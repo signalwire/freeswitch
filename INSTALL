@@ -1,0 +1,20 @@
+
+SQLITE (> make sqlite)
+It will download and build and install sqlite
+
+APR (> make apr)
+it will and download and build and install apr if needed but remember to make sure
+/usr/local/apr/lib is in the LD_LIBRARY_PATH that's up to you
+
+
+cp modules.conf.in modules.conf and edit to taste
+
+if you want sip:
+make sure mod_exosip is uncommeted in modules.conf
+make common
+make exosip
+
+
+make; make install
+
+

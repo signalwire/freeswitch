@@ -1,0 +1,14 @@
+# list the modules to build
+mod_bridgecall
+mod_dialplan_demo
+mod_softtimer
+#mod_zaptimer
+#mod_rtctimer
+mod_woomerachan
+mod_playback
+#mod_wanchan
+#mod_speexcodec
+#mod_speextest
+#mod_exosip
+mod_g711codec
+mod_rawaudio
