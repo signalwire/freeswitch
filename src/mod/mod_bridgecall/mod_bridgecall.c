@@ -76,7 +76,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 				data->running = -1;
 			}
 		} else {			
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Frame.... %d Bubye!\n", read_frame->datalen);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Frame....Bubye!\n");
 			data->running = -1;
 		}  
 		switch_yield(100);

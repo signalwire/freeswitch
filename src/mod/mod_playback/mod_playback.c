@@ -124,7 +124,7 @@ void playback_function(switch_core_session *session, char *data)
 
 	switch_core_codec_destroy(&codec);
 
-	switch_channel_set_state(channel, CS_HANGUP);
+	switch_channel_hangup(channel);
 }
 
 static const switch_application_interface playback_application_interface = {

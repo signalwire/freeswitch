@@ -199,7 +199,7 @@ struct switch_codec {
 struct switch_codec_implementation {
 	int samples_per_second;
 	int bits_per_second;
-	int nanoseconds_per_frame;
+	int microseconds_per_frame;
 	int samples_per_frame;
 	int bytes_per_frame;
 	int encoded_bytes_per_frame;

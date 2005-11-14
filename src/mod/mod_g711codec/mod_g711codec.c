@@ -189,7 +189,7 @@ static switch_status switch_g711a_destroy(switch_codec *codec)
 static const switch_codec_implementation g711u_8k_60ms_implementation = {
 	/*.samples_per_second*/				8000,
 	/*.bits_per_second*/				19200,
-	/*.nanoseconds_per_frame*/			60000,
+	/*.microseconds_per_frame*/			60000,
 	/*.samples_per_frame*/				480,
 	/*.bytes_per_frame*/				960,
 	/*.encoded_bytes_per_frame*/		480,
@@ -205,7 +205,7 @@ static const switch_codec_implementation g711u_8k_60ms_implementation = {
 static const switch_codec_implementation g711u_8k_30ms_implementation = {
 	/*.samples_per_second*/				8000,
 	/*.bits_per_second*/				96000,
-	/*.nanoseconds_per_frame*/			30000,
+	/*.microseconds_per_frame*/			30000,
 	/*.samples_per_frame*/				240,
 	/*.bytes_per_frame*/				480,
 	/*.encoded_bytes_per_frame*/		240,
@@ -222,7 +222,7 @@ static const switch_codec_implementation g711u_8k_30ms_implementation = {
 static const switch_codec_implementation g711u_8k_implementation = {
 	/*.samples_per_second*/				8000,
 	/*.bits_per_second*/				64000,
-	/*.nanoseconds_per_frame*/			20000,
+	/*.microseconds_per_frame*/			20000,
 	/*.samples_per_frame*/				160,
 	/*.bytes_per_frame*/				320,
 	/*.encoded_bytes_per_frame*/		160,
@@ -240,7 +240,7 @@ static const switch_codec_implementation g711u_8k_implementation = {
 static const switch_codec_implementation g711a_8k_implementation = {
 	/*.samples_per_second*/				8000,
 	/*.bits_per_second*/				64000,
-	/*.nanoseconds_per_frame*/			20000,
+	/*.microseconds_per_frame*/			20000,
 	/*.samples_per_frame*/				160,
 	/*.bytes_per_frame*/				320,
 	/*.encoded_bytes_per_frame*/		160,

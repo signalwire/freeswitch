@@ -244,7 +244,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 											  ptr->iananame,
 											  ptr->interface_name,
 											  impl->samples_per_second,
-											  impl->nanoseconds_per_frame / 1000);
+											  impl->microseconds_per_frame / 1000);
 					}
 
 					switch_core_hash_insert(loadable_modules.codec_hash,

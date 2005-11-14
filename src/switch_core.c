@@ -66,6 +66,9 @@ struct switch_core_session {
 	unsigned char *raw_read_buf[3200];
 	unsigned char *enc_read_buf[3200];
 
+	switch_mutex_t *mutex;
+	switch_thread_cond_t *cond;
+
 	void *private;
 };
 
@@ -168,7 +171,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 	}
 
 	for(iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
-		if ((!rate || rate == iptr->samples_per_second) && (!ms || ms == (iptr->nanoseconds_per_frame / 1000))) {
+		if ((!rate || rate == iptr->samples_per_second) && (!ms || ms == (iptr->microseconds_per_frame / 1000))) {
 			implementation = iptr;
 			break;
 		}
@@ -339,9 +342,12 @@ SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_thread_session *
 
 	switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
 
-	thread_session->running = -1;
-	while(thread_session->running) {
-		switch_yield(100);
+	if (thread_session->running > 0) {
+		thread_session->running = -1;
+
+		while(thread_session->running) {
+			switch_yield(1000);
+		}
 	}
 }
 
@@ -1074,6 +1080,11 @@ static void switch_core_standard_on_transmit(switch_core_session *session)
 }
 
 
+SWITCH_DECLARE(void) pbx_core_session_signal_state_change(switch_core_session *session)
+{
+	switch_thread_cond_signal(session->cond);
+}
+
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 {
 	switch_channel_state state = CS_NEW, laststate = CS_HANGUP;
@@ -1104,6 +1115,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 
 	driver_event_handlers = endpoint_interface->event_handlers;
 	assert(driver_event_handlers != NULL);
+
+	switch_mutex_lock(session->mutex);
 
 	while ((state = switch_channel_get_state(session->channel)) != CS_DONE) {
 		if (state != laststate) {
@@ -1190,10 +1203,11 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 			}
 			laststate = state;
 		}
-		//I should fall asleep here if possible!!!
-		switch_yield(1000);
-	}
 
+		if (state < CS_DONE) {
+			switch_thread_cond_wait(session->cond, session->mutex);
+		}
+	}
 }
 
 SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session **session)
@@ -1373,6 +1387,9 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_e
 	session->enc_write_frame.data = session->enc_write_buf;
 	session->enc_read_frame.data = session->enc_read_buf;
 
+	switch_mutex_init(&session->mutex, SWITCH_MUTEX_NESTED ,session->pool);
+	switch_thread_cond_create(&session->cond, session->pool);
+	
 	return session;
 }
 

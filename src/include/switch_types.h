@@ -178,6 +178,7 @@ typedef apr_socket_t switch_socket_t;
 typedef apr_pollfd_t switch_pollfd_t;
 typedef apr_pollset_t switch_pollset_t;
 typedef apr_file_t switch_file_t;
+typedef apr_thread_cond_t switch_thread_cond_t;
 
 #define SWITCH_UNSPEC APR_UNSPEC 
 #define SWITCH_POLLIN APR_POLLIN
@@ -189,6 +190,14 @@ typedef apr_file_t switch_file_t;
 #define SWITCH_READ APR_READ 
 #define SWITCH_FPROT_UREAD APR_FPROT_UREAD
 #define SWITCH_FPROT_GREAD APR_FPROT_GREAD
+
+#define switch_thread_cond_create apr_thread_cond_create
+#define switch_thread_cond_wait apr_thread_cond_wait
+#define switch_thread_cond_timedwait apr_thread_cond_timedwait
+#define switch_thread_cond_signal apr_thread_cond_signal
+#define switch_thread_cond_broadcast apr_thread_cond_broadcast
+#define switch_thread_cond_destroy apr_thread_cond_destroy
+
 #define switch_poll_setup apr_poll_setup
 #define switch_pollset_create apr_pollset_create
 #define switch_pollset_add apr_pollset_add

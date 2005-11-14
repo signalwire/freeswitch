@@ -90,7 +90,7 @@ static const switch_codec_implementation raw_32k_implementation = {
 	/*.samples_per_frame = */ 640,
 	/*.bytes_per_frame = */ 1280,
 	/*.encoded_bytes_per_frame = */ 1280,
-	/*.nanoseconds_per_frame = */ 20000,
+	/*.microseconds_per_frame = */ 20000,
 	/*.number_of_channels = */ 1,
 	/*.pref_frames_per_packet = */ 1,
 	/*.max_frames_per_packet = */ 1,
@@ -103,7 +103,7 @@ static const switch_codec_implementation raw_32k_implementation = {
 static const switch_codec_implementation raw_16k_implementation = {
 	/*.samples_per_second = */ 16000,
 	/*.bits_per_second = */ 256000,
-	/*.nanoseconds_per_frame = */ 20000,
+	/*.microseconds_per_frame = */ 20000,
 	/*.samples_per_frame = */ 320,
 	/*.bytes_per_frame = */ 640,
 	/*.encoded_bytes_per_frame = */ 640,
@@ -120,7 +120,7 @@ static const switch_codec_implementation raw_16k_implementation = {
 static const switch_codec_implementation raw_8k_implementation = {
 	/*.samples_per_second = */ 8000,
 	/*.bits_per_second = */ 128000,
-	/*.nanoseconds_per_frame = */ 20000,
+	/*.microseconds_per_frame = */ 20000,
 	/*.samples_per_frame = */ 160,
 	/*.bytes_per_frame = */ 320,
 	/*.encoded_bytes_per_frame = */ 320,
@@ -138,7 +138,7 @@ static const switch_codec_implementation raw_8k_implementation = {
 static const switch_codec_implementation raw_8k_30ms_implementation = {
 	/*.samples_per_second*/				8000,
 	/*.bits_per_second*/				128000,
-	/*.nanoseconds_per_frame*/			30000,
+	/*.microseconds_per_frame*/			30000,
 	/*.samples_per_frame*/				240,
 	/*.bytes_per_frame*/				480,
 	/*.encoded_bytes_per_frame*/		480,

@@ -116,6 +116,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec *codec);
 SWITCH_DECLARE(switch_status) switch_core_session_set_read_codec(switch_core_session *session, switch_codec *codec);
 SWITCH_DECLARE(switch_status) switch_core_session_set_write_codec(switch_core_session *session, switch_codec *codec);
 SWITCH_DECLARE(switch_memory_pool *) switch_core_session_get_pool(switch_core_session *session);
+SWITCH_DECLARE(void) pbx_core_session_signal_state_change(switch_core_session *session);
 
 #ifdef __cplusplus
 }

@@ -111,7 +111,7 @@ struct private_object {
 	int local_sdp_audio_port;
 	char call_id[50];
 	int ssrc;
-	//switch_mutex_t *rtp_lock;
+	switch_mutex_t *rtp_lock;
 };
 
 
@@ -373,7 +373,7 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
-			//switch_mutex_init(&tech_pvt->rtp_lock, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
+			switch_mutex_init(&tech_pvt->rtp_lock, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
 			tech_pvt->session = *new_session;
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
@@ -418,7 +418,7 @@ static void deactivate_rtp(struct private_object *tech_pvt)
 {
 	int loops = 0;
 	if (tech_pvt->rtp_session) {
-		//switch_mutex_lock(tech_pvt->rtp_lock);
+		switch_mutex_lock(tech_pvt->rtp_lock);
 
 		while(loops < 10 && (switch_test_flag(tech_pvt, TFLAG_READING) || switch_test_flag(tech_pvt, TFLAG_WRITING))) {
 			switch_yield(10000);
@@ -427,7 +427,7 @@ static void deactivate_rtp(struct private_object *tech_pvt)
 
 		ccrtp4c_destroy(&tech_pvt->rtp_session);
 		tech_pvt->rtp_session = NULL;
-		//switch_mutex_unlock(tech_pvt->rtp_lock);
+		switch_mutex_unlock(tech_pvt->rtp_lock);
 	}
 }
 
@@ -443,10 +443,10 @@ static void activate_rtp(struct private_object *tech_pvt)
 
 
 
-	//switch_mutex_lock(tech_pvt->rtp_lock);
+	switch_mutex_lock(tech_pvt->rtp_lock);
 	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
 		bw = tech_pvt->read_codec.implementation->bits_per_second;
-		ms = tech_pvt->read_codec.implementation->nanoseconds_per_frame;
+		ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
 	} else {
 		switch_channel_get_raw_mode(channel, NULL, NULL, NULL, &ms, &bw);
 		bw *= 8;
@@ -470,8 +470,8 @@ static void activate_rtp(struct private_object *tech_pvt)
 										tech_pvt->remote_sdp_audio_ip,
 										tech_pvt->remote_sdp_audio_port,
 										tech_pvt->read_codec.codec_interface->ianacode,
-										ms,
-										ms * 15);
+										ms ,
+										ms * 20);
 
 	if (tech_pvt->rtp_session) {
 		tech_pvt->ssrc = ccrtp4c_get_ssrc(tech_pvt->rtp_session);
@@ -481,7 +481,7 @@ static void activate_rtp(struct private_object *tech_pvt)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Oh oh?\n");
 	}
 
-	//switch_mutex_unlock(tech_pvt->rtp_lock);
+	switch_mutex_unlock(tech_pvt->rtp_lock);
 }
 
 static switch_status exosip_answer_channel(switch_core_session *session)
@@ -521,6 +521,8 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	struct private_object *tech_pvt = NULL;
 	size_t bytes = 0, samples = 0, frames=0, ms=0;
 	switch_channel *channel = NULL;
+	switch_time_t reference, now;
+	int mult = 2;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -534,6 +536,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
 		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 		samples = tech_pvt->read_codec.implementation->samples_per_frame;
+		ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
 	} else {
 		assert(0);
 	}
@@ -546,6 +549,8 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 		assert(tech_pvt->rtp_session != NULL);
 		tech_pvt->read_frame.datalen = 0;
 		
+		reference = switch_time_now();
+		reference += (ms * mult);
 		while(!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 			if ((tech_pvt->read_frame.datalen = 
 				 ccrtp4c_read(tech_pvt->rtp_session,
@@ -555,10 +560,21 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 				frames = (tech_pvt->read_frame.datalen / bytes);
 				samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
-				ms = frames * tech_pvt->read_codec.implementation->nanoseconds_per_frame / 1000;
+				ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
 				tech_pvt->timestamp_recv += samples;
 				break;
 			}
+			
+			now = switch_time_now();
+			if (now >= reference) {
+				printf("TO\n");
+				//memset(tech_pvt->read_buf, 0, bytes *2);
+				//tech_pvt->timestamp_recv += (samples * mult);
+				//reference += (ms * mult);
+				//tech_pvt->read_frame.datalen = bytes *2;
+				//break;
+			}
+
 			switch_yield(100);
 		}
 		
@@ -601,6 +617,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	
 	if (!switch_test_flag(tech_pvt, TFLAG_RTP)) {
 		activate_rtp(tech_pvt);
+		//return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
@@ -619,7 +636,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 		frames = (frame->datalen / bytes);
 		samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
-		ms = frames * tech_pvt->read_codec.implementation->nanoseconds_per_frame / 1000;
+		ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame / 1000;
 	} else {
 		assert(0);
 	}
@@ -777,7 +794,7 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
 			tech_pvt->session = session;
-			//switch_mutex_init(&tech_pvt->rtp_lock, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+			switch_mutex_init(&tech_pvt->rtp_lock, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
@@ -898,7 +915,7 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 				} else {
 					int ms;
 					switch_set_flag(tech_pvt, TFLAG_USING_CODEC);
-					ms = tech_pvt->write_codec.implementation->nanoseconds_per_frame / 1000;
+					ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Inbound Codec %s/%d %d ms\n", dname, rate, ms);
 					tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 					switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
@@ -1043,7 +1060,7 @@ static void handle_answer(eXosip_event_t *event)
 			} else {
 				int ms;
 				switch_set_flag(tech_pvt, TFLAG_USING_CODEC);
-				ms = tech_pvt->write_codec.implementation->nanoseconds_per_frame / 1000;
+				ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Outbound Codec %s/%d %d ms\n", dname, rate, ms);
 				tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 				switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);

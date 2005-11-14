@@ -347,8 +347,10 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 	if (ok) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
 		channel->state = state;
+		pbx_core_session_signal_state_change(channel->session);
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
+		//we won't tolerate an invalid state change so we can make sure we are as robust as a nice cup of dark coffee!
 		assert(0);
 	}
 	return channel->state;
@@ -410,8 +412,8 @@ SWITCH_DECLARE(switch_status) switch_channel_hangup(switch_channel *channel)
 	assert(channel != NULL);
 	if (channel->state < CS_HANGUP) {
 		channel->state = CS_HANGUP;
+		pbx_core_session_signal_state_change(channel->session);	
 	}
-
 	return channel->state;
 }
 

@@ -41,6 +41,7 @@ extern "C" {
 #include <apr_general.h>
 #include <apr_thread_proc.h>
 #include <apr_thread_mutex.h>
+#include <apr_thread_cond.h>
 #include <apr_thread_rwlock.h>
 #include <apr_file_io.h>
 #include <apr_poll.h>
@@ -49,7 +50,6 @@ extern "C" {
 #include <apr_strings.h>
 #include <apr_network_io.h>
 #include <apr_poll.h>
-
 #include <assert.h>
 
 //#include <time.h>
