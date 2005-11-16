@@ -1268,10 +1268,12 @@ SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash *hash, char *key)
 SWITCH_DECLARE(void) switch_core_launch_module_thread(switch_thread_start_t func, void *obj)
 {
 	switch_thread *thread;
+	apr_threadattr_t *thd_attr;;
+	apr_threadattr_create(&thd_attr, runtime.memory_pool);
+	apr_threadattr_detach_set(thd_attr, 1);
 
-	/* The 2nd needs to be a thread attr soon */
 	switch_thread_create(&thread,
-					  NULL,
+					  thd_attr,
 					  func,
 					  obj,
 					  runtime.memory_pool
@@ -1305,8 +1307,6 @@ SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session *sess
 {
 	switch_thread *thread;
 	apr_threadattr_t *thd_attr;;
-
-	/* The 2nd needs to be a thread attr soon */
 	apr_threadattr_create(&thd_attr, session->pool);
 	apr_threadattr_detach_set(thd_attr, 1);
 
@@ -1324,10 +1324,12 @@ SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session *sess
 SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *session, switch_thread_start_t func, void *obj)
 {
 	switch_thread *thread;
+	apr_threadattr_t *thd_attr;;
+	apr_threadattr_create(&thd_attr, session->pool);
+	apr_threadattr_detach_set(thd_attr, 1);
 
-	/* The 2nd needs to be a thread attr soon */
 	switch_thread_create(&thread,
-					  NULL,
+					  thd_attr,
 					  func,
 					  obj,
 					  session->pool

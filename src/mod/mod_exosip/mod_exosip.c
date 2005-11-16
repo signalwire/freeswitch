@@ -470,12 +470,13 @@ static void activate_rtp(struct private_object *tech_pvt)
 										tech_pvt->remote_sdp_audio_ip,
 										tech_pvt->remote_sdp_audio_port,
 										tech_pvt->read_codec.codec_interface->ianacode,
-										ms ,
-										ms * 20);
+										ms,
+										ms * 15);
 
 	if (tech_pvt->rtp_session) {
 		tech_pvt->ssrc = ccrtp4c_get_ssrc(tech_pvt->rtp_session);
 		ccrtp4c_start(tech_pvt->rtp_session);
+		tech_pvt->timestamp_recv = tech_pvt->timestamp_send = ccrtp4c_current_timestamp(tech_pvt->rtp_session);
 		switch_set_flag(tech_pvt, TFLAG_RTP);
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Oh oh?\n");
@@ -522,7 +523,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	size_t bytes = 0, samples = 0, frames=0, ms=0;
 	switch_channel *channel = NULL;
 	switch_time_t reference, now;
-	int mult = 2;
+	int mult = 1;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -548,7 +549,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 
 		assert(tech_pvt->rtp_session != NULL);
 		tech_pvt->read_frame.datalen = 0;
-		
+
 		reference = switch_time_now();
 		reference += (ms * mult);
 		while(!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
@@ -567,12 +568,12 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			
 			now = switch_time_now();
 			if (now >= reference) {
-				printf("TO\n");
-				//memset(tech_pvt->read_buf, 0, bytes *2);
-				//tech_pvt->timestamp_recv += (samples * mult);
-				//reference += (ms * mult);
-				//tech_pvt->read_frame.datalen = bytes *2;
-				//break;
+				//printf("TO\n");
+				memset(tech_pvt->read_buf, 0, bytes * mult);
+				tech_pvt->timestamp_recv += (samples * mult);
+				reference += (ms * mult);
+				tech_pvt->read_frame.datalen = bytes *2;
+				break;
 			}
 
 			switch_yield(100);
@@ -643,12 +644,10 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	
 
 	//printf("%s %s->%s send %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->remote_sdp_audio_ip, frame->datalen, samples, frames, ms, tech_pvt->timestamp_send);
-	
-	tech_pvt->timestamp_send += (int)samples;
+
+
 	ccrtp4c_write(tech_pvt->rtp_session, frame->data, frame->datalen, &tech_pvt->timestamp_send);
-
-	
-
+	tech_pvt->timestamp_send += (int)samples;
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);
 	//switch_mutex_unlock(tech_pvt->rtp_lock);

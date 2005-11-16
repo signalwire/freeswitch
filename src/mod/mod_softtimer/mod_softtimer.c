@@ -35,7 +35,7 @@
 static const char modname[] = "mod_softtimer";
 
 #ifdef WIN32
-#define WINTIMER
+//#define WINTIMER
 #endif
 
 struct timer_private {
@@ -82,7 +82,7 @@ static switch_status soft_timer_next(switch_timer *timer)
 	private->reference += timer->interval * 1000;
 
 	while (switch_time_now() < private->reference) {
-		switch_yield(100);
+		switch_yield(1000);
 	}
 #endif
 

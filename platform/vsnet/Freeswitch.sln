@@ -72,6 +72,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "osipparser2", "..\..\..\osi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "eXosip", "..\..\..\eXosip\platform\vsnet\eXosip.vcproj", "{4EA67539-9EE9-4065-BD39-87E517FD8262}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ccrtp4c", "..\..\..\ccrtp4c\w32\msvc\ccrtp4c.vcproj", "{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug IPv6 MSR|Win32 = Debug IPv6 MSR|Win32
@@ -279,6 +281,20 @@ Global
 		{4EA67539-9EE9-4065-BD39-87E517FD8262}.Release IPv6 XP|Win32.Build.0 = Release|Win32
 		{4EA67539-9EE9-4065-BD39-87E517FD8262}.Release|Win32.ActiveCfg = Release|Win32
 		{4EA67539-9EE9-4065-BD39-87E517FD8262}.Release|Win32.Build.0 = Release|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Debug IPv6 MSR|Win32.ActiveCfg = Debug|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Debug IPv6 MSR|Win32.Build.0 = Debug|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Debug IPv6 Musica|Win32.ActiveCfg = Debug|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Debug IPv6 Musica|Win32.Build.0 = Debug|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Debug IPv6 Win2000|Win32.ActiveCfg = Debug|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Debug IPv6 Win2000|Win32.Build.0 = Debug|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Debug|Win32.Build.0 = Debug|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Release IPv6 Win2000|Win32.ActiveCfg = Release|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Release IPv6 Win2000|Win32.Build.0 = Release|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Release IPv6 XP|Win32.ActiveCfg = Release|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Release IPv6 XP|Win32.Build.0 = Release|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Release|Win32.ActiveCfg = Release|Win32
+		{9ACCBFFD-390A-42F9-BD50-FF84A17A093A}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

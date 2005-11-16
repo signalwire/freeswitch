@@ -59,7 +59,7 @@ switch_caller_extension *demo_dialplan_hunt(switch_core_session *session)
 		switch_channel_hangup(channel);
 		return NULL;
 	}
-
+	
 	while (switch_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, "extensions")) {
 			if (!strcmp(var, caller_profile->destination_number) && val) {
@@ -67,7 +67,7 @@ switch_caller_extension *demo_dialplan_hunt(switch_core_session *session)
 
 				memset(app, 0, sizeof(app));
 				strncpy(app, val, sizeof(app));
-				
+			
 				if ((data = strchr(app, ' '))) {
 					*data = '\0';
 					data++;

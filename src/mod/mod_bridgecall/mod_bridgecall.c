@@ -79,7 +79,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Frame....Bubye!\n");
 			data->running = -1;
 		}  
-		switch_yield(100);
+		//switch_yield(100);
 	}
 
 	switch_channel_hangup(chan_b);
