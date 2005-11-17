@@ -471,12 +471,14 @@ static void activate_rtp(struct private_object *tech_pvt)
 										tech_pvt->remote_sdp_audio_port,
 										tech_pvt->read_codec.codec_interface->ianacode,
 										ms,
-										ms * 15);
+										ms * 15,
+										(ms / 1000) * 2);
 
 	if (tech_pvt->rtp_session) {
 		tech_pvt->ssrc = ccrtp4c_get_ssrc(tech_pvt->rtp_session);
+		//tech_pvt->timestamp_recv = tech_pvt->timestamp_send = 
 		ccrtp4c_start(tech_pvt->rtp_session);
-		tech_pvt->timestamp_recv = tech_pvt->timestamp_send = ccrtp4c_current_timestamp(tech_pvt->rtp_session);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Initial Timestamp %u\n", tech_pvt->timestamp_recv);
 		switch_set_flag(tech_pvt, TFLAG_RTP);
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Oh oh?\n");
@@ -522,8 +524,6 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	struct private_object *tech_pvt = NULL;
 	size_t bytes = 0, samples = 0, frames=0, ms=0;
 	switch_channel *channel = NULL;
-	switch_time_t reference, now;
-	int mult = 1;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -550,35 +550,34 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 		assert(tech_pvt->rtp_session != NULL);
 		tech_pvt->read_frame.datalen = 0;
 
-		reference = switch_time_now();
-		reference += (ms * mult);
 		while(!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
-			if ((tech_pvt->read_frame.datalen = 
-				 ccrtp4c_read(tech_pvt->rtp_session,
-							  tech_pvt->read_frame.data,
-							  sizeof(tech_pvt->read_buf),
-							  &tech_pvt->timestamp_recv))) {
+			int offset;
+
+			tech_pvt->read_frame.datalen = ccrtp4c_read(tech_pvt->rtp_session,
+														tech_pvt->read_frame.data,
+														sizeof(tech_pvt->read_buf),
+														tech_pvt->timestamp_recv,
+														&offset);
+
+			if (tech_pvt->read_frame.datalen > 0) {
 				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 				frames = (tech_pvt->read_frame.datalen / bytes);
 				samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 				ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
 				tech_pvt->timestamp_recv += samples;
 				break;
+			} else if (offset) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Timestamp behind by %d samples... auto-correcting\n", offset);
+				tech_pvt->timestamp_recv += offset;
+				continue;
 			}
 			
-			now = switch_time_now();
-			if (now >= reference) {
-				//printf("TO\n");
-				memset(tech_pvt->read_buf, 0, bytes * mult);
-				tech_pvt->timestamp_recv += (samples * mult);
-				reference += (ms * mult);
-				tech_pvt->read_frame.datalen = bytes *2;
-				break;
-			}
-
 			switch_yield(100);
 		}
-		
+
+		//tech_pvt->timestamp_recv += samples;
+
+
 		//printf("%s %s->%s recv %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->local_sdp_audio_ip, tech_pvt->read_frame.datalen, samples, frames, ms, tech_pvt->timestamp_recv);
 		
 
@@ -646,7 +645,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	//printf("%s %s->%s send %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->remote_sdp_audio_ip, frame->datalen, samples, frames, ms, tech_pvt->timestamp_send);
 
 
-	ccrtp4c_write(tech_pvt->rtp_session, frame->data, frame->datalen, &tech_pvt->timestamp_send);
+	ccrtp4c_write(tech_pvt->rtp_session, frame->data, frame->datalen, tech_pvt->timestamp_send);
 	tech_pvt->timestamp_send += (int)samples;
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);
@@ -1084,7 +1083,6 @@ static void handle_answer(eXosip_event_t *event)
 	assert(channel != NULL);
 
 	switch_channel_answer(channel);
-
 }
 
 static void log_event(eXosip_event_t *je)

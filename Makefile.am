@@ -8,7 +8,7 @@ APR_CONFIG=$(prefix)/bin/apr-1-config
 AM_CFLAGS  = $(shell $(APR_CONFIG) --cflags --cppflags --includes)
 AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) -Wl,-E -L$(PREFIX)/lib
 AM_CFLAGS  += -fPIC -Wall
-AM_CFLAGS  +=-I$(PWD) -I$(PWD)/include -I$(PREFIX)/include
+AM_CFLAGS  +=-I$(PWD) -I$(PWD)/src/include -I$(PREFIX)/include
 AM_CFLAGS 	+= -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\"
 AM_CFLAGS	+= -DSWITCH_PREFIX_DIR=\"$(PREFIX)\"
 AM_CFLAGS	+= -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"

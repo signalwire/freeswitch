@@ -136,7 +136,7 @@ MAKE = gmake
 NAME = freeswitch
 PREFIX = $(prefix)/${NAME}
 APR_CONFIG = $(prefix)/bin/apr-1-config
-AM_CFLAGS = $(shell $(APR_CONFIG) --cflags --cppflags --includes) -fPIC -Wall -I$(PWD) -I$(PWD)/include -I$(PREFIX)/include -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\" -DSWITCH_PREFIX_DIR=\"$(PREFIX)\" -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
+AM_CFLAGS = $(shell $(APR_CONFIG) --cflags --cppflags --includes) -fPIC -Wall -I$(PWD) -I$(PWD)/src/include -I$(PREFIX)/include -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\" -DSWITCH_PREFIX_DIR=\"$(PREFIX)\" -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
 AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) -Wl,-E -L$(PREFIX)/lib
 
 libfreeswitch_la_SOURCES = \
