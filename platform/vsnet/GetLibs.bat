@@ -21,14 +21,14 @@ set APRDIR=apr-1.2.2
 set APRTAR=%APRDIR%.tar.gz
 set APRURL=ftp://ftp.wayne.edu/apache/apr/
 set APRDESTDIR=apr
-set CCRTPDIR=ccrtp-1.3.5
-set CCRTPTAR=%CCRTPDIR%.tar.gz
-set CCRTPURL=ftp://ftp.gnu.org/pub/gnu/ccrtp/
-set CCRTPDESTDIR=ccrtp
-set CCPPDIR=commoncpp2-1.3.21
-set CCPPTAR=%CCPPDIR%.tar.gz
-set CCPPURL=ftp://ftp.gnu.org/gnu/commoncpp/
-set CCPPDESTDIR=commoncpp2
+REM set CCRTPDIR=ccrtp-1.3.5
+REM set CCRTPTAR=%CCRTPDIR%.tar.gz
+REM set CCRTPURL=ftp://ftp.gnu.org/pub/gnu/ccrtp/
+REM set CCRTPDESTDIR=ccrtp
+REM set CCPPDIR=commoncpp2-1.3.21
+REM set CCPPTAR=%CCPPDIR%.tar.gz
+REM set CCPPURL=ftp://ftp.gnu.org/gnu/commoncpp/
+REM set CCPPDESTDIR=commoncpp2
 set EXOSIPDIR=libeXosip-0.9.0
 set EXOSIPTAR=%EXOSIPDIR%.tar.gz
 set EXOSIPURL=http://www.antisip.com/download/
@@ -54,8 +54,8 @@ IF NOT EXIST %UTILSDIR%\%PATCHTAR% IF NOT EXIST %PATCH% %WGET% %PATCHURL%%PATCHT
 cd %LIBSRCDIR%
 
 IF NOT EXIST %APRTAR% IF NOT EXIST %APRDESTDIR% %WGET% %APRURL%%APRTAR% & %GUNZIP% < %APRTAR% | %TAR% xvf - & ren %APRDIR% %APRDESTDIR% & del %APRTAR%
-IF NOT EXIST %CCRTPTAR% IF NOT EXIST %CCRTPDESTDIR% %WGET% %CCRTPURL%%CCRTPTAR% & %GUNZIP% < %CCRTPTAR% | %TAR% xvf - & ren %CCRTPDIR% %CCRTPDESTDIR% & del %CCRTPTAR%
-IF NOT EXIST %CCPPTAR% IF NOT EXIST %CCPPDESTDIR% %WGET% %CCPPURL%%CCPPTAR% & %GUNZIP% < %CCPPTAR% | %TAR% xvf - & ren %CCPPDIR% %CCPPDESTDIR% & del %CCPPTAR%
+REM IF NOT EXIST %CCRTPTAR% IF NOT EXIST %CCRTPDESTDIR% %WGET% %CCRTPURL%%CCRTPTAR% & %GUNZIP% < %CCRTPTAR% | %TAR% xvf - & ren %CCRTPDIR% %CCRTPDESTDIR% & del %CCRTPTAR%
+REM IF NOT EXIST %CCPPTAR% IF NOT EXIST %CCPPDESTDIR% %WGET% %CCPPURL%%CCPPTAR% & %GUNZIP% < %CCPPTAR% | %TAR% xvf - & ren %CCPPDIR% %CCPPDESTDIR% & del %CCPPTAR%
 IF NOT EXIST %EXOSIPTAR% IF NOT EXIST %EXOSIPDESTDIR% %WGET% %EXOSIPURL%%EXOSIPTAR% & %GUNZIP% < %EXOSIPTAR% | %TAR% xvf - & ren %EXOSIPDIR% %EXOSIPDESTDIR% & del %EXOSIPTAR%
 IF NOT EXIST %OSIPTAR% IF NOT EXIST %OSIPDESTDIR% %WGET% %OSIPURL%%OSIPTAR% & %GUNZIP% < %OSIPTAR% | %TAR% xvf - & ren %OSIPDIR% %OSIPDESTDIR% & del %OSIPTAR%
 
@@ -95,7 +95,7 @@ REM %DEVENV% libapr.vcproj /build Release
 copy %LIBSRCDIR%\%APRDESTDIR%\debug\*.lib %DEBUGLIBBINDIR%
 copy %LIBSRCDIR%\%APRDESTDIR%\debug\*.dll %DEBUGLIBBINDIR%
 
-
+GOTO OSIP
 ECHO ****************************************************************
 ECHO **************           CCRTP BUILD           *****************
 ECHO ****************************************************************
@@ -147,7 +147,7 @@ copy %LIBSRCDIR%\%CCRTPDESTDIR%\w32\common\debug\*.dll %DEBUGLIBBINDIR%
 copy %LIBSRCDIR%\%CCRTPDESTDIR%\w32\msvcpp\debug\*.lib %DEBUGLIBBINDIR%
 copy %LIBSRCDIR%\%CCRTPDESTDIR%\w32\msvcpp\debug\*.dll %DEBUGLIBBINDIR%
 
-
+:OSIP
 ECHO ****************************************************************
 ECHO **************            OSIP BUILD           *****************
 ECHO ****************************************************************
