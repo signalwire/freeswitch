@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D _CRT_SECURE_NO_DEPRECATE"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\include;&quot;$(InputDir)..\..\..\libs\apr-1.2.2\include&quot;;..\..\..\eXosip\include;..\..\..\osip\include"
+				AdditionalIncludeDirectories="..\..\src\include;&quot;$(InputDir)..\..\..\libs\apr-1.2.2\include&quot;;..\..\..\eXosip\include;..\..\..\osip\include;..\..\..\jrtp4c\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
@@ -64,7 +64,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib ccrtp4c.lib"
+				AdditionalOptions="/NODEFAULTLIB:LIBCMT"
+				AdditionalDependencies="Ws2_32.lib  Iphlpapi.lib libcpmt.lib"
 				ShowProgress="0"
 				OutputFile="$(OutDir)/mod/mod_exosip.dll"
 				LinkIncremental="2"

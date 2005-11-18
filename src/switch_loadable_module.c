@@ -96,7 +96,6 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 	assert(filename != NULL);
 
 	*new_module = NULL;
-
 	status = apr_dso_load(&dso, filename, pool);
 
 	while (loading) {
@@ -185,6 +184,13 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	apr_dir_t *module_dir_handle;
 	apr_int32_t finfo_flags = APR_FINFO_DIRENT|APR_FINFO_TYPE|APR_FINFO_NAME;
 	switch_loadable_module *new_module;
+#ifdef WIN32
+	const char *ext = ".dll";
+	const char *EXT = ".DLL";
+#else
+	const char *ext = ".so";
+	const char *EXT = ".SO";
+#endif
 
 	memset(&loadable_modules, 0, sizeof(loadable_modules));
 	switch_core_new_memory_pool(&loadable_modules.pool);
@@ -215,6 +221,11 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 		if (!(ptr = (char *) fname)) {
 			continue;
 		}
+	
+		if (!strstr(fname, ext) && !strstr(fname, EXT)) {
+			continue;
+		}
+
 
 		len = strlen(SWITCH_MOD_DIR) + strlen(fname) + 3;
 		file = (char *) switch_core_alloc(loadable_modules.pool, len);
