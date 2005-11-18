@@ -1,5 +1,5 @@
 #CFLAGS += -I/usr/src/common/src
-LDFLAGS += -leXosip2  -lccrtp4c
+LDFLAGS += -leXosip2  -ljrtp4c
 
 $(MOD).so: $(MOD).c
 	$(CC) $(CFLAGS) -fPIC -c $(MOD).c -o $(MOD).o 

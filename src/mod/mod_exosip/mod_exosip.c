@@ -33,7 +33,7 @@
 
 #define HAVE_APR
 #include <switch.h>
-#include <ccrtp4c.h>
+#include <jrtp4c.h>
 #include <eXosip2/eXosip.h>
 #include <osip2/osip_mt.h>
 #include <osipparser2/osip_rfc3264.h>
@@ -101,7 +101,7 @@ struct private_object {
 	int32_t timestamp_send;
 	int32_t timestamp_recv;
 	int payload_num;
-	struct ccrtp4c *rtp_session;
+	struct jrtp4c *rtp_session;
 	struct osip_rfc3264 *sdp_config;
 	sdp_message_t *remote_sdp;
 	sdp_message_t *local_sdp;
@@ -425,7 +425,7 @@ static void deactivate_rtp(struct private_object *tech_pvt)
 			loops++;
 		}
 
-		ccrtp4c_destroy(&tech_pvt->rtp_session);
+		jrtp4c_destroy(&tech_pvt->rtp_session);
 		tech_pvt->rtp_session = NULL;
 		switch_mutex_unlock(tech_pvt->rtp_lock);
 	}
@@ -435,15 +435,24 @@ static void activate_rtp(struct private_object *tech_pvt)
 {
 	int bw, ms;
 	switch_channel *channel;
+	const char *err;
 
 	assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(tech_pvt->session);
 	assert(channel != NULL);
 
-
+	if (tech_pvt->rtp_session) {
+		return;
+	}
 
 	switch_mutex_lock(tech_pvt->rtp_lock);
+
+	if (tech_pvt->rtp_session) {
+		switch_mutex_unlock(tech_pvt->rtp_lock);
+		return;
+	}
+
 	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
 		bw = tech_pvt->read_codec.implementation->bits_per_second;
 		ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
@@ -464,24 +473,25 @@ static void activate_rtp(struct private_object *tech_pvt)
 
 
 
-	tech_pvt->rtp_session = ccrtp4c_new(
-										tech_pvt->local_sdp_audio_ip,
-										tech_pvt->local_sdp_audio_port,
-										tech_pvt->remote_sdp_audio_ip,
-										tech_pvt->remote_sdp_audio_port,
-										tech_pvt->read_codec.codec_interface->ianacode,
-										ms,
-										ms * 15,
-										(ms / 1000) * 2);
+	tech_pvt->rtp_session = jrtp4c_new(
+									   tech_pvt->local_sdp_audio_ip,
+									   tech_pvt->local_sdp_audio_port,
+									   tech_pvt->remote_sdp_audio_ip,
+									   tech_pvt->remote_sdp_audio_port,
+									   tech_pvt->read_codec.codec_interface->ianacode,
+									   tech_pvt->read_codec.implementation->samples_per_second,
+									   &err);
 
 	if (tech_pvt->rtp_session) {
-		tech_pvt->ssrc = ccrtp4c_get_ssrc(tech_pvt->rtp_session);
-		//tech_pvt->timestamp_recv = tech_pvt->timestamp_send = 
-		ccrtp4c_start(tech_pvt->rtp_session);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Initial Timestamp %u\n", tech_pvt->timestamp_recv);
+		tech_pvt->ssrc = jrtp4c_get_ssrc(tech_pvt->rtp_session);
+		jrtp4c_start(tech_pvt->rtp_session);
 		switch_set_flag(tech_pvt, TFLAG_RTP);
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Oh oh?\n");
+		switch_channel *channel = switch_core_session_get_channel(tech_pvt->session);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Oh oh? [%s]\n", err);
+		switch_channel_hangup(channel);
+		switch_set_flag(tech_pvt, TFLAG_BYE);
+		switch_clear_flag(tech_pvt, TFLAG_IO);
 	}
 
 	switch_mutex_unlock(tech_pvt->rtp_lock);
@@ -544,20 +554,17 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		if (!switch_test_flag(tech_pvt, TFLAG_RTP)) {
-			activate_rtp(tech_pvt);
+			return SWITCH_STATUS_GENERR;
 		}
+		
 
 		assert(tech_pvt->rtp_session != NULL);
 		tech_pvt->read_frame.datalen = 0;
 
 		while(!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
-			int offset;
-
-			tech_pvt->read_frame.datalen = ccrtp4c_read(tech_pvt->rtp_session,
+			tech_pvt->read_frame.datalen = jrtp4c_read(tech_pvt->rtp_session,
 														tech_pvt->read_frame.data,
-														sizeof(tech_pvt->read_buf),
-														tech_pvt->timestamp_recv,
-														&offset);
+													   sizeof(tech_pvt->read_buf));
 
 			if (tech_pvt->read_frame.datalen > 0) {
 				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
@@ -566,10 +573,6 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 				ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
 				tech_pvt->timestamp_recv += samples;
 				break;
-			} else if (offset) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Timestamp behind by %d samples... auto-correcting\n", offset);
-				tech_pvt->timestamp_recv += offset;
-				continue;
 			}
 			
 			switch_yield(100);
@@ -616,8 +619,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	assert(tech_pvt != NULL);
 	
 	if (!switch_test_flag(tech_pvt, TFLAG_RTP)) {
-		activate_rtp(tech_pvt);
-		//return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
@@ -641,11 +643,11 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 		assert(0);
 	}
 	
-
+	
 	//printf("%s %s->%s send %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->remote_sdp_audio_ip, frame->datalen, samples, frames, ms, tech_pvt->timestamp_send);
 
 
-	ccrtp4c_write(tech_pvt->rtp_session, frame->data, frame->datalen, tech_pvt->timestamp_send);
+	jrtp4c_write(tech_pvt->rtp_session, frame->data, frame->datalen, samples);
 	tech_pvt->timestamp_send += (int)samples;
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);
@@ -922,15 +924,20 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 			}
 		}
 		
-		switch_core_session_thread_launch(session);
+		activate_rtp(tech_pvt);
+		
+		if (switch_test_flag(tech_pvt, TFLAG_RTP)) {
+			switch_core_session_thread_launch(session);
+		} else {
+			switch_core_session_destroy(&session);
+			return SWITCH_STATUS_FALSE;
+		}
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot Create new Inbound Channel!\n");
 	}
 
 
 	return 0;
-
-
 
 }
 
@@ -1078,11 +1085,13 @@ static void handle_answer(eXosip_event_t *event)
 	free(dpayload);
 
 
+	activate_rtp(tech_pvt);
 
-	channel = switch_core_session_get_channel(tech_pvt->session);
-	assert(channel != NULL);
-
-	switch_channel_answer(channel);
+	if (switch_test_flag(tech_pvt, TFLAG_RTP)) {
+		channel = switch_core_session_get_channel(tech_pvt->session);
+		assert(channel != NULL);
+		switch_channel_answer(channel);
+	}
 }
 
 static void log_event(eXosip_event_t *je)
