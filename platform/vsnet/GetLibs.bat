@@ -9,14 +9,14 @@ set INCLUDEDIR=%BASEDIR%\include
 set LIBSRCDIR=%BASEDIR%\src
 set DEBUGLIBBINDIR=%BASEDIR%\debuglib
 set WGET=cscript %UTILSDIR%\wget.vbs
-set PATCHURL=http://www.jerris.com/
-SET PATCHTAR=patch.tar.gz
+REM set PATCHURL=http://www.jerris.com/
+REM SET PATCHTAR=patch.tar.gz
 set TAR=%UTILSDIR%\tar.exe
 set TARURL=http://users.pandora.be/larc/download/windows_management/tar.exe
 set GUNZIP=%UTILSDIR%\gunzip.exe
 set GUNZIPURL=http://users.pandora.be/larc/download/windows_management/gunzip.exe
 set UNIX2DOS=%UTILSDIR%\unix2dos.vbs
-set PATCH=%UTILSDIR%\PATCH.exe
+REM set PATCH=%UTILSDIR%\PATCH.exe
 set APRDIR=apr-1.2.2
 set APRTAR=%APRDIR%.tar.gz
 set APRURL=ftp://ftp.wayne.edu/apache/apr/
@@ -49,9 +49,9 @@ ECHO ****************************************************************
 
 IF NOT EXIST %TAR% %WGET% %TARURL% %UTILSDIR%
 IF NOT EXIST %GUNZIP% %WGET% %GUNZIPURL% %UTILSDIR%
-cd %UTILSDIR%
-IF NOT EXIST %UTILSDIR%\%PATCHTAR% IF NOT EXIST %PATCH% %WGET% %PATCHURL%%PATCHTAR% %UTILSDIR% & %GUNZIP% < %UTILSDIR%\%PATCHTAR% | %TAR% xvf - & del %PATCHTAR%
-cd %LIBSRCDIR%
+REM cd %UTILSDIR%
+REM IF NOT EXIST %UTILSDIR%\%PATCHTAR% IF NOT EXIST %PATCH% %WGET% %PATCHURL%%PATCHTAR% %UTILSDIR% & %GUNZIP% < %UTILSDIR%\%PATCHTAR% | %TAR% xvf - & del %PATCHTAR%
+REM cd %LIBSRCDIR%
 
 IF NOT EXIST %APRTAR% IF NOT EXIST %APRDESTDIR% %WGET% %APRURL%%APRTAR% & %GUNZIP% < %APRTAR% | %TAR% xvf - & ren %APRDIR% %APRDESTDIR% & del %APRTAR%
 REM IF NOT EXIST %CCRTPTAR% IF NOT EXIST %CCRTPDESTDIR% %WGET% %CCRTPURL%%CCRTPTAR% & %GUNZIP% < %CCRTPTAR% | %TAR% xvf - & ren %CCRTPDIR% %CCRTPDESTDIR% & del %CCRTPTAR%
