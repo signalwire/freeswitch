@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D _CRT_SECURE_NO_DEPRECATE"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\include;&quot;$(InputDir)..\..\..\libs\apr-1.2.2\include&quot;;..\..\..\eXosip\include;..\..\..\osip\include;..\..\..\jrtp4c\src"
+				AdditionalIncludeDirectories="..\..\src\include;&quot;$(InputDir)..\..\..\libs\apr-1.2.2\include&quot;;&quot;..\..\libs\libeXosip-0.9.0\include&quot;;&quot;..\..\libs\libosip2-2.2.0\include&quot;;..\..\libs\jrtp4c\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
@@ -128,7 +128,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\apr-1.2.2\include&quot;;&quot;$(InputDir)libs\eXosip\include&quot;;&quot;$(InputDir)libs\osip\include&quot;;&quot;$(InputDir)libs\common\src&quot;"
+				AdditionalIncludeDirectories="..\..\src\include;&quot;$(InputDir)..\..\..\libs\apr-1.2.2\include&quot;;&quot;..\..\libs\libeXosip-0.9.0\include&quot;;&quot;..\..\libs\libosip2-2.2.0\include&quot;;..\..\libs\jrtp4c\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -147,7 +147,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib"
+				AdditionalDependencies="Ws2_32.lib  Iphlpapi.lib libcpmt.lib"
 				OutputFile="$(OutDir)/mod/mod_exosip.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
@@ -189,15 +189,15 @@
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{4EA67539-9EE9-4065-BD39-87E517FD8262}"
-			RelativePathToProject="..\..\..\eXosip\platform\vsnet\eXosip.vcproj"
+			RelativePathToProject="..\..\libs\libeXosip-0.9.0\platform\windows\eXosip.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85255507-5D16-4218-85E2-F683BB2F04DA}"
-			RelativePathToProject="..\..\..\osip\platform\vsnet\osip2.vcproj"
+			RelativePathToProject="..\..\libs\libosip2-2.2.0\platform\vsnet\osip2.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{44F46B7E-0E51-4304-9735-330DFBAB41E5}"
-			RelativePathToProject="..\..\..\osip\platform\vsnet\osipparser2.vcproj"
+			RelativePathToProject="..\..\libs\libosip2-2.2.0\platform\vsnet\osipparser2.vcproj"
 		/>
 	</References>
 	<Files>

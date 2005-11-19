@@ -39,7 +39,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D WIN32"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\jthread\src;..\..\..\jrtplib\src;..\..\src"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\jthread-1.1.2\src&quot;;&quot;$(ProjectDir)..\..\jrtplib-3.3.0\src&quot;;&quot;$(ProjectDir)..\src&quot;"
 				RuntimeLibrary="1"
 			/>
 			<Tool
@@ -72,6 +72,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			>
@@ -92,6 +93,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\jthread-1.1.2\src&quot;;&quot;$(ProjectDir)..\..\jrtplib-3.3.0\src&quot;;&quot;$(ProjectDir)..\src&quot;"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -140,7 +142,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\jrtp4c.cpp"
+				RelativePath="..\src\jrtp4c.cpp"
 				>
 			</File>
 		</Filter>
@@ -150,7 +152,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\src\jrtp4c.h"
+				RelativePath="..\src\jrtp4c.h"
 				>
 			</File>
 		</Filter>

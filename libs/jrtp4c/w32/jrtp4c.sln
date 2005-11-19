@@ -1,14 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jrtp4c", "..\jrtp4c\jrtp4c.vcproj", "{E85B3E1F-B671-4E84-9F09-90F61A27D783}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jrtp4c", "jrtp4c.vcproj", "{E85B3E1F-B671-4E84-9F09-90F61A27D783}"
 	ProjectSection(ProjectDependencies) = postProject
 		{4009F58A-E333-424B-A868-7E82804DD055} = {4009F58A-E333-424B-A868-7E82804DD055}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jthread", "..\..\..\jthread\jthread.vcproj", "{96A714AE-BE53-4EFF-8569-C3809AD4F3B6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jthread", "..\..\jthread-1.1.2\jthread.vcproj", "{96A714AE-BE53-4EFF-8569-C3809AD4F3B6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jrtplib", "..\..\..\jrtplib\jrtplib.vcproj", "{4009F58A-E333-424B-A868-7E82804DD055}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jrtplib", "..\..\jrtplib-3.3.0\jrtplib.vcproj", "{4009F58A-E333-424B-A868-7E82804DD055}"
 	ProjectSection(ProjectDependencies) = postProject
 		{96A714AE-BE53-4EFF-8569-C3809AD4F3B6} = {96A714AE-BE53-4EFF-8569-C3809AD4F3B6}
 	EndProjectSection

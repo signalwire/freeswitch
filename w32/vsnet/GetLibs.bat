@@ -3,10 +3,10 @@ ECHO ****************************************************************
 ECHO **************          VARIABLE SETUP         *****************
 ECHO ****************************************************************
 
-for /f %%i in ('cscript /Nologo .\tools\Fulldir.vbs .\..\..\..\..') DO SET BASEDIR=%%i
-set UTILSDIR=%BASEDIR%\src\freeswitch\platform\vsnet\Tools
+for /f %%i in ('cscript /Nologo .\tools\Fulldir.vbs .\..\..') DO SET BASEDIR=%%i
+set UTILSDIR=%BASEDIR%\w32\vsnet\Tools
 set INCLUDEDIR=%BASEDIR%\include
-set LIBSRCDIR=%BASEDIR%\src
+set LIBSRCDIR=%BASEDIR%\libs
 set DEBUGLIBBINDIR=%BASEDIR%\debuglib
 set WGET=cscript %UTILSDIR%\wget.vbs
 set TAR=%UTILSDIR%\tar.exe
@@ -19,19 +19,19 @@ set UNIX2DOS=%UTILSDIR%\unix2dos.vbs
 set APRDIR=apr-1.2.2
 set APRTAR=%APRDIR%.tar.gz
 set APRURL=ftp://ftp.wayne.edu/apache/apr/
-set APRDESTDIR=apr
-REM set CCRTPDIR=ccrtp-1.3.5
-REM set CCRTPTAR=%CCRTPDIR%.tar.gz
-REM set CCRTPURL=ftp://ftp.gnu.org/pub/gnu/ccrtp/
-REM set CCRTPDESTDIR=ccrtp
-REM set CCPPDIR=commoncpp2-1.3.21
-REM set CCPPTAR=%CCPPDIR%.tar.gz
-REM set CCPPURL=ftp://ftp.gnu.org/gnu/commoncpp/
-REM set CCPPDESTDIR=commoncpp2
+set APRDESTDIR=%APRDIR%
+set JRTPDIR=jrtplib-3.3.0
+set JRTPTAR=%JRTPDIR%.tar.gz
+set JRTPURL=http://research.edm.luc.ac.be/jori/jrtplib/
+set JRTPDESTDIR=%JRTPDIR%
+set JTHREADDIR=jthread-1.1.2
+set JTHREADTAR=%JTHREADDIR%.tar.gz
+set JTHREADURL=http://research.edm.luc.ac.be/jori/jthread/
+set JTHREADDESTDIR=%JTHREADDIR%
 set EXOSIPDIR=libeXosip-0.9.0
 set EXOSIPTAR=%EXOSIPDIR%.tar.gz
 set EXOSIPURL=http://www.antisip.com/download/
-set EXOSIPDESTDIR=eXosip
+set EXOSIPDESTDIR=%EXOSIPDIR%
 set OSIPDIR=libosip2-2.2.1
 set OSIPTAR=%OSIPDIR%.tar.gz
 set OSIPURL=http://www.antisip.com/download/
@@ -40,7 +40,7 @@ set OSIPDESTDIR=libosip2-2.2.0
 IF NOT EXIST %INCLUDEDIR% md %INCLUDEDIR%
 IF NOT EXIST %DEBUGLIBBINDIR% md %DEBUGLIBBINDIR%
 IF NOT EXIST %LIBSRCDIR% md %LIBSRCDIR%
-cd %LIBSRCDIR%
+
 
 ECHO ****************************************************************
 ECHO **************             DOWNLOADS           *****************
@@ -51,9 +51,12 @@ IF NOT EXIST %TAR% %WGET% %TARURL2% %UTILSDIR%
 IF NOT EXIST %GUNZIP% %WGET% %GUNZIPURL% %UTILSDIR%
 IF NOT EXIST %GUNZIP% %WGET% %GUNZIPURL2% %UTILSDIR%
 
+cd %LIBSRCDIR%
 IF NOT EXIST %APRTAR% IF NOT EXIST %APRDESTDIR% %WGET% %APRURL%%APRTAR% & %GUNZIP% < %APRTAR% | %TAR% xvf - & ren %APRDIR% %APRDESTDIR% & del %APRTAR%
 IF NOT EXIST %EXOSIPTAR% IF NOT EXIST %EXOSIPDESTDIR% %WGET% %EXOSIPURL%%EXOSIPTAR% & %GUNZIP% < %EXOSIPTAR% | %TAR% xvf - & ren %EXOSIPDIR% %EXOSIPDESTDIR% & del %EXOSIPTAR%
 IF NOT EXIST %OSIPTAR% IF NOT EXIST %OSIPDESTDIR% %WGET% %OSIPURL%%OSIPTAR% & %GUNZIP% < %OSIPTAR% | %TAR% xvf - & ren %OSIPDIR% %OSIPDESTDIR% & del %OSIPTAR%
+IF NOT EXIST %JTHREADTAR% IF NOT EXIST %JTHREADDESTDIR% %WGET% %JTHREADURL%%JTHREADTAR% & %GUNZIP% < %JTHREADTAR% | %TAR% xvf - & ren %JTHREADDIR% %JTHREADDESTDIR% & del %JTHREADTAR%
+IF NOT EXIST %JRTPTAR% IF NOT EXIST %JRTPDESTDIR% %WGET% %JRTPURL%%JRTPTAR% & %GUNZIP% < %JRTPTAR% | %TAR% xvf - & ren %JRTPDIR% %JRTPDESTDIR% & del %JRTPTAR%
 
 
 ECHO ****************************************************************
@@ -90,6 +93,7 @@ IF NOT EXIST libapr.vcproj cscript %UTILSDIR%\upgrade.vbs libapr.dsp libapr.vcpr
 REM %DEVENV% libapr.vcproj /build Release
 copy %LIBSRCDIR%\%APRDESTDIR%\debug\*.lib %DEBUGLIBBINDIR%
 copy %LIBSRCDIR%\%APRDESTDIR%\debug\*.dll %DEBUGLIBBINDIR%
+cd %LIBSRCDIR%
 
 ECHO ****************************************************************
 ECHO **************            OSIP BUILD           *****************
@@ -117,8 +121,13 @@ IF NOT EXIST %INCLUDEDIR%\eXosip copy "%LIBSRCDIR%\%EXOSIPDESTDIR%\include\eXosi
 REM %DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\windows\eXosip.vcproj /build Release
 copy %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\windows\debug\*.lib %DEBUGLIBBINDIR%
 
+ECHO ****************************************************************
+ECHO **************           JRTP BUILD            *****************
+ECHO ****************************************************************
+
+%DEVENV% %LIBSRCDIR%\jrtp4c\jrtp4c.sln /build Debug
 
 :END
-cd %BASEDIR%
+cd %UTILSDIR%\..
 
 
