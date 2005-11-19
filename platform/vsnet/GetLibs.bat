@@ -9,14 +9,13 @@ set INCLUDEDIR=%BASEDIR%\include
 set LIBSRCDIR=%BASEDIR%\src
 set DEBUGLIBBINDIR=%BASEDIR%\debuglib
 set WGET=cscript %UTILSDIR%\wget.vbs
-REM set PATCHURL=http://www.jerris.com/
-REM SET PATCHTAR=patch.tar.gz
 set TAR=%UTILSDIR%\tar.exe
 set TARURL=http://users.pandora.be/larc/download/windows_management/tar.exe
+set TARURL2=http://www.sofaswitch.org/mikej/tar.exe
 set GUNZIP=%UTILSDIR%\gunzip.exe
 set GUNZIPURL=http://users.pandora.be/larc/download/windows_management/gunzip.exe
+set GUNZIPURL2=http://www.sofaswitch.org/mikej/gunzip.exe
 set UNIX2DOS=%UTILSDIR%\unix2dos.vbs
-REM set PATCH=%UTILSDIR%\PATCH.exe
 set APRDIR=apr-1.2.2
 set APRTAR=%APRDIR%.tar.gz
 set APRURL=ftp://ftp.wayne.edu/apache/apr/
@@ -48,14 +47,11 @@ ECHO **************             DOWNLOADS           *****************
 ECHO ****************************************************************
 
 IF NOT EXIST %TAR% %WGET% %TARURL% %UTILSDIR%
+IF NOT EXIST %TAR% %WGET% %TARURL2% %UTILSDIR%
 IF NOT EXIST %GUNZIP% %WGET% %GUNZIPURL% %UTILSDIR%
-REM cd %UTILSDIR%
-REM IF NOT EXIST %UTILSDIR%\%PATCHTAR% IF NOT EXIST %PATCH% %WGET% %PATCHURL%%PATCHTAR% %UTILSDIR% & %GUNZIP% < %UTILSDIR%\%PATCHTAR% | %TAR% xvf - & del %PATCHTAR%
-REM cd %LIBSRCDIR%
+IF NOT EXIST %GUNZIP% %WGET% %GUNZIPURL2% %UTILSDIR%
 
 IF NOT EXIST %APRTAR% IF NOT EXIST %APRDESTDIR% %WGET% %APRURL%%APRTAR% & %GUNZIP% < %APRTAR% | %TAR% xvf - & ren %APRDIR% %APRDESTDIR% & del %APRTAR%
-REM IF NOT EXIST %CCRTPTAR% IF NOT EXIST %CCRTPDESTDIR% %WGET% %CCRTPURL%%CCRTPTAR% & %GUNZIP% < %CCRTPTAR% | %TAR% xvf - & ren %CCRTPDIR% %CCRTPDESTDIR% & del %CCRTPTAR%
-REM IF NOT EXIST %CCPPTAR% IF NOT EXIST %CCPPDESTDIR% %WGET% %CCPPURL%%CCPPTAR% & %GUNZIP% < %CCPPTAR% | %TAR% xvf - & ren %CCPPDIR% %CCPPDESTDIR% & del %CCPPTAR%
 IF NOT EXIST %EXOSIPTAR% IF NOT EXIST %EXOSIPDESTDIR% %WGET% %EXOSIPURL%%EXOSIPTAR% & %GUNZIP% < %EXOSIPTAR% | %TAR% xvf - & ren %EXOSIPDIR% %EXOSIPDESTDIR% & del %EXOSIPTAR%
 IF NOT EXIST %OSIPTAR% IF NOT EXIST %OSIPDESTDIR% %WGET% %OSIPURL%%OSIPTAR% & %GUNZIP% < %OSIPTAR% | %TAR% xvf - & ren %OSIPDIR% %OSIPDESTDIR% & del %OSIPTAR%
 
@@ -95,59 +91,6 @@ REM %DEVENV% libapr.vcproj /build Release
 copy %LIBSRCDIR%\%APRDESTDIR%\debug\*.lib %DEBUGLIBBINDIR%
 copy %LIBSRCDIR%\%APRDESTDIR%\debug\*.dll %DEBUGLIBBINDIR%
 
-GOTO OSIP
-ECHO ****************************************************************
-ECHO **************           CCRTP BUILD           *****************
-ECHO ****************************************************************
-
-cd %LIBSRCDIR%\%CCPPDESTDIR%
-cd src
-IF NOT EXIST patched.tag copy %UTILSDIR%\commoncpp2005.diff
-IF EXIST commoncpp2005.diff %PATCH% -u -i commoncpp2005.diff
-IF EXIST commoncpp2005.diff ren commoncpp2005.diff patched.tag
-IF NOT EXIST "%INCLUDEDIR%\cc++" copy "%LIBSRCDIR%\%CCPPDESTDIR%\src\*.h" "%INCLUDEDIR%"
-IF NOT EXIST "%INCLUDEDIR%\ccrtp" copy "%LIBSRCDIR%\ccrtp4c\src\*.h" "%INCLUDEDIR%"
-IF NOT EXIST "%INCLUDEDIR%\cc++" md "%INCLUDEDIR%\cc++"
-IF NOT EXIST "%INCLUDEDIR%\ccrtp" md "%INCLUDEDIR%\ccrtp"
-IF NOT EXIST "%INCLUDEDIR%\ccrtp\base.h" copy "%LIBSRCDIR%\%CCRTPDESTDIR%\src\ccrtp\*.h" "%INCLUDEDIR%\ccrtp"
-IF NOT EXIST "%INCLUDEDIR%\cc++\pointer.h" copy "%LIBSRCDIR%\%CCPPDESTDIR%\src\template\*.h" "%INCLUDEDIR%\cc++"
-IF NOT EXIST "%INCLUDEDIR%\cc++\unix.h" copy "%LIBSRCDIR%\%CCPPDESTDIR%\src\include\cc++\*.h" "%INCLUDEDIR%\cc++"
-IF NOT EXIST "%INCLUDEDIR%\cc++\config.h" copy "%LIBSRCDIR%\%CCPPDESTDIR%\src\w32\cc++\*.h" "%INCLUDEDIR%\cc++"
-
-IF NOT EXIST "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\include\cc++" md "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\include" & md "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\include\cc++"
-IF NOT EXIST "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\include\cc++\unix.h" copy "%LIBSRCDIR%\%CCPPDESTDIR%\w32\cc++\*.h" "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\include\cc++"
-IF NOT EXIST "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\include\cc++\unix.h" copy "%LIBSRCDIR%\%CCPPDESTDIR%\w32\cc++\*.h" "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\include"
-IF NOT EXIST "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\include\cc++\unix.h" copy "%LIBSRCDIR%\%CCPPDESTDIR%\include\cc++\*.h" "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\include\cc++\"
-
-IF NOT EXIST "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\template\cc++" md "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\template" & md "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\template\cc++"
-IF NOT EXIST "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\template\cc++\pointer.h" copy "%LIBSRCDIR%\%CCPPDESTDIR%\template\*.h" "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\template\cc++\"
-
-IF NOT EXIST "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\src" md "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\src"
-IF NOT EXIST "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\src\unix.cpp" copy "%LIBSRCDIR%\%CCPPDESTDIR%\src\*.*" "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\src\"
-del "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\common\*.dsp"
-copy "%LIBSRCDIR%\%CCPPDESTDIR%\w32\*.dsp" "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\common\"
-copy "%UTILSDIR%\ccrtp1.sln" "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\msvcpp\"
-
-IF NOT EXIST "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\common\ccgnu2.vcproj" cscript %UTILSDIR%\upgrade.vbs %LIBSRCDIR%\%CCRTPDESTDIR%\w32\common\ccgnu2.dsp %LIBSRCDIR%\%CCRTPDESTDIR%\w32\common\ccgnu2.vcproj
-IF NOT EXIST "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\common\ccext2.vcproj" cscript %UTILSDIR%\upgrade.vbs %LIBSRCDIR%\%CCRTPDESTDIR%\w32\common\ccext2.dsp %LIBSRCDIR%\%CCRTPDESTDIR%\w32\common\ccext2.vcproj
-IF NOT EXIST "%LIBSRCDIR%\%CCRTPDESTDIR%\w32\msvcpp\ccrtp1.vcproj" cscript %UTILSDIR%\upgrade.vbs %LIBSRCDIR%\%CCRTPDESTDIR%\w32\msvcpp\ccrtp1.dsp %LIBSRCDIR%\%CCRTPDESTDIR%\w32\msvcpp\ccrtp1.vcproj
-
-cd %LIBSRCDIR%\%CCRTPDESTDIR%\w32\common
-%DEVENV% ccgnu2.vcproj /build Debug /project ccgnu2
-REM %DEVENV% ccgnu2.vcproj /build Release /project ccgnu2
-%DEVENV% ccext2.vcproj /build Debug /project ccext2
-REM %DEVENV% ccext2.vcproj /build Release /project ccext2
-cd %LIBSRCDIR%\%CCRTPDESTDIR%\w32\msvcpp
-%DEVENV% ccrtp1.vcproj /build Debug /project ccrtp1
-REM %DEVENV% ccrtp1.vcproj /build Release /project ccrtp1
-cd %LIBSRCDIR%
-
-copy %LIBSRCDIR%\%CCRTPDESTDIR%\w32\common\debug\*.lib %DEBUGLIBBINDIR%
-copy %LIBSRCDIR%\%CCRTPDESTDIR%\w32\common\debug\*.dll %DEBUGLIBBINDIR%
-copy %LIBSRCDIR%\%CCRTPDESTDIR%\w32\msvcpp\debug\*.lib %DEBUGLIBBINDIR%
-copy %LIBSRCDIR%\%CCRTPDESTDIR%\w32\msvcpp\debug\*.dll %DEBUGLIBBINDIR%
-
-:OSIP
 ECHO ****************************************************************
 ECHO **************            OSIP BUILD           *****************
 ECHO ****************************************************************
