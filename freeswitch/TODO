@@ -1,9 +1,0 @@
-1. MOD_PLAYBACK: Convert to use APR files, remove all the WIN32 ifdefs for file stuff.
-2. switch.h: Find a good home for the SWITCH_DECLARE stuff for win32
-3. MOD_WOOMERACHAN: #if 1==0 sectiton, convert to use switch_now instead of gettimeof day 
-				SWITCH_SLEEP (should I be using switch_sleep or switch_yield where I changed from sleep and usleep)
-4. all // comented headers and code, cleanup\remove after verifying everything works happy on other platforms
-5. if we don't need the timeval stuff let's get rid of it... it doesn't appear to be used.
-6. Decide if we are going to keep the libraries in tree or if we build a system that downloads (and patches if necessary) 
-7. Exclude .ilk files from loading as modules (they are built when building debug builds and greatly increase the speed of re-linking the lib on a recompile)... 
-		it is necessary if we want to be able to debug from the gui.  It can be #ifdef WIN32'd if you like.
