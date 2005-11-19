@@ -36,6 +36,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
+@ISLINUX_TRUE@am__append_1 = -Wl,-E
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -69,6 +70,8 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ISLINUX_FALSE = @ISLINUX_FALSE@
+ISLINUX_TRUE = @ISLINUX_TRUE@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -136,8 +139,11 @@ MAKE = gmake
 NAME = freeswitch
 PREFIX = $(prefix)/${NAME}
 APR_CONFIG = $(prefix)/bin/apr-1-config
+
 AM_CFLAGS = $(shell $(APR_CONFIG) --cflags --cppflags --includes) -fPIC -Wall -I$(PWD) -I$(PWD)/src/include -I$(PREFIX)/include -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\" -DSWITCH_PREFIX_DIR=\"$(PREFIX)\" -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
-AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) -Wl,-E -L$(PREFIX)/lib
+
+AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs )  $(am__append_1) -L$(PREFIX)/lib
+OSARCH = $(shell uname -s)
 
 libfreeswitch_la_SOURCES = \
 src/include/switch.h \

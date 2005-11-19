@@ -303,7 +303,7 @@ typedef __int32		int32_t;
 typedef __int64		int64_t;
 typedef unsigned long	in_addr_t;
 #else
-#include <stdint.h>
+#include <sys/types.h>
 #endif
 #endif
 

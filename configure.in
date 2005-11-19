@@ -16,7 +16,7 @@ AC_PROG_INSTALL
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdlib.h string.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([sys/types.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -30,8 +30,12 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([gethostname gettimeofday localtime_r memmove memset socket strcasecmp strchr strdup strncasecmp strstr])
+AC_CHECK_FUNCS([gethostname])
 
 AC_CONFIG_FILES([Makefile])
+
+AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
+
+
 
 AC_OUTPUT
