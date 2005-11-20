@@ -36,6 +36,7 @@ set OSIPDIR=libosip2-2.2.1
 set OSIPTAR=%OSIPDIR%.tar.gz
 set OSIPURL=http://www.antisip.com/download/
 set OSIPDESTDIR=osip
+set BACKUPURL=http://www.sofaswitch.org/mikej/
 
 IF NOT EXIST %LIBSRCDIR% md %LIBSRCDIR%
 
@@ -55,6 +56,13 @@ IF NOT EXIST %LIBSRCDIR%\%EXOSIPTAR% IF NOT EXIST %LIBSRCDIR%\%EXOSIPDESTDIR% %W
 IF NOT EXIST %LIBSRCDIR%\%OSIPTAR% IF NOT EXIST %LIBSRCDIR%\%OSIPDESTDIR% %WGET% %OSIPURL%%OSIPTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%OSIPTAR% | %TAR% xvf - & ren %OSIPDIR% %OSIPDESTDIR% & del %OSIPTAR%
 IF NOT EXIST %LIBSRCDIR%\%JTHREADTAR% IF NOT EXIST %LIBSRCDIR%\%JTHREADDESTDIR% %WGET% %JTHREADURL%%JTHREADTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%JTHREADTAR% | %TAR% xvf - & ren %JTHREADDIR% %JTHREADDESTDIR% & del %JTHREADTAR%
 IF NOT EXIST %LIBSRCDIR%\%JRTPTAR% IF NOT EXIST %LIBSRCDIR%\%JRTPDESTDIR% %WGET% %JRTPURL%%JRTPTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%JRTPTAR% | %TAR% xvf - & ren %JRTPDIR% %JRTPDESTDIR% & del %JRTPTAR%
+
+REM Backup download locations for all the libs just in case the primaries are down
+IF NOT EXIST %LIBSRCDIR%\%APRTAR% IF NOT EXIST %LIBSRCDIR%\%APRDESTDIR% %WGET% %BACKUPURL%%APRTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%APRTAR% | %TAR% xvf - & ren %APRDIR% %APRDESTDIR% & del %APRTAR%
+IF NOT EXIST %LIBSRCDIR%\%EXOSIPTAR% IF NOT EXIST %LIBSRCDIR%\%EXOSIPDESTDIR% %WGET% %BACKUPURL%%EXOSIPTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%EXOSIPTAR% | %TAR% xvf - & ren %EXOSIPDIR% %EXOSIPDESTDIR% & del %EXOSIPTAR%
+IF NOT EXIST %LIBSRCDIR%\%OSIPTAR% IF NOT EXIST %LIBSRCDIR%\%OSIPDESTDIR% %WGET% %BACKUPURL%%OSIPTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%OSIPTAR% | %TAR% xvf - & ren %OSIPDIR% %OSIPDESTDIR% & del %OSIPTAR%
+IF NOT EXIST %LIBSRCDIR%\%JTHREADTAR% IF NOT EXIST %LIBSRCDIR%\%JTHREADDESTDIR% %WGET% %BACKUPURL%%JTHREADTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%JTHREADTAR% | %TAR% xvf - & ren %JTHREADDIR% %JTHREADDESTDIR% & del %JTHREADTAR%
+IF NOT EXIST %LIBSRCDIR%\%JRTPTAR% IF NOT EXIST %LIBSRCDIR%\%JRTPDESTDIR% %WGET% %BACKUPURL%%JRTPTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%JRTPTAR% | %TAR% xvf - & ren %JRTPDIR% %JRTPDESTDIR% & del %JRTPTAR%
 cd 
 
 ECHO ****************************************************************
@@ -68,14 +76,14 @@ GOTO END
 
 :VS8
 set DEVENV="%VS80COMNTOOLS%..\IDE\devenv" 
-IF NOT EXIST %UTILSDIR%\upgrade.vbs copy %UTILSDIR%\upgrade8.vbs %UTILSDIR%\upgrade.vbs
 call "%VS80COMNTOOLS%vsvars32.bat"
+SET MSVCVER=8
 GOTO NEXT
 
 :VS7
 set DEVENV="%VS71COMNTOOLS%..\IDE\devenv"
-IF NOT EXIST %UTILSDIR%\upgrade.vbs copy %UTILSDIR%\upgrade7.vbs %UTILSDIR%\upgrade.vbs
 call "%VS71COMNTOOLS%vsvars32.bat"
+SET MSVCVER=7
 
 :NEXT
 ECHO ****************************************************************
@@ -91,24 +99,26 @@ ECHO ****************************************************************
 ECHO **************            OSIP BUILD           *****************
 ECHO ****************************************************************
 
-del %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osipparser2.vcproj
-copy %UTILSDIR%\osipparser2.vcproj %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\
-%DEVENV% %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osip.sln /Upgrade
-REM %DEVENV% %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osip.sln /build Debug
+IF NOT EXIST %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\patched.tag del %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osipparser2.vcproj
+IF NOT EXIST %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\patched.tag copy %UTILSDIR%\osipparser2.vcproj %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\
+IF NOT EXIST %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\patched.tag %DEVENV% %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osip.sln /Upgrade
+REM IF NOT EXIST %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\Debug\osip2.lib %DEVENV% %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osip.sln /build Debug
+IF NOT EXIST %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\patched.tag ECHO. > %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\patched.tag
 
 
 ECHO ****************************************************************
 ECHO **************          EXOSIP BUILD           *****************
 ECHO ****************************************************************
 
-%DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\eXosip.vcproj /Upgrade
-REM %DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\eXosip.vcproj /build Debug
+IF NOT EXIST %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\upgrade.tag %DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\eXosip.vcproj /Upgrade
+IF NOT EXIST %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\upgrade.tag ECHO. > %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\upgrade.tag
+REM IF NOT EXIST %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\Debug\eXosip.lib %DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\eXosip.vcproj /build Debug
 
 ECHO ****************************************************************
 ECHO **************           JRTP BUILD            *****************
 ECHO ****************************************************************
 
-REM %DEVENV% %LIBSRCDIR%\jrtp4c\w32\jrtp4c.sln /build Debug
+REM IF NOT EXIST %LIBSRCDIR%\jrtp4c\w32\Debug\jrtp4c.obj %DEVENV% %LIBSRCDIR%\jrtp4c\w32\jrtp4c.sln /build Debug
 
 :END
 cd %UTILSDIR%\..
