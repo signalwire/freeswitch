@@ -1,14 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FreeSwitchCoreLib", "FreeSwitchCore.vcproj", "{202D7A4E-760D-4D0E-AFA1-D7459CED30FF}"
-	ProjectSection(ProjectDependencies) = postProject
-		{13860EB7-038A-438F-898F-1032E42A5574} = {13860EB7-038A-438F-898F-1032E42A5574}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FreeSwitchConsole", "FreeSwitchConsole.vcproj", "{1AF3A893-F7BE-43DD-B697-8AB2397C0D67}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FreeSwitchCoreLib", "FreeSwitchCore.vcproj", "{202D7A4E-760D-4D0E-AFA1-D7459CED30FF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{13860EB7-038A-438F-898F-1032E42A5574} = {13860EB7-038A-438F-898F-1032E42A5574}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_bridgecall", "mod_bridgecall.vcproj", "{E1794405-29D4-466D-9BE3-DD2344C2A663}"
