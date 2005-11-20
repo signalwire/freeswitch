@@ -35,6 +35,15 @@
 extern "C" {
 #endif
 
+#if (_MSC_VER >= 1400) // VC8+
+#ifndef _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
+#ifndef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#endif
+#endif // VC8+
+
 #include <apr.h>
 #include <apr_network_io.h>
 #include <apr_errno.h>
