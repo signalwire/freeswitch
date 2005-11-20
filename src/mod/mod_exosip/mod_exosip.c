@@ -571,7 +571,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 				frames = (tech_pvt->read_frame.datalen / bytes);
 				samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 				ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
-				tech_pvt->timestamp_recv += samples;
+				tech_pvt->timestamp_recv += (int32_t)samples;
 				break;
 			}
 			
@@ -636,7 +636,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 
 	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
 		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-		frames = (frame->datalen / bytes);
+		frames = ((int)frame->datalen / bytes);
 		samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 		ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame / 1000;
 	} else {
@@ -647,7 +647,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	//printf("%s %s->%s send %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->remote_sdp_audio_ip, frame->datalen, samples, frames, ms, tech_pvt->timestamp_send);
 
 
-	jrtp4c_write(tech_pvt->rtp_session, frame->data, frame->datalen, samples);
+	jrtp4c_write(tech_pvt->rtp_session, frame->data, (int)frame->datalen, samples);
 	tech_pvt->timestamp_send += (int)samples;
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);
