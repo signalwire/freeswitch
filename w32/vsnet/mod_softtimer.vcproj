@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="mod_softtimer"
 	ProjectGUID="{DCC13474-28DF-47CA-A8EB-72F8CE9A78C5}"
+	RootNamespace="mod_softtimer"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -40,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(InputDir)..\..\include;$(InputDir)include;$(InputDir)..\..\..\libs\apr-1.2.2\include"
+				AdditionalIncludeDirectories="$(InputDir)..\..\include;$(InputDir)include;$(InputDir)..\..\..\libs\apr\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -119,7 +120,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(InputDir)..\..\include;$(InputDir)include;$(InputDir)..\..\..\libs\apr-1.2.2\include"
+				AdditionalIncludeDirectories="$(InputDir)..\..\include;$(InputDir)include;$(InputDir)..\..\..\libs\apr\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"

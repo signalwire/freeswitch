@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="mod_woomerachan"
 	ProjectGUID="{FE3540C5-3303-46E0-A69E-D92F775687F1}"
+	RootNamespace="mod_woomerachan"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -40,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(InputDir)..\..\include;$(InputDir)include;$(InputDir)..\..\..\libs\apr-1.2.2\include"
+				AdditionalIncludeDirectories="$(InputDir)..\..\include;$(InputDir)include;$(InputDir)..\..\..\libs\apr\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -119,7 +120,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(InputDir)..\..\include;$(InputDir)include;$(InputDir)..\..\..\libs\apr-1.2.2\include"
+				AdditionalIncludeDirectories="$(InputDir)..\..\include;$(InputDir)include;$(InputDir)..\..\..\libs\apr\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"

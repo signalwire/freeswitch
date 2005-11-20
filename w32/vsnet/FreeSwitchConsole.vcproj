@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="FreeSwitchConsole"
 	ProjectGUID="{1AF3A893-F7BE-43DD-B697-8AB2397C0D67}"
+	RootNamespace="FreeSwitchConsole"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -40,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(InputDir)include;$(InputDir)..\libs\apr-1.2.2\include"
+				AdditionalIncludeDirectories="$(InputDir)include;$(InputDir)..\libs\apr\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -118,7 +119,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(InputDir)include;$(InputDir)..\libs\apr-1.2.2\include"
+				AdditionalIncludeDirectories="$(InputDir)include;$(InputDir)..\libs\apr\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"

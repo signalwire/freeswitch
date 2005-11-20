@@ -39,7 +39,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D WIN32"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\jthread-1.1.2\src&quot;;&quot;$(ProjectDir)..\..\jrtplib-3.3.0\src&quot;;&quot;$(ProjectDir)..\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\jthread-1.1.2\src&quot;;&quot;$(ProjectDir)..\..\jrtplib\src&quot;;&quot;$(ProjectDir)..\src&quot;"
 				RuntimeLibrary="1"
 			/>
 			<Tool
@@ -93,7 +93,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\jthread-1.1.2\src&quot;;&quot;$(ProjectDir)..\..\jrtplib-3.3.0\src&quot;;&quot;$(ProjectDir)..\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\jthread-1.1.2\src&quot;;&quot;$(ProjectDir)..\..\jrtplib\src&quot;;&quot;$(ProjectDir)..\src&quot;"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D _CRT_SECURE_NO_DEPRECATE"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\include;&quot;$(InputDir)..\..\..\libs\apr-1.2.2\include&quot;;&quot;..\..\libs\libeXosip-0.9.0\include&quot;;&quot;..\..\libs\libosip2-2.2.0\include&quot;;..\..\libs\jrtp4c\src"
+				AdditionalIncludeDirectories="..\..\src\include;&quot;$(InputDir)..\..\..\libs\apr\include&quot;;..\..\libs\libeXosip2\include;..\..\libs\osip\include;..\..\libs\jrtp4c\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
@@ -128,7 +128,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\src\include;&quot;$(InputDir)..\..\..\libs\apr-1.2.2\include&quot;;&quot;..\..\libs\libeXosip-0.9.0\include&quot;;&quot;..\..\libs\libosip2-2.2.0\include&quot;;..\..\libs\jrtp4c\src"
+				AdditionalIncludeDirectories="..\..\src\include;&quot;$(InputDir)..\..\..\libs\apr\include&quot;;..\..\libs\libeXosip2\include;..\..\libs\osip\include;..\..\libs\jrtp4c\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -189,15 +189,15 @@
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{4EA67539-9EE9-4065-BD39-87E517FD8262}"
-			RelativePathToProject="..\..\libs\libeXosip-0.9.0\platform\windows\eXosip.vcproj"
+			RelativePathToProject="..\..\libs\libeXosip2\platform\vsnet\eXosip.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85255507-5D16-4218-85E2-F683BB2F04DA}"
-			RelativePathToProject="..\..\libs\libosip2-2.2.0\platform\vsnet\osip2.vcproj"
+			RelativePathToProject="..\..\libs\osip\platform\vsnet\osip2.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{44F46B7E-0E51-4304-9735-330DFBAB41E5}"
-			RelativePathToProject="..\..\libs\libosip2-2.2.0\platform\vsnet\osipparser2.vcproj"
+			RelativePathToProject="..\..\libs\osip\platform\vsnet\osipparser2.vcproj"
 		/>
 	</References>
 	<Files>

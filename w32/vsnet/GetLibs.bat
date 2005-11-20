@@ -19,23 +19,23 @@ set UNIX2DOS=%UTILSDIR%\unix2dos.vbs
 set APRDIR=apr-1.2.2
 set APRTAR=%APRDIR%.tar.gz
 set APRURL=ftp://ftp.wayne.edu/apache/apr/
-set APRDESTDIR=%APRDIR%
+set APRDESTDIR=apr
 set JRTPDIR=jrtplib-3.3.0
 set JRTPTAR=%JRTPDIR%.tar.gz
 set JRTPURL=http://research.edm.luc.ac.be/jori/jrtplib/
-set JRTPDESTDIR=%JRTPDIR%
+set JRTPDESTDIR=jrtplib
 set JTHREADDIR=jthread-1.1.2
 set JTHREADTAR=%JTHREADDIR%.tar.gz
 set JTHREADURL=http://research.edm.luc.ac.be/jori/jthread/
 set JTHREADDESTDIR=%JTHREADDIR%
-set EXOSIPDIR=libeXosip-0.9.0
+set EXOSIPDIR=libeXosip2-1.9.1-pre17
 set EXOSIPTAR=%EXOSIPDIR%.tar.gz
 set EXOSIPURL=http://www.antisip.com/download/
-set EXOSIPDESTDIR=%EXOSIPDIR%
+set EXOSIPDESTDIR=libeXosip2
 set OSIPDIR=libosip2-2.2.1
 set OSIPTAR=%OSIPDIR%.tar.gz
 set OSIPURL=http://www.antisip.com/download/
-set OSIPDESTDIR=libosip2-2.2.0
+set OSIPDESTDIR=osip
 
 IF NOT EXIST %INCLUDEDIR% md %INCLUDEDIR%
 IF NOT EXIST %DEBUGLIBBINDIR% md %DEBUGLIBBINDIR%
@@ -51,12 +51,11 @@ IF NOT EXIST %TAR% %WGET% %TARURL2% %UTILSDIR%
 IF NOT EXIST %GUNZIP% %WGET% %GUNZIPURL% %UTILSDIR%
 IF NOT EXIST %GUNZIP% %WGET% %GUNZIPURL2% %UTILSDIR%
 
-cd %LIBSRCDIR%
-IF NOT EXIST %APRTAR% IF NOT EXIST %APRDESTDIR% %WGET% %APRURL%%APRTAR% & %GUNZIP% < %APRTAR% | %TAR% xvf - & ren %APRDIR% %APRDESTDIR% & del %APRTAR%
-IF NOT EXIST %EXOSIPTAR% IF NOT EXIST %EXOSIPDESTDIR% %WGET% %EXOSIPURL%%EXOSIPTAR% & %GUNZIP% < %EXOSIPTAR% | %TAR% xvf - & ren %EXOSIPDIR% %EXOSIPDESTDIR% & del %EXOSIPTAR%
-IF NOT EXIST %OSIPTAR% IF NOT EXIST %OSIPDESTDIR% %WGET% %OSIPURL%%OSIPTAR% & %GUNZIP% < %OSIPTAR% | %TAR% xvf - & ren %OSIPDIR% %OSIPDESTDIR% & del %OSIPTAR%
-IF NOT EXIST %JTHREADTAR% IF NOT EXIST %JTHREADDESTDIR% %WGET% %JTHREADURL%%JTHREADTAR% & %GUNZIP% < %JTHREADTAR% | %TAR% xvf - & ren %JTHREADDIR% %JTHREADDESTDIR% & del %JTHREADTAR%
-IF NOT EXIST %JRTPTAR% IF NOT EXIST %JRTPDESTDIR% %WGET% %JRTPURL%%JRTPTAR% & %GUNZIP% < %JRTPTAR% | %TAR% xvf - & ren %JRTPDIR% %JRTPDESTDIR% & del %JRTPTAR%
+IF NOT EXIST %LIBSRCDIR%\%APRTAR% IF NOT EXIST %LIBSRCDIR%\%APRDESTDIR% %WGET% %APRURL%%APRTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%APRTAR% | %TAR% xvf - & ren %LIBSRCDIR%\%APRDIR% %APRDESTDIR% & del %LIBSRCDIR%\%APRTAR%
+IF NOT EXIST %LIBSRCDIR%\%EXOSIPTAR% IF NOT EXIST %LIBSRCDIR%\%EXOSIPDESTDIR% %WGET% %EXOSIPURL%%EXOSIPTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%EXOSIPTAR% | %TAR% xvf - & ren %LIBSRCDIR%\%EXOSIPDIR% %EXOSIPDESTDIR% & del %LIBSRCDIR%\%EXOSIPTAR%
+IF NOT EXIST %LIBSRCDIR%\%OSIPTAR% IF NOT EXIST %LIBSRCDIR%\%OSIPDESTDIR% %WGET% %OSIPURL%%OSIPTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%OSIPTAR% | %TAR% xvf - & ren %LIBSRCDIR%\%OSIPDIR% %OSIPDESTDIR% & del %LIBSRCDIR%\%OSIPTAR%
+IF NOT EXIST %LIBSRCDIR%\%JTHREADTAR% IF NOT EXIST %LIBSRCDIR%\%JTHREADDESTDIR% %WGET% %JTHREADURL%%JTHREADTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%JTHREADTAR% | %TAR% xvf - & ren %LIBSRCDIR%\%JTHREADDIR% %JTHREADDESTDIR% & del %LIBSRCDIR%\%JTHREADTAR%
+IF NOT EXIST %LIBSRCDIR%\%JRTPTAR% IF NOT EXIST %LIBSRCDIR%\%JRTPDESTDIR% %WGET% %JRTPURL%%JRTPTAR% %LIBSRCDIR% & %GUNZIP% < %LIBSRCDIR%\%JRTPTAR% | %TAR% xvf - & ren %LIBSRCDIR%\%JRTPDIR% %JRTPDESTDIR% & del %LIBSRCDIR%\%JRTPTAR%
 
 
 ECHO ****************************************************************
@@ -84,48 +83,33 @@ ECHO ****************************************************************
 ECHO **************             APR BUILD           *****************
 ECHO ****************************************************************
 
-cd %APRDESTDIR%
-IF NOT EXIST %INCLUDEDIR%\apr.h copy %LIBSRCDIR%\%APRDESTDIR%\include\*.h %INCLUDEDIR%
-IF NOT EXIST %INCLUDEDIR%\apr.h copy %LIBSRCDIR%\%APRDESTDIR%\include\apr.hw %INCLUDEDIR%\apr.h
-IF NOT EXIST libapr.vcproj %UNIX2DOS% libapr.dsp
-IF NOT EXIST libapr.vcproj cscript %UTILSDIR%\upgrade.vbs libapr.dsp libapr.vcproj
-%DEVENV% libapr.vcproj /build Debug
-REM %DEVENV% libapr.vcproj /build Release
-copy %LIBSRCDIR%\%APRDESTDIR%\debug\*.lib %DEBUGLIBBINDIR%
-copy %LIBSRCDIR%\%APRDESTDIR%\debug\*.dll %DEBUGLIBBINDIR%
-cd %LIBSRCDIR%
+IF NOT EXIST %LIBSRCDIR%\%APRDESTDIR%\libapr.vcproj %UNIX2DOS% %LIBSRCDIR%\%APRDESTDIR%\libapr.dsp
+IF NOT EXIST %LIBSRCDIR%\%APRDESTDIR%\libapr.vcproj cscript %UTILSDIR%\upgrade.vbs %LIBSRCDIR%\%APRDESTDIR%\libapr.dsp %LIBSRCDIR%\%APRDESTDIR%\libapr.vcproj
+%DEVENV% %LIBSRCDIR%\%APRDESTDIR%\libapr.vcproj /build Debug
+
 
 ECHO ****************************************************************
 ECHO **************            OSIP BUILD           *****************
 ECHO ****************************************************************
 
-IF NOT EXIST %INCLUDEDIR%\osip2 md %INCLUDEDIR%\osip2
-IF NOT EXIST %INCLUDEDIR%\osipparser2 md %INCLUDEDIR%\osipparser2
-IF NOT EXIST %INCLUDEDIR%\osip2\osip.h copy %LIBSRCDIR%\%OSIPDESTDIR%\include\osip2\*.h %INCLUDEDIR%\osip2
-IF NOT EXIST %INCLUDEDIR%\osipparser2\osip_parser.h copy %LIBSRCDIR%\%OSIPDESTDIR%\include\osipparser2\*.h %INCLUDEDIR%\osipparser2
+del %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osipparser2.vcproj
+copy %UTILSDIR%\osipparser2.vcproj %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\
 %DEVENV% %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osip.sln /Upgrade
 %DEVENV% %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osip.sln /build Debug
-REM %DEVENV% %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osip.sln /build Release
-copy %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\debug\*.lib %DEBUGLIBBINDIR%
 
 
 ECHO ****************************************************************
 ECHO **************          EXOSIP BUILD           *****************
 ECHO ****************************************************************
 
-IF NOT EXIST "%INCLUDEDIR%\eXosip" md "%INCLUDEDIR%\eXosip"
-IF NOT EXIST %INCLUDEDIR%\eXosip copy "%LIBSRCDIR%\%EXOSIPDESTDIR%\include\eXosip\*.h" "%INCLUDEDIR%\eXosip"
-%UNIX2DOS% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\windows\eXosip.vcproj
-%DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\windows\eXosip.vcproj /Upgrade
-%DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\windows\eXosip.vcproj /build Debug
-REM %DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\windows\eXosip.vcproj /build Release
-copy %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\windows\debug\*.lib %DEBUGLIBBINDIR%
+%DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\eXosip.vcproj /Upgrade
+%DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\eXosip.vcproj /build Debug
 
 ECHO ****************************************************************
 ECHO **************           JRTP BUILD            *****************
 ECHO ****************************************************************
 
-%DEVENV% %LIBSRCDIR%\jrtp4c\jrtp4c.sln /build Debug
+%DEVENV% %LIBSRCDIR%\jrtp4c\w32\jrtp4c.sln /build Debug
 
 :END
 cd %UTILSDIR%\..
