@@ -32,7 +32,9 @@ AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([gethostname])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile
+			libs/jrtp4c/Makefile
+])
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
 

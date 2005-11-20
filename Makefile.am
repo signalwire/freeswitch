@@ -1,5 +1,5 @@
 EXTRA_DIST =
-SUBDIRS = 
+SUBDIRS = libs/jrtp4c
 AUTOMAKE_OPTS		= gnu
 MAKE=gmake
 NAME=freeswitch
