@@ -63,7 +63,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_woomerachan", "mod_woom
 		{13860EB7-038A-438F-898F-1032E42A5574} = {13860EB7-038A-438F-898F-1032E42A5574}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libapr", "..\..\libs\apr-1.2.2\libapr.vcproj", "{13860EB7-038A-438F-898F-1032E42A5574}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libapr", "..\..\libs\apr\libapr.vcproj", "{13860EB7-038A-438F-898F-1032E42A5574}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "osip2", "..\..\libs\osip\platform\vsnet\osip2.vcproj", "{85255507-5D16-4218-85E2-F683BB2F04DA}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -81,7 +81,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jrtp4c", "..\..\libs\jrtp4c
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jthread", "..\..\libs\jthread-1.1.2\jthread.vcproj", "{96A714AE-BE53-4EFF-8569-C3809AD4F3B6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jrtplib", "..\..\libs\jrtplib-3.3.0\jrtplib.vcproj", "{4009F58A-E333-424B-A868-7E82804DD055}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jrtplib", "..\..\libs\jrtplib\jrtplib.vcproj", "{4009F58A-E333-424B-A868-7E82804DD055}"
 	ProjectSection(ProjectDependencies) = postProject
 		{96A714AE-BE53-4EFF-8569-C3809AD4F3B6} = {96A714AE-BE53-4EFF-8569-C3809AD4F3B6}
 	EndProjectSection

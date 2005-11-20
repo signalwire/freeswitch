@@ -1,4 +1,4 @@
-REM @echo off
+@echo off
 ECHO ****************************************************************
 ECHO **************          VARIABLE SETUP         *****************
 ECHO ****************************************************************
@@ -37,8 +37,6 @@ set OSIPTAR=%OSIPDIR%.tar.gz
 set OSIPURL=http://www.antisip.com/download/
 set OSIPDESTDIR=osip
 
-IF NOT EXIST %INCLUDEDIR% md %INCLUDEDIR%
-IF NOT EXIST %DEBUGLIBBINDIR% md %DEBUGLIBBINDIR%
 IF NOT EXIST %LIBSRCDIR% md %LIBSRCDIR%
 
 
@@ -86,7 +84,7 @@ ECHO ****************************************************************
 
 IF NOT EXIST %LIBSRCDIR%\%APRDESTDIR%\libapr.vcproj %UNIX2DOS% %LIBSRCDIR%\%APRDESTDIR%\libapr.dsp
 IF NOT EXIST %LIBSRCDIR%\%APRDESTDIR%\libapr.vcproj cscript %UTILSDIR%\upgrade.vbs %LIBSRCDIR%\%APRDESTDIR%\libapr.dsp %LIBSRCDIR%\%APRDESTDIR%\libapr.vcproj
-%DEVENV% %LIBSRCDIR%\%APRDESTDIR%\libapr.vcproj /build Debug
+REM %DEVENV% %LIBSRCDIR%\%APRDESTDIR%\libapr.vcproj /build Debug
 
 
 ECHO ****************************************************************
@@ -96,7 +94,7 @@ ECHO ****************************************************************
 del %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osipparser2.vcproj
 copy %UTILSDIR%\osipparser2.vcproj %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\
 %DEVENV% %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osip.sln /Upgrade
-%DEVENV% %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osip.sln /build Debug
+REM %DEVENV% %LIBSRCDIR%\%OSIPDESTDIR%\platform\vsnet\osip.sln /build Debug
 
 
 ECHO ****************************************************************
@@ -104,13 +102,13 @@ ECHO **************          EXOSIP BUILD           *****************
 ECHO ****************************************************************
 
 %DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\eXosip.vcproj /Upgrade
-%DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\eXosip.vcproj /build Debug
+REM %DEVENV% %LIBSRCDIR%\%EXOSIPDESTDIR%\platform\vsnet\eXosip.vcproj /build Debug
 
 ECHO ****************************************************************
 ECHO **************           JRTP BUILD            *****************
 ECHO ****************************************************************
 
-%DEVENV% %LIBSRCDIR%\jrtp4c\w32\jrtp4c.sln /build Debug
+REM %DEVENV% %LIBSRCDIR%\jrtp4c\w32\jrtp4c.sln /build Debug
 
 :END
 cd %UTILSDIR%\..

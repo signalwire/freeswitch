@@ -184,21 +184,6 @@
 		</Configuration>
 	</Configurations>
 	<References>
-		<ProjectReference
-			ReferencedProjectIdentifier="{E3B37452-127D-4C22-BB33-3B08E23721DF}"
-		/>
-		<ProjectReference
-			ReferencedProjectIdentifier="{4EA67539-9EE9-4065-BD39-87E517FD8262}"
-			RelativePathToProject="..\..\libs\libeXosip2\platform\vsnet\eXosip.vcproj"
-		/>
-		<ProjectReference
-			ReferencedProjectIdentifier="{85255507-5D16-4218-85E2-F683BB2F04DA}"
-			RelativePathToProject="..\..\libs\osip\platform\vsnet\osip2.vcproj"
-		/>
-		<ProjectReference
-			ReferencedProjectIdentifier="{44F46B7E-0E51-4304-9735-330DFBAB41E5}"
-			RelativePathToProject="..\..\libs\osip\platform\vsnet\osipparser2.vcproj"
-		/>
 	</References>
 	<Files>
 		<Filter

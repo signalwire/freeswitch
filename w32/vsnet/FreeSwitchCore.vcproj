@@ -94,7 +94,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(Projectdir)..\..\libs\apr-1.2.2\Debug\*.dll $(Outdir)"
+				CommandLine="copy $(Projectdir)..\..\libs\apr\Debug\*.dll $(Outdir)&#x0D;&#x0A;xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y"
 			/>
 		</Configuration>
 		<Configuration
@@ -174,7 +174,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(Projectdir)..\..\libs\apr-1.2.2\Release\*.dll $(Outdir)"
+				CommandLine="copy $(Projectdir)..\..\libs\apr\Release\*.dll $(Outdir)&#x0D;&#x0A;xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y"
 			/>
 		</Configuration>
 	</Configurations>

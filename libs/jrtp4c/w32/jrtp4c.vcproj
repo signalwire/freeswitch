@@ -40,6 +40,7 @@
 				AdditionalOptions="/D WIN32"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\jthread-1.1.2\src&quot;;&quot;$(ProjectDir)..\..\jrtplib\src&quot;;&quot;$(ProjectDir)..\src&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;"
 				RuntimeLibrary="1"
 			/>
 			<Tool
@@ -74,7 +75,7 @@
 			Name="Release|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -94,6 +95,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\jthread-1.1.2\src&quot;;&quot;$(ProjectDir)..\..\jrtplib\src&quot;;&quot;$(ProjectDir)..\src&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -105,13 +107,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -121,12 +120,6 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
