@@ -4,9 +4,9 @@ Set WshShell = WScript.CreateObject("WScript.Shell")
 Set WshSysEnv = WshShell.Environment("SYSTEM")
 
 If WshSysEnv("VS80COMNTOOLS")<> "" Then 
-	Set vcProj = CreateObject("VisualStudio.VCProjectEngine.7.1")
-Else If WshSysEnv("VS71COMNTOOLS")<> "" Then
 	Set vcProj = CreateObject("VisualStudio.VCProjectEngine.8.0")
+Else If WshSysEnv("VS71COMNTOOLS")<> "" Then
+	Set vcProj = CreateObject("VisualStudio.VCProjectEngine.7.1")
 Else
 	Wscript.Echo("Did not find any Visual Studio .net 2003 or 2005 on your machine")
 	WScript.Quit(1)
