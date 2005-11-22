@@ -117,17 +117,10 @@ Sub GetTarGZObjects(DestFolder)
 		Wget "http://www.sofaswitch.org/mikej/XGZip.dll", DestFolder
 	End If
 	
-	Set oExec = WshShell.Exec("regsvr32 /s " & DestFolder & "XTar.dll")
+	WshShell.Run "regsvr32 /s " & DestFolder & "XTar.dll", 6, True
 	
-	Do While oExec.Status = 0
-	     WScript.Sleep 100
-	Loop
+	WshShell.Run "regsvr32 /s " & DestFolder & "XGZip.dll", 6, True
 	
-	Set oExec = WshShell.Exec("regsvr32 /s " & DestFolder & "XGZip.dll")
-	
-	Do While oExec.Status = 0
-	     WScript.Sleep 100
-	Loop
 End Sub
 
 Sub UnTarGZ(TGZfile, DestFolder)
