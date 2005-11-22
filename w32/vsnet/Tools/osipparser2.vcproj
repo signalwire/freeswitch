@@ -4,7 +4,6 @@
 	Version="8.00"
 	Name="osipparser2"
 	ProjectGUID="{44F46B7E-0E51-4304-9735-330DFBAB41E5}"
-	RootNamespace="osipparser2"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -471,6 +470,4 @@
 			>
 		</Filter>
 	</Files>
-	<Globals>
-	</Globals>
 </VisualStudioProject>

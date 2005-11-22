@@ -15,15 +15,15 @@ GetTarGZObjects UtilsDir
 If Not FSO.FolderExists(LibDestDir & "osip") Then
 	WgetUnTarGz "http://www.antisip.com/download/libosip2-2.2.1.tar.gz", LibDestDir
 	RenameFolder LibDestDir & "libosip2-2.2.1", "osip"
-	FSO.CopyFile Utilsdir & "osipparser2.vcproj", LibDestDir & "osip\platform\vsnet\", True
-	Upgrade LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", LibDestDir & "osip\platform\vsnet\osipparser2.vcproj"
+'	FSO.CopyFile Utilsdir & "osipparser2.vcproj", LibDestDir & "osip\platform\vsnet\", True
+	Upgrade Utilsdir & "osipparser2.vcproj", LibDestDir & "osip\platform\vsnet\osipparser2.vcproj"
 	Upgrade LibDestDir & "osip\platform\vsnet\osip2.vcproj", LibDestDir & "osip\platform\vsnet\osip2.vcproj"
 End If
 
 If Not FSO.FolderExists(LibDestDir & "libeXosip2") Then 
 	WgetUnTarGz "http://www.antisip.com/download/libeXosip2-1.9.1-pre17.tar.gz", LibDestDir
 	RenameFolder LibDestDir & "libeXosip2-1.9.1-pre17", "libeXosip2"
-	Upgrade LibDestDir & "libeXosip2\platform\vsnet\eXosip.vcproj", LibDestDir & "libeXosip2\platform\vsnet\eXosip.vcproj"
+	Upgrade Utilsdir & "eXosip.vcproj", LibDestDir & "libeXosip2\platform\vsnet\eXosip.vcproj"
 End If
 
 If Not FSO.FolderExists(LibDestDir & "jthread-1.1.2") Then 
@@ -65,10 +65,10 @@ Sub Upgrade(OldFileName, NewFileName)
 '	WScript.Echo("Converting: "+ OldFileName)
 	
 	Set vcProject = vcProj.LoadProject(OldFileName)
-	If Not FSO.FileExists(vcProject.ProjectFile) Then
+'	If Not FSO.FileExists(vcProject.ProjectFile) Then
 		'   // specify name and location of new project file
 		vcProject.ProjectFile = NewFileName
-	End If
+'	End If
 	'   // call the project engine to save this off. 
 	'   // when no name is shown, it will create one with the .vcproj name
 	vcProject.Save()
