@@ -11,7 +11,6 @@ LibDestDir=Showpath(ScriptDir & "..\..\libs")
 UtilsDir=Showpath(ScriptDir & "Tools")
 
 GetTarGZObjects UtilsDir
-
 If Not FSO.FolderExists(LibDestDir & "osip") Then
 	WgetUnTarGz "http://www.antisip.com/download/libosip2-2.2.1.tar.gz", LibDestDir
 	RenameFolder LibDestDir & "libosip2-2.2.1", "osip"
@@ -41,6 +40,12 @@ If Not FSO.FolderExists(LibDestDir & "apr") Then
 	Unix2dos LibDestDir & "apr\libapr.dsp"
 	Upgrade LibDestDir & "apr\libapr.dsp", LibDestDir & "apr\libapr.vcproj"
 End If 
+
+If Not FSO.FolderExists(LibDestDir & "sqlite") Then 
+	WgetUnZip "http://www.sqlite.org/sqlite-source-3_2_7.zip", LibDestDir 
+	RenameFolder LibDestDir & "sqlite-source-3_2_7", "sqlite"
+	Upgrade Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\sqlite.vcproj"
+End If
 
 WScript.Echo "Download Complete"
 
@@ -104,6 +109,18 @@ Sub WgetUnTarGZ(URL, DestFolder)
 	UnTarGZ Destfolder & filename, DestFolder
 End Sub
 
+Sub WgetUnZip(URL, DestFolder)
+	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
+	StartPos = InstrRev(URL, "/", -1, 1) 
+	strlength = Len(URL)
+	filename=Right(URL,strlength-StartPos)
+	NameEnd = InstrRev(filename, ".",-1, 1)
+	filestrlength = Len(filename)
+	filebase = Left(filename,NameEnd)
+	Wget URL, DestFolder
+	UnZip Destfolder & filename, DestFolder & filebase
+End Sub
+
 Sub GetTarGZObjects(DestFolder)
 	Dim oExec
 
@@ -113,13 +130,19 @@ Sub GetTarGZObjects(DestFolder)
 		Wget "http://www.sofaswitch.org/mikej/XTar.dll", DestFolder
 	End If
 
-	If Not FSO.FileExists(DestFolder & "XGzip.dll") Then 
+	If Not FSO.FileExists(DestFolder & "XGZip.dll") Then 
 		Wget "http://www.sofaswitch.org/mikej/XGZip.dll", DestFolder
+	End If
+	
+	If Not FSO.FileExists(DestFolder & "XZip.dll") Then 
+		Wget "http://www.sofaswitch.org/mikej/XZip.dll", DestFolder
 	End If
 	
 	WshShell.Run "regsvr32 /s " & DestFolder & "XTar.dll", 6, True
 	
 	WshShell.Run "regsvr32 /s " & DestFolder & "XGZip.dll", 6, True
+
+	WshShell.Run "regsvr32 /s " & DestFolder & "XZip.dll", 6, True
 	
 End Sub
 
@@ -133,6 +156,14 @@ Sub UnTarGZ(TGZfile, DestFolder)
 	
 	Set objTAR = Nothing
 	Set objGZip = Nothing
+End Sub
+
+
+Sub UnZip(Zipfile, DestFolder)
+Dim objZip
+Set objZip = WScript.CreateObject("XStandard.Zip")
+objZip.UnPack Zipfile, DestFolder
+Set objZip = Nothing
 End Sub
 
 
@@ -168,5 +199,5 @@ End Sub
 
 Function Showpath(folderspec)
 	Set f = FSO.GetFolder(folderspec)
-	showpath = f.path
+	showpath = f.path & "\"
 End Function
