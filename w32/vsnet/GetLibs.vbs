@@ -210,10 +210,16 @@ End Sub
 
 Sub BuildViaDevEnv(ProjectFile, BuildType)
 	Wscript.echo "Building : " & ProjectFile & " Config type: " & BuildType
-	Set oExec = WshShell.Exec(Chr(34) & DevEnv & Chr(34) & " " & Chr(34) & ProjectFile & Chr(34) & " /Build " & BuildType)
-	Do While oExec.Status <> 1
-	WScript.Sleep 100
-	Loop
+	BuildCmd=Chr(34) & DevEnv & Chr(34) & " " & Chr(34) & ProjectFile & Chr(34) & " /Build " & BuildType
+	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpBuild.Bat", True)
+	MyFile.WriteLine("@" & BuildCmd)
+	MyFile.Close
+
+	Set oExec = WshShell.Exec(UtilsDir & "tmpBuild.Bat")
+	Do
+		strFromProc = OExec.StdOut.ReadLine()
+		WScript.Echo  strFromProc
+	Loop While Not OExec.StdOut.atEndOfStream
 End Sub
 
 Sub GetDevEnv()
