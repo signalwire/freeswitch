@@ -114,13 +114,14 @@ End Sub
 Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
 
 	If Not FSO.FolderExists(LibDestDir & "osip") Then
-		WgetUnTarGz "http://www.antisip.com/download/libosip2-2.2.1.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "libosip2-2.2.1") Then
+		WgetUnTarGz "http://www.antisip.com/download/libosip2-2.2.2.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "libosip2-2.2.2") Then
 			Wscript.echo "Unable to get osip from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/libosip2-2.2.1.tar.gz", LibDestDir
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/libosip2-2.2.2.tar.gz", LibDestDir
 		End If
-		RenameFolder LibDestDir & "libosip2-2.2.1", "osip"
+		RenameFolder LibDestDir & "libosip2-2.2.2", "osip"
 		FSO.CopyFile Utilsdir & "osipparser2.vcproj", LibDestDir & "osip\platform\vsnet\", True
+		FSO.CopyFile Utilsdir & "osip2.vcproj", LibDestDir & "osip\platform\vsnet\", True
 	End If
 	If FSO.FolderExists(LibDestDir & "osip") Then 
 		If BuildDebug Then
@@ -140,13 +141,13 @@ Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
 	End If 
 
 	If Not FSO.FolderExists(LibDestDir & "libeXosip2") Then 
-		WgetUnTarGz "http://www.antisip.com/download/libeXosip2-1.9.1-pre17.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "libeXosip2-1.9.1-pre17") Then
+		WgetUnTarGz "http://www.antisip.com/download/libeXosip2-2.2.2.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "libeXosip2-2.2.2") Then
 			Wscript.echo "Unable to get eXosip from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/libeXosip2-1.9.1-pre17.tar.gz", LibDestDir
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/libeXosip2-2.2.2.tar.gz", LibDestDir
 		End If
-		RenameFolder LibDestDir & "libeXosip2-1.9.1-pre17", "libeXosip2"
-		FSO.CopyFile Utilsdir & "eXosip.vcproj", LibDestDir & "libeXosip2\platform\vsnet\", True
+		RenameFolder LibDestDir & "libeXosip2-2.2.2", "libeXosip2"
+'		FSO.CopyFile Utilsdir & "eXosip.vcproj", LibDestDir & "libeXosip2\platform\vsnet\", True
 	End If
 	If FSO.FolderExists(LibDestDir & "libeXosip2") Then 
 		If BuildDebug Then
@@ -183,13 +184,13 @@ Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
 	End If
 	If FSO.FolderExists(LibDestDir & "jrtplib") And FSO.FolderExists(LibDestDir & "jthread-1.1.2") And FSO.FolderExists(LibDestDir & "jrtp4c")Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "jrtp4c\w32\Debug\jrtp4c.lib") Then 
+			If (Not FSO.FileExists(LibDestDir & "jrtp4c\w32\Debug\jrtp4c.lib")) Or (Not FSO.FileExists(LibDestDir & "jrtplib\Debug\jrtplib.lib")) Or (Not FSO.FileExists(LibDestDir & "jthread-1.1.2\Debug\jthread.lib")) Then 
 				UpgradeViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln"
 				BuildViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln", "Debug"
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "jrtp4c\w32\Release\jrtp4c.lib") Then 
+			If (Not FSO.FileExists(LibDestDir & "jrtp4c\w32\Release\jrtp4c.lib")) Or (Not FSO.FileExists(LibDestDir & "jrtplib\Release\jrtplib.lib")) Or (Not FSO.FileExists(LibDestDir & "jthread-1.1.2\Release\jthread.lib")) Then 
 				UpgradeViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln"
 				BuildViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln", "Release"
 			End If

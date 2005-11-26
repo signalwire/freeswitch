@@ -1,108 +1,65 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="7.10"
 	Name="osipparser2"
 	ProjectGUID="{44F46B7E-0E51-4304-9735-330DFBAB41E5}"
-	Keyword="Win32Proj"
-	>
+	RootNamespace="osipparser2"
+	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
-			Name="Win32"
-		/>
+			Name="Win32"/>
 	</Platforms>
-	<ToolFiles>
-	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="Debug"
 			IntermediateDirectory="Debug"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
+			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\include;..\..\src\osipparser2"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;OSIP_MT;ENABLE_TRACE;SYSTEM_LOGGER_ENABLED"
-				MinimalRebuild="true"
+				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(OutDir)/$(ProjectName).pdb"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
-			/>
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
 			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\osipparser2.lib"
-			/>
+				OutputFile="$(OutDir)\osipparser2.lib"/>
 			<Tool
-				Name="VCALinkTool"
-			/>
+				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCXDCMakeTool"
-			/>
+				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCBscMakeTool"
-			/>
+				Name="VCPreBuildEventTool"/>
 			<Tool
-				Name="VCFxCopTool"
-			/>
+				Name="VCPreLinkEventTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"
-			/>
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
 			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
+			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\include;..\..\src\osipparser2"
@@ -111,37 +68,119 @@
 				UsePrecompiledHeader="0"
 				ProgramDataBaseFileName="$(OutDir)/$(ProjectName).pdb"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
-			/>
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
 			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
+				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/osipparser2.lib"
-			/>
+				OutputFile="$(OutDir)/osipparser2.lib"/>
 			<Tool
-				Name="VCALinkTool"
-			/>
+				Name="VCMIDLTool"/>
 			<Tool
-				Name="VCXDCMakeTool"
-			/>
+				Name="VCPostBuildEventTool"/>
 			<Tool
-				Name="VCBscMakeTool"
-			/>
+				Name="VCPreBuildEventTool"/>
 			<Tool
-				Name="VCFxCopTool"
-			/>
+				Name="VCPreLinkEventTool"/>
 			<Tool
-				Name="VCPostBuildEventTool"
-			/>
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Debug DLL|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\include;..\..\src\osipparser2"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;OSIP_MT;ENABLE_TRACE;SYSTEM_LOGGER_ENABLED"
+				MinimalRebuild="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(OutDir)/$(ProjectName).pdb"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				ModuleDefinitionFile="..\windows\osipparser2.def"
+				GenerateDebugInformation="TRUE"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
+		<Configuration
+			Name="Release DLL|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\include;..\..\src\osipparser2"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;OSIP_MT;ENABLE_TRACE;SYSTEM_LOGGER_ENABLED"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(OutDir)/$(ProjectName).pdb"
+				WarningLevel="3"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				ModuleDefinitionFile="..\windows\osipparser2.def"/>
+			<Tool
+				Name="VCMIDLTool"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -150,324 +189,247 @@
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
-			>
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath="..\..\src\osipparser2\osip_accept.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_accept.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_accept_encoding.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_accept_encoding.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_accept_language.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_accept_language.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_alert_info.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_alert_info.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_allow.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_allow.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_authentication_info.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_authentication_info.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_authorization.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_authorization.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_body.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_body.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_call_id.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_call_id.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_call_info.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_call_info.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_contact.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_contact.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_content_disposition.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_content_disposition.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_content_encoding.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_content_encoding.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_content_length.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_content_length.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_content_type.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_content_type.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_cseq.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_cseq.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_error_info.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_error_info.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_from.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_from.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_header.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_header.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_list.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_list.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_md5c.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_md5c.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_message.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_message.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_message_parse.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_message_parse.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_message_to_str.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_message_to_str.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_mime_version.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_mime_version.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_parser_cfg.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_parser_cfg.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_port.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_port.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_proxy_authenticate.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_proxy_authenticate.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_proxy_authentication_info.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_proxy_authentication_info.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_proxy_authorization.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_proxy_authorization.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_record_route.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_record_route.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_rfc3264.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_rfc3264.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_route.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_route.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_to.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_to.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_uri.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_uri.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_via.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_via.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_www_authenticate.c"
-				>
+				RelativePath="..\..\src\osipparser2\osip_www_authenticate.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\sdp_accessor.c"
-				>
+				RelativePath="..\..\src\osipparser2\sdp_accessor.c">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\sdp_message.c"
-				>
+				RelativePath="..\..\src\osipparser2\sdp_message.c">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-			>
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_accept.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_accept.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_accept_encoding.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_accept_encoding.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_accept_language.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_accept_language.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_alert_info.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_alert_info.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_allow.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_allow.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_authorization.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_authorization.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\osip_body.h"
-				>
+				RelativePath="..\..\include\osipparser2\osip_body.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_call_id.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_call_id.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_call_info.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_call_info.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\osip_const.h"
-				>
+				RelativePath="..\..\include\osipparser2\osip_const.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_contact.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_contact.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_content_disposition.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_content_disposition.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_content_encoding.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_content_encoding.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_content_length.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_content_length.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_content_type.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_content_type.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_cseq.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_cseq.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_error_info.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_error_info.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_from.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_from.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_header.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_header.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\osip_headers.h"
-				>
+				RelativePath="..\..\include\osipparser2\osip_headers.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\osip_list.h"
-				>
+				RelativePath="..\..\include\osipparser2\osip_list.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\osip_md5.h"
-				>
+				RelativePath="..\..\include\osipparser2\osip_md5.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\osip_message.h"
-				>
+				RelativePath="..\..\include\osipparser2\osip_message.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_mime_version.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_mime_version.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\osip_parser.h"
-				>
+				RelativePath="..\..\include\osipparser2\osip_parser.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\osip_port.h"
-				>
+				RelativePath="..\..\include\osipparser2\osip_port.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_proxy_authenticate.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_proxy_authenticate.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_proxy_authorization.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_proxy_authorization.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_record_route.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_record_route.h">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\osip_rfc3264i.h"
-				>
+				RelativePath="..\..\src\osipparser2\osip_rfc3264i.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_route.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_route.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_to.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_to.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\osip_uri.h"
-				>
+				RelativePath="..\..\include\osipparser2\osip_uri.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_via.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_via.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\headers\osip_www_authenticate.h"
-				>
+				RelativePath="..\..\include\osipparser2\headers\osip_www_authenticate.h">
 			</File>
 			<File
-				RelativePath="..\..\src\osipparser2\parser.h"
-				>
+				RelativePath="..\..\src\osipparser2\parser.h">
 			</File>
 			<File
-				RelativePath="..\..\include\osipparser2\sdp_message.h"
-				>
+				RelativePath="..\..\include\osipparser2\sdp_message.h">
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
-			>
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}">
 		</Filter>
 	</Files>
+	<Globals>
+	</Globals>
 </VisualStudioProject>
