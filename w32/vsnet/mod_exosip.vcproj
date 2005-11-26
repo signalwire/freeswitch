@@ -25,6 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Mod_Exosip Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -65,11 +66,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIBCMT"
-				AdditionalDependencies="Ws2_32.lib  Iphlpapi.lib libcpmt.lib"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libcpmt.lib libapr-1.lib eXosip.lib jrtp4c.lib jrtplib.lib jthread.lib osipparser2.lib osip2.lib"
 				ShowProgress="0"
 				OutputFile="$(OutDir)/mod/mod_exosip.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories=""
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Debug&quot;;&quot;$(InputDir)..\..\libs\jrtp4c\w32\Debug&quot;;&quot;$(InputDir)..\..\libs\jrtplib\Debug&quot;;&quot;$(InputDir)..\..\libs\jthread-1.1.2\Debug&quot;;&quot;$(InputDir)..\..\libs\libeXosip2\platform\vsnet\Debug&quot;;&quot;$(InputDir)..\..\libs\osip\platform\vsnet\Debug&quot;"
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
@@ -113,6 +114,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Mod_Exosip Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -147,9 +149,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib  Iphlpapi.lib libcpmt.lib"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libcpmt.lib libapr-1.lib eXosip.lib jrtp4c.lib jrtplib.lib jthread.lib osipparser2.lib osip2.lib"
 				OutputFile="$(OutDir)/mod/mod_exosip.dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\libs\jrtp4c\w32\Release&quot;;&quot;$(InputDir)..\..\libs\jrtplib\Release&quot;;&quot;$(InputDir)..\..\libs\jthread-1.1.2\Release&quot;;&quot;$(InputDir)..\..\libs\libeXosip2\platform\vsnet\Release&quot;;&quot;$(InputDir)..\..\libs\osip\platform\vsnet\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

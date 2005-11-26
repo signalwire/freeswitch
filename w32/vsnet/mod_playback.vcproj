@@ -62,8 +62,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libapr-1.lib"
 				OutputFile="$(OutDir)/mod/mod_playback.dll"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories="$(InputDir)..\..\libs\apr\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_playback.pdb"
 				SubSystem="2"
@@ -139,8 +141,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libapr-1.lib"
 				OutputFile="$(OutDir)/mod/mod_playback.dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

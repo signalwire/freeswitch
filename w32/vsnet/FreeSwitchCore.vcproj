@@ -25,6 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Core Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -62,9 +63,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib"
+				AdditionalDependencies="Ws2_32.lib libapr-1.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories="$(InputDir)..\..\libs\apr\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FreeSwitchCore.pdb"
 				SubSystem="2"
@@ -94,7 +96,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(Projectdir)..\..\libs\apr\Debug\*.dll $(Outdir)&#x0D;&#x0A;xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y"
+				CommandLine="copy $(Projectdir)..\..\libs\apr\Debug\*.dll $(Outdir)&#x0D;&#x0A;xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -107,6 +109,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Core Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -141,9 +144,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib"
+				AdditionalDependencies="Ws2_32.lib libapr-1.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -174,7 +178,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(Projectdir)..\..\libs\apr\Release\*.dll $(Outdir)&#x0D;&#x0A;xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y"
+				CommandLine="copy $(Projectdir)..\..\libs\apr\Release\*.dll $(Outdir)&#x0D;&#x0A;xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

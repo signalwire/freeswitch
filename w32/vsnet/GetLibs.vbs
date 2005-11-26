@@ -344,10 +344,11 @@ End Sub
 
 
 Sub UnZip(Zipfile, DestFolder)
-Dim objZip
-Set objZip = WScript.CreateObject("XStandard.Zip")
-objZip.UnPack Zipfile, DestFolder
-'Set objZip = Nothing
+	Dim objZip
+	Set objZip = WScript.CreateObject("XStandard.Zip")
+	wscript.echo("Extracting: " & Zipfile)
+	objZip.UnPack Zipfile, DestFolder
+	Set objZip = Nothing
 End Sub
 
 

@@ -62,8 +62,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libapr-1.lib"
 				OutputFile="$(OutDir)/mod/mod_dialplan_demo.dll"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories="$(InputDir)..\..\libs\apr\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_dialplan_demo.pdb"
 				SubSystem="2"
@@ -139,8 +141,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libapr-1.lib"
 				OutputFile="$(OutDir)/mod/mod_dialplan_demo.dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
