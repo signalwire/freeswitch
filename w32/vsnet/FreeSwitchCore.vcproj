@@ -63,10 +63,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib libapr-1.lib"
+				AdditionalDependencies="Ws2_32.lib libapr-1.lib sqlite.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(InputDir)..\..\libs\apr\Debug"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Debug&quot;;&quot;$(InputDir)..\..\libs\sqlite\Debug&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FreeSwitchCore.pdb"
 				SubSystem="2"
@@ -144,10 +144,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib libapr-1.lib"
+				AdditionalDependencies="Ws2_32.lib libapr-1.lib sqlite.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\libs\sqlite\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
