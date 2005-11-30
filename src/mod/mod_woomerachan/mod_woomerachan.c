@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_woomerachan.c -- Woomera Endpoint Modile
+ * mod_woomerachan.c -- Woomera Endpoint Module
  *
  */
 #include <switch.h>
