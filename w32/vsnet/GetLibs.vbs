@@ -5,19 +5,19 @@ Set WshSysEnv = WshShell.Environment("SYSTEM")
 Set xml = CreateObject("Microsoft.XMLHTTP")
 Set oStream = createobject("Adodb.Stream")
 Set objArgs = WScript.Arguments
-Dim vcver, DevEnv
+Dim vcver, DevEnv, VCBuild
 BuildRelease=False
 BuildDebug=False
 BuildCore=False
 BuildModExosip=false
-
+quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
 LibDestDir=Showpath(ScriptDir & "..\..\libs")
 UtilsDir=Showpath(ScriptDir & "Tools")
 GetTarGZObjects UtilsDir
-GetDevEnv
-Wscript.echo "Detected Visual Studio DevEnv: " & DevEnv
+GetVCBuild
+Wscript.echo "Detected VCBuild: " & VCBuild
 
 If objArgs.Count >=2 Then
 	Select Case objArgs(1)
@@ -65,18 +65,20 @@ Sub BuildLibs_Core(BuildDebug, BuildRelease)
 			WgetUnTarGz "http://www.sofaswitch.org/mikej/apr-1.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "apr-1.2.2", "apr"
-		Unix2dos LibDestDir & "apr\libapr.dsp"
-		Upgrade LibDestDir & "apr\libapr.dsp", LibDestDir & "apr\libapr.vcproj"
+		FSO.CopyFile Utilsdir & "libapr.vcproj", LibDestDir & "apr\", True
+		FindReplaceInFile LibDestDir & "apr\libapr.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
+		FindReplaceInFile LibDestDir & "apr\file_io\unix\fullrw.c", "int i;", "unsigned int i;"
+'		Upgrade LibDestDir & "apr\libapr.dsp", LibDestDir & "apr\libapr.vcproj"
 	End If 
 	If FSO.FolderExists(LibDestDir & "apr") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "apr\Debug\libapr-1.lib") Then 
-				BuildViaDevEnv LibDestDir & "apr\libapr.vcproj", "Debug"
+				BuildViaVCBuild LibDestDir & "apr\libapr.vcproj", "Debug"
 			End If
 		End If
 		If BuildRelease Then
 			If Not FSO.FileExists(LibDestDir & "apr\Release\libapr-1.lib") Then 
-				BuildViaDevEnv LibDestDir & "apr\libapr.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "apr\libapr.vcproj", "Release"
 			End If
 		End If
 	Else
@@ -91,19 +93,20 @@ Sub BuildLibs_Core(BuildDebug, BuildRelease)
 		End If
 		RenameFolder LibDestDir & "sqlite-source-3_2_7", "sqlite"
 		FSO.CopyFile Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\", True
+		FindReplaceInFile LibDestDir & "sqlite\sqlite.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
 	'	Upgrade Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\sqlite.vcproj"
 	End If
 	If FSO.FolderExists(LibDestDir & "sqlite") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "sqlite\Debug\sqlite.lib") Then 
-				UpgradeViaDevEnv LibDestDir & "sqlite\sqlite.vcproj"
-				BuildViaDevEnv LibDestDir & "sqlite\sqlite.vcproj", "Debug"
+'				UpgradeViaDevEnv LibDestDir & "sqlite\sqlite.vcproj"
+				BuildViaVCBuild LibDestDir & "sqlite\sqlite.vcproj", "Debug"
 			End If
 		End If
 		If BuildRelease Then
 			If Not FSO.FileExists(LibDestDir & "sqlite\Release\sqlite.lib") Then 
-				UpgradeViaDevEnv LibDestDir & "sqlite\sqlite.vcproj"
-				BuildViaDevEnv LibDestDir & "sqlite\sqlite.vcproj", "Release"
+'				UpgradeViaDevEnv LibDestDir & "sqlite\sqlite.vcproj"
+				BuildViaVCBuild LibDestDir & "sqlite\sqlite.vcproj", "Release"
 			End If
 		End If
 	Else
@@ -120,20 +123,24 @@ Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
 			WgetUnTarGz "http://www.sofaswitch.org/mikej/libosip2-2.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "libosip2-2.2.2", "osip"
-		FSO.CopyFile Utilsdir & "osipparser2.vcproj", LibDestDir & "osip\platform\vsnet\", True
-		FSO.CopyFile Utilsdir & "osip2.vcproj", LibDestDir & "osip\platform\vsnet\", True
+'		FSO.CopyFile Utilsdir & "osipparser2.vcproj", LibDestDir & "osip\platform\vsnet\", True
+'		FSO.CopyFile Utilsdir & "osip2.vcproj", LibDestDir & "osip\platform\vsnet\", True
+		FindReplaceInFile LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
+		FindReplaceInFile LibDestDir & "osip\platform\vsnet\osip2.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
 	End If
 	If FSO.FolderExists(LibDestDir & "osip") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "osip\platform\vsnet\Debug\osip2.lib") Then 
-				UpgradeViaDevEnv LibDestDir & "osip\platform\vsnet\osip.sln"
-				BuildViaDevEnv LibDestDir & "osip\platform\vsnet\osip.sln", "Debug"
+'				UpgradeViaDevEnv LibDestDir & "osip\platform\vsnet\osip.sln"
+				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osip2.vcproj", "Debug"
+				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", "Debug"
 			End If
 		End If
 		If BuildRelease Then
 			If Not FSO.FileExists(LibDestDir & "osip\platform\vsnet\Release\osip2.lib") Then 
-				UpgradeViaDevEnv LibDestDir & "osip\platform\vsnet\osip.sln"
-				BuildViaDevEnv LibDestDir & "osip\platform\vsnet\osip.sln", "Release"
+'				UpgradeViaDevEnv LibDestDir & "osip\platform\vsnet\osip.sln"
+				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osip2.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", "Release"
 			End If
 		End If
 	Else
@@ -147,19 +154,20 @@ Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
 			WgetUnTarGz "http://www.sofaswitch.org/mikej/libeXosip2-2.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "libeXosip2-2.2.2", "libeXosip2"
+		FindReplaceInFile LibDestDir & "libeXosip2\platform\vsnet\eXosip.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
 '		FSO.CopyFile Utilsdir & "eXosip.vcproj", LibDestDir & "libeXosip2\platform\vsnet\", True
 	End If
 	If FSO.FolderExists(LibDestDir & "libeXosip2") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "libeXosip2\platform\vsnet\Debug\exosip.lib") Then 
-				UpgradeViaDevEnv LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj"
-				BuildViaDevEnv LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj", "Debug"
+'				UpgradeViaDevEnv LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj"
+				BuildViaVCBuild LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj", "Debug"
 			End If
 		End If
 		If BuildRelease Then
 			If Not FSO.FileExists(LibDestDir & "libeXosip2\platform\vsnet\Release\exosip.lib") Then 
-				UpgradeViaDevEnv LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj"
-				BuildViaDevEnv LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj", "Release"
+'				UpgradeViaDevEnv LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj"
+				BuildViaVCBuild LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj", "Release"
 			End If
 		End If
 	Else
@@ -172,6 +180,7 @@ Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
 			Wscript.echo "Unable to get JThread from default download location, Trying backup location:"
 			WgetUnTarGz "http://www.sofaswitch.org/mikej/jthread-1.1.2.tar.gz", LibDestDir
 		End If
+		FindReplaceInFile LibDestDir & "jthread-1.1.2\jthread.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
 	End If
 	
 	If Not FSO.FolderExists(LibDestDir & "jrtplib") Then 
@@ -181,18 +190,24 @@ Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
 			WgetUnTarGz "http://www.sofaswitch.org/mikej/jrtplib-3.3.0.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "jrtplib-3.3.0", "jrtplib"
+		FindReplaceInFile LibDestDir & "jrtplib\jrtplib.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
+		FindReplaceInFile LibDestDir & "jrtplib\jrtplib.vcproj", "WarningLevel=" & quote & "3" & quote, "WarningLevel=" & quote & "0" & quote
 	End If
 	If FSO.FolderExists(LibDestDir & "jrtplib") And FSO.FolderExists(LibDestDir & "jthread-1.1.2") And FSO.FolderExists(LibDestDir & "jrtp4c")Then 
 		If BuildDebug Then
 			If (Not FSO.FileExists(LibDestDir & "jrtp4c\w32\Debug\jrtp4c.lib")) Or (Not FSO.FileExists(LibDestDir & "jrtplib\Debug\jrtplib.lib")) Or (Not FSO.FileExists(LibDestDir & "jthread-1.1.2\Debug\jthread.lib")) Then 
-				UpgradeViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln"
-				BuildViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln", "Debug"
+'				UpgradeViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln"
+				BuildViaVCBuild LibDestDir & "jrtp4c\w32\jrtp4c.vcproj", "Debug"
+				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Debug"
+				BuildViaVCBuild LibDestDir & "jthread-1.1.2\jthread.vcproj", "Debug"
 			End If
 		End If
 		If BuildRelease Then
 			If (Not FSO.FileExists(LibDestDir & "jrtp4c\w32\Release\jrtp4c.lib")) Or (Not FSO.FileExists(LibDestDir & "jrtplib\Release\jrtplib.lib")) Or (Not FSO.FileExists(LibDestDir & "jthread-1.1.2\Release\jthread.lib")) Then 
-				UpgradeViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln"
-				BuildViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln", "Release"
+'				UpgradeViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln"
+				BuildViaVCBuild LibDestDir & "jrtp4c\w32\jrtp4c.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "jthread-1.1.2\jthread.vcproj", "Release"
 			End If
 		End If
 	Else
@@ -203,7 +218,7 @@ Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
 End Sub
 
 Sub UpgradeViaDevEnv(ProjectFile)
-	Set oExec = WshShell.Exec(Chr(34) & DevEnv & Chr(34) & " " & Chr(34) & ProjectFile & Chr(34) & " /Upgrade ")
+	Set oExec = WshShell.Exec(quote & DevEnv & quote & " " & quote & ProjectFile & quote & " /Upgrade ")
 	Do While oExec.Status <> 1
 	WScript.Sleep 100
 	Loop
@@ -211,7 +226,7 @@ End Sub
 
 Sub BuildViaDevEnv(ProjectFile, BuildType)
 	Wscript.echo "Building : " & ProjectFile & " Config type: " & BuildType
-	BuildCmd=Chr(34) & DevEnv & Chr(34) & " " & Chr(34) & ProjectFile & Chr(34) & " /Build " & BuildType
+	BuildCmd=quote & DevEnv & quote & " " & quote & ProjectFile & quote & " /Build " & BuildType
 	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpBuild.Bat", True)
 	MyFile.WriteLine("@" & BuildCmd)
 	MyFile.Close
@@ -221,6 +236,34 @@ Sub BuildViaDevEnv(ProjectFile, BuildType)
 		strFromProc = OExec.StdOut.ReadLine()
 		WScript.Echo  strFromProc
 	Loop While Not OExec.StdOut.atEndOfStream
+End Sub
+
+Sub BuildViaVCBuild(ProjectFile, BuildType)
+	Wscript.echo "Building : " & ProjectFile & " Config type: " & BuildType
+	BuildCmd=quote & VCBuild & quote & " /nologo /nocolor " & quote & ProjectFile & quote & " " & BuildType
+	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpBuild.Bat", True)
+	MyFile.WriteLine("@" & BuildCmd)
+	MyFile.Close
+
+	Set oExec = WshShell.Exec(UtilsDir & "tmpBuild.Bat")
+	Do
+		strFromProc = OExec.StdOut.ReadLine()
+		WScript.Echo  strFromProc
+	Loop While Not OExec.StdOut.atEndOfStream
+End Sub
+
+Sub GetVCBuild()
+	If WshSysEnv("VS80COMNTOOLS")<> "" Then 
+		vcver = "8"
+		VCBuild=Showpath(WshSysEnv("VS80COMNTOOLS")&"..\..\VC\vcpackages\") & "vcbuild.exe"
+	Else If WshSysEnv("VS71COMNTOOLS")<> "" Then
+		vcver = "7"
+		VCBuild=Showpath(WshSysEnv("VS71COMNTOOLS")&"..\..\VC\vcpackages\") & "vcbuild.exe"
+	Else
+		Wscript.Echo("Did not find any Visual Studio .net 2003 or 2005 on your machine")
+		WScript.Quit(1)
+	End If
+	End If
 End Sub
 
 Sub GetDevEnv()
@@ -239,17 +282,20 @@ End Sub
 
 
 Sub RenameFolder(FolderName, NewFolderName)
-On Error Resume Next
+'On Error Resume Next
 	Set Folder=FSO.GetFolder(FolderName)
 	Folder.Name = NewFolderName
-On Error GoTo 0
+'On Error GoTo 0
 End Sub
 
 Sub Upgrade(OldFileName, NewFileName)
-On Error Resume Next
+'On Error Resume Next
 	If WshSysEnv("VS80COMNTOOLS")<> "" Then 
+		Wscript.echo "8.0"
 		Set vcProj = CreateObject("VisualStudio.VCProjectEngine.8.0")
+		
 	Else If WshSysEnv("VS71COMNTOOLS")<> "" Then
+		Wscript.echo "7.1"
 		Set vcProj = CreateObject("VisualStudio.VCProjectEngine.7.1")
 	Else
 		Wscript.Echo("Did not find any Visual Studio .net 2003 or 2005 on your machine")
@@ -269,7 +315,7 @@ On Error Resume Next
 	vcProject.Save()
 	End If
 '	WScript.Echo("New Project Name: "+vcProject.ProjectFile+"")
-On Error GoTo 0
+'On Error GoTo 0
 End Sub
 
 
@@ -286,6 +332,24 @@ Sub Unix2dos(FileName)
 	sText = fOrgFile.ReadAll
 	fOrgFile.Close
 	sText = Replace(sText, vbLf, vbCrLf)
+	Set fNewFile = FSO.CreateTextFile(FileName, OverwriteIfExist, OpenAsASCII)
+	fNewFile.WriteLine sText
+	fNewFile.Close
+End Sub
+
+Sub FindReplaceInFile(FileName, sFind, sReplace)
+	Const OpenAsASCII = 0  ' Opens the file as ASCII (TristateFalse) 
+	Const OpenAsUnicode = -1  ' Opens the file as Unicode (TristateTrue) 
+	Const OpenAsDefault = -2  ' Opens the file using the system default 
+	
+	Const OverwriteIfExist = -1 
+	Const FailIfNotExist   =  0 
+	Const ForReading       =  1 
+	
+	Set fOrgFile = FSO.OpenTextFile(FileName, ForReading, FailIfNotExist, OpenAsASCII)
+	sText = fOrgFile.ReadAll
+	fOrgFile.Close
+	sText = Replace(sText, sFind, sReplace)
 	Set fNewFile = FSO.CreateTextFile(FileName, OverwriteIfExist, OpenAsASCII)
 	fNewFile.WriteLine sText
 	fNewFile.Close

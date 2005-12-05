@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D _CRT_SECURE_NO_DEPRECATE"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\include;&quot;$(InputDir)..\..\..\libs\apr\include&quot;;..\..\libs\libeXosip2\include;..\..\libs\osip\include;..\..\libs\jrtp4c\src"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\apr\include;..\..\libs\libeXosip2\include;..\..\libs\osip\include;..\..\libs\jrtp4c\src;..\..\libs\osip\src\osipparser2"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
@@ -130,7 +130,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\src\include;&quot;$(InputDir)..\..\..\libs\apr\include&quot;;..\..\libs\libeXosip2\include;..\..\libs\osip\include;..\..\libs\jrtp4c\src"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\apr\include;..\..\libs\libeXosip2\include;..\..\libs\osip\include;..\..\libs\jrtp4c\src;..\..\libs\osip\src\osipparser2"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -198,12 +198,20 @@
 				RelativePath="..\..\src\mod\mod_exosip\mod_exosip.c"
 				>
 			</File>
+			<File
+				RelativePath="..\..\libs\osip\src\osipparser2\osip_rfc3264.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\libs\osip\src\osipparser2\osip_rfc3264i.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
