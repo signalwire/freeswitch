@@ -504,7 +504,7 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
-			snprintf(name, sizeof(name), "Iax/%s-%04x", caller_profile->destination_number, rand() & 0xffff);
+			snprintf(name, sizeof(name), "IAX/%s-%04x", caller_profile->destination_number, rand() & 0xffff);
 			switch_channel_set_name(channel, name);
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
