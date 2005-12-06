@@ -48,6 +48,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_woomerachan", "mod_woom
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_IaxChan", "mod_IaxChan.vcproj", "{3A5B9131-F20C-4A85-9447-6C1610941CEE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -94,6 +99,10 @@ Global
 		{FE3540C5-3303-46E0-A69E-D92F775687F1}.Debug|Win32.Build.0 = Debug|Win32
 		{FE3540C5-3303-46E0-A69E-D92F775687F1}.Release|Win32.ActiveCfg = Release|Win32
 		{FE3540C5-3303-46E0-A69E-D92F775687F1}.Release|Win32.Build.0 = Release|Win32
+		{3A5B9131-F20C-4A85-9447-6C1610941CEE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3A5B9131-F20C-4A85-9447-6C1610941CEE}.Debug|Win32.Build.0 = Debug|Win32
+		{3A5B9131-F20C-4A85-9447-6C1610941CEE}.Release|Win32.ActiveCfg = Release|Win32
+		{3A5B9131-F20C-4A85-9447-6C1610941CEE}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

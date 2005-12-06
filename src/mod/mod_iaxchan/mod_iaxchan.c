@@ -30,9 +30,17 @@
  *
  */
 #include <switch.h>
+
+#ifdef WIN32
+#include <iax2.h>
+#include <iax-client.h>
+#include <iax2-parser.h>
+#include <sys/timeb.h>
+#else
 #include <iax/iax2.h>
 #include <iax/iax-client.h>
 #include <iax/iax2-parser.h>
+#endif
 
 static const char modname[] = "mod_iaxchan";
 
@@ -79,7 +87,17 @@ struct private_object {
 	switch_thread_cond_t *cond;
 };
 
+#ifdef WIN32
+void gettimeofday( struct timeval* tv, void* tz )
+{
+	struct _timeb curSysTime;
+	_ftime(&curSysTime);
+	tv->tv_sec = curSysTime.time;
+	tv->tv_usec = curSysTime.millitm * 1000;
 
+	return ;
+}
+#endif
 static void set_global_dialplan(char *dialplan)
 {
 	if (globals.dialplan) {

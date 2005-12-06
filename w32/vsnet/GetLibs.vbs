@@ -10,6 +10,7 @@ BuildRelease=False
 BuildDebug=False
 BuildCore=False
 BuildModExosip=false
+BuildModIaxChan=false
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
@@ -37,13 +38,17 @@ If objArgs.Count >=1 Then
 			BuildCore=True
 		Case "Mod_Exosip"   
 			BuildModExosip=True
+		Case "Mod_IaxChan"   
+			BuildModIaxChan=True
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
+			BuildModIaxChan=True
 	End Select
 Else
 	BuildCore=True
 	BuildModExosip=True
+	BuildModIaxChan=True
 End If
 
 
@@ -53,6 +58,10 @@ End If
 
 If BuildModExosip Then
 	BuildLibs_ModExosip BuildDebug, BuildRelease
+End If
+
+If BuildModIaxChan Then
+	BuildLibs_ModIaxChan BuildDebug, BuildRelease
 End If
 
 WScript.Echo "Complete"
@@ -215,6 +224,28 @@ Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
 	End If 
 
 
+End Sub
+
+Sub BuildLibs_ModIaxChan(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "iax") Then 
+		WgetUnTarGz "http://www.sofaswitch.org/mikej/iax-0.2.3.tar.gz", LibDestDir
+		RenameFolder LibDestDir & "iax-0.2.3", "iax"
+	End If 
+	If FSO.FolderExists(LibDestDir & "iax") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "iax\Debug\libiax2.lib") Then 
+				BuildViaVCBuild LibDestDir & "iax\libiax2.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "iax\Release\libiax2.lib") Then 
+				BuildViaVCBuild LibDestDir & "iax\libiax2.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download libIAX2"
+	End If 
+	
 End Sub
 
 Sub UpgradeViaDevEnv(ProjectFile)
