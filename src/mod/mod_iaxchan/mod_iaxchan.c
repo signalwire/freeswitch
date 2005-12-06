@@ -353,9 +353,6 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 static switch_status channel_kill_channel(switch_core_session *session, int sig);
 
 
-
-
-
 static void iax_err_cb(const char *s)
 {
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s", s);
@@ -591,6 +588,22 @@ static switch_status channel_waitfor_write(switch_core_session *session, int ms)
 
 }
 
+static switch_status channel_send_dtmf(switch_core_session *session, char *dtmf)
+{
+	struct private_object *tech_pvt = NULL;
+	char *digit;
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+	if (tech_pvt->iax_session) {
+		for(digit = dtmf; *digit; digit++) {
+			iax_send_dtmf(tech_pvt->iax_session, *digit);
+		}
+	}
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags) 
 {
 	switch_channel *channel = NULL;
@@ -674,7 +687,8 @@ static const switch_io_routines channel_io_routines = {
 	/*.write_frame*/		channel_write_frame,
 	/*.kill_channel*/		channel_kill_channel,
 	/*.waitfor_read*/		channel_waitfor_read,
-	/*.waitfor_write*/		channel_waitfor_write
+	/*.waitfor_write*/		channel_waitfor_write,
+	/*.send_dtmf*/			channel_send_dtmf
 };
 
 static const switch_endpoint_interface channel_endpoint_interface = {
@@ -938,6 +952,19 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 				break;
 		    case IAX_EVENT_REJECT:
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Rejected call.\n");
+				break;
+		    case IAX_EVENT_DTMF:
+				if ((tech_pvt = iax_get_private(iaxevent->session))) {
+					switch_channel *channel;
+					if ((channel = switch_core_session_get_channel(tech_pvt->session))) {
+						char str[2] = {iaxevent->subclass};
+						if (globals.debug) {
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s DTMF %s\n", str, switch_channel_get_name(channel));
+						}
+						switch_channel_queue_dtmf(channel, str);
+					}
+				}
+
 				break;
 		    default:
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Don't know what to do with IAX event %d.\n", iaxevent->etype);

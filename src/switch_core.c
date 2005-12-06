@@ -816,6 +816,25 @@ SWITCH_DECLARE(switch_status) switch_core_session_waitfor_write(switch_core_sess
 	return status;
 }
 
+
+SWITCH_DECLARE(switch_status) switch_core_session_send_dtmf(switch_core_session *session, char *dtmf) 
+{
+	struct switch_io_event_hook_send_dtmf *ptr;
+	switch_status status = SWITCH_STATUS_FALSE;
+
+	if (session->endpoint_interface->io_routines->send_dtmf) {
+		if ((status = session->endpoint_interface->io_routines->send_dtmf(session, dtmf)) == SWITCH_STATUS_SUCCESS) {
+			for (ptr = session->event_hooks.send_dtmf; ptr ; ptr = ptr->next) {
+				if ((status = ptr->send_dtmf(session, dtmf)) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+			}
+		}
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_outgoing(switch_core_session *session, switch_outgoing_channel_hook outgoing_channel)
 {
 	switch_io_event_hook_outgoing_channel *hook, *ptr;
@@ -958,6 +977,29 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_waitfor_write(s
 			session->event_hooks.waitfor_write = hook;
 		} else {
 			for(ptr = session->event_hooks.waitfor_write ; ptr && ptr->next; ptr = ptr->next);
+			ptr->next = hook;
+
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_MEMERR;
+
+}
+
+
+SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_send_dtmf(switch_core_session *session, switch_send_dtmf_hook send_dtmf)
+{
+	switch_io_event_hook_send_dtmf *hook, *ptr;
+
+	assert(send_dtmf != NULL);
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook)))) {
+		hook->send_dtmf = send_dtmf;
+		if (!session->event_hooks.send_dtmf) {
+			session->event_hooks.send_dtmf = hook;
+		} else {
+			for(ptr = session->event_hooks.send_dtmf ; ptr && ptr->next; ptr = ptr->next);
 			ptr->next = hook;
 
 		}

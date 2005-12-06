@@ -43,6 +43,7 @@ void playback_function(switch_core_session *session, char *data)
 	switch_channel *channel;
 	switch_file_t *fd;
 	char buf[960];
+	char dtmf[128];
 	int interval = 0, samples = 0;
 	size_t len = 0, ilen = 0;
 	switch_frame write_frame;
@@ -99,7 +100,25 @@ void playback_function(switch_core_session *session, char *data)
 	switch_core_service_session(session, &thread_session);
 	ilen = len;
 	while(switch_channel_get_state(channel) == CS_EXECUTE) {
-		if(switch_file_read(fd, buf, &ilen) != SWITCH_STATUS_SUCCESS) {
+		int done = 0;
+
+		if (switch_channel_has_dtmf(channel)) {
+			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DTMF [%s]\n", dtmf);
+			
+			switch (*dtmf) {
+			case '*':
+				done = 1;
+				break;
+			default:
+				break;
+			}
+		}
+		
+		if (done) {
+			break;
+		}
+		if (switch_file_read(fd, buf, &ilen) != SWITCH_STATUS_SUCCESS) {
 			break;
 		}
 

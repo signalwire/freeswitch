@@ -103,6 +103,7 @@ SWITCH_DECLARE(int) switch_buffer_read(switch_buffer *buffer, void *data, size_t
 
 
 	if (buffer->used < 1) {
+		buffer->used = 0;
 		return 0;
 	} else if (buffer->used >= datalen) {
 		reading = datalen;
@@ -112,7 +113,7 @@ SWITCH_DECLARE(int) switch_buffer_read(switch_buffer *buffer, void *data, size_t
 
 	memcpy(data, buffer->data, reading);
 	memmove(buffer->data, buffer->data + reading, buffer->datalen - reading);
-	buffer->used -= datalen;
+	buffer->used -= reading;
 	//printf("o %d = %d\n", reading, buffer->used);
 	return (int)reading;
 }

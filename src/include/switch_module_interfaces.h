@@ -83,6 +83,11 @@ struct switch_io_event_hook_waitfor_write {
 	struct switch_io_event_hook_waitfor_write *next;
 };
 
+struct switch_io_event_hook_send_dtmf {
+	switch_send_dtmf_hook send_dtmf;
+	struct switch_io_event_hook_send_dtmf *next;
+};
+
 struct switch_io_event_hooks {
 	struct switch_io_event_hook_outgoing_channel *outgoing_channel;
 	struct switch_io_event_hook_answer_channel *answer_channel;
@@ -91,6 +96,7 @@ struct switch_io_event_hooks {
 	struct switch_io_event_hook_kill_channel *kill_channel;
 	struct switch_io_event_hook_waitfor_read *waitfor_read;
 	struct switch_io_event_hook_waitfor_write *waitfor_write;
+	struct switch_io_event_hook_send_dtmf *send_dtmf;
 };
 
 struct switch_io_routines {
@@ -101,6 +107,7 @@ struct switch_io_routines {
 	switch_status (*kill_channel)(switch_core_session *, int);
 	switch_status (*waitfor_read)(switch_core_session *, int);
 	switch_status (*waitfor_write)(switch_core_session *, int);
+	switch_status (*send_dtmf)(switch_core_session *, char *);
 };
 
 /*

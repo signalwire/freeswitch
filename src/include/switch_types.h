@@ -148,6 +148,7 @@ typedef struct switch_io_event_hook_write_frame switch_io_event_hook_write_frame
 typedef struct switch_io_event_hook_kill_channel switch_io_event_hook_kill_channel;
 typedef struct switch_io_event_hook_waitfor_read switch_io_event_hook_waitfor_read;
 typedef struct switch_io_event_hook_waitfor_write switch_io_event_hook_waitfor_write;
+typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf;
 typedef struct switch_io_routines switch_io_routines;
 typedef struct switch_io_event_hooks switch_io_event_hooks;
 typedef struct switch_buffer switch_buffer;
@@ -162,6 +163,7 @@ typedef switch_status (*switch_write_frame_hook)(switch_core_session *, switch_f
 typedef switch_status (*switch_kill_channel_hook)(switch_core_session *, int);
 typedef switch_status (*switch_waitfor_read_hook)(switch_core_session *, int);
 typedef switch_status (*switch_waitfor_write_hook)(switch_core_session *, int);
+typedef switch_status (*switch_send_dtmf_hook)(switch_core_session *, char *);
 
 /*
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions
