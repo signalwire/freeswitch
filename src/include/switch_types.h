@@ -44,7 +44,8 @@ extern "C" {
 //#include <apr_poll.h>
 //#include <sys/types.h>
 
-#define SWITCH_GLOBAL_VERSION "1.5"
+#define SWITCH_GLOBAL_VERSION "1"
+#define SWITCH_MAX_CODECS 30
 
 typedef enum {
 	SWITCH_STATUS_SUCCESS,

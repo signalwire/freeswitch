@@ -230,7 +230,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		char *dest_uri;
-		switch_codec_interface *codecs[512];
+		switch_codec_interface *codecs[SWITCH_MAX_CODECS];
 		int num_codecs = 0;
 		/* do SIP Goodies...*/
 
@@ -592,7 +592,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	}
 
 	switch_clear_flag(tech_pvt, TFLAG_READING);
-
+	
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
 		switch_channel_hangup(channel);
 		return SWITCH_STATUS_FALSE;
@@ -751,7 +751,6 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 			switch_yield(1000);
 		}
 	}
-	eXosip_quit();
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -785,7 +784,7 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 
 	if ((session = switch_core_session_request(&exosip_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
-		switch_codec_interface *codecs[512];
+		switch_codec_interface *codecs[SWITCH_MAX_CODECS];
 		int num_codecs = 0;
 
 
@@ -1374,15 +1373,16 @@ static int config_exosip(int reload)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "eXosip_listen_addr failed!\n");
 		return SWITCH_STATUS_GENERR;
 	}
-
+	
 	switch_mutex_init(&globals.port_lock, SWITCH_MUTEX_NESTED, module_pool);
 
-
 	/* Setup the user agent */
-	eXosip_set_user_agent("OPENSWITCH 2.0");
-
+	eXosip_set_user_agent("FreeSWITCH");
 
 	monitor_thread_run();
+
+	eXosip_quit();
+
 	return 0;
 
 }

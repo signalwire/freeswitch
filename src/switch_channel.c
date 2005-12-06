@@ -241,6 +241,10 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 		return state;
 	}
 
+	if (last_state >= CS_HANGUP) {
+		return last_state;
+	}
+
 	/* STUB for more dev
 	case CS_INIT:
 		switch(state) {

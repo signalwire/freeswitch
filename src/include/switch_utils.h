@@ -79,9 +79,10 @@ typedef typeof(tv.tv_usec) switch_suseconds_t;
 #define switch_strlen_zero(s) (s && *s != '\0') ? 0 : 1
 #define switch_yield(ms) apr_sleep(ms * 10); apr_thread_yield();
 
+SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen);
 SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock, unsigned int flags, switch_memory_pool *pool);
 SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
-
+SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len);
 
 #if !defined(switch_strdupa) && defined(__GNUC__)
 # define switch_strdupa(s)									\

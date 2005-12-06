@@ -367,3 +367,17 @@ SWITCH_DECLARE(int) loadable_module_get_codecs(switch_memory_pool *pool, switch_
 	return i;
 
 }
+
+SWITCH_DECLARE(int) loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array, int arraylen, char **prefs, int preflen)
+{
+	int x, i = 0;
+	switch_codec_interface *codec_interface;
+
+	for(x = 0; x < preflen; x++) {
+		if ((codec_interface = loadable_module_get_codec_interface(prefs[x]))) {
+			array[i++] = codec_interface;
+		}
+	}
+
+	return i;
+}

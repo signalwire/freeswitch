@@ -31,6 +31,50 @@
  */
 #include <switch_utils.h>
 
+SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len)
+{
+    int i;
+    for (i = 0; i < len; i++) {
+		buf[i] = ((buf[i] >> 8) & 0x00ff) | ((buf[i] << 8) & 0xff00); 
+    }
+}
+
+
+SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen)
+{
+	int argc;
+	char *scan;
+	int paren = 0;
+
+	if (!buf || !array || !arraylen) {
+		return 0;
+	}
+
+	memset(array, 0, arraylen * sizeof(*array));
+
+	scan = buf;
+
+	for (argc = 0; *scan && (argc < arraylen - 1); argc++) {
+		array[argc] = scan;
+		for (; *scan; scan++) {
+			if (*scan == '(')
+				paren++;
+			else if (*scan == ')') {
+				if (paren)
+					paren--;
+			} else if ((*scan == delim) && !paren) {
+				*scan++ = '\0';
+				break;
+			}
+		}
+	}
+
+	if (*scan) {
+		array[argc++] = scan;
+	}
+
+	return argc;
+}
 
 SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock, unsigned int flags, switch_memory_pool *pool)
 {
