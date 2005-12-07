@@ -87,19 +87,6 @@ struct private_object {
 	switch_thread_cond_t *cond;
 };
 
-#ifdef WIN32
-#include <Mmsystem.h>
-
-int gettimeofday(struct timeval *tp, void *tz)
-{
-	DWORD now;
-	now = timeGetTime();
-	tp->tv_sec = now / 1000;
-	tp->tv_usec =  (now % 1000) * 1000;
-	return 0;
-}
-
-#endif
 static void set_global_dialplan(char *dialplan)
 {
 	if (globals.dialplan) {
@@ -724,10 +711,6 @@ static const switch_loadable_module_interface channel_module_interface = {
 
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface) {
-
-#ifdef WIN32
-	timeBeginPeriod(1);
-#endif
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
