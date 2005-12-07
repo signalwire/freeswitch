@@ -810,7 +810,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error Binding Port!\n");
 		return SWITCH_STATUS_TERM;
 	}
-	
+	 
 	iax_set_error(iax_err_cb);
     iax_set_output(iax_out_cb);
     netfd = iax_get_fd();	

@@ -1,5 +1,4 @@
-#CFLAGS += -I/usr/src/common/src
-LDFLAGS += -liax
+LDFLAGS += -liax -L/usr/local/lib
 
 $(MOD).so: $(MOD).c
 	$(CC) $(CFLAGS) -fPIC -c $(MOD).c -o $(MOD).o 
