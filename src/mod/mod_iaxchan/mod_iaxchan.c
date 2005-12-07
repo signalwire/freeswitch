@@ -88,15 +88,17 @@ struct private_object {
 };
 
 #ifdef WIN32
-void gettimeofday( struct timeval* tv, void* tz )
-{
-	struct _timeb curSysTime;
-	_ftime(&curSysTime);
-	tv->tv_sec = curSysTime.time;
-	tv->tv_usec = curSysTime.millitm * 1000;
+#include <Mmsystem.h>
 
-	return ;
+int gettimeofday(struct timeval *tp, void *tz)
+{
+	DWORD now;
+	now = timeGetTime();
+	tp->tv_sec = now / 1000;
+	tp->tv_usec =  (now % 1000) * 1000;
+	return 0;
 }
+
 #endif
 static void set_global_dialplan(char *dialplan)
 {
@@ -444,6 +446,7 @@ static switch_status channel_on_hangup(switch_core_session *session)
 	assert(tech_pvt != NULL);
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
+	switch_thread_cond_signal(tech_pvt->cond);
 
 	switch_core_codec_destroy(&tech_pvt->read_codec);
 	switch_core_codec_destroy(&tech_pvt->write_codec);
@@ -615,20 +618,27 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	//tech_pvt->read_frame.datalen = 0;
-	
-	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
-		switch_thread_cond_wait(tech_pvt->cond, tech_pvt->mutex);
-		while (switch_test_flag(tech_pvt, TFLAG_IO) && !switch_test_flag(tech_pvt, TFLAG_VOICE)) {
-			switch_yield(1000);
-		}
-	
+	for(;;) {
 		if (switch_test_flag(tech_pvt, TFLAG_IO)) {
-			//printf("WTF %d\n", tech_pvt->read_frame.datalen);
-			*frame = &tech_pvt->read_frame;
-			switch_clear_flag(tech_pvt, TFLAG_VOICE);
-			return SWITCH_STATUS_SUCCESS;
+			switch_thread_cond_wait(tech_pvt->cond, tech_pvt->mutex);
+			if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+				return SWITCH_STATUS_FALSE;			
+			}
+			while (switch_test_flag(tech_pvt, TFLAG_IO) && !switch_test_flag(tech_pvt, TFLAG_VOICE)) {
+				switch_yield(1000);
+			}
+	
+			if (switch_test_flag(tech_pvt, TFLAG_IO)) {
+				switch_clear_flag(tech_pvt, TFLAG_VOICE);
+				if(!tech_pvt->read_frame.datalen) {
+					continue;
+				}
+						
+				*frame = &tech_pvt->read_frame;
+				return SWITCH_STATUS_SUCCESS;
+			}
 		}
+		break;
 	}
 	return SWITCH_STATUS_FALSE;
 }
@@ -645,11 +655,15 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if(!switch_test_flag(tech_pvt, TFLAG_IO)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
-		switch_swap_linear(frame->data, frame->datalen / 2);
+		switch_swap_linear(frame->data, (int)frame->datalen / 2);
 	}
 	
-	iax_send_voice(tech_pvt->iax_session, tech_pvt->codec, frame->data, frame->datalen, tech_pvt->write_codec.implementation->samples_per_frame);
+	iax_send_voice(tech_pvt->iax_session, tech_pvt->codec, frame->data, (int)frame->datalen, tech_pvt->write_codec.implementation->samples_per_frame);
 
 	return SWITCH_STATUS_SUCCESS;
 	
@@ -710,6 +724,10 @@ static const switch_loadable_module_interface channel_module_interface = {
 
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface) {
+
+#ifdef WIN32
+	timeBeginPeriod(1);
+#endif
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
@@ -920,8 +938,8 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 
 					switch_clear_flag(tech_pvt, TFLAG_IO);
 					switch_clear_flag(tech_pvt, TFLAG_VOICE);
-
 					if ((channel = switch_core_session_get_channel(tech_pvt->session))) {
+						switch_thread_cond_signal(tech_pvt->cond);
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hangup %s\n", switch_channel_get_name(channel));
 						switch_set_flag(tech_pvt, TFLAG_HANGUP);
 						switch_channel_hangup(channel);

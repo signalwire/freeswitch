@@ -63,7 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libapr-1.lib libiax2.lib Ws2_32.lib Iphlpapi.lib"
+				AdditionalDependencies="libapr-1.lib Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
 				OutputFile="$(OutDir)/mod/mod_IaxChan.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(InputDir)..\..\libs\apr\Debug;$(InputDir)..\..\libs\iax\Debug"

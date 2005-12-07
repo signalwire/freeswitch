@@ -181,6 +181,8 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 	
 	if (switch_core_session_outgoing_channel(session, chan_type, caller_profile, &peer_session) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DOH!\n");
+		switch_channel_hangup(caller_channel);
+		return;
 	} else {
 		struct switch_core_thread_session this_audio_thread, other_audio_thread;
 		time_t start;
