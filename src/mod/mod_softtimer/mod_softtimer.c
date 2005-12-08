@@ -113,7 +113,7 @@ static const switch_loadable_module_interface mod_timers_module_interface = {
 	/*.switch_application_interface*/	NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface) {
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 	
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &mod_timers_module_interface;

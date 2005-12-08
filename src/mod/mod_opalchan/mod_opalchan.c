@@ -337,7 +337,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 }
 */
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface) {
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 
 	switch_config cfg;
 	char *var, *val;

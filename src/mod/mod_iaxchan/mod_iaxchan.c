@@ -710,7 +710,7 @@ static const switch_loadable_module_interface channel_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface) {
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
@@ -785,8 +785,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	int netfd;
 	int refresh;
 	struct iax_event *iaxevent = 0;
-	struct private_object *tech_pvt = NULL;
-	
+
 	load_config();
 
 	if ((res = iax_init(globals.port) < 0)) {
@@ -810,6 +809,8 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 		if (!(iaxevent = iax_get_event(0))) {
 			switch_yield(100);
 		} else {
+			struct private_object *tech_pvt = iax_get_private(iaxevent->session);
+
 			if (globals.debug && iaxevent->etype != IAX_EVENT_VOICE) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Event %d [%s]!\n",
 									  iaxevent->etype, IAXNAMES[iaxevent->etype]);
@@ -825,7 +826,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 		    case IAX_EVENT_TIMEOUT:
 				break;
 		    case IAX_EVENT_ACCEPT:
-				if ((tech_pvt = iax_get_private(iaxevent->session))) {					
+				if (tech_pvt) {					
 					unsigned int cap =  iax_session_get_capability(iaxevent->session);
 					unsigned int format = iaxevent->ies.format;
 				
@@ -845,7 +846,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 				break;
 		    case IAX_EVENT_ANSWER:
 				// the other side answered our call
-				if ((tech_pvt = iax_get_private(iaxevent->session))) {
+				if (tech_pvt) {
 					switch_channel *channel;
 					if ((channel = switch_core_session_get_channel(tech_pvt->session))) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Answer %s\n", switch_channel_get_name(channel));
@@ -916,7 +917,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 				break;
 		    case IAX_EVENT_BUSY:
 		    case IAX_EVENT_HANGUP:
-				if ((tech_pvt = iax_get_private(iaxevent->session))) {
+				if (tech_pvt) {
 					switch_channel *channel;
 
 					switch_clear_flag(tech_pvt, TFLAG_IO);
@@ -937,8 +938,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "sending silence\n");
 				break;
 		    case IAX_EVENT_VOICE:
-				if ((tech_pvt = iax_get_private(iaxevent->session)) && 
-					(tech_pvt->read_frame.datalen = iaxevent->datalen)) {
+				if (tech_pvt && (tech_pvt->read_frame.datalen = iaxevent->datalen)) {
 
 					memcpy(tech_pvt->read_frame.data, iaxevent->data, iaxevent->datalen);
 
@@ -955,7 +955,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Rejected call.\n");
 				break;
 		    case IAX_EVENT_DTMF:
-				if ((tech_pvt = iax_get_private(iaxevent->session))) {
+				if (tech_pvt) {
 					switch_channel *channel;
 					if ((channel = switch_core_session_get_channel(tech_pvt->session))) {
 						char str[2] = {iaxevent->subclass};
@@ -988,6 +988,8 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 	int x = 0;
 
 	running = -1;
+
+	iax_shutdown();
 
 	while (running) {
 		if (x++ > 1000) {

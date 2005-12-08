@@ -385,7 +385,7 @@ static const switch_loadable_module_interface wanchan_module_interface = {
 	/*.application_interface*/	NULL
 };
 
-Public switch_status switch_module_load(const switch_loadable_module_interface **interface) {
+Public switch_status switch_module_load(const switch_loadable_module_interface **interface, chanr *filename) {
 
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {

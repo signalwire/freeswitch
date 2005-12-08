@@ -329,7 +329,7 @@ static switch_loadable_module_interface speex_module_interface = {
 	/*.application_interface*/	NULL
 };
 
-switch_status switch_module_load(switch_loadable_module_interface **interface) {
+switch_status switch_module_load(switch_loadable_module_interface **interface, char *filename) {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &speex_module_interface;
 

@@ -43,7 +43,7 @@ struct switch_loadable_module {
 	char *filename;
 	const switch_loadable_module_interface *interface;
 	void *lib;
-	switch_status (*switch_module_load) (switch_loadable_module_interface **);
+	switch_status (*switch_module_load) (switch_loadable_module_interface **, char *);
 	switch_status (*switch_module_reload) (void);
 	switch_status (*switch_module_pause) (void);
 	switch_status (*switch_module_resume) (void);
@@ -87,7 +87,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 	apr_dso_handle_t *dso = NULL;
 	apr_status_t status;
 	apr_dso_handle_sym_t function_handle = NULL;
-	switch_status (*load_func_ptr) (switch_loadable_module_interface **) = NULL;
+	switch_status (*load_func_ptr) (switch_loadable_module_interface **, char *) = NULL;
 	int loading = 1;
 	const char *err = NULL;
 	switch_loadable_module_interface *interface = NULL;
@@ -113,7 +113,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 			break;
 		}
 
-		if (load_func_ptr(&interface) != SWITCH_STATUS_SUCCESS) {
+		if (load_func_ptr(&interface, filename) != SWITCH_STATUS_SUCCESS) {
 			err = "Module load routine returned an error";
 			interface = NULL;
 			break;
@@ -243,7 +243,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 											(void *) ptr);
 				}
 			}
-
+			
 			if (new_module->interface->codec_interface) {
 				const switch_codec_implementation *impl;
 				const switch_codec_interface *ptr;

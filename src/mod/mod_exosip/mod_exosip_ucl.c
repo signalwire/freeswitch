@@ -805,7 +805,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **_interface) {
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **_interface, char *filename) {
 	/* NOTE:  **interface is **_interface because the common lib redefines interface to struct in some situations */
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {

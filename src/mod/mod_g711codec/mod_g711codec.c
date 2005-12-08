@@ -281,7 +281,7 @@ static switch_loadable_module_interface g711_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface) {
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &g711_module_interface;
 
