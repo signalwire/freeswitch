@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_portaudio.c -- PortAudio Endpoint Module
+ * mod_iaxchan.c -- IAX2 Endpoint Module
  *
  */
 #include <switch.h>
