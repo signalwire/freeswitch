@@ -9,8 +9,9 @@ Dim vcver, DevEnv, VCBuild
 BuildRelease=False
 BuildDebug=False
 BuildCore=False
-BuildModExosip=false
-BuildModIaxChan=false
+BuildModExosip=False
+BuildModIaxChan=False
+BuildModPortAudio=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
@@ -40,15 +41,19 @@ If objArgs.Count >=1 Then
 			BuildModExosip=True
 		Case "Mod_IaxChan"   
 			BuildModIaxChan=True
+		Case "Mod_PortAudio"
+			BuildModPortAudio=True		
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
 			BuildModIaxChan=True
+			BuildModPortAudio=True		
 	End Select
 Else
 	BuildCore=True
 	BuildModExosip=True
 	BuildModIaxChan=True
+	BuildModPortAudio=True		
 End If
 
 
@@ -62,6 +67,10 @@ End If
 
 If BuildModIaxChan Then
 	BuildLibs_ModIaxChan BuildDebug, BuildRelease
+End If
+
+If BuildModPortAudio Then
+	BuildLibs_ModPortAudio BuildDebug, BuildRelease
 End If
 
 WScript.Echo "Complete"
@@ -244,6 +253,28 @@ Sub BuildLibs_ModIaxChan(BuildDebug, BuildRelease)
 		End If
 	Else
 		Wscript.echo "Unable to download libIAX2"
+	End If 
+	
+End Sub
+
+Sub BuildLibs_ModPortAudio(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "PortAudio") Then 
+		WgetUnZip "http://www.sofaswitch.org/mikej/portaudio_v18_1.zip", LibDestDir
+		RenameFolder LibDestDir & "portaudio_v18_1", "PortAudio"
+	End If 
+	If FSO.FolderExists(LibDestDir & "PortAudio") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "PortAudio\Lib\PAStaticWMMED.lib") Then 
+				BuildViaVCBuild LibDestDir & "PortAudio\winvc\PAStaticWMME\PAStaticWMME.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "PortAudio\Lib\PAStaticWMME.lib") Then 
+				BuildViaVCBuild LibDestDir & "PortAudio\winvc\PAStaticWMME\PAStaticWMME.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download PortAudio"
 	End If 
 	
 End Sub
