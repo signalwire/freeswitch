@@ -42,6 +42,8 @@ static const char modname[] = "mod_portaudio";
 static switch_memory_pool *module_pool;
 static int running = 1;
 
+#define SAMPLE_TYPE  paInt16
+typedef short SAMPLE;
 
 typedef enum {
 	TFLAG_IO = (1 << 0),
@@ -60,9 +62,12 @@ typedef enum {
 static struct {
 	int debug;
 	int port;
+	char *cid_name;
+	char *cid_num;
 	char *dialplan;
-	char *soundcard;
 	unsigned int flags;
+	int indev;
+	int outdev;
 } globals;
 
 struct private_object {
@@ -73,31 +78,18 @@ struct private_object {
 	unsigned char databuf[1024];
 	switch_core_session *session;
 	switch_caller_profile *caller_profile;	
-	unsigned int codec;
-	unsigned int codecs;
-	switch_mutex_t *mutex;
-	switch_thread_cond_t *cond;
+	PaError err;
+    PABLIO_Stream *audio_in;
+    PABLIO_Stream *audio_out;
+	int indev;
+	int outdev;
 };
 
-static void set_global_dialplan(char *dialplan)
-{
-	if (globals.dialplan) {
-		free(globals.dialplan);
-		globals.dialplan = NULL;
-	}
-	
-	globals.dialplan = strdup(dialplan);
-}
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_name, globals.cid_name)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_num, globals.cid_num)
 
-static void set_global_soundcard(char *soundcard)
-{
-	if (globals.soundcard) {
-		free(globals.soundcard);
-		globals.soundcard = NULL;
-	}
-	
-	globals.soundcard = strdup(soundcard);
-}
+
 static const switch_endpoint_interface channel_endpoint_interface;
 
 static switch_status channel_on_init(switch_core_session *session);
@@ -131,10 +123,6 @@ static switch_status channel_on_init(switch_core_session *session)
 
 	switch_set_flag(tech_pvt, TFLAG_IO);
 	
-	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-	switch_thread_cond_create(&tech_pvt->cond, switch_core_session_get_pool(session));	
-	switch_mutex_lock(tech_pvt->mutex);
-
 	/* Move Channel's State Machine to RING */
 	switch_channel_set_state(channel, CS_RING);
 
@@ -187,11 +175,13 @@ static switch_status channel_on_hangup(switch_core_session *session)
 	assert(tech_pvt != NULL);
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
-	switch_thread_cond_signal(tech_pvt->cond);
 
 	switch_core_codec_destroy(&tech_pvt->read_codec);
 	switch_core_codec_destroy(&tech_pvt->write_codec);
-	
+
+	CloseAudioStream(tech_pvt->audio_in);
+	CloseAudioStream(tech_pvt->audio_out);
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
 	return SWITCH_STATUS_SUCCESS;
@@ -324,35 +314,21 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
-
+	int t;
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	for(;;) {
-		if (switch_test_flag(tech_pvt, TFLAG_IO)) {
-			switch_thread_cond_wait(tech_pvt->cond, tech_pvt->mutex);
-			if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
-				return SWITCH_STATUS_FALSE;			
-			}
-			while (switch_test_flag(tech_pvt, TFLAG_IO) && !switch_test_flag(tech_pvt, TFLAG_VOICE)) {
-				switch_yield(1000);
-			}
-	
-			if (switch_test_flag(tech_pvt, TFLAG_IO)) {
-				switch_clear_flag(tech_pvt, TFLAG_VOICE);
-				if(!tech_pvt->read_frame.datalen) {
-					continue;
-				}
-						
-				*frame = &tech_pvt->read_frame;
-				return SWITCH_STATUS_SUCCESS;
-			}
-		}
-		break;
+	if	((t = ReadAudioStream(tech_pvt->audio_in, tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_frame))) {
+		tech_pvt->read_frame.datalen = t * 2;
+		tech_pvt->read_frame.samples = t;
+		*frame = &tech_pvt->read_frame;
+		return SWITCH_STATUS_SUCCESS;
 	}
+
+
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -376,7 +352,8 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 		switch_swap_linear(frame->data, (int)frame->datalen / 2);
 	}
 */
-
+	
+	WriteAudioStream(tech_pvt->audio_out, (short *)frame->data, (int)(frame->datalen / sizeof(SAMPLE)));
 	//XXX send voice
 
 	return SWITCH_STATUS_SUCCESS;
@@ -436,6 +413,8 @@ static const switch_loadable_module_interface channel_module_interface = {
 
 static int dump_info(void);
 static void make_call(char *dest);
+static switch_status load_config(void);
+static int get_dev_by_name(char *name, int in);
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 
@@ -445,6 +424,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	}
 
 	Pa_Initialize();
+	load_config();
 	dump_info();
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &channel_module_interface;
@@ -473,8 +453,22 @@ static switch_status load_config(void)
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
-			} else if (!strcmp(var, "soundcard")) {
-				set_global_soundcard(val);
+			} else if (!strcmp(var, "cid_name")) {
+				set_global_cid_name(val);
+			} else if (!strcmp(var, "cid_num")) {
+				set_global_cid_num(val);
+			} else if (!strcmp(var, "indev")) {
+				if (*val == '#') {
+					globals.indev = atoi(val+1);
+				} else {
+					globals.indev = get_dev_by_name(val, 1);
+				}
+			} else if (!strcmp(var, "outdev")) {
+				if (*val == '#') {
+					globals.outdev = atoi(val+1);
+				} else {
+					globals.outdev = get_dev_by_name(val, 1);
+				}
 			}
 		}
 	}
@@ -482,23 +476,18 @@ static switch_status load_config(void)
 	if (!globals.dialplan) {
 		set_global_dialplan("default");
 	}
-
+	
 	switch_config_close_file(&cfg);
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "sleep\n");
-	
-	switch_yield(500000);
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "sleep\n");
-	
-	make_call("1000");
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "sleep\n");
-	
+
+	switch_yield(50000);
+	make_call("8888");
 	return SWITCH_STATUS_TERM;
 }
 
@@ -510,6 +499,31 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static int get_dev_by_name(char *name, int in)
+{
+    int      i;
+    int      numDevices;
+    const    PaDeviceInfo *pdi;
+    numDevices = Pa_CountDevices();
+
+	if( numDevices < 0 ) {
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "ERROR: Pa_CountDevices returned 0x%x\n", numDevices );
+        return -2;
+    }
+ 
+	for( i=0; i<numDevices; i++ ) {
+        pdi = Pa_GetDeviceInfo( i );
+		if(strstr(pdi->name, name)) {
+			if(in && pdi->maxInputChannels) {
+				return i;
+			} else if (!in && pdi->maxOutputChannels) {
+				return i;
+			}
+		}
+	}
+	return -1;
+}
 
 
 static int dump_info(void)
@@ -571,7 +585,9 @@ error:
 static void make_call(char *dest)
 {
 	switch_core_session *session;
-					
+	int sample_rate = 8000;
+	int codec_ms = 20;
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "New Inbound Channel\n");
 	if ((session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
@@ -587,11 +603,10 @@ static void make_call(char *dest)
 			return;
 		}
 
-
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
 																  globals.dialplan,
-																  "Test This Shit",
-																  "1231231234",
+																  globals.cid_name,
+																  globals.cid_num,
 																  NULL,
 																  NULL,
 																  dest))) {
@@ -604,8 +619,8 @@ static void make_call(char *dest)
 
 		if (switch_core_codec_init(&tech_pvt->read_codec,
 								"L16",
-								0,
-								0,
+								sample_rate,
+								codec_ms,
 								SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
@@ -613,8 +628,8 @@ static void make_call(char *dest)
 		} else {
 			if (switch_core_codec_init(&tech_pvt->write_codec,
 									"L16",
-									0,
-									0,
+									sample_rate,
+									codec_ms,
 									SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 				switch_core_codec_destroy(&tech_pvt->read_codec);	
@@ -622,9 +637,29 @@ static void make_call(char *dest)
 			}
 		}
 	
+		tech_pvt->read_frame.codec = &tech_pvt->read_codec;
+		switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
+		switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 
-		switch_channel_set_state(channel, CS_INIT);
-   		switch_core_session_thread_launch(session);
+		tech_pvt->indev = globals.indev;
+		tech_pvt->outdev = globals.outdev;
+
+		if ((tech_pvt->err = OpenAudioStream( &tech_pvt->audio_in, sample_rate, SAMPLE_TYPE, PABLIO_READ | PABLIO_MONO, tech_pvt->indev, -1)) == paNoError) {
+			if ((tech_pvt->err = OpenAudioStream(&tech_pvt->audio_out, sample_rate, SAMPLE_TYPE, PABLIO_WRITE | PABLIO_MONO, -1, tech_pvt->outdev)) != paNoError) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio out!\n");
+				CloseAudioStream(tech_pvt->audio_in);
+			}
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio in!\n");		
+		}
+		if (tech_pvt->err == paNoError) {
+			switch_channel_set_state(channel, CS_INIT);
+   			switch_core_session_thread_launch(session);
+		} else {
+			switch_core_codec_destroy(&tech_pvt->read_codec);	
+			switch_core_codec_destroy(&tech_pvt->write_codec);	
+			switch_core_session_destroy(&session);
+		}
 	}		
 
 }

@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\src\include&quot;;&quot;$(ProjectDir)include&quot;;&quot;$(ProjectDir)..\..\libs\apr\include&quot;;&quot;$(ProjectDir)..\..\libs\portaudio\pa_common&quot;;&quot;$(ProjectDir)..\..\libs\portaudio\pablio&quot;;&quot;$(ProjectDir)..\..\libs\portaudio\pa_win_wmme&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\src\include&quot;;&quot;$(ProjectDir)include&quot;;&quot;$(ProjectDir)..\..\libs\apr\include&quot;;&quot;$(ProjectDir)..\..\libs\portaudio\pa_common&quot;;&quot;$(ProjectDir)\..\..\..\src\mod\mod_portaudio&quot;;&quot;$(ProjectDir)..\..\libs\portaudio\pa_win_wmme&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -194,11 +194,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\libs\portaudio\pablio\pablio.c"
+				RelativePath="..\..\src\mod\mod_portaudio\pablio.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\libs\portaudio\pablio\ringbuffer.c"
+				RelativePath="..\..\src\mod\mod_portaudio\ringbuffer.c"
 				>
 			</File>
 		</Filter>
@@ -207,6 +207,14 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\src\mod\mod_portaudio\pablio.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\mod\mod_portaudio\ringbuffer.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
