@@ -264,12 +264,12 @@ Sub BuildLibs_ModPortAudio(BuildDebug, BuildRelease)
 	End If 
 	If FSO.FolderExists(LibDestDir & "PortAudio") Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "PortAudio\Lib\PAStaticWMMED.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "PortAudio\winvc\Lib\PAStaticWMMED.lib") Then 
 				BuildViaVCBuild LibDestDir & "PortAudio\winvc\PAStaticWMME\PAStaticWMME.vcproj", "Debug"
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "PortAudio\Lib\PAStaticWMME.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "PortAudio\winvc\Lib\PAStaticWMME.lib") Then 
 				BuildViaVCBuild LibDestDir & "PortAudio\winvc\PAStaticWMME\PAStaticWMME.vcproj", "Release"
 			End If
 		End If
