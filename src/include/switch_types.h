@@ -130,6 +130,7 @@ typedef struct switch_timer_interface switch_timer_interface;
 typedef struct switch_dialplan_interface switch_dialplan_interface;
 typedef struct switch_codec_interface switch_codec_interface;
 typedef struct switch_application_interface switch_application_interface;
+typedef struct switch_api_interface switch_api_interface;
 typedef struct switch_core_session switch_core_session;
 typedef struct switch_loadable_module_interface switch_loadable_module_interface;
 typedef struct switch_caller_profile switch_caller_profile;

@@ -60,6 +60,7 @@ struct switch_loadable_module_container {
 	switch_hash *dialplan_hash;
 	switch_hash *timer_hash;
 	switch_hash *application_hash;
+	switch_hash *api_hash;
 	switch_memory_pool *pool;
 };
 
@@ -205,6 +206,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	switch_core_hash_init(&loadable_modules.codec_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.timer_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.application_hash, loadable_modules.pool);
+	switch_core_hash_init(&loadable_modules.api_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
 
 	while (apr_dir_read(&finfo, finfo_flags, module_dir_handle) == APR_SUCCESS) {
@@ -297,6 +299,17 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				}
 			}
 
+			if (new_module->interface->api_interface) {
+				const switch_api_interface *ptr;
+
+				for(ptr = new_module->interface->api_interface; ptr; ptr = ptr->next) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding API Function '%s'\n", ptr->interface_name);
+					switch_core_hash_insert(loadable_modules.api_hash,
+											(char *) ptr->interface_name,
+											(void *) ptr);
+				}
+			}
+
 		}
 
 	}
@@ -348,6 +361,11 @@ SWITCH_DECLARE(switch_timer_interface *) loadable_module_get_timer_interface(cha
 SWITCH_DECLARE(switch_application_interface *) loadable_module_get_application_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.application_hash, name);
+}
+
+SWITCH_DECLARE(switch_application_interface *) loadable_module_get_api_interface(char *name)
+{
+	return switch_core_hash_find(loadable_modules.api_hash, name);
 }
 
 SWITCH_DECLARE(int) loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array, int arraylen)

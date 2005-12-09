@@ -46,6 +46,7 @@ struct switch_loadable_module_interface {
 	const switch_dialplan_interface *dialplan_interface;
 	const switch_codec_interface *codec_interface;
 	const switch_application_interface *application_interface;
+	const switch_api_interface *api_interface;
 };
 
 SWITCH_DECLARE(switch_status) switch_loadable_module_init(void);
@@ -54,6 +55,7 @@ SWITCH_DECLARE(switch_codec_interface *) loadable_module_get_codec_interface(cha
 SWITCH_DECLARE(switch_dialplan_interface *) loadable_module_get_dialplan_interface(char *name);
 SWITCH_DECLARE(switch_timer_interface *) loadable_module_get_timer_interface(char *name);
 SWITCH_DECLARE(switch_application_interface *) loadable_module_get_application_interface(char *name);
+SWITCH_DECLARE(switch_application_interface *) loadable_module_get_api_interface(char *name);
 SWITCH_DECLARE(int) loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array, int arraylen);
 SWITCH_DECLARE(int) loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array, int arraylen, char **prefs, int preflen);
 SWITCH_DECLARE(void) loadable_module_shutdown(void);
