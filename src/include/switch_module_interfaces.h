@@ -254,7 +254,7 @@ struct switch_application_interface {
 struct switch_api_interface {
 	const char *interface_name;
 	const char *desc;
-	switch_status (*function)(char *in, char *out, size_t outlen);
+	switch_api_function function;
 	const struct switch_api_interface *next;
 };
 

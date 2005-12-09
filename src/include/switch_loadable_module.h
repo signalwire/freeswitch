@@ -55,7 +55,7 @@ SWITCH_DECLARE(switch_codec_interface *) loadable_module_get_codec_interface(cha
 SWITCH_DECLARE(switch_dialplan_interface *) loadable_module_get_dialplan_interface(char *name);
 SWITCH_DECLARE(switch_timer_interface *) loadable_module_get_timer_interface(char *name);
 SWITCH_DECLARE(switch_application_interface *) loadable_module_get_application_interface(char *name);
-SWITCH_DECLARE(switch_application_interface *) loadable_module_get_api_interface(char *name);
+SWITCH_DECLARE(switch_api_interface *) loadable_module_get_api_interface(char *name);
 SWITCH_DECLARE(int) loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array, int arraylen);
 SWITCH_DECLARE(int) loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array, int arraylen, char **prefs, int preflen);
 SWITCH_DECLARE(void) loadable_module_shutdown(void);

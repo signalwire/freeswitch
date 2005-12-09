@@ -68,6 +68,8 @@ static struct {
 	unsigned int flags;
 	int indev;
 	int outdev;
+	int call_id;
+	switch_hash *call_hash;
 } globals;
 
 struct private_object {
@@ -78,6 +80,7 @@ struct private_object {
 	unsigned char databuf[1024];
 	switch_core_session *session;
 	switch_caller_profile *caller_profile;	
+	char call_id[50];
 	PaError err;
     PABLIO_Stream *audio_in;
     PABLIO_Stream *audio_out;
@@ -101,6 +104,12 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags);
 static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags);
 static switch_status channel_kill_channel(switch_core_session *session, int sig);
+static int dump_info(void);
+static switch_status load_config(void);
+static int get_dev_by_name(char *name, int in);
+static switch_status place_call(char *dest, char *out, size_t outlen);
+static switch_status hup_call(char *callid, char *out, size_t outlen);
+static switch_status call_info(char *callid, char *out, size_t outlen);
 
 
 /* 
@@ -175,6 +184,7 @@ static switch_status channel_on_hangup(switch_core_session *session)
 	assert(tech_pvt != NULL);
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
+	switch_core_hash_delete(globals.call_hash, tech_pvt->call_id);
 
 	switch_core_codec_destroy(&tech_pvt->read_codec);
 	switch_core_codec_destroy(&tech_pvt->write_codec);
@@ -299,13 +309,11 @@ static switch_status channel_waitfor_write(switch_core_session *session, int ms)
 static switch_status channel_send_dtmf(switch_core_session *session, char *dtmf)
 {
 	struct private_object *tech_pvt = NULL;
-	char *digit;
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-		for(digit = dtmf; *digit; digit++) {
-			//XXX Do something...
-		}
+
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DTMF ON CALL %s [%s]\n", tech_pvt->call_id, dtmf);
 
     return SWITCH_STATUS_SUCCESS;
 }
@@ -374,6 +382,27 @@ static switch_status channel_answer_channel(switch_core_session *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static struct switch_api_interface channel_info_interface = {
+	/*.interface_name*/		"painfo",
+	/*.desc*/				"PortAudio Call Info",
+	/*.function*/			call_info,
+	/*.next*/				NULL
+};
+
+static struct switch_api_interface channel_hup_interface = {
+	/*.interface_name*/		"pahup",
+	/*.desc*/				"PortAudio Hangup Call",
+	/*.function*/			hup_call,
+	/*.next*/				&channel_info_interface
+};
+
+static struct switch_api_interface channel_api_interface = {
+	/*.interface_name*/		"pacall",
+	/*.desc*/				"PortAudio Call",
+	/*.function*/			place_call,
+	/*.next*/				&channel_hup_interface
+};
+
 static const switch_event_handler_table channel_event_handlers = {
 	/*.on_init*/			channel_on_init,
 	/*.on_ring*/			channel_on_ring,
@@ -408,13 +437,10 @@ static const switch_loadable_module_interface channel_module_interface = {
 	/*.timer_interface*/		NULL,
 	/*.dialplan_interface*/		NULL,
 	/*.codec_interface*/		NULL,
-	/*.application_interface*/	NULL
+	/*.application_interface*/	NULL,
+	/*.api_interface*/			&channel_api_interface
 };
 
-static int dump_info(void);
-static void make_call(char *dest);
-static switch_status load_config(void);
-static int get_dev_by_name(char *name, int in);
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 
@@ -423,9 +449,13 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 		return SWITCH_STATUS_TERM;
 	}
 
+
 	Pa_Initialize();
 	load_config();
+	switch_core_hash_init(&globals.call_hash, module_pool);
+
 	dump_info();
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &channel_module_interface;
 
@@ -482,7 +512,7 @@ static switch_status load_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
+/*
 SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 {
 
@@ -490,7 +520,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	make_call("8888");
 	return SWITCH_STATUS_TERM;
 }
-
+*/
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 {
@@ -582,11 +612,18 @@ error:
     return err;
 }
 
-static void make_call(char *dest)
+static switch_status place_call(char *dest, char *out, size_t outlen)
 {
 	switch_core_session *session;
 	int sample_rate = 8000;
 	int codec_ms = 20;
+
+	if (!dest) {
+		strncpy(out, "Usage: pacall <exten>", outlen - 1);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	strncpy(out, "FAIL", outlen - 1);
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "New Inbound Channel\n");
 	if ((session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
@@ -600,7 +637,7 @@ static void make_call(char *dest)
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
-			return;
+			return SWITCH_STATUS_FALSE;
 		}
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
@@ -624,7 +661,7 @@ static void make_call(char *dest)
 								SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
-			return;
+			return SWITCH_STATUS_FALSE;
 		} else {
 			if (switch_core_codec_init(&tech_pvt->write_codec,
 									"L16",
@@ -633,7 +670,7 @@ static void make_call(char *dest)
 									SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 				switch_core_codec_destroy(&tech_pvt->read_codec);	
-				return;
+				return SWITCH_STATUS_FALSE;
 			}
 		}
 	
@@ -654,12 +691,98 @@ static void make_call(char *dest)
 		}
 		if (tech_pvt->err == paNoError) {
 			switch_channel_set_state(channel, CS_INIT);
-   			switch_core_session_thread_launch(session);
+			snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", globals.call_id++);
+			switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);	
+			switch_core_session_thread_launch(session);
+			snprintf(out, outlen, "SUCCESS: %s", tech_pvt->call_id);
+			return SWITCH_STATUS_SUCCESS;
 		} else {
 			switch_core_codec_destroy(&tech_pvt->read_codec);	
 			switch_core_codec_destroy(&tech_pvt->write_codec);	
 			switch_core_session_destroy(&session);
 		}
 	}		
+	return SWITCH_STATUS_FALSE;
+}
 
+
+static switch_status hup_call(char *callid, char *out, size_t outlen)
+{
+	struct private_object *tech_pvt;
+	switch_channel *channel = NULL;
+	char tmp[50];
+
+	if (callid && !strcasecmp(callid, "last")) {
+		snprintf(tmp, sizeof(tmp), "%d", globals.call_id - 1);
+		callid = tmp;
+	}
+	if (!callid || !strcasecmp(callid, "all")) {
+		switch_hash_index_t* hi;
+		void *val;
+		int i = 0;
+
+		for (hi = apr_hash_first(module_pool, globals.call_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, NULL, NULL, &val);
+			tech_pvt = val;
+			channel = switch_core_session_get_channel(tech_pvt->session);
+			assert(channel != NULL);
+			switch_channel_hangup(channel);
+			i++;
+		}
+
+		snprintf(out, outlen, "HUNGUP: %d", i);
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid))) {
+
+		channel = switch_core_session_get_channel(tech_pvt->session);
+		assert(channel != NULL);
+
+		switch_channel_hangup(channel);
+		strncpy(out, "OK", outlen - 1);
+	} else {
+		strncpy(out, "NO SUCH CALL", outlen - 1);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+static void print_info(struct private_object *tech_pvt, char *out, size_t outlen)
+{
+	switch_channel *channel = NULL;
+	channel = switch_core_session_get_channel(tech_pvt->session);
+	assert(channel != NULL);
+
+	snprintf(out, outlen, "CALL %s\t%s\t%s\t%s\t%s\n",
+									tech_pvt->call_id,
+									tech_pvt->caller_profile->caller_id_name,
+									tech_pvt->caller_profile->caller_id_number,
+									tech_pvt->caller_profile->destination_number,
+									switch_channel_get_name(channel));		
+
+}
+
+static switch_status call_info(char *callid, char *out, size_t outlen)
+{
+	struct private_object *tech_pvt;
+	char tmp[50];
+	switch_hash_index_t* hi;
+	void *val;
+	if (!callid || !strcasecmp(callid, "all")) {
+		for (hi = apr_hash_first(module_pool, globals.call_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, NULL, NULL, &val);
+			tech_pvt = val;
+			print_info(tech_pvt, out + strlen(out), outlen - strlen(out));	
+		}
+	} else if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid))) {
+		print_info(tech_pvt, out, outlen);
+	} else {
+		strncpy(out, "NO SUCH CALL", outlen - 1);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
 }

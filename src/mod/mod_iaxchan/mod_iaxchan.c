@@ -87,26 +87,8 @@ struct private_object {
 	switch_thread_cond_t *cond;
 };
 
-static void set_global_dialplan(char *dialplan)
-{
-	if (globals.dialplan) {
-		free(globals.dialplan);
-		globals.dialplan = NULL;
-	}
-	
-	globals.dialplan = strdup(dialplan);
-}
-
-static void set_global_codec_string(char *codec_string)
-{
-	if (globals.codec_string) {
-		free(globals.codec_string);
-		globals.codec_string = NULL;
-	}
-	
-	globals.codec_string = strdup(codec_string);
-}
-
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
 
 
 static char *IAXNAMES[] = {"IAX_EVENT_CONNECT","IAX_EVENT_ACCEPT","IAX_EVENT_HANGUP","IAX_EVENT_REJECT","IAX_EVENT_VOICE",
@@ -344,13 +326,13 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 
 static void iax_err_cb(const char *s)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s", s);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "IAX  ERR: %s", s);
 }
 
 static void iax_out_cb(const char *s)
 {
-    if (globals.debug) {
-		iax_err_cb(s);
+	if (globals.debug) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "IAX INFO: %s", s);
 	}
 }
 
@@ -788,6 +770,9 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 
 	load_config();
 
+	if (globals.debug) {
+		iax_enable_debug();
+	}
 	if ((res = iax_init(globals.port) < 0)) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error Binding Port!\n");
 		return SWITCH_STATUS_TERM;

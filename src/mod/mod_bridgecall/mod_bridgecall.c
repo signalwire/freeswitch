@@ -69,7 +69,11 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 			break;
 		}
 
-
+		if (switch_channel_has_dtmf(chan_a)) {
+			char dtmf[128];
+			switch_channel_dequeue_dtmf(chan_a, dtmf, sizeof(dtmf));
+			switch_core_session_send_dtmf(session_b, dtmf);
+		}
 		if (switch_core_session_read_frame(session_a, &read_frame, -1) == SWITCH_STATUS_SUCCESS && read_frame->datalen) {
 			if (switch_core_session_write_frame(session_b, read_frame, -1) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Frame.... %d Bubye!\n", read_frame->datalen);
@@ -79,7 +83,6 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Frame....Bubye!\n");
 			data->running = -1;
 		}  
-		//switch_yield(100);
 	}
 
 	switch_channel_hangup(chan_b);

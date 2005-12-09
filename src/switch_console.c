@@ -33,6 +33,9 @@
 
 static int switch_console_process(char *cmd)
 {
+switch_api_interface *api;
+char *arg = NULL;
+
 #ifdef EMBED_PERL
 	const char *perlhelp = "perl - execute some perl. (print to STDERR if you want to see it.)\n";
 #else
@@ -52,6 +55,17 @@ static int switch_console_process(char *cmd)
 						   );
 		return 1;
 	}
+
+	if (arg = strchr(cmd, ' ')) {
+		*arg++ = '\0';
+	}
+	if ((api = loadable_module_get_api_interface(cmd))) {
+		char retbuf[512] = "";
+		switch_status status = api->function(arg, retbuf, sizeof(retbuf));
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
+		return 1;
+	}
+	
 
 #ifdef EMBED_PERL
 	if (!strncmp(cmd, "perl ", 5)) {

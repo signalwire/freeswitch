@@ -165,6 +165,7 @@ typedef switch_status (*switch_kill_channel_hook)(switch_core_session *, int);
 typedef switch_status (*switch_waitfor_read_hook)(switch_core_session *, int);
 typedef switch_status (*switch_waitfor_write_hook)(switch_core_session *, int);
 typedef switch_status (*switch_send_dtmf_hook)(switch_core_session *, char *);
+typedef switch_status (*switch_api_function)(char *in, char *out, size_t outlen);
 
 /*
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions
@@ -183,6 +184,7 @@ typedef apr_pollfd_t switch_pollfd_t;
 typedef apr_pollset_t switch_pollset_t;
 typedef apr_file_t switch_file_t;
 typedef apr_thread_cond_t switch_thread_cond_t;
+typedef apr_hash_index_t switch_hash_index_t;
 
 #define SWITCH_UNSPEC APR_UNSPEC 
 #define SWITCH_POLLIN APR_POLLIN
@@ -255,6 +257,9 @@ typedef apr_thread_cond_t switch_thread_cond_t;
 #define switch_file_close apr_file_close
 #define switch_file_read apr_file_read
 #define switch_file_write apr_file_write
+#define switch_hash_first apr_hash_first
+#define switch_hash_next apr_hash_next
+#define switch_hash_this apr_hash_this
 
 #define SWITCH_FOPEN_READ APR_FOPEN_READ
 #define SWITCH_FOPEN_WRITE APR_FOPEN_WRITE

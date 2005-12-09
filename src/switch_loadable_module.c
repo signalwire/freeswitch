@@ -363,7 +363,7 @@ SWITCH_DECLARE(switch_application_interface *) loadable_module_get_application_i
 	return switch_core_hash_find(loadable_modules.application_hash, name);
 }
 
-SWITCH_DECLARE(switch_application_interface *) loadable_module_get_api_interface(char *name)
+SWITCH_DECLARE(switch_api_interface *) loadable_module_get_api_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.api_hash, name);
 }
