@@ -434,6 +434,8 @@ static const switch_loadable_module_interface channel_module_interface = {
 	/*.application_interface*/	NULL
 };
 
+static int dump_info(void);
+static void make_call(char *dest);
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 
@@ -442,6 +444,8 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 		return SWITCH_STATUS_TERM;
 	}
 
+	Pa_Initialize();
+	dump_info();
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &channel_module_interface;
 
@@ -484,35 +488,143 @@ static switch_status load_config(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*
+
 SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 {
-	int res;
-	int netfd;
-	int refresh;
-	struct private_object *tech_pvt = NULL;
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "sleep\n");
 	
-	load_config();
-
-	running = 0;
-
+	switch_yield(500000);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "sleep\n");
+	
+	make_call("1000");
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "sleep\n");
+	
 	return SWITCH_STATUS_TERM;
 }
 
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 {
-	int x = 0;
-
-	running = -1;
-
-	while (running) {
-		if (x++ > 1000) {
-			break;
-		}
-		switch_yield(20000);
-	}
+   Pa_Terminate();
+ 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-*/
+
+
+static int dump_info(void)
+{
+    int      i,j;
+    int      numDevices;
+    const    PaDeviceInfo *pdi;
+    PaError  err;
+    numDevices = Pa_CountDevices();
+    if( numDevices < 0 )
+    {
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "ERROR: Pa_CountDevices returned 0x%x\n", numDevices );
+        err = numDevices;
+        goto error;
+    }
+    switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Number of devices = %d\n", numDevices );
+    for( i=0; i<numDevices; i++ )
+    {
+        pdi = Pa_GetDeviceInfo( i );
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "---------------------------------------------- #%d", i );
+        if( i == Pa_GetDefaultInputDeviceID() ) switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, " DefaultInput");
+        if( i == Pa_GetDefaultOutputDeviceID() ) switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, " DefaultOutput");
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "\nName         = %s\n", pdi->name );
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Max Inputs   = %d", pdi->maxInputChannels  );
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, ", Max Outputs = %d\n", pdi->maxOutputChannels  );
+        if( pdi->numSampleRates == -1 )
+        {
+            switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Sample Rate Range = %f to %f\n", pdi->sampleRates[0], pdi->sampleRates[1] );
+        }
+        else
+        {
+            switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Sample Rates =");
+            for( j=0; j<pdi->numSampleRates; j++ )
+            {
+                switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, " %8.2f,", pdi->sampleRates[j] );
+            }
+            switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "\n");
+        }
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Native Sample Formats = ");
+        if( pdi->nativeSampleFormats & paInt8 )        switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paInt8, ");
+        if( pdi->nativeSampleFormats & paUInt8 )       switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paUInt8, ");
+        if( pdi->nativeSampleFormats & paInt16 )       switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paInt16, ");
+        if( pdi->nativeSampleFormats & paInt32 )       switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paInt32, ");
+        if( pdi->nativeSampleFormats & paFloat32 )     switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paFloat32, ");
+        if( pdi->nativeSampleFormats & paInt24 )       switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paInt24, ");
+        if( pdi->nativeSampleFormats & paPackedInt24 ) switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paPackedInt24, ");
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "\n");
+    }
+ 
+    switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "----------------------------------------------\n");
+    return 0;
+error:
+    switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "An error occured while using the portaudio stream\n" );
+    switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Error number: %d\n", err );
+    switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Error message: %s\n", Pa_GetErrorText( err ) );
+    return err;
+}
+
+static void make_call(char *dest)
+{
+	switch_core_session *session;
+					
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "New Inbound Channel\n");
+	if ((session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
+		struct private_object *tech_pvt;
+		switch_channel *channel;
+		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object)))) {
+			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			channel = switch_core_session_get_channel(session);
+			switch_core_session_set_private(session, tech_pvt);
+			tech_pvt->session = session;
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
+			switch_core_session_destroy(&session);
+			return;
+		}
+
+
+		if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
+																  globals.dialplan,
+																  "Test This Shit",
+																  "1231231234",
+																  NULL,
+																  NULL,
+																  dest))) {
+			char name[128];
+			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
+			snprintf(name, sizeof(name), "PortAudio/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
+			switch_channel_set_name(channel, name);
+		}
+		tech_pvt->session = session;
+
+		if (switch_core_codec_init(&tech_pvt->read_codec,
+								"L16",
+								0,
+								0,
+								SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
+			return;
+		} else {
+			if (switch_core_codec_init(&tech_pvt->write_codec,
+									"L16",
+									0,
+									0,
+									SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
+				switch_core_codec_destroy(&tech_pvt->read_codec);	
+				return;
+			}
+		}
+	
+
+		switch_channel_set_state(channel, CS_INIT);
+   		switch_core_session_thread_launch(session);
+	}		
+
+}
