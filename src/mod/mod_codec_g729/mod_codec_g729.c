@@ -46,12 +46,12 @@ static switch_status switch_g729_init(switch_codec *codec, switch_codec_flag fla
 	
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
-
-	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
+	
+	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct g729_context))))) {
 		return SWITCH_STATUS_FALSE;
 	} else {
-		memset(context, 0, sizeof(*context));
 		if (encoding) {
+			//init_coder is fucked if you comment it no more crash
 			g729_init_coder(&context->encoder_object, 0);
 		}
 		if (decoding) {
