@@ -792,7 +792,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 
 		/* Wait for an event.*/
 		if (!(iaxevent = iax_get_event(0))) {
-			switch_yield(100);
+			switch_yield(1000);
 		} else {
 			struct private_object *tech_pvt = iax_get_private(iaxevent->session);
 

@@ -214,7 +214,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 			if (state > CS_RING) {
 				break;
 			}
-			switch_yield(100);
+			switch_yield(1000);
 		}
 
 		time(&start);
@@ -222,7 +222,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 			  switch_channel_get_state(peer_channel) == CS_TRANSMIT && 
 			  !switch_channel_test_flag(peer_channel, CF_ANSWERED) && 
 			  ((time(NULL) - start) < timelimit)) {
-			switch_yield(100);
+			switch_yield(20000);
 		}
 
 		if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
@@ -233,7 +233,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 				other_audio_thread.running = -1;
 				/* wait for the other audio thread */
 				while (other_audio_thread.running) {
-					switch_yield(100);
+					switch_yield(1000);
 				}
 			}
 

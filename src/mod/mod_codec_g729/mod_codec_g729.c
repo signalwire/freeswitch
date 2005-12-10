@@ -35,14 +35,12 @@
 static const char modname[] = "mod_codec_g729";
 
 struct g729_context {
-	struct dec_state *decoder_object;
-	struct cod_state *encoder_object;
+	struct dec_state decoder_object;
+	struct cod_state encoder_object;
 };
 
 static switch_status switch_g729_init(switch_codec *codec, switch_codec_flag flags, const struct switch_codec_settings *codec_settings)
 {
-	struct dec_state *decoder_object = NULL;
-	struct cod_state *encoder_object = NULL;
 	struct g729_context *context = NULL;
 	int encoding, decoding;
 	
@@ -52,20 +50,14 @@ static switch_status switch_g729_init(switch_codec *codec, switch_codec_flag fla
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
 		return SWITCH_STATUS_FALSE;
 	} else {
-		if ((encoding) && (!(encoder_object = switch_core_alloc(codec->memory_pool, sizeof(*encoder_object))))) {
-			return SWITCH_STATUS_FALSE;
+		memset(context, 0, sizeof(*context));
+		if (encoding) {
+			g729_init_coder(&context->encoder_object, 0);
 		}
-		if ((decoding) && (!(decoder_object = switch_core_alloc(codec->memory_pool, sizeof(*decoder_object))))) {
-			return SWITCH_STATUS_FALSE;
+		if (decoding) {
+			g729_init_decoder(&context->decoder_object);
 		}
-		if (encoder_object) {
-			g729_init_coder(encoder_object, 0);
-		}
-		if (decoder_object) {
-			g729_init_decoder(decoder_object);
-		}
-		context->decoder_object = decoder_object;
-		context->encoder_object = encoder_object;
+
 		codec->private = context;
 		
 		return SWITCH_STATUS_SUCCESS;
@@ -88,7 +80,6 @@ static switch_status switch_g729_encode(switch_codec *codec,
 								   unsigned int *flag)
 {
 	struct g729_context *context = codec->private;
-	struct cod_state *encoder_object = context->encoder_object;
 	short *dbuf;
 	unsigned char *ebuf;
 	int cbret = 0;
@@ -102,7 +93,7 @@ static switch_status switch_g729_encode(switch_codec *codec,
 	if (decoded_data_len < (size_t)codec->implementation->samples_per_frame*2 || *encoded_data_len < (size_t)codec->implementation->encoded_bytes_per_frame)
 		return SWITCH_STATUS_FALSE;
 
-	g729_coder(encoder_object, (short *) dbuf, ebuf, &cbret);
+	g729_coder(&context->encoder_object, (short *) dbuf, ebuf, &cbret);
 
 	*encoded_data_len   = (codec->implementation->encoded_bytes_per_frame / 2);
 
@@ -119,7 +110,6 @@ static switch_status switch_g729_decode(switch_codec *codec,
 								   unsigned int *flag) 
 {
 	struct g729_context *context = codec->private;
-	struct dec_state *decoder_object = context->decoder_object;
 	short *dbuf;
 	unsigned char *ebuf;
 
@@ -136,7 +126,7 @@ static switch_status switch_g729_decode(switch_codec *codec,
 		memset(dbuf, 0, codec->implementation->bytes_per_frame);
 		*decoded_data_len = codec->implementation->bytes_per_frame;
 	} else {
-		g729_decoder(decoder_object, decoded_data, (void *) encoded_data, (int)encoded_data_len);
+		g729_decoder(&context->decoder_object, decoded_data, (void *) encoded_data, (int)encoded_data_len);
 		*decoded_data_len = codec->implementation->bytes_per_frame;
 	}
 
