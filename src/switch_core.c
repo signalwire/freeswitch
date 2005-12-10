@@ -178,10 +178,13 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 	}
 
 	if (implementation) {
+		switch_status status;
 		codec->codec_interface = codec_interface;
 		codec->implementation = implementation;
 		codec->flags = flags;
-		switch_core_new_memory_pool(&codec->memory_pool);
+		if ((status = switch_core_new_memory_pool(&codec->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
 		implementation->init(codec, flags, codec_settings);
 
 		return SWITCH_STATUS_SUCCESS;
@@ -258,7 +261,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec *codec)
 SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *timer_name, int interval, int samples)
 {
 	switch_timer_interface *timer_interface;
-
+	switch_status status;
 	memset(timer, 0, sizeof(*timer));
 	if (!(timer_interface = loadable_module_get_timer_interface(timer_name))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid timer %s!\n", timer_name);
@@ -269,7 +272,9 @@ SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *
 	timer->samples = samples;
 	timer->samplecount = 0;
 	timer->timer_interface = timer_interface;
-	switch_core_new_memory_pool(&timer->memory_pool);
+	if ((status = switch_core_new_memory_pool(&timer->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
 
 	timer->timer_interface->timer_init(timer);
 	return SWITCH_STATUS_SUCCESS;
