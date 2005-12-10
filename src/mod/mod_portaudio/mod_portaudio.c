@@ -769,7 +769,6 @@ static void print_info(struct private_object *tech_pvt, char *out, size_t outlen
 static switch_status call_info(char *callid, char *out, size_t outlen)
 {
 	struct private_object *tech_pvt;
-	char tmp[50];
 	switch_hash_index_t* hi;
 	void *val;
 	if (!callid || !strcasecmp(callid, "all")) {
