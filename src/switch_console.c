@@ -56,12 +56,12 @@ char *arg = NULL;
 		return 1;
 	}
 
-	if (arg = strchr(cmd, ' ')) {
+	if ((arg = strchr(cmd, ' '))) {
 		*arg++ = '\0';
 	}
 	if ((api = loadable_module_get_api_interface(cmd))) {
 		char retbuf[512] = "";
-		switch_status status = api->function(arg, retbuf, sizeof(retbuf));
+		api->function(arg, retbuf, sizeof(retbuf));
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
 		return 1;
 	}

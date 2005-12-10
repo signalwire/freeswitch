@@ -79,22 +79,15 @@ static switch_status switch_g729_encode(switch_codec *codec,
 								   unsigned int *flag)
 {
 	struct g729_context *context = codec->private;
-	short *dbuf;
-	unsigned char *ebuf;
 	int cbret = 0;
 
-	if (!context)
+	if (!context) {
 		return SWITCH_STATUS_FALSE;
+	}
 
-	dbuf = decoded_data;
-	ebuf = encoded_data;
+	g729_coder(&context->encoder_object, (short *) decoded_data,  encoded_data, &cbret);
 	
-	if (decoded_data_len < (size_t)codec->implementation->samples_per_frame*2 || *encoded_data_len < (size_t)codec->implementation->encoded_bytes_per_frame)
-		return SWITCH_STATUS_FALSE;
-
-	g729_coder(&context->encoder_object, (short *) dbuf, ebuf, &cbret);
-
-	*encoded_data_len   = (codec->implementation->encoded_bytes_per_frame / 2);
+	*encoded_data_len = codec->implementation->encoded_bytes_per_frame;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -112,20 +105,15 @@ static switch_status switch_g729_decode(switch_codec *codec,
 	short *dbuf;
 	unsigned char *ebuf;
 
-	if (!context)
+	if (!context) {
 		return SWITCH_STATUS_FALSE;
-
-	dbuf = decoded_data;
-	ebuf = encoded_data;
-
-	if ((encoded_data_len * 2) < (size_t)codec->implementation->encoded_bytes_per_frame)
-		return SWITCH_STATUS_FALSE;
+	}
 
 	if (*flag & SWITCH_CODEC_FLAG_SILENCE) {
 		memset(dbuf, 0, codec->implementation->bytes_per_frame);
 		*decoded_data_len = codec->implementation->bytes_per_frame;
 	} else {
-		g729_decoder(&context->decoder_object, decoded_data, (void *) encoded_data, (int)encoded_data_len);
+		g729_decoder(&context->decoder_object, decoded_data, encoded_data, encoded_data_len);
 		*decoded_data_len = codec->implementation->bytes_per_frame;
 	}
 
