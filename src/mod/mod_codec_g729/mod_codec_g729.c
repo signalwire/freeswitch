@@ -51,7 +51,6 @@ static switch_status switch_g729_init(switch_codec *codec, switch_codec_flag fla
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (encoding) {
-			//init_coder is fucked if you comment it no more crash
 			g729_init_coder(&context->encoder_object, 0);
 		}
 		if (decoding) {
