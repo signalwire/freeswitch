@@ -1325,6 +1325,9 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	
 	while (switch_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, "settings")) {
+		if (!strcmp(var, "noload") && atoi(val)) {			
+			return SWITCH_STATUS_TERM;
+		}	
 			if (!strcmp(var, "debug")) {
 				globals.debug = atoi(val);
 			}
