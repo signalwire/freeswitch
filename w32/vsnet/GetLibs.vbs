@@ -12,6 +12,8 @@ BuildCore=False
 BuildModExosip=False
 BuildModIaxChan=False
 BuildModPortAudio=False
+BuildModSpeexCodec=False
+BuildModCodecG729=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
@@ -43,17 +45,25 @@ If objArgs.Count >=1 Then
 			BuildModIaxChan=True
 		Case "Mod_PortAudio"
 			BuildModPortAudio=True		
+		Case "Mod_SpeexCodec"
+			BuildModSpeexCodec=True
+		Case "Mod_CodecG729"
+			BuildModCodecG729=True
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
 			BuildModIaxChan=True
 			BuildModPortAudio=True		
+			BuildModSpeexCodec=True
+			BuildModCodecG729=True
 	End Select
 Else
 	BuildCore=True
 	BuildModExosip=True
 	BuildModIaxChan=True
 	BuildModPortAudio=True		
+	BuildModSpeexCodec=True
+	BuildModCodecG729=True
 End If
 
 
@@ -71,6 +81,14 @@ End If
 
 If BuildModPortAudio Then
 	BuildLibs_ModPortAudio BuildDebug, BuildRelease
+End If
+
+If BuildModSpeexCodec Then
+	BuildLibs_ModSpeexCodec BuildDebug, BuildRelease
+End If
+
+If BuildModCodecG729 Then
+	BuildLibs_ModCodecG729 BuildDebug, BuildRelease
 End If
 
 WScript.Echo "Complete"
@@ -277,6 +295,50 @@ Sub BuildLibs_ModPortAudio(BuildDebug, BuildRelease)
 		Wscript.echo "Unable to download PortAudio"
 	End If 
 	
+End Sub
+
+Sub BuildLibs_ModSpeexCodec(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "speex") Then 
+		WgetUnTarGz "http://downloads.us.xiph.org/releases/speex/speex-1.1.11.1.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "speex-1.1.11.1") Then
+			Wscript.echo "Unable to get libspeex from default download location, Trying backup location:"
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/speex-1.1.11.1.tar.gz", LibDestDir
+		End If
+		RenameFolder LibDestDir & "speex-1.1.11.1", "speex"
+		FSO.CopyFile Utilsdir & "libspeex.vcproj", LibDestDir & "speex\win32\libspeex\", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "speex") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "speex\win32\libspeex\Debug\libspeex.lib") Then 
+				BuildViaVCBuild LibDestDir & "speex\win32\libspeex\libspeex.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "speex\win32\libspeex\Release\libspeex.lib") Then 
+				BuildViaVCBuild LibDestDir & "speex\win32\libspeex\libspeex.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download libspeex"
+	End If 
+	
+End Sub
+
+Sub BuildLibs_ModCodecG729(BuildDebug, BuildRelease)
+	If FSO.FolderExists(LibDestDir & "libg729") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "libg729\Debug\libg729.lib") Then 
+				BuildViaVCBuild LibDestDir & "libg729\libg729.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "libg729\Debug\libg729.lib") Then 
+				BuildViaVCBuild LibDestDir & "libg729\libg729.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download libg729"
+	End If 
 End Sub
 
 Sub UpgradeViaDevEnv(ProjectFile)

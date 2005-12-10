@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+# Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FreeSwitchConsole", "FreeSwitchConsole.vcproj", "{1AF3A893-F7BE-43DD-B697-8AB2397C0D67}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
@@ -61,10 +61,12 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_codec_g729", "..\..\src\mod\mod_codec_g729\mod_codec_g729.vcproj", "{1D95CD95-0DE2-48C3-AC23-D5C7D1C9C0F0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
-		{0D5359EA-E6EB-485A-BB0D-455888E0761A} = {0D5359EA-E6EB-485A-BB0D-455888E0761A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libg729", "..\..\libs\libg729\libg729.vcproj", "{0D5359EA-E6EB-485A-BB0D-455888E0761A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_speexcodec", "mod_speexcodec.vcproj", "{5580D60E-0F77-4716-9CD4-B8E5986FA375}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -178,14 +180,14 @@ Global
 		{1D95CD95-0DE2-48C3-AC23-D5C7D1C9C0F0}.Release DLL|Win32.Build.0 = Release|Win32
 		{1D95CD95-0DE2-48C3-AC23-D5C7D1C9C0F0}.Release|Win32.ActiveCfg = Release|Win32
 		{1D95CD95-0DE2-48C3-AC23-D5C7D1C9C0F0}.Release|Win32.Build.0 = Release|Win32
-		{0D5359EA-E6EB-485A-BB0D-455888E0761A}.Debug DLL|Win32.ActiveCfg = Debug DLL|Win32
-		{0D5359EA-E6EB-485A-BB0D-455888E0761A}.Debug DLL|Win32.Build.0 = Debug DLL|Win32
-		{0D5359EA-E6EB-485A-BB0D-455888E0761A}.Debug|Win32.ActiveCfg = Debug|Win32
-		{0D5359EA-E6EB-485A-BB0D-455888E0761A}.Debug|Win32.Build.0 = Debug|Win32
-		{0D5359EA-E6EB-485A-BB0D-455888E0761A}.Release DLL|Win32.ActiveCfg = Release DLL|Win32
-		{0D5359EA-E6EB-485A-BB0D-455888E0761A}.Release DLL|Win32.Build.0 = Release DLL|Win32
-		{0D5359EA-E6EB-485A-BB0D-455888E0761A}.Release|Win32.ActiveCfg = Release|Win32
-		{0D5359EA-E6EB-485A-BB0D-455888E0761A}.Release|Win32.Build.0 = Release|Win32
+		{5580D60E-0F77-4716-9CD4-B8E5986FA375}.Debug DLL|Win32.ActiveCfg = Debug|Win32
+		{5580D60E-0F77-4716-9CD4-B8E5986FA375}.Debug DLL|Win32.Build.0 = Debug|Win32
+		{5580D60E-0F77-4716-9CD4-B8E5986FA375}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5580D60E-0F77-4716-9CD4-B8E5986FA375}.Debug|Win32.Build.0 = Debug|Win32
+		{5580D60E-0F77-4716-9CD4-B8E5986FA375}.Release DLL|Win32.ActiveCfg = Release|Win32
+		{5580D60E-0F77-4716-9CD4-B8E5986FA375}.Release DLL|Win32.Build.0 = Release|Win32
+		{5580D60E-0F77-4716-9CD4-B8E5986FA375}.Release|Win32.ActiveCfg = Release|Win32
+		{5580D60E-0F77-4716-9CD4-B8E5986FA375}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
