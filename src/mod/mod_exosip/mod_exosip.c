@@ -573,6 +573,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 				samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 				ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
 				tech_pvt->timestamp_recv += (int32_t)samples;
+				tech_pvt->read_frame.samples = samples;
 				break;
 			}
 			

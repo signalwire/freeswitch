@@ -421,7 +421,7 @@ static switch_status woomerachan_read_frame(switch_core_session *session, switch
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
 	switch_frame *pframe;
-	//switch_status status;
+	switch_status status;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -441,7 +441,10 @@ static switch_status woomerachan_read_frame(switch_core_session *session, switch
 	*frame = pframe;	
 	
 	pframe->datalen = sizeof(tech_pvt->databuf);
-	return switch_socket_recvfrom (tech_pvt->udpread, tech_pvt->udp_socket, 0, tech_pvt->databuf, &pframe->datalen);
+	if ((status = switch_socket_recvfrom (tech_pvt->udpread, tech_pvt->udp_socket, 0, tech_pvt->databuf, &pframe->datalen)) == SWITCH_STATUS_SUCCESS) {
+		pframe->samples = (int)pframe->datalen / 2;
+	}
+	return status;
 }
 
 static switch_status woomerachan_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags)

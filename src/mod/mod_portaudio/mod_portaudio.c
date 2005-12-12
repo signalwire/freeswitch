@@ -52,7 +52,8 @@ typedef enum {
 	TFLAG_DTMF = (1 << 3),
 	TFLAG_VOICE = (1 << 4),
 	TFLAG_HANGUP = (1 << 5),
-	TFLAG_LINEAR = (1 << 6)
+	TFLAG_LINEAR = (1 << 6),
+	TFLAG_ANSWER = (1 << 7)
 } TFLAGS;
 
 typedef enum {
@@ -104,13 +105,15 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags);
 static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags);
 static switch_status channel_kill_channel(switch_core_session *session, int sig);
+static switch_status engage_device(struct private_object *tech_pvt);
 static int dump_info(void);
 static switch_status load_config(void);
 static int get_dev_by_name(char *name, int in);
 static switch_status place_call(char *dest, char *out, size_t outlen);
 static switch_status hup_call(char *callid, char *out, size_t outlen);
 static switch_status call_info(char *callid, char *out, size_t outlen);
-
+static void send_dtmf(char *callid, char *out, size_t outlen);
+static void answer_call(char *callid, char *out, size_t outlen);
 
 /* 
    State methods they get called when the state changes to the specific state 
@@ -224,7 +227,34 @@ static switch_status channel_on_loopback(switch_core_session *session)
 
 static switch_status channel_on_transmit(switch_core_session *session)
 {
+	switch_channel *channel = NULL;
+	struct private_object *tech_pvt = NULL;
+	switch_time_t last;
+	int waitsec = 5 * 1000000;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	last = switch_time_now() - waitsec;
+
+	/* Turn on the device */
+	engage_device(tech_pvt);
+
+	while(switch_channel_get_state(channel) == CS_TRANSMIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
+		if (switch_time_now() - last >= waitsec) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
+			last = switch_time_now();
+		}
+		switch_yield(50000);
+	}
+
+	
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "CHANNEL TRANSMIT\n");
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -264,8 +294,6 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 			return SWITCH_STATUS_GENERR;
 		}
 
-		//XXX outbound shit 
-
 		/* (session == NULL) means it was originated from the core not from another channel */
 		if (session && (orig_channel = switch_core_session_get_channel(session))) {
 			switch_caller_profile *cloned_profile;
@@ -275,7 +303,8 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 				switch_channel_set_originator_caller_profile(channel, cloned_profile);
 			}
 		}
-		
+
+
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
@@ -323,16 +352,16 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
-	int t;
+	int samples;
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if	((t = ReadAudioStream(tech_pvt->audio_in, tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_frame))) {
-		tech_pvt->read_frame.datalen = t * 2;
-		tech_pvt->read_frame.samples = t;
+	if	((samples = ReadAudioStream(tech_pvt->audio_in, tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_frame))) {
+		tech_pvt->read_frame.datalen = samples * 2;
+		tech_pvt->read_frame.samples = samples;
 		*frame = &tech_pvt->read_frame;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -384,11 +413,26 @@ static switch_status channel_answer_channel(switch_core_session *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static struct switch_api_interface send_dtmf_interface = {
+	/*.interface_name*/		"padtmf",
+	/*.desc*/				"PortAudio Dial DTMF",
+	/*.function*/			send_dtmf,
+	/*.next*/				NULL
+};
+
+static struct switch_api_interface answer_call_interface = {
+	/*.interface_name*/		"paoffhook",
+	/*.desc*/				"PortAudio Answer Call",
+	/*.function*/			answer_call,
+	/*.next*/				&send_dtmf_interface
+};
+
 static struct switch_api_interface channel_info_interface = {
 	/*.interface_name*/		"painfo",
 	/*.desc*/				"PortAudio Call Info",
 	/*.function*/			call_info,
-	/*.next*/				NULL
+	/*.next*/				&answer_call_interface
 };
 
 static struct switch_api_interface channel_hup_interface = {
@@ -614,11 +658,67 @@ error:
     return err;
 }
 
+static switch_status engage_device(struct private_object *tech_pvt)
+{
+	int sample_rate = 8000;
+	int codec_ms = 20;
+
+	switch_channel *channel;
+	channel = switch_core_session_get_channel(tech_pvt->session);
+	assert(channel != NULL);
+
+	if (switch_core_codec_init(&tech_pvt->read_codec,
+								"L16",
+								sample_rate,
+								codec_ms,
+								SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
+			return SWITCH_STATUS_FALSE;
+		} else {
+			if (switch_core_codec_init(&tech_pvt->write_codec,
+									"L16",
+									sample_rate,
+									codec_ms,
+									SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
+				switch_core_codec_destroy(&tech_pvt->read_codec);	
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+	
+		tech_pvt->read_frame.codec = &tech_pvt->read_codec;
+		switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
+		switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
+
+		tech_pvt->indev = globals.indev;
+		tech_pvt->outdev = globals.outdev;
+		
+		if ((tech_pvt->err = OpenAudioStream( &tech_pvt->audio_in, sample_rate, SAMPLE_TYPE, PABLIO_READ | PABLIO_MONO, tech_pvt->indev, -1)) == paNoError) {
+			if ((tech_pvt->err = OpenAudioStream(&tech_pvt->audio_out, sample_rate, SAMPLE_TYPE, PABLIO_WRITE | PABLIO_MONO, -1, tech_pvt->outdev)) != paNoError) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio out!\n");
+				CloseAudioStream(tech_pvt->audio_in);
+			}
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio in!\n");		
+		}
+		if (tech_pvt->err == paNoError) {
+			snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", globals.call_id++);
+			switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);	
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			switch_core_codec_destroy(&tech_pvt->read_codec);	
+			switch_core_codec_destroy(&tech_pvt->write_codec);	
+			switch_core_session_destroy(&tech_pvt->session);
+		}
+	
+		return SWITCH_STATUS_FALSE;
+}
+
 static switch_status place_call(char *dest, char *out, size_t outlen)
 {
 	switch_core_session *session;
-	int sample_rate = 8000;
-	int codec_ms = 20;
+	switch_status status = SWITCH_STATUS_FALSE;
 
 	if (!dest) {
 		strncpy(out, "Usage: pacall <exten>", outlen - 1);
@@ -627,7 +727,6 @@ static switch_status place_call(char *dest, char *out, size_t outlen)
 
 	strncpy(out, "FAIL", outlen - 1);
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "New Inbound Channel\n");
 	if ((session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
 		switch_channel *channel;
@@ -655,56 +754,13 @@ static switch_status place_call(char *dest, char *out, size_t outlen)
 			switch_channel_set_name(channel, name);
 		}
 		tech_pvt->session = session;
-
-		if (switch_core_codec_init(&tech_pvt->read_codec,
-								"L16",
-								sample_rate,
-								codec_ms,
-								SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-								NULL) != SWITCH_STATUS_SUCCESS) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
-			return SWITCH_STATUS_FALSE;
-		} else {
-			if (switch_core_codec_init(&tech_pvt->write_codec,
-									"L16",
-									sample_rate,
-									codec_ms,
-									SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
-				switch_core_codec_destroy(&tech_pvt->read_codec);	
-				return SWITCH_STATUS_FALSE;
-			}
-		}
-	
-		tech_pvt->read_frame.codec = &tech_pvt->read_codec;
-		switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
-		switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
-
-		tech_pvt->indev = globals.indev;
-		tech_pvt->outdev = globals.outdev;
-
-		if ((tech_pvt->err = OpenAudioStream( &tech_pvt->audio_in, sample_rate, SAMPLE_TYPE, PABLIO_READ | PABLIO_MONO, tech_pvt->indev, -1)) == paNoError) {
-			if ((tech_pvt->err = OpenAudioStream(&tech_pvt->audio_out, sample_rate, SAMPLE_TYPE, PABLIO_WRITE | PABLIO_MONO, -1, tech_pvt->outdev)) != paNoError) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio out!\n");
-				CloseAudioStream(tech_pvt->audio_in);
-			}
-		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio in!\n");		
-		}
-		if (tech_pvt->err == paNoError) {
+		if ((status = engage_device(tech_pvt)) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_state(channel, CS_INIT);
-			snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", globals.call_id++);
-			switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);	
-			switch_core_session_thread_launch(session);
+			switch_core_session_thread_launch(tech_pvt->session);
 			snprintf(out, outlen, "SUCCESS: %s", tech_pvt->call_id);
-			return SWITCH_STATUS_SUCCESS;
-		} else {
-			switch_core_codec_destroy(&tech_pvt->read_codec);	
-			switch_core_codec_destroy(&tech_pvt->write_codec);	
-			switch_core_session_destroy(&session);
 		}
 	}		
-	return SWITCH_STATUS_FALSE;
+	return status;
 }
 
 
@@ -751,6 +807,43 @@ static switch_status hup_call(char *callid, char *out, size_t outlen)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static void send_dtmf(char *callid, char *out, size_t outlen)
+{
+	struct private_object *tech_pvt = NULL;
+	switch_channel *channel = NULL;
+	char *dtmf;
+
+	if (dtmf = strchr(callid, ' ')) {
+		*dtmf++ = '\0';
+	} else {
+		dtmf = "";
+	}
+
+	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid))) {
+		channel = switch_core_session_get_channel(tech_pvt->session);
+		assert(channel != NULL);
+		switch_channel_queue_dtmf(channel, dtmf);
+		strncpy(out, "OK", outlen - 1);
+	} else {
+		strncpy(out, "NO SUCH CALL", outlen - 1);
+	}
+}
+
+static void answer_call(char *callid, char *out, size_t outlen)
+{
+	struct private_object *tech_pvt = NULL;
+	switch_channel *channel = NULL;
+
+	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid))) {
+		channel = switch_core_session_get_channel(tech_pvt->session);
+		assert(channel != NULL);
+		switch_set_flag(tech_pvt, TFLAG_ANSWER);
+		switch_channel_answer(channel);
+	} else {
+		strncpy(out, "NO SUCH CALL", outlen - 1);
+	}
+}
 
 
 static void print_info(struct private_object *tech_pvt, char *out, size_t outlen)

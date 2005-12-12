@@ -71,13 +71,17 @@ void playback_function(switch_core_session *session, char *data)
 	interval = 20;
 	len = 320;
 	samples = 160;
-
+	
+	
 
 #if 0
 	interval = 30;
 	len = 480;
 	samples = 240;
 #endif
+
+	write_frame.samples = samples;
+
 	/* You can use zap instead of soft if you have it loaded */
 	if (switch_core_timer_init(&timer, "soft", interval, samples) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer failed!\n");

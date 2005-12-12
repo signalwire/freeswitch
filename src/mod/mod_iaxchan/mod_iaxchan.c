@@ -593,14 +593,11 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 			if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 				return SWITCH_STATUS_FALSE;			
 			}
-			while (switch_test_flag(tech_pvt, TFLAG_IO) && !switch_test_flag(tech_pvt, TFLAG_VOICE)) {
-				switch_yield(1000);
-			}
-	
+			
 			if (switch_test_flag(tech_pvt, TFLAG_IO)) {
 				switch_clear_flag(tech_pvt, TFLAG_VOICE);
 				if(!tech_pvt->read_frame.datalen) {
-					continue;
+					break;
 				}
 						
 				*frame = &tech_pvt->read_frame;
@@ -907,10 +904,10 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 					switch_clear_flag(tech_pvt, TFLAG_IO);
 					switch_clear_flag(tech_pvt, TFLAG_VOICE);
 					if ((channel = switch_core_session_get_channel(tech_pvt->session))) {
-						switch_thread_cond_signal(tech_pvt->cond);
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hangup %s\n", switch_channel_get_name(channel));
 						switch_set_flag(tech_pvt, TFLAG_HANGUP);
 						switch_channel_hangup(channel);
+						switch_thread_cond_signal(tech_pvt->cond);
 						iaxevent->session = NULL;
 					} else {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Session? %s\n", switch_test_flag(tech_pvt, TFLAG_VOICE) ? "yes" : "no");
@@ -923,9 +920,10 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 				break;
 		    case IAX_EVENT_VOICE:
 				if (tech_pvt && (tech_pvt->read_frame.datalen = iaxevent->datalen)) {
-
+					int bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+					int frames = (tech_pvt->read_frame.datalen / bytes);
+					tech_pvt->read_frame.samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 					memcpy(tech_pvt->read_frame.data, iaxevent->data, iaxevent->datalen);
-
 					/* wake up the i/o thread*/
 					switch_set_flag(tech_pvt, TFLAG_VOICE);
 					switch_thread_cond_signal(tech_pvt->cond);
