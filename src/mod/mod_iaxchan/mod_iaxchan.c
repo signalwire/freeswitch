@@ -354,7 +354,7 @@ static switch_status channel_on_init(switch_core_session *session)
 	assert(channel != NULL);
 
 	tech_pvt->read_frame.data = tech_pvt->databuf;
-
+	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	iax_set_private(tech_pvt->iax_session, tech_pvt);
 
 	switch_set_flag(tech_pvt, TFLAG_IO);
@@ -631,7 +631,6 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 	if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
 		switch_swap_linear(frame->data, (int)frame->datalen / 2);
 	}
-	
 	iax_send_voice(tech_pvt->iax_session, tech_pvt->codec, frame->data, (int)frame->datalen, tech_pvt->write_codec.implementation->samples_per_frame);
 
 	return SWITCH_STATUS_SUCCESS;

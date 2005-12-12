@@ -129,6 +129,7 @@ static switch_status channel_on_init(switch_core_session *session)
 	assert(channel != NULL);
 
 	tech_pvt->read_frame.data = tech_pvt->databuf;
+	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 
 	switch_set_flag(tech_pvt, TFLAG_IO);
 	
@@ -361,6 +362,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 	}
 */
 	
+
 	WriteAudioStream(tech_pvt->audio_out, (short *)frame->data, (int)(frame->datalen / sizeof(SAMPLE)));
 	//XXX send voice
 

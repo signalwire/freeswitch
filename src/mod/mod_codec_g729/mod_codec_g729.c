@@ -84,11 +84,26 @@ static switch_status switch_g729_encode(switch_codec *codec,
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
-
-	g729_coder(&context->encoder_object, (short *) decoded_data,  encoded_data, &cbret);
-	
-	*encoded_data_len = codec->implementation->encoded_bytes_per_frame;
-
+	if (decoded_data_len % 160 == 0) {
+		unsigned int new_len = 0;
+		INT16 *ddp = decoded_data;
+		char *edp = encoded_data;
+		int x;
+		int loops = (int) decoded_data_len / 160;
+		
+		for(x = 0; x < loops && new_len < *encoded_data_len; x++) {
+			g729_coder(&context->encoder_object, ddp, edp, &cbret);
+			edp += 10;
+			ddp += 80;
+			new_len += 10;
+		}
+		if( new_len <= *encoded_data_len ) {
+			*encoded_data_len = new_len;
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
+			return SWITCH_STATUS_FALSE;			
+		}
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -102,21 +117,35 @@ static switch_status switch_g729_decode(switch_codec *codec,
 								   unsigned int *flag) 
 {
 	struct g729_context *context = codec->private;
-	short *dbuf;
-	unsigned char *ebuf;
-
+	
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (*flag & SWITCH_CODEC_FLAG_SILENCE) {
-		memset(dbuf, 0, codec->implementation->bytes_per_frame);
-		*decoded_data_len = codec->implementation->bytes_per_frame;
-	} else {
-		g729_decoder(&context->decoder_object, decoded_data, encoded_data, encoded_data_len);
-		*decoded_data_len = codec->implementation->bytes_per_frame;
-	}
 
+	if (encoded_data_len % 10 == 0) {
+		int loops = (int) encoded_data_len / 10;
+		char *edp = encoded_data;
+		short *ddp = decoded_data;
+		int x;
+		unsigned int new_len = 0;
+		for(x = 0; x < loops && new_len < *decoded_data_len; x++) {
+			g729_decoder(&context->decoder_object, ddp, edp, 10);
+			ddp += 80;
+			edp += 10;
+			new_len += 160;
+		}
+		if (new_len <= *decoded_data_len) {
+			*decoded_data_len = new_len;
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+	} else {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "yo this frame is an odd size [%d]\n", encoded_data_len);
+	}
+	
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -130,7 +159,7 @@ static const switch_codec_implementation g729_8k_implementation = {
 	/*.bytes_per_frame*/				320,
 	/*.encoded_bytes_per_frame*/		20,
 	/*.number_of_channels*/				1,
-	/*.pref_frames_per_packet*/			6,
+	/*.pref_frames_per_packet*/			1,
 	/*.max_frames_per_packet*/			24,
 	/*.init*/							switch_g729_init,
 	/*.encode*/							switch_g729_encode,

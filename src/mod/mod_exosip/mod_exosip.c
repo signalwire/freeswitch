@@ -225,6 +225,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 	assert(tech_pvt != NULL);
 
 	tech_pvt->read_frame.data = tech_pvt->read_buf;
+	tech_pvt->read_frame.buflen = sizeof(tech_pvt->read_buf);
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "EXOSIP INIT\n");
 

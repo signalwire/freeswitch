@@ -523,6 +523,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 
 		if (read_frame->codec) {
 			size_t flag = 0;
+			session->raw_read_frame.datalen = session->raw_read_frame.buflen;
 			status = switch_core_codec_decode(read_frame->codec,
 										   session->read_codec,
 										   read_frame->data,
@@ -549,7 +550,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 			if ((*frame)->datalen == session->read_codec->implementation->bytes_per_frame) {
 				perfect = TRUE;
 			} else {
-				if (! session->raw_write_buffer) {
+				if (! session->raw_read_buffer) {
 					int bytes = session->read_codec->implementation->bytes_per_frame * 10;
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Engaging Read Buffer at %d bytes\n", bytes);
 					switch_buffer_create(session->pool, &session->raw_read_buffer, bytes);
@@ -570,7 +571,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 																				  session->read_codec->implementation->bytes_per_frame);
 					enc_frame = &session->raw_read_frame;
 				}
-
+				session->enc_read_frame.datalen = session->enc_read_frame.buflen;
 				status = switch_core_codec_encode(session->read_codec,
 											   (*frame)->codec,
 											   session->raw_read_frame.data,
@@ -641,6 +642,8 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 
 	if (need_codec) {
 		if (frame->codec) {
+
+			session->raw_write_frame.datalen = session->raw_write_frame.buflen;
 			status = switch_core_codec_decode(frame->codec,
 										   session->write_codec,
 										   frame->data,
@@ -687,6 +690,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 
 			if (perfect) {
 				enc_frame = write_frame;
+				session->enc_write_frame.datalen = session->enc_write_frame.buflen;
 				status = switch_core_codec_encode(session->write_codec,
 											   frame->codec,
 											   enc_frame->data,
@@ -728,6 +732,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 											 bytes))) {
 
 							enc_frame = &session->raw_write_frame;
+							session->enc_write_frame.datalen = session->enc_write_frame.buflen;
 							status = switch_core_codec_encode(session->write_codec,
 														   frame->codec,
 														   enc_frame->data,
@@ -1447,10 +1452,15 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_e
 	session->endpoint_interface = endpoint_interface;
 
 	session->raw_write_frame.data = session->raw_write_buf;
+	session->raw_write_frame.buflen = sizeof(session->raw_write_buf);
 	session->raw_read_frame.data = session->raw_read_buf;
+	session->raw_read_frame.buflen = sizeof(session->raw_read_buf);
+	
 
 	session->enc_write_frame.data = session->enc_write_buf;
+	session->enc_write_frame.buflen = sizeof(session->enc_write_buf);
 	session->enc_read_frame.data = session->enc_read_buf;
+	session->enc_read_frame.buflen = sizeof(session->enc_read_buf);
 
 	switch_mutex_init(&session->mutex, SWITCH_MUTEX_NESTED ,session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);

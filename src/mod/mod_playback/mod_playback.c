@@ -58,7 +58,7 @@ void playback_function(switch_core_session *session, char *data)
 	switch_channel_answer(channel);
 
 	write_frame.data = buf;
-
+	write_frame.buflen = sizeof(buf);
 
 	if (switch_file_open(&fd, data, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE FAILED\n");

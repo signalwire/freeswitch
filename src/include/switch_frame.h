@@ -42,6 +42,7 @@ struct switch_frame {
 	switch_codec *codec;
 	void *data;
 	size_t datalen;
+	size_t buflen;
 	int samples;
 };
 
