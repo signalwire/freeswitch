@@ -444,7 +444,11 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	switch_clear_flag(tech_pvt, TFLAG_IO);
+	switch_clear_flag(tech_pvt, TFLAG_VOICE);
 	switch_channel_hangup(channel);
+	switch_thread_cond_signal(tech_pvt->cond);
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
 	
