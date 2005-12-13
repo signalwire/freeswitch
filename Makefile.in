@@ -230,11 +230,11 @@ AM_CFLAGS = $(shell $(APR_CONFIG) --cflags --cppflags --includes) \
 	-DSWITCH_MOD_DIR=\"$(PREFIX)/mod\" \
 	-DSWITCH_PREFIX_DIR=\"$(PREFIX)\" \
 	-DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
-@ISMAC_TRUE@SOLINK = -dynamic -bundle -undefined suppress -force_flat_namespace
-SOLINK = -shared -Xlinker -x
 AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) $(am__append_1) \
 	-L$(PREFIX)/lib
 OSARCH = $(shell uname -s)
+@ISMAC_FALSE@SOLINK = -shared -Xlinker -x
+@ISMAC_TRUE@SOLINK = -dynamic -bundle -undefined suppress -force_flat_namespace
 libfreeswitch_la_SOURCES = \
 src/include/switch.h \
 src/include/switch_channel.h \

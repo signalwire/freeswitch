@@ -6,7 +6,6 @@ NAME=freeswitch
 PREFIX=$(prefix)/${NAME}
 APR_CONFIG=$(prefix)/bin/apr-1-config
 AM_CFLAGS  = $(shell $(APR_CONFIG) --cflags --cppflags --includes)
-SOLINK=-shared -Xlinker -x
 AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) 
 OSARCH=$(shell uname -s)
 
@@ -16,6 +15,8 @@ endif
 
 if ISMAC
 SOLINK=-dynamic -bundle -undefined suppress -force_flat_namespace
+else
+SOLINK=-shared -Xlinker -x
 endif
 
 
