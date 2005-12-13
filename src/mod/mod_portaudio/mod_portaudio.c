@@ -40,7 +40,7 @@
 static const char modname[] = "mod_portaudio";
 
 static switch_memory_pool *module_pool;
-static int running = 1;
+//static int running = 1;
 
 #define SAMPLE_TYPE  paInt16
 typedef short SAMPLE;
@@ -112,8 +112,8 @@ static int get_dev_by_name(char *name, int in);
 static switch_status place_call(char *dest, char *out, size_t outlen);
 static switch_status hup_call(char *callid, char *out, size_t outlen);
 static switch_status call_info(char *callid, char *out, size_t outlen);
-static void send_dtmf(char *callid, char *out, size_t outlen);
-static void answer_call(char *callid, char *out, size_t outlen);
+static switch_status send_dtmf(char *callid, char *out, size_t outlen);
+static switch_status answer_call(char *callid, char *out, size_t outlen);
 
 /* 
    State methods they get called when the state changes to the specific state 
@@ -268,7 +268,6 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 		struct private_object *tech_pvt;
 		switch_channel *channel, *orig_channel;
 		switch_caller_profile *caller_profile, *originator_caller_profile = NULL;
-		unsigned int req = 0, cap = 0;
 
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
@@ -808,13 +807,13 @@ static switch_status hup_call(char *callid, char *out, size_t outlen)
 }
 
 
-static void send_dtmf(char *callid, char *out, size_t outlen)
+static switch_status send_dtmf(char *callid, char *out, size_t outlen)
 {
 	struct private_object *tech_pvt = NULL;
 	switch_channel *channel = NULL;
 	char *dtmf;
 
-	if (dtmf = strchr(callid, ' ')) {
+	if ((dtmf = strchr(callid, ' '))) {
 		*dtmf++ = '\0';
 	} else {
 		dtmf = "";
@@ -828,9 +827,11 @@ static void send_dtmf(char *callid, char *out, size_t outlen)
 	} else {
 		strncpy(out, "NO SUCH CALL", outlen - 1);
 	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
-static void answer_call(char *callid, char *out, size_t outlen)
+static switch_status answer_call(char *callid, char *out, size_t outlen)
 {
 	struct private_object *tech_pvt = NULL;
 	switch_channel *channel = NULL;
@@ -843,6 +844,7 @@ static void answer_call(char *callid, char *out, size_t outlen)
 	} else {
 		strncpy(out, "NO SUCH CALL", outlen - 1);
 	}
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
