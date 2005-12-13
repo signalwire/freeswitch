@@ -36,6 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@ISMAC_TRUE@am__append_1 = -DMACOSX
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -106,6 +107,8 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ISMAC_FALSE = @ISMAC_FALSE@
+ISMAC_TRUE = @ISMAC_TRUE@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -171,7 +174,8 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 # -DDEBUG_DEFAULT 
 AM_CFLAGS = -Wall -O2 -g -Wall -Wstrict-prototypes -I . \
-	-DDEBUG_SUPPORT -DLIBIAX -fsigned-char $(UCFLAGS)
+	-DDEBUG_SUPPORT -DLIBIAX -fsigned-char $(UCFLAGS) \
+	$(am__append_1)
 pkgdir = $(libdir)
 pkg_LTLIBRARIES = libiax.la
 libiax_la_SOURCES = iax2-parser.c iax.c md5.c jitterbuf.c

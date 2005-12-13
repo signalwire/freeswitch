@@ -4,7 +4,9 @@ AM_CFLAGS += -DDEBUG_SUPPORT -DLIBIAX
 AM_CFLAGS += -fsigned-char
 # -DDEBUG_DEFAULT 
 AM_CFLAGS += $(UCFLAGS)
-
+if ISMAC
+AM_CFLAGS += -DMACOSX
+endif
 
 pkgdir = $(libdir)
 pkg_LTLIBRARIES=libiax.la
