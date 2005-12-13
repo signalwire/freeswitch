@@ -13,6 +13,6 @@ fi
 if [ -f $mod/Makefile ] ; then
 $make -C $mod
 else 
-$make -f $pwd/generic_mod.`uname -s`.mk -C $mod
+$make -f $pwd/generic_mod.mk -C $mod
 fi
 

@@ -3,7 +3,7 @@ LDFLAGS +=-lg729
 
 $(MOD).so: $(MOD).c
 	$(CC) $(CFLAGS) -fPIC -c $(MOD).c -o $(MOD).o
-	$(CC) -shared -Xlinker -x $(MOD).o -o $(MOD).so $(LDFLAGS) -lspeex
+	$(CC) $(SOLINK) $(MOD).o -o $(MOD).so $(LDFLAGS) -lspeex
 
 all:	$(MOD).so
 

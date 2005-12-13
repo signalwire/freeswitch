@@ -6,7 +6,7 @@ g711.o: g711.c g711.h
 
 $(MOD).so: $(MOD).c g711.o
 	$(CC) $(CFLAGS) -fPIC -c $(MOD).c -o $(MOD).o
-	$(CC) -shared -Xlinker -x g711.o $(MOD).o -o $(MOD).so $(LDFLAGS)
+	$(CC) $(SOLINK) g711.o $(MOD).o -o $(MOD).so $(LDFLAGS)
 
 
 
