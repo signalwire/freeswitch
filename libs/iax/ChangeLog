@@ -1,0 +1,21 @@
+libiax
+======
+
+version 0.2.3:
+	* Allow password to be passed in connect
+
+version 0.2.2 (Nov 13th, 2001):
+	* HTML Unlink requests
+	* HTML Reject link requests
+	* Text frames
+
+version 0.2.1 (Oct 20th, 2001):
+	* More space for challenge in IAX
+	* Fixed strncpy security bug
+	* Accept larger packets
+	* Handle out of order packets better
+	* Implemented send_url
+	* Added an iax-config script :-)
+
+version 0.2.0 (Oct 10th, 2001): 
+	* Initial Public Release
