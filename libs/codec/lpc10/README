@@ -1,0 +1,89 @@
+Tue Aug 20 16:19:51 CDT 1996
+Andy Fingerhut (jaf@arl.wustl.edu)
+
+In release 1.4, there are quite a few hand modifications to the C code
+that was automatically created from the Fortran code with f2c.  They
+are all summarized in change log comments at the beginning of the
+changed files.  All of the original files from f2c were checked in to
+RCS before modification, so it is possible to see exactly what changes
+were made, for the extremely curious.  That precaution was also for my
+benefit, in case I ever recompile the Fortran sources, and want to
+make similar changes to that new C source code.
+
+Below is the README file for this directory included with the 1.3
+release of the LPC-10 package.  A few parts of it are a little out of
+date, but it is correct for the most part.
+
+
+Sun Jul  7 15:30:31 CDT 1996
+Andy Fingerhut (jaf@arl.wustl.edu)
+
+To create the LPC-10 library, copy the appropriate makefile to the
+proper name for easy use, e.g., for Unix, copy makefile.unx to the
+file "Makefile".  The file makefile.dos has been used with some
+version of the 'nmake' utility that comes with the Microsoft C
+compiler (the same one used for Nautilus v1.5a, which I believe
+specifies Microsoft C version 7.0 or later).
+
+Then edit the file lpc10.h in the directory above.  It should already
+be set up to work properly on any Unix compiler for which "int" is 32
+bits and "short" is 16 bits, and under the Microsoft C compiler
+configured so that "long" is 32 bits and "int" is 16 bits.  There must
+be a typedef for the two types INT32 and INT16 in that file.  You
+should choose types that compile to those sizes using your compiler,
+because there are places in the LPC-10 code that expect INT16's to
+have exactly 16 bits (at least, I *think* they must be no larger), and
+INT32's to have exactly 32 bits.
+
+
+A few notes on how these files were created
+-------------------------------------------
+
+(This section is mostly for my benefit, so I can remember what I did.
+You don't need to read it if you just want to use this package.  It
+might be useful to read it if you change the Fortran sources and want
+to recreate a usable library of C sources.  -- Andy)
+
+These C sources were created automatically from the Fortran sources
+using f2c, for the most part.  Listed below are the extra
+modifications that were made after this automatic conversion.  Many of
+them were made so that it was not necessary to install f2c in order to
+use this LPC-10 coder.
+
+1.
+
+Put all of those files that were necessary for only the coder, rather
+than an application that uses the coder, into this subdirectory called
+lpc10.
+
+2.
+
+Copied f2c.h from the f2c distribution into this subdirectory.  Some
+modifications were made to the "typedef" statements in this file, to
+explicitly indicate the sizes (in bits) that different integer types
+should be.  The types INT32 and INT16 must be defined in a file called
+lpc10.h in the directory above.  Created the file f2clib.c, containing
+only the functions pow_ii(), r_sign(), and i_nint() from the f2c
+library.
+
+3.
+
+The f2c output originally had a file called contrl_com.c, that defined
+a small structure containing a few variables that were used in many
+different functions of the LPC10 code.  Every file containing
+functions that used it defined it as "extern", while contrl_com.c
+actually allocated storage for the structure.  Bill Dorsey, one of the
+lead developers of Nautilus, said that the Microsoft C compiler had
+problems either compiling this file, or linking it with all of the
+other compiled files, so he just eliminated that file and removed the
+"extern" keyword from the one of the files that declared it that way.
+The file chosen (arbitrarily) was analys.c.
+
+4.
+
+Copied the makefiles for Unix and Microsoft C from the Nautilus v1.5a
+distribution into the lpc10 directory.  Modified them to take out
+references to Nautilus.  These makefiles don't create an executable,
+but a library of compiled functions called liblpc10.a (Unix) or
+LPC10.LIB (DOS).  This library can be used when linking an executable
+that calls the functions lpcini_(), lpcenc_(), and lpcdec_().
