@@ -77,7 +77,7 @@ freeswitch_LDFLAGS = -static -lfreeswitch
 
 modules: $(NAME)
 	@echo making modules
-	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
+	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.`uname -s`.sh $(PWD) $$i || exit 1; done
 
 modclean:
 	@cd src/mod && for i in [a-z]* ; do echo making clean $$i ; CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" make -f $(PWD)/generic_mod.mk -C $$i clean || exit 1; done
