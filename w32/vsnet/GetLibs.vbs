@@ -254,10 +254,6 @@ Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
 End Sub
 
 Sub BuildLibs_ModIaxChan(BuildDebug, BuildRelease)
-	If Not FSO.FolderExists(LibDestDir & "iax") Then 
-		WgetUnTarGz "http://www.sofaswitch.org/mikej/iax-0.2.3.tar.gz", LibDestDir
-		RenameFolder LibDestDir & "iax-0.2.3", "iax"
-	End If 
 	If FSO.FolderExists(LibDestDir & "iax") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "iax\Debug\libiax2.lib") Then 
