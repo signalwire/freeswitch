@@ -153,6 +153,8 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 ISLINUX_FALSE = @ISLINUX_FALSE@
 ISLINUX_TRUE = @ISLINUX_TRUE@
+ISMAC_FALSE = @ISMAC_FALSE@
+ISMAC_TRUE = @ISMAC_TRUE@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -228,6 +230,7 @@ AM_CFLAGS = $(shell $(APR_CONFIG) --cflags --cppflags --includes) \
 	-DSWITCH_MOD_DIR=\"$(PREFIX)/mod\" \
 	-DSWITCH_PREFIX_DIR=\"$(PREFIX)\" \
 	-DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
+@ISMAC_TRUE@SOLINK = -dynamic -bundle -undefined suppress -force_flat_namespace
 SOLINK = -shared -Xlinker -x
 AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) $(am__append_1) \
 	-L$(PREFIX)/lib

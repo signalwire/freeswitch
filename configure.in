@@ -37,6 +37,7 @@ AC_CONFIG_FILES([Makefile
 ])
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
+AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
 
 
 

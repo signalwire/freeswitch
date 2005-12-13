@@ -14,6 +14,11 @@ if ISLINUX
 AM_LDFLAGS += -Wl,-E
 endif
 
+if ISMAC
+SOLINK=-dynamic -bundle -undefined suppress -force_flat_namespace
+endif
+
+
 AM_LDFLAGS += -L$(PREFIX)/lib
 
 
