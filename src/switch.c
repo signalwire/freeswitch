@@ -51,6 +51,7 @@ int main(int argc, char *argv[]) {
 		exit(-1);
 	}
 
+	switch_event_fire(SWITCH_EVENT_STARTUP, "Ready");
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_GLOBAL_VERSION);
 
 	/* wait for console input */

@@ -45,7 +45,8 @@ src/switch_console.c \
 src/switch_core.c \
 src/switch_loadable_module.c \
 src/switch_mutex.c \
-src/switch_utils.c
+src/switch_utils.c \
+src/switch_event.c
 
 #bindir = $(PREFIX)/bin
 #libdir = $(PREFIX)/lib
@@ -62,7 +63,8 @@ library_include_HEADERS =	src/include/switch.h \
 				src/include/switch_types.h \
 				src/include/switch_utils.h \
 				src/include/switch_caller.h \
-				src/include/switch_buffer.h
+				src/include/switch_buffer.h \
+				src/include/switch_event.h
 
 lib_LTLIBRARIES		= libfreeswitch.la
 libfreeswitch_la_CFLAGS	= $(AM_CFLAGS) -Wall -Werror -Wstrict-prototypes -Wmissing-prototypes -g  

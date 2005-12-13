@@ -122,6 +122,21 @@ typedef enum {
 	SWITCH_IO_FLAG_NOOP = 0,
 } switch_io_flag;
 
+/* make sure this is synced with the EVENT_NAMES array in switch_event.c
+   also never put any new ones before EVENT_ALL
+*/
+typedef enum {
+	SWITCH_EVENT_CUSTOM,
+	SWITCH_EVENT_INBOUND_CHAN,
+	SWITCH_EVENT_OUTBOUND_CHAN,
+	SWITCH_EVENT_ANSWER_CHAN,
+	SWITCH_EVENT_HANGUP_CHAN,
+	SWITCH_EVENT_STARTUP,
+	SWITCH_EVENT_ALL
+} switch_event_t;
+
+typedef struct switch_event_node switch_event_node;
+typedef void (*switch_event_callback_t)(switch_event_t, int, char *);
 typedef struct switch_loadable_module switch_loadable_module;
 typedef struct switch_frame switch_frame;
 typedef struct switch_channel switch_channel;

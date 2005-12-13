@@ -116,7 +116,7 @@ extern "C" {
 #include <switch_module_interfaces.h>
 #include <switch_channel.h>
 #include <switch_buffer.h>
-
+#include <switch_event.h>
 
 #ifdef __cplusplus
 }

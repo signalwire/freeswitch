@@ -422,6 +422,20 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, 
 	return duped;
 }
 
+
+SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
+{
+	char *duped = NULL;
+
+	assert(pool != NULL);
+	assert(todup != NULL);
+
+	if (todup && (duped = apr_palloc(pool, strlen(todup)+1))) {
+		strcpy(duped, todup);
+	}
+	return duped;
+}
+
 SWITCH_DECLARE(void *) switch_core_session_get_private(switch_core_session *session)
 {
 	assert(session != NULL);
@@ -1500,7 +1514,8 @@ SWITCH_DECLARE(switch_status) switch_core_init(void)
 		return SWITCH_STATUS_MEMERR;
 	}
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocated memory pool.\n");
-
+	switch_event_init(runtime.memory_pool);
+	
 #ifdef EMBED_PERL
 	if (! (my_perl = perl_alloc())) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate perl intrepreter\n");
