@@ -321,15 +321,15 @@ Sub BuildLibs_ModSpeexCodec(BuildDebug, BuildRelease)
 End Sub
 
 Sub BuildLibs_ModCodecG729(BuildDebug, BuildRelease)
-	If FSO.FolderExists(LibDestDir & "libg729") Then 
+	If FSO.FolderExists(LibDestDir & "codec\libg729") Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "libg729\Debug\libg729.lib") Then 
-				BuildViaVCBuild LibDestDir & "libg729\libg729.vcproj", "Debug"
+			If Not FSO.FileExists(LibDestDir & "codec\libg729\Debug\libg729.lib") Then 
+				BuildViaVCBuild LibDestDir & "codec\libg729\libg729.vcproj", "Debug"
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "libg729\Debug\libg729.lib") Then 
-				BuildViaVCBuild LibDestDir & "libg729\libg729.vcproj", "Release"
+			If Not FSO.FileExists(LibDestDir & "codec\libg729\Debug\libg729.lib") Then 
+				BuildViaVCBuild LibDestDir & "codec\libg729\libg729.vcproj", "Release"
 			End If
 		End If
 	Else
