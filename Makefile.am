@@ -21,7 +21,7 @@ SOLINK=-shared -Xlinker -x
 endif
 
 
-AM_LDFLAGS += -L$(PREFIX)/lib
+#AM_LDFLAGS += -L$(PREFIX)/lib
 
 
 AM_CFLAGS  += -fPIC -Wall
