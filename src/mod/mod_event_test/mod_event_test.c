@@ -57,3 +57,15 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_inte
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#ifdef TORTURE_ME
+SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
+{
+	for(;;) {
+		int x;
+		for(x = 0; x < 100; x++) {
+			switch_event_fire(SWITCH_EVENT_CUSTOM, "hello world");
+		}
+		switch_yield(100000);
+	}
+}
+#endif

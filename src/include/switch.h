@@ -118,6 +118,11 @@ extern "C" {
 #include <switch_buffer.h>
 #include <switch_event.h>
 
+#ifndef WIN32
+#include <config.h>
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif

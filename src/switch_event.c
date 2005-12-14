@@ -34,8 +34,8 @@
 static switch_event *EVENT_QUEUE_HEAD;
 static switch_event *EVENT_QUEUE_WORK;
 static switch_event_node *EVENT_NODES[SWITCH_EVENT_ALL+1] = {NULL};
-static switch_mutex_t *ELOCK = NULL;
-static switch_mutex_t *MUTEX = NULL;
+static switch_mutex_t *BLOCK = NULL;
+static switch_mutex_t *QLOCK = NULL;
 static switch_memory_pool *EPOOL = NULL;
 switch_thread_cond_t *COND;
 
@@ -51,6 +51,8 @@ static char *EVENT_NAMES[] = {
 	"ANSWER_CHAN",
 	"HANGUP_CHAN",
 	"STARTUP",
+	"EVENT_SHUTDOWN",
+	"SHUTDOWN",
 	"ALL"
 };
 
@@ -59,43 +61,46 @@ static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void
 	switch_event_node *enp;
 	switch_event *event = NULL, *out_event = NULL;
 	switch_event_t e;
+	switch_mutex_t *mutex = NULL;
 
-	assert(ELOCK != NULL);
+	switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, EPOOL);
+	switch_thread_cond_create(&COND, EPOOL);	
+	switch_mutex_lock(mutex);
+
+	assert(QLOCK != NULL);
 	assert(EPOOL != NULL);
 
 	THREAD_RUNNING = 1;
 	while(THREAD_RUNNING == 1) {
-		switch_thread_cond_wait(COND, MUTEX);
-
-		if (THREAD_RUNNING == 1) {
-			switch_mutex_lock(ELOCK);
-			/* <LOCKED> -----------------------------------------------*/
-			EVENT_QUEUE_WORK = EVENT_QUEUE_HEAD;
-			EVENT_QUEUE_HEAD = NULL;
-			switch_mutex_unlock(ELOCK);
-			/* </LOCKED> -----------------------------------------------*/
-		}
+		switch_thread_cond_wait(COND, mutex);
+		switch_mutex_lock(QLOCK);
+		/* <LOCKED> -----------------------------------------------*/
+		EVENT_QUEUE_WORK = EVENT_QUEUE_HEAD;
+		EVENT_QUEUE_HEAD = NULL;
+		switch_mutex_unlock(QLOCK);
+		/* </LOCKED> -----------------------------------------------*/
 
 		for(event = EVENT_QUEUE_WORK; event;) {
 			out_event = event;
 			event = event->next;
 			out_event->next = NULL;
-			if (THREAD_RUNNING == 1) {
-				for(e = out_event->event;; e = SWITCH_EVENT_ALL) {
-					for(enp = EVENT_NODES[e]; enp; enp = enp->next) {
-						if ((enp->event == out_event->event || enp->event == SWITCH_EVENT_ALL) && (enp->subclass == out_event->subclass || enp->subclass < 0)) {
-							enp->callback(out_event);
-						}
-					}
-		
-					if (e == SWITCH_EVENT_ALL) {
-						break;
+			for(e = out_event->event;; e = SWITCH_EVENT_ALL) {
+				for(enp = EVENT_NODES[e]; enp; enp = enp->next) {
+					if ((enp->event == out_event->event || enp->event == SWITCH_EVENT_ALL) && (enp->subclass == out_event->subclass || enp->subclass < 0)) {
+						enp->callback(out_event);
 					}
 				}
+		
+				if (e == SWITCH_EVENT_ALL) {
+					break;
+				}
 			}
+
 			free(out_event->data);
 			free(out_event);
 		}
+
+	
 	}
 	THREAD_RUNNING = 0;
 	return NULL;
@@ -104,7 +109,7 @@ static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void
 
 SWITCH_DECLARE(char *) switch_event_name(switch_event_t event)
 {
-	assert(ELOCK != NULL);
+	assert(BLOCK != NULL);
 	assert(EPOOL != NULL);
 
 	return EVENT_NAMES[event];
@@ -114,10 +119,9 @@ SWITCH_DECLARE(switch_status) switch_event_shutdown(void)
 {
 	THREAD_RUNNING = -1;
 
-	switch_thread_cond_signal(COND);
-
+	switch_event_fire(SWITCH_EVENT_EVENT_SHUTDOWN, "Event System Shutting Down");
 	while(THREAD_RUNNING) {
-		switch_yield(100);
+		switch_yield(1000);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -133,20 +137,19 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool)
 	assert(pool != NULL);
 	EPOOL = pool;
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Eventing Engine.\n");
-	switch_mutex_init(&ELOCK, SWITCH_MUTEX_NESTED, EPOOL);
+	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, EPOOL);
+	switch_mutex_init(&QLOCK, SWITCH_MUTEX_NESTED, EPOOL);
 
-	switch_mutex_init(&MUTEX, SWITCH_MUTEX_NESTED, pool);
-	switch_thread_cond_create(&COND, pool);	
-	switch_mutex_lock(MUTEX);
-	
     switch_thread_create(&thread,
 						 thd_attr,
 						 switch_event_thread,
 						 NULL,
-						 pool
+						 EPOOL
 						 );
 
-
+	while(!THREAD_RUNNING) {
+		switch_yield(1000);
+	}
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -154,9 +157,9 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool)
 SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, int subclass, char *data)
 {
 
-	switch_event *new_event;
+	switch_event *new_event, *ep;
 
-	assert(ELOCK != NULL);
+	assert(BLOCK != NULL);
 	assert(EPOOL != NULL);
 
 	if (!(new_event = malloc(sizeof(*new_event)))) {
@@ -168,15 +171,17 @@ SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, i
 	new_event->subclass = subclass;
 	new_event->data = strdup(data ? data : "");
 	
-	switch_mutex_lock(ELOCK);
+	switch_mutex_lock(QLOCK);
 	/* <LOCKED> -----------------------------------------------*/
-	if (EVENT_QUEUE_HEAD) {
-		new_event->next = EVENT_QUEUE_HEAD;
+	for(ep = EVENT_QUEUE_HEAD; ep && ep->next; ep = ep->next);
+
+	if (ep) {
+		ep->next = new_event;
+	} else {
+		EVENT_QUEUE_HEAD = new_event;
 	}
-	EVENT_QUEUE_HEAD = new_event;
-	switch_mutex_unlock(ELOCK);
+	switch_mutex_unlock(QLOCK);
 	/* </LOCKED> -----------------------------------------------*/
-	
 	switch_thread_cond_signal(COND);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -185,11 +190,11 @@ SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, 
 {
 	switch_event_node *event_node;
 
-	assert(ELOCK != NULL);
+	assert(BLOCK != NULL);
 	assert(EPOOL != NULL);
 
 	if (event <= SWITCH_EVENT_ALL && (event_node = switch_core_alloc(EPOOL, sizeof(switch_event_node)))) {
-		switch_mutex_lock(ELOCK);
+		switch_mutex_lock(BLOCK);
 		/* <LOCKED> -----------------------------------------------*/
 		event_node->id = switch_core_strdup(EPOOL, id);
 		event_node->event = event;
@@ -199,7 +204,7 @@ SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, 
 			event_node->next = EVENT_NODES[event];
 		}
 		EVENT_NODES[event] = event_node;
-		switch_mutex_unlock(ELOCK);
+		switch_mutex_unlock(BLOCK);
 		/* </LOCKED> -----------------------------------------------*/
 		return SWITCH_STATUS_SUCCESS;
 	}

@@ -30,6 +30,7 @@
  *
  */
 #include <switch_console.h>
+#include <switch.h>
 
 static int switch_console_process(char *cmd)
 {
@@ -98,7 +99,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *fi
 		filep = p + 1;
 	}
 
-#ifdef vasprintf
+#ifdef HAVE_VASPRINTF
 	ret = vasprintf(&data, fmt, ap);
 #else
 	data = (char *) malloc(2048);

@@ -1549,16 +1549,6 @@ SWITCH_DECLARE(switch_status) switch_core_init(void)
 SWITCH_DECLARE(switch_status) switch_core_destroy(void)
 {
 
-	switch_event_shutdown();
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Closing Event Engine.\n");
-
-	if (runtime.memory_pool) {
-		apr_pool_destroy(runtime.memory_pool);
-		apr_terminate();
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unallocated memory pool.\n");
-
-	}
-
 #ifdef EMBED_PERL
 	if (runtime.my_perl) {
 		perl_destruct(runtime.my_perl);
@@ -1567,6 +1557,15 @@ SWITCH_DECLARE(switch_status) switch_core_destroy(void)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unallocated perl interpreter.\n");
 	}
 #endif
+
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Closing Event Engine.\n");
+	switch_event_shutdown();
+
+	if (runtime.memory_pool) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unallocating memory pool.\n");
+		apr_pool_destroy(runtime.memory_pool);
+		apr_terminate();
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
