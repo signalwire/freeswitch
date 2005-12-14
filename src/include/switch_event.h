@@ -58,6 +58,8 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool);
 SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, int subclass, char *data);
 SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, int subclass, switch_event_callback_t callback);
 SWITCH_DECLARE(char *) switch_event_name(switch_event_t event);
+SWITCH_DECLARE(char *) switch_event_subclass_name(int subclass);
+SWITCH_DECLARE(switch_status) switch_event_reserve_subclass(int subclass, char *name);
 #define switch_event_fire(event, data) switch_event_fire_subclass(event, 0, data);
 
 #endif

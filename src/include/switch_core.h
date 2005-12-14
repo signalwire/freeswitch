@@ -70,6 +70,7 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, size_t memory
 SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash **hash, switch_memory_pool *pool);
 SWITCH_DECLARE(switch_status) switch_core_hash_destroy(switch_hash *hash);
 SWITCH_DECLARE(switch_status) switch_core_hash_insert(switch_hash *hash, char *key, void *data);
+SWITCH_DECLARE(switch_status) switch_core_hash_insert_dup(switch_hash *hash, char *key, void *data);
 SWITCH_DECLARE(switch_status) switch_core_hash_delete(switch_hash *hash, char *key);
 SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash *hash, char *key);
 SWITCH_DECLARE(void) switch_core_launch_module_thread(void *(*func)(switch_thread *, void*), void *obj);

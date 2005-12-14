@@ -320,12 +320,12 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 
 SWITCH_DECLARE(void) loadable_module_shutdown(void)
 {
-	apr_hash_index_t* hi;
+	switch_hash_index_t* hi;
 	void *val;
 	switch_loadable_module *module;
 
-	for (hi = apr_hash_first(loadable_modules.pool, loadable_modules.module_hash); hi; hi = apr_hash_next(hi)) {
-		apr_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_hash_first(loadable_modules.pool, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module *) val;
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Checking %s\t", module->interface->module_name);
 		if (module->switch_module_shutdown) {
@@ -370,12 +370,12 @@ SWITCH_DECLARE(switch_api_interface *) loadable_module_get_api_interface(char *n
 
 SWITCH_DECLARE(int) loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array, int arraylen)
 {
-	apr_hash_index_t* hi;
+	switch_hash_index_t* hi;
 	void *val;
 	int i = 0;
 
-	for (hi = apr_hash_first(pool, loadable_modules.codec_hash); hi; hi = apr_hash_next(hi)) {
-		apr_hash_this(hi, NULL, NULL, &val);
+	for (hi = switch_hash_first(pool, loadable_modules.codec_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, NULL, NULL, &val);
 		array[i++] = val;
 		if (i > arraylen) {
 			break;

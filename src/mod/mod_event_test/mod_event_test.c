@@ -31,11 +31,20 @@
  */
 #include <switch.h>
 
+typedef enum {
+	MY_EVENT_UNDEF,
+	MY_EVENT_COOL
+} my_event_t;
+
 static const char modname[] = "mod_event_test";
 
 static void event_handler (switch_event *event)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE,"*** OK *** I got event [%s] subclass [%d] data [%s]\n", switch_event_name(event->event), event->subclass, event->data);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE,"*** OK *** I got event [%s] subclass [%d(%s)] data [%s]\n", 
+						  switch_event_name(event->event),
+						  event->subclass,
+						  switch_event_subclass_name(event->subclass),
+						  event->data);
 }
 
 static switch_loadable_module_interface event_test_module_interface = {
@@ -51,11 +60,17 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_inte
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &event_test_module_interface;
 
+	if (switch_event_reserve_subclass(MY_EVENT_COOL, "my cool event") != SWITCH_STATUS_SUCCESS) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't register subclass!");
+		return SWITCH_STATUS_GENERR;
+	}
 	switch_event_bind((char *)modname, SWITCH_EVENT_ALL, -1, event_handler);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
+
+//#define TORTURE_ME
 
 #ifdef TORTURE_ME
 SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
@@ -63,7 +78,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	for(;;) {
 		int x;
 		for(x = 0; x < 100; x++) {
-			switch_event_fire(SWITCH_EVENT_CUSTOM, "hello world");
+			switch_event_fire_subclass(SWITCH_EVENT_CUSTOM, MY_EVENT_COOL, "hello world");
 		}
 		switch_yield(100000);
 	}

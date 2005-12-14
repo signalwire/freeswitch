@@ -1316,6 +1316,12 @@ SWITCH_DECLARE(switch_status) switch_core_hash_destroy(switch_hash *hash)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status) switch_core_hash_insert_dup(switch_hash *hash, char *key, void *data)
+{
+	apr_hash_set(hash, switch_core_strdup(apr_hash_pool_get(hash), key), APR_HASH_KEY_STRING, data);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status) switch_core_hash_insert(switch_hash *hash, char *key, void *data)
 {
 	apr_hash_set(hash, key, APR_HASH_KEY_STRING, data);

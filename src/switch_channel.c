@@ -207,9 +207,7 @@ SWITCH_DECLARE(switch_status) switch_channel_set_variable(switch_channel *channe
 	assert(channel != NULL);
 	switch_core_hash_delete(channel->variables, varname);
 
-	if (value) {
-		switch_core_hash_insert(channel->variables, varname, switch_core_session_strdup(channel->session, value));
-	}
+	switch_core_hash_insert_dup(channel->variables, varname, switch_core_session_strdup(channel->session, value));
 
 	return SWITCH_STATUS_SUCCESS;
 }

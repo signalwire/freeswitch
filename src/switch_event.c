@@ -33,12 +33,12 @@
 
 static switch_event *EVENT_QUEUE_HEAD;
 static switch_event *EVENT_QUEUE_WORK;
+static switch_thread_cond_t *COND;
 static switch_event_node *EVENT_NODES[SWITCH_EVENT_ALL+1] = {NULL};
 static switch_mutex_t *BLOCK = NULL;
 static switch_mutex_t *QLOCK = NULL;
 static switch_memory_pool *EPOOL = NULL;
-switch_thread_cond_t *COND;
-
+static switch_hash *CUSTOM_HASH = NULL;
 static int THREAD_RUNNING = 0;
 
 /* make sure this is synced with the switch_event_t enum in switch_types.h
@@ -115,6 +115,46 @@ SWITCH_DECLARE(char *) switch_event_name(switch_event_t event)
 	return EVENT_NAMES[event];
 }
 
+SWITCH_DECLARE(char *) switch_event_subclass_name(int subclass)
+{
+	char *name;
+	char val[50] = "";
+	
+	assert(EPOOL != NULL);
+	assert(CUSTOM_HASH != NULL);
+
+	if (subclass <= 0) {
+		return "NONE";
+	}
+
+	snprintf(val, sizeof(val), "%d", subclass);
+	name = switch_core_hash_find(CUSTOM_HASH, val);
+	return name ? name : "UNRESERVED";
+}
+
+
+SWITCH_DECLARE(switch_status) switch_event_reserve_subclass(int subclass, char *name)
+{
+    char val[50] = "";
+
+	assert(EPOOL != NULL);
+	assert(CUSTOM_HASH != NULL);
+
+	if (subclass <= 0) {
+        return SWITCH_STATUS_NOTIMPL;
+    }
+
+	snprintf(val, sizeof(val), "%d", subclass);
+	if (switch_core_hash_find(CUSTOM_HASH, val)) {
+		return SWITCH_STATUS_INUSE;
+	}
+	
+	switch_core_hash_insert_dup(CUSTOM_HASH, val, switch_core_strdup(EPOOL, name));
+	
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 SWITCH_DECLARE(switch_status) switch_event_shutdown(void)
 {
 	THREAD_RUNNING = -1;
@@ -139,7 +179,7 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool)
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Eventing Engine.\n");
 	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, EPOOL);
 	switch_mutex_init(&QLOCK, SWITCH_MUTEX_NESTED, EPOOL);
-
+	switch_core_hash_init(&CUSTOM_HASH, EPOOL);
     switch_thread_create(&thread,
 						 thd_attr,
 						 switch_event_thread,
