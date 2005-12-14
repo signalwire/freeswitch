@@ -1,0 +1,91 @@
+%define name	@PACKAGE@
+%define version	@VERSION@
+%define release	1
+%define prefix	/usr
+
+Summary: IAX (Inter Asterisk eXchange) Library
+Name: %{name}
+Version: %{version}
+Release: %{release}
+Copyright: LGPL
+Group: Development/Libraries
+Source: %{name}-%{version}.tar.gz
+URL: http://www.linux-support.net/
+Distribution: RedHat Linux
+Vendor: Linux Support Services
+Packager: Rob Flynn <rob@linux-support.net>
+BuildRoot: /var/tmp/%{name}-%{version}-root
+
+%description
+Inter Asterisk eXchange, lovingly called IAX (pronounced: eeks), is the protocol used by the Asterisk PBX
+system for inter-asterisk-communication.  Other applications may use libiax to communicate with each other
+and other asterisk servers.  IAX is a high performance, feature rich protocol unrelated
+to SIP or H.323.  Its single-socket design allows it to interoperate with NAT and PAT
+masquerade firewalls.  It supports internationalization, remote dialplans, 
+and voice, HTML, image, DTMF, and video content.  For more information see
+http://www.gnophone.com.
+
+%package devel
+Summary: IAX (Inter Asterisk eXchange) Development Package
+Group: Development/Libraries
+Requires: iax
+
+%description devel
+Inter Asterisk eXchange, lovingly called IAX (pronounced: eeks), is the protocol used by the Asterisk PBX
+system for inter-asterisk-communication.  Other applications may use libiax to communicate with each other
+and other asterisk servers.  IAX is a high performance, feature rich protocol unrelated
+to SIP or H.323.  Its single-socket design allows it to interoperate with NAT and PAT
+masquerade firewalls.  It supports internationalization, remote dialplans, 
+and voice, HTML, image, DTMF, and video content.  For more information see
+http://www.gnophone.com.
+
+This package contains all of the development files that you will need in order to compile IAX applications.
+
+%prep
+
+%setup
+
+%build
+CFLAGS="$RPM_OPT_FLAGS" ./configure --prefix=%{prefix} --enable-autoupdate
+make
+
+%install
+rm -rf $RPM_BUILD_ROOT
+make prefix=$RPM_BUILD_ROOT%{prefix} install-strip
+
+%files
+%defattr(-,root,root)
+%doc NEWS COPYING AUTHORS README
+%{prefix}/lib
+
+%files devel
+%defattr(-,root,root)
+%{prefix}/include/iax
+%{prefix}/bin/*
+
+%clean
+rm -r $RPM_BUILD_ROOT
+
+%changelog
+* Tue Nov 13 2001 Rob Flynn <rob@linux-support.net> (0.2.2 release)
+- HTML Unlink requests
+- HTML Reject link requests
+- Text frames
+
+* Sat Oct 20 2001 Rob Flynn <rob@linux-support.net> (0.2.1 release)
+- More space for challenge in IAX
+- Fixed strncpy security bug
+- Accept larger packets
+- Handle out of order packets better
+- Implemented send_url
+- Added an iax-config script :-)
+
+* Wed Oct 10 2001 Rob Flynn <rob@linux-support.net> (0.2.0 release)
+- Initial public release
+
+%post
+
+%preun
+
+%postun
+

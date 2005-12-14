@@ -1,0 +1,8 @@
+Makefile.in
+Makefile
+.deps
+.libs
+iax.lo
+md5.lo
+libiax.la
+

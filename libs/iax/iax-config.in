@@ -1,0 +1,74 @@
+#!/bin/sh
+iax_libs="-L/usr/lib -liax"
+iax_cflags=""
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+exec_prefix_set=no
+
+usage="\
+Usage: iax-config [--prefix[=DIR]] [--exec-prefix[=DIR]] [--version] [--libs] [--cflags]"
+
+if test $# -eq 0; then
+      echo "${usage}" 1>&2
+      exit 1
+fi
+
+while test $# -gt 0; do
+  case "$1" in
+  -*=*) optarg=`echo "$1" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+  *) optarg= ;;
+  esac
+
+  case $1 in
+    --prefix=*)
+      prefix=$optarg
+      if test $exec_prefix_set = no ; then
+        exec_prefix=$optarg
+      fi
+      ;;
+    --prefix)
+      echo $prefix
+      ;;
+    --exec-prefix=*)
+      exec_prefix=$optarg
+      exec_prefix_set=yes
+      ;;
+    --exec-prefix)
+      echo $exec_prefix
+      ;;
+    --version)
+      echo @VERSION@
+      ;;
+    --cflags)
+#      if test ${prefix}/include/iax != /usr/include/iax ; then
+        includes=-I${prefix}/include/iax
+        for i in $iax_cflags ; do
+          if test $i = -I${prefix}/include ; then
+            includes=""
+          fi
+        done      
+#      fi
+      echo $includes $iax_cflags
+      ;;
+    --libs)
+      my_iax_libs=
+      libdirs=-L${exec_prefix}/lib
+      for i in $iax_libs ; do
+        if test $i != -L${exec_prefix}/lib ; then
+          if test -z "$my_iax_libs" ; then
+            my_iax_libs="$i"
+          else
+            my_iax_libs="$my_iax_libs $i"
+          fi
+        fi
+      done
+      echo $libdirs $my_iax_libs 
+      ;;
+    *)
+      echo "${usage}" 1>&2
+      exit 1
+      ;;
+  esac
+  shift
+done
