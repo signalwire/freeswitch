@@ -16,7 +16,7 @@ dnl Check header files
 AC_HEADER_STDC
 
 AC_SUBST(LIBS)
-
+AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
 AC_ARG_ENABLE(snomhack,     [  --enable-snomhack       Use slower memset for SNOM phoneem ],,enable_snomhack=no)
 AC_ARG_ENABLE(extreme_debug,     [  --enable-extreme-debug  Compile with extreme debugging code enabled ],,enable_extreme_debug=no)
 AC_ARG_ENABLE(newjb,     [  --enable-newjb       Use new jitter buffer  ], [CFLAGS="$CFLAGS -DNEWJB"])
