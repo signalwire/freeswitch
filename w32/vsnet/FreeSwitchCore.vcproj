@@ -215,6 +215,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_event.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_loadable_module.c"
 				>
 			</File>
@@ -258,6 +262,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_core.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_event.h"
 				>
 			</File>
 			<File
