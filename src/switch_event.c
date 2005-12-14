@@ -31,7 +31,7 @@
  */
 #include <switch_event.h>
 
-static switch_event_node *EVENT_NODES[SWITCH_EVENT_ALL+1] = {};
+static switch_event_node *EVENT_NODES[SWITCH_EVENT_ALL+1] = {NULL};
 static switch_mutex_t *ELOCK = NULL;
 static switch_memory_pool *EPOOL = NULL;
 

@@ -43,6 +43,7 @@ src/include/switch_types.h \
 src/include/switch_utils.h \
 src/include/switch_caller.h \
 src/include/switch_buffer.h \
+src/include/switch_event.h \
 src/switch_buffer.c \
 src/switch_caller.c \
 src/switch_channel.c \
