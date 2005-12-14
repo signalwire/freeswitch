@@ -135,8 +135,10 @@ typedef enum {
 	SWITCH_EVENT_ALL
 } switch_event_t;
 
+typedef struct switch_event switch_event;
 typedef struct switch_event_node switch_event_node;
-typedef void (*switch_event_callback_t)(switch_event_t, int, char *);
+typedef void (*switch_event_callback_t)(switch_event *);
+typedef apr_threadattr_t switch_threadattr_t;
 typedef struct switch_loadable_module switch_loadable_module;
 typedef struct switch_frame switch_frame;
 typedef struct switch_channel switch_channel;
@@ -275,6 +277,8 @@ typedef apr_hash_index_t switch_hash_index_t;
 #define switch_hash_first apr_hash_first
 #define switch_hash_next apr_hash_next
 #define switch_hash_this apr_hash_this
+#define switch_threadattr_create apr_threadattr_create
+#define switch_threadattr_detach_set apr_threadattr_detach_set
 
 #define SWITCH_FOPEN_READ APR_FOPEN_READ
 #define SWITCH_FOPEN_WRITE APR_FOPEN_WRITE

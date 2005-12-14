@@ -108,7 +108,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 			*end = '\0';
 			end--;
 		} else if ((end = strchr(*var, '\n'))) {
-			if (*end - 1 == '\r') {
+			if (*(end - 1) == '\r') {
 				end--;
 			}
 			*end = '\0';

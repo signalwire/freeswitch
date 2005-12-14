@@ -1350,9 +1350,9 @@ SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash *hash, char *key)
 SWITCH_DECLARE(void) switch_core_launch_module_thread(switch_thread_start_t func, void *obj)
 {
 	switch_thread *thread;
-	apr_threadattr_t *thd_attr;;
-	apr_threadattr_create(&thd_attr, runtime.memory_pool);
-	apr_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_t *thd_attr;;
+	switch_threadattr_create(&thd_attr, runtime.memory_pool);
+	switch_threadattr_detach_set(thd_attr, 1);
 
 	switch_thread_create(&thread,
 					  thd_attr,
@@ -1388,9 +1388,9 @@ static void * SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *threa
 SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session *session)
 {
 	switch_thread *thread;
-	apr_threadattr_t *thd_attr;;
-	apr_threadattr_create(&thd_attr, session->pool);
-	apr_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_t *thd_attr;;
+	switch_threadattr_create(&thd_attr, session->pool);
+	switch_threadattr_detach_set(thd_attr, 1);
 
 	if (switch_thread_create(&thread,
 						  thd_attr,
@@ -1406,9 +1406,9 @@ SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session *sess
 SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *session, switch_thread_start_t func, void *obj)
 {
 	switch_thread *thread;
-	apr_threadattr_t *thd_attr;;
-	apr_threadattr_create(&thd_attr, session->pool);
-	apr_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_t *thd_attr;;
+	switch_threadattr_create(&thd_attr, session->pool);
+	switch_threadattr_detach_set(thd_attr, 1);
 
 	switch_thread_create(&thread,
 					  thd_attr,
@@ -1548,6 +1548,10 @@ SWITCH_DECLARE(switch_status) switch_core_init(void)
 
 SWITCH_DECLARE(switch_status) switch_core_destroy(void)
 {
+
+	switch_event_shutdown();
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Closing Event Engine.\n");
+
 	if (runtime.memory_pool) {
 		apr_pool_destroy(runtime.memory_pool);
 		apr_terminate();

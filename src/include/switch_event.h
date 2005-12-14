@@ -38,6 +38,13 @@ extern "C" {
 
 #include <switch.h>
 
+struct switch_event {
+	switch_event_t event;
+	int subclass;
+	char *data;
+	struct switch_event *next;
+};
+
 struct switch_event_node {
 	char *id;
 	switch_event_t event;
@@ -46,6 +53,7 @@ struct switch_event_node {
 	struct switch_event_node *next;
 };
 
+SWITCH_DECLARE(switch_status) switch_event_shutdown(void);
 SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool);
 SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, int subclass, char *data);
 SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, int subclass, switch_event_callback_t callback);

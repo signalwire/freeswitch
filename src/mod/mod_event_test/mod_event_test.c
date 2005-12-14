@@ -33,9 +33,9 @@
 
 static const char modname[] = "mod_event_test";
 
-static void event_handler (switch_event_t event, int subclass, char *data)
+static void event_handler (switch_event *event)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE,"*** OK *** I got event [%s] subclass [%d] data [%s]\n", switch_event_name(event), subclass, data);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE,"*** OK *** I got event [%s] subclass [%d] data [%s]\n", switch_event_name(event->event), event->subclass, event->data);
 }
 
 static switch_loadable_module_interface event_test_module_interface = {
