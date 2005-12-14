@@ -37,6 +37,8 @@
 #include "pablio.h"
 #include <string.h>
 
+#define MY_EVENT_RINGING 100
+
 static const char modname[] = "mod_portaudio";
 
 static switch_memory_pool *module_pool;
@@ -244,6 +246,9 @@ static switch_status channel_on_transmit(switch_core_session *session)
 	engage_device(tech_pvt);
 
 	while(switch_channel_get_state(channel) == CS_TRANSMIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
+		char buf[512];
+		snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
+		switch_event_fire_subclass(SWITCH_EVENT_CUSTOM, MY_EVENT_RINGING, buf);
 		if (switch_time_now() - last >= waitsec) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
 			last = switch_time_now();
@@ -487,6 +492,8 @@ static const switch_loadable_module_interface channel_module_interface = {
 };
 
 
+
+
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
@@ -500,6 +507,11 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	switch_core_hash_init(&globals.call_hash, module_pool);
 
 	dump_info();
+
+	if (switch_event_reserve_subclass(MY_EVENT_RINGING, "SoundCard Ringing") != SWITCH_STATUS_SUCCESS) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't register subclass!");
+		return SWITCH_STATUS_GENERR;
+	}
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &channel_module_interface;
