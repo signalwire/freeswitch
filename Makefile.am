@@ -15,6 +15,7 @@ endif
 
 if ISMAC
 SOLINK=-dynamic -bundle -undefined suppress -force_flat_namespace
+AM_CFLAGS += -DMACOSX -DBIGENDIAN
 else
 SOLINK=-shared -Xlinker -x
 endif
@@ -84,7 +85,7 @@ freeswitch_LDFLAGS = -static -lfreeswitch
 
 modules: $(NAME)
 	@echo making modules
-	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
+	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
 
 modclean:
 	@cd src/mod && for i in [a-z]* ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" make -f $(PWD)/generic_mod.mk -C $$i clean || exit 1; done

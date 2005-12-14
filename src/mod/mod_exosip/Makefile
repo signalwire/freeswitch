@@ -1,7 +1,6 @@
 #CFLAGS += -I/usr/src/common/src
 LDFLAGS += -leXosip2  -ljrtp4c
 
-OSARCH=$(shell uname -s)
 ifeq ($(OSARCH),Darwin)
 	LINKER=g++
 else

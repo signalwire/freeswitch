@@ -629,9 +629,11 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 		return SWITCH_STATUS_FALSE;
 	}
 
+#ifndef BIGENDIAN
 	if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
 		switch_swap_linear(frame->data, (int)frame->datalen / 2);
 	}
+#endif
 	iax_send_voice(tech_pvt->iax_session, tech_pvt->codec, frame->data, (int)frame->datalen, tech_pvt->write_codec.implementation->samples_per_frame);
 
 	return SWITCH_STATUS_SUCCESS;

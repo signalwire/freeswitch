@@ -127,6 +127,9 @@ void playback_function(switch_core_session *session, char *data)
 		}
 
 		write_frame.datalen = ilen;
+#ifdef BIGENDIAN
+		switch_swap_linear(write_frame.data, (int)write_frame.datalen / 2);
+#endif
 		if (switch_core_session_write_frame(session, &write_frame, -1) != SWITCH_STATUS_SUCCESS) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Write\n");
 			break;
