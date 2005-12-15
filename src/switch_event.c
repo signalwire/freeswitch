@@ -64,22 +64,25 @@ static int switch_events_match(switch_event *event, switch_event_node *node)
 
 	
 	if (node->event == SWITCH_EVENT_ALL) {
-		return 1;
+		match++;
+
+		if (!node->subclass) {
+			return match;
+		}
 	}
 
-	if (event->event == node->event) {
+	if (match || event->event == node->event) {
 
-		if (node->subclass) {
-			match = (event->subclass && strstr(event->subclass->name, node->subclass->name));
-		} else if (event->subclass) {
+		if (event->subclass && node->subclass) {
+			match = strstr(event->subclass->name, node->subclass->name) ? 1 : 0;
+		} else if (event->subclass && !node->subclass) {
+			match = 1;
+		} else {
 			match = 0;
 		}
-		
 	}
 
-
 	return match;
-
 }
 
 static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void *obj) 

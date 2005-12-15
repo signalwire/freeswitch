@@ -61,7 +61,11 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_inte
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}
-	switch_event_bind((char *)modname, SWITCH_EVENT_ALL, NULL, event_handler, NULL);
+
+	if (switch_event_bind((char *)modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

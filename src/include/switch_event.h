@@ -60,6 +60,8 @@ struct switch_event_node {
 	struct switch_event_node *next;
 };
 
+#define SWITCH_EVENT_SUBCLASS_ANY NULL
+
 SWITCH_DECLARE(switch_status) switch_event_shutdown(void);
 SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool);
 SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, char *subclass_name, char *data);
