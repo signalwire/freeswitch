@@ -446,9 +446,10 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 	switch_clear_flag(tech_pvt, TFLAG_VOICE);
+	switch_thread_cond_signal(tech_pvt->cond);
 	switch_channel_hangup(channel);
 	switch_thread_cond_signal(tech_pvt->cond);
-
+	
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
 	
@@ -927,13 +928,13 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 		    case IAX_EVENT_VOICE:
 				if (tech_pvt && (tech_pvt->read_frame.datalen = iaxevent->datalen)) {
 					int bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-					int frames = (tech_pvt->read_frame.datalen / bytes);
+					int frames = (int)(tech_pvt->read_frame.datalen / bytes);
 					tech_pvt->read_frame.samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 					memcpy(tech_pvt->read_frame.data, iaxevent->data, iaxevent->datalen);
 					/* wake up the i/o thread*/
 					switch_set_flag(tech_pvt, TFLAG_VOICE);
 					switch_thread_cond_signal(tech_pvt->cond);
-				}
+				}				
 				break;
 		    case IAX_EVENT_TRANSFER:
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Call transfer occurred.\n");

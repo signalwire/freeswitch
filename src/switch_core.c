@@ -1060,12 +1060,14 @@ SWITCH_DECLARE(switch_channel *) switch_core_session_get_channel(switch_core_ses
 
 static void switch_core_standard_on_init(switch_core_session *session)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard INIT\n");
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard INIT %s\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_hangup(switch_core_session *session)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard HANGUP\n");
+	
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard HANGUP %s\n", switch_channel_get_name(session->channel));
+
 }
 
 static void switch_core_standard_on_ring(switch_core_session *session)
@@ -1073,6 +1075,8 @@ static void switch_core_standard_on_ring(switch_core_session *session)
 	switch_dialplan_interface *dialplan_interface;
 	switch_caller_profile *caller_profile;
 	switch_caller_extension *extension;
+
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard RING %s\n", switch_channel_get_name(session->channel));
 
 	if (!(caller_profile = switch_channel_get_caller_profile(session->channel))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't get profile!\n");
@@ -1087,9 +1091,7 @@ static void switch_core_standard_on_ring(switch_core_session *session)
 			}
 		}
 	}
-
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard RING\n");
-}
+ }
 
 static void switch_core_standard_on_execute(switch_core_session *session)
 {

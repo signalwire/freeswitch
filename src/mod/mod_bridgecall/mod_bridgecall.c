@@ -161,9 +161,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 	caller_channel = switch_core_session_get_channel(session);
 	assert(caller_channel != NULL);
 
-	switch_channel_answer(caller_channel);
 
-	
 	strncpy(chan_type, data, sizeof(chan_type));
 
 	if ((chan_data = strchr(chan_type, '/'))) {
@@ -226,6 +224,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 		}
 
 		if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+			switch_channel_answer(caller_channel);
 			switch_core_session_launch_thread(session, audio_bridge_thread, (void *) &other_audio_thread);
 			audio_bridge_thread(NULL, (void *) &this_audio_thread);
 			switch_channel_hangup(peer_channel);

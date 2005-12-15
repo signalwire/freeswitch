@@ -214,7 +214,7 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_channel_hangup(channel);
+	switch_clear_flag(tech_pvt, TFLAG_IO);
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
 	
@@ -246,12 +246,12 @@ static switch_status channel_on_transmit(switch_core_session *session)
 	engage_device(tech_pvt);
 
 	while(switch_channel_get_state(channel) == CS_TRANSMIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
+		if (switch_time_now() - last >= waitsec) {
 		char buf[512];
 		snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
 		switch_event_fire_subclass(SWITCH_EVENT_CUSTOM, MY_EVENT_RINGING, buf);
-		if (switch_time_now() - last >= waitsec) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
-			last = switch_time_now();
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s\n", buf);
+		last = switch_time_now();
 		}
 		switch_yield(50000);
 	}
@@ -363,6 +363,10 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if	((samples = ReadAudioStream(tech_pvt->audio_in, tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_frame))) {
 		tech_pvt->read_frame.datalen = samples * 2;
 		tech_pvt->read_frame.samples = samples;
@@ -389,12 +393,6 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 	if(!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_FALSE;
 	}
-/*
-	if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
-		switch_swap_linear(frame->data, (int)frame->datalen / 2);
-	}
-*/
-	
 
 	WriteAudioStream(tech_pvt->audio_out, (short *)frame->data, (int)(frame->datalen / sizeof(SAMPLE)));
 	//XXX send voice
