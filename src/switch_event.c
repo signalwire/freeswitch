@@ -260,7 +260,12 @@ SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, 
 
 	if (subclass_name) {
 		if (!(subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
-			return SWITCH_STATUS_FALSE;
+			if (!(subclass = switch_core_alloc(EPOOL, sizeof(*subclass)))) {
+				return SWITCH_STATUS_MEMERR;
+			} else {
+				subclass->owner = switch_core_strdup(EPOOL, id);
+				subclass->name = switch_core_strdup(EPOOL, subclass_name);
+			}
 		}
 	}
 
