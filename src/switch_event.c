@@ -56,9 +56,35 @@ static char *EVENT_NAMES[] = {
 	"ALL"
 };
 
+static struct switch_event_subclass default_subclass = {__FILE__, "NONE"};
+
+static int switch_events_match(switch_event *event, switch_event_node *node)
+{
+	int match = 0;
+
+	
+	if (node->event == SWITCH_EVENT_ALL) {
+		return 1;
+	}
+
+	if (event->event == node->event) {
+
+		if (node->subclass) {
+			match = (event->subclass && strstr(event->subclass->name, node->subclass->name));
+		} else if (event->subclass) {
+			match = 0;
+		}
+		
+	}
+
+
+	return match;
+
+}
+
 static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void *obj) 
 {
-	switch_event_node *enp;
+	switch_event_node *node;
 	switch_event *event = NULL, *out_event = NULL;
 	switch_event_t e;
 	switch_mutex_t *mutex = NULL;
@@ -85,9 +111,13 @@ static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void
 			event = event->next;
 			out_event->next = NULL;
 			for(e = out_event->event;; e = SWITCH_EVENT_ALL) {
-				for(enp = EVENT_NODES[e]; enp; enp = enp->next) {
-					if ((enp->event == out_event->event || enp->event == SWITCH_EVENT_ALL) && (enp->subclass == out_event->subclass || enp->subclass < 0)) {
-						enp->callback(out_event);
+				for(node = EVENT_NODES[e]; node; node = node->next) {
+					if (switch_events_match(out_event, node)) {
+						out_event->user_data = node->user_data;
+						if (!out_event->subclass) {
+							out_event->subclass = &default_subclass;
+						}
+						node->callback(out_event);
 					}
 				}
 		
@@ -107,6 +137,7 @@ static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void
 }
 
 
+
 SWITCH_DECLARE(char *) switch_event_name(switch_event_t event)
 {
 	assert(BLOCK != NULL);
@@ -115,41 +146,26 @@ SWITCH_DECLARE(char *) switch_event_name(switch_event_t event)
 	return EVENT_NAMES[event];
 }
 
-SWITCH_DECLARE(char *) switch_event_subclass_name(int subclass)
+SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name)
 {
-	char *name;
-	char val[50] = "";
-	
-	assert(EPOOL != NULL);
-	assert(CUSTOM_HASH != NULL);
 
-	if (subclass <= 0) {
-		return "NONE";
-	}
-
-	snprintf(val, sizeof(val), "%d", subclass);
-	name = switch_core_hash_find(CUSTOM_HASH, val);
-	return name ? name : "UNRESERVED";
-}
-
-
-SWITCH_DECLARE(switch_status) switch_event_reserve_subclass(int subclass, char *name)
-{
-    char val[50] = "";
+	switch_event_subclass *subclass;
 
 	assert(EPOOL != NULL);
 	assert(CUSTOM_HASH != NULL);
 
-	if (subclass <= 0) {
-        return SWITCH_STATUS_NOTIMPL;
-    }
-
-	snprintf(val, sizeof(val), "%d", subclass);
-	if (switch_core_hash_find(CUSTOM_HASH, val)) {
+	if (switch_core_hash_find(CUSTOM_HASH, subclass_name)) {
 		return SWITCH_STATUS_INUSE;
 	}
+
+	if (!(subclass = switch_core_alloc(EPOOL, sizeof(*subclass)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	subclass->owner = switch_core_strdup(EPOOL, owner);
+	subclass->name = switch_core_strdup(EPOOL, subclass_name);
 	
-	switch_core_hash_insert_dup(CUSTOM_HASH, val, switch_core_strdup(EPOOL, name));
+	switch_core_hash_insert_dup(CUSTOM_HASH, subclass->name, subclass);
 	
 	return SWITCH_STATUS_SUCCESS;
 
@@ -173,7 +189,6 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool)
     switch_threadattr_create(&thd_attr, pool);
     switch_threadattr_detach_set(thd_attr, 1);
 
-
 	assert(pool != NULL);
 	EPOOL = pool;
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Eventing Engine.\n");
@@ -194,16 +209,21 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool)
 
 }
 
-SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, int subclass, char *data)
+SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, char *subclass_name, char *data)
 {
 
 	switch_event *new_event, *ep;
+	switch_event_subclass *subclass = NULL;
 
 	assert(BLOCK != NULL);
 	assert(EPOOL != NULL);
 
 	if (!(new_event = malloc(sizeof(*new_event)))) {
 		return SWITCH_STATUS_MEMERR;
+	}
+
+	if (subclass_name) {
+		subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name);
 	}
 
 	memset(new_event, 0, sizeof(*new_event));
@@ -222,16 +242,24 @@ SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, i
 	}
 	switch_mutex_unlock(QLOCK);
 	/* </LOCKED> -----------------------------------------------*/
+
 	switch_thread_cond_signal(COND);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, int subclass, switch_event_callback_t callback)
+SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, char *subclass_name, switch_event_callback_t callback, void *user_data)
 {
 	switch_event_node *event_node;
+	switch_event_subclass *subclass = NULL;
 
 	assert(BLOCK != NULL);
 	assert(EPOOL != NULL);
+
+	if (subclass_name) {
+		if (!(subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
+			return SWITCH_STATUS_FALSE;
+		}
+	}
 
 	if (event <= SWITCH_EVENT_ALL && (event_node = switch_core_alloc(EPOOL, sizeof(switch_event_node)))) {
 		switch_mutex_lock(BLOCK);
@@ -240,9 +268,12 @@ SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, 
 		event_node->event = event;
 		event_node->subclass = subclass;
 		event_node->callback = callback;
+		event_node->user_data = user_data;
+
 		if (EVENT_NODES[event]) {
 			event_node->next = EVENT_NODES[event];
 		}
+
 		EVENT_NODES[event] = event_node;
 		switch_mutex_unlock(BLOCK);
 		/* </LOCKED> -----------------------------------------------*/

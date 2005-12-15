@@ -37,7 +37,7 @@
 #include "pablio.h"
 #include <string.h>
 
-#define MY_EVENT_RINGING 100
+#define MY_EVENT_RINGING "portaudio::ringing"
 
 static const char modname[] = "mod_portaudio";
 
@@ -506,7 +506,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 
 	dump_info();
 
-	if (switch_event_reserve_subclass(MY_EVENT_RINGING, "SoundCard Ringing") != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_reserve_subclass(MY_EVENT_RINGING) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}

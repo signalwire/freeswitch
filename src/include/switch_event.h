@@ -38,28 +38,34 @@ extern "C" {
 
 #include <switch.h>
 
+struct switch_event_subclass {
+	char *owner;
+	char *name;
+};
+
 struct switch_event {
 	switch_event_t event;
-	int subclass;
+	switch_event_subclass *subclass;
 	char *data;
+	void *user_data;
 	struct switch_event *next;
 };
 
 struct switch_event_node {
 	char *id;
 	switch_event_t event;
-	int subclass;
+	switch_event_subclass *subclass;
 	switch_event_callback_t callback;
+	void *user_data;
 	struct switch_event_node *next;
 };
 
 SWITCH_DECLARE(switch_status) switch_event_shutdown(void);
 SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool);
-SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, int subclass, char *data);
-SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, int subclass, switch_event_callback_t callback);
+SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, char *subclass_name, char *data);
+SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, char *subclass_name, switch_event_callback_t callback, void *user_data);
 SWITCH_DECLARE(char *) switch_event_name(switch_event_t event);
-SWITCH_DECLARE(char *) switch_event_subclass_name(int subclass);
-SWITCH_DECLARE(switch_status) switch_event_reserve_subclass(int subclass, char *name);
-#define switch_event_fire(event, data) switch_event_fire_subclass(event, 0, data);
-
+SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name);
+#define switch_event_fire(event, data) switch_event_fire_subclass(event, NULL, data);
+#define switch_event_reserve_subclass(subclass_name) switch_event_reserve_subclass_detailed(__FILE__, subclass_name)
 #endif

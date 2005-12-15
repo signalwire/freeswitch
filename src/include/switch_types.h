@@ -139,6 +139,7 @@ typedef enum {
 } switch_event_t;
 
 typedef struct switch_event switch_event;
+typedef struct switch_event_subclass switch_event_subclass;
 typedef struct switch_event_node switch_event_node;
 typedef void (*switch_event_callback_t)(switch_event *);
 typedef apr_threadattr_t switch_threadattr_t;

@@ -31,19 +31,14 @@
  */
 #include <switch.h>
 
-typedef enum {
-	MY_EVENT_UNDEF,
-	MY_EVENT_COOL
-} my_event_t;
-
 static const char modname[] = "mod_event_test";
 
 static void event_handler (switch_event *event)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE,"*** OK *** I got event [%s] subclass [%d(%s)] data [%s]\n", 
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE,"\n*** EVENT ***\nEventName: %s\nSubclassOwner: %s\nSubclassName: %s\nEventData: %s\n\n", 
 						  switch_event_name(event->event),
-						  event->subclass,
-						  switch_event_subclass_name(event->subclass),
+						  event->subclass->owner,
+						  event->subclass->name,
 						  event->data);
 }
 
@@ -56,15 +51,17 @@ static switch_loadable_module_interface event_test_module_interface = {
 	/*.application_interface*/	NULL
 };
 
+#define MY_EVENT_COOL "test::cool"
+
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_interface **interface, char *filename) {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &event_test_module_interface;
 
-	if (switch_event_reserve_subclass(MY_EVENT_COOL, "my cool event") != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_reserve_subclass(MY_EVENT_COOL) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}
-	switch_event_bind((char *)modname, SWITCH_EVENT_ALL, -1, event_handler);
+	switch_event_bind((char *)modname, SWITCH_EVENT_ALL, NULL, event_handler, NULL);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
