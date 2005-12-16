@@ -602,7 +602,7 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 			if (switch_test_flag(tech_pvt, TFLAG_IO)) {
 				switch_clear_flag(tech_pvt, TFLAG_VOICE);
 				if(!tech_pvt->read_frame.datalen) {
-					break;
+					continue;
 				}
 						
 				*frame = &tech_pvt->read_frame;

@@ -416,12 +416,12 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_mutex_lock(globals.device_lock);
+	//switch_mutex_lock(globals.device_lock);
 	if (tech_pvt->audio_out) {
 		WriteAudioStream(tech_pvt->audio_out, (short *)frame->data, (int)(frame->datalen / sizeof(SAMPLE)));
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	switch_mutex_unlock(globals.device_lock);
+	//switch_mutex_unlock(globals.device_lock);
 
 	return status;
 	
