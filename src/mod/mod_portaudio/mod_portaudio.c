@@ -45,6 +45,7 @@ static switch_memory_pool *module_pool;
 //static int running = 1;
 
 #define SAMPLE_TYPE  paInt16
+//#define SAMPLE_TYPE  paFloat32
 typedef short SAMPLE;
 
 typedef enum {
@@ -73,6 +74,7 @@ static struct {
 	int outdev;
 	int call_id;
 	switch_hash *call_hash;
+	switch_mutex_t *device_lock;
 } globals;
 
 struct private_object {
@@ -178,6 +180,20 @@ static switch_status channel_on_execute(switch_core_session *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void deactivate_audio_device(struct private_object *tech_pvt)
+{
+	switch_mutex_lock(globals.device_lock);
+	if (tech_pvt->audio_in) {
+		CloseAudioStream(tech_pvt->audio_in);
+		tech_pvt->audio_in = NULL;
+	}
+	if (tech_pvt->audio_out) {
+		CloseAudioStream(tech_pvt->audio_out);
+		tech_pvt->audio_out = NULL;
+	}
+	switch_mutex_unlock(globals.device_lock);
+}
+
 static switch_status channel_on_hangup(switch_core_session *session)
 {
 	switch_channel *channel = NULL;
@@ -195,8 +211,7 @@ static switch_status channel_on_hangup(switch_core_session *session)
 	switch_core_codec_destroy(&tech_pvt->read_codec);
 	switch_core_codec_destroy(&tech_pvt->write_codec);
 
-	CloseAudioStream(tech_pvt->audio_in);
-	CloseAudioStream(tech_pvt->audio_out);
+	deactivate_audio_device(tech_pvt);
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
@@ -215,6 +230,9 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 	assert(tech_pvt != NULL);
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
+	deactivate_audio_device(tech_pvt);
+	switch_channel_hangup(channel);
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
 	
@@ -290,7 +308,7 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
-			snprintf(name, sizeof(name), "PortAudio/%s-%04x", caller_profile->destination_number, rand() & 0xffff);
+			snprintf(name, sizeof(name), "PortAudio/%s-%04x", caller_profile->destination_number ? caller_profile->destination_number : modname, rand() & 0xffff);
 			switch_channel_set_name(channel, name);
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
@@ -357,6 +375,8 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
 	int samples;
+	switch_status status = SWITCH_STATUS_FALSE;
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -367,23 +387,25 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if	((samples = ReadAudioStream(tech_pvt->audio_in, tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_frame))) {
+	
+	switch_mutex_lock(globals.device_lock);
+	if	(tech_pvt->audio_in && 
+		 (samples = ReadAudioStream(tech_pvt->audio_in, tech_pvt->read_frame.data, tech_pvt->read_codec.implementation->samples_per_frame))) {
 		tech_pvt->read_frame.datalen = samples * 2;
 		tech_pvt->read_frame.samples = samples;
 		*frame = &tech_pvt->read_frame;
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
 	}
+	switch_mutex_unlock(globals.device_lock);
 
-
-	return SWITCH_STATUS_FALSE;
+	return status;
 }
 
 static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags)
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
-	//switch_frame *pframe;
-
+	switch_status status = SWITCH_STATUS_FALSE;
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -394,10 +416,14 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 		return SWITCH_STATUS_FALSE;
 	}
 
-	WriteAudioStream(tech_pvt->audio_out, (short *)frame->data, (int)(frame->datalen / sizeof(SAMPLE)));
-	//XXX send voice
+	switch_mutex_lock(globals.device_lock);
+	if (tech_pvt->audio_out) {
+		WriteAudioStream(tech_pvt->audio_out, (short *)frame->data, (int)(frame->datalen / sizeof(SAMPLE)));
+		status = SWITCH_STATUS_SUCCESS;
+	}
+	switch_mutex_unlock(globals.device_lock);
 
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 	
 }
 
@@ -503,7 +529,8 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	Pa_Initialize();
 	load_config();
 	switch_core_hash_init(&globals.call_hash, module_pool);
-
+	switch_mutex_init(&globals.device_lock, SWITCH_MUTEX_NESTED, module_pool);
+	
 	dump_info();
 
 	if (switch_event_reserve_subclass(MY_EVENT_RINGING) != SWITCH_STATUS_SUCCESS) {
@@ -552,7 +579,7 @@ static switch_status load_config(void)
 				if (*val == '#') {
 					globals.outdev = atoi(val+1);
 				} else {
-					globals.outdev = get_dev_by_name(val, 1);
+					globals.outdev = get_dev_by_name(val, 0);
 				}
 			}
 		}
@@ -703,14 +730,18 @@ static switch_status engage_device(struct private_object *tech_pvt)
 		tech_pvt->indev = globals.indev;
 		tech_pvt->outdev = globals.outdev;
 		
+		switch_mutex_lock(globals.device_lock);
 		if ((tech_pvt->err = OpenAudioStream( &tech_pvt->audio_in, sample_rate, SAMPLE_TYPE, PABLIO_READ | PABLIO_MONO, tech_pvt->indev, -1)) == paNoError) {
 			if ((tech_pvt->err = OpenAudioStream(&tech_pvt->audio_out, sample_rate, SAMPLE_TYPE, PABLIO_WRITE | PABLIO_MONO, -1, tech_pvt->outdev)) != paNoError) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio out!\n");
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio out [%d]!\n", tech_pvt->outdev);
 				CloseAudioStream(tech_pvt->audio_in);
+				tech_pvt->audio_in = NULL;
 			}
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio in!\n");		
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio in [%d]!\n", tech_pvt->indev);		
 		}
+		switch_mutex_unlock(globals.device_lock);
+
 		if (tech_pvt->err == paNoError) {
 			snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", globals.call_id++);
 			switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);	
@@ -759,7 +790,7 @@ static switch_status place_call(char *dest, char *out, size_t outlen)
 																  dest))) {
 			char name[128];
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
-			snprintf(name, sizeof(name), "PortAudio/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
+			snprintf(name, sizeof(name), "PortAudio/%s-%04x", tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : modname, rand() & 0xffff);
 			switch_channel_set_name(channel, name);
 		}
 		tech_pvt->session = session;
@@ -866,10 +897,10 @@ static void print_info(struct private_object *tech_pvt, char *out, size_t outlen
 
 	snprintf(out, outlen, "CALL %s\t%s\t%s\t%s\t%s\n",
 									tech_pvt->call_id,
-									tech_pvt->caller_profile->caller_id_name,
-									tech_pvt->caller_profile->caller_id_number,
-									tech_pvt->caller_profile->destination_number,
-									switch_channel_get_name(channel));		
+			 tech_pvt->caller_profile->caller_id_name ? tech_pvt->caller_profile->caller_id_name : "n/a",
+			 tech_pvt->caller_profile->caller_id_number ? tech_pvt->caller_profile->caller_id_number : "n/a",
+			 tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : "n/a",
+			 switch_channel_get_name(channel));
 
 }
 

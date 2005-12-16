@@ -104,6 +104,14 @@ static int handle_SIGPIPE(int sig)
 	return 0;
 }
 
+#ifdef TRAP_BUS
+static int handle_SIGBUS(int sig)
+{
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Sig BUS!\n");
+	return 0;
+}
+#endif
+
 /* no ctl-c mofo */
 static int handle_SIGINT(int sig)
 {
@@ -1083,7 +1091,7 @@ static void switch_core_standard_on_ring(switch_core_session *session)
 		switch_channel_set_state(session->channel, CS_HANGUP);
 	} else {
 		if (!(dialplan_interface = loadable_module_get_dialplan_interface(caller_profile->dialplan))) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't get dialplan %s!\n", caller_profile->dialplan);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't get dialplan [%s]!\n", caller_profile->dialplan);
 			switch_channel_set_state(session->channel, CS_HANGUP);
 		} else {
 			if ((extension = dialplan_interface->hunt_function(session))) {
@@ -1547,6 +1555,9 @@ SWITCH_DECLARE(switch_status) switch_core_init(void)
 	(void) signal(SIGINT,(void *) handle_SIGINT);
 #ifdef SIGPIPE
 	(void) signal(SIGPIPE,(void *) handle_SIGPIPE);
+#endif
+#ifdef TRAP_BUS
+	(void) signal(SIGBUS,(void *) handle_SIGBUS);
 #endif
 	time(&runtime.initiated);
 
