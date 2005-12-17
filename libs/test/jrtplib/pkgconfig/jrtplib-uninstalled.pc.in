@@ -1,0 +1,12 @@
+# the standard variables don't make sense for an uninstalled copy
+prefix=
+exec_prefix=
+libdir=${pcfiledir}/..
+includedir=${pcfiledir}/..
+
+Name: Jrtplib Uninstalled
+Description: Full featured RTP library, Not Installed
+Version: @VERSION@
+Requires:
+Libs: ${libdir}/src/libjrtp.la
+Cflags: -I${includedir} -I${includedir}/src

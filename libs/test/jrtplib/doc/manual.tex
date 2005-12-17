@@ -1,0 +1,114 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{listings}
+\lstset{language=C++}
+\lstset{tabsize=4}
+\begin{document}
+	\title{JThread manual (v1.1.2)}
+	\author{Jori Liesenborgs\\
+	        {\tt jori@lumumba.uhasselt.be} }
+	\date{September 14, 2005}
+	\maketitle
+
+	\section{Introduction}
+
+	A lot of projects on which I'm working use threads. To be able to
+	use the same code on both unix and MS-Windows platforms, I decided
+	to write some simple wrapper classes for the existing thread functions
+	on those platforms.
+
+	The JThread package is very simple: currently, it only contains two
+	classes, namely {\tt JThread} and {\tt JMutex}. As their names 
+	suggest, {\tt JThread} represents a thread and {\tt JMutex} a mutex.
+	The thread class only contains very basic functions, for example to
+	start or kill a thread.
+
+	\section{Copyright \& disclaimer}
+
+	Permission is hereby granted, free of charge, to any person obtaining a
+	copy of this software and associated documentation files (the "Software"),
+	to deal in the Software without restriction, including without limitation
+	the rights to use, copy, modify, merge, publish, distribute, sublicense,
+	and/or sell copies of the Software, and to permit persons to whom the
+	Software is furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included
+	in all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+	OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+	THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+	FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+	IN THE SOFTWARE.
+
+	\section{Usage}
+
+	Here follows a description of the {\tt JThread} and {\tt JMutex} classes. 
+	Note that functions with return type {\tt int} always return a value of zero
+	or more on success and a negative value in case something went wrong.
+
+	\subsection{{\tt JMutex}}
+
+	The class definition of {\tt JMutex} is shown below. Before you can use an
+	instance of this type, you must first call the {\tt Init} function. You can
+	check if the mutex was already initialized by checking the return value
+	of {\tt IsInitialized}. After the initialization, the mutex can be locked
+	and unlocked by calling the functions {\tt Lock} and {\tt Unlock} respectively.
+
+\begin{lstlisting}[frame=tb]{}
+class JMutex
+{
+public:
+	JMutex();
+	~JMutex();
+	int Init();
+	int Lock();
+	int Unlock();
+	bool IsInitialized();
+};	
+\end{lstlisting}
+
+	\subsection{{\tt JThread}}
+	
+	To create your own thread, you have to derive a class from {\tt JThread},
+	which is depicted below. In your derived class, you have to implement
+	a member function {\tt Thread}, which will be executed in the new thread.
+	Your own {\tt Thread} implementation should call {\tt ThreadStarted}
+	immediately.
+
+	To start your thread, you simply have to call the {\tt Start} function.
+	This function finishes when your own {\tt Thread} function has called
+	{\tt ThreadStarted}. This way, when the {\tt Start} function
+	finishes, you can be really sure that your own {\tt Thread} implementation
+	is really running.
+
+	You can check if the thread is still running by calling {\tt IsRunning}.
+	If the thread has finished, you can check its return value by calling
+	{\tt GetReturnValue}. Finally, in case your thread gets stuck, you can
+	end it by using the {\tt Kill} function.
+
+	You should be careful with this {\tt Kill} function: if you call it when
+	the thread is working with a mutex (for example an internal mutex), this
+	mutex can be left in a locked state, which in turn can cause another thread
+	to block. You should only use the {\tt Kill} function when you're absolutely
+	sure that the thread is stuck in some loop and cannot be ended otherwise.
+
+\begin{lstlisting}[frame=tb]{}
+class JThread
+{
+public:
+	JThread();
+	virtual ~JThread();
+	int Start();
+	int Kill();
+	virtual void *Thread() = 0;
+	bool IsRunning();
+	void *GetReturnValue();
+protected:
+	void ThreadStarted();
+};
+\end{lstlisting}
+	
+\end{document}
+
