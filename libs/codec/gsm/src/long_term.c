@@ -1,10 +1,11 @@
 /*
+ * long_term.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header$ */
 
 #include <stdio.h>
 #include <assert.h>
@@ -13,9 +14,7 @@
 
 #include "gsm.h"
 #include "proto.h"
-#ifdef K6OPT
-#include "k6opt.h"
-#endif
+
 /*
  *  4.2.11 .. 4.2.12 LONG TERM PREDICTOR (LTP) SECTION
  */
@@ -199,9 +198,6 @@ static void Calculation_of_the_LTP_parameters P4((d,dp,bc_out,Nc_out),
 
 	/* Search for the maximum cross-correlation and coding of the LTP lag
 	 */
-# ifdef K6OPT
-	L_max = k6maxcc(wt,dp,&Nc);
-#	else
 	L_max = 0;
 	Nc    = 40;	/* index for the maximum cross-correlation */
 
@@ -239,7 +235,7 @@ static void Calculation_of_the_LTP_parameters P4((d,dp,bc_out,Nc_out),
 			L_max = L_result;
 		}
 	}
-#	endif
+
 	*Nc_out = Nc;
 
 	L_max <<= 1;
@@ -278,8 +274,8 @@ static void Calculation_of_the_LTP_parameters P4((d,dp,bc_out,Nc_out),
 
 	temp = gsm_norm( L_power );
 
-	R = (word)SASR( L_max   << temp, 16 );
-	S = (word)SASR( L_power << temp, 16 );
+	R = (word) SASR( L_max   << temp, 16 );
+	S = (word) SASR( L_power << temp, 16 );
 
 	/*  Coding of the LTP gain
 	 */
@@ -852,12 +848,13 @@ static void Long_term_analysis_filtering P6((bc,Nc,dp,d,dpp,e),
  */
 {
 	register int      k;
+	register longword ltmp;
 
 #	undef STEP
 #	define STEP(BP)					\
 	for (k = 0; k <= 39; k++) {			\
-		dpp[k]  = (word)GSM_MULT_R( BP, dp[k - Nc]);	\
-		e[k]	= GSM_SUB( d[k], dpp[k] );	\
+		dpp[k]  = (word) GSM_MULT_R( BP, dp[k - Nc]);	\
+		e[k]	= (word) GSM_SUB( d[k], dpp[k] );	\
 	}
 
 	switch (bc) {
@@ -920,6 +917,7 @@ void Gsm_Long_Term_Synthesis_Filtering P5((S,Ncr,bcr,erp,drp),
  *  table 4.3b.
  */
 {
+	register longword	ltmp;	/* for ADD */
 	register int 		k;
 	word			brp, drpp, Nr;
 
@@ -939,8 +937,8 @@ void Gsm_Long_Term_Synthesis_Filtering P5((S,Ncr,bcr,erp,drp),
 	assert(brp != MIN_WORD);
 
 	for (k = 0; k <= 39; k++) {
-		drpp   = (word)GSM_MULT_R( brp, drp[ k - Nr ] );
-		drp[k] = GSM_ADD( erp[k], drpp );
+		drpp   = (word) GSM_MULT_R( brp, drp[ k - Nr ] );
+		drp[k] = (word) GSM_ADD( erp[k], drpp );
 	}
 
 	/*

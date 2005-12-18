@@ -1,10 +1,11 @@
 /*
+ * private.h
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/*$Header$*/
 
 #ifndef	PRIVATE_H
 #define	PRIVATE_H
@@ -98,49 +99,6 @@ extern word	gsm_asr  	P((word a, int n));
 # define GSM_L_MULT(a, b) /* word a, word b */	\
 	(((longword)(a) * (longword)(b)) << 1)
 
-#if defined(__GNUC__) && defined(__i386__)
-
-static __inline__ int GSM_L_ADD(int a, int b)
-{
-	__asm__ __volatile__(
-	
-			"addl %2,%0; jno 0f; movl $0x7fffffff,%0; adcl $0,%0; 0:"
-			: "=r" (a)
-			: "0" (a), "ir" (b)
-			: "cc"
-		);
-	return(a);
-}
-
-static __inline__ short GSM_ADD(short a, short b)
-{
-	__asm__ __volatile__(
-			"addw %2,%0; jno 0f; movw $0x7fff,%0; adcw $0,%0; 0:"
-			: "=r" (a)
-			: "0" (a), "ir" (b)
-			: "cc"
-		);
-	return(a);
-}
-
-static __inline__ short GSM_SUB(short a, short b)
-{
-	__asm__ __volatile__(
-			"subw %2,%0; jno 0f; movw $0x7fff,%0; adcw $0,%0; 0:"
-			: "=r" (a)
-			: "0" (a), "ir" (b)
-			: "cc"
-		);
-	return(a);
-}
-
-#else
-
-#ifdef WIN32
-#define inline __inline
-#define __inline__ __inline
-#endif 
-
 # define GSM_L_ADD(a, b)	\
 	( (a) <  0 ? ( (b) >= 0 ? (a) + (b)	\
 		 : (utmp = (ulongword)-((a) + 1) + (ulongword)-((b) + 1)) \
@@ -149,21 +107,20 @@ static __inline__ short GSM_SUB(short a, short b)
 	          : (utmp = (ulongword)(a) + (ulongword)(b)) >= MAX_LONGWORD \
 		    ? MAX_LONGWORD : utmp))
 
-static inline word GSM_ADD(a, b)
-{
-	register longword ltmp;
-	ltmp = (longword) (a) + (longword) (b);
-	return (word)((ulongword) (ltmp - MIN_WORD) > MAX_WORD - MIN_WORD ? (ltmp > 0 ? MAX_WORD : MIN_WORD) : ltmp);
-};
+/*
+ * # define GSM_ADD(a, b)	\
+ * 	((ltmp = (longword)(a) + (longword)(b)) >= MAX_WORD \
+ * 	? MAX_WORD : ltmp <= MIN_WORD ? MIN_WORD : ltmp)
+ */
+/* Nonportable, but faster: */
 
-static inline word GSM_SUB(a, b)
-{
-	register longword ltmp;
-	ltmp = (longword) (a) - (longword) (b);
-	return (word)(ltmp >= MAX_WORD ? MAX_WORD : ltmp <= MIN_WORD ? MIN_WORD : ltmp);
-};
+#define	GSM_ADD(a, b)	\
+	((ulongword)((ltmp = (longword)(a) + (longword)(b)) - MIN_WORD) > \
+		MAX_WORD - MIN_WORD ? (ltmp > 0 ? MAX_WORD : MIN_WORD) : ltmp)
 
-#endif
+# define GSM_SUB(a, b)	\
+	((ltmp = (longword)(a) - (longword)(b)) >= MAX_WORD \
+	? MAX_WORD : ltmp <= MIN_WORD ? MIN_WORD : ltmp)
 
 # define GSM_ABS(a)	((a) < 0 ? ((a) == MIN_WORD ? MAX_WORD : -(a)) : (a))
 

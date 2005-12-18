@@ -1,10 +1,11 @@
 /*
+ * gsm_lpc.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header$ */
 
 #include <stdio.h>
 #include <assert.h>
@@ -13,10 +14,6 @@
 
 #include "gsm.h"
 #include "proto.h"
-
-#ifdef K6OPT
-#include "k6opt.h"
-#endif
 
 #undef	P
 
@@ -48,19 +45,12 @@ static void Autocorrelation P2((s, L_ACF),
 
 	/*  Search for the maximum.
 	 */
-#ifndef K6OPT
 	smax = 0;
 	for (k = 0; k <= 159; k++) {
 		temp = GSM_ABS( s[k] );
 		if (temp > smax) smax = temp;
 	}
-#else
-	{
-		longword lmax;
-		lmax = k6maxmin(s,160,NULL);
-		smax = (lmax > MAX_WORD) ? MAX_WORD : lmax;
-	}
-#endif
+
 	/*  Computation of the scaling factor.
 	 */
 	if (smax == 0) scalauto = 0;
@@ -73,7 +63,6 @@ static void Autocorrelation P2((s, L_ACF),
 	 */
 
 	if (scalauto > 0) {
-#	ifndef K6OPT
 
 # ifdef USE_FLOAT_MUL
 #   define SCALE(n)	\
@@ -84,7 +73,7 @@ static void Autocorrelation P2((s, L_ACF),
 # else 
 #   define SCALE(n)	\
 	case n: for (k = 0; k <= 159; k++) \
-			s[k] = (word)GSM_MULT_R( s[k], 16384 >> (n-1) );\
+			s[k] = (word) GSM_MULT_R( s[k], 16384 >> (n-1) );\
 		break;
 # endif /* USE_FLOAT_MUL */
 
@@ -95,10 +84,6 @@ static void Autocorrelation P2((s, L_ACF),
 		SCALE(4)
 		}
 # undef	SCALE
-
-#	else /* K6OPT */
-		k6vsraw(s,160,scalauto);
-#	endif
 	}
 # ifdef	USE_FLOAT_MUL
 	else for (k = 0; k <= 159; k++) float_s[k] = (float) s[k];
@@ -106,7 +91,6 @@ static void Autocorrelation P2((s, L_ACF),
 
 	/*  Compute the L_ACF[..].
 	 */
-#ifndef K6OPT
 	{
 # ifdef	USE_FLOAT_MUL
 		register float * sp = float_s;
@@ -153,24 +137,11 @@ static void Autocorrelation P2((s, L_ACF),
 	for (k = 9; k--; L_ACF[k] <<= 1) ; 
 
 	}
-
-#else
-	{
-		int k;
-		for (k=0; k<9; k++) {
-			L_ACF[k] = 2*k6iprod(s,s+k,160-k);
-		}
-	}
-#endif
 	/*   Rescaling of the array s[0..159]
 	 */
 	if (scalauto > 0) {
 		assert(scalauto <= 4); 
-#ifndef K6OPT
 		for (k = 160; k--; *s++ <<= scalauto) ;
-#	else /* K6OPT */
-		k6vsllw(s,160,scalauto);
-#	endif
 	}
 }
 
@@ -211,6 +182,7 @@ static void Reflection_coefficients P2( (L_ACF, r),
 {
 	register int	i, m, n;
 	register word	temp;
+	register longword ltmp;
 	word		ACF[9];	/* 0..8 */
 	word		P[  9];	/* 0..8 */
 	word		K[  9]; /* 2..8 */
@@ -229,7 +201,7 @@ static void Reflection_coefficients P2( (L_ACF, r),
 	assert(temp >= 0 && temp < 32);
 
 	/* ? overflow ? */
-	for (i = 0; i <= 8; i++) ACF[i] = (word)SASR( L_ACF[i] << temp, 16 );
+	for (i = 0; i <= 8; i++) ACF[i] = (word) SASR( L_ACF[i] << temp, 16 );
 
 	/*   Initialize array P[..] and K[..] for the recursion.
 	 */
@@ -257,15 +229,15 @@ static void Reflection_coefficients P2( (L_ACF, r),
 
 		/*  Schur recursion
 		 */
-		temp = (word)GSM_MULT_R( P[1], *r );
-		P[0] = GSM_ADD( P[0], temp );
+		temp = (word) GSM_MULT_R( P[1], *r );
+		P[0] = (word) GSM_ADD( P[0], temp );
 
 		for (m = 1; m <= 8 - n; m++) {
-			temp     = (word)GSM_MULT_R( K[ m   ],    *r );
-			P[m]     = GSM_ADD(    P[ m+1 ],  temp );
+			temp     = (word) GSM_MULT_R( K[ m   ],    *r );
+			P[m]     = (word) GSM_ADD(    P[ m+1 ],  temp );
 
-			temp     = (word)GSM_MULT_R( P[ m+1 ],    *r );
-			K[m]     = GSM_ADD(    K[ m   ],  temp );
+			temp     = (word) GSM_MULT_R( P[ m+1 ],    *r );
+			K[m]     = (word) GSM_ADD(    K[ m   ],  temp );
 		}
 	}
 }
@@ -318,6 +290,7 @@ static void Quantization_and_coding P1((LAR),
 )
 {
 	register word	temp;
+	longword	ltmp;
 
 
 	/*  This procedure needs four tables; the following equations
@@ -332,8 +305,8 @@ static void Quantization_and_coding P1((LAR),
 #	undef STEP
 #	define	STEP( A, B, MAC, MIC )		\
 		temp = (word)GSM_MULT( A,   *LAR );	\
-		temp = GSM_ADD(  temp,   B );	\
-		temp = GSM_ADD(  temp, 256 );	\
+		temp = (word) GSM_ADD(  temp,   B );	\
+		temp = (word) GSM_ADD(  temp, 256 );	\
 		temp = (word)SASR(     temp,   9 );	\
 		*LAR  =  temp>MAC ? MAC - MIC : (temp<MIC ? 0 : temp - MIC); \
 		LAR++;

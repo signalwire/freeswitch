@@ -1,10 +1,11 @@
 /*
+ * add.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header$ */
 
 /*
  *  See private.h for the more commonly used macro versions.
@@ -23,19 +24,19 @@
 word gsm_add P2((a,b), word a, word b)
 {
 	longword sum = (longword)a + (longword)b;
-	return (word)saturate(sum);
+	return (word) saturate(sum);
 }
 
 word gsm_sub P2((a,b), word a, word b)
 {
 	longword diff = (longword)a - (longword)b;
-	return (word)saturate(diff);
+	return (word) saturate(diff);
 }
 
 word gsm_mult P2((a,b), word a, word b)
 {
 	if (a == MIN_WORD && b == MIN_WORD) return MAX_WORD;
-	else return (word)SASR( (longword)a * (longword)b, 15 );
+	else return (word) SASR( (longword)a * (longword)b, 15 );
 }
 
 word gsm_mult_r P2((a,b), word a, word b)
@@ -44,7 +45,7 @@ word gsm_mult_r P2((a,b), word a, word b)
 	else {
 		longword prod = (longword)a * (longword)b + 16384;
 		prod >>= 15;
-		return (word)(prod & 0xFFFF);
+		return (word) (prod & 0xFFFF);
 	}
 }
 

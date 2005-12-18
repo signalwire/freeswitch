@@ -157,10 +157,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\debug.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\decode.c"
 				>
 			</File>
@@ -181,11 +177,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\gsm_explode.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\gsm_implode.c"
+				RelativePath=".\src\gsm_lpc.c"
 				>
 			</File>
 			<File
@@ -193,15 +185,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\gsm_print.c"
-				>
-			</File>
-			<File
 				RelativePath=".\src\long_term.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\lpc.c"
 				>
 			</File>
 			<File

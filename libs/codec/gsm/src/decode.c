@@ -1,10 +1,11 @@
 /*
+ * decode.c
+ *
  * Copyright 1992 by Jutta Degener and Carsten Bormann, Technische
  * Universitaet Berlin.  See the accompanying file "COPYRIGHT" for
  * details.  THERE IS ABSOLUTELY NO WARRANTY FOR THIS SOFTWARE.
  */
 
-/* $Header$ */
 
 #include <stdio.h>
 
@@ -22,12 +23,13 @@ static void Postprocessing P2((S,s),
 {
 	register int		k;
 	register word		msr = S->msr;
+	register longword	ltmp;	/* for GSM_ADD */
 	register word		tmp;
 
 	for (k = 160; k--; s++) {
-		tmp = (word)GSM_MULT_R( msr, 28180 );
-		msr = GSM_ADD(*s, tmp);  	   /* Deemphasis 	     */
-		*s  = GSM_ADD(msr, msr) & 0xFFF8;  /* Truncation & Upscaling */
+		tmp = (word) GSM_MULT_R( msr, 28180 );
+		msr = (word) GSM_ADD(*s, tmp);     /* Deemphasis 	     */
+		*s  = (word) GSM_ADD(msr, msr) & 0xFFF8;  /* Truncation & Upscaling */
 	}
 	S->msr = msr;
 }
