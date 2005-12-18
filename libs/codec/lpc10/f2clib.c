@@ -40,7 +40,7 @@ integer pow_ii(integer *ap, integer *bp)
 		if (n == 0 || x == 1)
 			return 1;
 		if (x != -1)
-			return x == 0 ? 1/x : 0;
+			return x == 0 ? 0 : 1/x;
 		n = -n;
 		}
 	u = n;
@@ -80,6 +80,6 @@ integer i_nint(x) real *x;
 integer i_nint(real *x)
 #endif
 {
-return( (*x)>=0 ?
-	floor(*x + .5) : -floor(.5 - *x) );
+return( (integer)((*x)>=0 ?
+	floor(*x + .5) : -floor(.5 - *x)) );
 }

@@ -194,7 +194,7 @@ static real c_b2 = 1.f;
 /* is undefined. */
 
     r__1 = inbuf[start - 1] - *dither;
-    oldsgn = r_sign(&c_b2, &r__1);
+    oldsgn = (real)r_sign(&c_b2, &r__1);
     i__1 = stop;
     for (i__ = start; i__ <= i__1; ++i__) {
 	lp_rms__ += (r__1 = lpbuf[i__], abs(r__1));

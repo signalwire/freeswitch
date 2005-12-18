@@ -132,7 +132,7 @@ extern int irc2pc_(real *rc, real *pc, integer *order, real *gprime, real *g2pas
     for (i__ = 1; i__ <= i__1; ++i__) {
 	*g2pass *= 1.f - rc[i__] * rc[i__];
     }
-    *g2pass = *gprime * sqrt(*g2pass);
+    *g2pass = *gprime * (real)sqrt(*g2pass);
     pc[1] = rc[1];
     i__1 = *order;
     for (i__ = 2; i__ <= i__1; ++i__) {

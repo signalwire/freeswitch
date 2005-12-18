@@ -372,7 +372,7 @@ e */
 	exc[px] -= pulse;
 /*  Load voiced excitation */
     } else {
-	sscale = sqrt((real) (*ip)) / 6.928f;
+	sscale = (real)sqrt((real) (*ip)) / 6.928f;
 	i__1 = *ip;
 	for (i__ = 1; i__ <= i__1; ++i__) {
 	    exc[contrl_1.order + i__ - 1] = 0.f;
@@ -438,7 +438,7 @@ e */
 /*  Apply gain to match RMS */
     r__1 = *rms * *rms;
     ssq = r__1 * *ip;
-    gain = sqrt(ssq / xssq);
+    gain = (real)sqrt(ssq / xssq);
     i__1 = *ip;
     for (i__ = 1; i__ <= i__1; ++i__) {
 	sout[i__] = gain * exc2[contrl_1.order + i__ - 1];

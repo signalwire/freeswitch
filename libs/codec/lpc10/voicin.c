@@ -778,7 +778,7 @@ d*/
 /*   NOTE: The divisor is a function of REF, the expected energies. */
 /* Computing MIN */
 /* Computing MAX */
-    r__2 = sqrt((real) (*lbue * *lbve)) * 64 / 3000;
+    r__2 = (real)(sqrt((real) (*lbue * *lbve)) * 64 / 3000);
     r__1 = max(r__2,1.f);
     *dither = min(r__1,20.f);
 /*   Voicing decisions are returned in VOIBUF. */

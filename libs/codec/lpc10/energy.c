@@ -97,7 +97,7 @@ extern int energy_(integer *len, real *speech, real *rms);
     for (i__ = 1; i__ <= i__1; ++i__) {
 	*rms += speech[i__] * speech[i__];
     }
-    *rms = sqrt(*rms / *len);
+    *rms = (real)sqrt(*rms / *len);
     return 0;
 } /* energy_ */
 

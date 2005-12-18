@@ -465,9 +465,9 @@ after */
 	    i__1 = lsamp;
 	    for (i__ = istart; i__ <= i__1; ++i__) {
 		r__1 = *ipito + slope * i__;
-		ip = r__1 + .5f;
+		ip = (integer)(r__1 + .5f);
 		if (uvpit != 0.f) {
-		    ip = uvpit;
+		    ip = (integer)uvpit;
 		}
 		if (ip <= i__ - jused) {
 		    ++(*nout);
@@ -487,14 +487,14 @@ over 16. */
 		    prop = (jused - ip / 2) / (real) lsamp;
 		    i__2 = *order;
 		    for (j = 1; j <= i__2; ++j) {
-			alro = log((rco[j - 1] + 1) / (1 - rco[j - 1]));
-			alrn = log((rc[j] + 1) / (1 - rc[j]));
+			alro = (real)log((rco[j - 1] + 1) / (1 - rco[j - 1]));
+			alrn = (real)log((rc[j] + 1) / (1 - rc[j]));
 			xxy = alro + prop * (alrn - alro);
-			xxy = exp(xxy);
+			xxy = (real)exp(xxy);
 			rci[j + *nout * rci_dim1] = (xxy - 1) / (xxy + 1);
 		    }
-		    rmsi[*nout] = log(*rmso) + prop * (log(*rms) - log(*rmso));
-		    rmsi[*nout] = exp(rmsi[*nout]);
+		    rmsi[*nout] = (real)(log(*rmso) + prop * (log(*rms) - log(*rmso)));
+		    rmsi[*nout] = (real)exp(rmsi[*nout]);
 		}
 	    }
 	    if (vflag != 1) {

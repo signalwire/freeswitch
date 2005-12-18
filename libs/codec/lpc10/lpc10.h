@@ -46,18 +46,24 @@ Add broken lpc10 code...  It's not too far from working I don't think...
 
 #if defined(unix) || defined(__unix__) || defined(__NetBSD__)
 typedef short		INT16;
-typedef int		INT32;
+typedef int			INT32;
 #endif
 
 
 #if defined(__MSDOS__) || defined(MSDOS)
-typedef int		INT16;
+typedef int			INT16;
 typedef long		INT32;
 #endif
 
 #if defined(__APPLE__)
 typedef short		INT16;
-typedef int		INT32;
+typedef int			INT32;
+#endif
+
+#if defined(WIN32) || defined(_MSC_VER)
+typedef __int16		INT16;
+typedef __int32		INT32;
+#pragma warning(disable: 4005)
 #endif
 
 

@@ -518,7 +518,7 @@ static integer c__2 = 2;
 	    drc[(5 - i__) * 3 - 2] = iout;
 	}
 /*  Determine error rate */
-	*erate = *erate * .96875f + errcnt * 102;
+	*erate = (integer)(*erate * .96875f + errcnt * 102);
     }
 /*  Get unsmoothed RMS, RC's, and PITCH */
     *irms = drms[1];
@@ -611,7 +611,7 @@ L900:
 	ishift = 15 - nbit[i__ - 1];
 	i2 *= pow_ii(&c__2, &ishift);
 	i2 += qb[i__ - 3];
-	irc[i__] = i2 * descl[i__ - 3] + deadd[i__ - 3];
+	irc[i__] = (integer)(i2 * descl[i__ - 3] + deadd[i__ - 3]);
     }
 /* 	IF (LISTL.GE.3) WRITE(FDEBUG,811) IRMS, (IRC(I),I=1,ORDER) */
 /* 811	FORMAT(1X,'<<DECODE OUT>>',T45,I4,1X,10I8) */

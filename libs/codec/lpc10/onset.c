@@ -272,7 +272,7 @@ static real c_b2 = 1.f;
 	*d__ = (r__1 * r__1 + (*d__) * 63.f) / 64.f;
 	if ((*d__) != 0.f) {
 	    if (abs(*n) > (*d__)) {
-		*fpc = r_sign(&c_b2, n);
+		*fpc = (real)r_sign(&c_b2, n);
 	    } else {
 		*fpc = (*n) / (*d__);
 	    }
