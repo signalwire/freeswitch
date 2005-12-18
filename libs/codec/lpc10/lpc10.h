@@ -60,7 +60,7 @@ typedef short		INT16;
 typedef int			INT32;
 #endif
 
-#if defined(WIN32) || defined(_MSC_VER)
+#if defined(WIN32) && defined(_MSC_VER)
 typedef __int16		INT16;
 typedef __int32		INT32;
 #pragma warning(disable: 4005)
