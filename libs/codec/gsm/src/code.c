@@ -62,10 +62,6 @@ void Gsm_Coder P8((S,s,LARc,Nc,bc,Mc,xmaxc,xMc),
 
 	word	so[160];
 
-#if !(defined(__GNUC__) && defined(__i386__))
-	longword ltmp;
-#endif
-
 	Gsm_Preprocess			(S, s, so);
 	Gsm_LPC_Analysis		(S, so, LARc);
 	Gsm_Short_Term_Analysis_Filter	(S, LARc, so);

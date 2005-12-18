@@ -278,8 +278,8 @@ static void Calculation_of_the_LTP_parameters P4((d,dp,bc_out,Nc_out),
 
 	temp = gsm_norm( L_power );
 
-	R = SASR( L_max   << temp, 16 );
-	S = SASR( L_power << temp, 16 );
+	R = (word)SASR( L_max   << temp, 16 );
+	S = (word)SASR( L_power << temp, 16 );
 
 	/*  Coding of the LTP gain
 	 */
@@ -856,7 +856,7 @@ static void Long_term_analysis_filtering P6((bc,Nc,dp,d,dpp,e),
 #	undef STEP
 #	define STEP(BP)					\
 	for (k = 0; k <= 39; k++) {			\
-		dpp[k]  = GSM_MULT_R( BP, dp[k - Nc]);	\
+		dpp[k]  = (word)GSM_MULT_R( BP, dp[k - Nc]);	\
 		e[k]	= GSM_SUB( d[k], dpp[k] );	\
 	}
 
@@ -939,7 +939,7 @@ void Gsm_Long_Term_Synthesis_Filtering P5((S,Ncr,bcr,erp,drp),
 	assert(brp != MIN_WORD);
 
 	for (k = 0; k <= 39; k++) {
-		drpp   = GSM_MULT_R( brp, drp[ k - Nr ] );
+		drpp   = (word)GSM_MULT_R( brp, drp[ k - Nr ] );
 		drp[k] = GSM_ADD( erp[k], drpp );
 	}
 

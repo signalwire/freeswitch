@@ -84,7 +84,7 @@ static void Autocorrelation P2((s, L_ACF),
 # else 
 #   define SCALE(n)	\
 	case n: for (k = 0; k <= 159; k++) \
-			s[k] = GSM_MULT_R( s[k], 16384 >> (n-1) );\
+			s[k] = (word)GSM_MULT_R( s[k], 16384 >> (n-1) );\
 		break;
 # endif /* USE_FLOAT_MUL */
 
@@ -229,7 +229,7 @@ static void Reflection_coefficients P2( (L_ACF, r),
 	assert(temp >= 0 && temp < 32);
 
 	/* ? overflow ? */
-	for (i = 0; i <= 8; i++) ACF[i] = SASR( L_ACF[i] << temp, 16 );
+	for (i = 0; i <= 8; i++) ACF[i] = (word)SASR( L_ACF[i] << temp, 16 );
 
 	/*   Initialize array P[..] and K[..] for the recursion.
 	 */
@@ -257,14 +257,14 @@ static void Reflection_coefficients P2( (L_ACF, r),
 
 		/*  Schur recursion
 		 */
-		temp = GSM_MULT_R( P[1], *r );
+		temp = (word)GSM_MULT_R( P[1], *r );
 		P[0] = GSM_ADD( P[0], temp );
 
 		for (m = 1; m <= 8 - n; m++) {
-			temp     = GSM_MULT_R( K[ m   ],    *r );
+			temp     = (word)GSM_MULT_R( K[ m   ],    *r );
 			P[m]     = GSM_ADD(    P[ m+1 ],  temp );
 
-			temp     = GSM_MULT_R( P[ m+1 ],    *r );
+			temp     = (word)GSM_MULT_R( P[ m+1 ],    *r );
 			K[m]     = GSM_ADD(    K[ m   ],  temp );
 		}
 	}
@@ -331,10 +331,10 @@ static void Quantization_and_coding P1((LAR),
 
 #	undef STEP
 #	define	STEP( A, B, MAC, MIC )		\
-		temp = GSM_MULT( A,   *LAR );	\
+		temp = (word)GSM_MULT( A,   *LAR );	\
 		temp = GSM_ADD(  temp,   B );	\
 		temp = GSM_ADD(  temp, 256 );	\
-		temp = SASR(     temp,   9 );	\
+		temp = (word)SASR(     temp,   9 );	\
 		*LAR  =  temp>MAC ? MAC - MIC : (temp<MIC ? 0 : temp - MIC); \
 		LAR++;
 

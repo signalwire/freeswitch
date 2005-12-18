@@ -95,8 +95,8 @@ void Gsm_Preprocess P3((S, s, so),
 		L_s2 = s1;
 		L_s2 <<= 15;
 #ifndef __GNUC__ 
-		msp = SASR( L_z2, 15 );
-		lsp = L_z2 & 0x7fff; /* gsm_L_sub(L_z2,(msp<<15)); */
+		msp = (word)SASR( L_z2, 15 );
+		lsp = (word)(L_z2 & 0x7fff); /* gsm_L_sub(L_z2,(msp<<15)); */
 
 		L_s2  += GSM_MULT_R( lsp, 32735 );
 		L_temp = (longword)msp * 32735; /* GSM_L_MULT(msp,32735) >> 1;*/
@@ -119,8 +119,8 @@ void Gsm_Preprocess P3((S, s, so),
 	/*   4.2.3  Preemphasis
 	 */
 
-		msp   = GSM_MULT_R( mp, -28180 );
-		mp    = SASR( L_temp, 15 );
+		msp   = (word)GSM_MULT_R( mp, -28180 );
+		mp    = (word)SASR( L_temp, 15 );
 		*so++ = GSM_ADD( mp, msp );
 		}
 	}

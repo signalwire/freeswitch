@@ -108,7 +108,7 @@ static void Weighting_filter P2((e, x),
 		 */
 
 		L_result = SASR( L_result, 13 );
-		x[k] =  (  L_result < MIN_WORD ? MIN_WORD
+		x[k] =  (word)(  L_result < MIN_WORD ? MIN_WORD
 			: (L_result > MAX_WORD ? MAX_WORD : L_result ));
 	}
 }
@@ -334,7 +334,7 @@ static void APCM_quantization P5((xM,xMc,mant_out,exp_out,xmaxc_out),
 		assert(temp1 >= 0 && temp1 < 16);
 
 		temp = xM[i] << temp1;
-		temp = GSM_MULT( temp, temp2 );
+		temp = (word)GSM_MULT( temp, temp2 );
 		temp = SASR(temp, 12);
 		xMc[i] = temp + 4;		/* see note below */
 	}
@@ -378,7 +378,7 @@ static void APCM_inverse_quantization P4((xMc,mant,exp,xMp),
 		assert( temp <= 7 && temp >= -7 ); 	/* 4 bit signed   */
 
 		temp <<= 12;				/* 16 bit signed  */
-		temp = GSM_MULT_R( temp1, temp );
+		temp = (word)GSM_MULT_R( temp1, temp );
 		temp = GSM_ADD( temp, temp3 );
 		*xMp++ = gsm_asr( temp, temp2 );
 	}

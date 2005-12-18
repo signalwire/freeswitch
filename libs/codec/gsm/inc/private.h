@@ -136,6 +136,11 @@ static __inline__ short GSM_SUB(short a, short b)
 
 #else
 
+#ifdef WIN32
+#define inline __inline
+#define __inline__ __inline
+#endif 
+
 # define GSM_L_ADD(a, b)	\
 	( (a) <  0 ? ( (b) >= 0 ? (a) + (b)	\
 		 : (utmp = (ulongword)-((a) + 1) + (ulongword)-((b) + 1)) \
@@ -144,25 +149,19 @@ static __inline__ short GSM_SUB(short a, short b)
 	          : (utmp = (ulongword)(a) + (ulongword)(b)) >= MAX_LONGWORD \
 		    ? MAX_LONGWORD : utmp))
 
-/*
- * # define GSM_ADD(a, b)	\
- * 	((ltmp = (longword)(a) + (longword)(b)) >= MAX_WORD \
- * 	? MAX_WORD : ltmp <= MIN_WORD ? MIN_WORD : ltmp)
- */
-/* Nonportable, but faster: */
+static inline word GSM_ADD(a, b)
+{
+	register longword ltmp;
+	ltmp = (longword) (a) + (longword) (b);
+	return (word)((ulongword) (ltmp - MIN_WORD) > MAX_WORD - MIN_WORD ? (ltmp > 0 ? MAX_WORD : MIN_WORD) : ltmp);
+};
 
-# define GSM_ADD(a, b) ({ \
-		register longword ltmp; \
-		ltmp = (longword) (a) + (longword) (b); \
-		((ulongword) (ltmp - MIN_WORD) > MAX_WORD - MIN_WORD ? \
-			(ltmp > 0 ? MAX_WORD : MIN_WORD) : ltmp); \
-	})
-
-#define GSM_SUB(a, b) ({ \
-		register longword ltmp; \
-		ltmp = (longword) (a) - (longword) (b); \
-		(ltmp >= MAX_WORD ? MAX_WORD : ltmp <= MIN_WORD ? MIN_WORD : ltmp); \
-	})
+static inline word GSM_SUB(a, b)
+{
+	register longword ltmp;
+	ltmp = (longword) (a) - (longword) (b);
+	return (word)(ltmp >= MAX_WORD ? MAX_WORD : ltmp <= MIN_WORD ? MIN_WORD : ltmp);
+};
 
 #endif
 
