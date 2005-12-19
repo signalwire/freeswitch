@@ -198,8 +198,8 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
 
 SWITCH_DECLARE(switch_status) switch_event_shutdown(void)
 {
-	THREAD_RUNNING = -1;
 	switch_event *event;
+	THREAD_RUNNING = -1;
 
 	if (switch_event_create(&event, SWITCH_EVENT_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, "event_info", "Event System Shutting Down");
@@ -366,7 +366,7 @@ SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_even
 
 SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, size_t buflen, char *fmt, ...)
 {
-	int len;
+	size_t len;
 	switch_event_header *hp;
     char *data = NULL;
     int ret = 0;
