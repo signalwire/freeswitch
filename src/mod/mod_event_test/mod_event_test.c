@@ -35,12 +35,11 @@ static const char modname[] = "mod_event_test";
 
 static void event_handler (switch_event *event)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE,"\n*** EVENT ***\nEventName: %s\nSubclassOwner: %s\nSubclassName: %s\nEventData: %s\n\n", 
-						  switch_event_name(event->event),
-						  event->subclass->owner,
-						  event->subclass->name,
-						  event->data);
+	char buf[1024];
+	switch_event_serialize(event, buf, sizeof(buf), NULL);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "\nEVENT\n--------------------------------\n%s\n", buf);
 }
+						  
 
 static switch_loadable_module_interface event_test_module_interface = {
 	/*.module_name*/			modname,
@@ -76,10 +75,16 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_inte
 #ifdef TORTURE_ME
 SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 {
+	int y = 0;
+	switch_event *event;
+
 	for(;;) {
 		int x;
 		for(x = 0; x < 100; x++) {
-			switch_event_fire_subclass(SWITCH_EVENT_CUSTOM, MY_EVENT_COOL, "hello world");
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_COOL) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, "event_info", "hello world %d", y++);
+				switch_event_fire(&event);
+			}
 		}
 		switch_yield(100000);
 	}

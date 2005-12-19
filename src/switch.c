@@ -33,6 +33,7 @@
 
 int main(int argc, char *argv[]) {
 	char *err = NULL;
+	switch_event *event;
 
 	if (switch_core_init() != SWITCH_STATUS_SUCCESS) {
 		err = "Cannot Initilize\n";
@@ -51,7 +52,11 @@ int main(int argc, char *argv[]) {
 		exit(-1);
 	}
 
-	switch_event_fire(SWITCH_EVENT_STARTUP, "Ready");
+	if (switch_event_create(&event, SWITCH_EVENT_STARTUP) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, "event_info", "System Ready");
+		switch_event_fire(&event);
+	}
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_GLOBAL_VERSION);
 
 	/* wait for console input */

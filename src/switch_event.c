@@ -56,14 +56,14 @@ static char *EVENT_NAMES[] = {
 	"ALL"
 };
 
-static struct switch_event_subclass default_subclass = {__FILE__, "NONE"};
+
 
 static int switch_events_match(switch_event *event, switch_event_node *node)
 {
 	int match = 0;
 
 	
-	if (node->event == SWITCH_EVENT_ALL) {
+	if (node->event_id == SWITCH_EVENT_ALL) {
 		match++;
 
 		if (!node->subclass) {
@@ -71,7 +71,7 @@ static int switch_events_match(switch_event *event, switch_event_node *node)
 		}
 	}
 
-	if (match || event->event == node->event) {
+	if (match || event->event_id == node->event_id) {
 
 		if (event->subclass && node->subclass) {
 			match = strstr(event->subclass->name, node->subclass->name) ? 1 : 0;
@@ -113,13 +113,10 @@ static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void
 			out_event = event;
 			event = event->next;
 			out_event->next = NULL;
-			for(e = out_event->event;; e = SWITCH_EVENT_ALL) {
+			for(e = out_event->event_id;; e = SWITCH_EVENT_ALL) {
 				for(node = EVENT_NODES[e]; node; node = node->next) {
 					if (switch_events_match(out_event, node)) {
 						out_event->user_data = node->user_data;
-						if (!out_event->subclass) {
-							out_event->subclass = &default_subclass;
-						}
 						node->callback(out_event);
 					}
 				}
@@ -129,8 +126,7 @@ static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void
 				}
 			}
 
-			free(out_event->data);
-			free(out_event);
+			switch_event_destroy(&out_event);
 		}
 
 	
@@ -177,8 +173,12 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
 SWITCH_DECLARE(switch_status) switch_event_shutdown(void)
 {
 	THREAD_RUNNING = -1;
+	switch_event *event;
 
-	switch_event_fire(SWITCH_EVENT_EVENT_SHUTDOWN, "Event System Shutting Down");
+	if (switch_event_create(&event, SWITCH_EVENT_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, "event_info", "Event System Shutting Down");
+		switch_event_fire(&event);
+	}
 	while(THREAD_RUNNING) {
 		switch_yield(1000);
 	}
@@ -212,39 +212,199 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool)
 
 }
 
-SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, char *subclass_name, char *data)
+SWITCH_DECLARE(switch_status) switch_event_create_detailed(switch_event **event, switch_event_t event_id, char *subclass_name)
 {
-
-	switch_event *new_event, *ep;
 	switch_event_subclass *subclass = NULL;
-
-	assert(BLOCK != NULL);
-	assert(EPOOL != NULL);
-
-	if (!(new_event = malloc(sizeof(*new_event)))) {
-		return SWITCH_STATUS_MEMERR;
-	}
 
 	if (subclass_name) {
 		subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name);
 	}
 
-	memset(new_event, 0, sizeof(*new_event));
-	new_event->event = event;
-	new_event->subclass = subclass;
-	new_event->data = strdup(data ? data : "");
+	if (event_id != SWITCH_EVENT_CUSTOM && subclass_name) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if(!(*event = malloc(sizeof(switch_event)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	memset(*event, 0, sizeof(switch_event));
+	(*event)->event_id = event_id;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(char *) switch_event_get_header(switch_event *event, char *header_name)
+{
+	switch_event_header *hp;
+	if (header_name) {
+		for(hp = event->headers; hp; hp = hp->next) {
+			if (!strcasecmp(hp->name, header_name)) {
+				return hp->value;
+			}
+		}
+	}
+	return NULL;
+}
+
+SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, char *header_name, char *fmt, ...)
+{
+    char *data;
+    int ret = 0;
+    va_list ap;
+
+	va_start(ap, fmt);
+	
+#ifdef HAVE_VASPRINTF
+	ret = vasprintf(&data, fmt, ap);
+#else
+	data = (char *) malloc(2048);
+	vsnprintf(data, 2048, fmt, ap);
+#endif
+	va_end(ap);
+	if (ret == -1) {
+		return SWITCH_STATUS_MEMERR;
+	} else {
+		switch_event_header *header, *hp;
+		
+
+		if (!(header = malloc(sizeof(*header)))) {
+			return SWITCH_STATUS_MEMERR;
+		}
+		memset(header, 0, sizeof(*header));
+		header->name = strdup(header_name);
+		header->value = data;
+
+		for (hp = event->headers; hp && hp->next; hp = hp->next);
+		
+		if (hp) {
+			hp->next = header;
+		} else {
+			event->headers = header;
+		}
+		
+		return SWITCH_STATUS_SUCCESS;
+
+	}
+	
+	return (ret >= 0) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
+	
+}
+
+SWITCH_DECLARE(void) switch_event_destroy(switch_event **event)
+{
+	switch_event_header *hp, *tofree;
+
+	for (hp = (*event)->headers; hp && hp->next;) {
+		tofree = hp;
+		hp = hp->next;
+		free(tofree->name);
+		free(tofree->value);
+		free(tofree);
+	}
+
+	free((*event));
+	*event = NULL;
+}
+
+SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_event *todup)
+{
+	switch_event_header *header, *hp, *hp2;
+
+	if (switch_event_create_subclass(event, todup->event_id, todup->subclass->name) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	(*event)->subclass = todup->subclass;
+	(*event)->user_data = todup->user_data;
+	
+	for (hp = todup->headers; hp && hp->next;) {
+		if (!(header = malloc(sizeof(*header)))) {
+			return SWITCH_STATUS_MEMERR;
+		}
+		memset(header, 0, sizeof(*header));
+		header->name = strdup(hp->name);
+		header->value = strdup(hp->value);
+
+		for (hp2 = todup->headers; hp2 && hp2->next; hp2 = hp2->next);
+
+		if (hp2) {
+			hp2->next = header;
+		} else {
+			(*event)->headers = header;
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, size_t buflen, char *fmt, ...)
+{
+	int len;
+	switch_event_header *hp;
+    char *data = NULL;
+    int ret = 0;
+    va_list ap;
+
+	if (fmt) {
+		va_start(ap, fmt);
+#ifdef HAVE_VASPRINTF
+		ret = vasprintf(&data, fmt, ap);
+#else
+		data = (char *) malloc(2048);
+		vsnprintf(data, 2048, fmt, ap);
+#endif
+		va_end(ap);
+		if (ret == -1) {
+			return SWITCH_STATUS_MEMERR;
+		}
+	}
+
+	snprintf(buf, buflen, "name: %s\n", switch_event_name(event->event_id));
+	len = strlen(buf);
+	if (event->subclass) {
+		snprintf(buf+len, buflen-len, "subclass-name: %s\nowner: %s", event->subclass->name, event->subclass->owner);
+	}
+	len = strlen(buf);
+	for (hp = event->headers; hp; hp = hp->next) {
+		snprintf(buf+len, buflen-len, "%s: %s\n", hp->name, hp->value);
+		len = strlen(buf);
+	}
+	if (data) {
+		snprintf(buf+len, buflen-len, "Content-Length: %d\n\n%s", strlen(data), data);
+		free(data);
+	} else {
+		snprintf(buf+len, buflen-len, "\n");
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event **event)
+{
+
+	switch_event *ep;
+
+	assert(BLOCK != NULL);
+	assert(EPOOL != NULL);
+
+	switch_event_add_header(*event, "file", file);
+	switch_event_add_header(*event, "function", func);
+	switch_event_add_header(*event, "line_number", "%d", line);
 	
 	switch_mutex_lock(QLOCK);
 	/* <LOCKED> -----------------------------------------------*/
 	for(ep = EVENT_QUEUE_HEAD; ep && ep->next; ep = ep->next);
 
 	if (ep) {
-		ep->next = new_event;
+		ep->next = *event;
 	} else {
-		EVENT_QUEUE_HEAD = new_event;
+		EVENT_QUEUE_HEAD = *event;
 	}
 	switch_mutex_unlock(QLOCK);
 	/* </LOCKED> -----------------------------------------------*/
+
+	*event = NULL;
 
 	switch_thread_cond_signal(COND);
 	return SWITCH_STATUS_SUCCESS;
@@ -273,7 +433,7 @@ SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, 
 		switch_mutex_lock(BLOCK);
 		/* <LOCKED> -----------------------------------------------*/
 		event_node->id = switch_core_strdup(EPOOL, id);
-		event_node->event = event;
+		event_node->event_id = event;
 		event_node->subclass = subclass;
 		event_node->callback = callback;
 		event_node->user_data = user_data;

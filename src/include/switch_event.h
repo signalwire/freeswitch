@@ -38,22 +38,29 @@ extern "C" {
 
 #include <switch.h>
 
+struct switch_event_header {
+	char *name;
+	char *value;
+	struct switch_event_header *next;
+};
+
 struct switch_event_subclass {
 	char *owner;
 	char *name;
 };
 
 struct switch_event {
-	switch_event_t event;
+	switch_event_t event_id;
+	char *owner;
 	switch_event_subclass *subclass;
-	char *data;
+	struct switch_event_header *headers;
 	void *user_data;
 	struct switch_event *next;
 };
 
 struct switch_event_node {
 	char *id;
-	switch_event_t event;
+	switch_event_t event_id;
 	switch_event_subclass *subclass;
 	switch_event_callback_t callback;
 	void *user_data;
@@ -64,10 +71,20 @@ struct switch_event_node {
 
 SWITCH_DECLARE(switch_status) switch_event_shutdown(void);
 SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool);
-SWITCH_DECLARE(switch_status) switch_event_fire_subclass(switch_event_t event, char *subclass_name, char *data);
+SWITCH_DECLARE(switch_status) switch_event_create_detailed(switch_event **event, switch_event_t event_id, char *subclass_name);
+SWITCH_DECLARE(char *) switch_event_get_header(switch_event *event, char *header_name);
+SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, char *header_name, char *fmt, ...);
+SWITCH_DECLARE(void) switch_event_destroy(switch_event **event);
+SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_event *todup);
+SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event **event);
 SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, char *subclass_name, switch_event_callback_t callback, void *user_data);
 SWITCH_DECLARE(char *) switch_event_name(switch_event_t event);
 SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name);
-#define switch_event_fire(event, data) switch_event_fire_subclass(event, NULL, data);
+SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, size_t buflen, char *fmt, ...);
+
 #define switch_event_reserve_subclass(subclass_name) switch_event_reserve_subclass_detailed(__FILE__, subclass_name)
+#define switch_event_create(event, id) switch_event_create_detailed(event, id, SWITCH_EVENT_SUBCLASS_ANY)
+#define switch_event_create_subclass(event, id, subclass) switch_event_create_detailed(event, id, subclass)
+#define switch_event_fire(event) switch_event_fire_detailed(__FILE__, __FUNCTION__, __LINE__, event)
+
 #endif

@@ -138,6 +138,8 @@ typedef enum {
 	SWITCH_EVENT_ALL
 } switch_event_t;
 
+
+typedef struct switch_event_header switch_event_header;
 typedef struct switch_event switch_event;
 typedef struct switch_event_subclass switch_event_subclass;
 typedef struct switch_event_node switch_event_node;

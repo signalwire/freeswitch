@@ -266,8 +266,15 @@ static switch_status channel_on_transmit(switch_core_session *session)
 	while(switch_channel_get_state(channel) == CS_TRANSMIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 		if (switch_time_now() - last >= waitsec) {
 		char buf[512];
+		switch_event *event;
+
 		snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
-		switch_event_fire_subclass(SWITCH_EVENT_CUSTOM, MY_EVENT_RINGING, buf);
+
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RINGING) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, "event_info", buf);
+			switch_event_fire(&event);
+		}
+
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s\n", buf);
 		last = switch_time_now();
 		}
