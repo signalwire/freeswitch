@@ -57,6 +57,21 @@ static char *EVENT_NAMES[] = {
 };
 
 
+#if 0
+static void debug_hash(void) {
+	switch_hash_index_t* hi;
+	void *val;
+	const void *var;
+	for (hi = switch_hash_first(EPOOL, CUSTOM_HASH); hi; hi = switch_hash_next(hi)) {
+		switch_event_subclass *subclass;
+		switch_hash_this(hi, &var, NULL, &val);
+		subclass = val;
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "***WTF %s=%s\n", (char *) var, subclass->name);
+	}
+}
+#endif
+
+
 
 static int switch_events_match(switch_event *event, switch_event_node *node)
 {
@@ -72,9 +87,20 @@ static int switch_events_match(switch_event *event, switch_event_node *node)
 	}
 
 	if (match || event->event_id == node->event_id) {
-
 		if (event->subclass && node->subclass) {
-			match = strstr(event->subclass->name, node->subclass->name) ? 1 : 0;
+			if (!strncasecmp(node->subclass->name, "file:", 5)) {
+				char *file_header;
+				if ((file_header = switch_event_get_header(event, "file"))) {
+					match = strstr(node->subclass->name + 5, file_header) ? 1 : 0;
+				}
+			} else if (!strncasecmp(node->subclass->name, "func:", 5)) {
+				char *func_header;
+				if ((func_header = switch_event_get_header(event, "function"))) {
+					match = strstr(node->subclass->name + 5, func_header) ? 1 : 0;
+				}
+			} else {
+				match = strstr(event->subclass->name, node->subclass->name) ? 1 : 0;
+			}
 		} else if (event->subclass && !node->subclass) {
 			match = 1;
 		} else {
@@ -164,7 +190,7 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
 	subclass->owner = switch_core_strdup(EPOOL, owner);
 	subclass->name = switch_core_strdup(EPOOL, subclass_name);
 	
-	switch_core_hash_insert_dup(CUSTOM_HASH, subclass->name, subclass);
+	switch_core_hash_insert(CUSTOM_HASH, subclass->name, subclass);
 	
 	return SWITCH_STATUS_SUCCESS;
 
@@ -212,13 +238,8 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool)
 
 }
 
-SWITCH_DECLARE(switch_status) switch_event_create_detailed(switch_event **event, switch_event_t event_id, char *subclass_name)
+SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event **event, switch_event_t event_id, char *subclass_name)
 {
-	switch_event_subclass *subclass = NULL;
-
-	if (subclass_name) {
-		subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name);
-	}
 
 	if (event_id != SWITCH_EVENT_CUSTOM && subclass_name) {
 		return SWITCH_STATUS_GENERR;
@@ -229,7 +250,13 @@ SWITCH_DECLARE(switch_status) switch_event_create_detailed(switch_event **event,
 	}
 
 	memset(*event, 0, sizeof(switch_event));
+
 	(*event)->event_id = event_id;
+
+	if (subclass_name) {
+		(*event)->subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -71,7 +71,7 @@ struct switch_event_node {
 
 SWITCH_DECLARE(switch_status) switch_event_shutdown(void);
 SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool);
-SWITCH_DECLARE(switch_status) switch_event_create_detailed(switch_event **event, switch_event_t event_id, char *subclass_name);
+SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event **event, switch_event_t event_id, char *subclass_name);
 SWITCH_DECLARE(char *) switch_event_get_header(switch_event *event, char *header_name);
 SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, char *header_name, char *fmt, ...);
 SWITCH_DECLARE(void) switch_event_destroy(switch_event **event);
@@ -83,8 +83,7 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
 SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, size_t buflen, char *fmt, ...);
 
 #define switch_event_reserve_subclass(subclass_name) switch_event_reserve_subclass_detailed(__FILE__, subclass_name)
-#define switch_event_create(event, id) switch_event_create_detailed(event, id, SWITCH_EVENT_SUBCLASS_ANY)
-#define switch_event_create_subclass(event, id, subclass) switch_event_create_detailed(event, id, subclass)
+#define switch_event_create(event, id) switch_event_create_subclass(event, id, SWITCH_EVENT_SUBCLASS_ANY)
 #define switch_event_fire(event) switch_event_fire_detailed(__FILE__, __FUNCTION__, __LINE__, event)
 
 #endif
