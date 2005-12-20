@@ -946,6 +946,7 @@ depends:
 	./buildlib.sh libosip2-2.2.2.tar.gz --prefix=/usr/local 
 	./buildlib.sh libeXosip2-2.2.2.tar.gz --prefix=/usr/local --disable-josua
 	./buildlib.sh speex-1.1.11.1.tar.gz --prefix=/usr/local 
+	./buildlib.sh portaudio.tar.gz
 
 modules: $(NAME)
 	@echo making modules
