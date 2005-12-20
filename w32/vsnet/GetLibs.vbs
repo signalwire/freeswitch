@@ -22,7 +22,6 @@ UtilsDir=Showpath(ScriptDir & "Tools")
 GetTarGZObjects UtilsDir
 GetVCBuild
 Wscript.echo "Detected VCBuild: " & VCBuild
-
 If objArgs.Count >=2 Then
 	Select Case objArgs(1)
 		Case "Release"		
@@ -148,6 +147,32 @@ Sub BuildLibs_Core(BuildDebug, BuildRelease)
 	Else
 		Wscript.echo "Unable to download SQLite"
 	End If 
+	
+	If Not FSO.FolderExists(LibDestDir & "iksemel") Then 
+		WgetUnTarGz "http://jabberstudio.2nw.net/iksemel/iksemel-1.2.tar.gz", LibDestDir 
+		If Not FSO.FolderExists(LibDestDir & "iksemel-1.2") Then
+			Wscript.echo "Unable to get iksemel from default download location, Trying backup location:"
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/iksemel-1.2.tar.gz", LibDestDir
+		End If
+		RenameFolder LibDestDir & "iksemel-1.2", "iksemel"
+		FSO.CopyFile Utilsdir & "iksemel\iksemel.vcproj", LibDestDir & "iksemel\", True
+		FSO.CopyFile Utilsdir & "iksemel\config.h", LibDestDir & "iksemel\include\", True
+	End If
+	If FSO.FolderExists(LibDestDir & "iksemel") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "iksemel\Debug\iksemel.lib") Then 
+				BuildViaVCBuild LibDestDir & "iksemel\iksemel.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "iksemel\Release\iksemel.lib") Then 
+				BuildViaVCBuild LibDestDir & "iksemel\iksemel.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download iksemel"
+	End If 
+		
 End Sub
 
 Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
