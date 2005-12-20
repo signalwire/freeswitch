@@ -30,39 +30,6 @@ WAV49	= -DWAV49
 ######### define this, and read about the GSM_OPT_WAV49 option in the
 ######### manual page on gsm_option(3).
 
-#K6OPT	= -DK6OPT
-#K6OPT	=
-######### Define to enable MMXTM optimizations for x86 architecture CPU's
-######### which support MMX instructions.  This should be newer pentiums,
-######### ppro's, etc, as well as the AMD K6 and K7.  The compile will
-######### probably require gcc. 
-
-ifneq (${OSARCH},Darwin)
-ifneq (${OSARCH},SunOS)
-ifneq (${PROC},x86_64)
-ifneq (${PROC},ultrasparc)
-ifneq ($(shell uname -m),ppc)
-ifneq ($(shell uname -m),ppc64)
-ifneq ($(shell uname -m),alpha)
-ifneq ($(shell uname -m),armv4l)
-ifneq (${PROC},sparc64)
-ifneq (${PROC},arm)
-ifneq (${PROC},ppc)
-ifneq (${PROC},ppc64)
-OPTIMIZE+=-march=$(PROC)
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-
 #The problem with sparc is the best stuff is in newer versions of gcc (post 3.0) only.
 #This works for even old (2.96) versions of gcc and provides a small boost either way.
 #A ultrasparc cpu is really v9 but the stock debian stable 3.0 gcc doesn't support it.
@@ -133,16 +100,6 @@ GSM_INSTALL_LIB = $(GSM_INSTALL_ROOT)/lib
 GSM_INSTALL_INC = $(GSM_INSTALL_ROOT)/inc
 GSM_INSTALL_MAN = $(GSM_INSTALL_ROOT)/man/man3
 
-
-# Where do you want to install the toast binaries and their manpage?
-#
-# Leave TOAST_INSTALL_ROOT empty to not install the toast binaries outside
-# of this directory.
-
-TOAST_INSTALL_ROOT	  = $(INSTALL_ROOT)
-TOAST_INSTALL_BIN = $(TOAST_INSTALL_ROOT)/bin
-TOAST_INSTALL_MAN = $(TOAST_INSTALL_ROOT)/man/man1
-
 #  Other tools
 
 SHELL		= /bin/sh
@@ -165,8 +122,6 @@ RANLIB	 	= ranlib
 # Local Directories
 
 ROOT	= .
-ADDTST	= $(ROOT)/add-test
-TST	= $(ROOT)/tst
 MAN	= $(ROOT)/man
 BIN	= $(ROOT)/bin
 SRC	= $(ROOT)/src
@@ -180,7 +135,7 @@ DEBUG	= -DNDEBUG
 ######### Remove -DNDEBUG to enable assertions.
 
 CFLAGS += $(PG) $(CCFLAGS) $(SASR) $(DEBUG) $(MULHACK) $(FAST) \
-	$(LTP_CUT) $(WAV49) $(K6OPT) $(CCINC) -I$(INC)
+	$(LTP_CUT) $(WAV49) $(CCINC) -I$(INC)
 ######### It's $(CC) $(CFLAGS)
 
 LFLAGS	= $(PG) $(LDFLAGS) $(LDINC)
@@ -192,167 +147,78 @@ LFLAGS	= $(PG) $(LDFLAGS) $(LDINC)
 LIBGSM	= $(LIB)/libgsm.a
 LIBGSMSO= $(LIB)/libgsm.so
 
-TOAST	= $(BIN)/toast
-UNTOAST	= $(BIN)/untoast
-TCAT	= $(BIN)/tcat
-
 # Headers
 
 GSM_HEADERS =	$(INC)/gsm.h
 
 HEADERS	=	$(INC)/proto.h		\
-		$(INC)/unproto.h	\
+		$(INC)/unproto.h		\
 		$(INC)/config.h		\
-		$(INC)/private.h	\
-		$(INC)/gsm.h		\
-		$(INC)/toast.h		\
+		$(INC)/private.h		\
+		$(INC)/gsm.h			\
+		$(INC)/toast.h			\
 		$(TLS)/taste.h
 
 # Sources
 
-GSM_SOURCES =	$(SRC)/add.c		\
-		$(SRC)/code.c		\
-		$(SRC)/debug.c		\
-		$(SRC)/decode.c		\
-		$(SRC)/long_term.c	\
-		$(SRC)/lpc.c		\
-		$(SRC)/preprocess.c	\
-		$(SRC)/rpe.c		\
+SOURCES =	$(SRC)/add.c			\
+		$(SRC)/gsm_create.c		\
 		$(SRC)/gsm_destroy.c	\
-		$(SRC)/gsm_decode.c	\
-		$(SRC)/gsm_encode.c	\
-		$(SRC)/gsm_explode.c	\
-		$(SRC)/gsm_implode.c	\
-		$(SRC)/gsm_create.c	\
-		$(SRC)/gsm_print.c	\
-		$(SRC)/gsm_option.c	\
-		$(SRC)/short_term.c	\
+		$(SRC)/gsm_decode.c		\
+		$(SRC)/gsm_encode.c		\
+		$(SRC)/gsm_option.c		\
+		$(SRC)/code.c			\
+		$(SRC)/decode.c		\
+		$(SRC)/gsm_lpc.c		\
+		$(SRC)/rpe.c			\
+		$(SRC)/preprocess.c		\
+		$(SRC)/long_term.c		\
+		$(SRC)/short_term.c		\
 		$(SRC)/table.c
-ifeq (${OSARCH},Linux)
-ifneq ($(shell uname -m),x86_64)
-ifneq ($(shell uname -m),ppc)
-ifneq ($(shell uname -m),ppc64)
-ifneq ($(shell uname -m),alpha)
-ifneq ($(shell uname -m),armv4l)
-ifneq ($(shell uname -m),sparc64)
-ifneq (${PROC},arm)
-GSM_SOURCES+= $(SRC)/k6opt.s
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-
-TOAST_SOURCES = $(SRC)/toast.c 		\
-		$(SRC)/toast_lin.c	\
-		$(SRC)/toast_ulaw.c	\
-		$(SRC)/toast_alaw.c	\
-		$(SRC)/toast_audio.c
-
-SOURCES	=	$(GSM_SOURCES)		\
-		$(TOAST_SOURCES)	\
-		$(ADDTST)/add_test.c	\
-		$(TLS)/sour.c		\
-		$(TLS)/ginger.c		\
-		$(TLS)/sour1.dta	\
-		$(TLS)/sour2.dta	\
-		$(TLS)/bitter.c		\
-		$(TLS)/bitter.dta	\
-		$(TLS)/taste.c		\
-		$(TLS)/sweet.c		\
-		$(TST)/cod2lin.c	\
-		$(TST)/cod2txt.c	\
-		$(TST)/gsm2cod.c	\
-		$(TST)/lin2cod.c	\
-		$(TST)/lin2txt.c
 
 # Object files
 
-GSM_OBJECTS =	$(SRC)/add.o		\
-		$(SRC)/code.o		\
-		$(SRC)/debug.o		\
-		$(SRC)/decode.o		\
-		$(SRC)/long_term.o	\
-		$(SRC)/lpc.o		\
-		$(SRC)/preprocess.o	\
-		$(SRC)/rpe.o		\
+OBJECTS =	$(SRC)/add.o			\
+		$(SRC)/gsm_create.o		\
 		$(SRC)/gsm_destroy.o	\
-		$(SRC)/gsm_decode.o	\
-		$(SRC)/gsm_encode.o	\
-		$(SRC)/gsm_explode.o	\
-		$(SRC)/gsm_implode.o	\
-		$(SRC)/gsm_create.o	\
-		$(SRC)/gsm_print.o	\
-		$(SRC)/gsm_option.o	\
-		$(SRC)/short_term.o	\
+		$(SRC)/gsm_decode.o		\
+		$(SRC)/gsm_encode.o		\
+		$(SRC)/gsm_option.o		\
+		$(SRC)/code.o			\
+		$(SRC)/decode.o		\
+		$(SRC)/gsm_lpc.o		\
+		$(SRC)/rpe.o			\
+		$(SRC)/preprocess.o		\
+		$(SRC)/long_term.o		\
+		$(SRC)/short_term.o		\
 		$(SRC)/table.o
-
-ifeq (${OSARCH},Linux)
-ifneq ($(shell uname -m), x86_64)
-ifneq ($(shell uname -m), ppc)
-ifneq ($(shell uname -m), ppc64)
-ifneq ($(shell uname -m), alpha)
-ifneq ($(shell uname -m), sparc64)
-ifneq ($(shell uname -m), armv4l)
-GSM_OBJECTS+= $(SRC)/k6opt.o
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-
-TOAST_OBJECTS =	$(SRC)/toast.o 		\
-		$(SRC)/toast_lin.o	\
-		$(SRC)/toast_ulaw.o	\
-		$(SRC)/toast_alaw.o	\
-		$(SRC)/toast_audio.o
-
-OBJECTS =	 $(GSM_OBJECTS) $(TOAST_OBJECTS)
 
 # Manuals
 
-GSM_MANUALS =	$(MAN)/gsm.3		\
+MANUALS =	$(MAN)/gsm.3			\
 		$(MAN)/gsm_explode.3	\
-		$(MAN)/gsm_option.3	\
+		$(MAN)/gsm_option.3		\
 		$(MAN)/gsm_print.3
-
-TOAST_MANUALS =	$(MAN)/toast.1
-
-MANUALS	= 	$(GSM_MANUALS) $(TOAST_MANUALS) $(MAN)/bitter.1
 
 # Other stuff in the distribution
 
 STUFF = 	ChangeLog			\
 		INSTALL			\
-		MACHINES		\
-		MANIFEST		\
-		Makefile		\
-		README			\
-		$(ADDTST)/add_test.dta	\
-		$(TLS)/bitter.dta	\
-		$(TST)/run
+		MACHINES			\
+		MANIFEST			\
+		Makefile			\
+		README
 
 
 # Install targets
 
-GSM_INSTALL_TARGETS =	\
+GSM_INSTALL_TARGETS =					\
 		$(GSM_INSTALL_LIB)/libgsm.a		\
-		$(GSM_INSTALL_INC)/gsm.h		\
-		$(GSM_INSTALL_MAN)/gsm.3		\
+		$(GSM_INSTALL_INC)/gsm.h			\
+		$(GSM_INSTALL_MAN)/gsm.3			\
 		$(GSM_INSTALL_MAN)/gsm_explode.3	\
-		$(GSM_INSTALL_MAN)/gsm_option.3		\
+		$(GSM_INSTALL_MAN)/gsm_option.3	\
 		$(GSM_INSTALL_MAN)/gsm_print.3
-
-TOAST_INSTALL_TARGETS =	\
-		$(TOAST_INSTALL_BIN)/toast		\
-		$(TOAST_INSTALL_BIN)/tcat		\
-		$(TOAST_INSTALL_BIN)/untoast		\
-		$(TOAST_INSTALL_MAN)/toast.1
 
 
 # Default rules
@@ -363,49 +229,25 @@ TOAST_INSTALL_TARGETS =	\
 
 # Target rules
 
-all:		$(LIBGSM) $(LIBGSMSO) $(TOAST) $(TCAT) $(UNTOAST)
+all:		$(LIBGSM) $(LIBGSMSO)
 		@-echo $(ROOT): Done.
 
-tst:		$(TST)/lin2cod $(TST)/cod2lin $(TOAST) $(TST)/test-result
-		@-echo tst: Done.
 
-addtst:		$(ADDTST)/add $(ADDTST)/add_test.dta
-		$(ADDTST)/add < $(ADDTST)/add_test.dta > /dev/null
-		@-echo addtst: Done.
-
-misc:		$(TLS)/sweet $(TLS)/bitter $(TLS)/sour $(TLS)/ginger 	\
-			$(TST)/lin2txt $(TST)/cod2txt $(TST)/gsm2cod
-		@-echo misc: Done.
-
-install:	toastinstall gsminstall
+install:	gsminstall
 		@-echo install: Done.
 
 
 # The basic API: libgsm
 
-$(LIBGSMSO):	$(LIB) $(GSM_OBJECTS)
-		$(LD) -o $@.1.0.10 -shared -Xlinker -soname -Xlinker libgsm.so.1 $(GSM_OBJECTS) -lc
+$(LIBGSMSO):	$(LIB) $(OBJECTS)
+		$(LD) -o $@.1.0.10 -shared -Xlinker -soname -Xlinker libgsm.so.1 $(OBJECTS) -lc
 		ln -fs libgsm.so.1.0.10 lib/libgsm.so.1
 		ln -fs libgsm.so.1.0.10 lib/libgsm.so
 
-$(LIBGSM):	$(LIB) $(GSM_OBJECTS)
+$(LIBGSM):	$(LIB) $(OBJECTS)
 		-rm $(RMFLAGS) $(LIBGSM)
-		$(AR) $(ARFLAGS) $(LIBGSM) $(GSM_OBJECTS)
+		$(AR) $(ARFLAGS) $(LIBGSM) $(OBJECTS)
 		$(RANLIB) $(LIBGSM)
-
-
-# Toast, Untoast and Tcat -- the compress-like frontends to gsm.
-
-$(TOAST):	$(BIN) $(TOAST_OBJECTS) $(LIBGSM)
-		$(LD) $(LFLAGS) -o $(TOAST) $(TOAST_OBJECTS) $(LIBGSMSO) $(LDLIB)
-
-$(UNTOAST):	$(BIN) $(TOAST)
-		-rm $(RMFLAGS) $(UNTOAST)
-		$(LN) toast $(UNTOAST)
-
-$(TCAT):	$(BIN) $(TOAST)
-		-rm $(RMFLAGS) $(TCAT)
-		$(LN) toast $(TCAT)
 
 
 # The local bin and lib directories
@@ -424,38 +266,10 @@ gsminstall:
 			$(MAKE) $(GSM_INSTALL_TARGETS) ;	\
 		fi
 
-toastinstall:
-		-if [ x"$(TOAST_INSTALL_ROOT)" != x ]; then	\
-			$(MAKE) $(TOAST_INSTALL_TARGETS);	\
-		fi
-
 gsmuninstall:
 		-if [ x"$(GSM_INSTALL_ROOT)" != x ] ; then	\
 			rm $(RMFLAGS) $(GSM_INSTALL_TARGETS) ;	\
 		fi
-
-toastuninstall:
-		-if [ x"$(TOAST_INSTALL_ROOT)" != x ] ; then 	\
-			rm $(RMFLAGS) $(TOAST_INSTALL_TARGETS);	\
-		fi
-
-$(TOAST_INSTALL_BIN)/toast:	$(TOAST)
-		-rm $@
-		cp $(TOAST) $@
-		chmod 755 $@
-
-$(TOAST_INSTALL_BIN)/untoast:	$(TOAST_INSTALL_BIN)/toast
-		-rm $@
-		ln $? $@
-
-$(TOAST_INSTALL_BIN)/tcat:	$(TOAST_INSTALL_BIN)/toast
-		-rm $@
-		ln $? $@
-
-$(TOAST_INSTALL_MAN)/toast.1:	$(MAN)/toast.1
-		-rm $@
-		cp $? $@
-		chmod 444 $@
 
 $(GSM_INSTALL_MAN)/gsm.3:	$(MAN)/gsm.3
 		-rm $@
@@ -501,7 +315,7 @@ gsm-1.0.tar.Z:	$(STUFF) $(SOURCES) $(HEADERS) $(MANUALS)
 
 # Clean
 
-uninstall:	toastuninstall gsmuninstall
+uninstall:	gsmuninstall
 		@-echo uninstall: Done.
 
 semi-clean:
@@ -514,70 +328,10 @@ semi-clean:
 			-print | xargs rm $(RMFLAGS)
 
 clean:	semi-clean
-		-rm $(RMFLAGS) $(LIBGSM) $(ADDTST)/add		\
-			$(TOAST) $(TCAT) $(UNTOAST)	\
+		-rm $(RMFLAGS) $(LIBGSM) \
 			$(ROOT)/gsm-1.0.tar.Z
 		rm -rf lib
 
-# Two tools that helped me generate gsm_encode.c and gsm_decode.c,
-# but aren't generally needed to port this.
-
-$(TLS)/sweet:	$(TLS)/sweet.o $(TLS)/taste.o
-		$(LD) $(LFLAGS) -o $(TLS)/sweet \
-			$(TLS)/sweet.o $(TLS)/taste.o $(LDLIB)
-
-$(TLS)/bitter:	$(TLS)/bitter.o $(TLS)/taste.o
-		$(LD) $(LFLAGS) -o $(TLS)/bitter \
-			$(TLS)/bitter.o $(TLS)/taste.o $(LDLIB)
-
-# A version of the same family that Jeff Chilton used to implement
-# the WAV #49 GSM format.
-
-$(TLS)/ginger:	$(TLS)/ginger.o $(TLS)/taste.o
-		$(LD) $(LFLAGS) -o $(TLS)/ginger \
-			$(TLS)/ginger.o $(TLS)/taste.o $(LDLIB)
-
-$(TLS)/sour:	$(TLS)/sour.o $(TLS)/taste.o
-		$(LD) $(LFLAGS) -o $(TLS)/sour \
-			$(TLS)/sour.o $(TLS)/taste.o $(LDLIB)
-
-# Run $(ADDTST)/add < $(ADDTST)/add_test.dta to make sure the
-# basic arithmetic functions work as intended.
-
-$(ADDTST)/add:	$(ADDTST)/add_test.o
-		$(LD) $(LFLAGS) -o $(ADDTST)/add $(ADDTST)/add_test.o $(LDLIB)
 
 
-# Various conversion programs between linear, text, .gsm and the code
-# format used by the tests we ran (.cod).  We paid for the test data,
-# so I guess we can't just provide them with this package.  Still,
-# if you happen to have them lying around, here's the code.
-# 
-# You can use gsm2cod | cod2txt independently to look at what's
-# coded inside the compressed frames, although this shouldn't be
-# hard to roll on your own using the gsm_print() function from
-# the API.
 
-
-$(TST)/test-result:	$(TST)/lin2cod $(TST)/cod2lin $(TOAST) $(TST)/run
-			( cd $(TST); ./run ) 
-
-$(TST)/lin2txt:		$(TST)/lin2txt.o $(LIBGSM)
-			$(LD) $(LFLAGS) -o $(TST)/lin2txt \
-				$(TST)/lin2txt.o $(LIBGSM) $(LDLIB)
-
-$(TST)/lin2cod:		$(TST)/lin2cod.o $(LIBGSM)
-			$(LD) $(LFLAGS) -o $(TST)/lin2cod \
-				$(TST)/lin2cod.o $(LIBGSM) $(LDLIB)
-
-$(TST)/gsm2cod:		$(TST)/gsm2cod.o $(LIBGSM)
-			$(LD) $(LFLAGS) -o $(TST)/gsm2cod \
-				$(TST)/gsm2cod.o $(LIBGSM) $(LDLIB)
-
-$(TST)/cod2txt:		$(TST)/cod2txt.o $(LIBGSM)
-			$(LD) $(LFLAGS) -o $(TST)/cod2txt \
-				$(TST)/cod2txt.o $(LIBGSM) $(LDLIB)
-
-$(TST)/cod2lin:		$(TST)/cod2lin.o $(LIBGSM)
-			$(LD) $(LFLAGS) -o $(TST)/cod2lin \
-				$(TST)/cod2lin.o $(LIBGSM) $(LDLIB)

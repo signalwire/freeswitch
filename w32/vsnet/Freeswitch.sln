@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+# Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FreeSwitchConsole", "FreeSwitchConsole.vcproj", "{1AF3A893-F7BE-43DD-B697-8AB2397C0D67}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
@@ -69,6 +69,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_speexcodec", "mod_speex
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_event_test", "mod_event_test.vcproj", "{3A2A7795-C216-4FFF-B8EF-4D17A84BACCC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_codec_gsm", "..\..\src\mod\codec\mod_codec_gsm\mod_codec_gsm.vcproj", "{4926323F-4EA8-4B7D-A3D3-65488725988F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
@@ -201,6 +206,14 @@ Global
 		{3A2A7795-C216-4FFF-B8EF-4D17A84BACCC}.Release DLL|Win32.Build.0 = Release|Win32
 		{3A2A7795-C216-4FFF-B8EF-4D17A84BACCC}.Release|Win32.ActiveCfg = Release|Win32
 		{3A2A7795-C216-4FFF-B8EF-4D17A84BACCC}.Release|Win32.Build.0 = Release|Win32
+		{4926323F-4EA8-4B7D-A3D3-65488725988F}.Debug DLL|Win32.ActiveCfg = Debug|Win32
+		{4926323F-4EA8-4B7D-A3D3-65488725988F}.Debug DLL|Win32.Build.0 = Debug|Win32
+		{4926323F-4EA8-4B7D-A3D3-65488725988F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4926323F-4EA8-4B7D-A3D3-65488725988F}.Debug|Win32.Build.0 = Debug|Win32
+		{4926323F-4EA8-4B7D-A3D3-65488725988F}.Release DLL|Win32.ActiveCfg = Release|Win32
+		{4926323F-4EA8-4B7D-A3D3-65488725988F}.Release DLL|Win32.Build.0 = Release|Win32
+		{4926323F-4EA8-4B7D-A3D3-65488725988F}.Release|Win32.ActiveCfg = Release|Win32
+		{4926323F-4EA8-4B7D-A3D3-65488725988F}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
