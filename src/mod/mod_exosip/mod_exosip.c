@@ -806,7 +806,7 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 																  globals.dialplan,
 																  event->request->from->displayname,
 																  event->request->from->url->username,
-																  event->request->req_uri->host,
+																  event->request->from->url->host,
 																  NULL,
 																  NULL,
 																  event->request->req_uri->username))) {
