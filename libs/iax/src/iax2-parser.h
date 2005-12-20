@@ -139,7 +139,6 @@ extern int iax_parse_ies(struct iax_ies *ies, unsigned char *data, int datalen);
 extern int iax_get_frames(void);
 extern int iax_get_iframes(void);
 extern int iax_get_oframes(void);
-
 extern void iax_frame_wrap(struct iax_frame *fr, struct ast_frame *f);
 extern struct iax_frame *iax_frame_new(int direction, int datalen);
 extern void iax_frame_free(struct iax_frame *fr);

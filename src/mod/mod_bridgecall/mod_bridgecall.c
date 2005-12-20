@@ -171,12 +171,13 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 
 	caller_caller_profile = switch_channel_get_caller_profile(caller_channel);
 	caller_profile = switch_caller_profile_new(session,
-											caller_caller_profile->dialplan,
-											caller_caller_profile->caller_id_name,
-											caller_caller_profile->caller_id_number,
-											NULL,
-											NULL,
-											chan_data);
+											   caller_caller_profile->dialplan,
+											   caller_caller_profile->caller_id_name,
+											   caller_caller_profile->caller_id_number,
+											   caller_caller_profile->network_addr,
+											   NULL,
+											   NULL,
+											   chan_data);
 	
 
 	

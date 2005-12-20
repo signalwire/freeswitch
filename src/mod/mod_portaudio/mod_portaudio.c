@@ -794,6 +794,7 @@ static switch_status place_call(char *dest, char *out, size_t outlen)
 																  globals.cid_num,
 																  NULL,
 																  NULL,
+																  NULL,
 																  dest))) {
 			char name[128];
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);

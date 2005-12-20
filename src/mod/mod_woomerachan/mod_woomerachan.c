@@ -1052,6 +1052,7 @@ static void *woomera_channel_thread_run(switch_thread *thread, void *obj)
 				char *exten;
 				char cid_name[512];
 				char *cid_num;
+				char *ip;
 				char *p;
 				switch_clear_flag(tech_pvt, TFLAG_PARSE_INCOMING);
 				switch_set_flag(tech_pvt, TFLAG_INCOMING);
@@ -1072,14 +1073,16 @@ static void *woomera_channel_thread_run(switch_thread *thread, void *obj)
 				} else {
 					cid_num = woomera_message_header(&wmsg, "Remote-Number");
 				}
-				
+				ip = woomera_message_header(&wmsg, "Remote-Address");
+
 				if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
-																	   tech_pvt->profile->dialplan,
-																	   cid_name,
-																	   cid_num,
-																	   NULL,
-																	   NULL,
-																	   exten))) {
+																		  tech_pvt->profile->dialplan,
+																		  cid_name,
+																		  cid_num,
+																		  ip,
+																		  NULL,
+																		  NULL,
+																		  exten))) {
 					char name[128];
 					switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 					snprintf(name, sizeof(name), "Woomera/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);

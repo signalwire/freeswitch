@@ -32,12 +32,13 @@
 #include <switch_caller.h>
 
 SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_core_session *session,
-										   char *dialplan,
-										   char *caller_id_name,
-										   char *caller_id_number,
-										   char *ani,
-										   char *ani2,
-										   char *destination_number)
+																  char *dialplan,
+																  char *caller_id_name,
+																  char *caller_id_number,
+																  char *network_addr,
+																  char *ani,
+																  char *ani2,
+																  char *destination_number)
 {
 
 
@@ -47,6 +48,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_core_se
 		profile->dialplan = switch_core_session_strdup(session, dialplan);
 		profile->caller_id_name = switch_core_session_strdup(session, caller_id_name);
 		profile->caller_id_number = switch_core_session_strdup(session, caller_id_number);
+		profile->network_addr = switch_core_session_strdup(session, network_addr);
 		profile->ani = switch_core_session_strdup(session, ani);
 		profile->ani2 = switch_core_session_strdup(session, ani2);
 		profile->destination_number = switch_core_session_strdup(session, destination_number);
@@ -57,7 +59,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_core_se
 
 
 SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_session *session,
-											 switch_caller_profile *tocopy)
+																	switch_caller_profile *tocopy)
 {
 	switch_caller_profile *profile = NULL;
 	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile)))) {
@@ -66,6 +68,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
 		profile->ani = switch_core_session_strdup(session, tocopy->ani);
 		profile->ani2 = switch_core_session_strdup(session, tocopy->ani2);
 		profile->caller_id_number = switch_core_session_strdup(session, tocopy->caller_id_number);
+		profile->network_addr = switch_core_session_strdup(session, tocopy->network_addr);
 		profile->destination_number = switch_core_session_strdup(session, tocopy->destination_number);
 	}
 
@@ -73,9 +76,9 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
 }
 
 SWITCH_DECLARE(switch_caller_extension *) switch_caller_extension_new(switch_core_session *session,
-											   char *extension_name,
-											   char *extension_number
-											   )
+																	  char *extension_name,
+																	  char *extension_number
+																	  )
 {
 	switch_caller_extension *caller_extension = NULL;
 
@@ -90,9 +93,9 @@ SWITCH_DECLARE(switch_caller_extension *) switch_caller_extension_new(switch_cor
 
 
 SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session *session,
-										  switch_caller_extension *caller_extension,
-										  char *application_name,
-										  char *application_data)
+															 switch_caller_extension *caller_extension,
+															 char *application_name,
+															 char *application_data)
 {
 	switch_caller_application *caller_application = NULL;
 

@@ -803,12 +803,13 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 		}
 		
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
-															   globals.dialplan,
-															   event->request->from->displayname,
-															   event->request->from->url->username,
-															   event->request->from->url->username,
-															   NULL,
-															   event->request->req_uri->username))) {
+																  globals.dialplan,
+																  event->request->from->displayname,
+																  event->request->from->url->username,
+																  event->request->req_uri->host,
+																  NULL,
+																  NULL,
+																  event->request->req_uri->username))) {
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}
 

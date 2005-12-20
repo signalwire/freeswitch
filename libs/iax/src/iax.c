@@ -3145,6 +3145,16 @@ struct sockaddr_in iax_get_peer_addr(struct iax_session *session)
 	return session->peeraddr;
 }
 
+char *iax_get_peer_ip(struct iax_session *session)
+{
+	return inet_ntoa(session->peeraddr.sin_addr);
+}
+
+char *iax_event_get_apparent_ip(struct iax_event *event)
+{
+	return inet_ntoa(event->ies.apparent_addr->sin_addr);
+}
+
 void iax_session_destroy(struct iax_session **session) 
 {
 	destroy_session(*session);

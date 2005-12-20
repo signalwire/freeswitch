@@ -872,12 +872,13 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 							break;
 						}
 
-
+						
 						if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
 																				  globals.dialplan,
 																				  iaxevent->ies.calling_name,
 																				  iaxevent->ies.calling_number,
-																				  NULL,
+																				  iax_get_peer_ip(iaxevent->session),
+																				  iaxevent->ies.calling_ani,
 																				  NULL,
 																				  iaxevent->ies.called_number))) {
 							char name[128];
