@@ -939,6 +939,14 @@ uninstall-info: uninstall-info-recursive
 	uninstall-libLTLIBRARIES uninstall-library_includeHEADERS
 
 
+depends:
+	./buildlib.sh apr-1.2.2.tar.gz --prefix=/usr/local 
+	./buildlib.sh jthread-1.1.2.tar.gz --prefix=/usr/local 
+	./buildlib.sh jrtplib-3.3.0.tar.gz --prefix=/usr/local 
+	./buildlib.sh libosip2-2.2.2.tar.gz --prefix=/usr/local 
+	./buildlib.sh libeXosip2-2.2.2.tar.gz --prefix=/usr/local --disable-josua
+	./buildlib.sh speex-1.1.11.1.tar.gz --prefix=/usr/local 
+
 modules: $(NAME)
 	@echo making modules
 	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
