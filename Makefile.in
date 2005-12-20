@@ -947,6 +947,8 @@ depends:
 	./buildlib.sh libeXosip2-2.2.2.tar.gz --prefix=/usr/local --disable-josua
 	./buildlib.sh speex-1.1.11.1.tar.gz --prefix=/usr/local 
 	./buildlib.sh portaudio.tar.gz
+	test -f libs/iax/src/.libs/libiax.a || (cd libs/iax && ./configure)
+	test -f libs/iax/src/.libs/libiax.a || (cd libs/iax && make install)
 
 modules: $(NAME)
 	@echo making modules
