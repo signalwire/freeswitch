@@ -46,6 +46,9 @@ static int THREAD_RUNNING = 0;
 */
 static char *EVENT_NAMES[] = {
 	"CUSTOM",
+	"CHANNEL_STATE",
+	"CHANNEL_ANSWER",
+	"LOG",
 	"INBOUND_CHAN",
 	"OUTBOUND_CHAN",
 	"ANSWER_CHAN",
@@ -161,7 +164,10 @@ static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void
 	return NULL;
 }
 
-
+SWITCH_DECLARE(switch_status) switch_event_running(void)
+{
+	return THREAD_RUNNING ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
 
 SWITCH_DECLARE(char *) switch_event_name(switch_event_t event)
 {
@@ -387,7 +393,7 @@ SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *
 		}
 	}
 
-	snprintf(buf, buflen, "name: %s\n", switch_event_name(event->event_id));
+	snprintf(buf, buflen, "event_name: %s\n", switch_event_name(event->event_id));
 	len = strlen(buf);
 	if (event->subclass) {
 		snprintf(buf+len, buflen-len, "subclass-name: %s\nowner: %s", event->subclass->name, event->subclass->owner);
@@ -412,13 +418,23 @@ SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func,
 {
 
 	switch_event *ep;
+	switch_time_exp_t tm;
+	char date[80] = "";
+	size_t retsize;
 
 	assert(BLOCK != NULL);
 	assert(EPOOL != NULL);
 
-	switch_event_add_header(*event, "file", file);
-	switch_event_add_header(*event, "function", func);
-	switch_event_add_header(*event, "line_number", "%d", line);
+	switch_time_exp_lt(&tm, switch_time_now());
+	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d", &tm);
+	switch_event_add_header(*event, "event_date", date);
+
+	switch_strftime(date, &retsize, sizeof(date), "%T", &tm);
+	switch_event_add_header(*event, "event_time", date);
+
+	switch_event_add_header(*event, "event_file", file);
+	switch_event_add_header(*event, "event_function", func);
+	switch_event_add_header(*event, "event_line_number", "%d", line);
 	
 	if (user_data) {
 		(*event)->event_user_data = user_data;

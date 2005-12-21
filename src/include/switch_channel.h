@@ -74,7 +74,8 @@ SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel *channel,
 SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, size_t len);
 SWITCH_DECLARE(switch_status) switch_channel_set_raw_mode (switch_channel *channel, int freq, int bits, int channels, int ms, int kbps);
 SWITCH_DECLARE(switch_status) switch_channel_get_raw_mode (switch_channel *channel, int *freq, int *bits, int *channels, int *ms, int *kbps);
-
+SWITCH_DECLARE(const char *) switch_channel_state_name(switch_channel_state state);
+SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, switch_event *event);
 #ifdef __cplusplus
 }
 #endif

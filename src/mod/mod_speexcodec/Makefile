@@ -1,5 +1,5 @@
 depends:
-	$(BASE)/buildlib.sh $(BASE) install speex-1.1.11.1.tar.gz --prefix=/usr/local 
+	$(BASE)/buildlib.sh $(BASE) install speex-1.1.11.1.tar.gz
 
 $(MOD).so: $(MOD).c
 	$(CC) $(CFLAGS) -fPIC -c $(MOD).c -o $(MOD).o

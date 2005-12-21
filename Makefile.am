@@ -28,6 +28,7 @@ AM_CFLAGS  +=-I$(PWD)/src/sqlite -I$(PWD) -I$(PWD)/src/include -I$(PREFIX)/inclu
 AM_CFLAGS 	+= -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\"
 AM_CFLAGS	+= -DSWITCH_PREFIX_DIR=\"$(PREFIX)\"
 AM_CFLAGS	+= -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
+AM_CFLAGS	+= -DSWITCH_DB_DIR=\"$(PREFIX)/db\"
 
 libfreeswitch_la_SOURCES	= \
 src/include/switch.h \
@@ -88,7 +89,8 @@ nodepends:
 
 depends:
 	./buildlib.sh . install sqlite-3.2.8.tar.gz --disable-tcl --enable-threadsafe
-	./buildlib.sh . install apr-1.2.2.tar.gz --prefix=/usr/local 
+	./buildlib.sh . install apr-1.2.2.tar.gz
+	./buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=/usr/src/freeswitch/libs/apr-1.2.2
 
 modules: $(NAME)
 	@echo making modules

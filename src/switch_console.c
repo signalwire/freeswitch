@@ -116,9 +116,24 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *fi
 		} else {
 			size_t retsize;
 			switch_time_exp_t tm;
+			switch_event *event;
 			switch_time_exp_lt(&tm, switch_time_now());
 			switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
-			fprintf(handle, "[%d] %s %s:%d %s() %s", (int)getpid(), date, filep, line, func, data);
+
+			if (channel == SWITCH_CHANNEL_ID_CONSOLE) {
+				fprintf(handle, "[%d] %s %s:%d %s() %s", (int)getpid(), date, filep, line, func, data);
+			}
+
+			else if (channel == SWITCH_CHANNEL_ID_EVENT && 
+					 switch_event_running() == SWITCH_STATUS_SUCCESS && 
+					 switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
+				
+				switch_event_add_header(event, "log_data", "%s", data);
+				switch_event_add_header(event, "log_file", "%s", filep);
+				switch_event_add_header(event, "log_function", "%s", func);
+				switch_event_add_header(event, "log_line", "%d", line);
+				switch_event_fire(&event);
+			}
 			free(data);
 		}
 	}

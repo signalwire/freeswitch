@@ -122,7 +122,7 @@ SWITCH_DECLARE(int) switch_channel_has_dtmf(switch_channel *channel)
 SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel *channel, char *dtmf)
 {
 	switch_status status;
-	
+
 	assert(channel != NULL);
 
 	switch_mutex_lock(channel->dtmf_mutex);
@@ -140,6 +140,7 @@ SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel *channel,
 SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, size_t len)
 {
 	int bytes;
+	switch_event *event;
 
 	assert(channel != NULL);
 
@@ -149,6 +150,11 @@ SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *d
 	}
 	switch_mutex_unlock(channel->dtmf_mutex);
 
+	if (bytes && switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_add_header(event, "dtmf_string", dtmf);
+		switch_event_fire(&event);
+	}
 
 	return bytes;
 
@@ -235,20 +241,27 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_get_state(switch_channel *ch
 	return channel->state;
 }
 
+static const char *state_names[] = {
+	"CS_NEW",
+	"CS_INIT",
+	"CS_RING",
+	"CS_TRANSMIT",
+	"CS_EXECUTE",
+	"CS_LOOPBACK",
+	"CS_HANGUP",
+	"CS_DONE"
+};
+
+SWITCH_DECLARE(const char *) switch_channel_state_name(switch_channel_state state)
+{
+	return state_names[state];
+}
+
 SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *channel, switch_channel_state state)
 {
 	switch_channel_state last_state;
 	int ok = 0;
-	const char *state_names[] = {
-		"CS_NEW",
-		"CS_INIT",
-		"CS_RING",
-		"CS_TRANSMIT",
-		"CS_EXECUTE",
-		"CS_LOOPBACK",
-		"CS_HANGUP",
-		"CS_DONE"
-	};
+
 
 	assert(channel != NULL);
 	last_state = channel->state;
@@ -381,6 +394,81 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 	return channel->state;
 }
 
+SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, switch_event *event)
+{
+	switch_caller_profile *caller_profile, *originator_caller_profile;
+	switch_hash_index_t* hi;
+	void *val;
+	const void *var;
+
+	caller_profile = switch_channel_get_caller_profile(channel);
+	originator_caller_profile = switch_channel_get_originator_caller_profile(channel);
+	
+	switch_event_add_header(event, "channel_state", (char *) switch_channel_state_name(channel->state));
+	switch_event_add_header(event, "channel_name", switch_channel_get_name(channel));
+
+	/* Index Caller's Profile */	
+	if (caller_profile) {
+		if (caller_profile->dialplan) {
+			switch_event_add_header(event, "channel_dialplan", caller_profile->dialplan);
+		}
+		if (caller_profile->caller_id_name) {
+			switch_event_add_header(event, "channel_caller_id_name", caller_profile->caller_id_name);
+		}
+		if (caller_profile->caller_id_number) {
+			switch_event_add_header(event, "channel_caller_id_number", caller_profile->caller_id_number);
+		}
+		if (caller_profile->network_addr) {
+			switch_event_add_header(event, "channel_network_addr", caller_profile->network_addr);
+		}
+		if (caller_profile->ani) {
+			switch_event_add_header(event, "channel_ani", caller_profile->ani);
+		}
+		if (caller_profile->ani2) {
+			switch_event_add_header(event, "channel_ani2", caller_profile->ani2);
+		}
+		if (caller_profile->destination_number) {
+			switch_event_add_header(event, "channel_destination_number", caller_profile->destination_number);
+		}
+	}
+	/* Index Originator's Profile */
+	if (originator_caller_profile) {
+		if (originator_caller_profile->dialplan) {
+			switch_event_add_header(event, "channel_dialplan", originator_caller_profile->dialplan);
+		}
+		if (originator_caller_profile->caller_id_name) {
+			switch_event_add_header(event, "channel_caller_id_name", originator_caller_profile->caller_id_name);
+		}
+		if (originator_caller_profile->caller_id_number) {
+			switch_event_add_header(event, "channel_caller_id_number", originator_caller_profile->caller_id_number);
+		}
+		if (originator_caller_profile->network_addr) {
+			switch_event_add_header(event, "channel_network_addr", originator_caller_profile->network_addr);
+		}
+		if (originator_caller_profile->ani) {
+			switch_event_add_header(event, "channel_ani", originator_caller_profile->ani);
+		}
+		if (originator_caller_profile->ani2) {
+			switch_event_add_header(event, "channel_ani2", originator_caller_profile->ani2);
+		}
+		if (originator_caller_profile->destination_number) {
+			switch_event_add_header(event, "channel_destination_number", originator_caller_profile->destination_number);
+		}
+	}
+	/* Index Variables */
+	for (hi = switch_hash_first(switch_core_session_get_pool(channel->session), channel->variables); hi; hi = switch_hash_next(hi)) {
+		char buf[1024];
+		switch_event_subclass *subclass;
+		switch_hash_this(hi, &var, NULL, &val);
+		subclass = val;
+		snprintf(buf, sizeof(buf), "variable_%s", (char *) var);
+		switch_event_add_header(event, buf, (char *) val);
+	}
+
+
+
+}
+
 SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel *channel, switch_caller_profile *caller_profile)
 {
 	assert(channel != NULL);
@@ -448,8 +536,14 @@ SWITCH_DECLARE(switch_status) switch_channel_answer(switch_channel *channel)
 
 
 	if (switch_core_session_answer_channel(channel->session) == SWITCH_STATUS_SUCCESS) {
+		switch_event *event;
+
 		switch_channel_set_flag(channel, CF_ANSWERED);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Answer!\n");
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Answer %s!\n", channel->name);
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
+		}
 		return SWITCH_STATUS_SUCCESS;
 	}
 

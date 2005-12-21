@@ -39,9 +39,14 @@ static char *embedding[] = { "", "-e", ""};
 EXTERN_C void xs_init (pTHX);
 #endif
 
-//#include <sys/types.h>
-//#include <sys/stat.h>
-//#include <fcntl.h>
+
+#ifndef SWITCH_DB_DIR
+#ifdef WIN32
+#define SWITCH_DB_DIR ".\\db"
+#else
+#define SWITCH_DB_DIR "/usr/local/freeswitch/db"
+#endif
+#endif
 
 struct switch_core_session {
 	unsigned long id;
@@ -77,6 +82,7 @@ struct switch_core_runtime {
 	unsigned long session_id;
 	apr_pool_t *memory_pool;
 	switch_hash *session_table;
+	switch_core_db *db;
 #ifdef EMBED_PERL
 	PerlInterpreter *my_perl;
 #endif
@@ -93,6 +99,7 @@ static void switch_core_standard_on_ring(switch_core_session *session);
 static void switch_core_standard_on_execute(switch_core_session *session);
 static void switch_core_standard_on_loopback(switch_core_session *session);
 static void switch_core_standard_on_transmit(switch_core_session *session);
+
 
 /* The main runtime obj we keep this hidden for ourselves */
 static struct switch_core_runtime runtime;
@@ -116,6 +123,32 @@ static int handle_SIGBUS(int sig)
 static int handle_SIGINT(int sig)
 {
 	return 0;
+}
+
+
+static void db_pick_path(char *dbname, char *buf, size_t size) 
+{
+
+	memset(buf, 0, size);
+	if (strchr(dbname, '/')) {
+		strncpy(buf, dbname, size);
+	} else {
+		snprintf(buf, size, "%s/%s.db", SWITCH_DB_DIR, dbname);
+	}
+}
+
+SWITCH_DECLARE(switch_core_db *) switch_core_db_open_file(char *filename) 
+{
+	switch_core_db *db;
+	char path[1024];
+	
+	db_pick_path(filename, path, sizeof(path));
+	if (switch_core_db_open(path, &db)) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SQL ERR [%s]\n", switch_core_db_errmsg(db));
+		switch_core_db_close(db);
+		db=NULL;
+	}
+	return db;
 }
 
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel)
@@ -1195,9 +1228,15 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 	switch_mutex_lock(session->mutex);
 
 	while ((state = switch_channel_get_state(session->channel)) != CS_DONE) {
-		if (state != laststate) {
+		switch_event *event;
 
+		if (state != laststate) {
 			midstate = state;
+
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(session->channel, event);
+				switch_event_fire(&event);
+			}
 
 			switch ( state ) {
 			case CS_NEW: /* Just created, Waiting for first instructions */
@@ -1510,6 +1549,22 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request_by_name(char *
 	return switch_core_session_request(endpoint_interface, pool);
 }
 
+
+static void core_event_handler (switch_event *event)
+{
+	char buf[1024];
+
+	switch(event->event_id) {
+	case SWITCH_EVENT_LOG:
+		return;
+		break;
+	default:
+		switch_event_serialize(event, buf, sizeof(buf), NULL);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "\nCORE EVENT\n--------------------------------\n%s\n", buf);
+		break;
+	}
+}
+
 SWITCH_DECLARE(switch_status) switch_core_init(void)
 {
 #ifdef EMBED_PERL
@@ -1531,7 +1586,17 @@ SWITCH_DECLARE(switch_status) switch_core_init(void)
 	}
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocated memory pool.\n");
 	switch_event_init(runtime.memory_pool);
-	
+
+	/* Activate SQL database */
+	if (!(runtime.db = switch_core_db_handle())) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error Opening DB!\n");
+	} else {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Opening DB\n");
+		if (switch_event_bind("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't bind event handler!\n");
+		}
+	}
+
 #ifdef EMBED_PERL
 	if (! (my_perl = perl_alloc())) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate perl intrepreter\n");
@@ -1579,6 +1644,9 @@ SWITCH_DECLARE(switch_status) switch_core_destroy(void)
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Closing Event Engine.\n");
 	switch_event_shutdown();
+
+
+	switch_core_db_close(runtime.db);
 
 	if (runtime.memory_pool) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unallocating memory pool.\n");

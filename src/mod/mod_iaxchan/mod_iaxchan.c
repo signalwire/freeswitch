@@ -982,7 +982,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 	iax_shutdown();
 
 	while (running) {
-		if (x++ > 1000) {
+		if (x++ > 100) {
 			break;
 		}
 		switch_yield(20000);

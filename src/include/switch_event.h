@@ -82,6 +82,7 @@ SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, 
 SWITCH_DECLARE(char *) switch_event_name(switch_event_t event);
 SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name);
 SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, size_t buflen, char *fmt, ...);
+SWITCH_DECLARE(switch_status) switch_event_running(void);
 
 #define switch_event_reserve_subclass(subclass_name) switch_event_reserve_subclass_detailed(__FILE__, subclass_name)
 #define switch_event_create(event, id) switch_event_create_subclass(event, id, SWITCH_EVENT_SUBCLASS_ANY)

@@ -36,8 +36,16 @@ static const char modname[] = "mod_event_test";
 static void event_handler (switch_event *event)
 {
 	char buf[1024];
-	switch_event_serialize(event, buf, sizeof(buf), NULL);
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "\nEVENT\n--------------------------------\n%s\n", buf);
+
+	switch(event->event_id) {
+	case SWITCH_EVENT_LOG:
+		return;
+		break;
+	default:
+		switch_event_serialize(event, buf, sizeof(buf), NULL);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "\nEVENT\n--------------------------------\n%s\n", buf);
+		break;
+	}
 }
 						  
 
