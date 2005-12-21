@@ -54,7 +54,8 @@ struct switch_event {
 	char *owner;
 	switch_event_subclass *subclass;
 	struct switch_event_header *headers;
-	void *user_data;
+	void *bind_user_data;
+	void *event_user_data;
 	struct switch_event *next;
 };
 
@@ -76,7 +77,7 @@ SWITCH_DECLARE(char *) switch_event_get_header(switch_event *event, char *header
 SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, char *header_name, char *fmt, ...);
 SWITCH_DECLARE(void) switch_event_destroy(switch_event **event);
 SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_event *todup);
-SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event **event);
+SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event **event, void *user_data);
 SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, char *subclass_name, switch_event_callback_t callback, void *user_data);
 SWITCH_DECLARE(char *) switch_event_name(switch_event_t event);
 SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name);
@@ -84,6 +85,7 @@ SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *
 
 #define switch_event_reserve_subclass(subclass_name) switch_event_reserve_subclass_detailed(__FILE__, subclass_name)
 #define switch_event_create(event, id) switch_event_create_subclass(event, id, SWITCH_EVENT_SUBCLASS_ANY)
-#define switch_event_fire(event) switch_event_fire_detailed(__FILE__, __FUNCTION__, __LINE__, event)
+#define switch_event_fire(event) switch_event_fire_detailed(__FILE__, (char * )__FUNCTION__, __LINE__, event, NULL)
+#define switch_event_fire_data(event, data) switch_event_fire_detailed(__FILE__, (char * )__FUNCTION__, __LINE__, event, data)
 
 #endif

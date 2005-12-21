@@ -1,5 +1,5 @@
 EXTRA_DIST =
-SUBDIRS = libs/jrtp4c
+SUBDIRS = 
 AUTOMAKE_OPTS		= gnu
 MAKE=gmake
 NAME=freeswitch
@@ -8,7 +8,6 @@ APR_CONFIG=$(prefix)/bin/apr-1-config
 AM_CFLAGS  = $(shell $(APR_CONFIG) --cflags --cppflags --includes)
 AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) 
 OSARCH=$(shell uname -s)
-
 if ISLINUX
 AM_LDFLAGS += -Wl,-E
 endif
@@ -25,7 +24,7 @@ endif
 
 
 AM_CFLAGS  += -fPIC -Wall
-AM_CFLAGS  +=-I$(PWD) -I$(PWD)/src/include -I$(PREFIX)/include
+AM_CFLAGS  +=-I$(PWD)/src/sqlite -I$(PWD) -I$(PWD)/src/include -I$(PREFIX)/include
 AM_CFLAGS 	+= -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\"
 AM_CFLAGS	+= -DSWITCH_PREFIX_DIR=\"$(PREFIX)\"
 AM_CFLAGS	+= -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
@@ -54,7 +53,8 @@ src/switch_core.c \
 src/switch_loadable_module.c \
 src/switch_mutex.c \
 src/switch_utils.c \
-src/switch_event.c
+src/switch_event.c 
+
 
 #bindir = $(PREFIX)/bin
 #libdir = $(PREFIX)/lib
@@ -84,6 +84,7 @@ freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDFLAGS = -static -lfreeswitch
 
 depends:
+	./buildlib.sh sqlite-3.2.8.tar.gz --disable-tcl --enable-threadsafe
 	./buildlib.sh apr-1.2.2.tar.gz --prefix=/usr/local 
 	./buildlib.sh jthread-1.1.2.tar.gz --prefix=/usr/local 
 	./buildlib.sh jrtplib-3.3.0.tar.gz --prefix=/usr/local 
@@ -91,7 +92,7 @@ depends:
 	./buildlib.sh libeXosip2-2.2.2.tar.gz --prefix=/usr/local --disable-josua
 	./buildlib.sh speex-1.1.11.1.tar.gz --prefix=/usr/local 
 	./buildlib.sh portaudio.tar.gz
-	test -f libs/iax/src/.libs/libiax.a || (cd libs/iax && ./configure)
+	test -f libs/iax/src/.libs/libiax.a || (cd libs/iax && ./configure ./configure --enable-newjb)
 	test -f libs/iax/src/.libs/libiax.a || (cd libs/iax && make install)
 
 modules: $(NAME)

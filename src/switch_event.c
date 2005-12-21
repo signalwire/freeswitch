@@ -142,7 +142,7 @@ static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void
 			for(e = out_event->event_id;; e = SWITCH_EVENT_ALL) {
 				for(node = EVENT_NODES[e]; node; node = node->next) {
 					if (switch_events_match(out_event, node)) {
-						out_event->user_data = node->user_data;
+						out_event->bind_user_data = node->user_data;
 						node->callback(out_event);
 					}
 				}
@@ -342,7 +342,8 @@ SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_even
 	}
 	
 	(*event)->subclass = todup->subclass;
-	(*event)->user_data = todup->user_data;
+	(*event)->event_user_data = todup->event_user_data;
+	(*event)->bind_user_data = todup->bind_user_data;
 	
 	for (hp = todup->headers; hp && hp->next;) {
 		if (!(header = malloc(sizeof(*header)))) {
@@ -397,7 +398,7 @@ SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *
 		len = strlen(buf);
 	}
 	if (data) {
-		snprintf(buf+len, buflen-len, "Content-Length: %d\n\n%s", strlen(data), data);
+		snprintf(buf+len, buflen-len, "Content-Length: %d\n\n%s", (int)strlen(data), data);
 		free(data);
 	} else {
 		snprintf(buf+len, buflen-len, "\n");
@@ -407,7 +408,7 @@ SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *
 }
 
 
-SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event **event)
+SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event **event, void *user_data)
 {
 
 	switch_event *ep;
@@ -418,6 +419,10 @@ SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func,
 	switch_event_add_header(*event, "file", file);
 	switch_event_add_header(*event, "function", func);
 	switch_event_add_header(*event, "line_number", "%d", line);
+	
+	if (user_data) {
+		(*event)->event_user_data = user_data;
+	}
 	
 	switch_mutex_lock(QLOCK);
 	/* <LOCKED> -----------------------------------------------*/

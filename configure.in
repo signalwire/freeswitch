@@ -32,9 +32,7 @@ AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 AC_CHECK_FUNCS([gethostname vasprintf])
 
-AC_CONFIG_FILES([Makefile
-			libs/jrtp4c/Makefile
-])
+AC_CONFIG_FILES([Makefile])
 
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
 AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
