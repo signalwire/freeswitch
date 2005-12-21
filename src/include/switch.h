@@ -60,14 +60,7 @@ extern "C" {
 #include <apr_network_io.h>
 #include <apr_poll.h>
 #include <assert.h>
-
-//#include <time.h>
-//#include <stdlib.h>
-//#include <stdio.h>
-//#include <sys/types.h>
-//#include <stdarg.h>
-//#include <sys/types.h>
-//#include <string.h>
+#include <sqlite3.h>
 
 #ifdef WIN32
 #if defined(SWITCH_CORE_DECLARE_STATIC)
