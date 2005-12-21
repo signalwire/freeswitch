@@ -226,17 +226,18 @@ MAKE = gmake
 NAME = freeswitch
 PREFIX = $(prefix)/${NAME}
 APR_CONFIG = $(prefix)/bin/apr-1-config
+APU_CONFIG = $(prefix)/bin/apu-1-config
 
 #AM_LDFLAGS += -L$(PREFIX)/lib
 AM_CFLAGS = $(shell $(APR_CONFIG) --cflags --cppflags --includes) \
-	$(am__append_2) -fPIC -Wall -I$(PWD)/src/sqlite -I$(PWD) \
-	-I$(PWD)/src/include -I$(PREFIX)/include \
-	-DSWITCH_MOD_DIR=\"$(PREFIX)/mod\" \
+	$(shell $(APU_CONFIG) --includes) $(am__append_2) -fPIC -Wall \
+	-I$(PWD)/src/sqlite -I$(PWD) -I$(PWD)/src/include \
+	-I$(PREFIX)/include -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\" \
 	-DSWITCH_PREFIX_DIR=\"$(PREFIX)\" \
 	-DSWITCH_CONF_DIR=\"$(PREFIX)/conf\" \
 	-DSWITCH_DB_DIR=\"$(PREFIX)/db\"
-AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) -lsqlite3 \
-	$(am__append_1)
+AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) $(shell \
+	$(APU_CONFIG) --link-ld --libs ) $(am__append_1)
 OSARCH = $(shell uname -s)
 @ISMAC_FALSE@SOLINK = -shared -Xlinker -x
 @ISMAC_TRUE@SOLINK = -dynamic -bundle -undefined suppress -force_flat_namespace

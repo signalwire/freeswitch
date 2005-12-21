@@ -5,8 +5,11 @@ MAKE=gmake
 NAME=freeswitch
 PREFIX=$(prefix)/${NAME}
 APR_CONFIG=$(prefix)/bin/apr-1-config
+APU_CONFIG=$(prefix)/bin/apu-1-config
 AM_CFLAGS  = $(shell $(APR_CONFIG) --cflags --cppflags --includes)
-AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) -lsqlite3
+AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs )
+AM_CFLAGS  += $(shell $(APU_CONFIG) --includes)
+AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs ) 
 OSARCH=$(shell uname -s)
 if ISLINUX
 AM_LDFLAGS += -Wl,-E

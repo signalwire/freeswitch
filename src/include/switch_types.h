@@ -226,6 +226,14 @@ typedef apr_hash_index_t switch_hash_index_t;
 #define switch_thread_cond_broadcast apr_thread_cond_broadcast
 #define switch_thread_cond_destroy apr_thread_cond_destroy
 
+#define switch_queue_create apr_queue_create
+#define switch_queue_interrupt_all apr_queue_interrupt_all
+#define switch_queue_pop apr_queue_pop
+#define switch_queue_push apr_queue_push
+#define switch_queue_size apr_queue_size
+#define switch_queue_term apr_queue_term
+#define switch_queue_trypop apr_queue_trypop
+#define switch_queue_trypush apr_queue_trypush
 #define switch_poll_setup apr_poll_setup
 #define switch_pollset_create apr_pollset_create
 #define switch_pollset_add apr_pollset_add
