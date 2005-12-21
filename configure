@@ -21359,7 +21359,7 @@ fi
 done
 
 
-                    ac_config_files="$ac_config_files Makefile libs/jrtp4c/Makefile"
+          ac_config_files="$ac_config_files Makefile"
 
 
 
@@ -21956,7 +21956,6 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-  "libs/jrtp4c/Makefile" ) CONFIG_FILES="$CONFIG_FILES libs/jrtp4c/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/include/config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/include/config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

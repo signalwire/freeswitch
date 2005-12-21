@@ -6,7 +6,7 @@ NAME=freeswitch
 PREFIX=$(prefix)/${NAME}
 APR_CONFIG=$(prefix)/bin/apr-1-config
 AM_CFLAGS  = $(shell $(APR_CONFIG) --cflags --cppflags --includes)
-AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) 
+AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) -lsqlite3
 OSARCH=$(shell uname -s)
 if ISLINUX
 AM_LDFLAGS += -Wl,-E
@@ -83,21 +83,16 @@ freeswitch_SOURCES = src/switch.c
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDFLAGS = -static -lfreeswitch
 
+nodepends:
+	touch .nodepends
+
 depends:
-	./buildlib.sh sqlite-3.2.8.tar.gz --disable-tcl --enable-threadsafe
-	./buildlib.sh apr-1.2.2.tar.gz --prefix=/usr/local 
-	./buildlib.sh jthread-1.1.2.tar.gz --prefix=/usr/local 
-	./buildlib.sh jrtplib-3.3.0.tar.gz --prefix=/usr/local 
-	./buildlib.sh libosip2-2.2.2.tar.gz --prefix=/usr/local 
-	./buildlib.sh libeXosip2-2.2.2.tar.gz --prefix=/usr/local --disable-josua
-	./buildlib.sh speex-1.1.11.1.tar.gz --prefix=/usr/local 
-	./buildlib.sh portaudio.tar.gz
-	test -f libs/iax/src/.libs/libiax.a || (cd libs/iax && ./configure ./configure --enable-newjb)
-	test -f libs/iax/src/.libs/libiax.a || (cd libs/iax && make install)
+	./buildlib.sh . install sqlite-3.2.8.tar.gz --disable-tcl --enable-threadsafe
+	./buildlib.sh . install apr-1.2.2.tar.gz --prefix=/usr/local 
 
 modules: $(NAME)
 	@echo making modules
-	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
+	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
 
 modclean:
 	@cd src/mod && for i in [a-z]* ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" make -f $(PWD)/generic_mod.mk -C $$i clean || exit 1; done

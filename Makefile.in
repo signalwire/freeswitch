@@ -220,7 +220,7 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 EXTRA_DIST = 
-SUBDIRS = libs/jrtp4c
+SUBDIRS = 
 AUTOMAKE_OPTS = gnu
 MAKE = gmake
 NAME = freeswitch
@@ -234,7 +234,8 @@ AM_CFLAGS = $(shell $(APR_CONFIG) --cflags --cppflags --includes) \
 	-DSWITCH_MOD_DIR=\"$(PREFIX)/mod\" \
 	-DSWITCH_PREFIX_DIR=\"$(PREFIX)\" \
 	-DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
-AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) $(am__append_1)
+AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) -lsqlite3 \
+	$(am__append_1)
 OSARCH = $(shell uname -s)
 @ISMAC_FALSE@SOLINK = -shared -Xlinker -x
 @ISMAC_TRUE@SOLINK = -dynamic -bundle -undefined suppress -force_flat_namespace
@@ -940,20 +941,16 @@ uninstall-info: uninstall-info-recursive
 	uninstall-libLTLIBRARIES uninstall-library_includeHEADERS
 
 
+nodepends:
+	touch .nodepends
+
 depends:
-	./buildlib.sh apr-1.2.2.tar.gz --prefix=/usr/local 
-	./buildlib.sh jthread-1.1.2.tar.gz --prefix=/usr/local 
-	./buildlib.sh jrtplib-3.3.0.tar.gz --prefix=/usr/local 
-	./buildlib.sh libosip2-2.2.2.tar.gz --prefix=/usr/local 
-	./buildlib.sh libeXosip2-2.2.2.tar.gz --prefix=/usr/local --disable-josua
-	./buildlib.sh speex-1.1.11.1.tar.gz --prefix=/usr/local 
-	./buildlib.sh portaudio.tar.gz
-	test -f libs/iax/src/.libs/libiax.a || (cd libs/iax && ./configure ./configure --enable-newjb)
-	test -f libs/iax/src/.libs/libiax.a || (cd libs/iax && make install)
+	./buildlib.sh . install sqlite-3.2.8.tar.gz --disable-tcl --enable-threadsafe
+	./buildlib.sh . install apr-1.2.2.tar.gz --prefix=/usr/local 
 
 modules: $(NAME)
 	@echo making modules
-	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
+	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
 
 modclean:
 	@cd src/mod && for i in [a-z]* ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" make -f $(PWD)/generic_mod.mk -C $$i clean || exit 1; done
