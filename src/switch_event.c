@@ -31,15 +31,57 @@
  */
 #include <switch_event.h>
 
-static switch_event *EVENT_QUEUE_HEAD;
-static switch_event *EVENT_QUEUE_WORK;
-static switch_thread_cond_t *COND;
 static switch_event_node *EVENT_NODES[SWITCH_EVENT_ALL+1] = {NULL};
 static switch_mutex_t *BLOCK = NULL;
-static switch_mutex_t *QLOCK = NULL;
-static switch_memory_pool *EPOOL = NULL;
+static switch_mutex_t *POOL_LOCK = NULL;
+static switch_memory_pool *RUNTIME_POOL = NULL;
+static switch_memory_pool *APOOL = NULL;
+static switch_memory_pool *BPOOL = NULL;
+static switch_memory_pool *THRUNTIME_POOL = NULL;
+static switch_queue_t *EVENT_QUEUE = NULL;
+//#define MALLOC_EVENTS
+
+#ifdef MALLOC_EVENTS
+static int POOL_COUNT = 0;
+#endif
+
+static int POOL_COUNT_MAX = 100;
+
 static switch_hash *CUSTOM_HASH = NULL;
 static int THREAD_RUNNING = 0;
+
+#ifdef MALLOC_EVENTS
+#define ALLOC(size) malloc(size)
+#define DUP(str) strdup(str)
+#else
+static void *locked_alloc(size_t len)
+{
+	void *mem;
+
+	switch_mutex_lock(POOL_LOCK);
+	/* <LOCKED> -----------------------------------------------*/
+	mem = switch_core_alloc(THRUNTIME_POOL, len);
+	switch_mutex_unlock(POOL_LOCK);
+	/* </LOCKED> ----------------------------------------------*/
+
+	return mem;
+}
+
+static void *locked_dup(char *str)
+{
+	char *dup;
+
+	switch_mutex_lock(POOL_LOCK);
+	/* <LOCKED> -----------------------------------------------*/
+	dup = switch_core_strdup(THRUNTIME_POOL, str);
+	switch_mutex_unlock(POOL_LOCK);
+	/* </LOCKED> ----------------------------------------------*/
+	
+	return dup;
+}
+#define ALLOC(size) locked_alloc(size)
+#define DUP(str) locked_dup(str)
+#endif
 
 /* make sure this is synced with the switch_event_t enum in switch_types.h
    also never put any new ones before EVENT_ALL
@@ -101,31 +143,34 @@ static int switch_events_match(switch_event *event, switch_event_node *node)
 static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void *obj) 
 {
 	switch_event_node *node;
-	switch_event *event = NULL, *out_event = NULL;
+	switch_event *out_event = NULL;
 	switch_event_t e;
-	switch_mutex_t *mutex = NULL;
+	void *pop;
 
-	switch_mutex_init(&mutex, SWITCH_MUTEX_NESTED, EPOOL);
-	switch_thread_cond_create(&COND, EPOOL);	
-	switch_mutex_lock(mutex);
-
-	assert(QLOCK != NULL);
-	assert(EPOOL != NULL);
-
+	assert(POOL_LOCK != NULL);
+	assert(RUNTIME_POOL != NULL);
 	THREAD_RUNNING = 1;
-	while(THREAD_RUNNING == 1) {
-		switch_thread_cond_wait(COND, mutex);
-		switch_mutex_lock(QLOCK);
-		/* <LOCKED> -----------------------------------------------*/
-		EVENT_QUEUE_WORK = EVENT_QUEUE_HEAD;
-		EVENT_QUEUE_HEAD = NULL;
-		switch_mutex_unlock(QLOCK);
-		/* </LOCKED> -----------------------------------------------*/
+	while(THREAD_RUNNING == 1 || switch_queue_size(EVENT_QUEUE)) {
 
-		for(event = EVENT_QUEUE_WORK; event;) {
-			out_event = event;
-			event = event->next;
-			out_event->next = NULL;
+#ifdef MALLOC_EVENTS
+		switch_mutex_lock(POOL_LOCK);
+		/* <LOCKED> -----------------------------------------------*/
+		if (POOL_COUNT >= POOL_COUNT_MAX) {
+			if (THRUNTIME_POOL == APOOL) {
+				THRUNTIME_POOL = BPOOL;
+			} else {
+				THRUNTIME_POOL = APOOL;
+			}
+			switch_pool_clear(THRUNTIME_POOL);
+			POOL_COUNT = 0;
+		}
+		switch_mutex_unlock(POOL_LOCK);
+		/* </LOCKED> -----------------------------------------------*/
+#endif
+
+		while (switch_queue_trypop(EVENT_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+			out_event = pop;
+
 			for(e = out_event->event_id;; e = SWITCH_EVENT_ALL) {
 				for(node = EVENT_NODES[e]; node; node = node->next) {
 					if (switch_events_match(out_event, node)) {
@@ -133,7 +178,7 @@ static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void
 						node->callback(out_event);
 					}
 				}
-		
+			
 				if (e == SWITCH_EVENT_ALL) {
 					break;
 				}
@@ -142,7 +187,7 @@ static void * SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void
 			switch_event_destroy(&out_event);
 		}
 
-	
+		switch_yield(1000);
 	}
 	THREAD_RUNNING = 0;
 	return NULL;
@@ -156,7 +201,7 @@ SWITCH_DECLARE(switch_status) switch_event_running(void)
 SWITCH_DECLARE(char *) switch_event_name(switch_event_t event)
 {
 	assert(BLOCK != NULL);
-	assert(EPOOL != NULL);
+	assert(RUNTIME_POOL != NULL);
 
 	return EVENT_NAMES[event];
 }
@@ -166,19 +211,19 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
 
 	switch_event_subclass *subclass;
 
-	assert(EPOOL != NULL);
+	assert(RUNTIME_POOL != NULL);
 	assert(CUSTOM_HASH != NULL);
 
 	if (switch_core_hash_find(CUSTOM_HASH, subclass_name)) {
 		return SWITCH_STATUS_INUSE;
 	}
 
-	if (!(subclass = switch_core_alloc(EPOOL, sizeof(*subclass)))) {
+	if (!(subclass = switch_core_alloc(RUNTIME_POOL, sizeof(*subclass)))) {
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	subclass->owner = switch_core_strdup(EPOOL, owner);
-	subclass->name = switch_core_strdup(EPOOL, subclass_name);
+	subclass->owner = switch_core_strdup(RUNTIME_POOL, owner);
+	subclass->name = switch_core_strdup(RUNTIME_POOL, subclass_name);
 	
 	switch_core_hash_insert(CUSTOM_HASH, subclass->name, subclass);
 	
@@ -189,12 +234,14 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
 SWITCH_DECLARE(switch_status) switch_event_shutdown(void)
 {
 	switch_event *event;
-	THREAD_RUNNING = -1;
 
 	if (switch_event_create(&event, SWITCH_EVENT_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, "event_info", "Event System Shutting Down");
 		switch_event_fire(&event);
 	}
+
+	THREAD_RUNNING = -1;
+
 	while(THREAD_RUNNING) {
 		switch_yield(1000);
 	}
@@ -209,16 +256,30 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool)
     switch_threadattr_detach_set(thd_attr, 1);
 
 	assert(pool != NULL);
-	EPOOL = pool;
+	RUNTIME_POOL = pool;
+
+
+	if (switch_core_new_memory_pool(&APOOL) != SWITCH_STATUS_SUCCESS) {
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory pool\n");
+        return SWITCH_STATUS_MEMERR;
+    }
+	if (switch_core_new_memory_pool(&BPOOL) != SWITCH_STATUS_SUCCESS) {
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory pool\n");
+        return SWITCH_STATUS_MEMERR;
+    }
+
+	THRUNTIME_POOL = APOOL;
+	switch_queue_create(&EVENT_QUEUE, POOL_COUNT_MAX + 10, THRUNTIME_POOL);
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Eventing Engine.\n");
-	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, EPOOL);
-	switch_mutex_init(&QLOCK, SWITCH_MUTEX_NESTED, EPOOL);
-	switch_core_hash_init(&CUSTOM_HASH, EPOOL);
+	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
+	switch_mutex_init(&POOL_LOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
+	switch_core_hash_init(&CUSTOM_HASH, RUNTIME_POOL);
     switch_thread_create(&thread,
 						 thd_attr,
 						 switch_event_thread,
 						 NULL,
-						 EPOOL
+						 RUNTIME_POOL
 						 );
 
 	while(!THREAD_RUNNING) {
@@ -235,11 +296,13 @@ SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event **event,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if(!(*event = malloc(sizeof(switch_event)))) {
+	if(!(*event = ALLOC(sizeof(switch_event)))) {
 		return SWITCH_STATUS_MEMERR;
 	}
 
+#ifdef MALLOC_EVENTS
 	memset(*event, 0, sizeof(switch_event));
+#endif
 
 	(*event)->event_id = event_id;
 
@@ -265,31 +328,28 @@ SWITCH_DECLARE(char *) switch_event_get_header(switch_event *event, char *header
 
 SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, char *header_name, char *fmt, ...)
 {
-    char *data;
     int ret = 0;
-    va_list ap;
+	char data[2048];
 
+    va_list ap;
 	va_start(ap, fmt);
-	
-#ifdef HAVE_VASPRINTF
-	ret = vasprintf(&data, fmt, ap);
-#else
-	data = (char *) malloc(2048);
-	vsnprintf(data, 2048, fmt, ap);
-#endif
+	vsnprintf(data, sizeof(data), fmt, ap);
 	va_end(ap);
+
 	if (ret == -1) {
 		return SWITCH_STATUS_MEMERR;
 	} else {
 		switch_event_header *header, *hp;
 		
-
-		if (!(header = malloc(sizeof(*header)))) {
+		if (!(header = ALLOC(sizeof(*header)))) {
 			return SWITCH_STATUS_MEMERR;
 		}
+#ifdef MALLOC_EVENTS
 		memset(header, 0, sizeof(*header));
-		header->name = strdup(header_name);
-		header->value = data;
+#endif
+
+		header->name = DUP(header_name);
+		header->value = DUP(data);
 
 		for (hp = event->headers; hp && hp->next; hp = hp->next);
 		
@@ -309,6 +369,7 @@ SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, char 
 
 SWITCH_DECLARE(void) switch_event_destroy(switch_event **event)
 {
+#ifdef MALLOC_EVENTS
 	switch_event_header *hp, *tofree;
 
 	for (hp = (*event)->headers; hp && hp->next;) {
@@ -320,6 +381,7 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event **event)
 	}
 
 	free((*event));
+#endif
 	*event = NULL;
 }
 
@@ -336,12 +398,14 @@ SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_even
 	(*event)->bind_user_data = todup->bind_user_data;
 	
 	for (hp = todup->headers; hp && hp->next;) {
-		if (!(header = malloc(sizeof(*header)))) {
+		if (!(header = ALLOC(sizeof(*header)))) {
 			return SWITCH_STATUS_MEMERR;
 		}
+#ifdef MALLOC_EVENTS
 		memset(header, 0, sizeof(*header));
-		header->name = strdup(hp->name);
-		header->value = strdup(hp->value);
+#endif
+		header->name = DUP(hp->name);
+		header->value = DUP(hp->value);
 
 		for (hp2 = todup->headers; hp2 && hp2->next; hp2 = hp2->next);
 
@@ -401,13 +465,18 @@ SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *
 SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event **event, void *user_data)
 {
 
-	switch_event *ep;
 	switch_time_exp_t tm;
 	char date[80] = "";
 	size_t retsize;
 
 	assert(BLOCK != NULL);
-	assert(EPOOL != NULL);
+	assert(RUNTIME_POOL != NULL);
+	
+	if (THREAD_RUNNING <= 0) {
+		/* sorry we're closed */
+		switch_event_destroy(event);
+		return SWITCH_STATUS_FALSE;
+	}
 
 	switch_time_exp_lt(&tm, switch_time_now());
 	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d", &tm);
@@ -424,21 +493,13 @@ SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func,
 		(*event)->event_user_data = user_data;
 	}
 	
-	switch_mutex_lock(QLOCK);
-	/* <LOCKED> -----------------------------------------------*/
-	for(ep = EVENT_QUEUE_HEAD; ep && ep->next; ep = ep->next);
-
-	if (ep) {
-		ep->next = *event;
-	} else {
-		EVENT_QUEUE_HEAD = *event;
-	}
-	switch_mutex_unlock(QLOCK);
-	/* </LOCKED> -----------------------------------------------*/
-
+	switch_queue_push(EVENT_QUEUE, *event);
 	*event = NULL;
 
-	switch_thread_cond_signal(COND);
+#ifdef MALLOC_EVENTS
+	POOL_COUNT++;
+#endif
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -448,23 +509,23 @@ SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, 
 	switch_event_subclass *subclass = NULL;
 
 	assert(BLOCK != NULL);
-	assert(EPOOL != NULL);
+	assert(RUNTIME_POOL != NULL);
 
 	if (subclass_name) {
 		if (!(subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
-			if (!(subclass = switch_core_alloc(EPOOL, sizeof(*subclass)))) {
+			if (!(subclass = switch_core_alloc(RUNTIME_POOL, sizeof(*subclass)))) {
 				return SWITCH_STATUS_MEMERR;
 			} else {
-				subclass->owner = switch_core_strdup(EPOOL, id);
-				subclass->name = switch_core_strdup(EPOOL, subclass_name);
+				subclass->owner = switch_core_strdup(RUNTIME_POOL, id);
+				subclass->name = switch_core_strdup(RUNTIME_POOL, subclass_name);
 			}
 		}
 	}
 
-	if (event <= SWITCH_EVENT_ALL && (event_node = switch_core_alloc(EPOOL, sizeof(switch_event_node)))) {
+	if (event <= SWITCH_EVENT_ALL && (event_node = switch_core_alloc(RUNTIME_POOL, sizeof(switch_event_node)))) {
 		switch_mutex_lock(BLOCK);
 		/* <LOCKED> -----------------------------------------------*/
-		event_node->id = switch_core_strdup(EPOOL, id);
+		event_node->id = switch_core_strdup(RUNTIME_POOL, id);
 		event_node->event_id = event;
 		event_node->subclass = subclass;
 		event_node->callback = callback;

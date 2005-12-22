@@ -61,6 +61,10 @@ extern "C" {
 #include <apr_poll.h>
 #include <apr_queue.h>
 #include <apr_uuid.h>
+#include <apr_strmatch.h>
+#define APR_WANT_STDIO
+#define APR_WANT_STRFUNC
+#include <apr_want.h>
 #include <assert.h>
 #include <sqlite3.h>
 

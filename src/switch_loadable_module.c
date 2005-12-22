@@ -70,7 +70,8 @@ static struct switch_loadable_module_container loadable_modules;
 static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 {
 	switch_status status = SWITCH_STATUS_SUCCESS;
-	switch_loadable_module *module = obj;
+	switch_core_thread_session *ts = obj;
+	switch_loadable_module *module = ts->objs[0];
 	int restarts;
 
 	assert(module != NULL);
@@ -79,6 +80,12 @@ static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 		status = module->switch_module_runtime();
 	}
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Thread ended for %s\n", module->interface->module_name);
+
+	if (ts->pool) {
+		switch_memory_pool *pool = ts->pool;
+		switch_core_destroy_memory_pool(&pool);
+	}
+
 	return NULL;
 }
 
@@ -165,7 +172,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 	module->lib = dso;
 
 	if (module->switch_module_runtime) {
-		switch_core_launch_module_thread(switch_loadable_module_exec, module);
+		switch_core_launch_thread(switch_loadable_module_exec, module);
 	}
 
 	*new_module = module;

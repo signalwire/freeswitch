@@ -1408,19 +1408,33 @@ SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash *hash, char *key)
 
 */
 
-SWITCH_DECLARE(void) switch_core_launch_module_thread(switch_thread_start_t func, void *obj)
+SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void *obj)
 {
 	switch_thread *thread;
 	switch_threadattr_t *thd_attr;;
 	switch_threadattr_create(&thd_attr, runtime.memory_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
+	switch_core_thread_session *ts;
+	switch_memory_pool *pool = NULL;
 
-	switch_thread_create(&thread,
-					  thd_attr,
-					  func,
-					  obj,
-					  runtime.memory_pool
-					  );
+	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory pool\n");
+        return;
+    }
+	
+	if (!(ts = switch_core_alloc(pool, sizeof(*ts)))) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory\n");
+	} else {
+		ts->pool = pool;
+		ts->objs[0] = obj;
+
+		switch_thread_create(&thread,
+							 thd_attr,
+							 func,
+							 ts,
+							 ts->pool
+							 );
+	}
 
 }
 

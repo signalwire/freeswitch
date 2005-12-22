@@ -193,6 +193,7 @@ typedef switch_status (*switch_api_function)(char *in, char *out, size_t outlen)
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions
    any other apr code should be as hidden as possible.
 */
+typedef apr_strmatch_pattern switch_strmatch_pattern;
 typedef apr_uuid_t switch_uuid_t;
 typedef apr_queue_t switch_queue_t;
 typedef apr_hash_t switch_hash;
@@ -228,6 +229,9 @@ typedef apr_hash_index_t switch_hash_index_t;
 #define switch_thread_cond_broadcast apr_thread_cond_broadcast
 #define switch_thread_cond_destroy apr_thread_cond_destroy
 
+#define switch_pool_clear apr_pool_clear
+#define switch_strmatch_precompile apr_strmatch_precompile
+#define switch_strmatch apr_strmatch
 #define switch_uuid_format apr_uuid_format
 #define switch_uuid_get apr_uuid_get
 #define switch_uuid_parse apr_uuid_parse
