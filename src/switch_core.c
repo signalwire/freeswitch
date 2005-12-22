@@ -74,6 +74,7 @@ struct switch_core_session {
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
 
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
 	void *private;
 };
 
@@ -178,6 +179,11 @@ SWITCH_DECLARE(switch_status) switch_core_do_perl(char *txt)
 }
 #endif
 
+
+SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session *session)
+{
+	return session->uuid_str;
+}
 
 SWITCH_DECLARE(switch_status) switch_core_session_set_read_codec(switch_core_session *session, switch_codec *codec)
 {
@@ -1490,6 +1496,7 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_e
 {
 	switch_memory_pool *usepool;
 	switch_core_session *session;
+	switch_uuid_t uuid;
 
 	assert(endpoint_interface != NULL);
 
@@ -1516,6 +1523,9 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_e
 
 	/* The session *IS* the pool you may not alter it because you have no idea how
 	   its all private it will be passed to the thread run function */
+
+	switch_uuid_get(&uuid);
+	switch_uuid_format(session->uuid_str, &uuid);
 
 	session->pool = usepool;
 	session->endpoint_interface = endpoint_interface;

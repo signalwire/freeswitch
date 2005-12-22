@@ -122,6 +122,7 @@ SWITCH_DECLARE(switch_memory_pool *) switch_core_session_get_pool(switch_core_se
 SWITCH_DECLARE(void) pbx_core_session_signal_state_change(switch_core_session *session);
 SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup);
 SWITCH_DECLARE(switch_core_db *) switch_core_db_open_file(char *filename);
+SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session *session);
 
 #define SWITCH_CORE_DB "core"
 #define switch_core_db_handle() switch_core_db_open_file(SWITCH_CORE_DB)

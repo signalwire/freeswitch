@@ -60,22 +60,6 @@ static char *EVENT_NAMES[] = {
 };
 
 
-#if 0
-static void debug_hash(void) {
-	switch_hash_index_t* hi;
-	void *val;
-	const void *var;
-	for (hi = switch_hash_first(EPOOL, CUSTOM_HASH); hi; hi = switch_hash_next(hi)) {
-		switch_event_subclass *subclass;
-		switch_hash_this(hi, &var, NULL, &val);
-		subclass = val;
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "***WTF %s=%s\n", (char *) var, subclass->name);
-	}
-}
-#endif
-
-
-
 static int switch_events_match(switch_event *event, switch_event_node *node)
 {
 	int match = 0;

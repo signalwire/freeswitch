@@ -65,7 +65,7 @@ typedef enum {
 #endif
 #endif
 
-	
+#define SWITCH_UUID_FORMATTED_LENGTH APR_UUID_FORMATTED_LENGTH 	
 #define SWITCH_CHANNEL_CONSOLE SWITCH_CHANNEL_ID_CONSOLE, __FILE__, __FUNCTION__, __LINE__
 #define SWITCH_CHANNEL_CONSOLE_CLEAN SWITCH_CHANNEL_ID_CONSOLE_CLEAN, __FILE__, __FUNCTION__, __LINE__
 #define SWITCH_CHANNEL_EVENT SWITCH_CHANNEL_ID_EVENT, __FILE__, __FUNCTION__, __LINE__
@@ -193,6 +193,8 @@ typedef switch_status (*switch_api_function)(char *in, char *out, size_t outlen)
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions
    any other apr code should be as hidden as possible.
 */
+typedef apr_uuid_t switch_uuid_t;
+typedef apr_queue_t switch_queue_t;
 typedef apr_hash_t switch_hash;
 typedef apr_pool_t switch_memory_pool;
 typedef apr_thread_t switch_thread;
@@ -226,6 +228,9 @@ typedef apr_hash_index_t switch_hash_index_t;
 #define switch_thread_cond_broadcast apr_thread_cond_broadcast
 #define switch_thread_cond_destroy apr_thread_cond_destroy
 
+#define switch_uuid_format apr_uuid_format
+#define switch_uuid_get apr_uuid_get
+#define switch_uuid_parse apr_uuid_parse
 #define switch_queue_create apr_queue_create
 #define switch_queue_interrupt_all apr_queue_interrupt_all
 #define switch_queue_pop apr_queue_pop

@@ -65,7 +65,8 @@ SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, swi
 	switch_core_hash_init(&(*channel)->variables, pool);
 	switch_buffer_create(pool, &(*channel)->dtmf_buffer, 128);
 	switch_mutex_init(&(*channel)->dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
-	
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -406,6 +407,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 	
 	switch_event_add_header(event, "channel_state", (char *) switch_channel_state_name(channel->state));
 	switch_event_add_header(event, "channel_name", switch_channel_get_name(channel));
+	switch_event_add_header(event, "unique_id", switch_core_session_get_uuid(channel->session));
+
 
 	/* Index Caller's Profile */	
 	if (caller_profile) {

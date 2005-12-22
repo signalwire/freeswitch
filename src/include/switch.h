@@ -59,6 +59,8 @@ extern "C" {
 #include <apr_strings.h>
 #include <apr_network_io.h>
 #include <apr_poll.h>
+#include <apr_queue.h>
+#include <apr_uuid.h>
 #include <assert.h>
 #include <sqlite3.h>
 
