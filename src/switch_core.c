@@ -1412,10 +1412,12 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 {
 	switch_thread *thread;
 	switch_threadattr_t *thd_attr;;
-	switch_threadattr_create(&thd_attr, runtime.memory_pool);
-	switch_threadattr_detach_set(thd_attr, 1);
 	switch_core_thread_session *ts;
 	switch_memory_pool *pool = NULL;
+
+	switch_threadattr_create(&thd_attr, runtime.memory_pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
         switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory pool\n");

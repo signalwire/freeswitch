@@ -478,12 +478,13 @@ SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_time_exp_lt(&tm, switch_time_now());
-	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d", &tm);
-	switch_event_add_header(*event, "event_date", date);
 
-	switch_strftime(date, &retsize, sizeof(date), "%T", &tm);
-	switch_event_add_header(*event, "event_time", date);
+	switch_rfc822_date(date, switch_time_now());
+	switch_event_add_header(*event, "event_date_gmt", date);
+
+	switch_time_exp_lt(&tm, switch_time_now());
+	switch_strftime(date, &retsize, sizeof(date), "%a, %d-%b-%Y %X", &tm);
+	switch_event_add_header(*event, "event_date_local", date);
 
 	switch_event_add_header(*event, "event_file", file);
 	switch_event_add_header(*event, "event_function", func);

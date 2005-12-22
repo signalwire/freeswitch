@@ -251,6 +251,8 @@ typedef apr_hash_index_t switch_hash_index_t;
 #define SWITCH_THREAD_FUNC APR_THREAD_FUNC
 #define switch_time_now apr_time_now
 #define switch_strftime apr_strftime
+#define switch_rfc822_date apr_rfc822_date
+#define switch_time_exp_gmt apr_time_exp_gmt
 #define switch_time_exp_get apr_time_exp_get
 #define switch_time_exp_lt apr_time_exp_lt
 #define switch_thread_create apr_thread_create

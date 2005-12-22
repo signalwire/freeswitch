@@ -7,6 +7,8 @@ else
 	LINKER=$(CC)
 endif
 
+all:	depends $(MOD).so
+
 depends:
 	$(BASE)/buildlib.sh $(BASE) install jthread-1.1.2.tar.gz 
 	$(BASE)/buildlib.sh $(BASE) install jrtplib-3.3.0.tar.gz 
@@ -18,8 +20,6 @@ depends:
 $(MOD).so: $(MOD).c
 	$(CC) $(CFLAGS) -fPIC -c $(MOD).c -o $(MOD).o 
 	$(LINKER) $(SOLINK) -o $(MOD).so  $(MOD).o $(LDFLAGS)
-
-all:	depends $(MOD).so
 
 clean:
 	rm -fr *.so *.o *~

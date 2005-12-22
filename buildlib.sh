@@ -42,7 +42,7 @@ fi
 
 if [ -f $uncompressed/.complete ] ; then
     echo $uncompressed already installed
-    exit
+    exit 0
 fi
 
 cd $uncompressed
