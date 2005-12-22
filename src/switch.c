@@ -62,6 +62,11 @@ int main(int argc, char *argv[]) {
 	/* wait for console input */
 	switch_console_loop();
 
+	if (switch_event_create(&event, SWITCH_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, "event_info", "System Shutting Down");
+		switch_event_fire(&event);
+	}
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Clean up modules.\n");
 	loadable_module_shutdown();
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Tearing down environment.\n");
