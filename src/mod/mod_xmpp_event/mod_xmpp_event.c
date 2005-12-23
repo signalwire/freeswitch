@@ -143,7 +143,6 @@ int on_result (struct session *sess, ikspak *pak)
 int on_stream (struct session *sess, int type, iks *node)
 {
 	sess->counter = opt_timeout;
-	//iks *x;
 
 	switch (type) {
 	case IKS_NODE_START:
@@ -206,7 +205,6 @@ int on_stream (struct session *sess, int type, iks *node)
 
 int on_msg (void *user_data, ikspak *pak)
 {
-	switch_event *event;
 	char *cmd = iks_find_cdata (pak->x, "body");
 	char *arg = NULL;
 	char retbuf[1024] = "";
@@ -223,17 +221,6 @@ int on_msg (void *user_data, ikspak *pak)
 	} 
 
 	switch_api_execute(cmd, arg, retbuf, sizeof(retbuf));
-
-	if (switch_event_create(&event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
-		if (cmd) {
-			switch_event_add_header(event, "re_command", cmd);
-		}
-		if (arg) {
-			switch_event_add_header(event, "re_command_arg", arg);
-		}
-		switch_event_add_body(event, retbuf);
-		switch_event_fire(&event);
-	}
 
 	return 0;
 }
@@ -276,6 +263,7 @@ static void xmpp_connect (char *jabber_id, char *pass)
 {
 	while (RUNNING == 1) {
 		int e;
+
 		memset (&globals.session, 0, sizeof (globals.session));
 		globals.session.parser = iks_stream_new (IKS_NS_CLIENT, &globals.session, (iksStreamHook *) on_stream);
 		if (globals.debug) iks_set_log_hook (globals.session.parser, (iksLogHook *) on_log);
@@ -363,8 +351,6 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_inte
 	if (load_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
-
-
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

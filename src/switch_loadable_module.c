@@ -410,13 +410,27 @@ SWITCH_DECLARE(int) loadable_module_get_codecs_sorted(switch_memory_pool *pool, 
 SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *retbuf, size_t len)
 {
 	switch_api_interface *api;
+	switch_status status;
+	switch_event *event;
 
 	if ((api = loadable_module_get_api_interface(cmd))) {
-		api->function(arg, retbuf, len);
+		status = api->function(arg, retbuf, len);
 	} else {
+		status = SWITCH_STATUS_FALSE;
 		snprintf(retbuf, len, "INVALID COMMAND [%s]", cmd);
-		return SWITCH_STATUS_FALSE;
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	if (switch_event_create(&event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
+		if (cmd) {
+			switch_event_add_header(event, "re_command", cmd);
+		}
+		if (arg) {
+			switch_event_add_header(event, "re_command_arg", arg);
+		}
+		switch_event_add_body(event, retbuf);
+		switch_event_fire(&event);
+	}
+
+
+	return status;
 }
