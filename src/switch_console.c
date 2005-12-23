@@ -34,8 +34,8 @@
 
 static int switch_console_process(char *cmd)
 {
-switch_api_interface *api;
 char *arg = NULL;
+ char retbuf[1024] = "";
 
 #ifdef EMBED_PERL
 	const char *perlhelp = "perl - execute some perl. (print to STDERR if you want to see it.)\n";
@@ -58,14 +58,6 @@ char *arg = NULL;
 	}
 
 
-	if ((api = loadable_module_get_api_interface(cmd))) {
-		char retbuf[512] = "";
-		api->function(arg, retbuf, sizeof(retbuf));
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
-		return 1;
-	}
-	
-
 #ifdef EMBED_PERL
 	if (!strncmp(cmd, "perl ", 5)) {
 		cmd += 5;
@@ -74,7 +66,12 @@ char *arg = NULL;
 		return 1;
 	}
 #endif
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unknown Command: %s\n", cmd);
+
+	if (switch_api_execute(cmd, arg, retbuf, sizeof(retbuf)) == SWITCH_STATUS_SUCCESS) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
+	} else {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unknown Command: %s\n", cmd);
+	}
 	return 1;
 }
 

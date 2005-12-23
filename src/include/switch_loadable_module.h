@@ -58,6 +58,7 @@ SWITCH_DECLARE(switch_application_interface *) loadable_module_get_application_i
 SWITCH_DECLARE(switch_api_interface *) loadable_module_get_api_interface(char *name);
 SWITCH_DECLARE(int) loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array, int arraylen);
 SWITCH_DECLARE(int) loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array, int arraylen, char **prefs, int preflen);
+SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *retbuf, size_t len);
 SWITCH_DECLARE(void) loadable_module_shutdown(void);
 
 #ifdef __cplusplus

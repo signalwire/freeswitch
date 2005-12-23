@@ -206,11 +206,10 @@ int on_stream (struct session *sess, int type, iks *node)
 
 int on_msg (void *user_data, ikspak *pak)
 {
-	switch_api_interface *api;
+	switch_event *event;
 	char *cmd = iks_find_cdata (pak->x, "body");
 	char *arg = NULL;
-	switch_event *event;
-	char retbuf[512] = "";
+	char retbuf[1024] = "";
 	char *p;
 
 	if ((p = strchr(cmd, '\r'))) {
@@ -222,17 +221,8 @@ int on_msg (void *user_data, ikspak *pak)
 	if ((arg = strchr(cmd, ' '))) {
 		*arg++ = '\0';
 	} 
-	if (arg && (p = strchr(arg, '\r'))) {
-		*p++ = '\0';
-	} else if ((p = strchr(cmd, '\n'))) {
-		*p++ = '\0';
-	}
 
-	if ((api = loadable_module_get_api_interface(cmd))) {
-		api->function(arg, retbuf, sizeof(retbuf));
-	} else {
-		snprintf(retbuf, sizeof(retbuf), "INVALID COMMAND [%s]", cmd);
-	}
+	switch_api_execute(cmd, arg, retbuf, sizeof(retbuf));
 
 	if (switch_event_create(&event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
 		if (cmd) {
