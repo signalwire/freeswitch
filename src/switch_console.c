@@ -66,7 +66,13 @@ char *arg = NULL;
 		return 1;
 	}
 #endif
-
+	if ((arg = strchr(cmd, '\r')) || (arg=strchr(cmd, '\n'))) {
+		*arg = '\0';
+		arg = NULL;
+	}
+	if ((arg = strchr(cmd, ' '))) {
+		*arg++ = '\0';
+	}
 	if (switch_api_execute(cmd, arg, retbuf, sizeof(retbuf)) == SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
 	} else {

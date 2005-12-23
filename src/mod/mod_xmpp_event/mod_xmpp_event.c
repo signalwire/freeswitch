@@ -119,14 +119,14 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_jid, globals.jid)
 	}
 
 	switch_config_close_file(&cfg);
-	
-	/* TBD use config to pick what events to bind to */
-	if (switch_event_bind((char *)modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't bind!\n");
-		return SWITCH_STATUS_GENERR;
-	}
-	
+
 	if (count == 3) {
+		/* TBD use config to pick what events to bind to */
+		if (switch_event_bind((char *)modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't bind!\n");
+			return SWITCH_STATUS_GENERR;
+		}
+	
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
