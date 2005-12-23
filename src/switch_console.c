@@ -87,18 +87,11 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *fi
 	int ret = 0;
 	va_list ap;
 	FILE *handle;
-	char *filep = file, *p;
+	char *filep = switch_cut_path(file);
 
 	va_start(ap, fmt);
 
 	handle = switch_core_data_channel(channel);
-
-	while((p = strchr(filep, '/'))) {
-		filep = p + 1;
-	}
-	while((p = strchr(filep, '\\'))) {
-		filep = p + 1;
-	}
 
 #ifdef HAVE_VASPRINTF
 	ret = vasprintf(&data, fmt, ap);
@@ -129,10 +122,10 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *fi
 					 switch_event_running() == SWITCH_STATUS_SUCCESS && 
 					 switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
 				
-				switch_event_add_header(event, "log_data", "%s", data);
-				switch_event_add_header(event, "log_file", "%s", filep);
-				switch_event_add_header(event, "log_function", "%s", func);
-				switch_event_add_header(event, "log_line", "%d", line);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", func);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
 				switch_event_fire(&event);
 			}
 			free(data);

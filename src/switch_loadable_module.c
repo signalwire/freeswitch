@@ -422,10 +422,10 @@ SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *ret
 
 	if (switch_event_create(&event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
 		if (cmd) {
-			switch_event_add_header(event, "re_command", cmd);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "API-Command", cmd);
 		}
 		if (arg) {
-			switch_event_add_header(event, "re_command_arg", arg);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "API-Command-Arguement", arg);
 		}
 		switch_event_add_body(event, retbuf);
 		switch_event_fire(&event);

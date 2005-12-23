@@ -153,7 +153,7 @@ SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *d
 
 	if (bytes && switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
-		switch_event_add_header(event, "dtmf_string", dtmf);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-String", dtmf);
 		switch_event_fire(&event);
 	}
 
@@ -405,59 +405,21 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 	caller_profile = switch_channel_get_caller_profile(channel);
 	originator_caller_profile = switch_channel_get_originator_caller_profile(channel);
 	
-	switch_event_add_header(event, "channel_state", (char *) switch_channel_state_name(channel->state));
-	switch_event_add_header(event, "channel_name", switch_channel_get_name(channel));
-	switch_event_add_header(event, "unique_id", switch_core_session_get_uuid(channel->session));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", (char *) switch_channel_state_name(channel->state));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
 
 
 	/* Index Caller's Profile */	
 	if (caller_profile) {
-		if (caller_profile->dialplan) {
-			switch_event_add_header(event, "channel_dialplan", caller_profile->dialplan);
-		}
-		if (caller_profile->caller_id_name) {
-			switch_event_add_header(event, "channel_caller_id_name", caller_profile->caller_id_name);
-		}
-		if (caller_profile->caller_id_number) {
-			switch_event_add_header(event, "channel_caller_id_number", caller_profile->caller_id_number);
-		}
-		if (caller_profile->network_addr) {
-			switch_event_add_header(event, "channel_network_addr", caller_profile->network_addr);
-		}
-		if (caller_profile->ani) {
-			switch_event_add_header(event, "channel_ani", caller_profile->ani);
-		}
-		if (caller_profile->ani2) {
-			switch_event_add_header(event, "channel_ani2", caller_profile->ani2);
-		}
-		if (caller_profile->destination_number) {
-			switch_event_add_header(event, "channel_destination_number", caller_profile->destination_number);
-		}
+		switch_caller_profile_event_set_data(caller_profile, event);
 	}
+	
 	/* Index Originator's Profile */
 	if (originator_caller_profile) {
-		if (originator_caller_profile->dialplan) {
-			switch_event_add_header(event, "channel_dialplan", originator_caller_profile->dialplan);
-		}
-		if (originator_caller_profile->caller_id_name) {
-			switch_event_add_header(event, "channel_caller_id_name", originator_caller_profile->caller_id_name);
-		}
-		if (originator_caller_profile->caller_id_number) {
-			switch_event_add_header(event, "channel_caller_id_number", originator_caller_profile->caller_id_number);
-		}
-		if (originator_caller_profile->network_addr) {
-			switch_event_add_header(event, "channel_network_addr", originator_caller_profile->network_addr);
-		}
-		if (originator_caller_profile->ani) {
-			switch_event_add_header(event, "channel_ani", originator_caller_profile->ani);
-		}
-		if (originator_caller_profile->ani2) {
-			switch_event_add_header(event, "channel_ani2", originator_caller_profile->ani2);
-		}
-		if (originator_caller_profile->destination_number) {
-			switch_event_add_header(event, "channel_destination_number", originator_caller_profile->destination_number);
-		}
+		switch_caller_profile_event_set_data(originator_caller_profile, event);
 	}
+
 	/* Index Variables */
 	for (hi = switch_hash_first(switch_core_session_get_pool(channel->session), channel->variables); hi; hi = switch_hash_next(hi)) {
 		char buf[1024];
@@ -465,7 +427,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 		switch_hash_this(hi, &var, NULL, &val);
 		subclass = val;
 		snprintf(buf, sizeof(buf), "variable_%s", (char *) var);
-		switch_event_add_header(event, buf, (char *) val);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, (char *) val);
 	}
 
 

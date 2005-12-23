@@ -62,9 +62,14 @@ static void event_handler (switch_event *event)
 {
 	char buf[1024];
 	iks *msg;
+	int loops = 0;
 
-	if (!globals.session.authorized) {
-		return;
+	while (!globals.session.authorized) {
+		switch_yield(100000);
+		if (loops++ > 5) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Nothing to do with this Event!\n");
+			return;
+		}
 	}
 
 	switch(event->event_id) {

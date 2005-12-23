@@ -31,6 +31,22 @@
  */
 #include <switch_utils.h>
 
+SWITCH_DECLARE(char *) switch_cut_path(char *in)
+{
+    char *p, *ret = in;
+    char delims[] = "/\\";
+    char *i;
+
+    for(i = delims; *i; i++) {
+        p = in;
+        while((p = strchr(p, *i))) {
+            ret = ++p;
+        }
+    }
+    return ret;
+}
+
+
 SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len)
 {
     int i;

@@ -75,7 +75,7 @@ SWITCH_DECLARE(switch_status) switch_event_shutdown(void);
 SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool);
 SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event **event, switch_event_t event_id, char *subclass_name);
 SWITCH_DECLARE(char *) switch_event_get_header(switch_event *event, char *header_name);
-SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, char *header_name, char *fmt, ...);
+SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, switch_stack_t stack, char *header_name, char *fmt, ...);
 SWITCH_DECLARE(void) switch_event_destroy(switch_event **event);
 SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_event *todup);
 SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event **event, void *user_data);
@@ -90,5 +90,4 @@ SWITCH_DECLARE(switch_status) switch_event_add_body(switch_event *event, char *f
 #define switch_event_create(event, id) switch_event_create_subclass(event, id, SWITCH_EVENT_SUBCLASS_ANY)
 #define switch_event_fire(event) switch_event_fire_detailed(__FILE__, (char * )__FUNCTION__, __LINE__, event, NULL)
 #define switch_event_fire_data(event, data) switch_event_fire_detailed(__FILE__, (char * )__FUNCTION__, __LINE__, event, data)
-
 #endif

@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_STARTUP) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, "event_info", "System Ready");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Ready");
 		switch_event_fire(&event);
 	}
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 	switch_console_loop();
 
 	if (switch_event_create(&event, SWITCH_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, "event_info", "System Shutting Down");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Shutting Down");
 		switch_event_fire(&event);
 	}
 

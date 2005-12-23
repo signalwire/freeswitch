@@ -97,7 +97,6 @@ static char *EVENT_NAMES[] = {
 	"ANSWER_CHAN",
 	"HANGUP_CHAN",
 	"STARTUP",
-	"EVENT_SHUTDOWN",
 	"SHUTDOWN",
 	"ALL"
 };
@@ -234,13 +233,6 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
 
 SWITCH_DECLARE(switch_status) switch_event_shutdown(void)
 {
-	switch_event *event;
-
-	if (switch_event_create(&event, SWITCH_EVENT_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, "event_info", "Event System Shutting Down");
-		switch_event_fire(&event);
-	}
-
 	THREAD_RUNNING = -1;
 
 	while(THREAD_RUNNING) {
@@ -327,7 +319,7 @@ SWITCH_DECLARE(char *) switch_event_get_header(switch_event *event, char *header
 	return NULL;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, char *header_name, char *fmt, ...)
+SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, switch_stack_t stack, char *header_name, char *fmt, ...)
 {
     int ret = 0;
 	char data[2048];
@@ -351,15 +343,18 @@ SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, char 
 
 		header->name = DUP(header_name);
 		header->value = DUP(data);
-
-		for (hp = event->headers; hp && hp->next; hp = hp->next);
-		
-		if (hp) {
-			hp->next = header;
-		} else {
+		if (stack = SWITCH_STACK_TOP) {
+			header->next = event->headers;
 			event->headers = header;
-		}
+		} else {
+			for (hp = event->headers; hp && hp->next; hp = hp->next);
 		
+			if (hp) {
+				hp->next = header;
+			} else {
+				event->headers = header;
+			}
+		}
 		return SWITCH_STATUS_SUCCESS;
 
 	}
@@ -444,7 +439,7 @@ SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_even
 
 SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, size_t buflen, char *fmt, ...)
 {
-	size_t len;
+	size_t len = 0;
 	switch_event_header *hp;
     char *data = NULL, *body = NULL;
     int ret = 0;
@@ -464,12 +459,6 @@ SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *
 		}
 	}
 
-	snprintf(buf, buflen, "event_name: %s\n", switch_event_name(event->event_id));
-	len = strlen(buf);
-	if (event->subclass) {
-		snprintf(buf+len, buflen-len, "subclass-name: %s\nowner: %s", event->subclass->name, event->subclass->owner);
-	}
-	len = strlen(buf);
 	for (hp = event->headers; hp; hp = hp->next) {
 		snprintf(buf+len, buflen-len, "%s: %s\n", hp->name, hp->value);
 		len = strlen(buf);
@@ -518,17 +507,21 @@ SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func,
 	}
 
 
-	switch_rfc822_date(date, switch_time_now());
-	switch_event_add_header(*event, "event_date_gmt", date);
-
+	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Calling-Line-Number", "%d", line);
+	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Calling-Function", func);
+	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Calling-File", switch_cut_path(file));
 	switch_time_exp_lt(&tm, switch_time_now());
 	switch_strftime(date, &retsize, sizeof(date), "%a, %d-%b-%Y %X", &tm);
-	switch_event_add_header(*event, "event_date_local", date);
+	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Date-Local", date);
+	switch_rfc822_date(date, switch_time_now());
+	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Date-GMT", date);
+	if ((*event)->subclass) {
+		switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Subclass", (*event)->subclass->name);
+		switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Subclass-Owner", (*event)->subclass->owner);
+	}
+	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Name", switch_event_name((*event)->event_id));
 
-	switch_event_add_header(*event, "event_file", file);
-	switch_event_add_header(*event, "event_function", func);
-	switch_event_add_header(*event, "event_line_number", "%d", line);
-	
+
 	if (user_data) {
 		(*event)->event_user_data = user_data;
 	}
