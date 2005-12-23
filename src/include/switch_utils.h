@@ -38,21 +38,6 @@ extern "C" {
 
 #include <switch.h>
 
-//#ifdef WIN32
-//#include <winsock2.h>
-//#include <time.h>
-//#define Public __declspec( dllexport )
-//#define PubImp __declspec( dllimport )
-//#else
-//#define Public
-//#define PubImp
-//#include <sys/time.h>
-//#include <unistd.h>
-//#endif
-
-//#define HAVE_TIMEVAL_STRUCT
-
-
 #ifndef snprintf
 #define snprintf apr_snprintf
 #endif
