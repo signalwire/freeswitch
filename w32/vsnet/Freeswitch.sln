@@ -78,6 +78,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_codec_gsm", "..\..\src\
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_xmpp_event", "..\..\src\mod\mod_xmpp_event\mod_xmpp_event.vcproj", "{F10BE67C-A8FF-4CB2-AF29-D46D2590DC59}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -146,6 +151,10 @@ Global
 		{3A2A7795-C216-4FFF-B8EF-4D17A84BACCC}.Release|Win32.Build.0 = Release|Win32
 		{4926323F-4EA8-4B7D-A3D3-65488725988F}.Debug|Win32.ActiveCfg = Debug|Win32
 		{4926323F-4EA8-4B7D-A3D3-65488725988F}.Release|Win32.ActiveCfg = Release|Win32
+		{F10BE67C-A8FF-4CB2-AF29-D46D2590DC59}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F10BE67C-A8FF-4CB2-AF29-D46D2590DC59}.Debug|Win32.Build.0 = Debug|Win32
+		{F10BE67C-A8FF-4CB2-AF29-D46D2590DC59}.Release|Win32.ActiveCfg = Release|Win32
+		{F10BE67C-A8FF-4CB2-AF29-D46D2590DC59}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

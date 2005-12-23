@@ -14,6 +14,7 @@ BuildModIaxChan=False
 BuildModPortAudio=False
 BuildModSpeexCodec=False
 BuildModCodecG729=False
+BuildModXMPPEvent=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
@@ -48,6 +49,8 @@ If objArgs.Count >=1 Then
 			BuildModSpeexCodec=True
 		Case "Mod_CodecG729"
 			BuildModCodecG729=True
+		Case "Mod_XMPPEvent"
+			BuildModXMPPEvent=True
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
@@ -55,6 +58,7 @@ If objArgs.Count >=1 Then
 			BuildModPortAudio=True		
 			BuildModSpeexCodec=True
 			BuildModCodecG729=True
+			BuildModXMPPEvent=True
 	End Select
 Else
 	BuildCore=True
@@ -63,6 +67,7 @@ Else
 	BuildModPortAudio=True		
 	BuildModSpeexCodec=True
 	BuildModCodecG729=True
+	BuildModXMPPEvent=True
 End If
 
 
@@ -88,6 +93,10 @@ End If
 
 If BuildModCodecG729 Then
 	BuildLibs_ModCodecG729 BuildDebug, BuildRelease
+End If
+
+If BuildModXMPPEvent Then
+	BuildLibs_ModXMPPEvent BuildDebug, BuildRelease
 End If
 
 WScript.Echo "Complete"
@@ -217,7 +226,11 @@ End If
 	Else
 		Wscript.echo "Unable to download SQLite"
 	End If 
-	
+			
+End Sub
+
+
+Sub BuildLibs_ModXMPPEvent(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "iksemel") Then 
 		WgetUnTarGz "http://jabberstudio.2nw.net/iksemel/iksemel-1.2.tar.gz", LibDestDir 
 		If Not FSO.FolderExists(LibDestDir & "iksemel-1.2") Then
@@ -242,8 +255,8 @@ End If
 	Else
 		Wscript.echo "Unable to download iksemel"
 	End If 
-		
 End Sub
+
 
 Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
 
