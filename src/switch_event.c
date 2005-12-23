@@ -90,6 +90,7 @@ static char *EVENT_NAMES[] = {
 	"CUSTOM",
 	"CHANNEL_STATE",
 	"CHANNEL_ANSWER",
+	"API",
 	"LOG",
 	"INBOUND_CHAN",
 	"OUTBOUND_CHAN",
@@ -367,6 +368,28 @@ SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, char 
 	
 }
 
+
+SWITCH_DECLARE(switch_status) switch_event_add_body(switch_event *event, char *fmt, ...)
+{
+    int ret = 0;
+	char data[2048];
+
+    va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(data, sizeof(data), fmt, ap);
+	va_end(ap);
+
+	if (ret == -1) {
+		return SWITCH_STATUS_MEMERR;
+	} else {
+		event->body = DUP(data);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	return (ret >= 0) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
+	
+}
+
 SWITCH_DECLARE(void) switch_event_destroy(switch_event **event)
 {
 #ifdef MALLOC_EVENTS
@@ -423,7 +446,7 @@ SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *
 {
 	size_t len;
 	switch_event_header *hp;
-    char *data = NULL;
+    char *data = NULL, *body = NULL;
     int ret = 0;
     va_list ap;
 
@@ -450,12 +473,28 @@ SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *
 	for (hp = event->headers; hp; hp = hp->next) {
 		snprintf(buf+len, buflen-len, "%s: %s\n", hp->name, hp->value);
 		len = strlen(buf);
+		
 	}
+
 	if (data) {
-		snprintf(buf+len, buflen-len, "Content-Length: %d\n\n%s", (int)strlen(data), data);
-		free(data);
+		body = data;
+	} else if (event->body) {
+		body = event->body;
+	}
+
+	if (body) {
+		int blen = (int)strlen(body);
+		if (blen) {
+			snprintf(buf+len, buflen-len, "Content-Length: %d\n\n%s", blen, body);
+		} else {
+			snprintf(buf+len, buflen-len, "\n");
+		}
 	} else {
 		snprintf(buf+len, buflen-len, "\n");
+	}
+
+	if (data) {
+		free(data);
 	}
 	
 	return SWITCH_STATUS_SUCCESS;

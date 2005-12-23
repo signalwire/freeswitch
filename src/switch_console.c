@@ -57,9 +57,7 @@ char *arg = NULL;
 		return 1;
 	}
 
-	if ((arg = strchr(cmd, ' '))) {
-		*arg++ = '\0';
-	}
+
 	if ((api = loadable_module_get_api_interface(cmd))) {
 		char retbuf[512] = "";
 		api->function(arg, retbuf, sizeof(retbuf));

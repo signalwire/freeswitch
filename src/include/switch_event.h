@@ -54,6 +54,7 @@ struct switch_event {
 	char *owner;
 	switch_event_subclass *subclass;
 	struct switch_event_header *headers;
+	char *body;
 	void *bind_user_data;
 	void *event_user_data;
 	struct switch_event *next;
@@ -83,6 +84,7 @@ SWITCH_DECLARE(char *) switch_event_name(switch_event_t event);
 SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name);
 SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, size_t buflen, char *fmt, ...);
 SWITCH_DECLARE(switch_status) switch_event_running(void);
+SWITCH_DECLARE(switch_status) switch_event_add_body(switch_event *event, char *fmt, ...);
 
 #define switch_event_reserve_subclass(subclass_name) switch_event_reserve_subclass_detailed(__FILE__, subclass_name)
 #define switch_event_create(event, id) switch_event_create_subclass(event, id, SWITCH_EVENT_SUBCLASS_ANY)

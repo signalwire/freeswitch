@@ -204,6 +204,50 @@ int on_stream (struct session *sess, int type, iks *node)
 	return IKS_OK;
 }
 
+int on_msg (void *user_data, ikspak *pak)
+{
+	switch_api_interface *api;
+	char *cmd = iks_find_cdata (pak->x, "body");
+	char *arg = NULL;
+	switch_event *event;
+	char retbuf[512] = "";
+	char *p;
+
+	if ((p = strchr(cmd, '\r'))) {
+		*p++ = '\0';
+	} else if ((p = strchr(cmd, '\n'))) {
+		*p++ = '\0';
+	}
+
+	if ((arg = strchr(cmd, ' '))) {
+		*arg++ = '\0';
+	} 
+	if (arg && (p = strchr(arg, '\r'))) {
+		*p++ = '\0';
+	} else if ((p = strchr(cmd, '\n'))) {
+		*p++ = '\0';
+	}
+
+	if ((api = loadable_module_get_api_interface(cmd))) {
+		api->function(arg, retbuf, sizeof(retbuf));
+	} else {
+		snprintf(retbuf, sizeof(retbuf), "INVALID COMMAND [%s]", cmd);
+	}
+
+	if (switch_event_create(&event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
+		if (cmd) {
+			switch_event_add_header(event, "re_command", cmd);
+		}
+		if (arg) {
+			switch_event_add_header(event, "re_command_arg", arg);
+		}
+		switch_event_add_body(event, retbuf);
+		switch_event_fire(&event);
+	}
+
+	return 0;
+}
+
 int on_error (void *user_data, ikspak *pak)
 {
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "authorization failed\n");
@@ -221,6 +265,11 @@ void j_setup_filter (struct session *sess)
 {
 	if (my_filter) iks_filter_delete (my_filter);
 	my_filter = iks_filter_new ();
+	iks_filter_add_rule (my_filter, on_msg, 0,
+						 IKS_RULE_TYPE, IKS_PAK_MESSAGE,
+						 IKS_RULE_SUBTYPE, IKS_TYPE_CHAT,
+						 IKS_RULE_FROM, globals.target_jid,
+						 IKS_RULE_DONE);
 	iks_filter_add_rule (my_filter, (iksFilterHook *) on_result, sess,
 						 IKS_RULE_TYPE, IKS_PAK_IQ,
 						 IKS_RULE_SUBTYPE, IKS_TYPE_RESULT,
