@@ -14,6 +14,7 @@ BuildModIaxChan=False
 BuildModPortAudio=False
 BuildModSpeexCodec=False
 BuildModCodecG729=False
+BuildModCodecGSM=False
 BuildModXMPPEvent=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
@@ -49,6 +50,8 @@ If objArgs.Count >=1 Then
 			BuildModSpeexCodec=True
 		Case "Mod_CodecG729"
 			BuildModCodecG729=True
+		Case "Mod_CodecGSM"
+			BuildModCodecGSM=True
 		Case "Mod_XMPPEvent"
 			BuildModXMPPEvent=True
 		Case Else
@@ -93,6 +96,10 @@ End If
 
 If BuildModCodecG729 Then
 	BuildLibs_ModCodecG729 BuildDebug, BuildRelease
+End If
+
+If BuildModCodecGSM Then
+	BuildLibs_ModCodecGSM BuildDebug, BuildRelease
 End If
 
 If BuildModXMPPEvent Then
@@ -442,6 +449,23 @@ Sub BuildLibs_ModCodecG729(BuildDebug, BuildRelease)
 		End If
 	Else
 		Wscript.echo "Unable to download libg729"
+	End If 
+End Sub
+
+Sub BuildLibs_ModCodecGSM(BuildDebug, BuildRelease)
+	If FSO.FolderExists(LibDestDir & "codec\gsm") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "codec\gsm\Debug\libgsm.lib") Then 
+				BuildViaVCBuild LibDestDir & "codec\gsm\libgsm.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "codec\gsm\Release\libgsm.lib") Then 
+				BuildViaVCBuild LibDestDir & "codec\gsm\libgsm.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download libgsm"
 	End If 
 End Sub
 
