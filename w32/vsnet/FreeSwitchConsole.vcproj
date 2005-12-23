@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(InputDir)include;$(InputDir)..\libs\apr\include"
+				AdditionalIncludeDirectories="&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\libs\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -119,7 +119,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(InputDir)include;$(InputDir)..\libs\apr\include"
+				AdditionalIncludeDirectories="&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\libs\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"

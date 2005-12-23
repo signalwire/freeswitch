@@ -93,33 +93,102 @@ End If
 WScript.Echo "Complete"
 
 Sub BuildLibs_Core(BuildDebug, BuildRelease)
+If Not FSO.FolderExists(LibDestDir & "include") Then
+	FSO.CreateFolder(LibDestDir & "include")
+End If
 	If Not FSO.FolderExists(LibDestDir & "apr") Then 
 		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-1.2.2.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "apr-1.2.2") Then
-			Wscript.echo "Unable to get SQLite from default download location, Trying backup location:"
+			Wscript.echo "Unable to get apr from default download location, Trying backup location:"
 			WgetUnTarGz "http://www.sofaswitch.org/mikej/apr-1.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "apr-1.2.2", "apr"
-		FSO.CopyFile Utilsdir & "libapr.vcproj", LibDestDir & "apr\", True
-		FindReplaceInFile LibDestDir & "apr\libapr.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
+		FSO.CopyFile Utilsdir & "apr\apr.vcproj", LibDestDir & "apr\", True
 		FindReplaceInFile LibDestDir & "apr\file_io\unix\fullrw.c", "int i;", "unsigned int i;"
-'		Upgrade LibDestDir & "apr\libapr.dsp", LibDestDir & "apr\libapr.vcproj"
 	End If 
 	If FSO.FolderExists(LibDestDir & "apr") Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "apr\Debug\libapr-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr\libapr.vcproj", "Debug"
+			If Not FSO.FileExists(LibDestDir & "apr\LibD\apr-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr\apr.vcproj", "Debug"
+				FSO.CopyFile LibDestDir & "apr\include\*.h", LibDestDir & "include"
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "apr\Release\libapr-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr\libapr.vcproj", "Release"
+			If Not FSO.FileExists(LibDestDir & "apr\LibR\apr-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr\apr.vcproj", "Release"
+				FSO.CopyFile LibDestDir & "apr\include\*.h", LibDestDir & "include"
 			End If
 		End If
 	Else
 		Wscript.echo "Unable to download APR"
 	End If 
-	
+
+	If Not FSO.FolderExists(LibDestDir & "apr-iconv") Then 
+		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-iconv-1.1.1.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "apr-iconv-1.1.1") Then
+			Wscript.echo "Unable to get apr-iconv from default download location, Trying backup location:"
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/apr-iconv-1.1.1.tar.gz", LibDestDir
+		End If
+		RenameFolder LibDestDir & "apr-iconv-1.1.1", "apr-iconv"
+		FSO.CopyFile Utilsdir & "apr\apriconv.vcproj", LibDestDir & "apr-iconv\", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "apr-iconv") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "apr-iconv\LibD\apriconv-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-iconv\apriconv.vcproj", "Debug"
+				FSO.CopyFile LibDestDir & "apr-iconv\include\*.h", LibDestDir & "include"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "apr-iconv\LibR\apriconv-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-iconv\apriconv.vcproj", "Release"
+				FSO.CopyFile LibDestDir & "apr-iconv\include\*.h", LibDestDir & "include"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download apr-iconv"
+	End If 
+
+	If Not FSO.FolderExists(LibDestDir & "apr-util") Then 
+		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-util-1.2.2.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "apr-util-1.2.2") Then
+			Wscript.echo "Unable to get apr-util from default download location, Trying backup location:"
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/apr-util-1.2.2.tar.gz", LibDestDir
+		End If
+		RenameFolder LibDestDir & "apr-util-1.2.2", "apr-util"
+		FSO.CopyFile Utilsdir & "apr\xml.vcproj", LibDestDir & "apr-util\xml\expat\lib\", True
+		FSO.CopyFile Utilsdir & "apr\gen_uri_delims.vcproj", LibDestDir & "apr-util\uri\", True
+		FSO.CopyFile Utilsdir & "apr\aprutil.vcproj", LibDestDir & "apr-util\", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "apr-util") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "apr-util\uri\uri_delims.h") Then 
+				BuildViaVCBuild LibDestDir & "apr-util\uri\gen_uri_delims.vcproj", "Debug"
+			End If
+			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\LibD\xml.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-util\xml\expat\lib\xml.vcproj", "Debug"
+			End If
+			If Not FSO.FileExists(LibDestDir & "apr-util\LibD\aprutil-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-util\aprutil.vcproj", "Debug"
+				FSO.CopyFile LibDestDir & "apr-util\include\*.h", LibDestDir & "include"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "apr-util\uri\uri_delims.h") Then 
+				BuildViaVCBuild LibDestDir & "apr-util\uri\gen_uri_delims.vcproj", "Release"
+			End If
+			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\LibR\xml.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-util\xml\expat\lib\xml.vcproj", "Release"
+			End If
+			If Not FSO.FileExists(LibDestDir & "apr-util\LibR\aprutil-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-util\aprutil.vcproj", "Release"
+				FSO.CopyFile LibDestDir & "apr-util\include\*.h", LibDestDir & "include"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download apr-util"
+	End If 	
+
 	If Not FSO.FolderExists(LibDestDir & "sqlite") Then 
 		WgetUnZip "http://www.sqlite.org/sqlite-source-3_2_7.zip", LibDestDir 
 		If Not FSO.FolderExists(LibDestDir & "sqlite-source-3_2_7") Then
@@ -130,6 +199,7 @@ Sub BuildLibs_Core(BuildDebug, BuildRelease)
 		FSO.CopyFile Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\", True
 		FindReplaceInFile LibDestDir & "sqlite\sqlite.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
 	'	Upgrade Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\sqlite.vcproj"
+		FSO.CopyFile LibDestDir & "sqlite\*.h", LibDestDir & "include"
 	End If
 	If FSO.FolderExists(LibDestDir & "sqlite") Then 
 		If BuildDebug Then
@@ -353,7 +423,7 @@ Sub BuildLibs_ModCodecG729(BuildDebug, BuildRelease)
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "codec\libg729\Debug\libg729.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "codec\libg729\Release\libg729.lib") Then 
 				BuildViaVCBuild LibDestDir & "codec\libg729\libg729.vcproj", "Release"
 			End If
 		End If

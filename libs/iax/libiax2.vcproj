@@ -103,7 +103,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;LIBIAX"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;LIBIAX;DEBUG_SUPPORT;WIN32_TIME_GET_TIME"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"

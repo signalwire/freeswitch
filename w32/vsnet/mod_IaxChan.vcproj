@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\apr\include&quot;;&quot;$(InputDir)..\..\..\libs\iax\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\iax\src&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -63,10 +63,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libapr-1.lib Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
 				OutputFile="$(OutDir)/mod/mod_IaxChan.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(InputDir)..\..\libs\apr\Debug;$(InputDir)..\..\libs\iax\Debug"
+				AdditionalLibraryDirectories="$(InputDir)..\..\libs\iax\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_IaxChan.pdb"
 				SubSystem="2"
@@ -124,9 +124,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\apr\include&quot;;&quot;$(InputDir)..\..\..\libs\iax\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\iax\src&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -143,14 +143,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libapr-1.lib libiax2.lib"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
 				OutputFile="$(OutDir)/mod/mod_IaxChan.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\libs\iax\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\iax\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
 				ImportLibrary="$(OutDir)/mod_IaxChan.lib"
 				TargetMachine="1"
 			/>

@@ -158,3 +158,12 @@ struct timeval switch_tvsub(struct timeval a, struct timeval b)
 }
 #undef ONE_MILLION
 #endif
+
+#ifdef WIN32
+//this forces certain symbols to not be optimized out of the dll
+void include_me(void)
+{
+	apr_socket_shutdown(NULL, 0);
+	apr_socket_recvfrom(NULL , NULL, 0, NULL, NULL);
+}
+#endif

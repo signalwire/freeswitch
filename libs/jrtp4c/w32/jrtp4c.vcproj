@@ -39,7 +39,8 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D WIN32"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\jthread\src;..\..\..\jrtplib\src;..\..\src"
+				AdditionalIncludeDirectories="..\..\jthread-1.1.2\src;..\..\jrtplib\src;..\src"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32"
 				RuntimeLibrary="1"
 			/>
 			<Tool
@@ -72,8 +73,9 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -92,6 +94,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\jthread-1.1.2\src;..\..\jrtplib\src;..\src"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -103,13 +107,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -119,12 +120,6 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -140,7 +135,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\jrtp4c.cpp"
+				RelativePath="..\src\jrtp4c.cpp"
 				>
 			</File>
 		</Filter>
