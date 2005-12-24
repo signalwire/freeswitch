@@ -77,8 +77,26 @@ static switch_status switch_gsm_encode(switch_codec *codec,
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
-	gsm_encode(context, (void *)decoded_data, (void *)encoded_data);
-	*encoded_data_len = 33;
+	if (decoded_data_len % 160 == 0) {
+		unsigned int new_len = 0;
+		gsm_signal *ddp = decoded_data;
+		gsm_byte *edp = encoded_data;
+		int x;
+		int loops = (int) decoded_data_len / 160;
+		
+		for(x = 0; x < loops && new_len < *encoded_data_len; x++) {
+			gsm_encode(context, ddp, edp);
+			edp += 10;
+			ddp += 80;
+			new_len += 10;
+		}
+		if( new_len <= *encoded_data_len ) {
+			*encoded_data_len = new_len;
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
+			return SWITCH_STATUS_FALSE;			
+		}
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -101,12 +119,12 @@ static switch_status switch_gsm_decode(switch_codec *codec,
 
 	if (encoded_data_len % 33 == 0) {
 		int loops = (int) encoded_data_len / 33;
-		char *edp = encoded_data;
-		short *ddp = decoded_data;
+		gsm_byte *edp = encoded_data;
+		gsm_signal *ddp = decoded_data;
 		int x;
 		unsigned int new_len = 0;
 		for(x = 0; x < loops && new_len < *decoded_data_len; x++) {
-			gsm_decode(&context, ddp, edp, 33);
+			gsm_decode(&context, ddp, edp);
 			ddp += 80;
 			edp += 10;
 			new_len += 320;
