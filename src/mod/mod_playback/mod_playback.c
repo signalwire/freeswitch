@@ -51,6 +51,7 @@ void playback_function(switch_core_session *session, char *data)
 	switch_timer timer;
 	switch_core_thread_session thread_session;
 	switch_codec codec;
+	switch_memory_pool *pool = switch_core_session_get_pool(session);
 	char *codec_name;
 	int x;
 
@@ -70,7 +71,7 @@ void playback_function(switch_core_session *session, char *data)
 	write_frame.data = buf;
 	write_frame.buflen = sizeof(buf);
 
-	if (switch_file_open(&fd, data, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_file_open(&fd, data, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD, pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE FAILED\n");
 		switch_channel_hangup(channel);
 		return;
@@ -94,7 +95,7 @@ void playback_function(switch_core_session *session, char *data)
 	write_frame.samples = samples;
 
 	/* You can use zap instead of soft if you have it loaded */
-	if (switch_core_timer_init(&timer, "soft", interval, samples) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_timer_init(&timer, "soft", interval, samples, pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer failed!\n");
 		switch_channel_hangup(channel);
 		return;
@@ -102,7 +103,7 @@ void playback_function(switch_core_session *session, char *data)
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %d bytes per %d ms!\n", len, interval);
 
-	if (switch_core_codec_init(&codec, codec_name, 8000, interval, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL) == SWITCH_STATUS_SUCCESS) {
+	if (switch_core_codec_init(&codec, codec_name, 8000, interval, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
 		write_frame.codec = &codec;
 	} else {

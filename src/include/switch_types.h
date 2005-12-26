@@ -109,8 +109,13 @@ typedef enum {
 	SWITCH_CODEC_FLAG_SILENCE_START =	(1 <<  2),
 	SWITCH_CODEC_FLAG_SILENCE_STOP =	(1 <<  3),
 	SWITCH_CODEC_FLAG_SILENCE =		(1 <<  4),
+	SWITCH_CODEC_FLAG_FREE_POOL =		(1 <<  5),
 
 } switch_codec_flag;
+
+typedef enum {
+		SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0),
+} switch_timer_flag;
 
 typedef enum {
 	SWITCH_CODEC_TYPE_AUDIO,
@@ -158,6 +163,8 @@ typedef struct switch_dialplan_interface switch_dialplan_interface;
 typedef struct switch_codec_interface switch_codec_interface;
 typedef struct switch_application_interface switch_application_interface;
 typedef struct switch_api_interface switch_api_interface;
+typedef struct switch_file_interface switch_file_interface;
+typedef struct switch_file_handle switch_file_handle;
 typedef struct switch_core_session switch_core_session;
 typedef struct switch_loadable_module_interface switch_loadable_module_interface;
 typedef struct switch_caller_profile switch_caller_profile;

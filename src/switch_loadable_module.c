@@ -61,6 +61,7 @@ struct switch_loadable_module_container {
 	switch_hash *timer_hash;
 	switch_hash *application_hash;
 	switch_hash *api_hash;
+	switch_hash *file_hash;
 	switch_memory_pool *pool;
 };
 
@@ -214,6 +215,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	switch_core_hash_init(&loadable_modules.timer_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.application_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.api_hash, loadable_modules.pool);
+	switch_core_hash_init(&loadable_modules.file_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
 
 	while (apr_dir_read(&finfo, finfo_flags, module_dir_handle) == APR_SUCCESS) {
@@ -317,6 +319,20 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				}
 			}
 
+			if (new_module->interface->file_interface) {
+				const switch_file_interface *ptr;
+
+				for(ptr = new_module->interface->file_interface; ptr; ptr = ptr->next) {
+					int i;
+					for (i = 0 ; ptr->extens[i]; i++) {
+						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding File Format '%s'\n", ptr->extens[i]);
+						switch_core_hash_insert(loadable_modules.api_hash,
+												(char *) ptr->extens[i],
+												(void *) ptr);
+					}
+				}
+			}
+
 		}
 
 	}
@@ -373,6 +389,11 @@ SWITCH_DECLARE(switch_application_interface *) loadable_module_get_application_i
 SWITCH_DECLARE(switch_api_interface *) loadable_module_get_api_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.api_hash, name);
+}
+
+SWITCH_DECLARE(switch_api_interface *) loadable_module_get_file_interface(char *name)
+{
+	return switch_core_hash_find(loadable_modules.file_hash, name);
 }
 
 SWITCH_DECLARE(int) loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array, int arraylen)

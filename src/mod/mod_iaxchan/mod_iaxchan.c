@@ -276,7 +276,8 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 							   0,
 							   0,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL) != SWITCH_STATUS_SUCCESS) {
+							   NULL,
+							   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 		return SWITCH_STATUS_GENERR;
 	} else {
@@ -284,7 +285,9 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 								   dname,
 								   0,
 								   0,
-								   SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
+								   SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, 
+								   NULL,
+								   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 			switch_core_codec_destroy(&tech_pvt->read_codec);	
 		return SWITCH_STATUS_GENERR;
@@ -476,7 +479,7 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 {
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
-		switch_channel *channel, *orig_channel;
+		switch_channel *channel;
 		switch_caller_profile *caller_profile;
 		unsigned int req = 0, cap = 0;
 

@@ -47,6 +47,7 @@ struct switch_loadable_module_interface {
 	const switch_codec_interface *codec_interface;
 	const switch_application_interface *application_interface;
 	const switch_api_interface *api_interface;
+	const switch_file_interface *file_interface;
 };
 
 SWITCH_DECLARE(switch_status) switch_loadable_module_init(void);
@@ -59,6 +60,7 @@ SWITCH_DECLARE(switch_api_interface *) loadable_module_get_api_interface(char *n
 SWITCH_DECLARE(int) loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array, int arraylen);
 SWITCH_DECLARE(int) loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array, int arraylen, char **prefs, int preflen);
 SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *retbuf, size_t len);
+SWITCH_DECLARE(switch_api_interface *) loadable_module_get_file_interface(char *name);
 SWITCH_DECLARE(void) loadable_module_shutdown(void);
 
 #ifdef __cplusplus

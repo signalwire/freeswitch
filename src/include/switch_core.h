@@ -77,7 +77,7 @@ SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash *hash, char *key);
 SWITCH_DECLARE(void) switch_core_launch_thread(void *(*func)(switch_thread *, void*), void *obj);
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel);
 SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *session, void *(*func)(switch_thread *, void *), void *obj);
-SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *timer_name, int interval, int samples);
+SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *timer_name, int interval, int samples, switch_memory_pool *pool);
 SWITCH_DECLARE(int) switch_core_timer_next(switch_timer *timer);
 SWITCH_DECLARE(switch_status) switch_core_timer_destroy(switch_timer *timer);
 SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_thread_session *thread_session);
@@ -101,7 +101,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_kill_channel(sw
 SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_waitfor_read(switch_core_session *session, switch_waitfor_read_hook waitfor_read);
 SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_waitfor_write(switch_core_session *session, switch_waitfor_write_hook waitfor_write);
 SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_send_dtmf(switch_core_session *session, switch_send_dtmf_hook send_dtmf);
-SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, int rate, int ms, switch_codec_flag flags, const switch_codec_settings *codec_settings);
+SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, int rate, int ms, switch_codec_flag flags, const switch_codec_settings *codec_settings, switch_memory_pool *pool);
 SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 								 switch_codec *other_codec,
 								 void *decoded_data,

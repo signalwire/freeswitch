@@ -887,21 +887,23 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 			int rate = atoi(drate);
 
 			if (switch_core_codec_init(&tech_pvt->read_codec,
-									dname,
-									rate,
-									globals.codec_ms,
-									SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-									NULL) != SWITCH_STATUS_SUCCESS) {
+									   dname,
+									   rate,
+									   globals.codec_ms,
+									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+									   NULL,
+									   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 				switch_channel_hangup(channel);
 				return SWITCH_STATUS_FALSE;
 			} else {
 				if (switch_core_codec_init(&tech_pvt->write_codec,
-										dname,
-										rate,
-										globals.codec_ms,
-										SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-										NULL) != SWITCH_STATUS_SUCCESS) {
+										   dname,
+										   rate,
+										   globals.codec_ms,
+										   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+										   NULL,
+										   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 					switch_channel_hangup(channel);
 					return SWITCH_STATUS_FALSE;
@@ -1046,12 +1048,24 @@ static void handle_answer(eXosip_event_t *event)
 		int rate = atoi(drate);
 
 
-		if (switch_core_codec_init(&tech_pvt->read_codec, dname, rate, globals.codec_ms, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_codec_init(&tech_pvt->read_codec,
+								   dname,
+								   rate,
+								   globals.codec_ms,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								   NULL,
+								   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 			switch_channel_hangup(channel);
 			return;
 		} else {
-			if (switch_core_codec_init(&tech_pvt->write_codec, dname, rate, globals.codec_ms, SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_codec_init(&tech_pvt->write_codec,
+									   dname,
+									   rate,
+									   globals.codec_ms,
+									   SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE,
+									   NULL,
+									   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 				switch_channel_hangup(channel);
 				return;

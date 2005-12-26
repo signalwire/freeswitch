@@ -202,7 +202,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_set_write_codec(switch_core_se
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, int rate, int ms, switch_codec_flag flags, const switch_codec_settings *codec_settings)
+SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, int rate, int ms, switch_codec_flag flags, const switch_codec_settings *codec_settings, switch_memory_pool *pool)
 {
 	const switch_codec_interface *codec_interface;
 	const switch_codec_implementation *iptr, *implementation = NULL;
@@ -229,8 +229,14 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 		codec->codec_interface = codec_interface;
 		codec->implementation = implementation;
 		codec->flags = flags;
-		if ((status = switch_core_new_memory_pool(&codec->memory_pool)) != SWITCH_STATUS_SUCCESS) {
-			return status;
+
+		if (pool) {
+			codec->memory_pool = pool;
+		} else {
+			if ((status = switch_core_new_memory_pool(&codec->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+				return status;
+			}
+			switch_set_flag(codec, SWITCH_CODEC_FLAG_FREE_POOL);
 		}
 		implementation->init(codec, flags, codec_settings);
 
@@ -301,11 +307,15 @@ SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec *codec)
 	}
 
 	codec->implementation->destroy(codec);
-	switch_core_destroy_memory_pool(&codec->memory_pool);
+
+	if (switch_test_flag(codec, SWITCH_CODEC_FLAG_FREE_POOL)) {
+		switch_core_destroy_memory_pool(&codec->memory_pool);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *timer_name, int interval, int samples)
+SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *timer_name, int interval, int samples, switch_memory_pool *pool)
 {
 	switch_timer_interface *timer_interface;
 	switch_status status;
@@ -319,8 +329,14 @@ SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *
 	timer->samples = samples;
 	timer->samplecount = 0;
 	timer->timer_interface = timer_interface;
-	if ((status = switch_core_new_memory_pool(&timer->memory_pool)) != SWITCH_STATUS_SUCCESS) {
-		return status;
+
+	if (pool) {
+		timer->memory_pool = pool;
+	} else {
+		if ((status = switch_core_new_memory_pool(&timer->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		switch_set_flag(timer, SWITCH_TIMER_FLAG_FREE_POOL);
 	}
 
 	timer->timer_interface->timer_init(timer);
@@ -352,7 +368,11 @@ SWITCH_DECLARE(switch_status) switch_core_timer_destroy(switch_timer *timer)
 	}
 
 	timer->timer_interface->timer_destroy(timer);
-	switch_core_destroy_memory_pool(&timer->memory_pool);
+
+	if (switch_test_flag(timer, SWITCH_TIMER_FLAG_FREE_POOL)) {
+		switch_core_destroy_memory_pool(&timer->memory_pool);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

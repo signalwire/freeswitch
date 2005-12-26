@@ -700,19 +700,22 @@ static switch_status engage_device(struct private_object *tech_pvt)
 	assert(channel != NULL);
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,
-								"L16",
-								sample_rate,
-								codec_ms,
-								SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-								NULL) != SWITCH_STATUS_SUCCESS) {
+							   "L16",
+							   sample_rate,
+							   codec_ms,
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   NULL,
+							   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 			return SWITCH_STATUS_FALSE;
 		} else {
 			if (switch_core_codec_init(&tech_pvt->write_codec,
-									"L16",
-									sample_rate,
-									codec_ms,
-									SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
+									   "L16",
+									   sample_rate,
+									   codec_ms,
+									   SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE,
+									   NULL,
+									   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 				switch_core_codec_destroy(&tech_pvt->read_codec);	
 				return SWITCH_STATUS_FALSE;
