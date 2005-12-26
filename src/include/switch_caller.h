@@ -92,7 +92,7 @@ extern "C" {
 	SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_session *session,
 																		switch_caller_profile *tocopy);
 
-	SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, switch_event *event);
+	SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, char *prefix, switch_event *event);
 
 
 #ifdef __cplusplus

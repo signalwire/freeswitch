@@ -521,6 +521,31 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 		}
 	}
 
+	if (*new_session) {
+		switch_caller_profile *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
+		switch_channel *channel = NULL, *peer_channel = NULL;
+
+		if ((channel = switch_core_session_get_channel(session))) {
+			profile = switch_channel_get_caller_profile(channel);
+		}
+		if ((peer_channel = switch_core_session_get_channel(*new_session))) {
+			peer_profile = switch_channel_get_caller_profile(peer_channel);
+		}
+
+		if (channel && peer_channel) {
+			if (profile) {
+				if ((cloned_profile = switch_caller_profile_clone(*new_session, profile))) {
+					switch_channel_set_originator_caller_profile(peer_channel, cloned_profile);
+				}
+			}
+			if (peer_profile) {
+				if ((cloned_profile = switch_caller_profile_clone(session, peer_profile))) {
+					switch_channel_set_originatee_caller_profile(channel, cloned_profile);
+				}
+			}
+		}
+	}
+
 	return status;
 }
 

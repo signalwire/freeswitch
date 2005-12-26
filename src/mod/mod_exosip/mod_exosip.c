@@ -367,8 +367,7 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 {
 	if ((*new_session = switch_core_session_request(&exosip_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
-		switch_channel *channel, *orig_channel;
-		switch_caller_profile *caller_profile, *originator_caller_profile = NULL;
+		switch_channel *channel;
 
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
@@ -384,6 +383,8 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 
 		if (outbound_profile) {
 			char name[128];
+			switch_caller_profile *caller_profile;
+
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
@@ -393,16 +394,6 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_STATUS_GENERR;
-		}
-
-		/* (session == NULL) means it was originated from the core not from another channel */
-		if (session && (orig_channel = switch_core_session_get_channel(session))) {
-			switch_caller_profile *cloned_profile;
-
-			if ((originator_caller_profile = switch_channel_get_caller_profile(orig_channel))) {
-				cloned_profile = switch_caller_profile_clone(*new_session, originator_caller_profile);
-				switch_channel_set_originator_caller_profile(channel, cloned_profile);
-			}
 		}
 		
 		switch_channel_set_flag(channel, CF_OUTBOUND);

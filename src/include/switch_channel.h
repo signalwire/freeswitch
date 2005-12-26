@@ -53,6 +53,8 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel *channel, 
 SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_caller_profile(switch_channel *channel);
 SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel *channel, switch_caller_profile *caller_profile);
 SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originator_caller_profile(switch_channel *channel);
+SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel *channel, switch_caller_profile *caller_profile);
+SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originatee_caller_profile(switch_channel *channel);
 SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel *channel, char *varname);
 SWITCH_DECLARE(switch_status) switch_channel_set_variable(switch_channel *channel, char *varname, char *value);
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel *channel, switch_caller_extension *caller_extension);

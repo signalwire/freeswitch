@@ -44,16 +44,26 @@ void playback_function(switch_core_session *session, char *data)
 	switch_file_t *fd;
 	char buf[960];
 	char dtmf[128];
+	char *ext;
 	int interval = 0, samples = 0;
 	size_t len = 0, ilen = 0;
 	switch_frame write_frame;
 	switch_timer timer;
 	switch_core_thread_session thread_session;
 	switch_codec codec;
+	char *codec_name;
 	int x;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
+
+
+	if (!(ext = strrchr(data, '.'))) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Format\n");
+		return;
+	} 
+
+	ext++;
 
 	switch_channel_answer(channel);
 
@@ -65,19 +75,20 @@ void playback_function(switch_core_session *session, char *data)
 		switch_channel_hangup(channel);
 		return;
 	}
-                       
+    
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s\n", data);
 	
 	interval = 20;
 	len = 320;
 	samples = 160;
-	
+	codec_name = "L16";
 	
 
 #if 0
-	interval = 30;
-	len = 480;
-	samples = 240;
+	interval = 20;
+	len = 33;
+	samples = 160;
+	codec_name = "gsm";
 #endif
 
 	write_frame.samples = samples;
@@ -91,7 +102,7 @@ void playback_function(switch_core_session *session, char *data)
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %d bytes per %d ms!\n", len, interval);
 
-	if (switch_core_codec_init(&codec, "L16", 8000, interval, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL) == SWITCH_STATUS_SUCCESS) {
+	if (switch_core_codec_init(&codec, codec_name, 8000, interval, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL) == SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
 		write_frame.codec = &codec;
 	} else {

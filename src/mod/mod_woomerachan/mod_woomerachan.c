@@ -348,8 +348,8 @@ static switch_status woomerachan_outgoing_channel(switch_core_session *session, 
 	if ((*new_session = switch_core_session_request(&woomerachan_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
 		switch_channel *channel, *orig_channel;
-		switch_caller_profile *caller_profile, *originator_caller_profile = NULL;
 		
+
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			tech_pvt->profile = &default_profile;
@@ -364,6 +364,8 @@ static switch_status woomerachan_outgoing_channel(switch_core_session *session, 
 
 		if (outbound_profile) {
 			char name[128];
+			switch_caller_profile *caller_profile;
+
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
@@ -375,16 +377,6 @@ static switch_status woomerachan_outgoing_channel(switch_core_session *session, 
 			return SWITCH_STATUS_GENERR;
 		}
 
-		/* (session == NULL) means it was originated from the core not from another channel */
-		if (session && (orig_channel = switch_core_session_get_channel(session))) {
-			switch_caller_profile *cloned_profile;
-
-			if ((originator_caller_profile = switch_channel_get_caller_profile(orig_channel))) {
-				cloned_profile = switch_caller_profile_clone(*new_session, originator_caller_profile);
-				switch_channel_set_originator_caller_profile(channel, cloned_profile);
-			}
-		}
-		
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);

@@ -477,7 +477,7 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
 		switch_channel *channel, *orig_channel;
-		switch_caller_profile *caller_profile, *originator_caller_profile = NULL;
+		switch_caller_profile *caller_profile;
 		unsigned int req = 0, cap = 0;
 
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
@@ -523,17 +523,6 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 				 caller_profile->destination_number,
 				 NULL, 0, req, cap);
 
-
-		/* (session == NULL) means it was originated from the core not from another channel */
-		if (session && (orig_channel = switch_core_session_get_channel(session))) {
-			switch_caller_profile *cloned_profile;
-
-			if ((originator_caller_profile = switch_channel_get_caller_profile(orig_channel))) {
-				cloned_profile = switch_caller_profile_clone(*new_session, originator_caller_profile);
-				switch_channel_set_originator_caller_profile(channel, cloned_profile);
-			}
-		}
-		
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
@@ -904,8 +893,10 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 					}
 				}
 				break;
-		    case IAX_EVENT_BUSY:
-		    case IAX_EVENT_HANGUP:
+		    case IAX_EVENT_REJECT:
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Rejected call.\n");
+			case IAX_EVENT_BUSY:
+			case IAX_EVENT_HANGUP:
 				if (tech_pvt) {
 					switch_channel *channel;
 
@@ -940,9 +931,6 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 		    case IAX_EVENT_TRANSFER:
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Call transfer occurred.\n");
 				//session[0] = iaxevent->session;
-				break;
-		    case IAX_EVENT_REJECT:
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Rejected call.\n");
 				break;
 		    case IAX_EVENT_DTMF:
 				if (tech_pvt) {

@@ -190,7 +190,6 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 		time_t start;
 		
 		peer_channel = switch_core_session_get_channel(peer_session);
-
 		memset(&other_audio_thread, 0, sizeof(other_audio_thread));
 		memset(&this_audio_thread, 0, sizeof(this_audio_thread));
 		other_audio_thread.objs[0] = session;
@@ -226,6 +225,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 
 		if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
 			switch_channel_answer(caller_channel);
+
 			switch_core_session_launch_thread(session, audio_bridge_thread, (void *) &other_audio_thread);
 			audio_bridge_thread(NULL, (void *) &this_audio_thread);
 			switch_channel_hangup(peer_channel);

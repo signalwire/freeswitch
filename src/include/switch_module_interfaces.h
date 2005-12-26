@@ -176,30 +176,27 @@ struct switch_codec_settings {
 	float pp_dereverb_level;
 };
 
+struct switch_file_handle {
+	const struct switch_file_interface *file_interface;
+	const struct switch_file_implementation *implementation;
+	switch_file_t *fd;
+	unsigned int sample_count;
+	switch_codec_flag flags;
+	switch_memory_pool *memory_pool;
+	void *private;
+};
+
+struct switch_file_implementation {
+	const struct switch_file_implementation *next;
+	int codec_iananum;
+};
+
 struct switch_codec {
 	const struct switch_codec_interface *codec_interface;
 	const struct switch_codec_implementation *implementation;
 	struct switch_codec_settings codec_settings;
 	switch_codec_flag flags;
 	switch_memory_pool *memory_pool;
-
-	switch_frame raw_write_frame;
-	unsigned char *raw_write_frame_data;
-	switch_buffer *raw_write_buffer;
-
-	switch_frame enc_write_frame;
-	unsigned char *enc_write_frame_data;
-	switch_buffer *enc_write_buffer;
-
-
-	switch_frame raw_read_frame;
-	unsigned char *raw_read_frame_data;
-	switch_buffer *raw_read_buffer;
-
-	switch_frame enc_read_frame;
-	unsigned char *enc_read_frame_data;
-	switch_buffer *enc_read_buffer;
-
 	void *private;
 };
 

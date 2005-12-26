@@ -75,30 +75,39 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
 	return profile;
 }
 
-SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, switch_event *event)
+SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, char *prefix, switch_event *event)
 
 {
-		if (caller_profile->dialplan) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Dialplan", caller_profile->dialplan);
-		}
-		if (caller_profile->caller_id_name) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Caller-ID-Name", caller_profile->caller_id_name);
-		}
-		if (caller_profile->caller_id_number) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Caller-ID-Number", caller_profile->caller_id_number);
-		}
-		if (caller_profile->network_addr) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Network-Addr", caller_profile->network_addr);
-		}
-		if (caller_profile->ani) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-ANI", caller_profile->ani);
-		}
-		if (caller_profile->ani2) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-ANI2", caller_profile->ani2);
-		}
-		if (caller_profile->destination_number) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Destination-Number", caller_profile->destination_number);
-		}
+	char header_name[1024];
+
+	if (caller_profile->dialplan) {
+		snprintf(header_name, sizeof(header_name), "%s-Dialplan", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->dialplan);
+	}
+	if (caller_profile->caller_id_name) {
+		snprintf(header_name, sizeof(header_name), "%s-Caller-ID-Name", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->caller_id_name);
+	}
+	if (caller_profile->caller_id_number) {
+		snprintf(header_name, sizeof(header_name), "%s-Caller-ID-Number", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->caller_id_number);
+	}
+	if (caller_profile->network_addr) {
+		snprintf(header_name, sizeof(header_name), "%s-Network-Addr", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->network_addr);
+	}
+	if (caller_profile->ani) {
+		snprintf(header_name, sizeof(header_name), "%s-ANI", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->ani);
+	}
+	if (caller_profile->ani2) {
+		snprintf(header_name, sizeof(header_name), "%s-ANI2", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->ani2);
+	}
+	if (caller_profile->destination_number) {
+		snprintf(header_name, sizeof(header_name), "%s-Destination-Number", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->destination_number);
+	}
 
 }
 

@@ -41,6 +41,7 @@ struct switch_channel {
 	switch_channel_flag flags;
 	switch_caller_profile *caller_profile;
 	switch_caller_profile *originator_caller_profile;
+	switch_caller_profile *originatee_caller_profile;
 	switch_caller_extension *caller_extension;
 	const struct switch_event_handler_table *event_handlers;
 	switch_hash *variables;
@@ -397,13 +398,14 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 
 SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, switch_event *event)
 {
-	switch_caller_profile *caller_profile, *originator_caller_profile;
+	switch_caller_profile *caller_profile, *originator_caller_profile, *originatee_caller_profile;
 	switch_hash_index_t* hi;
 	void *val;
 	const void *var;
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 	originator_caller_profile = switch_channel_get_originator_caller_profile(channel);
+	originatee_caller_profile = switch_channel_get_originatee_caller_profile(channel);
 	
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", (char *) switch_channel_state_name(channel->state));
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
@@ -412,12 +414,17 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 
 	/* Index Caller's Profile */	
 	if (caller_profile) {
-		switch_caller_profile_event_set_data(caller_profile, event);
+		switch_caller_profile_event_set_data(caller_profile, "Caller", event);
 	}
 	
 	/* Index Originator's Profile */
 	if (originator_caller_profile) {
-		switch_caller_profile_event_set_data(originator_caller_profile, event);
+		switch_caller_profile_event_set_data(originator_caller_profile, "Originator", event);
+	}
+
+	/* Index Originatee's Profile */
+	if (originatee_caller_profile) {
+		switch_caller_profile_event_set_data(originatee_caller_profile, "Originatee", event);
 	}
 
 	/* Index Variables */
@@ -452,10 +459,22 @@ SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel
 	channel->originator_caller_profile = caller_profile;
 }
 
+SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel *channel, switch_caller_profile *caller_profile)
+{
+	assert(channel != NULL);
+	channel->originatee_caller_profile = caller_profile;
+}
+
 SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originator_caller_profile(switch_channel *channel)
 {
 	assert(channel != NULL);
 	return channel->originator_caller_profile;
+}
+
+SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originatee_caller_profile(switch_channel *channel)
+{
+	assert(channel != NULL);
+	return channel->originatee_caller_profile;
 }
 
 SWITCH_DECLARE(void) switch_channel_set_event_handlers(switch_channel *channel, const struct switch_event_handler_table *event_handlers)
