@@ -17,7 +17,7 @@ endif
 
 if ISMAC
 SOLINK=-dynamic -bundle -undefined suppress -force_flat_namespace
-AM_CFLAGS += -DMACOSX -DBIGENDIAN
+AM_CFLAGS += -DMACOSX -DSWAP_LINEAR
 else
 SOLINK=-shared -Xlinker -x
 endif

@@ -39,7 +39,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @ISLINUX_TRUE@am__append_1 = -Wl,-E
-@ISMAC_TRUE@am__append_2 = -DMACOSX -DBIGENDIAN
+@ISMAC_TRUE@am__append_2 = -DMACOSX -DSWAP_LINEAR
 bin_PROGRAMS = freeswitch$(EXEEXT)
 DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \

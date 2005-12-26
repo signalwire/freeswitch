@@ -296,7 +296,7 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 {
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
-		switch_channel *channel, *orig_channel;
+		switch_channel *channel;
 		switch_caller_profile *caller_profile;
 
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {

@@ -343,7 +343,7 @@ SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, switc
 
 		header->name = DUP(header_name);
 		header->value = DUP(data);
-		if (stack = SWITCH_STACK_TOP) {
+		if ((stack = SWITCH_STACK_TOP)) {
 			header->next = event->headers;
 			event->headers = header;
 		} else {
