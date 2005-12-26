@@ -156,6 +156,23 @@ struct switch_dialplan_interface {
 	const struct switch_dialplan_interface *next;
 };
 
+struct switch_file_interface {
+	const char *interface_name;
+	const struct switch_file_interface *next;
+	const char *extens[];
+
+};
+
+struct switch_file_handle {
+	const struct switch_file_interface *file_interface;
+	switch_file_t *fd;
+	unsigned int sample_count;
+	switch_codec_flag flags;
+	switch_memory_pool *memory_pool;
+	void *private;
+};
+
+
 /* nobody has more setting than speex so we will let them set the standard */
 struct switch_codec_settings {
 	int quality;
@@ -174,21 +191,6 @@ struct switch_codec_settings {
 	int pp_dereverb;
 	float pp_dereverb_decay;
 	float pp_dereverb_level;
-};
-
-struct switch_file_handle {
-	const struct switch_file_interface *file_interface;
-	const struct switch_file_implementation *implementation;
-	switch_file_t *fd;
-	unsigned int sample_count;
-	switch_codec_flag flags;
-	switch_memory_pool *memory_pool;
-	void *private;
-};
-
-struct switch_file_implementation {
-	const struct switch_file_implementation *next;
-	int codec_iananum;
 };
 
 struct switch_codec {
