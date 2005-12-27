@@ -159,19 +159,25 @@ struct switch_dialplan_interface {
 
 struct switch_file_interface {
 	const char *interface_name;
-	switch_status (*file_open)(switch_file_handle *);
+	switch_status (*file_open)(switch_file_handle *, char *file_path);
 	switch_status (*file_close)(switch_file_handle *);
-	switch_status (*file_read)(switch_file_handle *, void *data, size_t len);
-	switch_status (*file_write)(switch_file_handle *, void *data, size_t len);
-	switch_status (*file_seek)(switch_file_handle *, unsigned int samples, int whence);
+	switch_status (*file_read)(switch_file_handle *, void *data, size_t *len);
+	switch_status (*file_write)(switch_file_handle *, void *data, size_t *len);
+	switch_status (*file_seek)(switch_file_handle *, unsigned int *cur_pos, unsigned int samples, int whence);
+	char **extens;
 	const struct switch_file_interface *next;
-	const char *extens[];
 };
 
 struct switch_file_handle {
 	const struct switch_file_interface *file_interface;
 	unsigned int flags;
 	switch_file_t *fd;
+	unsigned int samples;
+	unsigned int samplerate;
+	unsigned int channels;
+	unsigned int format;
+	unsigned int sections;
+	int seekable;
 	unsigned int sample_count;
 	switch_memory_pool *memory_pool;
 	void *private;

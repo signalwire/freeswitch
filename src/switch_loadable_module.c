@@ -326,7 +326,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 					int i;
 					for (i = 0 ; ptr->extens[i]; i++) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding File Format '%s'\n", ptr->extens[i]);
-						switch_core_hash_insert(loadable_modules.api_hash,
+						switch_core_hash_insert(loadable_modules.file_hash,
 												(char *) ptr->extens[i],
 												(void *) ptr);
 					}
@@ -391,7 +391,7 @@ SWITCH_DECLARE(switch_api_interface *) loadable_module_get_api_interface(char *n
 	return switch_core_hash_find(loadable_modules.api_hash, name);
 }
 
-SWITCH_DECLARE(switch_api_interface *) loadable_module_get_file_interface(char *name)
+SWITCH_DECLARE(switch_file_interface *) loadable_module_get_file_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.file_hash, name);
 }

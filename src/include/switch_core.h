@@ -124,6 +124,11 @@ SWITCH_DECLARE(void) pbx_core_session_signal_state_change(switch_core_session *s
 SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup);
 SWITCH_DECLARE(switch_core_db *) switch_core_db_open_file(char *filename);
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session *session);
+SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char *file_path, unsigned int flags, switch_memory_pool *pool);
+SWITCH_DECLARE(switch_status) switch_core_file_read(switch_file_handle *fh, void *data, size_t *len);
+SWITCH_DECLARE(switch_status) switch_core_file_write(switch_file_handle *fh, void *data, size_t *len);
+SWITCH_DECLARE(switch_status) switch_core_file_seek(switch_file_handle *fh, unsigned int *cur_pos, unsigned int samples, int whence);
+SWITCH_DECLARE(switch_status) switch_core_file_close(switch_file_handle *fh);
 
 #define SWITCH_CORE_DB "core"
 #define switch_core_db_handle() switch_core_db_open_file(SWITCH_CORE_DB)

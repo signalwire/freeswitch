@@ -315,6 +315,62 @@ SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char *file_path, unsigned int flags, switch_memory_pool *pool)
+{
+	char *ext;
+	switch_status status;
+
+	memset(fh, 0, sizeof(*fh));
+
+	if (!(ext = strrchr(file_path, '.'))) {
+        switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Format\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	ext++;
+
+	if (!(fh->file_interface = loadable_module_get_file_interface(ext))) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid file format [%s]!\n", ext);
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	fh->flags = flags;
+	if (pool) {
+		fh->memory_pool = pool;
+	} else {
+		if ((status = switch_core_new_memory_pool(&fh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+            return status;
+        }
+        switch_set_flag(fh, SWITCH_TIMER_FLAG_FREE_POOL);
+	}
+
+	return fh->file_interface->file_open(fh, file_path);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_file_read(switch_file_handle *fh, void *data, size_t *len)
+{
+	assert(fh != NULL);
+	
+	return fh->file_interface->file_read(fh, data, len);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_file_write(switch_file_handle *fh, void *data, size_t *len)
+{
+	assert(fh != NULL);
+	
+	return fh->file_interface->file_write(fh, data, len);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_file_seek(switch_file_handle *fh, unsigned int *cur_pos, unsigned int samples, int whence)
+{
+	return fh->file_interface->file_seek(fh, cur_pos, samples, whence);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_file_close(switch_file_handle *fh)
+{
+	return fh->file_interface->file_close(fh);
+}
+
+
 SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *timer_name, int interval, int samples, switch_memory_pool *pool)
 {
 	switch_timer_interface *timer_interface;

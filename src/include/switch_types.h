@@ -118,6 +118,17 @@ typedef enum {
 } switch_timer_flag;
 
 typedef enum {
+	SWITCH_FILE_FLAG_READ =			(1 <<  0),
+	SWITCH_FILE_FLAG_WRITE =		(1 <<  1),
+	SWITCH_FILE_FLAG_FREE_POOL =	(1 <<  2),
+	SWITCH_FILE_DATA_SHORT =		(1 <<  3),
+	SWITCH_FILE_DATA_INT =			(1 <<  4),
+	SWITCH_FILE_DATA_FLOAT =		(1 <<  5),
+	SWITCH_FILE_DATA_DOUBLE =		(1 <<  6),
+	SWITCH_FILE_DATA_RAW =			(1 <<  7),
+} switch_file_flag;
+
+typedef enum {
 	SWITCH_CODEC_TYPE_AUDIO,
 	SWITCH_CODEC_TYPE_VIDEO,
 	SWITCH_CODEC_TYPE_T38,

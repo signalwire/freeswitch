@@ -41,10 +41,8 @@ static const char modname[] = "mod_playback";
 void playback_function(switch_core_session *session, char *data)
 {
 	switch_channel *channel;
-	switch_file_t *fd;
 	char buf[960];
 	char dtmf[128];
-	char *ext;
 	int interval = 0, samples = 0;
 	size_t len = 0, ilen = 0;
 	switch_frame write_frame;
@@ -52,30 +50,26 @@ void playback_function(switch_core_session *session, char *data)
 	switch_core_thread_session thread_session;
 	switch_codec codec;
 	switch_memory_pool *pool = switch_core_session_get_pool(session);
+	switch_file_handle fh;
 	char *codec_name;
 	int x;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-
-	if (!(ext = strrchr(data, '.'))) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Format\n");
+	if (switch_core_file_open(&fh,
+							  data,
+							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_RAW,
+							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		switch_channel_hangup(channel);
 		return;
-	} 
-
-	ext++;
+	}
 
 	switch_channel_answer(channel);
 
 	write_frame.data = buf;
 	write_frame.buflen = sizeof(buf);
 
-	if (switch_file_open(&fd, data, SWITCH_FOPEN_READ, SWITCH_FPROT_UREAD, pool) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE FAILED\n");
-		switch_channel_hangup(channel);
-		return;
-	}
     
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s\n", data);
 	
@@ -84,14 +78,6 @@ void playback_function(switch_core_session *session, char *data)
 	samples = 160;
 	codec_name = "L16";
 	
-
-#if 0
-	interval = 20;
-	len = 33;
-	samples = 160;
-	codec_name = "gsm";
-#endif
-
 	write_frame.samples = samples;
 
 	/* You can use zap instead of soft if you have it loaded */
@@ -134,7 +120,10 @@ void playback_function(switch_core_session *session, char *data)
 		if (done) {
 			break;
 		}
-		if (switch_file_read(fd, buf, &ilen) != SWITCH_STATUS_SUCCESS) {
+		
+		switch_core_file_read(&fh, buf, &ilen);
+
+		if (ilen <= 0) {
 			break;
 		}
 
@@ -153,7 +142,7 @@ void playback_function(switch_core_session *session, char *data)
 	}
 	
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "done playing file\n");
-	switch_file_close(fd);
+	switch_core_file_close(&fh);
 
 	/* End the audio absorbing thread */
 	switch_core_thread_session_end(&thread_session);
