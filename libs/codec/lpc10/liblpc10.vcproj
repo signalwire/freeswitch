@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="liblpc10"
 	ProjectGUID="{FF1D238A-9D59-4850-838E-78182E05736B}"
+	RootNamespace="liblpc10"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -38,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;P_R_O_T_O_T_Y_P_E_S"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -98,7 +99,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;P_R_O_T_O_T_Y_P_E_S"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"

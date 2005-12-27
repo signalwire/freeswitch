@@ -1,20 +1,14 @@
 /*
 
-$Log$
-Revision 1.16  2004/06/26 03:50:14  markster
-Merge source cleanups (bug #1911)
+$Log: voicin.c,v $
+Revision 1.1  2004/05/04 11:16:43  csoutheren
+Initial version
 
-Revision 1.15  2003/11/23 22:14:32  markster
-Various warning cleanups
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
-Revision 1.14  2003/02/12 13:59:15  matteo
-mer feb 12 14:56:57 CET 2003
-
-Revision 1.1.1.1  2003/02/12 13:59:15  matteo
-mer feb 12 14:56:57 CET 2003
-
-Revision 1.2  2000/01/05 08:20:40  markster
-Some OSS fixes and a few lpc changes to make it actually work
+Revision 1.1  2000/06/05 04:45:12  robertj
+Added LPC-10 2400bps codec
 
  * Revision 1.2  1996/08/20  20:45:00  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
@@ -30,18 +24,18 @@ Some OSS fixes and a few lpc changes to make it actually work
 
 */
 
+#ifdef P_R_O_T_O_T_Y_P_E_S
+extern int voicin_(integer *vwin, real *inbuf, real *lpbuf, integer *buflim, integer *half, real *minamd, real *maxamd, integer *mintau, real *ivrc, integer *obound, integer *voibuf, integer *af, struct lpc10_encoder_state *st);
+/* comlen contrl_ 12 */
+/*:ref: vparms_ 14 14 4 6 6 4 4 6 4 4 4 4 6 6 6 6 */
+#endif
+
 /*  -- translated by f2c (version 19951025).
    You must link the resulting object file with the libraries:
 	-lf2c -lm   (in that order)
 */
 
 #include "f2c.h"
-
-#ifdef P_R_O_T_O_T_Y_P_E_S
-extern int voicin_(integer *vwin, real *inbuf, real *lpbuf, integer *buflim, integer *half, real *minamd, real *maxamd, integer *mintau, real *ivrc, integer *obound, integer *voibuf, integer *af, struct lpc10_encoder_state *st);
-/* comlen contrl_ 12 */
-/*:ref: vparms_ 14 14 4 6 6 4 4 6 4 4 4 4 6 6 6 6 */
-#endif
 
 /* Common Block Declarations */
 
@@ -56,21 +50,15 @@ extern struct {
 
 /* 	VOICIN Version 52 */
 
-/* $Log$
- * Revision 1.16  2004/06/26 03:50:14  markster
- * Merge source cleanups (bug #1911)
- *
-/* Revision 1.15  2003/11/23 22:14:32  markster
-/* Various warning cleanups
+/* $Log: voicin.c,v $
+/* Revision 1.1  2004/05/04 11:16:43  csoutheren
+/* Initial version
 /*
-/* Revision 1.14  2003/02/12 13:59:15  matteo
-/* mer feb 12 14:56:57 CET 2003
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 /*
-/* Revision 1.1.1.1  2003/02/12 13:59:15  matteo
-/* mer feb 12 14:56:57 CET 2003
-/*
-/* Revision 1.2  2000/01/05 08:20:40  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.2  1996/08/20  20:45:00  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
@@ -277,7 +265,7 @@ s*/
 	    ;
 
     /* System generated locals */
-    integer inbuf_offset = 0, lpbuf_offset = 0, i__1, i__2;
+    integer inbuf_offset, lpbuf_offset, i__1, i__2;
     real r__1, r__2;
 
     /* Builtin functions */
@@ -307,21 +295,15 @@ s*/
 
 /* 	Global Variables: */
 /*       Arguments */
-/* $Log$
- * Revision 1.16  2004/06/26 03:50:14  markster
- * Merge source cleanups (bug #1911)
- *
-/* Revision 1.15  2003/11/23 22:14:32  markster
-/* Various warning cleanups
+/* $Log: voicin.c,v $
+/* Revision 1.1  2004/05/04 11:16:43  csoutheren
+/* Initial version
 /*
-/* Revision 1.14  2003/02/12 13:59:15  matteo
-/* mer feb 12 14:56:57 CET 2003
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 /*
-/* Revision 1.1.1.1  2003/02/12 13:59:15  matteo
-/* mer feb 12 14:56:57 CET 2003
-/*
-/* Revision 1.2  2000/01/05 08:20:40  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.2  1996/08/20  20:45:00  jaf
  * Removed all static local variables that were SAVE'd in the Fortran

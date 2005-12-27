@@ -1,26 +1,11 @@
 /*
 
-$Log$
-Revision 1.18  2004/08/31 13:32:11  markster
-Merge NetBSD and Courtesty tone with modifications (bug #2329)
+$Log: lpc10.h,v $
+Revision 1.1  2004/05/04 11:30:49  csoutheren
+Initial version
 
-Revision 1.17  2003/10/26 18:50:49  markster
-Make it build and run on MacOS X
-
-Revision 1.3  2003/10/26 18:50:49  markster
-Make it build and run on MacOS X
-
-Revision 1.2  2003/04/23 19:13:35  markster
-More OpenBSD patches
-
-Revision 1.1.1.2  2003/03/16 22:37:30  matteo
-dom mar 16 23:37:23 CET 2003
-
-Revision 1.2  2003/03/16 16:09:48  markster
-Mere James's cleanups for fewer build warnings
-
-Revision 1.1  2000/01/05 00:20:06  markster
-Add broken lpc10 code...  It's not too far from working I don't think...
+Revision 1.1  2000/06/05 04:45:11  robertj
+Added LPC-10 2400bps codec
 
  * Revision 1.1  1996/08/19  22:47:31  jaf
  * Initial revision
@@ -35,36 +20,8 @@ Add broken lpc10 code...  It's not too far from working I don't think...
 #define LPC10_BITS_IN_COMPRESSED_FRAME 54
 
 
-/*
-
-  The "#if defined"'s in this file are by no means intended to be
-  complete.  They are what Nautilus uses, which has been successfully
-  compiled under DOS with the Microsoft C compiler, and under a few
-  versions of Unix with the GNU C compiler.
-
- */
-
-#if defined(unix) || defined(__unix__) || defined(__NetBSD__)
 typedef short		INT16;
-typedef int			INT32;
-#endif
-
-
-#if defined(__MSDOS__) || defined(MSDOS)
-typedef int			INT16;
-typedef long		INT32;
-#endif
-
-#if defined(__APPLE__)
-typedef short		INT16;
-typedef int			INT32;
-#endif
-
-#if defined(WIN32) && defined(_MSC_VER)
-typedef __int16		INT16;
-typedef __int32		INT32;
-#pragma warning(disable: 4005)
-#endif
+typedef int		INT32;
 
 
 /* The initial values for every member of this structure is 0, except
@@ -243,11 +200,11 @@ struct lpc10_decoder_state {
   
   */
 
-struct lpc10_encoder_state * create_lpc10_encoder_state (void);
+struct lpc10_encoder_state * create_lpc10_encoder_state ();
 void init_lpc10_encoder_state (struct lpc10_encoder_state *st);
 int lpc10_encode (real *speech, INT32 *bits, struct lpc10_encoder_state *st);
 
-struct lpc10_decoder_state * create_lpc10_decoder_state (void);
+struct lpc10_decoder_state * create_lpc10_decoder_state ();
 void init_lpc10_decoder_state (struct lpc10_decoder_state *st);
 int lpc10_decode (INT32 *bits, real *speech, struct lpc10_decoder_state *st);
 

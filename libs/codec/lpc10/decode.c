@@ -1,20 +1,14 @@
 /*
 
-$Log$
-Revision 1.16  2004/06/26 03:50:14  markster
-Merge source cleanups (bug #1911)
+$Log: decode_.c,v $
+Revision 1.1  2004/05/04 11:16:42  csoutheren
+Initial version
 
-Revision 1.15  2003/09/19 01:20:22  markster
-Code cleanups (bug #66)
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
-Revision 1.2  2003/09/19 01:20:22  markster
-Code cleanups (bug #66)
-
-Revision 1.1.1.1  2003/02/12 13:59:14  matteo
-mer feb 12 14:56:57 CET 2003
-
-Revision 1.2  2000/01/05 08:20:39  markster
-Some OSS fixes and a few lpc changes to make it actually work
+Revision 1.1  2000/06/05 04:45:12  robertj
+Added LPC-10 2400bps codec
 
  * Revision 1.2  1996/08/20  20:22:39  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
@@ -30,19 +24,19 @@ Some OSS fixes and a few lpc changes to make it actually work
 
 */
 
-/*  -- translated by f2c (version 19951025).
-   You must link the resulting object file with the libraries:
-	-lf2c -lm   (in that order)
-*/
-
-#include "f2c.h"
-
 #ifdef P_R_O_T_O_T_Y_P_E_S
 extern int decode_(integer *ipitv, integer *irms, integer *irc, integer *voice, integer *pitch, real *rms, real *rc, struct lpc10_decoder_state *st);
 /* comlen contrl_ 12 */
 /*:ref: ham84_ 14 3 4 4 4 */
 /*:ref: median_ 4 3 4 4 4 */
 #endif
+
+/*  -- translated by f2c (version 19951025).
+   You must link the resulting object file with the libraries:
+	-lf2c -lm   (in that order)
+*/
+
+#include "f2c.h"
 
 /* Common Block Declarations */
 
@@ -61,21 +55,15 @@ static integer c__2 = 2;
 
 /* 	DECODE Version 54 */
 
-/* $Log$
- * Revision 1.16  2004/06/26 03:50:14  markster
- * Merge source cleanups (bug #1911)
- *
-/* Revision 1.15  2003/09/19 01:20:22  markster
-/* Code cleanups (bug #66)
+/* $Log: decode_.c,v $
+/* Revision 1.1  2004/05/04 11:16:42  csoutheren
+/* Initial version
 /*
-/* Revision 1.2  2003/09/19 01:20:22  markster
-/* Code cleanups (bug #66)
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 /*
-/* Revision 1.1.1.1  2003/02/12 13:59:14  matteo
-/* mer feb 12 14:56:57 CET 2003
-/*
-/* Revision 1.2  2000/01/05 08:20:39  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.2  1996/08/20  20:22:39  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
@@ -205,21 +193,15 @@ static integer c__2 = 2;
     extern integer median_(integer *, integer *, integer *);
     integer ishift, errcnt, lsb;
 
-/* $Log$
- * Revision 1.16  2004/06/26 03:50:14  markster
- * Merge source cleanups (bug #1911)
- *
-/* Revision 1.15  2003/09/19 01:20:22  markster
-/* Code cleanups (bug #66)
+/* $Log: decode_.c,v $
+/* Revision 1.1  2004/05/04 11:16:42  csoutheren
+/* Initial version
 /*
-/* Revision 1.2  2003/09/19 01:20:22  markster
-/* Code cleanups (bug #66)
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 /*
-/* Revision 1.1.1.1  2003/02/12 13:59:14  matteo
-/* mer feb 12 14:56:57 CET 2003
-/*
-/* Revision 1.2  2000/01/05 08:20:39  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.2  1996/08/20  20:22:39  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
@@ -245,21 +227,15 @@ static integer c__2 = 2;
 /*   LPC Configuration parameters: */
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments */
-/* $Log$
- * Revision 1.16  2004/06/26 03:50:14  markster
- * Merge source cleanups (bug #1911)
- *
-/* Revision 1.15  2003/09/19 01:20:22  markster
-/* Code cleanups (bug #66)
+/* $Log: decode_.c,v $
+/* Revision 1.1  2004/05/04 11:16:42  csoutheren
+/* Initial version
 /*
-/* Revision 1.2  2003/09/19 01:20:22  markster
-/* Code cleanups (bug #66)
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 /*
-/* Revision 1.1.1.1  2003/02/12 13:59:14  matteo
-/* mer feb 12 14:56:57 CET 2003
-/*
-/* Revision 1.2  2000/01/05 08:20:39  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.2  1996/08/20  20:22:39  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
@@ -542,9 +518,9 @@ static integer c__2 = 2;
 	}
 	for (i__ = 1; i__ <= 6; ++i__) {
 	    if ((i__1 = drc[i__ * 3 - 2] - drc[i__ * 3 - 3], (real) abs(i__1))
-		     >= corth[ixcor + ((i__ + 2) << 2) - 5] && (i__2 = drc[i__ *
+		     >= corth[ixcor + (i__ + (2 << 2)) - 5] && (i__2 = drc[i__ *
 		     3 - 2] - drc[i__ * 3 - 1], (real) abs(i__2)) >= corth[
-		    ixcor + ((i__ + 2) << 2) - 5]) {
+		    ixcor + (i__ + (2 << 2)) - 5]) {
 		irc[i__] = median_(&drc[i__ * 3 - 1], &drc[i__ * 3 - 2], &drc[
 			i__ * 3 - 3]);
 	    }

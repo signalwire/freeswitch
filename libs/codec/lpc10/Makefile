@@ -3,7 +3,7 @@
 # 
 
 # default C compiler
-CC?= gcc
+CC= gcc
 
 # 
 # These definitions for CFLAGS and LIB_TARGET_DIR are used when one
@@ -14,62 +14,57 @@ CC?= gcc
 # definitions.
 # 
 
-LIB_TARGET_DIR = .
+LIB_TARGET_DIR = ..
 
 # 
 # -I$(LIB_TARGET_DIR) option needed so that #include "machine.h"
 # directives can find the machine.h file.
 # 
 
-WARNINGS = -Wall -Wno-comment -Wno-error
-CFLAGS += $(OPTIMIZE) -I$(LIB_TARGET_DIR) $(WARNINGS)
-ifneq (${OSARCH},CYGWIN)
-CFLAGS += -fPIC
-endif
-#CFLAGS+= $(shell if uname -m | grep -q 86; then echo "-mpentium" ; fi)
-
-#fix for PPC processors and ALPHA, And UltraSparc too
-ifneq ($(OSARCH),Darwin)
-ifneq ($(findstring BSD,${OSARCH}),BSD)
-ifneq ($(PROC),ppc)
-ifneq ($(PROC),x86_64)
-ifneq ($(PROC),alpha)
-#The problem with sparc is the best stuff is in newer versions of gcc (post 3.0) only.
-#This works for even old (2.96) versions of gcc and provides a small boost either way.
-#A ultrasparc cpu is really v9 but the stock debian stable 3.0 gcc doesn.t support it.
-#So we go lowest common available by gcc and go a step down, still a step up from
-#the default as we now have a better instruction set to work with. - Belgarath
-ifeq ($(PROC),ultrasparc)
-        CFLAGS+= -mtune=$(PROC) -mcpu=v8 -O3 -fomit-frame-pointer
-else
-ifneq ($(OSARCH),SunOS)
-ifneq  ($(OSARCH),arm)
-#        CFLAGS+= -march=$(PROC)
-endif
-endif
-endif
-endif
-endif
-endif
-endif
-endif
+WARNINGS = -Wall
+CFLAGS = -O3 -I$(LIB_TARGET_DIR) $(WARNINGS)
 
 LIB = $(LIB_TARGET_DIR)/liblpc10.a
 
 .PHONY: all clean
 
 all:	$(LIB)
+	ranlib $(LIB)
 
-OBJ=	f2clib.o analys.o bsynz.o chanwr.o dcbias.o decode.o \
-		deemp.o difmag.o dyptrk.o encode.o energy.o ham84.o \
-		hp100.o invert.o irc2pc.o ivfilt.o lpcdec.o lpcenc.o \
-		lpcini.o lpfilt.o median.o mload.o onset.o pitsyn.o \
-		placea.o placev.o preemp.o prepro.o random.o rcchk.o \
-		synths.o tbdm.o voicin.o vparms.o
-
-$(LIB): $(OBJ)
-	$(AR) cr $@ $(OBJ)
-	ranlib $@
+$(LIB):		$(LIB)(f2clib.o)	\
+		$(LIB)(analys.o)	\
+		$(LIB)(bsynz.o)		\
+		$(LIB)(chanwr.o)	\
+		$(LIB)(dcbias.o)	\
+		$(LIB)(decode.o)	\
+		$(LIB)(deemp.o)		\
+		$(LIB)(difmag.o)	\
+		$(LIB)(dyptrk.o)	\
+		$(LIB)(encode.o)	\
+		$(LIB)(energy.o)	\
+		$(LIB)(ham84.o)		\
+		$(LIB)(hp100.o)		\
+		$(LIB)(invert.o)	\
+		$(LIB)(irc2pc.o)	\
+		$(LIB)(ivfilt.o)	\
+		$(LIB)(lpcdec.o)	\
+		$(LIB)(lpcenc.o)	\
+		$(LIB)(lpcini.o)	\
+		$(LIB)(lpfilt.o)	\
+		$(LIB)(median.o)	\
+		$(LIB)(mload.o)		\
+		$(LIB)(onset.o)		\
+		$(LIB)(pitsyn.o)	\
+		$(LIB)(placea.o)	\
+		$(LIB)(placev.o)	\
+		$(LIB)(preemp.o)	\
+		$(LIB)(prepro.o)	\
+		$(LIB)(random.o)	\
+		$(LIB)(rcchk.o)		\
+		$(LIB)(synths.o)	\
+		$(LIB)(tbdm.o)		\
+		$(LIB)(voicin.o)	\
+		$(LIB)(vparms.o)
 
 clean:
-	-rm -f *.o $(LIB)
+	-rm -f *.o

@@ -1,23 +1,17 @@
 /*
 
-$Log$
-Revision 1.18  2003/10/21 18:08:11  markster
-Fix include order
+$Log: lpcini.c,v $
+Revision 1.1  2004/05/04 11:16:43  csoutheren
+Initial version
 
-Revision 1.5  2003/10/21 18:08:11  markster
-Fix include order
+Revision 1.3  2002/10/10 05:29:04  robertj
+Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
 
-Revision 1.4  2003/10/21 02:57:29  markster
-FreeBSD patch, take 2
+Revision 1.2  2001/02/24 14:00:10  rogerh
+Select the correct header file for malloc (stdlib.h or malloc.h)
 
-Revision 1.3  2003/10/16 21:11:30  martinp
-Revert the previous patch since it's braking compilation
-
-Revision 1.1  2003/02/12 13:59:15  matteo
-Initial revision
-
-Revision 1.2  2000/01/05 08:20:39  markster
-Some OSS fixes and a few lpc changes to make it actually work
+Revision 1.1  2000/06/05 04:45:12  robertj
+Added LPC-10 2400bps codec
 
  * Revision 1.2  1996/08/20  20:35:41  jaf
  * Added functions for allocating and initializing lpc10_encoder_state
@@ -41,8 +35,18 @@ extern int lpcini_(void);
 	-lf2c -lm   (in that order)
 */
 
-#include <stdlib.h>
 #include "f2c.h"
+
+/* malloc is now defined in stdlib.h in serveral systems */
+#ifdef  HAS_STDLIB_H
+#       include <stdlib.h>
+#else
+#       ifdef   HAS_MALLOC_H
+#               include         <malloc.h>
+#       else
+                extern char * malloc();
+#       endif
+#endif
 
 /* Common Block Declarations */
 
@@ -55,24 +59,18 @@ struct {
 
 /* ***************************************************************** */
 
-/* $Log$
- * Revision 1.18  2003/10/21 18:08:11  markster
- * Fix include order
- *
-/* Revision 1.5  2003/10/21 18:08:11  markster
-/* Fix include order
+/* $Log: lpcini.c,v $
+/* Revision 1.1  2004/05/04 11:16:43  csoutheren
+/* Initial version
 /*
-/* Revision 1.4  2003/10/21 02:57:29  markster
-/* FreeBSD patch, take 2
+/* Revision 1.3  2002/10/10 05:29:04  robertj
+/* Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
 /*
-/* Revision 1.3  2003/10/16 21:11:30  martinp
-/* Revert the previous patch since it's braking compilation
+/* Revision 1.2  2001/02/24 14:00:10  rogerh
+/* Select the correct header file for malloc (stdlib.h or malloc.h)
 /*
-/* Revision 1.1  2003/02/12 13:59:15  matteo
-/* Initial revision
-/*
-/* Revision 1.2  2000/01/05 08:20:39  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.2  1996/08/20  20:35:41  jaf
  * Added functions for allocating and initializing lpc10_encoder_state
@@ -93,24 +91,18 @@ struct {
 /* Subroutine */ int lpcini_(void)
 {
 
-/* $Log$
- * Revision 1.18  2003/10/21 18:08:11  markster
- * Fix include order
- *
-/* Revision 1.5  2003/10/21 18:08:11  markster
-/* Fix include order
+/* $Log: lpcini.c,v $
+/* Revision 1.1  2004/05/04 11:16:43  csoutheren
+/* Initial version
 /*
-/* Revision 1.4  2003/10/21 02:57:29  markster
-/* FreeBSD patch, take 2
+/* Revision 1.3  2002/10/10 05:29:04  robertj
+/* Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
 /*
-/* Revision 1.3  2003/10/16 21:11:30  martinp
-/* Revert the previous patch since it's braking compilation
+/* Revision 1.2  2001/02/24 14:00:10  rogerh
+/* Select the correct header file for malloc (stdlib.h or malloc.h)
 /*
-/* Revision 1.1  2003/02/12 13:59:15  matteo
-/* Initial revision
-/*
-/* Revision 1.2  2000/01/05 08:20:39  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.2  1996/08/20  20:35:41  jaf
  * Added functions for allocating and initializing lpc10_encoder_state
@@ -131,24 +123,18 @@ struct {
 
 /*   LPC Configuration parameters: */
 /* Frame size, Prediction order, Pitch period */
-/* $Log$
- * Revision 1.18  2003/10/21 18:08:11  markster
- * Fix include order
- *
-/* Revision 1.5  2003/10/21 18:08:11  markster
-/* Fix include order
+/* $Log: lpcini.c,v $
+/* Revision 1.1  2004/05/04 11:16:43  csoutheren
+/* Initial version
 /*
-/* Revision 1.4  2003/10/21 02:57:29  markster
-/* FreeBSD patch, take 2
+/* Revision 1.3  2002/10/10 05:29:04  robertj
+/* Removed non-ansi-C comments to maximise portability, thanks Martijn Roest
 /*
-/* Revision 1.3  2003/10/16 21:11:30  martinp
-/* Revert the previous patch since it's braking compilation
+/* Revision 1.2  2001/02/24 14:00:10  rogerh
+/* Select the correct header file for malloc (stdlib.h or malloc.h)
 /*
-/* Revision 1.1  2003/02/12 13:59:15  matteo
-/* Initial revision
-/*
-/* Revision 1.2  2000/01/05 08:20:39  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.2  1996/08/20  20:35:41  jaf
  * Added functions for allocating and initializing lpc10_encoder_state

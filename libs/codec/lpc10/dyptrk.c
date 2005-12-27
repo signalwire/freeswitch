@@ -1,17 +1,11 @@
 /*
 
-$Log$
-Revision 1.15  2004/06/26 03:50:14  markster
-Merge source cleanups (bug #1911)
+$Log: dyptrk.c,v $
+Revision 1.1  2004/05/04 11:16:42  csoutheren
+Initial version
 
-Revision 1.14  2003/02/12 13:59:15  matteo
-mer feb 12 14:56:57 CET 2003
-
-Revision 1.1.1.1  2003/02/12 13:59:15  matteo
-mer feb 12 14:56:57 CET 2003
-
-Revision 1.2  2000/01/05 08:20:39  markster
-Some OSS fixes and a few lpc changes to make it actually work
+Revision 1.1  2000/06/05 04:45:12  robertj
+Added LPC-10 2400bps codec
 
  * Revision 1.2  1996/08/20  20:25:29  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
@@ -27,17 +21,17 @@ Some OSS fixes and a few lpc changes to make it actually work
 
 */
 
+#ifdef P_R_O_T_O_T_Y_P_E_S
+extern int dyptrk_(real *amdf, integer *ltau, integer *minptr, integer *voice, integer *pitch, integer *midx, struct lpc10_encoder_state *st);
+/* comlen contrl_ 12 */
+#endif
+
 /*  -- translated by f2c (version 19951025).
    You must link the resulting object file with the libraries:
 	-lf2c -lm   (in that order)
 */
 
 #include "f2c.h"
-
-#ifdef P_R_O_T_O_T_Y_P_E_S
-extern int dyptrk_(real *amdf, integer *ltau, integer *minptr, integer *voice, integer *pitch, integer *midx, struct lpc10_encoder_state *st);
-/* comlen contrl_ 12 */
-#endif
 
 /* Common Block Declarations */
 
@@ -52,18 +46,12 @@ extern struct {
 
 /* 	DYPTRK Version 52 */
 
-/* $Log$
- * Revision 1.15  2004/06/26 03:50:14  markster
- * Merge source cleanups (bug #1911)
- *
-/* Revision 1.14  2003/02/12 13:59:15  matteo
-/* mer feb 12 14:56:57 CET 2003
+/* $Log: dyptrk.c,v $
+/* Revision 1.1  2004/05/04 11:16:42  csoutheren
+/* Initial version
 /*
-/* Revision 1.1.1.1  2003/02/12 13:59:15  matteo
-/* mer feb 12 14:56:57 CET 2003
-/*
-/* Revision 1.2  2000/01/05 08:20:39  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.2  1996/08/20  20:25:29  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
@@ -147,18 +135,12 @@ extern struct {
     real alpha, minsc, maxsc;
 
 /*       Arguments */
-/* $Log$
- * Revision 1.15  2004/06/26 03:50:14  markster
- * Merge source cleanups (bug #1911)
- *
-/* Revision 1.14  2003/02/12 13:59:15  matteo
-/* mer feb 12 14:56:57 CET 2003
+/* $Log: dyptrk.c,v $
+/* Revision 1.1  2004/05/04 11:16:42  csoutheren
+/* Initial version
 /*
-/* Revision 1.1.1.1  2003/02/12 13:59:15  matteo
-/* mer feb 12 14:56:57 CET 2003
-/*
-/* Revision 1.2  2000/01/05 08:20:39  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.2  1996/08/20  20:25:29  jaf
  * Removed all static local variables that were SAVE'd in the Fortran

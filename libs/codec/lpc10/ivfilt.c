@@ -1,26 +1,24 @@
 /*
 
-$Log$
-Revision 1.16  2004/06/26 03:50:14  markster
-Merge source cleanups (bug #1911)
+$Log: ivfilt.c,v $
+Revision 1.1  2004/05/04 11:16:43  csoutheren
+Initial version
 
-Revision 1.15  2003/09/19 01:20:22  markster
-Code cleanups (bug #66)
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 
-Revision 1.2  2003/09/19 01:20:22  markster
-Code cleanups (bug #66)
-
-Revision 1.1.1.1  2003/02/12 13:59:15  matteo
-mer feb 12 14:56:57 CET 2003
-
-Revision 1.2  2000/01/05 08:20:39  markster
-Some OSS fixes and a few lpc changes to make it actually work
+Revision 1.1  2000/06/05 04:45:12  robertj
+Added LPC-10 2400bps codec
 
  * Revision 1.1  1996/08/19  22:31:53  jaf
  * Initial revision
  *
 
 */
+
+#ifdef P_R_O_T_O_T_Y_P_E_S
+extern int ivfilt_(real *lpbuf, real *ivbuf, integer *len, integer *nsamp, real *ivrc);
+#endif
 
 /*  -- translated by f2c (version 19951025).
    You must link the resulting object file with the libraries:
@@ -29,29 +27,19 @@ Some OSS fixes and a few lpc changes to make it actually work
 
 #include "f2c.h"
 
-#ifdef P_R_O_T_O_T_Y_P_E_S
-extern int ivfilt_(real *lpbuf, real *ivbuf, integer *len, integer *nsamp, real *ivrc);
-#endif
-
 /* ********************************************************************* */
 
 /* 	IVFILT Version 48 */
 
-/* $Log$
- * Revision 1.16  2004/06/26 03:50:14  markster
- * Merge source cleanups (bug #1911)
- *
-/* Revision 1.15  2003/09/19 01:20:22  markster
-/* Code cleanups (bug #66)
+/* $Log: ivfilt.c,v $
+/* Revision 1.1  2004/05/04 11:16:43  csoutheren
+/* Initial version
 /*
-/* Revision 1.2  2003/09/19 01:20:22  markster
-/* Code cleanups (bug #66)
+/* Revision 1.2  2002/02/15 03:57:55  yurik
+/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
 /*
-/* Revision 1.1.1.1  2003/02/12 13:59:15  matteo
-/* mer feb 12 14:56:57 CET 2003
-/*
-/* Revision 1.2  2000/01/05 08:20:39  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.1  1996/08/19  22:31:53  jaf
  * Initial revision
@@ -109,7 +97,7 @@ extern int ivfilt_(real *lpbuf, real *ivbuf, integer *len, integer *nsamp, real 
     /* Function Body */
     for (i__ = 1; i__ <= 3; ++i__) {
 	r__[i__ - 1] = 0.f;
-	k = (i__ - 1) << 2;
+	k = i__ - (1 << 2);
 	i__1 = *len;
 	for (j = (i__ << 2) + *len - *nsamp; j <= i__1; j += 2) {
 	    r__[i__ - 1] += lpbuf[j] * lpbuf[j - k];

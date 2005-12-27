@@ -1,14 +1,20 @@
 /*
 
-$Log$
-Revision 1.14  2003/02/12 13:59:15  matteo
-mer feb 12 14:56:57 CET 2003
+$Log: f2clib.c,v $
+Revision 1.2  2004/05/05 13:25:38  rjongbloed
+Fixed clearly incorrect code (dived by zero) found with an MSVC warning
 
-Revision 1.1.1.1  2003/02/12 13:59:15  matteo
-mer feb 12 14:56:57 CET 2003
+Revision 1.1  2004/05/04 11:16:42  csoutheren
+Initial version
 
-Revision 1.2  2000/01/05 08:20:39  markster
-Some OSS fixes and a few lpc changes to make it actually work
+Revision 1.3  2004/02/17 09:21:45  csoutheren
+Fix for GM bug 134591
+
+Revision 1.2  2002/02/15 03:57:55  yurik
+Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+
+Revision 1.1  2000/06/05 04:45:12  robertj
+Added LPC-10 2400bps codec
 
  * Revision 1.1  1996/08/19  22:32:10  jaf
  * Initial revision
@@ -40,7 +46,7 @@ integer pow_ii(integer *ap, integer *bp)
 		if (n == 0 || x == 1)
 			return 1;
 		if (x != -1)
-			return x == 0 ? 0 : 1/x;
+			return x != 0 ? 1/x : 0;
 		n = -n;
 		}
 	u = n;
@@ -80,6 +86,6 @@ integer i_nint(x) real *x;
 integer i_nint(real *x)
 #endif
 {
-return( (integer)((*x)>=0 ?
-	floor(*x + .5) : -floor(.5 - *x)) );
+return (integer)( (*x)>=0 ?
+	floor(*x + .5) : -(floor(.5 - *x)) );
 }

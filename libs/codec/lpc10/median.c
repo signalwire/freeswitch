@@ -1,23 +1,21 @@
 /*
 
-$Log$
-Revision 1.15  2004/06/26 03:50:14  markster
-Merge source cleanups (bug #1911)
+$Log: median.c,v $
+Revision 1.1  2004/05/04 11:16:43  csoutheren
+Initial version
 
-Revision 1.14  2003/02/12 13:59:15  matteo
-mer feb 12 14:56:57 CET 2003
-
-Revision 1.1.1.1  2003/02/12 13:59:15  matteo
-mer feb 12 14:56:57 CET 2003
-
-Revision 1.2  2000/01/05 08:20:39  markster
-Some OSS fixes and a few lpc changes to make it actually work
+Revision 1.1  2000/06/05 04:45:12  robertj
+Added LPC-10 2400bps codec
 
  * Revision 1.1  1996/08/19  22:31:31  jaf
  * Initial revision
  *
 
 */
+
+#ifdef P_R_O_T_O_T_Y_P_E_S
+extern integer median_(integer *d1, integer *d2, integer *d3);
+#endif
 
 /*  -- translated by f2c (version 19951025).
    You must link the resulting object file with the libraries:
@@ -26,26 +24,16 @@ Some OSS fixes and a few lpc changes to make it actually work
 
 #include "f2c.h"
 
-#ifdef P_R_O_T_O_T_Y_P_E_S
-extern integer median_(integer *d1, integer *d2, integer *d3);
-#endif
-
 /* ********************************************************************* */
 
 /* 	MEDIAN Version 45G */
 
-/* $Log$
- * Revision 1.15  2004/06/26 03:50:14  markster
- * Merge source cleanups (bug #1911)
- *
-/* Revision 1.14  2003/02/12 13:59:15  matteo
-/* mer feb 12 14:56:57 CET 2003
+/* $Log: median.c,v $
+/* Revision 1.1  2004/05/04 11:16:43  csoutheren
+/* Initial version
 /*
-/* Revision 1.1.1.1  2003/02/12 13:59:15  matteo
-/* mer feb 12 14:56:57 CET 2003
-/*
-/* Revision 1.2  2000/01/05 08:20:39  markster
-/* Some OSS fixes and a few lpc changes to make it actually work
+/* Revision 1.1  2000/06/05 04:45:12  robertj
+/* Added LPC-10 2400bps codec
 /*
  * Revision 1.1  1996/08/19  22:31:31  jaf
  * Initial revision
