@@ -99,7 +99,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;md  $(Outdir)\db"
+				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -181,7 +181,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;md  $(Outdir)\db"
+				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

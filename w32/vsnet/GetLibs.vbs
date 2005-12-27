@@ -16,6 +16,7 @@ BuildModSpeexCodec=False
 BuildModCodecG729=False
 BuildModCodecGSM=False
 BuildModXMPPEvent=False
+BuildModsndfile=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
@@ -54,6 +55,8 @@ If objArgs.Count >=1 Then
 			BuildModCodecGSM=True
 		Case "Mod_XMPPEvent"
 			BuildModXMPPEvent=True
+		Case "Mod_sndfile"
+			BuildModsndfile=True
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
@@ -62,6 +65,7 @@ If objArgs.Count >=1 Then
 			BuildModSpeexCodec=True
 			BuildModCodecG729=True
 			BuildModXMPPEvent=True
+			BuildModsndfile=True
 	End Select
 Else
 	BuildCore=True
@@ -71,6 +75,7 @@ Else
 	BuildModSpeexCodec=True
 	BuildModCodecG729=True
 	BuildModXMPPEvent=True
+	BuildModsndfile=True
 End If
 
 
@@ -104,6 +109,10 @@ End If
 
 If BuildModXMPPEvent Then
 	BuildLibs_ModXMPPEvent BuildDebug, BuildRelease
+End If
+
+If BuildModsndfile Then
+	BuildLibs_Modsndfile BuildDebug, BuildRelease
 End If
 
 WScript.Echo "Complete"
@@ -467,6 +476,56 @@ Sub BuildLibs_ModCodecGSM(BuildDebug, BuildRelease)
 	Else
 		Wscript.echo "Unable to download libgsm"
 	End If 
+End Sub
+
+Sub BuildLibs_ModSpeexCodec(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "speex") Then 
+		WgetUnTarGz "http://downloads.us.xiph.org/releases/speex/speex-1.1.11.1.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "speex-1.1.11.1") Then
+			Wscript.echo "Unable to get libspeex from default download location, Trying backup location:"
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/speex-1.1.11.1.tar.gz", LibDestDir
+		End If
+		RenameFolder LibDestDir & "speex-1.1.11.1", "speex"
+		FSO.CopyFile Utilsdir & "libspeex.vcproj", LibDestDir & "speex\win32\libspeex\", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "speex") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "speex\win32\libspeex\Debug\libspeex.lib") Then 
+				BuildViaVCBuild LibDestDir & "speex\win32\libspeex\libspeex.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "speex\win32\libspeex\Release\libspeex.lib") Then 
+				BuildViaVCBuild LibDestDir & "speex\win32\libspeex\libspeex.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download libspeex"
+	End If 
+	
+End Sub
+
+Sub BuildLibs_Modsndfile(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "libsndfile") Then 
+		WgetUnTarGz "http://www.sofaswitch.com/mikej/libsndfile-1.0.12.tar.gz", LibDestDir
+		RenameFolder LibDestDir & "libsndfile-1.0.12", "libsndfile"
+		FSO.CopyFile Utilsdir & "libsndfile.vcproj", LibDestDir & "libsndfile\Win32\", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "libsndfile") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "libsndfile\Win32\Debug\libsndfile.lib") Then 
+				BuildViaVCBuild LibDestDir & "libsndfile\Win32\libsndfile.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "libsndfile\Win32\Release\libsndfile.lib") Then 
+				BuildViaVCBuild LibDestDir & "libsndfile\Win32\libsndfile.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download libsndfile"
+	End If 
+	
 End Sub
 
 Sub UpgradeViaDevEnv(ProjectFile)
