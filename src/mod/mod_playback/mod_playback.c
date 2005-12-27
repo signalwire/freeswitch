@@ -41,7 +41,7 @@ static const char modname[] = "mod_playback";
 void playback_function(switch_core_session *session, char *data)
 {
 	switch_channel *channel;
-	char buf[960];
+	short buf[960];
 	char dtmf[128];
 	int interval = 0, samples = 0;
 	size_t len = 0, ilen = 0;
@@ -59,7 +59,7 @@ void playback_function(switch_core_session *session, char *data)
 
 	if (switch_core_file_open(&fh,
 							  data,
-							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_RAW,
+							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel);
 		return;
@@ -73,14 +73,12 @@ void playback_function(switch_core_session *session, char *data)
     
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s\n", data);
 	
+	samples = fh.samplerate / 50;
+	len = samples * 2;
 	interval = 20;
-	len = 320;
-	samples = 160;
+
 	codec_name = "L16";
 	
-	write_frame.samples = samples;
-
-	/* You can use zap instead of soft if you have it loaded */
 	if (switch_core_timer_init(&timer, "soft", interval, samples, pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer failed!\n");
 		switch_channel_hangup(channel);
@@ -89,7 +87,13 @@ void playback_function(switch_core_session *session, char *data)
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %d bytes per %d ms!\n", len, interval);
 
-	if (switch_core_codec_init(&codec, codec_name, 8000, interval, SWITCH_CODEC_FLAG_ENCODE|SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
+	if (switch_core_codec_init(&codec,
+							   codec_name,
+							   8000,
+							   interval,
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   NULL,
+							   pool) == SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
 		write_frame.codec = &codec;
 	} else {
@@ -100,7 +104,7 @@ void playback_function(switch_core_session *session, char *data)
 
 	/* start a thread to absorb incoming audio */
 	switch_core_service_session(session, &thread_session);
-	ilen = len;
+	ilen = samples;
 	while(switch_channel_get_state(channel) == CS_EXECUTE) {
 		int done = 0;
 
@@ -127,7 +131,8 @@ void playback_function(switch_core_session *session, char *data)
 			break;
 		}
 
-		write_frame.datalen = ilen;
+		write_frame.datalen = ilen * 2;
+		write_frame.samples = ilen;
 #ifdef SWAP_LINEAR
 		switch_swap_linear(write_frame.data, (int)write_frame.datalen / 2);
 #endif

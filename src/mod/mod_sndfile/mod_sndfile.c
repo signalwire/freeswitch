@@ -85,15 +85,21 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 	}
 
 	if (!strcmp(ext, "r24")) {
-		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 24000;
 	}
 
 	if (!strcmp(ext, "r32")) {
-		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_32;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 32000;
+	}
+
+	if (!strcmp(ext, "gsm")) {
+		context->sfinfo.format = SF_FORMAT_RAW |SF_FORMAT_GSM610;
+		context->sfinfo.channels = 1;
+		context->sfinfo.samplerate = 8000;
 	}
 
 	if (!(context->handle = sf_open(path, mode, &context->sfinfo))) {
@@ -101,6 +107,7 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 		return SWITCH_STATUS_GENERR;
 	}
 
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Opening File [%s] %dhz\n", path, context->sfinfo.samplerate);
 	handle->samples = context->sfinfo.frames;
 	handle->samplerate = context->sfinfo.samplerate;
 	handle->channels = context->sfinfo.channels;
@@ -213,7 +220,8 @@ static switch_status setup_formats(void)
 	char buffer [128] ;
 	int format, major_count, subtype_count, m, s ;
 	int len,x,skip;
-
+	char *extras[] = {"r8", "r16", "r24", "r32", "gsm"};
+	int exlen = (sizeof(extras) / sizeof(extras[0]));
 	buffer [0] = 0 ;
 	sf_command (NULL, SFC_GET_LIB_VERSION, buffer, sizeof (buffer)) ;
 	if (strlen (buffer) < 1) {
@@ -228,7 +236,7 @@ static switch_status setup_formats(void)
 	sf_command (NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof (int)) ;
 	
 	sfinfo.channels = 1 ;
-	len = (major_count + 5) * sizeof(char *);
+	len = ((major_count + (exlen + 2)) * sizeof(char *));
 	*supported_formats = switch_core_permenant_alloc(len);
 	memset(supported_formats, 0, len);
 
@@ -260,11 +268,9 @@ static switch_status setup_formats(void)
 		}
 
 	}
-
-	supported_formats[len++] = "r8";
-	supported_formats[len++] = "r16";
-	supported_formats[len++] = "r24";
-	supported_formats[len++] = "r32";
+	for(m=0; m< exlen; m++) {
+		supported_formats[len++] = extras[m];
+	}
 	
 
 

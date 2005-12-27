@@ -449,7 +449,6 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 	switch_clear_flag(tech_pvt, TFLAG_VOICE);
-	switch_thread_cond_signal(tech_pvt->cond);
 	switch_channel_hangup(channel);
 	switch_thread_cond_signal(tech_pvt->cond);
 	

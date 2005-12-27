@@ -64,6 +64,10 @@ static void event_handler (switch_event *event)
 	iks *msg;
 	int loops = 0;
 
+	if (!RUNNING) {
+		return;
+	}
+
 	while (!globals.session.authorized) {
 		switch_yield(100000);
 		if (loops++ > 5) {
