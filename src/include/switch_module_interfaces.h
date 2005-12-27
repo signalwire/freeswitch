@@ -161,8 +161,8 @@ struct switch_file_interface {
 	const char *interface_name;
 	switch_status (*file_open)(switch_file_handle *, char *file_path);
 	switch_status (*file_close)(switch_file_handle *);
-	switch_status (*file_read)(switch_file_handle *, void *data, size_t *len);
-	switch_status (*file_write)(switch_file_handle *, void *data, size_t *len);
+	switch_status (*file_read)(switch_file_handle *, void *data, unsigned int *len);
+	switch_status (*file_write)(switch_file_handle *, void *data, unsigned int *len);
 	switch_status (*file_seek)(switch_file_handle *, unsigned int *cur_pos, unsigned int samples, int whence);
 	char **extens;
 	const struct switch_file_interface *next;
