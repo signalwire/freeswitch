@@ -11,8 +11,8 @@ make=`which make`
 fi
 
 if [ -f $mod/Makefile ] ; then
-$make -C $mod
+$make -C $mod $@
 else 
-$make -f $pwd/generic_mod.mk -C $mod
+$make -f $pwd/generic_mod.mk -C $mod $@
 fi
 

@@ -60,13 +60,6 @@ void gettimeofday(struct timeval *tv, void /*struct timezone*/ *tz);
 #include <arpa/inet.h>
 #include <time.h>
 
-#ifndef MACOSX
-#include <malloc.h>
-#ifndef SOLARIS
-#include <error.h>
-#endif
-#endif
-
 #endif
 #ifdef NEWJB
 #include "jitterbuf.h"
@@ -89,18 +82,15 @@ typedef long time_in_ms_t;
 /* Define socket options for IAX2 sockets, based on platform
  * availability of flags */
 #ifdef WIN32
-#define IAX_SOCKOPTS 0
+ #define IAX_SOCKOPTS 0
 #else
-#ifdef MACOSX
-#define IAX_SOCKOPTS MSG_DONTWAIT
-#else
-#ifdef SOLARIS
-#define IAX_SOCKOPTS MSG_DONTWAIT
-#else  /* Linux and others */
-#define IAX_SOCKOPTS MSG_DONTWAIT | MSG_NOSIGNAL
+ #ifdef LINUX
+ #define IAX_SOCKOPTS MSG_DONTWAIT | MSG_NOSIGNAL
+ #else
+ #define IAX_SOCKOPTS MSG_DONTWAIT
+ #endif
 #endif
-#endif
-#endif
+
 
 
 #ifdef SNOM_HACK
@@ -2860,6 +2850,7 @@ static struct iax_event *iax_net_read(void)
 	unsigned int sinlen;
 	sinlen = sizeof(sin);
 	res = iax_recvfrom(netfd, buf, sizeof(buf), 0, (struct sockaddr *) &sin, &sinlen);
+
 	if (res < 0) {
 #ifdef	WIN32
 		if (WSAGetLastError() != WSAEWOULDBLOCK) {
@@ -3121,9 +3112,11 @@ struct iax_event *iax_get_event(int blocking)
 		FD_SET(netfd, &fds);
 
 		nextEventTime = iax_time_to_next_event(); 
-
+		if(nextEventTime < 0 && blocking > 1) {
+			nextEventTime = blocking;
+		}
 		if(nextEventTime < 0) 
-		select(netfd + 1, &fds, NULL, NULL, NULL);
+			select(netfd + 1, &fds, NULL, NULL, NULL);
 		else 
 		{ 
 			struct timeval nextEvent; 

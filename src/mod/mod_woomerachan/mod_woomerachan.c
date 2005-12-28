@@ -1358,9 +1358,16 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 
 	
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
-		return SWITCH_STATUS_TERM;
+		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
+
+		if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
+			//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
+			return SWITCH_STATUS_MEMERR;
+		}
+		return SWITCH_STATUS_MEMERR;
 	}
+
+
 
 	if (switch_mutex_init(&default_profile.iolock, SWITCH_MUTEX_NESTED, module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no lock\n");

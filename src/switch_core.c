@@ -522,11 +522,13 @@ SWITCH_DECLARE(void *) switch_core_permenant_alloc(size_t memory)
 SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup)
 {
 	char *duped = NULL;
+	int len;
 
 	assert(runtime.memory_pool != NULL);
 
-	if (todup && (duped = apr_palloc(runtime.memory_pool, strlen(todup)+1))) {
-		strcpy(duped, todup);
+	len = strlen(todup) + 1;
+	if (todup && (duped = apr_palloc(runtime.memory_pool, len))) {
+		strncpy(duped, todup, len);
 	}
 	return duped;
 }
@@ -535,12 +537,14 @@ SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup)
 SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, char *todup)
 {
 	char *duped = NULL;
-
+	int len;
 	assert(session != NULL);
 	assert(session->pool != NULL);
 
-	if (todup && (duped = apr_palloc(session->pool, strlen(todup)+1))) {
-		strcpy(duped, todup);
+	len = strlen(todup) + 1;
+
+	if (todup && (duped = apr_palloc(session->pool, len))) {
+		strncpy(duped, todup, len);
 	}
 	return duped;
 }
@@ -549,12 +553,14 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, 
 SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
 {
 	char *duped = NULL;
-
+	int len;
 	assert(pool != NULL);
 	assert(todup != NULL);
 
-	if (todup && (duped = apr_palloc(pool, strlen(todup)+1))) {
-		strcpy(duped, todup);
+	len = strlen(todup) + 1;
+
+	if (todup && (duped = apr_palloc(pool, len))) {
+		strncpy(duped, todup, len);
 	}
 	return duped;
 }
@@ -1186,7 +1192,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_send_dtmf(switc
 
 SWITCH_DECLARE(switch_status) switch_core_new_memory_pool(switch_memory_pool **pool)
 {
-	assert(runtime.memory_pool != NULL);
+
+	if (runtime.memory_pool == NULL) {
+		return SWITCH_STATUS_MEMERR;
+	}
 
 	if ((apr_pool_create(pool, runtime.memory_pool)) != APR_SUCCESS) {
 		*pool = NULL;
@@ -1710,8 +1719,13 @@ SWITCH_DECLARE(switch_status) switch_core_init(void)
 		switch_core_destroy();
 		return SWITCH_STATUS_MEMERR;
 	}
+
+
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocated memory pool.\n");
 	switch_event_init(runtime.memory_pool);
+
+	assert(runtime.memory_pool != NULL);
 
 	/* Activate SQL database */
 	if (!(runtime.db = switch_core_db_handle())) {

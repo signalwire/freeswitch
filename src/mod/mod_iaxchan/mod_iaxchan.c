@@ -760,7 +760,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	int res;
 	int netfd;
 	int refresh;
-	struct iax_event *iaxevent = 0;
+	struct iax_event *iaxevent = NULL;
 
 	load_config();
 
@@ -785,9 +785,10 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 		}
 
 		/* Wait for an event.*/
-		if (!(iaxevent = iax_get_event(0))) {
+		if ((iaxevent = iax_get_event(0)) == NULL) {
 			switch_yield(1000);
-		} else {
+			continue;
+		} else if (iaxevent) {
 			struct private_object *tech_pvt = iax_get_private(iaxevent->session);
 
 			if (globals.debug && iaxevent->etype != IAX_EVENT_VOICE) {
@@ -951,7 +952,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Don't know what to do with IAX event %d.\n", iaxevent->etype);
 				break;
 			}
-
+			
 			iax_event_free(iaxevent);
 		}
 

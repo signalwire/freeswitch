@@ -220,7 +220,7 @@ static switch_status setup_formats(void)
 	char buffer [128] ;
 	int format, major_count, subtype_count, m, s ;
 	int len,x,skip;
-	char *extras[] = {"r8", "r16", "r24", "r32", "gsm"};
+	char *extras[] = {"r8", "r16", "r24", "r32", "gsm", NULL};
 	int exlen = (sizeof(extras) / sizeof(extras[0]));
 	buffer [0] = 0 ;
 	sf_command (NULL, SFC_GET_LIB_VERSION, buffer, sizeof (buffer)) ;
@@ -238,7 +238,7 @@ static switch_status setup_formats(void)
 	sfinfo.channels = 1 ;
 	len = ((major_count + (exlen + 2)) * sizeof(char *));
 	*supported_formats = switch_core_permenant_alloc(len);
-	memset(supported_formats, 0, len);
+	//memset(supported_formats, 0, len);
 
 	len = 0;
 	for (m = 0 ; m < major_count ; m++) {

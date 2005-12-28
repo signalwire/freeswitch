@@ -9,7 +9,7 @@ APU_CONFIG=$(prefix)/bin/apu-1-config
 AM_CFLAGS  = $(shell $(APR_CONFIG) --cflags --cppflags --includes)
 AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs )
 AM_CFLAGS  += $(shell $(APU_CONFIG) --includes)
-AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs ) 
+AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs ) -lsqlite3
 OSARCH=$(shell uname -s)
 if ISLINUX
 AM_LDFLAGS += -Wl,-E
@@ -85,7 +85,7 @@ libfreeswitch_la_LDFLAGS	= -version-info 1:0:0
 bin_PROGRAMS =	freeswitch
 freeswitch_SOURCES = src/switch.c
 freeswitch_CFLAGS = $(AM_CFLAGS)
-freeswitch_LDFLAGS = -static -lfreeswitch
+freeswitch_LDFLAGS = -lfreeswitch
 
 nodepends:
 	touch .nodepends
@@ -93,14 +93,15 @@ nodepends:
 depends:
 	./buildlib.sh . install sqlite-3.2.8.tar.gz --disable-tcl --enable-threadsafe
 	./buildlib.sh . install apr-1.2.2.tar.gz
-	./buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=/usr/src/freeswitch/libs/apr-1.2.2
+	./buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=../apr-1.2.2
 
 modules: $(NAME)
 	@echo making modules
 	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
 
 modclean:
-	@cd src/mod && for i in [a-z]* ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" make -f $(PWD)/generic_mod.mk -C $$i clean || exit 1; done
+	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
+
 
 
 install_mod:

@@ -30,7 +30,7 @@
  *
  */
 #include <switch.h>
-#include <speex.h>
+#include <speex/speex.h>
 #include <speex/speex_preprocess.h>
 
 static const char modname[] = "mod_speexcodec";
