@@ -31,6 +31,8 @@ if [ -d $tar ] ; then
     tar=
 else
     uncompressed=`echo $tar | sed "s/\.tar\.gz//g"`
+    uncompressed=`echo $uncompressed | sed "s/\.tgz//g"`
+
     if [ ! -f $tar ] ; then
 	rm -fr $uncompressed
 	wget $base/$tar
@@ -38,6 +40,8 @@ else
 	    echo cannot find $tar
 	    exit
 	fi
+    fi
+    if [ ! -d $uncompressed ] ; then
 	tar -zxvf $tar
     fi
 fi
