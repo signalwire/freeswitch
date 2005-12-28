@@ -50,8 +50,8 @@ const struct switch_codec_settings default_codec_settings = {
 	/*.pp_agc_level*/			8000,
 	/*.pp_denoise*/				0,
 	/*.pp_dereverb*/			0,
-	/*.pp_dereverb_decay*/		0.4,
-	/*.pp_dereverb_level*/		0.3,
+	/*.pp_dereverb_decay*/		0.4f,
+	/*.pp_dereverb_level*/		0.3f,
 };
 
 struct speex_context {
@@ -226,7 +226,7 @@ static switch_status switch_speex_decode(switch_codec *codec,
 	if (*flag & SWITCH_CODEC_FLAG_SILENCE) {
 		speex_decode_int(context->decoder_state, NULL, buf);
 	} else {
-		speex_bits_read_from(&context->decoder_bits, (char *)encoded_data, *decoded_data_len);
+		speex_bits_read_from(&context->decoder_bits, (char *)encoded_data, (int)*decoded_data_len);
 		speex_decode_int(context->decoder_state, &context->decoder_bits, buf);
 	}
 	

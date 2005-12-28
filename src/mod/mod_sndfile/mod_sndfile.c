@@ -108,7 +108,7 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 	}
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Opening File [%s] %dhz\n", path, context->sfinfo.samplerate);
-	handle->samples = context->sfinfo.frames;
+	handle->samples = (unsigned int)context->sfinfo.frames;
 	handle->samplerate = context->sfinfo.samplerate;
 	handle->channels = context->sfinfo.channels;
 	handle->format = context->sfinfo.format;
@@ -137,7 +137,7 @@ switch_status sndfile_file_seek(switch_file_handle *handle, unsigned int *cur_sa
 		return SWITCH_STATUS_NOTIMPL;
 	}
 
-	*cur_sample = sf_seek(context->handle, samples, whence);
+	*cur_sample = (unsigned int)sf_seek(context->handle, samples, whence);
 	
 	return SWITCH_STATUS_SUCCESS;
 
@@ -145,21 +145,21 @@ switch_status sndfile_file_seek(switch_file_handle *handle, unsigned int *cur_sa
 
 switch_status sndfile_file_read (switch_file_handle *handle, void *data, size_t *len)
 {
-	unsigned int inlen = *len;
+	size_t inlen = *len;
 	sndfile_context *context = handle->private;
 
 	if (switch_test_flag(handle, SWITCH_FILE_DATA_RAW)) {	
-		*len = sf_read_raw (context->handle, data, inlen);
+		*len = (size_t)sf_read_raw (context->handle, data, inlen);
 	} else if (switch_test_flag(handle, SWITCH_FILE_DATA_INT)) {
-		*len = sf_readf_int(context->handle, (int *) data, inlen);
+		*len = (size_t)sf_readf_int(context->handle, (int *) data, inlen);
 	} else if (switch_test_flag(handle, SWITCH_FILE_DATA_SHORT)) {
-		*len = sf_readf_short(context->handle, (short *) data, inlen);
+		*len = (size_t)sf_readf_short(context->handle, (short *) data, inlen);
 	} else if (switch_test_flag(handle, SWITCH_FILE_DATA_FLOAT)) {
-		*len = sf_readf_float(context->handle, (float *) data, inlen);
+		*len = (size_t)sf_readf_float(context->handle, (float *) data, inlen);
 	} else if (switch_test_flag(handle, SWITCH_FILE_DATA_DOUBLE)) {
-		*len = sf_readf_double(context->handle, (double *) data, inlen);
+		*len = (size_t)sf_readf_double(context->handle, (double *) data, inlen);
 	} else {
-		*len = sf_readf_int(context->handle, (int *) data, inlen);
+		*len = (size_t)sf_readf_int(context->handle, (int *) data, inlen);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -167,21 +167,21 @@ switch_status sndfile_file_read (switch_file_handle *handle, void *data, size_t 
 
 switch_status sndfile_file_write (switch_file_handle *handle, void *data, size_t *len)
 {
-	unsigned int inlen = *len;
+	size_t inlen = *len;
 	sndfile_context *context = handle->private;
 	
 	if (switch_test_flag(handle, SWITCH_FILE_DATA_RAW)) {	
-		*len = sf_write_raw (context->handle, data, inlen);
+		*len = (size_t)sf_write_raw (context->handle, data, inlen);
 	} else if (switch_test_flag(handle, SWITCH_FILE_DATA_INT)) {
-		*len = sf_writef_int(context->handle, (int *) data, inlen);
+		*len = (size_t)sf_writef_int(context->handle, (int *) data, inlen);
 	} else if (switch_test_flag(handle, SWITCH_FILE_DATA_SHORT)) {
-		*len = sf_writef_short(context->handle, (short *) data, inlen);
+		*len = (size_t)sf_writef_short(context->handle, (short *) data, inlen);
 	} else if (switch_test_flag(handle, SWITCH_FILE_DATA_FLOAT)) {
-		*len = sf_writef_float(context->handle, (float *) data, inlen);
+		*len = (size_t)sf_writef_float(context->handle, (float *) data, inlen);
 	} else if (switch_test_flag(handle, SWITCH_FILE_DATA_DOUBLE)) {
-		*len = sf_writef_double(context->handle, (double *) data, inlen);
+		*len = (size_t)sf_writef_double(context->handle, (double *) data, inlen);
 	} else {
-		*len = sf_writef_int(context->handle, (int *) data, inlen);
+		*len = (size_t)sf_writef_int(context->handle, (int *) data, inlen);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
