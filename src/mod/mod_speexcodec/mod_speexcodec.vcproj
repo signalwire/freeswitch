@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="mod_PortAudio"
-	ProjectGUID="{5FD31A25-5D83-4794-8BEE-904DAD84CE71}"
-	RootNamespace="mod_PortAudio"
+	Name="mod_speexcodec"
+	ProjectGUID="{5580D60E-0F77-4716-9CD4-B8E5986FA375}"
+	RootNamespace="mod_speexcodec"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Mod_PortAudio Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_SpeexCodec Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\src\include&quot;;&quot;$(ProjectDir)include&quot;;&quot;$(ProjectDir)..\..\libs\include&quot;;&quot;$(ProjectDir)..\..\libs\portaudio\pa_common&quot;;&quot;$(ProjectDir)\..\..\..\src\mod\mod_portaudio&quot;;&quot;$(ProjectDir)..\..\libs\portaudio\pa_win_wmme&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\speex\include&quot;;&quot;$(InputDir)..\..\..\libs\speex\include\speex&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -63,15 +63,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/NODEFAULTLIB:LIMBCTD"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib  PAStaticWMMED.lib Winmm.lib"
-				OutputFile="$(OutDir)/mod/mod_PortAudio.dll"
+				AdditionalDependencies="libspeex.lib"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_speexcodec.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Debug&quot;;&quot;$(InputDir)..\..\libs\portaudio\winvc\Lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\speex\win32\libspeex\Debug&quot;"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_PortAudio.pdb"
+				ProgramDatabaseFile="$(OutDir)/mod_speexcodec.pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_PortAudio.lib"
+				ImportLibrary="$(OutDir)/mod_speexcodec.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -109,7 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Mod_PortAudio Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_SpeexCodec Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -125,7 +124,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\src\include&quot;;&quot;$(ProjectDir)include&quot;;&quot;$(ProjectDir)..\..\libs\include&quot;;&quot;$(ProjectDir)..\..\libs\portaudio\pa_common&quot;;&quot;$(ProjectDir)\..\..\..\src\mod\mod_portaudio&quot;;&quot;$(ProjectDir)..\..\libs\portaudio\pa_win_wmme&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\speex\include&quot;;&quot;$(InputDir)..\..\..\libs\speex\include\speex&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -144,15 +143,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib  PAStaticWMME.lib Winmm.lib"
-				OutputFile="$(OutDir)/mod/mod_PortAudio.dll"
+				AdditionalDependencies="libspeex.lib"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_speexcodec.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\libs\portaudio\winvc\Lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\speex\win32\libspeex\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_PortAudio.lib"
+				ImportLibrary="$(OutDir)/mod_speexcodec.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -190,15 +189,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\mod\mod_PortAudio\mod_PortAudio.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\mod\mod_portaudio\pablio.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\mod\mod_portaudio\ringbuffer.c"
+				RelativePath=".\mod_speexcodec.c"
 				>
 			</File>
 		</Filter>
@@ -207,14 +198,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\..\src\mod\mod_portaudio\pablio.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\mod\mod_portaudio\ringbuffer.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

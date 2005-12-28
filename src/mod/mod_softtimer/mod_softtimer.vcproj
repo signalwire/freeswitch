@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="mod_rawaudio"
-	ProjectGUID="{5844AFE1-AA3E-4BDB-A9EF-119AEF19DF88}"
-	RootNamespace="mod_rawaudio"
+	Name="mod_softtimer"
+	ProjectGUID="{DCC13474-28DF-47CA-A8EB-72F8CE9A78C5}"
+	RootNamespace="mod_softtimer"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -62,13 +62,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/mod/mod_rawaudio.dll"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_softtimer.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(InputDir)..\..\libs\apr\Debug"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_rawaudio.pdb"
+				ProgramDatabaseFile="$(OutDir)/mod_softtimer.pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_rawaudio.lib"
+				ImportLibrary="$(OutDir)/mod_softtimer.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -140,14 +140,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/mod/mod_rawaudio.dll"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_softtimer.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_rawaudio.lib"
+				ImportLibrary="$(OutDir)/mod_softtimer.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -185,7 +185,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\mod\mod_rawaudio\mod_rawaudio.c"
+				RelativePath=".\mod_softtimer.c"
 				>
 			</File>
 		</Filter>

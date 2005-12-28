@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="mod_IaxChan"
-	ProjectGUID="{3A5B9131-F20C-4A85-9447-6C1610941CEE}"
-	RootNamespace="mod_IaxChan"
+	Name="mod_PortAudio"
+	ProjectGUID="{5FD31A25-5D83-4794-8BEE-904DAD84CE71}"
+	RootNamespace="mod_PortAudio"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Mod_IaxChan Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_PortAudio Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,11 +42,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\iax\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\portaudio\pa_common&quot;;&quot;$(InputDir)..\..\..\libs\portaudio\pa_win_wmme&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -63,14 +63,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
-				OutputFile="$(OutDir)/mod/mod_IaxChan.dll"
+				AdditionalOptions="/NODEFAULTLIB:LIMBCTD"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib  PAStaticWMMED.lib Winmm.lib"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_PortAudio.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(InputDir)..\..\libs\iax\Debug"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\portaudio\winvc\Lib&quot;"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_IaxChan.pdb"
+				ProgramDatabaseFile="$(OutDir)/mod_PortAudio.pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_IaxChan.lib"
+				ImportLibrary="$(OutDir)/mod_PortAudio.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -108,7 +109,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Mod_IaxChan Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_PortAudio Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -124,9 +125,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\iax\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\portaudio\pa_common&quot;;&quot;$(InputDir)..\..\..\libs\portaudio\pa_win_wmme&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -143,16 +144,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
-				OutputFile="$(OutDir)/mod/mod_IaxChan.dll"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib  PAStaticWMME.lib Winmm.lib"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_PortAudio.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\iax\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\portaudio\winvc\Lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				LinkTimeCodeGeneration="1"
-				ImportLibrary="$(OutDir)/mod_IaxChan.lib"
+				ImportLibrary="$(OutDir)/mod_PortAudio.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -190,7 +190,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\mod\mod_iaxchan\mod_iaxchan.c"
+				RelativePath=".\mod_PortAudio.c"
+				>
+			</File>
+			<File
+				RelativePath=".\pablio.c"
+				>
+			</File>
+			<File
+				RelativePath=".\ringbuffer.c"
 				>
 			</File>
 		</Filter>
@@ -199,6 +207,14 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\pablio.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ringbuffer.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

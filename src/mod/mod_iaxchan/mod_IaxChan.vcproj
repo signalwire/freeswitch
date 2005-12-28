@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="mod_exosip"
-	ProjectGUID="{45DF84ED-D24A-4FF6-B5B0-0A9A5FDB9552}"
-	RootNamespace="mod_exosip"
+	Name="mod_IaxChan"
+	ProjectGUID="{3A5B9131-F20C-4A85-9447-6C1610941CEE}"
+	RootNamespace="mod_IaxChan"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Mod_Exosip Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_IaxChan Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -41,14 +41,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/D _CRT_SECURE_NO_DEPRECATE"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\libeXosip2\include;..\..\libs\osip\include;..\..\libs\jrtp4c\src;..\..\libs\osip\src\osipparser2"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\iax\src&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -65,18 +63,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/NODEFAULTLIB:LIBCMT"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libcpmt.lib eXosip.lib jrtp4c.lib jrtplib.lib jthread.lib osipparser2.lib osip2.lib"
-				ShowProgress="0"
-				OutputFile="$(OutDir)/mod/mod_exosip.dll"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_IaxChan.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Debug&quot;;&quot;$(InputDir)..\..\libs\jrtp4c\w32\Debug&quot;;&quot;$(InputDir)..\..\libs\jrtplib\Debug&quot;;&quot;$(InputDir)..\..\libs\jthread-1.1.2\Debug&quot;;&quot;$(InputDir)..\..\libs\libeXosip2\platform\vsnet\Debug&quot;;&quot;$(InputDir)..\..\libs\osip\platform\vsnet\Debug&quot;"
-				IgnoreAllDefaultLibraries="false"
-				IgnoreDefaultLibraryNames=""
+				AdditionalLibraryDirectories="$(InputDir)..\..\..\libs\iax\Debug"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_exosip.pdb"
+				ProgramDatabaseFile="$(OutDir)/mod_IaxChan.pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_exosip.lib"
+				ImportLibrary="$(OutDir)/mod_IaxChan.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -114,7 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Mod_Exosip Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_IaxChan Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -130,9 +124,9 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\libeXosip2\include;..\..\libs\osip\include;..\..\libs\jrtp4c\src;..\..\libs\osip\src\osipparser2"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\iax\src&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -149,15 +143,16 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libcpmt.lib eXosip.lib jrtp4c.lib jrtplib.lib jthread.lib osipparser2.lib osip2.lib"
-				OutputFile="$(OutDir)/mod/mod_exosip.dll"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_IaxChan.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\libs\jrtp4c\w32\Release&quot;;&quot;$(InputDir)..\..\libs\jrtplib\Release&quot;;&quot;$(InputDir)..\..\libs\jthread-1.1.2\Release&quot;;&quot;$(InputDir)..\..\libs\libeXosip2\platform\vsnet\Release&quot;;&quot;$(InputDir)..\..\libs\osip\platform\vsnet\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\iax\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_exosip.lib"
+				LinkTimeCodeGeneration="1"
+				ImportLibrary="$(OutDir)/mod_IaxChan.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -195,11 +190,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\mod\mod_exosip\mod_exosip.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\libs\osip\src\osipparser2\osip_rfc3264.c"
+				RelativePath=".\mod_iaxchan.c"
 				>
 			</File>
 		</Filter>
@@ -208,10 +199,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\..\libs\osip\src\osipparser2\osip_rfc3264i.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

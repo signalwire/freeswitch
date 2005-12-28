@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="mod_g711codec"
-	ProjectGUID="{B1FE4613-3F4B-4DAF-9714-2472BF8F56AE}"
-	RootNamespace="mod_g711codec"
+	Name="mod_woomerachan"
+	ProjectGUID="{FE3540C5-3303-46E0-A69E-D92F775687F1}"
+	RootNamespace="mod_woomerachan"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -62,13 +62,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/mod/mod_g711codec.dll"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_woomerachan.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(InputDir)..\..\libs\apr\Debug"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_g711codec.pdb"
+				ProgramDatabaseFile="$(OutDir)/mod_woomerachan.pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_g711codec.lib"
+				ImportLibrary="$(OutDir)/mod_woomerachan.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -140,14 +140,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/mod/mod_g711codec.dll"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_woomerachan.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_g711codec.lib"
+				ImportLibrary="$(OutDir)/mod_woomerachan.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -185,11 +185,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\mod\mod_g711codec\g711.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\mod\mod_g711codec\mod_g711codec.c"
+				RelativePath=".\mod_woomerachan.c"
 				>
 			</File>
 		</Filter>
@@ -198,10 +194,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath="..\..\src\mod\mod_g711codec\g711.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

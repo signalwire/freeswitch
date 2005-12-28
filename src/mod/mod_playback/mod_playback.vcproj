@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/mod/mod_playback.dll"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_playback.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(InputDir)..\..\libs\apr\Debug"
 				GenerateDebugInformation="true"
@@ -140,7 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/mod/mod_playback.dll"
+				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_playback.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;"
 				GenerateDebugInformation="true"
@@ -185,7 +185,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\mod\mod_playback\mod_playback.c"
+				RelativePath=".\mod_playback.c"
 				>
 			</File>
 		</Filter>
