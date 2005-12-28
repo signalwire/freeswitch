@@ -522,7 +522,7 @@ SWITCH_DECLARE(void *) switch_core_permenant_alloc(size_t memory)
 SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup)
 {
 	char *duped = NULL;
-	int len;
+	size_t len;
 
 	assert(runtime.memory_pool != NULL);
 
@@ -537,7 +537,7 @@ SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup)
 SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, char *todup)
 {
 	char *duped = NULL;
-	int len;
+	size_t len;
 	assert(session != NULL);
 	assert(session->pool != NULL);
 
@@ -553,7 +553,7 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, 
 SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
 {
 	char *duped = NULL;
-	int len;
+	size_t len;
 	assert(pool != NULL);
 	assert(todup != NULL);
 
