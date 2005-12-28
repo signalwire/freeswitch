@@ -59,6 +59,7 @@ static switch_status switch_raw_encode(switch_codec *codec,
 	   TBD look at other_codec to determine the original format of the data and determine if we need to resample
 	   in the event the audio is the same format but different implementations.
 	*/
+	printf("encode %d %d->%d\n", decoded_data_len, other_codec->implementation->bytes_per_frame, codec->implementation->bytes_per_frame);
 
 	return SWITCH_STATUS_NOOP;
 }
@@ -72,7 +73,8 @@ static switch_status switch_raw_decode(switch_codec *codec,
 								 unsigned int *flag) 
 {
 
-	//printf("decode %d %d->%d\n", encoded_data_len, other_codec->implementation->bytes_per_frame, codec->implementation->bytes_per_frame);
+	printf("decode %d %d->%d\n", encoded_data_len, other_codec->implementation->bytes_per_frame, codec->implementation->bytes_per_frame);
+
 	return SWITCH_STATUS_NOOP;
 }
 
@@ -132,6 +134,23 @@ static const switch_codec_implementation raw_32k_implementation = {
 	/*.destroy = */ switch_raw_destroy
 };
 
+static const switch_codec_implementation raw_22k_implementation = {
+	/*.samples_per_second = */ 22050,
+	/*.bits_per_second = */ 352800,
+	/*.microseconds_per_frame = */ 20000,
+	/*.samples_per_frame = */ 441,
+	/*.bytes_per_frame = */ 882,
+	/*.encoded_bytes_per_frame = */ 882,
+	/*.number_of_channels = */ 1,
+	/*.pref_frames_per_packet = */ 1,
+	/*.max_frames_per_packet = */ 1,
+	/*.init = */ switch_raw_init,
+	/*.encode = */ switch_raw_encode,
+	/*.decode = */ switch_raw_decode,
+	/*.destroy = */ switch_raw_destroy,
+	/*.next = */ &raw_32k_implementation
+};
+
 static const switch_codec_implementation raw_16k_implementation = {
 	/*.samples_per_second = */ 16000,
 	/*.bits_per_second = */ 256000,
@@ -146,7 +165,7 @@ static const switch_codec_implementation raw_16k_implementation = {
 	/*.encode = */ switch_raw_encode,
 	/*.decode = */ switch_raw_decode,
 	/*.destroy = */ switch_raw_destroy,
-	/*.next = */ &raw_32k_implementation
+	/*.next = */ &raw_22k_implementation
 };
 
 static const switch_codec_implementation raw_8k_implementation = {

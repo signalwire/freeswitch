@@ -890,6 +890,7 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 									   dname,
 									   rate,
 									   globals.codec_ms,
+									   1,
 									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 									   NULL,
 									   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -901,6 +902,7 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 										   dname,
 										   rate,
 										   globals.codec_ms,
+										   1,
 										   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 										   NULL,
 										   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -1052,6 +1054,7 @@ static void handle_answer(eXosip_event_t *event)
 								   dname,
 								   rate,
 								   globals.codec_ms,
+								   1,
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL,
 								   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
@@ -1063,6 +1066,7 @@ static void handle_answer(eXosip_event_t *event)
 									   dname,
 									   rate,
 									   globals.codec_ms,
+									   1,
 									   SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE,
 									   NULL,
 									   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {

@@ -703,6 +703,7 @@ static switch_status engage_device(struct private_object *tech_pvt)
 							   "L16",
 							   sample_rate,
 							   codec_ms,
+							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL,
 							   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
@@ -713,6 +714,7 @@ static switch_status engage_device(struct private_object *tech_pvt)
 									   "L16",
 									   sample_rate,
 									   codec_ms,
+									   1,
 									   SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE,
 									   NULL,
 									   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {

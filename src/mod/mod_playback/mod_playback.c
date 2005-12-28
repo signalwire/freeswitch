@@ -71,36 +71,40 @@ void playback_function(switch_core_session *session, char *data)
 	write_frame.buflen = sizeof(buf);
 
     
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s\n", data);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s %dkhz %d channels\n", data, fh.samplerate, fh.channels);
 	
-	samples = fh.samplerate / 50;
-	len = samples * 2;
 	interval = 20;
-
+	samples = (fh.samplerate / 50) * fh.channels;
+	len = samples * 2;
+	
 	codec_name = "L16";
 	
-	if (switch_core_timer_init(&timer, "soft", interval, samples, pool) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer failed!\n");
-		switch_channel_hangup(channel);
-		return;
-	}
-
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %d bytes per %d ms!\n", len, interval);
-
 	if (switch_core_codec_init(&codec,
 							   codec_name,
-							   8000,
+							   fh.samplerate,
 							   interval,
+							   fh.channels,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL,
 							   pool) == SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
 		write_frame.codec = &codec;
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed\n");
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d\n", codec_name, fh.samplerate, interval);
+		switch_core_file_close(&fh);
 		switch_channel_hangup(channel);
 		return;
 	}
+
+	if (switch_core_timer_init(&timer, "soft", interval, samples, pool) != SWITCH_STATUS_SUCCESS) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer failed!\n");
+		switch_core_codec_destroy(&codec);
+		switch_core_file_close(&fh);
+		switch_channel_hangup(channel);
+		return;
+	}
+
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %d bytes per %d ms!\n", len, interval);
 
 	/* start a thread to absorb incoming audio */
 	switch_core_service_session(session, &thread_session);
@@ -130,7 +134,7 @@ void playback_function(switch_core_session *session, char *data)
 		if (ilen <= 0) {
 			break;
 		}
-
+		
 		write_frame.datalen = ilen * 2;
 		write_frame.samples = ilen;
 #ifdef SWAP_LINEAR

@@ -275,6 +275,7 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 							   dname,
 							   0,
 							   0,
+							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL,
 							   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
@@ -285,6 +286,7 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 								   dname,
 								   0,
 								   0,
+								   1,
 								   SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, 
 								   NULL,
 								   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {

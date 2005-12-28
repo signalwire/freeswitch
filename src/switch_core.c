@@ -202,7 +202,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_set_write_codec(switch_core_se
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, int rate, int ms, switch_codec_flag flags, const switch_codec_settings *codec_settings, switch_memory_pool *pool)
+SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, int rate, int ms, int channels, switch_codec_flag flags, const switch_codec_settings *codec_settings, switch_memory_pool *pool)
 {
 	const switch_codec_interface *codec_interface;
 	const switch_codec_implementation *iptr, *implementation = NULL;
@@ -218,7 +218,9 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 	}
 
 	for(iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
-		if ((!rate || rate == iptr->samples_per_second) && (!ms || ms == (iptr->microseconds_per_frame / 1000))) {
+		if ((!rate || rate == iptr->samples_per_second) && 
+			(!ms || ms == (iptr->microseconds_per_frame / 1000)) && 
+			(!channels || channels == iptr->number_of_channels)) {
 			implementation = iptr;
 			break;
 		}
