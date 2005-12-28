@@ -526,6 +526,8 @@ SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup)
 
 	assert(runtime.memory_pool != NULL);
 
+	if (!todup) return NULL;
+
 	len = strlen(todup) + 1;
 	if (todup && (duped = apr_palloc(runtime.memory_pool, len))) {
 		strncpy(duped, todup, len);
@@ -540,6 +542,8 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, 
 	size_t len;
 	assert(session != NULL);
 	assert(session->pool != NULL);
+
+	if (!todup) return NULL;
 
 	len = strlen(todup) + 1;
 
@@ -557,6 +561,7 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
 	assert(pool != NULL);
 	assert(todup != NULL);
 
+	if (!todup) return NULL;
 	len = strlen(todup) + 1;
 
 	if (todup && (duped = apr_palloc(pool, len))) {
