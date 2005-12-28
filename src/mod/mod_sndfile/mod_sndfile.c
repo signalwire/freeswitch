@@ -189,16 +189,16 @@ switch_status sndfile_file_write (switch_file_handle *handle, void *data, size_t
 
 /* Registration */
 
-static char *supported_formats[0];
+static char **supported_formats;
 
-static const switch_file_interface sndfile_file_interface = {
+static switch_file_interface sndfile_file_interface = {
 	/*.interface_name*/		modname,
 	/*.file_open*/			sndfile_file_open,
 	/*.file_close*/			sndfile_file_close,
 	/*.file_read*/			sndfile_file_read,
 	/*.file_write*/			sndfile_file_write,
 	/*.file_seek*/			sndfile_file_seek,
-	/*.extens*/ 			supported_formats,
+	/*.extens*/ 			NULL,
 	/*.next*/				NULL,
 };
 
@@ -286,6 +286,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_inte
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
+	sndfile_file_interface.extens = supported_formats;
 	*interface = &sndfile_module_interface;
 
 	/* indicate that the module should continue to be loaded */
