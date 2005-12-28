@@ -17,6 +17,7 @@ BuildModCodecG729=False
 BuildModCodecGSM=False
 BuildModXMPPEvent=False
 BuildModsndfile=False
+BuildModrawaudio=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
@@ -57,6 +58,8 @@ If objArgs.Count >=1 Then
 			BuildModXMPPEvent=True
 		Case "Mod_sndfile"
 			BuildModsndfile=True
+		Case "Mod_rawaudio"
+			BuildModrawaudio=True
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
@@ -66,6 +69,7 @@ If objArgs.Count >=1 Then
 			BuildModCodecG729=True
 			BuildModXMPPEvent=True
 			BuildModsndfile=True
+			BuildModrawaudio=True
 	End Select
 Else
 	BuildCore=True
@@ -76,6 +80,7 @@ Else
 	BuildModCodecG729=True
 	BuildModXMPPEvent=True
 	BuildModsndfile=True
+	BuildModrawaudio=True
 End If
 
 
@@ -113,6 +118,10 @@ End If
 
 If BuildModsndfile Then
 	BuildLibs_Modsndfile BuildDebug, BuildRelease
+End If
+
+If BuildModrawaudio Then
+	BuildLibs_Modrawaudio BuildDebug, BuildRelease
 End If
 
 WScript.Echo "Complete"
@@ -527,6 +536,29 @@ Sub BuildLibs_Modsndfile(BuildDebug, BuildRelease)
 	End If 
 	
 End Sub
+
+Sub BuildLibs_Modrawaudio(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "libresample") Then 
+		WgetUnZip "http://www.sofaswitch.com/mikej/libresample-0.1.3.zip", LibDestDir
+		RenameFolder LibDestDir & "libresample-0.1.3", "libresample"
+	End If 
+	If FSO.FolderExists(LibDestDir & "libresample") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "libresample\win\libresampled.lib") Then 
+				BuildViaVCBuild LibDestDir & "libresample\win\libresample.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "libresample\win\libresample.lib") Then 
+				BuildViaVCBuild LibDestDir & "libresample\win\libresample.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download libresample"
+	End If 
+	
+End Sub
+
 
 Sub UpgradeViaDevEnv(ProjectFile)
 	Set oExec = WshShell.Exec(quote & DevEnv & quote & " " & quote & ProjectFile & quote & " /Upgrade ")

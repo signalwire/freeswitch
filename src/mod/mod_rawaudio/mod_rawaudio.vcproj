@@ -25,6 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_rawaudio Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -62,9 +63,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libresampled.lib"
 				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_rawaudio.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(InputDir)..\..\libs\apr\Debug"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\libresample\win&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_rawaudio.pdb"
 				SubSystem="2"
@@ -106,6 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_rawaudio Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -140,9 +143,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="libresample.lib"
 				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_rawaudio.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\libresample\win&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
