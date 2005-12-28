@@ -189,7 +189,7 @@ switch_status sndfile_file_write (switch_file_handle *handle, void *data, size_t
 
 /* Registration */
 
-static char *supported_formats[1];
+static char *supported_formats[0];
 
 static const switch_file_interface sndfile_file_interface = {
 	/*.interface_name*/		modname,
