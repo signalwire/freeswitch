@@ -87,8 +87,14 @@ freeswitch_SOURCES = src/switch.c
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDFLAGS = -lfreeswitch
 
-nodepends:
+
+.nodepends:
 	touch .nodepends
+
+nodepends: .nodepends
+
+yesdepends:
+	rm .nodepends
 
 depends:
 	./buildlib.sh . install sqlite-3.2.8.tar.gz --disable-tcl --enable-threadsafe
@@ -104,7 +110,7 @@ modclean:
 
 
 
-install_mod:
+install_mod: modules
 	@echo Installing $(NAME)
 	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db
 	@/bin/cp -p ./$(NAME) $(PREFIX)/bin

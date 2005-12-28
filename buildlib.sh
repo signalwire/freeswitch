@@ -1,11 +1,13 @@
 #!/bin/bash
 
-if [ -f .nodepends ] ; then
+root=$1
+shift
+
+if [ -f $root/.nodepends ] ; then
+    echo "***depends disabled*** use make yesdepends to re-enable"
     exit 0
 fi
 
-root=$1
-shift
 
 
 install=

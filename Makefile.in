@@ -943,8 +943,13 @@ uninstall-info: uninstall-info-recursive
 	uninstall-libLTLIBRARIES uninstall-library_includeHEADERS
 
 
-nodepends:
+.nodepends:
 	touch .nodepends
+
+nodepends: .nodepends
+
+yesdepends:
+	rm .nodepends
 
 depends:
 	./buildlib.sh . install sqlite-3.2.8.tar.gz --disable-tcl --enable-threadsafe
@@ -958,7 +963,7 @@ modules: $(NAME)
 modclean:
 	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
 
-install_mod:
+install_mod: modules
 	@echo Installing $(NAME)
 	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db
 	@/bin/cp -p ./$(NAME) $(PREFIX)/bin

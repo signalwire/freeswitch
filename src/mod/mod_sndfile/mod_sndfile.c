@@ -237,8 +237,7 @@ static switch_status setup_formats(void)
 	
 	sfinfo.channels = 1 ;
 	len = ((major_count + (exlen + 2)) * sizeof(char *));
-	*supported_formats = switch_core_permenant_alloc(len);
-	//memset(supported_formats, 0, len);
+	supported_formats = switch_core_permenant_alloc(len);
 
 	len = 0;
 	for (m = 0 ; m < major_count ; m++) {
