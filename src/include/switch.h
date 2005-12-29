@@ -35,15 +35,6 @@
 extern "C" {
 #endif
 
-#if (_MSC_VER >= 1400) // VC8+
-#ifndef _CRT_SECURE_NO_DEPRECATE
-#define _CRT_SECURE_NO_DEPRECATE
-#endif
-#ifndef _CRT_NONSTDC_NO_DEPRECATE
-#define _CRT_NONSTDC_NO_DEPRECATE
-#endif
-#endif // VC8+
-
 #include <apr.h>
 #include <apr_network_io.h>
 #include <apr_errno.h>
@@ -68,41 +59,9 @@ extern "C" {
 #include <assert.h>
 #include <sqlite3.h>
 
-#ifdef WIN32
-#if defined(SWITCH_CORE_DECLARE_STATIC)
-#define SWITCH_DECLARE(type)            type __stdcall
-#define SWITCH_DECLARE_NONSTD(type)     type __cdecl
-#define SWITCH_DECLARE_DATA
-#elif defined(FREESWITCHCORE_EXPORTS)
-#define SWITCH_DECLARE(type)            __declspec(dllexport) type __stdcall
-#define SWITCH_DECLARE_NONSTD(type)     __declspec(dllexport) type __cdecl
-#define SWITCH_DECLARE_DATA             __declspec(dllexport)
-#else
-#define SWITCH_DECLARE(type)            __declspec(dllimport) type __stdcall
-#define SWITCH_DECLARE_NONSTD(type)     __declspec(dllimport) type __cdecl
-#define SWITCH_DECLARE_DATA             __declspec(dllimport)
-#endif
-
-#if defined(SWITCH_MOD_DECLARE_STATIC)
-#define SWITCH_MOD_DECLARE(type)            type __cdecl
-#elif defined(MOD_EXPORTS)
-#define SWITCH_MOD_DECLARE(type)     __declspec(dllexport) type __cdecl
-#else
-#define SWITCH_MOD_DECLARE(type)     __declspec(dllimport) type __cdecl
-#endif
-#else //not win32
-#define SWITCH_DECLARE(type) type
-#define SWITCH_DECLARE_NONSTD(type) type
-#define SWITCH_MOD_DECLARE(type) type
-#define SWITCH_DECLARE_DATA
-#ifndef getpid
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <time.h>
-#endif
-#endif
-
+#include <switch_platform.h>
+#include <switch_apr.h>
+#include <switch_sqlite.h>
 #include <switch_types.h>
 #include <switch_core.h>
 #include <switch_loadable_module.h>
