@@ -111,12 +111,12 @@ static switch_status switch_raw_encode(switch_codec *codec,
 			printf("Activate Resample %d->%d\n", codec->implementation->samples_per_second, other_codec->implementation->samples_per_second);
 			context->enc_from = codec->implementation->samples_per_second;
 			context->enc_to = other_codec->implementation->samples_per_second;
-			context->enc_factor = ((double)other_codec->implementation->samples_per_second / (double)codec->implementation->samples_per_second);
+			context->enc_factor = ((double) context->enc_from / (double)context->enc_to);
 			context->enc_resampler = resample_open(1, context->enc_factor, context->enc_factor);
 		}
 
 		if (context->enc_from) {
-	
+		
 		}
 
 		return SWITCH_STATUS_SUCCESS;
