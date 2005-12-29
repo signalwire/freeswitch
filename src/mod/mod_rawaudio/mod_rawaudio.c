@@ -47,10 +47,16 @@ struct raw_context {
 	int enc_from;
 	int enc_to;
 	double enc_factor;
+	float *enc_buf;
+	int enc_buf_len;
+	int enc_buf_size;
 	void *dec_resampler;
 	int dec_from;
 	int dec_to;
 	double dec_factor;
+	float *dec_buf;
+	int dec_buf_len;
+	int dec_buf_size;
 };
 
 
@@ -106,13 +112,15 @@ static switch_status switch_raw_encode(switch_codec *codec,
 	   TBD Support varying number of channels
 	*/
 
-	if (codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
+	if (other_codec && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
 		if (!context->enc_from) {
 			printf("Activate Resample %d->%d\n", codec->implementation->samples_per_second, other_codec->implementation->samples_per_second);
 			context->enc_from = codec->implementation->samples_per_second;
 			context->enc_to = other_codec->implementation->samples_per_second;
 			context->enc_factor = ((double) context->enc_from / (double)context->enc_to);
 			context->enc_resampler = resample_open(1, context->enc_factor, context->enc_factor);
+			context->enc_buf_size = codec->implementation->bytes_per_frame;
+			context->enc_buf = (float *) switch_core_alloc(codec->memory_pool, context->enc_buf_size);
 		}
 
 		if (context->enc_from) {
