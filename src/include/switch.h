@@ -35,6 +35,12 @@
 extern "C" {
 #endif
 
+#ifndef WIN32
+#include <config.h>
+#endif
+
+#include <switch_platform.h>
+
 #include <apr.h>
 #include <apr_network_io.h>
 #include <apr_errno.h>
@@ -59,7 +65,6 @@ extern "C" {
 #include <assert.h>
 #include <sqlite3.h>
 
-#include <switch_platform.h>
 #include <switch_apr.h>
 #include <switch_sqlite.h>
 #include <switch_types.h>
@@ -75,11 +80,6 @@ extern "C" {
 #include <switch_channel.h>
 #include <switch_buffer.h>
 #include <switch_event.h>
-
-#ifndef WIN32
-#include <config.h>
-#endif
-
 
 #ifdef __cplusplus
 }
