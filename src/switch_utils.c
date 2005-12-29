@@ -30,6 +30,74 @@
  *
  */
 #include <switch_utils.h>
+#define NORMFACT (float)0x8000
+#define MAXSAMPLE (float)0x7FFF
+#define MAXSAMPLEC (char)0x7F
+
+
+SWITCH_DECLARE(int) float_to_short(float *f, short *s, int len)
+{
+    int i;
+    float ft;
+        for(i=0;i<len;i++) {
+                ft = f[i] * NORMFACT;
+        if(ft >= 0) {
+            s[i] = (short)(ft+0.5);
+        } else {
+            s[i] = (short)(ft-0.5);
+        }
+        if (s[i] > (short)MAXSAMPLE) s[i] = (short)MAXSAMPLE;
+        if (s[i] < (short)-MAXSAMPLE) s[i] = (short)-MAXSAMPLE;
+        }
+    return len;
+}
+
+SWITCH_DECLARE(int) char_to_float(char *c, float *f, int len)
+{
+    int i;
+
+    if (len % 2) {
+        return(-1);
+    }
+
+        for(i=1;i<len;i+=2) {
+        f[(int)(i/2)] = (float)(((c[i])*0x100) + c[i-1]);
+        f[(int)(i/2)] /= NORMFACT;
+        if (f[(int)(i/2)] > MAXSAMPLE) f[(int)(i/2)] = MAXSAMPLE;
+        if (f[(int)(i/2)] < -MAXSAMPLE) f[(int)(i/2)] = -MAXSAMPLE;
+        }
+    return len/2;
+}
+
+SWITCH_DECLARE(int) float_to_char(float *f, char *c, int len)
+{
+    int i;
+    float ft;
+    long l;
+        for(i=0;i<len;i++) {
+        ft = f[i] * NORMFACT;
+        if (ft >= 0) {
+            l = (long)(ft+0.5);
+        } else {
+            l = (long)(ft-0.5);
+        }
+        c[i*2] = (unsigned char)((l)&0xff);
+        c[i*2+1] = (unsigned char)(((l)>>8)&0xff);
+        }
+    return len*2;
+}
+
+SWITCH_DECLARE(int) short_to_float(short *s, float *f, int len)
+{
+    int i;
+    int min, max;
+    min = max = 0;
+
+        for(i=0;i<len;i++) {
+                f[i] = (float)(s[i]) / NORMFACT;
+        }
+    return len;
+}
 
 SWITCH_DECLARE(char *) switch_cut_path(char *in)
 {

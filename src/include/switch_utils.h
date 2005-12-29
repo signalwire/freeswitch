@@ -70,6 +70,10 @@ SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll,
 SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
 SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len);
 SWITCH_DECLARE(char *) switch_cut_path(char *in);
+SWITCH_DECLARE(int) float_to_short(float *f, short *s, int len);
+SWITCH_DECLARE(int) char_to_float(char *c, float *f, int len);
+SWITCH_DECLARE(int) float_to_char(float *f, char *c, int len);
+SWITCH_DECLARE(int) short_to_float(short *s, float *f, int len);
 
 #if !defined(switch_strdupa) && defined(__GNUC__)
 # define switch_strdupa(s)									\

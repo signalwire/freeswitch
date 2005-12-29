@@ -34,16 +34,60 @@
 
 static const char modname[] = "mod_rawaudio";
 
+#ifndef MIN
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
+#ifndef MAX
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#endif
+
+struct raw_context {
+	void *enc_resampler;
+	int enc_from;
+	int enc_to;
+	double enc_factor;
+	void *dec_resampler;
+	int dec_from;
+	int dec_to;
+	double dec_factor;
+};
+
+
+static int resample(void *handle, double factor, float *src, int srclen, float *dst, int dstlen, int last)
+{
+    int o=0, srcused=0, srcpos=0, out=0;
+
+    for(;;) {
+        int srcBlock = MIN(srclen-srcpos, srclen);
+        int lastFlag = (last && (srcBlock == srclen-srcpos));
+        printf("resampling %d/%d (%d)\n",  srcpos, srclen,  MIN(dstlen-out, dstlen));
+        o = resample_process(handle, factor, &src[srcpos], srcBlock, lastFlag, &srcused, &dst[out], dstlen-out);
+        srcpos += srcused;
+        if (o >= 0)
+            out += o;
+        if (o < 0 || (o == 0 && srcpos == srclen))
+            break;
+    }
+    return out;
+}
+
+
 static switch_status switch_raw_init(switch_codec *codec, switch_codec_flag flags, const struct switch_codec_settings *codec_settings)
 {
 	int encoding, decoding;
-	
+	struct raw_context *context = NULL;
+
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
 	if (!(encoding || decoding)) {
 		return SWITCH_STATUS_FALSE;
 	} else {
+		if (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context)))) {
+			return SWITCH_STATUS_MEMERR;
+		}
+		codec->private = context;
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
@@ -56,12 +100,28 @@ static switch_status switch_raw_encode(switch_codec *codec,
 								 size_t *encoded_data_len,
 								 unsigned int *flag)
 {
-	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary.
-	   TBD look at other_codec to determine the original format of the data and determine if we need to resample
-	   in the event the audio is the same format but different implementations.
-	*/
-	printf("encode %d %d->%d\n", decoded_data_len, other_codec->implementation->bytes_per_frame, codec->implementation->bytes_per_frame);
+	struct raw_context *context = codec->private;
 
+	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary.
+	   TBD Support varying number of channels
+	*/
+
+	if (codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
+		if (!context->enc_from) {
+			printf("Activate Resample %d->%d\n", codec->implementation->samples_per_second, other_codec->implementation->samples_per_second);
+			context->enc_from = codec->implementation->samples_per_second;
+			context->enc_to = other_codec->implementation->samples_per_second;
+			context->enc_factor = ((double)other_codec->implementation->samples_per_second / (double)codec->implementation->samples_per_second);
+			context->enc_resampler = resample_open(1, context->enc_factor, context->enc_factor);
+		}
+
+		if (context->enc_from) {
+	
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
 	return SWITCH_STATUS_NOOP;
 }
 
@@ -73,6 +133,7 @@ static switch_status switch_raw_decode(switch_codec *codec,
 								 size_t *decoded_data_len,
 								 unsigned int *flag) 
 {
+	struct raw_context *context = codec->private;
 
 	printf("decode %d %d->%d\n", encoded_data_len, other_codec->implementation->bytes_per_frame, codec->implementation->bytes_per_frame);
 
