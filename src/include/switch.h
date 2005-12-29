@@ -39,32 +39,9 @@ extern "C" {
 #include <config.h>
 #endif
 
-#include <switch_platform.h>
-
-#include <apr.h>
-#include <apr_network_io.h>
-#include <apr_errno.h>
-#include <apr_general.h>
-#include <apr_thread_proc.h>
-#include <apr_thread_mutex.h>
-#include <apr_thread_cond.h>
-#include <apr_thread_rwlock.h>
-#include <apr_file_io.h>
-#include <apr_poll.h>
-#include <apr_dso.h>
-#include <apr_hash.h>
-#include <apr_strings.h>
-#include <apr_network_io.h>
-#include <apr_poll.h>
-#include <apr_queue.h>
-#include <apr_uuid.h>
-#include <apr_strmatch.h>
-#define APR_WANT_STDIO
-#define APR_WANT_STRFUNC
-#include <apr_want.h>
 #include <assert.h>
-#include <sqlite3.h>
 
+#include <switch_platform.h>
 #include <switch_apr.h>
 #include <switch_sqlite.h>
 #include <switch_types.h>

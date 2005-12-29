@@ -35,6 +35,8 @@
 extern "C" {
 #endif
 
+#include <sqlite3.h>
+
 typedef sqlite3 switch_core_db;
 
 #define switch_core_db_aggregate_context sqlite3_aggregate_context

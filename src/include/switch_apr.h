@@ -35,6 +35,28 @@
 extern "C" {
 #endif
 
+#include <apr.h>
+#include <apr_network_io.h>
+#include <apr_errno.h>
+#include <apr_general.h>
+#include <apr_thread_proc.h>
+#include <apr_thread_mutex.h>
+#include <apr_thread_cond.h>
+#include <apr_thread_rwlock.h>
+#include <apr_file_io.h>
+#include <apr_poll.h>
+#include <apr_dso.h>
+#include <apr_hash.h>
+#include <apr_strings.h>
+#include <apr_network_io.h>
+#include <apr_poll.h>
+#include <apr_queue.h>
+#include <apr_uuid.h>
+#include <apr_strmatch.h>
+#define APR_WANT_STDIO
+#define APR_WANT_STRFUNC
+#include <apr_want.h>
+
 /*
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions
    any other apr code should be as hidden as possible.
