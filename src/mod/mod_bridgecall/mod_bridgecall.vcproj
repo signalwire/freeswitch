@@ -68,7 +68,7 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_bridgecall.pdb"
 				SubSystem="2"
-				ImportLibrary=""
+				ImportLibrary="$(OutDir)/mod_bridgecall.lib"
 				TargetMachine="1"
 			/>
 			<Tool
