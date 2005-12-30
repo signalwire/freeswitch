@@ -279,11 +279,9 @@ static void xmpp_connect (char *jabber_id, char *pass)
 		globals.session.acc = iks_id_new (iks_parser_stack (globals.session.parser), jabber_id);
 		if (NULL == globals.session.acc->resource) {
 			/* user gave no resource name, use the default */
-			char *tmp;
-			tmp = iks_malloc (strlen (globals.session.acc->user) + strlen (globals.session.acc->server) + 9 + 3);
+			char tmp[512];
 			sprintf (tmp, "%s@%s/%s", globals.session.acc->user, globals.session.acc->server, modname);
 			globals.session.acc = iks_id_new (iks_parser_stack (globals.session.parser), tmp);
-			iks_free (tmp);
 		}
 		globals.session.pass = pass;
 
