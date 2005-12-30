@@ -71,7 +71,7 @@ void playback_function(switch_core_session *session, char *data)
 	write_frame.buflen = sizeof(buf);
 
     
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s %dkhz %d channels\n", data, fh.samplerate, fh.channels);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s %dhz %d channels\n", data, fh.samplerate, fh.channels);
 	
 	interval = 20;
 	samples = (fh.samplerate / 50) * fh.channels;
@@ -90,7 +90,7 @@ void playback_function(switch_core_session *session, char *data)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
 		write_frame.codec = &codec;
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d\n", codec_name, fh.samplerate, interval);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d channels %dms\n", codec_name, fh.samplerate, fh.channels, interval);
 		switch_core_file_close(&fh);
 		switch_channel_hangup(channel);
 		return;

@@ -243,6 +243,8 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 		implementation->init(codec, flags, codec_settings);
 
 		return SWITCH_STATUS_SUCCESS;
+	} else {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s Exists but not then desired implementation.\n", codec_name);	
 	}
 
 	return SWITCH_STATUS_NOTIMPL;
