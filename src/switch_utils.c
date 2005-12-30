@@ -35,9 +35,9 @@
 #define MAXSAMPLEC (char)0x7F
 
 
-SWITCH_DECLARE(int) switch_float_to_short(float *f, short *s, int len)
+SWITCH_DECLARE(size_t) switch_float_to_short(float *f, short *s, size_t len)
 {
-	int i;
+	size_t i;
 	float ft;
 	for(i=0;i<len;i++) {
 		ft = f[i] * NORMFACT;
