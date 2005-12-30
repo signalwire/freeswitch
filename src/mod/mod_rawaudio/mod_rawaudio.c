@@ -134,12 +134,12 @@ static switch_status switch_raw_encode(switch_codec *codec,
 				return SWITCH_STATUS_MEMERR;
 			}
 
-			context->enc->from = codec->implementation->samples_per_second;
-			context->enc->to = other_codec->implementation->samples_per_second;
-			context->enc->factor = ((double)context->enc->from / (double)context->enc->to);
+			context->enc->from = other_codec->implementation->samples_per_second;
+			context->enc->to = codec->implementation->samples_per_second;
+			context->enc->factor = ((double)context->enc->to / (double)context->enc->from);
 
 			context->enc->resampler = resample_open(QUALITY, context->enc->factor, context->enc->factor);
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Encode Resample %d->%d %f\n", other_codec->implementation->samples_per_second, codec->implementation->samples_per_second, context->enc->factor);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Encode Resample %d->%d %f\n", context->enc->from, context->enc->to, context->enc->factor);
 			context->enc->buf_size = codec->implementation->bytes_per_frame * 10;
 			context->enc->buf = (float *) switch_core_alloc(codec->memory_pool, context->enc->buf_size);
 			context->enc->new_buf_size = codec->implementation->bytes_per_frame * 10;
@@ -195,12 +195,12 @@ static switch_status switch_raw_decode(switch_codec *codec,
 			}
 
 
-			context->dec->from = codec->implementation->samples_per_second;
-			context->dec->to = other_codec->implementation->samples_per_second;
+			context->dec->from = other_codec->implementation->samples_per_second;
+			context->dec->to = codec->implementation->samples_per_second;
 			context->dec->factor = ((double)context->dec->from / (double)context->dec->to);
 
 			context->dec->resampler = resample_open(QUALITY, context->dec->factor, context->dec->factor);
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Decode Resample %d->%d %f\n", other_codec->implementation->samples_per_second, codec->implementation->samples_per_second, context->dec->factor);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Decode Resample %d->%d %f\n", context->dec->from, context->dec->to, context->dec->factor);
 			
 			context->dec->buf_size = codec->implementation->bytes_per_frame * 10;
 			context->dec->buf = (float *) switch_core_alloc(codec->memory_pool, context->dec->buf_size);
