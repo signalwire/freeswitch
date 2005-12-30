@@ -253,8 +253,10 @@ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 								 switch_codec *other_codec,
 								 void *decoded_data,
 								 size_t decoded_data_len,
+								 int decoded_rate,
 								 void *encoded_data,
 								 size_t *encoded_data_len,
+								 int *encoded_rate,
 								 unsigned int *flag)
 {
 	assert(codec != NULL);
@@ -271,15 +273,17 @@ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	return codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len, encoded_data, encoded_data_len, flag);
+	return codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len, decoded_rate, encoded_data, encoded_data_len, encoded_rate, flag);
 }
 
 SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 								 switch_codec *other_codec,
 								 void *encoded_data,
 								 size_t encoded_data_len,
+								 int encoded_rate,
 								 void *decoded_data,
 								 size_t *decoded_data_len,
+								 int *decoded_rate,
 								 unsigned int *flag)
 {
 	assert(codec != NULL);
@@ -296,7 +300,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	return codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, decoded_data, decoded_data_len, flag);
+	return codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate, decoded_data, decoded_data_len, decoded_rate, flag);
 }
 
 SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec *codec)
@@ -696,15 +700,19 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 	if (status == SWITCH_STATUS_SUCCESS && need_codec) {
 		switch_frame *enc_frame, *read_frame = *frame;
 
-		if (read_frame->codec) {
+		if (read_frame->codec->codec_interface == session->read_codec->codec_interface) {
+			status = SWITCH_STATUS_SUCCESS;
+		} else if (read_frame->codec) {
 			unsigned int flag = 0;
 			session->raw_read_frame.datalen = session->raw_read_frame.buflen;
 			status = switch_core_codec_decode(read_frame->codec,
 										   session->read_codec,
 										   read_frame->data,
 										   read_frame->datalen,
+										   read_frame->rate,
 										   session->raw_read_frame.data,
 										   &session->raw_read_frame.datalen,
+										   &session->raw_read_frame.rate,
 										   &flag);
 
 			switch (status) {
@@ -744,6 +752,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 					session->raw_read_frame.datalen = switch_buffer_read(session->raw_read_buffer,
 																				  session->raw_read_frame.data,
 																				  session->read_codec->implementation->bytes_per_frame);
+					session->raw_read_frame.rate = session->read_codec->implementation->samples_per_second;
 					enc_frame = &session->raw_read_frame;
 				}
 				session->enc_read_frame.datalen = session->enc_read_frame.buflen;
@@ -751,8 +760,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 											   (*frame)->codec,
 											   session->raw_read_frame.data,
 											   session->raw_read_frame.datalen,
+											   session->raw_read_frame.rate,
 											   session->enc_read_frame.data,
 											   &session->enc_read_frame.datalen,
+											   &session->enc_read_frame.rate,
 											   &flag);
 
 
@@ -801,7 +812,6 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 	unsigned int flag = 0, need_codec = 0, perfect = 0;
 	switch_io_flag io_flag = SWITCH_IO_FLAG_NOOP;
 
-
 	/* if you think this code is redundant.... too bad! I like to understand what I'm doing */
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		need_codec = TRUE;
@@ -816,18 +826,24 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 	}
 
 	if (need_codec) {
-		if (frame->codec) {
 
+		if (frame->codec->codec_interface == session->write_codec->codec_interface) {
+			write_frame = frame;
+			status = SWITCH_STATUS_SUCCESS;
+		} else if (frame->codec) {
 			session->raw_write_frame.datalen = session->raw_write_frame.buflen;
 			status = switch_core_codec_decode(frame->codec,
 										   session->write_codec,
 										   frame->data,
 										   frame->datalen,
+										   frame->rate,
 										   session->raw_write_frame.data,
 										   &session->raw_write_frame.datalen,
+										   &session->raw_write_frame.rate,
 										   &flag);
 
 			switch (status) {
+
 			case SWITCH_STATUS_SUCCESS:
 				write_frame = &session->raw_write_frame;
 				break;
@@ -840,7 +856,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				return status;
 				break;
 			}
-		}
+		} 
 
 		if (session->write_codec) {
 			if (write_frame->datalen == session->write_codec->implementation->bytes_per_frame) {
@@ -866,14 +882,16 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 			if (perfect) {
 				enc_frame = write_frame;
 				session->enc_write_frame.datalen = session->enc_write_frame.buflen;
+
 				status = switch_core_codec_encode(session->write_codec,
 											   frame->codec,
 											   enc_frame->data,
 											   enc_frame->datalen,
+											   enc_frame->rate,
 											   session->enc_write_frame.data,
 											   &session->enc_write_frame.datalen,
+											   &session->enc_write_frame.rate,
 											   &flag);
-
 
 				switch (status) {
 				case SWITCH_STATUS_SUCCESS:
@@ -907,13 +925,16 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 											 bytes))) {
 
 							enc_frame = &session->raw_write_frame;
+							session->raw_write_frame.rate = session->write_codec->implementation->samples_per_second;
 							session->enc_write_frame.datalen = session->enc_write_frame.buflen;
 							status = switch_core_codec_encode(session->write_codec,
 														   frame->codec,
 														   enc_frame->data,
 														   enc_frame->datalen,
+														   enc_frame->rate,
 														   session->enc_write_frame.data,
 														   &session->enc_write_frame.datalen,
+														   &session->enc_write_frame.rate,
 														   &flag);
 
 

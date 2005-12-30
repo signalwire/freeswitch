@@ -75,6 +75,7 @@ static struct {
 	int call_id;
 	switch_hash *call_hash;
 	switch_mutex_t *device_lock;
+	int sample_rate;
 } globals;
 
 struct private_object {
@@ -559,6 +560,8 @@ static switch_status load_config(void)
 		if (!strcasecmp(cfg.category, "settings")) {
 			if (!strcmp(var, "debug")) {
 				globals.debug = atoi(val);
+			} else if (!strcmp(var, "sample_rate")) {
+				globals.sample_rate = atoi(val);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
 			} else if (!strcmp(var, "cid_name")) {
@@ -585,6 +588,10 @@ static switch_status load_config(void)
 		set_global_dialplan("default");
 	}
 	
+	if (!globals.sample_rate) {
+		globals.sample_rate = 8000;
+	}
+
 	switch_config_close_file(&cfg);
 	
 	return SWITCH_STATUS_SUCCESS;
@@ -692,7 +699,7 @@ error:
 
 static switch_status engage_device(struct private_object *tech_pvt)
 {
-	int sample_rate = 8000;
+	int sample_rate = globals.sample_rate;
 	int codec_ms = 20;
 
 	switch_channel *channel;
@@ -723,7 +730,7 @@ static switch_status engage_device(struct private_object *tech_pvt)
 				return SWITCH_STATUS_FALSE;
 			}
 		}
-	
+		tech_pvt->read_frame.rate = sample_rate;
 		tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 		switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 		switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);

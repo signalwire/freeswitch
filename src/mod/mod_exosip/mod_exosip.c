@@ -911,6 +911,7 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 					return SWITCH_STATUS_FALSE;
 				} else {
 					int ms;
+					tech_pvt->read_frame.rate = rate;
 					switch_set_flag(tech_pvt, TFLAG_USING_CODEC);
 					ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Inbound Codec %s/%d %d ms\n", dname, rate, ms);
@@ -1075,6 +1076,7 @@ static void handle_answer(eXosip_event_t *event)
 				return;
 			} else {
 				int ms;
+				tech_pvt->read_frame.rate = rate;
 				switch_set_flag(tech_pvt, TFLAG_USING_CODEC);
 				ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Outbound Codec %s/%d %d ms\n", dname, rate, ms);

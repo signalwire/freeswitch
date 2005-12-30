@@ -103,7 +103,7 @@ void playback_function(switch_core_session *session, char *data)
 		switch_channel_hangup(channel);
 		return;
 	}
-
+	write_frame.rate = fh.samplerate;
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %d bytes per %d ms!\n", len, interval);
 
 	/* start a thread to absorb incoming audio */
@@ -136,7 +136,7 @@ void playback_function(switch_core_session *session, char *data)
 		}
 		
 		write_frame.datalen = ilen * 2;
-		write_frame.samples = ilen;
+		write_frame.samples = (int)ilen;
 #ifdef SWAP_LINEAR
 		switch_swap_linear(write_frame.data, (int)write_frame.datalen / 2);
 #endif

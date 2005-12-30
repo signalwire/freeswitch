@@ -35,92 +35,92 @@
 #define MAXSAMPLEC (char)0x7F
 
 
-SWITCH_DECLARE(int) float_to_short(float *f, short *s, int len)
+SWITCH_DECLARE(int) switch_float_to_short(float *f, short *s, int len)
 {
-    int i;
-    float ft;
-        for(i=0;i<len;i++) {
-                ft = f[i] * NORMFACT;
-        if(ft >= 0) {
-            s[i] = (short)(ft+0.5);
-        } else {
-            s[i] = (short)(ft-0.5);
-        }
-        if (s[i] > (short)MAXSAMPLE) s[i] = (short)MAXSAMPLE;
-        if (s[i] < (short)-MAXSAMPLE) s[i] = (short)-MAXSAMPLE;
-        }
-    return len;
+	int i;
+	float ft;
+	for(i=0;i<len;i++) {
+		ft = f[i] * NORMFACT;
+		if(ft >= 0) {
+			s[i] = (short)(ft+0.5);
+		} else {
+			s[i] = (short)(ft-0.5);
+		}
+		if (s[i] > (short)MAXSAMPLE) s[i] = (short)MAXSAMPLE;
+		if (s[i] < (short)-MAXSAMPLE) s[i] = (short)-MAXSAMPLE;
+	}
+	return len;
 }
 
-SWITCH_DECLARE(int) char_to_float(char *c, float *f, int len)
+SWITCH_DECLARE(int) switch_char_to_float(char *c, float *f, int len)
 {
-    int i;
+	int i;
 
-    if (len % 2) {
-        return(-1);
-    }
+	if (len % 2) {
+		return(-1);
+	}
 
-        for(i=1;i<len;i+=2) {
-        f[(int)(i/2)] = (float)(((c[i])*0x100) + c[i-1]);
-        f[(int)(i/2)] /= NORMFACT;
-        if (f[(int)(i/2)] > MAXSAMPLE) f[(int)(i/2)] = MAXSAMPLE;
-        if (f[(int)(i/2)] < -MAXSAMPLE) f[(int)(i/2)] = -MAXSAMPLE;
-        }
-    return len/2;
+	for(i=1;i<len;i+=2) {
+		f[(int)(i/2)] = (float)(((c[i])*0x100) + c[i-1]);
+		f[(int)(i/2)] /= NORMFACT;
+		if (f[(int)(i/2)] > MAXSAMPLE) f[(int)(i/2)] = MAXSAMPLE;
+		if (f[(int)(i/2)] < -MAXSAMPLE) f[(int)(i/2)] = -MAXSAMPLE;
+	}
+	return len/2;
 }
 
-SWITCH_DECLARE(int) float_to_char(float *f, char *c, int len)
+SWITCH_DECLARE(int) switch_float_to_char(float *f, char *c, int len)
 {
-    int i;
-    float ft;
-    long l;
-        for(i=0;i<len;i++) {
-        ft = f[i] * NORMFACT;
-        if (ft >= 0) {
-            l = (long)(ft+0.5);
-        } else {
-            l = (long)(ft-0.5);
-        }
-        c[i*2] = (unsigned char)((l)&0xff);
-        c[i*2+1] = (unsigned char)(((l)>>8)&0xff);
-        }
-    return len*2;
+	int i;
+	float ft;
+	long l;
+	for(i=0;i<len;i++) {
+		ft = f[i] * NORMFACT;
+		if (ft >= 0) {
+			l = (long)(ft+0.5);
+		} else {
+			l = (long)(ft-0.5);
+		}
+		c[i*2] = (unsigned char)((l)&0xff);
+		c[i*2+1] = (unsigned char)(((l)>>8)&0xff);
+	}
+	return len*2;
 }
 
-SWITCH_DECLARE(int) short_to_float(short *s, float *f, int len)
+SWITCH_DECLARE(int) switch_short_to_float(short *s, float *f, int len)
 {
-    int i;
-    int min, max;
-    min = max = 0;
+	int i;
 
-        for(i=0;i<len;i++) {
-                f[i] = (float)(s[i]) / NORMFACT;
-        }
-    return len;
+	for(i=0;i<len;i++) {
+		f[i] = (float)(s[i]) / NORMFACT;
+		//f[i] = (float) s[i];
+	}
+	return len;
 }
+
 
 SWITCH_DECLARE(char *) switch_cut_path(char *in)
 {
-    char *p, *ret = in;
-    char delims[] = "/\\";
-    char *i;
+	char *p, *ret = in;
+	char delims[] = "/\\";
+	char *i;
 
-    for(i = delims; *i; i++) {
-        p = in;
-        while((p = strchr(p, *i))) {
-            ret = ++p;
-        }
-    }
-    return ret;
+	for(i = delims; *i; i++) {
+		p = in;
+		while((p = strchr(p, *i))) {
+			ret = ++p;
+		}
+	}
+	return ret;
 }
 
 
 SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len)
 {
-    int i;
-    for (i = 0; i < len; i++) {
+	int i;
+	for (i = 0; i < len; i++) {
 		buf[i] = ((buf[i] >> 8) & 0x00ff) | ((buf[i] << 8) & 0xff00); 
-    }
+	}
 }
 
 

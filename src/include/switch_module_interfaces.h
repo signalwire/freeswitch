@@ -228,15 +228,19 @@ struct switch_codec_implementation {
 						 switch_codec *other_codec,
 						 void *decoded_data,
 						 size_t decoded_data_len,
+						 int decoded_rate,
 						 void *encoded_data,
 						 size_t *encoded_data_len,
+						 int *encoded_rate,
 						 unsigned int *flag);
 	switch_status (*decode)(switch_codec *codec,
 						 switch_codec *other_codec,
 						 void *encoded_data,
 						 size_t encoded_data_len,
+						 int encoded_rate,
 						 void *decoded_data,
 						 size_t *decoded_data_len,
+						 int *decoded_rate,
 						 unsigned int *flag);
 	switch_status (*destroy)(switch_codec *);
 	const struct switch_codec_implementation *next;

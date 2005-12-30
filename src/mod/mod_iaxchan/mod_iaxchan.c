@@ -298,6 +298,7 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 			int rate;
 			ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
 			rate = tech_pvt->write_codec.implementation->samples_per_second;
+			tech_pvt->read_frame.rate = rate;
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Codec %s/%d %d ms\n", dname, rate, ms);
 			tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 			switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);

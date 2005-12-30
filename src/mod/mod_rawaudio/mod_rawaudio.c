@@ -42,21 +42,24 @@ static const char modname[] = "mod_rawaudio";
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #endif
 
+#define QUALITY 1
+
+struct raw_resampler {
+	void *resampler;
+	int from;
+	int to;
+	double factor;
+	float *buf;
+	int buf_len;
+	int buf_size;
+	float *new_buf;
+	int new_buf_len;
+	int new_buf_size;
+};
+
 struct raw_context {
-	void *enc_resampler;
-	int enc_from;
-	int enc_to;
-	double enc_factor;
-	float *enc_buf;
-	int enc_buf_len;
-	int enc_buf_size;
-	void *dec_resampler;
-	int dec_from;
-	int dec_to;
-	double dec_factor;
-	float *dec_buf;
-	int dec_buf_len;
-	int dec_buf_size;
+	struct raw_resampler *enc;
+	struct raw_resampler *dec;
 };
 
 
@@ -67,13 +70,16 @@ static int resample(void *handle, double factor, float *src, int srclen, float *
     for(;;) {
         int srcBlock = MIN(srclen-srcpos, srclen);
         int lastFlag = (last && (srcBlock == srclen-srcpos));
-        printf("resampling %d/%d (%d)\n",  srcpos, srclen,  MIN(dstlen-out, dstlen));
         o = resample_process(handle, factor, &src[srcpos], srcBlock, lastFlag, &srcused, &dst[out], dstlen-out);
-        srcpos += srcused;
-        if (o >= 0)
+        //printf("resampling %d/%d (%d) %d %f\n",  srcpos, srclen,  MIN(dstlen-out, dstlen), srcused, factor);
+
+		srcpos += srcused;
+		if (o >= 0) {
             out += o;
-        if (o < 0 || (o == 0 && srcpos == srclen))
+		}
+		if (o < 0 || (o == 0 && srcpos == srclen)) {
             break;
+		}
     }
     return out;
 }
@@ -102,8 +108,10 @@ static switch_status switch_raw_encode(switch_codec *codec,
 								 switch_codec *other_codec,
 								 void *decoded_data,
 								 size_t decoded_data_len,
+								 int decoded_rate,
 								 void *encoded_data,
 								 size_t *encoded_data_len,
+								 int *encoded_rate,
 								 unsigned int *flag)
 {
 	struct raw_context *context = codec->private;
@@ -111,23 +119,49 @@ static switch_status switch_raw_encode(switch_codec *codec,
 	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary.
 	   TBD Support varying number of channels
 	*/
+	//printf("encode %d->%d (%d)\n", other_codec->implementation->samples_per_second, codec->implementation->samples_per_second, decoded_rate);
 
-	if (other_codec && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
-		if (!context->enc_from) {
-			printf("Activate Resample %d->%d\n", codec->implementation->samples_per_second, other_codec->implementation->samples_per_second);
-			context->enc_from = codec->implementation->samples_per_second;
-			context->enc_to = other_codec->implementation->samples_per_second;
-			context->enc_factor = ((double) context->enc_from / (double)context->enc_to);
-			context->enc_resampler = resample_open(1, context->enc_factor, context->enc_factor);
-			context->enc_buf_size = codec->implementation->bytes_per_frame;
-			context->enc_buf = (float *) switch_core_alloc(codec->memory_pool, context->enc_buf_size);
+	if (other_codec && 
+		codec->implementation->samples_per_second != other_codec->implementation->samples_per_second && 
+		decoded_rate != other_codec->implementation->samples_per_second) {
+		const short *ddp = decoded_data;
+		short *edp = encoded_data;
+		size_t ddplen = decoded_data_len / 2;
+
+		if (!context->enc) {
+			
+			if (!(context->enc = switch_core_alloc(codec->memory_pool, sizeof(struct raw_resampler)))) {
+				return SWITCH_STATUS_MEMERR;
+			}
+
+			context->enc->from = codec->implementation->samples_per_second;
+			context->enc->to = other_codec->implementation->samples_per_second;
+			context->enc->factor = ((double)context->enc->from / (double)context->enc->to);
+
+			context->enc->resampler = resample_open(QUALITY, context->enc->factor, context->enc->factor);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Encode Resample %d->%d %f\n", other_codec->implementation->samples_per_second, codec->implementation->samples_per_second, context->enc->factor);
+			context->enc->buf_size = codec->implementation->bytes_per_frame * 10;
+			context->enc->buf = (float *) switch_core_alloc(codec->memory_pool, context->enc->buf_size);
+			context->enc->new_buf_size = codec->implementation->bytes_per_frame * 10;
+			context->enc->new_buf = (float *) switch_core_alloc(codec->memory_pool, context->enc->new_buf_size);
 		}
 
-		if (context->enc_from) {
-		
+		if (context->enc) {
+			context->enc->buf_len = switch_short_to_float(decoded_data, context->enc->buf, (int)ddplen);
+			context->enc->new_buf_len = resample(context->enc->resampler, 
+													context->enc->factor, 
+													context->enc->buf, 
+													context->enc->buf_len, 
+													context->enc->new_buf, 
+													context->enc->new_buf_size, 
+													0);
+			switch_float_to_short(context->enc->new_buf, edp, decoded_data_len * 2);
+			*encoded_data_len = context->enc->new_buf_len * 2;
+			*encoded_rate = context->enc->to;
+			return SWITCH_STATUS_SUCCESS;
 		}
 
-		return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_GENERR;
 	}
 	
 	return SWITCH_STATUS_NOOP;
@@ -137,13 +171,61 @@ static switch_status switch_raw_decode(switch_codec *codec,
 								 switch_codec *other_codec,
 								 void *encoded_data,
 								 size_t encoded_data_len,
+								 int encoded_rate,
 								 void *decoded_data,
 								 size_t *decoded_data_len,
+								 int *decoded_rate,
 								 unsigned int *flag) 
 {
 	struct raw_context *context = codec->private;
 
-	printf("decode %d %d->%d\n", encoded_data_len, other_codec->implementation->bytes_per_frame, codec->implementation->bytes_per_frame);
+	//printf("decode %d->%d (%d)\n", other_codec->implementation->samples_per_second, codec->implementation->samples_per_second, encoded_rate);
+
+
+	if (other_codec && 
+		codec->implementation->samples_per_second != other_codec->implementation->samples_per_second &&
+		encoded_rate != other_codec->implementation->samples_per_second) {
+		short *ddp = decoded_data;
+		const short *edp = encoded_data;
+		size_t edplen = encoded_data_len / 2;
+
+		if (!context->dec) {
+			if (!(context->dec = switch_core_alloc(codec->memory_pool, sizeof(struct raw_resampler)))) {
+				return SWITCH_STATUS_MEMERR;
+			}
+
+
+			context->dec->from = codec->implementation->samples_per_second;
+			context->dec->to = other_codec->implementation->samples_per_second;
+			context->dec->factor = ((double)context->dec->from / (double)context->dec->to);
+
+			context->dec->resampler = resample_open(QUALITY, context->dec->factor, context->dec->factor);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Decode Resample %d->%d %f\n", other_codec->implementation->samples_per_second, codec->implementation->samples_per_second, context->dec->factor);
+			
+			context->dec->buf_size = codec->implementation->bytes_per_frame * 10;
+			context->dec->buf = (float *) switch_core_alloc(codec->memory_pool, context->dec->buf_size);
+			context->dec->new_buf_size = codec->implementation->bytes_per_frame * 10;
+			context->dec->new_buf = (float *) switch_core_alloc(codec->memory_pool, context->dec->new_buf_size);
+		}
+
+		if (context->dec) {
+			context->dec->buf_len = switch_short_to_float(encoded_data, context->dec->buf, (int)edplen);
+			context->dec->new_buf_len = resample(context->dec->resampler,
+													context->dec->factor, 
+													context->dec->buf,
+													context->dec->buf_len, 
+													context->dec->new_buf, 
+													context->dec->new_buf_size, 
+													0);
+			switch_float_to_short(context->dec->new_buf, ddp, (int)edplen);
+			*decoded_data_len = context->dec->new_buf_len * 2;
+			*decoded_rate = context->dec->to;
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		return SWITCH_STATUS_GENERR;
+	}
+
 
 	return SWITCH_STATUS_NOOP;
 }
@@ -151,6 +233,16 @@ static switch_status switch_raw_decode(switch_codec *codec,
 
 static switch_status switch_raw_destroy(switch_codec *codec)
 {
+	struct raw_context *context = codec->private;
+
+	if (context->enc && context->enc->resampler){
+		resample_close(context->enc->resampler);
+	}
+
+	if (context->dec && context->dec->resampler){
+		resample_close(context->dec->resampler);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

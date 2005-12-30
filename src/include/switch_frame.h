@@ -44,6 +44,7 @@ struct switch_frame {
 	size_t datalen;
 	size_t buflen;
 	int samples;
+	int rate;
 };
 
 #ifdef __cplusplus

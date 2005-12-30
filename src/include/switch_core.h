@@ -106,15 +106,19 @@ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 								 switch_codec *other_codec,
 								 void *decoded_data,
 								 size_t decoded_data_len,
+								 int decoded_rate,
 								 void *encoded_data,
 								 size_t *encoded_data_len,
+								 int *encoded_rate,
 								 unsigned int *flag);
 SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 								 switch_codec *other_codec,
 								 void *encoded_data,
 								 size_t encoded_data_len,
+								 int encoded_rate,
 								 void *decoded_data,
 								 size_t *decoded_data_len,
+								 int *decoded_rate,
 								 unsigned int *flag);
 SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec *codec);
 SWITCH_DECLARE(switch_status) switch_core_session_set_read_codec(switch_core_session *session, switch_codec *codec);
