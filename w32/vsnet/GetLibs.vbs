@@ -18,6 +18,7 @@ BuildModCodecGSM=False
 BuildModXMPPEvent=False
 BuildModsndfile=False
 BuildModrawaudio=False
+BuildSpiderMonkey=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
@@ -70,6 +71,7 @@ If objArgs.Count >=1 Then
 			BuildModXMPPEvent=True
 			BuildModsndfile=True
 			BuildModrawaudio=True
+			BuildSpiderMonkey=True
 	End Select
 Else
 	BuildCore=True
@@ -81,6 +83,7 @@ Else
 	BuildModXMPPEvent=True
 	BuildModsndfile=True
 	BuildModrawaudio=True
+	BuildSpiderMonkey=True
 End If
 
 
@@ -122,6 +125,10 @@ End If
 
 If BuildModrawaudio Then
 	BuildLibs_Modrawaudio BuildDebug, BuildRelease
+End If
+
+If BuildSpiderMonkey Then
+	BuildLibs_SpiderMonkey BuildDebug, BuildRelease
 End If
 
 WScript.Echo "Complete"
@@ -555,6 +562,36 @@ Sub BuildLibs_Modrawaudio(BuildDebug, BuildRelease)
 		End If
 	Else
 		Wscript.echo "Unable to download libresample"
+	End If 
+	
+End Sub
+
+Sub BuildLibs_SpiderMonkey(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "js") Then 
+		WgetUnZip "http://www.sofaswitch.com/mikej/js20051231.zip", LibDestDir
+		RenameFolder LibDestDir & "js20051231", "js"
+		WgetUnZip "http://www.sofaswitch.com/mikej/nspr-4.6.1.winnt5.debug.zip", LibDestDir & "js"
+		WgetUnZip "http://www.sofaswitch.com/mikej/nspr-4.6.1.winnt5.release.zip", LibDestDir & "js"
+		FSO.CreateFolder LibDestDir & "js\nspr\"
+		FSO.CopyFolder LibDestDir & "js\nspr-4.6.1.winnt5.debug\nspr-4.6.1\*", LibDestDir & "js\nspr\",true
+	End If 
+	If FSO.FolderExists(LibDestDir & "js") Then 
+		If BuildDebug Then
+		FSO.CopyFolder LibDestDir & "js\nspr-4.6.1.winnt5.debug\nspr-4.6.1\*", LibDestDir & "js\nspr\",true
+			If Not FSO.FileExists(LibDestDir & "js\src\Debug\js32.dll") Then 
+				BuildViaVCBuild LibDestDir & "js\src\fdlibm\fdlibm.vcproj", "Debug"
+				BuildViaVCBuild LibDestDir & "js\src\js.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+		FSO.CopyFolder LibDestDir & "js\nspr-4.6.1.winnt5.release\nspr-4.6.1\*", LibDestDir & "js\nspr\",true
+			If Not FSO.FileExists(LibDestDir & "js\src\Release\js32.dll") Then 
+				BuildViaVCBuild LibDestDir & "js\src\fdlibm\fdlibm.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "js\src\js.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download spidermonkey"
 	End If 
 	
 End Sub
