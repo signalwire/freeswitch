@@ -6,6 +6,14 @@
 #ifndef CCRTP4C_H
 #define CCRTP4C_H
 
+#ifdef WIN32
+#include <winsock2.h>
+#pragma warning(disable: 4267)
+#else
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#endif // WIN32
+
 #ifdef __cplusplus
 #include <rtpsession.h>
 #include <rtppacket.h>
@@ -13,18 +21,6 @@
 #include <rtpipv4address.h>
 #include <rtpsessionparams.h>
 #include <rtperrors.h>
-#ifndef WIN32
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#else
-#include <winsock2.h>
-#endif // WIN32
-#if 0
-#include <stdlib.h>
-#include <stdio.h>
-#include <iostream>
-#include <string>
-#endif
 
 extern "C" {
 #endif

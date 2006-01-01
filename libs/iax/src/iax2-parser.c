@@ -239,21 +239,21 @@ static void dump_prov_ies(char *output, int maxlen, unsigned char *iedata, int l
 	if (len < 2)
 		return;
 	strcpy(output, "\n"); 
-	maxlen -= strlen(output); output += strlen(output);
+	maxlen -= (int)strlen(output); output += strlen(output);
 	while(len > 2) {
 		ie = iedata[0];
 		ielen = iedata[1];
 		if (ielen + 2> len) {
 			snprintf(tmp, (int)sizeof(tmp), "Total Prov IE length of %d bytes exceeds remaining prov frame length of %d bytes\n", ielen + 2, len);
 			strncpy(output, tmp, maxlen - 1);
-			maxlen -= strlen(output); output += strlen(output);
+			maxlen -= (int)strlen(output); output += strlen(output);
 			return;
 		}
 		found = 0;
 		if (!found) {
 			snprintf(tmp, (int)sizeof(tmp), "       Unknown Prov IE %03d  : Present\n", ie);
 			strncpy(output, tmp, maxlen - 1);
-			maxlen -= strlen(output); output += strlen(output);
+			maxlen -= (int)strlen(output); output += strlen(output);
 		}
 		iedata += (2 + ielen);
 		len -= (2 + ielen);
@@ -467,7 +467,7 @@ int iax_ie_append_short(struct iax_ie_data *ied, unsigned char ie, unsigned shor
 
 int iax_ie_append_str(struct iax_ie_data *ied, unsigned char ie, unsigned char *str)
 {
-	return iax_ie_append_raw(ied, ie, str, strlen((char *) str));
+	return iax_ie_append_raw(ied, ie, str, (int)strlen((char *) str));
 }
 
 int iax_ie_append_byte(struct iax_ie_data *ied, unsigned char ie, unsigned char dat)

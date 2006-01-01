@@ -1,4 +1,8 @@
 'On Error Resume Next
+' **************
+' Initialization
+' **************
+
 Set WshShell = CreateObject("WScript.Shell")
 Set FSO = CreateObject("Scripting.FileSystemObject")
 Set WshSysEnv = WshShell.Environment("SYSTEM")
@@ -27,6 +31,11 @@ UtilsDir=Showpath(ScriptDir & "Tools")
 GetTarGZObjects UtilsDir
 GetVCBuild
 Wscript.echo "Detected VCBuild: " & VCBuild
+
+' **************
+' Option Parsing
+' **************
+
 If objArgs.Count >=2 Then
 	Select Case objArgs(1)
 		Case "Release"		
@@ -86,45 +95,62 @@ Else
 	BuildSpiderMonkey=True
 End If
 
+' ******************
+' Process lib builds
+' ******************
 
 If BuildCore Then
-	BuildLibs_Core BuildDebug, BuildRelease
+	If Not FSO.FolderExists(LibDestDir & "include") Then
+		FSO.CreateFolder(LibDestDir & "include")
+	End If
+	BuildLibs_apr BuildDebug, BuildRelease
+	FSO.CopyFile LibDestDir & "apr\include\*.h", LibDestDir & "include"
+	BuildLibs_apriconv BuildDebug, BuildRelease
+	FSO.CopyFile LibDestDir & "apr-iconv\include\*.h", LibDestDir & "include"
+	BuildLibs_aprutil BuildDebug, BuildRelease
+	FSO.CopyFile LibDestDir & "apr-util\include\*.h", LibDestDir & "include"
+	BuildLibs_libresample BuildDebug, BuildRelease
+	FSO.CopyFile LibDestDir & "libresample\include\*.h", LibDestDir & "include"
+	BuildLibs_sqlite BuildDebug, BuildRelease	
+	FSO.CopyFile LibDestDir & "sqlite\*.h", LibDestDir & "include"
 End If
 
 If BuildModExosip Then
-	BuildLibs_ModExosip BuildDebug, BuildRelease
+	BuildLibs_libosip2 BuildDebug, BuildRelease
+	BuildLibs_exosip BuildDebug, BuildRelease
+	BuildLibs_jrtplib BuildDebug, BuildRelease
 End If
 
 If BuildModIaxChan Then
-	BuildLibs_ModIaxChan BuildDebug, BuildRelease
+	BuildLibs_libiax2 BuildDebug, BuildRelease
 End If
 
 If BuildModPortAudio Then
-	BuildLibs_ModPortAudio BuildDebug, BuildRelease
+	BuildLibs_portaudio BuildDebug, BuildRelease
 End If
 
 If BuildModSpeexCodec Then
-	BuildLibs_ModSpeexCodec BuildDebug, BuildRelease
+	BuildLibs_SpeexCodec BuildDebug, BuildRelease
 End If
 
 If BuildModCodecG729 Then
-	BuildLibs_ModCodecG729 BuildDebug, BuildRelease
+	BuildLibs_libg729 BuildDebug, BuildRelease
 End If
 
 If BuildModCodecGSM Then
-	BuildLibs_ModCodecGSM BuildDebug, BuildRelease
+	BuildLibs_libgsm BuildDebug, BuildRelease
 End If
 
 If BuildModXMPPEvent Then
-	BuildLibs_ModXMPPEvent BuildDebug, BuildRelease
+	BuildLibs_iksemel BuildDebug, BuildRelease
 End If
 
 If BuildModsndfile Then
-	BuildLibs_Modsndfile BuildDebug, BuildRelease
+	BuildLibs_libsndfile BuildDebug, BuildRelease
 End If
 
 If BuildModrawaudio Then
-	BuildLibs_Modrawaudio BuildDebug, BuildRelease
+	BuildLibs_libresample BuildDebug, BuildRelease
 End If
 
 If BuildSpiderMonkey Then
@@ -133,63 +159,10 @@ End If
 
 WScript.Echo "Complete"
 
-Sub BuildLibs_Core(BuildDebug, BuildRelease)
-If Not FSO.FolderExists(LibDestDir & "include") Then
-	FSO.CreateFolder(LibDestDir & "include")
-End If
-	If Not FSO.FolderExists(LibDestDir & "apr") Then 
-		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-1.2.2.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "apr-1.2.2") Then
-			Wscript.echo "Unable to get apr from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/apr-1.2.2.tar.gz", LibDestDir
-		End If
-		RenameFolder LibDestDir & "apr-1.2.2", "apr"
-		FSO.CopyFile Utilsdir & "apr\apr.vcproj", LibDestDir & "apr\", True
-		FindReplaceInFile LibDestDir & "apr\file_io\unix\fullrw.c", "int i;", "unsigned int i;"
-	End If 
-	If FSO.FolderExists(LibDestDir & "apr") Then 
-		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "apr\LibD\apr-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr\apr.vcproj", "Debug"
-				FSO.CopyFile LibDestDir & "apr\include\*.h", LibDestDir & "include"
-			End If
-		End If
-		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "apr\LibR\apr-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr\apr.vcproj", "Release"
-				FSO.CopyFile LibDestDir & "apr\include\*.h", LibDestDir & "include"
-			End If
-		End If
-	Else
-		Wscript.echo "Unable to download APR"
-	End If 
-
-	If Not FSO.FolderExists(LibDestDir & "apr-iconv") Then 
-		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-iconv-1.1.1.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "apr-iconv-1.1.1") Then
-			Wscript.echo "Unable to get apr-iconv from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/apr-iconv-1.1.1.tar.gz", LibDestDir
-		End If
-		RenameFolder LibDestDir & "apr-iconv-1.1.1", "apr-iconv"
-		FSO.CopyFile Utilsdir & "apr\apriconv.vcproj", LibDestDir & "apr-iconv\", True
-	End If 
-	If FSO.FolderExists(LibDestDir & "apr-iconv") Then 
-		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "apr-iconv\LibD\apriconv-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr-iconv\apriconv.vcproj", "Debug"
-				FSO.CopyFile LibDestDir & "apr-iconv\include\*.h", LibDestDir & "include"
-			End If
-		End If
-		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "apr-iconv\LibR\apriconv-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr-iconv\apriconv.vcproj", "Release"
-				FSO.CopyFile LibDestDir & "apr-iconv\include\*.h", LibDestDir & "include"
-			End If
-		End If
-	Else
-		Wscript.echo "Unable to download apr-iconv"
-	End If 
-
+'  ******************
+'  Lib Build Sectiton
+'  ******************
+Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "apr-util") Then 
 		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-util-1.2.2.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "apr-util-1.2.2") Then
@@ -211,7 +184,6 @@ End If
 			End If
 			If Not FSO.FileExists(LibDestDir & "apr-util\LibD\aprutil-1.lib") Then 
 				BuildViaVCBuild LibDestDir & "apr-util\aprutil.vcproj", "Debug"
-				FSO.CopyFile LibDestDir & "apr-util\include\*.h", LibDestDir & "include"
 			End If
 		End If
 		If BuildRelease Then
@@ -223,13 +195,161 @@ End If
 			End If
 			If Not FSO.FileExists(LibDestDir & "apr-util\LibR\aprutil-1.lib") Then 
 				BuildViaVCBuild LibDestDir & "apr-util\aprutil.vcproj", "Release"
-				FSO.CopyFile LibDestDir & "apr-util\include\*.h", LibDestDir & "include"
 			End If
 		End If
 	Else
 		Wscript.echo "Unable to download apr-util"
 	End If 	
+End Sub
 
+Sub BuildLibs_apriconv(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "apr-iconv") Then 
+		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-iconv-1.1.1.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "apr-iconv-1.1.1") Then
+			Wscript.echo "Unable to get apr-iconv from default download location, Trying backup location:"
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/apr-iconv-1.1.1.tar.gz", LibDestDir
+		End If
+		RenameFolder LibDestDir & "apr-iconv-1.1.1", "apr-iconv"
+		FSO.CopyFile Utilsdir & "apr\apriconv.vcproj", LibDestDir & "apr-iconv\", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "apr-iconv") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "apr-iconv\LibD\apriconv-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-iconv\apriconv.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "apr-iconv\LibR\apriconv-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-iconv\apriconv.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download apr-iconv"
+	End If 
+End Sub
+
+Sub BuildLibs_apr(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "apr") Then 
+		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-1.2.2.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "apr-1.2.2") Then
+			Wscript.echo "Unable to get apr from default download location, Trying backup location:"
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/apr-1.2.2.tar.gz", LibDestDir
+		End If
+		RenameFolder LibDestDir & "apr-1.2.2", "apr"
+		FSO.CopyFile Utilsdir & "apr\apr.vcproj", LibDestDir & "apr\", True
+		FindReplaceInFile LibDestDir & "apr\file_io\unix\fullrw.c", "int i;", "unsigned int i;"
+	End If 
+	If FSO.FolderExists(LibDestDir & "apr") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "apr\LibD\apr-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr\apr.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "apr\LibR\apr-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr\apr.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download APR"
+	End If 
+End Sub
+
+Sub BuildLibs_exosip(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "libeXosip2") Then 
+		WgetUnTarGz "http://www.antisip.com/download/libeXosip2-2.2.2.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "libeXosip2-2.2.2") Then
+			Wscript.echo "Unable to get eXosip from default download location, Trying backup location:"
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/libeXosip2-2.2.2.tar.gz", LibDestDir
+		End If
+		RenameFolder LibDestDir & "libeXosip2-2.2.2", "libeXosip2"
+		FindReplaceInFile LibDestDir & "libeXosip2\platform\vsnet\eXosip.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
+	End If
+	If FSO.FolderExists(LibDestDir & "libeXosip2") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "libeXosip2\platform\vsnet\Debug\exosip.lib") Then 
+				BuildViaVCBuild LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "libeXosip2\platform\vsnet\Release\exosip.lib") Then 
+				BuildViaVCBuild LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download exosip"
+	End If 
+End Sub
+
+Sub BuildLibs_libosip2(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "osip") Then
+		WgetUnTarGz "http://www.antisip.com/download/libosip2-2.2.2.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "libosip2-2.2.2") Then
+			Wscript.echo "Unable to get osip from default download location, Trying backup location:"
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/libosip2-2.2.2.tar.gz", LibDestDir
+		End If
+		RenameFolder LibDestDir & "libosip2-2.2.2", "osip"
+		FindReplaceInFile LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
+		FindReplaceInFile LibDestDir & "osip\platform\vsnet\osip2.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
+	End If
+	If FSO.FolderExists(LibDestDir & "osip") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "osip\platform\vsnet\Debug\osip2.lib") Then 
+				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osip2.vcproj", "Debug"
+				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "osip\platform\vsnet\Release\osip2.lib") Then 
+				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osip2.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download Osip"
+	End If 
+End Sub
+
+Sub BuildLibs_jrtplib(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "jthread-1.1.2") Then 
+		WgetUnTarGz "http://research.edm.luc.ac.be/jori/jthread/jthread-1.1.2.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "jthread-1.1.2") Then
+			Wscript.echo "Unable to get JThread from default download location, Trying backup location:"
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/jthread-1.1.2.tar.gz", LibDestDir
+		End If
+		FindReplaceInFile LibDestDir & "jthread-1.1.2\jthread.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
+	End If
+	
+	If Not FSO.FolderExists(LibDestDir & "jrtplib") Then 
+		WgetUnTarGz "http://research.edm.luc.ac.be/jori/jrtplib/jrtplib-3.3.0.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "jrtplib-3.3.0") Then
+			Wscript.echo "Unable to get JRTPLib from default download location, Trying backup location:"
+			WgetUnTarGz "http://www.sofaswitch.org/mikej/jrtplib-3.3.0.tar.gz", LibDestDir
+		End If
+		RenameFolder LibDestDir & "jrtplib-3.3.0", "jrtplib"
+		FindReplaceInFile LibDestDir & "jrtplib\jrtplib.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
+		FindReplaceInFile LibDestDir & "jrtplib\jrtplib.vcproj", "WarningLevel=" & quote & "3" & quote, "WarningLevel=" & quote & "0" & quote
+	End If
+
+	If FSO.FolderExists(LibDestDir & "jrtplib") And FSO.FolderExists(LibDestDir & "jthread-1.1.2") Then 
+		If BuildDebug Then
+			If (Not FSO.FileExists(LibDestDir & "jrtplib\Debug\jrtplib.lib")) Or (Not FSO.FileExists(LibDestDir & "jthread-1.1.2\Debug\jthread.lib")) Then 
+				BuildViaVCBuild LibDestDir & "jthread-1.1.2\jthread.vcproj", "Debug"
+				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If (Not FSO.FileExists(LibDestDir & "jrtplib\Release\jrtplib.lib")) Or (Not FSO.FileExists(LibDestDir & "jthread-1.1.2\Release\jthread.lib")) Then 
+				BuildViaVCBuild LibDestDir & "jthread-1.1.2\jthread.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download JRtplib"
+	End If 
+End Sub
+
+Sub BuildLibs_sqlite(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "sqlite") Then 
 		WgetUnZip "http://www.sqlite.org/sqlite-source-3_2_7.zip", LibDestDir 
 		If Not FSO.FolderExists(LibDestDir & "sqlite-source-3_2_7") Then
@@ -239,30 +359,24 @@ End If
 		RenameFolder LibDestDir & "sqlite-source-3_2_7", "sqlite"
 		FSO.CopyFile Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\", True
 		FindReplaceInFile LibDestDir & "sqlite\sqlite.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
-	'	Upgrade Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\sqlite.vcproj"
-		FSO.CopyFile LibDestDir & "sqlite\*.h", LibDestDir & "include"
 	End If
 	If FSO.FolderExists(LibDestDir & "sqlite") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "sqlite\Debug\sqlite.lib") Then 
-'				UpgradeViaDevEnv LibDestDir & "sqlite\sqlite.vcproj"
 				BuildViaVCBuild LibDestDir & "sqlite\sqlite.vcproj", "Debug"
 			End If
 		End If
 		If BuildRelease Then
 			If Not FSO.FileExists(LibDestDir & "sqlite\Release\sqlite.lib") Then 
-'				UpgradeViaDevEnv LibDestDir & "sqlite\sqlite.vcproj"
 				BuildViaVCBuild LibDestDir & "sqlite\sqlite.vcproj", "Release"
 			End If
 		End If
 	Else
 		Wscript.echo "Unable to download SQLite"
 	End If 
-			
 End Sub
 
-
-Sub BuildLibs_ModXMPPEvent(BuildDebug, BuildRelease)
+Sub BuildLibs_iksemel(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "iksemel") Then 
 		WgetUnTarGz "http://jabberstudio.2nw.net/iksemel/iksemel-1.2.tar.gz", LibDestDir 
 		If Not FSO.FolderExists(LibDestDir & "iksemel-1.2") Then
@@ -289,111 +403,7 @@ Sub BuildLibs_ModXMPPEvent(BuildDebug, BuildRelease)
 	End If 
 End Sub
 
-
-Sub BuildLibs_ModExosip(BuildDebug, BuildRelease)
-
-	If Not FSO.FolderExists(LibDestDir & "osip") Then
-		WgetUnTarGz "http://www.antisip.com/download/libosip2-2.2.2.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "libosip2-2.2.2") Then
-			Wscript.echo "Unable to get osip from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/libosip2-2.2.2.tar.gz", LibDestDir
-		End If
-		RenameFolder LibDestDir & "libosip2-2.2.2", "osip"
-'		FSO.CopyFile Utilsdir & "osipparser2.vcproj", LibDestDir & "osip\platform\vsnet\", True
-'		FSO.CopyFile Utilsdir & "osip2.vcproj", LibDestDir & "osip\platform\vsnet\", True
-		FindReplaceInFile LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
-		FindReplaceInFile LibDestDir & "osip\platform\vsnet\osip2.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
-	End If
-	If FSO.FolderExists(LibDestDir & "osip") Then 
-		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "osip\platform\vsnet\Debug\osip2.lib") Then 
-'				UpgradeViaDevEnv LibDestDir & "osip\platform\vsnet\osip.sln"
-				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osip2.vcproj", "Debug"
-				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", "Debug"
-			End If
-		End If
-		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "osip\platform\vsnet\Release\osip2.lib") Then 
-'				UpgradeViaDevEnv LibDestDir & "osip\platform\vsnet\osip.sln"
-				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osip2.vcproj", "Release"
-				BuildViaVCBuild LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", "Release"
-			End If
-		End If
-	Else
-		Wscript.echo "Unable to download Osip"
-	End If 
-
-	If Not FSO.FolderExists(LibDestDir & "libeXosip2") Then 
-		WgetUnTarGz "http://www.antisip.com/download/libeXosip2-2.2.2.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "libeXosip2-2.2.2") Then
-			Wscript.echo "Unable to get eXosip from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/libeXosip2-2.2.2.tar.gz", LibDestDir
-		End If
-		RenameFolder LibDestDir & "libeXosip2-2.2.2", "libeXosip2"
-		FindReplaceInFile LibDestDir & "libeXosip2\platform\vsnet\eXosip.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
-'		FSO.CopyFile Utilsdir & "eXosip.vcproj", LibDestDir & "libeXosip2\platform\vsnet\", True
-	End If
-	If FSO.FolderExists(LibDestDir & "libeXosip2") Then 
-		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "libeXosip2\platform\vsnet\Debug\exosip.lib") Then 
-'				UpgradeViaDevEnv LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj"
-				BuildViaVCBuild LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj", "Debug"
-			End If
-		End If
-		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "libeXosip2\platform\vsnet\Release\exosip.lib") Then 
-'				UpgradeViaDevEnv LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj"
-				BuildViaVCBuild LibDestDir & "libeXosip2\platform\vsnet\exosip.vcproj", "Release"
-			End If
-		End If
-	Else
-		Wscript.echo "Unable to download exosip"
-	End If 
-
-	If Not FSO.FolderExists(LibDestDir & "jthread-1.1.2") Then 
-		WgetUnTarGz "http://research.edm.luc.ac.be/jori/jthread/jthread-1.1.2.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "jthread-1.1.2") Then
-			Wscript.echo "Unable to get JThread from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/jthread-1.1.2.tar.gz", LibDestDir
-		End If
-		FindReplaceInFile LibDestDir & "jthread-1.1.2\jthread.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
-	End If
-	
-	If Not FSO.FolderExists(LibDestDir & "jrtplib") Then 
-		WgetUnTarGz "http://research.edm.luc.ac.be/jori/jrtplib/jrtplib-3.3.0.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "jrtplib-3.3.0") Then
-			Wscript.echo "Unable to get JRTPLib from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/jrtplib-3.3.0.tar.gz", LibDestDir
-		End If
-		RenameFolder LibDestDir & "jrtplib-3.3.0", "jrtplib"
-		FindReplaceInFile LibDestDir & "jrtplib\jrtplib.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
-		FindReplaceInFile LibDestDir & "jrtplib\jrtplib.vcproj", "WarningLevel=" & quote & "3" & quote, "WarningLevel=" & quote & "0" & quote
-	End If
-	If FSO.FolderExists(LibDestDir & "jrtplib") And FSO.FolderExists(LibDestDir & "jthread-1.1.2") And FSO.FolderExists(LibDestDir & "jrtp4c")Then 
-		If BuildDebug Then
-			If (Not FSO.FileExists(LibDestDir & "jrtp4c\w32\Debug\jrtp4c.lib")) Or (Not FSO.FileExists(LibDestDir & "jrtplib\Debug\jrtplib.lib")) Or (Not FSO.FileExists(LibDestDir & "jthread-1.1.2\Debug\jthread.lib")) Then 
-'				UpgradeViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln"
-				BuildViaVCBuild LibDestDir & "jrtp4c\w32\jrtp4c.vcproj", "Debug"
-				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Debug"
-				BuildViaVCBuild LibDestDir & "jthread-1.1.2\jthread.vcproj", "Debug"
-			End If
-		End If
-		If BuildRelease Then
-			If (Not FSO.FileExists(LibDestDir & "jrtp4c\w32\Release\jrtp4c.lib")) Or (Not FSO.FileExists(LibDestDir & "jrtplib\Release\jrtplib.lib")) Or (Not FSO.FileExists(LibDestDir & "jthread-1.1.2\Release\jthread.lib")) Then 
-'				UpgradeViaDevEnv LibDestDir & "jrtp4c\w32\jrtp4c.sln"
-				BuildViaVCBuild LibDestDir & "jrtp4c\w32\jrtp4c.vcproj", "Release"
-				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Release"
-				BuildViaVCBuild LibDestDir & "jthread-1.1.2\jthread.vcproj", "Release"
-			End If
-		End If
-	Else
-		Wscript.echo "Unable to download JRtplib"
-	End If 
-
-
-End Sub
-
-Sub BuildLibs_ModIaxChan(BuildDebug, BuildRelease)
+Sub BuildLibs_libiax2(BuildDebug, BuildRelease)
 	If FSO.FolderExists(LibDestDir & "iax") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "iax\Debug\libiax2.lib") Then 
@@ -408,10 +418,9 @@ Sub BuildLibs_ModIaxChan(BuildDebug, BuildRelease)
 	Else
 		Wscript.echo "Unable to download libIAX2"
 	End If 
-	
 End Sub
 
-Sub BuildLibs_ModPortAudio(BuildDebug, BuildRelease)
+Sub BuildLibs_portaudio(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "PortAudio") Then 
 		WgetUnZip "http://www.sofaswitch.org/mikej/portaudio_v18_1.zip", LibDestDir
 		RenameFolder LibDestDir & "portaudio_v18_1", "PortAudio"
@@ -429,38 +438,10 @@ Sub BuildLibs_ModPortAudio(BuildDebug, BuildRelease)
 		End If
 	Else
 		Wscript.echo "Unable to download PortAudio"
-	End If 
-	
+	End If
 End Sub
 
-Sub BuildLibs_ModSpeexCodec(BuildDebug, BuildRelease)
-	If Not FSO.FolderExists(LibDestDir & "speex") Then 
-		WgetUnTarGz "http://downloads.us.xiph.org/releases/speex/speex-1.1.11.1.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "speex-1.1.11.1") Then
-			Wscript.echo "Unable to get libspeex from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/speex-1.1.11.1.tar.gz", LibDestDir
-		End If
-		RenameFolder LibDestDir & "speex-1.1.11.1", "speex"
-		FSO.CopyFile Utilsdir & "libspeex.vcproj", LibDestDir & "speex\win32\libspeex\", True
-	End If 
-	If FSO.FolderExists(LibDestDir & "speex") Then 
-		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "speex\win32\libspeex\Debug\libspeex.lib") Then 
-				BuildViaVCBuild LibDestDir & "speex\win32\libspeex\libspeex.vcproj", "Debug"
-			End If
-		End If
-		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "speex\win32\libspeex\Release\libspeex.lib") Then 
-				BuildViaVCBuild LibDestDir & "speex\win32\libspeex\libspeex.vcproj", "Release"
-			End If
-		End If
-	Else
-		Wscript.echo "Unable to download libspeex"
-	End If 
-	
-End Sub
-
-Sub BuildLibs_ModCodecG729(BuildDebug, BuildRelease)
+Sub BuildLibs_libg729(BuildDebug, BuildRelease)
 	If FSO.FolderExists(LibDestDir & "codec\libg729") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "codec\libg729\Debug\libg729.lib") Then 
@@ -477,7 +458,7 @@ Sub BuildLibs_ModCodecG729(BuildDebug, BuildRelease)
 	End If 
 End Sub
 
-Sub BuildLibs_ModCodecGSM(BuildDebug, BuildRelease)
+Sub BuildLibs_libgsm(BuildDebug, BuildRelease)
 	If FSO.FolderExists(LibDestDir & "codec\gsm") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "codec\gsm\Debug\libgsm.lib") Then 
@@ -494,7 +475,7 @@ Sub BuildLibs_ModCodecGSM(BuildDebug, BuildRelease)
 	End If 
 End Sub
 
-Sub BuildLibs_ModSpeexCodec(BuildDebug, BuildRelease)
+Sub BuildLibs_SpeexCodec(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "speex") Then 
 		WgetUnTarGz "http://downloads.us.xiph.org/releases/speex/speex-1.1.11.1.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "speex-1.1.11.1") Then
@@ -518,10 +499,9 @@ Sub BuildLibs_ModSpeexCodec(BuildDebug, BuildRelease)
 	Else
 		Wscript.echo "Unable to download libspeex"
 	End If 
-	
 End Sub
 
-Sub BuildLibs_Modsndfile(BuildDebug, BuildRelease)
+Sub BuildLibs_libsndfile(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "libsndfile") Then 
 		WgetUnTarGz "http://www.sofaswitch.com/mikej/libsndfile-1.0.12.tar.gz", LibDestDir
 		RenameFolder LibDestDir & "libsndfile-1.0.12", "libsndfile"
@@ -541,10 +521,9 @@ Sub BuildLibs_Modsndfile(BuildDebug, BuildRelease)
 	Else
 		Wscript.echo "Unable to download libsndfile"
 	End If 
-	
 End Sub
 
-Sub BuildLibs_Modrawaudio(BuildDebug, BuildRelease)
+Sub BuildLibs_libresample(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "libresample") Then 
 		WgetUnZip "http://www.sofaswitch.com/mikej/libresample-0.1.3.zip", LibDestDir
 		RenameFolder LibDestDir & "libresample-0.1.3", "libresample"
@@ -563,7 +542,6 @@ Sub BuildLibs_Modrawaudio(BuildDebug, BuildRelease)
 	Else
 		Wscript.echo "Unable to download libresample"
 	End If 
-	
 End Sub
 
 Sub BuildLibs_SpiderMonkey(BuildDebug, BuildRelease)
@@ -593,9 +571,11 @@ Sub BuildLibs_SpiderMonkey(BuildDebug, BuildRelease)
 	Else
 		Wscript.echo "Unable to download spidermonkey"
 	End If 
-	
 End Sub
 
+' *******************
+' Utility Subroutines
+' *******************
 
 Sub UpgradeViaDevEnv(ProjectFile)
 	Set oExec = WshShell.Exec(quote & DevEnv & quote & " " & quote & ProjectFile & quote & " /Upgrade ")
@@ -662,14 +642,11 @@ End Sub
 
 
 Sub RenameFolder(FolderName, NewFolderName)
-'On Error Resume Next
 	Set Folder=FSO.GetFolder(FolderName)
 	Folder.Name = NewFolderName
-'On Error GoTo 0
 End Sub
 
 Sub Upgrade(OldFileName, NewFileName)
-'On Error Resume Next
 	If WshSysEnv("VS80COMNTOOLS")<> "" Then 
 		Wscript.echo "8.0"
 		Set vcProj = CreateObject("VisualStudio.VCProjectEngine.8.0")
@@ -682,10 +659,7 @@ Sub Upgrade(OldFileName, NewFileName)
 		WScript.Quit(1)
 	End If
 	End If
-	
-	
-'	WScript.Echo("Converting: "+ OldFileName)
-	
+		
 	Set vcProject = vcProj.LoadProject(OldFileName)
 	If Not FSO.FileExists(vcProject.ProjectFile) Then
 		'   // specify name and location of new project file
@@ -697,7 +671,6 @@ Sub Upgrade(OldFileName, NewFileName)
 '	WScript.Echo("New Project Name: "+vcProject.ProjectFile+"")
 'On Error GoTo 0
 End Sub
-
 
 Sub Unix2dos(FileName)
 	Const OpenAsASCII = 0  ' Opens the file as ASCII (TristateFalse) 
@@ -831,7 +804,6 @@ Sub Wget(URL, DestFolder)
 	oStream.close
 	
 End Sub
-
 
 Function Showpath(folderspec)
 	Set f = FSO.GetFolder(folderspec)

@@ -130,7 +130,7 @@ extern "C" {
 
 		
 		if ((pack = jrtp4c->session->GetNextPacket())) {
-			slen = pack->GetPayloadLength();
+			slen = (int)pack->GetPayloadLength();
 
 			if (slen > datalen) {
 				slen = datalen;

@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D _CRT_SECURE_NO_DEPRECATE"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\libs\include;..\..\..\libs\libeXosip2\include;..\..\..\libs\osip\include;..\..\..\libs\jrtp4c\src;..\..\..\libs\osip\src\osipparser2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\libs\include;..\..\..\libs\libeXosip2\include;..\..\..\libs\osip\include;..\..\..\libs\jrtp4c\src;..\..\..\libs\osip\src\osipparser2;..\..\..\libs\jrtplib\src;&quot;..\..\..\libs\jthread-1.1.2\src&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
@@ -66,7 +66,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIBCMT"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libcpmt.lib eXosip.lib jrtp4c.lib jrtplib.lib jthread.lib osipparser2.lib osip2.lib"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libcpmt.lib eXosip.lib jrtplib.lib jthread.lib osipparser2.lib osip2.lib"
 				ShowProgress="0"
 				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_exosip.dll"
 				LinkIncremental="2"
@@ -130,7 +130,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\libs\include;..\..\..\libs\libeXosip2\include;..\..\..\libs\osip\include;..\..\..\libs\jrtp4c\src;..\..\..\libs\osip\src\osipparser2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\libs\include;..\..\..\libs\libeXosip2\include;..\..\..\libs\osip\include;..\..\..\libs\jrtp4c\src;..\..\..\libs\osip\src\osipparser2;..\..\..\libs\jrtplib\src;&quot;..\..\..\libs\jthread-1.1.2\src&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -149,7 +149,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libcpmt.lib eXosip.lib jrtp4c.lib jrtplib.lib jthread.lib osipparser2.lib osip2.lib"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libcpmt.lib eXosip.lib jrtplib.lib jthread.lib osipparser2.lib osip2.lib"
 				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_exosip.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\..\libs\jrtp4c\w32\Release&quot;;&quot;$(InputDir)..\..\..\libs\jrtplib\Release&quot;;&quot;$(InputDir)..\..\..\libs\jthread-1.1.2\Release&quot;;&quot;$(InputDir)..\..\..\libs\libeXosip2\platform\vsnet\Release&quot;;&quot;$(InputDir)..\..\..\libs\osip\platform\vsnet\Release&quot;"
@@ -194,6 +194,10 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
+			<File
+				RelativePath="..\..\..\libs\jrtp4c\src\jrtp4c.cpp"
+				>
+			</File>
 			<File
 				RelativePath=".\mod_exosip.c"
 				>

@@ -32,6 +32,7 @@
 #if defined(_MSC_VER)
 #define	close		_close
 #define inline __inline
+#define strdup _strdup
 #endif
 
 void gettimeofday(struct timeval *tv, void /*struct timezone*/ *tz);
@@ -567,7 +568,7 @@ int iax_get_netstats(struct iax_session *session, int *rtt, struct iax_netstat *
 
 static int calc_timestamp(struct iax_session *session, unsigned int ts, struct ast_frame *f)
 {
-	int ms;
+	unsigned int ms;
 	time_in_ms_t time_in_ms;
 	int voice = 0;
 	int genuine = 0;
@@ -926,7 +927,7 @@ int iax_init(int preferredportno)
 		    DEBU(G "Already initialized.");
 		    return 0;
 	    }
-	    netfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+	    netfd = (int)socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
 	    if (netfd < 0) {
 		    DEBU(G "Unable to allocate UDP socket\n");
 		    IAXERROR "Unable to allocate UDP socket\n");
@@ -976,7 +977,7 @@ int iax_init(int preferredportno)
 #endif
 	    portno = ntohs(sin.sin_port);
 	}
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 	callnums = rand() % 32767 + 1;
 	transfer_id = rand() % 32767 + 1;
 	DEBU(G "Started on port %d\n", portno);
@@ -1609,7 +1610,7 @@ int iax_hangup(struct iax_session *session, char *byemsg)
 
 int iax_sendurl(struct iax_session *session, char *url)
 {
-	return send_command(session, AST_FRAME_HTML, AST_HTML_URL, 0, (unsigned char *) url, strlen(url), -1);
+	return send_command(session, AST_FRAME_HTML, AST_HTML_URL, 0, (unsigned char *) url, (int)strlen(url), -1);
 }
 
 int iax_ring_announce(struct iax_session *session)
@@ -1653,12 +1654,12 @@ int iax_load_complete(struct iax_session *session)
 
 int iax_send_url(struct iax_session *session, char *url, int link)
 {
-	return send_command(session, AST_FRAME_HTML, link ? AST_HTML_LINKURL : AST_HTML_URL, 0, (unsigned char *) url, strlen(url), -1);
+	return send_command(session, AST_FRAME_HTML, link ? AST_HTML_LINKURL : AST_HTML_URL, 0, (unsigned char *) url, (int)strlen(url), -1);
 }
 
 int iax_send_text(struct iax_session *session, char *text)
 {
-	return send_command(session, AST_FRAME_TEXT, 0, 0, (unsigned char *) text, strlen(text) + 1, -1);
+	return send_command(session, AST_FRAME_TEXT, 0, 0, (unsigned char *) text, (int)strlen(text) + 1, -1);
 }
 
 int iax_send_unlink(struct iax_session *session)
@@ -1687,7 +1688,7 @@ static int iax_send_pong(struct iax_session *session, unsigned int ts)
 	    iax_ie_append_int(&ied,IAX_IE_RR_LOSS, 
 		((0xff & (stats.losspct/1000)) << 24 | (stats.frames_lost & 0x00ffffff)));
 	    iax_ie_append_int(&ied,IAX_IE_RR_PKTS, stats.frames_in);
-	    iax_ie_append_short(&ied,IAX_IE_RR_DELAY, stats.current - stats.min);
+	    iax_ie_append_short(&ied,IAX_IE_RR_DELAY, (unsigned short)(stats.current - stats.min));
 	    iax_ie_append_int(&ied,IAX_IE_RR_DROPPED, stats.frames_dropped);
 	    iax_ie_append_int(&ied,IAX_IE_RR_OOO, stats.frames_ooo);
 	}
@@ -1767,8 +1768,8 @@ int iax_auth_reply(struct iax_session *session, char *password, char *challenge,
 	memset(&ied, 0, sizeof(ied));
 	if ((methods & IAX_AUTH_MD5) && challenge) {
 		MD5Init(&md5);
-		MD5Update(&md5, (const unsigned char *) challenge, strlen(challenge));
-		MD5Update(&md5, (const unsigned char *) password, strlen(password));
+		MD5Update(&md5, (const unsigned char *) challenge, (unsigned int)strlen(challenge));
+		MD5Update(&md5, (const unsigned char *) password, (unsigned int)strlen(password));
 		MD5Final((unsigned char *) reply, &md5);
 		memset(realreply, 0, sizeof(realreply));
 		convert_reply(realreply, (unsigned char *) reply);
@@ -1790,8 +1791,8 @@ static int iax_regauth_reply(struct iax_session *session, char *password, char *
 	iax_ie_append_short(&ied, IAX_IE_REFRESH, session->refresh);
 	if ((methods & IAX_AUTHMETHOD_MD5) && challenge) {
 		MD5Init(&md5);
-		MD5Update(&md5, (const unsigned char *) challenge, strlen(challenge));
-		MD5Update(&md5, (const unsigned char *) password, strlen(password));
+		MD5Update(&md5, (const unsigned char *) challenge, (unsigned int)strlen(challenge));
+		MD5Update(&md5, (const unsigned char *) password, (unsigned int)strlen(password));
 		MD5Final((unsigned char *) reply, &md5);
 		memset(realreply, 0, sizeof(realreply));
 		convert_reply(realreply, (unsigned char *) reply);
@@ -1852,7 +1853,7 @@ char iax_pref_codec_add(struct iax_session *session, unsigned int format)
 void iax_pref_codec_del(struct iax_session *session, unsigned int format)
 {
 	int diff = (int) 'A';
-	int x;
+	size_t x;
 	char old[32];
 	char remove = which_bit(format) + diff;
 
@@ -2539,7 +2540,7 @@ static struct iax_event *iax_header_to_event(struct iax_session *session,
 				session->capability = e->ies.capability;
 				if (e->ies.codec_prefs) {
 					strncpy(session->codec_order, e->ies.codec_prefs, sizeof(session->codec_order));
-					session->codec_order_len = strlen(session->codec_order);
+					session->codec_order_len = (int)strlen(session->codec_order);
 				}
 				e->etype = IAX_EVENT_CONNECT;
 				e = schedule_delivery(e, ts, updatehistory);
