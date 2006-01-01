@@ -29,6 +29,10 @@
  * switch_core.h -- Core Library
  *
  */
+/*! \file switch_core.h
+    \brief Core Library
+*/
+
 #ifndef SWITCH_CORE_H
 #define SWITCH_CORE_H
 

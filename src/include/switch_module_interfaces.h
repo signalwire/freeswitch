@@ -29,6 +29,9 @@
  * switch_module_interfaces.h -- Module Interface Definitions
  *
  */
+/*! \file switch_module_interfaces.h
+    \brief Module Interface Definitions
+*/
 #ifndef SWITCH_MODULE_INTERFACES_H
 #define SWITCH_MODULE_INTERFACES_H
 

@@ -29,6 +29,10 @@
  * switch_console.h -- Simple Console
  *
  */
+/*! \file switch_console.h
+    \brief Simple Console
+*/
+
 #ifndef SWITCH_CONSOLE_H
 #define SWITCH_CONSOLE_H
 

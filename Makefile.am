@@ -119,6 +119,8 @@ install_mod: modules
 	@/bin/cp -f src/mod/*/mod_*.so $(PREFIX)/mod >/dev/null 2<&1 || echo No modules to copy.
 	@echo done
 
+dox:
+	doxygen $(PWD)/docs/Doxygen.conf
 
 eclean: clean
 	rm -f `find . -type f -name \*~`

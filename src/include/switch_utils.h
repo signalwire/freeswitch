@@ -29,6 +29,9 @@
  * switch_utils.h -- Compatability and Helper Code
  *
  */
+/*! \file switch_utils.h
+    \brief Compatability and Helper Code
+*/
 #ifndef SWITCH_UTILS_H
 #define SWITCH_UTILS_H
 

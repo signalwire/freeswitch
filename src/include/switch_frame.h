@@ -29,6 +29,10 @@
  * switch_frame.h -- Media Frame Structure
  *
  */
+/*! \file switch_frame.h
+    \brief Media Frame Structure
+*/
+
 #ifndef SWITCH_FRAME_H
 #define SWITCH_FRAME_H
 

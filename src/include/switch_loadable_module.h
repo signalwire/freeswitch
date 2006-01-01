@@ -29,6 +29,10 @@
  * switch_loadable_module.h -- Loadable Modules
  *
  */
+/*! \file switch_loadable_module.h
+    \brief Loadable Modules
+*/
+
 #ifndef SWITCH_LOADABLE_MODULE_H
 #define SWITCH_LOADABLE_MODULE_H
 

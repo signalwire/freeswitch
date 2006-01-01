@@ -29,6 +29,10 @@
  * switch_event.h -- Event System
  *
  */
+/*! \file switch_event.h
+    \brief Event System
+*/
+
 #ifndef SWITCH_EVENT_H
 #define SWITCH_EVENT_H
 

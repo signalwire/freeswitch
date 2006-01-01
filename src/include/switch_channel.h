@@ -29,6 +29,10 @@
  * switch_channel.h -- Media Channel Interface
  *
  */
+/*! \file switch_channel.h
+    \brief Media Channel Interface
+*/
+
 #ifndef SWITCH_CHANNEL_H
 #define SWITCH_CHANNEL_H
 

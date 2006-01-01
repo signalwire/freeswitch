@@ -29,6 +29,9 @@
  * switch_mutex.h -- Mutex Locking
  *
  */
+/*! \file switch_mutex.h
+    \brief Mutex Locking
+*/
 #ifndef SWITCH_MUTEX_H
 #define SWITCH_MUTEX_H
 

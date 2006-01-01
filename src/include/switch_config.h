@@ -29,6 +29,10 @@
  * switch_config.h -- Configuration File Parser
  *
  */
+/*! \file switch_config.h
+    \brief Configuration File Parser
+*/
+
 #ifndef SWITCH_CONFIG_H
 #define SWITCH_CONFIG_H
 

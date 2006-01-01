@@ -25,9 +25,12 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  *
- * switch_apr.h -- APR Header
+ * switch_apr.h -- APR includes header
  *
  */
+/*! \file switch_apr.h
+    \brief APR includes header
+*/
 #ifndef SWITCH_APR_H
 #define SWITCH_APR_H
 

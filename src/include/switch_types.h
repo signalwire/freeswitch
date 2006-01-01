@@ -28,6 +28,9 @@
  * switch_types.h -- Data Types
  *
  */
+/*! \file switch_types.h
+    \brief Data Types
+*/
 #ifndef SWITCH_TYPES_H
 #define SWITCH_TYPES_H
 

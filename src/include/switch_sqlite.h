@@ -28,6 +28,9 @@
  * switch_sqlite.h -- Sqlite Header
  *
  */
+/*! \file switch_sqlite.h
+    \brief Sqlite Header
+*/
 #ifndef SWITCH_SQLITE_H
 #define SWITCH_SQLITE_H
 

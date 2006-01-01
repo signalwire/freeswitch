@@ -29,6 +29,10 @@
  * switch_caller.h -- Caller Identification
  *
  */
+/*! \file switch_caller.h
+    \brief Caller Identification
+*/
+
 #ifndef SWITCH_CALLER_H
 #define SWITCH_CALLER_H
 

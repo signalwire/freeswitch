@@ -28,6 +28,9 @@
  * switch_platform.h -- Platform Specific Header
  *
  */
+/*! \file switch_platform.h
+    \brief Platform Specific Header
+*/
 #ifndef SWITCH_PLATFORM_H
 #define SWITCH_PLATFORM_H
 
