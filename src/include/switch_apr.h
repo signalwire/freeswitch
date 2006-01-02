@@ -83,17 +83,11 @@ extern "C" {
 #define SWITCH_POLLHUP APR_POLLHUP			/**< Hangup occurred */
 #define SWITCH_POLLNVAL APR_POLLNVAL		/**< Descriptior invalid */
 	
-/** Opaque thread-local mutex structure */
-typedef apr_thread_mutex_t switch_mutex_t;
-
 /** Abstract type for hash tables. */
 typedef apr_hash_t switch_hash;
 
 /** Abstract type for scanning hash tables. */
 typedef apr_hash_index_t switch_hash_index_t;
-
-/** The fundamental pool type */
-typedef apr_pool_t switch_memory_pool;
 
 /** number of microseconds since 00:00:00 january 1, 1970 UTC */
 typedef apr_time_t switch_time_t;
@@ -212,14 +206,14 @@ typedef apr_file_t switch_file_t;
  * @remark If perm is SWITCH_FPROT_OS_DEFAULT and the file is being created,
  * appropriate default permissions will be used.
  */
-apr_status_t switch_file_open(switch_file_t **newf, const char *fname, apr_int32_t flag, switch_fileperms_t perm, switch_pool_t *pool);
+DoxyDefine(apr_status_t switch_file_open(switch_file_t **newf, const char *fname, apr_int32_t flag, switch_fileperms_t perm, switch_pool_t *pool);)
 #define switch_file_open apr_file_open
 
 /**
  * Close the specified file.
  * @param file The file descriptor to close.
  */
-apr_status_t switch_file_close(switch_file_t *file);
+DoxyDefine(apr_status_t switch_file_close(switch_file_t *file);)
 #define switch_file_close apr_file_close
 
 /**
@@ -239,7 +233,7 @@ apr_status_t switch_file_close(switch_file_t *file);
  * @remark It is not possible for both bytes to be read and an APR_EOF
  * or other error to be returned.  APR_EINTR is never returned.
  */
-apr_status_t switch_file_read(switch_file_t *thefile, void *buf, switch_size_t *nbytes);
+DoxyDefine(apr_status_t switch_file_read(switch_file_t *thefile, void *buf, switch_size_t *nbytes);)
 #define switch_file_read apr_file_read
 
 /**
@@ -257,7 +251,7 @@ apr_status_t switch_file_read(switch_file_t *thefile, void *buf, switch_size_t *
  * @remark It is possible for both bytes to be written and an error to
  * be returned.  APR_EINTR is never returned.
  */
-apr_status_t swich_file_write(switch_file_t *thefile, const void *buf, switch_size_t *nbytes);
+DoxyDefine(apr_status_t switch_file_write(switch_file_t *thefile, const void *buf, switch_size_t *nbytes);)
 #define switch_file_write apr_file_write
 
 /** @} */
@@ -284,7 +278,7 @@ typedef apr_thread_cond_t switch_thread_cond_t;
  *        will be stored.
  * @param pool the pool from which to allocate the mutex.
  */
-apr_status_t switch_thread_cond_create(switch_thread_cond_t **cond, switch_pool_t *pool);
+DoxyDefine(apr_status_t switch_thread_cond_create(switch_thread_cond_t **cond, switch_pool_t *pool);)
 #define switch_thread_cond_create apr_thread_cond_create
 
 /**
@@ -299,7 +293,7 @@ apr_status_t switch_thread_cond_create(switch_thread_cond_t **cond, switch_pool_
  *        is released while the thread is asleep, and is again acquired before
  *        returning from this function.
  */
-apr_status_t switch_thread_cond_wait(switch_thread_cond_t *cond, switch_thread_mutex_t *mutex);
+DoxyDefine(apr_status_t switch_thread_cond_wait(switch_thread_cond_t *cond, switch_thread_mutex_t *mutex);)
 #define switch_thread_cond_wait apr_thread_cond_wait
 
 /**
@@ -318,7 +312,7 @@ apr_status_t switch_thread_cond_wait(switch_thread_cond_t *cond, switch_thread_m
  *        will wake up before this time, otherwise the error APR_TIMEUP
  *        is returned.
  */
-apr_status_t switch_thread_cond_timedwait(switch_thread_cond_t *cond, switch_thread_mutex_t *mutex, switch_interval_time_t timeout);
+DoxyDefine(apr_status_t switch_thread_cond_timedwait(switch_thread_cond_t *cond, switch_thread_mutex_t *mutex, switch_interval_time_t timeout);)
 #define switch_thread_cond_timedwait apr_thread_cond_timedwait
 
 /**
@@ -328,7 +322,7 @@ apr_status_t switch_thread_cond_timedwait(switch_thread_cond_t *cond, switch_thr
  * is desired, that mutex must be locked while calling this function.
  * @param cond the condition variable on which to produce the signal.
  */
-apr_status_t switch_thread_cond_signal(switch_thread_cond_t *cond);
+DoxyDefine(apr_status_t switch_thread_cond_signal(switch_thread_cond_t *cond);)
 #define switch_thread_cond_signal apr_thread_cond_signal
 
 /**
@@ -337,14 +331,14 @@ apr_status_t switch_thread_cond_signal(switch_thread_cond_t *cond);
  * the associated mutex. This will happen in a serialized manner.
  * @param cond the condition variable on which to produce the broadcast.
  */
-apr_status_t switch_thread_cond_broadcast(switch_thread_cond_t *cond);
+DoxyDefine(apr_status_t switch_thread_cond_broadcast(switch_thread_cond_t *cond);)
 #define switch_thread_cond_broadcast apr_thread_cond_broadcast
 
 /**
  * Destroy the condition variable and free the associated memory.
  * @param cond the condition variable to destroy.
  */
-apr_status_t switch_thread_cond_destroy(switch_thread_cond_t *cond);
+DoxyDefine(apr_status_t switch_thread_cond_destroy(switch_thread_cond_t *cond);)
 #define switch_thread_cond_destroy apr_thread_cond_destroy
 
 /** @} */
@@ -354,13 +348,6 @@ apr_status_t switch_thread_cond_destroy(switch_thread_cond_t *cond);
  * @ingroup APR 
  * @{
  */
-
-/** Lock Flags */
-typedef enum {
-	SWITCH_MUTEX_DEFAULT = APR_THREAD_MUTEX_DEFAULT	/**< platform-optimal lock behavior */,
-	SWITCH_MUTEX_NESTED = APR_THREAD_MUTEX_NESTED	/**< enable nested (recursive) locks */,
-	SWITCH_MUTEX_UNNESTED = APR_THREAD_MUTEX_UNNESTED	/**< disable nested locks */
-} switch_lock_flag;
 
 /** Opaque Thread structure. */
 typedef apr_thread_t switch_thread;
@@ -380,7 +367,7 @@ typedef apr_thread_start_t switch_thread_start_t;
  * @param new_attr The newly created threadattr.
  * @param cont The pool to use
  */
-apr_status_t switch_threadattr_create(switch_threadattr_t **new_attr, switch_pool_t *cont);
+DoxyDefine(apr_status_t switch_threadattr_create(switch_threadattr_t **new_attr, switch_pool_t *cont);)
 #define switch_threadattr_create apr_threadattr_create
 
 /**
@@ -388,7 +375,7 @@ apr_status_t switch_threadattr_create(switch_threadattr_t **new_attr, switch_poo
  * @param attr The threadattr to affect 
  * @param on Non-zero if detached threads should be created.
  */
-apr_status_t switch_threadattr_detach_set(switch_threadattr_t *attr, switch_int32_t on);
+DoxyDefine(apr_status_t switch_threadattr_detach_set(switch_threadattr_t *attr, switch_int32_t on);)
 #define switch_threadattr_detach_set apr_threadattr_detach_set
 
 /**
@@ -399,7 +386,7 @@ apr_status_t switch_threadattr_detach_set(switch_threadattr_t *attr, switch_int3
  * @param data Any data to be passed to the starting function
  * @param cont The pool to use
  */
-apr_status_t switch_thread_create(switch_thread_t **new_thread, switch_threadattr_t *attr, switch_thread_start_t func, void *data, switch_pool_t *cont);
+DoxyDefine(apr_status_t switch_thread_create(switch_thread_t **new_thread, switch_threadattr_t *attr, switch_thread_start_t func, void *data, switch_pool_t *cont);)
 #define switch_thread_create apr_thread_create
 
 /** @} */
@@ -426,7 +413,7 @@ typedef apr_sockaddr_t switch_sockaddr_t;
  * @param protocol The protocol of the socket (e.g., APR_PROTO_TCP).
  * @param cont The pool to use
  */
-apr_status_t switch_socket_create(switch_socket_t **new_sock, int family, int type, int protocol, switch_pool_t *cont);
+DoxyDefine(apr_status_t switch_socket_create(switch_socket_t **new_sock, int family, int type, int protocol, switch_pool_t *cont);)
 #define switch_socket_create apr_socket_create
 
 /**
@@ -442,14 +429,14 @@ apr_status_t switch_socket_create(switch_socket_t **new_sock, int family, int ty
  * @remark This does not actually close the socket descriptor, it just
  *      controls which calls are still valid on the socket.
  */
-apr_status_t switch_socket_shutdown(switch_socket_t *thesocket, switch_shutdown_how_e how);
+DoxyDefine(apr_status_t switch_socket_shutdown(switch_socket_t *thesocket, switch_shutdown_how_e how);)
 #define switch_socket_shutdown apr_socket_shutdown
 
 /**
  * Close a socket.
  * @param thesocket The socket to close 
  */
-apr_status_t switch_socket_close(switch_socket_t *thesocket);
+DoxyDefine(apr_status_t switch_socket_close(switch_socket_t *thesocket);)
 #define switch_socket_close apr_socket_close
 
 /**
@@ -459,7 +446,7 @@ apr_status_t switch_socket_close(switch_socket_t *thesocket);
  * @remark This may be where we will find out if there is any other process
  *      using the selected port.
  */
-apr_status_t switch_socket_bind(switch_socket_t *sock, switch_sockaddr_t *sa);
+DoxyDefine(apr_status_t switch_socket_bind(switch_socket_t *sock, switch_sockaddr_t *sa);)
 #define switch_socket_bind apr_socket_bind
 
 /**
@@ -469,7 +456,7 @@ apr_status_t switch_socket_bind(switch_socket_t *sock, switch_sockaddr_t *sa);
  *                listen queue.  If this value is less than zero, the listen
  *                queue size is set to zero.  
  */
-apr_status_t switch_socket_listen(switch_socket_t *sock, switch_int32_t backlog);
+DoxyDefine(apr_status_t switch_socket_listen(switch_socket_t *sock, switch_int32_t backlog);)
 #define switch_socket_listen apr_socket_listen
 
 /**
@@ -480,7 +467,7 @@ apr_status_t switch_socket_listen(switch_socket_t *sock, switch_int32_t backlog)
  * @param sock The socket we are listening on.
  * @param connection_pool The pool for the new socket.
  */
-apr_status_t switch_socket_accept(switch_socket_t **new_sock, switch_socket_t *sock, switch_pool_t *connection_pool);
+DoxyDefine(apr_status_t switch_socket_accept(switch_socket_t **new_sock, switch_socket_t *sock, switch_pool_t *connection_pool);)
 #define switch_socket_accept apr_socket_accept
 
 /**
@@ -489,7 +476,7 @@ apr_status_t switch_socket_accept(switch_socket_t **new_sock, switch_socket_t *s
  * @param sock The socket we wish to use for our side of the connection 
  * @param sa The address of the machine we wish to connect to.
  */
-apr_status_t switch_socket_connect(switch_socket_t *sock, switch_sockaddr_t *sa);
+DoxyDefine(apr_status_t switch_socket_connect(switch_socket_t *sock, switch_sockaddr_t *sa);)
 #define switch_socket_connect apr_socket_connect
 
 /**
@@ -515,12 +502,12 @@ apr_status_t switch_socket_connect(switch_socket_t *sock, switch_sockaddr_t *sa)
  * </PRE>
  * @param p The pool for the apr_sockaddr_t and associated storage.
  */
-apr_status_t switch_sockaddr_info_get(switch_sockaddr_t **sa,
-										const char *hostname,
-										switch_int32_t family,
-										switch_port_t port,
-										switch_int32_t flags,
-										switch_pool_t *p);
+DoxyDefine(apr_status_t switch_sockaddr_info_get(switch_sockaddr_t **sa,
+									  const char *hostname,
+									  switch_int32_t family,
+									  switch_port_t port,
+									  switch_int32_t flags,
+									  switch_pool_t *p);)
 #define switch_sockaddr_info_get apr_sockaddr_info_get
 
 /**
@@ -529,9 +516,9 @@ apr_status_t switch_sockaddr_info_get(switch_sockaddr_t **sa,
  * @param sa The apr_sockaddr_t.
  * @param flags Special processing flags.
  */
-apr_status_t switch_getnameinfo(char **hostname,
+DoxyDefine(apr_status_t switch_getnameinfo(char **hostname,
 									switch_sockaddr_t *sa,
-									switch_int32_t flags);
+									switch_int32_t flags);)
 #define switch_getnameinfo apr_getnameinfo
 
 /**
@@ -564,11 +551,11 @@ apr_status_t switch_getnameinfo(char **hostname,
  *         required, check for addr == NULL in addition to checking the 
  *         return code.
  */
-apr_status_t switch_parse_addr_port(char **addr,
+DoxyDefine(apr_status_t switch_parse_addr_port(char **addr,
 									char **scope_id,
 									switch_port_t *port,
 									const char *str,
-									switch_pool_t *p);
+									switch_pool_t *p);)
 #define switch_parse_addr_port apr_parse_addr_port
 
 /**
@@ -579,7 +566,7 @@ apr_status_t switch_parse_addr_port(char **addr,
  * @param cont The pool to use.
  * @remark If the buffer was not large enough, an error will be returned.
  */
-apr_status_t switch_gethostname(char *buf, int len, switch_pool_t *cont);
+DoxyDefine(apr_status_t switch_gethostname(char *buf, int len, switch_pool_t *cont);)
 #define switch_gethostname apr_gethostname
 
 /**
@@ -588,8 +575,8 @@ apr_status_t switch_gethostname(char *buf, int len, switch_pool_t *cont);
  * @param key The key to associate with the user data.
  * @param sock The currently open socket.
  */
-apr_status_t switch_socket_data_get(void **data, const char *key,
-										switch_socket_t *sock);
+DoxyDefine(apr_status_t switch_socket_data_get(void **data, const char *key,
+										switch_socket_t *sock);)
 #define switch_socket_data_get apr_socket_data_get
 
 /**
@@ -599,39 +586,390 @@ apr_status_t switch_socket_data_get(void **data, const char *key,
  * @param key The key to associate with the data.
  * @param cleanup The cleanup to call when the socket is destroyed.
  */
-apr_status_t switch_socket_data_set(switch_socket_t *sock, void *data,
-											const char *key,
-											switch_status_t (*cleanup)(void*));
+DoxyDefine(apr_status_t switch_socket_data_set(switch_socket_t *sock, 
+									void *data,
+									const char *key,
+									switch_status_t (*cleanup)(void*));)
 #define switch_socket_data_set apr_socket_data_set
 
+/**
+ * Send data over a network.
+ * @param sock The socket to send the data over.
+ * @param buf The buffer which contains the data to be sent. 
+ * @param len On entry, the number of bytes to send; on exit, the number
+ *            of bytes sent.
+ * @remark
+ * <PRE>
+ * This functions acts like a blocking write by default.  To change 
+ * this behavior, use apr_socket_timeout_set() or the APR_SO_NONBLOCK
+ * socket option.
+ *
+ * It is possible for both bytes to be sent and an error to be returned.
+ *
+ * APR_EINTR is never returned.
+ * </PRE>
+ */
+DoxyDefine(apr_status_t switch_socket_send(switch_socket_t *sock,
+								const char *buf,
+								apr_size_t *len);)
 #define switch_socket_send apr_socket_send
+
+/**
+ * Send multiple packets of data over a network.
+ * @param sock The socket to send the data over.
+ * @param vec The array of iovec structs containing the data to send 
+ * @param nvec The number of iovec structs in the array
+ * @param len Receives the number of bytes actually written
+ * @remark
+ * <PRE>
+ * This functions acts like a blocking write by default.  To change 
+ * this behavior, use apr_socket_timeout_set() or the APR_SO_NONBLOCK
+ * socket option.
+ * The number of bytes actually sent is stored in argument 3.
+ *
+ * It is possible for both bytes to be sent and an error to be returned.
+ *
+ * APR_EINTR is never returned.
+ * </PRE>
+ */
+DoxyDefine(apr_status_t switch_socket_sendv(switch_socket_t *sock, 
+                                           const struct iovec *vec,
+                                           apr_int32_t nvec, apr_size_t *len);)
 #define switch_socket_sendv apr_socket_sendv
+
+/**
+ * @param sock The socket to send from
+ * @param where The apr_sockaddr_t describing where to send the data
+ * @param flags The flags to use
+ * @param buf  The data to send
+ * @param len  The length of the data to send
+ */
+DoxyDefine(apr_status_t switch_socket_sendto(switcj_socket_t *sock, 
+								  apr_sockaddr_t *where,
+								  apr_int32_t flags,
+								  const char *buf, 
+								  apr_size_t *len);)
 #define switch_socket_sendto apr_socket_sendto
+
+/**
+ * @param from The apr_sockaddr_t to fill in the recipient info
+ * @param sock The socket to use
+ * @param flags The flags to use
+ * @param buf  The buffer to use
+ * @param len  The length of the available buffer
+ */
+
+DoxyDefine(apr_status_t switch_socket_recvfrom(switch_sockaddr_t *from, 
+									switch_socket_t *sock,
+									apr_int32_t flags, 
+									char *buf, 
+									apr_size_t *len);)
 #define switch_socket_recvfrom apr_socket_recvfrom
+
+/**
+ * Send a file from an open file descriptor to a socket, along with 
+ * optional headers and trailers
+ * @param sock The socket to which we're writing
+ * @param file The open file from which to read
+ * @param hdtr A structure containing the headers and trailers to send
+ * @param offset Offset into the file where we should begin writing
+ * @param len (input)  - Number of bytes to send from the file 
+ *            (output) - Number of bytes actually sent, 
+ *                       including headers, file, and trailers
+ * @param flags APR flags that are mapped to OS specific flags
+ * @remark This functions acts like a blocking write by default.  To change 
+ *         this behavior, use apr_socket_timeout_set() or the
+ *         APR_SO_NONBLOCK socket option.
+ * The number of bytes actually sent is stored in the len parameter.
+ * The offset parameter is passed by reference for no reason; its
+ * value will never be modified by the apr_socket_sendfile() function.
+ */
+DoxyDefine(apr_status_t switch_socket_sendfile(apr_socket_t *sock, 
+                                              switch_file_t *file,
+                                              apr_hdtr_t *hdtr,
+                                              apr_off_t *offset,
+                                              apr_size_t *len,
+                                              apr_int32_t flags);)
 #define switch_socket_sendfile apr_socket_sendfile
+
+/**
+ * Read data from a network.
+ * @param sock The socket to read the data from.
+ * @param buf The buffer to store the data in. 
+ * @param len On entry, the number of bytes to receive; on exit, the number
+ *            of bytes received.
+ * @remark
+ * <PRE>
+ * This functions acts like a blocking read by default.  To change 
+ * this behavior, use apr_socket_timeout_set() or the APR_SO_NONBLOCK
+ * socket option.
+ * The number of bytes actually received is stored in argument 3.
+ *
+ * It is possible for both bytes to be received and an APR_EOF or
+ * other error to be returned.
+ *
+ * APR_EINTR is never returned.
+ * </PRE>
+ */
+DoxyDefine(apr_status_t switch_socket_recv(switch_socket_t *sock, 
+								char *buf, 
+								apr_size_t *len);)
 #define switch_socket_recv apr_socket_recv
+
+/**
+ * Setup socket options for the specified socket
+ * @param sock The socket to set up.
+ * @param opt The option we would like to configure.  One of:
+ * <PRE>
+ *            APR_SO_DEBUG      --  turn on debugging information 
+ *            APR_SO_KEEPALIVE  --  keep connections active
+ *            APR_SO_LINGER     --  lingers on close if data is present
+ *            APR_SO_NONBLOCK   --  Turns blocking on/off for socket
+ *                                  When this option is enabled, use
+ *                                  the APR_STATUS_IS_EAGAIN() macro to
+ *                                  see if a send or receive function
+ *                                  could not transfer data without
+ *                                  blocking.
+ *            APR_SO_REUSEADDR  --  The rules used in validating addresses
+ *                                  supplied to bind should allow reuse
+ *                                  of local addresses.
+ *            APR_SO_SNDBUF     --  Set the SendBufferSize
+ *            APR_SO_RCVBUF     --  Set the ReceiveBufferSize
+ * </PRE>
+ * @param on Value for the option.
+ */
+DoxyDefine(apr_status_t switch_socket_opt_set(switch_socket_t *sock,
+								   apr_int32_t opt, 
+								   apr_int32_t on);)
 #define switch_socket_opt_set apr_socket_opt_set
+
+/**
+ * Setup socket timeout for the specified socket
+ * @param sock The socket to set up.
+ * @param t Value for the timeout.
+ * <PRE>
+ *   t > 0  -- read and write calls return APR_TIMEUP if specified time
+ *             elapsess with no data read or written
+ *   t == 0 -- read and write calls never block
+ *   t < 0  -- read and write calls block
+ * </PRE>
+ */
+DoxyDefine(apr_status_t switch_socket_timeout_set(switch_socket_t *sock,
+									   apr_interval_time_t t);)
 #define switch_socket_timeout_set apr_socket_timeout_set
+
+/**
+ * Query socket options for the specified socket
+ * @param sock The socket to query
+ * @param opt The option we would like to query.  One of:
+ * <PRE>
+ *            APR_SO_DEBUG      --  turn on debugging information 
+ *            APR_SO_KEEPALIVE  --  keep connections active
+ *            APR_SO_LINGER     --  lingers on close if data is present
+ *            APR_SO_NONBLOCK   --  Turns blocking on/off for socket
+ *            APR_SO_REUSEADDR  --  The rules used in validating addresses
+ *                                  supplied to bind should allow reuse
+ *                                  of local addresses.
+ *            APR_SO_SNDBUF     --  Set the SendBufferSize
+ *            APR_SO_RCVBUF     --  Set the ReceiveBufferSize
+ *            APR_SO_DISCONNECTED -- Query the disconnected state of the socket.
+ *                                  (Currently only used on Windows)
+ * </PRE>
+ * @param on Socket option returned on the call.
+ */
+DoxyDefine(apr_status_t switch_socket_opt_get(switch_socket_t *sock, 
+									apr_int32_t opt, apr_int32_t *on);)
 #define switch_socket_opt_get apr_socket_opt_get
+
+/**
+ * Query socket timeout for the specified socket
+ * @param sock The socket to query
+ * @param t Socket timeout returned from the query.
+ */
+DoxyDefine(apr_status_t switch_socket_timeout_get(switch_socket_t *sock, 
+                                                 apr_interval_time_t *t);)
 #define switch_socket_timeout_get apr_socket_timeout_get
+
+/**
+ * Query the specified socket if at the OOB/Urgent data mark
+ * @param sock The socket to query
+ * @param atmark Is set to true if socket is at the OOB/urgent mark,
+ *               otherwise is set to false.
+ */
+DoxyDefine(apr_status_t switch_socket_atmark(switch_socket_t *sock, 
+								  int *atmark);)
 #define switch_socket_atmark apr_socket_atmark
+
+/**
+ * Return an apr_sockaddr_t from an apr_socket_t
+ * @param sa The returned apr_sockaddr_t.
+ * @param which Which interface do we want the apr_sockaddr_t for?
+ * @param sock The socket to use
+ */
+DoxyDefine(apr_status_t switch_socket_addr_get(switch_sockaddr_t **sa,
+									apr_interface_e which,
+									switch_socket_t *sock);)
 #define switch_socket_addr_get apr_socket_addr_get
+
+/**
+ * Return the IP address (in numeric address string format) in
+ * an APR socket address.  APR will allocate storage for the IP address 
+ * string from the pool of the apr_sockaddr_t.
+ * @param addr The IP address.
+ * @param sockaddr The socket address to reference.
+ */
+DoxyDefine(apr_status_t switch_sockaddr_ip_get(char **addr, 
+									switch_sockaddr_t *sockaddr);)
 #define switch_sockaddr_ip_get apr_sockaddr_ip_get
+
+/**
+ * See if the IP addresses in two APR socket addresses are
+ * equivalent.  Appropriate logic is present for comparing
+ * IPv4-mapped IPv6 addresses with IPv4 addresses.
+ *
+ * @param addr1 One of the APR socket addresses.
+ * @param addr2 The other APR socket address.
+ * @remark The return value will be non-zero if the addresses
+ * are equivalent.
+ */
+DoxyDefine(int switch_sockaddr_equal(const switch_sockaddr_t *addr1, 
+						  const switch_sockaddr_t *addr2);)
 #define switch_sockaddr_equal apr_sockaddr_equal
+
+/**
+* Return the type of the socket.
+* @param sock The socket to query.
+* @param type The returned type (e.g., SOCK_STREAM).
+*/
+DoxyDefine(apr_status_t switch_socket_type_get(switch_socket_t *sock, 
+									int *type);)
 #define switch_socket_type_get apr_socket_type_get
+
+/**
+ * Given an switch_sockaddr_t and a service name, set the port for the service
+ * @param sockaddr The switch_sockaddr_t that will have its port set
+ * @param servname The name of the service you wish to use
+ */
+DoxyDefine(apr_status_t switch_getservbyname(switch_sockaddr_t *sockaddr, 
+								  const char *servname);)
 #define switch_getservbyname apr_getservbyname
+
+/**
+ * Build an ip-subnet representation from an IP address and optional netmask or
+ * number-of-bits.
+ * @param ipsub The new ip-subnet representation
+ * @param ipstr The input IP address string
+ * @param mask_or_numbits The input netmask or number-of-bits string, or NULL
+ * @param p The pool to allocate from
+ */
+DoxyDefine(apr_status_t switch_ipsubnet_create(apr_ipsubnet_t **ipsub, 
+									const char *ipstr, 
+									const char *mask_or_numbits, 
+									switch_pool_t *p);)
 #define switch_ipsubnet_create apr_ipsubnet_create
+
+/**
+ * Test the IP address in an apr_sockaddr_t against a pre-built ip-subnet
+ * representation.
+ * @param ipsub The ip-subnet representation
+ * @param sa The socket address to test
+ * @return non-zero if the socket address is within the subnet, 0 otherwise
+ */
+DoxyDefine(int switch_ipsubnet_test(apr_ipsubnet_t *ipsub, switch_sockaddr_t *sa);)
 #define switch_ipsubnet_test apr_ipsubnet_test
+
+/**
+ * Return the protocol of the socket.
+ * @param sock The socket to query.
+ * @param protocol The returned protocol (e.g., APR_PROTO_TCP).
+ */
+DoxyDefine(apr_status_t switch_socket_protocol_get(switch_socket_t *sock,
+										int *protocol);)
 #define switch_socket_protocol_get apr_socket_protocol_get
+
+/**
+ * Join a Multicast Group
+ * @param sock The socket to join a multicast group
+ * @param join The address of the multicast group to join
+ * @param iface Address of the interface to use.  If NULL is passed, the 
+ *              default multicast interface will be used. (OS Dependent)
+ * @param source Source Address to accept transmissions from (non-NULL 
+ *               implies Source-Specific Multicast)
+ */
+DoxyDefine(apr_status_t switch_mcast_join(switch_socket_t *sock,
+							   switch_sockaddr_t *join,
+							   switch_sockaddr_t *iface,
+							   switch_sockaddr_t *source);)
 #define switch_mcast_join apr_mcast_join
+
+/**
+ * Leave a Multicast Group.  All arguments must be the same as
+ * switch_mcast_join.
+ * @param sock The socket to leave a multicast group
+ * @param addr The address of the multicast group to leave
+ * @param iface Address of the interface to use.  If NULL is passed, the 
+ *              default multicast interface will be used. (OS Dependent)
+ * @param source Source Address to accept transmissions from (non-NULL 
+ *               implies Source-Specific Multicast)
+ */
+DoxyDefine(apr_status_t switch_mcast_leave(switch_socket_t *sock,
+								switch_sockaddr_t *addr,
+								switch_sockaddr_t *iface,
+								switch_sockaddr_t *source);)
 #define switch_mcast_leave apr_mcast_leave
+
+/**
+ * Set the Multicast Time to Live (ttl) for a multicast transmission.
+ * @param sock The socket to set the multicast ttl
+ * @param ttl Time to live to Assign. 0-255, default=1
+ * @remark If the TTL is 0, packets will only be seen by sockets on 
+ * the local machine, and only when multicast loopback is enabled.
+ */
+DoxyDefine(apr_status_t switch_mcast_hops(switch_socket_t *sock,
+							   apr_byte_t ttl);)
 #define switch_mcast_hops apr_mcast_hops
+
+/**
+ * Toggle IP Multicast Loopback
+ * @param sock The socket to set multicast loopback
+ * @param opt 0=disable, 1=enable
+ */
+DoxyDefine(apr_status_t switch_mcast_loopback(switch_socket_t *sock,
+								   apr_byte_t opt);)
 #define switch_mcast_loopback apr_mcast_loopback
+
+/**
+ * Set the Interface to be used for outgoing Multicast Transmissions.
+ * @param sock The socket to set the multicast interface on
+ * @param iface Address of the interface to use for Multicast
+ */
+DoxyDefine(apr_status_t switch_mcast_interface(switch_socket_t *sock,
+									switch_sockaddr_t *iface);)
 #define switch_mcast_interface apr_mcast_interface
 
 /** @} */
 
+/**
+ * @defgroup switch_memory_pool Memory Pool Functions
+ * @ingroup APR 
+ * @{
+ */
+/** The fundamental pool type */
+typedef apr_pool_t switch_memory_pool;
+
+
+/**
+ * Clear all memory in the pool and run all the cleanups. This also destroys all
+ * subpools.
+ * @param p The pool to clear
+ * @remark This does not actually free the memory, it just allows the pool
+ *         to re-use this memory for the next allocation.
+ * @see apr_pool_destroy()
+ */
+DoxyDefine(void switch_pool_clear(switch_memory_pool *p);)
 #define switch_pool_clear apr_pool_clear
+/** @} */
+
 #define switch_strmatch_precompile apr_strmatch_precompile
 #define switch_strmatch apr_strmatch
 #define switch_uuid_format apr_uuid_format

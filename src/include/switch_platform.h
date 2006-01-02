@@ -104,6 +104,12 @@ typedef unsigned long	in_addr_t;
 #endif
 #endif
 
+#ifdef DOXYGEN
+#define DoxyDefine(x) x
+#else
+#define DoxyDefine(x)
+#endif
+
 #ifdef __cplusplus
 }
 #endif
