@@ -3,7 +3,7 @@ LDFLAGS += -liax -L/usr/local/lib
 all:	depends $(MOD).so
 
 depends:
-	$(BASE)/buildlib.sh $(BASE) install iax --enable-newjb
+	$(BASE)/buildlib.sh $(BASE) install iax --enable-newjb --prefix=$(PREFIX)
 
 $(MOD).so: $(MOD).c
 	$(CC) $(CFLAGS) -fPIC -c $(MOD).c -o $(MOD).o 

@@ -77,7 +77,8 @@ am_libfreeswitch_la_OBJECTS = libfreeswitch_la-switch_buffer.lo \
 	libfreeswitch_la-switch_loadable_module.lo \
 	libfreeswitch_la-switch_mutex.lo \
 	libfreeswitch_la-switch_utils.lo \
-	libfreeswitch_la-switch_event.lo
+	libfreeswitch_la-switch_event.lo \
+	libfreeswitch_la-switch_resample.lo
 libfreeswitch_la_OBJECTS = $(am_libfreeswitch_la_OBJECTS)
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
@@ -224,7 +225,7 @@ SUBDIRS =
 AUTOMAKE_OPTS = gnu
 MAKE = gmake
 NAME = freeswitch
-PREFIX = $(prefix)/${NAME}
+PREFIX = $(prefix)
 APR_CONFIG = $(prefix)/bin/apr-1-config
 APU_CONFIG = $(prefix)/bin/apu-1-config
 
@@ -237,7 +238,8 @@ AM_CFLAGS = $(shell $(APR_CONFIG) --cflags --cppflags --includes) \
 	-DSWITCH_CONF_DIR=\"$(PREFIX)/conf\" \
 	-DSWITCH_DB_DIR=\"$(PREFIX)/db\"
 AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs ) $(shell \
-	$(APU_CONFIG) --link-ld --libs ) -lsqlite3 $(am__append_1)
+	$(APU_CONFIG) --link-ld --libs ) -lsqlite3 -lresample -lm \
+	$(am__append_1)
 OSARCH = $(shell uname -s)
 @ISMAC_FALSE@SOLINK = -shared -Xlinker -x
 @ISMAC_TRUE@SOLINK = -dynamic -bundle -undefined suppress -force_flat_namespace
@@ -265,7 +267,8 @@ src/switch_core.c \
 src/switch_loadable_module.c \
 src/switch_mutex.c \
 src/switch_utils.c \
-src/switch_event.c 
+src/switch_event.c \
+src/switch_resample.c
 
 
 #bindir = $(PREFIX)/bin
@@ -284,7 +287,8 @@ library_include_HEADERS = src/include/switch.h \
 				src/include/switch_utils.h \
 				src/include/switch_caller.h \
 				src/include/switch_buffer.h \
-				src/include/switch_event.h
+				src/include/switch_event.h \
+				src/include/switch_resample.h
 
 lib_LTLIBRARIES = libfreeswitch.la
 libfreeswitch_la_CFLAGS = $(AM_CFLAGS) -Wall -Werror -Wstrict-prototypes -Wmissing-prototypes -g  
@@ -423,6 +427,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_event.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_loadable_module.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_mutex.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_resample.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_utils.Plo@am__quote@
 
 .c.o:
@@ -515,6 +520,13 @@ libfreeswitch_la-switch_event.lo: src/switch_event.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/switch_event.c' object='libfreeswitch_la-switch_event.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfreeswitch_la_CFLAGS) $(CFLAGS) -c -o libfreeswitch_la-switch_event.lo `test -f 'src/switch_event.c' || echo '$(srcdir)/'`src/switch_event.c
+
+libfreeswitch_la-switch_resample.lo: src/switch_resample.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfreeswitch_la_CFLAGS) $(CFLAGS) -MT libfreeswitch_la-switch_resample.lo -MD -MP -MF "$(DEPDIR)/libfreeswitch_la-switch_resample.Tpo" -c -o libfreeswitch_la-switch_resample.lo `test -f 'src/switch_resample.c' || echo '$(srcdir)/'`src/switch_resample.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libfreeswitch_la-switch_resample.Tpo" "$(DEPDIR)/libfreeswitch_la-switch_resample.Plo"; else rm -f "$(DEPDIR)/libfreeswitch_la-switch_resample.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/switch_resample.c' object='libfreeswitch_la-switch_resample.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfreeswitch_la_CFLAGS) $(CFLAGS) -c -o libfreeswitch_la-switch_resample.lo `test -f 'src/switch_resample.c' || echo '$(srcdir)/'`src/switch_resample.c
 
 freeswitch-switch.o: src/switch.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(freeswitch_CFLAGS) $(CFLAGS) -MT freeswitch-switch.o -MD -MP -MF "$(DEPDIR)/freeswitch-switch.Tpo" -c -o freeswitch-switch.o `test -f 'src/switch.c' || echo '$(srcdir)/'`src/switch.c; \
@@ -952,25 +964,31 @@ yesdepends:
 	rm .nodepends
 
 depends:
-	./buildlib.sh . install sqlite-3.2.8.tar.gz --disable-tcl --enable-threadsafe
-	./buildlib.sh . install apr-1.2.2.tar.gz
-	./buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=../apr-1.2.2
+	./buildlib.sh . install sqlite-3.2.8.tar.gz --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
+	./buildlib.sh . install apr-1.2.2.tar.gz --prefix=$(PREFIX)
+	./buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=../apr-1.2.2 --prefix=$(PREFIX)
+	./buildlib.sh . install libresample-0.1.3.tgz --prefix=$(PREFIX)
+	cp libs/libresample-0.1.3/*.a $(PREFIX)/lib
+	cp libs/libresample-0.1.3/include/* $(PREFIX)/include
 
 modules: $(NAME)
 	@echo making modules
-	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
+	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; PREFIX="$(PREFIX)" BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
 
 modclean:
 	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
 
 install_mod: modules
 	@echo Installing $(NAME)
-	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db
+	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db $(PREFIX)/bin
 	@/bin/cp -p ./$(NAME) $(PREFIX)/bin
 	@ln -sf $(PREFIX)/bin/$(NAME) /usr/bin
 	@echo Installing Modules
 	@/bin/cp -f src/mod/*/mod_*.so $(PREFIX)/mod >/dev/null 2<&1 || echo No modules to copy.
 	@echo done
+
+dox:
+	doxygen $(PWD)/docs/Doxygen.conf
 
 eclean: clean
 	rm -f `find . -type f -name \*~`

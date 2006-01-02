@@ -7,6 +7,7 @@ AM_INIT_AUTOMAKE(libfreeswitch,0.1)
 AC_CONFIG_SRCDIR([src/switch.c])
 AC_CONFIG_HEADER([src/include/config.h])
 
+AC_PREFIX_DEFAULT(/usr/local/freeswitch)
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET

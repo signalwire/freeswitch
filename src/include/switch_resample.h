@@ -39,6 +39,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <stdlib.h>
 
 struct switch_audio_resampler {
 	void *resampler;

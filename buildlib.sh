@@ -53,7 +53,7 @@ fi
 
 cd $uncompressed
 make clean 2>&1
-sh ./configure --prefix=/usr/local $@
+sh ./configure $@
 
 if [ $? == 0 ] ; then
     make

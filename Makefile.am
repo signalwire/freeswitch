@@ -3,13 +3,14 @@ SUBDIRS =
 AUTOMAKE_OPTS		= gnu
 MAKE=gmake
 NAME=freeswitch
-PREFIX=$(prefix)/${NAME}
+PREFIX=$(prefix)
 APR_CONFIG=$(prefix)/bin/apr-1-config
 APU_CONFIG=$(prefix)/bin/apu-1-config
 AM_CFLAGS  = $(shell $(APR_CONFIG) --cflags --cppflags --includes)
 AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs )
 AM_CFLAGS  += $(shell $(APU_CONFIG) --includes)
 AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs ) -lsqlite3
+AM_LDFLAGS += -lresample -lm
 OSARCH=$(shell uname -s)
 if ISLINUX
 AM_LDFLAGS += -Wl,-E
@@ -57,7 +58,8 @@ src/switch_core.c \
 src/switch_loadable_module.c \
 src/switch_mutex.c \
 src/switch_utils.c \
-src/switch_event.c 
+src/switch_event.c \
+src/switch_resample.c
 
 
 #bindir = $(PREFIX)/bin
@@ -76,7 +78,8 @@ library_include_HEADERS =	src/include/switch.h \
 				src/include/switch_utils.h \
 				src/include/switch_caller.h \
 				src/include/switch_buffer.h \
-				src/include/switch_event.h
+				src/include/switch_event.h \
+				src/include/switch_resample.h
 
 lib_LTLIBRARIES		= libfreeswitch.la
 libfreeswitch_la_CFLAGS	= $(AM_CFLAGS) -Wall -Werror -Wstrict-prototypes -Wmissing-prototypes -g  
@@ -96,14 +99,18 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
+
 depends:
-	./buildlib.sh . install sqlite-3.2.8.tar.gz --disable-tcl --enable-threadsafe
-	./buildlib.sh . install apr-1.2.2.tar.gz
-	./buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=../apr-1.2.2
+	./buildlib.sh . install sqlite-3.2.8.tar.gz --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
+	./buildlib.sh . install apr-1.2.2.tar.gz --prefix=$(PREFIX)
+	./buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=../apr-1.2.2 --prefix=$(PREFIX)
+	./buildlib.sh . install libresample-0.1.3.tgz --prefix=$(PREFIX)
+	cp libs/libresample-0.1.3/*.a $(PREFIX)/lib
+	cp libs/libresample-0.1.3/include/* $(PREFIX)/include
 
 modules: $(NAME)
 	@echo making modules
-	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
+	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; PREFIX="$(PREFIX)" BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
 
 modclean:
 	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
@@ -112,7 +119,7 @@ modclean:
 
 install_mod: modules
 	@echo Installing $(NAME)
-	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db
+	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db $(PREFIX)/bin
 	@/bin/cp -p ./$(NAME) $(PREFIX)/bin
 	@ln -sf $(PREFIX)/bin/$(NAME) /usr/bin
 	@echo Installing Modules
