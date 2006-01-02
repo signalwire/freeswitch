@@ -47,6 +47,8 @@ extern "C" {
 		struct switch_caller_step *next_step;
 	};
 
+/*! \brief Caller specific data including callid information 
+ */
 	struct switch_caller_profile {
 		char *dialplan;
 		char *caller_id_name;

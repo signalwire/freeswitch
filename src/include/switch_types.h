@@ -74,6 +74,8 @@ typedef enum {
 #define SWITCH_CHANNEL_CONSOLE_CLEAN SWITCH_CHANNEL_ID_CONSOLE_CLEAN, __FILE__, __FUNCTION__, __LINE__
 #define SWITCH_CHANNEL_EVENT SWITCH_CHANNEL_ID_EVENT, __FILE__, __FUNCTION__, __LINE__
 
+/*! \brief Channel States
+ */
 typedef enum {
 	CS_NEW,
 	CS_INIT,

@@ -42,6 +42,10 @@ extern "C" {
 
 #include <switch.h>
 
+/*! \brief Get the current state of a channel in the state engine
+ * \param channel switch_channel object tot retreive state for
+ * \return state of a type in switch_channel_state enum
+ */
 SWITCH_DECLARE(switch_channel_state) switch_channel_get_state(switch_channel *channel);
 SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *channel, switch_channel_state state);
 

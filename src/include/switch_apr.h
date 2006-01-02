@@ -66,77 +66,139 @@ extern "C" {
 */
 
 typedef enum {
-	SWITCH_MUTEX_DEFAULT = APR_THREAD_MUTEX_DEFAULT,
-	SWITCH_MUTEX_NESTED = APR_THREAD_MUTEX_NESTED,
-	SWITCH_MUTEX_UNNESTED = APR_THREAD_MUTEX_UNNESTED
+	SWITCH_MUTEX_DEFAULT = APR_THREAD_MUTEX_DEFAULT	/**< platform-optimal lock behavior */,
+	SWITCH_MUTEX_NESTED = APR_THREAD_MUTEX_NESTED	/**< enable nested (recursive) locks */,
+	SWITCH_MUTEX_UNNESTED = APR_THREAD_MUTEX_UNNESTED	/**< disable nested locks */
 } switch_lock_flag;
 
+/**< descriptor refers to a socket */
 #define SWITCH_POLL_SOCKET APR_POLL_SOCKET
-#define SWITCH_THREAD_FUNC APR_THREAD_FUNC
 
+/** @def SWITCH_UNSPEC
+ * Let the system decide which address family to use
+ */
 #define SWITCH_UNSPEC APR_UNSPEC 
-#define SWITCH_POLLIN APR_POLLIN
-#define SWITCH_POLLPRI APR_POLLPRI
-#define SWITCH_POLLOUT APR_POLLOUT
-#define SWITCH_POLLERR APR_POLLERR
-#define SWITCH_POLLHUP APR_POLLHUP
-#define SWITCH_POLLNVAL APR_POLLNVAL
-#define SWITCH_READ APR_READ 
-#define SWITCH_FPROT_UREAD APR_FPROT_UREAD
-#define SWITCH_FPROT_GREAD APR_FPROT_GREAD
 
-#define SWITCH_FOPEN_READ APR_FOPEN_READ
-#define SWITCH_FOPEN_WRITE APR_FOPEN_WRITE
-#define SWITCH_FOPEN_CREATE APR_FOPEN_CREATE
-#define SWITCH_FOPEN_APPEND APR_FOPEN_APPEND
-#define SWITCH_FOPEN_TRUNCATE APR_FOPEN_TRUNCATE
-#define SWITCH_FOPEN_BINARY APR_FOPEN_BINARY
-#define SWITCH_FOPEN_EXCL APR_FOPEN_EXCL
-#define SWITCH_FOPEN_BUFFERED APR_FOPEN_BUFFERED
-#define SWITCH_FOPEN_DELONCLOSE APR_FOPEN_DELONCLOSE
-#define SWITCH_FOPEN_XTHREAD APR_FOPEN_XTHREAD
-#define SWITCH_FOPEN_SHARELOCK APR_FOPEN_SHARELOCK
-#define SWITCH_FOPEN_NOCLEANUP APR_FOPEN_NOCLEANUP
-#define SWITCH_FOPEN_SENDFILE_ENABLED APR_FOPEN_SENDFILE_ENABLED
-#define SWITCH_FOPEN_LARGEFILE APR_FOPEN_LARGEFILE
+/**
+ * Poll options
+ */
+#define SWITCH_POLLIN APR_POLLIN			/**< Can read without blocking */
+#define SWITCH_POLLPRI APR_POLLPRI			/**< Priority data available */
+#define SWITCH_POLLOUT APR_POLLOUT			/**< Can write without blocking */
+#define SWITCH_POLLERR APR_POLLERR			/**< Pending error */
+#define SWITCH_POLLHUP APR_POLLHUP			/**< Hangup occurred */
+#define SWITCH_POLLNVAL APR_POLLNVAL		/**< Descriptior invalid */
 
-#define SWITCH_FPROT_USETID APR_FPROT_USETID
-#define SWITCH_FPROT_UREAD APR_FPROT_UREAD
-#define SWITCH_FPROT_UWRITE APR_FPROT_UWRITE
-#define SWITCH_FPROT_UEXECUTE APR_FPROT_UEXECUTE
+/**
+ * @defgroup switch_file_open_flags File Open Flags/Routines
+ * @{
+ */
+#define SWITCH_FOPEN_READ APR_FOPEN_READ							/**< Open the file for reading */
+#define SWITCH_FOPEN_WRITE APR_FOPEN_WRITE							/**< Open the file for writing */
+#define SWITCH_FOPEN_CREATE APR_FOPEN_CREATE						/**< Create the file if not there */
+#define SWITCH_FOPEN_APPEND APR_FOPEN_APPEND						/**< Append to the end of the file */
+#define SWITCH_FOPEN_TRUNCATE APR_FOPEN_TRUNCATE					/**< Open the file and truncate to 0 length */
+#define SWITCH_FOPEN_BINARY APR_FOPEN_BINARY						/**< Open the file in binary mode */
+#define SWITCH_FOPEN_EXCL APR_FOPEN_EXCL							/**< Open should fail if APR_CREATE and file exists. */
+#define SWITCH_FOPEN_BUFFERED APR_FOPEN_BUFFERED					/**< Open the file for buffered I/O */
+#define SWITCH_FOPEN_DELONCLOSE APR_FOPEN_DELONCLOSE				/**< Delete the file after close */
+#define SWITCH_FOPEN_XTHREAD APR_FOPEN_XTHREAD						/**< Platform dependent tag to open the file for use across multiple threads */
+#define SWITCH_FOPEN_SHARELOCK APR_FOPEN_SHARELOCK					/**< Platform dependent support for higher level locked read/write access to support writes across process/machines */
+#define SWITCH_FOPEN_NOCLEANUP APR_FOPEN_NOCLEANUP					/**< Do not register a cleanup when the file is opened */
+#define SWITCH_FOPEN_SENDFILE_ENABLED APR_FOPEN_SENDFILE_ENABLED	/**< Advisory flag that this file should support apr_socket_sendfile operation */
+#define SWITCH_FOPEN_LARGEFILE APR_FOPEN_LAREFILE					/**< Platform dependent flag to enable large file support */
 
-#define SWITCH_FPROT_GSETID APR_FPROT_GSETID
-#define SWITCH_FPROT_GREAD APR_FPROT_GREAD
-#define SWITCH_FPROT_GWRITE APR_FPROT_GWRITE
-#define SWITCH_FPROT_GEXECUTE APR_FPROT_GEXECUTE
+#define SWITCH_READ APR_READ				/**< @deprecated @see SWITCH_FOPEN_READ */
+/** @} */
+
+/**
+ * @defgroup switch_file_permissions File Permissions flags 
+ * @{
+ */
+    
+#define SWITCH_FPROT_USETID APR_FPROT_USETID		/**< Set user id */
+#define SWITCH_FPROT_UREAD APR_FPROT_UREAD			/**< Read by user */
+#define SWITCH_FPROT_UWRITE APR_FPROT_UWRITE		/**< Write by user */
+#define SWITCH_FPROT_UEXECUTE APR_FPROT_UEXECUTE	/**< Execute by user */
+
+#define SWITCH_FPROT_GSETID APR_FPROT_GSETID		/**< Set group id */
+#define SWITCH_FPROT_GREAD APR_FPROT_GREAD			/**< Read by group */
+#define SWITCH_FPROT_GWRITE APR_FPROT_GWRITE		/**< Write by group */
+#define SWITCH_FPROT_GEXECUTE APR_FPROT_GEXECUTE	/**< Execute by group */
 
 #define SWITCH_FPROT_WSETID APR_FPROT_U WSETID
-#define SWITCH_FPROT_WREAD APR_FPROT_WREAD
-#define SWITCH_FPROT_WWRITE APR_FPROT_WWRITE
-#define SWITCH_FPROT_WEXECUTE APR_FPROT_WEXECUTE
+#define SWITCH_FPROT_WREAD APR_FPROT_WREAD			/**< Read by others */
+#define SWITCH_FPROT_WWRITE APR_FPROT_WWRITE		/**< Write by others */
+#define SWITCH_FPROT_WEXECUTE APR_FPROT_WEXECUTE	/**< Execute by others */
 
-#define SWITCH_FPROT_OS_DEFAULT APR_FPROT_OS_DEFAULT
-#define SWITCH_FPROT_FILE_SOURCE_PERMS APR_FPROT_FILE_SOURCE_PERMS
+#define SWITCH_FPROT_OS_DEFAULT APR_FPROT_OS_DEFAULT	/**< use OS's default permissions */
+
+/* additional permission flags for apr_file_copy  and apr_file_append */
+#define SWITCH_FPROT_FILE_SOURCE_PERMS APR_FPROT_FILE_SOURCE_PERMS	/**< Copy source file's permissions */
+/** @} */
 
 	
-typedef apr_threadattr_t switch_threadattr_t;
-typedef apr_strmatch_pattern switch_strmatch_pattern;
-typedef apr_uuid_t switch_uuid_t;
-typedef apr_queue_t switch_queue_t;
-typedef apr_hash_t switch_hash;
-typedef apr_pool_t switch_memory_pool;
+/** Opaque Thread structure. */
 typedef apr_thread_t switch_thread;
+
+/** Opaque Thread attributes structure. */
+typedef apr_threadattr_t switch_threadattr_t;
+
+/** Opaque thread-local mutex structure */
 typedef apr_thread_mutex_t switch_mutex_t;
-typedef apr_time_t switch_time_t;
-typedef apr_time_exp_t switch_time_exp_t;
+
+/**
+ * /fn typedef void *(SWITCH_THREAD_FUNC *switch_thread_start_t)(switch_thread_t*, void*);
+ * The prototype for any APR thread worker functions.
+ */
+#define SWITCH_THREAD_FUNC APR_THREAD_FUNC
 typedef apr_thread_start_t switch_thread_start_t;
-typedef apr_sockaddr_t switch_sockaddr_t;
-typedef apr_socket_t switch_socket_t;
-typedef apr_pollfd_t switch_pollfd_t;
-typedef apr_pollset_t switch_pollset_t;
-typedef apr_file_t switch_file_t;
+
+/** Opaque structure for thread condition variables */
 typedef apr_thread_cond_t switch_thread_cond_t;
+
+/** Abstract type for hash tables. */
+typedef apr_hash_t switch_hash;
+
+/** Abstract type for scanning hash tables. */
 typedef apr_hash_index_t switch_hash_index_t;
+
+/** The fundamental pool type */
+typedef apr_pool_t switch_memory_pool;
+
+/** number of microseconds since 00:00:00 january 1, 1970 UTC */
+typedef apr_time_t switch_time_t;
+
+/**
+ * a structure similar to ANSI struct tm with the following differences:
+ *  - tm_usec isn't an ANSI field
+ *  - tm_gmtoff isn't an ANSI field (it's a bsdism)
+ */
+typedef apr_time_exp_t switch_time_exp_t;
+
+/** Freeswitch's socket address type, used to ensure protocol independence */
+typedef apr_sockaddr_t switch_sockaddr_t;
+
+/** A structure to represent sockets */
+typedef apr_socket_t switch_socket_t;
+
+/** Poll descriptor set. */
+typedef apr_pollfd_t switch_pollfd_t;
+
+/** Opaque structure used for pollset API */
+typedef apr_pollset_t switch_pollset_t;
+
+/** Structure for referencing files. */
+typedef apr_file_t switch_file_t;
+
+/** Precompiled search pattern */
+typedef apr_strmatch_pattern switch_strmatch_pattern;
+
+/** we represent a UUID as a block of 16 bytes. */
+typedef apr_uuid_t switch_uuid_t;
+
+/** Opaque structure used for queue API */
+typedef apr_queue_t switch_queue_t;
 
 
 #define switch_thread_cond_create apr_thread_cond_create
