@@ -138,24 +138,8 @@ typedef enum {
 /** @} */
 
 	
-/** Opaque Thread structure. */
-typedef apr_thread_t switch_thread;
-
-/** Opaque Thread attributes structure. */
-typedef apr_threadattr_t switch_threadattr_t;
-
 /** Opaque thread-local mutex structure */
 typedef apr_thread_mutex_t switch_mutex_t;
-
-/**
- * /fn typedef void *(SWITCH_THREAD_FUNC *switch_thread_start_t)(switch_thread_t*, void*);
- * The prototype for any APR thread worker functions.
- */
-#define SWITCH_THREAD_FUNC APR_THREAD_FUNC
-typedef apr_thread_start_t switch_thread_start_t;
-
-/** Opaque structure for thread condition variables */
-typedef apr_thread_cond_t switch_thread_cond_t;
 
 /** Abstract type for hash tables. */
 typedef apr_hash_t switch_hash;
@@ -200,15 +184,140 @@ typedef apr_uuid_t switch_uuid_t;
 /** Opaque structure used for queue API */
 typedef apr_queue_t switch_queue_t;
 
+/**
+ * @defgroup switch_thread_cond Condition Variable Routines
+ * @ingroup APR 
+ * @{
+ */
 
+/**
+ * Note: destroying a condition variable (or likewise, destroying or
+ * clearing the pool from which a condition variable was allocated) if
+ * any threads are blocked waiting on it gives undefined results.
+ */
+
+/** Opaque structure for thread condition variables */
+typedef apr_thread_cond_t switch_thread_cond_t;
+
+/**
+ * /fn switch_status_t switch_thread_cond_create(switch_thread_cond_t **cond, switch_pool_t *pool)
+ * Create and initialize a condition variable that can be used to signal
+ * and schedule threads in a single process.
+ * @param cond the memory address where the newly created condition variable
+ *        will be stored.
+ * @param pool the pool from which to allocate the mutex.
+ */
 #define switch_thread_cond_create apr_thread_cond_create
+
+/**
+ * /fn swich_status_t switch_thread_cond_wait(switch_thread_cond_t *cond, switch_thread_mutex_t *mutex)
+ * Put the active calling thread to sleep until signaled to wake up. Each
+ * condition variable must be associated with a mutex, and that mutex must
+ * be locked before  calling this function, or the behavior will be
+ * undefined. As the calling thread is put to sleep, the given mutex
+ * will be simultaneously released; and as this thread wakes up the lock
+ * is again simultaneously acquired.
+ * @param cond the condition variable on which to block.
+ * @param mutex the mutex that must be locked upon entering this function,
+ *        is released while the thread is asleep, and is again acquired before
+ *        returning from this function.
+ */
 #define switch_thread_cond_wait apr_thread_cond_wait
+
+/**
+ * /fn switch_status_t switch_thread_cond_timedwait(switch_thread_cond_t *cond, switch_thread_mutex_t *mutex, switch_interval_time_t timeout)
+ * Put the active calling thread to sleep until signaled to wake up or
+ * the timeout is reached. Each condition variable must be associated
+ * with a mutex, and that mutex must be locked before calling this
+ * function, or the behavior will be undefined. As the calling thread
+ * is put to sleep, the given mutex will be simultaneously released;
+ * and as this thread wakes up the lock is again simultaneously acquired.
+ * @param cond the condition variable on which to block.
+ * @param mutex the mutex that must be locked upon entering this function,
+ *        is released while the thread is asleep, and is again acquired before
+ *        returning from this function.
+ * @param timeout The amount of time in microseconds to wait. This is 
+ *        a maximum, not a minimum. If the condition is signaled, we 
+ *        will wake up before this time, otherwise the error APR_TIMEUP
+ *        is returned.
+ */
 #define switch_thread_cond_timedwait apr_thread_cond_timedwait
+
+/**
+ * /fn switch_status_t switch_thread_cond_signal(switch_thread_cond_t *cond)
+ * Signals a single thread, if one exists, that is blocking on the given
+ * condition variable. That thread is then scheduled to wake up and acquire
+ * the associated mutex. Although it is not required, if predictable scheduling
+ * is desired, that mutex must be locked while calling this function.
+ * @param cond the condition variable on which to produce the signal.
+ */
 #define switch_thread_cond_signal apr_thread_cond_signal
+
+/**
+ * /fn switch_status_t switch_thread_cond_broadcast(switch_thread_cond_t *cond)
+ * Signals all threads blocking on the given condition variable.
+ * Each thread that was signaled is then scheduled to wake up and acquire
+ * the associated mutex. This will happen in a serialized manner.
+ * @param cond the condition variable on which to produce the broadcast.
+ */
 #define switch_thread_cond_broadcast apr_thread_cond_broadcast
+
+/**
+ * /fn switch_status_t switch_thread_cond_destroy(switch_thread_cond_t *cond)
+ * Destroy the condition variable and free the associated memory.
+ * @param cond the condition variable to destroy.
+ */
 #define switch_thread_cond_destroy apr_thread_cond_destroy
+
+/** @} */
+
+/**
+ * @defgroup switch_thread_proc Threads and Process Functions
+ * @ingroup APR 
+ * @{
+ */
+
+/** Opaque Thread structure. */
+typedef apr_thread_t switch_thread;
+
+/** Opaque Thread attributes structure. */
+typedef apr_threadattr_t switch_threadattr_t;
+
+/**
+ * /fn typedef void *(SWITCH_THREAD_FUNC *switch_thread_start_t)(switch_thread_t*, void*);
+ * The prototype for any APR thread worker functions.
+ */
+#define SWITCH_THREAD_FUNC APR_THREAD_FUNC
+typedef apr_thread_start_t switch_thread_start_t;
+
+/**
+ * /fn switch_status_t switch_threadattr_create(switch_threadattr_t **new_attr, switch_pool_t *cont)
+ * Create and initialize a new threadattr variable
+ * @param new_attr The newly created threadattr.
+ * @param cont The pool to use
+ */
 #define switch_threadattr_create apr_threadattr_create
+
+/**
+ * /fn apr_status_t switch_threadattr_detach_set(switch_threadattr_t *attr, switch_int32_t on)
+ * Set if newly created threads should be created in detached state.
+ * @param attr The threadattr to affect 
+ * @param on Non-zero if detached threads should be created.
+ */
 #define switch_threadattr_detach_set apr_threadattr_detach_set
+
+/**
+ * /fn switch_status_t apr_thread_create(switch_thread_t **new_thread, switch_threadattr_t *attr, switch_thread_start_t func, void *data, switch_pool_t *cont)
+ * Create a new thread of execution
+ * @param new_thread The newly created thread handle.
+ * @param attr The threadattr to use to determine how to create the thread
+ * @param func The function to start the new thread in
+ * @param data Any data to be passed to the starting function
+ * @param cont The pool to use
+ */
+#define switch_thread_create apr_thread_create
+
+/** @} */
 
 #define switch_pool_clear apr_pool_clear
 #define switch_strmatch_precompile apr_strmatch_precompile
@@ -234,7 +343,6 @@ typedef apr_queue_t switch_queue_t;
 #define switch_time_exp_gmt apr_time_exp_gmt
 #define switch_time_exp_get apr_time_exp_get
 #define switch_time_exp_lt apr_time_exp_lt
-#define switch_thread_create apr_thread_create
 #define switch_sleep apr_sleep
 #define switch_socket_create apr_socket_create
 #define switch_socket_shutdown apr_socket_shutdown
