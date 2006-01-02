@@ -115,8 +115,8 @@ typedef apr_uuid_t switch_uuid_t;
 typedef apr_queue_t switch_queue_t;
 
 /**
- * @defgroup apr_file_io File I/O Handling Functions
- * @ingroup APR 
+ * @defgroup switch_file_io File I/O Handling Functions
+ * @ingroup FREESWITCH 
  * @{
  */
 
@@ -258,7 +258,7 @@ DoxyDefine(apr_status_t switch_file_write(switch_file_t *thefile, const void *bu
 
 /**
  * @defgroup switch_thread_cond Condition Variable Routines
- * @ingroup APR 
+ * @ingroup FREESWITCH 
  * @{
  */
 
@@ -345,7 +345,7 @@ DoxyDefine(apr_status_t switch_thread_cond_destroy(switch_thread_cond_t *cond);)
 
 /**
  * @defgroup switch_thread_proc Threads and Process Functions
- * @ingroup APR 
+ * @ingroup FREESWITCH 
  * @{
  */
 
@@ -392,8 +392,8 @@ DoxyDefine(apr_status_t switch_thread_create(switch_thread_t **new_thread, switc
 /** @} */
 
 /**
- * @defgroup apr_network_io Network Routines
- * @ingroup APR 
+ * @defgroup switch_network_io Network Routines
+ * @ingroup FREESWITCH 
  * @{
  */
 
@@ -951,7 +951,7 @@ DoxyDefine(apr_status_t switch_mcast_interface(switch_socket_t *sock,
 
 /**
  * @defgroup switch_memory_pool Memory Pool Functions
- * @ingroup APR 
+ * @ingroup FREESWITCH 
  * @{
  */
 /** The fundamental pool type */

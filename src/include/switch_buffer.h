@@ -44,6 +44,12 @@ extern "C" {
 
 struct switch_buffer;
 
+/**
+ * @defgroup switch_buffer Buffer Routines
+ * @ingroup FREESWITCH 
+ * @{
+ */
+
 /*! \brief Allocate a new switch_buffer 
  * \param pool Pool to allocate the buffer from
  * \param buffer returned pointer to the new buffer
@@ -92,6 +98,7 @@ SWITCH_DECLARE(int) switch_buffer_write(switch_buffer *buffer, void *data, size_
  * \return int ammount of buffer used after the toss, or 0 if unable to toss that much data
  */
 SWITCH_DECLARE(int) switch_buffer_toss(switch_buffer *buffer, size_t datalen);
+/** @} */
 
 
 #ifdef __cplusplus
