@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -63,6 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/NODEFAULTLIB:LIBCMTD"
 				AdditionalDependencies="Ws2_32.lib Mswsock.lib apr-1.lib sqlite.lib apriconv-1.lib aprutil-1.lib xml.lib Rpcrt4.lib libresampled.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="2"
@@ -129,7 +130,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT"
+				PreprocessorDefinitions=" WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -147,6 +148,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="/NODEFAULTLIB:LIBCMTD"
 				AdditionalDependencies="Ws2_32.lib Mswsock.lib apr-1.lib sqlite.lib apriconv-1.lib aprutil-1.lib xml.lib Rpcrt4.lib libresample.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="1"
@@ -230,6 +232,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_resample.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_utils.c"
 				>
 			</File>
@@ -293,6 +299,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_platform.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_resample.h"
 				>
 			</File>
 			<File

@@ -61,7 +61,7 @@ extern "C" {
 #include <switch_channel.h>
 #include <switch_buffer.h>
 #include <switch_event.h>
-
+#include <switch_resample.h>
 #ifdef __cplusplus
 }
 #endif

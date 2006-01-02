@@ -153,7 +153,7 @@ typedef enum {
 } switch_event_t;
 
 
-
+typedef struct switch_audio_resampler switch_audio_resampler;
 typedef struct switch_event_header switch_event_header;
 typedef struct switch_event switch_event;
 typedef struct switch_event_subclass switch_event_subclass;

@@ -71,6 +71,10 @@ struct switch_core_session {
 	unsigned char *raw_read_buf[3200];
 	unsigned char *enc_read_buf[3200];
 
+
+	switch_audio_resampler *read_resampler;
+	switch_audio_resampler *write_resampler;
+
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
 
@@ -702,9 +706,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 	if (status == SWITCH_STATUS_SUCCESS && need_codec) {
 		switch_frame *enc_frame, *read_frame = *frame;
 
-		if (read_frame->codec->codec_interface == session->read_codec->codec_interface) {
-			status = SWITCH_STATUS_SUCCESS;
-		} else if (read_frame->codec) {
+		if (read_frame->codec) {
 			unsigned int flag = 0;
 			session->raw_read_frame.datalen = session->raw_read_frame.buflen;
 			status = switch_core_codec_decode(read_frame->codec,
@@ -718,6 +720,15 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 										   &flag);
 
 			switch (status) {
+			case SWITCH_STATUS_RESAMPLE:
+				if (!session->read_resampler) {
+					switch_resample_create(&session->read_resampler,
+						read_frame->codec->implementation->samples_per_second,
+						read_frame->codec->implementation->bytes_per_frame * 10,
+						session->read_codec->implementation->samples_per_second,
+						session->read_codec->implementation->bytes_per_frame * 10,
+						session->pool);
+				}
 			case SWITCH_STATUS_SUCCESS:
 				read_frame = &session->raw_read_frame;
 				break;
@@ -729,6 +740,21 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 				return status;
 				break;
 			}
+		}
+		if (session->read_resampler) {
+			short *data = read_frame->data;
+
+			session->read_resampler->from_len = switch_short_to_float(data, session->read_resampler->from, (int)read_frame->datalen / 2 );
+			session->read_resampler->to_len = switch_resample_process(session->read_resampler,
+				session->read_resampler->from,
+				session->read_resampler->from_len, 
+				session->read_resampler->to, 
+				(int)session->read_resampler->to_size, 
+				0);
+			switch_float_to_short(session->read_resampler->to, data, read_frame->datalen);
+			read_frame->samples = session->read_resampler->to_len;
+			read_frame->datalen = session->read_resampler->to_len * 2;
+			read_frame->rate = session->read_resampler->to_rate;
 		}
 
 		if (session->read_codec) {
@@ -828,11 +854,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 	}
 
 	if (need_codec) {
-
-		if (frame->codec->codec_interface == session->write_codec->codec_interface) {
-			write_frame = frame;
-			status = SWITCH_STATUS_SUCCESS;
-		} else if (frame->codec) {
+		if (frame->codec) {
 			session->raw_write_frame.datalen = session->raw_write_frame.buflen;
 			status = switch_core_codec_decode(frame->codec,
 										   session->write_codec,
@@ -845,7 +867,17 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 										   &flag);
 
 			switch (status) {
-
+			case SWITCH_STATUS_RESAMPLE:
+				write_frame = &session->raw_write_frame;
+				if (!session->write_resampler) {
+					status = switch_resample_create(&session->write_resampler,
+						frame->codec->implementation->samples_per_second,
+						frame->codec->implementation->bytes_per_frame * 10,
+						session->write_codec->implementation->samples_per_second,
+						session->write_codec->implementation->bytes_per_frame * 10,
+						session->pool);
+				}
+				break;
 			case SWITCH_STATUS_SUCCESS:
 				write_frame = &session->raw_write_frame;
 				break;
@@ -859,7 +891,21 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				break;
 			}
 		} 
+		if (session->write_resampler) {
+			short *data = write_frame->data;
 
+			session->write_resampler->from_len = switch_short_to_float(data, session->write_resampler->from, (int)write_frame->datalen / 2);
+			session->write_resampler->to_len = switch_resample_process(session->write_resampler,
+				session->write_resampler->from,
+				session->write_resampler->from_len, 
+				session->write_resampler->to, 
+				(int)session->write_resampler->to_size, 
+				0);
+			switch_float_to_short(session->write_resampler->to, data, write_frame->datalen);
+			write_frame->samples = session->write_resampler->to_len;
+			write_frame->datalen = session->write_resampler->to_len * 2;
+			write_frame->rate = session->write_resampler->to_rate;
+		}
 		if (session->write_codec) {
 			if (write_frame->datalen == session->write_codec->implementation->bytes_per_frame) {
 				perfect = TRUE;
