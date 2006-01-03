@@ -64,56 +64,7 @@ extern "C" {
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions
    any other apr code should be as hidden as possible.
 */
-
-/**< descriptor refers to a socket */
-#define SWITCH_POLL_SOCKET APR_POLL_SOCKET
-
-/** @def SWITCH_UNSPEC
- * Let the system decide which address family to use
- */
-#define SWITCH_UNSPEC APR_UNSPEC 
-
-/**
- * Poll options
- */
-#define SWITCH_POLLIN APR_POLLIN			/**< Can read without blocking */
-#define SWITCH_POLLPRI APR_POLLPRI			/**< Priority data available */
-#define SWITCH_POLLOUT APR_POLLOUT			/**< Can write without blocking */
-#define SWITCH_POLLERR APR_POLLERR			/**< Pending error */
-#define SWITCH_POLLHUP APR_POLLHUP			/**< Hangup occurred */
-#define SWITCH_POLLNVAL APR_POLLNVAL		/**< Descriptior invalid */
 	
-/** Abstract type for hash tables. */
-typedef apr_hash_t switch_hash;
-
-/** Abstract type for scanning hash tables. */
-typedef apr_hash_index_t switch_hash_index_t;
-
-/** number of microseconds since 00:00:00 january 1, 1970 UTC */
-typedef apr_time_t switch_time_t;
-
-/**
- * a structure similar to ANSI struct tm with the following differences:
- *  - tm_usec isn't an ANSI field
- *  - tm_gmtoff isn't an ANSI field (it's a bsdism)
- */
-typedef apr_time_exp_t switch_time_exp_t;
-
-/** Poll descriptor set. */
-typedef apr_pollfd_t switch_pollfd_t;
-
-/** Opaque structure used for pollset API */
-typedef apr_pollset_t switch_pollset_t;
-
-/** Precompiled search pattern */
-typedef apr_strmatch_pattern switch_strmatch_pattern;
-
-/** we represent a UUID as a block of 16 bytes. */
-typedef apr_uuid_t switch_uuid_t;
-
-/** Opaque structure used for queue API */
-typedef apr_queue_t switch_queue_t;
-
 /**
  * @defgroup switch_file_io File I/O Handling Functions
  * @ingroup FREESWITCH 
@@ -396,6 +347,14 @@ DoxyDefine(apr_status_t switch_thread_create(switch_thread_t **new_thread, switc
  * @ingroup FREESWITCH 
  * @{
  */
+
+/** descriptor refers to a socket */
+#define SWITCH_POLL_SOCKET APR_POLL_SOCKET
+
+/** @def SWITCH_UNSPEC
+ * Let the system decide which address family to use
+ */
+#define SWITCH_UNSPEC APR_UNSPEC 
 
 /** A structure to represent sockets */
 typedef apr_socket_t switch_socket_t;
@@ -970,36 +929,392 @@ DoxyDefine(void switch_pool_clear(switch_memory_pool *p);)
 #define switch_pool_clear apr_pool_clear
 /** @} */
 
-#define switch_strmatch_precompile apr_strmatch_precompile
-#define switch_strmatch apr_strmatch
-#define switch_uuid_format apr_uuid_format
-#define switch_uuid_get apr_uuid_get
-#define switch_uuid_parse apr_uuid_parse
-#define switch_queue_create apr_queue_create
-#define switch_queue_interrupt_all apr_queue_interrupt_all
-#define switch_queue_pop apr_queue_pop
-#define switch_queue_push apr_queue_push
-#define switch_queue_size apr_queue_size
-#define switch_queue_term apr_queue_term
-#define switch_queue_trypop apr_queue_trypop
-#define switch_queue_trypush apr_queue_trypush
-#define switch_poll_setup apr_poll_setup
+/**
+ * @defgroup apr_poll Poll Routines
+ * @ingroup APR 
+ * @{
+ */
+/** Poll descriptor set. */
+typedef apr_pollfd_t switch_pollfd_t;
+
+/** Opaque structure used for pollset API */
+typedef apr_pollset_t switch_pollset_t;
+
+/**
+ * Poll options
+ */
+#define SWITCH_POLLIN APR_POLLIN			/**< Can read without blocking */
+#define SWITCH_POLLPRI APR_POLLPRI			/**< Priority data available */
+#define SWITCH_POLLOUT APR_POLLOUT			/**< Can write without blocking */
+#define SWITCH_POLLERR APR_POLLERR			/**< Pending error */
+#define SWITCH_POLLHUP APR_POLLHUP			/**< Hangup occurred */
+#define SWITCH_POLLNVAL APR_POLLNVAL		/**< Descriptior invalid */
+
+/**
+ * Setup a pollset object
+ * @param pollset  The pointer in which to return the newly created object 
+ * @param size The maximum number of descriptors that this pollset can hold
+ * @param p The pool from which to allocate the pollset
+ * @param flags Optional flags to modify the operation of the pollset.
+ *
+ * @remark If flags equals APR_POLLSET_THREADSAFE, then a pollset is
+ * created on which it is safe to make concurrent calls to
+ * apr_pollset_add(), apr_pollset_remove() and apr_pollset_poll() from
+ * separate threads.  This feature is only supported on some
+ * platforms; the apr_pollset_create() call will fail with
+ * APR_ENOTIMPL on platforms where it is not supported.
+ */
+DoxyDefine(apr_status_t apr_pollset_create(switch_pollset_t **pollset,
+                                             apr_uint32_t size,
+                                             switch_memory_pool_t *p,
+                                             apr_uint32_t flags);)
 #define switch_pollset_create apr_pollset_create
+
+/**
+ * Add a socket or file descriptor to a pollset
+ * @param pollset The pollset to which to add the descriptor
+ * @param descriptor The descriptor to add
+ * @remark If you set client_data in the descriptor, that value
+ *         will be returned in the client_data field whenever this
+ *         descriptor is signalled in apr_pollset_poll().
+ * @remark If the pollset has been created with APR_POLLSET_THREADSAFE
+ *         and thread T1 is blocked in a call to apr_pollset_poll() for
+ *         this same pollset that is being modified via apr_pollset_add()
+ *         in thread T2, the currently executing apr_pollset_poll() call in
+ *         T1 will either: (1) automatically include the newly added descriptor
+ *         in the set of descriptors it is watching or (2) return immediately
+ *         with APR_EINTR.  Option (1) is recommended, but option (2) is
+ *         allowed for implementations where option (1) is impossible
+ *         or impractical.
+ */
+DoxyDefine(apr_status_t apr_pollset_add(switch_pollset_t *pollset,
+                                          const switch_pollfd_t *descriptor);)
 #define switch_pollset_add apr_pollset_add
+
+/**
+ * Poll the sockets in the poll structure
+ * @param aprset The poll structure we will be using. 
+ * @param numsock The number of sockets we are polling
+ * @param nsds The number of sockets signalled.
+ * @param timeout The amount of time in microseconds to wait.  This is 
+ *                a maximum, not a minimum.  If a socket is signalled, we 
+ *                will wake up before this time.  A negative number means 
+ *                wait until a socket is signalled.
+ * @remark The number of sockets signalled is returned in the third argument. 
+ *         This is a blocking call, and it will not return until either a 
+ *         socket has been signalled, or the timeout has expired. 
+ */
+DoxyDefine(apr_status_t switch_poll(switch_pollfd_t *aprset, apr_int32_t numsock,
+                                   apr_int32_t *nsds, 
+                                   apr_interval_time_t timeout);)
 #define switch_poll apr_poll
+ 
+ /** @} */
+
+ /**
+ * @defgroup switch_time Time Routines
+ * @ingroup FREESWITCH 
+ * @{
+ */
+
+ /** number of microseconds since 00:00:00 january 1, 1970 UTC */
+typedef apr_time_t switch_time_t;
+
+/**
+ * a structure similar to ANSI struct tm with the following differences:
+ *  - tm_usec isn't an ANSI field
+ *  - tm_gmtoff isn't an ANSI field (it's a bsdism)
+ */
+typedef apr_time_exp_t switch_time_exp_t;
+
+/**
+ * @return the current time
+ */
+DoxyDefine(switch_time_t switch_time_now(void);)
 #define switch_time_now apr_time_now
+
+/**
+ * formats the exploded time according to the format specified
+ * @param s string to write to
+ * @param retsize The length of the returned string
+ * @param max The maximum length of the string
+ * @param format The format for the time string
+ * @param tm The time to convert
+ */
+DoxyDefine(apr_status_t switch_strftime(char *s, apr_size_t *retsize, 
+                                       apr_size_t max, const char *format, 
+                                       switch_time_exp_t *tm);)
 #define switch_strftime apr_strftime
+
+/**
+ * switch_rfc822_date formats dates in the RFC822
+ * format in an efficient manner.  It is a fixed length
+ * format which requires the indicated amount of storage,
+ * including the trailing NUL terminator.
+ * @param date_str String to write to.
+ * @param t the time to convert 
+ */
+DoxyDefine(apr_status_t switch_rfc822_date(char *date_str, switch_time_t t);)
 #define switch_rfc822_date apr_rfc822_date
+
+/**
+ * convert a time to its human readable components in GMT timezone
+ * @param result the exploded time
+ * @param input the time to explode
+ */
+DoxyDefine(apr_status_t switch_time_exp_gmt(switch_time_exp_t *result, 
+                                           switch_time_t input);)
 #define switch_time_exp_gmt apr_time_exp_gmt
+
+/**
+ * Convert time value from human readable format to a numeric apr_time_t 
+ * e.g. elapsed usec since epoch
+ * @param result the resulting imploded time
+ * @param input the input exploded time
+ */
+DoxyDefine(apr_status_t switch_time_exp_get(switch_time_t *result, 
+											switch_time_exp_t *input);)
 #define switch_time_exp_get apr_time_exp_get
+
+/**
+ * convert a time to its human readable components in local timezone
+ * @param result the exploded time
+ * @param input the time to explode
+ */
+DoxyDefine(apr_status_t switch_time_exp_lt(switch_time_exp_t *result, 
+											switch_time_t input);)
 #define switch_time_exp_lt apr_time_exp_lt
+
+/**
+ * Sleep for the specified number of micro-seconds.
+ * @param t desired amount of time to sleep.
+ * @warning May sleep for longer than the specified time. 
+ */
+DoxyDefine(void apr_sleep(apr_interval_time_t t);)
 #define switch_sleep apr_sleep
+
+/** @} */
+
+/**
+ * @defgroup apr_hash Hash Tables
+ * @ingroup APR 
+ * @{
+ */
+
+/** Abstract type for hash tables. */
+typedef apr_hash_t switch_hash;
+
+/** Abstract type for scanning hash tables. */
+typedef apr_hash_index_t switch_hash_index_t;
+
+/**
+ * Start iterating over the entries in a hash table.
+ * @param p The pool to allocate the switch_hash_index_t iterator. If this
+ *          pool is NULL, then an internal, non-thread-safe iterator is used.
+ * @param ht The hash table
+ * @remark  There is no restriction on adding or deleting hash entries during
+ * an iteration (although the results may be unpredictable unless all you do
+ * is delete the current entry) and multiple iterations can be in
+ * progress at the same time.
+
+ */
+DoxyDefine(switch_hash_index_t * switch_hash_first(switch_memory_pool_t *p, switch_hash_t *ht);)
 #define switch_hash_first apr_hash_first
+
+/**
+ * Continue iterating over the entries in a hash table.
+ * @param hi The iteration state
+ * @return a pointer to the updated iteration state.  NULL if there are no more  
+ *         entries.
+ */
+DoxyDefine(switch_hash_index_t * switch_hash_next(switch_hash_index_t *hi);)
 #define switch_hash_next apr_hash_next
+
+/**
+ * Get the current entry's details from the iteration state.
+ * @param hi The iteration state
+ * @param key Return pointer for the pointer to the key.
+ * @param klen Return pointer for the key length.
+ * @param val Return pointer for the associated value.
+ * @remark The return pointers should point to a variable that will be set to the
+ *         corresponding data, or they may be NULL if the data isn't interesting.
+ */
+DoxyDefine(void switch_hash_this(switch_hash_index_t *hi, const void **key, 
+                                apr_ssize_t *klen, void **val);)
 #define switch_hash_this apr_hash_this
 
+/** @} */
 
+/**
+ * @defgroup switch_StrMatch String matching routines
+ * @ingroup FREESWITCH
+ * @{
+ */
 
+/** Precompiled search pattern */
+typedef apr_strmatch_pattern switch_strmatch_pattern;
+
+/**
+ * Precompile a pattern for matching using the Boyer-Moore-Horspool algorithm
+ * @param p The pool from which to allocate the pattern
+ * @param s The pattern string
+ * @param case_sensitive Whether the matching should be case-sensitive
+ * @return a pointer to the compiled pattern, or NULL if compilation fails
+ */
+DoxyDefine(const switch_strmatch_pattern * switch_strmatch_precompile(switch_memory_pool_t *p, const char *s, int case_sensitive);)
+#define switch_strmatch_precompile apr_strmatch_precompile
+
+/**
+ * Search for a precompiled pattern within a string
+ * @param pattern The pattern
+ * @param s The string in which to search for the pattern
+ * @param slen The length of s (excluding null terminator)
+ * @return A pointer to the first instance of the pattern in s, or
+ *         NULL if not found
+ */
+DoxyDefine(const char * switch_strmatch(const switch_strmatch_pattern *pattern,
+                                       const char *s, apr_size_t slen);)
+#define switch_strmatch apr_strmatch
+/** @} */
+
+/**
+ * @defgroup switch_UUID UUID Handling
+ * @ingroup FREESWITCH
+ * @{
+ */
+
+/** we represent a UUID as a block of 16 bytes. */
+
+typedef apr_uuid_t switch_uuid_t;
+
+/** UUIDs are formatted as: 00112233-4455-6677-8899-AABBCCDDEEFF */
+
+/**
+ * Format a UUID into a string, following the standard format
+ * @param buffer The buffer to place the formatted UUID string into. It must
+ *               be at least APR_UUID_FORMATTED_LENGTH + 1 bytes long to hold
+ *               the formatted UUID and a null terminator
+ * @param uuid The UUID to format
+ */ 
+DoxyDefine(void switch_uuid_format(char *buffer, const switch_uuid_t *uuid);)
+#define switch_uuid_format apr_uuid_format
+
+/**
+ * Generate and return a (new) UUID
+ * @param uuid The resulting UUID
+ */ 
+DoxyDefine(void switch_uuid_get(switch_uuid_t *uuid);)
+#define switch_uuid_get apr_uuid_get
+
+/**
+ * Parse a standard-format string into a UUID
+ * @param uuid The resulting UUID
+ * @param uuid_str The formatted UUID
+ */ 
+DoxyDefine(apr_status_t switch_uuid_parse(switch_uuid_t *uuid, const char *uuid_str);)
+#define switch_uuid_parse apr_uuid_parse
+
+/** @} */
+
+/**
+ * @defgroup switch_FIFO Thread Safe FIFO bounded queue
+ * @ingroup FREESWITCH
+ * @{
+ */
+
+/** Opaque structure used for queue API */
+typedef apr_queue_t switch_queue_t;
+
+/** 
+ * create a FIFO queue
+ * @param queue The new queue
+ * @param queue_capacity maximum size of the queue
+ * @param a pool to allocate queue from
+ */
+DoxyDefine(apr_status_t switch_queue_create(switch_queue_t **queue, 
+                                           unsigned int queue_capacity, 
+                                           switch_memory_pool_t *a);)
+#define switch_queue_create apr_queue_create
+
+/**
+ * interrupt all the threads blocking on this queue.
+ *
+ * @param queue the queue
+ */
+DoxyDefine(apr_status_t switch_queue_interrupt_all(switch_queue_t *queue);)
+#define switch_queue_interrupt_all apr_queue_interrupt_all
+
+/**
+ * pop/get an object from the queue, blocking if the queue is already empty
+ *
+ * @param queue the queue
+ * @param data the data
+ * @returns APR_EINTR the blocking was interrupted (try again)
+ * @returns APR_EOF if the queue has been terminated
+ * @returns APR_SUCCESS on a successfull pop
+ */
+DoxyDefine(apr_status_t switch_queue_pop(switch_queue_t *queue, void **data);)
+#define switch_queue_pop apr_queue_pop
+
+/**
+ * push/add a object to the queue, blocking if the queue is already full
+ *
+ * @param queue the queue
+ * @param data the data
+ * @returns APR_EINTR the blocking was interrupted (try again)
+ * @returns APR_EOF the queue has been terminated
+ * @returns APR_SUCCESS on a successfull push
+ */
+DoxyDefine(apr_status_t switch_queue_push(switch_queue_t *queue, void *data);)
+#define switch_queue_push apr_queue_push
+
+/**
+ * returns the size of the queue.
+ *
+ * @warning this is not threadsafe, and is intended for reporting/monitoring
+ * of the queue.
+ * @param queue the queue
+ * @returns the size of the queue
+ */
+DoxyDefine(unsigned int switch_queue_size(switch_queue_t *queue);)
+#define switch_queue_size apr_queue_size
+
+/**
+ * terminate all queue, sendinging a interupt to all the
+ * blocking threads
+ *
+ * @param queue the queue
+ */
+DoxyDefine(apr_status_t switch_queue_term(switch_queue_t *queue);)
+#define switch_queue_term apr_queue_term
+
+/**
+ * pop/get an object to the queue, returning immediatly if the queue is empty
+ *
+ * @param queue the queue
+ * @param data the data
+ * @returns APR_EINTR the blocking operation was interrupted (try again)
+ * @returns APR_EAGAIN the queue is empty
+ * @returns APR_EOF the queue has been terminated
+ * @returns APR_SUCCESS on a successfull push
+ */
+DoxyDefine(apr_status_t switch_queue_trypop(switch_queue_t *queue, void **data);)
+#define switch_queue_trypop apr_queue_trypop
+
+/**
+ * push/add a object to the queue, returning immediatly if the queue is full
+ *
+ * @param queue the queue
+ * @param data the data
+ * @returns APR_EINTR the blocking operation was interrupted (try again)
+ * @returns APR_EAGAIN the queue is full
+ * @returns APR_EOF the queue has been terminated
+ * @returns APR_SUCCESS on a successfull push
+ */
+DoxyDefine(apr_status_t switch_queue_trypush(switch_queue_t *queue, void *data);)
+#define switch_queue_trypush apr_queue_trypush
+
+/** @} */
 
 #ifdef __cplusplus
 }
