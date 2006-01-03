@@ -37,7 +37,7 @@ extern "C" {
 		RTPIPv4Address addr(destip, tx_port);
 		RTPSessionParams sessparams;
 		int status;
-		
+
 #ifdef WIN32
 		if (!WSOCKON) {
 			WSADATA dat;
@@ -70,13 +70,13 @@ extern "C" {
 		jrtp4c->transparams->SetPortbase(rx_port);
 
 
-		
+
 
 		if (!(jrtp4c->session = new JRTP4C)) {
 			*err = "Memory Error!\n";
 			delete jrtp4c->transparams;
-            delete jrtp4c;
-            return NULL;
+			delete jrtp4c;
+			return NULL;
 		}
 
 		if ((status = jrtp4c->session->Create(sessparams, jrtp4c->transparams)) < 0) {
@@ -128,7 +128,7 @@ extern "C" {
 			return 0;
 		}
 
-		
+
 		if ((pack = jrtp4c->session->GetNextPacket())) {
 			slen = (int)pack->GetPayloadLength();
 

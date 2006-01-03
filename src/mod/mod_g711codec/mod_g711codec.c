@@ -39,7 +39,7 @@ static const char modname[] = "mod_g711codec";
 static switch_status switch_g711u_init(switch_codec *codec, switch_codec_flag flags, const struct switch_codec_settings *codec_settings)
 {
 	int encoding, decoding;
-	
+
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
@@ -52,14 +52,14 @@ static switch_status switch_g711u_init(switch_codec *codec, switch_codec_flag fl
 
 
 static switch_status switch_g711u_encode(switch_codec *codec,
-								   switch_codec *other_codec,
-								   void *decoded_data,
-								   size_t decoded_data_len,
-								   int decoded_rate,
-								   void *encoded_data,
-								   size_t *encoded_data_len,
-								   int *encoded_rate,
-								   unsigned int *flag)
+										 switch_codec *other_codec,
+										 void *decoded_data,
+										 size_t decoded_data_len,
+										 int decoded_rate,
+										 void *encoded_data,
+										 size_t *encoded_data_len,
+										 int *encoded_rate,
+										 unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
@@ -67,25 +67,25 @@ static switch_status switch_g711u_encode(switch_codec *codec,
 
 	dbuf = decoded_data;
 	ebuf = encoded_data;
-	
+
 	for (i = 0; i < decoded_data_len / sizeof(short); i++) {
 		ebuf[i] = linear2ulaw(dbuf[i]);
 	}
-	
+
 	*encoded_data_len = i;
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status switch_g711u_decode(switch_codec *codec,
-								   switch_codec *other_codec,
-								   void *encoded_data,
-								   size_t encoded_data_len,
-								   int encoded_rate,
-								   void *decoded_data,
-								   size_t *decoded_data_len,
-								   int *decoded_rate,
-								   unsigned int *flag) 
+										 switch_codec *other_codec,
+										 void *encoded_data,
+										 size_t encoded_data_len,
+										 int encoded_rate,
+										 void *decoded_data,
+										 size_t *decoded_data_len,
+										 int *decoded_rate,
+										 unsigned int *flag) 
 {
 	short *dbuf;
 	unsigned char *ebuf;
@@ -117,7 +117,7 @@ static switch_status switch_g711u_destroy(switch_codec *codec)
 static switch_status switch_g711a_init(switch_codec *codec, switch_codec_flag flags, const struct switch_codec_settings *codec_settings)
 {
 	int encoding, decoding;
-	
+
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
@@ -130,14 +130,14 @@ static switch_status switch_g711a_init(switch_codec *codec, switch_codec_flag fl
 
 
 static switch_status switch_g711a_encode(switch_codec *codec,
-								   switch_codec *other_codec,
-								   void *decoded_data,
-								   size_t decoded_data_len,
-								   int decoded_rate,
-								   void *encoded_data,
-								   size_t *encoded_data_len,
-								   int *encoded_rate,
-								   unsigned int *flag)
+										 switch_codec *other_codec,
+										 void *decoded_data,
+										 size_t decoded_data_len,
+										 int decoded_rate,
+										 void *encoded_data,
+										 size_t *encoded_data_len,
+										 int *encoded_rate,
+										 unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
@@ -145,25 +145,25 @@ static switch_status switch_g711a_encode(switch_codec *codec,
 
 	dbuf = decoded_data;
 	ebuf = encoded_data;
-	
+
 	for (i = 0; i < decoded_data_len / sizeof(short); i++) {
 		ebuf[i] = linear2alaw(dbuf[i]);
 	}
-	
+
 	*encoded_data_len = i;
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status switch_g711a_decode(switch_codec *codec,
-								   switch_codec *other_codec,
-								   void *encoded_data,
-								   size_t encoded_data_len,
-								   int encoded_rate,
-								   void *decoded_data,
-								   size_t *decoded_data_len,
-								   int *decoded_rate,
-								   unsigned int *flag) 
+										 switch_codec *other_codec,
+										 void *encoded_data,
+										 size_t encoded_data_len,
+										 int encoded_rate,
+										 void *decoded_data,
+										 size_t *decoded_data_len,
+										 int *decoded_rate,
+										 unsigned int *flag) 
 {
 	short *dbuf;
 	unsigned char *ebuf;

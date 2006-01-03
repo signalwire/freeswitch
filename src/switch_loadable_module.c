@@ -232,7 +232,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 		if (!(ptr = (char *) fname)) {
 			continue;
 		}
-	
+
 		if (!strstr(fname, ext) && !strstr(fname, EXT)) {
 			continue;
 		}
@@ -250,11 +250,11 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				for (ptr = new_module->interface->endpoint_interface; ptr; ptr = ptr->next) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Endpoint '%s'\n", ptr->interface_name);
 					switch_core_hash_insert(loadable_modules.endpoint_hash,
-											(char *) ptr->interface_name,
-											(void *) ptr);
+						(char *) ptr->interface_name,
+						(void *) ptr);
 				}
 			}
-			
+
 			if (new_module->interface->codec_interface) {
 				const switch_codec_implementation *impl;
 				const switch_codec_interface *ptr;
@@ -262,16 +262,16 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				for(ptr = new_module->interface->codec_interface; ptr; ptr = ptr->next) {
 					for(impl = ptr->implementations; impl ; impl = impl->next) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-											  "Adding Codec '%s' (%s) %dkhz %dms\n",
-											  ptr->iananame,
-											  ptr->interface_name,
-											  impl->samples_per_second,
-											  impl->microseconds_per_frame / 1000);
+							"Adding Codec '%s' (%s) %dkhz %dms\n",
+							ptr->iananame,
+							ptr->interface_name,
+							impl->samples_per_second,
+							impl->microseconds_per_frame / 1000);
 					}
 
 					switch_core_hash_insert(loadable_modules.codec_hash,
-											(char *) ptr->iananame,
-											(void *) ptr);
+						(char *) ptr->iananame,
+						(void *) ptr);
 				}
 			}
 
@@ -281,8 +281,8 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				for(ptr = new_module->interface->dialplan_interface; ptr; ptr = ptr->next) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Dialplan '%s'\n", ptr->interface_name);
 					switch_core_hash_insert(loadable_modules.dialplan_hash,
-											(char *) ptr->interface_name,
-											(void *) ptr);
+						(char *) ptr->interface_name,
+						(void *) ptr);
 				}
 			}
 
@@ -292,8 +292,8 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				for(ptr = new_module->interface->timer_interface; ptr; ptr = ptr->next) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Timer '%s'\n", ptr->interface_name);
 					switch_core_hash_insert(loadable_modules.timer_hash,
-											(char *) ptr->interface_name,
-											(void *) ptr);
+						(char *) ptr->interface_name,
+						(void *) ptr);
 				}
 			}
 
@@ -303,8 +303,8 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				for(ptr = new_module->interface->application_interface; ptr; ptr = ptr->next) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Application '%s'\n", ptr->interface_name);
 					switch_core_hash_insert(loadable_modules.application_hash,
-											(char *) ptr->interface_name,
-											(void *) ptr);
+						(char *) ptr->interface_name,
+						(void *) ptr);
 				}
 			}
 
@@ -314,8 +314,8 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				for(ptr = new_module->interface->api_interface; ptr; ptr = ptr->next) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding API Function '%s'\n", ptr->interface_name);
 					switch_core_hash_insert(loadable_modules.api_hash,
-											(char *) ptr->interface_name,
-											(void *) ptr);
+						(char *) ptr->interface_name,
+						(void *) ptr);
 				}
 			}
 
@@ -327,8 +327,8 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 					for (i = 0 ; ptr->extens[i]; i++) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding File Format '%s'\n", ptr->extens[i]);
 						switch_core_hash_insert(loadable_modules.file_hash,
-												(char *) ptr->extens[i],
-												(void *) ptr);
+							(char *) ptr->extens[i],
+							(void *) ptr);
 					}
 				}
 			}

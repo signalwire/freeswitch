@@ -163,9 +163,9 @@ SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *d
 }
 
 SWITCH_DECLARE(switch_status) switch_channel_init(switch_channel *channel,
-								switch_core_session *session,
-								switch_channel_state state,
-								switch_channel_flag flags)
+												  switch_core_session *session,
+												  switch_channel_state state,
+												  switch_channel_flag flags)
 {
 	assert(channel != NULL);
 	channel->state = state;
@@ -278,104 +278,104 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 
 	/* STUB for more dev
 	case CS_INIT:
-		switch(state) {
+	switch(state) {
 
-		case CS_NEW:
-		case CS_INIT:
-		case CS_LOOPBACK:
-		case CS_TRANSMIT:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_HANGUP:
-		case CS_DONE:
+	case CS_NEW:
+	case CS_INIT:
+	case CS_LOOPBACK:
+	case CS_TRANSMIT:
+	case CS_RING:
+	case CS_EXECUTE:
+	case CS_HANGUP:
+	case CS_DONE:
 
-		default:
-			break;
-		}
-		break;
+	default:
+	break;
+	}
+	break;
 	*/
 
 	switch(last_state) {
-	case CS_NEW:
-		switch(state) {
-		default:
-			ok++;
-			break;
-		}
-		break;
+case CS_NEW:
+	switch(state) {
+default:
+	ok++;
+	break;
+	}
+	break;
 
-	case CS_INIT:
-		switch(state) {
-		case CS_LOOPBACK:
-		case CS_TRANSMIT:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_HANGUP:
-			ok++;
-		default:
-			break;
-		}
-		break;
+case CS_INIT:
+	switch(state) {
+case CS_LOOPBACK:
+case CS_TRANSMIT:
+case CS_RING:
+case CS_EXECUTE:
+case CS_HANGUP:
+	ok++;
+default:
+	break;
+	}
+	break;
 
-	case CS_LOOPBACK:
-		switch(state) {
-		case CS_TRANSMIT:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_HANGUP:
-			ok++;
-		default:
-			break;
-		}
-		break;
+case CS_LOOPBACK:
+	switch(state) {
+case CS_TRANSMIT:
+case CS_RING:
+case CS_EXECUTE:
+case CS_HANGUP:
+	ok++;
+default:
+	break;
+	}
+	break;
 
-	case CS_TRANSMIT:
-		switch(state) {
-		case CS_LOOPBACK:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_HANGUP:
-			ok++;
-		default:
-			break;
-		}
-		break;
+case CS_TRANSMIT:
+	switch(state) {
+case CS_LOOPBACK:
+case CS_RING:
+case CS_EXECUTE:
+case CS_HANGUP:
+	ok++;
+default:
+	break;
+	}
+	break;
 
-	case CS_RING:
-		switch(state) {
-		case CS_LOOPBACK:
-		case CS_EXECUTE:
-		case CS_HANGUP:
-		case CS_TRANSMIT:
-			ok++;
-		default:
-			break;
-		}
-		break;
+case CS_RING:
+	switch(state) {
+case CS_LOOPBACK:
+case CS_EXECUTE:
+case CS_HANGUP:
+case CS_TRANSMIT:
+	ok++;
+default:
+	break;
+	}
+	break;
 
-	case CS_EXECUTE:
-		switch(state) {
-		case CS_LOOPBACK:
-		case CS_TRANSMIT:
-		case CS_RING:
-		case CS_HANGUP:
-			ok++;
-		default:
-			break;
-		}
-		break;
+case CS_EXECUTE:
+	switch(state) {
+case CS_LOOPBACK:
+case CS_TRANSMIT:
+case CS_RING:
+case CS_HANGUP:
+	ok++;
+default:
+	break;
+	}
+	break;
 
-	case CS_HANGUP:
-		switch(state) {
-		case CS_DONE:
-			ok++;
-		default:
-			break;
-		}
-		break;
+case CS_HANGUP:
+	switch(state) {
+case CS_DONE:
+	ok++;
+default:
+	break;
+	}
+	break;
 
-	default:
-		break;
+default:
+	break;
 
 	}
 
@@ -406,7 +406,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 	caller_profile = switch_channel_get_caller_profile(channel);
 	originator_caller_profile = switch_channel_get_originator_caller_profile(channel);
 	originatee_caller_profile = switch_channel_get_originatee_caller_profile(channel);
-	
+
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", (char *) switch_channel_state_name(channel->state));
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
@@ -416,7 +416,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 	if (caller_profile) {
 		switch_caller_profile_event_set_data(caller_profile, "Caller", event);
 	}
-	
+
 	/* Index Originator's Profile */
 	if (originator_caller_profile) {
 		switch_caller_profile_event_set_data(originator_caller_profile, "Originator", event);

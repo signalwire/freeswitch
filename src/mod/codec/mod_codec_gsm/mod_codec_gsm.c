@@ -43,10 +43,10 @@ static switch_status switch_gsm_init(switch_codec *codec, switch_codec_flag flag
 {
 	struct gsm_context *context;
 	int encoding, decoding;
-	
+
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
-	
+
 	if (!(encoding || decoding)) {
 		return SWITCH_STATUS_FALSE;
 	} else {
@@ -56,9 +56,9 @@ static switch_status switch_gsm_init(switch_codec *codec, switch_codec_flag flag
 	}
 
 	codec->private = context;
-		
+
 	return SWITCH_STATUS_SUCCESS;
-	
+
 }
 
 static switch_status switch_gsm_destroy(switch_codec *codec)
@@ -76,14 +76,14 @@ static switch_status switch_gsm_destroy(switch_codec *codec)
 
 
 static switch_status switch_gsm_encode(switch_codec *codec,
-								   switch_codec *other_codec,
-								   void *decoded_data,
-								   size_t decoded_data_len,
-								   int decoded_rate,
-								   void *encoded_data,
-								   size_t *encoded_data_len,
-								   int *encoded_rate,
-								   unsigned int *flag)
+									   switch_codec *other_codec,
+									   void *decoded_data,
+									   size_t decoded_data_len,
+									   int decoded_rate,
+									   void *encoded_data,
+									   size_t *encoded_data_len,
+									   int *encoded_rate,
+									   unsigned int *flag)
 {
 	struct gsm_context *context = codec->private;
 	int cbret = 0;
@@ -116,17 +116,17 @@ static switch_status switch_gsm_encode(switch_codec *codec,
 
 
 static switch_status switch_gsm_decode(switch_codec *codec,
-								   switch_codec *other_codec,
-								   void *encoded_data,
-								   size_t encoded_data_len,
-								   int encoded_rate,
-								   void *decoded_data,
-								   size_t *decoded_data_len,
-								   int *decoded_rate,
-								   unsigned int *flag) 
+									   switch_codec *other_codec,
+									   void *encoded_data,
+									   size_t encoded_data_len,
+									   int encoded_rate,
+									   void *decoded_data,
+									   size_t *decoded_data_len,
+									   int *decoded_rate,
+									   unsigned int *flag) 
 {
 	struct gsm_context *context = codec->private;
-	
+
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -140,7 +140,7 @@ static switch_status switch_gsm_decode(switch_codec *codec,
 		unsigned int new_len = 0;
 		for(x = 0; x < loops && new_len < *decoded_data_len; x++) {
 			gsm_decode(context->decoder, edp, ddp);
-				ddp += 160;
+			ddp += 160;
 			edp += 33;
 			new_len += 320;
 		}
@@ -153,7 +153,7 @@ static switch_status switch_gsm_decode(switch_codec *codec,
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "yo this frame is an odd size [%d]\n", encoded_data_len);
 	}
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

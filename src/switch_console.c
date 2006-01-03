@@ -34,8 +34,8 @@
 
 static int switch_console_process(char *cmd)
 {
-char *arg = NULL;
- char retbuf[1024] = "";
+	char *arg = NULL;
+	char retbuf[1024] = "";
 
 #ifdef EMBED_PERL
 	const char *perlhelp = "perl - execute some perl. (print to STDERR if you want to see it.)\n";
@@ -48,12 +48,12 @@ char *arg = NULL;
 	}
 	if (!strcmp(cmd, "help")) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-						   "\n"
-						   "Valid Commands:\n\n"
-						   "help - umm yeah..\n"
-						   "%sshutdown - stop the program\n\n",
-						   perlhelp
-						   );
+			"\n"
+			"Valid Commands:\n\n"
+			"help - umm yeah..\n"
+			"%sshutdown - stop the program\n\n",
+			perlhelp
+			);
 		return 1;
 	}
 
@@ -119,14 +119,14 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *fi
 			}
 
 			else if (channel == SWITCH_CHANNEL_ID_EVENT && 
-					 switch_event_running() == SWITCH_STATUS_SUCCESS && 
-					 switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
-				
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", func);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
-				switch_event_fire(&event);
+				switch_event_running() == SWITCH_STATUS_SUCCESS && 
+				switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
+
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", func);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
+					switch_event_fire(&event);
 			}
 			free(data);
 		}

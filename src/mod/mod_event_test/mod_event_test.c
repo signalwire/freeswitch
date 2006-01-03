@@ -47,7 +47,7 @@ static void event_handler (switch_event *event)
 		break;
 	}
 }
-						  
+
 
 static switch_loadable_module_interface event_test_module_interface = {
 	/*.module_name*/			modname,

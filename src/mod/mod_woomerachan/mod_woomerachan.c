@@ -150,7 +150,7 @@ struct private_object {
 	struct woomera_profile *profile;
 	char dest[WOOMERA_STRLEN];
 	int port;
-	struct timeval started;
+	switch_time_t started;
 	int timeout;
 	char dtmfbuf[WOOMERA_STRLEN];
 	switch_caller_profile *caller_profile;

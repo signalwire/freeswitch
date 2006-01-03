@@ -43,10 +43,10 @@ static switch_status switch_g729_init(switch_codec *codec, switch_codec_flag fla
 {
 	struct g729_context *context = NULL;
 	int encoding, decoding;
-	
+
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
-	
+
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct g729_context))))) {
 		return SWITCH_STATUS_FALSE;
 	} else {
@@ -58,7 +58,7 @@ static switch_status switch_g729_init(switch_codec *codec, switch_codec_flag fla
 		}
 
 		codec->private = context;
-		
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
@@ -71,14 +71,14 @@ static switch_status switch_g729_destroy(switch_codec *codec)
 
 
 static switch_status switch_g729_encode(switch_codec *codec,
-								   switch_codec *other_codec,
-								   void *decoded_data,
-								   size_t decoded_data_len,
-								   int decoded_rate,
-								   void *encoded_data,
-								   size_t *encoded_data_len,
-								   int *encoded_rate,
-								   unsigned int *flag)
+										switch_codec *other_codec,
+										void *decoded_data,
+										size_t decoded_data_len,
+										int decoded_rate,
+										void *encoded_data,
+										size_t *encoded_data_len,
+										int *encoded_rate,
+										unsigned int *flag)
 {
 	struct g729_context *context = codec->private;
 	int cbret = 0;
@@ -92,7 +92,7 @@ static switch_status switch_g729_encode(switch_codec *codec,
 		char *edp = encoded_data;
 		int x;
 		int loops = (int) decoded_data_len / 160;
-		
+
 		for(x = 0; x < loops && new_len < *encoded_data_len; x++) {
 			g729_coder(&context->encoder_object, ddp, edp, &cbret);
 			edp += 10;
@@ -111,17 +111,17 @@ static switch_status switch_g729_encode(switch_codec *codec,
 
 
 static switch_status switch_g729_decode(switch_codec *codec,
-								   switch_codec *other_codec,
-								   void *encoded_data,
-								   size_t encoded_data_len,
-								   int encoded_rate,
-								   void *decoded_data,
-								   size_t *decoded_data_len,
-								   int *decoded_rate,
-								   unsigned int *flag) 
+										switch_codec *other_codec,
+										void *encoded_data,
+										size_t encoded_data_len,
+										int encoded_rate,
+										void *decoded_data,
+										size_t *decoded_data_len,
+										int *decoded_rate,
+										unsigned int *flag) 
 {
 	struct g729_context *context = codec->private;
-	
+
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -148,8 +148,8 @@ static switch_status switch_g729_decode(switch_codec *codec,
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "yo this frame is an odd size [%d]\n", encoded_data_len);
 	}
-	
-	
+
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

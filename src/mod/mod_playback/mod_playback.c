@@ -58,11 +58,11 @@ void playback_function(switch_core_session *session, char *data)
 	assert(channel != NULL);
 
 	if (switch_core_file_open(&fh,
-							  data,
-							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
-							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_channel_hangup(channel);
-		return;
+		data,
+		SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
+		switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+			switch_channel_hangup(channel);
+			return;
 	}
 
 	switch_channel_answer(channel);
@@ -70,25 +70,25 @@ void playback_function(switch_core_session *session, char *data)
 	write_frame.data = buf;
 	write_frame.buflen = sizeof(buf);
 
-    
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s %dhz %d channels\n", data, fh.samplerate, fh.channels);
-	
+
 	interval = 20;
 	samples = (fh.samplerate / 50) * fh.channels;
 	len = samples * 2;
-	
+
 	codec_name = "L16";
-	
+
 	if (switch_core_codec_init(&codec,
-							   codec_name,
-							   fh.samplerate,
-							   interval,
-							   fh.channels,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL,
-							   pool) == SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
-		write_frame.codec = &codec;
+		codec_name,
+		fh.samplerate,
+		interval,
+		fh.channels,
+		SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+		NULL,
+		pool) == SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
+			write_frame.codec = &codec;
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d channels %dms\n", codec_name, fh.samplerate, fh.channels, interval);
 		switch_core_file_close(&fh);
@@ -115,7 +115,7 @@ void playback_function(switch_core_session *session, char *data)
 		if (switch_channel_has_dtmf(channel)) {
 			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DTMF [%s]\n", dtmf);
-			
+
 			switch (*dtmf) {
 			case '*':
 				done = 1;
@@ -124,17 +124,17 @@ void playback_function(switch_core_session *session, char *data)
 				break;
 			}
 		}
-		
+
 		if (done) {
 			break;
 		}
-		
+
 		switch_core_file_read(&fh, buf, &ilen);
 
 		if (ilen <= 0) {
 			break;
 		}
-		
+
 		write_frame.datalen = ilen * 2;
 		write_frame.samples = (int)ilen;
 #ifdef SWAP_LINEAR
@@ -149,7 +149,7 @@ void playback_function(switch_core_session *session, char *data)
 			break;
 		}
 	}
-	
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "done playing file\n");
 	switch_core_file_close(&fh);
 
@@ -178,7 +178,7 @@ static const switch_loadable_module_interface mod_playback_module_interface = {
 };
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &mod_playback_module_interface;
 
@@ -188,8 +188,8 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 }
 
 /* 'switch_module_runtime' will start up in a thread by itself just by having it exist 
-   if it returns anything but SWITCH_STATUS_TERM it will be called again automaticly
- */
+if it returns anything but SWITCH_STATUS_TERM it will be called again automaticly
+*/
 
 
 //switch_status switch_module_runtime(void)

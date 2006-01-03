@@ -95,40 +95,6 @@ static switch_status switch_raw_destroy(switch_codec *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#if 0
-switch_status raw_file_open(switch_file_handle *handle, char *path)
-{
-	return SWITCH_STATUS_SUCCESS;
-}
-
-switch_status raw_file_close(switch_file_handle *handle)
-{
-	return SWITCH_STATUS_SUCCESS;
-}
-
-switch_status raw_file_seek(switch_file_handle *handle, unsigned int *cur_sample, unsigned int samples, int whence)
-{
-	return SWITCH_STATUS_NOTIMPL;
-}
-
-
-/* Registration */
-
-
-static char *supported_formats[] = {"raw", "r8k", NULL};
-
-static const switch_file_interface raw_file_interface = {
-	/*.interface_name*/		"raw",
-	/*.file_open*/			raw_file_open,
-	/*.file_close*/			raw_file_close,
-	/*.file_read*/			NULL,
-	/*.file_write*/			NULL,
-	/*.file_seek*/			raw_file_seek,
-	/*.extens*/ 			supported_formats,
-	/*.next*/				NULL,
-};
-#endif
-
 static const switch_codec_implementation raw_32k_implementation = {
 	/*.samples_per_second = */  32000,
 	/*.bits_per_second = */ 512000,

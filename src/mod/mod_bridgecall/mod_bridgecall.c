@@ -50,7 +50,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	switch_channel *chan_a, *chan_b;
 	switch_frame *read_frame;
 	switch_core_session *session_a, *session_b;
-	
+
 	session_a = data->objs[0];
 	session_b = data->objs[1];
 
@@ -61,12 +61,12 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 		switch_channel_state b_state = switch_channel_get_state(chan_b);
 
 		switch (b_state) {
-		case CS_HANGUP:
-			data->running = -1;
-			continue;
-			break;
-		default:
-			break;
+case CS_HANGUP:
+	data->running = -1;
+	continue;
+	break;
+default:
+	break;
 		}
 
 		if (switch_channel_has_dtmf(chan_a)) {
@@ -110,7 +110,7 @@ static switch_status audio_bridge_on_hangup(switch_core_session *session)
 
 	switch_core_session_kill_channel(other_session, SWITCH_SIG_KILL);
 	switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -137,7 +137,7 @@ static const switch_event_handler_table audio_bridge_peer_event_handlers = {
 	/*.on_init*/		NULL,
 	/*.on_ring*/		audio_bridge_on_ring,
 	/*.on_execute*/		NULL,
-    /*.on_hangup*/		audio_bridge_on_hangup,
+	/*.on_hangup*/		audio_bridge_on_hangup,
 	/*.on_loopback*/	NULL,
 	/*.on_transmit*/	NULL
 };
@@ -146,7 +146,7 @@ static const switch_event_handler_table audio_bridge_caller_event_handlers = {
 	/*.on_init*/		NULL,
 	/*.on_ring*/		NULL,
 	/*.on_execute*/		NULL,
-    /*.on_hangup*/		audio_bridge_on_hangup,
+	/*.on_hangup*/		audio_bridge_on_hangup,
 	/*.on_loopback*/	NULL,
 	/*.on_transmit*/	NULL
 };
@@ -171,16 +171,16 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 
 	caller_caller_profile = switch_channel_get_caller_profile(caller_channel);
 	caller_profile = switch_caller_profile_new(session,
-											   caller_caller_profile->dialplan,
-											   caller_caller_profile->caller_id_name,
-											   caller_caller_profile->caller_id_number,
-											   caller_caller_profile->network_addr,
-											   NULL,
-											   NULL,
-											   chan_data);
-	
+		caller_caller_profile->dialplan,
+		caller_caller_profile->caller_id_name,
+		caller_caller_profile->caller_id_number,
+		caller_caller_profile->network_addr,
+		NULL,
+		NULL,
+		chan_data);
 
-	
+
+
 	if (switch_core_session_outgoing_channel(session, chan_type, caller_profile, &peer_session) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DOH!\n");
 		switch_channel_hangup(caller_channel);
@@ -188,18 +188,18 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 	} else {
 		struct switch_core_thread_session this_audio_thread, other_audio_thread;
 		time_t start;
-		
+
 		peer_channel = switch_core_session_get_channel(peer_session);
 		memset(&other_audio_thread, 0, sizeof(other_audio_thread));
 		memset(&this_audio_thread, 0, sizeof(this_audio_thread));
 		other_audio_thread.objs[0] = session;
 		other_audio_thread.objs[1] = peer_session;
 		other_audio_thread.running = 5;
-		
+
 		this_audio_thread.objs[0] = peer_session;
 		this_audio_thread.objs[1] = session;
 		this_audio_thread.running = 2;
-		
+
 
 		switch_channel_set_private(caller_channel, peer_session);
 		switch_channel_set_private(peer_channel, session);
@@ -217,10 +217,10 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 
 		time(&start);
 		while(switch_channel_get_state(caller_channel) == CS_EXECUTE && 
-			  switch_channel_get_state(peer_channel) == CS_TRANSMIT && 
-			  !switch_channel_test_flag(peer_channel, CF_ANSWERED) && 
-			  ((time(NULL) - start) < timelimit)) {
-			switch_yield(20000);
+			switch_channel_get_state(peer_channel) == CS_TRANSMIT && 
+			!switch_channel_test_flag(peer_channel, CF_ANSWERED) && 
+			((time(NULL) - start) < timelimit)) {
+				switch_yield(20000);
 		}
 
 		if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
@@ -262,7 +262,7 @@ static const switch_loadable_module_interface mod_bridgecall_module_interface = 
 };
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &mod_bridgecall_module_interface;
 

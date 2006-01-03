@@ -54,7 +54,7 @@ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **ne
 													 switch_memory_pool *pool)
 {
 	switch_audio_resampler *resampler;
-	
+
 	if (!(resampler = switch_core_alloc(pool, sizeof(*resampler)))) {
 		return SWITCH_STATUS_MEMERR;
 	}
@@ -77,23 +77,23 @@ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **ne
 
 SWITCH_DECLARE(int) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst, int dstlen, int last)
 {
-    int o=0, srcused=0, srcpos=0, out=0;
+	int o=0, srcused=0, srcpos=0, out=0;
 
-    for(;;) {
-        int srcBlock = MIN(srclen-srcpos, srclen);
-        int lastFlag = (last && (srcBlock == srclen-srcpos));
-        o = resample_process(resampler->resampler, resampler->factor, &src[srcpos], srcBlock, lastFlag, &srcused, &dst[out], dstlen-out);
-        //printf("resampling %d/%d (%d) %d %f\n",  srcpos, srclen,  MIN(dstlen-out, dstlen), srcused, factor);
+	for(;;) {
+		int srcBlock = MIN(srclen-srcpos, srclen);
+		int lastFlag = (last && (srcBlock == srclen-srcpos));
+		o = resample_process(resampler->resampler, resampler->factor, &src[srcpos], srcBlock, lastFlag, &srcused, &dst[out], dstlen-out);
+		//printf("resampling %d/%d (%d) %d %f\n",  srcpos, srclen,  MIN(dstlen-out, dstlen), srcused, factor);
 
 		srcpos += srcused;
 		if (o >= 0) {
-            out += o;
+			out += o;
 		}
 		if (o < 0 || (o == 0 && srcpos == srclen)) {
-            break;
+			break;
 		}
-    }
-    return out;
+	}
+	return out;
 }
 
 SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler *resampler)

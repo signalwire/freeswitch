@@ -59,7 +59,7 @@ switch_caller_extension *demo_dialplan_hunt(switch_core_session *session)
 		switch_channel_hangup(channel);
 		return NULL;
 	}
-	
+
 	while (switch_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, "extensions")) {
 			if (!strcmp(var, caller_profile->destination_number) && val) {
@@ -67,7 +67,7 @@ switch_caller_extension *demo_dialplan_hunt(switch_core_session *session)
 
 				memset(app, 0, sizeof(app));
 				strncpy(app, val, sizeof(app));
-			
+
 				if ((data = strchr(app, ' '))) {
 					*data = '\0';
 					data++;
@@ -94,7 +94,7 @@ switch_caller_extension *demo_dialplan_hunt(switch_core_session *session)
 	} else {
 		switch_channel_hangup(channel);
 	}
-	
+
 	return extension;
 }
 
@@ -115,14 +115,10 @@ static const switch_loadable_module_interface demo_dialplan_module_interface = {
 };
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
-	
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &demo_dialplan_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
-
-

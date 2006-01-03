@@ -72,11 +72,9 @@ SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll,
 	switch_pollset_t *pollset;
 	switch_status status;
 
-
 	if ((status = switch_pollset_create(&pollset, 1, pool, flags)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
-
 
 	poll->desc_type = SWITCH_POLL_SOCKET;
 	poll->reqevents = flags;
@@ -84,9 +82,6 @@ SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll,
 	poll->client_data = sock;
 
 	return switch_pollset_add(pollset, poll);
-
-	
-
 }
 
 
@@ -94,61 +89,13 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 {
 	switch_status status; 
 	int nsds = 0;
-	
+
 	if ((status = switch_poll(poll, 1, &nsds, ms)) != SWITCH_STATUS_SUCCESS) {
 		return -1;
 	}
-	
+
 	return nsds;
 }
-
-
-#ifdef HAVE_TIMEVAL_STRUCT
-#define ONE_MILLION	1000000
-/*
- * put timeval in a valid range. usec is 0..999999
- * negative values are not allowed and truncated.
- */
-static struct timeval tvfix(struct timeval a)
-{
-	if (a.tv_usec >= ONE_MILLION) {
-		a.tv_sec += a.tv_usec % ONE_MILLION;
-		a.tv_usec %= ONE_MILLION;
-	} else if (a.tv_usec < 0) {
-		a.tv_usec = 0;
-	}
-	return a;
-}
-
-struct timeval switch_tvadd(struct timeval a, struct timeval b)
-{
-	/* consistency checks to guarantee usec in 0..999999 */
-	a = tvfix(a);
-	b = tvfix(b);
-	a.tv_sec += b.tv_sec;
-	a.tv_usec += b.tv_usec;
-	if (a.tv_usec >= ONE_MILLION) {
-		a.tv_sec++;
-		a.tv_usec -= ONE_MILLION;
-	}
-	return a;
-}
-
-struct timeval switch_tvsub(struct timeval a, struct timeval b)
-{
-	/* consistency checks to guarantee usec in 0..999999 */
-	a = tvfix(a);
-	b = tvfix(b);
-	a.tv_sec -= b.tv_sec;
-	a.tv_usec -= b.tv_usec;
-	if (a.tv_usec < 0) {
-		a.tv_sec-- ;
-		a.tv_usec += ONE_MILLION;
-	}
-	return a;
-}
-#undef ONE_MILLION
-#endif
 
 #ifdef WIN32
 //this forces certain symbols to not be optimized out of the dll
