@@ -964,7 +964,7 @@ typedef apr_pollset_t switch_pollset_t;
  * platforms; the apr_pollset_create() call will fail with
  * APR_ENOTIMPL on platforms where it is not supported.
  */
-DoxyDefine(apr_status_t apr_pollset_create(switch_pollset_t **pollset,
+DoxyDefine(apr_status_t switch_pollset_create(switch_pollset_t **pollset,
                                              apr_uint32_t size,
                                              switch_memory_pool_t *p,
                                              apr_uint32_t flags);)
@@ -987,7 +987,7 @@ DoxyDefine(apr_status_t apr_pollset_create(switch_pollset_t **pollset,
  *         allowed for implementations where option (1) is impossible
  *         or impractical.
  */
-DoxyDefine(apr_status_t apr_pollset_add(switch_pollset_t *pollset,
+DoxyDefine(apr_status_t switch_pollset_add(switch_pollset_t *pollset,
                                           const switch_pollfd_t *descriptor);)
 #define switch_pollset_add apr_pollset_add
 
@@ -1090,7 +1090,7 @@ DoxyDefine(apr_status_t switch_time_exp_lt(switch_time_exp_t *result,
  * @param t desired amount of time to sleep.
  * @warning May sleep for longer than the specified time. 
  */
-DoxyDefine(void apr_sleep(apr_interval_time_t t);)
+DoxyDefine(void switch_sleep(apr_interval_time_t t);)
 #define switch_sleep apr_sleep
 
 /** @} */

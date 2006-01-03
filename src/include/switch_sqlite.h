@@ -40,6 +40,16 @@ extern "C" {
 
 #include <sqlite3.h>
 
+/**
+ * @defgroup switch_sqlite Database Routines
+ * @ingroup FREESWITCH 
+ * @{
+ */
+
+/**
+ * Each open sqlite database is represented by an instance of the
+ * following opaque structure.
+*/
 typedef sqlite3 switch_core_db;
 
 #define switch_core_db_aggregate_context sqlite3_aggregate_context
@@ -150,6 +160,7 @@ typedef sqlite3 switch_core_db;
 #define switch_core_db_version sqlite3_version
 #define switch_core_db_vmprintf sqlite3_vmprintf
 
+/** @} */
 
 
 

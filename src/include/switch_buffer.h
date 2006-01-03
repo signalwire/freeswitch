@@ -42,13 +42,14 @@ extern "C" {
 
 #include <switch.h>
 
-struct switch_buffer;
-
 /**
  * @defgroup switch_buffer Buffer Routines
  * @ingroup FREESWITCH 
  * @{
  */
+
+struct switch_buffer;
+
 
 /*! \brief Allocate a new switch_buffer 
  * \param pool Pool to allocate the buffer from
@@ -72,7 +73,7 @@ SWITCH_DECLARE(int) switch_buffer_freespace(switch_buffer *buffer);
 
 /*! \brief Get the in use amount of a switch_buffer 
  * \param buffer any buffer of type switch_buffer
- * \return int size of buffer curently in use
+ * \return int ammount of buffer curently in use
  */
 SWITCH_DECLARE(int) switch_buffer_inuse(switch_buffer *buffer);
 
@@ -95,7 +96,7 @@ SWITCH_DECLARE(int) switch_buffer_write(switch_buffer *buffer, void *data, size_
 /*! \brief Remove data from the buffer
  * \param buffer any buffer of type switch_buffer
  * \param datalen amount of data to be returned
- * \return int ammount of buffer used after the toss, or 0 if unable to toss that much data
+ * \return int size of buffer, or 0 if unable to toss that much data
  */
 SWITCH_DECLARE(int) switch_buffer_toss(switch_buffer *buffer, size_t datalen);
 /** @} */
