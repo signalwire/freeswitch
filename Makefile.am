@@ -128,8 +128,7 @@ install_mod: modules
 	@echo done
 
 dox:
-	cd docs
-	doxygen $(PWD)/docs/Doxygen.conf
+	cd docs && doxygen $(PWD)/docs/Doxygen.conf
 
 eclean: clean
 	rm -f `find . -type f -name \*~`
