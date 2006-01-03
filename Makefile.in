@@ -973,7 +973,7 @@ depends:
 
 modules: $(NAME)
 	@echo making modules
-	@cd src/mod && for i in $(shell cat modules.conf | grep -v \#) ; do echo making $$i ; PREFIX="$(PREFIX)" BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
+	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; PREFIX="$(PREFIX)" BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
 
 modclean:
 	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
