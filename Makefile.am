@@ -128,6 +128,7 @@ install_mod: modules
 	@echo done
 
 dox:
+	cd docs
 	doxygen $(PWD)/docs/Doxygen.conf
 
 eclean: clean
