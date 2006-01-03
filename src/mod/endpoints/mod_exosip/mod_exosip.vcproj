@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_Exosip Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_Exosip Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/D _CRT_SECURE_NO_DEPRECATE"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\libs\include;..\..\..\libs\libeXosip2\include;..\..\..\libs\osip\include;..\..\..\libs\jrtp4c\src;..\..\..\libs\osip\src\osipparser2;..\..\..\libs\jrtplib\src;&quot;..\..\..\libs\jthread-1.1.2\src&quot;"
+				AdditionalIncludeDirectories="..\..\..\include;..\..\..\..\libs\include;..\..\..\..\libs\libeXosip2\include;..\..\..\..\libs\osip\include;..\..\..\..\libs\jrtp4c\src;..\..\..\..\libs\osip\src\osipparser2;..\..\..\..\libs\jrtplib\src;&quot;..\..\..\..\libs\jthread-1.1.2\src&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				GeneratePreprocessedFile="0"
 				MinimalRebuild="true"
@@ -68,9 +68,9 @@
 				AdditionalOptions="/NODEFAULTLIB:LIBCMT"
 				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libcpmt.lib eXosip.lib jrtplib.lib jthread.lib osipparser2.lib osip2.lib"
 				ShowProgress="0"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_exosip.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_exosip.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\apr\Debug&quot;;&quot;$(InputDir)..\..\..\libs\jrtp4c\w32\Debug&quot;;&quot;$(InputDir)..\..\..\libs\jrtplib\Debug&quot;;&quot;$(InputDir)..\..\..\libs\jthread-1.1.2\Debug&quot;;&quot;$(InputDir)..\..\..\libs\libeXosip2\platform\vsnet\Debug&quot;;&quot;$(InputDir)..\..\..\libs\osip\platform\vsnet\Debug&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\apr\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\jrtp4c\w32\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\jrtplib\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\jthread-1.1.2\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\libeXosip2\platform\vsnet\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\osip\platform\vsnet\Debug&quot;"
 				IgnoreAllDefaultLibraries="false"
 				IgnoreDefaultLibraryNames=""
 				GenerateDebugInformation="true"
@@ -114,7 +114,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_Exosip Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_Exosip Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -130,7 +130,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\libs\include;..\..\..\libs\libeXosip2\include;..\..\..\libs\osip\include;..\..\..\libs\jrtp4c\src;..\..\..\libs\osip\src\osipparser2;..\..\..\libs\jrtplib\src;&quot;..\..\..\libs\jthread-1.1.2\src&quot;"
+				AdditionalIncludeDirectories="..\..\..\include;..\..\..\..\libs\include;..\..\..\..\libs\libeXosip2\include;..\..\..\..\libs\osip\include;..\..\..\..\libs\jrtp4c\src;..\..\..\..\libs\osip\src\osipparser2;..\..\..\..\libs\jrtplib\src;&quot;..\..\..\..\libs\jthread-1.1.2\src&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -150,9 +150,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libcpmt.lib eXosip.lib jrtplib.lib jthread.lib osipparser2.lib osip2.lib"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_exosip.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_exosip.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\..\libs\jrtp4c\w32\Release&quot;;&quot;$(InputDir)..\..\..\libs\jrtplib\Release&quot;;&quot;$(InputDir)..\..\..\libs\jthread-1.1.2\Release&quot;;&quot;$(InputDir)..\..\..\libs\libeXosip2\platform\vsnet\Release&quot;;&quot;$(InputDir)..\..\..\libs\osip\platform\vsnet\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\jrtp4c\w32\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\jrtplib\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\jthread-1.1.2\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\libeXosip2\platform\vsnet\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\osip\platform\vsnet\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -195,7 +195,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\libs\jrtp4c\src\jrtp4c.cpp"
+				RelativePath="..\..\..\..\libs\jrtp4c\src\jrtp4c.cpp"
 				>
 			</File>
 			<File
@@ -203,7 +203,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libs\osip\src\osipparser2\osip_rfc3264.c"
+				RelativePath="..\..\..\..\libs\osip\src\osipparser2\osip_rfc3264.c"
 				>
 			</File>
 		</Filter>
@@ -213,7 +213,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\libs\osip\src\osipparser2\osip_rfc3264i.h"
+				RelativePath="..\..\..\..\libs\osip\src\osipparser2\osip_rfc3264i.h"
 				>
 			</File>
 		</Filter>

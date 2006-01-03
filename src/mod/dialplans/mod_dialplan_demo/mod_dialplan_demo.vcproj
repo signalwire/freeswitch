@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -62,9 +62,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_dialplan_demo.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_dialplan_demo.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(InputDir)..\..\libs\apr\Debug"
+				AdditionalLibraryDirectories="$(InputDir)..\..\..\libs\apr\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_dialplan_demo.pdb"
 				SubSystem="2"
@@ -121,7 +121,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -140,9 +140,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_dialplan_demo.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_dialplan_demo.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\apr\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

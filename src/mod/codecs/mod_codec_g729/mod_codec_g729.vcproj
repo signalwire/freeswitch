@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_CodecG729 Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_CodecG729 Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\codec\libg729&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\codec\libg729&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -64,9 +64,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libg729.lib FreeSwitchCore.lib"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_codec_g729.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_codec_g729.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\apr\Debug&quot;;&quot;$(InputDir)..\..\..\libs\codec\libg729\Debug&quot;;..\..\..\w32\vsnet\Debug"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\apr\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\codec\libg729\Debug&quot;;..\..\..\..\w32\vsnet\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_codec_g729.pdb"
 				SubSystem="2"
@@ -108,7 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_CodecG729 Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_CodecG729 Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -124,7 +124,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\codec\libg729&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\codec\libg729&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -144,9 +144,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libg729.lib FreeSwitchCore.lib"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_codec_g729.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_codec_g729.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\..\libs\codec\libg729\Release&quot;;..\..\..\w32\vsnet\Release"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\codec\libg729\Release&quot;;..\..\..\..\w32\vsnet\Release"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

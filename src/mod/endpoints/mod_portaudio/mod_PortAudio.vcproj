@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_PortAudio Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_PortAudio Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\portaudio\pa_common&quot;;&quot;$(InputDir)..\..\..\libs\portaudio\pa_win_wmme&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio\pa_common&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio\pa_win_wmme&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -65,9 +65,9 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIMBCTD"
 				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib  PAStaticWMMED.lib Winmm.lib"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_PortAudio.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_PortAudio.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\portaudio\winvc\Lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\portaudio\winvc\Lib&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_PortAudio.pdb"
 				SubSystem="2"
@@ -109,7 +109,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_PortAudio Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_PortAudio Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -125,7 +125,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\portaudio\pa_common&quot;;&quot;$(InputDir)..\..\..\libs\portaudio\pa_win_wmme&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio\pa_common&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio\pa_win_wmme&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -145,9 +145,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib  PAStaticWMME.lib Winmm.lib"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_PortAudio.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_PortAudio.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\portaudio\winvc\Lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\portaudio\winvc\Lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

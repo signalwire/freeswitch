@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_rawaudio Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_rawaudio Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\libresample\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libresample\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -64,9 +64,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libresampled.lib"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_rawaudio.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_rawaudio.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\libresample\win&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\libresample\win&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_rawaudio.pdb"
 				SubSystem="2"
@@ -108,7 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_rawaudio Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_rawaudio Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -124,7 +124,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\libresample\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libresample\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -144,9 +144,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libresample.lib"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_rawaudio.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_rawaudio.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\libresample\win&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\libresample\win&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

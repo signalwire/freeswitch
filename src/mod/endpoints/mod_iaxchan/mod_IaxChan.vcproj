@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_IaxChan Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_IaxChan Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\iax\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\iax\src&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -64,9 +64,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_IaxChan.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_IaxChan.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(InputDir)..\..\..\libs\iax\Debug"
+				AdditionalLibraryDirectories="$(InputDir)..\..\..\..\libs\iax\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_IaxChan.pdb"
 				SubSystem="2"
@@ -108,7 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_IaxChan Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_IaxChan Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -124,7 +124,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\iax\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\iax\src&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -144,9 +144,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_IaxChan.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_IaxChan.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\iax\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\iax\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

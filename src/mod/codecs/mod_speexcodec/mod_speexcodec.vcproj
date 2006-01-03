@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_SpeexCodec Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_SpeexCodec Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\speex\include&quot;;&quot;$(InputDir)..\..\..\libs\speex\include\speex&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\speex\include&quot;;&quot;$(InputDir)..\..\..\..\libs\speex\include\speex&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -64,9 +64,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libspeex.lib"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_speexcodec.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_speexcodec.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\speex\win32\libspeex\Debug&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\speex\win32\libspeex\Debug&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_speexcodec.pdb"
 				SubSystem="2"
@@ -108,7 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\w32\vsnet\getlibs.vbs Mod_SpeexCodec Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_SpeexCodec Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -124,7 +124,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\libs\speex\include&quot;;&quot;$(InputDir)..\..\..\libs\speex\include\speex&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\speex\include&quot;;&quot;$(InputDir)..\..\..\..\libs\speex\include\speex&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -144,9 +144,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libspeex.lib"
-				OutputFile="..\..\..\w32\vsnet\$(OutDir)/mod/mod_speexcodec.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_speexcodec.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\speex\win32\libspeex\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\speex\win32\libspeex\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
