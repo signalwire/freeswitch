@@ -1,19 +1,21 @@
 LDFLAGS += -lportaudio -L/usr/local/lib
 MYOBJS = pablio.o ringbuffer.o
 
-all:	depends $(MOD).so
+all:	depends $(MODNAME).so
 
 depends:
 	$(BASE)/buildlib.sh $(BASE) install portaudio.tar.gz --prefix=$(PREFIX)
 %.o:  %.c
 	$(CC) -fPIC $(CFLAGS) -c -o $@ $<
 
-$(MOD).so: $(MOD).c $(MYOBJS)
-	$(CC) $(CFLAGS) -fPIC -c $(MOD).c -o $(MOD).o 
-	$(CC) $(SOLINK) -o $(MOD).so $(MOD).o $(MYOBJS) $(LDFLAGS)
+$(MODNAME).so: $(MODNAME).c $(MYOBJS)
+	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
+	$(CC) $(SOLINK) -o $(MODNAME).so $(MODNAME).o $(MYOBJS) $(LDFLAGS)
 
 
 
 clean:
 	rm -fr *.so *.o *~
 
+install:
+	cp -f $(MODNAME).so $(PREFIX)/mod

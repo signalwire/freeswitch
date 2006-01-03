@@ -12,3 +12,5 @@ $(MODNAME).so: $(MODNAME).c
 clean:
 	rm -fr *.so *.o *~
 
+install:
+	cp -f $(MODNAME).so $(PREFIX)/mod

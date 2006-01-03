@@ -7,7 +7,7 @@ else
 	LINKER=$(CC)
 endif
 
-all:	depends $(MOD).so
+all:	depends $(MODNAME).so
 
 depends:
 	$(BASE)/buildlib.sh $(BASE) install jthread-1.1.2.tar.gz --prefix=$(PREFIX)
@@ -17,10 +17,12 @@ depends:
 	$(BASE)/buildlib.sh $(BASE) install libeXosip2-2.2.2.tar.gz --disable-josua --prefix=$(PREFIX)
 
 
-$(MOD).so: $(MOD).c
-	$(CC) $(CFLAGS) -fPIC -c $(MOD).c -o $(MOD).o 
-	$(LINKER) $(SOLINK) -o $(MOD).so  $(MOD).o $(LDFLAGS)
+$(MODNAME).so: $(MODNAME).c
+	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
+	$(LINKER) $(SOLINK) -o $(MODNAME).so  $(MODNAME).o $(LDFLAGS)
 
 clean:
 	rm -fr *.so *.o *~
 
+install:
+	cp -f $(MODNAME).so $(PREFIX)/mod

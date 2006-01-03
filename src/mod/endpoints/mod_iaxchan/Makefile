@@ -1,15 +1,17 @@
 LDFLAGS += -liax -L/usr/local/lib
 
-all:	depends $(MOD).so
+all:	depends $(MODNAME).so
 
 depends:
 	$(BASE)/buildlib.sh $(BASE) install iax --enable-newjb --prefix=$(PREFIX)
 
-$(MOD).so: $(MOD).c
-	$(CC) $(CFLAGS) -fPIC -c $(MOD).c -o $(MOD).o 
-	$(CC) $(SOLINK) -o $(MOD).so  $(MOD).o $(LDFLAGS)
+$(MODNAME).so: $(MODNAME).c
+	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
+	$(CC) $(SOLINK) -o $(MODNAME).so  $(MODNAME).o $(LDFLAGS)
 
 
 clean:
 	rm -fr *.so *.o *~
 
+install:
+	cp -f $(MODNAME).so $(PREFIX)/mod

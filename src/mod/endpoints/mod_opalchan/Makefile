@@ -1,12 +1,14 @@
 #CFLAGS += -I/usr/src/common/src
 LDFLAGS += -liax
 
-all:	$(MOD).so
+all:	$(MODNAME).so
 
-$(MOD).so: $(MOD).c
-	$(CC) $(CFLAGS) -fPIC -c $(MOD).c -o $(MOD).o 
-	$(CC) $(SOLINK) -o $(MOD).so  $(MOD).o $(LDFLAGS)
+$(MODNAME).so: $(MODNAME).c
+	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
+	$(CC) $(SOLINK) -o $(MODNAME).so  $(MODNAME).o $(LDFLAGS)
 
 clean:
 	rm -fr *.so *.o *~
 
+install:
+	cp -f $(MODNAME).so $(PREFIX)/mod

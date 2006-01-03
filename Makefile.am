@@ -115,7 +115,8 @@ modules: $(NAME)
 modclean:
 	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
 
-
+modwipe:
+	rm -f $(PREFIX)/mod/*.so
 
 install_mod: modules
 	@echo Installing $(NAME)
@@ -123,7 +124,7 @@ install_mod: modules
 	@/bin/cp -p ./$(NAME) $(PREFIX)/bin
 	@ln -sf $(PREFIX)/bin/$(NAME) /usr/bin
 	@echo Installing Modules
-	@/bin/cp -f src/mod/*/mod_*.so $(PREFIX)/mod >/dev/null 2<&1 || echo No modules to copy.
+	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making clean $$i ; PREFIX=$(PREFIX) MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i install || exit 1; done
 	@echo done
 
 dox:
