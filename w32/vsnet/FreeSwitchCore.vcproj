@@ -63,7 +63,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/NODEFAULTLIB:LIBCMTD"
 				AdditionalDependencies="Ws2_32.lib Mswsock.lib apr-1.lib sqlite.lib apriconv-1.lib aprutil-1.lib xml.lib Rpcrt4.lib libresampled.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="2"
@@ -148,7 +147,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/NODEFAULTLIB:LIBCMTD"
 				AdditionalDependencies="Ws2_32.lib Mswsock.lib apr-1.lib sqlite.lib apriconv-1.lib aprutil-1.lib xml.lib Rpcrt4.lib libresample.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="1"
