@@ -1594,32 +1594,36 @@ the core to have any clue and keeping switch_loadable_module.c from needing any 
 
 */
 
-SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void *obj)
+SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void *obj, switch_memory_pool *pool)
 {
 	switch_thread *thread;
-	switch_threadattr_t *thd_attr;
+	switch_threadattr_t *thd_attr = NULL;
 	switch_core_thread_session *ts;
-	switch_memory_pool *pool = NULL;
+	int mypool;
 
-	switch_threadattr_create(&thd_attr, runtime.memory_pool);
-	switch_threadattr_detach_set(thd_attr, 1);
+	mypool = pool ? 0 : 1;
 
-	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+	if (!pool && switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory pool\n");
 		return;
 	}
 
+	switch_threadattr_create(&thd_attr, pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+
 	if (!(ts = switch_core_alloc(pool, sizeof(*ts)))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory\n");
 	} else {
-		ts->pool = pool;
+		if (mypool) {
+			ts->pool = pool;
+		}
 		ts->objs[0] = obj;
 
 		switch_thread_create(&thread,
 			thd_attr,
 			func,
 			ts,
-			ts->pool
+			pool
 			);
 	}
 

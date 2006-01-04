@@ -78,7 +78,7 @@ SWITCH_DECLARE(switch_status) switch_core_hash_insert(switch_hash *hash, char *k
 SWITCH_DECLARE(switch_status) switch_core_hash_insert_dup(switch_hash *hash, char *key, void *data);
 SWITCH_DECLARE(switch_status) switch_core_hash_delete(switch_hash *hash, char *key);
 SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash *hash, char *key);
-SWITCH_DECLARE(void) switch_core_launch_thread(void *(*func)(switch_thread *, void*), void *obj);
+SWITCH_DECLARE(void) switch_core_launch_thread(void *(*func)(switch_thread *, void*), void *obj, switch_memory_pool *pool);
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel);
 SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *session, void *(*func)(switch_thread *, void *), void *obj);
 SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *timer_name, int interval, int samples, switch_memory_pool *pool);

@@ -734,18 +734,18 @@ static const switch_loadable_module_interface exosip_module_interface = {
 	/*.application_interface*/	NULL
 };
 
-
+#if 1
 SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 {
 	if (globals.running) {
 		globals.running = -1;
 		while(globals.running) {
-			switch_yield(1000);
+			switch_yield(100000);
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
-
+#endif
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 	/* NOTE:  **interface is **_interface because the common lib redefines interface to struct in some situations */
 
@@ -1240,10 +1240,82 @@ static void log_event(eXosip_event_t *je)
 
 
 
-static void *monitor_thread_run(void)
+static int config_exosip(int reload) 
+{
+	switch_config cfg;
+	char *var, *val;
+	char *cf = "exosip.conf";
+
+	globals.bytes_per_frame = DEFAULT_BYTES_PER_FRAME;
+	switch_core_hash_init(&globals.call_hash, module_pool);
+
+	if (!switch_config_open_file(&cfg, cf)) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
+		return SWITCH_STATUS_TERM;
+	}
+
+	globals.rtp_start = 16384;
+	globals.rtp_end = 32768;
+
+	while (switch_config_next_pair(&cfg, &var, &val)) {
+		if (!strcasecmp(cfg.category, "settings")) {
+			if (!strcmp(var, "debug")) {
+				globals.debug = atoi(val);
+			} else if (!strcmp(var, "port")) {
+				globals.port = atoi(val);
+			} else if (!strcmp(var, "dialplan")) {
+				set_global_dialplan(val);
+			} else if (!strcmp(var, "rtp_min_port")) {
+				globals.rtp_start = atoi(val);
+			} else if (!strcmp(var, "rtp_max_port")) {
+				globals.rtp_end = atoi(val);
+			} else if (!strcmp(var, "codec_ms")) {
+				globals.codec_ms = atoi(val);
+			}
+		}
+	}
+
+	if (!globals.codec_ms) {
+		globals.codec_ms = 20;
+	}
+
+	if (!globals.port) {
+		globals.port = 5060;
+	}
+
+	switch_config_close_file(&cfg);
+
+	if (!globals.dialplan) {
+		set_global_dialplan("default");
+	}
+
+	switch_mutex_init(&globals.port_lock, SWITCH_MUTEX_NESTED, module_pool);
+
+	/* Setup the user agent */
+	eXosip_set_user_agent("FreeSWITCH");
+
+
+	return 0;
+
+}
+
+
+SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 {
 	eXosip_event_t *event = NULL;
 
+	config_exosip(0);
+
+	if (eXosip_init ()) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "eXosip_init initialization failed!\n");
+		return SWITCH_STATUS_TERM;
+	}
+
+	if (eXosip_listen_addr (IPPROTO_UDP, NULL, globals.port, AF_INET, 0)) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "eXosip_listen_addr failed!\n");
+		return SWITCH_STATUS_TERM;
+	}
+	
 	globals.running = 1;
 	while (globals.running > 0) {
 		if (!(event = eXosip_event_wait(0,100))) {
@@ -1323,87 +1395,11 @@ static void *monitor_thread_run(void)
 		eXosip_event_free(event);
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Monitor Thread Exiting\n");
-	globals.running = 0;
-	return NULL;
-}
-
-
-static int config_exosip(int reload) 
-{
-	switch_config cfg;
-	char *var, *val;
-	char *cf = "exosip.conf";
-
-	globals.bytes_per_frame = DEFAULT_BYTES_PER_FRAME;
-	switch_core_hash_init(&globals.call_hash, module_pool);
-
-	if (!switch_config_open_file(&cfg, cf)) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
-		return SWITCH_STATUS_TERM;
-	}
-
-	globals.rtp_start = 16384;
-	globals.rtp_end = 32768;
-
-	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "settings")) {
-			if (!strcmp(var, "debug")) {
-				globals.debug = atoi(val);
-			} else if (!strcmp(var, "port")) {
-				globals.port = atoi(val);
-			} else if (!strcmp(var, "dialplan")) {
-				set_global_dialplan(val);
-			} else if (!strcmp(var, "rtp_min_port")) {
-				globals.rtp_start = atoi(val);
-			} else if (!strcmp(var, "rtp_max_port")) {
-				globals.rtp_end = atoi(val);
-			} else if (!strcmp(var, "codec_ms")) {
-				globals.codec_ms = atoi(val);
-			}
-		}
-	}
-
-	if (!globals.codec_ms) {
-		globals.codec_ms = 20;
-	}
-
-	if (!globals.port) {
-		globals.port = 5060;
-	}
-
-	switch_config_close_file(&cfg);
-
-	if (!globals.dialplan) {
-		set_global_dialplan("default");
-	}
-
-	if (eXosip_init ()) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "eXosip_init initialization failed!\n");
-		return SWITCH_STATUS_GENERR;
-	}
-	if (eXosip_listen_addr (IPPROTO_UDP, NULL, globals.port, AF_INET, 0)) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "eXosip_listen_addr failed!\n");
-		return SWITCH_STATUS_GENERR;
-	}
-
-	switch_mutex_init(&globals.port_lock, SWITCH_MUTEX_NESTED, module_pool);
-
-	/* Setup the user agent */
-	eXosip_set_user_agent("FreeSWITCH");
-
-	monitor_thread_run();
-
 	eXosip_quit();
-
-	return 0;
-
-}
-
-
-SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
-{
-	config_exosip(0);
+	globals.running = 0;
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Monitor Thread Exiting\n");
+ 	//switch_sleep(2000000);
+	   
 	return SWITCH_STATUS_TERM;
 }
 

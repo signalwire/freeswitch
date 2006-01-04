@@ -84,9 +84,10 @@ static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 
 	if (ts->pool) {
 		switch_memory_pool *pool = ts->pool;
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Destroying Pool for %s\n", module->interface->module_name);
 		switch_core_destroy_memory_pool(&pool);
 	}
-
+	switch_yield(1000000);
 	return NULL;
 }
 
@@ -173,7 +174,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 	module->lib = dso;
 
 	if (module->switch_module_runtime) {
-		switch_core_launch_thread(switch_loadable_module_exec, module);
+		switch_core_launch_thread(switch_loadable_module_exec, module, loadable_modules.pool);
 	}
 
 	*new_module = module;
