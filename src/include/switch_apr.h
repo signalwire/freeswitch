@@ -87,7 +87,7 @@ typedef apr_file_t switch_file_t;
 
 /**
  * @defgroup switch_file_permissions File Permissions flags 
- * @ingroup switch_apr
+ * @ingroup switch_file_io
  * @{
  */
     
@@ -114,7 +114,7 @@ typedef apr_file_t switch_file_t;
 
 /**
  * @defgroup switch_file_open_flags File Open Flags/Routines
- * @ingroup switch_apr
+ * @ingroup switch_file_io
  * @{
  */
 #define SWITCH_FOPEN_READ APR_FOPEN_READ							/**< Open the file for reading */
