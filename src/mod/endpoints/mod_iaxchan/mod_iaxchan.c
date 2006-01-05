@@ -173,7 +173,7 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 	int x;
 
 	if (globals.codec_string) {
-		if (!(num_codecs = loadable_module_get_codecs_sorted(switch_core_session_get_pool(tech_pvt->session),
+		if (!(num_codecs = switch_loadable_module_get_codecs_sorted(switch_core_session_get_pool(tech_pvt->session),
 			codecs,
 			SWITCH_MAX_CODECS,
 			globals.codec_order,
@@ -181,7 +181,7 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "NO codecs?\n");
 				return SWITCH_STATUS_GENERR;
 		}
-	} else if (!(num_codecs = loadable_module_get_codecs(switch_core_session_get_pool(tech_pvt->session), codecs, SWITCH_MAX_CODECS)) > 0) {
+	} else if (!(num_codecs = switch_loadable_module_get_codecs(switch_core_session_get_pool(tech_pvt->session), codecs, SWITCH_MAX_CODECS)) > 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "NO codecs?\n");
 		return SWITCH_STATUS_GENERR;
 	}

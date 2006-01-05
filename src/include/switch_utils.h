@@ -31,6 +31,9 @@
  */
 /*! \file switch_utils.h
     \brief Compatability and Helper Code
+
+	Just a miscelaneaous set of general utility/helper functions.
+
 */
 #ifndef SWITCH_UTILS_H
 #define SWITCH_UTILS_H
@@ -59,21 +62,98 @@ typedef typeof(tv.tv_usec) switch_suseconds_t;
 #endif
 #endif
 
+/*!
+  \brief Duplicate a string 
+*/
 #define switch_copy_string apr_cpystrn
+
+/*!
+  \brief Test for the existance of a flag on an arbitary object
+  \param obj the object to test
+  \param flag the or'd list of flags to test
+  \return true value if the object has the flags defined
+*/
 #define switch_test_flag(obj, flag) ((obj)->flags & flag)
+
+/*!
+  \brief Set a flag on an arbitrary object
+  \param obj the object to set the flags on
+  \param flag the or'd list of flags to set
+*/
 #define switch_set_flag(obj, flag) (obj)->flags |= (flag)
+
+/*!
+  \brief Clear a flag on an arbitrary object
+  \param obj the object to test
+  \param flag the or'd list of flags to clear
+*/
 #define switch_clear_flag(obj, flag) (obj)->flags &= ~(flag)
+
+/*!
+  \brief Copy flags from one arbitrary object to another
+  \param dest the object to copy the flags to
+  \param src the object to copy the flags from
+  \param flags the flags to copy
+*/
 #define switch_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
+
+/*!
+  \brief Test for NULL or zero length string
+  \param s the string to test
+  \return true value if the string is NULL or zero length
+*/
 #define switch_strlen_zero(s) (s && *s != '\0') ? 0 : 1
+
+/*!
+  \brief Wait a desired number of microseconds and yield the CPU
+*/
 #define switch_yield(ms) apr_sleep(ms * 10); apr_thread_yield();
+
+/*!
+  \brief Declares a function designed to set a dymaic global string
+  \param fname the function name to declare
+  \param vname the name of the global pointer to modify with the new function
+*/
 #define SWITCH_DECLARE_GLOBAL_STRING_FUNC(fname, vname) static void fname(char *string) { if (vname) {free(vname); vname = NULL;}vname = strdup(string);}
 
+/*!
+  \brief Separate a string into an array based on a character delimeter
+  \param buf the string to parse
+  \param delim the character delimeter
+  \param array the array to split the values into
+  \param arraylen the max number of elements in the array
+  \return the number of elements added to the array
+*/
 SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen);
+
+/*!
+  \brief Create a set of file descriptors to poll
+  \param poll the polfd to create
+  \param sock the socket to add
+  \param flags the flags to modify the behaviour
+  \param pool the memory pool to use
+  \return SWITCH_STATUS_SUCCESS when successful
+*/
 SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock, unsigned int flags, switch_memory_pool *pool);
+
+/*!
+  \brief Wait for a socket
+  \param poll the pollfd to wait on
+  \param ms the number of milliseconds to wait
+  \return the requested condition
+*/
 SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
+
+/*!
+  \brief Create a pointer to the file name in a given file path eliminating the directory name
+  \return the pointer to the next character after the final / or \\ characters
+*/
 SWITCH_DECLARE(char *) switch_cut_path(char *in);
 
 
+
+/* stuff below will probably be tossed soon */
+	
 #if !defined(switch_strdupa) && defined(__GNUC__)
 # define switch_strdupa(s)									\
   (__extension__										\

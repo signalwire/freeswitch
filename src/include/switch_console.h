@@ -31,6 +31,9 @@
  */
 /*! \file switch_console.h
     \brief Simple Console
+
+	This module implements a basic console i/o and by basic I mean, um yeah, basic
+	Right now the primary function of this portion of the program is to keep it from exiting.
 */
 
 #ifndef SWITCH_CONSOLE_H
@@ -42,7 +45,14 @@ extern "C" {
 
 #include <switch.h>
 
+/*!
+  \brief A simple comand loop that reads input from the terminal
+*/
 SWITCH_DECLARE(void) switch_console_loop(void);
+
+/*!
+  \brief A method akin to printf that allows you to redirect output to a specific console "channel"
+*/
 SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *file, const char *func, int line, char *fmt, ...);
 
 #ifdef __cplusplus

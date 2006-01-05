@@ -31,6 +31,12 @@
  */
 /*! \file switch_resample.h
     \brief Audio Resample Code
+
+	This module implements a generic interface for doing audio resampling it currently uses libresample but can be ported to
+	any resample library with a little effort.  I decided against making this interface pluggable because there are not many
+	options in terms of resample libraries so it seemed like a waste but I did opt to frontend the interface in case a better 
+	way comes along some day. =D
+	
 */
 
 #ifndef SWITCH_RESAMPLE_H
@@ -40,21 +46,42 @@
 extern "C" {
 #endif
 #include <stdlib.h>
+#include <switch.h>
 
+/*! \brief An audio resampling handle */
 struct switch_audio_resampler {
+	/*! a pointer to store the resampler object */
 	void *resampler;
+	/*! the rate to resample from in hz */
 	int from_rate;
+	/*! the rate to resample to in hz */
 	int to_rate;
+	/*! the factor to resample by (from / to) */
 	double factor;
+	/*! a pointer to store a float buffer for data to be resampled */
 	float *from;
+	/*! the size of the from buffer used */
 	int from_len;
+	/*! the total size of the from buffer */
 	size_t from_size;
+	/*! a pointer to store a float buffer for resampled data */
 	float *to;
+	/*! the size of the to buffer used */
 	int to_len;
+	/*! the total size of the to buffer */
 	size_t to_size;
 };
 
-#include <switch.h>
+/*!
+  \brief Prepare a new resampler handle
+  \param new_resampler NULL pointer to aim at the new handle
+  \param from_rate the rate to transfer from in hz
+  \param from_size the size of the buffer to allocate for the from data
+  \param to_rate the rate to transfer to in hz
+  \param to_size the size of the buffer to allocate for the to data
+  \param pool the memory pool to use for buffer allocation
+  \return SWITCH_STATUS_SUCCESS if the handle was created
+ */
 SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **new_resampler,
 													 int from_rate,
 													 size_t from_size,
@@ -62,14 +89,66 @@ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **ne
 													 size_t to_size,
 													 switch_memory_pool *pool);
 
+/*!
+  \brief Destroy an existing resampler handle
+  \param resampler the resampler handle to destroy
+ */
+SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler *resampler);
+
+/*!
+  \brief Resample one float buffer into another using specifications of a given handle
+  \param resampler the resample handle
+  \param src the source data
+  \param srclen the length of the source data
+  \param dst the destination data
+  \param dstlen the length of the destination data
+  \param last parameter denoting the last sample is being resampled
+  \return the used size of dst
+ */
 SWITCH_DECLARE(int) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst, int dstlen, int last);
 
+/*!
+  \brief Convert an array of floats to an array of shorts
+  \param f the float buffer
+  \param s the short buffer
+  \param len the length of the buffers
+  \return the size of the converted buffer
+ */
 SWITCH_DECLARE(size_t) switch_float_to_short(float *f, short *s, size_t len);
+
+/*!
+  \brief Convert an array of chars to an array of floats
+  \param c the char buffer
+  \param f the float buffer
+  \param len the length of the buffers
+  \return the size of the converted buffer
+ */
 SWITCH_DECLARE(int) switch_char_to_float(char *c, float *f, int len);
+
+/*!
+  \brief Convert an array of floats to an array of chars
+  \param f an array of floats
+  \param c an array of chars
+  \param len the length of the buffers
+  \return the size of the converted buffer
+ */
 SWITCH_DECLARE(int) switch_float_to_char(float *f, char *c, int len);
+
+/*!
+  \brief Convert an array of shorts to an array of floats
+  \param s an array of shorts
+  \param f an array of floats
+  \param len the size of the buffers
+  \return the size of the converted buffer
+ */
 SWITCH_DECLARE(int) switch_short_to_float(short *s, float *f, int len);
+
+/*!
+  \brief Perform a byteswap on a buffer of 16 bit samples
+  \param buf an array of samples
+  \param len the size of the array
+ */
 SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len);
-SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler *resampler);
 
 #ifdef __cplusplus
 }

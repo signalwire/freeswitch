@@ -342,7 +342,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void) loadable_module_shutdown(void)
+SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 {
 	switch_hash_index_t* hi;
 	void *val;
@@ -362,42 +362,42 @@ SWITCH_DECLARE(void) loadable_module_shutdown(void)
 
 }
 
-SWITCH_DECLARE(switch_endpoint_interface *) loadable_module_get_endpoint_interface(char *name)
+SWITCH_DECLARE(switch_endpoint_interface *) switch_loadable_module_get_endpoint_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.endpoint_hash, name);
 }
 
-SWITCH_DECLARE(switch_codec_interface *) loadable_module_get_codec_interface(char *name)
+SWITCH_DECLARE(switch_codec_interface *) switch_loadable_module_get_codec_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.codec_hash, name);
 }
 
-SWITCH_DECLARE(switch_dialplan_interface *) loadable_module_get_dialplan_interface(char *name)
+SWITCH_DECLARE(switch_dialplan_interface *) switch_loadable_module_get_dialplan_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.dialplan_hash, name);
 }
 
-SWITCH_DECLARE(switch_timer_interface *) loadable_module_get_timer_interface(char *name)
+SWITCH_DECLARE(switch_timer_interface *) switch_loadable_module_get_timer_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.timer_hash, name);
 }
 
-SWITCH_DECLARE(switch_application_interface *) loadable_module_get_application_interface(char *name)
+SWITCH_DECLARE(switch_application_interface *) switch_loadable_module_get_application_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.application_hash, name);
 }
 
-SWITCH_DECLARE(switch_api_interface *) loadable_module_get_api_interface(char *name)
+SWITCH_DECLARE(switch_api_interface *) switch_loadable_module_get_api_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.api_hash, name);
 }
 
-SWITCH_DECLARE(switch_file_interface *) loadable_module_get_file_interface(char *name)
+SWITCH_DECLARE(switch_file_interface *) switch_loadable_module_get_file_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.file_hash, name);
 }
 
-SWITCH_DECLARE(int) loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array, int arraylen)
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array, int arraylen)
 {
 	switch_hash_index_t* hi;
 	void *val;
@@ -415,13 +415,13 @@ SWITCH_DECLARE(int) loadable_module_get_codecs(switch_memory_pool *pool, switch_
 
 }
 
-SWITCH_DECLARE(int) loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array, int arraylen, char **prefs, int preflen)
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array, int arraylen, char **prefs, int preflen)
 {
 	int x, i = 0;
 	switch_codec_interface *codec_interface;
 
 	for(x = 0; x < preflen; x++) {
-		if ((codec_interface = loadable_module_get_codec_interface(prefs[x]))) {
+		if ((codec_interface = switch_loadable_module_get_codec_interface(prefs[x]))) {
 			array[i++] = codec_interface;
 		}
 	}
@@ -435,7 +435,7 @@ SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *ret
 	switch_status status;
 	switch_event *event;
 
-	if ((api = loadable_module_get_api_interface(cmd))) {
+	if ((api = switch_loadable_module_get_api_interface(cmd))) {
 		status = api->function(arg, retbuf, len);
 	} else {
 		status = SWITCH_STATUS_FALSE;

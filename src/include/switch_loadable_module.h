@@ -30,7 +30,12 @@
  *
  */
 /*! \file switch_loadable_module.h
-    \brief Loadable Modules
+    \brief Loadable Module Routines
+
+	This module is the gateway between external modules and the core of the application.
+	it contains all the access points to the various pluggable interfaces including the codecs 
+	and API modules.
+
 */
 
 #ifndef SWITCH_LOADABLE_MODULE_H
@@ -42,30 +47,129 @@ extern "C" {
 
 #include <switch.h>
 
+/*!
+  \defgroup mods Loadable Module Functions
+  \ingroup FREESWITCH
+  \{ 
+*/
 
+/*! \brief The abstraction of a loadable module */
 struct switch_loadable_module_interface {
+	/*! the name of the module */
 	const char *module_name;
+	/*! the table of endpoints the module has implmented */
 	const switch_endpoint_interface *endpoint_interface;
+	/*! the table of timers the module has implmented */
 	const switch_timer_interface *timer_interface;
+	/*! the table of dialplans the module has implmented */
 	const switch_dialplan_interface *dialplan_interface;
+	/*! the table of codecs the module has implmented */
 	const switch_codec_interface *codec_interface;
+	/*! the table of applications the module has implmented */
 	const switch_application_interface *application_interface;
+	/*! the table of api functions the module has implmented */
 	const switch_api_interface *api_interface;
+	/*! the table of file formats the module has implmented */
 	const switch_file_interface *file_interface;
 };
 
+/*!
+  \brief Initilize the module backend and load all the modules
+  \return SWITCH_STATUS_SUCCESS when complete
+ */
 SWITCH_DECLARE(switch_status) switch_loadable_module_init(void);
-SWITCH_DECLARE(switch_endpoint_interface *) loadable_module_get_endpoint_interface(char *name);
-SWITCH_DECLARE(switch_codec_interface *) loadable_module_get_codec_interface(char *name);
-SWITCH_DECLARE(switch_dialplan_interface *) loadable_module_get_dialplan_interface(char *name);
-SWITCH_DECLARE(switch_timer_interface *) loadable_module_get_timer_interface(char *name);
-SWITCH_DECLARE(switch_application_interface *) loadable_module_get_application_interface(char *name);
-SWITCH_DECLARE(switch_api_interface *) loadable_module_get_api_interface(char *name);
-SWITCH_DECLARE(int) loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array, int arraylen);
-SWITCH_DECLARE(int) loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array, int arraylen, char **prefs, int preflen);
+
+/*!
+  \brief Shutdown the module backend and call the shutdown routine in all loaded modules
+ */
+SWITCH_DECLARE(void) switch_loadable_module_shutdown(void);
+
+/*!
+  \brief Retrieve the endpoint interface by it's registered name
+  \param name the name of the endpoint
+  \return the desired endpoint interface
+ */
+SWITCH_DECLARE(switch_endpoint_interface *) switch_loadable_module_get_endpoint_interface(char *name);
+
+/*!
+  \brief Retrieve the codec interface by it's registered name
+  \param name the name of the codec
+  \return the desired codec interface
+ */
+SWITCH_DECLARE(switch_codec_interface *) switch_loadable_module_get_codec_interface(char *name);
+
+/*!
+  \brief Retrieve the dialplan interface by it's registered name
+  \param name the name of the dialplan
+  \return the desired dialplan interface
+ */
+SWITCH_DECLARE(switch_dialplan_interface *) switch_loadable_module_get_dialplan_interface(char *name);
+
+/*!
+  \brief Retrieve the timer interface by it's registered name
+  \param name the name of the timer
+  \return the desired timer interface
+ */
+SWITCH_DECLARE(switch_timer_interface *) switch_loadable_module_get_timer_interface(char *name);
+
+/*!
+  \brief Retrieve the application interface by it's registered name
+  \param name the name of the application
+  \return the desired application interface
+ */
+SWITCH_DECLARE(switch_application_interface *) switch_loadable_module_get_application_interface(char *name);
+
+/*!
+  \brief Retrieve the API interface by it's registered name
+  \param name the name of the API
+  \return the desired API interface
+ */
+SWITCH_DECLARE(switch_api_interface *) switch_loadable_module_get_api_interface(char *name);
+
+/*!
+  \brief Retrieve the file format interface by it's registered name
+  \param name the name of the file format
+  \return the desired file format interface
+ */
+SWITCH_DECLARE(switch_file_interface *) switch_loadable_module_get_file_interface(char *name);
+
+/*!
+  \brief Retrieve the list of loaded codecs into an array
+  \param pool the memory pool to use for the hash index
+  \param array the array to populate
+  \param arraylen the max size in elements of the array
+  \return the number of elements added to the array
+ */
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool, 
+													  switch_codec_interface **array, 
+													  int arraylen);
+
+/*!
+  \brief Retrieve the list of loaded codecs into an array based on another array showing the sorted order
+  \param pool the memory pool to use for the hash index
+  \param array the array to populate
+  \param arraylen the max size in elements of the array
+  \param prefs the array of preferred codec names
+  \param preflen the size in elements of the prefs
+  \return the number of elements added to the array
+  \note this function only considers codecs that are listed in the "prefs" array and ignores the rest.
+*/
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool *pool,
+															 switch_codec_interface **array,
+															 int arraylen, 
+															 char **prefs, 
+															 int preflen);
+
+/*!
+  \brief Execute a registered API command
+  \param cmd the name of the API command to execute
+  \param arg the optional arguement to the command
+  \param retbuf a buffer to write output to
+  \param len the length in bytes of retbuf
+  \return the status returned by the API call
+*/
 SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *retbuf, size_t len);
-SWITCH_DECLARE(switch_file_interface *) loadable_module_get_file_interface(char *name);
-SWITCH_DECLARE(void) loadable_module_shutdown(void);
+///\}
 
 #ifdef __cplusplus
 }

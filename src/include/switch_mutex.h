@@ -44,7 +44,7 @@ extern "C" {
 
 /**
  * @defgroup switch_thread_mutex Thread Mutex Routines
- * @ingroup FREESWITCH 
+ * @ingroup switch_apr
  * @{
  */
 

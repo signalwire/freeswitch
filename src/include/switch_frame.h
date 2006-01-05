@@ -42,12 +42,19 @@ extern "C" {
 
 #include <switch.h>
 
+/*! \brief An abstraction of a data frame */
 struct switch_frame {
+	/*! a pointer to the codec information */
 	switch_codec *codec;
+	/*! the frame data */
 	void *data;
+	/*! the size of the buffer that is in use */
 	size_t datalen;
+	/*! the entire size of the buffer */
 	size_t buflen;
+	/*! the number of audio samples present (audio only) */
 	int samples;
+	/*! the rate of the frame */
 	int rate;
 };
 

@@ -44,11 +44,36 @@ extern "C" {
 #define SWITCH_GLOBAL_VERSION "1"
 #define SWITCH_MAX_CODECS 30
 
+/*!
+  \enum switch_stack_t
+  \brief Expression of how to stack a list
+<pre>
+SWITCH_STACK_BOTTOM - Stack on the bottom
+SWITCH_STACK_TOP	- Stack on the top
+</pre>
+ */
 typedef enum {
 	SWITCH_STACK_BOTTOM,
 	SWITCH_STACK_TOP
 } switch_stack_t;
 
+/*!
+  \enum switch_status
+  \brief Common return values
+<pre>
+    SWITCH_STATUS_SUCCESS	- General Success (common return value for most functions)
+    SWITCH_STATUS_FALSE		- General Falsehood
+    SWITCH_STATUS_TIMEOUT	- A Timeout has occured
+    SWITCH_STATUS_RESTART	- An indication to restart the previous operation
+    SWITCH_STATUS_TERM		- An indication to terminate
+    SWITCH_STATUS_NOTIMPL	- An indication that requested resource is not impelemented
+    SWITCH_STATUS_MEMERR	- General memory error
+    SWITCH_STATUS_NOOP		- NOTHING
+    SWITCH_STATUS_RESAMPLE	- An indication that a resample has occured
+    SWITCH_STATUS_GENERR	- A general Error
+    SWITCH_STATUS_INUSE		- An indication that requested resource is in use
+</pre>
+ */
 typedef enum {
 	SWITCH_STATUS_SUCCESS,
 	SWITCH_STATUS_FALSE,
@@ -63,6 +88,15 @@ typedef enum {
 	SWITCH_STATUS_INUSE
 } switch_status;
 
+/*!
+\enum switch_text_channel
+\brief A target to write log/debug info to
+<pre>
+SWITCH_CHANNEL_ID_CONSOLE			- Write to the currently defined console
+SWITCH_CHANNEL_ID_CONSOLE_CLEAN		- Write to the currently defined console with no extra file/line/date information
+SWITCH_CHANNEL_ID_EVENT				- Write to the event engine as a LOG event
+</pre>
+ */
 typedef enum {
 	SWITCH_CHANNEL_ID_CONSOLE,
 	SWITCH_CHANNEL_ID_CONSOLE_CLEAN,
@@ -74,7 +108,19 @@ typedef enum {
 #define SWITCH_CHANNEL_CONSOLE_CLEAN SWITCH_CHANNEL_ID_CONSOLE_CLEAN, __FILE__, __FUNCTION__, __LINE__
 #define SWITCH_CHANNEL_EVENT SWITCH_CHANNEL_ID_EVENT, __FILE__, __FUNCTION__, __LINE__
 
-/*! \brief Channel States
+/*!
+  \enum switch_channel_state
+  \brief Channel States
+<pre>
+CS_NEW       - Channel is newly created 
+CS_INIT      - Channel has been initilized
+CS_RING      - Channel is looking for a dialplan
+CS_TRANSMIT  - Channel is in a passive transmit state
+CS_EXECUTE   - Channel is executing it's dialplan 
+CS_LOOPBACK  - Channel is in loopback
+CS_HANGUP    - Channel is flagged for hangup and ready to end
+CS_DONE      - Channel is ready to be destroyed and out of the state machine
+</pre>
  */
 typedef enum {
 	CS_NEW,
@@ -84,8 +130,21 @@ typedef enum {
 	CS_EXECUTE,
 	CS_LOOPBACK,
 	CS_HANGUP,
-	CS_DONE
+	CS_DONE 
 } switch_channel_state;
+
+
+/*!
+  \enum switch_channel_flag
+  \brief Channel Flags
+
+<pre>
+CF_SEND_AUDIO = (1 <<  0) - Channel will send audio
+CF_RECV_AUDIO = (1 <<  1) - Channel will recieve audio
+CF_ANSWERED   = (1 <<  2) - Channel is answered
+CF_OUTBOUND   = (1 <<  3) - Channel is an outbound channel
+</pre>
+ */
 
 typedef enum {
 	CF_SEND_AUDIO = (1 <<  0),
@@ -94,24 +153,84 @@ typedef enum {
 	CF_OUTBOUND   = (1 <<  3),
 } switch_channel_flag;
 
+
+/*!
+  \enum switch_signal
+  \brief Signals to send to channels
+<pre>
+SWITCH_SIG_KILL - Kill the channel
+</pre>
+ */
+
 typedef enum {
 	SWITCH_SIG_KILL
 } switch_signal;
 
+/*!
+  \enum switch_codec_flag
+  \brief Codec related flags
+<pre>
+SWITCH_CODEC_FLAG_ENCODE =			(1 <<  0) - Codec can encode
+SWITCH_CODEC_FLAG_DECODE =			(1 <<  1) - Codec can decode
+SWITCH_CODEC_FLAG_SILENCE_START =	(1 <<  2) - Start period of silence
+SWITCH_CODEC_FLAG_SILENCE_STOP =	(1 <<  3) - End period of silence
+SWITCH_CODEC_FLAG_SILENCE =			(1 <<  4) - Silence
+SWITCH_CODEC_FLAG_FREE_POOL =		(1 <<  5) - Free codec's pool on destruction
+</pre>
+*/
 typedef enum {
 	SWITCH_CODEC_FLAG_ENCODE =			(1 <<  0),
 	SWITCH_CODEC_FLAG_DECODE =			(1 <<  1),
 	SWITCH_CODEC_FLAG_SILENCE_START =	(1 <<  2),
 	SWITCH_CODEC_FLAG_SILENCE_STOP =	(1 <<  3),
-	SWITCH_CODEC_FLAG_SILENCE =		(1 <<  4),
+	SWITCH_CODEC_FLAG_SILENCE =			(1 <<  4),
 	SWITCH_CODEC_FLAG_FREE_POOL =		(1 <<  5),
 
 } switch_codec_flag;
 
+/*!
+  \enum switch_codec_type
+  \brief Codec types
+<pre>
+SWITCH_CODEC_TYPE_AUDIO - Audio Codec
+SWITCH_CODEC_TYPE_VIDEO - Video Codec
+SWITCH_CODEC_TYPE_T38   - T38 Codec
+SWITCH_CODEC_TYPE_APP   - Application Codec
+</pre>
+ */
+typedef enum {
+	SWITCH_CODEC_TYPE_AUDIO,
+	SWITCH_CODEC_TYPE_VIDEO,
+	SWITCH_CODEC_TYPE_T38,
+	SWITCH_CODEC_TYPE_APP
+} switch_codec_type;
+
+
+/*!
+  \enum switch_timer_flag
+  \brief Timer related flags
+<pre>
+SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0) - Free timer's pool on destruction
+</pre>
+*/
 typedef enum {
 		SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0),
 } switch_timer_flag;
 
+/*!
+  \enum switch_file_flag
+  \brief File flags
+<pre>
+SWITCH_FILE_FLAG_READ =         (1 <<  0) - Open for read
+SWITCH_FILE_FLAG_WRITE =        (1 <<  1) - Open for write
+SWITCH_FILE_FLAG_FREE_POOL =    (1 <<  2) - Free file handle's pool on destruction
+SWITCH_FILE_DATA_SHORT =        (1 <<  3) - Read data in shorts
+SWITCH_FILE_DATA_INT =          (1 <<  4) - Read data in ints
+SWITCH_FILE_DATA_FLOAT =        (1 <<  5) - Read data in floats
+SWITCH_FILE_DATA_DOUBLE =       (1 <<  6) - Read data in doubles
+SWITCH_FILE_DATA_RAW =          (1 <<  7) - Read data asis
+</pre>
+ */
 typedef enum {
 	SWITCH_FILE_FLAG_READ =			(1 <<  0),
 	SWITCH_FILE_FLAG_WRITE =		(1 <<  1),
@@ -124,29 +243,40 @@ typedef enum {
 } switch_file_flag;
 
 typedef enum {
-	SWITCH_CODEC_TYPE_AUDIO,
-	SWITCH_CODEC_TYPE_VIDEO,
-	SWITCH_CODEC_TYPE_T38,
-	SWITCH_CODEC_TYPE_APP
-} switch_codec_type;
-
-typedef enum {
 	SWITCH_IO_FLAG_NOOP = 0,
 } switch_io_flag;
 
 /* make sure this is synced with the EVENT_NAMES array in switch_event.c
    also never put any new ones before EVENT_ALL
 */
+/*!
+  \enum switch_event_t
+  \brief Built-in Events
+
+<pre>
+    SWITCH_EVENT_CUSTOM				- A custom event
+    SWITCH_EVENT_CHANNEL_STATE		- A channel has changed state
+    SWITCH_EVENT_CHANNEL_ANSWER		- A channel has been answered
+    SWITCH_EVENT_CHANNEL_HANGUP		- A channel has been hungup
+    SWITCH_EVENT_API				- An API call has been executed
+    SWITCH_EVENT_LOG				- A LOG event has been triggered
+    SWITCH_EVENT_INBOUND_CHAN		- A new inbound channel has been created
+    SWITCH_EVENT_OUTBOUND_CHAN		- A new outbound channel has been created
+    SWITCH_EVENT_STARTUP			- The system has been started
+    SWITCH_EVENT_SHUTDOWN			- The system has been shutdown
+    SWITCH_EVENT_ALL				- All events at once
+</pre>
+
+ */
 typedef enum {
 	SWITCH_EVENT_CUSTOM,
 	SWITCH_EVENT_CHANNEL_STATE,
 	SWITCH_EVENT_CHANNEL_ANSWER,
+	SWITCH_EVENT_CHANNEL_HANGUP,
 	SWITCH_EVENT_API,
 	SWITCH_EVENT_LOG,
 	SWITCH_EVENT_INBOUND_CHAN,
 	SWITCH_EVENT_OUTBOUND_CHAN,
-	SWITCH_EVENT_ANSWER_CHAN,
-	SWITCH_EVENT_HANGUP_CHAN,
 	SWITCH_EVENT_STARTUP,
 	SWITCH_EVENT_SHUTDOWN,
 	SWITCH_EVENT_ALL
@@ -192,6 +322,7 @@ typedef struct switch_io_routines switch_io_routines;
 typedef struct switch_io_event_hooks switch_io_event_hooks;
 typedef struct switch_buffer switch_buffer;
 typedef struct switch_codec_settings switch_codec_settings;
+typedef struct switch_config switch_config;
 typedef void (*switch_application_function)(switch_core_session *, char *);
 typedef void (*switch_event_callback_t)(switch_event *);
 typedef switch_caller_extension *(*switch_dialplan_hunt_function)(switch_core_session *);
@@ -207,7 +338,10 @@ typedef switch_status (*switch_send_dtmf_hook)(switch_core_session *, char *);
 typedef switch_status (*switch_api_function)(char *in, char *out, size_t outlen);
 
 /* things we don't deserve to know about */
+
+/*! \brief A channel */
 struct switch_channel;
+/*! \brief A core session representing a call and all of it's resources */
 struct switch_core_session;
 
 

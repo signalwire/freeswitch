@@ -252,7 +252,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 		snprintf(port, sizeof(port), "%i", tech_pvt->local_sdp_audio_port);
 		sdp_message_m_media_add(tech_pvt->local_sdp, "audio", port, NULL, "RTP/AVP");
 		/* Add in every codec we support on this outbound call */
-		if ((num_codecs = loadable_module_get_codecs(switch_core_session_get_pool(session), codecs, sizeof(codecs)/sizeof(codecs[0]))) > 0) {
+		if ((num_codecs = switch_loadable_module_get_codecs(switch_core_session_get_pool(session), codecs, sizeof(codecs)/sizeof(codecs[0]))) > 0) {
 			int i;
 			static const switch_codec_implementation *imp;
 			for (i = 0; i < num_codecs; i++) {
@@ -823,7 +823,7 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 		osip_rfc3264_init(&tech_pvt->sdp_config);
 		/* Add in what codecs we support locally */
 
-		if ((num_codecs = loadable_module_get_codecs(switch_core_session_get_pool(session), codecs, sizeof(codecs)/sizeof(codecs[0]))) > 0) {
+		if ((num_codecs = switch_loadable_module_get_codecs(switch_core_session_get_pool(session), codecs, sizeof(codecs)/sizeof(codecs[0]))) > 0) {
 			int i;
 			static const switch_codec_implementation *imp;
 

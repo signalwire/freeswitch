@@ -41,8 +41,14 @@ extern "C" {
 #include <sqlite3.h>
 
 /**
- * @defgroup switch_sqlite Database Routines
+ * @defgroup switch_sqlite_top Brought To You By SQLite
  * @ingroup FREESWITCH 
+ * @{
+ */
+
+/**
+ * @defgroup switch_sqlite Database Routines
+ * @ingroup switch_sqlite_top 
  * @{
  */
 
@@ -160,6 +166,7 @@ typedef sqlite3 switch_core_db;
 #define switch_core_db_version sqlite3_version
 #define switch_core_db_vmprintf sqlite3_vmprintf
 
+/** @} */
 /** @} */
 
 

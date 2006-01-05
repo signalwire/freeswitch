@@ -216,7 +216,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 
 	memset(codec, 0, sizeof(*codec));
 
-	if (!(codec_interface = loadable_module_get_codec_interface(codec_name))) {
+	if (!(codec_interface = switch_loadable_module_get_codec_interface(codec_name))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid codec %s!\n", codec_name);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -340,7 +340,7 @@ SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char
 	}
 	ext++;
 
-	if (!(fh->file_interface = loadable_module_get_file_interface(ext))) {
+	if (!(fh->file_interface = switch_loadable_module_get_file_interface(ext))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid file format [%s]!\n", ext);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -388,7 +388,7 @@ SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *
 	switch_timer_interface *timer_interface;
 	switch_status status;
 	memset(timer, 0, sizeof(*timer));
-	if (!(timer_interface = loadable_module_get_timer_interface(timer_name))) {
+	if (!(timer_interface = switch_loadable_module_get_timer_interface(timer_name))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid timer %s!\n", timer_name);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -605,7 +605,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 	switch_status status = SWITCH_STATUS_FALSE;
 	const switch_endpoint_interface *endpoint_interface;
 
-	if (!(endpoint_interface = loadable_module_get_endpoint_interface(endpoint_name))) {
+	if (!(endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not locate channel type %s\n", endpoint_name);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1315,7 +1315,7 @@ static void switch_core_standard_on_ring(switch_core_session *session)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't get profile!\n");
 		switch_channel_set_state(session->channel, CS_HANGUP);
 	} else {
-		if (!(dialplan_interface = loadable_module_get_dialplan_interface(caller_profile->dialplan))) {
+		if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(caller_profile->dialplan))) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't get dialplan [%s]!\n", caller_profile->dialplan);
 			switch_channel_set_state(session->channel, CS_HANGUP);
 		} else {
@@ -1342,7 +1342,7 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 	while (switch_channel_get_state(session->channel) == CS_EXECUTE && extension->current_application) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Execute %s(%s)\n", extension->current_application->application_name,
 			extension->current_application->application_data);
-		if (!(application_interface = loadable_module_get_application_interface(extension->current_application->application_name))) {
+		if (!(application_interface = switch_loadable_module_get_application_interface(extension->current_application->application_name))) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Application %s\n", extension->current_application->application_name);
 			switch_channel_set_state(session->channel, CS_HANGUP);
 			return;
@@ -1381,7 +1381,7 @@ static void switch_core_standard_on_transmit(switch_core_session *session)
 }
 
 
-SWITCH_DECLARE(void) pbx_core_session_signal_state_change(switch_core_session *session)
+SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session *session)
 {
 	switch_thread_cond_signal(session->cond);
 }
@@ -1756,7 +1756,7 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request_by_name(char *
 {
 	const switch_endpoint_interface *endpoint_interface;
 
-	if (!(endpoint_interface = loadable_module_get_endpoint_interface(endpoint_name))) {
+	if (!(endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not locate channel type %s\n", endpoint_name);
 		return NULL;
 	}

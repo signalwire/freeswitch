@@ -383,7 +383,7 @@ default:
 	if (ok) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
 		channel->state = state;
-		pbx_core_session_signal_state_change(channel->session);
+		switch_core_session_signal_state_change(channel->session);
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
 
@@ -509,7 +509,7 @@ SWITCH_DECLARE(switch_status) switch_channel_hangup(switch_channel *channel)
 	assert(channel != NULL);
 	if (channel->state < CS_HANGUP) {
 		channel->state = CS_HANGUP;
-		pbx_core_session_signal_state_change(channel->session);	
+		switch_core_session_signal_state_change(channel->session);	
 	}
 	return channel->state;
 }

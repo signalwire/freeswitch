@@ -30,7 +30,21 @@
  *
  */
 /*! \file switch_config.h
-    \brief Configuration File Parser
+    \brief Basic Configuration File Parser
+
+	This module implements a basic interface and file format parser it may be depricated in favor of database entries
+	or expanded to tie to external handlers in the future as necessary.
+<pre>
+
+EXAMPLE 
+
+[category1]
+var1 => val1
+var2 => val2
+\# lines that begin with \# are comments
+\#var3 => val3
+</pre>
+
 */
 
 #ifndef SWITCH_CONFIG_H
@@ -42,18 +56,40 @@ extern "C" {
 
 #include <switch.h>
 
+/*! \brief A simple file handle representing an open configuration file **/
 struct switch_config {
+	/*! FILE stream buffer to the opened file */
     FILE *file;
+	/*! path to the file */
     char *path;
+	/*! current category */
     char category[256];
+	/*! buffer of current line being read */
     char buf[1024];
+	/*! current line number in file */
     int lineno;
 };
 
-typedef struct switch_config switch_config;
-
+/*!
+  \brief Open a configuration file
+  \param cfg (switch_config *) config handle to use
+  \param file_path path to the file
+  \return 1 (true) on success 0 (false) on failure
+*/
 SWITCH_DECLARE(int) switch_config_open_file(switch_config *cfg, char *file_path);
+
+/*!
+  \brief Close a previously opened configuration file
+  \param cfg (switch_config *) config handle to use
+*/
 SWITCH_DECLARE(void) switch_config_close_file(switch_config *cfg);
+
+/*!
+  \brief Retrieve next name/value pair from configuration file
+  \param cfg (switch_config *) config handle to use
+  \param var pointer to aim at the new variable name
+  \param val pointer to aim at the new value
+*/
 SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char **val);
 
 #ifdef __cplusplus

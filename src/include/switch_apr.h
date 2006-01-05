@@ -30,6 +30,11 @@
  */
 /*! \file switch_apr.h
     \brief APR includes header
+	
+	The things powered by APR are renamed into the switch_ namespace to provide a cleaner
+	look to things and helps me to document what parts of APR I am using I'd like to take this
+	opportunity to thank APR for all the awesome stuff it does and for making my life much easier.
+
 */
 #ifndef SWITCH_APR_H
 #define SWITCH_APR_H
@@ -64,10 +69,16 @@ extern "C" {
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions
    any other apr code should be as hidden as possible.
 */
-	
+
+/**
+ * @defgroup switch_apr Brought To You By APR
+ * @ingroup FREESWITCH
+ * @{
+ */	
+
 /**
  * @defgroup switch_file_io File I/O Handling Functions
- * @ingroup FREESWITCH 
+ * @ingroup switch_apr 
  * @{
  */
 
@@ -76,6 +87,7 @@ typedef apr_file_t switch_file_t;
 
 /**
  * @defgroup switch_file_permissions File Permissions flags 
+ * @ingroup switch_apr
  * @{
  */
     
@@ -102,6 +114,7 @@ typedef apr_file_t switch_file_t;
 
 /**
  * @defgroup switch_file_open_flags File Open Flags/Routines
+ * @ingroup switch_apr
  * @{
  */
 #define SWITCH_FOPEN_READ APR_FOPEN_READ							/**< Open the file for reading */
@@ -209,7 +222,7 @@ DoxyDefine(apr_status_t switch_file_write(switch_file_t *thefile, const void *bu
 
 /**
  * @defgroup switch_thread_cond Condition Variable Routines
- * @ingroup FREESWITCH 
+ * @ingroup switch_apr 
  * @{
  */
 
@@ -296,7 +309,7 @@ DoxyDefine(apr_status_t switch_thread_cond_destroy(switch_thread_cond_t *cond);)
 
 /**
  * @defgroup switch_thread_proc Threads and Process Functions
- * @ingroup FREESWITCH 
+ * @ingroup switch_apr 
  * @{
  */
 
@@ -344,7 +357,7 @@ DoxyDefine(apr_status_t switch_thread_create(switch_thread_t **new_thread, switc
 
 /**
  * @defgroup switch_network_io Network Routines
- * @ingroup FREESWITCH 
+ * @ingroup switch_apr 
  * @{
  */
 
@@ -910,7 +923,7 @@ DoxyDefine(apr_status_t switch_mcast_interface(switch_socket_t *sock,
 
 /**
  * @defgroup switch_memory_pool Memory Pool Functions
- * @ingroup FREESWITCH 
+ * @ingroup switch_apr 
  * @{
  */
 /** The fundamental pool type */
@@ -931,7 +944,7 @@ DoxyDefine(void switch_pool_clear(switch_memory_pool *p);)
 
 /**
  * @defgroup apr_poll Poll Routines
- * @ingroup APR 
+ * @ingroup switch_apr
  * @{
  */
 /** Poll descriptor set. */
@@ -1013,7 +1026,7 @@ DoxyDefine(apr_status_t switch_poll(switch_pollfd_t *aprset, apr_int32_t numsock
 
  /**
  * @defgroup switch_time Time Routines
- * @ingroup FREESWITCH 
+ * @ingroup switch_apr 
  * @{
  */
 
@@ -1097,7 +1110,7 @@ DoxyDefine(void switch_sleep(apr_interval_time_t t);)
 
 /**
  * @defgroup apr_hash Hash Tables
- * @ingroup APR 
+ * @ingroup switch_apr
  * @{
  */
 
@@ -1147,7 +1160,7 @@ DoxyDefine(void switch_hash_this(switch_hash_index_t *hi, const void **key,
 
 /**
  * @defgroup switch_StrMatch String matching routines
- * @ingroup FREESWITCH
+ * @ingroup switch_apr
  * @{
  */
 
@@ -1179,7 +1192,7 @@ DoxyDefine(const char * switch_strmatch(const switch_strmatch_pattern *pattern,
 
 /**
  * @defgroup switch_UUID UUID Handling
- * @ingroup FREESWITCH
+ * @ingroup switch_apr
  * @{
  */
 
@@ -1218,7 +1231,7 @@ DoxyDefine(apr_status_t switch_uuid_parse(switch_uuid_t *uuid, const char *uuid_
 
 /**
  * @defgroup switch_FIFO Thread Safe FIFO bounded queue
- * @ingroup FREESWITCH
+ * @ingroup switch_apr
  * @{
  */
 
@@ -1314,6 +1327,7 @@ DoxyDefine(apr_status_t switch_queue_trypop(switch_queue_t *queue, void **data);
 DoxyDefine(apr_status_t switch_queue_trypush(switch_queue_t *queue, void *data);)
 #define switch_queue_trypush apr_queue_trypush
 
+/** @} */
 /** @} */
 
 #ifdef __cplusplus

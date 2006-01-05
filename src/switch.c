@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Clean up modules.\n");
-	loadable_module_shutdown();
+	switch_loadable_module_shutdown();
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Tearing down environment.\n");
 	switch_core_destroy();
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Exiting Now.\n");

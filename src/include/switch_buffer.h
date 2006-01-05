@@ -31,6 +31,10 @@
  */
 /*! \file switch_buffer.h
     \brief Data Buffering Code
+
+	The purpose of this module is to make a plain buffering interface that can be used for read/write buffers
+	throughout the application.  The first implementation was done to provide the functionality and the interface
+	and I think it can be optimized under the hood as we go using bucket brigades and/or ring buffering techniques.
 */
 
 #ifndef SWITCH_BUFFER_H
@@ -89,13 +93,13 @@ SWITCH_DECLARE(int) switch_buffer_read(switch_buffer *buffer, void *data, size_t
  * \param buffer any buffer of type switch_buffer
  * \param data pointer to the data to be written
  * \param datalen amount of data to be written
- * \return int ammount of buffer used after the write, or 0 if no space available
+ * \return int amount of buffer used after the write, or 0 if no space available
  */
 SWITCH_DECLARE(int) switch_buffer_write(switch_buffer *buffer, void *data, size_t datalen);
 
 /*! \brief Remove data from the buffer
  * \param buffer any buffer of type switch_buffer
- * \param datalen amount of data to be returned
+ * \param datalen amount of data to be removed
  * \return int size of buffer, or 0 if unable to toss that much data
  */
 SWITCH_DECLARE(int) switch_buffer_toss(switch_buffer *buffer, size_t datalen);
