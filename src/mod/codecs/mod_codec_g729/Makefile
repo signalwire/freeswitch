@@ -1,7 +1,9 @@
-CFLAGS += -I/usr/local/include/libg729
 LDFLAGS +=-lg729
 
-all:	$(MODNAME).so
+all:	depends $(MODNAME).so
+
+depends:
+	$(BASE)/buildlib.sh $(BASE) install codec/libg729 --prefix=$(PREFIX)
 
 $(MODNAME).so: $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o
