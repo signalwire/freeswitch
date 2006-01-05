@@ -62,7 +62,7 @@ static switch_status switch_raw_encode(switch_codec *codec,
 {
 
 	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary.*/
-	if (decoded_rate != codec->implementation->samples_per_second) {
+	if (decoded_rate != other_codec->implementation->samples_per_second) {
 		memcpy(encoded_data, decoded_data, decoded_data_len);
 		*encoded_data_len = decoded_data_len;
 		return SWITCH_STATUS_RESAMPLE;
