@@ -107,6 +107,7 @@ depends:
 	./buildlib.sh . install libresample-0.1.3.tgz --prefix=$(PREFIX)
 	cp libs/libresample-0.1.3/*.a $(PREFIX)/lib
 	cp libs/libresample-0.1.3/include/* $(PREFIX)/include
+	ranlib $(PREFIX)/lib/libresample.a
 
 modules: $(NAME)
 	@echo making modules

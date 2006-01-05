@@ -566,7 +566,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_set_read_codec(switch_core_ses
 SWITCH_DECLARE(switch_status) switch_core_session_set_write_codec(switch_core_session *session, switch_codec *codec);
 ///\}
 
-///\defgroup db Databse Functions
+///\defgroup db Database Functions
 ///\ingroup core1
 ///\{
 /*! 
