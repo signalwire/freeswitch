@@ -1,3 +1,4 @@
+CFLAGS += -I$(PREFIX)/include/g729
 LDFLAGS +=-lg729
 
 all:	depends $(MODNAME).so
