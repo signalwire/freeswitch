@@ -112,7 +112,7 @@ If BuildCore Then
 		VERSION=strFromProc
 	Loop While Not OExec.StdOut.atEndOfStream
 
-	FindReplaceInFile FreeswitchDir & "src\include\switch_version.h", "#define FREESWITCH_VERSION_REVISION", "#define FREESWITCH_VERSION_REVISION         " & VERSION
+	FindReplaceInFile FreeswitchDir & "src\include\switch_version.h", "@SVN_VERSION@", VERSION
 
 	If Not FSO.FolderExists(LibDestDir & "include") Then
 		FSO.CreateFolder(LibDestDir & "include")
