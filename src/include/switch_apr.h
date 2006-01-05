@@ -134,7 +134,6 @@ typedef apr_file_t switch_file_t;
 /** @} */
 
 /**
-
  * Open the specified file.
  * @param newf The opened file descriptor.
  * @param fname The full path to the file (using / on all systems)
