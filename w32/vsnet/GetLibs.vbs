@@ -27,6 +27,7 @@ quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
 LibDestDir=Showpath(ScriptDir & "..\..\libs")
+FreeswitchDir=Showpath(ScriptDir & "..\..")
 UtilsDir=Showpath(ScriptDir & "Tools")
 GetTarGZObjects UtilsDir
 GetVCBuild
@@ -100,6 +101,19 @@ End If
 ' ******************
 
 If BuildCore Then
+	FSO.CopyFile FreeswitchDir & "src\include\switch_version.h.in", FreeswitchDir & "src\include\switch_version.h", true
+	VersionCmd="svnversion " & FreeswitchDir & " -n"
+	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpVersion.Bat", True)
+	MyFile.WriteLine("@" & VersionCmd)
+	MyFile.Close
+	Set oExec = WshShell.Exec(UtilsDir & "tmpVersion.Bat")
+	Do
+		strFromProc = OExec.StdOut.ReadLine()
+		VERSION=strFromProc
+	Loop While Not OExec.StdOut.atEndOfStream
+
+	FindReplaceInFile FreeswitchDir & "src\include\switch_version.h", "#define FREESWITCH_VERSION_REVISION", "#define FREESWITCH_VERSION_REVISION         " & VERSION
+
 	If Not FSO.FolderExists(LibDestDir & "include") Then
 		FSO.CreateFolder(LibDestDir & "include")
 	End If

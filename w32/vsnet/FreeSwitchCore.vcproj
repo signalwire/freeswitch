@@ -315,6 +315,10 @@
 				RelativePath="..\..\src\include\switch_utils.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\src\include\switch_version.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

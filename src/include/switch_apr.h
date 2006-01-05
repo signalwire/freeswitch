@@ -131,8 +131,6 @@ typedef apr_file_t switch_file_t;
 #define SWITCH_FOPEN_NOCLEANUP APR_FOPEN_NOCLEANUP					/**< Do not register a cleanup when the file is opened */
 #define SWITCH_FOPEN_SENDFILE_ENABLED APR_FOPEN_SENDFILE_ENABLED	/**< Advisory flag that this file should support apr_socket_sendfile operation */
 #define SWITCH_FOPEN_LARGEFILE APR_FOPEN_LAREFILE					/**< Platform dependent flag to enable large file support */
-
-#define SWITCH_READ APR_READ				/**< @deprecated @see SWITCH_FOPEN_READ */
 /** @} */
 
 /**
