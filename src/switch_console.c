@@ -46,12 +46,17 @@ static int switch_console_process(char *cmd)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bye!\n");
 		return 0;
 	}
+	if (!strcmp(cmd, "version")) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Version %s\n", SWITCH_VERSION_FULL);
+		return 1;
+	}
 	if (!strcmp(cmd, "help")) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-			"\n"
-			"Valid Commands:\n\n"
-			"help - umm yeah..\n"
-			"%sshutdown - stop the program\n\n",
+							  "\n"
+							  "Valid Commands:\n\n"
+							  "version\n"
+							  "help - umm yeah..\n"
+							  "%sshutdown - stop the program\n\n",
 			perlhelp
 			);
 		return 1;

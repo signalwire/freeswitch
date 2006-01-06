@@ -33,7 +33,7 @@ AM_CFLAGS 	+= -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\"
 AM_CFLAGS	+= -DSWITCH_PREFIX_DIR=\"$(PREFIX)\"
 AM_CFLAGS	+= -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
 AM_CFLAGS	+= -DSWITCH_DB_DIR=\"$(PREFIX)/db\"
-AM_CFLAGS	+= -DSWITCH_SVN_VERSION=\"$(shell svnversion . -n || echo 'get svn' )\"
+
 
 libfreeswitch_la_SOURCES	= \
 src/include/switch.h \
@@ -92,7 +92,16 @@ bin_PROGRAMS =	freeswitch
 freeswitch_SOURCES = src/switch.c
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDFLAGS = -lfreeswitch
+nodist_freeswitch_SOURCES = src/include/switch_version.h
+BUILT_SOURCES = version
+CLEANFILES = src/include/switch_version.h
 
+version: Makefile
+	./checkversion.sh
+
+newversion: Makefile
+	./checkversion.sh force
+	$(MAKE)
 
 .nodepends:
 	touch .nodepends

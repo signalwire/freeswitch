@@ -45,6 +45,7 @@ extern "C" {
 
 #include <assert.h>
 
+#include <switch_version.h>
 #include <switch_platform.h>
 #include <switch_apr.h>
 #include <switch_sqlite.h>

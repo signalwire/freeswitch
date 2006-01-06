@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
 		switch_event_fire(&event);
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_SVN_VERSION);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_VERSION_FULL);
 
 	/* wait for console input */
 	switch_console_loop();
