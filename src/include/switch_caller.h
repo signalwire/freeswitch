@@ -42,6 +42,9 @@
 	linked into a stack which will be executed in order by the session's state machine when the 
 	current state is CS_EXECUTE.
 */
+///\defgroup caller Caller Identity / Dialplan
+///\ingroup FREESWITCH
+///\{
 
 #ifndef SWITCH_CALLER_H
 #define SWITCH_CALLER_H
@@ -165,6 +168,7 @@ extern "C" {
 }
 #endif
 
+///\}
 
 #endif
 

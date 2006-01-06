@@ -46,6 +46,9 @@ var2 => val2
 </pre>
 
 */
+///\defgroup confg Config File Parser
+///\ingroup FREESWITCH
+///\{
 
 #ifndef SWITCH_CONFIG_H
 #define SWITCH_CONFIG_H
@@ -95,6 +98,6 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 #ifdef __cplusplus
 }
 #endif
-
+///\}
 
 #endif
