@@ -161,13 +161,13 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel)
 	FILE *handle = stdout;
 
 	switch (channel) {
-case SWITCH_CHANNEL_ID_CONSOLE:
-case SWITCH_CHANNEL_ID_CONSOLE_CLEAN:
-	handle = runtime.console;
-	break;
-default:
-	handle = stdout;
-	break;
+	case SWITCH_CHANNEL_ID_CONSOLE:
+	case SWITCH_CHANNEL_ID_CONSOLE_CLEAN:
+		handle = runtime.console;
+		break;
+	default:
+		handle = stdout;
+		break;
 	}
 
 	return handle;
@@ -225,8 +225,8 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 		if ((!rate || rate == iptr->samples_per_second) && 
 			(!ms || ms == (iptr->microseconds_per_frame / 1000)) && 
 			(!channels || channels == iptr->number_of_channels)) {
-				implementation = iptr;
-				break;
+			implementation = iptr;
+			break;
 		}
 	}
 
@@ -279,7 +279,17 @@ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	return codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len, decoded_rate, encoded_data, encoded_data_len, encoded_rate, flag);
+	*encoded_data_len = decoded_data_len;
+	return codec->implementation->encode(codec,
+										 other_codec,
+										 decoded_data,
+										 decoded_data_len,
+										 decoded_rate,
+										 encoded_data,
+										 encoded_data_len,
+										 encoded_rate, 
+										 flag);
+
 }
 
 SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
@@ -306,7 +316,18 @@ SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	return codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate, decoded_data, decoded_data_len, decoded_rate, flag);
+	*decoded_data_len = encoded_data_len;
+
+	return codec->implementation->decode(codec,
+										 other_codec,
+										 encoded_data,
+										 encoded_data_len,
+										 encoded_rate,
+										 decoded_data,
+										 decoded_data_len,
+										 decoded_rate,
+										 flag);
+
 }
 
 SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec *codec)
@@ -458,14 +479,14 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 
 	while(data->running > 0) {
 		switch(switch_core_session_read_frame(session, &read_frame, -1)) {
-case SWITCH_STATUS_SUCCESS:
-	break;
-case SWITCH_STATUS_TIMEOUT:
-	break;
-default:
-	data->running = -1;
-	continue;
-	break;
+		case SWITCH_STATUS_SUCCESS:
+			break;
+		case SWITCH_STATUS_TIMEOUT:
+			break;
+		default:
+			data->running = -1;
+			continue;
+			break;
 		}
 
 		switch_yield(100);
@@ -504,7 +525,7 @@ SWITCH_DECLARE(switch_memory_pool *) switch_core_session_get_pool(switch_core_se
 }
 
 /* **ONLY** alloc things with this function that **WILL NOT** outlive
-the session itself or expect an earth shattering KABOOM!*/
+   the session itself or expect an earth shattering KABOOM!*/
 SWITCH_DECLARE(void *)switch_core_session_alloc(switch_core_session *session, size_t memory)
 {
 	void *ptr = NULL;
@@ -518,7 +539,7 @@ SWITCH_DECLARE(void *)switch_core_session_alloc(switch_core_session *session, si
 }
 
 /* **ONLY** alloc things with these functions that **WILL NOT** need
-to be freed *EVER* ie this is for *PERMENANT* memory allocation */
+   to be freed *EVER* ie this is for *PERMENANT* memory allocation */
 
 SWITCH_DECLARE(void *) switch_core_permenant_alloc(size_t memory)
 {
@@ -710,35 +731,35 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 			unsigned int flag = 0;
 			session->raw_read_frame.datalen = session->raw_read_frame.buflen;
 			status = switch_core_codec_decode(read_frame->codec,
-				session->read_codec,
-				read_frame->data,
-				read_frame->datalen,
-				read_frame->rate,
-				session->raw_read_frame.data,
-				&session->raw_read_frame.datalen,
-				&session->raw_read_frame.rate,
-				&flag);
+											  session->read_codec,
+											  read_frame->data,
+											  read_frame->datalen,
+											  session->read_codec->implementation->samples_per_second,
+											  session->raw_read_frame.data,
+											  &session->raw_read_frame.datalen,
+											  &session->raw_read_frame.rate,
+											  &flag);
 
 			switch (status) {
-case SWITCH_STATUS_RESAMPLE:
-	if (!session->read_resampler) {
-		switch_resample_create(&session->read_resampler,
-			read_frame->codec->implementation->samples_per_second,
-			read_frame->codec->implementation->bytes_per_frame * 10,
-			session->read_codec->implementation->samples_per_second,
-			session->read_codec->implementation->bytes_per_frame * 10,
-			session->pool);
-	}
-case SWITCH_STATUS_SUCCESS:
-	read_frame = &session->raw_read_frame;
-	break;
-case SWITCH_STATUS_NOOP:
-	status = SWITCH_STATUS_SUCCESS;
-	break;
-default:
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s decoder error!\n", session->read_codec->codec_interface->interface_name);
-	return status;
-	break;
+			case SWITCH_STATUS_RESAMPLE:
+				if (!session->read_resampler) {
+					switch_resample_create(&session->read_resampler,
+										   read_frame->codec->implementation->samples_per_second,
+										   read_frame->codec->implementation->bytes_per_frame * 10,
+										   session->read_codec->implementation->samples_per_second,
+										   session->read_codec->implementation->bytes_per_frame * 10,
+										   session->pool);
+				}
+			case SWITCH_STATUS_SUCCESS:
+				read_frame = &session->raw_read_frame;
+				break;
+			case SWITCH_STATUS_NOOP:
+				status = SWITCH_STATUS_SUCCESS;
+				break;
+			default:
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s decoder error!\n", session->read_codec->codec_interface->interface_name);
+				return status;
+				break;
 			}
 		}
 		if (session->read_resampler) {
@@ -746,11 +767,11 @@ default:
 
 			session->read_resampler->from_len = switch_short_to_float(data, session->read_resampler->from, (int)read_frame->datalen / 2 );
 			session->read_resampler->to_len = switch_resample_process(session->read_resampler,
-				session->read_resampler->from,
-				session->read_resampler->from_len, 
-				session->read_resampler->to, 
-				(int)session->read_resampler->to_size, 
-				0);
+																	  session->read_resampler->from,
+																	  session->read_resampler->from_len, 
+																	  session->read_resampler->to, 
+																	  (int)session->read_resampler->to_size, 
+																	  0);
 			switch_float_to_short(session->read_resampler->to, data, read_frame->datalen);
 			read_frame->samples = session->read_resampler->to_len;
 			read_frame->datalen = session->read_resampler->to_len * 2;
@@ -776,38 +797,41 @@ default:
 
 				if (perfect) {
 					enc_frame = *frame;
+					session->raw_read_frame.rate = (*frame)->rate;
 				} else {
 					session->raw_read_frame.datalen = switch_buffer_read(session->raw_read_buffer,
-						session->raw_read_frame.data,
-						session->read_codec->implementation->bytes_per_frame);
+																		 session->raw_read_frame.data,
+																		 session->read_codec->implementation->bytes_per_frame);
 					session->raw_read_frame.rate = session->read_codec->implementation->samples_per_second;
 					enc_frame = &session->raw_read_frame;
 				}
 				session->enc_read_frame.datalen = session->enc_read_frame.buflen;
 				status = switch_core_codec_encode(session->read_codec,
-					(*frame)->codec,
-					session->raw_read_frame.data,
-					session->raw_read_frame.datalen,
-					session->raw_read_frame.rate,
-					session->enc_read_frame.data,
-					&session->enc_read_frame.datalen,
-					&session->enc_read_frame.rate,
-					&flag);
+												  (*frame)->codec,
+												  session->raw_read_frame.data,
+												  session->raw_read_frame.datalen,
+												  (*frame)->codec->implementation->samples_per_second,
+												  session->enc_read_frame.data,
+												  &session->enc_read_frame.datalen,
+												  &session->enc_read_frame.rate,
+												  &flag);
 
 
 				switch (status) {
-case SWITCH_STATUS_SUCCESS:
-	*frame = &session->enc_read_frame;
-	break;
-case SWITCH_STATUS_NOOP:
-	*frame = &session->raw_read_frame;
-	status = SWITCH_STATUS_SUCCESS;
-	break;
-default:
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s encoder error!\n", session->read_codec->codec_interface->interface_name);
-	*frame = NULL;
-	status = SWITCH_STATUS_GENERR;
-	break;
+				case SWITCH_STATUS_RESAMPLE:
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "fixme 1\n");
+				case SWITCH_STATUS_SUCCESS:
+					*frame = &session->enc_read_frame;
+					break;
+				case SWITCH_STATUS_NOOP:
+					*frame = &session->raw_read_frame;
+					status = SWITCH_STATUS_SUCCESS;
+					break;
+				default:
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s encoder error!\n", session->read_codec->codec_interface->interface_name);
+					*frame = NULL;
+					status = SWITCH_STATUS_GENERR;
+					break;
 				}
 			}
 		}
@@ -857,38 +881,38 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 		if (frame->codec) {
 			session->raw_write_frame.datalen = session->raw_write_frame.buflen;
 			status = switch_core_codec_decode(frame->codec,
-				session->write_codec,
-				frame->data,
-				frame->datalen,
-				frame->rate,
-				session->raw_write_frame.data,
-				&session->raw_write_frame.datalen,
-				&session->raw_write_frame.rate,
-				&flag);
+											  session->write_codec,
+											  frame->data,
+											  frame->datalen,
+											  session->write_codec->implementation->samples_per_second,
+											  session->raw_write_frame.data,
+											  &session->raw_write_frame.datalen,
+											  &session->raw_write_frame.rate,
+											  &flag);
 
 			switch (status) {
-case SWITCH_STATUS_RESAMPLE:
-	write_frame = &session->raw_write_frame;
-	if (!session->write_resampler) {
-		status = switch_resample_create(&session->write_resampler,
-			frame->codec->implementation->samples_per_second,
-			frame->codec->implementation->bytes_per_frame * 10,
-			session->write_codec->implementation->samples_per_second,
-			session->write_codec->implementation->bytes_per_frame * 10,
-			session->pool);
-	}
-	break;
-case SWITCH_STATUS_SUCCESS:
-	write_frame = &session->raw_write_frame;
-	break;
-case SWITCH_STATUS_NOOP:
-	write_frame = frame;
-	status = SWITCH_STATUS_SUCCESS;
-	break;
-default:
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s decoder error!\n", frame->codec->codec_interface->interface_name);
-	return status;
-	break;
+			case SWITCH_STATUS_RESAMPLE:
+				write_frame = &session->raw_write_frame;
+				if (!session->write_resampler) {
+					status = switch_resample_create(&session->write_resampler,
+													frame->codec->implementation->samples_per_second,
+													frame->codec->implementation->bytes_per_frame * 10,
+													session->write_codec->implementation->samples_per_second,
+													session->write_codec->implementation->bytes_per_frame * 10,
+													session->pool);
+				}
+				break;
+			case SWITCH_STATUS_SUCCESS:
+				write_frame = &session->raw_write_frame;
+				break;
+			case SWITCH_STATUS_NOOP:
+				write_frame = frame;
+				status = SWITCH_STATUS_SUCCESS;
+				break;
+			default:
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s decoder error!\n", frame->codec->codec_interface->interface_name);
+				return status;
+				break;
 			}
 		} 
 		if (session->write_resampler) {
@@ -896,12 +920,12 @@ default:
 
 			session->write_resampler->from_len = switch_short_to_float(data, session->write_resampler->from, (int)write_frame->datalen / 2);
 			session->write_resampler->to_len = switch_resample_process(session->write_resampler,
-				session->write_resampler->from,
-				session->write_resampler->from_len, 
-				session->write_resampler->to, 
-				(int)session->write_resampler->to_size, 
-				0);
-			switch_float_to_short(session->write_resampler->to, data, write_frame->datalen);
+																	   session->write_resampler->from,
+																	   session->write_resampler->from_len, 
+																	   session->write_resampler->to, 
+																	   (int)session->write_resampler->to_size, 
+																	   0);
+			switch_float_to_short(session->write_resampler->to, data, write_frame->datalen * 2);
 			write_frame->samples = session->write_resampler->to_len;
 			write_frame->datalen = session->write_resampler->to_len * 2;
 			write_frame->rate = session->write_resampler->to_rate;
@@ -913,10 +937,10 @@ default:
 				if (!session->raw_write_buffer) {
 					int bytes = session->write_codec->implementation->bytes_per_frame * 10;
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-						"Engaging Write Buffer at %d bytes to accomidate %d->%d\n",
-						bytes,
-						write_frame->datalen,
-						session->write_codec->implementation->bytes_per_frame);
+										  "Engaging Write Buffer at %d bytes to accomidate %d->%d\n",
+										  bytes,
+										  write_frame->datalen,
+										  session->write_codec->implementation->bytes_per_frame);
 					if ((status = switch_buffer_create(session->pool, &session->raw_write_buffer, bytes)) != SWITCH_STATUS_SUCCESS) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Buffer Failed!\n");
 						return status;
@@ -932,28 +956,30 @@ default:
 				session->enc_write_frame.datalen = session->enc_write_frame.buflen;
 
 				status = switch_core_codec_encode(session->write_codec,
-					frame->codec,
-					enc_frame->data,
-					enc_frame->datalen,
-					enc_frame->rate,
-					session->enc_write_frame.data,
-					&session->enc_write_frame.datalen,
-					&session->enc_write_frame.rate,
-					&flag);
+												  frame->codec,
+												  enc_frame->data,
+												  enc_frame->datalen,
+												  session->write_codec->implementation->samples_per_second,
+												  session->enc_write_frame.data,
+												  &session->enc_write_frame.datalen,
+												  &session->enc_write_frame.rate,
+												  &flag);
 
 				switch (status) {
-case SWITCH_STATUS_SUCCESS:
-	write_frame = &session->enc_write_frame;
-	break;
-case SWITCH_STATUS_NOOP:
-	write_frame = enc_frame;
-	status = SWITCH_STATUS_SUCCESS;
-	break;
-default:
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s encoder error!\n", session->read_codec->codec_interface->interface_name);
-	write_frame = NULL;
-	return status;
-	break;
+				case SWITCH_STATUS_RESAMPLE:
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "fixme 2\n");
+				case SWITCH_STATUS_SUCCESS:
+					write_frame = &session->enc_write_frame;
+					break;
+				case SWITCH_STATUS_NOOP:
+					write_frame = enc_frame;
+					status = SWITCH_STATUS_SUCCESS;
+					break;
+				default:
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s encoder error!\n", session->read_codec->codec_interface->interface_name);
+					write_frame = NULL;
+					return status;
+					break;
 				}
 
 				status = perform_write(session, write_frame, timeout, io_flag);
@@ -968,40 +994,69 @@ default:
 					int x;
 					for (x = 0; x < frames; x++) {
 						if ((session->raw_write_frame.datalen =
-							switch_buffer_read(session->raw_write_buffer,
-							session->raw_write_frame.data,
-							bytes))) {
+							 switch_buffer_read(session->raw_write_buffer,
+												session->raw_write_frame.data,
+												bytes))) {
 
-								enc_frame = &session->raw_write_frame;
-								session->raw_write_frame.rate = session->write_codec->implementation->samples_per_second;
-								session->enc_write_frame.datalen = session->enc_write_frame.buflen;
-								status = switch_core_codec_encode(session->write_codec,
-									frame->codec,
-									enc_frame->data,
-									enc_frame->datalen,
-									enc_frame->rate,
-									session->enc_write_frame.data,
-									&session->enc_write_frame.datalen,
-									&session->enc_write_frame.rate,
-									&flag);
+							enc_frame = &session->raw_write_frame;
+							session->raw_write_frame.rate = session->write_codec->implementation->samples_per_second;
+							session->enc_write_frame.datalen = session->enc_write_frame.buflen;
+							status = switch_core_codec_encode(session->write_codec,
+															  frame->codec,
+															  enc_frame->data,
+															  enc_frame->datalen,
+															  frame->codec->implementation->samples_per_second,
+															  session->enc_write_frame.data,
+															  &session->enc_write_frame.datalen,
+															  &session->enc_write_frame.rate,
+															  &flag);
 
 
 
-								switch (status) {
-case SWITCH_STATUS_SUCCESS:
-	write_frame = &session->enc_write_frame;
-	break;
-case SWITCH_STATUS_NOOP:
-	write_frame = enc_frame;
-	status = SWITCH_STATUS_SUCCESS;
-	break;
-default:
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s encoder error!\n", session->read_codec->codec_interface->interface_name);
-	write_frame = NULL;
-	return status;
-	break;
+							switch (status) {
+							case SWITCH_STATUS_RESAMPLE:
+								write_frame = &session->enc_write_frame;
+								if (!session->read_resampler) {
+									status = switch_resample_create(&session->read_resampler,
+																	frame->codec->implementation->samples_per_second,
+																	frame->codec->implementation->bytes_per_frame * 10,
+																	session->write_codec->implementation->samples_per_second,
+																	session->write_codec->implementation->bytes_per_frame * 10,
+																	session->pool);
 								}
-								status = perform_write(session, write_frame, timeout, io_flag);
+								break;
+							case SWITCH_STATUS_SUCCESS:
+								write_frame = &session->enc_write_frame;
+								break;
+							case SWITCH_STATUS_NOOP:
+								write_frame = enc_frame;
+								status = SWITCH_STATUS_SUCCESS;
+								break;
+							default:
+								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s encoder error!\n", session->read_codec->codec_interface->interface_name);
+								write_frame = NULL;
+								return status;
+								break;
+							}
+
+							if (session->read_resampler) {
+								short *data = write_frame->data;
+								
+								session->read_resampler->from_len = switch_short_to_float(data,
+																						  session->read_resampler->from, 
+																						  (int)write_frame->datalen / 2);
+								session->read_resampler->to_len = switch_resample_process(session->read_resampler,
+																						  session->read_resampler->from,
+																						  session->read_resampler->from_len, 
+																						  session->read_resampler->to, 
+																						  (int)session->read_resampler->to_size, 
+																						  0);
+								switch_float_to_short(session->read_resampler->to, data, write_frame->datalen * 2);
+								write_frame->samples = session->read_resampler->to_len;
+								write_frame->datalen = session->read_resampler->to_len * 2;
+								write_frame->rate = session->read_resampler->to_rate;
+							}
+							status = perform_write(session, write_frame, timeout, io_flag);
 						}
 					}
 					return status;
@@ -1341,7 +1396,7 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 
 	while (switch_channel_get_state(session->channel) == CS_EXECUTE && extension->current_application) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Execute %s(%s)\n", extension->current_application->application_name,
-			extension->current_application->application_data);
+							  extension->current_application->application_data);
 		if (!(application_interface = switch_loadable_module_get_application_interface(extension->current_application->application_name))) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Application %s\n", extension->current_application->application_name);
 			switch_channel_set_state(session->channel, CS_HANGUP);
@@ -1394,17 +1449,17 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 	const switch_event_handler_table *application_event_handlers = NULL;
 
 	/*
-	Life of the channel. you have channel and pool in your session
-	everywhere you go you use the session to malloc with
-	switch_core_session_alloc(session, <size>)
+	  Life of the channel. you have channel and pool in your session
+	  everywhere you go you use the session to malloc with
+	  switch_core_session_alloc(session, <size>)
 
-	The enpoint module gets the first crack at implementing the state
-	if it wants to, it can cancel the default behaviour by returning SWITCH_STATUS_FALSE
+	  The enpoint module gets the first crack at implementing the state
+	  if it wants to, it can cancel the default behaviour by returning SWITCH_STATUS_FALSE
 
-	Next comes the channel's event handler table that can be set by an application
-	which also can veto the next behaviour in line by returning SWITCH_STATUS_FALSE
+	  Next comes the channel's event handler table that can be set by an application
+	  which also can veto the next behaviour in line by returning SWITCH_STATUS_FALSE
 
-	Finally the default state behaviour is called.
+	  Finally the default state behaviour is called.
 
 
 	*/
@@ -1431,97 +1486,97 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 			}
 
 			switch ( state ) {
-case CS_NEW: /* Just created, Waiting for first instructions */
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State NEW\n");
-	break;
-case CS_DONE:
-	continue;
-	break;
-case CS_HANGUP: /* Deactivate and end the thread */
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State HANGUP\n");
-	if (!driver_event_handlers->on_hangup ||
-		(driver_event_handlers->on_hangup &&
-		driver_event_handlers->on_hangup(session) == SWITCH_STATUS_SUCCESS && 
-		midstate == switch_channel_get_state(session->channel))) {
-			if (!application_event_handlers || !application_event_handlers->on_hangup ||
-				(application_event_handlers->on_hangup &&
-				application_event_handlers->on_hangup(session) == SWITCH_STATUS_SUCCESS && 
-				midstate == switch_channel_get_state(session->channel))) {
-					switch_core_standard_on_hangup(session);
-			}
-	}
-	switch_channel_set_state(session->channel, CS_DONE);
-	break;
-case CS_INIT: /* Basic setup tasks */
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State INIT\n");
-	if (!driver_event_handlers->on_init ||
-		(driver_event_handlers->on_init &&
-		driver_event_handlers->on_init(session) == SWITCH_STATUS_SUCCESS && 
-		midstate == switch_channel_get_state(session->channel))) {
-			if (!application_event_handlers || !application_event_handlers->on_init ||
-				(application_event_handlers->on_init &&
-				application_event_handlers->on_init(session) == SWITCH_STATUS_SUCCESS && 
-				midstate == switch_channel_get_state(session->channel))) {
-					switch_core_standard_on_init(session);
-			}
-	}
-	break;
-case CS_RING: /* Look for a dialplan and find something to do */
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State RING\n");
-	if (!driver_event_handlers->on_ring ||
-		(driver_event_handlers->on_ring &&
-		driver_event_handlers->on_ring(session) == SWITCH_STATUS_SUCCESS && 
-		midstate == switch_channel_get_state(session->channel))) {
-			if (!application_event_handlers || !application_event_handlers->on_ring ||
-				(application_event_handlers->on_ring &&
-				application_event_handlers->on_ring(session) == SWITCH_STATUS_SUCCESS && 
-				midstate == switch_channel_get_state(session->channel))) {
-					switch_core_standard_on_ring(session);
-			}
-	}
-	break;
-case CS_EXECUTE: /* Execute an Operation*/
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State EXECUTE\n");
-	if (!driver_event_handlers->on_execute ||
-		(driver_event_handlers->on_execute &&
-		driver_event_handlers->on_execute(session) == SWITCH_STATUS_SUCCESS && 
-		midstate == switch_channel_get_state(session->channel))) {
-			if (!application_event_handlers || !application_event_handlers->on_execute ||
-				(application_event_handlers->on_execute &&
-				application_event_handlers->on_execute(session) == SWITCH_STATUS_SUCCESS && 
-				midstate == switch_channel_get_state(session->channel))) {
-					switch_core_standard_on_execute(session);
-			}
-	}
-	break;
-case CS_LOOPBACK: /* loop all data back to source */
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State LOOPBACK\n");
-	if (!driver_event_handlers->on_loopback ||
-		(driver_event_handlers->on_loopback &&
-		driver_event_handlers->on_loopback(session) == SWITCH_STATUS_SUCCESS && 
-		midstate == switch_channel_get_state(session->channel))) {
-			if (!application_event_handlers || !application_event_handlers->on_loopback ||
-				(application_event_handlers->on_loopback &&
-				application_event_handlers->on_loopback(session) == SWITCH_STATUS_SUCCESS && 
-				midstate == switch_channel_get_state(session->channel))) {
-					switch_core_standard_on_loopback(session);
-			}
-	}
-	break;
-case CS_TRANSMIT: /* send/recieve data to/from another channel */
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State TRANSMIT\n");
-	if (!driver_event_handlers->on_transmit ||
-		(driver_event_handlers->on_transmit &&
-		driver_event_handlers->on_transmit(session) == SWITCH_STATUS_SUCCESS && 
-		midstate == switch_channel_get_state(session->channel))) {
-			if (!application_event_handlers || !application_event_handlers->on_transmit ||
-				(application_event_handlers->on_transmit &&
-				application_event_handlers->on_transmit(session) == SWITCH_STATUS_SUCCESS && 
-				midstate == switch_channel_get_state(session->channel))) {
-					switch_core_standard_on_transmit(session);
-			}
-	}
-	break;
+			case CS_NEW: /* Just created, Waiting for first instructions */
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State NEW\n");
+				break;
+			case CS_DONE:
+				continue;
+				break;
+			case CS_HANGUP: /* Deactivate and end the thread */
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State HANGUP\n");
+				if (!driver_event_handlers->on_hangup ||
+					(driver_event_handlers->on_hangup &&
+					 driver_event_handlers->on_hangup(session) == SWITCH_STATUS_SUCCESS && 
+					 midstate == switch_channel_get_state(session->channel))) {
+					if (!application_event_handlers || !application_event_handlers->on_hangup ||
+						(application_event_handlers->on_hangup &&
+						 application_event_handlers->on_hangup(session) == SWITCH_STATUS_SUCCESS && 
+						 midstate == switch_channel_get_state(session->channel))) {
+						switch_core_standard_on_hangup(session);
+					}
+				}
+				switch_channel_set_state(session->channel, CS_DONE);
+				break;
+			case CS_INIT: /* Basic setup tasks */
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State INIT\n");
+				if (!driver_event_handlers->on_init ||
+					(driver_event_handlers->on_init &&
+					 driver_event_handlers->on_init(session) == SWITCH_STATUS_SUCCESS && 
+					 midstate == switch_channel_get_state(session->channel))) {
+					if (!application_event_handlers || !application_event_handlers->on_init ||
+						(application_event_handlers->on_init &&
+						 application_event_handlers->on_init(session) == SWITCH_STATUS_SUCCESS && 
+						 midstate == switch_channel_get_state(session->channel))) {
+						switch_core_standard_on_init(session);
+					}
+				}
+				break;
+			case CS_RING: /* Look for a dialplan and find something to do */
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State RING\n");
+				if (!driver_event_handlers->on_ring ||
+					(driver_event_handlers->on_ring &&
+					 driver_event_handlers->on_ring(session) == SWITCH_STATUS_SUCCESS && 
+					 midstate == switch_channel_get_state(session->channel))) {
+					if (!application_event_handlers || !application_event_handlers->on_ring ||
+						(application_event_handlers->on_ring &&
+						 application_event_handlers->on_ring(session) == SWITCH_STATUS_SUCCESS && 
+						 midstate == switch_channel_get_state(session->channel))) {
+						switch_core_standard_on_ring(session);
+					}
+				}
+				break;
+			case CS_EXECUTE: /* Execute an Operation*/
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State EXECUTE\n");
+				if (!driver_event_handlers->on_execute ||
+					(driver_event_handlers->on_execute &&
+					 driver_event_handlers->on_execute(session) == SWITCH_STATUS_SUCCESS && 
+					 midstate == switch_channel_get_state(session->channel))) {
+					if (!application_event_handlers || !application_event_handlers->on_execute ||
+						(application_event_handlers->on_execute &&
+						 application_event_handlers->on_execute(session) == SWITCH_STATUS_SUCCESS && 
+						 midstate == switch_channel_get_state(session->channel))) {
+						switch_core_standard_on_execute(session);
+					}
+				}
+				break;
+			case CS_LOOPBACK: /* loop all data back to source */
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State LOOPBACK\n");
+				if (!driver_event_handlers->on_loopback ||
+					(driver_event_handlers->on_loopback &&
+					 driver_event_handlers->on_loopback(session) == SWITCH_STATUS_SUCCESS && 
+					 midstate == switch_channel_get_state(session->channel))) {
+					if (!application_event_handlers || !application_event_handlers->on_loopback ||
+						(application_event_handlers->on_loopback &&
+						 application_event_handlers->on_loopback(session) == SWITCH_STATUS_SUCCESS && 
+						 midstate == switch_channel_get_state(session->channel))) {
+						switch_core_standard_on_loopback(session);
+					}
+				}
+				break;
+			case CS_TRANSMIT: /* send/recieve data to/from another channel */
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State TRANSMIT\n");
+				if (!driver_event_handlers->on_transmit ||
+					(driver_event_handlers->on_transmit &&
+					 driver_event_handlers->on_transmit(session) == SWITCH_STATUS_SUCCESS && 
+					 midstate == switch_channel_get_state(session->channel))) {
+					if (!application_event_handlers || !application_event_handlers->on_transmit ||
+						(application_event_handlers->on_transmit &&
+						 application_event_handlers->on_transmit(session) == SWITCH_STATUS_SUCCESS && 
+						 midstate == switch_channel_get_state(session->channel))) {
+						switch_core_standard_on_transmit(session);
+					}
+				}
+				break;
 			}
 
 			laststate = midstate;
@@ -1581,16 +1636,16 @@ SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash *hash, char *key)
 }
 
 /* This function abstracts the thread creation for modules by allowing you to pass a function ptr and
-a void object and trust that that the function will be run in a thread with arg  This lets
-you request and activate a thread without giving up any knowledge about what is in the thread
-neither the core nor the calling module know anything about each other.
+   a void object and trust that that the function will be run in a thread with arg  This lets
+   you request and activate a thread without giving up any knowledge about what is in the thread
+   neither the core nor the calling module know anything about each other.
 
-This thread is expected to never exit until the application exits so the func is responsible
-to make sure that is the case.
+   This thread is expected to never exit until the application exits so the func is responsible
+   to make sure that is the case.
 
-The typical use for this is so switch_loadable_module.c can start up a thread for each module
-passing the table of module methods as a session obj into the core without actually allowing
-the core to have any clue and keeping switch_loadable_module.c from needing any thread code.
+   The typical use for this is so switch_loadable_module.c can start up a thread for each module
+   passing the table of module methods as a session obj into the core without actually allowing
+   the core to have any clue and keeping switch_loadable_module.c from needing any thread code.
 
 */
 
@@ -1620,11 +1675,11 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 		ts->objs[0] = obj;
 
 		switch_thread_create(&thread,
-			thd_attr,
-			func,
-			ts,
-			pool
-			);
+							 thd_attr,
+							 func,
+							 ts,
+							 pool
+							 );
 	}
 
 }
@@ -1659,12 +1714,12 @@ SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session *sess
 	switch_threadattr_detach_set(thd_attr, 1);
 
 	if (switch_thread_create(&thread,
-		thd_attr,
-		switch_core_session_thread,
-		session,
-		session->pool
-		) != APR_SUCCESS) {
-			switch_core_session_destroy(&session);
+							 thd_attr,
+							 switch_core_session_thread,
+							 session,
+							 session->pool
+							 ) != APR_SUCCESS) {
+		switch_core_session_destroy(&session);
 	}
 
 }
@@ -1677,11 +1732,11 @@ SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *sess
 	switch_threadattr_detach_set(thd_attr, 1);
 
 	switch_thread_create(&thread,
-		thd_attr,
-		func,
-		obj,
-		session->pool
-		);
+						 thd_attr,
+						 func,
+						 obj,
+						 session->pool
+						 );
 
 }
 
@@ -1727,7 +1782,7 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_e
 	switch_channel_init(session->channel, session, CS_NEW, CF_SEND_AUDIO | CF_RECV_AUDIO);
 
 	/* The session *IS* the pool you may not alter it because you have no idea how
-	its all private it will be passed to the thread run function */
+	   its all private it will be passed to the thread run function */
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(session->uuid_str, &uuid);
@@ -1770,13 +1825,14 @@ static void core_event_handler (switch_event *event)
 	char buf[1024];
 
 	switch(event->event_id) {
-case SWITCH_EVENT_LOG:
-	return;
-	break;
-default:
-	switch_event_serialize(event, buf, sizeof(buf), NULL);
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "\nCORE EVENT\n--------------------------------\n%s\n", buf);
-	break;
+	case SWITCH_EVENT_LOG:
+		return;
+		break;
+	default:
+		buf[0] = '\0';
+		//switch_event_serialize(event, buf, sizeof(buf), NULL);
+		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "\nCORE EVENT\n--------------------------------\n%s\n", buf);
+		break;
 	}
 }
 
