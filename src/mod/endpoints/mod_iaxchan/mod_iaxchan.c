@@ -423,8 +423,13 @@ static switch_status channel_on_hangup(switch_core_session *session)
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 	switch_thread_cond_signal(tech_pvt->cond);
 
-	switch_core_codec_destroy(&tech_pvt->read_codec);
-	switch_core_codec_destroy(&tech_pvt->write_codec);
+	if (tech_pvt->read_codec.implementation) {
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+	}
+
+	if (tech_pvt->write_codec.implementation) {
+		switch_core_codec_destroy(&tech_pvt->write_codec);
+	}
 
 	if (tech_pvt->iax_session) {
 		if (!switch_test_flag(tech_pvt, TFLAG_HANGUP)) {
