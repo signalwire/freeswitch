@@ -44,9 +44,9 @@ bin_PROGRAMS = freeswitch$(EXEEXT)
 DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure $(top_srcdir)/src/include/config.h.in \
-	AUTHORS COPYING ChangeLog INSTALL NEWS TODO compile \
-	config.guess config.sub depcomp install-sh ltmain.sh missing \
-	mkinstalldirs
+	$(top_srcdir)/src/include/switch_version.h.in AUTHORS COPYING \
+	ChangeLog INSTALL NEWS TODO compile config.guess config.sub \
+	depcomp install-sh ltmain.sh missing mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -56,7 +56,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/include/config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = src/include/switch_version.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -176,6 +176,8 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SVNVERSION = @SVNVERSION@
+SVN_VERSION = @SVN_VERSION@
 VERSION = @VERSION@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
@@ -350,6 +352,8 @@ $(top_srcdir)/src/include/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f src/include/config.h src/include/stamp-h1
+src/include/switch_version.h: $(top_builddir)/config.status $(top_srcdir)/src/include/switch_version.h.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(libdir)" || $(mkdir_p) "$(DESTDIR)$(libdir)"
