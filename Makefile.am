@@ -59,7 +59,8 @@ src/switch_core.c \
 src/switch_loadable_module.c \
 src/switch_mutex.c \
 src/switch_utils.c \
-src/switch_event.c
+src/switch_event.c \
+src/switch_resample.c
 
 
 
