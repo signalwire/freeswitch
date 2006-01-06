@@ -67,6 +67,21 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 	return argc;
 }
 
+SWITCH_DECLARE(char *) switch_cut_path(char *in)
+{
+	char *p, *ret = in;
+	char delims[] = "/\\";
+	char *i;
+
+	for(i = delims; *i; i++) {
+		p = in;
+		while((p = strchr(p, *i))) {
+			ret = ++p;
+		}
+	}
+	return ret;
+}
+
 SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock, unsigned int flags, switch_memory_pool *pool)
 {
 	switch_pollset_t *pollset;

@@ -33,6 +33,7 @@ AM_CFLAGS 	+= -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\"
 AM_CFLAGS	+= -DSWITCH_PREFIX_DIR=\"$(PREFIX)\"
 AM_CFLAGS	+= -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
 AM_CFLAGS	+= -DSWITCH_DB_DIR=\"$(PREFIX)/db\"
+AM_CFLAGS	+= -DSWITCH_SVN_VERSION=\"$(shell svnversion . -n || echo 'get svn' )\"
 
 libfreeswitch_la_SOURCES	= \
 src/include/switch.h \
@@ -58,8 +59,8 @@ src/switch_core.c \
 src/switch_loadable_module.c \
 src/switch_mutex.c \
 src/switch_utils.c \
-src/switch_event.c \
-src/switch_resample.c
+src/switch_event.c
+
 
 
 #bindir = $(PREFIX)/bin
@@ -80,6 +81,7 @@ library_include_HEADERS =	src/include/switch.h \
 				src/include/switch_buffer.h \
 				src/include/switch_event.h \
 				src/include/switch_resample.h
+
 
 lib_LTLIBRARIES		= libfreeswitch.la
 libfreeswitch_la_CFLAGS	= $(AM_CFLAGS) -Wall -Werror -Wstrict-prototypes -Wmissing-prototypes -g  

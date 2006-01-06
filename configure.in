@@ -10,20 +10,10 @@ AC_CONFIG_HEADER([src/include/config.h])
 AC_PREFIX_DEFAULT(/usr/local/freeswitch)
 
 # Checks for programs.
-AC_PATH_PROGS(SVNVERSION, svnversion, [echo Missing subversion so some stuff will be borked],${PATH}:/opt/csw/bin)
 AC_PROG_CC
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
-
-# SVN Revision number, needed for FREESWITCH_VERSION
-if test -n "$SVNVERSION" ; then
-	AC_DEFINE_UNQUOTED([SVN_VERSION],"`${SVNVERSION} . -n`",[Which Subversion revision are we building here ?] )
-	AC_SUBST([SVN_VERSION])
-else
-	AC_DEFINE_UNQUOTED([SVN_VERSION],"UNKNOWN",[Unknown Subversion because it's not on this machine.] )
-	AC_SUBST([SVN_VERSION])
-fi   
 
 # Checks for header files.
 AC_HEADER_DIRENT
