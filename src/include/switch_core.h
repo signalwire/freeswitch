@@ -407,12 +407,20 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_outgoing(switch
 ///\ingroup core1
 ///\{
 /*! 
-  \brief Add an event hook to be executed when a session requests an outgoing extension
+  \brief Add an event hook to be executed when a session answers a channel
   \param session session to bind hook to
   \param answer_channel hook to bind
   \return SWITCH_STATUS_SUCCESS on suceess
 */
 SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_answer_channel(switch_core_session *session, switch_answer_channel_hook answer_channel);
+
+/*! 
+  \brief Add an event hook to be executed when a session sends a message
+  \param session session to bind hook to
+  \param answer_channel hook to bind
+  \return SWITCH_STATUS_SUCCESS on suceess
+*/
+SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_receive_message(switch_core_session *session, switch_receive_message_hook receive_message);
 
 /*! 
   \brief Add an event hook to be executed when a session reads a frame
