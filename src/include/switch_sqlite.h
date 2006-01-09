@@ -230,23 +230,18 @@ DoxyDefine(int switch_core_db_close(switch_core_db *);)
 ** database handle to be called whenever an undefined collation sequence is
 ** required.
 **
-** If the function is registered using the sqlite3_collation_needed() API,
-** then it is passed the names of undefined collation sequences as strings
-** encoded in UTF-8. If sqlite3_collation_needed16() is used, the names
-** are passed as UTF-16 in machine native byte order. A call to either
-** function replaces any existing callback.
+** The function is passed the names of undefined collation sequences as 
+** strings encoded in UTF-8. A call to the function replaces any existing callback.
 **
 ** When the user-function is invoked, the first argument passed is a copy
-** of the second argument to sqlite3_collation_needed() or
-** sqlite3_collation_needed16(). The second argument is the database
+** of the second argument to sqlite3_collation_needed().  The second argument is the database
 ** handle. The third argument is one of SQLITE_UTF8, SQLITE_UTF16BE or
 ** SQLITE_UTF16LE, indicating the most desirable form of the collation
 ** sequence function required. The fourth parameter is the name of the
 ** required collation sequence.
 **
 ** The collation sequence is returned to SQLite by a collation-needed
-** callback using the sqlite3_create_collation() or
-** sqlite3_create_collation16() APIs, described above.
+** callback using the sqlite3_create_collation() API, described above.
 */
 DoxyDefine(int switch_core_db_collation_needed(
   switch_core_db*, 
@@ -254,12 +249,6 @@ DoxyDefine(int switch_core_db_collation_needed(
   void(*)(void*,switch_core_db*,int eTextRep,const char*)
 );)
 #define switch_core_db_collation_needed sqlite3_collation_needed
-DoxyDefine(int switch_core_db_collation_needed16(
-  switch_core_db*, 
-  void*,
-  void(*)(void*,switch_core_db*,int eTextRep,const void*)
-);)
-#define switch_core_db_collation_needed16 sqlite3_collation_needed16
 
 /**
 ** The next group of routines returns information about the information
@@ -340,13 +329,10 @@ DoxyDefine(int switch_core_db_column_type(sqlite3_stmt*, int iCol);)
 /**
 ** The first parameter is a compiled SQL statement. This function returns
 ** the column heading for the Nth column of that statement, where N is the
-** second function parameter.  The string returned is UTF-8 for
-** sqlite3_column_name() and UTF-16 for sqlite3_column_name16().
+** second function parameter.  The string returned is UTF-8.
 */
 DoxyDefine(const char *switch_core_db_column_name(sqlite3_stmt*,int);)
 #define switch_core_db_column_name sqlite3_column_name
-DoxyDefine(const void *switch_core_db_column_name16(sqlite3_stmt*,int);)
-#define switch_core_db_column_name16 sqlite3_column_name16
 
 /**
 ** Return the number of columns in the result set returned by the compiled
@@ -415,28 +401,23 @@ DoxyDefine(void *switch_core_db_commit_hook(switch_core_db*, int(*)(void*), void
 #define switch_core_db_commit_hook sqlite3_commit_hook
 
 /**
-** These functions return true if the given input string comprises
-** one or more complete SQL statements. For the sqlite3_complete() call,
-** the parameter must be a nul-terminated UTF-8 string. For
-** sqlite3_complete16(), a nul-terminated machine byte order UTF-16 string
-** is required.
+** This functions return true if the given input string comprises
+** one or more complete SQL statements. The parameter must be a nul-terminated 
+** UTF-8 string. 
 **
 ** The algorithm is simple.  If the last token other than spaces
 ** and comments is a semicolon, then return true.  otherwise return
 ** false.
 */
 DoxyDefine(int switch_core_db_complete(const char *sql);)
-DoxyDefine(int switch_core_db_complete16(const void *sql);)
 #define switch_core_db_complete sqlite3_complete
-#define switch_core_db_complete16 sqlite3_complete16
 
 /**
-** These two functions are used to add new collation sequences to the
+** This function is used to add new collation sequences to the
 ** sqlite3 handle specified as the first argument. 
 **
 ** The name of the new collation sequence is specified as a UTF-8 string
-** for sqlite3_create_collation() and a UTF-16 string for
-** sqlite3_create_collation16(). In both cases the name is passed as the
+** for sqlite3_create_collation() and the name is passed as the
 ** second function argument.
 **
 ** The third argument must be one of the constants SQLITE_UTF8,
@@ -448,8 +429,7 @@ DoxyDefine(int switch_core_db_complete16(const void *sql);)
 ** argument. If it is NULL, this is the same as deleting the collation
 ** sequence (so that SQLite cannot call it anymore). Each time the user
 ** supplied function is invoked, it is passed a copy of the void* passed as
-** the fourth argument to sqlite3_create_collation() or
-** sqlite3_create_collation16() as its first parameter.
+** the fourth argument.
 **
 ** The remaining arguments to the user-supplied routine are two strings,
 ** each represented by a [length, data] pair and encoded in the encoding
@@ -465,18 +445,53 @@ DoxyDefine(int switch_core_db_create_collation(
   void*,
   int(*xCompare)(void*,int,const void*,int,const void*)
 );)
-DoxyDefine(int switch_core_db_create_collation16(
-  switch_core_db*, 
-  const char *zName, 
-  int eTextRep, 
-  void*,
-  int(*xCompare)(void*,int,const void*,int,const void*)
-);)
 #define switch_core_db_create_collation sqlite3_create_collation
-#define switch_core_db_create_collation16 sqlite3_create_collation16
 
+/*
+** The following function is used to add user functions or aggregates
+** implemented in C to the SQL langauge interpreted by SQLite. The
+** name of the (scalar) function or aggregate, is encoded in UTF-8.
+**
+** The first argument is the database handle that the new function or
+** aggregate is to be added to. If a single program uses more than one
+** database handle internally, then user functions or aggregates must 
+** be added individually to each database handle with which they will be
+** used.
+**
+** The third parameter is the number of arguments that the function or
+** aggregate takes. If this parameter is negative, then the function or
+** aggregate may take any number of arguments.
+**
+** The fourth parameter is one of SQLITE_UTF* values defined below,
+** indicating the encoding that the function is most likely to handle
+** values in.  This does not change the behaviour of the programming
+** interface. However, if two versions of the same function are registered
+** with different encoding values, SQLite invokes the version likely to
+** minimize conversions between text encodings.
+**
+** The seventh, eighth and ninth parameters, xFunc, xStep and xFinal, are
+** pointers to user implemented C functions that implement the user
+** function or aggregate. A scalar function requires an implementation of
+** the xFunc callback only, NULL pointers should be passed as the xStep
+** and xFinal parameters. An aggregate function requires an implementation
+** of xStep and xFinal, but NULL should be passed for xFunc. To delete an
+** existing user function or aggregate, pass NULL for all three function
+** callback. Specifying an inconstent set of callback values, such as an
+** xFunc and an xFinal, or an xStep but no xFinal, SQLITE_ERROR is
+** returned.
+*/
+DoxyDefine(int switch_core_db_create_function(
+  switch_core_db *,
+  const char *zFunctionName,
+  int nArg,
+  int eTextRep,
+  void*,
+  void (*xFunc)(sqlite3_context*,int,sqlite3_value**),
+  void (*xStep)(sqlite3_context*,int,sqlite3_value**),
+  void (*xFinal)(sqlite3_context*)
+);)
 #define switch_core_db_create_function sqlite3_create_function
-#define switch_core_db_create_function16 sqlite3_create_function16
+
 #define switch_core_db_data_count sqlite3_data_count
 #define switch_core_db_db_handle sqlite3_db_handle
 #define switch_core_db_errcode sqlite3_errcode
