@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Michael Jerris <mike@jerris.com>
  *
  * switch_sqlite.h -- Sqlite Header
  *
@@ -447,7 +448,7 @@ DoxyDefine(int switch_core_db_create_collation(
 );)
 #define switch_core_db_create_collation sqlite3_create_collation
 
-/*
+/**
 ** The following function is used to add user functions or aggregates
 ** implemented in C to the SQL langauge interpreted by SQLite. The
 ** name of the (scalar) function or aggregate, is encoded in UTF-8.
@@ -492,37 +493,392 @@ DoxyDefine(int switch_core_db_create_function(
 );)
 #define switch_core_db_create_function sqlite3_create_function
 
+/**
+** Return the number of values in the current row of the result set.
+**
+** After a call to sqlite3_step() that returns SQLITE_ROW, this routine
+** will return the same value as the sqlite3_column_count() function.
+** After sqlite3_step() has returned an SQLITE_DONE, SQLITE_BUSY or
+** error code, or before sqlite3_step() has been called on a 
+** compiled SQL statement, this routine returns zero.
+*/
+DoxyDefine(int switch_core_db_data_count(sqlite3_stmt *pStmt);)
 #define switch_core_db_data_count sqlite3_data_count
+
+/**
+** Return the sqlite3* database handle to which the prepared statement given
+** in the argument belongs.  This is the same database handle that was
+** the first argument to the sqlite3_prepare() that was used to create
+** the statement in the first place.
+*/
+DoxyDefine(sqlite3 *sqlite3_db_handle(sqlite3_stmt*);)
 #define switch_core_db_db_handle sqlite3_db_handle
+
+/**
+** Return the error code for the most recent sqlite3_* API call associated
+** with sqlite3 handle 'db'. SQLITE_OK is returned if the most recent 
+** API call was successful.
+**
+** Calls to many sqlite3_* functions set the error code and string returned
+** by sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16()
+** (overwriting the previous values). Note that calls to sqlite3_errcode(),
+** sqlite3_errmsg() and sqlite3_errmsg16() themselves do not affect the
+** results of future invocations.
+**
+** Assuming no other intervening sqlite3_* API calls are made, the error
+** code returned by this function is associated with the same error as
+** the strings  returned by sqlite3_errmsg() and sqlite3_errmsg16().
+*/
+DoxyDefine(int sqlite3_errcode(sqlite3 *db);)
 #define switch_core_db_errcode sqlite3_errcode
+
+/**
+** Return a pointer to a UTF-8 encoded string describing in english the
+** error condition for the most recent sqlite3_* API call. The returned
+** string is always terminated by an 0x00 byte.
+**
+** The string "not an error" is returned when the most recent API call was
+** successful.
+*/
+DoxyDefine(const char *sqlite3_errmsg(sqlite3*);)
 #define switch_core_db_errmsg sqlite3_errmsg
-#define switch_core_db_errmsg16 sqlite3_errmsg16
+
+/**
+** A function to executes one or more statements of SQL.
+**
+** If one or more of the SQL statements are queries, then
+** the callback function specified by the 3rd parameter is
+** invoked once for each row of the query result.  This callback
+** should normally return 0.  If the callback returns a non-zero
+** value then the query is aborted, all subsequent SQL statements
+** are skipped and the sqlite3_exec() function returns the SQLITE_ABORT.
+**
+** The 4th parameter is an arbitrary pointer that is passed
+** to the callback function as its first parameter.
+**
+** The 2nd parameter to the callback function is the number of
+** columns in the query result.  The 3rd parameter to the callback
+** is an array of strings holding the values for each column.
+** The 4th parameter to the callback is an array of strings holding
+** the names of each column.
+**
+** The callback function may be NULL, even for queries.  A NULL
+** callback is not an error.  It just means that no callback
+** will be invoked.
+**
+** If an error occurs while parsing or evaluating the SQL (but
+** not while executing the callback) then an appropriate error
+** message is written into memory obtained from malloc() and
+** *errmsg is made to point to that message.  The calling function
+** is responsible for freeing the memory that holds the error
+** message.   Use sqlite3_free() for this.  If errmsg==NULL,
+** then no error message is ever written.
+**
+** The return value is is SQLITE_OK if there are no errors and
+** some other return code if there is an error.  The particular
+** return value depends on the type of error. 
+**
+** If the query could not be executed because a database file is
+** locked or busy, then this function returns SQLITE_BUSY.  (This
+** behavior can be modified somewhat using the sqlite3_busy_handler()
+** and sqlite3_busy_timeout() functions below.)
+*/
+DoxyDefine(int sqlite3_exec(
+  sqlite3*,                     /* An open database */
+  const char *sql,              /* SQL to be executed */
+  sqlite3_callback,             /* Callback function */
+  void *,                       /* 1st argument to callback function */
+  char **errmsg                 /* Error msg written here */
+);)
 #define switch_core_db_exec sqlite3_exec
+
+/**
+** Return TRUE (non-zero) if the statement supplied as an argument needs
+** to be recompiled.  A statement needs to be recompiled whenever the
+** execution environment changes in a way that would alter the program
+** that sqlite3_prepare() generates.  For example, if new functions or
+** collating sequences are registered or if an authorizer function is
+** added or changed.
+**
+*/
+DoxyDefine(int sqlite3_expired(sqlite3_stmt*);)
 #define switch_core_db_expired sqlite3_expired
+
+/**
+** The sqlite3_finalize() function is called to delete a compiled
+** SQL statement obtained by a previous call to sqlite3_prepare().
+** If the statement was executed successfully, or
+** not executed at all, then SQLITE_OK is returned. If execution of the
+** statement failed then an error code is returned. 
+**
+** This routine can be called at any point during the execution of the
+** virtual machine.  If the virtual machine has not completed execution
+** when this routine is called, that is like encountering an error or
+** an interrupt.  (See sqlite3_interrupt().)  Incomplete updates may be
+** rolled back and transactions cancelled,  depending on the circumstances,
+** and the result code returned will be SQLITE_ABORT.
+*/
+DoxyDefine(int sqlite3_finalize(sqlite3_stmt *pStmt);)
 #define switch_core_db_finalize sqlite3_finalize
-#define switch_core_db_free sqlite3_free
+
+/**
+** Call this routine to free the memory that sqlite3_get_table() allocated.
+*/
+DoxyDefine(void sqlite3_free_table(char **result);)
 #define switch_core_db_free_table sqlite3_free_table
+
+/**
+  * Test to see whether or not the database connection is in autocommit
+  * mode.  Return TRUE if it is and FALSE if not.  Autocommit mode is on
+  * by default.  Autocommit is disabled by a BEGIN statement and reenabled
+  * by the next COMMIT or ROLLBACK.
+  */
+DoxyDefine(int sqlite3_get_autocommit(sqlite3*);)
 #define switch_core_db_get_autocommit sqlite3_get_autocommit
+
+/**
+** The following two functions may be used by scalar user functions to
+** associate meta-data with argument values. If the same value is passed to
+** multiple invocations of the user-function during query execution, under
+** some circumstances the associated meta-data may be preserved. This may
+** be used, for example, to add a regular-expression matching scalar
+** function. The compiled version of the regular expression is stored as
+** meta-data associated with the SQL value passed as the regular expression
+** pattern.
+**
+** Calling sqlite3_get_auxdata() returns a pointer to the meta data
+** associated with the Nth argument value to the current user function
+** call, where N is the second parameter. If no meta-data has been set for
+** that value, then a NULL pointer is returned.
+**
+** The sqlite3_set_auxdata() is used to associate meta data with a user
+** function argument. The third parameter is a pointer to the meta data
+** to be associated with the Nth user function argument value. The fourth
+** parameter specifies a 'delete function' that will be called on the meta
+** data pointer to release it when it is no longer required. If the delete
+** function pointer is NULL, it is not invoked.
+**
+** In practice, meta-data is preserved between function calls for
+** expressions that are constant at compile time. This includes literal
+** values and SQL variables.
+*/
+DoxyDefine(void *sqlite3_get_auxdata(sqlite3_context*, int);)
+DoxyDefine(void sqlite3_set_auxdata(sqlite3_context*, int, void*, void (*)(void*));)
 #define switch_core_db_get_auxdata sqlite3_get_auxdata
+#define switch_core_db_set_auxdata sqlite3_set_auxdata
+
+/**
+** This next routine is really just a wrapper around sqlite3_exec().
+** Instead of invoking a user-supplied callback for each row of the
+** result, this routine remembers each row of the result in memory
+** obtained from malloc(), then returns all of the result after the
+** query has finished. 
+**
+** As an example, suppose the query result where this table:
+**
+**        Name        | Age
+**        -----------------------
+**        Alice       | 43
+**        Bob         | 28
+**        Cindy       | 21
+**
+** If the 3rd argument were &azResult then after the function returns
+** azResult will contain the following data:
+**
+**        azResult[0] = "Name";
+**        azResult[1] = "Age";
+**        azResult[2] = "Alice";
+**        azResult[3] = "43";
+**        azResult[4] = "Bob";
+**        azResult[5] = "28";
+**        azResult[6] = "Cindy";
+**        azResult[7] = "21";
+**
+** Notice that there is an extra row of data containing the column
+** headers.  But the *nrow return value is still 3.  *ncolumn is
+** set to 2.  In general, the number of values inserted into azResult
+** will be ((*nrow) + 1)*(*ncolumn).
+**
+** After the calling function has finished using the result, it should 
+** pass the result data pointer to sqlite3_free_table() in order to 
+** release the memory that was malloc-ed.  Because of the way the 
+** malloc() happens, the calling function must not try to call 
+** free() directly.  Only sqlite3_free_table() is able to release 
+** the memory properly and safely.
+**
+** The return value of this routine is the same as from sqlite3_exec().
+*/
+DoxyDefine(int sqlite3_get_table(
+  sqlite3*,               /* An open database */
+  const char *sql,       /* SQL to be executed */
+  char ***resultp,       /* Result written to a char *[]  that this points to */
+  int *nrow,             /* Number of result rows written here */
+  int *ncolumn,          /* Number of result columns written here */
+  char **errmsg          /* Error msg written here */
+);)
 #define switch_core_db_get_table sqlite3_get_table
-#define switch_core_db_get_table_cb sqlite3_get_table_cb
+
+/**
+** This function is called to recover from a malloc() failure that occured
+** within the SQLite library. Normally, after a single malloc() fails the 
+** library refuses to function (all major calls return SQLITE_NOMEM).
+** This function restores the library state so that it can be used again.
+**
+** All existing statements (sqlite3_stmt pointers) must be finalized or
+** reset before this call is made. Otherwise, SQLITE_BUSY is returned.
+** If any in-memory databases are in use, either as a main or TEMP
+** database, SQLITE_ERROR is returned. In either of these cases, the 
+** library is not reset and remains unusable.
+**
+** This function is *not* threadsafe. Calling this from within a threaded
+** application when threads other than the caller have used SQLite is
+** dangerous and will almost certainly result in malfunctions.
+**
+** This functionality can be omitted from a build by defining the 
+** SQLITE_OMIT_GLOBALRECOVER at compile time.
+*/
+DoxyDefine(int sqlite3_global_recover();)
 #define switch_core_db_global_recover sqlite3_global_recover
+
+/** This function causes any pending database operation to abort and
+ * return at its earliest opportunity.  This routine is typically
+ * called in response to a user action such as pressing "Cancel"
+ * or Ctrl-C where the user wants a long query operation to halt
+ * immediately.
+ */
+DoxyDefine(void sqlite3_interrupt(sqlite3*);)
 #define switch_core_db_interrupt sqlite3_interrupt
-#define switch_core_db_interrupt_count sqlite3_interrupt_count
+
+/**
+ * Each entry in an SQLite table has a unique integer key.  (The key is
+ * the value of the INTEGER PRIMARY KEY column if there is such a column,
+ * otherwise the key is generated at random.  The unique key is always
+ * available as the ROWID, OID, or _ROWID_ column.)  The following routine
+ * returns the integer key of the most recent insert in the database.
+ *
+ * This function is similar to the mysql_insert_id() function from MySQL.
+ */
+DoxyDefine(sqlite_int64 sqlite3_last_insert_rowid(sqlite3*);)
 #define switch_core_db_last_insert_rowid sqlite3_last_insert_rowid
-#define switch_core_db_libversion sqlite3_libversion
-#define switch_core_db_libversion_number sqlite3_libversion_number
-#define switch_core_db_malloc_failed sqlite3_malloc_failed
-#define switch_core_db_mprintf sqlite3_mprintf
+
+/**
+ * Open the sqlite database file "filename".  The "filename" is UTF-8
+ * encoded.  An sqlite3* handle is returned in *ppDb, even
+ * if an error occurs. If the database is opened (or created) successfully,
+ * then SQLITE_OK is returned. Otherwise an error code is returned. The
+ * sqlite3_errmsg() routine can be used to obtain
+ * an English language description of the error.
+ *
+ * If the database file does not exist, then a new database is created.
+ * The encoding for the database is UTF-8.
+ *
+ * Whether or not an error occurs when it is opened, resources associated
+ * with the sqlite3* handle should be released by passing it to
+ * sqlite3_close() when it is no longer required.
+ */
+DoxyDefine(int sqlite3_open(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb          /* OUT: SQLite db handle */
+);)
 #define switch_core_db_open sqlite3_open
-#define switch_core_db_open16 sqlite3_open16
-#define switch_core_db_opentemp_count sqlite3_opentemp_count
-#define switch_core_db_os_trace sqlite3_os_trace
+
+/**
+** To execute an SQL query, it must first be compiled into a byte-code
+** program using the following routine.
+**
+** The first parameter "db" is an SQLite database handle. The second
+** parameter "zSql" is the statement to be compiled, encoded as
+** UTF-8. If the next parameter, "nBytes", is less
+** than zero, then zSql is read up to the first nul terminator.  If
+** "nBytes" is not less than zero, then it is the length of the string zSql
+** in bytes (not characters).
+**
+** *pzTail is made to point to the first byte past the end of the first
+** SQL statement in zSql.  This routine only compiles the first statement
+** in zSql, so *pzTail is left pointing to what remains uncompiled.
+**
+** *ppStmt is left pointing to a compiled SQL statement that can be
+** executed using sqlite3_step().  Or if there is an error, *ppStmt may be
+** set to NULL.  If the input text contained no SQL (if the input is and
+** empty string or a comment) then *ppStmt is set to NULL.
+**
+** On success, SQLITE_OK is returned.  Otherwise an error code is returned.
+*/
+DoxyDefine(int sqlite3_prepare(
+  sqlite3 *db,            /* Database handle */
+  const char *zSql,       /* SQL statement, UTF-8 encoded */
+  int nBytes,             /* Length of zSql in bytes. */
+  sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
+  const char **pzTail     /* OUT: Pointer to unused portion of zSql */
+);)
 #define switch_core_db_prepare sqlite3_prepare
-#define switch_core_db_prepare16 sqlite3_prepare16
+
+/**
+ * Register a function for tracing SQL command evaluation.  The function registered by
+ * sqlite3_profile() runs at the end of each SQL statement and includes
+ * information on how long that statement ran.
+ *
+ * The sqlite3_profile() API is currently considered experimental and
+ * is subject to change.
+ */
+DoxyDefine(void *sqlite3_profile(sqlite3*,
+   void(*xProfile)(void*,const char*,sqlite_uint64), void*);)
 #define switch_core_db_profile sqlite3_profile
+
+/**
+** This routine configures a callback function - the progress callback - that
+** is invoked periodically during long running calls to sqlite3_exec(),
+** sqlite3_step() and sqlite3_get_table(). An example use for this API is to 
+** keep a GUI updated during a large query.
+**
+** The progress callback is invoked once for every N virtual machine opcodes,
+** where N is the second argument to this function. The progress callback
+** itself is identified by the third argument to this function. The fourth
+** argument to this function is a void pointer passed to the progress callback
+** function each time it is invoked.
+**
+** If a call to sqlite3_exec(), sqlite3_step() or sqlite3_get_table() results 
+** in less than N opcodes being executed, then the progress callback is not
+** invoked.
+** 
+** To remove the progress callback altogether, pass NULL as the third
+** argument to this function.
+**
+** If the progress callback returns a result other than 0, then the current 
+** query is immediately terminated and any database changes rolled back. If the
+** query was part of a larger transaction, then the transaction is not rolled
+** back and remains active. The sqlite3_exec() call returns SQLITE_ABORT. 
+**
+******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
+*/
+DoxyDefine(void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);)
 #define switch_core_db_progress_handler sqlite3_progress_handler
+/**
+ * The sqlite3_reset() function is called to reset a compiled SQL
+ * statement obtained by a previous call to sqlite3_prepare() or
+ * sqlite3_prepare16() back to it's initial state, ready to be re-executed.
+ * Any SQL statement variables that had values bound to them using
+ * the sqlite3_bind_*() API retain their values.
+ */
+DoxyDefine(int sqlite3_reset(sqlite3_stmt *pStmt);)
 #define switch_core_db_reset sqlite3_reset
+
+/**
+** User-defined functions invoke the following routines in order to
+** set their return value.
+*/
+DoxyDefine(void sqlite3_result_blob(sqlite3_context*, const void*, int, void(*)(void*));)
+DoxyDefine(void sqlite3_result_double(sqlite3_context*, double);)
+DoxyDefine(void sqlite3_result_error(sqlite3_context*, const char*, int);)
+DoxyDefine(void sqlite3_result_error16(sqlite3_context*, const void*, int);)
+DoxyDefine(void sqlite3_result_int(sqlite3_context*, int);)
+DoxyDefine(void sqlite3_result_int64(sqlite3_context*, sqlite_int64);)
+DoxyDefine(void sqlite3_result_null(sqlite3_context*);)
+DoxyDefine(void sqlite3_result_text(sqlite3_context*, const char*, int, void(*)(void*));)
+DoxyDefine(void sqlite3_result_text16(sqlite3_context*, const void*, int, void(*)(void*));)
+DoxyDefine(void sqlite3_result_text16le(sqlite3_context*, const void*, int,void(*)(void*));)
+DoxyDefine(void sqlite3_result_text16be(sqlite3_context*, const void*, int,void(*)(void*));)
+DoxyDefine(void sqlite3_result_value(sqlite3_context*, sqlite3_value*);)
 #define switch_core_db_result_blob sqlite3_result_blob
 #define switch_core_db_result_double sqlite3_result_double
 #define switch_core_db_result_error sqlite3_result_error
@@ -535,17 +891,134 @@ DoxyDefine(int switch_core_db_create_function(
 #define switch_core_db_result_text16be sqlite3_result_text16be
 #define switch_core_db_result_text16le sqlite3_result_text16le
 #define switch_core_db_result_value sqlite3_result_value
-#define switch_core_db_search_count sqlite3_search_count
+
+/**
+** This routine registers a callback with the SQLite library.  The
+** callback is invoked (at compile-time, not at run-time) for each
+** attempt to access a column of a table in the database.  The callback
+** returns SQLITE_OK if access is allowed, SQLITE_DENY if the entire
+** SQL statement should be aborted with an error and SQLITE_IGNORE
+** if the column should be treated as a NULL value.
+*/
+DoxyDefine(int sqlite3_set_authorizer(
+  sqlite3*,
+  int (*xAuth)(void*,int,const char*,const char*,const char*,const char*),
+  void *pUserData
+);)
 #define switch_core_db_set_authorizer sqlite3_set_authorizer
-#define switch_core_db_set_auxdata sqlite3_set_auxdata
-#define switch_core_db_snprintf sqlite3_snprintf
-#define switch_core_db_sort_count sqlite3_sort_count
+
+/** 
+** After an SQL query has been compiled with a call to either
+** sqlite3_prepare() or sqlite3_prepare16(), then this function must be
+** called one or more times to execute the statement.
+**
+** The return value will be either SQLITE_BUSY, SQLITE_DONE, 
+** SQLITE_ROW, SQLITE_ERROR, or SQLITE_MISUSE.
+**
+** SQLITE_BUSY means that the database engine attempted to open
+** a locked database and there is no busy callback registered.
+** Call sqlite3_step() again to retry the open.
+**
+** SQLITE_DONE means that the statement has finished executing
+** successfully.  sqlite3_step() should not be called again on this virtual
+** machine.
+**
+** If the SQL statement being executed returns any data, then 
+** SQLITE_ROW is returned each time a new row of data is ready
+** for processing by the caller. The values may be accessed using
+** the sqlite3_column_*() functions described below. sqlite3_step()
+** is called again to retrieve the next row of data.
+** 
+** SQLITE_ERROR means that a run-time error (such as a constraint
+** violation) has occurred.  sqlite3_step() should not be called again on
+** the VM. More information may be found by calling sqlite3_errmsg().
+**
+** SQLITE_MISUSE means that the this routine was called inappropriately.
+** Perhaps it was called on a virtual machine that had already been
+** finalized or on one that had previously returned SQLITE_ERROR or
+** SQLITE_DONE.  Or it could be the case the the same database connection
+** is being used simulataneously by two or more threads.
+*/
+DoxyDefine(int sqlite3_step(sqlite3_stmt*);)
 #define switch_core_db_step sqlite3_step
+
+/**
+** If the following global variable is made to point to a
+** string which is the name of a directory, then all temporary files
+** created by SQLite will be placed in that directory.  If this variable
+** is NULL pointer, then SQLite does a search for an appropriate temporary
+** file directory.
+**
+** Once sqlite3_open() has been called, changing this variable will invalidate
+** the current temporary database, if any.
+*/
+DoxyDefine(extern char *sqlite3_temp_directory;)
 #define switch_core_db_temp_directory sqlite3_temp_directory
+
+/**
+** This function returns the number of database rows that have been
+** modified by INSERT, UPDATE or DELETE statements since the database handle
+** was opened. This includes UPDATE, INSERT and DELETE statements executed
+** as part of trigger programs. All changes are counted as soon as the
+** statement that makes them is completed (when the statement handle is
+** passed to sqlite3_reset() or sqlite_finalise()).
+**
+** SQLite implements the command "DELETE FROM table" without a WHERE clause
+** by dropping and recreating the table.  (This is much faster than going
+** through and deleting individual elements form the table.)  Because of
+** this optimization, the change count for "DELETE FROM table" will be
+** zero regardless of the number of elements that were originally in the
+** table. To get an accurate count of the number of rows deleted, use
+** "DELETE FROM table WHERE 1" instead.
+*/
+DoxyDefine(int sqlite3_total_changes(sqlite3*);)
 #define switch_core_db_total_changes sqlite3_total_changes
+
+/**
+** Register a function for tracing SQL command evaluation.  The function
+** registered is invoked at the first sqlite3_step()
+** for the evaluation of an SQL statement.
+*/
+DoxyDefine(void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);)
 #define switch_core_db_trace sqlite3_trace
+
+/**
+** Move all bindings from the first prepared statement over to the second.
+** This routine is useful, for example, if the first prepared statement
+** fails with an SQLITE_SCHEMA error.  The same SQL can be prepared into
+** the second prepared statement then all of the bindings transfered over
+** to the second statement before the first statement is finalized.
+*/
+DoxyDefine(int sqlite3_transfer_bindings(sqlite3_stmt*, sqlite3_stmt*);)
 #define switch_core_db_transfer_bindings sqlite3_transfer_bindings
+
+/**
+** The pUserData parameter to the sqlite3_create_function()
+** routine used to register user functions is available to
+** the implementation of the function using this call.
+*/
+DoxyDefine(void *sqlite3_user_data(sqlite3_context*);)
 #define switch_core_db_user_data sqlite3_user_data
+
+/**
+** The next group of routines returns information about parameters to
+** a user-defined function.  Function implementations use these routines
+** to access their parameters.  These routines are the same as the
+** sqlite3_column_* routines except that these routines take a single
+** sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
+** column number.
+*/
+DoxyDefine(const void *sqlite3_value_blob(sqlite3_value*);)
+DoxyDefine(int sqlite3_value_bytes(sqlite3_value*);)
+DoxyDefine(int sqlite3_value_bytes16(sqlite3_value*);)
+DoxyDefine(double sqlite3_value_double(sqlite3_value*);)
+DoxyDefine(int sqlite3_value_int(sqlite3_value*);)
+DoxyDefine(sqlite_int64 sqlite3_value_int64(sqlite3_value*);)
+DoxyDefine(const unsigned char *sqlite3_value_text(sqlite3_value*);)
+DoxyDefine(const void *sqlite3_value_text16(sqlite3_value*);)
+DoxyDefine(const void *sqlite3_value_text16le(sqlite3_value*);)
+DoxyDefine(const void *sqlite3_value_text16be(sqlite3_value*);)
+DoxyDefine(int sqlite3_value_type(sqlite3_value*);)
 #define switch_core_db_value_blob sqlite3_value_blob
 #define switch_core_db_value_bytes sqlite3_value_bytes
 #define switch_core_db_value_bytes16 sqlite3_value_bytes16
@@ -557,8 +1030,57 @@ DoxyDefine(int switch_core_db_create_function(
 #define switch_core_db_value_text16be sqlite3_value_text16be
 #define switch_core_db_value_text16le sqlite3_value_text16le
 #define switch_core_db_value_type sqlite3_value_type
-#define switch_core_db_version sqlite3_version
+
+
+/**
+** The following routines are variants of the "sprintf()" from the
+** standard C library.  The resulting string is written into memory
+** obtained from malloc() so that there is never a possiblity of buffer
+** overflow.  These routines also implement some additional formatting
+** options that are useful for constructing SQL statements.
+**
+** The strings returned by these routines should be freed by calling
+** sqlite3_free().
+**
+** All of the usual printf formatting options apply.  In addition, there
+** is a "%q" option.  %q works like %s in that it substitutes a null-terminated
+** string from the argument list.  But %q also doubles every '\'' character.
+** %q is designed for use inside a string literal.  By doubling each '\''
+** character it escapes that character and allows it to be inserted into
+** the string.
+**
+** For example, so some string variable contains text as follows:
+**
+**      char *zText = "It's a happy day!";
+**
+** We can use this text in an SQL statement as follows:
+**
+**      char *z = sqlite3_mprintf("INSERT INTO TABLES('%q')", zText);
+**      sqlite3_exec(db, z, callback1, 0, 0);
+**      sqlite3_free(z);
+**
+** Because the %q format string is used, the '\'' character in zText
+** is escaped and the SQL generated is as follows:
+**
+**      INSERT INTO table1 VALUES('It''s a happy day!')
+**
+** This is correct.  Had we used %s instead of %q, the generated SQL
+** would have looked like this:
+**
+**      INSERT INTO table1 VALUES('It's a happy day!');
+**
+** This second example is an SQL syntax error.  As a general rule you
+** should always use %q instead of %s when inserting text into a string 
+** literal.
+*/
+DoxyDefine(char *sqlite3_mprintf(const char*,...);)
+DoxyDefine(char *sqlite3_vmprintf(const char*, va_list);)
+DoxyDefine(void sqlite3_free(char *z);)
+DoxyDefine(char *sqlite3_snprintf(int,char*,const char*, ...);)
+#define switch_core_db_snprintf sqlite3_snprintf
 #define switch_core_db_vmprintf sqlite3_vmprintf
+#define switch_core_db_mprintf sqlite3_mprintf
+#define switch_core_db_free sqlite3_free
 
 /** @} */
 /** @} */
