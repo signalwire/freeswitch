@@ -47,6 +47,37 @@ extern "C" {
 #define SWITCH_MAX_CORE_THREAD_SESSION_OBJS 128
 #define SWITCH_MAX_STREAMS 128
 
+/*! \brief A message object designed to allow unlike technologies to exchange data */
+struct switch_core_session_message {
+	/*! uuid of the sender (for replies)*/
+	char *from;
+	/*! enumeration of the type of message */
+	switch_core_session_message_t message_id;
+
+	/*! optional numeric arg*/
+	int numeric_arg;
+	/*! optional string arg*/
+	char *string_arg;
+	/*! optional string arg*/
+	size_t string_arg_size;
+	/*! optional arbitrary pointer arg */
+	void *pointer_arg;
+	/*! optional arbitrary pointer arg's size */
+	size_t pointer_arg_size;
+
+	/*! optional numeric reply*/
+	int numeric_reply;
+	/*! optional string reply*/
+	char *string_reply;
+	/*! optional string reply*/
+	size_t string_reply_size;
+	/*! optional arbitrary pointer reply */
+	void *pointer_reply;
+	/*! optional arbitrary pointer reply's size */
+	size_t pointer_reply_size;
+
+};
+
 /*! \brief A generic object to pass as a thread's session object to allow mutiple arguements and a pool */
 struct switch_core_thread_session {
 	/*! status of the thread */
@@ -214,6 +245,14 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session *session);
 
 /*! 
+  \brief Send a message to another session using it's uuid
+  \param uuid_str the unique id of the session you want to send a message to
+  \param message the switch_core_session_message object to send
+  \return the status returned by the message handler
+*/
+SWITCH_DECLARE (switch_status) switch_core_session_message_send(char *uuid_str, switch_core_session_message *message);
+
+/*! 
   \brief Retrieve private user data from a session
   \param session the session to retrieve from
   \return a pointer to the private data
@@ -292,6 +331,13 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
   \return SWITCH_STATUS_SUCCESS if the channel was answered
 */
 SWITCH_DECLARE(switch_status) switch_core_session_answer_channel(switch_core_session *session);
+
+/*! 
+  \brief Receive a message on a given session
+  \param session the session to receive the message from
+  \return the status returned by the message handler
+*/
+SWITCH_DECLARE(switch_status) switch_core_session_receive_message(switch_core_session *session, switch_core_session_message *message);
 
 /*! 
   \brief Read a frame from a session

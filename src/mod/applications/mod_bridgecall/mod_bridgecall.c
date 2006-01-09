@@ -46,6 +46,8 @@ struct audio_bridge_data {
 static void *audio_bridge_thread(switch_thread *thread, void *obj)
 {
 	struct switch_core_thread_session *data = obj;
+	int *stream_id_p;
+	int stream_id = *stream_id_p;
 
 	switch_channel *chan_a, *chan_b;
 	switch_frame *read_frame;
@@ -53,6 +55,8 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 
 	session_a = data->objs[0];
 	session_b = data->objs[1];
+	
+	stream_id = data->objs[2];
 
 	chan_a = switch_core_session_get_channel(session_a);
 	chan_b = switch_core_session_get_channel(session_b);
@@ -74,8 +78,9 @@ default:
 			switch_channel_dequeue_dtmf(chan_a, dtmf, sizeof(dtmf));
 			switch_core_session_send_dtmf(session_b, dtmf);
 		}
-		if (switch_core_session_read_frame(session_a, &read_frame, -1) == SWITCH_STATUS_SUCCESS && read_frame->datalen) {
-			if (switch_core_session_write_frame(session_b, read_frame, -1) != SWITCH_STATUS_SUCCESS) {
+		
+		if (switch_core_session_read_frame(session_a, &read_frame, -1, stream_id) == SWITCH_STATUS_SUCCESS && read_frame->datalen) {
+			if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "write: Bad Frame.... %d Bubye!\n", read_frame->datalen);
 				data->running = -1;
 			}
@@ -83,6 +88,7 @@ default:
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "read: Bad Frame.... %d Bubye!\n", read_frame->datalen);
 			data->running = -1;
 		}  
+
 	}
 
 	switch_channel_hangup(chan_b);
@@ -188,16 +194,19 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 	} else {
 		struct switch_core_thread_session this_audio_thread, other_audio_thread;
 		time_t start;
+		int stream_id = 0;
 
 		peer_channel = switch_core_session_get_channel(peer_session);
 		memset(&other_audio_thread, 0, sizeof(other_audio_thread));
 		memset(&this_audio_thread, 0, sizeof(this_audio_thread));
 		other_audio_thread.objs[0] = session;
 		other_audio_thread.objs[1] = peer_session;
+		other_audio_thread.objs[2] = &stream_id;
 		other_audio_thread.running = 5;
 
 		this_audio_thread.objs[0] = peer_session;
 		this_audio_thread.objs[1] = session;
+		this_audio_thread.objs[2] = &stream_id;
 		this_audio_thread.running = 2;
 
 

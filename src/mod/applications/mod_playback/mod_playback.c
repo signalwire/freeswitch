@@ -53,6 +53,7 @@ void playback_function(switch_core_session *session, char *data)
 	switch_file_handle fh;
 	char *codec_name;
 	int x;
+	int stream_id;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -107,7 +108,9 @@ void playback_function(switch_core_session *session, char *data)
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %d bytes per %d ms!\n", len, interval);
 
 	/* start a thread to absorb incoming audio */
-	switch_core_service_session(session, &thread_session);
+	for(stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
+		switch_core_service_session(session, &thread_session, stream_id);
+	}
 	ilen = samples;
 	while(switch_channel_get_state(channel) == CS_EXECUTE) {
 		int done = 0;
@@ -140,9 +143,17 @@ void playback_function(switch_core_session *session, char *data)
 #ifdef SWAP_LINEAR
 		switch_swap_linear(write_frame.data, (int)write_frame.datalen / 2);
 #endif
-		if (switch_core_session_write_frame(session, &write_frame, -1) != SWITCH_STATUS_SUCCESS) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Write\n");
-			break;
+
+		for(stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
+			if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Write\n");
+				done = 1;
+				break;
+			}
+
+			if (done) {
+				break;
+			}
 		}
 
 		if ((x = switch_core_timer_next(&timer)) < 0) {

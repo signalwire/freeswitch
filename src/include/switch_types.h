@@ -44,6 +44,21 @@ extern "C" {
 #define SWITCH_GLOBAL_VERSION "1"
 #define SWITCH_MAX_CODECS 30
 
+
+/*!
+  \enum switch_core_session_message_t
+  \brief Possible types of messages for inter-session communication
+<pre>
+	SWITCH_MESSAGE_REDIRECT_AUDIO - Indication to redirect audio to another location if possible
+	SWITCH_MESSAGE_TRANSMIT_TEXT  - A text message
+</pre>
+ */
+typedef enum {
+	SWITCH_MESSAGE_REDIRECT_AUDIO,
+	SWITCH_MESSAGE_TRANSMIT_TEXT
+} switch_core_session_message_t;
+
+
 /*!
   \enum switch_stack_t
   \brief Expression of how to stack a list
@@ -140,7 +155,7 @@ typedef enum {
 
 <pre>
 CF_SEND_AUDIO = (1 <<  0) - Channel will send audio
-CF_RECV_AUDIO = (1 <<  1) - Channel will recieve audio
+CF_RECV_AUDIO = (1 <<  1) - Channel will receive audio
 CF_ANSWERED   = (1 <<  2) - Channel is answered
 CF_OUTBOUND   = (1 <<  3) - Channel is an outbound channel
 </pre>
@@ -283,6 +298,7 @@ typedef enum {
 } switch_event_t;
 
 
+typedef struct switch_core_session_message switch_core_session_message;
 typedef struct switch_audio_resampler switch_audio_resampler;
 typedef struct switch_event_header switch_event_header;
 typedef struct switch_event switch_event;
@@ -312,6 +328,7 @@ typedef struct switch_core_thread_session switch_core_thread_session;
 typedef struct switch_codec_implementation switch_codec_implementation;
 typedef struct switch_io_event_hook_outgoing_channel switch_io_event_hook_outgoing_channel;
 typedef struct switch_io_event_hook_answer_channel switch_io_event_hook_answer_channel;
+typedef struct switch_io_event_hook_receive_message switch_io_event_hook_receive_message;
 typedef struct switch_io_event_hook_read_frame switch_io_event_hook_read_frame;
 typedef struct switch_io_event_hook_write_frame switch_io_event_hook_write_frame;
 typedef struct switch_io_event_hook_kill_channel switch_io_event_hook_kill_channel;
@@ -329,6 +346,7 @@ typedef switch_caller_extension *(*switch_dialplan_hunt_function)(switch_core_se
 typedef switch_status (*switch_event_handler)(switch_core_session *);
 typedef switch_status (*switch_outgoing_channel_hook)(switch_core_session *, switch_caller_profile *, switch_core_session *);
 typedef switch_status (*switch_answer_channel_hook)(switch_core_session *);
+typedef switch_status (*switch_receive_message_hook)(switch_core_session *, switch_core_session_message *);
 typedef switch_status (*switch_read_frame_hook)(switch_core_session *, switch_frame **, int, switch_io_flag, int);
 typedef switch_status (*switch_write_frame_hook)(switch_core_session *, switch_frame *, int, switch_io_flag, int);
 typedef switch_status (*switch_kill_channel_hook)(switch_core_session *, int);

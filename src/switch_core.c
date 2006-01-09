@@ -186,6 +186,18 @@ SWITCH_DECLARE(switch_status) switch_core_do_perl(char *txt)
 }
 #endif
 
+SWITCH_DECLARE (switch_status) switch_core_session_message_send(char *uuid_str, switch_core_session_message *message)
+{
+	switch_core_session *session = NULL;
+
+	if ((session = switch_core_hash_find(runtime.session_table, uuid_str))) {
+		if (switch_channel_get_state(session->channel) < CS_HANGUP) {
+			return switch_core_session_receive_message(session, message);
+		}
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
 
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session *session)
 {
@@ -472,9 +484,10 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 {
 	switch_core_thread_session *data = obj;
 	switch_core_session *session = data->objs[0];
-	int *stream_id = data->objs[1];
+	int *stream_id_p = data->objs[1];
 	switch_channel *channel;
 	switch_frame *read_frame;
+	int stream_id = *stream_id_p;
 
 	assert(session != NULL);
 	channel = switch_core_session_get_channel(session);
@@ -482,7 +495,7 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 
 
 	while(data->running > 0) {
-		switch(switch_core_session_read_frame(session, &read_frame, -1, *stream_id)) {
+		switch(switch_core_session_read_frame(session, &read_frame, -1, stream_id)) {
 		case SWITCH_STATUS_SUCCESS:
 			break;
 		case SWITCH_STATUS_TIMEOUT:
@@ -701,6 +714,27 @@ SWITCH_DECLARE(switch_status) switch_core_session_answer_channel(switch_core_ses
 		if ((status = session->endpoint_interface->io_routines->answer_channel(session)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.answer_channel; ptr ; ptr = ptr->next) {
 				if ((status = ptr->answer_channel(session)) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+			}
+		}
+	} else {
+		status = SWITCH_STATUS_SUCCESS;
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status) switch_core_session_receive_message(switch_core_session *session, switch_core_session_message *message)
+{
+	struct switch_io_event_hook_receive_message *ptr;
+	switch_status status = SWITCH_STATUS_FALSE;
+
+	assert(session != NULL);
+	if (session->endpoint_interface->io_routines->receive_message) {
+		if ((status = session->endpoint_interface->io_routines->receive_message(session, message)) == SWITCH_STATUS_SUCCESS) {
+			for (ptr = session->event_hooks.receive_message; ptr ; ptr = ptr->next) {
+				if ((status = ptr->receive_message(session, message)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			}
@@ -1726,8 +1760,9 @@ static void * SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *threa
 
 	snprintf(session->name, sizeof(session->name), "%ld", session->id);
 
-	switch_core_hash_insert(runtime.session_table, session->name, session);
+	switch_core_hash_insert(runtime.session_table, session->uuid_str, session);
 	switch_core_session_run(session);
+	switch_core_hash_delete(runtime.session_table, session->uuid_str);
 	switch_core_session_destroy(&session);
 
 
