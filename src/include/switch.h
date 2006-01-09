@@ -43,10 +43,12 @@ extern "C" {
 #include <config.h>
 #endif
 
+//Need to include this before any other includes (MSVC Bug)
+#include <switch_platform.h>
+
 #include <assert.h>
 
 #include <switch_version.h>
-#include <switch_platform.h>
 #include <switch_apr.h>
 #include <switch_sqlite.h>
 #include <switch_types.h>

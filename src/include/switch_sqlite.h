@@ -398,11 +398,83 @@ DoxyDefine(const char *switch_core_db_column_decltype(sqlite3_stmt *, int i);)
 DoxyDefine(const void *switch_core_db_column_decltype16(sqlite3_stmt*,int);)
 #define switch_core_db_column_decltype16 sqlite3_column_decltype16
 
+/**
+** Register a callback function to be invoked whenever a new transaction
+** is committed.  The pArg argument is passed through to the callback.
+** callback.  If the callback function returns non-zero, then the commit
+** is converted into a rollback.
+**
+** If another function was previously registered, its pArg value is returned.
+** Otherwise NULL is returned.
+**
+** Registering a NULL function disables the callback.
+**
+******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
+*/
+DoxyDefine(void *switch_core_db_commit_hook(switch_core_db*, int(*)(void*), void*);)
 #define switch_core_db_commit_hook sqlite3_commit_hook
+
+/**
+** These functions return true if the given input string comprises
+** one or more complete SQL statements. For the sqlite3_complete() call,
+** the parameter must be a nul-terminated UTF-8 string. For
+** sqlite3_complete16(), a nul-terminated machine byte order UTF-16 string
+** is required.
+**
+** The algorithm is simple.  If the last token other than spaces
+** and comments is a semicolon, then return true.  otherwise return
+** false.
+*/
+DoxyDefine(int switch_core_db_complete(const char *sql);)
+DoxyDefine(int switch_core_db_complete16(const void *sql);)
 #define switch_core_db_complete sqlite3_complete
 #define switch_core_db_complete16 sqlite3_complete16
+
+/**
+** These two functions are used to add new collation sequences to the
+** sqlite3 handle specified as the first argument. 
+**
+** The name of the new collation sequence is specified as a UTF-8 string
+** for sqlite3_create_collation() and a UTF-16 string for
+** sqlite3_create_collation16(). In both cases the name is passed as the
+** second function argument.
+**
+** The third argument must be one of the constants SQLITE_UTF8,
+** SQLITE_UTF16LE or SQLITE_UTF16BE, indicating that the user-supplied
+** routine expects to be passed pointers to strings encoded using UTF-8,
+** UTF-16 little-endian or UTF-16 big-endian respectively.
+**
+** A pointer to the user supplied routine must be passed as the fifth
+** argument. If it is NULL, this is the same as deleting the collation
+** sequence (so that SQLite cannot call it anymore). Each time the user
+** supplied function is invoked, it is passed a copy of the void* passed as
+** the fourth argument to sqlite3_create_collation() or
+** sqlite3_create_collation16() as its first parameter.
+**
+** The remaining arguments to the user-supplied routine are two strings,
+** each represented by a [length, data] pair and encoded in the encoding
+** that was passed as the third argument when the collation sequence was
+** registered. The user routine should return negative, zero or positive if
+** the first string is less than, equal to, or greater than the second
+** string. i.e. (STRING1 - STRING2).
+*/
+DoxyDefine(int switch_core_db_create_collation(
+  switch_core_db*, 
+  const char *zName, 
+  int eTextRep, 
+  void*,
+  int(*xCompare)(void*,int,const void*,int,const void*)
+);)
+DoxyDefine(int switch_core_db_create_collation16(
+  switch_core_db*, 
+  const char *zName, 
+  int eTextRep, 
+  void*,
+  int(*xCompare)(void*,int,const void*,int,const void*)
+);)
 #define switch_core_db_create_collation sqlite3_create_collation
 #define switch_core_db_create_collation16 sqlite3_create_collation16
+
 #define switch_core_db_create_function sqlite3_create_function
 #define switch_core_db_create_function16 sqlite3_create_function16
 #define switch_core_db_data_count sqlite3_data_count

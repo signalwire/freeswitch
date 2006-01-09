@@ -30,3 +30,11 @@ jrtplib: http://research.edm.luc.ac.be/jori/jrtplib/jrtplib-3.3.0.tar.gz
 Backup Download Locations:
 jthread: http://www.sofaswitch.org/mikej/jthread-1.1.2.tar.gz
 jrtplib: http://www.sofaswitch.org/mikej/jrtplib-3.3.0.tar.gz
+
+MSVC Notes:
+Freeswitch will compile and run from Microsoft Visual Studio 2005.  
+If using the Visual C++ Express edition, please make sure that the location of the include and lib directories are propperly set in the file
+C:\Program Files\Microsoft Visual Studio 8\VC\vcpackages\VCProjectEngine.Dll.Express.Config.  
+The automated build process for te dependecy libraries will not work without these settings.
+
+
