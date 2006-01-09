@@ -47,7 +47,7 @@ static int switch_console_process(char *cmd)
 		return 0;
 	}
 	if (!strcmp(cmd, "version")) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Version %s\n", SWITCH_VERSION_FULL);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "FreeSwitch Version %s\n", SWITCH_VERSION_FULL);
 		return 1;
 	}
 	if (!strcmp(cmd, "help")) {
