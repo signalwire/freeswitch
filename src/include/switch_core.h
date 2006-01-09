@@ -335,6 +335,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_answer_channel(switch_core_ses
 /*! 
   \brief Receive a message on a given session
   \param session the session to receive the message from
+  \param message the message to recieve
   \return the status returned by the message handler
 */
 SWITCH_DECLARE(switch_status) switch_core_session_receive_message(switch_core_session *session, switch_core_session_message *message);
