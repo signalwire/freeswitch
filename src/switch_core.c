@@ -78,6 +78,9 @@ struct switch_core_session {
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
 
+	void *streams[SWITCH_MAX_STREAMS];
+	int stream_count;
+
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
 	void *private;
 };
@@ -469,6 +472,7 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 {
 	switch_core_thread_session *data = obj;
 	switch_core_session *session = data->objs[0];
+	int *stream_id = data->objs[1];
 	switch_channel *channel;
 	switch_frame *read_frame;
 
@@ -478,7 +482,7 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 
 
 	while(data->running > 0) {
-		switch(switch_core_session_read_frame(session, &read_frame, -1)) {
+		switch(switch_core_session_read_frame(session, &read_frame, -1, *stream_id)) {
 		case SWITCH_STATUS_SUCCESS:
 			break;
 		case SWITCH_STATUS_TIMEOUT:
@@ -512,10 +516,11 @@ SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_thread_session *
 	}
 }
 
-SWITCH_DECLARE(void) switch_core_service_session(switch_core_session *session, switch_core_thread_session *thread_session)
+SWITCH_DECLARE(void) switch_core_service_session(switch_core_session *session, switch_core_thread_session *thread_session, int stream_id)
 {
 	thread_session->running = 1;
 	thread_session->objs[0] = session;
+	thread_session->objs[1] = &stream_id;
 	switch_core_session_launch_thread(session, switch_core_service_thread, thread_session);
 }
 
@@ -617,6 +622,23 @@ SWITCH_DECLARE(switch_status) switch_core_session_set_private(switch_core_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(int) switch_core_session_add_stream(switch_core_session *session, void *private)
+{
+	session->streams[session->stream_count++] = private;
+	return session->stream_count - 1;
+}
+
+SWITCH_DECLARE(void *) switch_core_session_get_stream(switch_core_session *session, int index)
+{
+	return session->streams[index];
+}
+
+
+SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session *session)
+{
+	return session->stream_count;
+}
+
 SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_session *session,
 																   char *endpoint_name,
 																   switch_caller_profile *caller_profile,
@@ -690,7 +712,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_answer_channel(switch_core_ses
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session *session, switch_frame **frame, int timeout)
+SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session *session, switch_frame **frame, int timeout, int stream_id)
 {
 	struct switch_io_event_hook_read_frame *ptr;
 	switch_status status = SWITCH_STATUS_FALSE;
@@ -698,9 +720,13 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 
 
 	if (session->endpoint_interface->io_routines->read_frame) {
-		if ((status = session->endpoint_interface->io_routines->read_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP)) == SWITCH_STATUS_SUCCESS) {
+		if ((status = session->endpoint_interface->io_routines->read_frame(session,
+																		   frame,
+																		   timeout,
+																		   SWITCH_IO_FLAG_NOOP,
+																		   stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.read_frame; ptr ; ptr = ptr->next) {
-				if ((status = ptr->read_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP)) != SWITCH_STATUS_SUCCESS) {
+				if ((status = ptr->read_frame(session, frame, timeout, SWITCH_IO_FLAG_NOOP, stream_id)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			}
@@ -840,14 +866,14 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 	return status;
 }
 
-static switch_status perform_write(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags) {
+static switch_status perform_write(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id) {
 	struct switch_io_event_hook_write_frame *ptr;
 	switch_status status = SWITCH_STATUS_FALSE;
 
 	if (session->endpoint_interface->io_routines->write_frame) {
-		if ((status = session->endpoint_interface->io_routines->write_frame(session, frame, timeout, flags)) == SWITCH_STATUS_SUCCESS) {
+		if ((status = session->endpoint_interface->io_routines->write_frame(session, frame, timeout, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.write_frame; ptr ; ptr = ptr->next) {
-				if ((status = ptr->write_frame(session, frame, timeout, flags)) != SWITCH_STATUS_SUCCESS) {
+				if ((status = ptr->write_frame(session, frame, timeout, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			}
@@ -856,7 +882,7 @@ static switch_status perform_write(switch_core_session *session, switch_frame *f
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_session *session, switch_frame *frame, int timeout)
+SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_session *session, switch_frame *frame, int timeout, int stream_id)
 {
 
 	switch_status status = SWITCH_STATUS_FALSE;
@@ -982,7 +1008,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 					break;
 				}
 
-				status = perform_write(session, write_frame, timeout, io_flag);
+				status = perform_write(session, write_frame, timeout, io_flag, stream_id);
 				return status;
 			} else {
 				int used = switch_buffer_inuse(session->raw_write_buffer);
@@ -1056,7 +1082,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 								write_frame->datalen = session->read_resampler->to_len * 2;
 								write_frame->rate = session->read_resampler->to_rate;
 							}
-							status = perform_write(session, write_frame, timeout, io_flag);
+							status = perform_write(session, write_frame, timeout, io_flag, stream_id);
 						}
 					}
 					return status;
@@ -1064,7 +1090,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 			}
 		}
 	} else {
-		status = perform_write(session, frame, timeout, io_flag);
+		status = perform_write(session, frame, timeout, io_flag, stream_id);
 	}
 	return status;
 }
@@ -1088,15 +1114,15 @@ SWITCH_DECLARE(switch_status) switch_core_session_kill_channel(switch_core_sessi
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_waitfor_read(switch_core_session *session, int timeout)
+SWITCH_DECLARE(switch_status) switch_core_session_waitfor_read(switch_core_session *session, int timeout, int stream_id)
 {
 	struct switch_io_event_hook_waitfor_read *ptr;
 	switch_status status = SWITCH_STATUS_FALSE;
 
 	if (session->endpoint_interface->io_routines->waitfor_read) {
-		if ((status = session->endpoint_interface->io_routines->waitfor_read(session, timeout)) == SWITCH_STATUS_SUCCESS) {
+		if ((status = session->endpoint_interface->io_routines->waitfor_read(session, timeout, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.waitfor_read; ptr ; ptr = ptr->next) {
-				if ((status = ptr->waitfor_read(session, timeout)) != SWITCH_STATUS_SUCCESS) {
+				if ((status = ptr->waitfor_read(session, timeout, stream_id)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			}
@@ -1107,15 +1133,15 @@ SWITCH_DECLARE(switch_status) switch_core_session_waitfor_read(switch_core_sessi
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_waitfor_write(switch_core_session *session, int timeout)
+SWITCH_DECLARE(switch_status) switch_core_session_waitfor_write(switch_core_session *session, int timeout, int stream_id)
 {
 	struct switch_io_event_hook_waitfor_write *ptr;
 	switch_status status = SWITCH_STATUS_FALSE;
 
 	if (session->endpoint_interface->io_routines->waitfor_write) {
-		if ((status = session->endpoint_interface->io_routines->waitfor_write(session, timeout)) == SWITCH_STATUS_SUCCESS) {
+		if ((status = session->endpoint_interface->io_routines->waitfor_write(session, timeout, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.waitfor_write; ptr ; ptr = ptr->next) {
-				if ((status = ptr->waitfor_write(session, timeout)) != SWITCH_STATUS_SUCCESS) {
+				if ((status = ptr->waitfor_write(session, timeout, stream_id)) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			}
@@ -1420,12 +1446,15 @@ static void switch_core_standard_on_loopback(switch_core_session *session)
 {
 	switch_channel_state state;
 	switch_frame *frame;
+	int stream_id;
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard LOOPBACK\n");
 
 	while ((state = switch_channel_get_state(session->channel)) == CS_LOOPBACK) {
-		if (switch_core_session_read_frame(session, &frame, -1) == SWITCH_STATUS_SUCCESS) {
-			switch_core_session_write_frame(session, frame, -1);
+		for(stream_id = 0; stream_id < session->stream_count; stream_id++) {
+			if (switch_core_session_read_frame(session, &frame, -1, stream_id) == SWITCH_STATUS_SUCCESS) {
+				switch_core_session_write_frame(session, frame, -1, stream_id);
+			}
 		}
 	}
 }

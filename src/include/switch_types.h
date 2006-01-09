@@ -228,7 +228,7 @@ SWITCH_FILE_DATA_SHORT =        (1 <<  3) - Read data in shorts
 SWITCH_FILE_DATA_INT =          (1 <<  4) - Read data in ints
 SWITCH_FILE_DATA_FLOAT =        (1 <<  5) - Read data in floats
 SWITCH_FILE_DATA_DOUBLE =       (1 <<  6) - Read data in doubles
-SWITCH_FILE_DATA_RAW =          (1 <<  7) - Read data asis
+SWITCH_FILE_DATA_RAW =          (1 <<  7) - Read data as is
 </pre>
  */
 typedef enum {
@@ -329,11 +329,11 @@ typedef switch_caller_extension *(*switch_dialplan_hunt_function)(switch_core_se
 typedef switch_status (*switch_event_handler)(switch_core_session *);
 typedef switch_status (*switch_outgoing_channel_hook)(switch_core_session *, switch_caller_profile *, switch_core_session *);
 typedef switch_status (*switch_answer_channel_hook)(switch_core_session *);
-typedef switch_status (*switch_read_frame_hook)(switch_core_session *, switch_frame **, int, switch_io_flag);
-typedef switch_status (*switch_write_frame_hook)(switch_core_session *, switch_frame *, int, switch_io_flag);
+typedef switch_status (*switch_read_frame_hook)(switch_core_session *, switch_frame **, int, switch_io_flag, int);
+typedef switch_status (*switch_write_frame_hook)(switch_core_session *, switch_frame *, int, switch_io_flag, int);
 typedef switch_status (*switch_kill_channel_hook)(switch_core_session *, int);
-typedef switch_status (*switch_waitfor_read_hook)(switch_core_session *, int);
-typedef switch_status (*switch_waitfor_write_hook)(switch_core_session *, int);
+typedef switch_status (*switch_waitfor_read_hook)(switch_core_session *, int, int);
+typedef switch_status (*switch_waitfor_write_hook)(switch_core_session *, int, int);
 typedef switch_status (*switch_send_dtmf_hook)(switch_core_session *, char *);
 typedef switch_status (*switch_api_function)(char *in, char *out, size_t outlen);
 

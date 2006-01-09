@@ -44,14 +44,15 @@ extern "C" {
 
 #include <switch.h>
 
-#define MAX_CORE_THREAD_SESSION_OBJS 128
+#define SWITCH_MAX_CORE_THREAD_SESSION_OBJS 128
+#define SWITCH_MAX_STREAMS 128
 
 /*! \brief A generic object to pass as a thread's session object to allow mutiple arguements and a pool */
 struct switch_core_thread_session {
 	/*! status of the thread */
 	int running;
 	/*! array of void pointers to pass mutiple data objects */
-	void *objs[MAX_CORE_THREAD_SESSION_OBJS];
+	void *objs[SWITCH_MAX_CORE_THREAD_SESSION_OBJS];
 	/*! a pointer to a memory pool if the thread has it's own pool */
 	switch_memory_pool *pool;
 };
@@ -227,6 +228,29 @@ SWITCH_DECLARE(void *) switch_core_session_get_private(switch_core_session *sess
 */
 SWITCH_DECLARE(switch_status) switch_core_session_set_private(switch_core_session *session, void *private);
 
+/*!
+  \brief Add a logical stream to a session
+  \param session the session to add the stream to
+  \param private an optional pointer to private data for the new stream
+  \return the stream id of the new stream
+ */
+SWITCH_DECLARE(int) switch_core_session_add_stream(switch_core_session *session, void *private);
+
+/*!
+  \brief Retreive a logical stream from a session
+  \param session the session to add the stream to
+  \param index the index to retrieve
+  \return the private data (if any)
+ */
+SWITCH_DECLARE(void *) switch_core_session_get_stream(switch_core_session *session, int index);
+
+/*!
+  \brief Determine the number of logical streams a session has
+  \param session the session to query
+  \return the total number of logical streams
+ */
+SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session *session);
+
 /*! 
   \brief Launch a thread designed to exist within the scope of a given session
   \param session a session to allocate the thread from
@@ -244,9 +268,10 @@ SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_thread_session *
 /*! 
   \brief Launch a service thread on a session to drop inbound data
   \param session the session the launch thread on
+  \param stream_id which logical media channel to use
   \param thread_session the thread_session to use
 */
-SWITCH_DECLARE(void) switch_core_service_session(switch_core_session *session, switch_core_thread_session *thread_session);
+SWITCH_DECLARE(void) switch_core_service_session(switch_core_session *session, switch_core_thread_session *thread_session, int stream_id);
 
 /*! 
   \brief Request an outgoing session spawned from an existing session using a desired endpoing module
@@ -273,18 +298,20 @@ SWITCH_DECLARE(switch_status) switch_core_session_answer_channel(switch_core_ses
   \param session the session to read from
   \param frame a NULL pointer to a frame to aim at the newly read frame
   \param timeout number of milliseconds to wait for data
+  \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a the frame was read
 */
-SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session *session, switch_frame **frame, int timeout);
+SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session *session, switch_frame **frame, int timeout, int stream_id);
 
 /*! 
   \brief Write a frame to a session
   \param session the session to write to
   \param frame the frame to write
   \param timeout number of milliseconds to wait for data
+  \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS a the frame was written
 */
-SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_session *session, switch_frame *frame, int timeout);
+SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_session *session, switch_frame *frame, int timeout, int stream_id);
 
 /*! 
   \brief Send a signal to a channel
@@ -298,17 +325,19 @@ SWITCH_DECLARE(switch_status) switch_core_session_kill_channel(switch_core_sessi
   \brief Wait for a session to be ready for input
   \param session session to wait for
   \param timeout number of milliseconds to wait for data
+  \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS if data is available for read within timeframe specified
 */
-SWITCH_DECLARE(switch_status) switch_core_session_waitfor_read(switch_core_session *session, int timeout);
+SWITCH_DECLARE(switch_status) switch_core_session_waitfor_read(switch_core_session *session, int timeout, int stream_id);
 
 /*! 
   \brief Wait for a session to be ready for output
   \param session session to wait for
   \param timeout number of milliseconds to wait for data
+  \param stream_id which logical media channel to use
   \return SWITCH_STATUS_SUCCESS if the session is available for write within timeframe specified
 */
-SWITCH_DECLARE(switch_status) switch_core_session_waitfor_write(switch_core_session *session, int timeout);
+SWITCH_DECLARE(switch_status) switch_core_session_waitfor_write(switch_core_session *session, int timeout, int stream_id);
 
 /*! 
   \brief Send DTMF to a session

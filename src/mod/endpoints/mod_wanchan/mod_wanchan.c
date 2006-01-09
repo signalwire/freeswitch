@@ -154,8 +154,8 @@ static switch_status wanchan_on_hangup(switch_core_session *session);
 static switch_status wanchan_on_loopback(switch_core_session *session);
 static switch_status wanchan_on_transmit(switch_core_session *session);
 static switch_status wanchan_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile, switch_core_session **new_session);
-static switch_status wanchan_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags);
-static switch_status wanchan_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags);
+static switch_status wanchan_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags, int stream_id);
+static switch_status wanchan_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id);
 static int on_info(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
 static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
 static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
@@ -266,7 +266,7 @@ static switch_status wanchan_answer_channel(switch_core_session *session)
 
 
 
-static switch_status wanchan_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags) 
+static switch_status wanchan_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags, int stream_id) 
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
@@ -312,7 +312,7 @@ static switch_status wanchan_read_frame(switch_core_session *session, switch_fra
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanchan_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags)
+static switch_status wanchan_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
@@ -466,6 +466,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 		char ani2str[4] = "";
 		//wanpipe_tdm_api_t tdm_api;
 
+		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(session);

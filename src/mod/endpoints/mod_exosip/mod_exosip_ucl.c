@@ -385,6 +385,7 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 		switch_channel *channel, *orig_channel;
 		switch_caller_profile *caller_profile, *originator_caller_profile = NULL;
 
+		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(*new_session);
@@ -838,7 +839,7 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 		switch_codec_interface *codecs[512];
 		int num_codecs = 0;
 
-
+		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(session);

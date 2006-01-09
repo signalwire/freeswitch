@@ -145,15 +145,15 @@ struct switch_io_routines {
 	/*! answers the given session's channel */
 	switch_status (*answer_channel)(switch_core_session *);
 	/*! read a frame from a session */
-	switch_status (*read_frame)(switch_core_session *, switch_frame **, int, switch_io_flag);
+	switch_status (*read_frame)(switch_core_session *, switch_frame **, int, switch_io_flag, int);
 	/*! write a frame to a session */
-	switch_status (*write_frame)(switch_core_session *, switch_frame *, int, switch_io_flag);
+	switch_status (*write_frame)(switch_core_session *, switch_frame *, int, switch_io_flag, int);
 	/*! send a kill signal to the session's channel */
 	switch_status (*kill_channel)(switch_core_session *, int);
 	/*! wait for the session's channel to be ready to read audio */
-	switch_status (*waitfor_read)(switch_core_session *, int);
+	switch_status (*waitfor_read)(switch_core_session *, int, int);
 	/*! wait for the session's channel to be ready to write audio */
-	switch_status (*waitfor_write)(switch_core_session *, int);
+	switch_status (*waitfor_write)(switch_core_session *, int, int);
 	/*! send a string of DTMF digits to a session's channel */
 	switch_status (*send_dtmf)(switch_core_session *, char *);
 };

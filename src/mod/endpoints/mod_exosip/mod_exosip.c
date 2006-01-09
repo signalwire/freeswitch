@@ -145,8 +145,8 @@ static switch_status exosip_on_hangup(switch_core_session *session);
 static switch_status exosip_on_loopback(switch_core_session *session);
 static switch_status exosip_on_transmit(switch_core_session *session);
 static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile, switch_core_session **new_session);
-static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags);
-static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags);
+static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags, int stream_id);
+static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id);
 static int config_exosip(int reload);
 static switch_status parse_sdp_media(sdp_media_t *media, char **dname, char **drate, char **dpayload);
 static switch_status exosip_kill_channel(switch_core_session *session, int sig);
@@ -368,6 +368,7 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 		struct private_object *tech_pvt;
 		switch_channel *channel;
 
+		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(*new_session);
@@ -520,7 +521,7 @@ static switch_status exosip_answer_channel(switch_core_session *session)
 }
 
 
-static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags) 
+static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags, int stream_id) 
 {
 	struct private_object *tech_pvt = NULL;
 	size_t bytes = 0, samples = 0, frames=0, ms=0;
@@ -597,7 +598,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 }
 
 
-static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags)
+static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
@@ -668,7 +669,7 @@ static switch_status exosip_kill_channel(switch_core_session *session, int sig)
 
 }
 
-static switch_status exosip_waitfor_read(switch_core_session *session, int ms)
+static switch_status exosip_waitfor_read(switch_core_session *session, int ms, int stream_id)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
@@ -683,7 +684,7 @@ static switch_status exosip_waitfor_read(switch_core_session *session, int ms)
 }
 
 
-static switch_status exosip_waitfor_write(switch_core_session *session, int ms)
+static switch_status exosip_waitfor_write(switch_core_session *session, int ms, int stream_id)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
@@ -779,7 +780,7 @@ static switch_status exosip_create_call(eXosip_event_t *event)
 		switch_codec_interface *codecs[SWITCH_MAX_CODECS];
 		int num_codecs = 0;
 
-
+		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(session);
