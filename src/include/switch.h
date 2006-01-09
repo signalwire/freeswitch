@@ -39,12 +39,12 @@
 extern "C" {
 #endif
 
+//Need to include this before any other includes (MSVC Bug)
+#include <switch_platform.h>
+
 #ifndef WIN32
 #include <config.h>
 #endif
-
-//Need to include this before any other includes (MSVC Bug)
-#include <switch_platform.h>
 
 #include <assert.h>
 

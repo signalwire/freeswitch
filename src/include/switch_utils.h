@@ -51,17 +51,6 @@ extern "C" {
 #define vsnprintf apr_vsnprintf
 #endif
 
-#ifdef HAVE_TIMEVAL_STRUCT
-extern struct timeval tv;
-#ifdef WIN32
-typedef long switch_timeval_t;
-typedef long switch_suseconds_t;
-#else
-typedef typeof(tv.tv_sec) switch_timeval_t;
-typedef typeof(tv.tv_usec) switch_suseconds_t;
-#endif
-#endif
-
 /*!
   \brief Duplicate a string 
 */
@@ -151,59 +140,8 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
 SWITCH_DECLARE(char *) switch_cut_path(char *in);
 
 
-
-/* stuff below will probably be tossed soon */
-	
-#if !defined(switch_strdupa) && defined(__GNUC__)
-# define switch_strdupa(s)									\
-  (__extension__										\
-    ({													\
-      __const char *__old = (s);						\
-      size_t __len = strlen (__old) + 1;				\
-      char *__new = (char *) __builtin_alloca (__len);	\
-      (char *) memcpy (__new, __old, __len);			\
-    }))
-#endif
-
-
-#ifdef HAVE_TIMEVAL_STRUCT
-struct timeval switch_tvadd(struct timeval a, struct timeval b);
-struct timeval switch_tvsub(struct timeval a, struct timeval b);
-
-
-/*static struct timeval switch_tvnow(void)
-{
-	struct timeval t;
-	gettimeofday(&t, NULL);
-	return t;
-}
-*/
-
-static struct timeval switch_tv(switch_timeval_t sec, switch_suseconds_t usec)
-{
-	struct timeval t;
-    t.tv_sec = sec;
-    t.tv_usec = usec;
-    return t;
-
-}
-
-static int switch_tvdiff_ms(struct timeval end, struct timeval start)
-{
-	/* the offset by 1,000,000 below is intentional...
-	   it avoids differences in the way that division
-	   is handled for positive and negative numbers, by ensuring
-	   that the divisor is always positive
-	*/
-	return	((end.tv_sec - start.tv_sec) * 1000) +
-		(((1000000 + end.tv_usec - start.tv_usec) / 1000) - 1000);
-}
-
-#endif
-
 #ifdef __cplusplus
 }
-
 #endif
 
 #endif

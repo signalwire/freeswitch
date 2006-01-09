@@ -1,4 +1,2 @@
-1. switch.h: Find a good home for the SWITCH_DECLARE stuff for win32
-2. MOD_WOOMERACHAN: #if 1==0 sectiton, convert to use switch_now instead of gettimeof day 
-				SWITCH_SLEEP (should I be using switch_sleep or switch_yield where I changed from sleep and usleep)
-3. if we don't need the timeval stuff let's get rid of it... it doesn't appear to be used.
+1. MOD_WOOMERACHAN: #if 1==0 sectiton, convert to use switch_now instead of gettimeof day 
+2. switch_version.h.  Change both msvc and unix scripts to create this to look for a VERSION file to generate this for tarball releases.
