@@ -488,7 +488,7 @@ DoxyDefine(int switch_core_db_collation_needed(
  *       TEXT             BLOB            No change
  *       BLOB             INTEGER         Convert to TEXT then use atoi()
  *       BLOB             FLOAT           Convert to TEXT then use atof()
- *       BLOB             TEXT            Add a \000 terminator if needed
+ *       BLOB             TEXT            Add a "\000" terminator if needed
  *
  * Return the value of a BLOB.
  */
@@ -530,10 +530,10 @@ DoxyDefine(const void *switch_core_db_column_blob(sqlite3_stmt*, int iCol);)
  *       TEXT             BLOB            No change
  *       BLOB             INTEGER         Convert to TEXT then use atoi()
  *       BLOB             FLOAT           Convert to TEXT then use atof()
- *       BLOB             TEXT            Add a \000 terminator if needed
+ *       BLOB             TEXT            Add a "\000" terminator if needed
  *
  * Return the number of bytes in a BLOB value or the number of bytes in a 
- * TEXT value represented as UTF-8.  The \000 terminator is included in the 
+ * TEXT value represented as UTF-8.  The "\000" terminator is included in the 
  * byte count for TEXT values.
  */
 DoxyDefine(int switch_core_db_column_bytes(sqlite3_stmt*, int iCol);)
@@ -574,10 +574,10 @@ DoxyDefine(int switch_core_db_column_bytes(sqlite3_stmt*, int iCol);)
  *       TEXT             BLOB            No change
  *       BLOB             INTEGER         Convert to TEXT then use atoi()
  *       BLOB             FLOAT           Convert to TEXT then use atof()
- *       BLOB             TEXT            Add a \000 terminator if needed
+ *       BLOB             TEXT            Add a "\000" terminator if needed
  *
  * Return the number of bytes in a BLOB value or the number of bytes in a 
- * TEXT value represented as UTF-16.  The \u0000 terminator is included in 
+ * TEXT value represented as UTF-16.  The "\u0000" terminator is included in 
  * the byte count for TEXT values.
  */
 DoxyDefine(int switch_core_db_column_bytes16(sqlite3_stmt*, int iCol);)
@@ -618,7 +618,7 @@ DoxyDefine(int switch_core_db_column_bytes16(sqlite3_stmt*, int iCol);)
  *       TEXT             BLOB            No change
  *       BLOB             INTEGER         Convert to TEXT then use atoi()
  *       BLOB             FLOAT           Convert to TEXT then use atof()
- *       BLOB             TEXT            Add a \000 terminator if needed
+ *       BLOB             TEXT            Add a "\000" terminator if needed
  *
  *  Return a FLOAT value.
  */
@@ -660,7 +660,7 @@ DoxyDefine(double switch_core_db_column_double(sqlite3_stmt*, int iCol);)
  *       TEXT             BLOB            No change
  *       BLOB             INTEGER         Convert to TEXT then use atoi()
  *       BLOB             FLOAT           Convert to TEXT then use atof()
- *       BLOB             TEXT            Add a \000 terminator if needed
+ *       BLOB             TEXT            Add a "\000" terminator if needed
  *
  *  Return an INTEGER value in the host computer's native integer representation.  
  *  This might be either a 32- or 64-bit integer depending on the host.
@@ -703,7 +703,7 @@ DoxyDefine(int switch_core_db_column_int(sqlite3_stmt*, int iCol);)
  *       TEXT             BLOB            No change
  *       BLOB             INTEGER         Convert to TEXT then use atoi()
  *       BLOB             FLOAT           Convert to TEXT then use atof()
- *       BLOB             TEXT            Add a \000 terminator if needed
+ *       BLOB             TEXT            Add a "\000" terminator if needed
  *
  * Return an INTEGER value as a 64-bit signed integer.
  */
@@ -745,7 +745,7 @@ DoxyDefine(sqlite_int64 switch_core_db_column_int64(sqlite3_stmt*, int iCol);)
  *       TEXT             BLOB            No change
  *       BLOB             INTEGER         Convert to TEXT then use atoi()
  *       BLOB             FLOAT           Convert to TEXT then use atof()
- *       BLOB             TEXT            Add a \000 terminator if needed
+ *       BLOB             TEXT            Add a "\000" terminator if needed
  *
  *  Return the value as UTF-8 text.
  */
@@ -787,7 +787,7 @@ DoxyDefine(const unsigned char *switch_core_db_column_text(sqlite3_stmt*, int iC
  *       TEXT             BLOB            No change
  *       BLOB             INTEGER         Convert to TEXT then use atoi()
  *       BLOB             FLOAT           Convert to TEXT then use atof()
- *       BLOB             TEXT            Add a \000 terminator if needed
+ *       BLOB             TEXT            Add a "\000" terminator if needed
  *
  * Return the value as UTF-16 text.
  */
@@ -829,7 +829,7 @@ DoxyDefine(const void *switch_core_db_column_text16(sqlite3_stmt*, int iCol);)
  *       TEXT             BLOB            No change
  *       BLOB             INTEGER         Convert to TEXT then use atoi()
  *       BLOB             FLOAT           Convert to TEXT then use atof()
- *       BLOB             TEXT            Add a \000 terminator if needed
+ *       BLOB             TEXT            Add a "\000" terminator if needed
  *
  * ReturnS the datatype of the result.  This is one of
  * SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT, SQLITE_BLOB, or SQLITE_NULL.
