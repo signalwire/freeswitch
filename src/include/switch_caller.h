@@ -29,22 +29,26 @@
  * switch_caller.h -- Caller Identification
  *
  */
-/*! \file switch_caller.h
-    \brief Caller Identification
-
-	This file implements a caller profile which is a group of information about a connected endpoint
-	such as common caller id and other useful information such as ip address and destination number.
-	A connected session's channel has up to 3 profiles: It's own, that of the session who spawned it
-	and that of the session it has spawned.
-
-	In addition, this file implements an abstract interface for extensions and applications.
-	A connected session's channel has one extension object which may have one or more applications
-	linked into a stack which will be executed in order by the session's state machine when the 
-	current state is CS_EXECUTE.
+/**
+ * @file switch_caller.h
+ * @brief Caller Identification
+ * @see caller
 */
-///\defgroup caller Caller Identity / Dialplan
-///\ingroup FREESWITCH
-///\{
+/**
+ * @defgroup caller Caller Identity / Dialplan
+ * @ingroup FREESWITCH 
+ *
+ *	This module implements a caller profile which is a group of information about a connected endpoint
+ *	such as common caller id and other useful information such as ip address and destination number.
+ *	A connected session's channel has up to 3 profiles: It's own, that of the session who spawned it
+ *	and that of the session it has spawned.
+ *
+ *	In addition, this module implements an abstract interface for extensions and applications.
+ *	A connected session's channel has one extension object which may have one or more applications
+ *	linked into a stack which will be executed in order by the session's state machine when the 
+ *	current state is CS_EXECUTE.
+ * @{
+ */
 
 #ifndef SWITCH_CALLER_H
 #define SWITCH_CALLER_H
@@ -168,7 +172,7 @@ extern "C" {
 }
 #endif
 
-///\}
+/** @} */
 
 #endif
 

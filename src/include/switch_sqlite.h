@@ -127,14 +127,6 @@ DoxyDefine(int switch_core_db_bind_blob(sqlite3_stmt*, int, const void*, int n, 
  * the parameters name.  If the same named parameter occurs more than
  * once, it is assigned the same index each time.
  *
- * The fifth parameter to sqlite3_bind_blob(), sqlite3_bind_text(), and
- * sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
- * text after SQLite has finished with it.  If the fifth argument is the
- * special value SQLITE_STATIC, then the library assumes that the information
- * is in static, unmanaged space and does not need to be freed.  If the
- * fifth argument has the value SQLITE_TRANSIENT, then SQLite makes its
- * own private copy of the data.
- *
  * The sqlite3_bind_* routine must be called before switch_core_db_step() after
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
@@ -157,14 +149,6 @@ DoxyDefine(int switch_core_db_bind_double(sqlite3_stmt*, int, double);)
  * sqlite3_bind_parameter_index() to get the correct index value given
  * the parameters name.  If the same named parameter occurs more than
  * once, it is assigned the same index each time.
- *
- * The fifth parameter to sqlite3_bind_blob(), sqlite3_bind_text(), and
- * sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
- * text after SQLite has finished with it.  If the fifth argument is the
- * special value SQLITE_STATIC, then the library assumes that the information
- * is in static, unmanaged space and does not need to be freed.  If the
- * fifth argument has the value SQLITE_TRANSIENT, then SQLite makes its
- * own private copy of the data.
  *
  * The sqlite3_bind_* routine must be called before switch_core_db_step() after
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
@@ -189,14 +173,6 @@ DoxyDefine(int switch_core_db_bind_int(sqlite3_stmt*, int, int);)
  * the parameters name.  If the same named parameter occurs more than
  * once, it is assigned the same index each time.
  *
- * The fifth parameter to sqlite3_bind_blob(), sqlite3_bind_text(), and
- * sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
- * text after SQLite has finished with it.  If the fifth argument is the
- * special value SQLITE_STATIC, then the library assumes that the information
- * is in static, unmanaged space and does not need to be freed.  If the
- * fifth argument has the value SQLITE_TRANSIENT, then SQLite makes its
- * own private copy of the data.
- *
  * The sqlite3_bind_* routine must be called before switch_core_db_step() after
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
@@ -219,14 +195,6 @@ DoxyDefine(int switch_core_db_bind_int64(sqlite3_stmt*, int, sqlite_int64);)
  * sqlite3_bind_parameter_index() to get the correct index value given
  * the parameters name.  If the same named parameter occurs more than
  * once, it is assigned the same index each time.
- *
- * The fifth parameter to sqlite3_bind_blob(), sqlite3_bind_text(), and
- * sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
- * text after SQLite has finished with it.  If the fifth argument is the
- * special value SQLITE_STATIC, then the library assumes that the information
- * is in static, unmanaged space and does not need to be freed.  If the
- * fifth argument has the value SQLITE_TRANSIENT, then SQLite makes its
- * own private copy of the data.
  *
  * The sqlite3_bind_* routine must be called before switch_core_db_step() after
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
@@ -313,14 +281,6 @@ DoxyDefine(int switch_core_db_bind_text16(sqlite3_stmt*, int, const void*, int, 
  * the parameters name.  If the same named parameter occurs more than
  * once, it is assigned the same index each time.
  *
- * The fifth parameter to sqlite3_bind_blob(), sqlite3_bind_text(), and
- * sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
- * text after SQLite has finished with it.  If the fifth argument is the
- * special value SQLITE_STATIC, then the library assumes that the information
- * is in static, unmanaged space and does not need to be freed.  If the
- * fifth argument has the value SQLITE_TRANSIENT, then SQLite makes its
- * own private copy of the data.
- *
  * The sqlite3_bind_* routine must be called before switch_core_db_step() after
  * an switch_core_db_prepare() or sqlite3_reset().  Unbound parameterss are
  * interpreted as NULL.
@@ -329,22 +289,23 @@ DoxyDefine(int switch_core_db_bind_value(sqlite3_stmt*, int, const sqlite3_value
 #define switch_core_db_bind_value sqlite3_bind_value
 
 /**
- * Return the number of parameters in a compiled SQL statement.  This
- * routine was added to support DBD::SQLite.
+ * @return The number of parameters in a compiled SQL statement.
+ * @remark This routine was added to support DBD::SQLite.
  */
 DoxyDefine(int switch_core_db_bind_parameter_count(sqlite3_stmt*);)
 #define switch_core_db_bind_parameter_count sqlite3_bind_parameter_count
 
 /**
- * Return the index of a parameter with the given name.  The name
- * must match exactly.  If no parameter with the given name is found,
- * return 0.
+ * @return the index of a parameter with the given name.  If no parameter with the 
+ * given name is found, return 0.
+ * @remark The name must match exactly.
  */
 DoxyDefine(int switch_core_db_bind_parameter_index(sqlite3_stmt*, const char *zName);)
 #define switch_core_db_bind_parameter_index sqlite3_bind_parameter_index
 
 /**
- * Return the name of the i-th parameter.  Ordinary parameters "?" are
+ * @return the name of the i-th parameter.  
+ * @remark Ordinary parameters "?" are
  * nameless and a NULL is returned.  For parameters of the form :AAA or
  * $VVV the complete text of the parameter name is returned, including
  * the initial ":" or "$".  NULL is returned if the index is out of range.
@@ -455,14 +416,16 @@ DoxyDefine(int switch_core_db_collation_needed(
 
 /**
  * The next group of routines returns information about the information
- * in a single column of the current result row of a query.  In every
- * case the first parameter is a pointer to the SQL statement that is being
- * executed (the sqlite_stmt* that was returned from switch_core_db_prepare()) and
- * the second argument is the index of the column for which information 
+ * in a single column of the current result row of a query.
+ *
+ * @param stmt a pointer to the SQL statement that is being
+ * executed (the sqlite_stmt* that was returned from switch_core_db_prepare())
+ *
+ * @param iCol the index of the column for which information 
  * should be returned.  iCol is zero-indexed.  The left-most column as an
  * index of 0.
  *
- * If the SQL statement is not currently point to a valid row, or if the
+ * @remark If the SQL statement is not currently point to a valid row, or if the
  * the colulmn index is out of range, the result is undefined.
  *
  * These routines attempt to convert the value where appropriate.  For
@@ -490,9 +453,9 @@ DoxyDefine(int switch_core_db_collation_needed(
  *       BLOB             FLOAT           Convert to TEXT then use atof()
  *       BLOB             TEXT            Add a "\000" terminator if needed
  *
- * Return the value of a BLOB.
+ * @return the value of a BLOB.
  */
-DoxyDefine(const void *switch_core_db_column_blob(sqlite3_stmt*, int iCol);)
+DoxyDefine(const void *switch_core_db_column_blob(sqlite3_stmt *stmt, int iCol);)
 #define switch_core_db_column_blob sqlite3_column_blob
 
 /**

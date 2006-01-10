@@ -29,12 +29,11 @@
  * switch_channel.h -- Media Channel Interface
  *
  */
-/*! \file switch_channel.h
-    \brief Media Channel Interface
-
-	The switch_channel object is a private entity that belongs to a session that contains the call
-	specific information such as the call state, variables, caller profiles and DTMF queue
-*/
+/** 
+ * @file switch_channel.h
+ * @brief Media Channel Interface
+ * @see switch_channel
+ */
 
 #ifndef SWITCH_CHANNEL_H
 #define SWITCH_CHANNEL_H
@@ -45,11 +44,13 @@ extern "C" {
 
 #include <switch.h>
 
-/*!
-  \defgroup chans Channel Functions
-  \ingroup FREESWITCH
-  \{ 
-*/
+/**
+ * @defgroup switch_channel Channel Functions
+ * @ingroup FREESWITCH
+ *	The switch_channel object is a private entity that belongs to a session that contains the call
+ *	specific information such as the call state, variables, caller profiles and DTMF queue
+ * @{
+ */
 
 /*!
   \brief Get the current state of a channel in the state engine
@@ -283,7 +284,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 // These may go away
 SWITCH_DECLARE(switch_status) switch_channel_set_raw_mode (switch_channel *channel, int freq, int bits, int channels, int ms, int kbps);
 SWITCH_DECLARE(switch_status) switch_channel_get_raw_mode (switch_channel *channel, int *freq, int *bits, int *channels, int *ms, int *kbps);
-///\}
+/** @} */
 
 #ifdef __cplusplus
 }

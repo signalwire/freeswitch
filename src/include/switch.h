@@ -80,39 +80,39 @@ extern "C" {
  *  - Linux (x86)
  *  - Windows (MSVC 2005)
  *  - Mac OS X
- *  - FreeBSD
+ *  - OpenBSD
  *
  * \section depends Dependencies
  *  Freeswitch makes heavy use of external libraries.  
  *
  *  libFreeSwitch:
- *		APR (http://apr.apache.org)
- *		SQLite (http://www.sqlite.org)
- *		libresample (http://ccrma-www.stanford.edu/~jos/resample/Free_Resampling_Software.html)
+ *		- APR (http://apr.apache.org)
+ *		- SQLite (http://www.sqlite.org)
+ *		- libresample (http://ccrma-www.stanford.edu/~jos/resample/Free_Resampling_Software.html)
  *
  *	Additionally, the experimental external modules make use of several external modules:
  *
  *	mod_Exosip:
- *		JRTPlib (http://research.edm.luc.ac.be/jori/jrtplib/jrtplib.html)
- *		eXoSIP (http://savannah.nongnu.org/projects/exosip/)
+ *		- JRTPlib (http://research.edm.luc.ac.be/jori/jrtplib/jrtplib.html)
+ *		- eXoSIP (http://savannah.nongnu.org/projects/exosip/)
  *
  *	mod_iaxchan:
- *		libiax2 (forked from http://iaxclient.sourceforge.net/)
+ *		- libiax2 (forked from http://iaxclient.sourceforge.net/)
  *
  *	mod_speexcodec
- *		libspeex (http://www.speex.org/)
+ *		- libspeex (http://www.speex.org/)
  *
  *	mod_portaudio
- *		portaudio (http://www.portaudio.com/)
+ *		- portaudio (http://www.portaudio.com/)
  *
  *	mod_woomerachan
- *		openh323\woomera (http://www.voxgratia.org/)
+ *		- openh323/woomera (http://www.voxgratia.org/)
  *
  *	mod_xmpp_event
- *		iksemel (http://iksemel.jabberstudio.org/)
+ *		- iksemel (http://iksemel.jabberstudio.org/)
  *
  *	mod_sndfile
- *		libsndfile (http://www.mega-nerd.com/libsndfile/)
+ *		- libsndfile (http://www.mega-nerd.com/libsndfile/)
  *
  * \section license Licensing
  *

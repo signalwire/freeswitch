@@ -29,26 +29,29 @@
  * switch_config.h -- Configuration File Parser
  *
  */
-/*! \file switch_config.h
-    \brief Basic Configuration File Parser
+/** 
+ * @file switch_config.h
+ * @brief Basic Configuration File Parser
+ * @see config
+ */
 
-	This module implements a basic interface and file format parser it may be depricated in favor of database entries
-	or expanded to tie to external handlers in the future as necessary.
-<pre>
-
-EXAMPLE 
-
-[category1]
-var1 => val1
-var2 => val2
-\# lines that begin with \# are comments
-\#var3 => val3
-</pre>
-
-*/
-///\defgroup confg Config File Parser
-///\ingroup FREESWITCH
-///\{
+/**
+ * @defgroup config Config File Parser
+ * @ingroup FREESWITCH 
+ * This module implements a basic interface and file format parser it may be depricated in favor of database entries
+ * or expanded to tie to external handlers in the future as necessary.
+ * <pre>
+ *
+ * EXAMPLE 
+ * 
+ * [category1]
+ * var1 => val1
+ * var2 => val2
+ * \# lines that begin with \# are comments
+ * \#var3 => val3
+ * </pre>
+ * @{
+ */
 
 #ifndef SWITCH_CONFIG_H
 #define SWITCH_CONFIG_H
@@ -98,6 +101,6 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 #ifdef __cplusplus
 }
 #endif
-///\}
+/** @} */
 
 #endif
