@@ -69,4 +69,54 @@ extern "C" {
 }
 #endif
 
+/** \mainpage FreeSWITCH
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+
+ * \section intro Introduction
+ *
+ * \section supports Supported Platforms
+ * Freeswitch has been built on the following platforms:
+ *
+ *  - Linux (x86)
+ *  - Windows (MSVC 2005)
+ *  - Mac OS X
+ *  - FreeBSD
+ *
+ * \section depends Dependencies
+ *  Freeswitch makes heavy use of external libraries.  
+ *
+ *  libFreeSwitch:
+ *		APR (http://apr.apache.org)
+ *		SQLite (http://www.sqlite.org)
+ *		libresample (http://ccrma-www.stanford.edu/~jos/resample/Free_Resampling_Software.html)
+ *
+ *	Additionally, the experimental external modules make use of several external modules:
+ *
+ *	mod_Exosip:
+ *		JRTPlib (http://research.edm.luc.ac.be/jori/jrtplib/jrtplib.html)
+ *		eXoSIP (http://savannah.nongnu.org/projects/exosip/)
+ *
+ *	mod_iaxchan:
+ *		libiax2 (forked from http://iaxclient.sourceforge.net/)
+ *
+ *	mod_speexcodec
+ *		libspeex (http://www.speex.org/)
+ *
+ *	mod_portaudio
+ *		portaudio (http://www.portaudio.com/)
+ *
+ *	mod_woomerachan
+ *		openh323\woomera (http://www.voxgratia.org/)
+ *
+ *	mod_xmpp_event
+ *		iksemel (http://iksemel.jabberstudio.org/)
+ *
+ *	mod_sndfile
+ *		libsndfile (http://www.mega-nerd.com/libsndfile/)
+ *
+ * \section license Licensing
+ *
+ * Freeswitch is licensed under the terms of the MPL 1.1
+ *
+ */
 #endif
