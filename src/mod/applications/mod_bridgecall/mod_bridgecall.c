@@ -47,7 +47,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 {
 	struct switch_core_thread_session *data = obj;
 	int *stream_id_p;
-	int stream_id = *stream_id_p;
+	int stream_id;
 
 	switch_channel *chan_a, *chan_b;
 	switch_frame *read_frame;
@@ -56,7 +56,8 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	session_a = data->objs[0];
 	session_b = data->objs[1];
 	
-	stream_id = data->objs[2];
+	stream_id_p = data->objs[2];
+	stream_id = *stream_id_p;
 
 	chan_a = switch_core_session_get_channel(session_a);
 	chan_b = switch_core_session_get_channel(session_b);
