@@ -1588,7 +1588,7 @@ DoxyDefine(void *switch_core_db_user_data(sqlite3_context*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(const void *sqlite3_value_blob(sqlite3_value*);)
+DoxyDefine(const void *switch_core_db_value_blob(sqlite3_value*);)
 #define switch_core_db_value_blob sqlite3_value_blob
 
 /**
@@ -1599,7 +1599,7 @@ DoxyDefine(const void *sqlite3_value_blob(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(int sqlite3_value_bytes(sqlite3_value*);)
+DoxyDefine(int switch_core_db_value_bytes(sqlite3_value*);)
 #define switch_core_db_value_bytes sqlite3_value_bytes
 
 /**
@@ -1610,7 +1610,7 @@ DoxyDefine(int sqlite3_value_bytes(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(int sqlite3_value_bytes16(sqlite3_value*);)
+DoxyDefine(int switch_core_db_value_bytes16(sqlite3_value*);)
 #define switch_core_db_value_bytes16 sqlite3_value_bytes16
 
 /**
@@ -1621,7 +1621,7 @@ DoxyDefine(int sqlite3_value_bytes16(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(double sqlite3_value_double(sqlite3_value*);)
+DoxyDefine(double switch_core_db_value_double(sqlite3_value*);)
 #define switch_core_db_value_double sqlite3_value_double
 
 /**
@@ -1632,7 +1632,7 @@ DoxyDefine(double sqlite3_value_double(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(int sqlite3_value_int(sqlite3_value*);)
+DoxyDefine(int switch_core_db_value_int(sqlite3_value*);)
 #define switch_core_db_value_int sqlite3_value_int
 
 /**
@@ -1643,7 +1643,7 @@ DoxyDefine(int sqlite3_value_int(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(sqlite_int64 sqlite3_value_int64(sqlite3_value*);)
+DoxyDefine(sqlite_int64 switch_core_db_value_int64(sqlite3_value*);)
 #define switch_core_db_value_int64 sqlite3_value_int64
 
 /**
@@ -1654,7 +1654,7 @@ DoxyDefine(sqlite_int64 sqlite3_value_int64(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(const unsigned char *sqlite3_value_text(sqlite3_value*);)
+DoxyDefine(const unsigned char *switch_core_db_value_text(sqlite3_value*);)
 #define switch_core_db_value_text sqlite3_value_text
 
 /**
@@ -1665,7 +1665,7 @@ DoxyDefine(const unsigned char *sqlite3_value_text(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(const void *sqlite3_value_text16(sqlite3_value*);)
+DoxyDefine(const void *switch_core_db_value_text16(sqlite3_value*);)
 #define switch_core_db_value_text16 sqlite3_value_text16
 
 /**
@@ -1676,7 +1676,7 @@ DoxyDefine(const void *sqlite3_value_text16(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(const void *sqlite3_value_text16le(sqlite3_value*);)
+DoxyDefine(const void *switch_core_db_value_text16be(sqlite3_value*);)
 #define switch_core_db_value_text16be sqlite3_value_text16be
 
 /**
@@ -1687,7 +1687,7 @@ DoxyDefine(const void *sqlite3_value_text16le(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(const void *sqlite3_value_text16be(sqlite3_value*);)
+DoxyDefine(const void *switch_core_db_value_text16le(sqlite3_value*);)
 #define switch_core_db_value_text16le sqlite3_value_text16le
 
 /**
@@ -1698,7 +1698,7 @@ DoxyDefine(const void *sqlite3_value_text16be(sqlite3_value*);)
  * sqlite3_value* pointer instead of an sqlite3_stmt* and an integer
  * column number.
  */
-DoxyDefine(int sqlite3_value_type(sqlite3_value*);)
+DoxyDefine(int switch_core_db_value_type(sqlite3_value*);)
 #define switch_core_db_value_type sqlite3_value_type
 
 
