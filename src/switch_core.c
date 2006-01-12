@@ -58,18 +58,18 @@ struct switch_core_session {
 	struct switch_io_event_hooks event_hooks;
 	switch_codec *read_codec;
 	switch_codec *write_codec;
-
+	// TBD Make these 128k buffers size themselves dynamicly
 	switch_buffer *raw_write_buffer;
 	switch_frame raw_write_frame;
 	switch_frame enc_write_frame;
-	unsigned char *raw_write_buf[3200];
-	unsigned char *enc_write_buf[3200];
+	unsigned char *raw_write_buf[131072];
+	unsigned char *enc_write_buf[131072];
 
 	switch_buffer *raw_read_buffer;
 	switch_frame raw_read_frame;
 	switch_frame enc_read_frame;
-	unsigned char *raw_read_buf[3200];
-	unsigned char *enc_read_buf[3200];
+	unsigned char *raw_read_buf[131072];
+	unsigned char *enc_read_buf[131072];
 
 
 	switch_audio_resampler *read_resampler;
@@ -317,6 +317,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 													   int *decoded_rate,
 													   unsigned int *flag)
 {
+
 	assert(codec != NULL);
 	assert(encoded_data != NULL);
 	assert(decoded_data != NULL);
@@ -332,7 +333,6 @@ SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 	}
 
 	*decoded_data_len = encoded_data_len;
-
 	return codec->implementation->decode(codec,
 										 other_codec,
 										 encoded_data,
