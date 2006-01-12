@@ -805,9 +805,9 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 				if (!session->read_resampler) {
 					switch_resample_create(&session->read_resampler,
 										   read_frame->codec->implementation->samples_per_second,
-										   read_frame->codec->implementation->bytes_per_frame * 10,
+										   read_frame->codec->implementation->bytes_per_frame * 20,
 										   session->read_codec->implementation->samples_per_second,
-										   session->read_codec->implementation->bytes_per_frame * 10,
+										   session->read_codec->implementation->bytes_per_frame * 20,
 										   session->pool);
 				}
 			case SWITCH_STATUS_SUCCESS:
@@ -956,9 +956,9 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				if (!session->write_resampler) {
 					status = switch_resample_create(&session->write_resampler,
 													frame->codec->implementation->samples_per_second,
-													frame->codec->implementation->bytes_per_frame * 10,
+													frame->codec->implementation->bytes_per_frame * 20,
 													session->write_codec->implementation->samples_per_second,
-													session->write_codec->implementation->bytes_per_frame * 10,
+													session->write_codec->implementation->bytes_per_frame * 20,
 													session->pool);
 				}
 				break;
@@ -1079,9 +1079,9 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 								if (!session->read_resampler) {
 									status = switch_resample_create(&session->read_resampler,
 																	frame->codec->implementation->samples_per_second,
-																	frame->codec->implementation->bytes_per_frame * 10,
+																	frame->codec->implementation->bytes_per_frame * 20,
 																	session->write_codec->implementation->samples_per_second,
-																	session->write_codec->implementation->bytes_per_frame * 10,
+																	session->write_codec->implementation->bytes_per_frame * 20,
 																	session->pool);
 								}
 								break;
