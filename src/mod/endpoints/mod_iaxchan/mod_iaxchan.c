@@ -723,7 +723,7 @@ static switch_status channel_answer_channel(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+	if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		iax_answer(tech_pvt->iax_session);
 	}
 	return SWITCH_STATUS_SUCCESS;
