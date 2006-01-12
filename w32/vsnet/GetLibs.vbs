@@ -1,4 +1,4 @@
-'On Error Resume Next
+On Error Resume Next
 ' **************
 ' Initialization
 ' **************
@@ -101,7 +101,6 @@ End If
 ' ******************
 
 If BuildCore Then
-	FSO.CopyFile FreeswitchDir & "src\include\switch_version.h.in", FreeswitchDir & "src\include\switch_version.h", true
 	VersionCmd="svnversion " & quote & FreeswitchDir & "." & quote &  " -n"
 	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpVersion.Bat", True)
 	MyFile.WriteLine("@" & VersionCmd)
@@ -111,8 +110,20 @@ If BuildCore Then
 		strFromProc = OExec.StdOut.ReadLine()
 		VERSION=strFromProc
 	Loop While Not OExec.StdOut.atEndOfStream
+	
+	Set fOrgFile = FSO.OpenTextFile(UtilsDir & "lastversion", ForReading, FailIfNotExist, OpenAsASCII)
+	sLastVersion = fOrgFile.ReadLine()
+	fOrgFile.Close
+	
+	If VERSION <> sLastVersion Then
+		Set MyFile = fso.CreateTextFile(UtilsDir & "lastversion", True)
+		MyFile.WriteLine(VERSION)
+		MyFile.Close
+	
+		FSO.CopyFile FreeswitchDir & "src\include\switch_version.h.in", FreeswitchDir & "src\include\switch_version.h", true
+		FindReplaceInFile FreeswitchDir & "src\include\switch_version.h", "@SVN_VERSION@", VERSION
+	End If
 
-	FindReplaceInFile FreeswitchDir & "src\include\switch_version.h", "@SVN_VERSION@", VERSION
 
 	If Not FSO.FolderExists(LibDestDir & "include") Then
 		FSO.CreateFolder(LibDestDir & "include")
