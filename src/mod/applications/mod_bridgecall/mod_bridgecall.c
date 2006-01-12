@@ -47,7 +47,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 {
 	struct switch_core_thread_session *data = obj;
 	int *stream_id_p;
-	int stream_id;
+	int stream_id = 0;
 
 	switch_channel *chan_a, *chan_b;
 	switch_frame *read_frame;
@@ -57,7 +57,9 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	session_b = data->objs[1];
 	
 	stream_id_p = data->objs[2];
-	stream_id = *stream_id_p;
+	if (stream_id_p) {
+		stream_id = *stream_id_p;
+	}
 
 	chan_a = switch_core_session_get_channel(session_a);
 	chan_b = switch_core_session_get_channel(session_b);
@@ -82,11 +84,11 @@ default:
 		
 		if (switch_core_session_read_frame(session_a, &read_frame, -1, stream_id) == SWITCH_STATUS_SUCCESS && read_frame->datalen) {
 			if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "write: Bad Frame.... %d Bubye!\n", read_frame->datalen);
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "write: Bad Frame.... Bubye!\n");
 				data->running = -1;
 			}
 		} else {			
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "read: Bad Frame.... %d Bubye!\n", read_frame->datalen);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "read: Bad Frame.... Bubye!\n");
 			data->running = -1;
 		}  
 
