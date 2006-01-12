@@ -11,23 +11,25 @@
 			Name="Win32"
 		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
+			BuildLogFile=""
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="doxygen $(InputDir)Doxygen.conf"
-				Outputs="html/index.html"
-			/>
-			<Tool
-				Name="Doxygen"
+				CommandLine=""
+				AdditionalDependencies=""
+				Outputs=""
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -40,6 +42,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\src\include; ..\libs\include"
+				PreprocessorDefinitions="WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -51,28 +55,22 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
+				Name="VCLibrarianTool"
+				OutputFile=""
 			/>
 			<Tool
 				Name="VCALinkTool"
 			/>
 			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
 				Name="VCXDCMakeTool"
+				OutputDocumentFile=""
 			/>
 			<Tool
 				Name="VCBscMakeTool"
+				OutputFile=""
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -82,18 +80,18 @@
 			Name="Release|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
+			ConfigurationType="4"
+			BuildLogFile=""
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="doxygen $(InputDir)Doxygen.conf"
-				Outputs="html/index.html"
-			/>
-			<Tool
-				Name="Doxygen"
+				CommandLine=""
+				AdditionalDependencies=""
+				Outputs=""
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -106,6 +104,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\src\include; ..\libs\include"
+				PreprocessorDefinitions="WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -117,28 +117,22 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
+				Name="VCLibrarianTool"
+				OutputFile=""
 			/>
 			<Tool
 				Name="VCALinkTool"
 			/>
 			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
 				Name="VCXDCMakeTool"
+				OutputDocumentFile=""
 			/>
 			<Tool
 				Name="VCBscMakeTool"
+				OutputFile=""
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -160,7 +154,10 @@
 					Name="Debug|Win32"
 					>
 					<Tool
-						Name="Doxygen"
+						Name="VCCustomBuildTool"
+						CommandLine="doxygen $(InputPath)"
+						AdditionalDependencies="..\src\include\switch.h;..\src\include\switch_apr.h;..\src\include\switch_buffer.h;..\src\include\switch_caller.h;..\src\include\switch_channel.h;..\src\include\switch_config.h;..\src\include\switch_console.h;..\src\include\switch_core.h;..\src\include\switch_event.h;..\src\include\switch_frame.h;..\src\include\switch_loadable_module.h;..\src\include\switch_module_interface.h;..\src\include\switch_mutex.h;..\src\include\switch_platform.h;..\src\include\switch_resample.h;..\src\include\switch_sqlite.h;..\src\include\switch_types.h;..\src\include\switch_utils.h"
+						Outputs="html/index.html"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -168,89 +165,11 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine=""
-						AdditionalDependencies=""
-						Outputs=""
+						CommandLine="doxygen $(InputPath)"
+						AdditionalDependencies="..\src\include\switch.h;..\src\include\switch_apr.h;..\src\include\switch_buffer.h;..\src\include\switch_caller.h;..\src\include\switch_channel.h;..\src\include\switch_config.h;..\src\include\switch_console.h;..\src\include\switch_core.h;..\src\include\switch_event.h;..\src\include\switch_frame.h;..\src\include\switch_loadable_module.h;..\src\include\switch_module_interface.h;..\src\include\switch_mutex.h;..\src\include\switch_platform.h;..\src\include\switch_resample.h;..\src\include\switch_sqlite.h;..\src\include\switch_types.h;..\src\include\switch_utils.h"
+						Outputs="html/index.html"
 					/>
 				</FileConfiguration>
-			</File>
-		</Filter>
-		<Filter
-			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-			>
-			<File
-				RelativePath="..\src\include\switch.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_apr.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_buffer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_caller.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_channel.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_config.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_console.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_core.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_event.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_frame.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_loadable_module.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_module_interfaces.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_mutex.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_platform.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_resample.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_sqlite.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_types.h"
-				>
-			</File>
-			<File
-				RelativePath="..\src\include\switch_utils.h"
-				>
 			</File>
 		</Filter>
 	</Files>

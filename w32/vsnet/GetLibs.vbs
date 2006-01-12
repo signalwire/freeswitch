@@ -102,7 +102,7 @@ End If
 
 If BuildCore Then
 	FSO.CopyFile FreeswitchDir & "src\include\switch_version.h.in", FreeswitchDir & "src\include\switch_version.h", true
-	VersionCmd="svnversion " & FreeswitchDir & " -n"
+	VersionCmd="svnversion " & quote & FreeswitchDir & "." & quote &  " -n"
 	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpVersion.Bat", True)
 	MyFile.WriteLine("@" & VersionCmd)
 	MyFile.Close
