@@ -920,7 +920,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 {
 
 	switch_status status = SWITCH_STATUS_FALSE;
-	switch_frame *enc_frame, *write_frame = frame;
+	switch_frame *enc_frame = NULL, *write_frame = frame;
 	unsigned int flag = 0, need_codec = 0, perfect = 0;
 	switch_io_flag io_flag = SWITCH_IO_FLAG_NOOP;
 
