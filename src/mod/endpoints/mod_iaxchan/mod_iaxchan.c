@@ -86,6 +86,7 @@ struct private_object {
 	switch_caller_profile *caller_profile;	
 	unsigned int codec;
 	unsigned int codecs;
+	unsigned short samprate;
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
 };
@@ -245,6 +246,7 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 		*cababilities = local_cap;
 		if (globals.codec_rates_last) {
 			*samprate = iax_build_codec_rates();
+			tech_pvt->samprate = *samprate;
 		}
 		return SWITCH_STATUS_SUCCESS;
 	} else if (switch_test_flag(&globals, GFLAG_MY_CODEC_PREFS) && (leading & mixed_cap)) {
@@ -310,10 +312,11 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 	assert(channel != NULL);
 
 
-	if (*samprate) {
+	if (tech_pvt->samprate || *samprate) {
 		unsigned short samples = iax_build_codec_rates();
-		unsigned short mixed = (*samprate & samples);
+		unsigned short mixed = ((tech_pvt->samprate ? tech_pvt->samprate : *samprate) & samples);
 
+		printf("\n\n******WTF %u %u %u\n******\n", *samprate, samples, mixed);
 		srate = 8000;
 		
 		if (mixed & IAX_RATE_16KHZ) {
@@ -720,8 +723,9 @@ static switch_status channel_answer_channel(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	iax_answer(tech_pvt->iax_session);
-
+	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+		iax_answer(tech_pvt->iax_session);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -909,8 +913,12 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 					if (tech_pvt) {
 						switch_channel *channel;
 						if ((channel = switch_core_session_get_channel(tech_pvt->session))) {
-							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Answer %s\n", switch_channel_get_name(channel));
-							switch_channel_answer(channel);
+							if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WTF Mutiple Answer %s?\n", switch_channel_get_name(channel));
+							} else {
+								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Answer %s\n", switch_channel_get_name(channel));
+								switch_channel_answer(channel);
+							}
 						}
 					}
 
