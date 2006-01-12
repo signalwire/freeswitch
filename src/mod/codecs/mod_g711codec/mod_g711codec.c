@@ -227,6 +227,23 @@ static const switch_codec_implementation g711u_8k_30ms_implementation = {
 	/*.next*/							&g711u_8k_60ms_implementation
 };
 
+
+static const switch_codec_implementation g711u_16k_implementation = {
+	/*.samples_per_second*/				16000,
+	/*.bits_per_second*/				128000,
+	/*.microseconds_per_frame*/			20000,
+	/*.samples_per_frame*/				320,
+	/*.bytes_per_frame*/				640,
+	/*.encoded_bytes_per_frame*/		320,
+	/*.number_of_channels*/				1,
+	/*.pref_frames_per_packet*/			1,
+	/*.max_frames_per_packet*/			1,
+	/*.init*/							switch_g711u_init,
+	/*.encode*/							switch_g711u_encode,
+	/*.decode*/							switch_g711u_decode,
+	/*.destroy*/						switch_g711u_destroy,
+};
+
 static const switch_codec_implementation g711u_8k_implementation = {
 	/*.samples_per_second*/				8000,
 	/*.bits_per_second*/				64000,
@@ -241,7 +258,7 @@ static const switch_codec_implementation g711u_8k_implementation = {
 	/*.encode*/							switch_g711u_encode,
 	/*.decode*/							switch_g711u_decode,
 	/*.destroy*/						switch_g711u_destroy,
-	///*.next*/							&g711u_8k_30ms_implementation
+	/*.next*/							&g711u_16k_implementation
 };
 
 

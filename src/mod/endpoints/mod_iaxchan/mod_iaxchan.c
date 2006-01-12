@@ -160,6 +160,40 @@ static unsigned int iana2ast(int iana)
 	return ast;
 }
 
+static unsigned short iax_build_codec_rates(void) 
+{
+	int x;
+	unsigned short samples = 0;
+	
+	for (x = 0; x < globals.codec_rates_last; x++) {
+		int rate = atoi(globals.codec_rates[x]);
+		switch (rate) {
+		case 8:
+			samples |= IAX_RATE_8KHZ;
+			break;
+		case 16:
+			samples |= IAX_RATE_16KHZ;
+			break;
+		case 22:
+			samples |= IAX_RATE_22KHZ;
+			break;
+		case 32:
+			samples |= IAX_RATE_32KHZ;
+			break;
+		case 44:
+			samples |= IAX_RATE_44KHZ;
+			break;
+		case 48:
+			samples |= IAX_RATE_48KHZ;
+			break;
+		default:
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "I don't know rate %d\n", rate);
+			break;
+		}
+	}
+	return samples;
+}
+
 typedef enum {
 	IAX_SET = 1,
 	IAX_QUERY = 2
@@ -174,7 +208,7 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 	switch_codec_interface *codecs[SWITCH_MAX_CODECS];
 	int num_codecs = 0;
 	unsigned int local_cap = 0, mixed_cap = 0, chosen = 0, leading = 0;
-	int x;
+	int x, srate = 8000;
 
 	if (globals.codec_string) {
 		if (!(num_codecs = switch_loadable_module_get_codecs_sorted(switch_core_session_get_pool(tech_pvt->session),
@@ -210,38 +244,7 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 		*format = chosen;
 		*cababilities = local_cap;
 		if (globals.codec_rates_last) {
-			int x;
-			unsigned short samples = 0;
-
-			for (x = 0; x < globals.codec_rates_last; x++) {
-				int rate = atoi(globals.codec_rates[x]);
-				switch (rate) {
-				case 8:
-					samples |= IAX_RATE_8KHZ;
-					break;
-				case 16:
-					samples |= IAX_RATE_16KHZ;
-					break;
-				case 22:
-					samples |= IAX_RATE_22KHZ;
-					break;
-				case 32:
-					samples |= IAX_RATE_32KHZ;
-					break;
-				case 44:
-					samples |= IAX_RATE_44KHZ;
-					break;
-				case 48:
-					samples |= IAX_RATE_48KHZ;
-					break;
-				default:
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "I don't know rate %d\n", rate);
-					break;
-				}
-			}
-			if (samples) {
-				*samprate = samples;
-			}
+			*samprate = iax_build_codec_rates();
 		}
 		return SWITCH_STATUS_SUCCESS;
 	} else if (switch_test_flag(&globals, GFLAG_MY_CODEC_PREFS) && (leading & mixed_cap)) {
@@ -306,31 +309,53 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 	channel = switch_core_session_get_channel(tech_pvt->session);
 	assert(channel != NULL);
 
+	if (*samprate) {
+		srate = 8000;
+		unsigned short samples = iax_build_codec_rates();
+		unsigned short mixed = (*samprate & samples);
+
+		if (mixed & IAX_RATE_16KHZ) {
+			srate = 16000;
+		}
+		if (mixed & IAX_RATE_22KHZ) {
+			srate = 22000;
+		}
+		if (mixed & IAX_RATE_32KHZ) {
+			srate = 32000;
+		}
+		if (mixed & IAX_RATE_44KHZ) {
+			srate = 44000;
+		}
+		if (mixed & IAX_RATE_48KHZ) {
+			srate = 48000;
+		}
+	}
+
 	if (!strcasecmp(dname, "l16")) {
 		switch_set_flag(tech_pvt, TFLAG_LINEAR);
 	}
 	if (switch_core_codec_init(&tech_pvt->read_codec,
-		dname,
-		0,
-		0,
-		1,
+							   dname,
+							   srate,
+							   0,
+							   1,
 		SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 		NULL,
 		switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
-			return SWITCH_STATUS_GENERR;
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
+		return SWITCH_STATUS_GENERR;
 	} else {
 		if (switch_core_codec_init(&tech_pvt->write_codec,
-			dname,
-			0,
-			0,
-			1,
-			SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, 
-			NULL,
-			switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
-				switch_core_codec_destroy(&tech_pvt->read_codec);	
-				return SWITCH_STATUS_GENERR;
+								   dname,
+								   srate,
+								   0,
+								   1,
+								   SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, 
+								   NULL,
+								   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
+			switch_core_codec_destroy(&tech_pvt->read_codec);	
+			return SWITCH_STATUS_GENERR;
 		} else {
 			int ms;
 			int rate;
