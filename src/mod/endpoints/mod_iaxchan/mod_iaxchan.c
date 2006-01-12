@@ -310,9 +310,10 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 	assert(channel != NULL);
 
 	if (*samprate) {
-		srate = 8000;
 		unsigned short samples = iax_build_codec_rates();
 		unsigned short mixed = (*samprate & samples);
+
+		srate = 8000;
 
 		if (mixed & IAX_RATE_16KHZ) {
 			srate = 16000;
