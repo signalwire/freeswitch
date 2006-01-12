@@ -323,7 +323,7 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 			srate = 16000;
 		}
 		if (mixed & IAX_RATE_22KHZ) {
-			srate = 22000;
+			srate = 22050;
 		}
 		if (mixed & IAX_RATE_32KHZ) {
 			srate = 32000;

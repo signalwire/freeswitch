@@ -731,6 +731,7 @@ static switch_status engage_device(struct private_object *tech_pvt)
 				return SWITCH_STATUS_FALSE;
 			}
 		}
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Loaded codec L16 %dhz %dms on %s\n", sample_rate, codec_ms, switch_channel_get_name(channel));
 		tech_pvt->read_frame.rate = sample_rate;
 		tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 		switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
