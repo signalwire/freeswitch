@@ -227,6 +227,7 @@ extern void iax_pref_codec_del(struct iax_session *session, unsigned int format)
 extern int iax_pref_codec_get(struct iax_session *session, unsigned int *array, int len);
 extern char *iax_get_peer_ip(struct iax_session *session);
 extern char *iax_event_get_apparent_ip(struct iax_event *event);
+extern void iax_set_samplerate(struct iax_session *session, unsigned short samplemask);
 
 #if defined(__cplusplus)
 }

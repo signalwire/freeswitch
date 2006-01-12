@@ -143,6 +143,7 @@
 #define IAX_RATE_22KHZ                         (1 << 3) /* 22.05khz sampling */
 #define IAX_RATE_44KHZ                         (1 << 4) /* 44.1khz sampling */
 #define IAX_RATE_48KHZ                         (1 << 5) /* 48khz sampling */
+#define IAX_RATE_32KHZ                         (1 << 6) /* 32khz sampling */
 
 #define IAX_DPSTATUS_EXISTS			(1 << 0)
 #define IAX_DPSTATUS_CANEXIST		(1 << 1)

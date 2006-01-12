@@ -143,6 +143,8 @@ static void dump_samprate(char *output, int maxlen, void *value, int len)
 			strcat(tmp, ",11.025khz");
 		if (sr & IAX_RATE_16KHZ)
 			strcat(tmp, ",16khz");
+		if (sr & IAX_RATE_32KHZ)
+			strcat(tmp, ",32khz");
 		if (sr & IAX_RATE_22KHZ)
 			strcat(tmp, ",22.05khz");
 		if (sr & IAX_RATE_44KHZ)

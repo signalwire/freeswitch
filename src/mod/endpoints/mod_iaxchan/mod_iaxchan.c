@@ -69,6 +69,9 @@ static struct {
 	char *codec_string;
 	char *codec_order[SWITCH_MAX_CODECS];
 	int codec_order_last;
+	char *codec_rates_string;
+	char *codec_rates[SWITCH_MAX_CODECS];
+	int codec_rates_last;
 	unsigned int flags;
 } globals;
 
@@ -89,6 +92,7 @@ struct private_object {
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string)
 
 
 static char *IAXNAMES[] = {"IAX_EVENT_CONNECT","IAX_EVENT_ACCEPT","IAX_EVENT_HANGUP","IAX_EVENT_REJECT","IAX_EVENT_VOICE",
@@ -161,7 +165,7 @@ typedef enum {
 	IAX_QUERY = 2
 } iax_io_t;
 
-static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_session *iax_session, unsigned int *format, unsigned int *cababilities, iax_io_t io)
+static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_session *iax_session, unsigned int *format, unsigned int *cababilities, unsigned short *samprate, iax_io_t io)
 {
 	char *dname = NULL;
 	//int rate = 8000;
@@ -205,6 +209,40 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 		chosen = leading;
 		*format = chosen;
 		*cababilities = local_cap;
+		if (globals.codec_rates_last) {
+			int x;
+			unsigned short samples = 0;
+
+			for (x = 0; x < globals.codec_rates_last; x++) {
+				int rate = atoi(globals.codec_rates[x]);
+				switch (rate) {
+				case 8:
+					samples |= IAX_RATE_8KHZ;
+					break;
+				case 16:
+					samples |= IAX_RATE_16KHZ;
+					break;
+				case 22:
+					samples |= IAX_RATE_22KHZ;
+					break;
+				case 32:
+					samples |= IAX_RATE_32KHZ;
+					break;
+				case 44:
+					samples |= IAX_RATE_44KHZ;
+					break;
+				case 48:
+					samples |= IAX_RATE_48KHZ;
+					break;
+				default:
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "I don't know rate %d\n", rate);
+					break;
+				}
+			}
+			if (samples) {
+				*samprate = samples;
+			}
+		}
 		return SWITCH_STATUS_SUCCESS;
 	} else if (switch_test_flag(&globals, GFLAG_MY_CODEC_PREFS) && (leading & mixed_cap)) {
 		chosen = leading;
@@ -489,6 +527,7 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 		switch_channel *channel;
 		switch_caller_profile *caller_profile;
 		unsigned int req = 0, cap = 0;
+		unsigned short samprate = 0;
 
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
@@ -521,12 +560,14 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 		}
 
 
-		if (iax_set_codec(tech_pvt, tech_pvt->iax_session, &req, &cap, IAX_QUERY) != SWITCH_STATUS_SUCCESS) {
+		if (iax_set_codec(tech_pvt, tech_pvt->iax_session, &req, &cap, &samprate, IAX_QUERY) != SWITCH_STATUS_SUCCESS) {
 			switch_core_session_destroy(new_session);
 			return SWITCH_STATUS_GENERR;
 		}
 
-
+		if (samprate) {
+			iax_set_samplerate(tech_pvt->iax_session, samprate);
+		}
 
 		iax_call(tech_pvt->iax_session,
 			caller_profile->caller_id_number,
@@ -747,6 +788,9 @@ static switch_status load_config(void)
 			} else if (!strcmp(var, "codec_prefs")) {
 				set_global_codec_string(val);
 				globals.codec_order_last = switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
+			} else if (!strcmp(var, "codec_rates")) {
+				set_global_codec_rates_string(val);
+				globals.codec_rates_last = switch_separate_string(globals.codec_rates_string, ',', globals.codec_rates, SWITCH_MAX_CODECS);
 			}
 		}
 	}
@@ -819,7 +863,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 						unsigned int cap =  iax_session_get_capability(iaxevent->session);
 						unsigned int format = iaxevent->ies.format;
 
-						if (iax_set_codec(tech_pvt, iaxevent->session, &format, &cap, IAX_SET) != SWITCH_STATUS_SUCCESS) {
+						if (iax_set_codec(tech_pvt, iaxevent->session, &format, &cap, &iaxevent->ies.samprate, IAX_SET) != SWITCH_STATUS_SUCCESS) {
 							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WTF? %d %d\n",iaxevent->ies.format, iaxevent->ies.capability);
 						}
 					}
@@ -890,11 +934,12 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 							}
 
 							if (iax_set_codec(tech_pvt, iaxevent->session,
-								&iaxevent->ies.format,
-								&iaxevent->ies.capability,
-								IAX_SET) != SWITCH_STATUS_SUCCESS) {
-									iax_reject(iaxevent->session, "Codec Error!");
-									switch_core_session_destroy(&session);
+											  &iaxevent->ies.format,
+											  &iaxevent->ies.capability,
+											  &iaxevent->ies.samprate,
+											  IAX_SET) != SWITCH_STATUS_SUCCESS) {
+								iax_reject(iaxevent->session, "Codec Error!");
+								switch_core_session_destroy(&session);
 							} else {
 								tech_pvt->iax_session = iaxevent->session;						
 								tech_pvt->session = session;

@@ -253,6 +253,7 @@ struct iax_session {
 #endif
 	struct iax_netstat remote_netstats;
 
+	unsigned short samplemask;
 	/* For linking if there are multiple connections */
 	struct iax_session *next;
 };
@@ -1880,6 +1881,12 @@ int iax_pref_codec_get(struct iax_session *session, unsigned int *array, int len
 	return x;
 }
 
+void iax_set_samplerate(struct iax_session *session, unsigned short samplemask)
+{
+	session->samplemask = samplemask;
+}
+
+
 int iax_call(struct iax_session *session, char *cidnum, char *cidname, char *ich, char *lang, int wait, int formats, int capabilities)
 {
 	char tmp[256]="";
@@ -1898,7 +1905,11 @@ int iax_call(struct iax_session *session, char *cidnum, char *cidname, char *ich
 	}
 	memset(&ied, 0, sizeof(ied));
 	strncpy(tmp, ich, sizeof(tmp) - 1);	
+
 	iax_ie_append_short(&ied, IAX_IE_VERSION, IAX_PROTO_VERSION);
+    if (session->samplemask) {
+		iax_ie_append_short(&ied, IAX_IE_SAMPLINGRATE, session->samplemask);
+	}
 	if (cidnum)
 		iax_ie_append_str(&ied, IAX_IE_CALLING_NUMBER, (unsigned char *) cidnum);
 	if (cidname)
