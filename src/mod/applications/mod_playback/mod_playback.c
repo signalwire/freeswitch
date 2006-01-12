@@ -164,6 +164,8 @@ void playback_function(switch_core_session *session, char *data)
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "done playing file\n");
 	switch_core_file_close(&fh);
 
+	switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
+
 	/* End the audio absorbing thread */
 	switch_core_thread_session_end(&thread_session);
 
