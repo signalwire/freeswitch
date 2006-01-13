@@ -456,8 +456,6 @@ Sub BuildLibs_libg729(BuildDebug, BuildRelease)
 				BuildViaVCBuild LibDestDir & "codec\libg729\libg729.vcproj", "Release"
 			End If
 		End If
-	Else
-		Wscript.echo "Unable to download libg729"
 	End If 
 End Sub
 
