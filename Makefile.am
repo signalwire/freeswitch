@@ -93,7 +93,7 @@ freeswitch_SOURCES = src/switch.c
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDFLAGS = -lfreeswitch
 nodist_freeswitch_SOURCES = src/include/switch_version.h
-BUILT_SOURCES = version
+BUILT_SOURCES = depends version
 CLEANFILES = src/include/switch_version.h
 
 version: Makefile

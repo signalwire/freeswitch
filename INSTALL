@@ -1,18 +1,27 @@
+UNIX:
+
+1) Prepare Automake
+	./configure
+
+2) Edit modules.conf and adjust to taste.
+
+3) Choose one of the following:
+
+	Build The Entire Project (reccommended)
+	make everything
+
+	Build/Install All
+	make installall
+
+	Build Just The Core
+	make
+
+	Build Modules
+	make modules
+
+	Install Modiles
+	make install_mod
 
 
-APR (> make apr)
-it will and download and build and install apr if needed but remember to make sure
-/usr/local/apr/lib is in the LD_LIBRARY_PATH that's up to you
-
-
-cp modules.conf.in modules.conf and edit to taste
-
-if you want sip:
-make sure mod_exosip is uncommeted in modules.conf
-make common
-make exosip
-
-
-make; make install
-
+Windows 32:
 
