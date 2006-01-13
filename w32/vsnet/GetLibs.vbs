@@ -589,6 +589,7 @@ Sub CreateSwitchVersion()
 	End If
 	VersionCmd="svnversion " & quote & FreeswitchDir & "." & quote &  " -n"
 	Set MyFile = fso.CreateTextFile(UtilsDir & "svnversion\tmpVersion.Bat", True)
+	MyFile.WriteLine("@" & "cd " & UtilsDir & "svnversion")
 	MyFile.WriteLine("@" & VersionCmd)
 	MyFile.Close
 	Set oExec = WshShell.Exec(UtilsDir & "svnversion\tmpVersion.Bat")
