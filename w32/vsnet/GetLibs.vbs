@@ -1,4 +1,4 @@
-On Error Resume Next
+'On Error Resume Next
 ' **************
 ' Initialization
 ' **************
@@ -101,31 +101,7 @@ End If
 ' ******************
 
 If BuildCore Then
-  'http://www.sofaswitch.org/mikej/svnversion.zip
-	VersionCmd="svnversion " & quote & FreeswitchDir & "." & quote &  " -n"
-	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpVersion.Bat", True)
-	MyFile.WriteLine("@" & VersionCmd)
-	MyFile.Close
-	Set oExec = WshShell.Exec(UtilsDir & "tmpVersion.Bat")
-	Do
-		strFromProc = OExec.StdOut.ReadLine()
-		VERSION=strFromProc
-	Loop While Not OExec.StdOut.atEndOfStream
-	
-	sLastVersion = ""
-	Set fOrgFile = FSO.OpenTextFile(UtilsDir & "lastversion", ForReading, FailIfNotExist, OpenAsASCII)
-	sLastVersion = fOrgFile.ReadLine()
-	fOrgFile.Close
-	
-	If VERSION <> sLastVersion Then
-		Set MyFile = fso.CreateTextFile(UtilsDir & "lastversion", True)
-		MyFile.WriteLine(VERSION)
-		MyFile.Close
-	
-		FSO.CopyFile FreeswitchDir & "src\include\switch_version.h.in", FreeswitchDir & "src\include\switch_version.h", true
-		FindReplaceInFile FreeswitchDir & "src\include\switch_version.h", "@SVN_VERSION@", VERSION
-	End If
-
+	CreateSwitchVersion
 
 	If Not FSO.FolderExists(LibDestDir & "include") Then
 		FSO.CreateFolder(LibDestDir & "include")
@@ -603,6 +579,47 @@ End Sub
 ' *******************
 ' Utility Subroutines
 ' *******************
+
+Sub CreateSwitchVersion()
+	Dim sLastFile
+	Const OverwriteIfExist = -1 
+	Const ForReading       =  1 
+ 	If Not FSO.FolderExists(UtilsDir & "svnversion") Then
+		FSO.CreateFolder(UtilsDir & "svnversion")
+	End If
+	VersionCmd="svnversion " & quote & FreeswitchDir & "." & quote &  " -n"
+	Set MyFile = fso.CreateTextFile(UtilsDir & "svnversion\tmpVersion.Bat", True)
+	MyFile.WriteLine("@" & VersionCmd)
+	MyFile.Close
+	Set oExec = WshShell.Exec(UtilsDir & "svnversion\tmpVersion.Bat")
+	Do
+		strFromProc = OExec.StdOut.ReadLine()
+		VERSION=strFromProc
+	Loop While Not OExec.StdOut.atEndOfStream
+	If VERSION = "" Then
+		WgetUnZip "http://www.sofaswitch.org/mikej/svnversion.zip", UtilsDir 
+		Set oExec = WshShell.Exec(UtilsDir & "svnversion\tmpVersion.Bat")
+		Do
+			strFromProc = OExec.StdOut.ReadLine()
+			VERSION=strFromProc
+		Loop While Not OExec.StdOut.atEndOfStream
+	End If
+	sLastVersion = ""
+	Set sLastFile = FSO.OpenTextFile(UtilsDir & "lastversion", ForReading, true, OpenAsASCII)
+	If Not sLastFile.atEndOfStream Then
+		sLastVersion = sLastFile.ReadLine()
+	End If
+	sLastFile.Close
+	
+	If VERSION <> sLastVersion Then
+		Set MyFile = fso.CreateTextFile(UtilsDir & "lastversion", True)
+		MyFile.WriteLine(VERSION)
+		MyFile.Close
+	
+		FSO.CopyFile FreeswitchDir & "src\include\switch_version.h.in", FreeswitchDir & "src\include\switch_version.h", true
+		FindReplaceInFile FreeswitchDir & "src\include\switch_version.h", "@SVN_VERSION@", VERSION
+	End If
+End Sub
 
 Sub UpgradeViaDevEnv(ProjectFile)
 	Set oExec = WshShell.Exec(quote & DevEnv & quote & " " & quote & ProjectFile & quote & " /Upgrade ")
