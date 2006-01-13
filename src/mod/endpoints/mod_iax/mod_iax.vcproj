@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="mod_IaxChan"
+	Name="mod_Iax"
 	ProjectGUID="{3A5B9131-F20C-4A85-9447-6C1610941CEE}"
-	RootNamespace="mod_IaxChan"
+	RootNamespace="mod_Iax"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_IaxChan Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_Iax Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -64,13 +64,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_IaxChan.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_Iax.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(InputDir)..\..\..\..\libs\iax\Debug"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_IaxChan.pdb"
+				ProgramDatabaseFile="$(OutDir)/mod_Iax.pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_IaxChan.lib"
+				ImportLibrary="$(OutDir)/mod_Iax.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -108,7 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_IaxChan Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_Iax Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -144,7 +144,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_IaxChan.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_Iax.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\iax\Release&quot;"
 				GenerateDebugInformation="true"
@@ -152,7 +152,7 @@
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				LinkTimeCodeGeneration="1"
-				ImportLibrary="$(OutDir)/mod_IaxChan.lib"
+				ImportLibrary="$(OutDir)/mod_Iax.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -190,7 +190,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\mod_iaxchan.c"
+				RelativePath=".\mod_iax.c"
 				>
 			</File>
 		</Filter>

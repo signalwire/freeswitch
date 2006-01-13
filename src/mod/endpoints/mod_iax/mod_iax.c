@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_iaxchan.c -- IAX2 Endpoint Module
+ * mod_iax.c -- IAX2 Endpoint Module
  *
  */
 #include <switch.h>
@@ -42,7 +42,7 @@
 #include <iax/iax2-parser.h>
 #endif
 
-static const char modname[] = "mod_iaxchan";
+static const char modname[] = "mod_iax";
 
 static switch_memory_pool *module_pool;
 static int running = 1;
