@@ -101,6 +101,7 @@ End If
 ' ******************
 
 If BuildCore Then
+  'http://www.sofaswitch.org/mikej/svnversion.zip
 	VersionCmd="svnversion " & quote & FreeswitchDir & "." & quote &  " -n"
 	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpVersion.Bat", True)
 	MyFile.WriteLine("@" & VersionCmd)
@@ -111,6 +112,7 @@ If BuildCore Then
 		VERSION=strFromProc
 	Loop While Not OExec.StdOut.atEndOfStream
 	
+	sLastVersion = ""
 	Set fOrgFile = FSO.OpenTextFile(UtilsDir & "lastversion", ForReading, FailIfNotExist, OpenAsASCII)
 	sLastVersion = fOrgFile.ReadLine()
 	fOrgFile.Close
