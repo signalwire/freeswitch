@@ -8,12 +8,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FreeSwitchConsole", "FreeSw
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FreeSwitchCoreLib", "FreeSwitchCore.vcproj", "{202D7A4E-760D-4D0E-AFA1-D7459CED30FF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_codec_g729", "..\..\src\mod\codecs\mod_codec_g729\mod_codec_g729.vcproj", "{1D95CD95-0DE2-48C3-AC23-D5C7D1C9C0F0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_g729", "..\..\src\mod\codecs\mod_g729\mod_g729.vcproj", "{1D95CD95-0DE2-48C3-AC23-D5C7D1C9C0F0}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_codec_gsm", "..\..\src\mod\codecs\mod_codec_gsm\mod_codec_gsm.vcproj", "{4926323F-4EA8-4B7D-A3D3-65488725988F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_gsm", "..\..\src\mod\codecs\mod_gsm\mod_gsm.vcproj", "{4926323F-4EA8-4B7D-A3D3-65488725988F}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
@@ -48,12 +48,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_exosip", "..\..\src\mod
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_g711codec", "..\..\src\mod\codecs\mod_g711codec\mod_g711codec.vcproj", "{B1FE4613-3F4B-4DAF-9714-2472BF8F56AE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_g711", "..\..\src\mod\codecs\mod_g711\mod_g711.vcproj", "{B1FE4613-3F4B-4DAF-9714-2472BF8F56AE}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_IaxChan", "..\..\src\mod\endpoints\mod_iaxchan\mod_IaxChan.vcproj", "{3A5B9131-F20C-4A85-9447-6C1610941CEE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_iax", "..\..\src\mod\endpoints\mod_iax\mod_iax.vcproj", "{3A5B9131-F20C-4A85-9447-6C1610941CEE}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
@@ -68,7 +68,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_PortAudio", "..\..\src\
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_rawaudio", "..\..\src\mod\codecs\mod_rawaudio\mod_rawaudio.vcproj", "{5844AFE1-AA3E-4BDB-A9EF-119AEF19DF88}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_l16", "..\..\src\mod\codecs\mod_l16\mod_l16.vcproj", "{5844AFE1-AA3E-4BDB-A9EF-119AEF19DF88}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
@@ -78,12 +78,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_softtimer", "..\..\src\
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_speexcodec", "..\..\src\mod\codecs\mod_speexcodec\mod_speexcodec.vcproj", "{5580D60E-0F77-4716-9CD4-B8E5986FA375}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_speex", "..\..\src\mod\codecs\mod_speex\mod_speex.vcproj", "{5580D60E-0F77-4716-9CD4-B8E5986FA375}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_woomerachan", "..\..\src\mod\endpoints\mod_woomerachan\mod_woomerachan.vcproj", "{FE3540C5-3303-46E0-A69E-D92F775687F1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_woomera", "..\..\src\mod\endpoints\mod_woomera\mod_woomera.vcproj", "{FE3540C5-3303-46E0-A69E-D92F775687F1}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
