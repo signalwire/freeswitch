@@ -166,14 +166,15 @@ void playback_function(switch_core_session *session, char *data)
 
 	switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
 
-	/* End the audio absorbing thread */
-	switch_core_thread_session_end(&thread_session);
-
 	switch_core_timer_destroy(&timer);
 
 	switch_core_codec_destroy(&codec);
 
 	switch_channel_hangup(channel);
+
+	/* End the audio absorbing thread */
+	switch_core_thread_session_end(&thread_session);
+
 }
 
 static const switch_application_interface playback_application_interface = {

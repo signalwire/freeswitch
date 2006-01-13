@@ -199,7 +199,7 @@ static switch_status channel_on_hangup(switch_core_session *session)
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
-	
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 

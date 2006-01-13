@@ -493,6 +493,10 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
+#ifdef WTF
+	data->running = 0;
+	return NULL;
+#endif
 
 	while(data->running > 0) {
 		switch(switch_core_session_read_frame(session, &read_frame, -1, stream_id)) {
@@ -506,7 +510,7 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 			break;
 		}
 
-		switch_yield(100);
+		switch_yield(10000);
 	}
 
 	data->running = 0;
@@ -1791,7 +1795,7 @@ SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session *sess
 SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *session, switch_thread_start_t func, void *obj)
 {
 	switch_thread *thread;
-	switch_threadattr_t *thd_attr;;
+	switch_threadattr_t *thd_attr = NULL;
 	switch_threadattr_create(&thd_attr, session->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 

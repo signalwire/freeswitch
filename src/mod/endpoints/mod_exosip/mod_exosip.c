@@ -1320,7 +1320,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	globals.running = 1;
 	while (globals.running > 0) {
 		if (!(event = eXosip_event_wait(0,100))) {
-			switch_yield(100);
+			switch_yield(1000);
 			continue;
 		}
 
