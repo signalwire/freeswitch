@@ -13,6 +13,7 @@ Dim vcver, DevEnv, VCBuild
 BuildRelease=False
 BuildDebug=False
 BuildCore=False
+BuildVersion=False
 BuildModExosip=False
 BuildModIaxChan=False
 BuildModPortAudio=False
@@ -53,6 +54,8 @@ If objArgs.Count >=1 Then
 	Select Case objArgs(0)
 		Case "Core"		
 			BuildCore=True
+		Case "Version"		
+			BuildVersion=True
 		Case "Mod_Exosip"   
 			BuildModExosip=True
 		Case "Mod_IaxChan"   
@@ -81,7 +84,7 @@ If objArgs.Count >=1 Then
 			BuildModXMPPEvent=True
 			BuildModsndfile=True
 			BuildModrawaudio=True
-			BuildSpiderMonkey=True
+			BuildVersion=True
 	End Select
 Else
 	BuildCore=True
@@ -93,12 +96,16 @@ Else
 	BuildModXMPPEvent=True
 	BuildModsndfile=True
 	BuildModrawaudio=True
-	BuildSpiderMonkey=True
+	BuildVersion=True
 End If
 
 ' ******************
 ' Process lib builds
 ' ******************
+
+If BuildVersion Then
+	CreateSwitchVersion
+End If
 
 If BuildCore Then
 	CreateSwitchVersion

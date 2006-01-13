@@ -7,6 +7,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FreeSwitchConsole", "FreeSw
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FreeSwitchCoreLib", "FreeSwitchCore.vcproj", "{202D7A4E-760D-4D0E-AFA1-D7459CED30FF}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FE191916-DEDD-43B3-B28C-D09C9088C586} = {FE191916-DEDD-43B3-B28C-D09C9088C586}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_g729", "..\..\src\mod\codecs\mod_g729\mod_g729.vcproj", "{1D95CD95-0DE2-48C3-AC23-D5C7D1C9C0F0}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -106,6 +109,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{CBD81696-E
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "docs", "..\..\docs\docs.vcproj", "{1A1FF289-4FD6-4285-A422-D31DD67A4723}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FreeSwitchVersion", "FreeSwitchVersion.vcproj", "{FE191916-DEDD-43B3-B28C-D09C9088C586}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -184,6 +189,10 @@ Global
 		{FE3540C5-3303-46E0-A69E-D92F775687F1}.Release|Win32.Build.0 = Release|Win32
 		{1A1FF289-4FD6-4285-A422-D31DD67A4723}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1A1FF289-4FD6-4285-A422-D31DD67A4723}.Release|Win32.ActiveCfg = Release|Win32
+		{FE191916-DEDD-43B3-B28C-D09C9088C586}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FE191916-DEDD-43B3-B28C-D09C9088C586}.Debug|Win32.Build.0 = Debug|Win32
+		{FE191916-DEDD-43B3-B28C-D09C9088C586}.Release|Win32.ActiveCfg = Release|Win32
+		{FE191916-DEDD-43B3-B28C-D09C9088C586}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
