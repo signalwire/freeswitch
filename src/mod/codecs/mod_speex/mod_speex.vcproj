@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="mod_speexcodec"
+	Name="mod_speex"
 	ProjectGUID="{5580D60E-0F77-4716-9CD4-B8E5986FA375}"
-	RootNamespace="mod_speexcodec"
+	RootNamespace="mod_speex"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_SpeexCodec Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_Speex Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -64,13 +64,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libspeex.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_speexcodec.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_speex.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\speex\win32\libspeex\Debug&quot;"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_speexcodec.pdb"
+				ProgramDatabaseFile="$(OutDir)/mod_speex.pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_speexcodec.lib"
+				ImportLibrary="$(OutDir)/mod_speex.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -108,7 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_SpeexCodec Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_Speex Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -144,14 +144,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libspeex.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_speexcodec.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_speex.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\speex\win32\libspeex\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_speexcodec.lib"
+				ImportLibrary="$(OutDir)/mod_speex.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -189,7 +189,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\mod_speexcodec.c"
+				RelativePath=".\mod_speex.c"
 				>
 			</File>
 		</Filter>

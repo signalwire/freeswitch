@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_wanchan.c -- WANPIPE PRI Channel Module
+ * mod_wanpipe.c -- WANPIPE PRI Channel Module
  *
  */
 #include <switch.h>
@@ -41,7 +41,7 @@
 #include <libsangoma.h>
 #include <sangoma_pri.h>
 
-static const char modname[] = "mod_wanchan";
+static const char modname[] = "mod_wanpipe";
 #define STRLEN 15
 
 static switch_memory_pool *module_pool;
@@ -149,13 +149,13 @@ static int str2switch(char *swtype)
 static void set_global_dialplan(char *dialplan);
 static int str2node(char *node);
 static int str2switch(char *swtype);
-static switch_status wanchan_on_init(switch_core_session *session);
-static switch_status wanchan_on_hangup(switch_core_session *session);
-static switch_status wanchan_on_loopback(switch_core_session *session);
-static switch_status wanchan_on_transmit(switch_core_session *session);
-static switch_status wanchan_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile, switch_core_session **new_session);
-static switch_status wanchan_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags, int stream_id);
-static switch_status wanchan_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id);
+static switch_status wanpipe_on_init(switch_core_session *session);
+static switch_status wanpipe_on_hangup(switch_core_session *session);
+static switch_status wanpipe_on_loopback(switch_core_session *session);
+static switch_status wanpipe_on_transmit(switch_core_session *session);
+static switch_status wanpipe_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile, switch_core_session **new_session);
+static switch_status wanpipe_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags, int stream_id);
+static switch_status wanpipe_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id);
 static int on_info(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
 static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
 static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
@@ -172,7 +172,7 @@ static int config_wanpipe(int reload);
    returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
    so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
-static switch_status wanchan_on_init(switch_core_session *session)
+static switch_status wanpipe_on_init(switch_core_session *session)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
@@ -185,7 +185,7 @@ static switch_status wanchan_on_init(switch_core_session *session)
 
 	tech_pvt->frame.data = tech_pvt->databuf;
 	
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANCHAN INIT\n");
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE INIT\n");
 
 	
 	/* Move Channel's State Machine to RING */
@@ -193,7 +193,7 @@ static switch_status wanchan_on_init(switch_core_session *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanchan_on_ring(switch_core_session *session)
+static switch_status wanpipe_on_ring(switch_core_session *session)
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
@@ -204,12 +204,12 @@ static switch_status wanchan_on_ring(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANCHAN RING\n");
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE RING\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanchan_on_hangup(switch_core_session *session)
+static switch_status wanpipe_on_hangup(switch_core_session *session)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
@@ -225,30 +225,30 @@ static switch_status wanchan_on_hangup(switch_core_session *session)
 	pri_hangup(tech_pvt->spri->pri, tech_pvt->hangup_event.hangup.call ? tech_pvt->hangup_event.hangup.call : tech_pvt->ring_event.ring.call, tech_pvt->cause);
 	pri_destroycall(tech_pvt->spri->pri, tech_pvt->hangup_event.hangup.call ? tech_pvt->hangup_event.hangup.call : tech_pvt->ring_event.ring.call);
 	
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANCHAN HANGUP\n");
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE HANGUP\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanchan_on_loopback(switch_core_session *session)
+static switch_status wanpipe_on_loopback(switch_core_session *session)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANCHAN LOOPBACK\n");
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE LOOPBACK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanchan_on_transmit(switch_core_session *session)
+static switch_status wanpipe_on_transmit(switch_core_session *session)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANCHAN TRANSMIT\n");
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE TRANSMIT\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanchan_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile, switch_core_session **new_session)
+static switch_status wanpipe_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile, switch_core_session **new_session)
 {
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "NOT IMPLEMENTED\n");
 
 	return SWITCH_STATUS_GENERR;
 }
 
-static switch_status wanchan_answer_channel(switch_core_session *session)
+static switch_status wanpipe_answer_channel(switch_core_session *session)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
@@ -266,7 +266,7 @@ static switch_status wanchan_answer_channel(switch_core_session *session)
 
 
 
-static switch_status wanchan_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags, int stream_id) 
+static switch_status wanpipe_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags, int stream_id) 
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
@@ -312,7 +312,7 @@ static switch_status wanchan_read_frame(switch_core_session *session, switch_fra
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanchan_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id)
+static switch_status wanpipe_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
@@ -352,33 +352,33 @@ static switch_status wanchan_write_frame(switch_core_session *session, switch_fr
 	return status;
 }
 
-static const switch_io_routines wanchan_io_routines*/	{
-	/*.outgoing_channel*/	wanchan_outgoing_channel,
-	/*.answer_channel*/		wanchan_answer_channel,
-	/*.read_frame*/			wanchan_read_frame,
-	/*.write_frame*/		wanchan_write_frame
+static const switch_io_routines wanpipe_io_routines*/	{
+	/*.outgoing_channel*/	wanpipe_outgoing_channel,
+	/*.answer_channel*/		wanpipe_answer_channel,
+	/*.read_frame*/			wanpipe_read_frame,
+	/*.write_frame*/		wanpipe_write_frame
 };
 
-static const switch_event_handler_table  wanchan_event_handlers = {
-	/*.on_init*/		wanchan_on_init,
-	/*.on_ring*/		wanchan_on_ring,
+static const switch_event_handler_table  wanpipe_event_handlers = {
+	/*.on_init*/		wanpipe_on_init,
+	/*.on_ring*/		wanpipe_on_ring,
 	/*.on_execute*/		NULL,
-	/*.on_hangup*/		wanchan_on_hangup,
-	/*.on_loopback*/	wanchan_on_loopback,
-	/*.on_transmit*/	wanchan_on_transmit
+	/*.on_hangup*/		wanpipe_on_hangup,
+	/*.on_loopback*/	wanpipe_on_loopback,
+	/*.on_transmit*/	wanpipe_on_transmit
 };
 
-static const switch_endpoint_interface wanchan_endpoint_interface = {
-	/*.interface_name*/	"wanchan",
-	/*.io_routines*/	&wanchan_io_routines,
-	/*.event_handlers*/	&wanchan_event_handlers,
+static const switch_endpoint_interface wanpipe_endpoint_interface = {
+	/*.interface_name*/	"wanpipe",
+	/*.io_routines*/	&wanpipe_io_routines,
+	/*.event_handlers*/	&wanpipe_event_handlers,
 	/*.private*/		NULL,
 	/*.next*/			NULL
 };
 
-static const switch_loadable_module_interface wanchan_module_interface = {
+static const switch_loadable_module_interface wanpipe_module_interface = {
 	/*.module_name*/			modname,
-	/*.endpoint_interface*/		&wanchan_endpoint_interface,
+	/*.endpoint_interface*/		&wanpipe_endpoint_interface,
 	/*.timer_interface*/		NULL,
 	/*.dialplan_interface*/		NULL,
 	/*.codec_interface*/		NULL,
@@ -394,7 +394,7 @@ Public switch_status switch_module_load(const switch_loadable_module_interface *
 	}
 	
 	/* connect my internal structure to the blank pointer passed to me */
-	*interface = &wanchan_module_interface;
+	*interface = &wanpipe_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -460,7 +460,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE,"-- Ring on channel %d (from %s to %s)\n", event->ring.channel, event->ring.callingnum, event->ring.callednum);
 
 	sprintf(name, "w%dg%d", globals.span, event->ring.channel);
-	if ((session = switch_core_session_request(&wanchan_endpoint_interface, NULL))) {
+	if ((session = switch_core_session_request(&wanpipe_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
 		int fd;
 		char ani2str[4] = "";
@@ -483,7 +483,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
 															   globals.dialplan,
-															   "wanchan fixme",
+															   "wanpipe fixme",
 															   event->ring.callingnum,
 															   event->ring.callingani,
 															   switch_strlen_zero(ani2str) ? NULL : ani2str,
@@ -571,7 +571,7 @@ static int config_wanpipe(int reload)
 	char *var, *val;
 	int count = 0;
 	struct sangoma_pri *spri;
-	char *cf = "wanchan.conf";
+	char *cf = "wanpipe.conf";
 
 	globals.bytes_per_frame = DEFAULT_BYTES_PER_FRAME;
 
