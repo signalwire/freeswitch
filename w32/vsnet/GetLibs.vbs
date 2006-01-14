@@ -23,6 +23,7 @@ BuildModCodecGSM=False
 BuildModXMPPEvent=False
 BuildModsndfile=False
 BuildModrawaudio=False
+BuildModpcre=False
 BuildSpiderMonkey=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
@@ -32,10 +33,12 @@ LibsBase="http://www.freeswitch.org/downloads/libs/"
 LibDestDir=Showpath(ScriptDir & "..\..\libs")
 FreeswitchDir=Showpath(ScriptDir & "..\..")
 UtilsDir=Showpath(ScriptDir & "Tools")
-If objArgs(0) <> "Version" Then
-	GetTarGZObjects UtilsDir
-	GetVCBuild
-	Wscript.echo "Detected VCBuild: " & VCBuild
+If objArgs.Count >=1 Then
+	If objArgs(0) <> "Version" Then
+		GetTarGZObjects UtilsDir
+		GetVCBuild
+		Wscript.echo "Detected VCBuild: " & VCBuild
+	End If
 End If
 
 ' **************
@@ -78,6 +81,8 @@ If objArgs.Count >=1 Then
 			BuildModsndfile=True
 		Case "Mod_rawaudio"
 			BuildModrawaudio=True
+		Case "Mod_pcre"
+			BuildModpcre=True
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
@@ -89,6 +94,7 @@ If objArgs.Count >=1 Then
 			BuildModsndfile=True
 			BuildModrawaudio=True
 			BuildVersion=True
+			BuildModpcre=True
 	End Select
 Else
 	BuildCore=True
@@ -101,6 +107,7 @@ Else
 	BuildModsndfile=True
 	BuildModrawaudio=True
 	BuildVersion=True
+	BuildModpcre=True
 End If
 
 ' ******************
@@ -165,6 +172,10 @@ End If
 
 If BuildModrawaudio Then
 	BuildLibs_libresample BuildDebug, BuildRelease
+End If
+
+If BuildModpcre Then
+	BuildLibs_pcre BuildDebug, BuildRelease
 End If
 
 If BuildSpiderMonkey Then
@@ -553,6 +564,36 @@ Sub BuildLibs_libresample(BuildDebug, BuildRelease)
 		End If
 	Else
 		Wscript.echo "Unable to download libresample"
+	End If 
+End Sub
+
+Sub BuildLibs_pcre(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "pcre") Then 
+		WgetUnTarGz LibsBase & "pcre-6.4.tar.gz", LibDestDir
+		RenameFolder LibDestDir & "pcre-6.4", "pcre"
+		If Not FSO.FolderExists(LibDestDir & "pcre\win32") Then
+			FSO.CreateFolder(LibDestDir & "pcre\win32")
+		End If
+		FSO.CopyFile Utilsdir & "pcre\libpcre.vcproj", LibDestDir & "pcre\win32\", True
+		FSO.CopyFile Utilsdir & "pcre\pcre_chartables.c.vcproj", LibDestDir & "pcre\win32\", True
+		FSO.CopyFile Utilsdir & "pcre\pcre.h", LibDestDir & "pcre\win32\", True
+		FSO.CopyFile Utilsdir & "pcre\config.h", LibDestDir & "pcre\win32\", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "pcre") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "pcre\win32\Debug\libpcre.lib") Then 
+				BuildViaVCBuild LibDestDir & "pcre\win32\pcre_chartables.c.vcproj", "Debug"
+				BuildViaVCBuild LibDestDir & "pcre\win32\libpcre.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "pcre\win32\Release\libpcre.lib") Then 
+				BuildViaVCBuild LibDestDir & "pcre\win32\pcre_chartables.c.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "pcre\win32\libpcre.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download pcre"
 	End If 
 End Sub
 

@@ -25,11 +25,12 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="building pcre_chartables.c"
-				CommandLine="if not exist pcre_chartables.c call &quot;$(VCInstallDir)bin\vcvars32.bat&quot;&#x0D;&#x0A;if not exist pcre_chartables.c &quot;$(VCInstallDir)bin\cl.exe&quot; ..\dftables.c /I. /D_CRT_SECURE_NO_DEPRECATE&#x0D;&#x0A;if not exist pcre_chartables.c dftables.exe pcre_chartables.c&#x0D;&#x0A;"
+				Description=""
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				Description=""
 				CommandLine=""
 				AdditionalDependencies=""
 				Outputs=""
@@ -110,11 +111,12 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="building pcre_chartables.c"
-				CommandLine="if not exist pcre_chartables.c call &quot;$(VCInstallDir)bin\vcvars32.bat&quot;&#x0D;&#x0A;if not exist pcre_chartables.c &quot;$(VCInstallDir)bin\cl.exe&quot; ..\dftables.c /I. /D_CRT_SECURE_NO_DEPRECATE&#x0D;&#x0A;if not exist pcre_chartables.c dftables.exe pcre_chartables.c&#x0D;&#x0A;"
+				Description=""
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				Description=""
 				CommandLine=""
 				AdditionalDependencies=""
 				Outputs=""
@@ -196,11 +198,12 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="building pcre_chartables.c"
-				CommandLine="if not exist pcre_chartables.c call &quot;$(VCInstallDir)bin\vcvars32.bat&quot;&#x0D;&#x0A;if not exist pcre_chartables.c &quot;$(VCInstallDir)bin\cl.exe&quot; ..\dftables.c /I. /D_CRT_SECURE_NO_DEPRECATE&#x0D;&#x0A;if not exist pcre_chartables.c dftables.exe pcre_chartables.c&#x0D;&#x0A;"
+				Description=""
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				Description=""
 				CommandLine=""
 				AdditionalDependencies=""
 				Outputs=""
@@ -297,11 +300,12 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="building pcre_chartables.c"
-				CommandLine="if not exist pcre_chartables.c call &quot;$(VCInstallDir)bin\vcvars32.bat&quot;&#x0D;&#x0A;if not exist pcre_chartables.c &quot;$(VCInstallDir)bin\cl.exe&quot; ..\dftables.c /I. /D_CRT_SECURE_NO_DEPRECATE&#x0D;&#x0A;if not exist pcre_chartables.c dftables.exe pcre_chartables.c&#x0D;&#x0A;"
+				Description=""
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				Description=""
 				CommandLine=""
 				AdditionalDependencies=""
 				Outputs=""
