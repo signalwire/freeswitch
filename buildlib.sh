@@ -11,7 +11,7 @@ fi
 
 
 install=
-base=http://www.sofaswitch.com/mikej
+base=http://www.freeswitch.org/downloads/libs
 
 if [ ! -z $1 ] && [ $1 = install ] ; then
     install=1
