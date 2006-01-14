@@ -93,7 +93,7 @@ freeswitch_SOURCES = src/switch.c
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDFLAGS = -lfreeswitch
 nodist_freeswitch_SOURCES = src/include/switch_version.h
-BUILT_SOURCES = depends version
+BUILT_SOURCES = version depends
 CLEANFILES = src/include/switch_version.h
 
 version: Makefile
@@ -111,8 +111,7 @@ nodepends: .nodepends
 yesdepends:
 	rm .nodepends
 
-
-depends:
+.depend:
 	./buildlib.sh . install sqlite-3.2.8.tar.gz --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
 	./buildlib.sh . install apr-1.2.2.tar.gz --prefix=$(PREFIX)
 	./buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=../apr-1.2.2 --prefix=$(PREFIX)
@@ -120,6 +119,10 @@ depends:
 	cp libs/libresample-0.1.3/*.a $(PREFIX)/lib
 	cp libs/libresample-0.1.3/include/* $(PREFIX)/include
 	ranlib $(PREFIX)/lib/libresample.a
+	touch .depend
+
+depends: .depend
+
 
 modules: $(NAME)
 	@echo making modules

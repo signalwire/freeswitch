@@ -52,9 +52,10 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 	char *var, *val;
 	char app[1024] = "";
 	int catno = -1;
-	char *regex = NULL;
 	char *exten_name = NULL;
 	pcre *re = NULL;
+	int match_count = 0;
+	int ovector[30];
 
 	channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(channel);
@@ -69,12 +70,11 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 
 	while (switch_config_next_pair(&cfg, &var, &val)) {
 		if (cfg.catno != catno) { /* new category */
-			regex = NULL;
 			catno = cfg.catno;
 			exten_name = cfg.category;
+			cleanre();
+			match_count = 0;
 		}
-
-		
 			
 		if (!strcasecmp(var, "regex")) {
 			const char *error = NULL;
@@ -88,15 +88,13 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 							  &erroffset,       /* for error offset */
 							  NULL);            /* use default character tables */
 			if (error) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ERROR: %d %s\n", erroffset, error);
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "COMPILE ERROR: %d [%s]\n", erroffset, error);
 				cleanre();
+				switch_channel_hangup(channel);
 				return NULL;
 			}
-		} else if (!strcasecmp(var, "match")) {
-			int rc;
-			int ovector[30];
 
-			rc = pcre_exec(
+			match_count = pcre_exec(
 						   re,             /* result of pcre_compile() */
 						   NULL,           /* we didn't study the pattern */
 						   caller_profile->destination_number,  		   /* the subject string */
@@ -105,15 +103,16 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 						   0,              /* default options */
 						   ovector,        /* vector of integers for substring information */
 						   sizeof(ovector) / sizeof(ovector[0]));            /* number of elements (NOT size in bytes) */
-
-
-			if (rc > 0) {
+		} else if (match_count > 0 && !strcasecmp(var, "match")) {
+			if (!re) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ERROR: match without regex in %s line %d\n", cfg.path, cfg.lineno);
+				continue;
+			} else {
 				char newval[1024] = "";
 				char index[10] = "";
 				char replace[128] = "";
 				int x, y=0, z=0, num = 0;
 				char *data;
-
 
 				for (x = 0; x < sizeof(newval) && x < strlen(val);) {
 					if (val[x] == '$') {
@@ -127,7 +126,7 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 						z = 0;
 						num = atoi(index);
 
-						if (pcre_copy_substring(caller_profile->destination_number, ovector, rc, num, replace, sizeof(replace)) > 0) {
+						if (pcre_copy_substring(caller_profile->destination_number, ovector, match_count, num, replace, sizeof(replace)) > 0) {
 							int r;
 							for(r = 0; r < strlen(replace); r++) {
 								newval[y++] = replace[r];
@@ -161,11 +160,9 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 
 				switch_caller_extension_add_application(session, extension, app, data);
 			}
-
 		}
-
 	}
-
+	
 	switch_config_close_file(&cfg);
 
 	if (extension) {
