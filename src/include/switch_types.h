@@ -41,7 +41,7 @@ extern "C" {
 #include <switch.h>
 #include <switch_platform.h>
 
-#define SWITCH_GLOBAL_VERSION "1"
+#define SWITCH_RECCOMMENDED_BUFFER_SIZE 131072
 #define SWITCH_MAX_CODECS 30
 
 

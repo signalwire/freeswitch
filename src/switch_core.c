@@ -58,18 +58,18 @@ struct switch_core_session {
 	struct switch_io_event_hooks event_hooks;
 	switch_codec *read_codec;
 	switch_codec *write_codec;
-	// TBD Make these 128k buffers size themselves dynamicly
+
 	switch_buffer *raw_write_buffer;
 	switch_frame raw_write_frame;
 	switch_frame enc_write_frame;
-	unsigned char *raw_write_buf[131072];
-	unsigned char *enc_write_buf[131072];
+	unsigned char *raw_write_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	unsigned char *enc_write_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 
 	switch_buffer *raw_read_buffer;
 	switch_frame raw_read_frame;
 	switch_frame enc_read_frame;
-	unsigned char *raw_read_buf[131072];
-	unsigned char *enc_read_buf[131072];
+	unsigned char *raw_read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	unsigned char *enc_read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 
 
 	switch_audio_resampler *read_resampler;

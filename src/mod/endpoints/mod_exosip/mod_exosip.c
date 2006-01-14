@@ -92,7 +92,7 @@ struct private_object {
 	switch_frame read_frame;
 	switch_codec read_codec;
 	switch_codec write_codec;
-	unsigned char read_buf[1024];
+	unsigned char read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	switch_caller_profile *caller_profile;
 	int cid;
 	int did;

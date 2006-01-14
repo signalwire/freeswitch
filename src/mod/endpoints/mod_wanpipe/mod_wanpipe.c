@@ -88,7 +88,7 @@ static struct {
 struct private_object {
 	unsigned int flags;							/* FLAGS */
 	struct switch_frame frame;						/* Frame for Writing */
-	unsigned char databuf[1024];
+	unsigned char databuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	struct sangoma_pri *spri;
 	pri_event ring_event;
 	pri_event hangup_event;

@@ -52,7 +52,7 @@ static struct {
 struct private_object {
 	unsigned int flags;
 	struct switch_frame frame;
-	unsigned char databuf[1024];
+	unsigned char databuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	switch_core_session *session;
 	switch_caller_profile *caller_profile;	
 };

@@ -80,7 +80,7 @@ struct private_object {
 	switch_codec read_codec;
 	switch_codec write_codec;
 	struct switch_frame read_frame;
-	unsigned char databuf[1024];
+	unsigned char databuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	switch_core_session *session;
 	struct iax_session *iax_session;
 	switch_caller_profile *caller_profile;	
