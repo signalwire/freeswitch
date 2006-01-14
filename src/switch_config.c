@@ -97,6 +97,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 			*end = '\0';
 			(*var)++;
 			switch_copy_string(cfg->category, *var, sizeof(cfg->category));
+			cfg->catno++;
 			continue;
 		}
 

@@ -74,6 +74,8 @@ struct switch_config {
     char buf[1024];
 	/*! current line number in file */
     int lineno;
+	/*! current category number in file */
+	int catno;
 };
 
 /*!

@@ -33,26 +33,33 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
+#include <pcre.h>
 
 static const char modname[] = "mod_pcre";
 
+#define cleanre()	if (re) {\
+				pcre_free(re);\
+				re = NULL;\
+			}
 
 switch_caller_extension *dialplan_hunt(switch_core_session *session)
 {
 	switch_caller_profile *caller_profile;
 	switch_caller_extension *extension = NULL;
 	switch_channel *channel;
-	char *cf = "extensions.conf";
+	char *cf = "regextensions.conf";
 	switch_config cfg;
 	char *var, *val;
-	char app[1024];
+	char app[1024] = "";
+	int catno = -1;
+	char *regex = NULL;
+	char *exten_name = NULL;
+	pcre *re = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(channel);
-	//switch_channel_set_variable(channel, "pleasework", "yay");
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name, caller_profile->destination_number);	
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Processing %s->%s!\n", caller_profile->caller_id_name, caller_profile->destination_number);	
 
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
@@ -61,12 +68,80 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 	}
 
 	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "extensions")) {
-			if (!strcmp(var, caller_profile->destination_number) && val) {
+		if (cfg.catno != catno) { /* new category */
+			regex = NULL;
+			catno = cfg.catno;
+			exten_name = cfg.category;
+		}
+
+		
+			
+		if (!strcasecmp(var, "regex")) {
+			const char *error = NULL;
+			int erroffset = 0;
+			
+			cleanre();
+			re = pcre_compile(
+							  val,		        /* the pattern */
+							  0,                /* default options */
+							  &error,           /* for error message */
+							  &erroffset,       /* for error offset */
+							  NULL);            /* use default character tables */
+			if (error) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ERROR: %d %s\n", erroffset, error);
+				cleanre();
+				return NULL;
+			}
+		} else if (!strcasecmp(var, "match")) {
+			int rc;
+			int ovector[30];
+
+			rc = pcre_exec(
+						   re,             /* result of pcre_compile() */
+						   NULL,           /* we didn't study the pattern */
+						   caller_profile->destination_number,  		   /* the subject string */
+						   strlen(caller_profile->destination_number),    /* the length of the subject string */
+						   0,              /* start at offset 0 in the subject */
+						   0,              /* default options */
+						   ovector,        /* vector of integers for substring information */
+						   sizeof(ovector) / sizeof(ovector[0]));            /* number of elements (NOT size in bytes) */
+
+
+			if (rc > 0) {
+				char newval[1024] = "";
+				char index[10] = "";
+				char replace[128] = "";
+				int x, y=0, z=0, num = 0;
 				char *data;
 
+
+				for (x = 0; x < sizeof(newval) && x < strlen(val);) {
+					if (val[x] == '$') {
+						x++;
+						
+						while(val[x] > 47 && val[x] < 58) {
+							index[z++] = val[x];
+							x++;
+						}
+						index[z++] = '\0';
+						z = 0;
+						num = atoi(index);
+
+						if (pcre_copy_substring(caller_profile->destination_number, ovector, rc, num, replace, sizeof(replace)) > 0) {
+							int r;
+							for(r = 0; r < strlen(replace); r++) {
+								newval[y++] = replace[r];
+							}
+						}
+					} else {
+						newval[y++] = val[x];
+						x++;
+					}
+				}
+				newval[y++] = '\0';
+
 				memset(app, 0, sizeof(app));
-				strncpy(app, val, sizeof(app));
+				switch_copy_string(app, newval, sizeof(app));
 
 				if ((data = strchr(app, ' '))) {
 					*data = '\0';
@@ -75,16 +150,20 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid extension on line %d\n", cfg.lineno);
 					continue;
 				}
+
+				
 				if (!extension) {
-					if (!(extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number))) {
+					if (!(extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number))) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "memory error!\n");
 						break;
 					}
 				}
 
 				switch_caller_extension_add_application(session, extension, app, data);
-			} 
+			}
+
 		}
+
 	}
 
 	switch_config_close_file(&cfg);
@@ -95,12 +174,13 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 		switch_channel_hangup(channel);
 	}
 
+	cleanre();
 	return extension;
 }
 
 
 static const switch_dialplan_interface dialplan_interface = {
-	/*.interface_name =*/ "demo",
+	/*.interface_name =*/ "pcre",
 	/*.hunt_function = */ dialplan_hunt
 	/*.next = NULL */
 };

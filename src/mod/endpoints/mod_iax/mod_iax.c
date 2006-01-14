@@ -88,7 +88,7 @@ struct private_object {
 	unsigned int codecs;
 	unsigned short samprate;
 	switch_mutex_t *mutex;
-	switch_thread_cond_t *cond;
+	//switch_thread_cond_t *cond;
 };
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
@@ -434,8 +434,8 @@ static switch_status channel_on_init(switch_core_session *session)
 	switch_set_flag(tech_pvt, TFLAG_IO);
 
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-	switch_thread_cond_create(&tech_pvt->cond, switch_core_session_get_pool(session));	
-	switch_mutex_lock(tech_pvt->mutex);
+	//switch_thread_cond_create(&tech_pvt->cond, switch_core_session_get_pool(session));	
+	//switch_mutex_lock(tech_pvt->mutex);
 
 	/* Move Channel's State Machine to RING */
 	switch_channel_set_state(channel, CS_RING);
@@ -489,7 +489,8 @@ static switch_status channel_on_hangup(switch_core_session *session)
 	assert(tech_pvt != NULL);
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
-	switch_thread_cond_signal(tech_pvt->cond);
+	switch_clear_flag(tech_pvt, TFLAG_VOICE);
+	//switch_thread_cond_signal(tech_pvt->cond);
 
 	if (tech_pvt->read_codec.implementation) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -526,7 +527,7 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 	switch_clear_flag(tech_pvt, TFLAG_VOICE);
 	switch_channel_hangup(channel);
-	switch_thread_cond_signal(tech_pvt->cond);
+	//switch_thread_cond_signal(tech_pvt->cond);
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
@@ -663,25 +664,26 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	for(;;) {
-		if (switch_test_flag(tech_pvt, TFLAG_IO)) {
-			switch_thread_cond_wait(tech_pvt->cond, tech_pvt->mutex);
-			if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
-				return SWITCH_STATUS_FALSE;			
-			}
 
-			if (switch_test_flag(tech_pvt, TFLAG_IO)) {
-				switch_clear_flag(tech_pvt, TFLAG_VOICE);
-				if(!tech_pvt->read_frame.datalen) {
-					continue;
-				}
-
-				*frame = &tech_pvt->read_frame;
-				return SWITCH_STATUS_SUCCESS;
-			}
+	while (switch_test_flag(tech_pvt, TFLAG_IO)) {
+		//switch_thread_cond_wait(tech_pvt->cond, tech_pvt->mutex);
+		if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
+			return SWITCH_STATUS_FALSE;			
 		}
-		break;
+		
+		if (switch_test_flag(tech_pvt, TFLAG_IO) && switch_test_flag(tech_pvt, TFLAG_VOICE)) {
+			switch_clear_flag(tech_pvt, TFLAG_VOICE);
+			if(!tech_pvt->read_frame.datalen) {
+				continue;
+			}
+			
+			*frame = &tech_pvt->read_frame;
+			return SWITCH_STATUS_SUCCESS;
+		}
+		switch_yield(1000);
 	}
+	
+	
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -999,7 +1001,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hangup %s\n", switch_channel_get_name(channel));
 							switch_set_flag(tech_pvt, TFLAG_HANGUP);
 							switch_channel_hangup(channel);
-							switch_thread_cond_signal(tech_pvt->cond);
+							//switch_thread_cond_signal(tech_pvt->cond);
 							iaxevent->session = NULL;
 						} else {
 							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Session? %s\n", switch_test_flag(tech_pvt, TFLAG_VOICE) ? "yes" : "no");
@@ -1012,13 +1014,16 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 					break;
 				case IAX_EVENT_VOICE:
 					if (tech_pvt && (tech_pvt->read_frame.datalen = iaxevent->datalen)) {
-						int bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-						int frames = (int)(tech_pvt->read_frame.datalen / bytes);
-						tech_pvt->read_frame.samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
-						memcpy(tech_pvt->read_frame.data, iaxevent->data, iaxevent->datalen);
-						/* wake up the i/o thread*/
-						switch_set_flag(tech_pvt, TFLAG_VOICE);
-						switch_thread_cond_signal(tech_pvt->cond);
+						switch_channel *channel;
+                        if ((channel = switch_core_session_get_channel(tech_pvt->session)) && switch_channel_get_state(channel) <= CS_HANGUP) {
+							int bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+							int frames = (int)(tech_pvt->read_frame.datalen / bytes);
+							tech_pvt->read_frame.samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
+							memcpy(tech_pvt->read_frame.data, iaxevent->data, iaxevent->datalen);
+							/* wake up the i/o thread*/
+							switch_set_flag(tech_pvt, TFLAG_VOICE);
+							//switch_thread_cond_signal(tech_pvt->cond);
+						}
 					}				
 					break;
 				case IAX_EVENT_TRANSFER:
