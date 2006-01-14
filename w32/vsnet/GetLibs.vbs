@@ -7,7 +7,7 @@ Set WshShell = CreateObject("WScript.Shell")
 Set FSO = CreateObject("Scripting.FileSystemObject")
 Set WshSysEnv = WshShell.Environment("SYSTEM")
 Set xml = CreateObject("Microsoft.XMLHTTP")
-Set oStream = createobject("Adodb.Stream")
+Set oStream = CreateObject("Adodb.Stream")
 Set objArgs = WScript.Arguments
 Dim vcver, DevEnv, VCBuild
 BuildRelease=False
@@ -27,12 +27,16 @@ BuildSpiderMonkey=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
+ToolsBase="http://www.freeswitch.org/downloads/win32/"
+LibsBase="http://www.freeswitch.org/downloads/libs/"
 LibDestDir=Showpath(ScriptDir & "..\..\libs")
 FreeswitchDir=Showpath(ScriptDir & "..\..")
 UtilsDir=Showpath(ScriptDir & "Tools")
-GetTarGZObjects UtilsDir
-GetVCBuild
-Wscript.echo "Detected VCBuild: " & VCBuild
+If objArgs(0) <> "Version" Then
+	GetTarGZObjects UtilsDir
+	GetVCBuild
+	Wscript.echo "Detected VCBuild: " & VCBuild
+End If
 
 ' **************
 ' Option Parsing
@@ -177,7 +181,7 @@ Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-util-1.2.2.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "apr-util-1.2.2") Then
 			Wscript.echo "Unable to get apr-util from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/apr-util-1.2.2.tar.gz", LibDestDir
+			WgetUnTarGz LibsBase & "apr-util-1.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "apr-util-1.2.2", "apr-util"
 		FSO.CopyFile Utilsdir & "apr\xml.vcproj", LibDestDir & "apr-util\xml\expat\lib\", True
@@ -217,7 +221,7 @@ Sub BuildLibs_apriconv(BuildDebug, BuildRelease)
 		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-iconv-1.1.1.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "apr-iconv-1.1.1") Then
 			Wscript.echo "Unable to get apr-iconv from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/apr-iconv-1.1.1.tar.gz", LibDestDir
+			WgetUnTarGz LibsBase & "apr-iconv-1.1.1.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "apr-iconv-1.1.1", "apr-iconv"
 		FSO.CopyFile Utilsdir & "apr\apriconv.vcproj", LibDestDir & "apr-iconv\", True
@@ -243,7 +247,7 @@ Sub BuildLibs_apr(BuildDebug, BuildRelease)
 		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-1.2.2.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "apr-1.2.2") Then
 			Wscript.echo "Unable to get apr from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/apr-1.2.2.tar.gz", LibDestDir
+			WgetUnTarGz LibsBase & "apr-1.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "apr-1.2.2", "apr"
 		FSO.CopyFile Utilsdir & "apr\apr.vcproj", LibDestDir & "apr\", True
@@ -270,7 +274,7 @@ Sub BuildLibs_exosip(BuildDebug, BuildRelease)
 		WgetUnTarGz "http://www.antisip.com/download/libeXosip2-2.2.2.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "libeXosip2-2.2.2") Then
 			Wscript.echo "Unable to get eXosip from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/libeXosip2-2.2.2.tar.gz", LibDestDir
+			WgetUnTarGz LibsBase & "libeXosip2-2.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "libeXosip2-2.2.2", "libeXosip2"
 		FindReplaceInFile LibDestDir & "libeXosip2\platform\vsnet\eXosip.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
@@ -296,7 +300,7 @@ Sub BuildLibs_libosip2(BuildDebug, BuildRelease)
 		WgetUnTarGz "http://www.antisip.com/download/libosip2-2.2.2.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "libosip2-2.2.2") Then
 			Wscript.echo "Unable to get osip from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/libosip2-2.2.2.tar.gz", LibDestDir
+			WgetUnTarGz LibsBase & "libosip2-2.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "libosip2-2.2.2", "osip"
 		FindReplaceInFile LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
@@ -325,7 +329,7 @@ Sub BuildLibs_jrtplib(BuildDebug, BuildRelease)
 		WgetUnTarGz "http://research.edm.luc.ac.be/jori/jthread/jthread-1.1.2.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "jthread-1.1.2") Then
 			Wscript.echo "Unable to get JThread from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/jthread-1.1.2.tar.gz", LibDestDir
+			WgetUnTarGz LibsBase & "jthread-1.1.2.tar.gz", LibDestDir
 		End If
 		FindReplaceInFile LibDestDir & "jthread-1.1.2\jthread.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
 	End If
@@ -334,7 +338,7 @@ Sub BuildLibs_jrtplib(BuildDebug, BuildRelease)
 		WgetUnTarGz "http://research.edm.luc.ac.be/jori/jrtplib/jrtplib-3.3.0.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "jrtplib-3.3.0") Then
 			Wscript.echo "Unable to get JRTPLib from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/jrtplib-3.3.0.tar.gz", LibDestDir
+			WgetUnTarGz LibsBase & "jrtplib-3.3.0.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "jrtplib-3.3.0", "jrtplib"
 		FindReplaceInFile LibDestDir & "jrtplib\jrtplib.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
@@ -364,7 +368,7 @@ Sub BuildLibs_sqlite(BuildDebug, BuildRelease)
 		WgetUnZip "http://www.sqlite.org/sqlite-source-3_2_7.zip", LibDestDir 
 		If Not FSO.FolderExists(LibDestDir & "sqlite-source-3_2_7") Then
 			Wscript.echo "Unable to get SQLite from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/sqlite-source-3_2_7.zip", LibDestDir
+			WgetUnTarGz LibsBase & "sqlite-source-3_2_7.zip", LibDestDir
 		End If
 		RenameFolder LibDestDir & "sqlite-source-3_2_7", "sqlite"
 		FSO.CopyFile Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\", True
@@ -391,7 +395,7 @@ Sub BuildLibs_iksemel(BuildDebug, BuildRelease)
 		WgetUnTarGz "http://jabberstudio.2nw.net/iksemel/iksemel-1.2.tar.gz", LibDestDir 
 		If Not FSO.FolderExists(LibDestDir & "iksemel-1.2") Then
 			Wscript.echo "Unable to get iksemel from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/iksemel-1.2.tar.gz", LibDestDir
+			WgetUnTarGz LibsBase & "iksemel-1.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "iksemel-1.2", "iksemel"
 		FSO.CopyFile Utilsdir & "iksemel\iksemel.vcproj", LibDestDir & "iksemel\", True
@@ -432,7 +436,7 @@ End Sub
 
 Sub BuildLibs_portaudio(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "PortAudio") Then 
-		WgetUnZip "http://www.sofaswitch.org/mikej/portaudio_v18_1.zip", LibDestDir
+		WgetUnZip LibsBase & "portaudio_v18_1.zip", LibDestDir
 		RenameFolder LibDestDir & "portaudio_v18_1", "PortAudio"
 	End If 
 	If FSO.FolderExists(LibDestDir & "PortAudio") Then 
@@ -488,7 +492,7 @@ Sub BuildLibs_SpeexCodec(BuildDebug, BuildRelease)
 		WgetUnTarGz "http://downloads.us.xiph.org/releases/speex/speex-1.1.11.1.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "speex-1.1.11.1") Then
 			Wscript.echo "Unable to get libspeex from default download location, Trying backup location:"
-			WgetUnTarGz "http://www.sofaswitch.org/mikej/speex-1.1.11.1.tar.gz", LibDestDir
+			WgetUnTarGz LibsBase & "speex-1.1.11.1.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "speex-1.1.11.1", "speex"
 		FSO.CopyFile Utilsdir & "libspeex.vcproj", LibDestDir & "speex\win32\libspeex\", True
@@ -511,7 +515,7 @@ End Sub
 
 Sub BuildLibs_libsndfile(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "libsndfile") Then 
-		WgetUnTarGz "http://www.sofaswitch.com/mikej/libsndfile-1.0.12.tar.gz", LibDestDir
+		WgetUnTarGz LibsBase & "libsndfile-1.0.12.tar.gz", LibDestDir
 		RenameFolder LibDestDir & "libsndfile-1.0.12", "libsndfile"
 		FSO.CopyFile Utilsdir & "libsndfile.vcproj", LibDestDir & "libsndfile\Win32\", True
 	End If 
@@ -533,7 +537,7 @@ End Sub
 
 Sub BuildLibs_libresample(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "libresample") Then 
-		WgetUnZip "http://www.sofaswitch.com/mikej/libresample-0.1.3.zip", LibDestDir
+		WgetUnZip LibsBase & "libresample-0.1.3.zip", LibDestDir
 		RenameFolder LibDestDir & "libresample-0.1.3", "libresample"
 	End If 
 	If FSO.FolderExists(LibDestDir & "libresample") Then 
@@ -554,10 +558,10 @@ End Sub
 
 Sub BuildLibs_SpiderMonkey(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "js") Then 
-		WgetUnZip "http://www.sofaswitch.com/mikej/js20051231.zip", LibDestDir
+		WgetUnZip LibsBase & "js20051231.zip", LibDestDir
 		RenameFolder LibDestDir & "js20051231", "js"
-		WgetUnZip "http://www.sofaswitch.com/mikej/nspr-4.6.1.winnt5.debug.zip", LibDestDir & "js"
-		WgetUnZip "http://www.sofaswitch.com/mikej/nspr-4.6.1.winnt5.release.zip", LibDestDir & "js"
+		WgetUnZip LibsBase & "nspr-4.6.1.winnt5.debug.zip", LibDestDir & "js"
+		WgetUnZip LibsBase & "nspr-4.6.1.winnt5.release.zip", LibDestDir & "js"
 		FSO.CreateFolder LibDestDir & "js\nspr\"
 		FSO.CopyFolder LibDestDir & "js\nspr-4.6.1.winnt5.debug\nspr-4.6.1\*", LibDestDir & "js\nspr\",true
 	End If 
@@ -603,7 +607,7 @@ Sub CreateSwitchVersion()
 		VERSION=strFromProc
 	Loop While Not OExec.StdOut.atEndOfStream
 	If VERSION = "" Then
-		WgetUnZip "http://www.sofaswitch.org/mikej/svnversion.zip", UtilsDir 
+		WgetUnZip ToolsBase & "svnversion.zip", UtilsDir 
 		Set oExec = WshShell.Exec(UtilsDir & "svnversion\tmpVersion.Bat")
 		Do
 			strFromProc = OExec.StdOut.ReadLine()
@@ -785,15 +789,15 @@ Sub GetTarGZObjects(DestFolder)
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
 
 	If Not FSO.FileExists(DestFolder & "XTar.dll") Then 
-		Wget "http://www.sofaswitch.org/mikej/XTar.dll", DestFolder
+		Wget ToolsBase & "XTar.dll", DestFolder
 	End If
 
 	If Not FSO.FileExists(DestFolder & "XGZip.dll") Then 
-		Wget "http://www.sofaswitch.org/mikej/XGZip.dll", DestFolder
+		Wget ToolsBase & "XGZip.dll", DestFolder
 	End If
 	
 	If Not FSO.FileExists(DestFolder & "XZip.dll") Then 
-		Wget "http://www.sofaswitch.org/mikej/XZip.dll", DestFolder
+		Wget ToolsBase & "XZip.dll", DestFolder
 	End If
 	
 	WshShell.Run "regsvr32 /s " & DestFolder & "XTar.dll", 6, True

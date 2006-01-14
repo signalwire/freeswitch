@@ -25,6 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description="Generating switch_version.h"
 				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Version"
 			/>
 			<Tool
@@ -47,6 +48,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				Description="Generating switch_version.h"
 				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Version"
 			/>
 			<Tool
