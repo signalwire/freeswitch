@@ -66,7 +66,7 @@ void gettimeofday(struct timeval *tv, void /*struct timezone*/ *tz);
 #include "jitterbuf.h"
 #endif
 
-typedef int64_t time_in_ms_t;
+typedef long long time_in_ms_t;
 
 #include "iax-client.h"
 #include "md5.h"
