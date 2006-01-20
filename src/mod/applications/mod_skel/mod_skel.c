@@ -34,15 +34,16 @@
 static const char modname[] = "mod_skel";
 
 static switch_loadable_module_interface skel_module_interface = {
-	/*.module_name*/			modname,
-	/*.endpoint_interface*/		NULL,
-	/*.timer_interface*/		NULL,
-	/*.dialplan_interface*/		NULL,
-	/*.codec_interface*/		NULL,
-	/*.application_interface*/	NULL
+	/*.module_name */ modname,
+	/*.endpoint_interface */ NULL,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ NULL,
+	/*.codec_interface */ NULL,
+	/*.application_interface */ NULL
 };
 
-switch_status switch_module_load(switch_loadable_module_interface **interface, char *filename) {
+switch_status switch_module_load(switch_loadable_module_interface **interface, char *filename)
+{
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &skel_module_interface;
 
@@ -51,4 +52,3 @@ switch_status switch_module_load(switch_loadable_module_interface **interface, c
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-

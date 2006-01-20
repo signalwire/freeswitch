@@ -33,11 +33,11 @@
 
 static const char modname[] = "mod_event_test";
 
-static void event_handler (switch_event *event)
+static void event_handler(switch_event *event)
 {
 	char buf[1024];
 
-	switch(event->event_id) {
+	switch (event->event_id) {
 	case SWITCH_EVENT_LOG:
 		return;
 		break;
@@ -50,12 +50,12 @@ static void event_handler (switch_event *event)
 
 
 static switch_loadable_module_interface event_test_module_interface = {
-	/*.module_name*/			modname,
-	/*.endpoint_interface*/		NULL,
-	/*.timer_interface*/		NULL,
-	/*.dialplan_interface*/		NULL,
-	/*.codec_interface*/		NULL,
-	/*.application_interface*/	NULL
+	/*.module_name */ modname,
+	/*.endpoint_interface */ NULL,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ NULL,
+	/*.codec_interface */ NULL,
+	/*.application_interface */ NULL
 };
 
 #define MY_EVENT_COOL "test::cool"
@@ -76,9 +76,9 @@ static void *torture_thread(switch_thread *thread, void *obj)
 
 	z = THREADS++;
 
-	while(THREADS > 0) {
+	while (THREADS > 0) {
 		int x;
-		for(x = 0; x < 1; x++) {
+		for (x = 0; x < 1; x++) {
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_COOL) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, "event_info", "hello world %d %d", z, y++);
 				switch_event_fire(&event);
@@ -104,7 +104,8 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 #endif
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_interface **interface, char *filename) {
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_interface **interface, char *filename)
+{
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &event_test_module_interface;
 
@@ -112,16 +113,16 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_inte
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}
-
 #ifdef TORTURE_ME
-	if (switch_event_bind((char *)modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
+		SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (1) {
 		int x = 0;
-		for(x = 0 ; x < TTHREADS  ; x++) {
+		for (x = 0; x < TTHREADS; x++) {
 			switch_core_launch_thread(torture_thread, NULL);
 		}
 	}
@@ -130,4 +131,3 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_inte
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-

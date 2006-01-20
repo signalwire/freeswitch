@@ -54,7 +54,7 @@ struct private_object {
 	struct switch_frame frame;
 	unsigned char databuf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	switch_core_session *session;
-	switch_caller_profile *caller_profile;	
+	switch_caller_profile *caller_profile;
 };
 
 
@@ -65,9 +65,12 @@ static switch_status channel_on_hangup(switch_core_session *session);
 static switch_status channel_on_ring(switch_core_session *session);
 static switch_status channel_on_loopback(switch_core_session *session);
 static switch_status channel_on_transmit(switch_core_session *session);
-static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile, switch_core_session **new_session);
-static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags, int stream_id);
-static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id);
+static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
+											  switch_core_session **new_session);
+static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
+										switch_io_flag flags, int stream_id);
+static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
+										 switch_io_flag flags, int stream_id);
 static switch_status channel_kill_channel(switch_core_session *session, int sig);
 
 
@@ -119,7 +122,7 @@ static switch_status channel_on_execute(switch_core_session *session)
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-	
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
 
@@ -130,7 +133,7 @@ static switch_status channel_on_hangup(switch_core_session *session)
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
-	
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -147,7 +150,7 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
-	
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -157,7 +160,7 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 	switch_channel_hangup(channel);
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
-	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -177,15 +180,17 @@ static switch_status channel_on_transmit(switch_core_session *session)
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
    that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
-static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile, switch_core_session **new_session) 
+static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
+											  switch_core_session **new_session)
 {
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
 		switch_channel *channel, *orig_channel;
 		switch_caller_profile *caller_profile, *originator_caller_profile = NULL;
-		
+
 		switch_core_session_add_stream(*new_session, NULL);
-		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
+		if ((tech_pvt =
+			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
@@ -218,7 +223,7 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 				switch_channel_set_originator_caller_profile(channel, cloned_profile);
 			}
 		}
-		
+
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
@@ -250,7 +255,8 @@ static switch_status channel_waitfor_write(switch_core_session *session, int ms,
 
 }
 
-static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags, int stream_id) 
+static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
+										switch_io_flag flags, int stream_id)
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
@@ -266,7 +272,8 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id)
+static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
+										 switch_io_flag flags, int stream_id)
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
@@ -279,43 +286,43 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 	assert(tech_pvt != NULL);
 
 	return SWITCH_STATUS_SUCCESS;
-	
+
 }
 
 static const switch_event_handler_table channel_event_handlers = {
-	/*.on_init*/			channel_on_init,
-	/*.on_ring*/			channel_on_ring,
-	/*.on_execute*/			channel_on_execute,
-	/*.on_hangup*/			channel_on_hangup,
-	/*.on_loopback*/		channel_on_loopback,
-	/*.on_transmit*/		channel_on_transmit
+	/*.on_init */ channel_on_init,
+	/*.on_ring */ channel_on_ring,
+	/*.on_execute */ channel_on_execute,
+	/*.on_hangup */ channel_on_hangup,
+	/*.on_loopback */ channel_on_loopback,
+	/*.on_transmit */ channel_on_transmit
 };
 
 static const switch_io_routines channel_io_routines = {
-	/*.outgoing_channel*/	channel_outgoing_channel,
-	/*.answer_channel*/		NULL,
-	/*.read_frame*/			channel_read_frame,
-	/*.write_frame*/		channel_write_frame,
-	/*.kill_channel*/		channel_kill_channel,
-	/*.waitfor_read*/		channel_waitfor_read,
-	/*.waitfor_write*/		channel_waitfor_write
+	/*.outgoing_channel */ channel_outgoing_channel,
+	/*.answer_channel */ NULL,
+	/*.read_frame */ channel_read_frame,
+	/*.write_frame */ channel_write_frame,
+	/*.kill_channel */ channel_kill_channel,
+	/*.waitfor_read */ channel_waitfor_read,
+	/*.waitfor_write */ channel_waitfor_write
 };
 
 static const switch_endpoint_interface channel_endpoint_interface = {
-	/*.interface_name*/		"opal",
-	/*.io_routines*/		&channel_io_routines,
-	/*.event_handlers*/		&channel_event_handlers,
-	/*.private*/			NULL,
-	/*.next*/				NULL
+	/*.interface_name */ "opal",
+	/*.io_routines */ &channel_io_routines,
+	/*.event_handlers */ &channel_event_handlers,
+	/*.private */ NULL,
+	/*.next */ NULL
 };
 
 static const switch_loadable_module_interface channel_module_interface = {
-	/*.module_name*/			modname,
-	/*.endpoint_interface*/		&channel_endpoint_interface,
-	/*.timer_interface*/		NULL,
-	/*.dialplan_interface*/		NULL,
-	/*.codec_interface*/		NULL,
-	/*.application_interface*/	NULL
+	/*.module_name */ modname,
+	/*.endpoint_interface */ &channel_endpoint_interface,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ NULL,
+	/*.codec_interface */ NULL,
+	/*.application_interface */ NULL
 };
 
 
@@ -338,19 +345,20 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 }
 */
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+{
 
 	switch_config cfg;
 	char *var, *val;
 	char *cf = "opal.conf";
-	
+
 	memset(&globals, 0, sizeof(globals));
-	
+
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
-	
+
 
 	while (switch_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, "settings")) {
@@ -364,7 +372,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 
 	switch_config_close_file(&cfg);
 
-	
+
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
