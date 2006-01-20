@@ -4,7 +4,7 @@ root=$1
 shift
 
 if [ -f $root/.nodepends ] ; then
-    echo "***depends disabled*** use make yesdepends to re-enable"
+    echo "***depends disabled*** use gmake yesdepends to re-enable"
     exit 0
 fi
 
@@ -24,7 +24,7 @@ shift
 cd $root/libs/.
 CFLAGS=
 LDFLAGS=
-MAKEFLAGS=
+GMAKEFLAGS=
 
 if [ -d $tar ] ; then
     uncompressed=$tar
@@ -52,18 +52,18 @@ if [ -f $uncompressed/.complete ] ; then
 fi
 
 cd $uncompressed
-make clean 2>&1
+gmake clean 2>&1
 sh ./configure $@
 
 if [ $? == 0 ] ; then
-    make
+    gmake
 else 
     echo ERROR
     exit 1
 fi
 
 if [ ! -z $install ] ; then
-    make install
+    gmake install
     ldconfig 2>&1
 fi
 

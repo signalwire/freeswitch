@@ -1,16 +1,17 @@
 EXTRA_DIST =
 SUBDIRS = 
-AUTOMAKE_OPTS		= gnu
+AUTOMAKE_OPTS= gnu
 MAKE=gmake
 NAME=freeswitch
 PREFIX=$(prefix)
 APR_CONFIG=$(prefix)/bin/apr-1-config
 APU_CONFIG=$(prefix)/bin/apu-1-config
-AM_CFLAGS  = $(shell $(APR_CONFIG) --cflags --cppflags --includes)
-AM_LDFLAGS = $(shell $(APR_CONFIG) --link-ld --libs )
-AM_CFLAGS  += $(shell $(APU_CONFIG) --includes)
+AM_CFLAGS  = -I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags --cppflags --includes)
+AM_LDFLAGS = -L$(PREFIX)/lib
+AM_LDFLAGS += $(shell $(APR_CONFIG) --link-ld --libs )
+AM_CFLAGS  += $(shell $(APU_CONFIG) --includes) 
 AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs ) -lsqlite3
-AM_LDFLAGS += -lresample -lm
+AM_LDFLAGS += -lresample -lm -L/usr/local/lib/db42 -L/usr/local/lib
 OSARCH=$(shell uname -s)
 if ISLINUX
 AM_LDFLAGS += -Wl,-E
@@ -24,7 +25,7 @@ SOLINK=-shared -Xlinker -x
 endif
 
 
-#AM_LDFLAGS += -L$(PREFIX)/lib
+
 
 
 AM_CFLAGS  += -fPIC -Wall
@@ -126,7 +127,7 @@ depends: .depend
 
 modules: $(NAME)
 	@echo making modules
-	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; PREFIX="$(PREFIX)" BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
+	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; DYLD_LIBRARY_PATH="$(PREFIX)/lib:$DYLD_LIBRARY_PATH" LD_LIBRARY_PATH="$(PREFIX)/lib:$LD_LIBRARY_PATH" PREFIX="$(PREFIX)" BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
 
 modclean:
 	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
