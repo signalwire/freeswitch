@@ -91,7 +91,8 @@ static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 	return NULL;
 }
 
-static switch_status switch_loadable_module_load_file(char *filename, switch_memory_pool *pool, switch_loadable_module **new_module)
+static switch_status switch_loadable_module_load_file(char *filename, switch_memory_pool *pool,
+													  switch_loadable_module **new_module)
 {
 	switch_loadable_module *module = NULL;
 	apr_dso_handle_t *dso = NULL;
@@ -129,7 +130,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 			break;
 		}
 
-		if (! (module = switch_core_permenant_alloc( sizeof(switch_loadable_module) ))) {
+		if (!(module = switch_core_permenant_alloc(sizeof(switch_loadable_module)))) {
 			err = "Could not allocate memory\n";
 			break;
 		}
@@ -192,7 +193,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	char *ptr;
 	apr_finfo_t finfo;
 	apr_dir_t *module_dir_handle;
-	apr_int32_t finfo_flags = APR_FINFO_DIRENT|APR_FINFO_TYPE|APR_FINFO_NAME;
+	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
 	switch_loadable_module *new_module;
 #ifdef WIN32
 	const char *ext = ".dll";
@@ -250,9 +251,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				const switch_endpoint_interface *ptr;
 				for (ptr = new_module->interface->endpoint_interface; ptr; ptr = ptr->next) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Endpoint '%s'\n", ptr->interface_name);
-					switch_core_hash_insert(loadable_modules.endpoint_hash,
-						(char *) ptr->interface_name,
-						(void *) ptr);
+					switch_core_hash_insert(loadable_modules.endpoint_hash, (char *) ptr->interface_name, (void *) ptr);
 				}
 			}
 
@@ -260,76 +259,64 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				const switch_codec_implementation *impl;
 				const switch_codec_interface *ptr;
 
-				for(ptr = new_module->interface->codec_interface; ptr; ptr = ptr->next) {
-					for(impl = ptr->implementations; impl ; impl = impl->next) {
+				for (ptr = new_module->interface->codec_interface; ptr; ptr = ptr->next) {
+					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-							"Adding Codec '%s' (%s) %dkhz %dms\n",
-							ptr->iananame,
-							ptr->interface_name,
-							impl->samples_per_second,
-							impl->microseconds_per_frame / 1000);
+											  "Adding Codec '%s' (%s) %dkhz %dms\n",
+											  ptr->iananame,
+											  ptr->interface_name,
+											  impl->samples_per_second, impl->microseconds_per_frame / 1000);
 					}
 
-					switch_core_hash_insert(loadable_modules.codec_hash,
-						(char *) ptr->iananame,
-						(void *) ptr);
+					switch_core_hash_insert(loadable_modules.codec_hash, (char *) ptr->iananame, (void *) ptr);
 				}
 			}
 
 			if (new_module->interface->dialplan_interface) {
 				const switch_dialplan_interface *ptr;
 
-				for(ptr = new_module->interface->dialplan_interface; ptr; ptr = ptr->next) {
+				for (ptr = new_module->interface->dialplan_interface; ptr; ptr = ptr->next) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Dialplan '%s'\n", ptr->interface_name);
-					switch_core_hash_insert(loadable_modules.dialplan_hash,
-						(char *) ptr->interface_name,
-						(void *) ptr);
+					switch_core_hash_insert(loadable_modules.dialplan_hash, (char *) ptr->interface_name, (void *) ptr);
 				}
 			}
 
 			if (new_module->interface->timer_interface) {
 				const switch_timer_interface *ptr;
 
-				for(ptr = new_module->interface->timer_interface; ptr; ptr = ptr->next) {
+				for (ptr = new_module->interface->timer_interface; ptr; ptr = ptr->next) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Timer '%s'\n", ptr->interface_name);
-					switch_core_hash_insert(loadable_modules.timer_hash,
-						(char *) ptr->interface_name,
-						(void *) ptr);
+					switch_core_hash_insert(loadable_modules.timer_hash, (char *) ptr->interface_name, (void *) ptr);
 				}
 			}
 
 			if (new_module->interface->application_interface) {
 				const switch_application_interface *ptr;
 
-				for(ptr = new_module->interface->application_interface; ptr; ptr = ptr->next) {
+				for (ptr = new_module->interface->application_interface; ptr; ptr = ptr->next) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Application '%s'\n", ptr->interface_name);
 					switch_core_hash_insert(loadable_modules.application_hash,
-						(char *) ptr->interface_name,
-						(void *) ptr);
+											(char *) ptr->interface_name, (void *) ptr);
 				}
 			}
 
 			if (new_module->interface->api_interface) {
 				const switch_api_interface *ptr;
 
-				for(ptr = new_module->interface->api_interface; ptr; ptr = ptr->next) {
+				for (ptr = new_module->interface->api_interface; ptr; ptr = ptr->next) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding API Function '%s'\n", ptr->interface_name);
-					switch_core_hash_insert(loadable_modules.api_hash,
-						(char *) ptr->interface_name,
-						(void *) ptr);
+					switch_core_hash_insert(loadable_modules.api_hash, (char *) ptr->interface_name, (void *) ptr);
 				}
 			}
 
 			if (new_module->interface->file_interface) {
 				const switch_file_interface *ptr;
 
-				for(ptr = new_module->interface->file_interface; ptr; ptr = ptr->next) {
+				for (ptr = new_module->interface->file_interface; ptr; ptr = ptr->next) {
 					int i;
-					for (i = 0 ; ptr->extens[i]; i++) {
+					for (i = 0; ptr->extens[i]; i++) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding File Format '%s'\n", ptr->extens[i]);
-						switch_core_hash_insert(loadable_modules.file_hash,
-							(char *) ptr->extens[i],
-							(void *) ptr);
+						switch_core_hash_insert(loadable_modules.file_hash, (char *) ptr->extens[i], (void *) ptr);
 					}
 				}
 			}
@@ -344,7 +331,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 
 SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 {
-	switch_hash_index_t* hi;
+	switch_hash_index_t *hi;
 	void *val;
 	switch_loadable_module *module;
 
@@ -397,9 +384,10 @@ SWITCH_DECLARE(switch_file_interface *) switch_loadable_module_get_file_interfac
 	return switch_core_hash_find(loadable_modules.file_hash, name);
 }
 
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array, int arraylen)
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array,
+													  int arraylen)
 {
-	switch_hash_index_t* hi;
+	switch_hash_index_t *hi;
 	void *val;
 	int i = 0;
 
@@ -415,12 +403,13 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool, 
 
 }
 
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array, int arraylen, char **prefs, int preflen)
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array,
+															 int arraylen, char **prefs, int preflen)
 {
 	int x, i = 0;
 	switch_codec_interface *codec_interface;
 
-	for(x = 0; x < preflen; x++) {
+	for (x = 0; x < preflen; x++) {
 		if ((codec_interface = switch_loadable_module_get_codec_interface(prefs[x]))) {
 			array[i++] = codec_interface;
 		}
