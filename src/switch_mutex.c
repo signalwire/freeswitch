@@ -31,7 +31,9 @@
  */
 #include <switch_mutex.h>
 
-SWITCH_DECLARE(switch_status) switch_mutex_init(switch_mutex_t **lock, switch_lock_flag flags, switch_memory_pool *pool)
+SWITCH_DECLARE(switch_status) switch_mutex_init(switch_mutex_t **lock,
+												switch_lock_flag flags,
+												switch_memory_pool *pool)
 {
 
 	return (apr_thread_mutex_create(lock, flags, pool) == APR_SUCCESS) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
@@ -56,3 +58,5 @@ SWITCH_DECLARE(switch_status) switch_mutex_trylock(switch_mutex_t *lock)
 {
 	return apr_thread_mutex_trylock(lock);
 }
+
+

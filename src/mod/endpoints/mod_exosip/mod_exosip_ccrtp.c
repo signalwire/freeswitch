@@ -62,7 +62,7 @@ typedef enum {
 	TFLAG_DTMF = (1 << 3),
 	TFLAG_READING = (1 << 4),
 	TFLAG_WRITING = (1 << 5),
-	TFLAG_USING_CODEC = (1 << 6),
+	TFLAG_USING_CODEC = (1 << 6),	
 	TFLAG_RTP = (1 << 7),
 	TFLAG_BYE = (1 << 8)
 } TFLAGS;
@@ -88,7 +88,7 @@ static struct {
 } globals;
 
 struct private_object {
-	unsigned int flags;
+	unsigned int flags;		
 	switch_core_session *session;
 	switch_frame read_frame;
 	switch_codec read_codec;
@@ -136,7 +136,7 @@ static void set_global_dialplan(char *dialplan)
 		free(globals.dialplan);
 		globals.dialplan = NULL;
 	}
-
+	
 	globals.dialplan = strdup(dialplan);
 }
 
@@ -145,14 +145,11 @@ static switch_status exosip_on_init(switch_core_session *session);
 static switch_status exosip_on_hangup(switch_core_session *session);
 static switch_status exosip_on_loopback(switch_core_session *session);
 static switch_status exosip_on_transmit(switch_core_session *session);
-static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											 switch_core_session **new_session);
-static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
-									   switch_io_flag flags);
-static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
-										switch_io_flag flags);
+static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile, switch_core_session **new_session);
+static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags);
+static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags);
 static int config_exosip(int reload);
-static switch_status parse_sdp_media(sdp_media_t * media, char **dname, char **drate, char **dpayload);
+static switch_status parse_sdp_media(sdp_media_t *media, char **dname, char **drate, char **dpayload);
 static switch_status exosip_kill_channel(switch_core_session *session, int sig);
 static void activate_rtp(struct private_object *tech_pvt);
 static void deactivate_rtp(struct private_object *tech_pvt);
@@ -205,7 +202,7 @@ static int sdp_add_codec(struct osip_rfc3264 *cnf, int codec_type, int payload, 
 	default:
 		break;
 	}
-	return 0;
+	 return 0;
 }
 
 
@@ -235,7 +232,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 		char *dest_uri;
 		switch_codec_interface *codecs[512];
 		int num_codecs = 0;
-		/* do SIP Goodies... */
+		/* do SIP Goodies...*/
 
 		/* Generate callerid URI */
 		eXosip_guess_localip(AF_INET, localip, 128);
@@ -248,17 +245,14 @@ static switch_status exosip_on_init(switch_core_session *session)
 		/* Initialize SDP */
 		sdp_message_init(&tech_pvt->local_sdp);
 		sdp_message_v_version_set(tech_pvt->local_sdp, "0");
-		sdp_message_o_origin_set(tech_pvt->local_sdp, "OpenSWITCH2", "0", "0", "IN", "IP4",
-								 tech_pvt->local_sdp_audio_ip);
+		sdp_message_o_origin_set(tech_pvt->local_sdp, "OpenSWITCH2", "0", "0", "IN", "IP4", tech_pvt->local_sdp_audio_ip);
 		sdp_message_s_name_set(tech_pvt->local_sdp, "SIP Call");
 		sdp_message_c_connection_add(tech_pvt->local_sdp, -1, "IN", "IP4", tech_pvt->local_sdp_audio_ip, NULL, NULL);
 		sdp_message_t_time_descr_add(tech_pvt->local_sdp, "0", "0");
 		snprintf(port, sizeof(port), "%i", tech_pvt->local_sdp_audio_port);
 		sdp_message_m_media_add(tech_pvt->local_sdp, "audio", port, NULL, "RTP/AVP");
 		/* Add in every codec we support on this outbound call */
-		if ((num_codecs =
-			 loadable_module_get_codecs(switch_core_session_get_pool(session), codecs,
-										sizeof(codecs) / sizeof(codecs[0]))) > 0) {
+		if ((num_codecs = loadable_module_get_codecs(switch_core_session_get_pool(session), codecs, sizeof(codecs)/sizeof(codecs[0]))) > 0) {
 			int i;
 			static const switch_codec_implementation *imp;
 			for (i = 0; i < num_codecs; i++) {
@@ -266,14 +260,12 @@ static switch_status exosip_on_init(switch_core_session *session)
 
 				snprintf(tmp, sizeof(tmp), "%i", codecs[i]->ianacode);
 				sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(tmp));
-				for (imp = codecs[i]->implementations; imp; imp = imp->next) {
+				for (imp = codecs[i]->implementations ; imp ; imp = imp->next) {
 					/* Add to SDP config */
-					sdp_add_codec(tech_pvt->sdp_config, codecs[i]->codec_type, codecs[i]->ianacode, codecs[i]->iananame,
-								  imp->samples_per_second, x++);
+					sdp_add_codec(tech_pvt->sdp_config, codecs[i]->codec_type, codecs[i]->ianacode, codecs[i]->iananame, imp->samples_per_second, x++);
 					/* Add to SDP message */
 
-					snprintf(tmp, sizeof(tmp), "%i %s/%i", codecs[i]->ianacode, codecs[i]->iananame,
-							 imp->samples_per_second);
+					snprintf(tmp, sizeof(tmp), "%i %s/%i", codecs[i]->ianacode, codecs[i]->iananame, imp->samples_per_second);
 					sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(tmp));
 					memset(tmp, 0, sizeof(tmp));
 				}
@@ -281,9 +273,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 		}
 		/* Setup our INVITE */
 		eXosip_lock();
-		if (!
-			(dest_uri =
-			 (char *) switch_core_session_alloc(session, strlen(tech_pvt->caller_profile->destination_number) + 10))) {
+		if (!(dest_uri = (char *) switch_core_session_alloc(session, strlen(tech_pvt->caller_profile->destination_number) + 10))) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "AIEEEE!\n");
 			assert(dest_uri != NULL);
 		}
@@ -302,7 +292,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 		switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);
 		tech_pvt->did = -1;
 		eXosip_unlock();
-	}
+	} 
 
 	/* Let Media Work */
 	switch_set_flag(tech_pvt, TFLAG_IO);
@@ -341,8 +331,8 @@ static switch_status exosip_on_hangup(switch_core_session *session)
 	assert(tech_pvt != NULL);
 
 
-	switch_core_hash_delete(globals.call_hash, tech_pvt->call_id);
-
+	switch_core_hash_delete(globals.call_hash, tech_pvt->call_id);	
+	
 
 	switch_set_flag(tech_pvt, TFLAG_BYE);
 	switch_clear_flag(tech_pvt, TFLAG_IO);
@@ -356,8 +346,7 @@ static switch_status exosip_on_hangup(switch_core_session *session)
 		switch_core_codec_destroy(&tech_pvt->write_codec);
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "EXOSIP HANGUP %s %d/%d=%d\n", switch_channel_get_name(channel),
-						  tech_pvt->cid, tech_pvt->did, i);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "EXOSIP HANGUP %s %d/%d=%d\n", switch_channel_get_name(channel), tech_pvt->cid, tech_pvt->did, i);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -373,8 +362,7 @@ static switch_status exosip_on_transmit(switch_core_session *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											 switch_core_session **new_session)
+static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile, switch_core_session **new_session)
 {
 	if ((*new_session = switch_core_session_request(&exosip_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
@@ -382,8 +370,7 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 		switch_caller_profile *caller_profile, *originator_caller_profile = NULL;
 
 		switch_core_session_add_stream(*new_session, NULL);
-		if ((tech_pvt =
-			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
+		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
@@ -417,7 +404,7 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 				switch_channel_set_originator_caller_profile(channel, cloned_profile);
 			}
 		}
-
+		
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
@@ -434,7 +421,7 @@ static void deactivate_rtp(struct private_object *tech_pvt)
 	if (tech_pvt->rtp_session) {
 		//switch_mutex_lock(tech_pvt->rtp_lock);
 
-		while (loops < 10 && (switch_test_flag(tech_pvt, TFLAG_READING) || switch_test_flag(tech_pvt, TFLAG_WRITING))) {
+		while(loops < 10 && (switch_test_flag(tech_pvt, TFLAG_READING) || switch_test_flag(tech_pvt, TFLAG_WRITING))) {
 			switch_yield(10000);
 			loops++;
 		}
@@ -470,16 +457,22 @@ static void activate_rtp(struct private_object *tech_pvt)
 						  tech_pvt->local_sdp_audio_ip,
 						  tech_pvt->local_sdp_audio_port,
 						  tech_pvt->remote_sdp_audio_ip,
-						  tech_pvt->remote_sdp_audio_port, tech_pvt->read_codec.codec_interface->ianacode, ms);
+						  tech_pvt->remote_sdp_audio_port,
+						  tech_pvt->read_codec.codec_interface->ianacode,
+						  ms
+						  );
 
 
 
 
-	tech_pvt->rtp_session = ccrtp4c_new(tech_pvt->local_sdp_audio_ip,
+	tech_pvt->rtp_session = ccrtp4c_new(
+										tech_pvt->local_sdp_audio_ip,
 										tech_pvt->local_sdp_audio_port,
 										tech_pvt->remote_sdp_audio_ip,
 										tech_pvt->remote_sdp_audio_port,
-										tech_pvt->read_codec.codec_interface->ianacode, ms, ms * 15);
+										tech_pvt->read_codec.codec_interface->ianacode,
+										ms,
+										ms * 15);
 
 	if (tech_pvt->rtp_session) {
 		tech_pvt->ssrc = ccrtp4c_get_ssrc(tech_pvt->rtp_session);
@@ -514,21 +507,20 @@ static switch_status exosip_answer_channel(switch_core_session *session)
 		sdp_message_to_str(tech_pvt->local_sdp, &buf);
 		osip_message_set_body(answer, buf, strlen(buf));
 		osip_message_set_content_type(answer, "application/sdp");
-		free(buf);
+		free(buf); 
 		eXosip_call_send_answer(tech_pvt->tid, 200, answer);
 		eXosip_unlock();
-	}
+	} 
 
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
-									   switch_io_flag flags)
+static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout, switch_io_flag flags) 
 {
 	struct private_object *tech_pvt = NULL;
-	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
+	size_t bytes = 0, samples = 0, frames=0, ms=0;
 	switch_channel *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
@@ -554,11 +546,12 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 
 		assert(tech_pvt->rtp_session != NULL);
 		tech_pvt->read_frame.datalen = 0;
-
-		while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO)
-			   && tech_pvt->read_frame.datalen == 0) {
-			if ((tech_pvt->read_frame.datalen =
-				 ccrtp4c_read(tech_pvt->rtp_session, tech_pvt->read_frame.data, sizeof(tech_pvt->read_buf),
+		
+		while(!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
+			if ((tech_pvt->read_frame.datalen = 
+				 ccrtp4c_read(tech_pvt->rtp_session,
+							  tech_pvt->read_frame.data,
+							  sizeof(tech_pvt->read_buf),
 							  &tech_pvt->timestamp_recv))) {
 				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 				frames = (tech_pvt->read_frame.datalen / bytes);
@@ -569,9 +562,9 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			}
 			switch_yield(100);
 		}
-
+		
 		//printf("%s %s->%s recv %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->local_sdp_audio_ip, tech_pvt->read_frame.datalen, samples, frames, ms, tech_pvt->timestamp_recv);
-
+		
 
 		//switch_mutex_unlock(tech_pvt->rtp_lock);
 
@@ -589,25 +582,24 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 
 	*frame = &tech_pvt->read_frame;
 
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
-										switch_io_flag flags)
+static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
 	switch_status status = SWITCH_STATUS_SUCCESS;
-	int bytes = 0, samples = 0, ms = 0, frames = 0;
+	int bytes=0, samples=0, ms=0, frames=0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
+	
 	if (!switch_test_flag(tech_pvt, TFLAG_RTP)) {
 		activate_rtp(tech_pvt);
 	}
@@ -632,14 +624,14 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	} else {
 		assert(0);
 	}
-
+	
 
 	//printf("%s %s->%s send %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->remote_sdp_audio_ip, frame->datalen, samples, frames, ms, tech_pvt->timestamp_send);
-
-	tech_pvt->timestamp_send += (int) samples;
+	
+	tech_pvt->timestamp_send += (int)samples;
 	ccrtp4c_write(tech_pvt->rtp_session, frame->data, frame->datalen, &tech_pvt->timestamp_send);
 
-
+	
 
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);
@@ -663,7 +655,7 @@ static switch_status exosip_kill_channel(switch_core_session *session, int sig)
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 	switch_set_flag(tech_pvt, TFLAG_BYE);
-
+	
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -693,45 +685,45 @@ static switch_status exosip_waitfor_write(switch_core_session *session, int ms)
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
+	
 	return SWITCH_STATUS_SUCCESS;
 
 }
-
+	
 static const switch_io_routines exosip_io_routines = {
-	/*.outgoing_channel */ exosip_outgoing_channel,
-	/*.answer_channel */ exosip_answer_channel,
-	/*.read_frame */ exosip_read_frame,
-	/*.write_frame */ exosip_write_frame,
-	/*.kill_channel */ exosip_kill_channel,
-	/*.waitfor_read */ exosip_waitfor_read,
-	/*.waitfor_read */ exosip_waitfor_write
+	/*.outgoing_channel*/	exosip_outgoing_channel,
+	/*.answer_channel*/		exosip_answer_channel,
+	/*.read_frame*/			exosip_read_frame,
+	/*.write_frame*/		exosip_write_frame,
+	/*.kill_channel*/		exosip_kill_channel,
+	/*.waitfor_read*/		exosip_waitfor_read,
+	/*.waitfor_read*/		exosip_waitfor_write
 };
 
-static const switch_event_handler_table exosip_event_handlers = {
-	/*.on_init */ exosip_on_init,
-	/*.on_ring */ exosip_on_ring,
-	/*.on_execute */ exosip_on_execute,
-	/*.on_hangup */ exosip_on_hangup,
-	/*.on_loopback */ exosip_on_loopback,
-	/*.on_transmit */ exosip_on_transmit
+static const switch_event_handler_table  exosip_event_handlers = {
+	/*.on_init*/			exosip_on_init,
+	/*.on_ring*/			exosip_on_ring,
+	/*.on_execute*/			exosip_on_execute,
+	/*.on_hangup*/			exosip_on_hangup,
+	/*.on_loopback*/		exosip_on_loopback,
+	/*.on_transmit*/		exosip_on_transmit
 };
 
 static const switch_endpoint_interface exosip_endpoint_interface = {
-	/*.interface_name */ "exosip",
-	/*.io_routines */ &exosip_io_routines,
-	/*.event_handlers */ &exosip_event_handlers,
-	/*.private */ NULL,
-	/*.next */ NULL
+	/*.interface_name*/		"exosip",
+	/*.io_routines*/		&exosip_io_routines,
+	/*.event_handlers*/		&exosip_event_handlers,
+	/*.private*/			NULL,
+	/*.next*/				NULL
 };
 
 static const switch_loadable_module_interface exosip_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ &exosip_endpoint_interface,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
+	/*.module_name*/			modname,
+	/*.endpoint_interface*/		&exosip_endpoint_interface,
+	/*.timer_interface*/		NULL,
+	/*.dialplan_interface*/		NULL,
+	/*.codec_interface*/		NULL,
+	/*.application_interface*/	NULL
 };
 
 
@@ -739,7 +731,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 {
 	if (globals.running) {
 		globals.running = -1;
-		while (globals.running) {
+		while(globals.running) {
 			switch_yield(1000);
 		}
 	}
@@ -747,15 +739,14 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
-{
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 	/* NOTE:  **interface is **_interface because the common lib redefines interface to struct in some situations */
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
-
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &exosip_module_interface;
 
@@ -763,7 +754,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status exosip_create_call(eXosip_event_t * event)
+static switch_status exosip_create_call(eXosip_event_t *event)
 {
 	switch_core_session *session;
 	sdp_message_t *remote_sdp = NULL;
@@ -793,13 +784,14 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			switch_core_session_destroy(&session);
 			return SWITCH_STATUS_MEMERR;
 		}
-
+		
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
-																  globals.dialplan,
-																  event->request->from->displayname,
-																  event->request->from->url->username,
-																  event->request->from->url->username,
-																  NULL, event->request->req_uri->username))) {
+															   globals.dialplan,
+															   event->request->from->displayname,
+															   event->request->from->url->username,
+															   event->request->from->url->username,
+															   NULL,
+															   event->request->req_uri->username))) {
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}
 
@@ -810,7 +802,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 
 		snprintf(name, sizeof(name), "Exosip/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
 		switch_channel_set_name(channel, name);
-
+		
 		if (!(remote_sdp = eXosip_get_sdp_info(event->request))) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot Find Remote SDP!\n");
 			exosip_on_hangup(session);
@@ -822,18 +814,15 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		tech_pvt->local_sdp_audio_port = next_rtp_port();
 		osip_rfc3264_init(&tech_pvt->sdp_config);
 		/* Add in what codecs we support locally */
-
-		if ((num_codecs =
-			 loadable_module_get_codecs(switch_core_session_get_pool(session), codecs,
-										sizeof(codecs) / sizeof(codecs[0]))) > 0) {
+		
+		if ((num_codecs = loadable_module_get_codecs(switch_core_session_get_pool(session), codecs, sizeof(codecs)/sizeof(codecs[0]))) > 0) {
 			int i;
 			static const switch_codec_implementation *imp;
 
 			for (i = 0; i < num_codecs; i++) {
 				int x = 0;
-				for (imp = codecs[i]->implementations; imp; imp = imp->next) {
-					sdp_add_codec(tech_pvt->sdp_config, codecs[i]->codec_type, codecs[i]->ianacode, codecs[i]->iananame,
-								  imp->samples_per_second, x++);
+				for (imp = codecs[i]->implementations ; imp ; imp = imp->next) {
+					sdp_add_codec(tech_pvt->sdp_config, codecs[i]->codec_type, codecs[i]->ianacode, codecs[i]->iananame, imp->samples_per_second, x++);
 				}
 			}
 		}
@@ -842,18 +831,17 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		sdp_message_parse(tech_pvt->local_sdp, local_sdp_str);
 
 		sdp_message_to_str(remote_sdp, &remote_sdp_str);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "LOCAL SDP:\n%s\nREMOTE SDP:\n%s", local_sdp_str, remote_sdp_str);
-
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "LOCAL SDP:\n%s\nREMOTE SDP:\n%s", local_sdp_str,remote_sdp_str);
+		
 		mline = 0;
-		while (0 == osip_rfc3264_match(tech_pvt->sdp_config, remote_sdp, audio_tab, video_tab, t38_tab, app_tab, mline)) {
+		while (0==osip_rfc3264_match(tech_pvt->sdp_config, remote_sdp, audio_tab, video_tab, t38_tab, app_tab, mline)) {
 			if (audio_tab[0] == NULL && video_tab[0] == NULL && t38_tab[0] == NULL && app_tab[0] == NULL) {
 
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Got no compatible codecs!\n");
 				break;
 			}
-			for (pos = 0; audio_tab[pos] != NULL; pos++) {
-				osip_rfc3264_complete_answer(tech_pvt->sdp_config, remote_sdp, tech_pvt->local_sdp, audio_tab[pos],
-											 mline);
+			for (pos=0; audio_tab[pos]!=NULL; pos++) {
+				osip_rfc3264_complete_answer(tech_pvt->sdp_config, remote_sdp, tech_pvt->local_sdp, audio_tab[pos], mline);
 				if (parse_sdp_media(audio_tab[pos], &dname, &drate, &dpayload) == SWITCH_STATUS_SUCCESS) {
 					tech_pvt->payload_num = atoi(dpayload);
 					break;
@@ -862,8 +850,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			mline++;
 		}
 		free(remote_sdp_str);
-		sdp_message_o_origin_set(tech_pvt->local_sdp, "OpenSWITCH2", "0", "0", "IN", "IP4",
-								 tech_pvt->local_sdp_audio_ip);
+		sdp_message_o_origin_set(tech_pvt->local_sdp, "OpenSWITCH2", "0", "0", "IN", "IP4", tech_pvt->local_sdp_audio_ip);
 		sdp_message_s_name_set(tech_pvt->local_sdp, "SIP Call");
 		sdp_message_c_connection_add(tech_pvt->local_sdp, -1, "IN", "IP4", tech_pvt->local_sdp_audio_ip, NULL, NULL);
 		snprintf(port, sizeof(port), "%i", tech_pvt->local_sdp_audio_port);
@@ -874,9 +861,9 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		snprintf(tech_pvt->remote_sdp_audio_ip, 50, conn->c_addr);
 
 		tech_pvt->remote_sdp_audio_port = atoi(remote_med->m_port);
-
+		
 		snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", event->cid);
-		switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);
+		switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);	
 
 		if (!dname) {
 			exosip_on_hangup(session);
@@ -891,21 +878,21 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			int rate = atoi(drate);
 
 			if (switch_core_codec_init(&tech_pvt->read_codec,
-									   dname,
-									   rate,
-									   globals.codec_ms,
-									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-									   NULL) != SWITCH_STATUS_SUCCESS) {
+									dname,
+									rate,
+									globals.codec_ms,
+									SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+									NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 				switch_channel_hangup(channel);
 				return SWITCH_STATUS_FALSE;
 			} else {
 				if (switch_core_codec_init(&tech_pvt->write_codec,
-										   dname,
-										   rate,
-										   globals.codec_ms,
-										   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-										   NULL) != SWITCH_STATUS_SUCCESS) {
+										dname,
+										rate,
+										globals.codec_ms,
+										SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+										NULL) != SWITCH_STATUS_SUCCESS) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 					switch_channel_hangup(channel);
 					return SWITCH_STATUS_FALSE;
@@ -913,15 +900,14 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 					int ms;
 					switch_set_flag(tech_pvt, TFLAG_USING_CODEC);
 					ms = tech_pvt->write_codec.implementation->nanoseconds_per_frame / 1000;
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Inbound Codec %s/%d %d ms\n", dname, rate,
-										  ms);
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Inbound Codec %s/%d %d ms\n", dname, rate, ms);
 					tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 					switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 					switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
 				}
 			}
 		}
-
+		
 		switch_core_session_thread_launch(session);
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot Create new Inbound Channel!\n");
@@ -934,14 +920,13 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 
 }
 
-static void destroy_call_by_event(eXosip_event_t * event)
+static void destroy_call_by_event(eXosip_event_t *event)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
 
 	if (!(tech_pvt = get_pvt_by_call_id(event->cid))) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Um in case you are interested, Can't find the pvt [%d]!\n",
-							  event->cid);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Um in case you are interested, Can't find the pvt [%d]!\n", event->cid);
 		return;
 	}
 
@@ -951,10 +936,10 @@ static void destroy_call_by_event(eXosip_event_t * event)
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "destroy %s\n", switch_channel_get_name(channel));
 	exosip_kill_channel(tech_pvt->session, SWITCH_SIG_KILL);
 	switch_channel_hangup(channel);
-
+	
 }
 
-static switch_status parse_sdp_media(sdp_media_t * media, char **dname, char **drate, char **dpayload)
+static switch_status parse_sdp_media(sdp_media_t *media, char **dname, char **drate, char **dpayload)
 {
 	int pos = 0;
 	sdp_attribute_t *attr = NULL;
@@ -962,7 +947,7 @@ static switch_status parse_sdp_media(sdp_media_t * media, char **dname, char **d
 	switch_status status = SWITCH_STATUS_GENERR;
 
 	while (osip_list_eol(media->a_attributes, pos) == 0) {
-		attr = (sdp_attribute_t *) osip_list_get(media->a_attributes, pos);
+		attr = (sdp_attribute_t *)osip_list_get(media->a_attributes, pos);
 		if (attr != NULL && strcasecmp(attr->a_att_field, "rtpmap") == 0) {
 			payload = attr->a_att_value;
 			if ((name = strchr(payload, ' '))) {
@@ -983,8 +968,7 @@ static switch_status parse_sdp_media(sdp_media_t * media, char **dname, char **d
 				*dname = strdup("L16");
 				*drate = strdup("8000");
 			}
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Found negotiated codec Payload: %s Name: %s Rate: %s\n",
-								  *dpayload, *dname, *drate);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Found negotiated codec Payload: %s Name: %s Rate: %s\n", *dpayload, *dname, *drate);
 			break;
 		}
 		attr = NULL;
@@ -994,7 +978,7 @@ static switch_status parse_sdp_media(sdp_media_t * media, char **dname, char **d
 	return status;
 }
 
-static void handle_answer(eXosip_event_t * event)
+static void handle_answer(eXosip_event_t *event)
 {
 	osip_message_t *ack = NULL;
 	sdp_message_t *remote_sdp = NULL;
@@ -1042,22 +1026,18 @@ static void handle_answer(eXosip_event_t * event)
 	/* Assign them thar IDs */
 	tech_pvt->did = event->did;
 	tech_pvt->tid = event->tid;
-
+	
 
 	if (1) {
 		int rate = atoi(drate);
 
 
-		if (switch_core_codec_init
-			(&tech_pvt->read_codec, dname, rate, globals.codec_ms, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-			 NULL) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_codec_init(&tech_pvt->read_codec, dname, rate, globals.codec_ms, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 			switch_channel_hangup(channel);
 			return;
 		} else {
-			if (switch_core_codec_init
-				(&tech_pvt->write_codec, dname, rate, globals.codec_ms,
-				 SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_codec_init(&tech_pvt->write_codec, dname, rate, globals.codec_ms, SWITCH_CODEC_FLAG_ENCODE |SWITCH_CODEC_FLAG_DECODE, NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
 				switch_channel_hangup(channel);
 				return;
@@ -1078,7 +1058,7 @@ static void handle_answer(eXosip_event_t * event)
 	eXosip_call_build_ack(event->did, &ack);
 	eXosip_call_send_ack(event->did, ack);
 	eXosip_unlock();
-
+	
 	free(dname);
 	free(drate);
 	free(dpayload);
@@ -1092,119 +1072,133 @@ static void handle_answer(eXosip_event_t * event)
 
 }
 
-static void log_event(eXosip_event_t * je)
+static void log_event(eXosip_event_t *je)
 {
 	char buf[100];
 
 	buf[0] = '\0';
 	if (je->type == EXOSIP_CALL_NOANSWER) {
-		snprintf(buf, 99, "<- (%i %i) No answer", je->cid, je->did);
+		snprintf (buf, 99, "<- (%i %i) No answer", je->cid, je->did);
 	} else if (je->type == EXOSIP_CALL_CLOSED) {
-		snprintf(buf, 99, "<- (%i %i) Call Closed", je->cid, je->did);
+		snprintf (buf, 99, "<- (%i %i) Call Closed", je->cid, je->did);
 	} else if (je->type == EXOSIP_CALL_RELEASED) {
-		snprintf(buf, 99, "<- (%i %i) Call released", je->cid, je->did);
-	} else if (je->type == EXOSIP_MESSAGE_NEW && je->request != NULL && MSG_IS_MESSAGE(je->request)) {
+		snprintf (buf, 99, "<- (%i %i) Call released", je->cid, je->did);
+	} else if (je->type == EXOSIP_MESSAGE_NEW
+			   && je->request!=NULL && MSG_IS_MESSAGE(je->request)) {
 		char *tmp = NULL;
-
+    
 		if (je->request != NULL) {
 			osip_body_t *body;
-			osip_from_to_str(je->request->from, &tmp);
-
-			osip_message_get_body(je->request, 0, &body);
+			osip_from_to_str (je->request->from, &tmp);
+      
+			osip_message_get_body (je->request, 0, &body);
 			if (body != NULL && body->body != NULL) {
-				snprintf(buf, 99, "<- (%i) from: %s TEXT: %s", je->tid, tmp, body->body);
+				snprintf (buf, 99, "<- (%i) from: %s TEXT: %s",
+						  je->tid, tmp, body->body);
 			}
-			osip_free(tmp);
+			osip_free (tmp);
 		} else {
-			snprintf(buf, 99, "<- (%i) New event for unknown request?", je->tid);
+			snprintf (buf, 99, "<- (%i) New event for unknown request?", je->tid);
 		}
 	} else if (je->type == EXOSIP_MESSAGE_NEW) {
 		char *tmp = NULL;
-
-		osip_from_to_str(je->request->from, &tmp);
-		snprintf(buf, 99, "<- (%i) %s from: %s", je->tid, je->request->sip_method, tmp);
-		osip_free(tmp);
+    
+		osip_from_to_str (je->request->from, &tmp);
+		snprintf (buf, 99, "<- (%i) %s from: %s",
+				  je->tid, je->request->sip_method, tmp);
+		osip_free (tmp);
 	} else if (je->type == EXOSIP_MESSAGE_PROCEEDING
-			   || je->type == EXOSIP_MESSAGE_ANSWERED
-			   || je->type == EXOSIP_MESSAGE_REDIRECTED
-			   || je->type == EXOSIP_MESSAGE_REQUESTFAILURE
-			   || je->type == EXOSIP_MESSAGE_SERVERFAILURE || je->type == EXOSIP_MESSAGE_GLOBALFAILURE) {
+             || je->type == EXOSIP_MESSAGE_ANSWERED
+             || je->type == EXOSIP_MESSAGE_REDIRECTED
+             || je->type == EXOSIP_MESSAGE_REQUESTFAILURE
+             || je->type == EXOSIP_MESSAGE_SERVERFAILURE
+			   || je->type == EXOSIP_MESSAGE_GLOBALFAILURE) {
 		if (je->response != NULL && je->request != NULL) {
 			char *tmp = NULL;
-
-			osip_to_to_str(je->request->to, &tmp);
-			snprintf(buf, 99, "<- (%i) [%i %s for %s] to: %s",
-					 je->tid, je->response->status_code, je->response->reason_phrase, je->request->sip_method, tmp);
-			osip_free(tmp);
+      
+			osip_to_to_str (je->request->to, &tmp);
+			snprintf (buf, 99, "<- (%i) [%i %s for %s] to: %s",
+					  je->tid, je->response->status_code,
+					  je->response->reason_phrase, je->request->sip_method, tmp);
+			osip_free (tmp);
 		} else if (je->request != NULL) {
-			snprintf(buf, 99, "<- (%i) Error for %s request", je->tid, je->request->sip_method);
+			snprintf (buf, 99, "<- (%i) Error for %s request",
+					  je->tid, je->request->sip_method);
 		} else {
-			snprintf(buf, 99, "<- (%i) Error for unknown request", je->tid);
+			snprintf (buf, 99, "<- (%i) Error for unknown request", je->tid);
 		}
 	} else if (je->response == NULL && je->request != NULL && je->cid > 0) {
 		char *tmp = NULL;
-
-		osip_from_to_str(je->request->from, &tmp);
-		snprintf(buf, 99, "<- (%i %i) %s from: %s", je->cid, je->did, je->request->cseq->method, tmp);
-		osip_free(tmp);
+    
+		osip_from_to_str (je->request->from, &tmp);
+		snprintf (buf, 99, "<- (%i %i) %s from: %s",
+				  je->cid, je->did, je->request->cseq->method, tmp);
+		osip_free (tmp);
 	} else if (je->response != NULL && je->cid > 0) {
 		char *tmp = NULL;
-
-		osip_to_to_str(je->request->to, &tmp);
-		snprintf(buf, 99, "<- (%i %i) [%i %s] for %s to: %s",
-				 je->cid, je->did, je->response->status_code,
-				 je->response->reason_phrase, je->request->sip_method, tmp);
-		osip_free(tmp);
+    
+		osip_to_to_str (je->request->to, &tmp);
+		snprintf (buf, 99, "<- (%i %i) [%i %s] for %s to: %s",
+				  je->cid, je->did, je->response->status_code,
+				  je->response->reason_phrase, je->request->sip_method, tmp);
+		osip_free (tmp);
 	} else if (je->response == NULL && je->request != NULL && je->rid > 0) {
 		char *tmp = NULL;
-
-		osip_from_to_str(je->request->from, &tmp);
-		snprintf(buf, 99, "<- (%i) %s from: %s", je->rid, je->request->cseq->method, tmp);
-		osip_free(tmp);
+    
+		osip_from_to_str (je->request->from, &tmp);
+		snprintf (buf, 99, "<- (%i) %s from: %s",
+				  je->rid, je->request->cseq->method, tmp);
+		osip_free (tmp);
 	} else if (je->response != NULL && je->rid > 0) {
 		char *tmp = NULL;
-
-		osip_from_to_str(je->request->from, &tmp);
-		snprintf(buf, 99, "<- (%i) [%i %s] from: %s",
-				 je->rid, je->response->status_code, je->response->reason_phrase, tmp);
-		osip_free(tmp);
+    
+		osip_from_to_str (je->request->from, &tmp);
+		snprintf (buf, 99, "<- (%i) [%i %s] from: %s",
+				  je->rid, je->response->status_code,
+				  je->response->reason_phrase, tmp);
+		osip_free (tmp);
 	} else if (je->response == NULL && je->request != NULL && je->sid > 0) {
 		char *tmp = NULL;
 		char *stat = NULL;
 		osip_header_t *sub_state;
-
-		osip_message_header_get_byname(je->request, "subscription-state", 0, &sub_state);
+    
+		osip_message_header_get_byname (je->request, "subscription-state",
+										0, &sub_state);
 		if (sub_state != NULL && sub_state->hvalue != NULL)
 			stat = sub_state->hvalue;
-
-		osip_uri_to_str(je->request->from->url, &tmp);
-		snprintf(buf, 99, "<- (%i) [%s] %s from: %s", je->sid, stat, je->request->cseq->method, tmp);
-		osip_free(tmp);
+    
+		osip_uri_to_str (je->request->from->url, &tmp);
+		snprintf (buf, 99, "<- (%i) [%s] %s from: %s",
+				  je->sid, stat, je->request->cseq->method, tmp);
+		osip_free (tmp);
 	} else if (je->response != NULL && je->sid > 0) {
 		char *tmp = NULL;
-
-		osip_uri_to_str(je->request->to->url, &tmp);
-		snprintf(buf, 99, "<- (%i) [%i %s] from: %s",
-				 je->sid, je->response->status_code, je->response->reason_phrase, tmp);
-		osip_free(tmp);
+    
+		osip_uri_to_str (je->request->to->url, &tmp);
+		snprintf (buf, 99, "<- (%i) [%i %s] from: %s",
+				  je->sid, je->response->status_code,
+				  je->response->reason_phrase, tmp);
+		osip_free (tmp);
 	} else if (je->response == NULL && je->request != NULL) {
 		char *tmp = NULL;
-
-		osip_from_to_str(je->request->from, &tmp);
-		snprintf(buf, 99, "<- (c=%i|d=%i|s=%i|n=%i) %s from: %s",
-				 je->cid, je->did, je->sid, je->nid, je->request->sip_method, tmp);
-		osip_free(tmp);
+    
+		osip_from_to_str (je->request->from, &tmp);
+		snprintf (buf, 99, "<- (c=%i|d=%i|s=%i|n=%i) %s from: %s",
+				  je->cid, je->did, je->sid, je->nid,
+				  je->request->sip_method, tmp);
+		osip_free (tmp);
 	} else if (je->response != NULL) {
 		char *tmp = NULL;
-
-		osip_from_to_str(je->request->from, &tmp);
-		snprintf(buf, 99, "<- (c=%i|d=%i|s=%i|n=%i) [%i %s] for %s from: %s",
-				 je->cid, je->did, je->sid, je->nid,
-				 je->response->status_code, je->response->reason_phrase, je->request->sip_method, tmp);
-		osip_free(tmp);
+    
+		osip_from_to_str (je->request->from, &tmp);
+		snprintf (buf, 99, "<- (c=%i|d=%i|s=%i|n=%i) [%i %s] for %s from: %s",
+				  je->cid, je->did, je->sid, je->nid,
+				  je->response->status_code, je->response->reason_phrase,
+				  je->request->sip_method, tmp);
+		osip_free (tmp);
 	} else {
-		snprintf(buf, 99, "<- (c=%i|d=%i|s=%i|n=%i|t=%i) %s",
-				 je->cid, je->did, je->sid, je->nid, je->tid, je->textinfo);
+		snprintf (buf, 99, "<- (c=%i|d=%i|s=%i|n=%i|t=%i) %s",
+				  je->cid, je->did, je->sid, je->nid, je->tid, je->textinfo);
 	}
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "\n%s\n", buf);
 	/* Print it out */
@@ -1215,21 +1209,21 @@ static void log_event(eXosip_event_t * je)
 static void *monitor_thread_run(void)
 {
 	eXosip_event_t *event = NULL;
-
+	
 	globals.running = 1;
 	while (globals.running > 0) {
-		if (!(event = eXosip_event_wait(0, 100))) {
+		if (!(event = eXosip_event_wait(0,100))) {
 			switch_yield(100);
 			continue;
 		}
 
 		eXosip_lock();
-		eXosip_automatic_action();
+		eXosip_automatic_action ();
 		eXosip_unlock();
 
 		log_event(event);
 
-		switch (event->type) {
+		switch(event->type) {
 		case EXOSIP_CALL_INVITE:
 			exosip_create_call(event);
 			break;
@@ -1301,7 +1295,7 @@ static void *monitor_thread_run(void)
 }
 
 
-static int config_exosip(int reload)
+static int config_exosip(int reload) 
 {
 	switch_config cfg;
 	char *var, *val;
@@ -1335,7 +1329,7 @@ static int config_exosip(int reload)
 			}
 		}
 	}
-
+	
 	if (!globals.codec_ms) {
 		globals.codec_ms = 20;
 	}
@@ -1350,11 +1344,11 @@ static int config_exosip(int reload)
 		set_global_dialplan("default");
 	}
 
-	if (eXosip_init()) {
+	if (eXosip_init ()) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "eXosip_init initialization failed!\n");
 		return SWITCH_STATUS_GENERR;
 	}
-	if (eXosip_listen_addr(IPPROTO_UDP, NULL, globals.port, AF_INET, 0)) {
+	if (eXosip_listen_addr (IPPROTO_UDP, NULL, globals.port, AF_INET, 0)) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "eXosip_listen_addr failed!\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1377,3 +1371,4 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	config_exosip(0);
 	return SWITCH_STATUS_TERM;
 }
+

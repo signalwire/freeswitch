@@ -71,8 +71,7 @@ SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_set_raw_mode(switch_channel *channel, int freq, int bits, int channels,
-														  int ms, int kbps)
+SWITCH_DECLARE(switch_status) switch_channel_set_raw_mode (switch_channel *channel, int freq, int bits, int channels, int ms, int kbps)
 {
 
 	assert(channel != NULL);
@@ -87,8 +86,7 @@ SWITCH_DECLARE(switch_status) switch_channel_set_raw_mode(switch_channel *channe
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_get_raw_mode(switch_channel *channel, int *freq, int *bits, int *channels,
-														  int *ms, int *kbps)
+SWITCH_DECLARE(switch_status) switch_channel_get_raw_mode (switch_channel *channel, int *freq, int *bits, int *channels, int *ms, int *kbps)
 {
 	if (freq) {
 		*freq = channel->freq;
@@ -130,7 +128,7 @@ SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel *channel,
 	assert(channel != NULL);
 
 	switch_mutex_lock(channel->dtmf_mutex);
-	if (switch_buffer_inuse(channel->dtmf_buffer) + strlen(dtmf) > (size_t) switch_buffer_len(channel->dtmf_buffer)) {
+	if (switch_buffer_inuse(channel->dtmf_buffer) + strlen(dtmf) > (size_t)switch_buffer_len(channel->dtmf_buffer)) {
 		switch_buffer_toss(channel->dtmf_buffer, strlen(dtmf));
 	}
 
@@ -166,7 +164,8 @@ SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *d
 
 SWITCH_DECLARE(switch_status) switch_channel_init(switch_channel *channel,
 												  switch_core_session *session,
-												  switch_channel_state state, switch_channel_flag flags)
+												  switch_channel_state state,
+												  switch_channel_flag flags)
 {
 	assert(channel != NULL);
 	channel->state = state;
@@ -278,117 +277,115 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 	}
 
 	/* STUB for more dev
-	   case CS_INIT:
-	   switch(state) {
-
-	   case CS_NEW:
-	   case CS_INIT:
-	   case CS_LOOPBACK:
-	   case CS_TRANSMIT:
-	   case CS_RING:
-	   case CS_EXECUTE:
-	   case CS_HANGUP:
-	   case CS_DONE:
-
-	   default:
-	   break;
-	   }
-	   break;
-	 */
-
-	switch (last_state) {
-	case CS_NEW:
-		switch (state) {
-		default:
-			ok++;
-			break;
-		}
-		break;
-
 	case CS_INIT:
-		switch (state) {
-		case CS_LOOPBACK:
-		case CS_TRANSMIT:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_HANGUP:
-			ok++;
-		default:
-			break;
-		}
-		break;
+	switch(state) {
 
+	case CS_NEW:
+	case CS_INIT:
 	case CS_LOOPBACK:
-		switch (state) {
-		case CS_TRANSMIT:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_HANGUP:
-			ok++;
-		default:
-			break;
-		}
-		break;
-
 	case CS_TRANSMIT:
-		switch (state) {
-		case CS_LOOPBACK:
-		case CS_RING:
-		case CS_EXECUTE:
-		case CS_HANGUP:
-			ok++;
-		default:
-			break;
-		}
-		break;
-
 	case CS_RING:
-		switch (state) {
-		case CS_LOOPBACK:
-		case CS_EXECUTE:
-		case CS_HANGUP:
-		case CS_TRANSMIT:
-			ok++;
-		default:
-			break;
-		}
-		break;
-
 	case CS_EXECUTE:
-		switch (state) {
-		case CS_LOOPBACK:
-		case CS_TRANSMIT:
-		case CS_RING:
-		case CS_HANGUP:
-			ok++;
-		default:
-			break;
-		}
-		break;
-
 	case CS_HANGUP:
-		switch (state) {
-		case CS_DONE:
-			ok++;
-		default:
-			break;
-		}
-		break;
+	case CS_DONE:
 
 	default:
-		break;
+	break;
+	}
+	break;
+	*/
+
+	switch(last_state) {
+case CS_NEW:
+	switch(state) {
+default:
+	ok++;
+	break;
+	}
+	break;
+
+case CS_INIT:
+	switch(state) {
+case CS_LOOPBACK:
+case CS_TRANSMIT:
+case CS_RING:
+case CS_EXECUTE:
+case CS_HANGUP:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_LOOPBACK:
+	switch(state) {
+case CS_TRANSMIT:
+case CS_RING:
+case CS_EXECUTE:
+case CS_HANGUP:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_TRANSMIT:
+	switch(state) {
+case CS_LOOPBACK:
+case CS_RING:
+case CS_EXECUTE:
+case CS_HANGUP:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_RING:
+	switch(state) {
+case CS_LOOPBACK:
+case CS_EXECUTE:
+case CS_HANGUP:
+case CS_TRANSMIT:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_EXECUTE:
+	switch(state) {
+case CS_LOOPBACK:
+case CS_TRANSMIT:
+case CS_RING:
+case CS_HANGUP:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+case CS_HANGUP:
+	switch(state) {
+case CS_DONE:
+	ok++;
+default:
+	break;
+	}
+	break;
+
+default:
+	break;
 
 	}
 
 
 	if (ok) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s State Change %s -> %s\n", channel->name,
-							  state_names[last_state], state_names[state]);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
 		channel->state = state;
 		switch_core_session_signal_state_change(channel->session);
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s Invalid State Change %s -> %s\n", channel->name,
-							  state_names[last_state], state_names[state]);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s Invalid State Change %s -> %s\n", channel->name, state_names[last_state], state_names[state]);
 
 		//we won't tolerate an invalid state change so we can make sure we are as robust as a nice cup of dark coffee!
 		if (channel->state < CS_HANGUP) {
@@ -402,7 +399,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, switch_event *event)
 {
 	switch_caller_profile *caller_profile, *originator_caller_profile, *originatee_caller_profile;
-	switch_hash_index_t *hi;
+	switch_hash_index_t* hi;
 	void *val;
 	const void *var;
 
@@ -410,13 +407,12 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 	originator_caller_profile = switch_channel_get_originator_caller_profile(channel);
 	originatee_caller_profile = switch_channel_get_originatee_caller_profile(channel);
 
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State",
-							(char *) switch_channel_state_name(channel->state));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", (char *) switch_channel_state_name(channel->state));
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
 
 
-	/* Index Caller's Profile */
+	/* Index Caller's Profile */	
 	if (caller_profile) {
 		switch_caller_profile_event_set_data(caller_profile, "Caller", event);
 	}
@@ -432,8 +428,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 	}
 
 	/* Index Variables */
-	for (hi = switch_hash_first(switch_core_session_get_pool(channel->session), channel->variables); hi;
-		 hi = switch_hash_next(hi)) {
+	for (hi = switch_hash_first(switch_core_session_get_pool(channel->session), channel->variables); hi; hi = switch_hash_next(hi)) {
 		char buf[1024];
 		switch_event_subclass *subclass;
 		switch_hash_this(hi, &var, NULL, &val);
@@ -458,15 +453,13 @@ SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_caller_profile(switch
 	return channel->caller_profile;
 }
 
-SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel *channel,
-																  switch_caller_profile *caller_profile)
+SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel *channel, switch_caller_profile *caller_profile)
 {
 	assert(channel != NULL);
 	channel->originator_caller_profile = caller_profile;
 }
 
-SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel *channel,
-																  switch_caller_profile *caller_profile)
+SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel *channel, switch_caller_profile *caller_profile)
 {
 	assert(channel != NULL);
 	channel->originatee_caller_profile = caller_profile;
@@ -484,8 +477,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originatee_caller_pro
 	return channel->originatee_caller_profile;
 }
 
-SWITCH_DECLARE(void) switch_channel_set_event_handlers(switch_channel *channel,
-													   const struct switch_event_handler_table *event_handlers)
+SWITCH_DECLARE(void) switch_channel_set_event_handlers(switch_channel *channel, const struct switch_event_handler_table *event_handlers)
 {
 	assert(channel != NULL);
 	channel->event_handlers = event_handlers;
@@ -497,8 +489,7 @@ SWITCH_DECLARE(const struct switch_event_handler_table *) switch_channel_get_eve
 	return channel->event_handlers;
 }
 
-SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel *channel,
-														 switch_caller_extension *caller_extension)
+SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel *channel, switch_caller_extension *caller_extension)
 {
 	assert(channel != NULL);
 	channel->caller_extension = caller_extension;
@@ -518,7 +509,7 @@ SWITCH_DECLARE(switch_status) switch_channel_hangup(switch_channel *channel)
 	assert(channel != NULL);
 	if (channel->state < CS_HANGUP) {
 		channel->state = CS_HANGUP;
-		switch_core_session_signal_state_change(channel->session);
+		switch_core_session_signal_state_change(channel->session);	
 	}
 	return channel->state;
 }

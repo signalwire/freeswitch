@@ -36,8 +36,7 @@
 static const char modname[] = "mod_g711codec";
 
 
-static switch_status switch_g711u_init(switch_codec *codec, switch_codec_flag flags,
-									   const struct switch_codec_settings *codec_settings)
+static switch_status switch_g711u_init(switch_codec *codec, switch_codec_flag flags, const struct switch_codec_settings *codec_settings)
 {
 	int encoding, decoding;
 
@@ -58,7 +57,9 @@ static switch_status switch_g711u_encode(switch_codec *codec,
 										 size_t decoded_data_len,
 										 int decoded_rate,
 										 void *encoded_data,
-										 size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
+										 size_t *encoded_data_len,
+										 int *encoded_rate,
+										 unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
@@ -82,7 +83,9 @@ static switch_status switch_g711u_decode(switch_codec *codec,
 										 size_t encoded_data_len,
 										 int encoded_rate,
 										 void *decoded_data,
-										 size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
+										 size_t *decoded_data_len,
+										 int *decoded_rate,
+										 unsigned int *flag) 
 {
 	short *dbuf;
 	unsigned char *ebuf;
@@ -111,8 +114,7 @@ static switch_status switch_g711u_destroy(switch_codec *codec)
 }
 
 
-static switch_status switch_g711a_init(switch_codec *codec, switch_codec_flag flags,
-									   const struct switch_codec_settings *codec_settings)
+static switch_status switch_g711a_init(switch_codec *codec, switch_codec_flag flags, const struct switch_codec_settings *codec_settings)
 {
 	int encoding, decoding;
 
@@ -133,7 +135,9 @@ static switch_status switch_g711a_encode(switch_codec *codec,
 										 size_t decoded_data_len,
 										 int decoded_rate,
 										 void *encoded_data,
-										 size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
+										 size_t *encoded_data_len,
+										 int *encoded_rate,
+										 unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
@@ -157,7 +161,9 @@ static switch_status switch_g711a_decode(switch_codec *codec,
 										 size_t encoded_data_len,
 										 int encoded_rate,
 										 void *decoded_data,
-										 size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
+										 size_t *decoded_data_len,
+										 int *decoded_rate,
+										 unsigned int *flag) 
 {
 	short *dbuf;
 	unsigned char *ebuf;
@@ -189,122 +195,126 @@ static switch_status switch_g711a_destroy(switch_codec *codec)
 
 
 static const switch_codec_implementation g711u_8k_60ms_implementation = {
-	/*.samples_per_second */ 8000,
-	/*.bits_per_second */ 19200,
-	/*.microseconds_per_frame */ 60000,
-	/*.samples_per_frame */ 480,
-	/*.bytes_per_frame */ 960,
-	/*.encoded_bytes_per_frame */ 480,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy
+	/*.samples_per_second*/				8000,
+	/*.bits_per_second*/				19200,
+	/*.microseconds_per_frame*/			60000,
+	/*.samples_per_frame*/				480,
+	/*.bytes_per_frame*/				960,
+	/*.encoded_bytes_per_frame*/		480,
+	/*.number_of_channels*/				1,
+	/*.pref_frames_per_packet*/			1,
+	/*.max_frames_per_packet*/			1,
+	/*.init*/							switch_g711u_init,
+	/*.encode*/							switch_g711u_encode,
+	/*.decode*/							switch_g711u_decode,
+	/*.destroy*/						switch_g711u_destroy
 };
 
 static const switch_codec_implementation g711u_8k_30ms_implementation = {
-	/*.samples_per_second */ 8000,
-	/*.bits_per_second */ 96000,
-	/*.microseconds_per_frame */ 30000,
-	/*.samples_per_frame */ 240,
-	/*.bytes_per_frame */ 480,
-	/*.encoded_bytes_per_frame */ 240,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy,
-	/*.next */ &g711u_8k_60ms_implementation
+	/*.samples_per_second*/				8000,
+	/*.bits_per_second*/				96000,
+	/*.microseconds_per_frame*/			30000,
+	/*.samples_per_frame*/				240,
+	/*.bytes_per_frame*/				480,
+	/*.encoded_bytes_per_frame*/		240,
+	/*.number_of_channels*/				1,
+	/*.pref_frames_per_packet*/			1,
+	/*.max_frames_per_packet*/			1,
+	/*.init*/							switch_g711u_init,
+	/*.encode*/							switch_g711u_encode,
+	/*.decode*/							switch_g711u_decode,
+	/*.destroy*/						switch_g711u_destroy,
+	/*.next*/							&g711u_8k_60ms_implementation
 };
 
 
 static const switch_codec_implementation g711u_16k_implementation = {
-	/*.samples_per_second */ 16000,
-	/*.bits_per_second */ 128000,
-	/*.microseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 320,
-	/*.bytes_per_frame */ 640,
-	/*.encoded_bytes_per_frame */ 320,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy,
+	/*.samples_per_second*/				16000,
+	/*.bits_per_second*/				128000,
+	/*.microseconds_per_frame*/			20000,
+	/*.samples_per_frame*/				320,
+	/*.bytes_per_frame*/				640,
+	/*.encoded_bytes_per_frame*/		320,
+	/*.number_of_channels*/				1,
+	/*.pref_frames_per_packet*/			1,
+	/*.max_frames_per_packet*/			1,
+	/*.init*/							switch_g711u_init,
+	/*.encode*/							switch_g711u_encode,
+	/*.decode*/							switch_g711u_decode,
+	/*.destroy*/						switch_g711u_destroy,
 };
 
 static const switch_codec_implementation g711u_8k_implementation = {
-	/*.samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 160,
-	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 160,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711u_init,
-	/*.encode */ switch_g711u_encode,
-	/*.decode */ switch_g711u_decode,
-	/*.destroy */ switch_g711u_destroy,
-	/*.next */ &g711u_16k_implementation
+	/*.samples_per_second*/				8000,
+	/*.bits_per_second*/				64000,
+	/*.microseconds_per_frame*/			20000,
+	/*.samples_per_frame*/				160,
+	/*.bytes_per_frame*/				320,
+	/*.encoded_bytes_per_frame*/		160,
+	/*.number_of_channels*/				1,
+	/*.pref_frames_per_packet*/			1,
+	/*.max_frames_per_packet*/			1,
+	/*.init*/							switch_g711u_init,
+	/*.encode*/							switch_g711u_encode,
+	/*.decode*/							switch_g711u_decode,
+	/*.destroy*/						switch_g711u_destroy,
+	/*.next*/							&g711u_16k_implementation
 };
 
 
 static const switch_codec_implementation g711a_8k_implementation = {
-	/*.samples_per_second */ 8000,
-	/*.bits_per_second */ 64000,
-	/*.microseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 160,
-	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 160,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_g711a_init,
-	/*.encode */ switch_g711a_encode,
-	/*.decode */ switch_g711a_decode,
-	/*.destroy */ switch_g711a_destroy
+	/*.samples_per_second*/				8000,
+	/*.bits_per_second*/				64000,
+	/*.microseconds_per_frame*/			20000,
+	/*.samples_per_frame*/				160,
+	/*.bytes_per_frame*/				320,
+	/*.encoded_bytes_per_frame*/		160,
+	/*.number_of_channels*/				1,
+	/*.pref_frames_per_packet*/			1,
+	/*.max_frames_per_packet*/			1,
+	/*.init*/							switch_g711a_init,
+	/*.encode*/							switch_g711a_encode,
+	/*.decode*/							switch_g711a_decode,
+	/*.destroy*/						switch_g711a_destroy
 };
 
 
 static const switch_codec_interface g711a_codec_interface = {
-	/*.interface_name */ "g711 alaw",
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 8,
-	/*.iananame */ "PCMA",
-	/*.implementations */ &g711a_8k_implementation
+	/*.interface_name*/					"g711 alaw",
+	/*.codec_type*/						SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode*/						8,
+	/*.iananame*/						"PCMA",
+	/*.implementations*/				&g711a_8k_implementation
 };
 
 static const switch_codec_interface g711u_codec_interface = {
-	/*.interface_name */ "g711 ulaw",
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 0,
-	/*.iananame */ "PCMU",
-	/*.implementations */ &g711u_8k_implementation,
-	/*.next */ &g711a_codec_interface
+	/*.interface_name*/					"g711 ulaw",
+	/*.codec_type*/						SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode*/						0,
+	/*.iananame*/						"PCMU",
+	/*.implementations*/				&g711u_8k_implementation,
+	/*.next*/							&g711a_codec_interface
 };
 
 static switch_loadable_module_interface g711_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &g711u_codec_interface,
-	/*.application_interface */ NULL
+	/*.module_name*/			modname,
+	/*.endpoint_interface*/		NULL,
+	/*.timer_interface*/		NULL,
+	/*.dialplan_interface*/		NULL,
+	/*.codec_interface*/		&g711u_codec_interface,
+	/*.application_interface*/	NULL
 };
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
-{
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &g711_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
+
+
+
+
+

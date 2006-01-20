@@ -73,17 +73,16 @@ SWITCH_DECLARE(char *) switch_cut_path(char *in)
 	char delims[] = "/\\";
 	char *i;
 
-	for (i = delims; *i; i++) {
+	for(i = delims; *i; i++) {
 		p = in;
-		while ((p = strchr(p, *i))) {
+		while((p = strchr(p, *i))) {
 			ret = ++p;
 		}
 	}
 	return ret;
 }
 
-SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock,
-														  unsigned int flags, switch_memory_pool *pool)
+SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock, unsigned int flags, switch_memory_pool *pool)
 {
 	switch_pollset_t *pollset;
 	switch_status status;
@@ -103,7 +102,7 @@ SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll,
 
 SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 {
-	switch_status status;
+	switch_status status; 
 	int nsds = 0;
 
 	if ((status = switch_poll(poll, 1, &nsds, ms)) != SWITCH_STATUS_SUCCESS) {
@@ -118,6 +117,6 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 void include_me(void)
 {
 	apr_socket_shutdown(NULL, 0);
-	apr_socket_recvfrom(NULL, NULL, 0, NULL, NULL);
+	apr_socket_recvfrom(NULL , NULL, 0, NULL, NULL);
 }
 #endif

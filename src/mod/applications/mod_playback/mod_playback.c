@@ -59,11 +59,11 @@ void playback_function(switch_core_session *session, char *data)
 	assert(channel != NULL);
 
 	if (switch_core_file_open(&fh,
-							  data,
-							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
-							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_channel_hangup(channel);
-		return;
+		data,
+		SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
+		switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+			switch_channel_hangup(channel);
+			return;
 	}
 
 	switch_channel_answer(channel);
@@ -81,17 +81,17 @@ void playback_function(switch_core_session *session, char *data)
 	codec_name = "L16";
 
 	if (switch_core_codec_init(&codec,
-							   codec_name,
-							   fh.samplerate,
-							   interval,
-							   fh.channels,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, pool) == SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
-		write_frame.codec = &codec;
+		codec_name,
+		fh.samplerate,
+		interval,
+		fh.channels,
+		SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+		NULL,
+		pool) == SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
+			write_frame.codec = &codec;
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d channels %dms\n",
-							  codec_name, fh.samplerate, fh.channels, interval);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d channels %dms\n", codec_name, fh.samplerate, fh.channels, interval);
 		switch_core_file_close(&fh);
 		switch_channel_hangup(channel);
 		return;
@@ -108,11 +108,11 @@ void playback_function(switch_core_session *session, char *data)
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %d bytes per %d ms!\n", len, interval);
 
 	/* start a thread to absorb incoming audio */
-	for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
+	for(stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
 		switch_core_service_session(session, &thread_session, stream_id);
 	}
 	ilen = samples;
-	while (switch_channel_get_state(channel) == CS_EXECUTE) {
+	while(switch_channel_get_state(channel) == CS_EXECUTE) {
 		int done = 0;
 
 		if (switch_channel_has_dtmf(channel)) {
@@ -139,12 +139,12 @@ void playback_function(switch_core_session *session, char *data)
 		}
 
 		write_frame.datalen = ilen * 2;
-		write_frame.samples = (int) ilen;
+		write_frame.samples = (int)ilen;
 #ifdef SWAP_LINEAR
-		switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
+		switch_swap_linear(write_frame.data, (int)write_frame.datalen / 2);
 #endif
 
-		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
+		for(stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
 			if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Write\n");
 				done = 1;
@@ -178,21 +178,20 @@ void playback_function(switch_core_session *session, char *data)
 }
 
 static const switch_application_interface playback_application_interface = {
-	/*.interface_name */ "playback",
-	/*.application_function */ playback_function
+	/*.interface_name*/ "playback",
+	/*.application_function*/ playback_function
 };
 
 static const switch_loadable_module_interface mod_playback_module_interface = {
-	/*.module_name = */ modname,
-	/*.endpoint_interface = */ NULL,
-	/*.timer_interface = */ NULL,
-	/*.dialplan_interface = */ NULL,
-	/*.codec_interface = */ NULL,
-	/*.application_interface */ &playback_application_interface
+	/*.module_name = */			modname,
+	/*.endpoint_interface = */	NULL,
+	/*.timer_interface = */		NULL,
+	/*.dialplan_interface = */	NULL,
+	/*.codec_interface = */		NULL,
+	/*.application_interface*/	&playback_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
-{
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &mod_playback_module_interface;
@@ -208,3 +207,7 @@ if it returns anything but SWITCH_STATUS_TERM it will be called again automaticl
 
 
 //switch_status switch_module_runtime(void)
+
+
+
+

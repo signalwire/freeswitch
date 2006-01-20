@@ -36,7 +36,9 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_core_se
 																  char *caller_id_name,
 																  char *caller_id_number,
 																  char *network_addr,
-																  char *ani, char *ani2, char *destination_number)
+																  char *ani,
+																  char *ani2,
+																  char *destination_number)
 {
 
 
@@ -73,8 +75,8 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
 	return profile;
 }
 
-SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, char *prefix,
-														  switch_event *event)
+SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, char *prefix, switch_event *event)
+
 {
 	char header_name[1024];
 
@@ -110,7 +112,9 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile 
 }
 
 SWITCH_DECLARE(switch_caller_extension *) switch_caller_extension_new(switch_core_session *session,
-																	  char *extension_name, char *extension_number)
+																	  char *extension_name,
+																	  char *extension_number
+																	  )
 {
 	switch_caller_extension *caller_extension = NULL;
 
@@ -126,7 +130,8 @@ SWITCH_DECLARE(switch_caller_extension *) switch_caller_extension_new(switch_cor
 
 SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session *session,
 															 switch_caller_extension *caller_extension,
-															 char *application_name, char *application_data)
+															 char *application_name,
+															 char *application_data)
 {
 	switch_caller_application *caller_application = NULL;
 
@@ -137,7 +142,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 		caller_application->application_data = switch_core_session_strdup(session, application_data);
 		if (!caller_extension->applications) {
 			caller_extension->applications = caller_application;
-		} else if (caller_extension->last_application) {
+		} else if(caller_extension->last_application) {
 			caller_extension->last_application->next = caller_application;
 		}
 
@@ -146,3 +151,6 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 	}
 
 }
+
+
+

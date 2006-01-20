@@ -35,8 +35,7 @@
 static const char modname[] = "mod_rawaudio";
 
 
-static switch_status switch_raw_init(switch_codec *codec, switch_codec_flag flags,
-									 const struct switch_codec_settings *codec_settings)
+static switch_status switch_raw_init(switch_codec *codec, switch_codec_flag flags, const struct switch_codec_settings *codec_settings)
 {
 	int encoding, decoding;
 	struct raw_context *context = NULL;
@@ -52,15 +51,17 @@ static switch_status switch_raw_init(switch_codec *codec, switch_codec_flag flag
 }
 
 static switch_status switch_raw_encode(switch_codec *codec,
-									   switch_codec *other_codec,
-									   void *decoded_data,
-									   size_t decoded_data_len,
-									   int decoded_rate,
-									   void *encoded_data,
-									   size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
+								 switch_codec *other_codec,
+								 void *decoded_data,
+								 size_t decoded_data_len,
+								 int decoded_rate,
+								 void *encoded_data,
+								 size_t *encoded_data_len,
+								 int *encoded_rate,
+								 unsigned int *flag)
 {
 
-	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary. */
+	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary.*/
 	if (codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
 		memcpy(encoded_data, decoded_data, decoded_data_len);
 		*encoded_data_len = decoded_data_len;
@@ -70,12 +71,14 @@ static switch_status switch_raw_encode(switch_codec *codec,
 }
 
 static switch_status switch_raw_decode(switch_codec *codec,
-									   switch_codec *other_codec,
-									   void *encoded_data,
-									   size_t encoded_data_len,
-									   int encoded_rate,
-									   void *decoded_data,
-									   size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
+								 switch_codec *other_codec,
+								 void *encoded_data,
+								 size_t encoded_data_len,
+								 int encoded_rate,
+								 void *decoded_data,
+								 size_t *decoded_data_len,
+								 int *decoded_rate,
+								 unsigned int *flag) 
 {
 	if (codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
 		memcpy(decoded_data, encoded_data, encoded_data_len);
@@ -88,12 +91,12 @@ static switch_status switch_raw_decode(switch_codec *codec,
 
 static switch_status switch_raw_destroy(switch_codec *codec)
 {
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static const switch_codec_implementation raw_32k_implementation = {
-	/*.samples_per_second = */ 32000,
+	/*.samples_per_second = */  32000,
 	/*.bits_per_second = */ 512000,
 	/*.microseconds_per_frame = */ 20000,
 	/*.samples_per_frame = */ 640,
@@ -161,48 +164,52 @@ static const switch_codec_implementation raw_8k_implementation = {
 
 
 static const switch_codec_implementation raw_8k_30ms_implementation = {
-	/*.samples_per_second */ 8000,
-	/*.bits_per_second */ 128000,
-	/*.microseconds_per_frame */ 30000,
-	/*.samples_per_frame */ 240,
-	/*.bytes_per_frame */ 480,
-	/*.encoded_bytes_per_frame */ 480,
-	/*.number_of_channels */ 1,
-	/*.pref_frames_per_packet */ 1,
-	/*.max_frames_per_packet */ 1,
-	/*.init */ switch_raw_init,
-	/*.encode */ switch_raw_encode,
-	/*.decode */ switch_raw_decode,
-	/*.destroy */ switch_raw_destroy,
-	/*.next */ &raw_8k_implementation
+	/*.samples_per_second*/				8000,
+	/*.bits_per_second*/				128000,
+	/*.microseconds_per_frame*/			30000,
+	/*.samples_per_frame*/				240,
+	/*.bytes_per_frame*/				480,
+	/*.encoded_bytes_per_frame*/		480,
+	/*.number_of_channels*/				1,
+	/*.pref_frames_per_packet*/			1,
+	/*.max_frames_per_packet*/			1,
+	/*.init*/							switch_raw_init,
+	/*.encode*/							switch_raw_encode,
+	/*.decode*/							switch_raw_decode,
+	/*.destroy*/						switch_raw_destroy,
+	/*.next*/							&raw_8k_implementation
 };
 
 
 static const switch_codec_interface raw_codec_interface = {
-	/*.interface_name */ "raw signed linear (16 bit)",
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 10,
-	/*.iananame */ "L16",
-	/*.implementations */ &raw_8k_30ms_implementation
+	/*.interface_name*/					"raw signed linear (16 bit)",
+	/*.codec_type*/						SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode*/						10,
+	/*.iananame*/						"L16",
+	/*.implementations*/				&raw_8k_30ms_implementation
 };
 
 static switch_loadable_module_interface raw_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ NULL,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ &raw_codec_interface,
-	/*.application_interface */ NULL,
-	/*.api_interface */ NULL,
-	///*.file_interface*/                   &raw_file_interface
+	/*.module_name*/					modname,
+	/*.endpoint_interface*/				NULL,
+	/*.timer_interface*/				NULL,
+	/*.dialplan_interface*/				NULL,
+	/*.codec_interface*/				&raw_codec_interface,
+	/*.application_interface*/			NULL,
+	/*.api_interface*/					NULL,
+	///*.file_interface*/					&raw_file_interface
 };
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
-{
-	/* connect my internal structure to the blank pointer passed to me */
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
+	/* connect my internal structure to the blank pointer passed to me */ 
 	*interface = &raw_module_interface;
 
-	/* indicate that the module should continue to be loaded */
+	/* indicate that the module should continue to be loaded */ 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+
+
+
+

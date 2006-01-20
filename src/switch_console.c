@@ -54,9 +54,14 @@ static int switch_console_process(char *cmd)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE,
 							  "\n"
 							  "Valid Commands:\n\n"
-							  "version\n" "help - umm yeah..\n" "%sshutdown - stop the program\n\n", perlhelp);
+							  "version\n"
+							  "help - umm yeah..\n"
+							  "%sshutdown - stop the program\n\n",
+			perlhelp
+			);
 		return 1;
 	}
+
 
 #ifdef EMBED_PERL
 	if (!strncmp(cmd, "perl ", 5)) {
@@ -66,7 +71,7 @@ static int switch_console_process(char *cmd)
 		return 1;
 	}
 #endif
-	if ((arg = strchr(cmd, '\r')) || (arg = strchr(cmd, '\n'))) {
+	if ((arg = strchr(cmd, '\r')) || (arg=strchr(cmd, '\n'))) {
 		*arg = '\0';
 		arg = NULL;
 	}
@@ -74,16 +79,14 @@ static int switch_console_process(char *cmd)
 		*arg++ = '\0';
 	}
 	if (switch_api_execute(cmd, arg, retbuf, sizeof(retbuf)) == SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "",
-							  retbuf);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unknown Command: %s\n", cmd);
 	}
 	return 1;
 }
 
-SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *file, const char *func, int line,
-										   char *fmt, ...)
+SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *file, const char *func, int line, char *fmt, ...)
 {
 	char *data;
 	int ret = 0;
@@ -117,18 +120,18 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *fi
 			switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 
 			if (channel == SWITCH_CHANNEL_ID_CONSOLE) {
-				fprintf(handle, "[%d] %s %s:%d %s() %s", (int) getpid(), date, filep, line, func, data);
+				fprintf(handle, "[%d] %s %s:%d %s() %s", (int)getpid(), date, filep, line, func, data);
 			}
 
-			else if (channel == SWITCH_CHANNEL_ID_EVENT &&
-					 switch_event_running() == SWITCH_STATUS_SUCCESS &&
-					 switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
+			else if (channel == SWITCH_CHANNEL_ID_EVENT && 
+				switch_event_running() == SWITCH_STATUS_SUCCESS && 
+				switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
 
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", func);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
-				switch_event_fire(&event);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", func);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
+					switch_event_fire(&event);
 			}
 			free(data);
 		}
@@ -158,14 +161,14 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		}
 
 		memset(&cmd, 0, sizeof(cmd));
-		for (x = 0; sizeof(cmd); x++) {
+		for (x=0; sizeof(cmd) ;x++) {
 			cmd[x] = getchar();
 			if (cmd[x] == '\n') {
 				cmd[x] = '\0';
 				break;
 			}
 		}
-		if (cmd[0]) {
+		if(cmd[0]) {
 			running = switch_console_process(cmd);
 		}
 	}

@@ -60,8 +60,7 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 	channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(channel);
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Processing %s->%s!\n", caller_profile->caller_id_name,
-						  caller_profile->destination_number);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Processing %s->%s!\n", caller_profile->caller_id_name, caller_profile->destination_number);	
 
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
@@ -70,23 +69,24 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 	}
 
 	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (cfg.catno != catno) {	/* new category */
+		if (cfg.catno != catno) { /* new category */
 			catno = cfg.catno;
 			exten_name = cfg.category;
 			cleanre();
 			match_count = 0;
 		}
-
+			
 		if (!strcasecmp(var, "regex")) {
 			const char *error = NULL;
 			int erroffset = 0;
-
+			
 			cleanre();
-			re = pcre_compile(val,	/* the pattern */
-							  0,	/* default options */
-							  &error,	/* for error message */
-							  &erroffset,	/* for error offset */
-							  NULL);	/* use default character tables */
+			re = pcre_compile(
+							  val,		        /* the pattern */
+							  0,                /* default options */
+							  &error,           /* for error message */
+							  &erroffset,       /* for error offset */
+							  NULL);            /* use default character tables */
 			if (error) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "COMPILE ERROR: %d [%s]\n", erroffset, error);
 				cleanre();
@@ -94,31 +94,31 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 				return NULL;
 			}
 
-			match_count = pcre_exec(re,	/* result of pcre_compile() */
-									NULL,	/* we didn't study the pattern */
-									caller_profile->destination_number,	/* the subject string */
-									strlen(caller_profile->destination_number),	/* the length of the subject string */
-									0,	/* start at offset 0 in the subject */
-									0,	/* default options */
-									ovector,	/* vector of integers for substring information */
-									sizeof(ovector) / sizeof(ovector[0]));	/* number of elements (NOT size in bytes) */
+			match_count = pcre_exec(
+						   re,             /* result of pcre_compile() */
+						   NULL,           /* we didn't study the pattern */
+						   caller_profile->destination_number,  		   /* the subject string */
+						   strlen(caller_profile->destination_number),    /* the length of the subject string */
+						   0,              /* start at offset 0 in the subject */
+						   0,              /* default options */
+						   ovector,        /* vector of integers for substring information */
+						   sizeof(ovector) / sizeof(ovector[0]));            /* number of elements (NOT size in bytes) */
 		} else if (match_count > 0 && !strcasecmp(var, "match")) {
 			if (!re) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ERROR: match without regex in %s line %d\n", cfg.path,
-									  cfg.lineno);
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ERROR: match without regex in %s line %d\n", cfg.path, cfg.lineno);
 				continue;
 			} else {
 				char newval[1024] = "";
 				char index[10] = "";
 				char replace[128] = "";
-				int x, y = 0, z = 0, num = 0;
+				int x, y=0, z=0, num = 0;
 				char *data;
 
 				for (x = 0; x < sizeof(newval) && x < strlen(val);) {
 					if (val[x] == '$') {
 						x++;
-
-						while (val[x] > 47 && val[x] < 58) {
+						
+						while(val[x] > 47 && val[x] < 58) {
 							index[z++] = val[x];
 							x++;
 						}
@@ -126,11 +126,9 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 						z = 0;
 						num = atoi(index);
 
-						if (pcre_copy_substring
-							(caller_profile->destination_number, ovector, match_count, num, replace,
-							 sizeof(replace)) > 0) {
+						if (pcre_copy_substring(caller_profile->destination_number, ovector, match_count, num, replace, sizeof(replace)) > 0) {
 							int r;
-							for (r = 0; r < strlen(replace); r++) {
+							for(r = 0; r < strlen(replace); r++) {
 								newval[y++] = replace[r];
 							}
 						}
@@ -152,11 +150,9 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 					continue;
 				}
 
-
+				
 				if (!extension) {
-					if (!
-						(extension =
-						 switch_caller_extension_new(session, exten_name, caller_profile->destination_number))) {
+					if (!(extension = switch_caller_extension_new(session, exten_name, caller_profile->destination_number))) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "memory error!\n");
 						break;
 					}
@@ -166,7 +162,7 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 			}
 		}
 	}
-
+	
 	switch_config_close_file(&cfg);
 
 	if (extension) {
@@ -181,9 +177,9 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 
 
 static const switch_dialplan_interface dialplan_interface = {
-	/*.interface_name = */ "pcre",
+	/*.interface_name =*/ "pcre",
 	/*.hunt_function = */ dialplan_hunt
-		/*.next = NULL */
+	/*.next = NULL */
 };
 
 static const switch_loadable_module_interface dialplan_module_interface = {
@@ -192,11 +188,10 @@ static const switch_loadable_module_interface dialplan_module_interface = {
 	/*.timer_interface = */ NULL,
 	/*.dialplan_interface = */ &dialplan_interface,
 	/*.codec_interface = */ NULL,
-	/*.application_interface = */ NULL
+	/*.application_interface =*/ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
-{
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &dialplan_module_interface;

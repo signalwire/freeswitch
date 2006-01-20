@@ -52,8 +52,7 @@ switch_caller_extension *demo_dialplan_hunt(switch_core_session *session)
 	caller_profile = switch_channel_get_caller_profile(channel);
 	//switch_channel_set_variable(channel, "pleasework", "yay");
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name,
-						  caller_profile->destination_number);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name, caller_profile->destination_number);	
 
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
@@ -77,17 +76,14 @@ switch_caller_extension *demo_dialplan_hunt(switch_core_session *session)
 					continue;
 				}
 				if (!extension) {
-					if (!
-						(extension =
-						 switch_caller_extension_new(session, caller_profile->destination_number,
-													 caller_profile->destination_number))) {
+					if (!(extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number))) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "memory error!\n");
 						break;
 					}
 				}
 
 				switch_caller_extension_add_application(session, extension, app, data);
-			}
+			} 
 		}
 	}
 
@@ -104,9 +100,9 @@ switch_caller_extension *demo_dialplan_hunt(switch_core_session *session)
 
 
 static const switch_dialplan_interface demo_dialplan_interface = {
-	/*.interface_name = */ "demo",
+	/*.interface_name =*/ "demo",
 	/*.hunt_function = */ demo_dialplan_hunt
-		/*.next = NULL */
+	/*.next = NULL */
 };
 
 static const switch_loadable_module_interface demo_dialplan_module_interface = {
@@ -115,11 +111,10 @@ static const switch_loadable_module_interface demo_dialplan_module_interface = {
 	/*.timer_interface = */ NULL,
 	/*.dialplan_interface = */ &demo_dialplan_interface,
 	/*.codec_interface = */ NULL,
-	/*.application_interface = */ NULL
+	/*.application_interface =*/ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
-{
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &demo_dialplan_module_interface;

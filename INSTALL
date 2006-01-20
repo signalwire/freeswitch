@@ -25,15 +25,3 @@ UNIX:
 
 Windows 32:
 
-	Requires: Microsoft Visual Studio 2005 or 
-						Visual C++ 2005 Express Edition and Platform SDK
-						Internet connectivity to download dependency libraries
-						
-1) Open /w32/vsnet/Freeswitch.sln
-
-2) Choose Release or Debug build
-
-3) Build solution or your choice of modules using the ide.
-	
-	
-	
