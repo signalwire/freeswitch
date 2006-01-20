@@ -83,7 +83,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 
 	*var = *val = NULL;
 
-	for(;;) {
+	for (;;) {
 		cfg->lineno++;
 
 		if (!fgets(cfg->buf, sizeof(cfg->buf), cfg->file)) {
@@ -154,6 +154,3 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 	return ret;
 
 }
-
-
-

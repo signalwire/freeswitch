@@ -49,9 +49,7 @@
 SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **new_resampler,
 													 int from_rate,
 													 size_t from_size,
-													 int to_rate,
-													 size_t to_size,
-													 switch_memory_pool *pool)
+													 int to_rate, size_t to_size, switch_memory_pool *pool)
 {
 	switch_audio_resampler *resampler;
 
@@ -61,10 +59,11 @@ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **ne
 
 	resampler->from_rate = from_rate;
 	resampler->to_rate = to_rate;
-	resampler->factor = ((double)resampler->to_rate / (double)resampler->from_rate);
+	resampler->factor = ((double) resampler->to_rate / (double) resampler->from_rate);
 
 	resampler->resampler = resample_open(QUALITY, resampler->factor, resampler->factor);
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Resampler %d->%d %f\n", resampler->from_rate, resampler->to_rate, resampler->factor);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Resampler %d->%d %f\n", resampler->from_rate,
+						  resampler->to_rate, resampler->factor);
 	resampler->from_size = from_size;
 	resampler->from = (float *) switch_core_alloc(pool, resampler->from_size);
 	resampler->to_size = to_size;
@@ -75,14 +74,16 @@ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **ne
 }
 
 
-SWITCH_DECLARE(int) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst, int dstlen, int last)
+SWITCH_DECLARE(int) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst,
+											int dstlen, int last)
 {
-	int o=0, srcused=0, srcpos=0, out=0;
+	int o = 0, srcused = 0, srcpos = 0, out = 0;
 
-	for(;;) {
-		int srcBlock = MIN(srclen-srcpos, srclen);
-		int lastFlag = (last && (srcBlock == srclen-srcpos));
-		o = resample_process(resampler->resampler, resampler->factor, &src[srcpos], srcBlock, lastFlag, &srcused, &dst[out], dstlen-out);
+	for (;;) {
+		int srcBlock = MIN(srclen - srcpos, srclen);
+		int lastFlag = (last && (srcBlock == srclen - srcpos));
+		o = resample_process(resampler->resampler, resampler->factor, &src[srcpos], srcBlock, lastFlag, &srcused,
+							 &dst[out], dstlen - out);
 		//printf("resampling %d/%d (%d) %d %f\n",  srcpos, srclen,  MIN(dstlen-out, dstlen), srcused, factor);
 
 		srcpos += srcused;
@@ -106,15 +107,17 @@ SWITCH_DECLARE(size_t) switch_float_to_short(float *f, short *s, size_t len)
 {
 	size_t i;
 	float ft;
-	for(i=0;i<len;i++) {
+	for (i = 0; i < len; i++) {
 		ft = f[i] * NORMFACT;
-		if(ft >= 0) {
-			s[i] = (short)(ft+0.5);
+		if (ft >= 0) {
+			s[i] = (short) (ft + 0.5);
 		} else {
-			s[i] = (short)(ft-0.5);
+			s[i] = (short) (ft - 0.5);
 		}
-		if ((float)s[i] > MAXSAMPLE) s[i] = (short)MAXSAMPLE;
-		if (s[i] < (short)-MAXSAMPLE) s[i] = (short)-MAXSAMPLE;
+		if ((float) s[i] > MAXSAMPLE)
+			s[i] = (short) MAXSAMPLE;
+		if (s[i] < (short) -MAXSAMPLE)
+			s[i] = (short) -MAXSAMPLE;
 	}
 	return len;
 }
@@ -124,16 +127,18 @@ SWITCH_DECLARE(int) switch_char_to_float(char *c, float *f, int len)
 	int i;
 
 	if (len % 2) {
-		return(-1);
+		return (-1);
 	}
 
-	for(i=1;i<len;i+=2) {
-		f[(int)(i/2)] = (float)(((c[i])*0x100) + c[i-1]);
-		f[(int)(i/2)] /= NORMFACT;
-		if (f[(int)(i/2)] > MAXSAMPLE) f[(int)(i/2)] = MAXSAMPLE;
-		if (f[(int)(i/2)] < -MAXSAMPLE) f[(int)(i/2)] = -MAXSAMPLE;
+	for (i = 1; i < len; i += 2) {
+		f[(int) (i / 2)] = (float) (((c[i]) * 0x100) + c[i - 1]);
+		f[(int) (i / 2)] /= NORMFACT;
+		if (f[(int) (i / 2)] > MAXSAMPLE)
+			f[(int) (i / 2)] = MAXSAMPLE;
+		if (f[(int) (i / 2)] < -MAXSAMPLE)
+			f[(int) (i / 2)] = -MAXSAMPLE;
 	}
-	return len/2;
+	return len / 2;
 }
 
 SWITCH_DECLARE(int) switch_float_to_char(float *f, char *c, int len)
@@ -141,25 +146,25 @@ SWITCH_DECLARE(int) switch_float_to_char(float *f, char *c, int len)
 	int i;
 	float ft;
 	long l;
-	for(i=0;i<len;i++) {
+	for (i = 0; i < len; i++) {
 		ft = f[i] * NORMFACT;
 		if (ft >= 0) {
-			l = (long)(ft+0.5);
+			l = (long) (ft + 0.5);
 		} else {
-			l = (long)(ft-0.5);
+			l = (long) (ft - 0.5);
 		}
-		c[i*2] = (unsigned char)((l)&0xff);
-		c[i*2+1] = (unsigned char)(((l)>>8)&0xff);
+		c[i * 2] = (unsigned char) ((l) & 0xff);
+		c[i * 2 + 1] = (unsigned char) (((l) >> 8) & 0xff);
 	}
-	return len*2;
+	return len * 2;
 }
 
 SWITCH_DECLARE(int) switch_short_to_float(short *s, float *f, int len)
 {
 	int i;
 
-	for(i=0;i<len;i++) {
-		f[i] = (float)(s[i]) / NORMFACT;
+	for (i = 0; i < len; i++) {
+		f[i] = (float) (s[i]) / NORMFACT;
 		//f[i] = (float) s[i];
 	}
 	return len;
@@ -170,6 +175,6 @@ SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len)
 {
 	int i;
 	for (i = 0; i < len; i++) {
-		buf[i] = ((buf[i] >> 8) & 0x00ff) | ((buf[i] << 8) & 0xff00); 
+		buf[i] = ((buf[i] >> 8) & 0x00ff) | ((buf[i] << 8) & 0xff00);
 	}
 }

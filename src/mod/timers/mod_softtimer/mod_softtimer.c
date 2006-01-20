@@ -71,9 +71,9 @@ static switch_status soft_timer_next(switch_timer *timer)
 
 #ifdef WINTIMER
 	private->base.QuadPart += timer->interval * (private->freq.QuadPart / 1000);
-	for(;;) {
+	for (;;) {
 		QueryPerformanceCounter(&private->now);
-		if(private->now.QuadPart >= private->base.QuadPart) {
+		if (private->now.QuadPart >= private->base.QuadPart) {
 			break;
 		}
 		switch_yield(100);
@@ -98,31 +98,27 @@ static switch_status soft_timer_destroy(switch_timer *timer)
 }
 
 static const switch_timer_interface soft_timer_interface = {
-	/*.interface_name*/		"soft",
-	/*.timer_init*/			soft_timer_init,
-	/*.timer_next*/			soft_timer_next,
-	/*.timer_destroy*/		soft_timer_destroy
+	/*.interface_name */ "soft",
+	/*.timer_init */ soft_timer_init,
+	/*.timer_next */ soft_timer_next,
+	/*.timer_destroy */ soft_timer_destroy
 };
 
 static const switch_loadable_module_interface mod_timers_module_interface = {
-	/*.module_name*/					modname,
-	/*.endpoint_interface*/				NULL,
-	/*.timer_interface*/				&soft_timer_interface,
-	/*.switch_dialplan_interface*/		NULL,
-	/*.switch_codec_interface*/			NULL,
-	/*.switch_application_interface*/	NULL
+	/*.module_name */ modname,
+	/*.endpoint_interface */ NULL,
+	/*.timer_interface */ &soft_timer_interface,
+	/*.switch_dialplan_interface */ NULL,
+	/*.switch_codec_interface */ NULL,
+	/*.switch_application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename) {
-	
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+{
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &mod_timers_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
-
-
-

@@ -31,7 +31,8 @@
  */
 #include <switch.h>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 	char *err = NULL;
 	switch_event *event;
 
@@ -47,7 +48,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	if(err) {
+	if (err) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error: %s", err);
 		exit(-1);
 	}
@@ -75,5 +76,3 @@ int main(int argc, char *argv[]) {
 	return 0;
 
 }
-
-

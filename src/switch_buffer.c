@@ -41,7 +41,8 @@ SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool *pool, swi
 {
 	switch_buffer *new_buffer;
 
-	if ((new_buffer = switch_core_alloc(pool, sizeof(switch_buffer))) && (new_buffer->data = switch_core_alloc(pool, max_len))) {
+	if ((new_buffer = switch_core_alloc(pool, sizeof(switch_buffer)))
+		&& (new_buffer->data = switch_core_alloc(pool, max_len))) {
 		new_buffer->datalen = max_len;
 		*buffer = new_buffer;
 		return SWITCH_STATUS_SUCCESS;
@@ -54,7 +55,7 @@ SWITCH_DECLARE(int) switch_buffer_len(switch_buffer *buffer)
 
 	assert(buffer != NULL);
 
-	return (int)buffer->datalen;
+	return (int) buffer->datalen;
 
 }
 
@@ -63,14 +64,14 @@ SWITCH_DECLARE(int) switch_buffer_freespace(switch_buffer *buffer)
 {
 	assert(buffer != NULL);
 
-	return (int)(buffer->datalen - buffer->used);
+	return (int) (buffer->datalen - buffer->used);
 }
 
 SWITCH_DECLARE(int) switch_buffer_inuse(switch_buffer *buffer)
 {
 	assert(buffer != NULL);
 
-	return (int)buffer->used;
+	return (int) buffer->used;
 }
 
 SWITCH_DECLARE(int) switch_buffer_toss(switch_buffer *buffer, size_t datalen)
@@ -91,7 +92,7 @@ SWITCH_DECLARE(int) switch_buffer_toss(switch_buffer *buffer, size_t datalen)
 	memmove(buffer->data, buffer->data + reading, buffer->datalen - reading);
 	buffer->used -= datalen;
 
-	return (int)buffer->datalen;
+	return (int) buffer->datalen;
 }
 
 SWITCH_DECLARE(int) switch_buffer_read(switch_buffer *buffer, void *data, size_t datalen)
@@ -115,7 +116,7 @@ SWITCH_DECLARE(int) switch_buffer_read(switch_buffer *buffer, void *data, size_t
 	memmove(buffer->data, buffer->data + reading, buffer->datalen - reading);
 	buffer->used -= reading;
 	//printf("o %d = %d\n", reading, buffer->used);
-	return (int)reading;
+	return (int) reading;
 }
 
 SWITCH_DECLARE(int) switch_buffer_write(switch_buffer *buffer, void *data, size_t datalen)
@@ -135,6 +136,5 @@ SWITCH_DECLARE(int) switch_buffer_write(switch_buffer *buffer, void *data, size_
 		buffer->used += datalen;
 	}
 	//printf("i %d = %d\n", datalen, buffer->used);
-	return (int)buffer->used;
+	return (int) buffer->used;
 }
-
