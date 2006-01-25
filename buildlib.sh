@@ -64,7 +64,10 @@ fi
 
 if [ ! -z $install ] ; then
     gmake install
-    ldconfig 2>&1
+    ldpath=`which ldconfig`
+    if [ ! -z $ldpath ] ; then
+	ldconfig 2>&1
+    fi
 fi
 
 if [ $? == 0 ] ; then

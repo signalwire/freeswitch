@@ -17,6 +17,10 @@ if ISLINUX
 AM_LDFLAGS += -Wl,-E
 endif
 
+if IS64BITLINUX
+AM_CFLAGS += -m64 -march=k8
+endif
+
 if ISMAC
 SOLINK=-dynamic -bundle -undefined suppress -force_flat_namespace
 AM_CFLAGS += -DMACOSX -DSWAP_LINEAR
