@@ -515,10 +515,6 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 /* Either add a timeout here or make damn sure the thread cannot get hung somehow (my preference) */
 SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_thread_session *thread_session)
 {
-	switch_core_session *session = thread_session->objs[0];
-
-	switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
-
 	if (thread_session->running > 0) {
 		thread_session->running = -1;
 
