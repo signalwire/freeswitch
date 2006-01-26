@@ -222,6 +222,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_ivr.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_loadable_module.c"
 				>
 			</File>
@@ -281,6 +285,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_frame.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_ivr.h"
 				>
 			</File>
 			<File
