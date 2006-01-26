@@ -46,6 +46,18 @@ extern "C" {
 
 
 /*!
+  \enum switch_ivr_option_t
+  \brief Possible options related to ivr functions
+<pre>
+    SWITCH_IVR_OPTION_SYNC  - synchronous (do everyting in the forground)
+
+</pre>
+ */
+typedef enum {
+	SWITCH_IVR_OPTION_SYNC = (1 << 0)
+} switch_ivr_option_t;
+	
+/*!
   \enum switch_core_session_message_t
   \brief Possible types of messages for inter-session communication
 <pre>
@@ -354,6 +366,7 @@ typedef switch_status (*switch_waitfor_read_hook)(switch_core_session *, int, in
 typedef switch_status (*switch_waitfor_write_hook)(switch_core_session *, int, int);
 typedef switch_status (*switch_send_dtmf_hook)(switch_core_session *, char *);
 typedef switch_status (*switch_api_function)(char *in, char *out, size_t outlen);
+typedef switch_status (*switch_dtmf_callback_function)(switch_core_session *session, char *dtmf);
 
 /* things we don't deserve to know about */
 

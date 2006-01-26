@@ -55,6 +55,7 @@ src/include/switch_utils.h \
 src/include/switch_caller.h \
 src/include/switch_buffer.h \
 src/include/switch_event.h \
+src/include/switch_ivr.h\
 src/switch_buffer.c \
 src/switch_caller.c \
 src/switch_channel.c \
@@ -65,7 +66,8 @@ src/switch_loadable_module.c \
 src/switch_mutex.c \
 src/switch_utils.c \
 src/switch_event.c \
-src/switch_resample.c
+src/switch_resample.c \
+src/switch_ivr.c
 
 
 
@@ -86,7 +88,8 @@ library_include_HEADERS =	src/include/switch.h \
 				src/include/switch_caller.h \
 				src/include/switch_buffer.h \
 				src/include/switch_event.h \
-				src/include/switch_resample.h
+				src/include/switch_resample.h \
+				src/include/switch_ivr.h
 
 
 lib_LTLIBRARIES		= libfreeswitch.la
