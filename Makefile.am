@@ -166,4 +166,4 @@ eclean: clean
 	rm -f *.tar *.tgz *.gz 
 
 megaclean: eclean modclean
-	rm -fr $(SQLITETAR) $(SQLITE) $(APR) $(APRTAR) $(SOX) $(SOXTAR) $(COMMONTAR)
+	rm -fr .depend `find . -name .complete`
