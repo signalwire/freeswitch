@@ -33,8 +33,7 @@
 #include <switch_ivr.h>
 
 
-/* TBD (Lots! there are only 2 functions in here lol) */
-
+/* TBD (Lots! there are not very many functions in here lol) */
 
 SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *session, 
 													 char *file,

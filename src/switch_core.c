@@ -388,7 +388,7 @@ SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char
 		if ((status = switch_core_new_memory_pool(&fh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
 			return status;
 		}
-		switch_set_flag(fh, SWITCH_TIMER_FLAG_FREE_POOL);
+		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
 	}
 
 	return fh->file_interface->file_open(fh, file_path);
@@ -419,6 +419,68 @@ SWITCH_DECLARE(switch_status) switch_core_file_close(switch_file_handle *fh)
 	return fh->file_interface->file_close(fh);
 }
 
+SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh, 
+													  char *module_name, 
+													  unsigned int flags,
+													  switch_memory_pool *pool)
+{
+	switch_status status;
+
+	if (!(sh->speech_interface = switch_loadable_module_get_speech_interface(module_name))) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid speech module [%s]!\n", module_name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	sh->flags = flags;
+	if (pool) {
+		sh->memory_pool = pool;
+	} else {
+		if ((status = switch_core_new_memory_pool(&sh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		switch_set_flag(sh, SWITCH_SPEECH_FLAG_FREE_POOL);
+	}
+
+	return sh->speech_interface->speech_open(sh, flags);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_speech_feed_asr(switch_speech_handle *sh, void *data, unsigned int *len, int rate, unsigned int *flags)
+{
+	assert(sh != NULL);
+	
+	return sh->speech_interface->speech_feed_asr(sh, data, len, rate, flags);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_speech_interpret_asr(switch_speech_handle *sh, char *buf, unsigned int buflen, unsigned int *flags)
+{
+	assert(sh != NULL);
+
+	return sh->speech_interface->speech_interpret_asr(sh, buf, buflen, flags);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *sh, char *text, unsigned int *flags)
+{
+	assert(sh != NULL);
+
+	return sh->speech_interface->speech_feed_tts(sh, text, flags);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
+														  void *data,
+														  unsigned int *datalen,
+														  unsigned int *rate,
+														  unsigned int *flags)
+{
+	assert(sh != NULL);
+
+	return sh->speech_interface->speech_read_tts(sh, data, datalen, rate, flags);
+}
+
+
+SWITCH_DECLARE(switch_status) switch_core_speech_close(switch_speech_handle *sh, unsigned int *flags)
+{
+	return sh->speech_interface->speech_close(sh);
+}
 
 SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *timer_name, int interval, int samples,
 													 switch_memory_pool *pool)

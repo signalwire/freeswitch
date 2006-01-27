@@ -49,12 +49,15 @@ extern "C" {
   \enum switch_ivr_option_t
   \brief Possible options related to ivr functions
 <pre>
-    SWITCH_IVR_OPTION_SYNC  - synchronous (do everyting in the forground)
-
+    SWITCH_IVR_OPTION_NONE  - nothing whatsoever
+    SWITCH_IVR_OPTION_ASYNC - Asynchronous (do things in the background when applicable)
+	SWITCH_IVR_OPTION_FILE  - string argument implies a filename
 </pre>
  */
 typedef enum {
-	SWITCH_IVR_OPTION_SYNC = (1 << 0)
+	SWITCH_IVR_OPTION_NONE = 0,
+	SWITCH_IVR_OPTION_ASYNC = (1 << 0),
+	SWITCH_IVR_OPTION_FILE = (1 << 1)
 } switch_ivr_option_t;
 	
 /*!
@@ -215,6 +218,27 @@ typedef enum {
 
 } switch_codec_flag;
 
+
+/*!
+  \enum switch_speech_flag
+  \brief Speech related flags
+<pre>
+SWITCH_SPEECH_FLAG_TTS =			(1 <<  0) - Interface can/should convert text to speech.
+SWITCH_SPEECH_FLAG_ASR =			(1 <<  1) - Interface can/should convert audio to text.
+SWITCH_SPEECH_FLAG_HASTEXT =		(1 <<  2) - Interface is has text to read.
+SWITCH_SPEECH_FLAG_PEEK =			(1 <<  3) - Read data but do not erase it.
+SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  4) - Free interface's pool on destruction.
+</pre>
+*/
+typedef enum {
+	SWITCH_SPEECH_FLAG_TTS =			(1 <<  0),
+	SWITCH_SPEECH_FLAG_ASR =			(1 <<  1),
+	SWITCH_SPEECH_FLAG_HASTEXT =		(1 <<  2),
+	SWITCH_SPEECH_FLAG_PEEK =			(1 <<  3),
+	SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  4),
+
+} switch_speech_flag;
+
 /*!
   \enum switch_codec_type
   \brief Codec types
@@ -352,6 +376,8 @@ typedef struct switch_io_event_hooks switch_io_event_hooks;
 typedef struct switch_buffer switch_buffer;
 typedef struct switch_codec_settings switch_codec_settings;
 typedef struct switch_config switch_config;
+typedef struct switch_speech_handle switch_speech_handle;
+typedef struct switch_speech_interface switch_speech_interface;
 typedef void (*switch_application_function)(switch_core_session *, char *);
 typedef void (*switch_event_callback_t)(switch_event *);
 typedef switch_caller_extension *(*switch_dialplan_hunt_function)(switch_core_session *);

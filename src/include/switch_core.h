@@ -732,6 +732,72 @@ SWITCH_DECLARE(switch_status) switch_core_file_seek(switch_file_handle *fh, unsi
 SWITCH_DECLARE(switch_status) switch_core_file_close(switch_file_handle *fh);
 ///\}
 
+///\defgroup speeech ASR/TTS Functions
+///\ingroup core1
+///\{
+/*! 
+  \brief Open a speech handle
+  \param sh a speech handle to use
+  \param module_name the speech module to use
+  \param flags asr/tts flags
+  \param pool the pool to use (NULL for new pool)
+  \return SWITCH_STATUS_SUCCESS if the handle is opened
+*/
+SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh, char *module_name, unsigned int flags, switch_memory_pool *pool);
+
+/*!
+  \brief Feed data to the ASR module
+  \param sh the speech handle to feed
+  \param data the buffer of audio data
+  \param len the in-use size of the buffer
+  \param rate the rate of the audio (in hz)
+  \param flags flags in/out for fine tuning
+  \return SWITCH_STATUS_SUCCESS with possible new flags on success
+*/
+SWITCH_DECLARE(switch_status) switch_core_speech_feed_asr(switch_speech_handle *sh, void *data, unsigned int *len, int rate, unsigned int *flags);
+
+/*! 
+  \brief Get text back from the ASR module
+  \param sh the speech handle to read
+  \param buf the buffer to insert the text into
+  \param buflen the max size of the buffer
+  \param flags flags in/out for fine tuning
+  \return SWITCH_STATUS_SUCCESS with possible new flags on success
+*/
+SWITCH_DECLARE(switch_status) switch_core_speech_interpret_asr(switch_speech_handle *sh, char *buf, unsigned int buflen, unsigned int *flags);
+
+/*! 
+  \brief Feed text to the TTS module
+  \param sh the speech handle to feed
+  \param text the buffer to write
+  \param flags flags in/out for fine tuning
+  \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
+*/
+SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *sh, char *text, unsigned int *flags);
+
+/*! 
+  \brief Read rendered audio from the TTS module
+  \param sh the speech handle to read
+  \param data the buffer to read to
+  \param datalen the max size / written size of the data
+  \param rate the rate of the read audio
+  \param flags flags in/out for fine tuning
+  \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
+*/
+	SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
+														  void *data,
+														  unsigned int *datalen,
+														  unsigned int *rate,
+														  unsigned int *flags);
+/*! 
+  \brief Close an open speech handle
+  \param sh the speech handle to close
+  \param flags flags in/out for fine tuning
+  \return SWITCH_STATUS_SUCCESS if the file handle was closed
+*/
+SWITCH_DECLARE(switch_status) switch_core_speech_close(switch_speech_handle *sh, unsigned int *flags);
+///\}
+
 ///\defgroup misc Misc
 ///\ingroup core1
 ///\{

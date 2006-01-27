@@ -62,6 +62,7 @@ struct switch_loadable_module_container {
 	switch_hash *application_hash;
 	switch_hash *api_hash;
 	switch_hash *file_hash;
+	switch_hash *speech_hash;
 	switch_memory_pool *pool;
 };
 
@@ -218,6 +219,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	switch_core_hash_init(&loadable_modules.application_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.api_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.file_hash, loadable_modules.pool);
+	switch_core_hash_init(&loadable_modules.speech_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
 
 	while (apr_dir_read(&finfo, finfo_flags, module_dir_handle) == APR_SUCCESS) {
@@ -321,6 +323,15 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				}
 			}
 
+			if (new_module->interface->speech_interface) {
+				const switch_speech_interface *ptr;
+
+				for (ptr = new_module->interface->speech_interface; ptr; ptr = ptr->next) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Speech interface '%s'\n", ptr->interface_name);
+					switch_core_hash_insert(loadable_modules.speech_hash, (char *) ptr->interface_name, (void *) ptr);
+				}
+			}
+			
 		}
 
 	}
@@ -382,6 +393,11 @@ SWITCH_DECLARE(switch_api_interface *) switch_loadable_module_get_api_interface(
 SWITCH_DECLARE(switch_file_interface *) switch_loadable_module_get_file_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.file_hash, name);
+}
+
+SWITCH_DECLARE(switch_speech_interface *) switch_loadable_module_get_speech_interface(char *name)
+{
+	return switch_core_hash_find(loadable_modules.speech_hash, name);
 }
 
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array,

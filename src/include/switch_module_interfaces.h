@@ -280,6 +280,46 @@ struct switch_file_handle {
 };
 
 
+/*! \brief Abstract interface to a speech module */
+struct switch_speech_interface {
+	/*! the name of the interface */
+	const char *interface_name;
+	/*! function to open the speech interface */
+	switch_status (*speech_open)(switch_speech_handle *sh,
+								 unsigned int flags);
+	/*! function to close the speech interface */
+	switch_status (*speech_close)(switch_speech_handle *);
+	/*! function to feed audio to the ASR*/
+	switch_status (*speech_feed_asr)(switch_speech_handle *sh, void *data, unsigned int *len, int rate, unsigned int *flags);
+	/*! function to read text from the ASR*/
+	switch_status (*speech_interpret_asr)(switch_speech_handle *sh, char *buf, unsigned int buflen, unsigned int *flags);
+	/*! function to feed text to the TTS*/
+	switch_status (*speech_feed_tts)(switch_speech_handle *sh, char *text, unsigned int *flags);
+	/*! function to read audio from the TTS*/
+	switch_status (*speech_read_tts)(switch_speech_handle *sh,
+									 void *data,
+									 unsigned int *datalen,
+									 unsigned int *rate,
+									 unsigned int *flags);
+
+	const struct switch_speech_interface *next;
+};
+
+
+/*! an abstract representation of a asr/tts speech interface. */
+struct switch_speech_handle {
+	/*! the interface of the module that implemented the current speech interface */
+	const struct switch_speech_interface *speech_interface;
+	/*! flags to control behaviour */
+	unsigned int flags;
+
+	/*! the handle's memory pool */
+	switch_memory_pool *memory_pool;
+	/*! private data for the format module to store handle specific info */
+	void *private;
+};
+
+
 /* nobody has more setting than speex so we will let them set the standard */
 /*! \brief Various codec settings (currently only relevant to speex) */
 struct switch_codec_settings {

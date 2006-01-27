@@ -71,6 +71,8 @@ struct switch_loadable_module_interface {
 	const switch_api_interface *api_interface;
 	/*! the table of file formats the module has implmented */
 	const switch_file_interface *file_interface;
+	/*! the table of speech interfaces the module has implmented */
+	const switch_speech_interface *speech_interface;
 };
 
 /*!
@@ -132,6 +134,14 @@ SWITCH_DECLARE(switch_api_interface *) switch_loadable_module_get_api_interface(
   \return the desired file format interface
  */
 SWITCH_DECLARE(switch_file_interface *) switch_loadable_module_get_file_interface(char *name);
+
+/*!
+  \brief Retrieve the speech interface by it's registered name
+  \param name the name of the speech interface
+  \return the desired speech interface
+ */
+SWITCH_DECLARE(switch_speech_interface *) switch_loadable_module_get_speech_interface(char *name);
+
 
 /*!
   \brief Retrieve the list of loaded codecs into an array
