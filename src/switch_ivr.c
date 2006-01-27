@@ -33,7 +33,93 @@
 #include <switch_ivr.h>
 
 
-/* TBD (Lots! there is only 1 function in here lol) */
+/* TBD (Lots! there are only 2 functions in here lol) */
+
+
+SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *session, 
+													 char *file,
+													 switch_dtmf_callback_function dtmf_callback)
+{
+	switch_channel *channel;
+    char dtmf[128];
+	switch_file_handle fh;
+	switch_frame *read_frame;
+	switch_codec codec, *read_codec;
+	char *codec_name;
+	switch_status status = SWITCH_STATUS_SUCCESS;
+	
+	memset(&fh, 0, sizeof(fh));
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	read_codec = switch_core_session_get_read_codec(session);
+	assert(read_codec != NULL);
+
+	fh.channels = read_codec->implementation->number_of_channels;
+	fh.samplerate = read_codec->implementation->samples_per_second;
+
+
+	if (switch_core_file_open(&fh,
+							  file,
+							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
+							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		switch_channel_hangup(channel);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	switch_channel_answer(channel);
+
+	
+	codec_name = "L16";
+	if (switch_core_codec_init(&codec,
+							   codec_name,
+							   read_codec->implementation->samples_per_second,
+							   read_codec->implementation->microseconds_per_frame / 1000,
+							   read_codec->implementation->number_of_channels,
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
+		switch_core_session_set_read_codec(session, &codec);		
+	} else {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d channels %dms\n",
+							  codec_name, fh.samplerate, fh.channels, read_codec->implementation->microseconds_per_frame / 1000);
+		switch_core_file_close(&fh);
+		return SWITCH_STATUS_GENERR;
+	}
+	
+
+	while (switch_channel_get_state(channel) == CS_EXECUTE) {
+		int len;
+
+		if (dtmf_callback) {
+			/*
+			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
+			*/
+			if (switch_channel_has_dtmf(channel)) {
+				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+				status = dtmf_callback(session, dtmf);
+			}
+
+			if (status != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
+
+		if (switch_core_session_read_frame(session, &read_frame, -1, 0) != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
+
+		len = read_frame->datalen / 2;
+		switch_core_file_write(&fh, read_frame->data, &len);
+	}
+
+	switch_core_session_set_read_codec(session, read_codec);
+	switch_core_file_close(&fh);
+
+	return status;
+}
 
 SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session, 
 												   char *file,
@@ -56,6 +142,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	int stream_id;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 
+	memset(&fh, 0, sizeof(fh));
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -165,7 +252,9 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 			}
 		} else { /* time off the channel (if you must) */
 			switch_frame *read_frame;
-			switch_core_session_read_frame(session, &read_frame, -1, 0);
+			if (switch_core_session_read_frame(session, &read_frame, -1, 0) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
 		}
 	}
 

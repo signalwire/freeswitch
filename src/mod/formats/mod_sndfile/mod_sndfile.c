@@ -46,7 +46,8 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 	sndfile_context *context;
 	int mode = 0;
 	char *ext;
-
+	int ready = 1;
+	
 	if (!(ext = strrchr(path, '.'))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Format\n");
 		return SWITCH_STATUS_GENERR;
@@ -67,40 +68,60 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 		return SWITCH_STATUS_GENERR;
 	}
 
-
 	if (!(context = switch_core_alloc(handle->memory_pool, sizeof(*context)))) {
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if (!strcmp(ext, "r8") || !strcmp(ext, "raw")) {
-		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
-		context->sfinfo.channels = 1;
-		context->sfinfo.samplerate = 8000;
+	if (mode & SFM_WRITE) {
+		context->sfinfo.channels = handle->channels;
+		context->sfinfo.samplerate = handle->samplerate;
+		if (handle->samplerate == 8000 || handle->samplerate == 16000) {
+			context->sfinfo.format |= SF_FORMAT_PCM_16;
+		} else if (handle->samplerate == 24000) {
+			context->sfinfo.format |= SF_FORMAT_PCM_24;
+		} else if (handle->samplerate == 32000) {
+			context->sfinfo.format |= SF_FORMAT_PCM_32;
+		}
+
+		/* Could add more else if() but i am too lazy atm.. */
+		if (!strcasecmp(ext, "wav")) {
+			context->sfinfo.format |= SF_FORMAT_WAV;
+		} else {
+			ready = 0;
+		}
 	}
 
-	if (!strcmp(ext, "r16")) {
-		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
-		context->sfinfo.channels = 1;
-		context->sfinfo.samplerate = 16000;
+
+	if (!ready) {
+		if (!strcmp(ext, "r8") || !strcmp(ext, "raw")) {
+			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
+			context->sfinfo.channels = 1;
+			context->sfinfo.samplerate = 8000;
+		} else if (!strcmp(ext, "r16")) {
+			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
+			context->sfinfo.channels = 1;
+			context->sfinfo.samplerate = 16000;
+		} else if (!strcmp(ext, "r24")) {
+			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
+			context->sfinfo.channels = 1;
+			context->sfinfo.samplerate = 24000;
+		} else if (!strcmp(ext, "r32")) {
+			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_32;
+			context->sfinfo.channels = 1;
+			context->sfinfo.samplerate = 32000;
+		} else if (!strcmp(ext, "gsm")) {
+			context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
+			context->sfinfo.channels = 1;
+			context->sfinfo.samplerate = 8000;
+		}
 	}
 
-	if (!strcmp(ext, "r24")) {
-		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
-		context->sfinfo.channels = 1;
-		context->sfinfo.samplerate = 24000;
-	}
 
-	if (!strcmp(ext, "r32")) {
-		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_32;
-		context->sfinfo.channels = 1;
-		context->sfinfo.samplerate = 32000;
-	}
+	if ((mode & SFM_WRITE) && sf_format_check (&context->sfinfo) == 0) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error : file format is invalid (0x%08X).\n", context->sfinfo.format);
+		return SWITCH_STATUS_GENERR;
+	};
 
-	if (!strcmp(ext, "gsm")) {
-		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
-		context->sfinfo.channels = 1;
-		context->sfinfo.samplerate = 8000;
-	}
 
 	if (!(context->handle = sf_open(path, mode, &context->sfinfo))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error Opening File [%s] [%s]\n", path,

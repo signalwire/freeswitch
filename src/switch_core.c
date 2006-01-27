@@ -212,6 +212,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_set_read_codec(switch_core_ses
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_codec *) switch_core_session_get_read_codec(switch_core_session *session)
+{
+	return session->read_codec;
+}
 
 SWITCH_DECLARE(switch_status) switch_core_session_set_write_codec(switch_core_session *session, switch_codec *codec)
 {
@@ -219,6 +223,11 @@ SWITCH_DECLARE(switch_status) switch_core_session_set_write_codec(switch_core_se
 
 	session->write_codec = codec;
 	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_codec *) switch_core_session_get_write_codec(switch_core_session *session)
+{
+	return session->write_codec;
 }
 
 SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, int rate, int ms,
@@ -360,8 +369,6 @@ SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char
 {
 	char *ext;
 	switch_status status;
-
-	memset(fh, 0, sizeof(*fh));
 
 	if (!(ext = strrchr(file_path, '.'))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Format\n");

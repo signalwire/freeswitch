@@ -64,6 +64,19 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 												   char *file,
 												   char *timer_name,
 												   switch_dtmf_callback_function dtmf_callback);
+
+
+
+/*!
+  \brief record a file from the session to a file
+  \param session the session to record from
+  \param file the path to the file
+  \param dtmf_callback code to execute if any dtmf is dialed during the recording
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *session,
+													 char *file,
+													 switch_dtmf_callback_function dtmf_callback);
 	
 /** @} */
 

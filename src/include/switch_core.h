@@ -642,14 +642,28 @@ SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec *codec);
 SWITCH_DECLARE(switch_status) switch_core_session_set_read_codec(switch_core_session *session, switch_codec *codec);
 
 /*! 
+  \brief Retrieve the read codec from a given session
+  \param session session to retrieve from
+  \return a pointer to the codec
+*/
+SWITCH_DECLARE(switch_codec *) switch_core_session_get_read_codec(switch_core_session *session);
+
+/*! 
   \brief Assign the write codec to a given session
   \param session session to add the codec to
   \param codec the codec to add
   \return SWITCH_STATUS_SUCCESS if successful
 */
 SWITCH_DECLARE(switch_status) switch_core_session_set_write_codec(switch_core_session *session, switch_codec *codec);
-///\}
 
+/*! 
+  \brief Retrieve the write codec from a given session
+  \param session session to retrieve from
+  \return a pointer to the codec
+*/
+SWITCH_DECLARE(switch_codec *) switch_core_session_get_write_codec(switch_core_session *session);
+
+///\}
 ///\defgroup db Database Functions
 ///\ingroup core1
 ///\{
@@ -684,7 +698,7 @@ SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char
 
 /*! 
   \brief Read media from a file handle
-  \param fh the file handle to read from
+  \param fh the file handle to read from (must be initilized by you memset all 0 for read, fill in channels and rate for write)
   \param data the buffer to read the data to
   \param len the max size of the buffer
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes read if successful

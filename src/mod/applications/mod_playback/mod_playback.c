@@ -73,9 +73,29 @@ void playback_function(switch_core_session *session, char *data)
 	
 }
 
+
+void record_function(switch_core_session *session, char *data)
+{
+	switch_channel *channel;
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	if (switch_ivr_record_file(session, data, on_dtmf) != SWITCH_STATUS_SUCCESS) {
+		switch_channel_hangup(channel);
+	}
+	
+}
+
+static const switch_application_interface record_application_interface = {
+	/*.interface_name */ "record",
+	/*.application_function */ record_function
+};
+
 static const switch_application_interface playback_application_interface = {
 	/*.interface_name */ "playback",
-	/*.application_function */ playback_function
+	/*.application_function */ playback_function,
+	NULL,NULL,NULL,
+	/*.next*/				  &record_application_interface
 };
 
 static const switch_loadable_module_interface mod_playback_module_interface = {
