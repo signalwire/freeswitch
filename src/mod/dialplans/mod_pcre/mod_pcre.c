@@ -97,7 +97,7 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 			match_count = pcre_exec(re,	/* result of pcre_compile() */
 									NULL,	/* we didn't study the pattern */
 									caller_profile->destination_number,	/* the subject string */
-									strlen(caller_profile->destination_number),	/* the length of the subject string */
+									(int) strlen(caller_profile->destination_number),	/* the length of the subject string */
 									0,	/* start at offset 0 in the subject */
 									0,	/* default options */
 									ovector,	/* vector of integers for substring information */
@@ -111,7 +111,7 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 				char newval[1024] = "";
 				char index[10] = "";
 				char replace[128] = "";
-				int x, y = 0, z = 0, num = 0;
+				unsigned int x, y = 0, z = 0, num = 0;
 				char *data;
 
 				for (x = 0; x < sizeof(newval) && x < strlen(val);) {
@@ -129,7 +129,7 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 						if (pcre_copy_substring
 							(caller_profile->destination_number, ovector, match_count, num, replace,
 							 sizeof(replace)) > 0) {
-							int r;
+							unsigned int r;
 							for (r = 0; r < strlen(replace); r++) {
 								newval[y++] = replace[r];
 							}

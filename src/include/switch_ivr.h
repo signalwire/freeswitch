@@ -78,7 +78,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_ses
 SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_session *session,
 															  char *buf,
 															  unsigned int buflen,
-															  int maxdigits,
+															  unsigned int maxdigits,
 															  const char *terminators,
 															  char *terminator);
 	

@@ -75,11 +75,11 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_ses
 SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_session *session,
 															  char *buf,
 															  unsigned int buflen,
-															  int maxdigits,
+															  unsigned int maxdigits,
 															  const char *terminators,
 															  char *terminator)
 {
-	int i = 0, x = strlen(buf);
+	unsigned int i = 0, x =  (unsigned int) strlen(buf);
 	switch_channel *channel;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	
@@ -94,7 +94,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
 			char dtmf[128];
 			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
 
-			for(i =0 ; i < strlen(dtmf); i++) {
+			for(i =0 ; i < (unsigned int) strlen(dtmf); i++) {
 
 				if (strchr(terminators, dtmf[i])) {
 					*terminator = dtmf[i];

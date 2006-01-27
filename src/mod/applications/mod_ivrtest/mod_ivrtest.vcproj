@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="mod_ivrtest"
-	ProjectGUID="{78100236-7CEA-4948-96CC-E8ED3160329C}"
+	ProjectGUID="{419AA391-5F3F-4BFE-A869-9D154D62A792}"
 	RootNamespace="mod_ivrtest"
 	Keyword="Win32Proj"
 	>
