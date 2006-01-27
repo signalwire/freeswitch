@@ -1028,7 +1028,7 @@ modwipe:
 install_mod: modules
 	@echo Installing $(NAME)
 	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db $(PREFIX)/bin
-	@/bin/cp -p ./$(NAME) $(PREFIX)/bin
+	@if [ -f .libs/$(NAME) ] ; then /bin/cp -p .libs/$(NAME) $(PREFIX)/bin ; else /bin/cp -p ./$(NAME) $(PREFIX)/bin ; fi
 	@ln -sf $(PREFIX)/bin/$(NAME) /usr/bin
 	@echo Installing Modules
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making clean $$i ; PREFIX=$(PREFIX) MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i install || exit 1; done
