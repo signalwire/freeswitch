@@ -55,7 +55,9 @@ extern "C" {
 /*!
   \brief Wait for DTMF digits calling a pluggable callback function when digits are collected.
   \param session the session to read.
-  \param dtmf_collection_callback code to execute if any dtmf is dialed during the recording
+  \param dtmf_callback code to execute if any dtmf is dialed during the recording
+  \param buf an object to maintain across calls
+  \param buflen the size of buf
   \return SWITCH_STATUS_SUCCESS to keep the collection moving.
 */
 SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_session *session,
@@ -86,6 +88,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
   \param file the path to the file
   \param timer_name the name of a timer to use input will be absorbed (NULL to time off the session input).
   \param dtmf_callback code to execute if any dtmf is dialed during the playback
+  \param buf an object to maintain across calls
+  \param buflen the size of buf
   \return SWITCH_STATUS_SUCCESS if all is well
   \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop playback.
 */
@@ -103,6 +107,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
   \param session the session to record from
   \param file the path to the file
   \param dtmf_callback code to execute if any dtmf is dialed during the recording
+  \param buf an object to maintain across calls
+  \param buflen the size of buf
   \return SWITCH_STATUS_SUCCESS if all is well
   \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop recording.
 */
