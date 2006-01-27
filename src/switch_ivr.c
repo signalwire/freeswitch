@@ -89,7 +89,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 	
 
 	while (switch_channel_get_state(channel) == CS_EXECUTE) {
-		int len;
+		size_t len;
 
 		if (dtmf_callback) {
 			/*
@@ -110,7 +110,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 			break;
 		}
 
-		len = read_frame->datalen / 2;
+		len = (size_t) read_frame->datalen / 2;
 		switch_core_file_write(&fh, read_frame->data, &len);
 	}
 
