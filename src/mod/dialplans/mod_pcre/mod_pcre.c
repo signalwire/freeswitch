@@ -147,11 +147,7 @@ switch_caller_extension *dialplan_hunt(switch_core_session *session)
 				if ((data = strchr(app, ' '))) {
 					*data = '\0';
 					data++;
-				} else {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid extension on line %d\n", cfg.lineno);
-					continue;
-				}
-
+				} 
 
 				if (!extension) {
 					if (!

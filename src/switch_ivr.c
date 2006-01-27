@@ -35,9 +35,95 @@
 
 /* TBD (Lots! there are not very many functions in here lol) */
 
+SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_session *session,
+														switch_dtmf_callback_function dtmf_callback,
+														void *buf,
+														unsigned int buflen)
+{
+	switch_channel *channel;
+	switch_status status = SWITCH_STATUS_SUCCESS;
+	
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	if (!dtmf_callback) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	while (switch_channel_get_state(channel) == CS_EXECUTE) {
+		switch_frame *read_frame;
+		char dtmf[128];
+
+		if (switch_channel_has_dtmf(channel)) {
+			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+			status = dtmf_callback(session, dtmf, buf, buflen);
+		}
+
+		if (status != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
+
+		if (switch_core_session_read_frame(session, &read_frame, -1, 0) != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
+	}
+
+	return status;
+}
+
+
+SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_session *session,
+															  char *buf,
+															  unsigned int buflen,
+															  int maxdigits,
+															  const char *terminators,
+															  char *terminator)
+{
+	int i = 0, x = strlen(buf);
+	switch_channel *channel;
+	switch_status status = SWITCH_STATUS_SUCCESS;
+	
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	*terminator = '\0';
+	while (switch_channel_get_state(channel) == CS_EXECUTE) {
+		switch_frame *read_frame;
+		
+		if (switch_channel_has_dtmf(channel)) {
+			char dtmf[128];
+			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+
+			for(i =0 ; i < strlen(dtmf); i++) {
+
+				if (strchr(terminators, dtmf[i])) {
+					*terminator = dtmf[i];
+					return SWITCH_STATUS_SUCCESS;
+				}
+
+				buf[x++] = dtmf[i];
+				buf[x] = '\0';
+				if (x >= buflen || x >= maxdigits) {
+					return SWITCH_STATUS_SUCCESS;
+				}
+			}
+		}
+		
+		if ((status = switch_core_session_read_frame(session, &read_frame, -1, 0)) != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
+	}
+
+	return status;
+}
+
+
+
 SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *session, 
 													 char *file,
-													 switch_dtmf_callback_function dtmf_callback)
+													 switch_dtmf_callback_function dtmf_callback,
+													 void *buf,
+													 unsigned int buflen)
 {
 	switch_channel *channel;
     char dtmf[128];
@@ -91,22 +177,27 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 	while (switch_channel_get_state(channel) == CS_EXECUTE) {
 		size_t len;
 
-		if (dtmf_callback) {
+		if (dtmf_callback || buf) {
 			/*
 			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			*/
 			if (switch_channel_has_dtmf(channel)) {
 				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-				status = dtmf_callback(session, dtmf);
+				if (dtmf_callback) {
+					status = dtmf_callback(session, dtmf, buf, buflen);
+				} else {
+					switch_copy_string((char *)buf, dtmf, buflen);
+					status = SWITCH_STATUS_BREAK;
+				}
 			}
 
 			if (status != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 		}
-
-		if (switch_core_session_read_frame(session, &read_frame, -1, 0) != SWITCH_STATUS_SUCCESS) {
+		
+		if ((status = switch_core_session_read_frame(session, &read_frame, -1, 0)) != SWITCH_STATUS_SUCCESS) {
 			break;
 		}
 
@@ -123,10 +214,12 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session, 
 												   char *file,
 												   char *timer_name,
-												   switch_dtmf_callback_function dtmf_callback)
+												   switch_dtmf_callback_function dtmf_callback,
+												   void *buf,
+												   unsigned int buflen)
 {
 	switch_channel *channel;
-	short buf[960];
+	short abuf[960];
 	char dtmf[128];
 	int interval = 0, samples = 0;
 	size_t len = 0, ilen = 0;
@@ -156,8 +249,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 
 	switch_channel_answer(channel);
 
-	write_frame.data = buf;
-	write_frame.buflen = sizeof(buf);
+	write_frame.data = abuf;
+	write_frame.buflen = sizeof(abuf);
 
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s %dhz %d channels\n", file, fh.samplerate, fh.channels);
@@ -206,23 +299,30 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	while (switch_channel_get_state(channel) == CS_EXECUTE) {
 		int done = 0;
 
-		if (dtmf_callback) {
+		if (dtmf_callback || buf) {
+
+
 			/*
 			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			*/
 			if (switch_channel_has_dtmf(channel)) {
 				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-				status = dtmf_callback(session, dtmf);
+				if (dtmf_callback) {
+					status = dtmf_callback(session, dtmf, buf, buflen);
+				} else {
+					switch_copy_string((char *)buf, dtmf, buflen);
+					status = SWITCH_STATUS_BREAK;
+				}
 			}
-
+			
 			if (status != SWITCH_STATUS_SUCCESS) {
 				done = 1;
 				break;
 			}
 		}
 		
-		switch_core_file_read(&fh, buf, &ilen);
+		switch_core_file_read(&fh, abuf, &ilen);
 
 		if (done || ilen <= 0) {
 			break;
@@ -270,3 +370,6 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 
 	return status;
 }
+
+
+

@@ -6,10 +6,12 @@ if [ ! -z $1 ] ; then
     fi
 fi
 
+force=0
 version=`svnversion . -n || echo hacked`
 oldversion=`cat .version 2>/dev/null || echo "0"`
+grep "@SVN_VERSION@" src/include/switch_version.h && force=1
 
-if [ $oldversion != $version ] ; then
+if [ $oldversion != $version ] || [ $force = 1 ] ; then
     cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/$version/g" > src/include/switch_version.h
     echo $version > .version
     make modclean

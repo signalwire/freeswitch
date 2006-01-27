@@ -102,6 +102,7 @@ typedef enum {
     SWITCH_STATUS_RESAMPLE	- An indication that a resample has occured
     SWITCH_STATUS_GENERR	- A general Error
     SWITCH_STATUS_INUSE		- An indication that requested resource is in use
+	SWITCH_STATUS_BREAK     - A non-fatal break of an operation
 </pre>
  */
 typedef enum {
@@ -115,7 +116,8 @@ typedef enum {
 	SWITCH_STATUS_NOOP,
 	SWITCH_STATUS_RESAMPLE,
 	SWITCH_STATUS_GENERR,
-	SWITCH_STATUS_INUSE
+	SWITCH_STATUS_INUSE,
+	SWITCH_STATUS_BREAK,
 } switch_status;
 
 /*!
@@ -392,7 +394,7 @@ typedef switch_status (*switch_waitfor_read_hook)(switch_core_session *, int, in
 typedef switch_status (*switch_waitfor_write_hook)(switch_core_session *, int, int);
 typedef switch_status (*switch_send_dtmf_hook)(switch_core_session *, char *);
 typedef switch_status (*switch_api_function)(char *in, char *out, size_t outlen);
-typedef switch_status (*switch_dtmf_callback_function)(switch_core_session *session, char *dtmf);
+typedef switch_status (*switch_dtmf_callback_function)(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen);
 
 /* things we don't deserve to know about */
 

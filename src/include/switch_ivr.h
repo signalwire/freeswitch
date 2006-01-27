@@ -53,17 +53,48 @@ extern "C" {
  */
 
 /*!
+  \brief Wait for DTMF digits calling a pluggable callback function when digits are collected.
+  \param session the session to read.
+  \param dtmf_collection_callback code to execute if any dtmf is dialed during the recording
+  \return SWITCH_STATUS_SUCCESS to keep the collection moving.
+*/
+SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_session *session,
+																 switch_dtmf_callback_function dtmf_callback,
+																 void *buf,
+																 unsigned int buflen);
+
+/*!
+  \brief Wait for specified number of DTMF digits, untile terminator is received or until the channel hangs up.
+  \param session the session to read.
+  \param buf strig to write to
+  \param buflen max size of buf
+  \param maxdigits max number of digits to read
+  \param terminators digits to end the collection
+  \param terminator actual digit that caused the collection to end (if any)
+  \return SWITCH_STATUS_SUCCESS to keep the collection moving.
+*/
+SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_session *session,
+															  char *buf,
+															  unsigned int buflen,
+															  int maxdigits,
+															  const char *terminators,
+															  char *terminator);
+	
+/*!
   \brief play a file from the disk to the session
   \param session the session to play the file too
   \param file the path to the file
   \param timer_name the name of a timer to use input will be absorbed (NULL to time off the session input).
   \param dtmf_callback code to execute if any dtmf is dialed during the playback
   \return SWITCH_STATUS_SUCCESS if all is well
+  \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop playback.
 */
 SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 												   char *file,
 												   char *timer_name,
-												   switch_dtmf_callback_function dtmf_callback);
+												   switch_dtmf_callback_function dtmf_callback,
+												   void *buf,
+												   unsigned int buflen);
 
 
 
@@ -73,11 +104,15 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
   \param file the path to the file
   \param dtmf_callback code to execute if any dtmf is dialed during the recording
   \return SWITCH_STATUS_SUCCESS if all is well
+  \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop recording.
 */
 SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *session,
 													 char *file,
-													 switch_dtmf_callback_function dtmf_callback);
-	
+													 switch_dtmf_callback_function dtmf_callback,
+													 void *buf,
+													 unsigned int buflen);
+
+
 /** @} */
 
 #ifdef __cplusplus

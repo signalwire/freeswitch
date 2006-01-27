@@ -89,6 +89,8 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 		} else {
 			ready = 0;
 		}
+	} else {
+		ready = 0;
 	}
 
 
