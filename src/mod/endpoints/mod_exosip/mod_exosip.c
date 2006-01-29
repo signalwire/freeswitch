@@ -80,6 +80,9 @@ static struct {
 	int port;
 	int rtp_start;
 	int rtp_end;
+	char *codec_string;
+	char *codec_order[SWITCH_MAX_CODECS];
+	int codec_order_last;
 	switch_hash *call_hash;
 	switch_mutex_t *port_lock;
 	int running;
@@ -129,17 +132,9 @@ static int next_rtp_port(void)
 }
 
 
-static void set_global_dialplan(char *dialplan)
-{
-	if (globals.dialplan) {
-		free(globals.dialplan);
-		globals.dialplan = NULL;
-	}
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
 
-	globals.dialplan = strdup(dialplan);
-}
-
-static void set_global_dialplan(char *dialplan);
 static switch_status exosip_on_init(switch_core_session *session);
 static switch_status exosip_on_hangup(switch_core_session *session);
 static switch_status exosip_on_loopback(switch_core_session *session);
@@ -256,9 +251,21 @@ static switch_status exosip_on_init(switch_core_session *session)
 		snprintf(port, sizeof(port), "%i", tech_pvt->local_sdp_audio_port);
 		sdp_message_m_media_add(tech_pvt->local_sdp, "audio", port, NULL, "RTP/AVP");
 		/* Add in every codec we support on this outbound call */
-		if ((num_codecs =
-			 switch_loadable_module_get_codecs(switch_core_session_get_pool(session), codecs,
-											   sizeof(codecs) / sizeof(codecs[0]))) > 0) {
+		if (globals.codec_string) {
+			num_codecs = switch_loadable_module_get_codecs_sorted(switch_core_session_get_pool(tech_pvt->session),
+																  codecs,
+																  SWITCH_MAX_CODECS,
+																  globals.codec_order,
+																  globals.codec_order_last);
+			
+		} else {
+			num_codecs =
+				switch_loadable_module_get_codecs(switch_core_session_get_pool(session), codecs,
+												  sizeof(codecs) / sizeof(codecs[0]));
+		}
+		
+
+		if (num_codecs > 0) {
 			int i;
 			static const switch_codec_implementation *imp;
 			for (i = 0; i < num_codecs; i++) {
@@ -832,9 +839,21 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		osip_rfc3264_init(&tech_pvt->sdp_config);
 		/* Add in what codecs we support locally */
 
-		if ((num_codecs =
-			 switch_loadable_module_get_codecs(switch_core_session_get_pool(session), codecs,
-											   sizeof(codecs) / sizeof(codecs[0]))) > 0) {
+
+		if (globals.codec_string) {
+			num_codecs = switch_loadable_module_get_codecs_sorted(switch_core_session_get_pool(tech_pvt->session),
+																  codecs,
+																  SWITCH_MAX_CODECS,
+																  globals.codec_order,
+																  globals.codec_order_last);
+			
+		} else {
+			num_codecs =
+				switch_loadable_module_get_codecs(switch_core_session_get_pool(session), codecs,
+												  sizeof(codecs) / sizeof(codecs[0]));
+		}
+
+		if (num_codecs > 0) {
 			int i;
 			static const switch_codec_implementation *imp;
 
@@ -1265,6 +1284,10 @@ static int config_exosip(int reload)
 				globals.port = atoi(val);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
+			} else if (!strcmp(var, "codec_prefs")) {
+				set_global_codec_string(val);
+				globals.codec_order_last =
+					switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
 			} else if (!strcmp(var, "rtp_min_port")) {
 				globals.rtp_start = atoi(val);
 			} else if (!strcmp(var, "rtp_max_port")) {
