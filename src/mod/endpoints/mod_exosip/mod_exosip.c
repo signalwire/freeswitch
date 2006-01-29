@@ -474,7 +474,6 @@ static void activate_rtp(struct private_object *tech_pvt)
 
 
 
-
 	tech_pvt->rtp_session = jrtp4c_new(tech_pvt->local_sdp_audio_ip,
 									   tech_pvt->local_sdp_audio_port,
 									   tech_pvt->remote_sdp_audio_ip,
