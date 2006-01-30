@@ -107,7 +107,7 @@ CLEANFILES = src/include/switch_version.h
 
 
 makecheck:
-	make --version || echo you need to execute gnu make from the top level
+	make --version || (echo you need to execute gnu make from the top level && exit)
 
 version: Makefile
 	./checkversion.sh

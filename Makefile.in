@@ -984,7 +984,7 @@ uninstall-info: uninstall-info-recursive
 
 
 makecheck:
-	make --version || echo you need to execute gnu make from the top level
+	make --version || (echo you need to execute gnu make from the top level && exit)
 
 version: Makefile
 	./checkversion.sh
