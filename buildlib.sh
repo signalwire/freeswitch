@@ -60,7 +60,7 @@ cd $uncompressed
 $MAKE clean 2>&1
 sh ./configure $@
 
-if [ $? == 0 ] ; then
+if [ $? = 0 ] ; then
     $MAKE
 else 
     echo ERROR
@@ -69,13 +69,9 @@ fi
 
 if [ ! -z $install ] ; then
     $MAKE install
-    ldpath=`which ldconfig`
-    if [ ! -z $ldpath ] ; then
-	ldconfig 2>&1
-    fi
 fi
 
-if [ $? == 0 ] ; then
+if [ $? = 0 ] ; then
     touch .complete
 else 
     echo ERROR
