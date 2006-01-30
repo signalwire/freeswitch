@@ -1012,10 +1012,10 @@ depends: .depend
 
 modules: $(NAME)
 	@echo making modules
-	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; MAKE=$(MAKE) DYLD_LIBRARY_PATH="$(PREFIX)/lib:$DYLD_LIBRARY_PATH" LD_LIBRARY_PATH="$(PREFIX)/lib:$LD_LIBRARY_PATH" PREFIX="$(PREFIX)" BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
+	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; export MAKE=$(MAKE) DYLD_LIBRARY_PATH="$(PREFIX)/lib:$DYLD_LIBRARY_PATH" LD_LIBRARY_PATH="$(PREFIX)/lib:$LD_LIBRARY_PATH" PREFIX="$(PREFIX)" BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
 
 modclean:
-	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; MAKE=$(MAKE) SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
+	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; export MAKE=$(MAKE) SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
 
 everything: install install_mod
 
@@ -1031,7 +1031,7 @@ install_mod: modules
 	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db $(PREFIX)/bin
 	@if [ -f .libs/$(NAME) ] ; then /bin/cp -p .libs/$(NAME) $(PREFIX)/bin ; else /bin/cp -p ./$(NAME) $(PREFIX)/bin ; fi
 	@echo Installing Modules
-	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making clean $$i ; PREFIX=$(PREFIX) MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i install || exit 1; done
+	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making clean $$i ; export PREFIX=$(PREFIX) MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i install || exit 1; done
 	@echo done
 
 dox:
