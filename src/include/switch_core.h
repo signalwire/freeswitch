@@ -732,7 +732,7 @@ SWITCH_DECLARE(switch_status) switch_core_file_seek(switch_file_handle *fh, unsi
 SWITCH_DECLARE(switch_status) switch_core_file_close(switch_file_handle *fh);
 ///\}
 
-///\defgroup speeech ASR/TTS Functions
+///\defgroup speech ASR/TTS Functions
 ///\ingroup core1
 ///\{
 /*! 
