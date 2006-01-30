@@ -26,112 +26,147 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
  *
- * mod_codec_gsm.c -- gsm Codec Module
+ * mod_ilbc.c -- ilbc Codec Module
  *
  */  
 #include "switch.h"
-#include "gsm.h"
-static const char modname[] = "mod_codec_gsm";
-struct gsm_context {
-	gsm encoder;
-	gsm decoder;
-};
-static switch_status switch_gsm_init(switch_codec *codec, switch_codec_flag flags,
-									   const struct switch_codec_settings *codec_settings) 
-{
-	struct gsm_context *context;
-	int encoding, decoding;
-	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
-	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
-	if (!(encoding || decoding)) {
-		return SWITCH_STATUS_FALSE;
-	} else {
-		context = switch_core_alloc(codec->memory_pool, sizeof(*context));
-		if (encoding)
-			context->encoder = gsm_create();
-		if (decoding)
-			context->decoder = gsm_create();
-	}
-	codec->private = context;
-	return SWITCH_STATUS_SUCCESS;
-}
-static switch_status switch_gsm_destroy(switch_codec *codec) 
-{
-	struct gsm_context *context = codec->private;
-	int encoding = (codec->flags & SWITCH_CODEC_FLAG_ENCODE);
-	int decoding = (codec->flags & SWITCH_CODEC_FLAG_DECODE);
-	if (encoding)
-		gsm_destroy(context->encoder);
-	if (decoding)
-		gsm_destroy(context->decoder);
-	codec->private = NULL;
-	return SWITCH_STATUS_SUCCESS;
-}
-static switch_status switch_gsm_encode(switch_codec *codec, switch_codec *other_codec, void *decoded_data,
-										  size_t decoded_data_len, int decoded_rate, void *encoded_data,
-										  size_t *encoded_data_len, int *encoded_rate, unsigned int *flag) 
-{
-	struct gsm_context *context = codec->private;
-	int cbret = 0;
-	if (!context) {
-		return SWITCH_STATUS_FALSE;
-	}
-	if (decoded_data_len % 320 == 0) {
-		unsigned int new_len = 0;
-		gsm_signal * ddp = decoded_data;
-		gsm_byte * edp = encoded_data;
-		int x;
-		int loops = (int) decoded_data_len / 320;
-		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
-			gsm_encode(context->encoder, ddp, edp);
-			edp += 33;
-			ddp += 160;
-			new_len += 33;
-		}
-		if (new_len <= *encoded_data_len) {
-			*encoded_data_len = new_len;
-		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
-			return SWITCH_STATUS_FALSE;
-		}
-	}
-	return SWITCH_STATUS_SUCCESS;
-}
-static switch_status switch_gsm_decode(switch_codec *codec, switch_codec *other_codec, void *encoded_data,
-										  size_t encoded_data_len, int encoded_rate, void *decoded_data,
-										  size_t *decoded_data_len, int *decoded_rate, unsigned int *flag) 
-{
-	struct gsm_context *context = codec->private;
-	if (!context) {
-		return SWITCH_STATUS_FALSE;
-	}
-	if (encoded_data_len % 33 == 0) {
-		int loops = (int) encoded_data_len / 33;
-		gsm_byte * edp = encoded_data;
-		gsm_signal * ddp = decoded_data;
-		int x;
-		unsigned int new_len = 0;
-		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
-			gsm_decode(context->decoder, edp, ddp);
-			ddp += 160;
-			edp += 33;
-			new_len += 320;
-		}
-		if (new_len <= *decoded_data_len) {
-			*decoded_data_len = new_len;
-		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!!\n");
-			return SWITCH_STATUS_FALSE;
-		}
-	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "yo this frame is an odd size [%d]\n", encoded_data_len);
-	}
-	return SWITCH_STATUS_SUCCESS;
-}
+#include "iLBC_encode.h"
+#include "iLBC_decode.h"
 
-
+static const char modname[] = "mod_ilbc";
+
+struct ilbc_context {
+	ilbc encoder;
+	ilbc decoder;
+};
+
+static switch_status switch_ilbc_init(switch_codec *codec, switch_codec_flag flags,
+									  const struct switch_codec_settings *codec_settings) 
+{
+	struct ilbc_context *context;
+	int encoding, decoding;
+
+	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
+	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
+
+	if (!(encoding || decoding)) {
+		return SWITCH_STATUS_FALSE;
+	} else {
+		context = switch_core_alloc(codec->memory_pool, sizeof(*context));
+		if (encoding)
+			context->encoder = ilbc_create();
+		if (decoding)
+			context->decoder = ilbc_create();
+	}
+
+	codec->private = context;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status switch_ilbc_destroy(switch_codec *codec) 
+{
+	struct ilbc_context *context = codec->private;
+
+	int encoding = (codec->flags & SWITCH_CODEC_FLAG_ENCODE);
+	int decoding = (codec->flags & SWITCH_CODEC_FLAG_DECODE);
+
+	if (encoding)
+		ilbc_destroy(context->encoder);
+	if (decoding)
+		ilbc_destroy(context->decoder);
+
+	codec->private = NULL;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status switch_ilbc_encode(switch_codec *codec, 
+										switch_codec *other_codec, 
+										void *decoded_data,
+
+										size_t decoded_data_len, 
+										int decoded_rate, 
+										void *encoded_data,
+
+										size_t *encoded_data_len, 
+										int *encoded_rate, 
+										unsigned int *flag) 
+{
+	struct ilbc_context *context = codec->private;
+	int cbret = 0;
+
+	if (!context) {
+		return SWITCH_STATUS_FALSE;
+	}
+	if (decoded_data_len % 320 == 0) {
+		unsigned int new_len = 0;
+		ilbc_signal * ddp = decoded_data;
+		ilbc_byte * edp = encoded_data;
+		int x;
+		int loops = (int) decoded_data_len / 320;
+		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
+			ilbc_encode(context->encoder, ddp, edp);
+			edp += 33;
+			ddp += 160;
+			new_len += 33;
+		}
+		if (new_len <= *encoded_data_len) {
+			*encoded_data_len = new_len;
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status switch_ilbc_decode(switch_codec *codec, 
+										switch_codec *other_codec, 
+										void *encoded_data,
+
+										size_t encoded_data_len, 
+										int encoded_rate, 
+										void *decoded_data,
+
+										size_t *decoded_data_len, 
+										int *decoded_rate, 
+										unsigned int *flag) 
+{
+	struct ilbc_context *context = codec->private;
+
+	if (!context) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (encoded_data_len % 33 == 0) {
+		int loops = (int) encoded_data_len / 33;
+		ilbc_byte * edp = encoded_data;
+		ilbc_signal * ddp = decoded_data;
+		int x;
+		unsigned int new_len = 0;
+
+		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
+			ilbc_decode(context->decoder, edp, ddp);
+			ddp += 160;
+			edp += 33;
+			new_len += 320;
+		}
+		if (new_len <= *decoded_data_len) {
+			*decoded_data_len = new_len;
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!!\n");
+			return SWITCH_STATUS_FALSE;
+		}
+	} else {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "yo this frame is an odd size [%d]\n", encoded_data_len);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 /* Registration */ 
-static const switch_codec_implementation gsm_8k_implementation = { 
+
+static const switch_codec_implementation ilbc_8k_implementation = { 
 		/*.samples_per_second */ 8000, 
 		/*.bits_per_second */ 13200, 
 		/*.microseconds_per_frame */ 20000, 
@@ -141,35 +176,49 @@
 		/*.number_of_channels */ 1, 
 		/*.pref_frames_per_packet */ 1, 
 		/*.max_frames_per_packet */ 1, 
-		/*.init */ switch_gsm_init, 
-		/*.encode */ switch_gsm_encode, 
-		/*.decode */ switch_gsm_decode, 
-		/*.destroy */ switch_gsm_destroy, 
+		/*.init */ switch_ilbc_init, 
+		/*.encode */ switch_ilbc_encode, 
+		/*.decode */ switch_ilbc_decode, 
+		/*.destroy */ switch_ilbc_destroy, 
 };
-static const switch_codec_interface gsm_codec_interface = { 
-		/*.interface_name */ "gsm", 
+
+
+static const switch_codec_interface ilbc_codec_interface = { 
+		/*.interface_name */ "ilbc", 
 		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 3, 
-		/*.iananame */ "gsm", 
-		/*.implementations */ &gsm_8k_implementation, 
+		/*.iananame */ "ilbc", 
+		/*.implementations */ &ilbc_8k_implementation, 
 };
-static switch_loadable_module_interface gsm_module_interface = { 
+
+
+static switch_loadable_module_interface ilbc_module_interface = { 
 		/*.module_name */ modname, 
 		/*.endpoint_interface */ NULL, 
 		/*.timer_interface */ NULL, 
 		/*.dialplan_interface */ NULL, 
-		/*.codec_interface */ &gsm_codec_interface, 
+		/*.codec_interface */ &ilbc_codec_interface, 
 		/*.application_interface */ NULL 
 };
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface,
+
+
+
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface,
 														char *filename)
 {
 	
 		/* connect my internal structure to the blank pointer passed to me */ 
-		*interface = &gsm_module_interface;
-	
+		*interface = &ilbc_module_interface;
+	
+
 		/* indicate that the module should continue to be loaded */ 
 		return SWITCH_STATUS_SUCCESS;
-}
 
-
+}
+
+
+
+
+
+
+

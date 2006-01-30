@@ -18,7 +18,7 @@ AM_LDFLAGS += -Wl,-E
 endif
 
 if IS64BITLINUX
-AM_CFLAGS += -m64 -march=k8
+AM_CFLAGS += -m64 -march=k8 -fPIC
 endif
 
 if ISMAC

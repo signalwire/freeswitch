@@ -140,6 +140,10 @@ If BuildModExosip Then
 	BuildLibs_libosip2 BuildDebug, BuildRelease
 	BuildLibs_exosip BuildDebug, BuildRelease
 	BuildLibs_jrtplib BuildDebug, BuildRelease
+	If Not FSO.FolderExists(LibDestDir & "include\jrtplib3") Then
+		FSO.CreateFolder(LibDestDir & "include\jrtplib3")
+	End If
+	FSO.CopyFile LibDestDir & "jrtplib\src\*.h", LibDestDir & "include\jrtplib3"
 End If
 
 If BuildModIaxChan Then
@@ -336,36 +340,15 @@ Sub BuildLibs_libosip2(BuildDebug, BuildRelease)
 End Sub
 
 Sub BuildLibs_jrtplib(BuildDebug, BuildRelease)
-	If Not FSO.FolderExists(LibDestDir & "jthread-1.1.2") Then 
-		WgetUnTarGz "http://research.edm.luc.ac.be/jori/jthread/jthread-1.1.2.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "jthread-1.1.2") Then
-			Wscript.echo "Unable to get JThread from default download location, Trying backup location:"
-			WgetUnTarGz LibsBase & "jthread-1.1.2.tar.gz", LibDestDir
-		End If
-		FindReplaceInFile LibDestDir & "jthread-1.1.2\jthread.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
-	End If
-	
-	If Not FSO.FolderExists(LibDestDir & "jrtplib") Then 
-		WgetUnTarGz "http://research.edm.luc.ac.be/jori/jrtplib/jrtplib-3.3.0.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "jrtplib-3.3.0") Then
-			Wscript.echo "Unable to get JRTPLib from default download location, Trying backup location:"
-			WgetUnTarGz LibsBase & "jrtplib-3.3.0.tar.gz", LibDestDir
-		End If
-		RenameFolder LibDestDir & "jrtplib-3.3.0", "jrtplib"
-		FindReplaceInFile LibDestDir & "jrtplib\jrtplib.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
-		FindReplaceInFile LibDestDir & "jrtplib\jrtplib.vcproj", "WarningLevel=" & quote & "3" & quote, "WarningLevel=" & quote & "0" & quote
-	End If
 
-	If FSO.FolderExists(LibDestDir & "jrtplib") And FSO.FolderExists(LibDestDir & "jthread-1.1.2") Then 
+	If FSO.FolderExists(LibDestDir & "jrtplib")Then 
 		If BuildDebug Then
-			If (Not FSO.FileExists(LibDestDir & "jrtplib\Debug\jrtplib.lib")) Or (Not FSO.FileExists(LibDestDir & "jthread-1.1.2\Debug\jthread.lib")) Then 
-				BuildViaVCBuild LibDestDir & "jthread-1.1.2\jthread.vcproj", "Debug"
+			If (Not FSO.FileExists(LibDestDir & "jrtplib\Debug\jrtplib.lib")) Then 
 				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Debug"
 			End If
 		End If
 		If BuildRelease Then
-			If (Not FSO.FileExists(LibDestDir & "jrtplib\Release\jrtplib.lib")) Or (Not FSO.FileExists(LibDestDir & "jthread-1.1.2\Release\jthread.lib")) Then 
-				BuildViaVCBuild LibDestDir & "jthread-1.1.2\jthread.vcproj", "Release"
+			If (Not FSO.FileExists(LibDestDir & "jrtplib\Release\jrtplib.lib")) Then 
 				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Release"
 			End If
 		End If

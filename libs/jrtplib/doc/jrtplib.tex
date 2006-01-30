@@ -1,0 +1,2675 @@
+\documentclass[12pt,a4paper]{article}
+
+\newcommand{\jversion}{3.3.0}
+\newcommand{\headerfile}[1]{\marginpar{\scriptsize Header:\\{\tt #1}}}
+\newcommand{\inherits}[1]{\marginpar{\scriptsize Inherits:\\{\tt #1}}}
+\newcommand{\Paragraph}[1]{\paragraph{#1}\ \\\addcontentsline{toc}{subsection}{\ \hspace{3cm}\ {#1}}}
+%\newcommand{\headerfile}[1]{\marginpar{\pdfannot width 10cm depth 7cm{/Subtype/Text/Contents(Header: #1)}}}
+
+\usepackage{listings}
+\lstset{language=C++}
+\lstset{tabsize=4}
+
+\setlength{\hoffset}{-1.0in}
+\addtolength{\hoffset}{1.5cm}
+\setlength{\textwidth}{14.5cm}
+\setlength{\voffset}{-1.0in}
+\addtolength{\voffset}{1.0cm}
+\setlength{\textheight}{23.5cm}
+\setlength{\topmargin}{0.5cm}
+\setlength{\footskip}{2.0cm}
+
+\begin{document}
+	\title{\ \vspace{3.5cm}\ \\{\bf JRTPLIB \jversion}}
+	\author{Jori Liesenborgs\\{\tt jori@lumumba.uhasselt.be}}
+	\date{October 2, 2005\\\vspace{0.5cm}\ \\
+	      {\small{\em Developed at the The Expertise Centre for \\Digital Media (EDM),
+	      a research institute\\of the Hasselt University}\\\ \\
+		  {\tt http://www.edm.uhasselt.be/}\\
+		  {\tt http://www.uhasselt.be/}}}
+	\maketitle
+	
+	\newpage
+	\tableofcontents
+
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{0.3cm}
+
+	\newpage
+	\section*{Acknowledgment}\addcontentsline{toc}{section}{Acknowledgment}
+
+		I would like thank the people at the Expertise Centre for Digital Media
+		for giving me the opportunity to create this rewrite of the library.
+
+	\newpage
+	\section{Introduction}
+
+		This document describes JRTPLIB version \jversion, an object-oriented
+		library written in C++ which aims to help developers in using the 
+		Real-time Transport Protocol (RTP) as described in RFC 3550.
+
+		The library makes it possible for the user to send and receive data
+		using RTP, without worrying about SSRC collisions, scheduling and
+		transmitting RTCP data etc. The user only needs to provide the library
+		with the payload data to be sent and the library gives the user access
+		to incoming RTP and RTCP data.
+
+		\subsection{Design idea}
+
+			The library provides several classes which can be helpful in
+			creating RTP applications. Most users will probably need just the
+			{\tt RTPSession} class for building an application. This class
+			provides the necessary functions for sending RTP data and handles
+			the RTCP part internally.
+
+			For applications such as a mixer or translator using the {\tt
+			RTPSession} class will not be a good solution. Other components can
+			be used for this purpose: a transmission component, an SSRC table,
+			an RTCP scheduler etc. Using these, it should be much easier to
+			build all kinds of applications.
+
+		\subsection{Changes from version 2.x}
+
+			One of the most important changes is probably the fact that this
+			version is based on RFC 3550 and the 2.x versions were based upon
+			RFC 1889 which is now obsolete.
+
+			Also, the 2.x series was created with the idea that the user would
+			only need to use the {\tt RTPSession} class which meant that the
+			other classes were not very useful by themselves. This version on
+			the other hand, aims to provide many useful components to aid the
+			user in building RTP capable applications.
+
+			In this version, the code which is specific for the underlying
+			protocol by which RTP packets are transported, is bundled in
+			a class which inherits its interface from a class called {\tt
+			RTPTransmitter}. This makes it easy for different underlying
+			protocols to be supported. Currently there is support for UDP over
+			IPv4 and UDP over IPv6.
+
+	\section{Copyright license}
+
+		The library code uses the following copyright license:
+
+			{\em Permission is hereby granted, free of charge, to any person
+			obtaining a copy of this software and associated documentation files
+			(the "Software"), to deal in the Software without restriction,
+			including without limitation the rights to use, copy, modify, merge,
+			publish, distribute, sublicense, and/or sell copies of the Software,
+			and to permit persons to whom the Software is furnished to do so,
+			subject to the following conditions:
+
+			The above copyright notice and this permission notice shall be
+			included in all copies or substantial portions of the Software.
+
+			THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+			KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+			WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+			NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+			BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+			ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+			CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+			SOFTWARE.}
+
+		There are two reason for using this license. First, since this is the
+		license of the 2.x series, it only seemed natural that this rewrite
+		would contain the same license. Second, since the RTP protocol is
+		deliberately incomplete RTP profiles can, for example, define additional
+		header fields. The best way to deal with this is to adapt the library
+		code itself and that's why I like to keep the license as free as
+		possible.
+
+	\section{Using JRTPLIB \jversion}
+		
+		This section gives information about how to use the library. First, some
+		simple examples will be given which illustrate how you can work with the
+		{\tt RTPSession} class. Afterwards, a complete description of the API
+		will be given.
+
+		\subsection{Getting started with the {\tt RTPSession} class}
+
+			To use RTP, you'll have to create an {\tt RTPSession} object. The
+			constructor of the {\tt RTPSession} class takes a parameter of
+			type {\tt RTPTrans\-mitter::Trans\-mission\-Protocol} and defaults
+			to {\tt RTPTrans\-mitter::IPv4UDPProto}. This means that unless
+			specified otherwise, the UDP over IPv4 transmission component will
+			be used. Let's suppose that this is the kind of session you want to
+			create, then this is our code so far:
+
+            \begin{lstlisting}[frame=tb]{} 
+RTPSession session; 
+			\end{lstlisting}
+
+			To actually create the session, you'll have to call the {\tt Create}
+			member function which takes two arguments: the first one is of type
+			{\tt RTPSession\-Params} and specifies the general options for
+			the session. One parameter of this class must be set explicitly,
+			otherwise the session will not be created successfully. This
+			parameter is the timestamp unit of the data you intend to send and
+			can be calculated by dividing a certain time interval (in seconds)
+			by the number of samples in that interval. So, assuming that we'll
+			send $8000 Hz$ voice data, we can use this code:
+
+            \begin{lstlisting}[frame=tb]{} 
+RTPSessionParams sessionparams;
+
+sessionparams.SetOwnTimestampUnit(1.0/8000.0);
+			\end{lstlisting}
+			The other parameters will probably depend on the actual RTP profile
+			you intend to work with. For a complete description of the {\tt
+			RTPSession\-Params} class, see section \ref{rtpsessionparams}.
+
+			The second argument of the {\tt Create} function is a pointer to
+			an {\tt RTPTrans\-mission\-Params} instance and describes the
+			parameters for the transmission component. Since there can be
+			several transmission components, you'll have to use a class which
+			inherits {\tt RTPTrans\-mission\-Params} and which is appropriate
+			for the component you've chosen. For our UDP over IPv4 component,
+			the class to be used is {\tt RTPUDPv4Trans\-mission\-Params}.
+			Assuming that we want our RTP portbase to be $8000$, we can do the
+			following:
+			\begin{lstlisting}[frame=tb]{}
+RTPUDPv4TransmissionParams transparams;
+
+transparams.SetPortbase(8000);
+			\end{lstlisting}
+
+			Now, we're ready to call the {\tt Create} member function of
+			{\tt RTPSession}. The return value is stored in the integer {\tt
+			status} so we can check if something went wrong. If this value is
+			negative, it indicates that some error occurred. A description
+			of what this error code means can be retrieved by calling {\tt
+			RTPGetErrorString}:
+			\begin{lstlisting}[frame=tb]{}
+int status = session.Create(sessionparams,&transparams);
+if (status < 0)
+{
+	std::cerr << RTPGetErrorString(status) << std::endl;
+	exit(-1);
+}
+			\end{lstlisting}
+			
+			If the session was created with success, this is probably a good
+			point to specify to which destinations RTP and RTCP data should be
+			sent. This is done by a call to the {\tt RTPSession} member function
+			{\tt AddDestination}. This function takes an argument of type {\tt
+			RTPAddress}. This is an abstract class and for the UDP over IPv4
+			transmitter the actual class to be used is {\tt RTPIPv4Address}.
+			Suppose that we want to send our data to a process running on the
+			same host at port $9000$, we can do the following:
+			\begin{lstlisting}[frame=tb]{}
+u_int8_t localip[]={127,0,0,1};
+RTPIPv4Address addr(localip,9000);
+
+status = session.AddDestination(addr);
+if (status < 0)
+{
+	std::cerr << RTPGetErrorString(status) << std::endl;
+	exit(-1);
+}
+			\end{lstlisting}
+
+			If the library was compiled with JThread support, incoming data is
+			processed in the background. If JThread support was not enabled at
+			compile time or if you specified in the session parameters that no
+			poll thread should be used, you'll have to call the {\tt RTPSession}
+			member function {\tt Poll} regularly to process incoming data and
+			to send RTCP data when necessary. For now, let's assume that we're
+			working with the poll thread enabled.
+
+			Lets suppose that for a duration of one minute, we want to send
+			packets containing $20 ms$ (or $160$ samples) of silence and we want
+			to indicate when a packet from someone else has been received. Also
+			suppose we have $L8$ data as defined in RFC 3551 and want to use
+			payload type $96$. First, we'll set some default values:
+			\begin{lstlisting}[frame=tb]{}
+session.SetDefaultPayloadType(96);
+session.SetDefaultMark(false);
+session.SetDefaultTimestampIncrement(160);
+			\end{lstlisting}
+
+			Next, we'll create the buffer which contains $160$ silence samples
+			and create an {\tt RTPTime} instance which indicates $20 ms$ or
+			$0.020$ seconds. We'll also store the current time so we'll know
+			when one minute has passed.
+			\begin{lstlisting}[frame=tb]{}
+u_int8_t silencebuffer[160];
+
+for (int i = 0 ; i < 160 ; i++)
+	silencebuffer[i] = 128;
+
+RTPTime delay(0.020);
+RTPTime starttime = RTPTime::CurrentTime();
+			\end{lstlisting}
+
+			Next, the main loop will be shown. In this loop, a packet containing
+			$160$ bytes of payload data will be sent. Then, data handling can
+			take place but this part is described later in the text. Finally,
+			we'll wait $20 ms$ and check if sixty seconds have passed:
+			\begin{lstlisting}[frame=tb]{}
+bool done = false;
+while (!done)
+{
+	status = session.SendPacket(silencebuffer,160);
+	if (status < 0)
+	{
+		std::cerr << RTPGetErrorString(status) << std::endl;
+		exit(-1);
+	}
+	
+	//
+	// Inspect incoming data here
+	//
+	
+	RTPTime::Wait(delay);
+	
+	RTPTime t = RTPTime::CurrentTime();
+	t -= starttime;
+	if (t > RTPTime(60.0))
+		done = true;
+}
+			\end{lstlisting}
+
+			Information about participants in the session, packet retrieval
+			etc, has to be done between calls to the {\tt RTPSession} member
+			functions {\tt BeginDataAccess} and {\tt EndDataAccess}. This
+			ensures that the background thread doesn't try to change the same
+			data you're trying to access. We'll iterate over the participants
+			using the {\tt GotoFirstSource} and {\tt GotoNextSource} member
+			functions. Packets from the currently selected participant can
+			be retrieved using the {\tt GetNextPacket} member function which
+			returns a pointer to an instance of the {\tt RTPPacket} class.
+			When you don't need the packet anymore, it has to be deleted. The
+			processing of incoming data will then be as follows:
+			\begin{lstlisting}[frame=tb]{}
+session.BeginDataAccess();
+if (session.GotoFirstSource())
+{
+	do
+	{
+		RTPPacket *packet = session.GetNextPacket();
+		if (packet)
+		{
+			std::cout << "Got packet with extended sequence number " 
+			          << packet->GetExtendedSequenceNumber() 
+					  << " from SSRC " << packet->GetSSRC() 
+					  << std::endl;
+			delete packet;
+		}
+	} while (session.GotoNextSource());
+}
+session.EndDataAccess();
+			\end{lstlisting}
+			
+			Information about the currently selected source can be obtained
+			by using the {\tt GetCurrentSourceInfo} member function of 
+			the {\tt RTPSession} class. This function returns a pointer to 
+			an instance of {\tt RTPSourceData} which contains all information
+			about that source: sender reports from that source, receiver
+			reports, SDES info etc. The {\tt RTPSourceData} class is described
+			in detail in section \ref{rtpsourcedata}.
+
+			When the main loop is finished, we'll send a BYE packet to
+			inform other participants of our departure and clean up the {\tt
+			RTPSession} class. Also, we want to wait at most $10$ seconds for
+			the BYE packet to be sent, otherwise we'll just leave the session
+			without sending a BYE packet.
+			\begin{lstlisting}[frame=tb]{}
+delay = RTPTime(10.0);
+session.BYEDestroy(delay,"Time's up",9);
+			\end{lstlisting}
+
+			The complete code of the program is given in {\tt example2.cpp} and
+			is shown on the following pages. More detailed information about
+			the {\tt RTPSession} class can be found in section \ref{rtpsession}.
+
+			\newpage
+			\lstinputlisting{../examples/example2.cpp}
+			\newpage
+			
+		\subsection{The complete API}
+
+			Here, the complete API of the library will be explained. This
+			will be done in a more or less bottom-to-top fashion.
+
+			\subsubsection{Library version}\headerfile{rtplibraryversion.h}
+				
+				The {\tt RTPLibraryVersion} class has a static member which
+				creates an instance of this class:
+				\begin{verbatim}
+					static RTPLibraryVersion GetVersion();
+				\end{verbatim}
+
+				The user can access the version data using the following
+				member functions:
+				\begin{itemize}
+					\item {\tt int GetMajorNumber() const}\\
+						Returns the major version number.
+					\item {\tt int GetMinorNumber() const}\\
+						Returns the minor version number.
+					\item {\tt int GetDebugNumber() const}\\
+						Returns the debug version number.
+					\item {\tt std::string GetVersionString() const}\\
+						Returns a string describing the library version.
+				\end{itemize}
+			
+			\subsubsection{Error codes}\headerfile{rtperrors.h}
+
+				Unless specified otherwise, functions with a return type {\tt int}
+				will return a negative value when an error occurred and zero or a
+				positive value upon success. A description of the error code can
+				be obtained by using the following function:
+				\begin{verbatim}
+					std::string RTPGetErrorString(int errcode)
+				\end{verbatim}
+			
+			\subsubsection{Time utilities}\headerfile{rtptimeutilities.h}
+
+				\Paragraph{\tt RTPNTPTime}
+
+					This is a simple wrapper for the most significant word (MSW)
+					and least significant word (LSW) of an NTP timestamp. The
+					class has the following members:
+					\begin{itemize}
+						\item {\tt RTPNTPTime(u\_int32\_t m, u\_int32\_t l)}\\
+							This constructor creates and instance with MSW {\tt m}
+							and LSW {\tt l}.
+						\item {\tt u\_int32\_t GetMSW() const}\\
+							Returns the most significant word.
+						\item {\tt u\_int32\_t GetLSW() const}\\
+							Returns the least significant word.
+					\end{itemize}
+	
+				\Paragraph{\tt RTPTime}
+					
+					This class is used to specify wallclock time, delay intervals
+					etc. It stores a number of seconds and a number of microseconds and
+					it has the following interface:
+					\begin{itemize}
+						\item {\tt RTPTime(u\_int32\_t seconds, u\_int32\_t microseconds)}\\
+							Creates an instance corresponding to {\tt seconds} and
+							{\tt microseconds}.
+						\item {\tt RTPTime(double t)}\\
+							Creates an {\tt RTPTime} instance representing {\tt t} which
+							is expressed in units of seconds.
+						\item {\tt RTPTime(RTPNTPTime ntptime)}\\
+							Creates an instance that corresponds to {\tt ntptime}. If
+							the conversion cannot be made, both the seconds and the
+							microseconds are set to zero.
+						\item {\tt u\_int32\_t GetSeconds() const}\\
+							Returns the number of seconds stored in this instance.
+						\item {\tt u\_int32\_t GetMicroSeconds() const}\\
+							Returns the number of microseconds stored in this instance.
+						\item {\tt double GetDouble() const}\\
+							Returns the time stored in this instance, expressed in
+							units of seconds.
+						\item {\tt RTPNTPTime GetNTPTime() const}\\
+							Returns the NTP time corresponding to the time stored in
+							this instance.
+						\item {\tt static RTPTime CurrentTime()}\\
+							Returns an RTPTime instance representing the current
+							wallclock time. This is expressed as a number of seconds
+							since 00:00:00 UTC, January 1, 1970.
+						\item {\tt static void Wait(const RTPTime \&delay)}\\
+							This function waits the amount of time specified in
+							{\tt delay}.
+					\end{itemize}
+
+					The following operators are defined in the {\tt RTPTime} class:
+					\begin{itemize}
+						\item {\tt operator-=}
+						\item {\tt operator+=}
+						\item {\tt operator<}
+						\item {\tt operator>}
+						\item {\tt operator<=}
+						\item {\tt operator>=}
+					\end{itemize}
+
+			\subsubsection{\tt RTPRandom}\headerfile{rtprandom.h}
+				
+				The {\tt RTPRandom} class can be used to generate random numbers.
+				It has the following member functions:
+				\begin{itemize}
+					\item {\tt u\_int8\_t GetRandom8()}\\
+						Returns a random eight bit value.
+					\item {\tt u\_int16\_t GetRandom16()}\\
+						Returns a random sixteen bit value.
+					\item {\tt u\_int32\_t GetRandom32()}\\
+						Returns a random thirty-two bit value.
+					\item {\tt double GetRandomDouble()}\\
+						Returns a random number between $0.0$ and $1.0$.
+				\end{itemize}
+				
+			\subsubsection{\tt RTCPSDESInfo}\headerfile{rtcpsdesinfo.h}
+
+				The class {\tt RTCPSDESInfo} is a container for RTCP SDES
+				information. The interface is the following:
+				\begin{itemize}
+					\item {\tt void Clear()}\\
+						Clears all SDES information.
+					\item {\tt int SetCNAME(const u\_int8\_t *s, size\_t l)}\\
+						Sets the SDES CNAME item to {\tt s} with length {\tt l}.
+					\item {\tt int SetName(const u\_int8\_t *s, size\_t l)}\\
+						Sets the SDES name item to {\tt s} with length {\tt l}.
+					\item {\tt int SetEMail(const u\_int8\_t *s, size\_t l)}\\
+						Sets the SDES e-mail item to {\tt s} with length {\tt l}.
+					\item {\tt int SetPhone(const u\_int8\_t *s, size\_t l)}\\
+						Sets the SDES phone item to {\tt s} with length {\tt l}.
+					\item {\tt int SetLocation(const u\_int8\_t *s, size\_t l)}\\
+						Sets the SDES location item to {\tt s} with length {\tt l}.
+					\item {\tt int SetTool(const u\_int8\_t *s, size\_t l)}\\
+						Sets the SDES tool item to {\tt s} with length {\tt l}.
+					\item {\tt int SetNote(const u\_int8\_t *s, size\_t l)}\\
+						Sets the SDES note item to {\tt s} with length {\tt l}.
+					\item {\tt u\_int8\_t *GetCNAME(size\_t *len) const}\\
+						Returns the SDES CNAME item and stores its length in {\tt len}.
+					\item {\tt u\_int8\_t *GetName(size\_t *len) const}\\
+						Returns the SDES name item and stores its length in {\tt len}.
+					\item {\tt u\_int8\_t *GetEMail(size\_t *len) const}\\
+						Returns the SDES e-mail item and stores its length in {\tt len}.
+					\item {\tt u\_int8\_t *GetPhone(size\_t *len) const}\\
+						Returns the SDES phone item and stores its length in {\tt len}.
+					\item {\tt u\_int8\_t *GetLocation(size\_t *len) const}\\
+						Returns the SDES location item and stores its length in {\tt len}.
+					\item {\tt u\_int8\_t *GetTool(size\_t *len) const}\\
+						Returns the SDES tool item and stores its length in {\tt len}.
+					\item {\tt u\_int8\_t *GetNote(size\_t *len) const }\\
+						Returns the SDES note item and stores its length in {\tt len}.
+				\end{itemize}
+
+				If SDES private item support was enabled at compile time, the following
+				member functions are also available:
+				\begin{itemize}
+					\item {\tt int SetPrivateValue(const u\_int8\_t *prefix, size\_t prefixlen, const u\_int8\_t *value, size\_t valuelen)}\\
+						Sets the entry for the prefix string specified by {\tt prefix} with
+						length {\tt prefixlen} to contain the value string specified by
+						{\tt value} with length {\tt valuelen}. If the maximum allowed
+						number of prefixes was reached, the error code
+						{\tt ERR\_\-RTP\_\-SDES\_\-MAX\-PRIV\-ITEMS} is returned.
+					\item {\tt int DeletePrivatePrefix(const u\_int8\_t *s, size\_t len)}\\
+						Deletes the entry for the prefix specified by {\tt s} with length
+						{\tt len}.
+					\item {\tt void GotoFirstPrivateValue()}\\
+						Starts the iteration over the stored SDES private item prefixes
+						and their associated values.
+					\item {\tt bool GetNextPrivateValue(u\_int8\_t **prefix, size\_t *prefixlen, u\_int8\_t **value, size\_t *valuelen)}\\
+						If available, returns {\tt true} and stores the next SDES
+						private item prefix in {\tt prefix} and its length in
+						{\tt prefixlen}. The associated value and its length are
+						then stored in {\tt value} and {\tt valuelen}. Otherwise,
+						it returns {\tt false}.
+					\item {\tt bool GetPrivateValue(const u\_int8\_t *prefix, size\_t prefixlen, u\_int8\_t **value, size\_t *valuelen) const}\\ 
+						Looks for the entry which corresponds to the SDES private
+						item prefix {\tt prefix} with length {\tt prefixlen}. If found,
+						the function returns {\tt true} and stores the associated
+						value and its length in {\tt value} and {\tt valuelen}
+						respectively.
+					\end{itemize}
+
+            \subsubsection{\tt RTPTransmitter}\headerfile{rtptransmitter.h}
+
+				The abstract class {\tt RTPTransmitter} specifies the interface for
+				actual transmission components. Currently, three implementations exist:
+				an UDP over IPv4 transmitter, an UDP over IPv6 transmitter and a 
+				GStreamer transmission component. The {\tt TransmissionProtocol} type 
+				is used to specify a specific kind of transmitter:
+				\begin{verbatim}
+					enum TransmissionProtocol { IPv4UDPProto, IPv6UDPProto, 
+					                            IPv4GSTProto, UserDefinedProto };
+				\end{verbatim}
+				The {\tt UserDefinedProto} can be used to select your own transmission
+				component when using the {\tt RTPSession} class. In this case, you'll
+				have to implement the {\tt RTPSession} member function 
+				{\tt NewUserDefinedTransmitter()} which should return a pointer to your
+				own {\tt RTPTransmitter} implementation.
+
+				Three kind of receive modes can be specified using the {\tt ReceiveMode}
+				type:
+				\begin{verbatim}
+					enum ReceiveMode { AcceptAll, AcceptSome, IgnoreSome };
+				\end{verbatim}
+				Depending on the mode set, incoming data is processed differently:
+				\begin{itemize}
+					\item {\tt AcceptAll}\\
+						All incoming data is accepted, no matter where it originated
+						from.
+					\item {\tt AcceptSome}\\
+						Only data coming from specific sources will be accepted.
+					\item {\tt IgnoreSome}\\
+						All incoming data is accepted, except for data coming from
+						a specific set of sources.
+				\end{itemize}
+				
+				The interface defined by the {\tt RTPTransmission} class is the
+				following:
+				\begin{itemize}
+					\item {\tt int Init(bool threadsafe)}
+						This function must be called before the transmission component
+						can be used. Depending on the value of {\tt threadsafe}, the
+						component will be created for thread-safe usage or not.
+					\item {\tt int Create(size\_t maxpacksize, const RTPTransmissionParams *transparams)}\\
+						Prepares the component to be used. The parameter {\tt maxpacksize}
+						specifies the maximum size a packet can have: if the packet
+						is larger it will not be transmitted. The {\tt transparams}
+						parameter specifies a pointer to an {\tt RTPTransmissionParams}
+						instance. This is also an abstract class and each actual
+						component will define its own parameters by inheriting a
+						a class from {\tt RTPTransmissionParams}. If {\tt transparams}
+						is NULL, the default transmission parameters for the component
+						will be used.
+					\item {\tt int Destroy()}\\
+						By calling this function, buffers are cleared and the component
+						cannot be used anymore. Only when the {\tt Create} function is
+						called again can the component be used again.
+					\item {\tt RTPTransmissionInfo *GetTransmissionInfo()}\\
+					    This function returns an instance of a subclass of {\tt RTPTransmissionInfo}
+						which will give some additional information about the transmitter
+						(a list of local IP addresses for example). Currently, either
+						an instance of {\tt RTP\-UDPv4\-Trans\-mission\-Info} or {\tt RTP\-UDPv6\-Trans\-mission\-Info}
+						is returned, depending on the type of the transmitter. The user
+						has to delete the returned instance when it is no longer needed.
+					\item {\tt int GetLocalHostName(u\_int8\_t *buffer, size\_t *bufferlength)}\\
+						Looks up the local host name based upon internal information about
+						the local host's addresses. This function might take some time
+						since a DNS query might be done. {\tt bufferlength} should initially
+						contain the number of bytes that may be stored in {\tt buffer}.
+						If the function succeeds, {\tt bufferlength} is set to the 
+						number of bytes stored in {\tt buffer}. Note that the data in
+						{\tt buffer} is not NULL-terminated. If the function fails because
+						the buffer isn't large enough, it returns {\tt ERR\_RTP\_TRANS\_BUFFERLENGTHTOOSMALL}
+						and stores the number of bytes needed in {\tt bufferlength}.
+					\item {\tt bool ComesFromThisTransmitter(const RTPAddress *addr)}\\
+						Returns {\tt true} if the address specified by {\tt addr} is one
+						of the addresses of the transmitter. 
+					\item {\tt size\_t GetHeaderOverhead()}\\
+						Returns the amount of bytes that will be added to the RTP packet
+						by the underlying layers (excluding the link layer).
+					\item {\tt int Poll()}\\
+						Checks for incoming data and stores it.
+					\item {\tt bool NewDataAvailable()}
+						Returns {\tt true} if packets can be obtained using the
+						{\tt GetNextPacket} member function.
+					\item {\tt RTPRawPacket *GetNextPacket()}\\
+						Returns the raw data of a received RTP packet (received during
+						the {\tt Poll} function) in an {\tt RTPRawPacket} instance.
+					\item {\tt int WaitForIncomingData(const RTPTime \&delay,bool *dataavailable = 0)}\\
+						Waits at most a time {\tt delay} until incoming data has
+						been detected. If {\tt dataavailable} is not {\tt NULL}, it should
+						be set to {\tt true} if data was actually read and to {\tt false}
+						otherwise.
+					\item {\tt int AbortWait()}\\
+						If the previous function has been called, this one aborts
+						the waiting.
+					\item {\tt int SendRTPData(const void *data, size\_t len)}\\
+						Send a packet with length {\tt len} containing {\tt data}
+						to all RTP addresses of the current destination list.
+					\item {\tt int SendRTCPData(const void *data, size\_t len)}\\
+						Send a packet with length {\tt len} containing {\tt data}
+						to all RTCP addresses of the current destination list.
+					\item {\tt void ResetPacketCount()}\\
+						The transmitter keeps track of the amount of RTP and RTCP 
+						packets that were sent. This functions resets those counts.
+					\item {\tt u\_int32\_t GetNumRTPPacketsSent()}\\
+						Returns the number of RTP packets sent.
+					\item {\tt u\_int32\_t GetNumRTCPPacketsSent()}\\
+						Returns the number of RTCP packets sent.
+					\item {\tt int AddDestination(const RTPAddress \&addr)}\\
+						Adds the address specified by {\tt addr} to the list of
+						destinations.
+					\item {\tt int DeleteDestination(const RTPAddress \&addr)}\\
+						Deletes the address specified by {\tt addr} from the list
+						of destinations.
+					\item {\tt void ClearDestinations()}\\
+						Clears the list of destinations.
+					\item {\tt bool SupportsMulticasting()}\\
+						Returns {\tt true} if the transmission component supports
+						multicasting.
+					\item {\tt int JoinMulticastGroup(const RTPAddress \&addr)}\\
+						Joins the multicast group specified by {\tt addr}.
+					\item {\tt int LeaveMulticastGroup(const RTPAddress \&addr)}\\
+						Leaves the multicast group specified by {\tt addr}.
+					\item {\tt void LeaveAllMulticastGroups()}\\
+						Leaves all the multicast groups that have been joined.
+					\item {\tt int SetReceiveMode(RTPTransmitter::ReceiveMode m)}\\
+						Sets the receive mode to m, which is one of the following:
+						{\tt RTPTrans\-mitter::\-Accept\-All}, {\tt RTPTrans\-mitter::\-Accept\-Some},
+						{\tt RTPTrans\-mitter::\-Ignore\-Some}. Note that if the receive
+						mode is changed, all information about the addresses to ignore
+						or to accept is lost.
+					\item {\tt int AddToIgnoreList(const RTPAddress \&addr)}\\
+						Adds {\tt addr} to the list of addresses to ignore.
+					\item {\tt int DeleteFromIgnoreList(const RTPAddress \&addr)}\\
+						Deletes {\tt addr} from the list of addresses to ignore.
+					\item {\tt void ClearIgnoreList()}\\
+						Clears the list of addresses to ignore.
+					\item {\tt int AddToAcceptList(const RTPAddress \&addr)}\\
+						Adds {\tt addr} to the list of addresses to accept.
+					\item {\tt int DeleteFromAcceptList(const RTPAddress \&addr)}\\
+						Deletes {\tt addr} from the list of addresses to accept.
+					\item {\tt void ClearAcceptList()}\\
+						Clears the list of addresses to accept.
+					\item {\tt int SetMaximumPacketSize(size\_t s)}\\
+						Sets the maximum packet size which the transmitter should
+						allow to {\tt s}.
+				\end{itemize}
+
+				\Paragraph{UDP over IPv4 transmitter}\headerfile{rtpudpv4transmitter.h}\inherits{RTPTransmitter}
+
+					The class {\tt RTPUDPv4Transmitter} inherits the {\tt RTPTransmitter}
+					interface and implements a transmission component which user UDP
+					over IPv4 to send and receive RTP and RTCP data. 
+
+					The component's parameters are described by the class 
+					{\tt RTPUDPv4Trans\-mission\-Params} and is described in section
+					\ref{rtpudpv4transmissionparams}. The functions which have
+					an {\tt RTPAddress} argument require an argument of
+					type {\tt RTPIPv4Address} which is described in section
+					\ref{rtpipv4address}. The {\tt Get\-Trans\-mission\-Info} member function
+					of the {\tt RTP\-UDPv4\-Trans\-mitter} class returns an instance
+					of type {\tt RTP\-UDPv4\-Trans\-mission\-Info} which is described
+					in section \ref{rtpudpv4transmissioninfo}.
+					
+				\Paragraph{UDP over IPv6 transmitter}\headerfile{rtpudpv6transmitter.h}\inherits{RTPTransmitter}
+					
+					The class {\tt RTPUDPv6Transmitter} inherits the {\tt RTPTransmitter}
+					interface and implements a transmission component which user UDP
+					over IPv6 to send and receive RTP and RTCP data. 
+
+					The component's parameters are described by the class 
+					{\tt RTPUDPv6Trans\-mission\-Params} and is described in section
+					\ref{rtpudpv6transmissionparams}. The functions which have
+					an {\tt RTPAddress} argument require an argument of
+					type {\tt RTPIPv6Address} which is described in section
+					\ref{rtpipv6address}. The {\tt Get\-Trans\-mission\-Info} member function
+					of the {\tt RTP\-UDPv6\-Trans\-mitter} class returns an instance
+					of type {\tt RTP\-UDPv6\-Trans\-mission\-Info} which is described
+					in section \ref{rtpudpv6transmissioninfo}.
+
+			\subsubsection{\tt RTPTransmissionParams}\headerfile{rtptransmitter.h}
+			
+				The {\tt RTPTransmissionParams} class is an abstract class which
+				will have a specific implementation for a specific kind of
+				transmission component. All actual implementations inherit the
+				following function which identify the component type for which
+				these parameters are valid:
+				\begin{verbatim}
+					RTPTransmitter::TransmissionProtocol GetTransmissionProtocol()
+				\end{verbatim}
+
+				\Paragraph{Parameters for the UDP over IPv4 transmitter}\headerfile{rtpudpv4transmitter.h}\inherits{RTPTransmissionParams}
+				\label{rtpudpv4transmissionparams}
+				
+					The {\tt RTPUDPv4TransmissionParams} class represents the
+					parameters used by the UDP over IPv4 transmission component.
+					By default, the multicast TTL is set to $1$ and the portbase
+					is set to $5000$. The interface of this class is the following:
+					\begin{itemize}
+						\item {\tt void SetBindIP(u\_int32\_t ip)}\\
+							Sets the IP address which is used to bind the sockets
+							to {\tt ip}.
+						\item {\tt void SetPortbase(u\_int16\_t pbase)}\\
+							Sets the RTP portbase to {\tt pbase}. This has to be
+							an even number.
+						\item {\tt void SetMulticastTTL(u\_int8\_t mcastTTL)}\\
+							Sets the multicast TTL to be used to {\tt mcastTTL}.
+						\item {\tt void SetLocalIPList(std::list<u\_int32\_t> \&iplist)}\\
+							Passes a list of IP addresses which will be used as
+							the local IP addresses.
+						\item {\tt void ClearLocalIPList()}\\
+							Clears the list of local IP addresses. An empty list
+							will make the transmission component itself determine the
+							local IP addresses.
+						\item {\tt u\_int32\_t GetBindIP() const}\\
+							Returns the IP address which will be used to bind the
+							sockets.
+						\item {\tt u\_int16\_t GetPortbase() const}\\
+							Returns the RTP portbase which will be used.
+						\item {\tt u\_int8\_t GetMulticastTTL() const}\\
+							Returns the multicast TTL which will be used.
+						\item {\tt const std::list<u\_int32\_t> \&GetLocalIPList() const}\\
+							Returns the list of local IP addresses.
+					\end{itemize}
+
+				\Paragraph{Parameters for the UDP over IPv6 transmitter}\headerfile{rtpudpv6transmitter.h}\inherits{RTPTransmissionParams}
+				\label{rtpudpv6transmissionparams}
+	
+					The {\tt RTPUDPv6TransmissionParams} class represents the
+					parameters used by the UDP over IPv6 transmission component.
+					By default, the multicast TTL is set to $1$ and the portbase
+					is set to $5000$. The interface of this class is the following:
+					\begin{itemize}
+						\item {\tt void SetBindIP(in6\_addr ip)}\\
+							Sets the IP address which is used to bind the sockets
+							to {\tt ip}.
+						\item {\tt void SetPortbase(u\_int16\_t pbase)}\\
+							Sets the RTP portbase to {\tt pbase}. This has to be
+							an even number.
+						\item {\tt void SetMulticastTTL(u\_int8\_t mcastTTL)}\\
+							Sets the multicast TTL to be used to {\tt mcastTTL}.
+						\item {\tt void SetLocalIPList(std::list<in6\_addr> \&iplist)}\\
+							Passes a list of IP addresses which will be used as
+							the local IP addresses.
+						\item {\tt void ClearLocalIPList()}\\
+							Clears the list of local IP addresses. An empty list
+							will make the transmission component itself determine the
+							local IP addresses.
+						\item {\tt in6\_addr GetBindIP() const}\\
+							Returns the IP address which will be used to bind the
+							sockets.
+						\item {\tt u\_int16\_t GetPortbase() const}\\
+							Returns the RTP portbase which will be used.
+						\item {\tt u\_int8\_t GetMulticastTTL() const}\\
+							Returns the multicast TTL which will be used.
+						\item {\tt const std::list<in6\_addr> \&GetLocalIPList() const}\\
+							Returns the list of local IP addresses.
+					\end{itemize}
+
+			\subsubsection{\tt RTPTransmissionInfo}\headerfile{rtptransmitter.h}
+
+				The {\tt RTPTransmissionInfo} class is an abstract class which
+				will have a specific implementation for a specific kind of
+				transmission component. All actual implementations inherit the
+				following function which identify the component type for which
+				these parameters are valid:
+				\begin{verbatim}
+					RTPTransmitter::TransmissionProtocol GetTransmissionProtocol()
+				\end{verbatim}
+
+				\Paragraph{Info about the UDP over IPv4 transmitter}\headerfile{rtpudpv4transmitter.h}
+				\label{rtpudpv4transmissioninfo}
+				
+					The class {\tt RTPUDPv4TransmissionInfo} gives some additional
+					information about the UDP over IPv4 transmission component. The
+					following member functions are available:
+					\begin{itemize}
+						\item {\tt std::list<u\_int32\_t> GetLocalIPList() const}\\
+							Returns the list of IPv4 addresses the transmitter
+							considers to be the local IP addresses.
+						\item {\tt int GetRTPSocket() const}\\
+							Returns the socket descriptor used for receiving and transmitting
+							RTP packets.
+						\item {\tt int GetRTCPSocket() const}\\
+							Returns the socket descriptor used for receiving and transmitting
+							RTCP packets.
+					\end{itemize}
+
+				\Paragraph{Info about the UDP over IPv6 transmitter}\headerfile{rtpudpv6transmitter.h}
+				\label{rtpudpv6transmissioninfo}
+				
+					The class {\tt RTPUDPv6TransmissionInfo} gives some additional
+					information about the UDP over IPv6 transmission component. The
+					following member functions are available:
+					\begin{itemize}
+						\item {\tt std::list<in6\_addr> GetLocalIPList() const}\\
+							Returns the list of IPv4 addresses the transmitter
+							considers to be the local IP addresses.
+						\item {\tt int GetRTPSocket() const}\\
+							Returns the socket descriptor used for receiving and transmitting
+							RTP packets.
+						\item {\tt int GetRTCPSocket() const}\\
+							Returns the socket descriptor used for receiving and transmitting
+							RTCP packets.
+					\end{itemize}
+
+			\subsubsection{\tt RTPAddress}\headerfile{rtpaddress.h}
+
+				The class {\tt RTPAddress} is an abstract class which is used to
+				specify destinations, multicast groups etc. To check which actual
+				implementation is used, the class defines the following type:
+				\begin{verbatim}
+					enum AddressType { IPv4Address, IPv6Address, UserDefinedAddress };
+				\end{verbatim}
+				The type {\tt RTPAddress::IPv4Address} is used by the UDP over IPv4
+				transmitter; {\tt RTPAddress::IPv6Address} is used by the UDP over
+				IPv6 transmitter. The {\tt RTPAddress::UserDefinedAddress} type can
+				be useful when using a user-defined transmission component.
+				
+				The class defines the following interface:
+				\begin{itemize}
+					\item {\tt AddressType GetAddressType() const}\\
+						Returns the type of address the actual implementation
+						represents.
+					\item {\tt RTPAddress *CreateCopy() const}\\
+						Creates a copy of the {\tt RTPAddress} instance.
+					\item {\tt bool IsSameAddress(const RTPAddress *addr) const}\\
+						Checks if the address {\tt addr} is the same address as
+						the one this instance represents. Implementations must be
+						able ti handle a NULL argument.
+					\item {\tt bool IsFromSameHost(const RTPAddress *addr) const}\\
+						Checks if the address {\tt addr} represents the same host
+						as this instance. Implementations must be able to handle
+						a NULL argument.
+				\end{itemize}
+	
+				\Paragraph{\tt RTPIPv4Address}\headerfile{rtpipv4address.h}\inherits{RTPAddress}
+				\label{rtpipv4address}
+						
+					This class is used by the UDP over IPv4 transmission component.
+					The following member functions are defined in this class:
+					\begin{itemize}
+						\item {\tt RTPIPv4Address(u\_int32\_t ip = 0, u\_int16\_t port = 0)}\\
+							Creates an instance with IP address {\tt ip} and port number {\tt port}.
+							Both are interpreted in host byte order.
+						\item {\tt RTPIPv4Address(const u\_int8\_t ip[4], u\_int16\_t port = 0)}\\
+							Creates an instance with IP address {\tt ip} and port {\tt port}.
+							The port number is interpreted in host byte order.
+						\item {\tt void SetIP(u\_int32\_t ip)}\\
+							Sets the IP address for this instance to {\tt ip} which is
+							assumed to be in host byte order.
+						\item {\tt void SetIP(const u\_int8\_t ip[4])}\\
+							Sets the IP address of this instance to {\tt ip}.
+						\item {\tt void SetPort(u\_int16\_t port)}\\
+							Sets the port number for this instance to {\tt port} which
+							is interpreted in host byte order.
+						\item {\tt u\_int32\_t GetIP() const}\\
+							Returns the IP address contained in this instance in
+							host byte order.
+						\item {\tt u\_int16\_t GetPort() const}\\
+							Returns the port number of this instance in host byte
+							order.
+					\end{itemize}
+
+					When an {\tt RTPIPv4Address} is used in one of the multicast
+					functions of the transmitter, the port number is ignored. When
+					an instance is used in one of the accept or ignore functions
+					of the transmitter, a zero port number represents all ports
+					for the specified IP address.
+					
+				\Paragraph{\tt RTPIPv6Address}\headerfile{rtpipv6address.h}\inherits{RTPAddress}
+				\label{rtpipv6address}
+
+					This class is used by the UDP over IPv4 transmission component.
+					The following member functions are defined:
+					\begin{itemize}
+						\item {\tt RTPIPv6Address()}\\
+							Creates an instance with IP address and port number set to
+							zero.
+						\item {\tt RTPIPv6Address(const u\_int8\_t ip[16], u\_int16\_t port = 0)}\\
+							Creates an instance with IP address {\tt ip} and port
+							number {\tt port}. The port number is assumed to be in
+							host byte order.
+						\item {\tt RTPIPv6Address(in6\_addr ip, u\_int16\_t port = 0)}\\
+							Creates an instance with IP address {\tt ip} and port
+							number {\tt port}. The port number is assumed to be in
+							host byte order.
+						\item {\tt void SetIP(in6\_addr ip)}\\
+							Sets the IP address for this instance to {\tt ip}.
+						\item {\tt void SetIP(const u\_int8\_t ip[16])}\\
+							Sets the IP address for this instance to {\tt ip}.
+						\item {\tt void SetPort(u\_int16\_t port)}\\
+							Sets the port number for this instance to {\tt port}, which
+							is interpreted in host byte order.
+						\item {\tt void GetIP(u\_int8\_t ip[16]) const}\\
+							Copies the IP address of this instance in {\tt ip}.
+						\item {\tt in6\_addr GetIP() const}\\
+							Returns the IP address of this instance.
+						\item {\tt u\_int16\_t GetPort() const}\\
+							Returns the port number contained in this instance in
+							host byte order.
+					\end{itemize}
+					
+					When an {\tt RTPIPv6Address} is used in one of the multicast
+					functions of the transmitter, the port number is ignored. When
+					an instance is used in one of the accept or ignore functions
+					of the transmitter, a zero port number represents all ports
+					for the specified IP address.
+
+			\subsubsection{\tt RTPRawPacket}\headerfile{rtprawpacket.h}
+				
+				The {\tt RTPRawPacket} class is used by the transmission component
+				to store the incoming RTP and RTCP data in. It has the following 
+				interface:
+				\begin{itemize}
+					\item {\tt RTPRawPacket(u\_int8\_t *data, size\_t datalen, RTPAddress *address, RTPTime \&recvtime, bool rtp)}\\
+						Creates an instance which stores data from {\tt data} with
+						length {\tt datalen}. Only the pointer to the data is stored,
+						no actual copy is made! The address from which this packet
+						originated is set to {\tt address} and the time at which
+						the packet was received is set to {\tt recvtime}. The flag
+						which indicates whether this data is RTP or RTCP data is set
+						to {\tt rtp}.
+					\item {\tt u\_int8\_t *GetData()}\\
+						Returns the pointer to the data which is contained in this
+						packet.
+					\item {\tt size\_t GetDataLength() const}\\
+						Returns the length of the packet described by this instance.
+					\item {\tt RTPTime GetReceiveTime() const}\\
+						Returns the time at which this packet was received.
+					\item {\tt const RTPAddress *GetSenderAddress() const}\\
+						Returns the address stored in this packet.
+					\item {\tt bool IsRTP() const}\\
+						Returns {\tt true} if this data is RTP data, {\tt false} if it is RTCP
+						data.
+					\item {\tt void ZeroData()}\\
+						Sets the pointer to the data stored in this packet to zero.
+						This will prevent a {\tt delete} call for the actual data when
+						the destructor of {\tt RTPRawPacket} is called. This function
+						is used by the {\tt RTPPacket} and {\tt RTCPCompoundPacket}
+						classes to obtain the packet data (without having to copy it)
+						and to make sure the data isn't deleted when the destructor
+						of {\tt RTPRawPacket} is called.
+				\end{itemize}
+
+			\subsubsection{\tt RTPPacket}\headerfile{rtppacket.h}
+	
+				The {\tt RTPPacket} class can be used to parse a {\tt RTPRawPacket}
+				instance if it represents RTP data. The class can also be used to
+				create a new RTP packet according to the parameters specified by
+				the user. The interface of this class is the following:
+				\begin{itemize}
+					\item {\tt RTPPacket(RTPRawPacket \&rawpack)}\\
+						Creates an RTPPacket instance based upon the data in
+						{\tt rawpack}.
+					\item {\tt RTPPacket(u\_int8\_t payloadtype, const void *payloaddata, size\_t payloadlen, u\_int16\_t seqnr,
+									u\_int32\_t timestamp, u\_int32\_t ssrc, bool gotmarker, u\_int8\_t numcsrcs, const u\_int32\_t *csrcs,
+									bool gotextension, u\_int16\_t extensionid, u\_int16\_t extensionlen\_numwords, const void *extensiondata,
+									size\_t maxpacksize = 0)}\\
+						Creates an new buffer for an RTP packet and fills in the fields
+						according to the specified parameters. If {\tt maxpacksize} is
+						not equal to zero, an error is generated if the total packet size
+						would exceed {\tt maxpacksize}. The arguments of the constructor
+						are self-explanatory. Note that the size of a header extension is
+						specified in a number of $32$-bit words.
+					\item {\tt RTPPacket(u\_int8\_t payloadtype, const void *payloaddata, size\_t payloadlen, u\_int16\_t seqnr,
+									u\_int32\_t timestamp, u\_int32\_t ssrc, bool gotmarker, u\_int8\_t numcsrcs, const u\_int32\_t *csrcs,
+									bool gotextension, u\_int16\_t extensionid, u\_int16\_t extensionlen\_numwords, const void *extensiondata,
+									void *buffer, size\_t buffersize)}\\
+						Pretty much the same function as the previous one, except that data is stored
+						in an external buffer {\tt buffer} with buffer size {\tt buffersize}.
+					\item {\tt int GetCreationError() const}\\
+						If an error occurred in one of the constructors, this function
+						returns the error code.
+					\item {\tt bool HasExtension() const}\\
+						Returns {\tt true} if the RTP packet has a header extension and
+						{\tt false} otherwise.
+					\item {\tt bool HasMarker() const}\\
+						Returns {\tt true} is the marker bit was set and {\tt false}
+						otherwise.
+					\item {\tt int GetCSRCCount() const}\\
+						Returns the number of CSRCs contained in this packet.
+					\item {\tt u\_int32\_t GetCSRC(int num) const}\\
+						Returns a specific CSRC identifier. The parameter {\tt num} 
+						can go from $0$ to {\tt GetCSRCCount()}-$1$.
+					\item {\tt u\_int8\_t GetPayloadType() const}\\
+						Returns the payload type of the packet.
+					\item {\tt u\_int32\_t GetExtendedSequenceNumber() const}\\
+						Returns the extended sequence number of the packet. When
+						the packet is just received, only the low $16$ bits will
+						be set. The high $16$ bits can be filled in later.
+					\item {\tt u\_int16\_t GetSequenceNumber() const}\\
+						Returns the sequence number of this packet.
+					\item {\tt void SetExtendedSequenceNumber(u\_int32\_t seq)}\\
+						Sets the extended sequence number of this packet to {\tt seq}.
+					\item {\tt u\_int32\_t GetTimestamp() const}\\
+						Returns the timestamp of this packet.
+					\item {\tt u\_int32\_t GetSSRC() const}\\
+						Returns the SSRC identifier stored in this packet.
+					\item {\tt u\_int8\_t *GetPacketData() const}\\
+						Returns a pointer to the data of the entire packet.
+					\item {\tt u\_int8\_t *GetPayloadData() const}\\
+						Returns a pointer to the actual payload data.
+					\item {\tt size\_t GetPacketLength() const}\\
+						Returns the length of the entire packet.
+					\item {\tt size\_t GetPayloadLength() const}\\
+						Returns the payload length.
+					\item {\tt u\_int16\_t GetExtensionID() const}\\
+						If a header extension is present, this function
+						returns the extension identifier.
+					\item {\tt u\_int8\_t *GetExtensionData() const}\\
+						Returns a pointer to the header extension data.
+					\item {\tt size\_t GetExtensionLength() const}\\
+						Returns the length of the header extension data.
+					\item {\tt RTPTime GetReceiveTime() const}\\
+						When an {\tt RTPPacket} instance is created from 
+						an {\tt RTPRawPacket} instance, the raw packet's 
+						reception time is stored in the {\tt RTPPacket}
+						instance. This function then retrieves that time.
+				\end{itemize}
+
+			\subsubsection{\tt RTCPCompoundPacket}\headerfile{rtpcompoundpacket.h}
+
+				This class describes an RTCP compound packet and has the following
+				interface:
+				\begin{itemize}
+					\item {\tt RTCPCompoundPacket(RTPRawPacket \&rawpack)}\\
+						Creates an {\tt RTCPCompoundPacket} instance from the
+						data in {\tt rawpack}.
+					\item {\tt int GetCreationError()}\\
+						If the raw packet data in the constructor could not
+						be parsed, this function returns the error code of
+						what went wrong. If the packet had an invalid format,
+						the return value is {\tt ERR\_\-RTP\_\-RTCPCOMPOUND\_\-INVALID\-PACKET}.
+					\item {\tt u\_int8\_t *GetCompoundPacketData()}\\
+						Returns a pointer to the data of the entire RTCP compound packet.
+					\item {\tt size\_t GetCompoundPacketLength()}\\
+						Returns the size of the entire RTCP compound packet
+					\item {\tt void GotoFirstPacket()}\\
+						Starts the iteration over the individual RTCP packets in
+						the RTCP compound packet.
+					\item {\tt RTCPPacket *GetNextPacket()}\\
+						Returns a pointer to the next individual RTCP packet. Note
+						that no {\tt delete} call may be done on the {\tt RTCPPacket}
+						instance which is returned. The {\tt RTCPPacket} class is
+						described below.
+				\end{itemize}
+				
+				\Paragraph{\tt RTCPPacket}\headerfile{rtcppacket.h}
+					
+					The class {\tt RTCPPacket} is a base class for specific types
+					of RTCP packets. The following type in the {\tt RTCPPacket}
+					class identifies the different packet types:
+					\begin{verbatim}
+						enum PacketType { SR, RR, SDES, BYE, APP, Unknown };
+					\end{verbatim}
+
+					The class contains the following member functions:
+					\begin{itemize}
+						\item {\tt bool IsKnownFormat() const}\\
+							Returns {\tt true} if the subclass was able to interpret
+							the data and {\tt false} otherwise.
+						\item {\tt PacketType GetPacketType() const}\\
+							Returns the actual packet type which the subclass
+							implements:
+							\begin{itemize}
+								\item {\tt RTCPPacket::SR}: indicates an {\tt RTCPSRPacket} instance
+								\item {\tt RTCPPacket::RR}: indicates an {\tt RTCPRRPacket} instance
+								\item {\tt RTCPPacket::SDES}: indicates an {\tt RTCPSDESPacket} instance
+								\item {\tt RTCPPacket::BYE}: indicates an {\tt RTCPBYEPacket} instance
+								\item {\tt RTCPPacket::APP}: indicates an {\tt RTCPAPPPacket} instance
+								\item {\tt RTCPPacket::Unknown}: indicates an {\tt RTCPUnknownPacket} instance
+							\end{itemize}
+						\item {\tt u\_int8\_t *GetPacketData()}\\
+							Returns a pointer to the data of this RTCP packet.
+						\item {\tt size\_t GetPacketLength() const}\\
+							Returns the length of this RTCP packet.
+					\end{itemize}
+
+				\Paragraph{\tt RTCPSRPacket}\headerfile{rtcpsrpacket.h}\inherits{RTCPPacket}
+					
+					This class describes an RTCP sender report packet. The interface
+					is the following:
+					\begin{itemize}
+						\item {\tt RTCPSRPacket(u\_int8\_t *data, size\_t datalen)}\\
+							Creates an instance based on the data in {\tt data} with
+							length {\tt datalen}. Since the {\tt data} pointer
+							is referenced inside the class (no copy of the data is
+							made) one must make sure that the memory it points to is
+							valid as long as the class instance exists.
+						\item {\tt u\_int32\_t GetSenderSSRC() const}\\
+							Returns the SSRC of the participant who sent this packet.
+						\item {\tt RTPNTPTime GetNTPTimestamp() const}\\
+							Returns the NTP timestamp contained in the sender report.
+						\item {\tt u\_int32\_t GetRTPTimestamp() const}\\
+							Returns the RTP timestamp contained in the sender report.
+						\item {\tt u\_int32\_t GetSenderPacketCount() const}\\
+							Returns the sender's packet count contained in the
+							sender report.
+						\item {\tt u\_int32\_t GetSenderOctetCount() const}\\
+							Returns the sender's octet count contained in the sender
+							report.
+						\item {\tt int GetReceptionReportCount() const}\\
+							Returns the number of reception report blocks present
+							in this packet.
+						\item {\tt u\_int32\_t GetSSRC(int index) const}\\
+							Returns the SSRC of the reception report block described
+							by {\tt index} which may have a value from $0$ to
+							{\tt GetReceptionReportCount()}-$1$. Note that no
+							check is performed to see if {\tt index} is valid.
+						\item {\tt u\_int8\_t GetFractionLost(int index) const}\\
+							Returns the `fraction lost' field of the reception 
+							report described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+						\item {\tt int32\_t GetLostPacketCount(int index) const}\\
+							Returns the number of lost packets in the reception 
+							report block described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+						\item {\tt u\_int32\_t GetExtendedHighestSequenceNumber(int index) const}\\
+							Returns the extended highest sequence number of the reception 
+							report block described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReception\-Report\-Count()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+						\item {\tt u\_int32\_t GetJitter(int index) const}\\
+							Returns the jitter field of the reception 
+							report block described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+						\item {\tt u\_int32\_t GetLSR(int index) const}\\
+							Returns the LSR field of the reception 
+							report block described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+						\item {\tt u\_int32\_t GetDLSR(int index) const}\\
+							Returns the DLSR field of the reception 
+							report block described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+					\end{itemize}
+
+				\Paragraph{\tt RTCPRRPacket}\headerfile{rtcprrpacket.h}\inherits{RTCPPacket}
+
+					This class describes an RTCP receiver report packet. The interface
+					is the following:
+					\begin{itemize}
+						\item {\tt RTCPRRPacket(u\_int8\_t *data, size\_t datalen)}\\
+							Creates an instance based on the data in {\tt data} with
+							length {\tt datalen}. Since the {\tt data} pointer
+							is referenced inside the class (no copy of the data is
+							made) one must make sure that the memory it points to is
+							valid as long as the class instance exists.
+						\item {\tt u\_int32\_t GetSenderSSRC() const}\\
+							Returns the SSRC of the participant who sent this packet.
+						\item {\tt int GetReceptionReportCount() const}\\
+							Returns the number of reception report blocks present
+							in this packet.
+						\item {\tt u\_int32\_t GetSSRC(int index) const}\\
+							Returns the SSRC of the reception report block described
+							by {\tt index} which may have a value from $0$ to
+							{\tt GetReceptionReportCount()}-$1$. Note that no
+							check is performed to see if {\tt index} is valid.
+						\item {\tt u\_int8\_t GetFractionLost(int index) const}\\
+							Returns the `fraction lost' field of the reception 
+							report described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+						\item {\tt int32\_t GetLostPacketCount(int index) const}\\
+							Returns the number of lost packets in the reception 
+							report block described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+						\item {\tt u\_int32\_t GetExtendedHighestSequenceNumber(int index) const}\\
+							Returns the extended highest sequence number of the reception 
+							report block described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReception\-Report\-Count()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+						\item {\tt u\_int32\_t GetJitter(int index) const}\\
+							Returns the jitter field of the reception 
+							report block described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+						\item {\tt u\_int32\_t GetLSR(int index) const}\\
+							Returns the LSR field of the reception 
+							report block described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+						\item {\tt u\_int32\_t GetDLSR(int index) const}\\
+							Returns the DLSR field of the reception 
+							report block described by {\tt index} which may have a value 
+							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+					\end{itemize}
+		
+				\Paragraph{\tt RTCPSDESPacket}\headerfile{rtcpsdespacket.h}\inherits{RTCPPacket}
+
+					This class describes an RTCP SDES packet. In the {\tt RTCP\-SDES\-Packet}
+					class, the following type is defined:
+					\begin{verbatim}
+						enum ItemType { None, CNAME, NAME, EMAIL, PHONE,
+						                LOC, TOOL, NOTE, PRIV, Unknown };
+					\end{verbatim}
+					This type is used to identify the type of an SDES item. The type
+					{\tt None} is used when the iteration over the items has finished;
+					{\tt Unknown} is used when there really is an item present, but
+					the type is not a standard type.
+
+					The class interface is the following:
+					\begin{itemize}
+						\item {\tt RTCPSDESPacket(u\_int8\_t *data, size\_t datalen)}\\
+							Creates an instance based on the data in {\tt data} with
+							length {\tt datalen}. Since the {\tt data} pointer
+							is referenced inside the class (no copy of the data is
+							made) one must make sure that the memory it points to is
+							valid as long as the class instance exists.
+						\item {\tt int GetChunkCount() const}\\
+							Returns the number of SDES chunks in the SDES packet.
+							Each chunk has its own SSRC identifier.
+						\item {\tt bool GotoFirstChunk()}\\
+							Starts the iteration. If no SDES chunks are present,
+							the function returns {\tt false}. Otherwise, it
+							returns {\tt true} and sets the current chunk to be
+							the first chunk.
+						\item {\tt bool GotoNextChunk()}\\
+							Sets the current chunk to the next available chunk.
+							If no next chunk is present, this function returns
+							{\tt false}, otherwise it returns {\tt true}.
+						\item {\tt u\_int32\_t GetChunkSSRC() const}\\
+							Returns the SSRC identifier of the current chunk.
+						\item {\tt bool GotoFirstItem()}\\
+							Starts the iteration over the SDES items in the current
+							chunk. If no SDES items are present, the function returns
+							{\tt false}. Otherwise, the function sets the current item
+							to be the first one and returns {\tt true}.
+						\item {\tt bool GotoNextItem()}\\
+							If there's another item in the chunk, the current item
+							is set to be the next one and the function returns {\tt true}.
+							Otherwise, the function returns {\tt false}.
+						\item {\tt ItemType GetItemType() const}\\
+							Returns the SDES item type of the current item in the current
+							chunk.
+						\item {\tt size\_t GetItemLength() const}\\
+							Returns the item length of the current item in the current
+							chunk.
+						\item {\tt u\_int8\_t *GetItemData()}\\
+							Returns the item data of the current item in the current
+							chunk.
+					\end{itemize}
+
+					If SDES private item support was enabled at compile-time, the following
+					members can be used if the current item is an SDES private item.
+					\begin{itemize}
+						\item {\tt size\_t GetPRIVPrefixLength()}\\
+							Returns the length of the prefix string of the private
+							item.
+						\item {\tt u\_int8\_t *GetPRIVPrefixData()}\\
+							Returns the actual data of the prefix string.
+						\item {\tt size\_t GetPRIVValueLength()}\\
+							Returns the length of the value string of the private
+							item.
+						\item {\tt u\_int8\_t *GetPRIVValueData()}\\
+							Returns the actual value data of the private item.
+					\end{itemize}
+
+				\Paragraph{\tt RTCPAPPPacket}\headerfile{rtcpapppacket.h}\inherits{RTCPPacket}
+					
+					The class {\tt RTCPAPPPacket} describes an RTCP APP packet.
+					The following member functions are available:
+					\begin{itemize}
+						\item {\tt RTCPAPPPacket(u\_int8\_t *data, size\_t datalen)}\\
+							Creates an instance based on the data in {\tt data} with
+							length {\tt datalen}. Since the {\tt data} pointer
+							is referenced inside the class (no copy of the data is
+							made) one must make sure that the memory it points to is
+							valid as long as the class instance exists.
+						\item {\tt u\_int8\_t GetSubType() const}\\
+							Returns the subtype contained in the APP packet.
+						\item {\tt u\_int32\_t GetSSRC() const}\\
+							Returns the SSRC of the source which sent this packet.
+						\item {\tt u\_int8\_t *GetName()}\\
+							Returns the name contained in the APP packet. This always
+							consists of four bytes and is not NULL-terminated.
+						\item {\tt u\_int8\_t *GetAPPData()}\\
+							Returns a pointer to the actual data.
+						\item {\tt size\_t GetAPPDataLength() const}\\
+							Returns the length of the actual data.
+					\end{itemize}
+				
+				\Paragraph{\tt RTCPBYEPacket}\headerfile{rtcpbyepacket.h}\inherits{RTCPPacket}
+
+					An RTCP BYE packet is represented by the class {\tt RTCPBYEPacket}
+					which has the following member functions:
+					\begin{itemize}
+						\item {\tt RTCPBYEPacket(u\_int8\_t *data, size\_t datalen)}\\
+							Creates an instance based on the data in {\tt data} with
+							length {\tt datalen}. Since the {\tt data} pointer
+							is referenced inside the class (no copy of the data is
+							made) one must make sure that the memory it points to is
+							valid as long as the class instance exists.
+						\item {\tt int GetSSRCCount() const}\\
+							Returns the number of SSRC identifiers present in this
+							BYE packet.
+						\item {\tt u\_int32\_t GetSSRC(int index) const}\\
+							Returns the SSRC described by {\tt index} which may have a value 
+							from $0$ to {\tt GetSSRCCount()}-$1$. Note that 
+							no check is performed to see if {\tt index} is valid.
+						\item {\tt bool HasReasonForLeaving() const}\\
+							Returns true if the BYE packet contains a reason for
+							leaving.
+						\item {\tt size\_t GetReasonLength() const}\\
+							Returns the length of the string which describes why
+							the source(s) left.
+						\item {\tt u\_int8\_t *GetReasonData()}\\
+							Returns the actual reason data.
+					\end{itemize}
+	
+				\Paragraph{\tt RTCPUnknownPacket}\headerfile{rtcpunknownpacket.h}\inherits{RTCPPacket}
+				
+					This class doesn't have any extra member functions besides
+					the ones it inherited. Note that since an unknown packet type
+					doesn't have any format to check against, the {\tt IsKnownFormat}
+					function will trivially return {\tt true}. Only the following
+					constructor is available:
+					\begin{itemize}
+						\item {\tt RTCPUnknownPacket(u\_int8\_t *data, size\_t datalen)}\\
+							Creates an instance based on the data in {\tt data} with
+							length {\tt datalen}. Since the {\tt data} pointer
+							is referenced inside the class (no copy of the data is
+							made) one must make sure that the memory it points to is
+							valid as long as the class instance exists.
+					\end{itemize}
+					
+			\subsubsection{\tt RTCPCompoundPacketBuilder}\headerfile{rtpcompoundpacket\-builder.h}\inherits{RTCPCompoundPacket}
+				
+				The {\tt RTCPCompoundPacketBuilder} class can be used to
+				construct an RTCP compound packet. It inherits the member
+				functions of {\tt RTCP\-Compound\-Packet} which can be used
+				to access the information in the compound packet once it has
+				been built successfully. The member functions described below
+				return {\tt ERR\_\-RTP\_\-RTCPCOMP\-PACK\-BUILDER\_\-NOT\-ENOUGH\-BYTES\-LEFT}
+				if the action would cause the maximum allowed size to be
+				exceeded.
+				\begin{itemize}
+					\item {\tt int InitBuild(size\_t maxpacketsize)}\\
+						Starts building an RTCP compound packet with maximum size {\tt maxpacketsize}.
+						New memory will be allocated to store the packet.
+					\item {\tt int InitBuild(void *externalbuffer, size\_t buffersize)}\\
+						Starts building a packet. Data will be stored in {\tt externalbuffer} which
+						can contain {\tt buffersize} bytes.
+					\item {\tt int StartSenderReport(u\_int32\_t senderssrc, const RTPNTPTime \&ntptimestamp, u\_int32\_t rtptimestamp,
+					                                 u\_int32\_t packetcount, u\_int32\_t octetcount)}\\
+						Tells the packet builder that the packet should start with a sender report which
+						will contain the sender information specified by this function's
+						arguments. Once the sender report is started, report blocks can be
+						added using the {\tt AddReportBlock} function. 
+					\item {\tt int StartReceiverReport(u\_int32\_t senderssrc)}\\
+						Tells the packet builder that the packet should start with a receiver report which
+						will contain the sender SSRC {\tt senderssrc}. Once the sender report is started, 
+						report blocks can be added using the {\tt AddReportBlock} function. 
+					\item {\tt int AddReportBlock(u\_int32\_t ssrc, u\_int8\_t fractionlost, int32\_t packetslost, u\_int32\_t exthighestseq,
+					                              u\_int32\_t jitter, u\_int32\_t lsr, u\_int32\_t dlsr)}\\
+						Adds the report block information specified by the function's
+						arguments. If more than 31 report blocks are added, the builder
+						will automatically use a new RTCP receiver report packet.
+					\item {\tt int AddSDESSource(u\_int32\_t ssrc)}\\
+						Starts an SDES chunk for participant {\tt ssrc}.
+					\item {\tt int AddSDESNormalItem(RTCPSDESPacket::ItemType t, const void *itemdata, u\_int8\_t itemlength)}\\
+						Adds a normal (non-private) SDES item of type {\tt t} to the current SDES
+						chunk. The item's value will have length {\tt itemlength} and will contain
+						the data {\tt itemdata}.
+					\item {\tt int AddBYEPacket(u\_int32\_t *ssrcs, u\_int8\_t numssrcs, const void *reasondata, u\_int8\_t reasonlength)}\\
+						Adds a BYE packet to the compound packet. It will contain {\tt numssrcs}
+						source identifiers specified in {\tt ssrcs} and will indicate
+						as reason for leaving the string of length {\tt reasonlength}
+						containing data {\tt reasondata}.
+					\item {\tt int AddAPPPacket(u\_int8\_t subtype, u\_int32\_t ssrc, const u\_int8\_t name[4], const void *appdata, size\_t appdatalen)}\\
+						Adds the APP packet specified by the arguments to the
+						compound packet. Note that {\tt appdatalen} has to be
+						a multiple of four.
+					\item {\tt int EndBuild()}\\
+						Finished building the compound packet. If successful, the
+						{\tt RTCPCompoundPacket} member functions can be used to
+						access the RTCP packet data.
+				\end{itemize}
+
+				If the library was compiled with SDES private item support, the
+				following member function is also available:
+				\begin{itemize}
+					\item {\tt int AddSDESPrivateItem(const void *prefixdata, u\_int8\_t prefixlength, const void *valuedata,
+	                                                  u\_int8\_t valuelength)}\\
+						Adds an SDES PRIV item described by the function's arguments
+						to the current SDES chunk.
+				\end{itemize}
+
+			\subsubsection{\tt RTPSources}\headerfile{rtpsources.h}
+	
+				The {\tt RTPSources} class represents a table in which information
+				about the participating sources is kept. The class has member
+				functions to process RTP and RTCP data and to iterate over the
+				participants. Note that a NULL address is used to identify packets
+				from our own session. The class also provides some overridable
+				functions which can be used to catch certain events (new SSRC,
+				SSRC collision, \ldots).
+				
+				When probation support is enabled, you can select one of
+				three probation types:
+				\begin{verbatim}
+					enum ProbationType { NoProbation, ProbationDiscard, ProbationStore };
+				\end{verbatim}
+				When {\tt NoProbation} is selected, the probation algorithm will
+				not be used to validate new sources. When {\tt ProbationDiscard}
+				is used, the probation algorithm is activated but received packets
+				will be discarded until the source is validated. To activate the
+				probation routine and store the packets which are received before
+				the source is validated, the mode {\tt ProbationStore} can be
+				selected.
+
+				The RTPSources class interface is the following:
+				\begin{itemize}
+					\item {\tt RTPSources(ProbationType probationtype = ProbationStore)}\\
+						In the constructor you can select the probation type you'd like
+						to use. This only makes a difference when probation support was
+						enabled at compilation time.
+					\item {\tt void Clear()}\\
+						Clears the source table.
+					\item {\tt int CreateOwnSSRC(u\_int32\_t ssrc)}\\
+						Creates an entry for our own SSRC identifier.
+					\item {\tt int DeleteOwnSSRC()}\\
+						Deletes the entry for our own SSRC identifier.
+					\item {\tt void SentRTPPacket()}\\
+						For our own SSRC entry, the sender flag is updated based
+						upon outgoing packets instead of incoming packets. This
+						function should be called if our own session has sent an
+						RTP packet.
+					\item {\tt int ProcessRawPacket(RTPRawPacket *rawpack, RTPTransmitter *trans, bool acceptownpackets)}\\
+						Processes a raw packet {\tt rawpack}. The instance {\tt trans} will be used to
+						check if this packet is one of our own packets. The flag {\tt acceptownpackets}
+						indicates whether own packets should be accepted or ignored.
+					\item {\tt int ProcessRawPacket(RTPRawPacket *rawpack, RTPTransmitter *trans[], int numtrans, bool acceptownpackets)}\\
+						Same function as the previous one, except that every transmitter
+						in the array {\tt trans} of length {\tt numtrans} is used
+						to check if the packet is from our own session.
+					\item {\tt int ProcessRTPPacket(RTPPacket *rtppack, const RTPTime \&receivetime, const RTPAddress *senderaddress, bool *stored)}\\
+						Processes an {\tt RTPPacket} instance {\tt rtppack} which was 
+						received at time {\tt receivetime}. And which originated from
+						{\tt senderaddress}. The {\tt senderaddress} parameter must
+						be NULL if the packet was sent by the local participant. The
+						flag {\tt stored} indicates whether the packet was stored in
+						the table or not. If so, the {\tt rtppack} instance may not
+						be deleted.
+					\item {\tt int ProcessRTCPCompoundPacket(RTCPCompoundPacket *rtcpcomppack, const RTPTime \&receivetime,
+					                                         const RTPAddress *senderaddress)}\\
+						Processes the RTCP compound packet {\tt rtcpcomppack}
+						which was received at time {\tt receivetime} from {\tt
+						senderaddress}. The {\tt senderaddress} parameter must
+						be NULL if the packet was sent by the local participant.
+					\item {\tt int ProcessRTCPSenderInfo(u\_int32\_t ssrc, const RTPNTPTime \&ntptime, u\_int32\_t rtptime,
+					                                     u\_int32\_t packetcount, u\_int32\_t octetcount, const RTPTime \&receivetime,
+					                                     const RTPAddress *senderaddress)}\\
+						Process the sender information of SSRC {\tt ssrc} into
+						the source table. The information was received at time
+						{\tt receivetime} from address {\tt senderaddress}. The
+						{\tt senderaddress} parameter must be NULL if the packet
+						was sent by the local participant.
+					\item {\tt int ProcessRTCPReportBlock(u\_int32\_t ssrc, u\_int8\_t fractionlost, int32\_t lostpackets,
+					                                      u\_int32\_t exthighseqnr, u\_int32\_t jitter, u\_int32\_t lsr,
+					                                      u\_int32\_t dlsr, const RTPTime \&receivetime, const RTPAddress *senderaddress)}\\
+						Processes the report block information which was sent
+						by participant {\tt ssrc} into the source table. The
+						information was received at time {\tt receivetime} from
+						address {\tt senderaddress}. The {\tt senderaddress}
+						parameter must be NULL if the packet was sent by the
+						local participant.
+					\item {\tt int ProcessSDESNormalItem(u\_int32\_t ssrc, RTCPSDESPacket::ItemType t, size\_t itemlength,
+					                                     const void *itemdata, const RTPTime \&receivetime, const RTPAddress *senderaddress)}\\
+						Processes the non-private SDES item from source {\tt
+						ssrc} into the source table. The information was
+						received at time {\tt receivetime} from address {\tt
+						senderaddress}. The {\tt senderaddress} parameter must
+						be NULL if the packet was sent by the local participant.
+					\item {\tt int ProcessBYE(u\_int32\_t ssrc, size\_t reasonlength, const void *reasondata, const RTPTime \&receivetime,
+					                          const RTPAddress *senderaddress)}\\
+						Processes the BYE message for SSRC {\tt ssrc}. The
+						information was received at time {\tt receivetime} from
+						address {\tt senderaddress}. The {\tt senderaddress}
+						parameter must be NULL if the packet was sent by the
+						local participant.
+					\item {\tt int UpdateReceiveTime(u\_int32\_t ssrc, const RTPTime \&receivetime, const RTPAddress *senderaddress)}\\
+						If we heard from source {\tt ssrc}, but no actual
+						data was added to the source table (for example, if
+						no report block was meant for us), this function can
+						be used to indicate that something was received from
+						this source. This will prevent a premature timeout for
+						this participant. The message was received at time {\tt
+						receivetime} from address {\tt senderaddress}. The {\tt
+						senderaddress} parameter must be NULL if the packet was
+						sent by the local participant.
+					\item {\tt bool GotoFirstSource()}\\
+						Starts the iteration over the participants by going to the
+						first member in the table. If a member was found, the function
+						returns {\tt true}, otherwise it returns {\tt false}.
+					\item {\tt bool GotoNextSource()}\\
+						Sets the current source to be the next source in the table.
+						If we're already at the last source, the function returns
+						{\tt false}, otherwise it returns {\tt true}.
+					\item {\tt bool GotoPreviousSource()}\\
+						Sets the current source to be the previous source in the table.
+						If we're at the first source, the function returns
+						{\tt false}, otherwise it returns {\tt true}.
+					\item {\tt bool GotoFirstSourceWithData()}\\
+						Sets the current source to be the first source in the table
+						which has {\tt RTPPacket} instances that we haven't extracted
+						yet. If no such member was found, the function returns {\tt false},
+						otherwise it returns {\tt true}.
+					\item {\tt bool GotoNextSourceWithData()}\\
+						Sets the current source to be the next source in the table
+						which has {\tt RTPPacket} instances that we haven't extracted
+						yet. If no such member was found, the function returns {\tt false},
+						otherwise it returns {\tt true}.
+					\item {\tt bool GotoPreviousSourceWithData()}\\
+						Sets the current source to be the previous source in the table
+						which has {\tt RTPPacket} instances that we haven't extracted
+						yet. If no such member was found, the function returns {\tt false},
+						otherwise it returns {\tt true}.
+					\item {\tt RTPSourceData *GetCurrentSourceInfo()}\\
+						Returns the {\tt RTPSourceData} instance for the currently
+						selected participant.
+					\item {\tt RTPSourceData *GetSourceInfo(u\_int32\_t ssrc)}\\
+						Returns the {\tt RTPSourceData} instance for the participant
+						identified by {\tt ssrc}, or NULL if no such entry exists.
+					\item {\tt RTPPacket *GetNextPacket()}\\
+						Extracts the next packet from the received packets queue
+						of the current participant.
+					\item {\tt bool GotEntry(u\_int32\_t ssrc)}\\
+						Returns {\tt true} if an entry for participant {\tt ssrc} exists
+						and {\tt false} otherwise.
+					\item {\tt RTPSourceData *GetOwnSourceInfo()}\\
+						If present, it returns the {\tt RTPSourceData} instance of
+						the entry which was created by {\tt CreateOwnSSRC}.
+					\item {\tt void Timeout(const RTPTime \&curtime, const RTPTime \&timeoutdelay)}\\
+						Assuming that the current time is {\tt curtime}, time out the
+						members from whom we haven't heard during the previous time
+						interval {\tt timeoutdelay}.
+					\item {\tt void SenderTimeout(const RTPTime \&curtime, const RTPTime \&timeoutdelay)}\\
+						Assuming that the current time is {\tt curtime}, remove the
+						sender flag for senders from whom we haven't received any RTP
+						packets during the previous time interval {\tt timeoutdelay}.
+					\item {\tt void BYETimeout(const RTPTime \&curtime, const RTPTime \&timeoutdelay)}\\
+						Assuming that the current time is {\tt curtime}, remove the
+						members who sent a BYE packet more than the time interval
+						{\tt timeoutdelay} ago.
+					\item {\tt void NoteTimeout(const RTPTime \&curtime, const RTPTime \&timeoutdelay)}\\
+						Assuming that the current time is {\tt curtime}, clear the SDES 
+						NOTE items which haven't been updated in during the previous
+						time interval {\tt timeoutdelay}.
+					\item {\tt void MultipleTimeouts(const RTPTime \&curtime, const RTPTime \&sendertimeout,
+					                                 const RTPTime \&byetimeout, const RTPTime \&generaltimeout,
+					                                 const RTPTime \&notetimeout)}\\
+						Combines the previous four functions. This is more efficient
+						than calling all four functions since only one iteration
+						is needed in this function.
+					\item {\tt int GetSenderCount() const}\\
+						Returns the number of participants which are marked as a
+						sender.
+					\item {\tt int GetTotalCount() const}\\
+						Returns the total number of entries in the source table.
+					\item {\tt int GetActiveMemberCount() const}\\
+						Returns the number of members which have been validated and
+						which haven't sent a BYE packet yet.
+				\end{itemize}
+				
+				If SDES private item support was enabled at compile-time, the following
+				member function is also available: 
+				\begin{itemize}
+					\item {\tt int ProcessSDESPrivateItem(u\_int32\_t ssrc, size\_t prefixlen, const void *prefixdata,
+	                                                      size\_t valuelen, const void *valuedata, const RTPTime \&receivetime,
+					                                      const RTPAddress *senderaddress)}\\
+						Processes the SDES private item from source {\tt ssrc}
+						into the source table. The information was received at
+						time {\tt receivetime} from address {\tt senderaddress}.
+						The {\tt senderaddress} parameter must be NULL if the
+						packet was sent by the local participant.
+				\end{itemize}
+
+				By inheriting your own class from {\tt RTPSources} and overriding
+				one or more of the functions below, your application can be informed
+				of certain events:
+				\begin{itemize}
+					\item {\tt void OnRTPPacket(RTPPacket *pack, const RTPTime \&receivetime,
+					                                    const RTPAddress *senderaddress)}\\
+						Is called when an RTP packet is about to be processed.
+					\item {\tt void OnRTCPCompoundPacket(RTCPCompoundPacket *pack, const RTPTime \&receivetime,
+					                                             const RTPAddress *senderaddress)}\\
+						Is called when an RTCP packet is about to be processed.
+					\item {\tt void OnSSRCCollision(RTPSourceData *srcdat, const RTPAddress *senderaddress, bool isrtp)}\\
+						Is called when an SSRC collision was detected. The instance
+						{\tt srcdat} is the one present in the table, the address
+						{\tt senderaddress} is the one that collided with one of the
+						addresses and {\tt isrtp} indicates against which address of
+						{\tt srcdat} the check failed.
+					\item {\tt void OnCNAMECollision(RTPSourceData *srcdat, const RTPAddress *senderaddress,
+					                                         const u\_int8\_t *cname, size\_t cnamelength)}\\
+						Is called when another CNAME was received than the one
+						already present for source {\tt srcdat}.
+					\item {\tt void OnNewSource(RTPSourceData *srcdat)}\\
+						Is called when a new entry {\tt srcdat} is added to the source
+						table.
+					\item {\tt void OnRemoveSource(RTPSourceData *srcdat)}\\
+						Is called when the entry {\tt srcdat} is about to be
+						deleted from the source table.
+					\item {\tt void OnTimeout(RTPSourceData *srcdat)}\\
+						Is called when participant {\tt srcdat} is timed out.
+					\item {\tt void OnBYETimeout(RTPSourceData *srcdat)}\\
+						Is called when participant {\tt srcdat} is timed after
+						having sent a BYE packet.
+					\item {\tt void OnBYEPacket(RTPSourceData *srcdat)}\\
+						Is called when a BYE packet has been processed for source
+						{\tt srcdat}.
+					\item {\tt void OnAPPPacket(RTCPAPPPacket *apppacket, const RTPTime \&receivetime,
+					                                    const RTPAddress *senderaddress)}\\
+						In called when an RTCP APP packet {\tt apppacket} has been received 
+						at time {\tt receivetime} from address {\tt senderaddress}.
+					\item {\tt void OnUnknownPacketType(RTCPPacket *rtcppack, const RTPTime \&receivetime,
+					                                            const RTPAddress *senderaddress)}\\
+						Is called when an unknown RTCP packet type was detected.
+					\item {\tt void OnUnknownPacketFormat(RTCPPacket *rtcppack, const RTPTime \&receivetime,
+					                                              const RTPAddress *senderaddress)}\\
+						Is called when an unknown packet format for a known packet
+						type was detected.
+					\item {\tt void OnNoteTimeout(RTPSourceData *srcdat)}\\
+						Is called when the SDES NOTE item for source {\tt srcdat}
+						has been timed out.
+				\end{itemize}
+				
+			\subsubsection{\tt RTPSourceData}\headerfile{rtpsourcedata.h}
+			\label{rtpsourcedata}
+			
+				The {\tt RTPSourceData} class contains all information about a member
+				of the session. The interface is the following:
+				\begin{itemize}
+					\item {\tt u\_int32\_t GetSSRC() const}\\
+						Returns the SSRC identifier for this member.
+					\item {\tt bool HasData() const}\\
+						Returns {\tt true} if there are RTP packets which can be extracted.
+					\item {\tt RTPPacket *GetNextPacket()}\\
+						Extracts the first packet of this participants RTP packet queue.
+					\item {\tt void FlushPackets()}\\
+						Clears the participant's RTP packet list.
+					\item {\tt bool IsOwnSSRC() const}\\
+						Returns {\tt true} if the participant was added using the
+						{\tt RTPSources} member function {\tt CreateOwnSSRC} and
+						returns {\tt false} otherwise.
+					\item {\tt bool IsCSRC() const}\\
+						Returns true if the source identifier is actually a CSRC from
+						an RTP packet.
+					\item {\tt bool IsSender() const}\\
+						Returns {\tt true} if this member is marked as a sender and
+						{\tt false} if not.
+					\item {\tt bool IsValidated() const}\\
+						Returns {\tt true} if the participant is validated: this is so
+						if a number of consecutive RTP packets have been received or if
+						a CNAME item has been received for this participant.
+					\item {\tt bool IsActive() const}\\
+						Returns {\tt true} if the source was validated and had not yet
+						sent a BYE packet.
+					\item {\tt void SetProcessedInRTCP(bool v)}\\
+						This function is used by the {\tt RTCPPacketBuilder} class to mark
+						whether this participant's information has been processed in a
+						report block or not.
+					\item {\tt bool IsProcessedInRTCP() const}\\
+						This function is used by the {\tt RTCPPacketBuilder} class and
+						returns whether this participant has been processed in a report
+						block or not.
+					\item {\tt bool IsRTPAddressSet() const}\\
+						Returns {\tt true} if the address from which this participant's RTP packets
+						originate has already been set.
+					\item {\tt bool IsRTCPAddressSet() const}\\
+						Returns {\tt true} if the address from which this participant's RTCP packets
+						originate has already been set.
+					\item {\tt const RTPAddress *GetRTPDataAddress() const}\\
+						Returns the address from which this participant's RTP packet originate. If the
+						address has been set and the returned value is NULL, this indicates that it
+						originated from the local participant.
+					\item {\tt const RTPAddress *GetRTCPDataAddress() const}\\
+						Returns the address from which this participant's RTCP packet originate. If the
+						address has been set and the returned value is NULL, this indicates that it
+						originated from the local participant.					
+					\item {\tt bool ReceivedBYE() const}\\
+						Returns {\tt true} if we received a BYE message for this participant and
+						{\tt false} otherwise.
+					\item {\tt u\_int8\_t *GetBYEReason(size\_t *len) const}\\
+						Returns the reason for leaving contained in the BYE packet of this participant.
+						The length of the reason is stored in {\tt len}.
+					\item {\tt RTPTime GetBYETime() const}\\
+						Returns the time at which the BYE packet was received.
+					\item {\tt void SetTimestampUnit(double tsu)}\\
+						Sets the value for the timestamp unit to be used in jitter calculations
+						for data received from this participant. If not set, the library uses an
+						approximation for the timestamp unit which is calculated from two consecutive
+						RTCP sender reports. The timestamp unit is defined as a time interval divided
+						by the number of samples in that interval: for $8000 Hz$ audio this would be
+						$1.0/8000.0$.
+					\item {\tt double GetTimestampUnit() const}\\
+						Returns the timestamp unit used for this participant.
+					\item {\tt bool SR\_HasInfo() const}\\
+						Returns {\tt true} if an RTCP sender report has been received from this participant.
+					\item {\tt RTPNTPTime SR\_GetNTPTimestamp() const}\\
+						Returns the NTP timestamp contained in the last sender report.
+					\item {\tt u\_int32\_t SR\_GetRTPTimestamp() const}\\
+						Returns the RTP timestamp contained in the last sender report.
+					\item {\tt u\_int32\_t SR\_GetPacketCount() const}\\
+						Returns the packet count contained in the last sender report.
+					\item {\tt u\_int32\_t SR\_GetByteCount() const}\\
+						Returns the octet count contained in the last sender report.
+					\item {\tt RTPTime SR\_GetReceiveTime() const}\\
+						Returns the time at which the last sender report was received.
+					\item {\tt bool SR\_Prev\_HasInfo() const}\\
+						Returns {\tt true} if more than one RTCP sender report has been received.
+					\item {\tt RTPNTPTime SR\_Prev\_GetNTPTimestamp() const}\\
+						Returns the NTP timestamp contained in the second to last sender report.
+					\item {\tt u\_int32\_t SR\_Prev\_GetRTPTimestamp() const}\\
+						Returns the RTP timestamp contained in the second to last sender report.
+					\item {\tt u\_int32\_t SR\_Prev\_GetPacketCount() const}\\
+						Returns the packet count contained in the second to last sender report.
+					\item {\tt u\_int32\_t SR\_Prev\_GetByteCount() const}\\
+						Returns the octet count contained in the second to last sender report.
+					\item {\tt RTPTime SR\_Prev\_GetReceiveTime() const}\\
+						Returns the time at which the second to last sender report was received.
+					\item {\tt bool RR\_HasInfo() const}\\
+						Returns {\tt true} if this participant sent a receiver report with information
+						about the reception of our data.
+					\item {\tt double RR\_GetFractionLost() const}\\
+						Returns the fraction lost value from the last report.
+					\item {\tt int32\_t	RR\_GetPacketsLost() const}\\
+						Returns the number of lost packets contained in the last report.
+					\item {\tt u\_int32\_t RR\_GetExtendedHighestSequenceNumber() const}\\
+						Returns the extended highest sequence number contained in the last report.
+					\item {\tt u\_int32\_t RR\_GetJitter() const}\\
+						Returns the jitter value from the last report.
+					\item {\tt u\_int32\_t RR\_GetLastSRTimestamp() const}\\
+						Returns the LSR value from the last report.
+					\item {\tt u\_int32\_t RR\_GetDelaySinceLastSR() const}\\
+						Returns the DLSR value from the last report.
+					\item {\tt RTPTime RR\_GetReceiveTime() const}\\
+						Returns the time at which the last report was received.
+					\item {\tt bool RR\_Prev\_HasInfo() const}\\
+						Returns {\tt true} if this participant sent more than one receiver report with information
+						about the reception of our data.
+					\item {\tt double RR\_Prev\_GetFractionLost() const}\\
+						Returns the fraction lost value from the second to last report.
+					\item {\tt int32\_t	RR\_Prev\_GetPacketsLost() const}\\
+						Returns the number of lost packets contained in the second to last report.
+					\item {\tt u\_int32\_t RR\_Prev\_GetExtendedHighestSequenceNumber() const}\\
+						Returns the extended highest sequence number contained in the second to last report.
+					\item {\tt u\_int32\_t RR\_Prev\_GetJitter() const}\\
+						Returns the jitter value from the second to last report.
+					\item {\tt u\_int32\_t RR\_Prev\_GetLastSRTimestamp() const}\\
+						Returns the LSR value from the second to last report.
+					\item {\tt u\_int32\_t RR\_Prev\_GetDelaySinceLastSR() const}\\
+						Returns the DLSR value from the second to last report.
+					\item {\tt RTPTime RR\_Prev\_GetReceiveTime() const}\\
+						Returns the time at which the second to last report was received.
+					\item {\tt bool INF\_HasSentData() const}\\
+						Returns {\tt true} if validated RTP packets have been received from this
+						participant.
+					\item {\tt int32\_t INF\_GetNumPacketsReceived() const}\\
+						Returns the total number of received packets from this participant.
+					\item {\tt u\_int32\_t INF\_GetBaseSequenceNumber() const}\\
+						Returns the base sequence number of this participant.
+					\item {\tt u\_int32\_t INF\_GetExtendedHighestSequenceNumber() const}\\
+						Returns the extended highest sequence number received from this
+						participant.
+					\item {\tt u\_int32\_t INF\_GetJitter() const}\\
+						Returns the current jitter value for this participant.
+					\item {\tt RTPTime INF\_GetLastMessageTime() const}\\
+						Returns the time at which something was last heard from this member.
+					\item {\tt RTPTime INF\_GetLastRTPPacketTime() const}\\
+						Returns the time at which the last RTP packet was received.
+					\item {\tt double INF\_GetEstimatedTimestampUnit() const}\\
+						Returns the estimated timestamp unit. The estimate is made from two
+						consecutive sender reports.
+					\item {\tt u\_int32\_t INF\_GetNumPacketsReceivedInInterval() const}\\
+						Returns the number of packets received since a new interval was
+						started with {\tt INF\_StartNewInterval}.
+					\item {\tt u\_int32\_t INF\_GetSavedExtendedSequenceNumber() const}\\
+						Returns the extended sequence number which was stored by the
+						{\tt INF\_StartNewInterval} call.
+					\item {\tt void INF\_StartNewInterval()}\\
+						Starts a new interval to count received packets in. This also stores
+						the current extended highest sequence number to be able to calculate
+						the packet loss during the interval.
+					\item {\tt RTPTime INF\_GetRoundtripTime() const}\\
+						Estimates the round trip time by using the LSR and DLSR info from the
+						last receiver report.
+					\item {\tt RTPTime INF\_GetLastSDESNoteTime() const}\\
+						Returns the time at which the last SDES NOTE item was received.
+					\item {\tt u\_int8\_t *SDES\_GetCNAME(size\_t *len) const}\\
+						Returns a pointer to the SDES CNAME item of this participant and stores
+						its length in {\tt len}.
+					\item {\tt u\_int8\_t *SDES\_GetName(size\_t *len) const}\\
+						Returns a pointer to the SDES name item of this participant and stores
+						its length in {\tt len}.
+					\item {\tt u\_int8\_t *SDES\_GetEMail(size\_t *len) const}\\
+						Returns a pointer to the SDES e-mail item of this participant and stores
+						its length in {\tt len}.
+					\item {\tt u\_int8\_t *SDES\_GetPhone(size\_t *len) const}\\
+						Returns a pointer to the SDES phone item of this participant and stores
+						its length in {\tt len}.
+					\item {\tt u\_int8\_t *SDES\_GetLocation(size\_t *len) const}\\
+						Returns a pointer to the SDES location item of this participant and stores
+						its length in {\tt len}.
+					\item {\tt u\_int8\_t *SDES\_GetTool(size\_t *len) const}\\
+						Returns a pointer to the SDES tool item of this participant and stores
+						its length in {\tt len}.
+					\item {\tt u\_int8\_t *SDES\_GetNote(size\_t *len) const}\\
+						Returns a pointer to the SDES note item of this participant and stores
+						its length in {\tt len}.
+				\end{itemize}
+
+				If SDES private item support was enabled at compile-time, the following
+				member functions are also available:
+				\begin{itemize}
+					\item {\tt void SDES\_GotoFirstPrivateValue()}\\
+						Starts the iteration over the stored SDES private item prefixes
+						and their associated values.
+					\item {\tt bool SDES\_GetNextPrivateValue(u\_int8\_t **prefix, size\_t *prefixlen, u\_int8\_t **value, size\_t *valuelen) }\\
+						If available, returns {\tt true} and stores the next SDES
+						private item prefix in {\tt prefix} and its length in
+						{\tt prefixlen}. The associated value and its length are
+						then stored in {\tt value} and {\tt valuelen}. Otherwise,
+						it returns {\tt false}.
+					\item {\tt bool SDES\_GetPrivateValue(u\_int8\_t *prefix, size\_t prefixlen, u\_int8\_t **value, size\_t *valuelen) const}\\
+						Looks for the entry which corresponds to the SDES private
+						item prefix {\tt prefix} with length {\tt prefixlen}. If found,
+						the function returns {\tt true} and stores the associated
+						value and its length in {\tt value} and {\tt valuelen}
+						respectively.
+				\end{itemize}
+				
+			\subsubsection{\tt RTPPacketBuilder}\headerfile{rtppacketbuilder.h}
+
+				This class can be used to build RTP packets and is a bit more
+				high-level than the {\tt RTPPacket} class: it generates an SSRC
+				identifier, keeps track of timestamp and sequence number etc.
+
+				The interface is the following:
+				\begin{itemize}
+					\item {\tt int Init(size\_t maxpacksize)}\\
+						Initializes the builder to only allow packets with a size
+						below {\tt maxpacksize}
+					\item {\tt void Destroy()}\\
+						Cleans up the builder.
+					\item {\tt u\_int32\_t GetPacketCount()}\\
+						Returns the number of packets which have been created with
+						the current SSRC identifier.
+					\item {\tt u\_int32\_t GetPayloadOctetCount()}\\
+						Returns the number of payload octets which have been generated
+						with this SSRC identifier.
+					\item {\tt int SetMaximumPacketSize(size\_t maxpacksize)}\\
+						Sets the maximum allowed packet size to {\tt maxpacksize}.
+					\item {\tt int AddCSRC(u\_int32\_t csrc)}\\
+						Adds a CSRC to the CSRC list which will be stored in the
+						RTP packets.
+					\item {\tt int DeleteCSRC(u\_int32\_t csrc)}\\
+						Deletes a CSRC from the list which will be stored in the
+						RTP packets.
+					\item {\tt void ClearCSRCList()}\\
+						Clears the CSRC list.
+					\item {\tt int BuildPacket(const void *data, size\_t len)}\\
+						Builds a packet with payload {\tt data} and payload length
+						{\tt len}. The payload type, marker and timestamp increment
+						used will be those that have been set using the 
+						{\tt SetDefault} functions below.
+					\item {\tt int BuildPacket(const void *data, size\_t len,
+					                           u\_int8\_t pt, bool mark, u\_int32\_t timestampinc)}\\
+						Builds a packet with payload {\tt data} and payload length
+						{\tt len}. The payload type will be set to {\tt pt}, the
+						marker bit to {\tt mark} and after building this packet,
+						the timestamp will be incremented with {\tt timestamp}.
+					\item {\tt int BuildPacketEx(const void *data, size\_t len,
+					                             u\_int16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
+						Builds a packet with payload {\tt data} and payload length
+						{\tt len}. The payload type, marker and timestamp increment
+						used will be those that have been set using the 
+						{\tt SetDefault} functions below. This packet will also contain
+						an RTP header extension with identifier {\tt hdrextID} and data
+						{\tt hdrextdata}. The length of the header extension data
+						is given by {\tt numhdrextwords} which expresses the length
+						in a number of $32$-bit words.
+					\item {\tt int BuildPacketEx(const void *data, size\_t len,
+					                             u\_int8\_t pt, bool mark, u\_int32\_t timestampinc,
+					                             u\_int16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
+						Builds a packet with payload {\tt data} and payload
+						length {\tt len}. The payload type will be set to {\tt
+						pt}, the marker bit to {\tt mark} and after building
+						this packet, the timestamp will be incremented with {\tt
+						timestamp}. This packet will also contain an RTP header
+						extension with identifier {\tt hdrextID} and data {\tt
+						hdrextdata}. The length of the header extension data is
+						given by {\tt numhdrextwords} which expresses the length
+						in a number of $32$-bit words.
+					\item {\tt u\_int8\_t *GetPacket()}\\
+						Returns a pointer to the last built RTP packet data.
+					\item {\tt size\_t GetPacketLength()}\\
+						Returns the size of the last built RTP packet.
+					\item {\tt int SetDefaultPayloadType(u\_int8\_t pt)}\\
+						Sets the default payload type to {\tt pt}.
+					\item {\tt int SetDefaultMark(bool m)}\\
+						Sets the default marker bit to {\tt m}.
+					\item {\tt int SetDefaultTimestampIncrement(u\_int32\_t timestampinc)}\\
+						Sets the default timestamp increment to {\tt timestampinc}.
+					\item {\tt int IncrementTimestamp(u\_int32\_t inc)}\\
+						This function increments the timestamp with the amount
+						given by {\tt inc}. This can be useful if, for example,
+						a packet was not sent because it contained only silence.
+						Then, this function should be called to increment the
+						timestamp with the appropriate amount so that the next
+						packets will still be played at the correct time at
+						other hosts.
+					\item {\tt int IncrementTimestampDefault()}\\
+						This function increments the timestamp with the amount
+						given set by the {\tt SetDefaultTimestampIncrement}
+						member function. This can be useful if, for example,
+						a packet was not sent because it contained only silence.
+						Then, this function should be called to increment the
+						timestamp with the appropriate amount so that the next
+						packets will still be played at the correct time at
+						other hosts.						
+					\item {\tt u\_int32\_t CreateNewSSRC()}\\
+						Creates a new SSRC to be used in generated packets. This
+						will also generate new timestamp and sequence number
+						offsets.
+					\item {\tt u\_int32\_t CreateNewSSRC(RTPSources \&sources)}\\
+						Creates a new SSRC to be used in generated packets. This
+						will also generate new timestamp and sequence number
+						offsets. The source table {\tt sources} is used to make
+						sure that the chosen SSRC isn't used by another participant
+						yet.
+					\item {\tt u\_int32\_t GetSSRC()}\\
+						Returns the current SSRC identifier.
+					\item {\tt u\_int32\_t GetTimestamp()}\\
+						Returns the current RTP timestamp.
+					\item {\tt u\_int16\_t GetSequenceNumber()}\\
+						Returns the current sequence number.
+					\item {\tt RTPTime GetPacketTime()}\\
+						Returns the time at which a packet was generated. This
+						is not necessarily the time at which the last RTP packet
+						was generated: if the timestamp increment was zero, the
+						time is not updated.
+					\item {\tt u\_int32\_t GetPacketTimestamp()}\\
+						Returns the RTP timestamp which corresponds to the time 
+						returned by the previous function.
+				\end{itemize}
+				
+			\subsubsection{\tt RTCPPacketBuilder}\headerfile{rtcppacketbuilder.h}
+
+				The class {\tt RTCPPacketBuilder} can be used to build RTCP
+				compound packets. This class is more high-level than the
+				{\tt RTCPCompoundPacketBuilder} class: it uses the information
+				of an {\tt RTPPacketBuilder} instance and of a {\tt RTPSources}
+				instance to automatically generate the next compound packet which should
+				be sent. It also provides functions to determine when SDES items
+				other than the CNAME item should be sent.
+
+				Its class interface is the following:
+				\begin{itemize}
+					\item {\tt RTCPPacketBuilder(RTPSources \&sources,RTPPacketBuilder \&rtppackbuilder)}\\
+						Creates an instance which will use the source table
+						{\tt sources} and the RTP packet builder {\tt rtppackbuilder}
+						to determine the information for the next RTCP compound packet.
+					\item {\tt int Init(size\_t maxpacksize, double timestampunit, const void *cname, size\_t cnamelen)}\\
+						Initializes the builder to use the maximum allowed
+						packet size {\tt maxpacksize}, timestamp unit {\tt
+						timestampunit} and the SDES CNAME item specified by {\tt
+						cname} with length {\tt cnamelen}. The timestamp unit
+						is defined as a time interval divided by the number of
+						samples in that interval: for $8000 Hz$ audio this would
+						be $1.0/8000.0$.
+					\item {\tt void Destroy()}\\
+						Cleans up the builder.
+					\item {\tt int SetTimestampUnit(double tsunit)}\\
+						Sets the timestamp unit to be used to {\tt tsunit}. The
+						timestamp unit is defined as a time interval divided
+						by the number of samples in that interval: for $8000 Hz$
+						audio this would be $1.0/8000.0$.
+					\item {\tt int SetMaximumPacketSize(size\_t maxpacksize)}\\
+						Sets the maximum size allowed size of an RTCP compound
+						packet to {\tt maxpacksize}.
+					\item {\tt int BuildNextPacket(RTCPCompoundPacket **pack)}\\
+						Builds the next RTCP compound packet which should be
+						sent and stores it in {\tt pack}.
+					\item {\tt int BuildBYEPacket(RTCPCompoundPacket **pack, const void *reason, size\_t reasonlength,bool useSRifpossible = true)}\\
+						Builds a BYE packet with reason for leaving
+						specified by {\tt reason} and length
+						{\tt reasonlength}. If {\tt useSRifpossible} is set to {\tt true},
+						the RTCP compound packet will start with a sender report if
+						allowed. Otherwise, a receiver report is used.
+					\item {\tt void SetNameInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the class will check if other SDES items
+						need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES name
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt void SetEMailInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the class will check if other SDES items
+						need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES e-mail
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt void SetLocationInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the class will check if other SDES items
+						need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES location
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt void SetPhoneInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the class will check if other SDES items
+						need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES phone
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt void SetToolInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the class will check if other SDES items
+						need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES tool
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt void SetNoteInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the class will check if other SDES items
+						need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES note
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt int SetLocalName(const void *s, size\_t len)}\\
+						Sets the SDES name item for the local participant to the value {\tt s}
+						with length {\tt len}.
+					\item {\tt int SetLocalEMail(const void *s, size\_t len)}\\
+						Sets the SDES e-mail item for the local participant to the value {\tt s}
+						with length {\tt len}.
+					\item {\tt int SetLocalLocation(const void *s, size\_t len)}\\
+						Sets the SDES location item for the local participant to the value {\tt s}
+						with length {\tt len}.
+					\item {\tt int SetLocalPhone(const void *s, size\_t len)}\\
+						Sets the SDES phone item for the local participant to the value {\tt s}
+						with length {\tt len}.
+					\item {\tt int SetLocalTool(const void *s, size\_t len)}\\
+						Sets the SDES tool item for the local participant to the value {\tt s}
+						with length {\tt len}.
+					\item {\tt int SetLocalNote(const void *s, size\_t len)}\\
+						Sets the SDES note item for the local participant to the value {\tt s}
+						with length {\tt len}.
+				\end{itemize}
+				
+			\subsubsection{\tt RTPCollisionList}\headerfile{rtpcollisionlist.h}
+		
+				This class represents a list of addresses from which SSRC collisions were
+				detected. Its interface is this:
+				\begin{itemize}
+					\item {\tt void Clear()}\\
+						Clears the list of addresses.
+					\item {\tt int UpdateAddress(const RTPAddress *addr, const RTPTime \&receivetime, bool *created)}\\
+						Updates the entry for address {\tt addr} to indicate that a collision
+						was detected at time {\tt receivetime}. If the entry did not exist yet, the
+						flag {\tt created} is set to {\tt true}, otherwise it is set to {\tt false}.
+					\item {\tt bool HasAddress(const RTPAddress *addr) const}\\
+						Returns {\tt true} if the address {\tt addr} appears in the list.
+					\item {\tt void Timeout(const RTPTime \&currenttime, const RTPTime \&timeoutdelay)}\\
+						Assuming that the current time is given by {\tt currenttime}, this function
+						times out entries which haven't been updated in the previous time interval
+						specified by {\tt timeoutdelay}.
+				\end{itemize}
+
+			\subsubsection{\tt RTCPScheduler}\headerfile{rtcpscheduler.h}
+
+				This class determines when RTCP compound packets should be sent. It has
+				the following interface:
+				\begin{itemize}
+					\item {\tt RTCPScheduler(RTPSources \&sources)}\\
+						Creates an instance which will use the source table {\tt RTPSources} to
+						determine when RTCP compound packets should be scheduled. Note that
+						for correct operation the {\tt sources} instance should have information
+						about the own SSRC (added by {\tt CreateOwnSSRC}).
+					\item {\tt void Reset()}\\
+						Resets the scheduler.
+					\item {\tt void SetParameters(const RTCPSchedulerParams \&params)}\\
+						Sets the scheduler parameters to be used to {\tt params}. The
+						{\tt RTCPSchedulerParams} class is described below.
+					\item {\tt RTCPSchedulerParams GetParameters() const}\\
+						Returns the currently used scheduler parameters.
+					\item {\tt void SetHeaderOverhead(size\_t numbytes)}\\
+						Sets the header overhead from underlying protocols (for example UDP and
+						IP) to {\tt numbytes}.
+					\item {\tt size\_t GetHeaderOverhead() const}\\
+						Returns the currently used header overhead.
+					\item {\tt void AnalyseIncoming(RTCPCompoundPacket \&rtcpcomppack)}\\
+						For each incoming RTCP compound packet, this function has to be
+						called for the scheduler to work correctly.
+					\item {\tt void AnalyseOutgoing(RTCPCompoundPacket \&rtcpcomppack)}\\
+						For each outgoing RTCP compound packet, this function has to be
+						called for the scheduler to work correctly.
+					\item {\tt void ActiveMemberDecrease()}\\
+						This function has to be called each time a member times out or
+						sends a BYE packet.
+					\item {\tt void ScheduleBYEPacket(size\_t packetsize)}\\
+						Asks the scheduler to schedule an RTCP compound packet containing a
+						BYE packet. The compound packet has size {\tt packetsize}.
+					\item {\tt RTPTime GetTransmissionDelay()}\\
+						Returns the delay after which an RTCP compound will possibly have to
+						be sent. The {\tt IsTime} member function should be called afterwards to
+						make sure that it actually is time to send an RTCP compound packet.
+					\item {\tt bool IsTime()}\\
+						This function returns {\tt true} if it's time to send an RTCP compound packet
+						and {\tt false} otherwise. If the function returns {\tt true} it will also
+						have calculated the next time at which a packet should be sent, so if it
+						is called again right away, it will return {\tt false}.
+					\item {\tt RTPTime CalculateDeterministicInterval(bool sender = false)}\\
+						Calculates the deterministic interval at this time. This is used -- together
+						with a certain multiplier -- to time out members, senders etc.
+				\end{itemize}
+
+				\Paragraph{Scheduler parameters}\headerfile{rtcpscheduler.h}
+
+					The {\tt RTCPSchedulerParams} class describes the parameters to be used by the
+					scheduler. Its interface is the following:
+					\begin{itemize}
+						\item {\tt int SetRTCPBandwidth(double bw)}\\
+							Sets the RTCP bandwidth to be used to {\tt bw} (in bytes per second).
+						\item {\tt double GetRTCPBandwidth() const}\\
+							Returns the used RTCP bandwidth in bytes per second.
+						\item {\tt int SetSenderBandwidthFraction(double fraction)}\\
+							Sets the fraction of the RTCP bandwidth reserved for senders
+							to {\tt fraction}.
+						\item {\tt double GetSenderBandwidthFraction() const}\\
+							Returns the fraction of the RTCP bandwidth reserved for senders.
+						\item {\tt int SetMinimumTransmissionInterval(const RTPTime \&t)}\\
+							Sets the minimum (deterministic) interval between RTCP compound packets
+							to {\tt t}.
+						\item {\tt RTPTime GetMinimumTransmissionInterval() const}\\
+							Returns the minimum RTCP transmission interval.
+						\item {\tt void SetUseHalfAtStartup(bool usehalf)}\\
+							If {\tt usehalf} is {\tt true}, only use half the minimum interval
+							before sending the first RTCP compound packet.
+						\item {\tt bool GetUseHalfAtStartup() const}\\
+							Returns if only half the minimum interval should be used before sending
+							the first RTCP compound packet.
+						\item {\tt void SetRequestImmediateBYE(bool v)}\\
+							If {\tt v} is {\tt true}, the scheduler will schedule a BYE packet
+							to be sent immediately if allowed.
+						\item {\tt bool GetRequestImmediateBYE()}\\
+							Returns if the scheduler will schedule a BYE packet to be sent immediately
+							if allowed.
+					\end{itemize}
+
+					The parameters default to the following values:
+					\begin{itemize}
+						\item RTCP bandwidth: 1000 bytes per second
+						\item Sender bandwidth fraction: 25\%
+						\item Minimum interval: 5 seconds
+						\item Use half minimum interval at startup: yes
+						\item Send BYE packet immediately if possible: yes
+					\end{itemize}
+				
+			\subsubsection{\tt RTPSessionParams}\headerfile{rtpsessionparams.h}
+			\label{rtpsessionparams}
+
+				Describes the parameters for to be used by an {\tt RTPSession}
+				instance. Note that the own timestamp unit must be set to a
+				valid number, otherwise the session can't be created.
+				The interface of this class is the following:
+				\begin{itemize}
+					\item {\tt int SetUsePollThread(bool usethread)}\\
+						If {\tt usethread} is {\tt true}, the session will
+						use a poll thread to automatically process incoming
+						data and to send RTCP packets when necessary.
+					\item {\tt bool IsUsingPollThread() const}\\
+						Returns whether the session should use a poll thread
+						or not.
+					\item {\tt void SetMaximumPacketSize(size\_t max)}\\
+						Sets the maximum allowed packet size for the session.
+					\item {\tt size\_t GetMaximumPacketSize() const}\\
+						Returns the maximum allowed packet size.
+					\item {\tt void SetAcceptOwnPackets(bool accept)}\\
+						If the argument is {\tt true}, the session should accept
+						its own packets and store them accordingly in the source
+						table.
+					\item {\tt bool AcceptOwnPackets() const}\\
+						Returns {\tt true} if the session should accept its
+						own packets.
+					\item {\tt void SetReceiveMode(RTPTransmitter::ReceiveMode recvmode)}\\
+						Sets the receive mode to be used by the session.
+					\item {\tt RTPTransmitter::ReceiveMode GetReceiveMode() const}\\
+						Returns the currently set receive mode.
+					\item {\tt void SetOwnTimestampUnit(double tsunit)}\\
+						Sets the timestamp unit for our own data. The timestamp
+						unit is defined as a time interval in seconds divided by
+						the number of samples in that interval. For example, for
+						$8000 Hz audio$, the timestamp unit would be $1.0/8000.0$.
+						Since this value is initially set to an illegal value, the
+						user must set this to an allowed value to be able to create
+						a session.
+					\item {\tt double GetOwnTimestampUnit() const}\\
+						Returns the currently set timestamp unit.
+					\item {\tt void SetResolveLocalHostname(bool v)}\\
+						If {\tt v} is set to {\tt true}, the session will ask
+						the transmitter to find a host name based upon the IP
+						addresses in its list of local IP addresses. If set to
+						{\tt false}, a call to {\tt gethostname} or something
+						similar will be used to find the local hostname. Note
+						that the first method might take some time.
+					\item {\tt bool GetResolveLocalHostname() const}\\
+						Returns whether the local hostname should be determined
+						from the transmitter's list of local IP addresses or not.
+					\item {\tt void SetProbationType(RTPSources::ProbationType probtype)}\\
+						If probation support is enabled, this function sets the
+						probation type to be used.
+					\item {\tt RTPSources::ProbationType GetProbationType() const}\\
+						Returns the probation type which will be used.
+					\item {\tt void SetSessionBandwidth(double sessbw)}\\
+						Sets the session bandwidth in bytes per second.
+					\item {\tt double GetSessionBandwidth() const}\\
+						Returns the session bandwidth in bytes per second.
+					\item {\tt void SetControlTrafficFraction(double frac)}\\
+						Sets the fraction of the session bandwidth to be used
+						for control traffic.
+					\item {\tt double GetControlTrafficFraction() const}\\
+						Returns the fraction of the session bandwidth that will
+						be used for control traffic.
+					\item {\tt void SetSenderControlBandwidthFraction(double frac)}\\
+						Sets the minimum fraction of the control traffic that
+						will be used by senders.
+					\item {\tt double GetSenderControlBandwidthFraction() const}\\
+						Returns the minimum fraction of the control traffic that
+						will be used by senders.
+					\item {\tt void SetMinimumRTCPTransmissionInterval(const RTPTime \&t)}\\
+						Set the minimal time interval between sending RTCP packets.
+					\item {\tt RTPTime GetMinimumRTCPTransmissionInterval() const}\\
+						Returns the minimal time interval between sending RTCP packets.
+					\item {\tt void SetUseHalfRTCPIntervalAtStartup(bool usehalf)}\\
+						If {\tt usehalf} is set to {\tt true}, the session will only
+						wait half of the calculated RTCP interval before sending its
+						first RTCP packet.
+					\item {\tt bool GetUseHalfRTCPIntervalAtStartup() const}\\
+						Returns whether the session will only
+						wait half of the calculated RTCP interval before sending its
+						first RTCP packet or not.
+					\item {\tt void SetRequestImmediateBYE(bool v) }\\
+						If {\tt v} is {\tt true}, the session will send a BYE
+						packet immediately if this is allowed.
+					\item {\tt bool GetRequestImmediateBYE() const}\\
+						Returns whether the session should send a BYE packet immediately
+						(if allowed) or not.
+					\item {\tt void SetSenderReportForBYE(bool v)}\\
+						When sending a BYE packet, this indicates whether it will be part
+						of an RTCP compound packet that begins with a sender report or a
+						receiver report. Of course, a sender report will only be used if
+						allowed.
+					\item {\tt bool GetSenderReportForBYE() const}\\
+						Returns {\tt true} if a BYE packet will be sent in an RTCP compound
+						packet which starts with a sender report. If a receiver report will
+						be used, the function returns {\tt false}.
+					\item {\tt void SetSenderTimeoutMultiplier(double m)}\\
+						Sets the multiplier to be used when timing out senders.
+					\item {\tt double GetSenderTimeoutMultiplier() const}\\
+						Returns the multiplier to be used when timing out senders.
+					\item {\tt void SetSourceTimeoutMultiplier(double m)}\\
+						Sets the multiplier to be used when timing out members.
+					\item {\tt double GetSourceTimeoutMultiplier() const}\\
+						Returns the multiplier to be used when timing out members.
+					\item {\tt void SetBYETimeoutMultiplier(double m)}\\
+						Sets the multiplier to be used when timing out a member after
+						it has sent a BYE packet.
+					\item {\tt double GetBYETimeoutMultiplier() const}\\
+						Returns the multiplier to be used when timing out a member after
+						it has sent a BYE packet.
+					\item {\tt void SetCollisionTimeoutMultiplier(double m)}\\
+						Sets the multiplier to be used when timing out entries
+						in the collision table.
+					\item {\tt double GetCollisionTimeoutMultiplier() const}\\
+						Returns the multiplier to be used when timing out entries
+						in the collision table.
+					\item {\tt void SetNoteTimeoutMultiplier(double m)}\\
+						Sets the multiplier to be used when timing out SDES NOTE
+						information.
+					\item {\tt double GetNoteTimeoutMultiplier() const}\\
+						Returns the multiplier to be used when timing out SDES NOTE
+						information.
+				\end{itemize}
+
+				The default values for the parameters are the following:
+				\begin{itemize}
+					\item Use poll thread: yes
+					\item Maximum packet size: 1400 bytes
+					\item Accept own packets: no
+					\item Receive mode: accept all packets
+					\item Resolve local hostname: no
+					\item Probation type: {\tt ProbationStore}
+					\item Session bandwidth: 10000 bytes per second
+					\item Control traffic fraction: 5\%
+					\item Sender's fraction of control traffic: 25\%
+					\item Minimum RTCP interval: 5 seconds
+					\item Use half minimum interval at startup: yes
+					\item Send BYE packet immediately if allowed: yes
+					\item Use sender report for BYE packet: yes
+					\item Sender timeout multiplier: 2
+					\item Member timeout multiplier: 5
+					\item Timeout multiplier after BYE packet: 1
+					\item Timeout multiplier for entries in collision table: 10
+					\item Timeout multiplier for SDES NOTE items: 25
+				\end{itemize}
+
+			\subsubsection{\tt RTPSession}\headerfile{rtpsession.h}
+			\label{rtpsession}
+			
+				For most RTP based applications, the {\tt RTPSession} class
+				will probably be the one to use. It handles the RTCP part
+				completely internally, so the user can focus on sending and
+				receiving the actual data.
+				
+				Note that the {\tt RTPSession} class is not meant to be thread
+				safe. The user should use some kind of locking mechanism to prevent
+				different threads from using the same {\tt RTPSession} instance.
+
+				The {\tt RTPSession} class interface is the following:
+				\begin{itemize}
+					\item {\tt RTPSession(RTPTransmitter::Transmission\-Protocol proto = RTP\-Trans\-mitter::IPv4\-UDPProto)}\\
+						Creates an instance which will use the transmission component given
+						by {\tt proto}. When {\tt proto} indicates the a user-defined
+						transmitter, the {\tt NewUserDefinedTransmitter()} member
+						function should be implemented.
+					\item {\tt int Create(const RTPSessionParams \&sessparams, const RTPTransmissionParams *transparams = 0)}\\
+						Creates the session with parameters {\tt sessparams} and transmission parameters {\tt transparams}.
+						If {\tt transparams} is NULL, the defaults for the requested transmitter will
+						be used.
+					\item {\tt void Destroy()}\\
+						Leaves the session without sending a BYE packet.
+					\item {\tt void BYEDestroy(const RTPTime \&maxwaittime, const void *reason, size\_t reasonlength)}\\
+						Sends a BYE packet and leaves the session. At most a time {\tt maxwaittime} will
+						be waited to send the BYE packet. If this time expires, the session will be
+						left without sending a BYE packet. The BYE packet will contain as reason for
+						leaving {\tt reason} with length {\tt reasonlength}.
+					\item {\tt bool IsActive()}\\
+						Returns whether the session has been created or not.
+					\item {\tt u\_int32\_t GetLocalSSRC()}\\
+						Returns our own SSRC.
+					\item {\tt int AddDestination(const RTPAddress \&addr)}\\
+						Adds {\tt addr} to the list of destinations.
+					\item {\tt int DeleteDestination(const RTPAddress \&addr)}\\
+						Deletes {\tt addr} from the list of destinations.
+					\item {\tt void ClearDestinations()}\\
+						Clears the list of destination.
+					\item {\tt bool SupportsMulticasting()}\\
+						Returns {\tt true} if multicasting is supported.
+					\item {\tt int JoinMulticastGroup(const RTPAddress \&addr)}\\
+						Joins the multicast group specified by {\tt addr}.
+					\item {\tt int LeaveMulticastGroup(const RTPAddress \&addr)}\\
+						Leaves the multicast group specified by {\tt addr}.
+					\item {\tt void LeaveAllMulticastGroups()}\\
+						Leaves all multicast groups.
+					\item {\tt int SendPacket(const void *data, size\_t len)}\\
+						Sends the RTP packet with payload {\tt data} which has length {\tt len}.
+						The used payload type, marker and timestamp increment will be those that
+						have been set using the {\tt SetDefault} member functions.
+					\item {\tt int SendPacket(const void *data, size\_t len,
+					                          u\_int8\_t pt, bool mark, u\_int32\_t timestampinc)}\\
+						Sends the RTP packet with payload {\tt data} which has length {\tt len}.
+						It will use payload type {\tt pt}, marker {\tt mark} and after the packet
+						has been built, the timestamp will be incremented by {\tt timestampinc}.
+					\item {\tt int SendPacketEx(const void *data, size\_t len,
+					                            u\_int16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
+						Sends the RTP packet with payload {\tt data} which has length {\tt len}.
+						The packet will contain a header extension with identifier {\tt hdrextID} and
+						containing data {\tt hdrextdata}. The length of this data is given by
+						{\tt numhdrextwords} and is specified in a number of 32-bit words.
+						The used payload type, marker and timestamp increment will be those that
+						have been set using the {\tt SetDefault} member functions.
+					\item {\tt int SendPacketEx(const void *data, size\_t len,
+					                            u\_int8\_t pt, bool mark, u\_int32\_t timestampinc,
+					                            u\_int16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
+						Sends the RTP packet with payload {\tt data} which has length {\tt len}.
+						It will use payload type {\tt pt}, marker {\tt mark} and after the packet
+						has been built, the timestamp will be incremented by {\tt timestampinc}.
+						The packet will contain a header extension with identifier {\tt hdrextID} and
+						containing data {\tt hdrextdata}. The length of this data is given by
+						{\tt numhdrextwords} and is specified in a number of 32-bit words.
+					\item {\tt int SetDefaultPayloadType(u\_int8\_t pt)}\\
+						Sets the default payload type for RTP packets to {\tt pt}.
+					\item {\tt int SetDefaultMark(bool m)}\\
+						Sets the default marker for RTP packets to {\tt m}.
+					\item {\tt int SetDefaultTimestampIncrement(u\_int32\_t timestampinc)}\\
+						Sets the default value to increment the timestamp with to
+						{\tt timestampinc}.
+					\item {\tt int IncrementTimestamp(u\_int32\_t inc)}\\
+						This function increments the timestamp with the amount
+						given by {\tt inc}. This can be useful if, for example,
+						a packet was not sent because it contained only silence.
+						Then, this function should be called to increment the
+						timestamp with the appropriate amount so that the next
+						packets will still be played at the correct time at
+						other hosts.
+					\item {\tt int IncrementTimestampDefault()}\\
+						This function increments the timestamp with the amount
+						given set by the {\tt SetDefaultTimestampIncrement}
+						member function. This can be useful if, for example,
+						a packet was not sent because it contained only silence.
+						Then, this function should be called to increment the
+						timestamp with the appropriate amount so that the next
+						packets will still be played at the correct time at
+						other hosts.						
+					\item {\tt RTPTransmissionInfo *GetTransmissionInfo()}\\
+					    This function returns an instance of a subclass of {\tt RTPTransmissionInfo}
+						which will give some additional information about the transmitter
+						(a list of local IP addresses for example). The user
+						has to delete the returned instance when it is no longer needed.
+					\item {\tt int Poll()}\\
+						If you're not using the poll thread, this function
+						must be called regularly to process incoming data
+						and to send RTCP data when necessary.
+					\item {\tt int WaitForIncomingData(const RTPTime \&delay,bool *dataavailable = 0)}\\
+						Waits at most a time {\tt delay} until incoming data has
+						been detected. Only works when you're not using the poll
+						thread. If {\tt dataavailable} is not {\tt NULL}, it should
+						be set to {\tt true} if data was actually read and to {\tt false}
+						otherwise.
+					\item {\tt int AbortWait()}\\
+						If the previous function has been called, this one aborts
+						the waiting. Only works when you're not using the poll
+						thread.
+					\item {\tt RTPTime GetRTCPDelay()}\\
+						Returns the time interval after which an RTCP compound
+						packet may have to be sent. Only works when you're not using
+						the poll thread.
+					\item {\tt int BeginDataAccess()}\\
+						The following member functions (till {\tt EndDataAccess})
+						need to be accessed between a call to {\tt BeginDataAccess}
+						and {\tt EndDataAccess}. The {\tt BeginDataAccess} makes
+						sure that the poll thread won't access the source table
+						at the same time. When the {\tt EndDataAccess} is called,
+						the lock on the source table is freed again.
+					\item {\tt bool GotoFirstSource()}\\
+						Starts the iteration over the participants by going to the
+						first member in the table. If a member was found, the function
+						returns {\tt true}, otherwise it returns {\tt false}.
+					\item {\tt bool GotoNextSource()}\\
+						Sets the current source to be the next source in the table.
+						If we're already at the last source, the function returns
+						{\tt false}, otherwise it returns {\tt true}.
+					\item {\tt bool GotoPreviousSource()}\\
+						Sets the current source to be the previous source in the table.
+						If we're at the first source, the function returns
+						{\tt false}, otherwise it returns {\tt true}.
+					\item {\tt bool GotoFirstSourceWithData()}\\
+						Sets the current source to be the first source in the table
+						which has {\tt RTPPacket} instances that we haven't extracted
+						yet. If no such member was found, the function returns {\tt false},
+						otherwise it returns {\tt true}.
+					\item {\tt bool GotoNextSourceWithData()}\\
+						Sets the current source to be the next source in the table
+						which has {\tt RTPPacket} instances that we haven't extracted
+						yet. If no such member was found, the function returns {\tt false},
+						otherwise it returns {\tt true}.
+					\item {\tt bool GotoPreviousSourceWithData()}\\
+						Sets the current source to be the previous source in the table
+						which has {\tt RTPPacket} instances that we haven't extracted
+						yet. If no such member was found, the function returns {\tt false},
+						otherwise it returns {\tt true}.
+					\item {\tt RTPSourceData *GetCurrentSourceInfo()}\\
+						Returns the {\tt RTPSourceData} instance for the currently
+						selected participant.
+					\item {\tt RTPSourceData *GetSourceInfo(u\_int32\_t ssrc)}\\
+						Returns the {\tt RTPSourceData} instance for the participant
+						identified by {\tt ssrc}, or NULL if no such entry exists.
+					\item {\tt RTPPacket *GetNextPacket()}\\
+						Extracts the next packet from the received packets queue
+						of the current participant.
+					\item {\tt int EndDataAccess()}\\
+						See {\tt BeginDataAccess}.
+					\item {\tt int SetReceiveMode(RTPTransmitter::ReceiveMode m)}\\
+						Sets the receive mode to {\tt m}, which can be one of the
+						following:
+						\begin{itemize}
+							\item {\tt RTPTransmitter::AcceptAll}\\
+								All incoming data is accepted, no matter where it originated
+								from.
+							\item {\tt RTPTransmitter::AcceptSome}\\
+								Only data coming from specific sources will be accepted.
+							\item {\tt RTPTransmitter::IgnoreSome}\\
+								All incoming data is accepted, except for data coming from
+								a specific set of sources.
+						\end{itemize}
+						Note that when the receive mode is changed, the list of addressed
+						to be ignored or accepted will be cleared.
+					\item {\tt int AddToIgnoreList(const RTPAddress \&addr)}\\
+						Adds {\tt addr} to the list of addresses to ignore.
+					\item {\tt int DeleteFromIgnoreList(const RTPAddress \&addr)}\\
+						Deletes {\tt addr} from the list of addresses to ignore.
+					\item {\tt void ClearIgnoreList()}\\
+						Clears the list of addresses to ignore.
+					\item {\tt int AddToAcceptList(const RTPAddress \&addr)}\\
+						Adds {\tt addr} to the list of addresses to accept.
+					\item {\tt int DeleteFromAcceptList(const RTPAddress \&addr)}\\
+						Deletes {\tt addr} from the list of addresses to accept.
+					\item {\tt void ClearAcceptList()}\\
+						Clears the list of addresses to accept.
+					\item {\tt int SetMaximumPacketSize(size\_t s)}\\
+						Sets the maximum allowed packet size to {\tt s}.
+					\item {\tt int SetSessionBandwidth(double bw)}\\
+						Sets the session bandwidth to {\tt bw}, which is specified
+						in bytes per second.
+					\item {\tt int SetTimestampUnit(double u)}\\
+						Sets our own timestamp unit to {\tt u}. The timestamp unit
+						is defined as a time interval divided by the number of
+						samples in that interval: for $8000 Hz$ audio this would
+						be $1.0/8000.0$.
+					\item {\tt void SetNameInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the RTCP packet builder will check if other (non-CNAME) SDES 
+						items need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES name
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt void SetEMailInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the RTCP packet builder will check if other (non-CNAME) SDES 
+						items need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES e-mail
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt void SetLocationInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the RTCP packet builder will check if other (non-CNAME) SDES 
+						items need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES location
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt void SetPhoneInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the RTCP packet builder will check if other (non-CNAME) SDES 
+						items need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES phone
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt void SetToolInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the RTCP packet builder will check if other (non-CNAME) SDES 
+						items need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES tool
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt void SetNoteInterval(int count)}\\
+						After all possible sources in the source table have been
+						processed, the RTCP packet builder will check if other (non-CNAME) SDES 
+						items need to be sent. If {\tt count} is zero or negative, nothing
+						will happen. If {\tt count} is positive, an SDES note
+						item will be added after the sources in the source table have
+						been processed {\tt count} times.
+					\item {\tt int SetLocalName(const void *s, size\_t len)}\\
+						Sets the SDES name item for the local participant to the value {\tt s}
+						with length {\tt len}.
+					\item {\tt int SetLocalEMail(const void *s, size\_t len)}\\
+						Sets the SDES e-mail item for the local participant to the value {\tt s}
+						with length {\tt len}.
+					\item {\tt int SetLocalLocation(const void *s, size\_t len)}\\
+						Sets the SDES location item for the local participant to the value {\tt s}
+						with length {\tt len}.
+					\item {\tt int SetLocalPhone(const void *s, size\_t len)}\\
+						Sets the SDES phone item for the local participant to the value {\tt s}
+						with length {\tt len}.
+					\item {\tt int SetLocalTool(const void *s, size\_t len)}\\
+						Sets the SDES tool item for the local participant to the value {\tt s}
+						with length {\tt len}.
+					\item {\tt int SetLocalNote(const void *s, size\_t len)}\\
+						Sets the SDES note item for the local participant to the value {\tt s}
+						with length {\tt len}.
+				\end{itemize}
+
+				In case you specified in the constructor that you want to use your own
+				transmission component, you should override the following function:
+				\begin{itemize}
+					\item {\tt RTPTransmitter *NewUserDefinedTransmitter()}
+				\end{itemize}
+				The {\tt RTPTransmitter} instance returned by this function will then
+				be used to send and receive RTP and RTCP packets. Note that when the
+				session is destroyed, this {\tt RTPTransmitter} instance will be destroyed
+				with a {\tt delete} call.
+
+				By inheriting your own class from {\tt RTPSession} and overriding
+				one or more of the functions below, certain events can be detected:
+				\begin{itemize}
+					\item {\tt void OnRTPPacket(RTPPacket *pack, const RTPTime \&receivetime,
+					                                    const RTPAddress *senderaddress)}\\
+						Is called when an RTP packet is about to be processed.
+					\item {\tt void OnRTCPCompoundPacket(RTCPCompoundPacket *pack, const RTPTime \&receivetime,
+					                                             const RTPAddress *senderaddress)}\\
+						Is called when an RTCP packet is about to be processed.
+					\item {\tt void OnSSRCCollision(RTPSourceData *srcdat, const RTPAddress *senderaddress, bool isrtp)}\\
+						Is called when an SSRC collision was detected. The instance
+						{\tt srcdat} is the one present in the table, the address
+						{\tt senderaddress} is the one that collided with one of the
+						addresses and {\tt isrtp} indicates against which address of
+						{\tt srcdat} the check failed.
+					\item {\tt void OnCNAMECollision(RTPSourceData *srcdat, const RTPAddress *senderaddress,
+					                                         const u\_int8\_t *cname, size\_t cnamelength)}\\
+						Is called when another CNAME was received than the one
+						already present for source {\tt srcdat}.
+					\item {\tt void OnNewSource(RTPSourceData *srcdat)}\\
+						Is called when a new entry {\tt srcdat} is added to the source
+						table.
+					\item {\tt void OnRemoveSource(RTPSourceData *srcdat)}\\
+						Is called when the entry {\tt srcdat} is about to be
+						deleted from the source table.
+					\item {\tt void OnTimeout(RTPSourceData *srcdat)}\\
+						Is called when participant {\tt srcdat} is timed out.
+					\item {\tt void OnBYETimeout(RTPSourceData *srcdat)}\\
+						Is called when participant {\tt srcdat} is timed after
+						having sent a BYE packet.
+					\item {\tt void OnBYEPacket(RTPSourceData *srcdat)}\\
+						Is called when a BYE packet has been processed for source
+						{\tt srcdat}.
+					\item {\tt void OnAPPPacket(RTCPAPPPacket *apppacket, const RTPTime \&receivetime,
+					                                    const RTPAddress *senderaddress)}\\
+						In called when an RTCP APP packet {\tt apppacket} has been received 
+						at time {\tt receivetime} from address {\tt senderaddress}.
+					\item {\tt void OnUnknownPacketType(RTCPPacket *rtcppack, const RTPTime \&receivetime,
+					                                            const RTPAddress *senderaddress)}\\
+						Is called when an unknown RTCP packet type was detected.
+					\item {\tt void OnUnknownPacketFormat(RTCPPacket *rtcppack, const RTPTime \&receivetime,
+					                                              const RTPAddress *senderaddress)}\\
+						Is called when an unknown packet format for a known packet
+						type was detected.
+					\item {\tt void OnNoteTimeout(RTPSourceData *srcdat)}\\
+						Is called when the SDES NOTE item for source {\tt srcdat}
+						has been timed out.
+					\item {\tt void OnPollThreadError(int errcode)}\\
+						Is called when error {\tt errcode} was detected in the
+						poll thread.
+					\item {\tt void OnPollThreadStep()}\\
+						Is called each time the poll thread loops. This happens when
+						incoming data was detected or when its time to send an RTCP
+						compound packet.
+				\end{itemize}
+
+	\section{Contact}
+		
+		If you have any questions, remarks or requests about the library or
+		if you think you've discovered a bug, you can contact me at:
+		\begin{verbatim}
+			jori@lumumba.uhasselt.be
+		\end{verbatim}
+		
+		The home page of the library is:
+		\begin{verbatim}
+			http://research.edm.uhasselt.be/jori/jrtplib/jrtplib.html
+		\end{verbatim}
+
+		There is also a mailing list for the library. To subscribe to the list, 
+		send an e-mail with the text {\tt subscribe jrtplib} as the message body (not 
+		the subject) to {\tt majordomo@edm.uhasselt.be} and you'll receive further 
+		instructions.
+
+\end{document}
+

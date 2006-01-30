@@ -32,7 +32,7 @@
 
 #define HAVE_APR
 #include <switch.h>
-#include <jrtp4c.h>
+#include <jrtplib3/jrtp4c.h>
 #include <eXosip2/eXosip.h>
 #include <osip2/osip_mt.h>
 #include <osipparser2/osip_rfc3264.h>

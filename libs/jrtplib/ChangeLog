@@ -1,0 +1,229 @@
+							      October 2, 2005
+				
+				
+				JRTPLIB ChangeLog
+				
+				   -----------
+
+
+ 3.3.0 (October 2005)
+ 	* Now it is possible to use a user-defined transmission component.
+	* Added GStreamer transmission component written by Philippe Khalaf
+	  (burger@speedy.org).
+
+ 3.2.1 (September 2005)
+ 	* The library wouldn't compile when probation support was disabled. 
+	  Thanks to Herman Bastiaens (herman.bastiaens@student.luc.ac.be) for
+	  bringing this to my attention.
+	* When parsed from an RTPRawPacket, the receive time is also stored
+	  in the RTPPacket instance.
+
+ 3.2.0 (September 2005)
+ 	* Modified the routine in the RTPSession class which creates the
+	  CNAME. Aparently on some systems, the 'getlogin' call returns
+	  null. As an alternative, the library uses getenv("LOGNAME").
+	  Thanks to Mark Schiffmann (schima@neumann-elektronik.com) for
+	  mentioning this to me.
+	* Added a OnBYEPacket method to the RTPSession class. Thanks to
+	  Sigrid Thijs (sthijs@androme.be) for suggesting this.
+	* When probation support is enabled, a probation type can be selected
+	  when the session is created. Supported types are "No probation",
+	  "Use probation, but store packets" and "Use probation and discard
+	  packets received in probation mode". Thanks to Chris Flerackers
+	  (cflerackers@androme.be) for suggesting this feature.
+	* Added a parameter to WaitForIncomingData which indicates if
+	  data is available when the function returns. Based on a suggestion
+	  by Uwe Andersen (uandersen@mayah.com).
+	* Now using getifaddrs (if possible) to obtain our own IP addresses
+	  (both in IPv4 version and IPv6 version).
+	* IPv6 code in Win32 version now works, but Visual Studio 2005 beta
+	  has to be used. Thanks to Yi-Huan Chan (yhchan@csie.nctu.edu.tw)
+	  for contributing some code.
+	* Added Win32 code for GetLocalIPList_Interfaces (both IPv4 and IPv6).
+	  Thanks to Ivan Makushkin (camry@pisem.net) for pointing out how
+	  this could be done.
+	* Added an option to use a SR packet when sending a BYE message.
+	  Previously, a RR packet was always used, even if a session is
+	  actually an active sender of data. Thanks to Uwe Andersen
+	  (uandersen@mayah.com) for bringing this to my attention.
+	* Fixed bug in CNAME creation.
+	* Added WinCE support. Thanks to Maarten Daniels 
+	  (maarten.daniels@uhasselt.be) for supplying patches.
+	* Changed the CurrentTime implementation for the MS-Windows version.
+	  Thanks to Maarten Daniels (maarten.daniels@uhasselt.be) and Chris
+	  Flerackers (cflerackers@androme.be).
+
+ 3.1.0 (October 2004)
+ 	* Added a callback OnPollThreadStep which is called at the end of 
+	  each loop of the poll thread
+	* Added the examples subdirectory to the package
+	* Fixed bug in rtpudpv4transmitter.cpp and rtpudpv6transmitter.cpp
+	  which caused an infinite loop in LeaveAllMulticastGroups. Thanks
+	  to Stijn Agten (stijn.agten@luc.ac.be) for pointing this out.
+	* Added a function GetTransmissionInfo to the RTPTransmitter class
+	  (and subclasses). The function will return some additional
+	  information about the transmitter, like local IP addresses and
+	  socket descriptors.
+
+ 3.0.2 (September 2004)
+ 	* Bugfix in rtpinternalsourcedata.cpp. The bug caused a crash when
+	  duplicate packets were received. Thanks to Dominique Prunier
+	  (dominique.prunier@micromedia-int.com) for informing me about
+	  this.
+
+ 3.0.1 (September 2004)
+ 	* Bugfix in rtpudpv4transmitter.cpp and rtpudpv6transmitter.cpp in
+	  method SetReceiveMode
+	* Removed unused 'acceptownpackets' variable from
+	  rtpudpv4transmitter.cpp and rtpudpv6transmitter.cpp
+	* Added a 'Dump' function (for debugging) in RTPUDPv4Transmitter
+	  and RTPUDPv6Transmitter
+	* Now using JThread 1.1.0
+
+ 3.0.0 (August 2004)
+ 	* Complete rewrite of the library to provide better extensibility
+	  and compliance with RFC 3550
+	* Changes from the 2.x series:
+		- The 2.x series was created with the idea that the user 
+		  would only need to use the RTPSession class which meant 
+		  that the other classes were not very useful by themselves. 
+		  This version on the other hand, aims to provide many 
+		  useful components to aid the user in building RTP capable 
+		  applications.
+		- In this version, the code which is specific for the 
+		  underlying protocol by which RTP packets are transported, 
+		  is bundled in a class which inherits its interface from a 
+		  class called RTPTransmitter. This makes it easy for 
+		  different underlying protocols to be supported. Currently 
+		  there is support for UDP over IPv4 and UDP over IPv6.
+
+ 2.9 (July 2004)
+ 	* Fixed bug in rtpsrclist.cpp. Thanks to Lukasz Bobowiec 
+	  (bobowiec@icslab.agh.edu.pl)
+	* Added function in RTPSourceData which returns the IP address
+	* Changed the random routines. Thanks to Jaap Keuter
+	  (jaap.keuter@xs4all.nl)
+	* Made the shared library link against libstdc++ if possible.
+	  Thanks to Anatoly Yakovenko (aeyakovenko@yahoo.com) for the
+	  suggestion.
+
+ 2.8 (January 2004)
+ 	* Added code to avoid a crash when receiving a malformed packet
+	* Fixed a memory leak (forgot to free memory when a malformed
+	  packet was discarded)
+	* Changed debug routines for memory tracking
+
+ 2.7b (November 2003)
+ 	* Only added --enable-fpic and --enable-fPIC to the configure script
+
+ 2.7 (December 2002)
+ 	* Fixed important bug in rtpsources.cpp. This bug could cause
+	  source information to get lost and could create a memory leak.
+	* Improved support for AIX in multicasting code (uses _AIX define). 
+	  Thanks to Klaus Matuschek (klaus.matuschek@infonova.com)
+	* Fixed possible buffer overrun in rtpcontributingsources.cpp
+
+ 2.6 (January 2002)
+	* This release only contains some minor changes
+	* An 'install' target was added to the Makefile
+	* Some newlines were added add the end of certain files to avoid
+	  compiler warnings
+	* Improved the jitter calculations somewhat 
+
+ 2.5 (December 2000)
+ 	* Added the possibility for the user to receive the raw RTCP packets.
+	* Fixed a bug in RTPContributingSources::CreateLocalCNAME(). In this
+	  routine, the wrong length was passed to 'gethostname'. Thanks to
+	  Sergey V.Shpital (sergey@page.net.ru) for bringing this to my
+	  attention.
+	* Added a routine to set the Type of Service (ToS) field of the
+	  outgoing packets (both RTP and RTCP). Thank to Philippe Cardon
+	  (philippe.cardon@bt.com) for writing this code.
+	* Fixed a bug in the 'packets lost' calculation. Thank to Domingo 
+	  Cuevas Jr. (dcj@onebox.com) for helping me find this bug.
+	* Fixed a bug in the sequence number and jitter calculation: when
+	  packets were received out of order, the sequence numbers and
+	  jitter got messed up. Many thanks to Mohammad Tawsheeq Russool 
+	  (m.russool@eim.surrey.ac.uk) for helping me track down these
+	  bugs.
+	* Added the possibility to set the timestamp unit for a particular
+	  source. Previously, it was assumed that their timestamp unit
+	  was the same as that of the local session.
+	
+ 2.4 (July 2000)
+ 	* Fixed a bug which caused all CSRS's except one to be incorrect.
+ 	* Added RTP header extension support (for both sending and receiving).
+ 	* Added some things (which should have been there already) to
+ 	  RTPPacket.
+ 	* Adjusted the way in which the login name is retrieved on unix-like
+ 	  systems. First I used a call to 'getlogin', but apparently this
+ 	  function messes with timers through the use of 'alarm' calls (at
+ 	  least on Linux). Now, I use a combination of 'geteuid' and
+ 	  'getpwuid' to obtain the necessary information. This does not
+ 	  have that problem and is a lot cleaner since it doesn't depend
+ 	  on login info (utmp) like 'getlogin'. Thanks to Roberto Jung Drebes
+ 	  (drebes@inf.ufrgs.br) for pointing out the timer-problem.
+ 	* Made a LaTeX version of the manual and tutorial. Looks a lot nicer.
+ 	* Made it possible for the user to specify the local IP address
+ 	  instead of letting the library figure it out itself.
+ 	* Fixed a bug which caused the 'fraction lost' in a RR packet to be
+ 	  zero all the time. Thanks to Domingo Cuevas Jr. (dcj@onebox.com) for
+ 	  pointing this out.
+ 	* Rewrote the RTCP packet sending routines. Now, they are much cleaner
+ 	  and much more understandable :)
+ 	* Added better support for RTCP 'APP' packets. You can now both send
+ 	  and receive APP packets.
+				
+ 2.3 (April 2000)
+ 	* The routine which creates and sends RTCP packets is now a bit faster.
+ 	* Added a sample that demonstrates the round-trip time function.
+ 	* Added functions to RTPSourceData: now the time when the last RR or
+ 	  SR report was received can be retrieved. Also, the round trip time
+ 	  can be retrieved: this is calculated as suggested in RFC 1889.
+ 	* Fixed a bug: the LSR value was not calculated correctly, now it is
+ 	  (or should be ;-) )
+ 	* Instead of specifying defines on the command line, they are now
+ 	  defined in a config file. The unix version of this file is created
+ 	  by the configure script.
+ 	* Added a member to RTPPacket which I had forgotten (the payload type,
+ 	  which is obviously important :-) ).
+ 	* The library should now be able to work on a VxWorks platform. Thanks
+ 	  to Dave Osborne (dosborne@argoneng.com) for his help.
+	* Added a tutorial and a small example application.
+ 	* Added some debugging routines (RTPDebug class) to check for memory
+ 	  leaks. It turned out that there weren't any, so I'm pretty pleased ;)
+ 	* I've added a 'configure' script to make compilation a bit easier
+ 	  across different platforms. Thanks to Qi Han (qh1c4@mizzou.edu) for
+ 	  helping me to improve the support for the Solaris platform. Also
+ 	  many thanks to Dario Maggiorini (dario@netdev.usr.dsi.unimi.it) for
+ 	  helping me test the script on several platforms.
+ 	* Added multicasting support.
+	* A bug in rtpsourcedata.cpp was pointed out and fixed by Ramon Clout
+	  (ramonc@win.tue.nl). Many thanks for this, Ramon.
+				
+ 2.2 (February 2000)
+ 	* Extra support for Sun and HP. Thanks to Henry Lau (hlau@nuera.com)
+ 	  and Justin Matthews (jmatthews@nuera.com) for this information.
+ 	* The 'Poll' routine in rtpconnection.cpp has been altered. Now, the
+ 	  routine should work even if there's that ioctl bug (previously, this
+ 	  bug was only taken into consideration on a Windows platform).
+ 	  Thanks to Justin Matthews (jmatthews@nuera.com) for his bugreport.
+ 	* Added some routines to RTPSession to get the local IP address and the
+ 	  port number of the sending socket.
+ 	* 'install' rule added to the makefile.
+ 	* Added the define 'RTP_SOCKLENTYPE_UINT'. See README.TXT for more
+ 	  information about this.
+
+ 2.1 (December 1999)
+	* First release of jrtplib.
+	* Added member functions of RTPSession to retrieve the used sockets.
+	* Made the destination list faster by using a hash table.
+
+ 2.0 (August 1999)
+ 	* First decent implementation of RTP. Entirely rewritten since 1.0.
+ 	
+ 1.0 (August 1999)
+ 	* First implementation of RTP. There were a lot of things that weren't
+ 	  quite right and the organisation of the classes was quite nasty.
+ 	  However, I learned a lot about RTP making this version, and so it
+ 	  allowed me to make a good start on version 2.0.

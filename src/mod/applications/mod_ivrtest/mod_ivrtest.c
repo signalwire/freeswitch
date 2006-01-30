@@ -30,8 +30,6 @@
  *
  */
 #include <switch.h>
-#include <switch_ivr.h>
-
 
 
 static const char modname[] = "mod_ivrtest";
