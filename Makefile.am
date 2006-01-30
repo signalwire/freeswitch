@@ -1,7 +1,7 @@
 EXTRA_DIST =
 SUBDIRS = 
 AUTOMAKE_OPTS= gnu
-MAKE=$(shell which gmake 2>/dev/null || which make)
+AM_MAKE=$(shell which gmake 2>/dev/null || which make)
 NAME=freeswitch
 PREFIX=$(prefix)
 APR_CONFIG=$(prefix)/bin/apr-1-config
