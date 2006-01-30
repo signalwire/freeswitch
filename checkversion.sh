@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 if [ ! -z $1 ] ; then
     if [ $1 = force ] ; then

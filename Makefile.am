@@ -1,7 +1,7 @@
 EXTRA_DIST =
 SUBDIRS = 
 AUTOMAKE_OPTS= gnu
-MAKE=gmake
+MAKE=$(shell which gmake 2>/dev/null || which make)
 NAME=freeswitch
 PREFIX=$(prefix)
 APR_CONFIG=$(prefix)/bin/apr-1-config
@@ -120,10 +120,10 @@ yesdepends:
 	rm .nodepends
 
 .depend:
-	./buildlib.sh . install sqlite-3.2.8.tar.gz --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
-	./buildlib.sh . install apr-1.2.2.tar.gz --prefix=$(PREFIX)
-	./buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=../apr-1.2.2 --prefix=$(PREFIX)
-	./buildlib.sh . install libresample-0.1.3.tgz --prefix=$(PREFIX)
+	MAKE=$(MAKE) ./buildlib.sh . install sqlite-3.2.8.tar.gz --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
+	MAKE=$(MAKE) ./buildlib.sh . install apr-1.2.2.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) ./buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=../apr-1.2.2 --prefix=$(PREFIX)
+	MAKE=$(MAKE) ./buildlib.sh . install libresample-0.1.3.tgz --prefix=$(PREFIX)
 	cp libs/libresample-0.1.3/*.a $(PREFIX)/lib
 	cp libs/libresample-0.1.3/include/* $(PREFIX)/include
 	ranlib $(PREFIX)/lib/libresample.a
@@ -134,10 +134,10 @@ depends: .depend
 
 modules: $(NAME)
 	@echo making modules
-	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; DYLD_LIBRARY_PATH="$(PREFIX)/lib:$DYLD_LIBRARY_PATH" LD_LIBRARY_PATH="$(PREFIX)/lib:$LD_LIBRARY_PATH" PREFIX="$(PREFIX)" BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
+	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; MAKE=$(MAKE) DYLD_LIBRARY_PATH="$(PREFIX)/lib:$DYLD_LIBRARY_PATH" LD_LIBRARY_PATH="$(PREFIX)/lib:$LD_LIBRARY_PATH" PREFIX="$(PREFIX)" BASE="$(PWD)" OSARCH="$(OSARCH)" SOLINK="$(SOLINK)" LDFLAGS="$(AM_LDFLAGS) -lfreeswitch" CFLAGS="$(AM_CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i || exit 1; done
 
 modclean:
-	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
+	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; MAKE=$(MAKE) SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
 
 everything: install install_mod
 

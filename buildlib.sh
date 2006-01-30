@@ -1,14 +1,19 @@
-#!/bin/bash
+#!/bin/sh
 
 root=$1
 shift
 
 if [ -f $root/.nodepends ] ; then
-    echo "***depends disabled*** use gmake yesdepends to re-enable"
+    echo "***depends disabled*** use $MAKE yesdepends to re-enable"
     exit 0
 fi
 
-
+if [ -z $MAKE ] ; then
+    make=`which dmake 2>/dev/null`
+    if [ -z $MAKE ] ; then
+	make=make
+    fi
+fi
 
 install=
 base=http://www.freeswitch.org/downloads/libs
@@ -24,7 +29,7 @@ shift
 cd $root/libs/.
 CFLAGS=
 LDFLAGS=
-GMAKEFLAGS=
+MAKEFLAGS=
 
 if [ -d $tar ] ; then
     uncompressed=$tar
@@ -52,18 +57,18 @@ if [ -f $uncompressed/.complete ] ; then
 fi
 
 cd $uncompressed
-gmake clean 2>&1
+$MAKE clean 2>&1
 sh ./configure $@
 
 if [ $? == 0 ] ; then
-    gmake
+    $MAKE
 else 
     echo ERROR
     exit 1
 fi
 
 if [ ! -z $install ] ; then
-    gmake install
+    $MAKE install
     ldpath=`which ldconfig`
     if [ ! -z $ldpath ] ; then
 	ldconfig 2>&1

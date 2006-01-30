@@ -3,7 +3,7 @@ LDFLAGS += -lsndfile -L/usr/local/lib
 all:	depends $(MODNAME).so
 
 depends:
-	$(BASE)/buildlib.sh $(BASE) install libsndfile-1.0.12.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/buildlib.sh $(BASE) install libsndfile-1.0.12.tar.gz --prefix=$(PREFIX)
 
 $(MODNAME).so: $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 

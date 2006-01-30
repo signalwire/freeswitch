@@ -10,9 +10,9 @@ endif
 all:	depends $(MODNAME).so
 
 depends:
-	$(BASE)/buildlib.sh $(BASE) install jrtplib --prefix=$(PREFIX) --disable-gst
-	$(BASE)/buildlib.sh $(BASE) install libosip2-2.2.2.tar.gz --prefix=$(PREFIX)
-	$(BASE)/buildlib.sh $(BASE) install libeXosip2-2.2.2.tar.gz --disable-josua --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/buildlib.sh $(BASE) install jrtplib --prefix=$(PREFIX) --disable-gst
+	MAKE=$(MAKE) $(BASE)/buildlib.sh $(BASE) install libosip2-2.2.2.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/buildlib.sh $(BASE) install libeXosip2-2.2.2.tar.gz --disable-josua --prefix=$(PREFIX)
 
 
 $(MODNAME).so: $(MODNAME).c
