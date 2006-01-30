@@ -121,6 +121,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_ivrtest", "..\..\src\mo
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "FreeSwitchSetup", "..\Setup\Setup.vdproj", "{B17FFBE6-A942-4056-8346-B624FB5D995B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -211,6 +213,8 @@ Global
 		{419AA391-5F3F-4BFE-A869-9D154D62A792}.Debug|Win32.Build.0 = Debug|Win32
 		{419AA391-5F3F-4BFE-A869-9D154D62A792}.Release|Win32.ActiveCfg = Release|Win32
 		{419AA391-5F3F-4BFE-A869-9D154D62A792}.Release|Win32.Build.0 = Release|Win32
+		{B17FFBE6-A942-4056-8346-B624FB5D995B}.Debug|Win32.ActiveCfg = Debug
+		{B17FFBE6-A942-4056-8346-B624FB5D995B}.Release|Win32.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
