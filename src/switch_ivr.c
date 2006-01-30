@@ -87,9 +87,17 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
     assert(channel != NULL);
 
 	*terminator = '\0';
+
+	for (i = 0 ; i < x; i++) {
+		if (strchr(terminators, buf[i])) {
+			*terminator = buf[i];
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
 	while (switch_channel_get_state(channel) == CS_EXECUTE) {
 		switch_frame *read_frame;
-		
+
 		if (switch_channel_has_dtmf(channel)) {
 			char dtmf[128];
 			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
