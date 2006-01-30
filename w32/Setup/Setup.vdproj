@@ -537,7 +537,7 @@
             "SourcePath" = "8:FreeSwitch.dll"
             "TargetName" = "8:FreeSwitch.dll"
             "Tag" = "8:"
-            "Folder" = "8:_06036160035041E38F4179E6DB6380C5"
+            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -548,7 +548,7 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:FALSE"
+            "Exclude" = "11:TRUE"
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
@@ -580,7 +580,7 @@
         {
             "{3C67513D-01DD-4637-8A68-80971EB9504F}:_04AC783F1C9F41AEB4E947C46CE9C9FF"
             {
-            "DefaultLocation" = "8:[ProgramFilesFolder][Manufacturer]\\[ProductName]"
+            "DefaultLocation" = "8:[ProgramFilesFolder]\\[ProductName]"
             "Name" = "8:#1925"
             "AlwaysCreate" = "11:FALSE"
             "Condition" = "8:"
@@ -661,7 +661,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Freeswitch"
         "ProductCode" = "8:{317A9CC0-40DC-4803-A13E-5937F05F9D2E}"
-        "PackageCode" = "8:{AABF82A4-89F3-4CE3-8662-4E2FC14537CC}"
+        "PackageCode" = "8:{4B3BB88F-3D84-4288-8C17-FB3071BEF79E}"
         "UpgradeCode" = "8:{8080E3A5-7ADD-4173-8913-BDA439D1C8DD}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
