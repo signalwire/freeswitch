@@ -1016,7 +1016,7 @@ modules: $(NAME)
 modclean:
 	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CC="$(CC)" MOD="$$i" $(PWD)/modmake.sh $(PWD) $$i clean || exit 1; done
 
-everything: all modules
+everything: install install_mod
 
 installall: install install_mod
 

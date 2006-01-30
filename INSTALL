@@ -7,27 +7,25 @@ UNIX:
 
 3) Choose one of the following:
 
-	Build The Entire Project (reccommended)
-	make everything
+	*) Build The Entire Project (reccommended)
+	   make installall
 
-	Build/Install All
-	make installall
+	*) Do it yourself step by step:
+	   make
+	   make install
+	   make modules
+	   make install_mod
 
-	Build Just The Core
-	make
 
-	Build Modules
-	make modules
-
-	Install Modiles
-	make install_mod
+	*) Rebuild all the dependancies
+	   make megaclean 
 
 
 Windows 32:
 
 	Requires: Microsoft Visual Studio 2005 or 
-						Visual C++ 2005 Express Edition and Platform SDK
-						Internet connectivity to download dependency libraries
+	Visual C++ 2005 Express Edition and Platform SDK
+	Internet connectivity to download dependency libraries
 						
 1) Open /w32/vsnet/Freeswitch.sln
 
