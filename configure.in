@@ -44,5 +44,4 @@ AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
 AM_CONDITIONAL(IS64BITLINUX, [test `uname -m` = x86_64])
 
 
-
 AC_OUTPUT([src/include/switch_version.h])

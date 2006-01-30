@@ -102,12 +102,9 @@ freeswitch_SOURCES = src/switch.c
 freeswitch_CFLAGS = $(AM_CFLAGS)
 freeswitch_LDFLAGS = -lfreeswitch
 nodist_freeswitch_SOURCES = src/include/switch_version.h
-BUILT_SOURCES = makecheck version depends
+BUILT_SOURCES = version depends
 CLEANFILES = src/include/switch_version.h
 
-
-makecheck:
-	make --version || (echo you need to execute gnu make from the top level && false)
 
 version: Makefile
 	./checkversion.sh
