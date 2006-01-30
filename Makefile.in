@@ -1002,7 +1002,7 @@ yesdepends:
 	MAKE=$(MAKE) ./buildlib.sh . install sqlite-3.2.8.tar.gz --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
 	MAKE=$(MAKE) ./buildlib.sh . install apr-1.2.2.tar.gz --prefix=$(PREFIX)
 	MAKE=$(MAKE) ./buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=../apr-1.2.2 --prefix=$(PREFIX)
-	MAKE=$(MAKE) ./buildlib.sh . install libresample-0.1.3.tgz --prefix=$(PREFIX)
+	MAKE=$(MAKE) ./buildlib.sh . libresample-0.1.3.tgz --prefix=$(PREFIX)
 	cp libs/libresample-0.1.3/*.a $(PREFIX)/lib
 	cp libs/libresample-0.1.3/include/* $(PREFIX)/include
 	ranlib $(PREFIX)/lib/libresample.a
