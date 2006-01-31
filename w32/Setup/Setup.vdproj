@@ -255,7 +255,7 @@
         "InstallerBootstrapper" = "3:2"
             "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
             {
-            "Enabled" = "11:TRUE"
+            "Enabled" = "11:FALSE"
             "PromptEnabled" = "11:TRUE"
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
@@ -292,7 +292,7 @@
         "InstallerBootstrapper" = "3:2"
             "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
             {
-            "Enabled" = "11:TRUE"
+            "Enabled" = "11:FALSE"
             "PromptEnabled" = "11:TRUE"
             "PrerequisitesLocation" = "2:1"
             "Url" = "8:"
@@ -661,7 +661,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Freeswitch"
         "ProductCode" = "8:{317A9CC0-40DC-4803-A13E-5937F05F9D2E}"
-        "PackageCode" = "8:{4B3BB88F-3D84-4288-8C17-FB3071BEF79E}"
+        "PackageCode" = "8:{35F86401-29E6-4EA4-9362-D05B6C91426B}"
         "UpgradeCode" = "8:{8080E3A5-7ADD-4173-8913-BDA439D1C8DD}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
@@ -780,6 +780,20 @@
         }
         "Shortcut"
         {
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_D1F2AF522CBC4A73A0E9C0DC50BF28FA"
+            {
+            "Name" = "8:FreeSwitchConsole"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_F0B800E719294692A02518CFD8CBAEFF"
+            "Folder" = "8:_47AC7012FEA1483795137E042EAAA132"
+            "WorkingFolder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
+            "Icon" = "8:"
+            "Feature" = "8:"
+            }
         }
         "UserInterface"
         {
