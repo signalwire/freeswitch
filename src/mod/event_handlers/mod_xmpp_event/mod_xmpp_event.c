@@ -300,7 +300,7 @@ static void xmpp_connect(char *jabber_id, char *pass)
 		case IKS_NET_NOCONN:
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "connection failed\n");
 		default:
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "io error\n");
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "io error %d\n", e);
 			switch_sleep(5000000);
 			continue;
 		}
