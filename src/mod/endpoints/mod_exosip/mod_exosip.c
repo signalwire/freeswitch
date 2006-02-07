@@ -38,7 +38,6 @@
 #include <osipparser2/osip_rfc3264.h>
 #include <osipparser2/osip_port.h>
 
-
 static const char modname[] = "mod_exosip";
 #define STRLEN 15
 
@@ -725,7 +724,7 @@ static const switch_io_routines exosip_io_routines = {
 	/*.waitfor_read */ exosip_waitfor_write
 };
 
-static const switch_event_handler_table exosip_event_handlers = {
+static const switch_state_handler_table exosip_event_handlers = {
 	/*.on_init */ exosip_on_init,
 	/*.on_ring */ exosip_on_ring,
 	/*.on_execute */ exosip_on_execute,
