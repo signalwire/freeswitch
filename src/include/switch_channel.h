@@ -192,18 +192,18 @@ SWITCH_DECLARE(switch_status) switch_channel_clear_flag(switch_channel *channel,
 SWITCH_DECLARE(switch_status) switch_channel_answer(switch_channel *channel);
 
 /*!
-  \brief add an event handler table to a given channel
-  \param channel channel on which to add the event handler table
-  \param state_handler table of event handler functions
+  \brief add a state handler table to a given channel
+  \param channel channel on which to add the state handler table
+  \param state_handler table of state handler functions
   \return the index number/priority of the table negative value indicates failure
 */
 SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel *channel, const switch_state_handler_table *state_handler);
 
 /*!
-  \brief Retrieve an event handler tablefrom a given channel at given index level
-  \param channel channel from which to retrieve the event handler table
-  \param index the index of the event handler table (start from 0)
-  \return given channel's event handler table at given index or NULL if requested index does not exist.
+  \brief Retrieve an state handler tablefrom a given channel at given index level
+  \param channel channel from which to retrieve the state handler table
+  \param index the index of the state handler table (start from 0)
+  \return given channel's state handler table at given index or NULL if requested index does not exist.
 */
 SWITCH_DECLARE(const switch_state_handler_table *) switch_channel_get_state_handler(switch_channel *channel, int index);
 
