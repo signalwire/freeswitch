@@ -92,6 +92,26 @@ static void ivrtest_function(switch_core_session *session, char *data)
 }
 
 
+static switch_status my_on_hangup(switch_core_session *session)
+{
+	switch_channel *channel;
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "I globally hooked to [%s] on the hangup event\n", switch_channel_get_name(channel));
+
+}
+
+static const switch_state_handler_table state_handlers = {
+	/*.on_init */ NULL,
+	/*.on_ring */ NULL,
+	/*.on_execute */ NULL,
+	/*.on_hangup */ my_on_hangup,
+	/*.on_loopback */ NULL,
+	/*.on_transmit */ NULL
+};
+
 static const switch_application_interface ivrtest_application_interface = {
 	/*.interface_name */ "ivrtest",
 	/*.application_function */ ivrtest_function
@@ -112,6 +132,8 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &mod_ivrtest_module_interface;
 
+	/* test global state handlers */
+	switch_core_add_state_handler(&state_handlers);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

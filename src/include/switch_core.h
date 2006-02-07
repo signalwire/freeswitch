@@ -115,6 +115,26 @@ SWITCH_DECLARE(switch_status) switch_core_destroy(void);
 ///\}
 
 
+
+///\defgroup sh State Handlers
+///\ingroup core1
+///\{
+/*! 
+  \brief Add a global state handler
+  \param state_handler a state handler to add
+  \return the current index/priority of this handler
+*/
+SWITCH_DECLARE(int) switch_core_add_state_handler(const switch_state_handler_table *state_handler);
+
+/*! 
+  \brief Access a state handler
+  \param index the desired index to access
+  \return the desired state handler table or NULL when it does not exist.
+*/
+SWITCH_DECLARE(const switch_state_handler_table *) switch_core_get_state_handler(int index);
+///\}
+
+
 ///\defgroup memp Memory Pooling/Allocation
 ///\ingroup core1
 ///\{

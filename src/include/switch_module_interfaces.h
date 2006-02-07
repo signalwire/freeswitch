@@ -47,19 +47,19 @@ extern "C" {
 
 /*! \brief A table of functions to execute at various states 
 */
-struct switch_event_handler_table {
+struct switch_state_handler_table {
 	/*! executed when the state changes to init */
-	switch_event_handler on_init;
+	switch_state_handler on_init;
 	/*! executed when the state changes to ring */
-	switch_event_handler on_ring;
+	switch_state_handler on_ring;
 	/*! executed when the state changes to execute */
-	switch_event_handler on_execute;
+	switch_state_handler on_execute;
 	/*! executed when the state changes to hangup */
-	switch_event_handler on_hangup;
+	switch_state_handler on_hangup;
 	/*! executed when the state changes to loopback*/
-	switch_event_handler on_loopback;
+	switch_state_handler on_loopback;
 	/*! executed when the state changes to transmit*/
-	switch_event_handler on_transmit;
+	switch_state_handler on_transmit;
 };
 
 /*! \brief Node in which to store custom outgoing channel callback hooks */
@@ -183,7 +183,7 @@ struct switch_endpoint_interface {
 	const switch_io_routines *io_routines;
 
 	/*! state machine methods */
-	const switch_event_handler_table *event_handlers;
+	const switch_state_handler_table *state_handler;
 
 	/*! private information */
 	void *private;

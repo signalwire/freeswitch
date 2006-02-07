@@ -144,7 +144,7 @@ static switch_status audio_bridge_on_ring(switch_core_session *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_event_handler_table audio_bridge_peer_event_handlers = {
+static const switch_state_handler_table audio_bridge_peer_state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_ring */ audio_bridge_on_ring,
 	/*.on_execute */ NULL,
@@ -153,7 +153,7 @@ static const switch_event_handler_table audio_bridge_peer_event_handlers = {
 	/*.on_transmit */ NULL
 };
 
-static const switch_event_handler_table audio_bridge_caller_event_handlers = {
+static const switch_state_handler_table audio_bridge_caller_state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_ring */ NULL,
 	/*.on_execute */ NULL,
@@ -215,8 +215,8 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 
 		switch_channel_set_private(caller_channel, peer_session);
 		switch_channel_set_private(peer_channel, session);
-		switch_channel_set_event_handlers(caller_channel, &audio_bridge_caller_event_handlers);
-		switch_channel_set_event_handlers(peer_channel, &audio_bridge_peer_event_handlers);
+		switch_channel_add_state_handler(caller_channel, &audio_bridge_caller_state_handlers);
+		switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
 		switch_core_session_thread_launch(peer_session);
 
 		for (;;) {

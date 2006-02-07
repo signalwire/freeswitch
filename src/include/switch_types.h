@@ -43,7 +43,7 @@ extern "C" {
 
 #define SWITCH_RECCOMMENDED_BUFFER_SIZE 131072
 #define SWITCH_MAX_CODECS 30
-
+#define SWITCH_MAX_STATE_HANDLERS 30
 
 /*!
   \enum switch_ivr_option_t
@@ -359,7 +359,7 @@ typedef struct switch_caller_profile switch_caller_profile;
 typedef struct switch_caller_step switch_caller_step;
 typedef struct switch_caller_extension switch_caller_extension;
 typedef struct switch_caller_application switch_caller_application;
-typedef struct switch_event_handler_table switch_event_handler_table;
+typedef struct switch_state_handler_table switch_state_handler_table;
 typedef struct switch_timer switch_timer;
 typedef struct switch_codec switch_codec;
 typedef struct switch_core_thread_session switch_core_thread_session;
@@ -383,7 +383,7 @@ typedef struct switch_speech_interface switch_speech_interface;
 typedef void (*switch_application_function)(switch_core_session *, char *);
 typedef void (*switch_event_callback_t)(switch_event *);
 typedef switch_caller_extension *(*switch_dialplan_hunt_function)(switch_core_session *);
-typedef switch_status (*switch_event_handler)(switch_core_session *);
+typedef switch_status (*switch_state_handler)(switch_core_session *);
 typedef switch_status (*switch_outgoing_channel_hook)(switch_core_session *, switch_caller_profile *, switch_core_session *);
 typedef switch_status (*switch_answer_channel_hook)(switch_core_session *);
 typedef switch_status (*switch_receive_message_hook)(switch_core_session *, switch_core_session_message *);

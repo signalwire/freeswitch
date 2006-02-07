@@ -91,6 +91,8 @@ struct switch_core_runtime {
 	apr_pool_t *memory_pool;
 	switch_hash *session_table;
 	switch_core_db *db;
+	const struct switch_state_handler_table *state_handlers[SWITCH_MAX_STATE_HANDLERS];
+    int state_handler_index;
 #ifdef EMBED_PERL
 	PerlInterpreter *my_perl;
 #endif
@@ -185,6 +187,29 @@ SWITCH_DECLARE(switch_status) switch_core_do_perl(char *txt)
 	return SWITCH_STATUS_SUCCESS;
 }
 #endif
+
+
+SWITCH_DECLARE(int) switch_core_add_state_handler(const switch_state_handler_table *state_handler)
+{
+	int index = runtime.state_handler_index++;
+
+	if (runtime.state_handler_index >= SWITCH_MAX_STATE_HANDLERS) {
+		return -1;
+	}
+
+	runtime.state_handlers[index] = state_handler;
+	return index;
+}
+
+SWITCH_DECLARE(const switch_state_handler_table *) switch_core_get_state_handler(int index)
+{
+
+	if (index > SWITCH_MAX_STATE_HANDLERS || index > runtime.state_handler_index) {
+		return NULL;
+	}
+
+	return runtime.state_handlers[index];
+}
 
 SWITCH_DECLARE(switch_status) switch_core_session_message_send(char *uuid_str, switch_core_session_message *message)
 {
@@ -1604,8 +1629,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 {
 	switch_channel_state state = CS_NEW, laststate = CS_HANGUP, midstate = CS_DONE;
 	const switch_endpoint_interface *endpoint_interface;
-	const switch_event_handler_table *driver_event_handlers = NULL;
-	const switch_event_handler_table *application_event_handlers = NULL;
+	const switch_state_handler_table *driver_state_handler = NULL;
+	const switch_state_handler_table *application_state_handler = NULL;
 
 	/*
 	   Life of the channel. you have channel and pool in your session
@@ -1623,13 +1648,13 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 
 	 */
 	assert(session != NULL);
-	application_event_handlers = switch_channel_get_event_handlers(session->channel);
+
 
 	endpoint_interface = session->endpoint_interface;
 	assert(endpoint_interface != NULL);
 
-	driver_event_handlers = endpoint_interface->event_handlers;
-	assert(driver_event_handlers != NULL);
+	driver_state_handler = endpoint_interface->state_handler;
+	assert(driver_state_handler != NULL);
 
 	switch_mutex_lock(session->mutex);
 
@@ -1637,6 +1662,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 		switch_event *event;
 
 		if (state != laststate) {
+			int index = 0;
+			int proceed = 1;
 			midstate = state;
 
 			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
@@ -1653,14 +1680,37 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				break;
 			case CS_HANGUP:	/* Deactivate and end the thread */
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State HANGUP\n");
-				if (!driver_event_handlers->on_hangup ||
-					(driver_event_handlers->on_hangup &&
-					 driver_event_handlers->on_hangup(session) == SWITCH_STATUS_SUCCESS &&
+				if (!driver_state_handler->on_hangup ||
+					(driver_state_handler->on_hangup &&
+					 driver_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
-					if (!application_event_handlers || !application_event_handlers->on_hangup ||
-						(application_event_handlers->on_hangup &&
-						 application_event_handlers->on_hangup(session) == SWITCH_STATUS_SUCCESS &&
-						 midstate == switch_channel_get_state(session->channel))) {
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+						if (!application_state_handler || !application_state_handler->on_hangup ||
+							(application_state_handler->on_hangup &&
+							 application_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					index = 0;
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+						if (!application_state_handler || !application_state_handler->on_hangup ||
+							(application_state_handler->on_hangup &&
+							 application_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+
+					if (proceed) {
 						switch_core_standard_on_hangup(session);
 					}
 				}
@@ -1668,70 +1718,181 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				break;
 			case CS_INIT:		/* Basic setup tasks */
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State INIT\n");
-				if (!driver_event_handlers->on_init ||
-					(driver_event_handlers->on_init &&
-					 driver_event_handlers->on_init(session) == SWITCH_STATUS_SUCCESS &&
+				if (!driver_state_handler->on_init ||
+					(driver_state_handler->on_init &&
+					 driver_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
-					if (!application_event_handlers || !application_event_handlers->on_init ||
-						(application_event_handlers->on_init &&
-						 application_event_handlers->on_init(session) == SWITCH_STATUS_SUCCESS &&
-						 midstate == switch_channel_get_state(session->channel))) {
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+						if (!application_state_handler || !application_state_handler->on_init ||
+							(application_state_handler->on_init &&
+							 application_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					index = 0;
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+						if (!application_state_handler || !application_state_handler->on_init ||
+							(application_state_handler->on_init &&
+							 application_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					if (proceed) {
 						switch_core_standard_on_init(session);
 					}
 				}
 				break;
 			case CS_RING:		/* Look for a dialplan and find something to do */
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State RING\n");
-				if (!driver_event_handlers->on_ring ||
-					(driver_event_handlers->on_ring &&
-					 driver_event_handlers->on_ring(session) == SWITCH_STATUS_SUCCESS &&
+				if (!driver_state_handler->on_ring ||
+					(driver_state_handler->on_ring &&
+					 driver_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
-					if (!application_event_handlers || !application_event_handlers->on_ring ||
-						(application_event_handlers->on_ring &&
-						 application_event_handlers->on_ring(session) == SWITCH_STATUS_SUCCESS &&
-						 midstate == switch_channel_get_state(session->channel))) {
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+						if (!application_state_handler || !application_state_handler->on_ring ||
+							(application_state_handler->on_ring &&
+							 application_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					index = 0;
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+						if (!application_state_handler || !application_state_handler->on_ring ||
+							(application_state_handler->on_ring &&
+							 application_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					if (proceed) {
 						switch_core_standard_on_ring(session);
 					}
 				}
 				break;
 			case CS_EXECUTE:	/* Execute an Operation */
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State EXECUTE\n");
-				if (!driver_event_handlers->on_execute ||
-					(driver_event_handlers->on_execute &&
-					 driver_event_handlers->on_execute(session) == SWITCH_STATUS_SUCCESS &&
+				if (!driver_state_handler->on_execute ||
+					(driver_state_handler->on_execute &&
+					 driver_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
-					if (!application_event_handlers || !application_event_handlers->on_execute ||
-						(application_event_handlers->on_execute &&
-						 application_event_handlers->on_execute(session) == SWITCH_STATUS_SUCCESS &&
-						 midstate == switch_channel_get_state(session->channel))) {
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+						if (!application_state_handler || !application_state_handler->on_execute ||
+							(application_state_handler->on_execute &&
+							 application_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					index = 0;
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+						if (!application_state_handler || !application_state_handler->on_execute ||
+							(application_state_handler->on_execute &&
+							 application_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					if (proceed) {
 						switch_core_standard_on_execute(session);
 					}
 				}
 				break;
 			case CS_LOOPBACK:	/* loop all data back to source */
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State LOOPBACK\n");
-				if (!driver_event_handlers->on_loopback ||
-					(driver_event_handlers->on_loopback &&
-					 driver_event_handlers->on_loopback(session) == SWITCH_STATUS_SUCCESS &&
+				if (!driver_state_handler->on_loopback ||
+					(driver_state_handler->on_loopback &&
+					 driver_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
-					if (!application_event_handlers || !application_event_handlers->on_loopback ||
-						(application_event_handlers->on_loopback &&
-						 application_event_handlers->on_loopback(session) == SWITCH_STATUS_SUCCESS &&
-						 midstate == switch_channel_get_state(session->channel))) {
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+						if (!application_state_handler || !application_state_handler->on_loopback ||
+							(application_state_handler->on_loopback &&
+							 application_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					index = 0;
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+						if (!application_state_handler || !application_state_handler->on_loopback ||
+							(application_state_handler->on_loopback &&
+							 application_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					if (proceed) {
 						switch_core_standard_on_loopback(session);
 					}
 				}
 				break;
 			case CS_TRANSMIT:	/* send/recieve data to/from another channel */
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State TRANSMIT\n");
-				if (!driver_event_handlers->on_transmit ||
-					(driver_event_handlers->on_transmit &&
-					 driver_event_handlers->on_transmit(session) == SWITCH_STATUS_SUCCESS &&
+				if (!driver_state_handler->on_transmit ||
+					(driver_state_handler->on_transmit &&
+					 driver_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
-					if (!application_event_handlers || !application_event_handlers->on_transmit ||
-						(application_event_handlers->on_transmit &&
-						 application_event_handlers->on_transmit(session) == SWITCH_STATUS_SUCCESS &&
-						 midstate == switch_channel_get_state(session->channel))) {
+
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+						if (!application_state_handler || !application_state_handler->on_transmit ||
+							(application_state_handler->on_transmit &&
+							 application_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					index = 0;
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+						if (!application_state_handler || !application_state_handler->on_transmit ||
+							(application_state_handler->on_transmit &&
+							 application_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					if (proceed) {
 						switch_core_standard_on_transmit(session);
 					}
 				}

@@ -43,7 +43,8 @@ struct switch_channel {
 	switch_caller_profile *originator_caller_profile;
 	switch_caller_profile *originatee_caller_profile;
 	switch_caller_extension *caller_extension;
-	const struct switch_event_handler_table *event_handlers;
+	const struct switch_state_handler_table *state_handlers[SWITCH_MAX_STATE_HANDLERS];
+	int state_handler_index;
 	switch_hash *variables;
 	void *private;
 	int freq;
@@ -484,17 +485,29 @@ SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originatee_caller_pro
 	return channel->originatee_caller_profile;
 }
 
-SWITCH_DECLARE(void) switch_channel_set_event_handlers(switch_channel *channel,
-													   const struct switch_event_handler_table *event_handlers)
+SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel *channel,
+													 const switch_state_handler_table *state_handler)
 {
 	assert(channel != NULL);
-	channel->event_handlers = event_handlers;
+	int index = channel->state_handler_index++;
+
+	if (channel->state_handler_index >= SWITCH_MAX_STATE_HANDLERS) {
+		return -1;
+	}
+
+	channel->state_handlers[index] = state_handler;
+	return index;
 }
 
-SWITCH_DECLARE(const struct switch_event_handler_table *) switch_channel_get_event_handlers(switch_channel *channel)
+SWITCH_DECLARE(const switch_state_handler_table *) switch_channel_get_state_handler(switch_channel *channel, int index)
 {
 	assert(channel != NULL);
-	return channel->event_handlers;
+
+	if (index > SWITCH_MAX_STATE_HANDLERS || index > channel->state_handler_index) {
+		return NULL;
+	}
+
+	return channel->state_handlers[index];
 }
 
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel *channel,
