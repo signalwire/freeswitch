@@ -488,8 +488,10 @@ SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originatee_caller_pro
 SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel *channel,
 													 const switch_state_handler_table *state_handler)
 {
+	int index;
+
 	assert(channel != NULL);
-	int index = channel->state_handler_index++;
+	index = channel->state_handler_index++;
 
 	if (channel->state_handler_index >= SWITCH_MAX_STATE_HANDLERS) {
 		return -1;

@@ -476,7 +476,7 @@ static switch_status woomerachan_write_frame(switch_core_session *session, switc
 
 }
 
-static const switch_event_handler_table woomerachan_event_handlers = {
+static const switch_state_handler_table woomerachan_event_handlers = {
 	/*.on_init */ woomerachan_on_init,
 	/*.on_ring */ woomerachan_on_ring,
 	/*.on_execute */ woomerachan_on_execute,

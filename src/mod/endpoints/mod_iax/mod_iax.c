@@ -741,7 +741,7 @@ static switch_status channel_answer_channel(switch_core_session *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_event_handler_table channel_event_handlers = {
+static const switch_state_handler_table channel_event_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
 	/*.on_execute */ channel_on_execute,

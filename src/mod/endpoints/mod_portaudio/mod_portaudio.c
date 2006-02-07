@@ -486,7 +486,7 @@ static struct switch_api_interface channel_api_interface = {
 	/*.next */ &channel_hup_interface
 };
 
-static const switch_event_handler_table channel_event_handlers = {
+static const switch_state_handler_table channel_event_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
 	/*.on_execute */ channel_on_execute,
