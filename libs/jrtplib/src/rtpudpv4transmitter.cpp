@@ -1706,7 +1706,7 @@ bool RTPUDPv4Transmitter::GetLocalIPList_Interfaces()
 	
 	while (tmp != 0)
 	{
-		if (tmp->ifa_addr->sa_family == AF_INET)
+		if (tmp->ifa_addr && tmp->ifa_addr->sa_family == AF_INET)
 		{
 			struct sockaddr_in *inaddr = (struct sockaddr_in *)tmp->ifa_addr;
 			localIPs.push_back(ntohl(inaddr->sin_addr.s_addr));
