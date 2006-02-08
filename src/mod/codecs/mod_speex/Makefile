@@ -1,7 +1,7 @@
 all:	depends $(MODNAME).so
 
 depends:
-	MAKE=$(MAKE) $(BASE)/buildlib.sh $(BASE) install speex-1.1.11.1.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install speex-1.1.11.1.tar.gz --prefix=$(PREFIX)
 
 $(MODNAME).so: $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o

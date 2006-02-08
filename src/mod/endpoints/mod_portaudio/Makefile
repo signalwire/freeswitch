@@ -4,7 +4,7 @@ MYOBJS = pablio.o ringbuffer.o
 all:	depends $(MODNAME).so
 
 depends:
-	MAKE=$(MAKE) $(BASE)/buildlib.sh $(BASE) install portaudio.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install portaudio.tar.gz --prefix=$(PREFIX)
 %.o:  %.c
 	$(CC) -fPIC $(CFLAGS) -c -o $@ $<
 

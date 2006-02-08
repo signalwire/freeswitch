@@ -4,7 +4,7 @@ LDFLAGS +=-lg729
 all:	depends $(MODNAME).so
 
 depends:
-	MAKE=$(MAKE) $(BASE)/buildlib.sh $(BASE) install codec/libg729 --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install codec/libg729 --prefix=$(PREFIX)
 
 $(MODNAME).so: $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o
