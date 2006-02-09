@@ -330,7 +330,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	*encoded_data_len = decoded_data_len;
+
 	return codec->implementation->encode(codec,
 										 other_codec,
 										 decoded_data,
@@ -352,6 +352,8 @@ SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 	assert(encoded_data != NULL);
 	assert(decoded_data != NULL);
 
+
+
 	if (!codec->implementation) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec is not initilized!\n");
 		return SWITCH_STATUS_GENERR;
@@ -362,7 +364,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	*decoded_data_len = encoded_data_len;
+
 	return codec->implementation->decode(codec,
 										 other_codec,
 										 encoded_data,
@@ -1090,6 +1092,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 	if (need_codec) {
 		if (frame->codec) {
 			session->raw_write_frame.datalen = session->raw_write_frame.buflen;
+
 			status = switch_core_codec_decode(frame->codec,
 											  session->write_codec,
 											  frame->data,
