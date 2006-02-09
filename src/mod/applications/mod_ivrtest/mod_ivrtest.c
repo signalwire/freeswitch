@@ -100,6 +100,7 @@ static switch_status my_on_hangup(switch_core_session *session)
     assert(channel != NULL);
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "I globally hooked to [%s] on the hangup event\n", switch_channel_get_name(channel));
+	return SWITCH_STATUS_SUCCESS;
 
 }
 
