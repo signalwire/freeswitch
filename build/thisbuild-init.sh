@@ -4,7 +4,8 @@
 # architectures compile the software to check portability. Please leave
 # this file in tact! - Justin
 
-../build.sh build 2>&1
+cd ..
+./build.sh build 2>&1
 ojnk=$?
 
 echo "Return Code: $ojnk"
