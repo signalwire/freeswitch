@@ -818,6 +818,60 @@ SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *
 SWITCH_DECLARE(switch_status) switch_core_speech_close(switch_speech_handle *sh, unsigned int *flags);
 ///\}
 
+
+///\defgroup dir Directory Service Functions
+///\ingroup core1
+///\{
+/*! 
+  \brief Open a directory handle
+  \param dh a direcotry handle to use
+  \param module_name the directory module to use
+  \param source the source of the db (ip, hostname, path etc)
+  \param dsn the username or designation of the lookup
+  \param passwd the password
+  \param pool the pool to use (NULL for new pool)
+  \return SWITCH_STATUS_SUCCESS if the handle is opened
+*/
+SWITCH_DECLARE(switch_status) switch_core_directory_open(switch_directory_handle *dh, 
+														 char *module_name, 
+														 char *source,
+														 char *dsn,
+														 char *passwd,
+														 switch_memory_pool *pool);
+
+/*! 
+  \brief Query a directory handle
+  \param dh a direcotry handle to use
+  \param query a string of filters or query data
+  \return SWITCH_STATUS_SUCCESS if the query is successful
+*/
+SWITCH_DECLARE(switch_status) switch_core_directory_query(switch_directory_handle *dh, char *query);
+
+/*! 
+  \brief Obtain the next record in a lookup
+  \param dh a direcotry handle to use
+  \return SWITCH_STATUS_SUCCESS if another record exists
+*/
+SWITCH_DECLARE(switch_status) switch_core_directory_next(switch_directory_handle *dh);
+
+/*! 
+  \brief Obtain the next name/value pair in the current record
+  \param dh a direcotry handle to use
+  \param var a pointer to pointer of the name to fill in
+  \param val a pointer to poinbter of the value to fill in
+  \return SWITCH_STATUS_SUCCESS if an item exists
+*/
+SWITCH_DECLARE(switch_status) switch_core_directory_next_pair(switch_directory_handle *dh, char **var, char **val);
+
+/*! 
+  \brief Close an open directory handle
+  \param dh a direcotry handle to close
+  \return SWITCH_STATUS_SUCCESS if handle was closed
+*/
+SWITCH_DECLARE(switch_status) switch_core_directory_close(switch_directory_handle *dh);
+///\}
+
+
 ///\defgroup misc Misc
 ///\ingroup core1
 ///\{

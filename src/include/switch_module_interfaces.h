@@ -320,6 +320,39 @@ struct switch_speech_handle {
 };
 
 
+
+/*! \brief Abstract interface to a directory module */
+struct switch_directory_interface {
+	/*! the name of the interface */
+	const char *interface_name;
+	/*! function to open the directory interface */
+	switch_status (*directory_open)(switch_directory_handle *dh, char *source, char *dsn, char *passwd);
+	/*! function to close the directory interface */
+	switch_status (*directory_close)(switch_directory_handle *dh);
+	/*! function to query the directory interface */
+	switch_status (*directory_query)(switch_directory_handle *dh, char *query);
+	/*! function to advance to the next record */
+	switch_status (*directory_next)(switch_directory_handle *dh);
+	/*! function to advance to the next name/value pair in the current record */
+	switch_status (*directory_next_pair)(switch_directory_handle *dh, char **var, char **val);
+	
+	const struct switch_directory_interface *next;
+};
+
+/*! an abstract representation of a directory interface. */
+struct switch_directory_handle {
+	/*! the interface of the module that implemented the current directory interface */
+	const struct switch_directory_interface *directory_interface;
+	/*! flags to control behaviour */
+	unsigned int flags;
+
+	/*! the handle's memory pool */
+	switch_memory_pool *memory_pool;
+	/*! private data for the format module to store handle specific info */
+	void *private;
+};
+
+
 /* nobody has more setting than speex so we will let them set the standard */
 /*! \brief Various codec settings (currently only relevant to speex) */
 struct switch_codec_settings {

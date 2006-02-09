@@ -444,6 +444,52 @@ SWITCH_DECLARE(switch_status) switch_core_file_close(switch_file_handle *fh)
 	return fh->file_interface->file_close(fh);
 }
 
+SWITCH_DECLARE(switch_status) switch_core_directory_open(switch_directory_handle *dh, 
+														 char *module_name, 
+														 char *source,
+														 char *dsn,
+														 char *passwd,
+														 switch_memory_pool *pool)
+{
+	switch_status status;
+
+	if (!(dh->directory_interface = switch_loadable_module_get_directory_interface(module_name))) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid directory module [%s]!\n", module_name);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (pool) {
+		dh->memory_pool = pool;
+	} else {
+		if ((status = switch_core_new_memory_pool(&dh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		switch_set_flag(dh, SWITCH_DIRECTORY_FLAG_FREE_POOL);
+	}
+
+	return dh->directory_interface->directory_open(dh, source, dsn, passwd);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_directory_query(switch_directory_handle *dh, char *query)
+{
+	return dh->directory_interface->directory_query(dh, query);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_directory_next(switch_directory_handle *dh)
+{
+	return dh->directory_interface->directory_next(dh);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_directory_next_pair(switch_directory_handle *dh, char **var, char **val)
+{
+	return dh->directory_interface->directory_next_pair(dh, var, val);
+}
+
+SWITCH_DECLARE(switch_status) switch_core_directory_close(switch_directory_handle *dh)
+{
+	return dh->directory_interface->directory_close(dh);
+}
+
 SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh, 
 													  char *module_name, 
 													  unsigned int flags,

@@ -73,6 +73,8 @@ struct switch_loadable_module_interface {
 	const switch_file_interface *file_interface;
 	/*! the table of speech interfaces the module has implmented */
 	const switch_speech_interface *speech_interface;
+	/*! the table of directory interfaces the module has implmented */
+	const switch_directory_interface *directory_interface;
 };
 
 /*!
@@ -141,6 +143,13 @@ SWITCH_DECLARE(switch_file_interface *) switch_loadable_module_get_file_interfac
   \return the desired speech interface
  */
 SWITCH_DECLARE(switch_speech_interface *) switch_loadable_module_get_speech_interface(char *name);
+
+/*!
+  \brief Retrieve the directory interface by it's registered name
+  \param name the name of the directory interface
+  \return the desired directory interface
+ */
+SWITCH_DECLARE(switch_directory_interface *) switch_loadable_module_get_directory_interface(char *name);
 
 
 /*!

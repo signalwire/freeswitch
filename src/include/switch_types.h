@@ -241,6 +241,19 @@ typedef enum {
 
 } switch_speech_flag;
 
+
+/*!
+  \enum switch_directory_flag
+  \brief Directory Handle related flags
+<pre>
+SWITCH_DIRECTORY_FLAG_FREE_POOL =		(1 <<  0) - Free interface's pool on destruction.
+</pre>
+*/
+typedef enum {
+	SWITCH_DIRECTORY_FLAG_FREE_POOL =		(1 <<  0),
+
+} switch_directory_flag;
+
 /*!
   \enum switch_codec_type
   \brief Codec types
@@ -380,6 +393,8 @@ typedef struct switch_codec_settings switch_codec_settings;
 typedef struct switch_config switch_config;
 typedef struct switch_speech_handle switch_speech_handle;
 typedef struct switch_speech_interface switch_speech_interface;
+typedef struct switch_directory_handle switch_directory_handle;
+typedef struct switch_directory_interface switch_directory_interface;
 typedef void (*switch_application_function)(switch_core_session *, char *);
 typedef void (*switch_event_callback_t)(switch_event *);
 typedef switch_caller_extension *(*switch_dialplan_hunt_function)(switch_core_session *);
