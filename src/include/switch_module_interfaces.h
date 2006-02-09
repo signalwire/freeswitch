@@ -330,7 +330,7 @@ struct switch_directory_interface {
 	/*! function to close the directory interface */
 	switch_status (*directory_close)(switch_directory_handle *dh);
 	/*! function to query the directory interface */
-	switch_status (*directory_query)(switch_directory_handle *dh, char *query);
+	switch_status (*directory_query)(switch_directory_handle *dh, char *base, char *query);
 	/*! function to advance to the next record */
 	switch_status (*directory_next)(switch_directory_handle *dh);
 	/*! function to advance to the next name/value pair in the current record */

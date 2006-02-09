@@ -57,18 +57,23 @@ if [ -f $uncompressed/.complete ] ; then
 fi
 
 cd $uncompressed
-$MAKE clean 2>&1
-sh ./configure $@
 
-if [ $? = 0 ] ; then
-    $MAKE
-else 
-    echo ERROR
-    exit 1
-fi
+if [ -f ../$uncompressed.build.sh ] ; then
+    MAKE=$MAKE ../$uncompressed.build.sh $@
+else
+    $MAKE clean 2>&1
+    sh ./configure $@
 
-if [ ! -z $install ] ; then
-    $MAKE install
+    if [ $? = 0 ] ; then
+	$MAKE
+    else 
+	echo ERROR
+	exit 1
+    fi
+
+    if [ ! -z $install ] ; then
+	$MAKE install
+    fi
 fi
 
 if [ $? = 0 ] ; then

@@ -472,9 +472,9 @@ SWITCH_DECLARE(switch_status) switch_core_directory_open(switch_directory_handle
 	return dh->directory_interface->directory_open(dh, source, dsn, passwd);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_directory_query(switch_directory_handle *dh, char *query)
+SWITCH_DECLARE(switch_status) switch_core_directory_query(switch_directory_handle *dh, char *base, char *query)
 {
-	return dh->directory_interface->directory_query(dh, query);
+	return dh->directory_interface->directory_query(dh, base, query);
 }
 
 SWITCH_DECLARE(switch_status) switch_core_directory_next(switch_directory_handle *dh)

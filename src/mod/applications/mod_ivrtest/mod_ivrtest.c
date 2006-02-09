@@ -48,6 +48,39 @@ static switch_status on_dtmf(switch_core_session *session, char *dtmf, void *buf
 
 }
 
+static void dirtest_function(switch_core_session *session, char *data)
+{
+	char *var, *val;
+	switch_channel *channel;
+	switch_directory_handle dh;
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+
+	if (switch_core_directory_open(&dh, 
+								   "ldap",
+								   "ldap.freeswitch.org",
+								   "cn=Manager,dc=freeswitch,dc=org",
+								   "test",
+								   NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't connect\n");
+		return;
+	}
+
+
+	switch_core_directory_query(&dh, "ou=dialplan,dc=freeswitch,dc=org", "(objectClass=*)");
+	while (switch_core_directory_next(&dh) == SWITCH_STATUS_SUCCESS) {
+		while (switch_core_directory_next_pair(&dh, &var, &val) == SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "VALUE [%s]=[%s]\n", var, val);
+		}
+	}
+
+	switch_core_directory_close(&dh);
+	switch_channel_hangup(channel);
+
+}
+
 static void ivrtest_function(switch_core_session *session, char *data)
 {
 	switch_channel *channel;
@@ -113,9 +146,16 @@ static const switch_state_handler_table state_handlers = {
 	/*.on_transmit */ NULL
 };
 
+static const switch_application_interface dirtest_application_interface = {
+	/*.interface_name */ "dirtest",
+	/*.application_function */ dirtest_function
+};
+
 static const switch_application_interface ivrtest_application_interface = {
 	/*.interface_name */ "ivrtest",
-	/*.application_function */ ivrtest_function
+	/*.application_function */ ivrtest_function,
+	NULL, NULL, NULL,
+	/*.next*/ &dirtest_application_interface
 };
 
 static const switch_loadable_module_interface mod_ivrtest_module_interface = {

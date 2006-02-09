@@ -842,10 +842,11 @@ SWITCH_DECLARE(switch_status) switch_core_directory_open(switch_directory_handle
 /*! 
   \brief Query a directory handle
   \param dh a direcotry handle to use
+  \param base the base to query against
   \param query a string of filters or query data
   \return SWITCH_STATUS_SUCCESS if the query is successful
 */
-SWITCH_DECLARE(switch_status) switch_core_directory_query(switch_directory_handle *dh, char *query);
+SWITCH_DECLARE(switch_status) switch_core_directory_query(switch_directory_handle *dh, char *base, char *query);
 
 /*! 
   \brief Obtain the next record in a lookup
