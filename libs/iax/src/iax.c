@@ -2237,12 +2237,14 @@ static struct iax_event *schedule_delivery(struct iax_event *e, unsigned int ts,
 	   this can be a negative number, too */
 	ms = calc_rxstamp(e->session) - ts;
 
-	/* Drop voice frame if timestamp is way off */
-	if ((e->etype == IAX_EVENT_VOICE) && ((ms > 65536) || (ms < -65536))) {
-	    DEBU(G "Dropping a voice packet with odd ts (ts = %d; ms = %d)\n", ts, ms);
-	    free(e);
-	    return NULL;
-	}
+	/*  
+	   Drop voice frame if timestamp is way off 
+	   if ((e->etype == IAX_EVENT_VOICE) && ((ms > 65536) || (ms < -65536))) {
+	   DEBU(G "Dropping a voice packet with odd ts (ts = %d; ms = %d)\n", ts, ms);
+	   free(e);
+	   return NULL;
+	   }
+	*/
 
 	/* Adjust if voice frame timestamp is off by a step */
 	if (ms > 32768) {
