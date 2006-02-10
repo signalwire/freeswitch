@@ -593,20 +593,25 @@ Sub	BuildLibs_ldap(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "openldap") Then 
 		WgetUnTarGz LibsBase & "openldap-2.3.19.tar.gz", LibDestDir
 		RenameFolder LibDestDir & "openldap-2.3.19", "openldap"
-'		If Not FSO.FolderExists(LibDestDir & "pcre\win32") Then
-'			FSO.CreateFolder(LibDestDir & "pcre\win32")
-'		End If
-'		FSO.CopyFile Utilsdir & "pcre\libpcre.vcproj", LibDestDir & "pcre\win32\", True
+		FSO.CopyFile Utilsdir & "openldap\lber_types.h", LibDestDir & "openldap\include", True
+		FSO.CopyFile Utilsdir & "openldap\ldap_config.h", LibDestDir & "openldap\include", True
+		FSO.CopyFile Utilsdir & "openldap\ldap_features.h", LibDestDir & "openldap\include", True
+		FSO.CopyFile Utilsdir & "openldap\portable.h", LibDestDir & "openldap\include", True
+		FSO.CopyFile Utilsdir & "openldap\liblber.vcproj", LibDestDir & "openldap\libraries\liblber", True
+		FSO.CopyFile Utilsdir & "openldap\libldap.vcproj", LibDestDir & "openldap\libraries\libldap", True
+		FSO.CopyFile Utilsdir & "openldap\libldap_r.vcproj", LibDestDir & "openldap\libraries\libldap_r", True
 	End If 
-	If FSO.FolderExists(LibDestDir & "pcre") Then 
+	If FSO.FolderExists(LibDestDir & "openldap") Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "pcre\win32\Debug\libpcre.lib") Then 
-				BuildViaVCBuild LibDestDir & "pcre\win32\libpcre.vcproj", "Debug"
+			If Not FSO.FileExists(LibDestDir & "openldap\Debug\oldap_r.lib") Then 
+				BuildViaVCBuild LibDestDir & "openldap\libraries\liblber\liblber.vcproj", "Debug"
+				BuildViaVCBuild LibDestDir & "openldap\libraries\libldap_r\libldap_r.vcproj", "Debug"
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "pcre\win32\Release\libpcre.lib") Then 
-				BuildViaVCBuild LibDestDir & "pcre\win32\libpcre.vcproj", "Release"
+			If Not FSO.FileExists(LibDestDir & "openldap\Release\oldap_r.lib") Then 
+				BuildViaVCBuild LibDestDir & "openldap\libraries\liblber\liblber.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "openldap\libraries\libldap_r\libldap_r.vcproj", "Release"
 			End If
 		End If
 	Else
