@@ -62,7 +62,8 @@ typedef enum {
 	TFLAG_WRITING = (1 << 5),
 	TFLAG_USING_CODEC = (1 << 6),
 	TFLAG_RTP = (1 << 7),
-	TFLAG_BYE = (1 << 8)
+	TFLAG_BYE = (1 << 8),
+	TFLAG_ANS = (1 << 9)
 } TFLAGS;
 
 
@@ -513,10 +514,9 @@ static switch_status exosip_answer_channel(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+	if (!switch_test_flag(tech_pvt, TFLAG_ANS) && !switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		char *buf = NULL;
 		osip_message_t *answer = NULL;
-
 
 		/* Transmit 200 OK with SDP */
 		eXosip_lock();
@@ -527,6 +527,7 @@ static switch_status exosip_answer_channel(switch_core_session *session)
 		free(buf);
 		eXosip_call_send_answer(tech_pvt->tid, 200, answer);
 		eXosip_unlock();
+		switch_set_flag(tech_pvt, TFLAG_ANS);
 	}
 
 
