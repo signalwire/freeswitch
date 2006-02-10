@@ -287,6 +287,8 @@ static switch_status woomerachan_on_hangup(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	switch_core_codec_destroy(&tech_pvt->read_codec);
+	switch_core_codec_destroy(&tech_pvt->write_codec);
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s WOOMERACHAN HANGUP\n", switch_channel_get_name(channel));
 	tech_destroy(tech_pvt);
