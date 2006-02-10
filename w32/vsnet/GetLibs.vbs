@@ -24,6 +24,7 @@ BuildModXMPPEvent=False
 BuildModsndfile=False
 BuildModrawaudio=False
 BuildModpcre=False
+BuildModldap=False
 BuildSpiderMonkey=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
@@ -83,6 +84,8 @@ If objArgs.Count >=1 Then
 			BuildModrawaudio=True
 		Case "Mod_pcre"
 			BuildModpcre=True
+		Case "Mod_ldap"
+			BuildModldap=True
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
@@ -95,6 +98,7 @@ If objArgs.Count >=1 Then
 			BuildModrawaudio=True
 			BuildVersion=True
 			BuildModpcre=True
+			BuildModldap=True
 	End Select
 Else
 	BuildCore=True
@@ -107,6 +111,7 @@ Else
 	BuildModsndfile=True
 	BuildModrawaudio=True
 	BuildVersion=True
+	BuildModldap=True
 	BuildModpcre=True
 End If
 
@@ -180,6 +185,10 @@ End If
 
 If BuildModpcre Then
 	BuildLibs_pcre BuildDebug, BuildRelease
+End If
+
+If BuildModldap Then
+	BuildLibs_ldap BuildDebug, BuildRelease
 End If
 
 If BuildSpiderMonkey Then
@@ -579,6 +588,32 @@ Sub BuildLibs_pcre(BuildDebug, BuildRelease)
 		Wscript.echo "Unable to download pcre"
 	End If 
 End Sub
+
+Sub	BuildLibs_ldap(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "openldap") Then 
+		WgetUnTarGz LibsBase & "openldap-2.3.19.tar.gz", LibDestDir
+		RenameFolder LibDestDir & "openldap-2.3.19", "openldap"
+'		If Not FSO.FolderExists(LibDestDir & "pcre\win32") Then
+'			FSO.CreateFolder(LibDestDir & "pcre\win32")
+'		End If
+'		FSO.CopyFile Utilsdir & "pcre\libpcre.vcproj", LibDestDir & "pcre\win32\", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "pcre") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "pcre\win32\Debug\libpcre.lib") Then 
+				BuildViaVCBuild LibDestDir & "pcre\win32\libpcre.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "pcre\win32\Release\libpcre.lib") Then 
+				BuildViaVCBuild LibDestDir & "pcre\win32\libpcre.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download openldap"
+	End If 
+End Sub
+
 
 Sub BuildLibs_SpiderMonkey(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "js") Then 
