@@ -75,15 +75,24 @@ typedef enum {
 static struct {
 	int debug;
 	int panic;
-	int span;
-	int dchan;
-	int node;
-	int pswitch;
 	int bytes_per_frame;
 	char *dialplan;
-	struct sangoma_pri *spri;
 } globals;
 
+struct wanpipe_pri_span {
+	int span;
+	int dchan;
+	unsigned int bchans;
+	int node;
+	int pswitch;
+	char *dialplan;
+	unsigned int l1;
+	unsigned int dp;
+	struct sangoma_pri spri;
+};
+
+#define MAX_SPANS 128
+static struct wanpipe_pri_span *SPANS[MAX_SPANS];
 
 
 struct private_object {
@@ -144,6 +153,31 @@ static int str2switch(char *swtype)
 	if (!strcasecmp(swtype, "gr303tmc"))
 		return PRI_SWITCH_GR303_TMC;
 	return -1;
+}
+
+
+static int str2l1(char *l1)
+{
+	if (!strcasecmp(l1, "alaw"))
+		return PRI_LAYER_1_ALAW;
+
+	return PRI_LAYER_1_ULAW;
+}
+
+static int str2dp(char *dp)
+{
+	if (!strcasecmp(dp, "international"))
+		return PRI_INTERNATIONAL_ISDN;
+	if (!strcasecmp(dp, "national"))
+		return PRI_NATIONAL_ISDN;
+	if (!strcasecmp(dp, "local"))
+		return PRI_LOCAL_ISDN;
+	if (!strcasecmp(dp, "private"))
+		return PRI_PRIVATE;		
+	if (!strcasecmp(dp, "unknown"))
+		return PRI_UNKNOWN;
+
+	return PRI_UNKNOWN;
 }
 
 static const switch_endpoint_interface wanpipe_endpoint_interface;
@@ -248,14 +282,13 @@ static switch_status wanpipe_on_hangup(switch_core_session *session)
 	struct channel_map *chanmap;
 
 	
-	chanmap = globals.spri->private;
-
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	chanmap = tech_pvt->spri->private;
 
 	sangoma_socket_close(&tech_pvt->socket);
 
@@ -318,61 +351,114 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 		if (outbound_profile) {
 			char name[128];
 			switch_caller_profile *caller_profile;
-			
+			struct sangoma_pri *spri;
+			int span = 0, autospan = 0, autochan = 0;
+			char *num, *p;
+			int channo = 0;
+			struct channel_map *chanmap = NULL;
+
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+			num = caller_profile->destination_number;
+			if ((p = strchr(num, '/'))) {
+				*p++ = '\0';
+				if (*num != 'a') {
+					span = atoi(num);
+				} else {
+					span = 1;
+					autospan = 1;
+				}
+				num = p;
+				if ((p = strchr(num, '/'))) {
+					*p++ = '\0';
+					if (*num == 'a') {
+						autochan = 1;
+					} else if (*num == 'A') {
+						autochan = -1;
+					} else {
+						channo = atoi(num);
+					}
+					caller_profile->destination_number = p;
+				}
+				
+			}
+			
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 			snprintf(name, sizeof(name), "WanPipe/%s-%04x", caller_profile->destination_number, rand() & 0xffff);
 			switch_channel_set_name(channel, name);
-			if ((tech_pvt->call = pri_new_call(globals.spri->pri))) {
-				struct pri_sr *sr;
-				struct channel_map *chanmap;
-				int channel = 0;
-				int mtu_mru;
-				wanpipe_tdm_api_t tdm_api;
 
-				chanmap = globals.spri->private;
-				for(channel = 1; channel < SANGOMA_MAX_CHAN_PER_SPAN; channel++) {
-					if (!chanmap->map[channel]) {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Choosing channel %d\n", channel);
+			do {
+				if ((spri = &SPANS[span]->spri)) {
+					chanmap = spri->private;
+					if (channo == 0) {
+						if (autochan > 0) {
+							for(channo = 1; channo < SANGOMA_MAX_CHAN_PER_SPAN; channo++) {
+								if ((SPANS[span]->bchans & (1 << channo)) && !chanmap->map[channo]) {
+									switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Choosing channel %d\n", channo);
+									break;
+								}
+							}
+						} else if (autochan < 0) {
+							for(channo = SANGOMA_MAX_CHAN_PER_SPAN; channo > 0; channo--) {
+								if ((SPANS[span]->bchans & (1 << channo)) && !chanmap->map[channo]) {
+									switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Choosing channel %d\n", channo);
+									break;
+								}
+							}
+						}
+
+						if (channo <= 0 || channo == (SANGOMA_MAX_CHAN_PER_SPAN)) {
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Free Channels!\n");
+							channo = 0;
+						}
+					}
+					if (channo) {
 						break;
 					}
 				}
-				if (channel == (SANGOMA_MAX_CHAN_PER_SPAN)) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Free Channels!\n");
-					switch_core_session_destroy(new_session);
-                    return SWITCH_STATUS_GENERR;
-				}
+			} while(autospan && span < MAX_SPANS && !spri && !channo);
+
+
+			if (!spri || channo == 0 || channo == (SANGOMA_MAX_CHAN_PER_SPAN)) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Free Channels!\n");
+				switch_core_session_destroy(new_session);
+				return SWITCH_STATUS_GENERR;
+			}
+			
+			if (spri && (tech_pvt->call = pri_new_call(spri->pri))) {
+				struct pri_sr *sr;
+				int mtu_mru;
+				wanpipe_tdm_api_t tdm_api;
 
 				sr = pri_sr_new();
-				pri_sr_set_channel(sr, channel, 0, 0);
-				pri_sr_set_bearer(sr, 0, PRI_LAYER_1_ULAW);
-				pri_sr_set_called(sr, caller_profile->destination_number, PRI_NATIONAL_ISDN, 1);
+				pri_sr_set_channel(sr, channo, 0, 0);
+				pri_sr_set_bearer(sr, 0, SPANS[span]->l1);
+				pri_sr_set_called(sr, caller_profile->destination_number, SPANS[span]->dp, 1);
 				pri_sr_set_caller(sr,
 								  caller_profile->caller_id_number,
 								  caller_profile->caller_id_name,
-								  PRI_NATIONAL_ISDN,
+								  SPANS[span]->dp,
 								  PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
 				pri_sr_set_redirecting(sr,
 									   caller_profile->caller_id_number,
-									   PRI_NATIONAL_ISDN,
+									   SPANS[span]->dp,
 									   PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN,
 									   PRI_REDIR_UNCONDITIONAL);
 				
-				if (pri_setup(globals.spri->pri, tech_pvt->call , sr)) {
+				if (pri_setup(spri->pri, tech_pvt->call , sr)) {
 					switch_core_session_destroy(new_session);
 					pri_sr_free(sr);
 					return SWITCH_STATUS_GENERR;
 				}
-				if ((tech_pvt->socket = sangoma_create_socket_intr(globals.spri->span, channel)) < 0) {
+				if ((tech_pvt->socket = sangoma_create_socket_intr(spri->span, channo)) < 0) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open fd!\n");
 					switch_core_session_destroy(new_session);
 					pri_sr_free(sr);
                     return SWITCH_STATUS_GENERR;
 				}
 				pri_sr_free(sr);
-				chanmap->map[channel] = *new_session;
-				tech_pvt->spri = globals.spri;
+				chanmap->map[channo] = *new_session;
+				tech_pvt->spri = spri;
 
 				mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->socket, &tdm_api);	
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "MTU is %d\n", mtu_mru);
@@ -535,11 +621,15 @@ static const switch_loadable_module_interface wanpipe_module_interface = {
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
 {
 
+	memset(SPANS, 0, sizeof(SPANS));
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
+
+	/* start the pri's */
+	config_wanpipe(0);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &wanpipe_module_interface;
@@ -678,7 +768,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
-			sprintf(name, "w%dg%d", globals.span, event->ring.channel);
+			sprintf(name, "w%dg%d", spri->span, event->ring.channel);
 			switch_channel_set_name(channel, name);
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
@@ -784,23 +874,33 @@ static void *pri_thread_run(switch_thread *thread, void *obj)
 
 	spri->on_loop = check_flags;
 	spri->private = &chanmap;
-	globals.spri = spri;
 	sangoma_run_pri(spri);
 
 	free(spri);
 	return NULL;
 }
 
+static void pri_thread_launch(struct sangoma_pri *spri)
+{
+	switch_thread *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	
+	switch_threadattr_create(&thd_attr, module_pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_thread_create(&thread, thd_attr, pri_thread_run, spri, module_pool);
+
+}
 
 static int config_wanpipe(int reload)
 {
 	switch_config cfg;
 	char *var, *val;
 	int count = 0;
-	struct sangoma_pri *spri;
 	char *cf = "wanpipe.conf";
+	int current_span = 0;
 
 	globals.bytes_per_frame = DEFAULT_BYTES_PER_FRAME;
+
 
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
@@ -811,45 +911,98 @@ static int config_wanpipe(int reload)
 		if (!strcasecmp(cfg.category, "settings")) {
 			if (!strcmp(var, "debug")) {
 				globals.debug = atoi(val);
-			} else if (!strcmp(var, "span")) {
-				globals.span = atoi(val);
-			} else if (!strcmp(var, "dchan")) {
-				globals.dchan = atoi(val);
-			} else if (!strcmp(var, "node")) {
-				globals.node = str2node(val);
-			} else if (!strcmp(var, "switch")) {
-				globals.pswitch = str2switch(val);
 			} else if (!strcmp(var, "bpf")) {
 				globals.bytes_per_frame = atoi(val);
-			} else if (!strcmp(var, "dialplan")) {
-				set_global_dialplan(val);
+			}
+		} else if (!strcasecmp(cfg.category, "span")) {
+			if (!strcmp(var, "span")) {
+				current_span = atoi(val);
+				if (current_span <= 0 || current_span > MAX_SPANS) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid SPAN!\n");
+					current_span = 0;
+					continue;
+				}
+				if (!SPANS[current_span]) {
+					if (!(SPANS[current_span] = switch_core_alloc(module_pool, sizeof(*SPANS[current_span])))) {
+						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "MEMORY ERROR\n");
+						break;;
+					}
+					SPANS[current_span]->span = current_span;
+				}
+				
+			} else {
+				if (!current_span) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid option %s when no span defined.\n", var);
+					continue;
+				}
+				
+				if (!strcmp(var, "dchan")) {
+					SPANS[current_span]->dchan = atoi(val);
+				} else if (!strcmp(var, "bchan")) {
+					char from[128];
+					char *to;
+					switch_copy_string(from, val, sizeof(from));
+					if ((to = strchr(from, '-'))) {
+						int fromi, toi, x = 0;
+						*to++ = '\0';
+						fromi = atoi(from);
+						toi = atoi(to);
+						if (fromi > 0 && toi > 0 && fromi < toi && fromi < MAX_SPANS && toi < MAX_SPANS) {
+							for(x = fromi; x <= toi; x++) {
+								SPANS[current_span]->bchans |= (1 << x);
+							}
+						} else {
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid bchan range!\n");
+						}
+					} else {
+						int i = atoi(val);
+						if (i > 0 && i < 31) {
+							SPANS[current_span]->bchans |= (1 << i);
+						} else {
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid bchan!\n");
+						}
+					}
+				} else if (!strcmp(var, "node")) {
+					SPANS[current_span]->node = str2node(val);
+				} else if (!strcmp(var, "switch")) {
+					SPANS[current_span]->pswitch = str2switch(val);
+				} else if (!strcmp(var, "dp")) {
+					SPANS[current_span]->dp = str2dp(val);
+				} else if (!strcmp(var, "l1")) {
+					SPANS[current_span]->l1 = str2l1(val);
+				} else if (!strcmp(var, "dialplan")) {
+					set_global_dialplan(val);
+				}
 			}
 		}
 	}
-
 	switch_config_close_file(&cfg);
 
 	if (!globals.dialplan) {
 		set_global_dialplan("default");
 	}
 
-	if ((spri = switch_core_alloc(module_pool, sizeof(*spri)))) {
-		memset(spri, 0, sizeof(*spri));
-		sangoma_init_pri(spri, globals.span, globals.dchan, 23, globals.pswitch, globals.node, globals.debug);
-
-		pri_thread_run(NULL, spri);
-
-	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "error!\n");
+	for(current_span = 1; current_span < MAX_SPANS; current_span++) {
+		if (SPANS[current_span]) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Launch span %d\n", current_span);
+			if (!SPANS[current_span]->l1) {
+				SPANS[current_span]->l1 = PRI_LAYER_1_ULAW;
+			}
+			sangoma_init_pri(&SPANS[current_span]->spri,
+							 current_span,
+							 SPANS[current_span]->dchan,
+							 SPANS[current_span]->pswitch,
+							 SPANS[current_span]->node,
+							 globals.debug);
+			pri_thread_launch(&SPANS[current_span]->spri);
+		}
 	}
+
+
 
 	return count;
 
 }
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
-{
-	config_wanpipe(0);
-	return SWITCH_STATUS_TERM;
-}
+
