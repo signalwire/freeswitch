@@ -593,13 +593,13 @@ Sub	BuildLibs_ldap(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "openldap") Then 
 		WgetUnTarGz LibsBase & "openldap-2.3.19.tar.gz", LibDestDir
 		RenameFolder LibDestDir & "openldap-2.3.19", "openldap"
-		FSO.CopyFile Utilsdir & "openldap\lber_types.h", LibDestDir & "openldap\include", True
-		FSO.CopyFile Utilsdir & "openldap\ldap_config.h", LibDestDir & "openldap\include", True
-		FSO.CopyFile Utilsdir & "openldap\ldap_features.h", LibDestDir & "openldap\include", True
-		FSO.CopyFile Utilsdir & "openldap\portable.h", LibDestDir & "openldap\include", True
-		FSO.CopyFile Utilsdir & "openldap\liblber.vcproj", LibDestDir & "openldap\libraries\liblber", True
-		FSO.CopyFile Utilsdir & "openldap\libldap.vcproj", LibDestDir & "openldap\libraries\libldap", True
-		FSO.CopyFile Utilsdir & "openldap\libldap_r.vcproj", LibDestDir & "openldap\libraries\libldap_r", True
+		FSO.CopyFile Utilsdir & "openldap\lber_types.h", LibDestDir & "openldap\include\", True
+		FSO.CopyFile Utilsdir & "openldap\ldap_config.h", LibDestDir & "openldap\include\", True
+		FSO.CopyFile Utilsdir & "openldap\ldap_features.h", LibDestDir & "openldap\include\", True
+		FSO.CopyFile Utilsdir & "openldap\portable.h", LibDestDir & "openldap\include\", True
+		FSO.CopyFile Utilsdir & "openldap\liblber.vcproj", LibDestDir & "openldap\libraries\liblber\", True
+		FSO.CopyFile Utilsdir & "openldap\libldap.vcproj", LibDestDir & "openldap\libraries\libldap\", True
+		FSO.CopyFile Utilsdir & "openldap\libldap_r.vcproj", LibDestDir & "openldap\libraries\libldap_r\", True
 	End If 
 	If FSO.FolderExists(LibDestDir & "openldap") Then 
 		If BuildDebug Then
