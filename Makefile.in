@@ -1001,7 +1001,7 @@ yesdepends:
 
 depends:
 	@echo making depends
-	rm -f build/freeswitch.env
+	@rm -f build/freeswitch.env
 	@./build/addenv.sh build/freeswitch.env PREFIX $(PREFIX)
 	@./build/addenv.sh build/freeswitch.env MAKE $(MAKE)
 	./build/buildlib.sh . install sqlite-3.2.8.tar.gz --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
@@ -1013,7 +1013,7 @@ depends:
 
 modules: $(NAME)
 	@echo making modules
-	rm -f build/freeswitch.env
+	@rm -f build/freeswitch.env
 	@./build/addenv.sh build/freeswitch.env MAKE "$(MAKE)"
 	@./build/addenv.sh build/freeswitch.env DYLD_LIBRARY_PATH "$(PREFIX)/lib:$DYLD_LIBRARY_PATH"
 	@./build/addenv.sh build/freeswitch.env LD_LIBRARY_PATH "$(PREFIX)/lib:$LD_LIBRARY_PATH"
@@ -1025,14 +1025,14 @@ modules: $(NAME)
 	@./build/addenv.sh build/freeswitch.env CFLAGS "$(AM_CFLAGS)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; $(PWD)/build/modmake.sh $(PWD) $$i || exit 1; done
-	rm -f build/freeswitch.env
+	@rm -f build/freeswitch.env
 
 modclean:
-	rm -f build/freeswitch.env
+	@rm -f build/freeswitch.env
 	@./build/addenv.sh build/freeswitch.env MAKE "$(MAKE)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
 	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; $(PWD)/build/modmake.sh $(PWD) $$i clean || exit 1; done
-	rm -f build/freeswitch.env
+	@rm -f build/freeswitch.env
 
 everything: install install_mod
 
@@ -1048,11 +1048,11 @@ install_mod: modules
 	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db $(PREFIX)/bin
 	@if [ -f .libs/$(NAME) ] ; then /bin/cp -p .libs/$(NAME) $(PREFIX)/bin ; else /bin/cp -p ./$(NAME) $(PREFIX)/bin ; fi
 	@echo Installing Modules
-	rm -f build/freeswitch.env
+	@rm -f build/freeswitch.env
 	@./build/addenv.sh build/freeswitch.env PREFIX "$(PREFIX)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making clean $$i ; $(PWD)/build/modmake.sh $(PWD) $$i install || exit 1; done
 	@echo done
-	rm -f build/freeswitch.env
+	@rm -f build/freeswitch.env
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
 
