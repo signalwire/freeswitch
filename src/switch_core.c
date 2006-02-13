@@ -1764,7 +1764,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 					}
 				}
 				switch_channel_set_state(session->channel, CS_DONE);
-				midstate == switch_channel_get_state(session->channel);
+				midstate = switch_channel_get_state(session->channel);
 				break;
 			case CS_INIT:		/* Basic setup tasks */
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State INIT\n");
