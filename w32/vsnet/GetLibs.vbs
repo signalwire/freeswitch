@@ -139,6 +139,8 @@ If BuildCore Then
 	FSO.CopyFile LibDestDir & "libresample\include\*.h", LibDestDir & "include"
 	BuildLibs_sqlite BuildDebug, BuildRelease	
 	FSO.CopyFile LibDestDir & "sqlite\*.h", LibDestDir & "include"
+	BuildLibs_howl BuildDebug, BuildRelease	
+	FSO.CopyFile LibDestDir & "howl\include\*.h", LibDestDir & "include"
 End If
 
 If BuildModExosip Then
@@ -535,6 +537,35 @@ Sub BuildLibs_libsndfile(BuildDebug, BuildRelease)
 		End If
 	Else
 		Wscript.echo "Unable to download libsndfile"
+	End If 
+End Sub
+
+Sub BuildLibs_howl(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "howl") Then 
+		WgetUnTarGz LibsBase & "howl-1.0.0.tar.gz", LibDestDir
+		RenameFolder LibDestDir & "howl-1.0.0", "howl"
+		FSO.CopyFile Utilsdir & "howl\libhowl.vcproj", LibDestDir & "howl\src\lib\howl\Win32\", True
+		FSO.CopyFile Utilsdir & "howl\libmDNSResponder.vcproj", LibDestDir & "howl\src\lib\mDNSResponder\Win32\", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "howl") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "howl\src\lib\howl\Win32\Debug\libhowld.lib") Then 
+				BuildViaVCBuild LibDestDir & "howl\src\lib\howl\Win32\libhowl.vcproj", "Debug"
+			End If
+			If Not FSO.FileExists(LibDestDir & "howl\src\lib\mDNSResponder\Win32\Debug\libmDNSResponderd.lib") Then 
+				BuildViaVCBuild LibDestDir & "howl\src\lib\mDNSResponder\Win32\libmDNSResponder.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "howl\src\lib\howl\Win32\Release\libhowl.lib") Then 
+				BuildViaVCBuild LibDestDir & "howl\src\lib\howl\Win32\libhowl.vcproj", "Release"
+			End If
+			If Not FSO.FileExists(LibDestDir & "howl\src\lib\mDNSResponder\Win32\Release\libmDNSResponder.lib") Then 
+				BuildViaVCBuild LibDestDir & "howl\src\lib\mDNSResponder\Win32\libmDNSResponder.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download howl"
 	End If 
 End Sub
 
