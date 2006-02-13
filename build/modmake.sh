@@ -4,6 +4,10 @@ shift
 mod=$1
 shift
 
+if [ -f $pwd/build/freeswitch.env ] ; then
+    . $pwd/build/freeswitch.env
+fi
+
 make=`which gmake`
 
 if [ -z $make ] ; then

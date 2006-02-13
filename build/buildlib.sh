@@ -3,13 +3,18 @@
 root=$1
 shift
 
+
 if [ -f $root/.nodepends ] ; then
     echo "***depends disabled*** use $MAKE yesdepends to re-enable"
     exit 0
 fi
 
+if [ -f $root/build/freeswitch.env ] ; then
+    . $root/build/freeswitch.env
+fi
+
 if [ -z $MAKE ] ; then
-    make=`which dmake 2>/dev/null`
+    make=`which gmake 2>/dev/null`
     if [ -z $MAKE ] ; then
 	make=make
     fi
