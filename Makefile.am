@@ -12,7 +12,7 @@ AM_LDFLAGS = -L$(PREFIX)/lib
 AM_LDFLAGS += $(shell $(APR_CONFIG) --link-ld --libs )
 AM_CFLAGS  += $(shell $(APU_CONFIG) --includes) 
 AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs ) -lsqlite3
-AM_LDFLAGS += -lhowl -lresample -lm -L/usr/local/lib/db42 -L/usr/local/lib
+AM_LDFLAGS += -lresample -lm -L/usr/local/lib/db42 -L/usr/local/lib
 OSARCH=$(shell uname -s)
 if ISLINUX
 AM_LDFLAGS += -Wl,-E
@@ -131,7 +131,6 @@ depends:
 	./build/buildlib.sh . install apr-1.2.2.tar.gz --prefix=$(PREFIX)
 	./build/buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=../apr-1.2.2 --prefix=$(PREFIX)
 	./build/buildlib.sh . libresample-0.1.3.tgz --prefix=$(PREFIX)
-	./build/buildlib.sh . howl-1.0.0.tar.gz --prefix=$(PREFIX)
 	rm build/freeswitch.env
 
 

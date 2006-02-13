@@ -98,6 +98,8 @@ static char *EVENT_NAMES[] = {
 	"OUTBOUND_CHAN",
 	"STARTUP",
 	"SHUTDOWN",
+	"PUBLISH",
+	"UNPUBLISH",
 	"ALL"
 };
 
@@ -116,6 +118,7 @@ static int switch_events_match(switch_event *event, switch_event_node *node)
 	}
 
 	if (match || event->event_id == node->event_id) {
+
 		if (event->subclass && node->subclass) {
 			if (!strncasecmp(node->subclass->name, "file:", 5)) {
 				char *file_header;
@@ -130,7 +133,7 @@ static int switch_events_match(switch_event *event, switch_event_node *node)
 			} else {
 				match = strstr(event->subclass->name, node->subclass->name) ? 1 : 0;
 			}
-		} else if (event->subclass && !node->subclass) {
+		} else if ((event->subclass && !node->subclass) || (!event->subclass && !node->subclass)) {
 			match = 1;
 		} else {
 			match = 0;

@@ -1326,6 +1326,7 @@ static int config_exosip(int reload)
 SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 {
 	eXosip_event_t *event = NULL;
+	switch_event *s_event;
 
 	config_exosip(0);
 
@@ -1337,6 +1338,12 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	if (eXosip_listen_addr(IPPROTO_UDP, NULL, globals.port, AF_INET, 0)) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "eXosip_listen_addr failed!\n");
 		return SWITCH_STATUS_TERM;
+	}
+
+	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp");
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", globals.port);
+		switch_event_fire(&s_event);
 	}
 
 	globals.running = 1;

@@ -330,6 +330,8 @@ typedef enum {
     SWITCH_EVENT_OUTBOUND_CHAN		- A new outbound channel has been created
     SWITCH_EVENT_STARTUP			- The system has been started
     SWITCH_EVENT_SHUTDOWN			- The system has been shutdown
+	SWITCH_EVENT_PUBLISH			- Publish
+	SWITCH_EVENT_UNPUBLISH			- UnPublish
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -345,6 +347,8 @@ typedef enum {
 	SWITCH_EVENT_OUTBOUND_CHAN,
 	SWITCH_EVENT_STARTUP,
 	SWITCH_EVENT_SHUTDOWN,
+	SWITCH_EVENT_PUBLISH,
+	SWITCH_EVENT_UNPUBLISH,
 	SWITCH_EVENT_ALL
 } switch_event_t;
 
