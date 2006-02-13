@@ -274,7 +274,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 		return state;
 	}
 
-	if (last_state >= CS_HANGUP) {
+	if (last_state >= CS_HANGUP && state < last_state) {
 		return last_state;
 	}
 

@@ -1764,6 +1764,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 					}
 				}
 				switch_channel_set_state(session->channel, CS_DONE);
+				midstate == switch_channel_get_state(session->channel);
 				break;
 			case CS_INIT:		/* Basic setup tasks */
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "State INIT\n");
@@ -1948,13 +1949,19 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				break;
 			}
 
+			if (midstate == CS_DONE) {
+				break;
+			}
+
 			laststate = midstate;
 		}
-
+		
+		
 		if (state < CS_DONE && midstate == switch_channel_get_state(session->channel)) {
 			switch_thread_cond_wait(session->cond, session->mutex);
-		}
+		} 
 	}
+
 }
 
 SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session **session)
@@ -2050,14 +2057,12 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 
 static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *thread, void *obj)
 {
+	unsigned int id;
 	switch_core_session *session = obj;
-
-
 	session->thread = thread;
 
-	session->id = runtime.session_id++;
-	if (runtime.session_id >= sizeof(unsigned long))
-		runtime.session_id = 1;
+	id = runtime.session_id++;
+	session->id = id;
 
 	snprintf(session->name, sizeof(session->name), "%ld", session->id);
 
@@ -2065,7 +2070,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *thread
 	switch_core_session_run(session);
 	switch_core_hash_delete(runtime.session_table, session->uuid_str);
 	switch_core_session_destroy(&session);
-
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Session %ld Ended\n", id);
 
 	return NULL;
 }
