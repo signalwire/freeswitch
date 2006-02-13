@@ -245,8 +245,9 @@ AM_CFLAGS = -I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags \
 	-DSWITCH_CONF_DIR=\"$(PREFIX)/conf\" \
 	-DSWITCH_DB_DIR=\"$(PREFIX)/db\"
 AM_LDFLAGS = -L$(PREFIX)/lib $(shell $(APR_CONFIG) --link-ld --libs ) \
-	$(shell $(APU_CONFIG) --link-ld --libs ) -lsqlite3 -lresample \
-	-lm -L/usr/local/lib/db42 -L/usr/local/lib $(am__append_1)
+	$(shell $(APU_CONFIG) --link-ld --libs ) -lsqlite3 -lhowl \
+	-lresample -lm -L/usr/local/lib/db42 -L/usr/local/lib \
+	$(am__append_1)
 OSARCH = $(shell uname -s)
 @ISMAC_FALSE@SOLINK = -shared -Xlinker -x
 @ISMAC_TRUE@SOLINK = -dynamic -bundle -undefined suppress -force_flat_namespace
