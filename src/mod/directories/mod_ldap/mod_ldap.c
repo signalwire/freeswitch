@@ -30,9 +30,15 @@
  *
  */
 #include <switch.h>
+#ifdef MSLDAP
+#include <windows.h>
+#include <winldap.h>
+#include <winber.h>
+#define LDAP_OPT_SUCCESS LDAP_SUCCESS
+#else
 #include <lber.h>
 #include <ldap.h>
-
+#endif
 
 static const char modname[] = "mod_ldap";
 
