@@ -98,13 +98,13 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 {
 	switch_loadable_module *module = NULL;
 	apr_dso_handle_t *dso = NULL;
-	apr_status_t status;
+	apr_status_t status = SWITCH_STATUS_SUCCESS;
 	apr_dso_handle_sym_t function_handle = NULL;
 	switch_status (*load_func_ptr) (switch_loadable_module_interface **, char *) = NULL;
 	int loading = 1;
 	const char *err = NULL;
 	switch_loadable_module_interface *interface = NULL;
-	char derr[512];
+	char derr[512] = "";
 
 	assert(filename != NULL);
 
@@ -190,13 +190,13 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 {
 
-	char *file;
-	size_t len;
-	char *ptr;
-	apr_finfo_t finfo;
-	apr_dir_t *module_dir_handle;
+	char *file = NULL;
+	size_t len = 0;
+	char *ptr = NULL;
+	apr_finfo_t finfo = {0};
+	apr_dir_t *module_dir_handle = NULL;
 	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
-	switch_loadable_module *new_module;
+	switch_loadable_module *new_module = NULL;
 #ifdef WIN32
 	const char *ext = ".dll";
 	const char *EXT = ".DLL";

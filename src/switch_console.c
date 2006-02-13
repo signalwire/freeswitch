@@ -85,7 +85,7 @@ static int switch_console_process(char *cmd)
 SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *file, const char *func, int line,
 										   char *fmt, ...)
 {
-	char *data;
+	char *data = NULL;
 	int ret = 0;
 	va_list ap;
 	FILE *handle;
@@ -130,8 +130,10 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *fi
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
 				switch_event_fire(&event);
 			}
-			free(data);
 		}
+	}
+	if(data) {
+		free(data);
 	}
 	fflush(handle);
 }
