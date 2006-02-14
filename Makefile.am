@@ -146,7 +146,7 @@ modules: $(NAME)
 	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
 	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
 	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
-	@./build/addenv.sh build/freeswitch.env CFLAGS "$(AM_CFLAGS)"
+	@./build/addenv.sh build/freeswitch.env CFLAGS "-Werror $(AM_CFLAGS)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; $(PWD)/build/modmake.sh $(PWD) $$i || exit 1; done
 	@rm -f build/freeswitch.env

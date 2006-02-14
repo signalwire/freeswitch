@@ -132,7 +132,7 @@ switch_caller_extension *directory_dialplan_hunt(switch_core_session *session)
 				}
 				switch_copy_string(app, val, sizeof(app));
 				if ((data = strchr(app, ' '))) {
-					*data++ = NULL;
+					*data++ = '\0';
 				}
 				switch_caller_extension_add_application(session, extension, app, data);
 			}

@@ -72,7 +72,6 @@ static switch_status switch_gsm_encode(switch_codec *codec, switch_codec *other_
 										  size_t *encoded_data_len, int *encoded_rate, unsigned int *flag) 
 {
 	struct gsm_context *context = codec->private;
-	int cbret = 0;
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}

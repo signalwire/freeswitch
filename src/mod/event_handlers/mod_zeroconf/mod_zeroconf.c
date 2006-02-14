@@ -52,7 +52,7 @@ static sw_result HOWL_API my_browser(sw_discovery discovery,
 									 sw_const_string type,
 									 sw_const_string domain,
 									 sw_opaque_t extra) {
-	sw_discovery_resolve_id rid;
+	//sw_discovery_resolve_id rid;
 
 	switch (status) {
 		case SW_DISCOVERY_BROWSE_INVALID:

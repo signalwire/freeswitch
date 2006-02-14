@@ -39,7 +39,6 @@ static switch_status switch_raw_init(switch_codec *codec, switch_codec_flag flag
 									 const struct switch_codec_settings *codec_settings)
 {
 	int encoding, decoding;
-	struct raw_context *context = NULL;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
