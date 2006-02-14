@@ -194,6 +194,13 @@ static void process_module_file(char *dir, char *fname)
 	char *file;
 	switch_loadable_module *new_module = NULL;
 
+#ifdef WIN32
+	const char *ext = ".dll";
+#else
+	const char *ext = ".so";
+#endif
+
+
 	if (!(file = switch_core_strdup(loadable_modules.pool, fname))) {
 		return;
 	}
@@ -201,9 +208,15 @@ static void process_module_file(char *dir, char *fname)
 	if (*file == '/') {
 		path = switch_core_strdup(loadable_modules.pool, file);
 	} else {
-		len = strlen(dir) + strlen(file) + 3;
-		path = (char *) switch_core_alloc(loadable_modules.pool, len);
-		snprintf(path, len, "%s/%s", dir, file);
+		if (strchr(file, '.')) {
+			len = strlen(dir) + strlen(file) + 3;
+			path = (char *) switch_core_alloc(loadable_modules.pool, len);
+			snprintf(path, len, "%s/%s", dir, file);
+		} else {
+			len = strlen(dir) + strlen(file) + 7;
+			path = (char *) switch_core_alloc(loadable_modules.pool, len);
+			snprintf(path, len, "%s/%s%s", dir, file, ext);
+		}
 	}
 
 	if (switch_loadable_module_load_file(path, loadable_modules.pool, &new_module) == SWITCH_STATUS_SUCCESS) {
@@ -354,7 +367,8 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "This option must be the first one to work.");
 						}
 					} else {
-						if (!strstr(val, ext) && !strstr(val, EXT)) {
+						if (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid extension for %s\n", val);
 							continue;
 						}
 						process_module_file((char *) SWITCH_MOD_DIR, (char *) val);
