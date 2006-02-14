@@ -135,6 +135,7 @@ depends:
 
 
 modules: $(NAME)
+	@if [ ! -f $(PWD)/modules.conf ] ; then cp $(PWD)/modules.conf.in $(PWD)/modules.conf ; fi
 	@echo making modules
 	@rm -f build/freeswitch.env
 	@./build/addenv.sh build/freeswitch.env MAKE "$(MAKE)"

@@ -860,7 +860,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	int netfd;
 	int refresh;
 	struct iax_event *iaxevent = NULL;
-
+	switch_event *s_event;
 	load_config();
 
 	if (globals.debug) {
@@ -876,6 +876,12 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	netfd = iax_get_fd();
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "IAX Ready Port %d\n", globals.port);
+
+	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_iax2._udp");
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", globals.port);
+		switch_event_fire(&s_event);
+	}
 
 	for (;;) {
 

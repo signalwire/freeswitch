@@ -862,7 +862,7 @@ static void *pri_thread_run(switch_thread *thread, void *obj)
 {
 	struct sangoma_pri *spri = obj;
 	struct channel_map chanmap;
-
+	switch_event *s_event;
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANY, on_anything);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RING, on_ring);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_ringing);
@@ -874,6 +874,12 @@ static void *pri_thread_run(switch_thread *thread, void *obj)
 
 	spri->on_loop = check_flags;
 	spri->private = &chanmap;
+
+	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_pri._tcp");
+		switch_event_fire(&s_event);
+	}
+
 	sangoma_run_pri(spri);
 
 	free(spri);
