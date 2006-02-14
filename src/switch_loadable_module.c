@@ -187,16 +187,135 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 
 }
 
+static void process_module_file(char *dir, char *fname)
+{
+	size_t len = 0;
+	char *path;
+	char *file;
+	switch_loadable_module *new_module = NULL;
+
+	if (!(file = switch_core_strdup(loadable_modules.pool, fname))) {
+		return;
+	}
+
+	if (*file == '/') {
+		path = switch_core_strdup(loadable_modules.pool, file);
+	} else {
+		len = strlen(dir) + strlen(file) + 3;
+		path = (char *) switch_core_alloc(loadable_modules.pool, len);
+		snprintf(path, len, "%s/%s", dir, file);
+	}
+
+	if (switch_loadable_module_load_file(path, loadable_modules.pool, &new_module) == SWITCH_STATUS_SUCCESS) {
+		switch_core_hash_insert(loadable_modules.module_hash, (char *) file, new_module);
+
+		if (new_module->interface->endpoint_interface) {
+			const switch_endpoint_interface *ptr;
+			for (ptr = new_module->interface->endpoint_interface; ptr; ptr = ptr->next) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Endpoint '%s'\n", ptr->interface_name);
+				switch_core_hash_insert(loadable_modules.endpoint_hash, (char *) ptr->interface_name, (void *) ptr);
+			}
+		}
+
+		if (new_module->interface->codec_interface) {
+			const switch_codec_implementation *impl;
+			const switch_codec_interface *ptr;
+
+			for (ptr = new_module->interface->codec_interface; ptr; ptr = ptr->next) {
+				for (impl = ptr->implementations; impl; impl = impl->next) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE,
+										  "Adding Codec '%s' (%s) %dkhz %dms\n",
+										  ptr->iananame,
+										  ptr->interface_name,
+										  impl->samples_per_second, impl->microseconds_per_frame / 1000);
+				}
+
+				switch_core_hash_insert(loadable_modules.codec_hash, (char *) ptr->iananame, (void *) ptr);
+			}
+		}
+
+		if (new_module->interface->dialplan_interface) {
+			const switch_dialplan_interface *ptr;
+
+			for (ptr = new_module->interface->dialplan_interface; ptr; ptr = ptr->next) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Dialplan '%s'\n", ptr->interface_name);
+				switch_core_hash_insert(loadable_modules.dialplan_hash, (char *) ptr->interface_name, (void *) ptr);
+			}
+		}
+
+		if (new_module->interface->timer_interface) {
+			const switch_timer_interface *ptr;
+
+			for (ptr = new_module->interface->timer_interface; ptr; ptr = ptr->next) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Timer '%s'\n", ptr->interface_name);
+				switch_core_hash_insert(loadable_modules.timer_hash, (char *) ptr->interface_name, (void *) ptr);
+			}
+		}
+
+		if (new_module->interface->application_interface) {
+			const switch_application_interface *ptr;
+
+			for (ptr = new_module->interface->application_interface; ptr; ptr = ptr->next) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Application '%s'\n", ptr->interface_name);
+				switch_core_hash_insert(loadable_modules.application_hash,
+										(char *) ptr->interface_name, (void *) ptr);
+			}
+		}
+
+		if (new_module->interface->api_interface) {
+			const switch_api_interface *ptr;
+
+			for (ptr = new_module->interface->api_interface; ptr; ptr = ptr->next) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding API Function '%s'\n", ptr->interface_name);
+				switch_core_hash_insert(loadable_modules.api_hash, (char *) ptr->interface_name, (void *) ptr);
+			}
+		}
+
+		if (new_module->interface->file_interface) {
+			const switch_file_interface *ptr;
+
+			for (ptr = new_module->interface->file_interface; ptr; ptr = ptr->next) {
+				int i;
+				for (i = 0; ptr->extens[i]; i++) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding File Format '%s'\n", ptr->extens[i]);
+					switch_core_hash_insert(loadable_modules.file_hash, (char *) ptr->extens[i], (void *) ptr);
+				}
+			}
+		}
+
+		if (new_module->interface->speech_interface) {
+			const switch_speech_interface *ptr;
+
+			for (ptr = new_module->interface->speech_interface; ptr; ptr = ptr->next) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Speech interface '%s'\n", ptr->interface_name);
+				switch_core_hash_insert(loadable_modules.speech_hash, (char *) ptr->interface_name, (void *) ptr);
+			}
+		}
+
+		if (new_module->interface->directory_interface) {
+			const switch_directory_interface *ptr;
+
+			for (ptr = new_module->interface->directory_interface; ptr; ptr = ptr->next) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Directory interface '%s'\n", ptr->interface_name);
+				switch_core_hash_insert(loadable_modules.directory_hash, (char *) ptr->interface_name, (void *) ptr);
+			}
+		}
+	}
+}
+
 SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 {
 
-	char *file = NULL;
-	size_t len = 0;
 	char *ptr = NULL;
 	apr_finfo_t finfo = {0};
 	apr_dir_t *module_dir_handle = NULL;
 	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
-	switch_loadable_module *new_module = NULL;
+	char *cf = "modules.conf";
+	char *var, *val;
+	switch_config cfg;
+	unsigned char all = 0;
+	unsigned int count = 0;
+
 #ifdef WIN32
 	const char *ext = ".dll";
 	const char *EXT = ".DLL";
@@ -208,10 +327,6 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	memset(&loadable_modules, 0, sizeof(loadable_modules));
 	switch_core_new_memory_pool(&loadable_modules.pool);
 
-	if (apr_dir_open(&module_dir_handle, SWITCH_MOD_DIR, loadable_modules.pool) != APR_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open directory: %s\n", SWITCH_MOD_DIR);
-		return SWITCH_STATUS_GENERR;
-	}
 
 	switch_core_hash_init(&loadable_modules.module_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.endpoint_hash, loadable_modules.pool);
@@ -224,129 +339,70 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	switch_core_hash_init(&loadable_modules.directory_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
 
-	while (apr_dir_read(&finfo, finfo_flags, module_dir_handle) == APR_SUCCESS) {
-		const char *fname = finfo.fname;
 
-		if (finfo.filetype != APR_REG) {
-			continue;
-		}
-
-		if (!fname) {
-			fname = finfo.name;
-		}
-
-		if (!(ptr = (char *) fname)) {
-			continue;
-		}
-
-		if (!strstr(fname, ext) && !strstr(fname, EXT)) {
-			continue;
-		}
-
-
-		len = strlen(SWITCH_MOD_DIR) + strlen(fname) + 3;
-		file = (char *) switch_core_alloc(loadable_modules.pool, len);
-		snprintf(file, len, "%s/%s", SWITCH_MOD_DIR, fname);
-
-		if (switch_loadable_module_load_file(file, loadable_modules.pool, &new_module) == SWITCH_STATUS_SUCCESS) {
-			switch_core_hash_insert(loadable_modules.module_hash, (char *) fname, new_module);
-
-			if (new_module->interface->endpoint_interface) {
-				const switch_endpoint_interface *ptr;
-				for (ptr = new_module->interface->endpoint_interface; ptr; ptr = ptr->next) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Endpoint '%s'\n", ptr->interface_name);
-					switch_core_hash_insert(loadable_modules.endpoint_hash, (char *) ptr->interface_name, (void *) ptr);
-				}
-			}
-
-			if (new_module->interface->codec_interface) {
-				const switch_codec_implementation *impl;
-				const switch_codec_interface *ptr;
-
-				for (ptr = new_module->interface->codec_interface; ptr; ptr = ptr->next) {
-					for (impl = ptr->implementations; impl; impl = impl->next) {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-											  "Adding Codec '%s' (%s) %dkhz %dms\n",
-											  ptr->iananame,
-											  ptr->interface_name,
-											  impl->samples_per_second, impl->microseconds_per_frame / 1000);
-					}
-
-					switch_core_hash_insert(loadable_modules.codec_hash, (char *) ptr->iananame, (void *) ptr);
-				}
-			}
-
-			if (new_module->interface->dialplan_interface) {
-				const switch_dialplan_interface *ptr;
-
-				for (ptr = new_module->interface->dialplan_interface; ptr; ptr = ptr->next) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Dialplan '%s'\n", ptr->interface_name);
-					switch_core_hash_insert(loadable_modules.dialplan_hash, (char *) ptr->interface_name, (void *) ptr);
-				}
-			}
-
-			if (new_module->interface->timer_interface) {
-				const switch_timer_interface *ptr;
-
-				for (ptr = new_module->interface->timer_interface; ptr; ptr = ptr->next) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Timer '%s'\n", ptr->interface_name);
-					switch_core_hash_insert(loadable_modules.timer_hash, (char *) ptr->interface_name, (void *) ptr);
-				}
-			}
-
-			if (new_module->interface->application_interface) {
-				const switch_application_interface *ptr;
-
-				for (ptr = new_module->interface->application_interface; ptr; ptr = ptr->next) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Application '%s'\n", ptr->interface_name);
-					switch_core_hash_insert(loadable_modules.application_hash,
-											(char *) ptr->interface_name, (void *) ptr);
-				}
-			}
-
-			if (new_module->interface->api_interface) {
-				const switch_api_interface *ptr;
-
-				for (ptr = new_module->interface->api_interface; ptr; ptr = ptr->next) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding API Function '%s'\n", ptr->interface_name);
-					switch_core_hash_insert(loadable_modules.api_hash, (char *) ptr->interface_name, (void *) ptr);
-				}
-			}
-
-			if (new_module->interface->file_interface) {
-				const switch_file_interface *ptr;
-
-				for (ptr = new_module->interface->file_interface; ptr; ptr = ptr->next) {
-					int i;
-					for (i = 0; ptr->extens[i]; i++) {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding File Format '%s'\n", ptr->extens[i]);
-						switch_core_hash_insert(loadable_modules.file_hash, (char *) ptr->extens[i], (void *) ptr);
+	if (switch_config_open_file(&cfg, cf)) {
+		while (switch_config_next_pair(&cfg, &var, &val)) {
+			count++;
+			if (!strcasecmp(cfg.category, "modules")) {
+				if (!strcasecmp(var, "load")) {
+					if (!strcasecmp(val, "all")) {
+						if (count == 1) {
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Loading all modules.");
+							all = 1;
+							break;
+						} else {
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "This option must be the first one to work.");
+						}
+					} else {
+						if (!strstr(val, ext) && !strstr(val, EXT)) {
+							continue;
+						}
+						process_module_file((char *) SWITCH_MOD_DIR, (char *) val);
 					}
 				}
 			}
-
-			if (new_module->interface->speech_interface) {
-				const switch_speech_interface *ptr;
-
-				for (ptr = new_module->interface->speech_interface; ptr; ptr = ptr->next) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Speech interface '%s'\n", ptr->interface_name);
-					switch_core_hash_insert(loadable_modules.speech_hash, (char *) ptr->interface_name, (void *) ptr);
-				}
-			}
-
-			if (new_module->interface->directory_interface) {
-				const switch_directory_interface *ptr;
-
-				for (ptr = new_module->interface->directory_interface; ptr; ptr = ptr->next) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Adding Directory interface '%s'\n", ptr->interface_name);
-					switch_core_hash_insert(loadable_modules.directory_hash, (char *) ptr->interface_name, (void *) ptr);
-				}
-			}
-			
 		}
-
+		switch_config_close_file(&cfg);
+	} else {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
+		all = 1;
 	}
-	apr_dir_close(module_dir_handle);
+
+	if (!count && !all) {
+		all = 1;
+	}
+
+	if (all) {
+		if (apr_dir_open(&module_dir_handle, SWITCH_MOD_DIR, loadable_modules.pool) != APR_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open directory: %s\n", SWITCH_MOD_DIR);
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+
+	if (all) {
+		while (apr_dir_read(&finfo, finfo_flags, module_dir_handle) == APR_SUCCESS) {
+			const char *fname = finfo.fname;
+
+			if (finfo.filetype != APR_REG) {
+				continue;
+			}
+
+			if (!fname) {
+				fname = finfo.name;
+			}
+
+			if (!(ptr = (char *) fname)) {
+				continue;
+			}
+
+			if (!strstr(fname, ext) && !strstr(fname, EXT)) {
+				continue;
+			}
+
+			process_module_file((char *) SWITCH_MOD_DIR, (char *) fname);
+		}
+		apr_dir_close(module_dir_handle);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

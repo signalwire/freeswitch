@@ -101,8 +101,12 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 			continue;
 		}
 
-		if (**var == '#' || **var == '\n' || **var == '\r') {
+		if (**var == '#' || **var == ';' || **var == '\n' || **var == '\r') {
 			continue;
+		}
+
+		if (!strncmp(*var, "__END__", 7)) {
+			break;
 		}
 
 		if ((end = strchr(*var, '#'))) {
