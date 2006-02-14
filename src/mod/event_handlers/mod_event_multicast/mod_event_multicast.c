@@ -84,7 +84,7 @@ static switch_status load_config(void)
 static void event_handler(switch_event *event)
 {
 	char buf[1024];
-	int len;
+	size_t len;
 
 	if (event->subclass && !strcmp(event->subclass->name, MULTICAST_EVENT)) {
 		/* ignore our own events to avoid ping pong*/
@@ -197,7 +197,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	globals.running = 1;
 	while(globals.running == 1) {
 		switch_sockaddr_t addr = {0};
-		int len = sizeof(buf);
+		size_t len = sizeof(buf);
 		memset(buf, 0, len);
 		if ((status = switch_socket_recvfrom(&addr, globals.udp_socket, 0, buf, &len)) == SWITCH_STATUS_SUCCESS) {
 			if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {

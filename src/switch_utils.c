@@ -119,5 +119,7 @@ void include_me(void)
 {
 	apr_socket_shutdown(NULL, 0);
 	apr_socket_recvfrom(NULL, NULL, 0, NULL, NULL);
+	apr_mcast_join(NULL, NULL, NULL, NULL);
+	apr_socket_opt_set(NULL, 0, 0);
 }
 #endif
