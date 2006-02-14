@@ -197,18 +197,18 @@ SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *ret
   \param filename the path to the module's dll or so file
   \return SWITCH_STATUS_SUCCESS on a successful load
 */
-switch_status switch_module_load(const switch_loadable_module_interface **interface, char *filename);
-switch_status switch_module_reload(void);
-switch_status switch_module_pause(void);
-switch_status switch_module_resume(void);
-switch_status switch_module_status(void);
-switch_status switch_module_runtime(void);
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename);
+SWITCH_MOD_DECLARE(switch_status) switch_module_reload(void);
+SWITCH_MOD_DECLARE(switch_status) switch_module_pause(void);
+SWITCH_MOD_DECLARE(switch_status) switch_module_resume(void);
+SWITCH_MOD_DECLARE(switch_status) switch_module_status(void);
+SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void);
 
 /*!
   \brief Shutdown a module
   \return SWITCH_STATUS_SUCCESS on a successful shutdown
 */
-switch_status switch_module_shutdown(void);
+SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void);
 ///\}
 
 #ifdef __cplusplus

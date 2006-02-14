@@ -63,10 +63,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Mswsock.lib apr-1.lib sqlite.lib apriconv-1.lib aprutil-1.lib xml.lib Rpcrt4.lib libresampled.lib libhowld.lib libmDNSResponderd.lib"
+				AdditionalDependencies="Ws2_32.lib Mswsock.lib apr-1.lib sqlite.lib apriconv-1.lib aprutil-1.lib xml.lib Rpcrt4.lib libresampled.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Debug&quot;;&quot;$(InputDir)..\..\libs\apr\LibD&quot;;&quot;$(InputDir)..\..\libs\sqlite\Debug&quot;;&quot;$(InputDir)..\..\libs\apr-util\LibD&quot;;&quot;$(InputDir)..\..\libs\apr-util\xml\expat\lib\LibD&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\LibD&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\howl\src\lib\howl\Win32\Debug&quot;;&quot;$(InputDir)..\..\libs\howl\src\lib\mDNSResponder\Win32\Debug&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Debug&quot;;&quot;$(InputDir)..\..\libs\apr\LibD&quot;;&quot;$(InputDir)..\..\libs\sqlite\Debug&quot;;&quot;$(InputDir)..\..\libs\apr-util\LibD&quot;;&quot;$(InputDir)..\..\libs\apr-util\xml\expat\lib\LibD&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\LibD&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;"
 				AddModuleNamesToAssembly=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FreeSwitchCore.pdb"
@@ -147,10 +147,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Mswsock.lib apr-1.lib sqlite.lib apriconv-1.lib aprutil-1.lib xml.lib Rpcrt4.lib libresample.lib libhowl.lib libmDNSResponder.lib"
+				AdditionalDependencies="Ws2_32.lib Mswsock.lib apr-1.lib sqlite.lib apriconv-1.lib aprutil-1.lib xml.lib Rpcrt4.lib libresample.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\libs\sqlite\Release&quot;;&quot;$(InputDir)..\..\libs\apr\LibR&quot;;&quot;$(InputDir)..\..\libs\apr-util\LibR&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\LibR&quot;;&quot;$(InputDir)..\..\libs\apr-util\xml\expat\lib\LibR&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\howl\src\lib\mDNSResponder\Win32\Release&quot;;&quot;$(InputDir)..\..\libs\howl\src\lib\howl\Win32\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\Release&quot;;&quot;$(InputDir)..\..\libs\sqlite\Release&quot;;&quot;$(InputDir)..\..\libs\apr\LibR&quot;;&quot;$(InputDir)..\..\libs\apr-util\LibR&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\LibR&quot;;&quot;$(InputDir)..\..\libs\apr-util\xml\expat\lib\LibR&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

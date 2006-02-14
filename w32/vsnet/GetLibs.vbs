@@ -25,6 +25,7 @@ BuildModsndfile=False
 BuildModrawaudio=False
 BuildModpcre=False
 BuildModldap=False
+BuildModzeroconf=False
 BuildSpiderMonkey=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
@@ -86,6 +87,8 @@ If objArgs.Count >=1 Then
 			BuildModpcre=True
 		Case "Mod_ldap"
 			BuildModldap=True
+		Case "Mod_zeroconf"
+			BuildModzeroconf=True
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
@@ -99,6 +102,7 @@ If objArgs.Count >=1 Then
 			BuildVersion=True
 			BuildModpcre=True
 			BuildModldap=True
+			BuildModzeroconf=True
 	End Select
 Else
 	BuildCore=True
@@ -113,6 +117,7 @@ Else
 	BuildVersion=True
 	BuildModldap=True
 	BuildModpcre=True
+	BuildModzeroconf=True
 End If
 
 ' ******************
@@ -139,8 +144,10 @@ If BuildCore Then
 	FSO.CopyFile LibDestDir & "libresample\include\*.h", LibDestDir & "include"
 	BuildLibs_sqlite BuildDebug, BuildRelease	
 	FSO.CopyFile LibDestDir & "sqlite\*.h", LibDestDir & "include"
+End If
+
+If BuildModzeroconf Then
 	BuildLibs_howl BuildDebug, BuildRelease	
-	FSO.CopyFile LibDestDir & "howl\include\*.h", LibDestDir & "include"
 End If
 
 If BuildModExosip Then

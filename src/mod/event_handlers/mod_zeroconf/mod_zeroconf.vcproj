@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="mod_zeroconf"
-	ProjectGUID="{3A2A7795-C216-4FFF-B8EF-4D17A84BACCC}"
+	ProjectGUID="{C7705DC4-2088-493E-AF8D-65BC6D65C125}"
 	RootNamespace="mod_zeroconf"
 	Keyword="Win32Proj"
 	>
@@ -25,6 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs  Mod_zeroconf Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -41,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\howl\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -62,9 +63,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies=" libhowld.lib libmDNSResponderd.lib Ws2_32.lib  iphlpapi.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_zeroconf.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(InputDir)..\..\..\libs\apr\Debug"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\howl\src\lib\howl\Win32\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\howl\src\lib\mDNSResponder\Win32\Debug&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_zeroconf.pdb"
 				SubSystem="2"
@@ -106,6 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs  Mod_zeroconf Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -121,7 +124,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\howl\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -140,9 +143,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies=" libhowl.lib libmDNSResponder.lib Ws2_32.lib iphlpapi.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_zeroconf.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\libs\apr\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\howl\src\lib\mDNSResponder\Win32\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\howl\src\lib\howl\Win32\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
