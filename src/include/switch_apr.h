@@ -85,6 +85,15 @@ extern "C" {
 /** Structure for referencing files. */
 typedef apr_file_t switch_file_t;
 
+#define SWITCH_SO_LINGER APR_SO_LINGER
+#define SWITCH_SO_KEEPALIVE APR_SO_KEEPALIVE
+#define SWITCH_SO_DEBUG APR_SO_DEBUG
+#define SWITCH_SO_NONBLOCK APR_SO_NONBLOCK
+#define SWITCH_SO_REUSEADDR APR_SO_REUSEADDR
+#define SWITCH_SO_SNDBUF APR_SO_SNDBUF
+#define SWITCH_SO_RCVBUF APR_SO_RCVBUF
+#define SWITCH_SO_DISCONNECTED APR_SO_DISCONNECTED
+
 /**
  * @defgroup switch_file_permissions File Permissions flags 
  * @ingroup switch_file_io

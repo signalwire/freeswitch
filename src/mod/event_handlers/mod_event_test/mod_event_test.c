@@ -33,6 +33,9 @@
 
 static const char modname[] = "mod_event_test";
 
+//#define TORTURE_ME
+
+
 static void event_handler(switch_event *event)
 {
 	char buf[1024];
@@ -49,6 +52,7 @@ static void event_handler(switch_event *event)
 }
 
 
+
 static switch_loadable_module_interface event_test_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
@@ -60,8 +64,6 @@ static switch_loadable_module_interface event_test_module_interface = {
 
 #define MY_EVENT_COOL "test::cool"
 
-
-//#define TORTURE_ME
 
 #ifdef TORTURE_ME
 #define TTHREADS 500
@@ -113,13 +115,14 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}
-#ifdef TORTURE_ME
+
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
 		SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
+#ifdef TORTURE_ME
 	if (1) {
 		int x = 0;
 		for (x = 0; x < TTHREADS; x++) {
