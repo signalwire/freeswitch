@@ -104,7 +104,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 #endif
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &event_test_module_interface;

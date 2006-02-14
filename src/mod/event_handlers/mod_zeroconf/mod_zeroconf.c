@@ -264,8 +264,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 }
 
 
-
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
 {
 
 	memset(&globals, 0, sizeof(globals));
