@@ -39,6 +39,8 @@ extern "C" {
 #define TELETONE_MAX_TONES 6
 #define TELETONE_TONE_RANGE 127
 
+typedef double teletone_process_t;
+
 /*! \file libteletone.h
     \brief Top level include file
 
@@ -48,7 +50,7 @@ extern "C" {
 /*! \brief An abstraction to store a tone mapping */
 typedef struct {
 	/*! An array of tone frequencies */
-	double freqs[TELETONE_MAX_TONES];
+	teletone_process_t freqs[TELETONE_MAX_TONES];
 } teletone_tone_map_t;
 
 

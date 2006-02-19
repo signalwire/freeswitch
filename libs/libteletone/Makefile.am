@@ -19,6 +19,6 @@ library_include_HEADERS = src/libteletone.h src/libteletone_detect.h src/libtele
 
 
 
-
-
+dox:
+	cd docs && doxygen $(PWD)/docs/Doxygen.conf
 

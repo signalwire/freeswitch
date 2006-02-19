@@ -731,6 +731,9 @@ uninstall-info: uninstall-info-recursive
 	uninstall-info-am uninstall-libLTLIBRARIES \
 	uninstall-library_includeHEADERS
 
+
+dox:
+	cd docs && doxygen $(PWD)/docs/Doxygen.conf
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

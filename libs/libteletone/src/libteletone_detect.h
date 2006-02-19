@@ -92,9 +92,9 @@ extern "C" {
 
 /*! \brief A continer for the elements of a Goertzel Algorithm (The names are from his formula) */
 typedef struct {
-	float v2;
-	float v3;
-	float fac;
+	teletone_process_t v2;
+	teletone_process_t v3;
+	teletone_process_t fac;
 } teletone_goertzel_state_t;
 	
 /*! \brief A container for a DTMF detection state.*/
@@ -109,7 +109,7 @@ typedef struct {
     teletone_goertzel_state_t col_out[GRID_FACTOR];
     teletone_goertzel_state_t row_out2nd[GRID_FACTOR];
     teletone_goertzel_state_t col_out2nd[GRID_FACTOR];
-    float energy;
+    teletone_process_t energy;
     
     int current_sample;
     char digits[TELETONE_MAX_DTMF_DIGITS + 1];
@@ -121,7 +121,7 @@ typedef struct {
 
 /*! \brief An abstraction to store the coefficient of a tone frequency */
 typedef struct {
-    float fac;
+    teletone_process_t fac;
 } teletone_detection_descriptor_t;
 
 /*! \brief A container for a single multi-tone detection 
@@ -136,7 +136,7 @@ typedef struct {
 	teletone_goertzel_state_t gs2[TELETONE_MAX_TONES];
 	int tone_count;
 
-	float energy;
+	teletone_process_t energy;
 	int current_sample;
 	
 	int min_samples;
@@ -173,6 +173,7 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 
 /*! 
   \brief Initilize a DTMF detection state object
+  \param dtmf_detect_state the DTMF detection state to initilize
   \param sample_rate the desired sample rate
 */
 void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state, int sample_rate);
@@ -213,7 +214,7 @@ void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
   \param goertzel_state the goertzel state to retrieve from
   \return the computed value for consideration in furthur audio tests
 */
-float teletone_goertzel_result (teletone_goertzel_state_t *goertzel_state);
+teletone_process_t teletone_goertzel_result (teletone_goertzel_state_t *goertzel_state);
 
 
 

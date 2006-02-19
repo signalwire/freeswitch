@@ -55,7 +55,6 @@ extern "C" {
 */
 
 typedef short teletone_audio_t;
-typedef float teletone_process_t;
 struct teletone_generation_session;
 typedef int (*tone_handler)(struct teletone_generation_session *ts, teletone_tone_map_t *map);
 
@@ -128,6 +127,7 @@ int teletone_set_map(teletone_tone_map_t *map, ...);
   \param ts the tone generation session to initilize
   \param buflen the size of the buffer(in samples) to dynamically allocate
   \param handler a callback function to execute when a tone generation instruction is complete
+  \param user_data optional user data to send
   \return 0
 */
 int teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_handler handler, void *user_data);
