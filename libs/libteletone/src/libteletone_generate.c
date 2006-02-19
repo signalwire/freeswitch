@@ -37,10 +37,10 @@ int teletone_set_tone(teletone_generation_session_t *ts, int index, ...)
 {
 	va_list ap;
 	int i = 0;
-	double x = 0;
+	teletone_process_t x = 0;
 
 	va_start(ap, index);
-	while (i <= TELETONE_MAX_TONES && (x = va_arg(ap, double))) {
+	while (i <= TELETONE_MAX_TONES && (x = va_arg(ap, teletone_process_t))) {
 		ts->TONES[index].freqs[i++] = x;
 	}
 	va_end(ap);
@@ -53,10 +53,10 @@ int teletone_set_map(teletone_tone_map_t *map, ...)
 {
 	va_list ap;
 	int i = 0;
-	double x = 0;
+	teletone_process_t x = 0;
 
 	va_start(ap, map);
-	while (i <= TELETONE_MAX_TONES && (x = va_arg(ap, double))) {
+	while (i <= TELETONE_MAX_TONES && (x = va_arg(ap, teletone_process_t))) {
 		map->freqs[i++] = x;
 	}
 	va_end(ap);
@@ -117,10 +117,10 @@ int teletone_destroy_session(teletone_generation_session_t *ts)
 
 int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
-	double period = (1.0 / ts->rate) / ts->channels;
+	teletone_process_t period = (1.0 / ts->rate) / ts->channels;
 	int i, c;
 	int freqlen = 0;
-	double tones[TELETONE_MAX_TONES];
+	teletone_process_t tones[TELETONE_MAX_TONES];
 	int decay = 0;
 	int duration;
 	int wait = 0;
@@ -144,7 +144,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 		}
 	
 		for (freqlen = 0; map->freqs[freqlen] && freqlen < TELETONE_MAX_TONES; freqlen++) {
-			tones[freqlen] = (double) map->freqs[freqlen] * (2 * M_PI);
+			tones[freqlen] = (teletone_process_t) map->freqs[freqlen] * (2 * M_PI);
 		}
 	
 		if (ts->channels > 1) {
