@@ -4,7 +4,7 @@
 AC_PREREQ(2.59)
 AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 AM_INIT_AUTOMAKE(libteletone,0.1)
-AC_CONFIG_SRCDIR([src/libteletone.c])
+AC_CONFIG_SRCDIR([src])
 #AC_CONFIG_HEADER([])
 
 # Checks for programs.
