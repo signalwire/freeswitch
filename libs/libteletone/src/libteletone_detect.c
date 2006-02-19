@@ -51,7 +51,9 @@
  * detriment.
  */
 #include <math.h>
+#ifndef _MSC_VER
 #include <stdint.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <time.h>

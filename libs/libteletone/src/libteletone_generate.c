@@ -161,7 +161,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 			for (i = 0; i < freqlen; i++) {
 				sample += ((teletone_process_t) 2 * (ts->volume > 0 ? ts->volume : 1) * cos(tones[i] * ts->samples * period));
 			}
-			ts->buffer[ts->samples] = sample;
+			ts->buffer[ts->samples] = (teletone_audio_t)sample;
 			
 			for (c = 1; c < ts->channels; c++) {
 				ts->buffer[ts->samples+1] = ts->buffer[ts->samples];

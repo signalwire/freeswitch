@@ -145,6 +145,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_event_multicast", "..\.
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libteletone", "..\..\libs\libteletone\libteletone.vcproj", "{89385C74-5860-4174-9CAF-A39E7C48909C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -253,6 +255,10 @@ Global
 		{784113EF-44D9-4949-835D-7065D3C7AD08}.Debug|Win32.Build.0 = Debug|Win32
 		{784113EF-44D9-4949-835D-7065D3C7AD08}.Release|Win32.ActiveCfg = Release|Win32
 		{784113EF-44D9-4949-835D-7065D3C7AD08}.Release|Win32.Build.0 = Release|Win32
+		{89385C74-5860-4174-9CAF-A39E7C48909C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{89385C74-5860-4174-9CAF-A39E7C48909C}.Debug|Win32.Build.0 = Debug|Win32
+		{89385C74-5860-4174-9CAF-A39E7C48909C}.Release|Win32.ActiveCfg = Release|Win32
+		{89385C74-5860-4174-9CAF-A39E7C48909C}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

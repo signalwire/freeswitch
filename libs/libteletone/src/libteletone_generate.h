@@ -38,7 +38,9 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#ifndef _MSC_VER
 #include <unistd.h>
+#endif
 #include <fcntl.h>
 #include <sys/types.h>
 #include <errno.h>
