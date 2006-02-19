@@ -1,0 +1,8 @@
+Install is common:
+
+./configure --with-prefix=<desired prefix>
+make
+make install
+
+
+
