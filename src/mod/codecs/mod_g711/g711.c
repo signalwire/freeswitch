@@ -161,7 +161,7 @@ unsigned char linear2alaw(short pcm_val)
 			aval |= (pcm_val >> 1) & QUANT_MASK;
 		else
 			aval |= (pcm_val >> seg) & QUANT_MASK;
-		return (aval ^ mask);
+		return (unsigned char)(aval ^ mask);
 	}
 }
 
@@ -177,7 +177,7 @@ short alaw2linear(unsigned char a_val)
 	a_val ^= 0x55;
 
 	t = (a_val & QUANT_MASK) << 4;
-	seg = ((unsigned) a_val & SEG_MASK) >> SEG_SHIFT;
+	seg = (short)(((unsigned) a_val & SEG_MASK) >> SEG_SHIFT);
 	switch (seg) {
 	case 0:
 		t += 8;
@@ -252,8 +252,8 @@ unsigned char linear2ulaw(short pcm_val)
 	if (seg >= 8)				/* out of range, return maximum value. */
 		return (unsigned char) (0x7F ^ mask);
 	else {
-		uval = (unsigned char) (seg << 4) | ((pcm_val >> (seg + 1)) & 0xF);
-		return (uval ^ mask);
+		uval = (unsigned char) ((seg << 4) | ((pcm_val >> (seg + 1)) & 0xF));
+		return (unsigned char) (uval ^ mask);
 	}
 
 }

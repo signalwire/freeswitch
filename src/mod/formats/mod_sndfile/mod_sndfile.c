@@ -48,7 +48,7 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 	char *ext;
 	int ready = 1;
 	
-	if (!(ext = strrchr(path, '.'))) {
+	if ((ext = strrchr(path, '.')) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Format\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -68,7 +68,7 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (!(context = switch_core_alloc(handle->memory_pool, sizeof(*context)))) {
+	if ((context = switch_core_alloc(handle->memory_pool, sizeof(*context))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
 
@@ -125,7 +125,7 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 	};
 
 
-	if (!(context->handle = sf_open(path, mode, &context->sfinfo))) {
+	if ((context->handle = sf_open(path, mode, &context->sfinfo)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error Opening File [%s] [%s]\n", path,
 							  sf_strerror(context->handle));
 		return SWITCH_STATUS_GENERR;

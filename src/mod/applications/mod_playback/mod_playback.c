@@ -57,7 +57,7 @@ static void playback_function(switch_core_session *session, char *data)
 
 	file_name = switch_core_session_strdup(session, data);
 
-	if ((timer_name = strchr(file_name, ' '))) {
+	if ((timer_name = strchr(file_name, ' ')) != 0) {
 		*timer_name++ = '\0';
 	}
 

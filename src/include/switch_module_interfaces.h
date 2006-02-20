@@ -241,9 +241,9 @@ struct switch_file_interface {
 	/*! function to close the file */
 	switch_status (*file_close)(switch_file_handle *);
 	/*! function to read from the file */
-	switch_status (*file_read)(switch_file_handle *, void *data, unsigned int *len);
+	switch_status (*file_read)(switch_file_handle *, void *data, size_t *len);
 	/*! function to write from the file */
-	switch_status (*file_write)(switch_file_handle *, void *data, unsigned int *len);
+	switch_status (*file_write)(switch_file_handle *, void *data, size_t *len);
 	/*! function to seek to a certian position in the file */
 	switch_status (*file_seek)(switch_file_handle *, unsigned int *cur_pos, unsigned int samples, int whence);
 	/*! list of supported file extensions */

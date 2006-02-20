@@ -87,7 +87,7 @@ static switch_status switch_speex_init(switch_codec *codec, switch_codec_flag fl
 
 	memcpy(&codec->codec_settings, codec_settings, sizeof(codec->codec_settings));
 
-	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
+	if (!(encoding || decoding) || ((context = switch_core_alloc(codec->memory_pool, sizeof(*context))) == 0)) {
 		return SWITCH_STATUS_FALSE;
 	} else {
 		const SpeexMode *mode = NULL;

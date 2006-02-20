@@ -174,7 +174,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 
 	strncpy(chan_type, data, sizeof(chan_type));
 
-	if ((chan_data = strchr(chan_type, '/'))) {
+	if ((chan_data = strchr(chan_type, '/')) != 0) {
 		*chan_data = '\0';
 		chan_data++;
 	}
