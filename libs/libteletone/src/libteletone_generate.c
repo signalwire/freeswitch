@@ -76,7 +76,7 @@ int teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_ha
 	ts->user_data = user_data;
 	ts->volume = 1500;
 	ts->decay_step = 0;
-	if (!(ts->buffer = calloc(buflen, sizeof(teletone_audio_t)))) {
+	if ((ts->buffer = calloc(buflen, sizeof(teletone_audio_t))) == 0) {
 		return -1;
 	}
 	ts->datalen = buflen;
@@ -220,7 +220,7 @@ int teletone_run(teletone_generation_session_t *ts, char *cmd)
 				continue;
 			}
 
-			if ((end = strchr(cur, ';'))) {
+			if ((end = strchr(cur, ';')) != 0) {
 				*end++ = '\0';
 			}
 			
@@ -283,11 +283,11 @@ int teletone_run(teletone_generation_session_t *ts, char *cmd)
 						if (*cur) {
 							char *next;
 							int i = 0;
-							if ((e = strchr(p, ')'))) {
+							if ((e = strchr(p, ')')) != 0) {
 								*e++ = '\0';
 							}
 							do {
-								if ((next = strchr(p, ','))) {
+								if ((next = strchr(p, ',')) != 0) {
 									*next++ = '\0';
 								}
 								if (i == 0) {

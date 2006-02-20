@@ -76,6 +76,9 @@ extern "C" {
  * @{
  */	
 
+typedef apr_size_t swtich_size_t;
+typedef apr_int16_t switch_int16_t;
+
 /**
  * @defgroup switch_file_io File I/O Handling Functions
  * @ingroup switch_apr 

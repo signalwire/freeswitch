@@ -52,7 +52,7 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config *cfg, char *file_path)
 		path = path_buf;
 	}
 
-	if (!path || !(f = fopen(path, "r"))) {
+	if (!path || (f = fopen(path, "r")) == 0) {
 		return 0;
 	}
 
@@ -93,7 +93,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 
 		*var = cfg->buf;
 
-		if (**var == '[' && (end = strchr(*var, ']'))) {
+		if (**var == '[' && (end = strchr(*var, ']')) != 0) {
 			*end = '\0';
 			(*var)++;
 			switch_copy_string(cfg->category, *var, sizeof(cfg->category));
@@ -109,10 +109,10 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 			break;
 		}
 
-		if ((end = strchr(*var, '#'))) {
+		if ((end = strchr(*var, '#')) != 0) {
 			*end = '\0';
 			end--;
-		} else if ((end = strchr(*var, '\n'))) {
+		} else if ((end = strchr(*var, '\n')) != 0) {
 			if (*(end - 1) == '\r') {
 				end--;
 			}
@@ -126,7 +126,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 		}
 		*var = p;
 
-		if (!(*val = strchr(*var, '='))) {
+		if ((*val = strchr(*var, '=')) == 0) {
 			ret = -1;
 			//log_printf(0, server.log, "Invalid syntax on %s: line %d\n", cfg->path, cfg->lineno);
 			continue;

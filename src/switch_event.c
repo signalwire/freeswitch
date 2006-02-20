@@ -122,12 +122,12 @@ static int switch_events_match(switch_event *event, switch_event_node *node)
 		if (event->subclass && node->subclass) {
 			if (!strncasecmp(node->subclass->name, "file:", 5)) {
 				char *file_header;
-				if ((file_header = switch_event_get_header(event, "file"))) {
+				if ((file_header = switch_event_get_header(event, "file")) != 0) {
 					match = strstr(node->subclass->name + 5, file_header) ? 1 : 0;
 				}
 			} else if (!strncasecmp(node->subclass->name, "func:", 5)) {
 				char *func_header;
-				if ((func_header = switch_event_get_header(event, "function"))) {
+				if ((func_header = switch_event_get_header(event, "function")) != 0) {
 					match = strstr(node->subclass->name + 5, func_header) ? 1 : 0;
 				}
 			} else {
@@ -221,7 +221,7 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
 		return SWITCH_STATUS_INUSE;
 	}
 
-	if (!(subclass = switch_core_alloc(RUNTIME_POOL, sizeof(*subclass)))) {
+	if ((subclass = switch_core_alloc(RUNTIME_POOL, sizeof(*subclass))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
 
@@ -288,7 +288,7 @@ SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event **event,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (!(*event = ALLOC(sizeof(switch_event)))) {
+	if ((*event = ALLOC(sizeof(switch_event))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
 #ifdef MALLOC_EVENTS
@@ -333,7 +333,7 @@ SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, switc
 	} else {
 		switch_event_header *header, *hp;
 
-		if (!(header = ALLOC(sizeof(*header)))) {
+		if ((header = ALLOC(sizeof(*header))) == 0) {
 			return SWITCH_STATUS_MEMERR;
 		}
 #ifdef MALLOC_EVENTS
@@ -342,7 +342,7 @@ SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, switc
 
 		header->name = DUP(header_name);
 		header->value = DUP(data);
-		if ((stack = SWITCH_STACK_TOP)) {
+		if (((stack = SWITCH_STACK_TOP)) != 0) {
 			header->next = event->headers;
 			event->headers = header;
 		} else {
@@ -357,9 +357,6 @@ SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, switc
 		return SWITCH_STATUS_SUCCESS;
 
 	}
-
-	return (ret >= 0) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
-
 }
 
 
@@ -379,9 +376,6 @@ SWITCH_DECLARE(switch_status) switch_event_add_body(switch_event *event, char *f
 		event->body = DUP(data);
 		return SWITCH_STATUS_SUCCESS;
 	}
-
-	return (ret >= 0) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_GENERR;
-
 }
 
 SWITCH_DECLARE(void) switch_event_destroy(switch_event **event)
@@ -415,7 +409,7 @@ SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_even
 	(*event)->bind_user_data = todup->bind_user_data;
 
 	for (hp = todup->headers; hp && hp->next;) {
-		if (!(header = ALLOC(sizeof(*header)))) {
+		if ((header = ALLOC(sizeof(*header))) == 0) {
 			return SWITCH_STATUS_MEMERR;
 		}
 #ifdef MALLOC_EVENTS
@@ -546,8 +540,8 @@ SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, 
 	assert(RUNTIME_POOL != NULL);
 
 	if (subclass_name) {
-		if (!(subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name))) {
-			if (!(subclass = switch_core_alloc(RUNTIME_POOL, sizeof(*subclass)))) {
+		if ((subclass = switch_core_hash_find(CUSTOM_HASH, subclass_name)) == 0) {
+			if ((subclass = switch_core_alloc(RUNTIME_POOL, sizeof(*subclass))) == 0) {
 				return SWITCH_STATUS_MEMERR;
 			} else {
 				subclass->owner = switch_core_strdup(RUNTIME_POOL, id);
@@ -556,7 +550,7 @@ SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, 
 		}
 	}
 
-	if (event <= SWITCH_EVENT_ALL && (event_node = switch_core_alloc(RUNTIME_POOL, sizeof(switch_event_node)))) {
+	if (event <= SWITCH_EVENT_ALL && (event_node = switch_core_alloc(RUNTIME_POOL, sizeof(switch_event_node))) != 0) {
 		switch_mutex_lock(BLOCK);
 		/* <LOCKED> ----------------------------------------------- */
 		event_node->id = switch_core_strdup(RUNTIME_POOL, id);

@@ -53,7 +53,7 @@ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **ne
 {
 	switch_audio_resampler *resampler;
 
-	if (!(resampler = switch_core_alloc(pool, sizeof(*resampler)))) {
+	if ((resampler = switch_core_alloc(pool, sizeof(*resampler))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
 

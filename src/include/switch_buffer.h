@@ -80,7 +80,7 @@ SWITCH_DECLARE(int) switch_buffer_freespace(switch_buffer *buffer);
  * \param buffer any buffer of type switch_buffer
  * \return int ammount of buffer curently in use
  */
-SWITCH_DECLARE(int) switch_buffer_inuse(switch_buffer *buffer);
+SWITCH_DECLARE(size_t) switch_buffer_inuse(switch_buffer *buffer);
 
 /*! \brief Read data from a switch_buffer up to the ammount of datalen if it is available.  Remove read data from buffer. 
  * \param buffer any buffer of type switch_buffer

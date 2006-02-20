@@ -60,7 +60,7 @@ SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, swi
 {
 	assert(pool != NULL);
 
-	if (!((*channel) = switch_core_alloc(pool, sizeof(switch_channel)))) {
+	if (((*channel) = switch_core_alloc(pool, sizeof(switch_channel))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
 
@@ -112,9 +112,9 @@ SWITCH_DECLARE(switch_status) switch_channel_get_raw_mode(switch_channel *channe
 }
 
 
-SWITCH_DECLARE(int) switch_channel_has_dtmf(switch_channel *channel)
+SWITCH_DECLARE(size_t) switch_channel_has_dtmf(switch_channel *channel)
 {
-	int has;
+	size_t has;
 
 	assert(channel != NULL);
 	switch_mutex_lock(channel->dtmf_mutex);

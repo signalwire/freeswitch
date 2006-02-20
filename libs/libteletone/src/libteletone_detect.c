@@ -267,7 +267,7 @@ int teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
     int sample;
     int best_row;
     int best_col;
-    int hit;
+    char hit;
     int limit;
 
     hit = 0;

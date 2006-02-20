@@ -75,7 +75,7 @@ SWITCH_DECLARE(char *) switch_cut_path(char *in)
 
 	for (i = delims; *i; i++) {
 		p = in;
-		while ((p = strchr(p, *i))) {
+		while ((p = strchr(p, *i)) != 0) {
 			ret = ++p;
 		}
 	}
@@ -83,7 +83,7 @@ SWITCH_DECLARE(char *) switch_cut_path(char *in)
 }
 
 SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock,
-														  unsigned int flags, switch_memory_pool *pool)
+														  switch_int16_t flags, switch_memory_pool *pool)
 {
 	switch_pollset_t *pollset;
 	switch_status status;

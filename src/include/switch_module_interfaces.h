@@ -417,7 +417,7 @@ struct switch_codec_implementation {
 	/*! number of samples that denote one frame */
 	int samples_per_frame;
 	/*! number of bytes that denote one frame decompressed */
-	int bytes_per_frame;
+	size_t bytes_per_frame;
 	/*! number of bytes that denote one frame compressed */
 	int encoded_bytes_per_frame;
 	/*! number of channels represented */

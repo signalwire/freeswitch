@@ -42,7 +42,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_core_se
 
 	switch_caller_profile *profile = NULL;
 
-	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile)))) {
+	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile))) != 0) {
 		profile->dialplan = switch_core_session_strdup(session, dialplan);
 		profile->caller_id_name = switch_core_session_strdup(session, caller_id_name);
 		profile->caller_id_number = switch_core_session_strdup(session, caller_id_number);
@@ -60,7 +60,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
 																	switch_caller_profile *tocopy)
 {
 	switch_caller_profile *profile = NULL;
-	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile)))) {
+	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile))) != 0) {
 		profile->dialplan = switch_core_session_strdup(session, tocopy->dialplan);
 		profile->caller_id_name = switch_core_session_strdup(session, tocopy->caller_id_name);
 		profile->ani = switch_core_session_strdup(session, tocopy->ani);
@@ -114,7 +114,7 @@ SWITCH_DECLARE(switch_caller_extension *) switch_caller_extension_new(switch_cor
 {
 	switch_caller_extension *caller_extension = NULL;
 
-	if ((caller_extension = switch_core_session_alloc(session, sizeof(switch_caller_extension)))) {
+	if ((caller_extension = switch_core_session_alloc(session, sizeof(switch_caller_extension))) != 0) {
 		caller_extension->extension_name = switch_core_session_strdup(session, extension_name);
 		caller_extension->extension_number = switch_core_session_strdup(session, extension_number);
 		caller_extension->current_application = caller_extension->last_application = caller_extension->applications;
@@ -132,7 +132,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 
 	assert(session != NULL);
 
-	if ((caller_application = switch_core_session_alloc(session, sizeof(switch_caller_application)))) {
+	if ((caller_application = switch_core_session_alloc(session, sizeof(switch_caller_application))) != 0) {
 		caller_application->application_name = switch_core_session_strdup(session, application_name);
 		caller_application->application_data = switch_core_session_strdup(session, application_data);
 		if (!caller_extension->applications) {

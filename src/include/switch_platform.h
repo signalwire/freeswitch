@@ -38,6 +38,10 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#pragma warning(disable:4152 4054 4100)
+#endif
+
 #if (_MSC_VER >= 1400) // VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE

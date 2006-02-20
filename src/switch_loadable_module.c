@@ -132,7 +132,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 			break;
 		}
 
-		if (!(module = switch_core_permenant_alloc(sizeof(switch_loadable_module)))) {
+		if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module))) == 0) {
 			err = "Could not allocate memory\n";
 			break;
 		}
@@ -201,7 +201,7 @@ static void process_module_file(char *dir, char *fname)
 #endif
 
 
-	if (!(file = switch_core_strdup(loadable_modules.pool, fname))) {
+	if ((file = switch_core_strdup(loadable_modules.pool, fname)) == 0) {
 		return;
 	}
 
@@ -405,7 +405,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				fname = finfo.name;
 			}
 
-			if (!(ptr = (char *) fname)) {
+			if ((ptr = (char *) fname) == 0) {
 				continue;
 			}
 
@@ -512,7 +512,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool 
 	switch_codec_interface *codec_interface;
 
 	for (x = 0; x < preflen; x++) {
-		if ((codec_interface = switch_loadable_module_get_codec_interface(prefs[x]))) {
+		if ((codec_interface = switch_loadable_module_get_codec_interface(prefs[x])) != 0 ) {
 			array[i++] = codec_interface;
 		}
 	}
@@ -526,7 +526,7 @@ SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *ret
 	switch_status status;
 	switch_event *event;
 
-	if ((api = switch_loadable_module_get_api_interface(cmd))) {
+	if ((api = switch_loadable_module_get_api_interface(cmd)) != 0) {
 		status = api->function(arg, retbuf, len);
 	} else {
 		status = SWITCH_STATUS_FALSE;

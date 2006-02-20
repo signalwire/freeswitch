@@ -249,7 +249,7 @@ SWITCH_DECLARE(switch_status) switch_channel_hangup(switch_channel *channel);
   \param channel channel to test
   \return number of digits in the queue
 */
-SWITCH_DECLARE(int) switch_channel_has_dtmf(switch_channel *channel);
+SWITCH_DECLARE(size_t) switch_channel_has_dtmf(switch_channel *channel);
 
 /*!
   \brief Queue DTMF on a given channel

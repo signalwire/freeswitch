@@ -41,8 +41,8 @@ SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool *pool, swi
 {
 	switch_buffer *new_buffer;
 
-	if ((new_buffer = switch_core_alloc(pool, sizeof(switch_buffer)))
-		&& (new_buffer->data = switch_core_alloc(pool, max_len))) {
+	if ((new_buffer = switch_core_alloc(pool, sizeof(switch_buffer))) != 0
+		&& (new_buffer->data = switch_core_alloc(pool, max_len)) != 0) {
 		new_buffer->datalen = max_len;
 		*buffer = new_buffer;
 		return SWITCH_STATUS_SUCCESS;
@@ -67,7 +67,7 @@ SWITCH_DECLARE(int) switch_buffer_freespace(switch_buffer *buffer)
 	return (int) (buffer->datalen - buffer->used);
 }
 
-SWITCH_DECLARE(int) switch_buffer_inuse(switch_buffer *buffer)
+SWITCH_DECLARE(size_t) switch_buffer_inuse(switch_buffer *buffer)
 {
 	assert(buffer != NULL);
 

@@ -215,7 +215,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_message_send(char *uuid_str, s
 {
 	switch_core_session *session = NULL;
 
-	if ((session = switch_core_hash_find(runtime.session_table, uuid_str))) {
+	if ((session = switch_core_hash_find(runtime.session_table, uuid_str)) != 0) {
 		if (switch_channel_get_state(session->channel) < CS_HANGUP) {
 			return switch_core_session_receive_message(session, message);
 		}
@@ -268,7 +268,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 
 	memset(codec, 0, sizeof(*codec));
 
-	if (!(codec_interface = switch_loadable_module_get_codec_interface(codec_name))) {
+	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid codec %s!\n", codec_name);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -397,13 +397,13 @@ SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char
 	char *ext;
 	switch_status status;
 
-	if (!(ext = strrchr(file_path, '.'))) {
+	if ((ext = strrchr(file_path, '.')) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Format\n");
 		return SWITCH_STATUS_FALSE;
 	}
 	ext++;
 
-	if (!(fh->file_interface = switch_loadable_module_get_file_interface(ext))) {
+	if ((fh->file_interface = switch_loadable_module_get_file_interface(ext)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid file format [%s]!\n", ext);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -455,7 +455,7 @@ SWITCH_DECLARE(switch_status) switch_core_directory_open(switch_directory_handle
 {
 	switch_status status;
 
-	if (!(dh->directory_interface = switch_loadable_module_get_directory_interface(module_name))) {
+	if ((dh->directory_interface = switch_loadable_module_get_directory_interface(module_name)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid directory module [%s]!\n", module_name);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -499,7 +499,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh,
 {
 	switch_status status;
 
-	if (!(sh->speech_interface = switch_loadable_module_get_speech_interface(module_name))) {
+	if ((sh->speech_interface = switch_loadable_module_get_speech_interface(module_name)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid speech module [%s]!\n", module_name);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -561,7 +561,7 @@ SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *
 	switch_timer_interface *timer_interface;
 	switch_status status;
 	memset(timer, 0, sizeof(*timer));
-	if (!(timer_interface = switch_loadable_module_get_timer_interface(timer_name))) {
+	if ((timer_interface = switch_loadable_module_get_timer_interface(timer_name)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid timer %s!\n", timer_name);
 		return SWITCH_STATUS_GENERR;
 	}
@@ -688,7 +688,7 @@ SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session *session, s
 	assert(session != NULL);
 	assert(session->pool != NULL);
 
-	if ((ptr = apr_palloc(session->pool, memory))) {
+	if ((ptr = apr_palloc(session->pool, memory)) != 0) {
 		memset(ptr, 0, memory);
 	}
 	return ptr;
@@ -702,7 +702,7 @@ SWITCH_DECLARE(void *) switch_core_permenant_alloc(size_t memory)
 	void *ptr = NULL;
 	assert(runtime.memory_pool != NULL);
 
-	if ((ptr = apr_palloc(runtime.memory_pool, memory))) {
+	if ((ptr = apr_palloc(runtime.memory_pool, memory)) != 0) {
 		memset(ptr, 0, memory);
 	}
 	return ptr;
@@ -719,7 +719,7 @@ SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup)
 		return NULL;
 
 	len = strlen(todup) + 1;
-	if (todup && (duped = apr_palloc(runtime.memory_pool, len))) {
+	if (todup && (duped = apr_palloc(runtime.memory_pool, len)) != 0) {
 		strncpy(duped, todup, len);
 	}
 	return duped;
@@ -738,7 +738,7 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, 
 
 	len = strlen(todup) + 1;
 
-	if (todup && (duped = apr_palloc(session->pool, len))) {
+	if (todup && (duped = apr_palloc(session->pool, len)) != 0) {
 		strncpy(duped, todup, len);
 	}
 	return duped;
@@ -756,7 +756,7 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
 		return NULL;
 	len = strlen(todup) + 1;
 
-	if (todup && (duped = apr_palloc(pool, len))) {
+	if (todup && (duped = apr_palloc(pool, len)) != 0) {
 		strncpy(duped, todup, len);
 	}
 	return duped;
@@ -802,7 +802,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 	switch_status status = SWITCH_STATUS_FALSE;
 	const switch_endpoint_interface *endpoint_interface;
 
-	if (!(endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name))) {
+	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not locate channel type %s\n", endpoint_name);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -823,21 +823,21 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 		switch_caller_profile *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
 		switch_channel *channel = NULL, *peer_channel = NULL;
 
-		if ((channel = switch_core_session_get_channel(session))) {
+		if ((channel = switch_core_session_get_channel(session)) != 0) {
 			profile = switch_channel_get_caller_profile(channel);
 		}
-		if ((peer_channel = switch_core_session_get_channel(*new_session))) {
+		if ((peer_channel = switch_core_session_get_channel(*new_session)) != 0) {
 			peer_profile = switch_channel_get_caller_profile(peer_channel);
 		}
 
 		if (channel && peer_channel) {
 			if (profile) {
-				if ((cloned_profile = switch_caller_profile_clone(*new_session, profile))) {
+				if ((cloned_profile = switch_caller_profile_clone(*new_session, profile)) != 0) {
 					switch_channel_set_originator_caller_profile(peer_channel, cloned_profile);
 				}
 			}
 			if (peer_profile) {
-				if ((cloned_profile = switch_caller_profile_clone(session, peer_profile))) {
+				if ((cloned_profile = switch_caller_profile_clone(session, peer_profile)) != 0) {
 					switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 				}
 			}
@@ -989,7 +989,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 				perfect = TRUE;
 			} else {
 				if (!session->raw_read_buffer) {
-					int bytes = session->read_codec->implementation->bytes_per_frame * 10;
+					size_t bytes = session->read_codec->implementation->bytes_per_frame * 10;
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Engaging Read Buffer at %d bytes\n", bytes);
 					switch_buffer_create(session->pool, &session->raw_read_buffer, bytes);
 				}
@@ -1146,7 +1146,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				perfect = TRUE;
 			} else {
 				if (!session->raw_write_buffer) {
-					int bytes = session->write_codec->implementation->bytes_per_frame * 10;
+					size_t bytes = session->write_codec->implementation->bytes_per_frame * 10;
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE,
 										  "Engaging Write Buffer at %d bytes to accomidate %d->%d\n",
 										  bytes,
@@ -1197,16 +1197,16 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				status = perform_write(session, write_frame, timeout, io_flag, stream_id);
 				return status;
 			} else {
-				int used = switch_buffer_inuse(session->raw_write_buffer);
-				int bytes = session->write_codec->implementation->bytes_per_frame;
-				int frames = (used / bytes);
+				size_t used = switch_buffer_inuse(session->raw_write_buffer);
+				size_t bytes = session->write_codec->implementation->bytes_per_frame;
+				size_t frames = (used / bytes);
 
 
 				if (frames) {
-					int x;
+					size_t x;
 					for (x = 0; x < frames; x++) {
 						if ((session->raw_write_frame.datalen =
-							 switch_buffer_read(session->raw_write_buffer, session->raw_write_frame.data, bytes))) {
+							 switch_buffer_read(session->raw_write_buffer, session->raw_write_frame.data, bytes)) != 0) {
 
 							enc_frame = &session->raw_write_frame;
 							session->raw_write_frame.rate = session->write_codec->implementation->samples_per_second;
@@ -1366,7 +1366,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_outgoing(switch
 	switch_io_event_hook_outgoing_channel *hook, *ptr;
 
 	assert(outgoing_channel != NULL);
-	if ((hook = switch_core_session_alloc(session, sizeof(*hook)))) {
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
 		hook->outgoing_channel = outgoing_channel;
 		if (!session->event_hooks.outgoing_channel) {
 			session->event_hooks.outgoing_channel = hook;
@@ -1389,7 +1389,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_answer_channel(
 	switch_io_event_hook_answer_channel *hook, *ptr;
 
 	assert(answer_channel != NULL);
-	if ((hook = switch_core_session_alloc(session, sizeof(*hook)))) {
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
 		hook->answer_channel = answer_channel;
 		if (!session->event_hooks.answer_channel) {
 			session->event_hooks.answer_channel = hook;
@@ -1412,7 +1412,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_read_frame(swit
 	switch_io_event_hook_read_frame *hook, *ptr;
 
 	assert(read_frame != NULL);
-	if ((hook = switch_core_session_alloc(session, sizeof(*hook)))) {
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
 		hook->read_frame = read_frame;
 		if (!session->event_hooks.read_frame) {
 			session->event_hooks.read_frame = hook;
@@ -1435,7 +1435,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_write_frame(swi
 	switch_io_event_hook_write_frame *hook, *ptr;
 
 	assert(write_frame != NULL);
-	if ((hook = switch_core_session_alloc(session, sizeof(*hook)))) {
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
 		hook->write_frame = write_frame;
 		if (!session->event_hooks.write_frame) {
 			session->event_hooks.write_frame = hook;
@@ -1458,7 +1458,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_kill_channel(sw
 	switch_io_event_hook_kill_channel *hook, *ptr;
 
 	assert(kill_channel != NULL);
-	if ((hook = switch_core_session_alloc(session, sizeof(*hook)))) {
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
 		hook->kill_channel = kill_channel;
 		if (!session->event_hooks.kill_channel) {
 			session->event_hooks.kill_channel = hook;
@@ -1481,7 +1481,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_waitfor_read(sw
 	switch_io_event_hook_waitfor_read *hook, *ptr;
 
 	assert(waitfor_read != NULL);
-	if ((hook = switch_core_session_alloc(session, sizeof(*hook)))) {
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
 		hook->waitfor_read = waitfor_read;
 		if (!session->event_hooks.waitfor_read) {
 			session->event_hooks.waitfor_read = hook;
@@ -1504,7 +1504,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_waitfor_write(s
 	switch_io_event_hook_waitfor_write *hook, *ptr;
 
 	assert(waitfor_write != NULL);
-	if ((hook = switch_core_session_alloc(session, sizeof(*hook)))) {
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
 		hook->waitfor_write = waitfor_write;
 		if (!session->event_hooks.waitfor_write) {
 			session->event_hooks.waitfor_write = hook;
@@ -1528,7 +1528,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_send_dtmf(switc
 	switch_io_event_hook_send_dtmf *hook, *ptr;
 
 	assert(send_dtmf != NULL);
-	if ((hook = switch_core_session_alloc(session, sizeof(*hook)))) {
+	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
 		hook->send_dtmf = send_dtmf;
 		if (!session->event_hooks.send_dtmf) {
 			session->event_hooks.send_dtmf = hook;
@@ -1591,15 +1591,15 @@ static void switch_core_standard_on_ring(switch_core_session *session)
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard RING %s\n", switch_channel_get_name(session->channel));
 
-	if (!(caller_profile = switch_channel_get_caller_profile(session->channel))) {
+	if ((caller_profile = switch_channel_get_caller_profile(session->channel)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't get profile!\n");
 		switch_channel_set_state(session->channel, CS_HANGUP);
 	} else {
-		if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(caller_profile->dialplan))) {
+		if ((dialplan_interface = switch_loadable_module_get_dialplan_interface(caller_profile->dialplan)) == 0) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't get dialplan [%s]!\n", caller_profile->dialplan);
 			switch_channel_set_state(session->channel, CS_HANGUP);
 		} else {
-			if ((extension = dialplan_interface->hunt_function(session))) {
+			if ((extension = dialplan_interface->hunt_function(session)) != 0) {
 				switch_channel_set_caller_extension(session->channel, extension);
 			}
 		}
@@ -1613,7 +1613,7 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard EXECUTE\n");
-	if (!(extension = switch_channel_get_caller_extension(session->channel))) {
+	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Extension!\n");
 		switch_channel_set_state(session->channel, CS_HANGUP);
 		return;
@@ -1623,9 +1623,9 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Execute %s(%s)\n",
 							  extension->current_application->application_name,
 							  extension->current_application->application_data);
-		if (!
+		if (
 			(application_interface =
-			 switch_loadable_module_get_application_interface(extension->current_application->application_name))) {
+			 switch_loadable_module_get_application_interface(extension->current_application->application_name)) == 0) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Application %s\n",
 								  extension->current_application->application_name);
 			switch_channel_set_state(session->channel, CS_HANGUP);
@@ -1733,7 +1733,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 					(driver_state_handler->on_hangup &&
 					 driver_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
-					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_hangup ||
 							(application_state_handler->on_hangup &&
 							 application_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS &&
@@ -1746,7 +1746,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 						}
 					}
 					index = 0;
-					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_hangup ||
 							(application_state_handler->on_hangup &&
 							 application_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS &&
@@ -1772,7 +1772,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 					(driver_state_handler->on_init &&
 					 driver_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
-					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_init ||
 							(application_state_handler->on_init &&
 							 application_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS &&
@@ -1785,7 +1785,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 						}
 					}
 					index = 0;
-					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_init ||
 							(application_state_handler->on_init &&
 							 application_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS &&
@@ -1808,7 +1808,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 					(driver_state_handler->on_ring &&
 					 driver_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
-					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_ring ||
 							(application_state_handler->on_ring &&
 							 application_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS &&
@@ -1821,7 +1821,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 						}
 					}
 					index = 0;
-					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_ring ||
 							(application_state_handler->on_ring &&
 							 application_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS &&
@@ -1844,7 +1844,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 					(driver_state_handler->on_execute &&
 					 driver_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
-					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_execute ||
 							(application_state_handler->on_execute &&
 							 application_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS &&
@@ -1857,7 +1857,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 						}
 					}
 					index = 0;
-					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_execute ||
 							(application_state_handler->on_execute &&
 							 application_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS &&
@@ -1880,7 +1880,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 					(driver_state_handler->on_loopback &&
 					 driver_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
-					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_loopback ||
 							(application_state_handler->on_loopback &&
 							 application_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS &&
@@ -1893,7 +1893,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 						}
 					}
 					index = 0;
-					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_loopback ||
 							(application_state_handler->on_loopback &&
 							 application_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS &&
@@ -1917,7 +1917,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 					 driver_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS &&
 					 midstate == switch_channel_get_state(session->channel))) {
 
-					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++))) {
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_transmit ||
 							(application_state_handler->on_transmit &&
 							 application_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS &&
@@ -1930,7 +1930,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 						}
 					}
 					index = 0;
-					while(proceed && (application_state_handler = switch_core_get_state_handler(index++))) {
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
 						if (!application_state_handler || !application_state_handler->on_transmit ||
 							(application_state_handler->on_transmit &&
 							 application_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS &&
@@ -1977,7 +1977,7 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session **session)
 
 SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash **hash, switch_memory_pool *pool)
 {
-	if ((*hash = apr_hash_make(pool))) {
+	if ((*hash = apr_hash_make(pool)) != 0) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 	return SWITCH_STATUS_GENERR;
@@ -2042,7 +2042,7 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 
-	if (!(ts = switch_core_alloc(pool, sizeof(*ts)))) {
+	if ((ts = switch_core_alloc(pool, sizeof(*ts))) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory\n");
 	} else {
 		if (mypool) {
@@ -2107,7 +2107,7 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, size_t memory
 	void *ptr = NULL;
 	assert(pool != NULL);
 
-	if ((ptr = apr_palloc(pool, memory))) {
+	if ((ptr = apr_palloc(pool, memory)) != 0) {
 		memset(ptr, 0, memory);
 	}
 	return ptr;
@@ -2129,7 +2129,7 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_e
 		return NULL;
 	}
 
-	if (!(session = switch_core_alloc(usepool, sizeof(switch_core_session)))) {
+	if ((session = switch_core_alloc(usepool, sizeof(switch_core_session))) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate session\n");
 		apr_pool_destroy(usepool);
 		return NULL;
@@ -2173,7 +2173,7 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request_by_name(char *
 {
 	const switch_endpoint_interface *endpoint_interface;
 
-	if (!(endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name))) {
+	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not locate channel type %s\n", endpoint_name);
 		return NULL;
 	}
@@ -2226,7 +2226,7 @@ SWITCH_DECLARE(switch_status) switch_core_init(void)
 	assert(runtime.memory_pool != NULL);
 
 	/* Activate SQL database */
-	if (!(runtime.db = switch_core_db_handle())) {
+	if ((runtime.db = switch_core_db_handle()) == 0 ) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error Opening DB!\n");
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Opening DB\n");

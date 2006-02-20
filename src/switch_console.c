@@ -66,11 +66,11 @@ static int switch_console_process(char *cmd)
 		return 1;
 	}
 #endif
-	if ((arg = strchr(cmd, '\r')) || (arg = strchr(cmd, '\n'))) {
+	if ((arg = strchr(cmd, '\r')) != 0  || (arg = strchr(cmd, '\n')) != 0 )  {
 		*arg = '\0';
 		arg = NULL;
 	}
-	if ((arg = strchr(cmd, ' '))) {
+	if ((arg = strchr(cmd, ' ')) != 0) {
 		*arg++ = '\0';
 	}
 	if (switch_api_execute(cmd, arg, retbuf, sizeof(retbuf)) == SWITCH_STATUS_SUCCESS) {
@@ -160,8 +160,8 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		}
 
 		memset(&cmd, 0, sizeof(cmd));
-		for (x = 0; sizeof(cmd); x++) {
-			cmd[x] = getchar();
+		for (x = 0; x < sizeof(cmd); x++) {
+			cmd[x] = (char)getchar();
 			if (cmd[x] == '\n') {
 				cmd[x] = '\0';
 				break;
