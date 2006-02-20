@@ -98,9 +98,6 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_name, globals.cid_name)
 	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cid_num, globals.cid_num)
 
-
-	 static const switch_endpoint_interface channel_endpoint_interface;
-
 	 static switch_status channel_on_init(switch_core_session *session);
 	 static switch_status channel_on_hangup(switch_core_session *session);
 	 static switch_status channel_on_ring(switch_core_session *session);
@@ -294,55 +291,6 @@ static switch_status channel_on_transmit(switch_core_session *session)
 }
 
 
-/* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
-   that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
-*/
-static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											  switch_core_session **new_session)
-{
-	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
-		struct private_object *tech_pvt;
-		switch_channel *channel;
-		switch_caller_profile *caller_profile;
-
-		switch_core_session_add_stream(*new_session, NULL);
-		if ((tech_pvt =
-			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
-			memset(tech_pvt, 0, sizeof(*tech_pvt));
-			channel = switch_core_session_get_channel(*new_session);
-			switch_core_session_set_private(*new_session, tech_pvt);
-			tech_pvt->session = *new_session;
-		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
-			switch_core_session_destroy(new_session);
-			return SWITCH_STATUS_GENERR;
-		}
-
-		if (outbound_profile) {
-			char name[128];
-			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
-			switch_channel_set_caller_profile(channel, caller_profile);
-			tech_pvt->caller_profile = caller_profile;
-			snprintf(name, sizeof(name), "PortAudio/%s-%04x",
-					 caller_profile->destination_number ? caller_profile->destination_number : modname,
-					 rand() & 0xffff);
-			switch_channel_set_name(channel, name);
-		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
-			switch_core_session_destroy(new_session);
-			return SWITCH_STATUS_GENERR;
-		}
-
-		switch_channel_set_flag(channel, CF_OUTBOUND);
-		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
-		switch_channel_set_state(channel, CS_INIT);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	return SWITCH_STATUS_GENERR;
-
-}
-
 static switch_status channel_waitfor_read(switch_core_session *session, int ms, int stream_id)
 {
 	struct private_object *tech_pvt = NULL;
@@ -399,7 +347,7 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	if (tech_pvt->audio_in &&
 		(samples =
 		 ReadAudioStream(tech_pvt->audio_in, tech_pvt->read_frame.data,
-						 tech_pvt->read_codec.implementation->samples_per_frame))) {
+						 tech_pvt->read_codec.implementation->samples_per_frame)) != 0) {
 		tech_pvt->read_frame.datalen = samples * 2;
 		tech_pvt->read_frame.samples = samples;
 		*frame = &tech_pvt->read_frame;
@@ -524,7 +472,54 @@ static const switch_loadable_module_interface channel_module_interface = {
 	/*.api_interface */ &channel_api_interface
 };
 
+/* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
+   that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
+*/
+static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
+											  switch_core_session **new_session)
+{
+	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, NULL)) != 0) {
+		struct private_object *tech_pvt;
+		switch_channel *channel;
+		switch_caller_profile *caller_profile;
 
+		switch_core_session_add_stream(*new_session, NULL);
+		if ((tech_pvt =
+			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
+			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			channel = switch_core_session_get_channel(*new_session);
+			switch_core_session_set_private(*new_session, tech_pvt);
+			tech_pvt->session = *new_session;
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
+			switch_core_session_destroy(new_session);
+			return SWITCH_STATUS_GENERR;
+		}
+
+		if (outbound_profile) {
+			char name[128];
+			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+			switch_channel_set_caller_profile(channel, caller_profile);
+			tech_pvt->caller_profile = caller_profile;
+			snprintf(name, sizeof(name), "PortAudio/%s-%04x",
+					 caller_profile->destination_number ? caller_profile->destination_number : modname,
+					 rand() & 0xffff);
+			switch_channel_set_name(channel, name);
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
+			switch_core_session_destroy(new_session);
+			return SWITCH_STATUS_GENERR;
+		}
+
+		switch_channel_set_flag(channel, CF_OUTBOUND);
+		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
+		switch_channel_set_state(channel, CS_INIT);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_GENERR;
+
+}
 
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
@@ -796,12 +791,12 @@ static switch_status place_call(char *dest, char *out, size_t outlen)
 
 	strncpy(out, "FAIL", outlen - 1);
 
-	if ((session = switch_core_session_request(&channel_endpoint_interface, NULL))) {
+	if ((session = switch_core_session_request(&channel_endpoint_interface, NULL)) != 0) {
 		struct private_object *tech_pvt;
 		switch_channel *channel;
 
 		switch_core_session_add_stream(session, NULL);
-		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object)))) {
+		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
@@ -815,7 +810,7 @@ static switch_status place_call(char *dest, char *out, size_t outlen)
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
 																  globals.dialplan,
 																  globals.cid_name,
-																  globals.cid_num, NULL, NULL, NULL, dest))) {
+																  globals.cid_num, NULL, NULL, NULL, dest)) != 0) {
 			char name[128];
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 			snprintf(name, sizeof(name), "PortAudio/%s-%04x",
@@ -863,7 +858,7 @@ static switch_status hup_call(char *callid, char *out, size_t outlen)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid))) {
+	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
 
 		channel = switch_core_session_get_channel(tech_pvt->session);
 		assert(channel != NULL);
@@ -884,13 +879,13 @@ static switch_status send_dtmf(char *callid, char *out, size_t outlen)
 	switch_channel *channel = NULL;
 	char *dtmf;
 
-	if ((dtmf = strchr(callid, ' '))) {
+	if ((dtmf = strchr(callid, ' ')) != 0) {
 		*dtmf++ = '\0';
 	} else {
 		dtmf = "";
 	}
 
-	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid))) {
+	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
 		channel = switch_core_session_get_channel(tech_pvt->session);
 		assert(channel != NULL);
 		switch_channel_queue_dtmf(channel, dtmf);
@@ -907,7 +902,7 @@ static switch_status answer_call(char *callid, char *out, size_t outlen)
 	struct private_object *tech_pvt = NULL;
 	switch_channel *channel = NULL;
 
-	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid))) {
+	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
 		channel = switch_core_session_get_channel(tech_pvt->session);
 		assert(channel != NULL);
 		switch_set_flag(tech_pvt, TFLAG_ANSWER);
@@ -945,7 +940,7 @@ static switch_status call_info(char *callid, char *out, size_t outlen)
 			tech_pvt = val;
 			print_info(tech_pvt, out + strlen(out), outlen - strlen(out));
 		}
-	} else if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid))) {
+	} else if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
 		print_info(tech_pvt, out, outlen);
 	} else {
 		strncpy(out, "NO SUCH CALL", outlen - 1);

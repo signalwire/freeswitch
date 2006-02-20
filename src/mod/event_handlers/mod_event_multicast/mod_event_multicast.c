@@ -37,7 +37,7 @@ static switch_memory_pool *module_pool;
 
 static struct {
 	char *address;
-	int port;
+	switch_port_t port;
 	switch_sockaddr_t *addr;
 	switch_socket_t *udp_socket;
 	int running;
@@ -70,7 +70,7 @@ static switch_status load_config(void)
 			if (!strcasecmp(var, "address")) {
 				set_global_address(val);
 			} else if (!strcasecmp(var, "port")) {
-				globals.port = atoi(val);
+				globals.port = (switch_port_t)atoi(val);
 			}
 		}
 	}
@@ -205,13 +205,13 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 				switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");
 				var = buf;
 				while(*var) {
-					if ((val = strchr(var, ':'))) {
+					if ((val = strchr(var, ':')) != 0) {
 						char varname[512];
 						*val++ = '\0';
 						while(*val == ' ') {
 							val++;
 						}
-						if ((term = strchr(val, '\r')) || (term=strchr(val, '\n'))) {
+						if ((term = strchr(val, '\r')) != 0 || (term=strchr(val, '\n')) != 0) {
 							*term = '\0';
 							while(*term == '\r' || *term == '\n') {
 								term++;

@@ -124,14 +124,14 @@ switch_caller_extension *directory_dialplan_hunt(switch_core_session *session)
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DIRECTORY VALUE [%s]=[%s]\n", var, val);
 			if(!strcasecmp(var, "callflow")) {
 				if (!extension) {
-					if (!(extension = switch_caller_extension_new(session, caller_profile->destination_number,
-																  caller_profile->destination_number))) {
+					if ((extension = switch_caller_extension_new(session, caller_profile->destination_number,
+																  caller_profile->destination_number)) == 0) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "memory error!\n");
 						goto out;
 					}
 				}
 				switch_copy_string(app, val, sizeof(app));
-				if ((data = strchr(app, ' '))) {
+				if ((data = strchr(app, ' ')) != 0) {
 					*data++ = '\0';
 				}
 				switch_caller_extension_add_application(session, extension, app, data);

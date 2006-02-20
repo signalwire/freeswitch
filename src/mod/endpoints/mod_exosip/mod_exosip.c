@@ -70,9 +70,6 @@ typedef enum {
 #define PACKET_LEN 160
 #define DEFAULT_BYTES_PER_FRAME 160
 
-
-static const switch_endpoint_interface exosip_endpoint_interface;
-
 static struct {
 	int debug;
 	int bytes_per_frame;
@@ -288,9 +285,8 @@ static switch_status exosip_on_init(switch_core_session *session)
 		}
 		/* Setup our INVITE */
 		eXosip_lock();
-		if (!
-			(dest_uri =
-			 (char *) switch_core_session_alloc(session, strlen(tech_pvt->caller_profile->destination_number) + 10))) {
+		if ((dest_uri =
+			 (char *) switch_core_session_alloc(session, strlen(tech_pvt->caller_profile->destination_number) + 10)) == 0) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "AIEEEE!\n");
 			assert(dest_uri != NULL);
 		}
@@ -378,51 +374,6 @@ static switch_status exosip_on_transmit(switch_core_session *session)
 {
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "EXOSIP TRANSMIT\n");
 	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											 switch_core_session **new_session)
-{
-	if ((*new_session = switch_core_session_request(&exosip_endpoint_interface, NULL))) {
-		struct private_object *tech_pvt;
-		switch_channel *channel;
-
-		switch_core_session_add_stream(*new_session, NULL);
-		if ((tech_pvt =
-			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
-			memset(tech_pvt, 0, sizeof(*tech_pvt));
-			channel = switch_core_session_get_channel(*new_session);
-			switch_core_session_set_private(*new_session, tech_pvt);
-			switch_mutex_init(&tech_pvt->rtp_lock, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
-			tech_pvt->session = *new_session;
-		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
-			switch_core_session_destroy(new_session);
-			return SWITCH_STATUS_GENERR;
-		}
-
-		if (outbound_profile) {
-			char name[128];
-			switch_caller_profile *caller_profile;
-
-			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
-			switch_channel_set_caller_profile(channel, caller_profile);
-			tech_pvt->caller_profile = caller_profile;
-			snprintf(name, sizeof(name), "Exosip/%s-%04x", caller_profile->destination_number, rand() & 0xffff);
-			switch_channel_set_name(channel, name);
-		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
-			switch_core_session_destroy(new_session);
-			return SWITCH_STATUS_GENERR;
-		}
-
-		switch_channel_set_flag(channel, CF_OUTBOUND);
-		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
-		switch_channel_set_state(channel, CS_INIT);
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	return SWITCH_STATUS_GENERR;
 }
 
 
@@ -751,6 +702,51 @@ static const switch_loadable_module_interface exosip_module_interface = {
 	/*.application_interface */ NULL
 };
 
+static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
+											 switch_core_session **new_session)
+{
+	if ((*new_session = switch_core_session_request(&exosip_endpoint_interface, NULL)) != 0) {
+		struct private_object *tech_pvt;
+		switch_channel *channel;
+
+		switch_core_session_add_stream(*new_session, NULL);
+		if ((tech_pvt =
+			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
+			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			channel = switch_core_session_get_channel(*new_session);
+			switch_core_session_set_private(*new_session, tech_pvt);
+			switch_mutex_init(&tech_pvt->rtp_lock, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
+			tech_pvt->session = *new_session;
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
+			switch_core_session_destroy(new_session);
+			return SWITCH_STATUS_GENERR;
+		}
+
+		if (outbound_profile) {
+			char name[128];
+			switch_caller_profile *caller_profile;
+
+			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
+			switch_channel_set_caller_profile(channel, caller_profile);
+			tech_pvt->caller_profile = caller_profile;
+			snprintf(name, sizeof(name), "Exosip/%s-%04x", caller_profile->destination_number, rand() & 0xffff);
+			switch_channel_set_name(channel, name);
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
+			switch_core_session_destroy(new_session);
+			return SWITCH_STATUS_GENERR;
+		}
+
+		switch_channel_set_flag(channel, CF_OUTBOUND);
+		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
+		switch_channel_set_state(channel, CS_INIT);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_GENERR;
+}
+
 #if 1
 SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 {
@@ -792,13 +788,13 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 	char *dpayload, *dname, *drate;
 	char *remote_sdp_str = NULL;
 
-	if ((session = switch_core_session_request(&exosip_endpoint_interface, NULL))) {
+	if ((session = switch_core_session_request(&exosip_endpoint_interface, NULL)) != 0) {
 		struct private_object *tech_pvt;
 		switch_codec_interface *codecs[SWITCH_MAX_CODECS];
 		int num_codecs = 0;
 
 		switch_core_session_add_stream(session, NULL);
-		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object)))) {
+		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
@@ -815,7 +811,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 																  event->request->from->displayname,
 																  event->request->from->url->username,
 																  event->request->from->url->host,
-																  NULL, NULL, event->request->req_uri->username))) {
+																  NULL, NULL, event->request->req_uri->username)) != 0) {
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}
 
@@ -827,7 +823,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		snprintf(name, sizeof(name), "Exosip/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
 		switch_channel_set_name(channel, name);
 
-		if (!(remote_sdp = eXosip_get_sdp_info(event->request))) {
+		if ((remote_sdp = eXosip_get_sdp_info(event->request)) == 0) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot Find Remote SDP!\n");
 			exosip_on_hangup(session);
 			switch_core_session_destroy(&session);
@@ -915,7 +911,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		switch_channel_set_state(channel, CS_INIT);
 
 
-		if (1) {
+		{
 			int rate = atoi(drate);
 
 			if (switch_core_codec_init(&tech_pvt->read_codec,
@@ -975,7 +971,7 @@ static void destroy_call_by_event(eXosip_event_t * event)
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
 
-	if (!(tech_pvt = get_pvt_by_call_id(event->cid))) {
+	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Um in case you are interested, Can't find the pvt [%d]!\n",
 							  event->cid);
 		return;
@@ -1001,12 +997,12 @@ static switch_status parse_sdp_media(sdp_media_t * media, char **dname, char **d
 		attr = (sdp_attribute_t *) osip_list_get(media->a_attributes, pos);
 		if (attr != NULL && strcasecmp(attr->a_att_field, "rtpmap") == 0) {
 			payload = attr->a_att_value;
-			if ((name = strchr(payload, ' '))) {
+			if ((name = strchr(payload, ' ')) != 0) {
 				*(name++) = '\0';
 				/* Name and payload are required */
 				*dpayload = strdup(payload);
 				status = SWITCH_STATUS_SUCCESS;
-				if ((rate = strchr(name, '/'))) {
+				if ((rate = strchr(name, '/')) != 0) {
 					*(rate++) = '\0';
 					*drate = strdup(rate);
 					*dname = strdup(name);
@@ -1041,7 +1037,7 @@ static void handle_answer(eXosip_event_t * event)
 	switch_channel *channel;
 
 
-	if (!(tech_pvt = get_pvt_by_call_id(event->cid))) {
+	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Um in case you are interested, Can't find the pvt!\n");
 		return;
 	}
@@ -1056,7 +1052,7 @@ static void handle_answer(eXosip_event_t * event)
 	}
 
 	/* Get all of the remote SDP elements... stuff */
-	if (!(remote_sdp = eXosip_get_sdp_info(event->response))) {
+	if ((remote_sdp = eXosip_get_sdp_info(event->response)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cant Find SDP?\n");
 		switch_channel_hangup(channel);
 		return;
@@ -1080,7 +1076,7 @@ static void handle_answer(eXosip_event_t * event)
 	tech_pvt->tid = event->tid;
 
 
-	if (1) {
+	{
 		int rate = atoi(drate);
 
 
@@ -1348,7 +1344,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 
 	globals.running = 1;
 	while (globals.running > 0) {
-		if (!(event = eXosip_event_wait(0, 100))) {
+		if ((event = eXosip_event_wait(0, 100)) == 0) {
 			switch_yield(1000);
 			continue;
 		}

@@ -63,7 +63,7 @@ static switch_status mod_ldap_open(switch_directory_handle *dh, char *source, ch
 	int  auth_method = LDAP_AUTH_SIMPLE;
 	int desired_version = LDAP_VERSION3;
 
-	if (!(context = switch_core_alloc(dh->memory_pool, sizeof(*context)))) {
+	if ((context = switch_core_alloc(dh->memory_pool, sizeof(*context))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
 	
@@ -188,7 +188,7 @@ switch_status mod_ldap_next_pair(switch_directory_handle *dh, char **var, char *
 			context->attr = ldap_next_attribute(context->ld, context->entry, context->ber);
 		}
 		context->vitt++;
-		if (context->entry && context->attr && (context->vals = ldap_get_values(context->ld, context->entry, context->attr))) {
+		if (context->entry && context->attr && (context->vals = ldap_get_values(context->ld, context->entry, context->attr)) != 0) {
 			goto itter;
 		}
 	}

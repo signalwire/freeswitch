@@ -201,6 +201,22 @@
 			<File
 				RelativePath="..\..\..\..\libs\osip\src\osipparser2\osip_rfc3264.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						WarningLevel="3"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						WarningLevel="3"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter

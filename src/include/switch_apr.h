@@ -384,6 +384,7 @@ typedef apr_socket_t switch_socket_t;
 /** Freeswitch's socket address type, used to ensure protocol independence */
 typedef apr_sockaddr_t switch_sockaddr_t;
 
+typedef apr_port_t switch_port_t;
 /* function definitions */
 
 /**

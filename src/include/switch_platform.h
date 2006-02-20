@@ -39,7 +39,9 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
-#pragma warning(disable:4152 4054 4100)
+// C4200 Non standard extension C zero sized array
+// C4204: nonstandard extension used : non-constant aggregate initializer
+#pragma warning(disable:4152 4054 4100 4142 4200 4204)
 #endif
 
 #if (_MSC_VER >= 1400) // VC8+

@@ -425,14 +425,14 @@ SWITCH_DECLARE(switch_status) switch_core_file_read(switch_file_handle *fh, void
 {
 	assert(fh != NULL);
 
-	return fh->file_interface->file_read(fh, data, (unsigned int *) len);
+	return fh->file_interface->file_read(fh, data, len);
 }
 
 SWITCH_DECLARE(switch_status) switch_core_file_write(switch_file_handle *fh, void *data, size_t *len)
 {
 	assert(fh != NULL);
 
-	return fh->file_interface->file_write(fh, data, (unsigned int *) len);
+	return fh->file_interface->file_write(fh, data, len);
 }
 
 SWITCH_DECLARE(switch_status) switch_core_file_seek(switch_file_handle *fh, unsigned int *cur_pos, unsigned int samples,

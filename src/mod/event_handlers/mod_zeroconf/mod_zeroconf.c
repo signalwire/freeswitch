@@ -135,9 +135,9 @@ static void event_handler(switch_event *event)
 			switch_event_header *hp;
 			char *service = switch_event_get_header(event, "service");
 			char *port = switch_event_get_header(event, "port");
-			int porti = 0;
+			sw_port porti = 0;
 			for (hp = event->headers; hp; hp = hp->next) {
-				int len = strlen(hp->name) + strlen(hp->value) + 2;
+				size_t len = strlen(hp->name) + strlen(hp->value) + 2;
 				char *data = malloc(len);
 
 				if (!data) {
@@ -156,7 +156,7 @@ static void event_handler(switch_event *event)
 				service = "_freeswitch._tcp";
 			}
 			if (port) {
-				porti = atoi(port);				
+				porti = (sw_port)atoi(port);				
 			}
 
 			switch_mutex_lock(globals.zc_lock);			
@@ -208,7 +208,7 @@ static switch_status load_config(void)
 	while (switch_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, "settings")) {
 			if (!strcmp(var, "browse")) {
-				if ((oid = switch_core_alloc(module_pool, sizeof(*oid)))) {
+				if ((oid = switch_core_alloc(module_pool, sizeof(*oid))) != 0) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bind browser to to %s\n", val);
 					switch_mutex_lock(globals.zc_lock);	
 					sw_discovery_browse(globals.discovery, 0, val, NULL, my_browser, NULL, oid);
@@ -308,7 +308,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 
 	RUNNING = 1;
 	while(RUNNING == 1) {
-		unsigned int ms;
+		sw_uint32 ms;
 		ms = 100;
 		sw_discovery_step(globals.discovery, &ms);
 		switch_yield(1000);

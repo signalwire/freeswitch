@@ -223,13 +223,13 @@ int on_msg(void *user_data, ikspak * pak)
 	char retbuf[1024] = "";
 	char *p;
 
-	if ((p = strchr(cmd, '\r'))) {
+	if ((p = strchr(cmd, '\r')) != 0) {
 		*p++ = '\0';
-	} else if ((p = strchr(cmd, '\n'))) {
+	} else if ((p = strchr(cmd, '\n')) != 0) {
 		*p++ = '\0';
 	}
 
-	if ((arg = strchr(cmd, ' '))) {
+	if ((arg = strchr(cmd, ' ')) != 0) {
 		*arg++ = '\0';
 	}
 

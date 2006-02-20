@@ -69,7 +69,7 @@ switch_caller_extension *demo_dialplan_hunt(switch_core_session *session)
 				memset(app, 0, sizeof(app));
 				strncpy(app, val, sizeof(app));
 
-				if ((data = strchr(app, ' '))) {
+				if ((data = strchr(app, ' ')) != 0) {
 					*data = '\0';
 					data++;
 				} else {
@@ -77,10 +77,9 @@ switch_caller_extension *demo_dialplan_hunt(switch_core_session *session)
 					continue;
 				}
 				if (!extension) {
-					if (!
-						(extension =
+					if ((extension =
 						 switch_caller_extension_new(session, caller_profile->destination_number,
-													 caller_profile->destination_number))) {
+													 caller_profile->destination_number)) == 0) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "memory error!\n");
 						break;
 					}
