@@ -288,7 +288,7 @@ struct switch_speech_interface {
 	switch_status (*speech_open)(switch_speech_handle *sh,
 								 unsigned int flags);
 	/*! function to close the speech interface */
-	switch_status (*speech_close)(switch_speech_handle *);
+	switch_status (*speech_close)(switch_speech_handle *, unsigned int *flags);
 	/*! function to feed audio to the ASR*/
 	switch_status (*speech_feed_asr)(switch_speech_handle *sh, void *data, unsigned int *len, int rate, unsigned int *flags);
 	/*! function to read text from the ASR*/

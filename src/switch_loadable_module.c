@@ -514,6 +514,9 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool 
 	for (x = 0; x < preflen; x++) {
 		if ((codec_interface = switch_loadable_module_get_codec_interface(prefs[x])) != 0 ) {
 			array[i++] = codec_interface;
+			if (i > arraylen) {
+				break;
+			}
 		}
 	}
 
