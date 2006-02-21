@@ -990,16 +990,20 @@ static int config_wanpipe(int reload)
 
 	for(current_span = 1; current_span < MAX_SPANS; current_span++) {
 		if (SPANS[current_span]) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Launch span %d\n", current_span);
+
 			if (!SPANS[current_span]->l1) {
 				SPANS[current_span]->l1 = PRI_LAYER_1_ULAW;
 			}
-			sangoma_init_pri(&SPANS[current_span]->spri,
-							 current_span,
-							 SPANS[current_span]->dchan,
-							 SPANS[current_span]->pswitch,
-							 SPANS[current_span]->node,
-							 globals.debug);
+			if (sangoma_init_pri(&SPANS[current_span]->spri,
+								 current_span,
+								 SPANS[current_span]->dchan,
+								 SPANS[current_span]->pswitch,
+								 SPANS[current_span]->node,
+								 globals.debug)) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot launch span %d\n", current_span);
+				continue;
+			}
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Launch span %d\n", current_span);
 			pri_thread_launch(&SPANS[current_span]->spri);
 		}
 	}
