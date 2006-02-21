@@ -115,11 +115,14 @@ static void switch_core_standard_on_transmit(switch_core_session *session);
 static struct switch_core_runtime runtime;
 
 
+#pragma warning( push )
+#pragma warning( disable : 4100 )
 static int handle_SIGPIPE(int sig)
 {
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Sig Pipe!\n");
 	return 0;
 }
+#pragma warning( pop )
 
 #ifdef TRAP_BUS
 static int handle_SIGBUS(int sig)
@@ -130,11 +133,14 @@ static int handle_SIGBUS(int sig)
 #endif
 
 /* no ctl-c mofo */
+
+#pragma warning( push )
+#pragma warning( disable : 4100 )
 static int handle_SIGINT(int sig)
 {
 	return 0;
 }
-
+#pragma warning( pop )
 
 static void db_pick_path(char *dbname, char *buf, size_t size)
 {
@@ -617,6 +623,8 @@ SWITCH_DECLARE(switch_status) switch_core_timer_destroy(switch_timer *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#pragma warning( push )
+#pragma warning( disable : 4100 )
 static void *switch_core_service_thread(switch_thread *thread, void *obj)
 {
 	switch_core_thread_session *data = obj;
@@ -648,6 +656,7 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 	data->running = 0;
 	return NULL;
 }
+#pragma warning( pop )
 
 /* Either add a timeout here or make damn sure the thread cannot get hung somehow (my preference) */
 SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_thread_session *thread_session)
@@ -1658,11 +1667,13 @@ static void switch_core_standard_on_loopback(switch_core_session *session)
 	}
 }
 
+#pragma warning( push )
+#pragma warning( disable : 4100 )
 static void switch_core_standard_on_transmit(switch_core_session *session)
 {
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard TRANSMIT\n");
 }
-
+#pragma warning( pop )
 
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session *session)
 {
@@ -1978,10 +1989,13 @@ SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash **hash, switch_m
 	return SWITCH_STATUS_GENERR;
 }
 
+#pragma warning( push )
+#pragma warning( disable : 4100 )
 SWITCH_DECLARE(switch_status) switch_core_hash_destroy(switch_hash *hash)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
+#pragma warning( pop )
 
 SWITCH_DECLARE(switch_status) switch_core_hash_insert_dup(switch_hash *hash, char *key, void *data)
 {

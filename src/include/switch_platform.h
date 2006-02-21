@@ -39,10 +39,15 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
-// C4200 Non standard extension C zero sized array
-// C4204: nonstandard extension used : non-constant aggregate initializer
+/* disable the following warnings 
+ * C4152: non standard extension, function/data ptr conversion in expression
+ * C4054: A function pointer is cast (possibly incorrectly) to a data pointer.
+ * C4100: The formal parameter is not referenced in the body of the function. The unreferenced parameter is ignored. 
+ * C4142: A type is redefined in a manner that has no effect on the generated code.
+ * C4200: Non standard extension C zero sized array
+ * C4204: nonstandard extension used : non-constant aggregate initializer 
+ */
 #pragma warning(disable:4152 4054 4100 4142 4200 4204)
-#endif
 
 #if (_MSC_VER >= 1400) // VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE
@@ -52,6 +57,36 @@ extern "C" {
 #define _CRT_NONSTDC_NO_DEPRECATE
 #endif
 #endif // VC8+
+
+#if  _MSC_VER < 1300
+#ifndef __FUNCTION__
+#define __FUNCTION__ ""
+#endif
+#endif
+
+#ifndef uint32_t
+typedef unsigned __int8		uint8_t;
+typedef unsigned __int16	uint16_t;
+typedef unsigned __int32	uint32_t;
+typedef unsigned __int64    uint64_t;
+typedef __int8		int8_t;
+typedef __int16		int16_t;
+typedef __int32		int32_t;
+typedef __int64		int64_t;
+typedef unsigned long	in_addr_t;
+#endif
+
+#else
+#include <sys/types.h>
+#ifndef getpid
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <time.h>
+#endif
+
+#endif // _MSC_VER
+
 
 #ifdef WIN32
 #if defined(SWITCH_CORE_DECLARE_STATIC)
@@ -80,34 +115,6 @@ extern "C" {
 #define SWITCH_DECLARE_NONSTD(type) type
 #define SWITCH_MOD_DECLARE(type) type
 #define SWITCH_DECLARE_DATA
-#ifndef getpid
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <time.h>
-#endif
-#endif
-
-#ifndef uint32_t
-#ifdef WIN32
-typedef unsigned __int8		uint8_t;
-typedef unsigned __int16	uint16_t;
-typedef unsigned __int32	uint32_t;
-typedef unsigned __int64    uint64_t;
-typedef __int8		int8_t;
-typedef __int16		int16_t;
-typedef __int32		int32_t;
-typedef __int64		int64_t;
-typedef unsigned long	in_addr_t;
-#else
-#include <sys/types.h>
-#endif
-#endif
-
-#if defined(_MSC_VER) && _MSC_VER < 1300
-#ifndef __FUNCTION__
-#define __FUNCTION__ ""
-#endif
 #endif
 
 #ifdef DOXYGEN

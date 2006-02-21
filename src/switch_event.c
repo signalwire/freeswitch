@@ -143,6 +143,8 @@ static int switch_events_match(switch_event *event, switch_event_node *node)
 	return match;
 }
 
+#pragma warning( push )
+#pragma warning( disable : 4100 )
 static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void *obj)
 {
 	switch_event_node *node;
@@ -195,6 +197,7 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void 
 	THREAD_RUNNING = 0;
 	return NULL;
 }
+#pragma warning( pop ) 
 
 SWITCH_DECLARE(switch_status) switch_event_running(void)
 {
