@@ -114,16 +114,17 @@ static void switch_core_standard_on_transmit(switch_core_session *session);
 /* The main runtime obj we keep this hidden for ourselves */
 static struct switch_core_runtime runtime;
 
-
+#ifdef WIN32
 #pragma warning( push )
 #pragma warning( disable : 4100 )
+#endif
 static int handle_SIGPIPE(int sig)
 {
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Sig Pipe!\n");
 	return 0;
 }
+#ifdef WIN32
 #pragma warning( pop )
-
 #ifdef TRAP_BUS
 static int handle_SIGBUS(int sig)
 {
@@ -131,17 +132,20 @@ static int handle_SIGBUS(int sig)
 	return 0;
 }
 #endif
+#endif
 
 /* no ctl-c mofo */
-
+#ifdef WIN32
 #pragma warning( push )
 #pragma warning( disable : 4100 )
+#endif
 static int handle_SIGINT(int sig)
 {
 	return 0;
 }
+#ifdef WIN32
 #pragma warning( pop )
-
+#endif
 static void db_pick_path(char *dbname, char *buf, size_t size)
 {
 
@@ -623,8 +627,10 @@ SWITCH_DECLARE(switch_status) switch_core_timer_destroy(switch_timer *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#ifdef WIN32
 #pragma warning( push )
 #pragma warning( disable : 4100 )
+#endif
 static void *switch_core_service_thread(switch_thread *thread, void *obj)
 {
 	switch_core_thread_session *data = obj;
@@ -656,8 +662,9 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 	data->running = 0;
 	return NULL;
 }
+#ifdef WIN32
 #pragma warning( pop )
-
+#endif
 /* Either add a timeout here or make damn sure the thread cannot get hung somehow (my preference) */
 SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_thread_session *thread_session)
 {
@@ -1667,13 +1674,17 @@ static void switch_core_standard_on_loopback(switch_core_session *session)
 	}
 }
 
+#ifdef WIN32
 #pragma warning( push )
 #pragma warning( disable : 4100 )
+#endif
 static void switch_core_standard_on_transmit(switch_core_session *session)
 {
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard TRANSMIT\n");
 }
+#ifdef WIN32
 #pragma warning( pop )
+#endif
 
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session *session)
 {
@@ -1989,13 +2000,17 @@ SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash **hash, switch_m
 	return SWITCH_STATUS_GENERR;
 }
 
+#ifdef WIN32
 #pragma warning( push )
 #pragma warning( disable : 4100 )
+#endif
 SWITCH_DECLARE(switch_status) switch_core_hash_destroy(switch_hash *hash)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
+#ifdef WIN32
 #pragma warning( pop )
+#endif
 
 SWITCH_DECLARE(switch_status) switch_core_hash_insert_dup(switch_hash *hash, char *key, void *data)
 {
