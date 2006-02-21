@@ -1,4 +1,4 @@
-CFLAGS += -DWITH_OPENLDAP
+CFLAGS += -DWITH_OPENLDAP -DLDAP_DEPRECATED
 LDFLAGS += -lldap_r -llber
 
 LINKER=$(CC)
@@ -7,7 +7,7 @@ LINKER=$(CC)
 all:	depends $(MODNAME).so
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install openldap-2.3.19.tgz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install openldap-2.3.19.tgz --prefix=$(PREFIX) --disable-bdb --disable-hdb
 
 $(MODNAME).so: $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
