@@ -1,4 +1,4 @@
-/* 
+A/* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
  *
@@ -29,17 +29,12 @@
  * mod_wanpipe.c -- WANPIPE PRI Channel Module
  *
  */
+
+
 #include <switch.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/queue.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <string.h>
 #include <libsangoma.h>
 #include <sangoma_pri.h>
+#include <libteletone.h>
 
 static const char modname[] = "mod_wanpipe";
 #define STRLEN 15
@@ -110,6 +105,8 @@ struct private_object {
 	int callno;
 	int cause;
 	q931_call *call;
+	teletone_generation_session_t tone_session;
+	switch_buffer *dtmf_buffer;
 };
 
 struct channel_map {
@@ -206,7 +203,6 @@ static void *pri_thread_run(switch_thread *thread, void *obj);
 static int config_wanpipe(int reload);
 
 
-
 /* 
    State methods they get called when the state changes to the specific state 
    returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
@@ -252,6 +248,18 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
+
+	teletone_init_session(&tech_pvt->tone_session, 1024, NULL, NULL);
+	
+	if (1 || globals.debug) {
+		tech_pvt->tone_session.debug = globals.debug;
+		tech_pvt->tone_session.debug_stream = stdout;
+	}
+	
+	tech_pvt->tone_session.rate = rate;
+	tech_pvt->tone_session.duration = 150 * (tech_pvt->tone_session.rate / 1000);
+	tech_pvt->tone_session.wait = 50 * (tech_pvt->tone_session.rate / 1000);
+	
 
 	/* Move Channel's State Machine to RING */
 	switch_channel_set_state(channel, CS_RING);
@@ -313,6 +321,8 @@ static switch_status wanpipe_on_hangup(switch_core_session *session)
 	pri_destroycall(tech_pvt->spri->pri,
 					tech_pvt->hangup_event.hangup.call ? tech_pvt->hangup_event.hangup.call : tech_pvt->ring_event.ring.call);
 	*/
+
+	teletone_destroy_session(&tech_pvt->tone_session);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -589,11 +599,73 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 	return status;
 }
 
+static switch_status wanpipe_send_dtmf(switch_core_session *session, char *digits)
+{
+	struct private_object *tech_pvt;
+	switch_channel *channel = NULL;
+	switch_status status = SWITCH_STATUS_SUCCESS;
+	int wrote = 0;
+	char *cur = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	if (!tech_pvt->dtmf_buffer) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate DTMF Buffer....");
+		if (switch_buffer_create(switch_core_session_get_pool(session), &tech_pvt->dtmf_buffer, 960) != SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "FAILURE!\n");
+			return SWITCH_STATUS_FALSE;
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SUCCESS!\n");
+		}
+	}
+	for (cur = digits; *cur; cur++) {
+		if ((wrote = teletone_mux_tones(&tech_pvt->tone_session, &tech_pvt->tone_session.TONES[(int)*cur]))) {
+			switch_buffer_write(tech_pvt->dtmf_buffer, tech_pvt->tone_session.buffer, wrote * 2);
+		}
+	}
+
+	return status;
+}
+
+static switch_status wanpipe_receive_message(switch_core_session *session, switch_core_session_message *msg)
+{
+	return SWITCH_STATUS_FALSE;
+}
+
+static switch_status wanpipe_kill_channel(switch_core_session *session, int sig)
+{
+	struct private_object *tech_pvt;
+	switch_channel *channel = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+
+	switch_clear_flag(tech_pvt, TFLAG_MEDIA);
+
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
 static const switch_io_routines wanpipe_io_routines = {
 	/*.outgoing_channel */ wanpipe_outgoing_channel,
 	/*.answer_channel */ wanpipe_answer_channel,
 	/*.read_frame */ wanpipe_read_frame,
-	/*.write_frame */ wanpipe_write_frame
+	/*.write_frame */ wanpipe_write_frame,
+	/*.kill_channel */ wanpipe_kill_channel,
+	/*.waitfor_read */ NULL,
+	/*.waitfor_read */ NULL,
+	/*.send_dtmf*/ wanpipe_send_dtmf,
+	/*.receive_message*/ wanpipe_receive_message
 };
 
 static const switch_state_handler_table wanpipe_state_handlers = {

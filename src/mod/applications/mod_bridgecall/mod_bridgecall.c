@@ -34,7 +34,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-
 static const char modname[] = "mod_bridgecall";
 
 struct audio_bridge_data {
