@@ -131,6 +131,7 @@ depends:
 	./build/buildlib.sh . install apr-1.2.2.tar.gz --prefix=$(PREFIX)
 	./build/buildlib.sh . install apr-util-1.2.2.tar.gz --with-apr=../apr-1.2.2 --prefix=$(PREFIX)
 	./build/buildlib.sh . libresample-0.1.3.tgz --prefix=$(PREFIX)
+	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
 	rm build/freeswitch.env
 
 

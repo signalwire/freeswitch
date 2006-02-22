@@ -499,7 +499,7 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 		if (outbound_profile) {
 			char name[128];
 			snprintf(name, sizeof(name), "PortAudio/%s-%04x",
-					 caller_profile->destination_number ? outbound_profile->destination_number : modname,
+					 outbound_profile->destination_number ? outbound_profile->destination_number : modname,
 					 rand() & 0xffff);
 			switch_channel_set_name(channel, name);
 
