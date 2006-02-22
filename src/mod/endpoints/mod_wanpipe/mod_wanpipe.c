@@ -70,6 +70,8 @@ static struct {
 	int debug;
 	int panic;
 	int mtu;
+	int dtmf_on;
+	int dtmf_off;
 	char *dialplan;
 } globals;
 
@@ -102,8 +104,10 @@ struct private_object {
 	switch_caller_profile *caller_profile;
 	int socket;
 	int callno;
+	int span;
 	int cause;
 	q931_call *call;
+	teletone_dtmf_detect_state_t dtmf_detect;
 	teletone_generation_session_t tone_session;
 	switch_buffer *dtmf_buffer;
 };
@@ -248,17 +252,22 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
 
+
+	/* Setup artificial DTMF stuff */
+	memset(&tech_pvt->tone_session, 0, sizeof(tech_pvt->tone_session));
 	teletone_init_session(&tech_pvt->tone_session, 1024, NULL, NULL);
 	
-	if (1 || globals.debug) {
+	if (globals.debug) {
 		tech_pvt->tone_session.debug = globals.debug;
 		tech_pvt->tone_session.debug_stream = stdout;
 	}
 	
 	tech_pvt->tone_session.rate = rate;
-	tech_pvt->tone_session.duration = 150 * (tech_pvt->tone_session.rate / 1000);
-	tech_pvt->tone_session.wait = 50 * (tech_pvt->tone_session.rate / 1000);
+	tech_pvt->tone_session.duration = globals.dtmf_on * (tech_pvt->tone_session.rate / 1000);
+	tech_pvt->tone_session.wait = globals.dtmf_off * (tech_pvt->tone_session.rate / 1000);
 	
+	teletone_dtmf_detect_init (&tech_pvt->dtmf_detect, rate);
+
 
 	/* Move Channel's State Machine to RING */
 	switch_channel_set_state(channel, CS_RING);
@@ -516,6 +525,7 @@ static switch_status wanpipe_read_frame(switch_core_session *session, switch_fra
 	switch_channel *channel = NULL;
 	void *bp;
 	int bytes = 0, res = 0;
+	char digit_str[80];
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -552,6 +562,17 @@ static switch_status wanpipe_read_frame(switch_core_session *session, switch_fra
 		bp += bytes;
 	}
 	tech_pvt->read_frame.datalen = bytes;
+	tech_pvt->read_frame.samples = bytes / 2;
+
+	res = teletone_dtmf_detect (&tech_pvt->dtmf_detect, tech_pvt->read_frame.data, tech_pvt->read_frame.samples);
+	res = teletone_dtmf_get(&tech_pvt->dtmf_detect, digit_str, sizeof(digit_str));
+
+	if(digit_str[0]) {
+		switch_channel_queue_dtmf(channel, digit_str);
+		if (globals.debug) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DTMF DETECTED: [%s]\n", digit_str);
+		}
+	}
 
 	*frame = &tech_pvt->read_frame;
 	return SWITCH_STATUS_SUCCESS;
@@ -565,6 +586,8 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 	int res = 0;
 	int bytes = frame->datalen;
 	void *bp = frame->data;
+	unsigned char dtmf[1024];
+	int inuse, bread, bwrote = 0;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 
 	channel = switch_core_session_get_channel(session);
@@ -573,7 +596,33 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	return SWITCH_STATUS_SUCCESS;
+	while (tech_pvt->dtmf_buffer && bwrote < frame->datalen && bytes > 0 && (inuse = switch_buffer_inuse(tech_pvt->dtmf_buffer)) > 0) {
+		if ((bread = switch_buffer_read(tech_pvt->dtmf_buffer, dtmf, PACKET_LEN)) < PACKET_LEN) {
+			while (bread < PACKET_LEN) {
+				dtmf[bread++] = 0;
+			}
+		}
+		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
+		res = sangoma_sendmsg_socket(tech_pvt->socket,
+									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), dtmf, bread, 0);
+		if (res < 0) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE,
+								  "Bad Write %d bytes returned %d (%s)!\n", bread,
+								  res, strerror(errno));
+			if (errno == EBUSY) {
+				continue;
+			}
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Failed!\n");
+			status = SWITCH_STATUS_GENERR;
+			break;
+		} else {
+			bytes -= res;
+			bwrote += res;
+			bp += res;
+			res = 0;
+		}
+	}
+
 	while (bytes > 0) {
 		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
 		res = sangoma_sendmsg_socket(tech_pvt->socket,
@@ -614,11 +663,11 @@ static switch_status wanpipe_send_dtmf(switch_core_session *session, char *digit
 
 	if (!tech_pvt->dtmf_buffer) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate DTMF Buffer....");
-		if (switch_buffer_create(switch_core_session_get_pool(session), &tech_pvt->dtmf_buffer, 960) != SWITCH_STATUS_SUCCESS) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "FAILURE!\n");
+		if (switch_buffer_create(switch_core_session_get_pool(session), &tech_pvt->dtmf_buffer, 3192) != SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "FAILURE!\n");
 			return SWITCH_STATUS_FALSE;
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SUCCESS!\n");
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "SUCCESS!\n");
 		}
 	}
 	for (cur = digits; *cur; cur++) {
@@ -839,7 +888,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 			tech_pvt->call = event->ringing.call;
 		}
 		tech_pvt->callno = event->ring.channel;
-
+		tech_pvt->span = spri->span;
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Ringing on channel %d but it's not in use?\n", event->ringing.channel);
 	}
@@ -913,8 +962,9 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 		if (!tech_pvt->call) {
 			tech_pvt->call = event->ring.call;
 		}
-
+		
 		tech_pvt->callno = event->ring.channel;
+		tech_pvt->span = spri->span;
 
 		if ((fd = sangoma_create_socket_intr(spri->span, event->ring.channel)) < 0) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open fd!\n");
@@ -1024,6 +1074,8 @@ static int config_wanpipe(int reload)
 	int current_span = 0;
 
 	globals.mtu = DEFAULT_MTU;
+	globals.dtmf_on = 150;
+	globals.dtmf_off = 50;
 
 
 	if (!switch_config_open_file(&cfg, cf)) {
@@ -1037,6 +1089,10 @@ static int config_wanpipe(int reload)
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "mtu")) {
 				globals.mtu = atoi(val);
+			} else if (!strcmp(var, "dtmf_on")) {
+				globals.dtmf_on = atoi(val);
+			} else if (!strcmp(var, "dtmf_off")) {
+				globals.dtmf_off = atoi(val);
 			}
 		} else if (!strcasecmp(cfg.category, "span")) {
 			if (!strcmp(var, "span")) {

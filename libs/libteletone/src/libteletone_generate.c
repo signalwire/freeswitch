@@ -72,6 +72,8 @@ int teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_ha
 	ts->channels = 1;
 	ts->duration = 2000;
 	ts->wait = 500;
+	ts->tmp_duration = -1;
+	ts->tmp_wait = -1;
 	ts->handler = handler;
 	ts->user_data = user_data;
 	ts->volume = 1500;
