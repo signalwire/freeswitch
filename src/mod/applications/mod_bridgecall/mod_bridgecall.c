@@ -81,21 +81,29 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 			break;
 		}
 
-
+		/* If this call is running on early media and it answers for real, pass it along... */
 		if (!ans_b && switch_channel_test_flag(chan_a, CF_ANSWERED)) {
-			switch_channel_answer(chan_b);
+			if (!switch_channel_test_flag(chan_b, CF_ANSWERED)) {
+				switch_channel_answer(chan_b);
+			}
+			ans_b++;
 		}
 
 		if (!ans_a && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
-			switch_channel_answer(chan_a);
+			if (!switch_channel_test_flag(chan_a, CF_ANSWERED)) {
+				switch_channel_answer(chan_a);
+			}
+			ans_a++;
 		}
 
+		/* if 1 channel has DTMF pass it to the other */
 		if (switch_channel_has_dtmf(chan_a)) {
 			char dtmf[128];
 			switch_channel_dequeue_dtmf(chan_a, dtmf, sizeof(dtmf));
 			switch_core_session_send_dtmf(session_b, dtmf);
 		}
 
+		/* read audio from 1 channel and write it to the other */
 		if (switch_core_session_read_frame(session_a, &read_frame, -1, stream_id) == SWITCH_STATUS_SUCCESS
 			&& read_frame->datalen) {
 			if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {

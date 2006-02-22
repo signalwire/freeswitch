@@ -70,12 +70,12 @@ typedef enum {
 } TFLAGS;
 
 #define PACKET_LEN 160
-#define DEFAULT_BYTES_PER_FRAME 160
+#define DEFAULT_MTU 160
 
 static struct {
 	int debug;
 	int panic;
-	int bytes_per_frame;
+	int mtu;
 	char *dialplan;
 } globals;
 
@@ -84,6 +84,7 @@ struct wanpipe_pri_span {
 	int dchan;
 	unsigned int bchans;
 	int node;
+	int mtu;
 	int pswitch;
 	char *dialplan;
 	unsigned int l1;
@@ -521,7 +522,7 @@ static switch_status wanpipe_read_frame(switch_core_session *session, switch_fra
 
 	*frame = NULL;
 	memset(tech_pvt->databuf, 0, sizeof(tech_pvt->databuf));
-	while (bytes < globals.bytes_per_frame) {
+	while (bytes < globals.mtu) {
 		if ((res = sangoma_socket_waitfor(tech_pvt->socket, timeout, POLLIN | POLLERR)) < 0) {
 			return SWITCH_STATUS_GENERR;
 		} else if (res == 0) {
@@ -563,17 +564,19 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	return SWITCH_STATUS_SUCCESS;
 	while (bytes > 0) {
 		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
 		res = sangoma_sendmsg_socket(tech_pvt->socket,
 									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), bp, PACKET_LEN, 0);
 		if (res < 0) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-								  "Bad Write frame len %d write %d bytes returned %d errno %d!\n", frame->datalen,
-								  PACKET_LEN, res, errno);
+								  "Bad Write frame len %d write %d bytes returned %d (%s)!\n", frame->datalen,
+								  PACKET_LEN, res, strerror(errno));
 			if (errno == EBUSY) {
 				continue;
 			}
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Failed!\n");
 			status = SWITCH_STATUS_GENERR;
 			break;
 		} else {
@@ -742,6 +745,7 @@ static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	return 0;
 }
 
+#if 0
 static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event)
 {
 	switch_core_session *session;
@@ -771,6 +775,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 
 	return 0;
 }
+#endif 
 
 static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event)
 {
@@ -901,10 +906,11 @@ static void *pri_thread_run(switch_thread *thread, void *obj)
 {
 	struct sangoma_pri *spri = obj;
 	struct channel_map chanmap;
+
 	switch_event *s_event;
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANY, on_anything);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RING, on_ring);
-	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_ringing);
+	//SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_ringing);
 	//SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_SETUP_ACK, on_ringing);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_PROCEEDING, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANSWER, on_answer);
@@ -946,7 +952,7 @@ static int config_wanpipe(int reload)
 	char *cf = "wanpipe.conf";
 	int current_span = 0;
 
-	globals.bytes_per_frame = DEFAULT_BYTES_PER_FRAME;
+	globals.mtu = DEFAULT_MTU;
 
 
 	if (!switch_config_open_file(&cfg, cf)) {
@@ -958,8 +964,8 @@ static int config_wanpipe(int reload)
 		if (!strcasecmp(cfg.category, "settings")) {
 			if (!strcmp(var, "debug")) {
 				globals.debug = atoi(val);
-			} else if (!strcmp(var, "bpf")) {
-				globals.bytes_per_frame = atoi(val);
+			} else if (!strcmp(var, "mtu")) {
+				globals.mtu = atoi(val);
 			}
 		} else if (!strcasecmp(cfg.category, "span")) {
 			if (!strcmp(var, "span")) {
@@ -1019,6 +1025,14 @@ static int config_wanpipe(int reload)
 					SPANS[current_span]->l1 = str2l1(val);
 				} else if (!strcmp(var, "dialplan")) {
 					set_global_dialplan(val);
+				} else if (!strcmp(var, "mtu")) {
+					int mtu = atoi(val);
+
+					if (mtu >= 10 && mtu < 960) {
+						SPANS[current_span]->mtu = mtu;
+					} else {
+						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid MTU (%s)!\n", val);
+					}
 				}
 			}
 		}
@@ -1028,6 +1042,8 @@ static int config_wanpipe(int reload)
 	if (!globals.dialplan) {
 		set_global_dialplan("default");
 	}
+
+
 
 	for(current_span = 1; current_span < MAX_SPANS; current_span++) {
 		if (SPANS[current_span]) {
