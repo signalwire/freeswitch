@@ -148,6 +148,7 @@ static switch_status parse_sdp_media(sdp_media_t * media, char **dname, char **d
 static switch_status exosip_kill_channel(switch_core_session *session, int sig);
 static void activate_rtp(struct private_object *tech_pvt);
 static void deactivate_rtp(struct private_object *tech_pvt);
+static void sdp_add_rfc2833(struct osip_rfc3264 *cnf);
 
 static struct private_object *get_pvt_by_call_id(int id)
 {
@@ -284,6 +285,9 @@ static switch_status exosip_on_init(switch_core_session *session)
 				}
 			}
 		}
+
+		sdp_add_rfc2833(tech_pvt->sdp_config);
+
 		/* Setup our INVITE */
 		eXosip_lock();
 		if ((dest_uri =
@@ -493,6 +497,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	struct private_object *tech_pvt = NULL;
 	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
 	switch_channel *channel = NULL;
+	int payload = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -523,7 +528,32 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 		while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO)
 			   && tech_pvt->read_frame.datalen == 0) {
 			tech_pvt->read_frame.datalen =
-				jrtp4c_read(tech_pvt->rtp_session, tech_pvt->read_frame.data, sizeof(tech_pvt->read_buf));
+				jrtp4c_read(tech_pvt->rtp_session, tech_pvt->read_frame.data, sizeof(tech_pvt->read_buf), &payload);
+
+
+			
+			if (payload == 101) {
+				unsigned char *data;
+				unsigned int event;
+                unsigned int event_end;
+                unsigned int duration;
+				data = tech_pvt->read_frame.data;
+				
+				event = ntohl(*((unsigned int *)(data)));
+                event >>= 24;
+                event_end = ntohl(*((unsigned int *)(data)));
+                event_end <<= 8;
+                event_end >>= 24;
+                duration = ntohl(*((unsigned int *)(data)));
+                duration &= 0xFFFF;
+
+				printf("DTMF %d %d %d\n", event, event_end, duration);
+			}
+
+			if (payload != tech_pvt->payload_num) {
+				printf("lets skip %d\n", payload);
+				continue;
+			}
 
 			if (tech_pvt->read_frame.datalen > 0) {
 				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
@@ -696,6 +726,7 @@ static switch_status exosip_receive_message(switch_core_session *session, switch
 				/* Transmit 183 Progress with SDP */
 				eXosip_lock();
 				eXosip_call_build_answer(tech_pvt->tid, 183, &progress);
+				sdp_add_rfc2833(tech_pvt->sdp_config);
 				sdp_message_to_str(tech_pvt->local_sdp, &buf);
 				osip_message_set_body(progress, buf, strlen(buf));
 				osip_message_set_content_type(progress, "application/sdp");
@@ -828,6 +859,23 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void sdp_add_rfc2833(struct osip_rfc3264 *cnf)
+{
+	sdp_media_t *med = NULL;
+	sdp_attribute_t *attr = NULL;
+
+	sdp_media_init(&med);
+	sdp_attribute_init(&attr);
+	attr->a_att_field = osip_strdup("rtpmap");
+	attr->a_att_value = osip_strdup("101 telephony-event/8000");
+	osip_list_add(med->a_attributes, attr, -1);
+	
+
+	med->m_media = osip_strdup("telephony-event");
+	osip_rfc3264_add_audio_media(cnf, med, -1);
+
+}
+
 static switch_status exosip_create_call(eXosip_event_t * event)
 {
 	switch_core_session *session;
@@ -908,8 +956,11 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			int i;
 			static const switch_codec_implementation *imp;
 
+			sdp_add_rfc2833(tech_pvt->sdp_config);
+
 			for (i = 0; i < num_codecs; i++) {
 				int x = 0;
+
 				for (imp = codecs[i]->implementations; imp; imp = imp->next) {
 					sdp_add_codec(tech_pvt->sdp_config, codecs[i]->codec_type, codecs[i]->ianacode, codecs[i]->iananame,
 								  imp->samples_per_second, x++);

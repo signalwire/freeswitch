@@ -113,11 +113,13 @@ extern "C" {
 		jrtp4c->session->AbortWait();
 	}
 
-	int jrtp4c_read(struct jrtp4c *jrtp4c, void *data, int datalen)
+	int jrtp4c_read(struct jrtp4c *jrtp4c, void *data, int datalen, int *payload_type)
 	{
 		RTPPacket *pack;
 		int slen = 0;
 		bool hasdata = 0;
+
+		*payload_type = 0;
 
 		jrtp4c->session->BeginDataAccess();
 
@@ -136,7 +138,11 @@ extern "C" {
 				slen = datalen;
 			}
 
+		
+			*payload_type = pack->GetPayloadType();
+
 			memcpy(data, pack->GetPayloadData(), slen);
+
 			delete pack;
 		}
 		jrtp4c->session->EndDataAccess();

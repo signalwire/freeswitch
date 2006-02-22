@@ -77,6 +77,10 @@ typedef unsigned long	in_addr_t;
 #endif
 
 #else
+/* packed attribute */
+#ifndef PACKED
+#define PACKED __attribute__ ((packed))
+#endif
 #include <sys/types.h>
 #ifndef getpid
 #include <unistd.h>
