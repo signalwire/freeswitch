@@ -69,10 +69,6 @@ struct switch_loadable_module_container {
 
 static struct switch_loadable_module_container loadable_modules;
 
-#ifdef WIN32
-#pragma warning( push )
-#pragma warning( disable : 4100 )
-#endif
 static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 {
 	switch_status status = SWITCH_STATUS_SUCCESS;
@@ -95,9 +91,7 @@ static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 	switch_yield(1000000);
 	return NULL;
 }
-#ifdef WIN32
-#pragma warning( pop )
-#endif
+
 static switch_status switch_loadable_module_load_file(char *filename, switch_memory_pool *pool,
 													  switch_loadable_module **new_module)
 {
@@ -509,10 +503,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool, 
 	return i;
 
 }
-#ifdef WIN32
-#pragma warning( push )
-#pragma warning( disable : 4100 )
-#endif
+
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array,
 															 int arraylen, char **prefs, int preflen)
 {
@@ -530,9 +521,6 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool 
 
 	return i;
 }
-#ifdef WIN32
-#pragma warning( pop )
-#endif
 
 SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *retbuf, size_t len)
 {

@@ -143,10 +143,6 @@ static int switch_events_match(switch_event *event, switch_event_node *node)
 	return match;
 }
 
-#ifdef WIN32
-#pragma warning( push )
-#pragma warning( disable : 4100 )
-#endif
 static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void *obj)
 {
 	switch_event_node *node;
@@ -199,9 +195,6 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void 
 	THREAD_RUNNING = 0;
 	return NULL;
 }
-#ifdef WIN32
-#pragma warning( pop ) 
-#endif
 
 SWITCH_DECLARE(switch_status) switch_event_running(void)
 {
