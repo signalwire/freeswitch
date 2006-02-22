@@ -75,11 +75,11 @@ typedef __int32		int32_t;
 typedef __int64		int64_t;
 typedef unsigned long	in_addr_t;
 #endif
-
+#define PACKED
 #else
 /* packed attribute */
 #ifndef PACKED
-#define PACKED __attribute__ ((packed))
+#define PACKED __attribute__ ((__packed__))
 #endif
 #include <sys/types.h>
 #ifndef getpid
