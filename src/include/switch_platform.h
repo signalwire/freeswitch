@@ -79,7 +79,6 @@ typedef unsigned long	in_addr_t;
 #else
 #include <sys/types.h>
 #ifndef getpid
-#include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>

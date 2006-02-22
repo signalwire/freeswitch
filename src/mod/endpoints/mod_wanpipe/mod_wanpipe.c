@@ -1,4 +1,4 @@
-A/* 
+/* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
  *
@@ -29,7 +29,6 @@ A/*
  * mod_wanpipe.c -- WANPIPE PRI Channel Module
  *
  */
-
 
 #include <switch.h>
 #include <libsangoma.h>
