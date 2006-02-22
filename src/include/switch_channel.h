@@ -129,6 +129,14 @@ SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel
 */
 SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originatee_caller_profile(switch_channel *channel);
 
+
+/*!
+  \brief Retrive the given channel's unique id
+  \param channel channel to retrive the unique id from
+  \return the unique id
+*/
+SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel *channel);
+
 /*!
   \brief Set a variable on a given channel
   \param channel channel to set variable on

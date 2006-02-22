@@ -381,11 +381,12 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 				}
 				
 			}
-			
+
+			snprintf(name, sizeof(name), "WanPipe/%s-%04x", caller_profile->destination_number, rand() & 0xffff);
+			switch_channel_set_name(channel, name);			
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
-			snprintf(name, sizeof(name), "WanPipe/%s-%04x", caller_profile->destination_number, rand() & 0xffff);
-			switch_channel_set_name(channel, name);
+
 
 			do {
 				if ((spri = &SPANS[span]->spri)) {
@@ -704,6 +705,43 @@ static int on_answer(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 	return 0;
 }
 
+
+static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event)
+{
+	switch_core_session *session;
+	switch_channel *channel;
+	struct channel_map *chanmap;
+
+	chanmap = spri->private;
+
+	if ((session = chanmap->map[event->proceeding.channel])) {
+		switch_caller_profile *originator;
+
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Proceeding on channel %d\n", event->proceeding.channel);
+		channel = switch_core_session_get_channel(session);
+		assert(channel != NULL);
+		
+		if ((originator = switch_channel_get_originator_caller_profile(channel))) {
+			switch_core_session_message msg;
+
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Passing progress to Originator %s\n", originator->chan_name);
+
+			msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
+			msg.from = switch_channel_get_name(channel);
+			
+			switch_core_session_message_send(originator->uuid, &msg);
+
+			switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+		}
+
+		//switch_channel_answer(channel);
+	} else {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Proceeding on channel %d but it's not in use?\n", event->proceeding.channel);
+	}
+
+	return 0;
+}
+
 static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event)
 {
 	switch_core_session *session;
@@ -770,6 +808,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 			switch_core_session_set_private(session, tech_pvt);
 			sprintf(name, "w%dg%d", spri->span, event->ring.channel);
 			switch_channel_set_name(channel, name);
+
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
@@ -867,8 +906,10 @@ static void *pri_thread_run(switch_thread *thread, void *obj)
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RING, on_ring);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_ringing);
 	//SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_SETUP_ACK, on_ringing);
+	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_PROCEEDING, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANSWER, on_answer);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_HANGUP_REQ, on_hangup);
+	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_HANGUP, on_hangup);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_INFO_RECEIVED, on_info);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RESTART, on_restart);
 

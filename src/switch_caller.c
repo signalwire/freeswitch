@@ -68,6 +68,8 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
 		profile->caller_id_number = switch_core_session_strdup(session, tocopy->caller_id_number);
 		profile->network_addr = switch_core_session_strdup(session, tocopy->network_addr);
 		profile->destination_number = switch_core_session_strdup(session, tocopy->destination_number);
+		profile->uuid = switch_core_session_strdup(session, tocopy->uuid);
+		profile->chan_name = switch_core_session_strdup(session, tocopy->chan_name);
 	}
 
 	return profile;

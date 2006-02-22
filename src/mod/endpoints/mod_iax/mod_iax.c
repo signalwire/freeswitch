@@ -733,11 +733,13 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 
 		if (outbound_profile) {
 			char name[128];
+
+			snprintf(name, sizeof(name), "IAX/%s-%04x", outbound_profile->destination_number, rand() & 0xffff);
+			switch_channel_set_name(channel, name);
+
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
-			snprintf(name, sizeof(name), "IAX/%s-%04x", caller_profile->destination_number, rand() & 0xffff);
-			switch_channel_set_name(channel, name);
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
@@ -983,10 +985,11 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 																				  iaxevent->ies.calling_ani,
 																				  NULL, iaxevent->ies.called_number)) != 0) {
 							char name[128];
-							switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 							snprintf(name, sizeof(name), "IAX/%s-%04x", tech_pvt->caller_profile->destination_number,
 									 rand() & 0xffff);
 							switch_channel_set_name(channel, name);
+							switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
+
 						}
 
 						if (iax_set_codec(tech_pvt, iaxevent->session,

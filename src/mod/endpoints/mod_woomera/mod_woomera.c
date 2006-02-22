@@ -490,11 +490,12 @@ static switch_status woomerachan_outgoing_channel(switch_core_session *session, 
 			char name[128];
 			switch_caller_profile *caller_profile;
 
+			snprintf(name, sizeof(name), "Woomera/%s-%04x", outbound_profile->destination_number, rand() & 0xffff);
+			switch_channel_set_name(channel, name);
+
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
-			snprintf(name, sizeof(name), "Woomera/%s-%04x", caller_profile->destination_number, rand() & 0xffff);
-			switch_channel_set_name(channel, name);
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
@@ -1067,10 +1068,11 @@ static void *woomera_channel_thread_run(switch_thread *thread, void *obj)
 																		  tech_pvt->profile->dialplan,
 																		  cid_name, cid_num, ip, NULL, NULL, exten)) != 0) {
 					char name[128];
-					switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 					snprintf(name, sizeof(name), "Woomera/%s-%04x", tech_pvt->caller_profile->destination_number,
 							 rand() & 0xffff);
 					switch_channel_set_name(channel, name);
+					switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
+
 				}
 
 				woomera_printf(tech_pvt->profile, tech_pvt->command_channel,

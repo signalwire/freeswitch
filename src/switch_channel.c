@@ -450,6 +450,16 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel *channel, switch_caller_profile *caller_profile)
 {
 	assert(channel != NULL);
+	assert(channel->session != NULL);
+
+	if (!caller_profile->uuid) {
+		caller_profile->uuid = switch_core_session_strdup(channel->session, switch_core_session_get_uuid(channel->session));
+	}
+
+	if (!caller_profile->chan_name) {
+		caller_profile->chan_name = switch_core_session_strdup(channel->session, channel->name);
+	}
+
 	channel->caller_profile = caller_profile;
 }
 
@@ -477,6 +487,13 @@ SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originator_caller_pro
 {
 	assert(channel != NULL);
 	return channel->originator_caller_profile;
+}
+
+SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel *channel)
+{
+	assert(channel != NULL);
+	assert(channel->session != NULL);
+	return switch_core_session_get_uuid(channel->session);
 }
 
 SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originatee_caller_profile(switch_channel *channel)

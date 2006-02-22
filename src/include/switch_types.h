@@ -64,13 +64,15 @@ typedef enum {
   \enum switch_core_session_message_t
   \brief Possible types of messages for inter-session communication
 <pre>
-	SWITCH_MESSAGE_REDIRECT_AUDIO - Indication to redirect audio to another location if possible
-	SWITCH_MESSAGE_TRANSMIT_TEXT  - A text message
+	SWITCH_MESSAGE_REDIRECT_AUDIO     - Indication to redirect audio to another location if possible
+	SWITCH_MESSAGE_TRANSMIT_TEXT      - A text message
+	SWITCH_MESSAGE_INDICATE_PROGRESS  - indicate progress 
 </pre>
  */
 typedef enum {
 	SWITCH_MESSAGE_REDIRECT_AUDIO,
-	SWITCH_MESSAGE_TRANSMIT_TEXT
+	SWITCH_MESSAGE_TRANSMIT_TEXT,
+	SWITCH_MESSAGE_INDICATE_PROGRESS
 } switch_core_session_message_t;
 
 
@@ -171,18 +173,20 @@ typedef enum {
   \brief Channel Flags
 
 <pre>
-CF_SEND_AUDIO = (1 <<  0) - Channel will send audio
-CF_RECV_AUDIO = (1 <<  1) - Channel will receive audio
-CF_ANSWERED   = (1 <<  2) - Channel is answered
-CF_OUTBOUND   = (1 <<  3) - Channel is an outbound channel
+CF_SEND_AUDIO   = (1 <<  0) - Channel will send audio
+CF_RECV_AUDIO   = (1 <<  1) - Channel will receive audio
+CF_ANSWERED     = (1 <<  2) - Channel is answered
+CF_OUTBOUND     = (1 <<  3) - Channel is an outbound channel
+CF_EARLY_MEDIA  = (1 <<  4) - Channel is ready for audio before answer 
 </pre>
  */
 
 typedef enum {
-	CF_SEND_AUDIO = (1 <<  0),
-	CF_RECV_AUDIO = (1 <<  1),
-	CF_ANSWERED   = (1 <<  2),
-	CF_OUTBOUND   = (1 <<  3),
+	CF_SEND_AUDIO 	= (1 <<  0),
+	CF_RECV_AUDIO 	= (1 <<  1),
+	CF_ANSWERED   	= (1 <<  2),
+	CF_OUTBOUND   	= (1 <<  3),
+	CF_EARLY_MEDIA	= (1 << 4)
 } switch_channel_flag;
 
 

@@ -498,13 +498,14 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 
 		if (outbound_profile) {
 			char name[128];
+			snprintf(name, sizeof(name), "PortAudio/%s-%04x",
+					 caller_profile->destination_number ? outbound_profile->destination_number : modname,
+					 rand() & 0xffff);
+			switch_channel_set_name(channel, name);
+
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
-			snprintf(name, sizeof(name), "PortAudio/%s-%04x",
-					 caller_profile->destination_number ? caller_profile->destination_number : modname,
-					 rand() & 0xffff);
-			switch_channel_set_name(channel, name);
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
@@ -812,11 +813,12 @@ static switch_status place_call(char *dest, char *out, size_t outlen)
 																  globals.cid_name,
 																  globals.cid_num, NULL, NULL, NULL, dest)) != 0) {
 			char name[128];
-			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 			snprintf(name, sizeof(name), "PortAudio/%s-%04x",
 					 tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->
 					 destination_number : modname, rand() & 0xffff);
 			switch_channel_set_name(channel, name);
+
+			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}
 		tech_pvt->session = session;
 		if ((status = engage_device(tech_pvt)) == SWITCH_STATUS_SUCCESS) {

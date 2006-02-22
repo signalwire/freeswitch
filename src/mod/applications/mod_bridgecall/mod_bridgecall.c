@@ -47,8 +47,8 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 {
 	struct switch_core_thread_session *data = obj;
 	int *stream_id_p;
-	int stream_id = 0;
-
+	int stream_id = 0, ans_a = 0, ans_b = 0;
+	
 	switch_channel *chan_a, *chan_b;
 	switch_frame *read_frame;
 	switch_core_session *session_a, *session_b;
@@ -64,6 +64,11 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	chan_a = switch_core_session_get_channel(session_a);
 	chan_b = switch_core_session_get_channel(session_b);
 
+
+	ans_a = switch_channel_test_flag(chan_a, CF_ANSWERED);
+	ans_b = switch_channel_test_flag(chan_b, CF_ANSWERED);
+
+
 	while (data->running > 0) {
 		switch_channel_state b_state = switch_channel_get_state(chan_b);
 
@@ -74,6 +79,15 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 			break;
 		default:
 			break;
+		}
+
+
+		if (!ans_b && switch_channel_test_flag(chan_a, CF_ANSWERED)) {
+			switch_channel_answer(chan_b);
+		}
+
+		if (!ans_a && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
+			switch_channel_answer(chan_a);
 		}
 
 		if (switch_channel_has_dtmf(chan_a)) {
@@ -229,12 +243,18 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 		time(&start);
 		while (switch_channel_get_state(caller_channel) == CS_EXECUTE &&
 			   switch_channel_get_state(peer_channel) == CS_TRANSMIT &&
-			   !switch_channel_test_flag(peer_channel, CF_ANSWERED) && ((time(NULL) - start) < timelimit)) {
+			   !switch_channel_test_flag(peer_channel, CF_ANSWERED) &&
+			   !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) &&
+			   ((time(NULL) - start) < timelimit)) {
 			switch_yield(20000);
 		}
 
 		if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
 			switch_channel_answer(caller_channel);
+		}
+
+		if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || 
+			switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 
 			switch_core_session_launch_thread(session, audio_bridge_thread, (void *) &other_audio_thread);
 			audio_bridge_thread(NULL, (void *) &this_audio_thread);

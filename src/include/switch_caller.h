@@ -76,6 +76,10 @@ extern "C" {
 		char *ani2;
 		/*! Destination Number */
 		char *destination_number;
+		/*! channel name */
+		char *chan_name;
+		/*! unique id */
+		char *uuid;
 	};
 
 	/*! \brief An Abstract Representation of a dialplan Application */
