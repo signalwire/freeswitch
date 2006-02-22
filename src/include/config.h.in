@@ -91,6 +91,15 @@
 /* Version number of package */
 #undef VERSION
 
+/* for the places where it is not defined */
+#undef __BIG_ENDIAN
+
+/* Little Endian */
+#undef __BYTE_ORDER
+
+/* for the places where it is not defined */
+#undef __LITTLE_ENDIAN
+
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
 
