@@ -12,7 +12,7 @@ AM_LDFLAGS = -L$(PREFIX)/lib
 AM_LDFLAGS += $(shell $(APR_CONFIG) --link-ld --libs )
 AM_CFLAGS  += $(shell $(APU_CONFIG) --includes) 
 AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs ) -lsqlite3
-AM_LDFLAGS += -lresample -lm -L/usr/local/lib/db42 -L/usr/local/lib
+AM_LDFLAGS += -lteletone -lresample -lm -L/usr/local/lib/db42 -L/usr/local/lib
 OSARCH=$(shell uname -s)
 if ISLINUX
 AM_LDFLAGS += -Wl,-E
@@ -42,21 +42,27 @@ AM_CFLAGS	+= -DSWITCH_DB_DIR=\"$(PREFIX)/db\"
 
 
 libfreeswitch_la_SOURCES	= \
-src/include/switch.h \
-src/include/switch_channel.h \
-src/include/switch_config.h \
-src/include/switch_console.h \
-src/include/switch_core.h \
-src/include/switch_frame.h \
-src/include/switch_loadable_module.h \
-src/include/switch_module_interfaces.h \
-src/include/switch_mutex.h \
-src/include/switch_types.h \
-src/include/switch_utils.h \
-src/include/switch_caller.h \
-src/include/switch_buffer.h \
-src/include/switch_event.h \
+src/include/config.h\
+src/include/switch.h\
+src/include/switch_apr.h\
+src/include/switch_buffer.h\
+src/include/switch_caller.h\
+src/include/switch_channel.h\
+src/include/switch_config.h\
+src/include/switch_console.h\
+src/include/switch_core.h\
+src/include/switch_event.h\
+src/include/switch_frame.h\
 src/include/switch_ivr.h\
+src/include/switch_loadable_module.h\
+src/include/switch_module_interfaces.h\
+src/include/switch_mutex.h\
+src/include/switch_platform.h\
+src/include/switch_resample.h\
+src/include/switch_sqlite.h\
+src/include/switch_types.h\
+src/include/switch_utils.h\
+src/include/switch_version.h\
 src/switch_buffer.c \
 src/switch_caller.c \
 src/switch_channel.c \
@@ -75,22 +81,29 @@ src/switch_ivr.c
 #bindir = $(PREFIX)/bin
 #libdir = $(PREFIX)/lib
 library_includedir	= $(PREFIX)/include
-library_include_HEADERS =	src/include/switch.h \
-				src/include/switch_channel.h \
-				src/include/switch_config.h \
-				src/include/switch_console.h \
-				src/include/switch_core.h \
-				src/include/switch_frame.h \
-				src/include/switch_loadable_module.h \
-				src/include/switch_module_interfaces.h \
-				src/include/switch_mutex.h \
-				src/include/switch_types.h \
-				src/include/switch_utils.h \
-				src/include/switch_caller.h \
-				src/include/switch_buffer.h \
-				src/include/switch_event.h \
-				src/include/switch_resample.h \
-				src/include/switch_ivr.h
+library_include_HEADERS = \
+src/include/config.h\
+src/include/switch.h\
+src/include/switch_apr.h\
+src/include/switch_buffer.h\
+src/include/switch_caller.h\
+src/include/switch_channel.h\
+src/include/switch_config.h\
+src/include/switch_console.h\
+src/include/switch_core.h\
+src/include/switch_event.h\
+src/include/switch_frame.h\
+src/include/switch_ivr.h\
+src/include/switch_loadable_module.h\
+src/include/switch_module_interfaces.h\
+src/include/switch_mutex.h\
+src/include/switch_platform.h\
+src/include/switch_resample.h\
+src/include/switch_sqlite.h\
+src/include/switch_types.h\
+src/include/switch_utils.h\
+src/include/switch_version.h
+
 
 
 lib_LTLIBRARIES		= libfreeswitch.la
