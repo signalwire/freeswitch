@@ -44,6 +44,8 @@ extern "C" {
 #define SWITCH_RECCOMMENDED_BUFFER_SIZE 131072
 #define SWITCH_MAX_CODECS 30
 #define SWITCH_MAX_STATE_HANDLERS 30
+#define SWITCH_TRUE 1
+#define SWITCH_FALSE 0
 
 /*!
   \enum switch_ivr_option_t

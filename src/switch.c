@@ -31,6 +31,14 @@
  */
 #include <switch.h>
 
+static int RUNNING = 0;
+
+static int handle_SIGHUP(int sig)
+{
+	RUNNING = 0;
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	char *err = NULL;
@@ -60,8 +68,16 @@ int main(int argc, char *argv[])
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_VERSION_FULL);
 
-	/* wait for console input */
-	switch_console_loop();
+	if (argv[1] && !strcmp(argv[1], "-nc")) {
+		(void) signal(SIGHUP, (void *) handle_SIGHUP);
+		RUNNING = 1;
+		while(RUNNING) {
+			switch_yield(10000);
+		}
+	} else {
+		/* wait for console input */
+		switch_console_loop();
+	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Shutting Down");

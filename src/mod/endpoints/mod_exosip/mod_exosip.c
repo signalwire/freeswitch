@@ -43,6 +43,8 @@ static const char modname[] = "mod_exosip";
 
 static switch_memory_pool *module_pool;
 
+
+
 typedef enum {
 	PFLAG_ANSWER = (1 << 0),
 	PFLAG_HANGUP = (1 << 1),
@@ -85,6 +87,8 @@ static struct {
 	switch_mutex_t *port_lock;
 	int running;
 	int codec_ms;
+	int supress_telephony_events;
+	int dtmf_duration;
 } globals;
 
 struct private_object {
@@ -100,6 +104,7 @@ struct private_object {
 	int tid;
 	int32_t timestamp_send;
 	int32_t timestamp_recv;
+	int32_t timestamp_dtmf;
 	int payload_num;
 	struct jrtp4c *rtp_session;
 	struct osip_rfc3264 *sdp_config;
@@ -111,7 +116,14 @@ struct private_object {
 	int local_sdp_audio_port;
 	char call_id[50];
 	int ssrc;
+	char last_digit;
 	switch_mutex_t *rtp_lock;
+	switch_queue_t *dtmf_queue;
+	char out_digit;
+	unsigned char out_digit_packet[4];
+	unsigned int out_digit_sofar;
+	unsigned int out_digit_dur;
+	unsigned int out_digit_seq;
 };
 
 
@@ -129,6 +141,10 @@ static int next_rtp_port(void)
 	return port;
 }
 
+struct rfc2833_digit {
+	char digit;
+	int duration;
+};
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
@@ -148,7 +164,7 @@ static switch_status parse_sdp_media(sdp_media_t * media, char **dname, char **d
 static switch_status exosip_kill_channel(switch_core_session *session, int sig);
 static void activate_rtp(struct private_object *tech_pvt);
 static void deactivate_rtp(struct private_object *tech_pvt);
-static void sdp_add_rfc2833(struct osip_rfc3264 *cnf);
+static void sdp_add_rfc2833(struct osip_rfc3264 *cnf, int rate);
 
 static struct private_object *get_pvt_by_call_id(int id)
 {
@@ -282,11 +298,11 @@ static switch_status exosip_on_init(switch_core_session *session)
 							 imp->samples_per_second);
 					sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(tmp));
 					memset(tmp, 0, sizeof(tmp));
-				}
+				} 
 			}
 		}
 
-		sdp_add_rfc2833(tech_pvt->sdp_config);
+		sdp_add_rfc2833(tech_pvt->sdp_config, 8000);
 
 		/* Setup our INVITE */
 		eXosip_lock();
@@ -517,10 +533,11 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
+
+		
 		if (!switch_test_flag(tech_pvt, TFLAG_RTP)) {
 			return SWITCH_STATUS_GENERR;
 		}
-
 
 		assert(tech_pvt->rtp_session != NULL);
 		tech_pvt->read_frame.datalen = 0;
@@ -530,31 +547,24 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			tech_pvt->read_frame.datalen =
 				jrtp4c_read(tech_pvt->rtp_session, tech_pvt->read_frame.data, sizeof(tech_pvt->read_buf), &payload);
 
-
-			
+			/* RFC2833 ... TBD try harder to honor the duration etc.*/
 			if (payload == 101) {
-				unsigned char *data;
-				unsigned int event;
-                unsigned int event_end;
-                unsigned int duration;
-				data = tech_pvt->read_frame.data;
-				
-				event = ntohl(*((unsigned int *)(data)));
-                event >>= 24;
-                event_end = ntohl(*((unsigned int *)(data)));
-                event_end <<= 8;
-                event_end >>= 24;
-                duration = ntohl(*((unsigned int *)(data)));
-                duration &= 0xFFFF;
+				unsigned char *packet = tech_pvt->read_frame.data;
+				int end = packet[1]&0x80;
+				int duration = (packet[2]<<8) + packet[3];
+				char key = switch_rfc2833_to_char(packet[0]);
 
-				printf("DTMF %d %d %d\n", event, event_end, duration);
+				if (duration && end && key != tech_pvt->last_digit) {
+					char digit_str[] = {key, 0};
+					switch_channel_queue_dtmf(channel, digit_str);
+					tech_pvt->last_digit = key;
+				}
 			}
 
-			if (payload != tech_pvt->payload_num) {
-				printf("lets skip %d\n", payload);
+			if (globals.supress_telephony_events && payload != tech_pvt->payload_num) {
 				continue;
 			}
-
+			
 			if (tech_pvt->read_frame.datalen > 0) {
 				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 				frames = (tech_pvt->read_frame.datalen / bytes);
@@ -567,14 +577,6 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 
 			switch_yield(100);
 		}
-
-		//tech_pvt->timestamp_recv += samples;
-
-
-		//printf("%s %s->%s recv %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->local_sdp_audio_ip, tech_pvt->read_frame.datalen, samples, frames, ms, tech_pvt->timestamp_recv);
-
-
-		//switch_mutex_unlock(tech_pvt->rtp_lock);
 
 	} else {
 		memset(tech_pvt->read_buf, 0, 160);
@@ -589,7 +591,6 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	}
 
 	*frame = &tech_pvt->read_frame;
-
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -633,6 +634,60 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	} else {
 		assert(0);
 	}
+
+
+	if (tech_pvt->out_digit_dur > 0) {
+		int x, ts, loops = 1, duration;
+
+		tech_pvt->out_digit_sofar += samples;
+
+		if (tech_pvt->out_digit_sofar >= tech_pvt->out_digit_dur) {
+			duration = tech_pvt->out_digit_dur;
+			tech_pvt->out_digit_packet[1] |= 0x80;
+			tech_pvt->out_digit_dur = 0;
+			loops = 3;
+		} else {
+			duration = tech_pvt->out_digit_sofar;
+		}
+
+		ts = tech_pvt->timestamp_dtmf += samples;
+		tech_pvt->out_digit_packet[2] = (unsigned char) (duration >> 8);
+		tech_pvt->out_digit_packet[3] = (unsigned char) duration;
+		
+
+		for (x = 0; x < loops; x++) {
+			jrtp4c_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+			printf("Send %s packet for [%c] ts=%d sofar=%d dur=%d\n", loops == 1 ? "middle" : "end", tech_pvt->out_digit, ts, 
+				   tech_pvt->out_digit_sofar, duration);
+		}
+	}
+
+	if (!tech_pvt->out_digit_dur && tech_pvt->dtmf_queue && switch_queue_size(tech_pvt->dtmf_queue)) {
+		void *pop;
+
+		if (switch_queue_trypop(tech_pvt->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			int x, ts;
+			struct rfc2833_digit *rdigit = pop;
+			
+			memset(tech_pvt->out_digit_packet, 0, 4);
+			tech_pvt->out_digit_sofar = 0;
+			tech_pvt->out_digit_dur = rdigit->duration;
+			tech_pvt->out_digit = rdigit->digit;
+			tech_pvt->out_digit_packet[0] = switch_char_to_rfc2833(rdigit->digit);
+			tech_pvt->out_digit_packet[1] = 7;
+
+			ts = tech_pvt->timestamp_dtmf += samples;
+			tech_pvt->out_digit_seq++;
+			for (x = 0; x < 3; x++) {
+				jrtp4c_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+				printf("Send start packet for [%c] ts=%d sofar=%d dur=%d\n", tech_pvt->out_digit, ts, 
+					   tech_pvt->out_digit_sofar, 0);
+			}
+
+			free(rdigit);
+		}
+	}
+
 
 
 	//printf("%s %s->%s send %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->remote_sdp_audio_ip, frame->datalen, samples, frames, ms, tech_pvt->timestamp_send);
@@ -699,7 +754,30 @@ static switch_status exosip_waitfor_write(switch_core_session *session, int ms, 
 
 static switch_status exosip_send_dtmf(switch_core_session *session, char *digits)
 {
-	return SWITCH_STATUS_FALSE;
+	struct private_object *tech_pvt;
+	char *c;
+
+	tech_pvt = switch_core_session_get_private(session);
+    assert(tech_pvt != NULL);
+
+	if (!tech_pvt->dtmf_queue) {
+		switch_queue_create(&tech_pvt->dtmf_queue, 100, switch_core_session_get_pool(session));
+	}
+
+	for(c = digits; *c; c++) {
+		struct rfc2833_digit *rdigit;
+
+		if ((rdigit = malloc(sizeof(*rdigit)))) {
+			memset(rdigit, 0, sizeof(*rdigit));
+			rdigit->digit = *c;
+			rdigit->duration = globals.dtmf_duration * (tech_pvt->read_codec.implementation->samples_per_second / 1000);
+			switch_queue_push(tech_pvt->dtmf_queue, rdigit);
+		} else {
+			return SWITCH_STATUS_MEMERR;
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status exosip_receive_message(switch_core_session *session, switch_core_session_message *msg)
@@ -726,7 +804,6 @@ static switch_status exosip_receive_message(switch_core_session *session, switch
 				/* Transmit 183 Progress with SDP */
 				eXosip_lock();
 				eXosip_call_build_answer(tech_pvt->tid, 183, &progress);
-				sdp_add_rfc2833(tech_pvt->sdp_config);
 				sdp_message_to_str(tech_pvt->local_sdp, &buf);
 				osip_message_set_body(progress, buf, strlen(buf));
 				osip_message_set_content_type(progress, "application/sdp");
@@ -831,7 +908,7 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 	return SWITCH_STATUS_GENERR;
 }
 
-#if 1
+
 SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 {
 	if (globals.running) {
@@ -842,7 +919,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
-#endif
+
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
 {
 	/* NOTE:  **interface is **_interface because the common lib redefines interface to struct in some situations */
@@ -859,15 +936,17 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void sdp_add_rfc2833(struct osip_rfc3264 *cnf)
+static void sdp_add_rfc2833(struct osip_rfc3264 *cnf, int rate)
 {
 	sdp_media_t *med = NULL;
 	sdp_attribute_t *attr = NULL;
-
+	char tmp[128];
+	
 	sdp_media_init(&med);
 	sdp_attribute_init(&attr);
 	attr->a_att_field = osip_strdup("rtpmap");
-	attr->a_att_value = osip_strdup("101 telephony-event/8000");
+	snprintf(tmp, sizeof(tmp), "101 telephony-event/%d", rate);
+	attr->a_att_value = osip_strdup(tmp);
 	osip_list_add(med->a_attributes, attr, -1);
 	
 
@@ -875,6 +954,7 @@ static void sdp_add_rfc2833(struct osip_rfc3264 *cnf)
 	osip_rfc3264_add_audio_media(cnf, med, -1);
 
 }
+
 
 static switch_status exosip_create_call(eXosip_event_t * event)
 {
@@ -956,7 +1036,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			int i;
 			static const switch_codec_implementation *imp;
 
-			sdp_add_rfc2833(tech_pvt->sdp_config);
+
 
 			for (i = 0; i < num_codecs; i++) {
 				int x = 0;
@@ -967,6 +1047,8 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 				}
 			}
 		}
+		sdp_add_rfc2833(tech_pvt->sdp_config, 8000);
+
 		osip_rfc3264_prepare_answer(tech_pvt->sdp_config, remote_sdp, local_sdp_str, 8192);
 		sdp_message_init(&tech_pvt->local_sdp);
 		sdp_message_parse(tech_pvt->local_sdp, local_sdp_str);
@@ -1377,6 +1459,7 @@ static int config_exosip(int reload)
 
 	globals.rtp_start = 16384;
 	globals.rtp_end = 32768;
+	globals.dtmf_duration = 100;
 
 	while (switch_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, "settings")) {
@@ -1396,6 +1479,15 @@ static int config_exosip(int reload)
 				globals.rtp_end = atoi(val);
 			} else if (!strcmp(var, "codec_ms")) {
 				globals.codec_ms = atoi(val);
+			} else if (!strcmp(var, "supress_telephony_events")) {
+				globals.supress_telephony_events = switch_true(val);
+			} else if (!strcmp(var, "dtmf_duration")) {
+				int dur = atoi(val);
+				if (dur > 10 && dur < 8000) {
+					globals.dtmf_duration = dur;
+				} else {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Duration out of bounds!\n");
+				}
 			}
 		}
 	}

@@ -156,6 +156,11 @@ extern "C" {
 		return jrtp4c->session->SendPacket(data, datalen, jrtp4c->payload, false, ts);
 	}
 
+	int jrtp4c_write_payload(struct jrtp4c *jrtp4c, void *data, int datalen, int payload, uint32_t ts, uint32_t mseq)
+	{
+		return jrtp4c->session->SendPacket(data, datalen, payload, false, ts, mseq);
+	}
+
 	uint32_t jrtp4c_start(struct jrtp4c *jrtp4c)
 	{
 		//jrtp4c->session->BeginDataAccess();

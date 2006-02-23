@@ -44,12 +44,42 @@ extern "C" {
 
 #include <switch.h>
 
+
+
 #ifndef snprintf
 #define snprintf apr_snprintf
 #endif
 #ifndef vsnprintf
 #define vsnprintf apr_vsnprintf
 #endif
+
+
+/*!
+  \brief Evaluate the truthfullness of a string expression
+  \param expr a string expression
+  \return true or false 
+*/
+#define switch_true(expr)\
+(expr && ( !strcasecmp(expr, "yes") ||\
+!strcasecmp(expr, "on") ||\
+!strcasecmp(expr, "true") ||\
+atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
+
+
+
+/*!
+  \brief Return the RFC2833 character based on an event id
+  \param event the event id to convert
+  \return the character represented by the event or null for an invalid event
+*/
+SWITCH_DECLARE(char) switch_rfc2833_to_char(int event);
+
+/*!
+  \brief Return the RFC2833 event based on an key character
+  \param the charecter to encode
+  \return the event id for the specified character or -1 on an invalid input
+*/
+SWITCH_DECLARE(int) switch_char_to_rfc2833(char key);
 
 /*!
   \brief Duplicate a string 

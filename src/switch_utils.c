@@ -31,6 +31,25 @@
  */
 #include <switch_utils.h>
 
+static char RFC2833_CHARS[] = "0123456789*#ABCDF";
+
+SWITCH_DECLARE(char) switch_rfc2833_to_char(int event)
+{
+    return (event > -1 && event < sizeof(RFC2833_CHARS)) ? RFC2833_CHARS[event] : '\0';
+}
+
+SWITCH_DECLARE(int) switch_char_to_rfc2833(char key)
+{
+    char *c;
+
+    for (c = RFC2833_CHARS; *c ; c++) {
+        if (*c == key) {
+            return (c - RFC2833_CHARS);
+        }
+    }
+    return -1;
+}
+
 SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen)
 {
 	int argc;

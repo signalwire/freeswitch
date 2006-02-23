@@ -72,6 +72,7 @@ static struct {
 	int mtu;
 	int dtmf_on;
 	int dtmf_off;
+	int supress_dtmf_tone;
 	char *dialplan;
 } globals;
 
@@ -571,6 +572,9 @@ static switch_status wanpipe_read_frame(switch_core_session *session, switch_fra
 		switch_channel_queue_dtmf(channel, digit_str);
 		if (globals.debug) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DTMF DETECTED: [%s]\n", digit_str);
+		}
+		if (globals.supress_dtmf_tone) {
+			memset(tech_pvt->read_frame.data, 0, tech_pvt->read_frame.datalen);
 		}
 	}
 
@@ -1093,6 +1097,8 @@ static int config_wanpipe(int reload)
 				globals.dtmf_on = atoi(val);
 			} else if (!strcmp(var, "dtmf_off")) {
 				globals.dtmf_off = atoi(val);
+			} else if (!strcmp(var, "supress_dtmf_tone")) {
+				globals.supress_dtmf_tone = switch_true(val);
 			}
 		} else if (!strcasecmp(cfg.category, "span")) {
 			if (!strcmp(var, "span")) {

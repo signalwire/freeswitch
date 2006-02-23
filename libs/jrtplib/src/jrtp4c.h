@@ -51,6 +51,7 @@ extern "C" {
 	void jrtp4c_destroy(struct jrtp4c **jrtp4c);
 	int jrtp4c_read(struct jrtp4c *jrtp4c, void *data, int datalen, int *payload_type);
 	int jrtp4c_write(struct jrtp4c *jrtp4c, void *data, int datalen, uint32_t ts);
+	int jrtp4c_write_payload(struct jrtp4c *jrtp4c, void *data, int datalen, int payload, uint32_t ts, uint32_t mseq);
 	uint32_t jrtp4c_start(struct jrtp4c *jrtp4c);
 	uint32_t jrtp4c_get_ssrc(struct jrtp4c *jrtp4c);
 	void jrtp4c_killread(struct jrtp4c *jrtp4c);
