@@ -208,6 +208,14 @@ int RTPPacketBuilder::BuildPacket(const void *data,size_t len,
 	return PrivateBuildPacket(data,len,pt,mark,timestampinc,false);
 }
 
+int RTPPacketBuilder::BuildPacket(const void *data,size_t len,
+                u_int8_t pt,bool mark,u_int32_t timestampinc, u_int32_t mseq)
+{
+	if (!init)
+		return ERR_RTP_PACKBUILD_NOTINIT;
+	return PrivateBuildPacket(data,len,pt,mark,timestampinc,false,0,0,0,mseq);
+}
+
 int RTPPacketBuilder::BuildPacketEx(const void *data,size_t len,
                   u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords)
 {
@@ -234,9 +242,9 @@ int RTPPacketBuilder::BuildPacketEx(const void *data,size_t len,
 
 int RTPPacketBuilder::PrivateBuildPacket(const void *data,size_t len,
 	                  u_int8_t pt,bool mark,u_int32_t timestampinc,bool gotextension,
-	                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords)
+	                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords, u_int32_t mseq)
 {
-	RTPPacket p(pt,data,len,seqnr,timestamp,ssrc,mark,numcsrcs,csrcs,gotextension,hdrextID,
+	RTPPacket p(pt,data,len, mseq ? mseq : seqnr,timestamp,ssrc,mark,numcsrcs,csrcs,gotextension,hdrextID,
 	            (u_int16_t)numhdrextwords,hdrextdata,buffer,maxpacksize);
 	int status = p.GetCreationError();
 
@@ -260,7 +268,9 @@ int RTPPacketBuilder::PrivateBuildPacket(const void *data,size_t len,
 	numpayloadbytes += (u_int32_t)p.GetPayloadLength();
 	numpackets++;
 	timestamp += timestampinc;
-	seqnr++;
+	if (mseq) {
+		seqnr++;
+	}
 
 
 	return 0;

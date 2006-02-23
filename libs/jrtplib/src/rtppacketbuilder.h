@@ -61,6 +61,8 @@ public:
 	int BuildPacket(const void *data,size_t len);
 	int BuildPacket(const void *data,size_t len,
 	                u_int8_t pt,bool mark,u_int32_t timestampinc);
+	int BuildPacket(const void *data,size_t len,
+	                u_int8_t pt,bool mark,u_int32_t timestampinc, u_int32_t mseq);
 	int BuildPacketEx(const void *data,size_t len,
 	                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords);
 	int BuildPacketEx(const void *data,size_t len,
@@ -87,7 +89,7 @@ public:
 private:
 	int PrivateBuildPacket(const void *data,size_t len,
 	                  u_int8_t pt,bool mark,u_int32_t timestampinc,bool gotextension,
-	                  u_int16_t hdrextID = 0,const void *hdrextdata = 0,size_t numhdrextwords = 0);
+	                  u_int16_t hdrextID = 0,const void *hdrextdata = 0,size_t numhdrextwords = 0,  u_int32_t mseq = 0);
 
 	RTPRandom rtprnd;	
 	size_t maxpacksize;

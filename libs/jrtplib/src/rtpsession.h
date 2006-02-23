@@ -85,7 +85,7 @@ public:
 
 	int SendPacket(const void *data,size_t len);
 	int SendPacket(const void *data,size_t len,
-	                u_int8_t pt,bool mark,u_int32_t timestampinc);
+	                u_int8_t pt,bool mark,u_int32_t timestampinc, u_int32_t mseq = 0);
 	int SendPacketEx(const void *data,size_t len,
 	                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords);
 	int SendPacketEx(const void *data,size_t len,

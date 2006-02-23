@@ -508,7 +508,7 @@ int RTPSession::SendPacket(const void *data,size_t len)
 }
 
 int RTPSession::SendPacket(const void *data,size_t len,
-                u_int8_t pt,bool mark,u_int32_t timestampinc)
+                u_int8_t pt,bool mark,u_int32_t timestampinc, u_int32_t mseq)
 {
 	int status;
 
@@ -516,7 +516,7 @@ int RTPSession::SendPacket(const void *data,size_t len,
 		return ERR_RTP_SESSION_NOTCREATED;
 	
 	BUILDER_LOCK
-	if ((status = packetbuilder.BuildPacket(data,len,pt,mark,timestampinc)) < 0)
+	if ((status = packetbuilder.BuildPacket(data,len,pt,mark,timestampinc, mseq)) < 0)
 	{
 		BUILDER_UNLOCK
 		return status;
