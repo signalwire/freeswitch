@@ -103,9 +103,10 @@ struct switch_core_runtime;
 ///\{
 /*! 
   \brief Initilize the core
+  \param console optional FILE stream for output
   \note to be called at application startup
 */
-SWITCH_DECLARE(switch_status) switch_core_init(void);
+SWITCH_DECLARE(switch_status) switch_core_init(FILE *console);
 
 /*! 
   \brief Destroy the core
@@ -882,6 +883,12 @@ SWITCH_DECLARE(switch_status) switch_core_directory_close(switch_directory_handl
   \return a FILE stream
 */
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel);
+
+/*!
+  \brief Set the output console to the desired FILE stream
+  \param handle the FILE stream
+*/
+SWITCH_DECLARE(void) switch_core_set_console(FILE *handle);
 
 /*! 
   \brief Launch a thread

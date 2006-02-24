@@ -63,7 +63,7 @@ typedef enum {
 	TFLAG_SWITCH = (1 << 9),
 } TFLAGS;
 
-#define PACKET_LEN 160
+
 #define DEFAULT_MTU 160
 
 static struct {
@@ -205,7 +205,7 @@ static int check_flags(struct sangoma_pri *spri);
 static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
 static int on_anything(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
 static void *pri_thread_run(switch_thread *thread, void *obj);
-static int config_wanpipe(int reload);
+static switch_status config_wanpipe(int reload);
 
 
 /* 
@@ -219,6 +219,7 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 	switch_channel *channel = NULL;
 	wanpipe_tdm_api_t tdm_api;
 	int err = 0;
+	int mtu_mru;
 	unsigned int rate = 8000;
 
 	channel = switch_core_session_get_channel(session);
@@ -229,10 +230,15 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE INIT\n");
+	err = sangoma_tdm_set_codec(tech_pvt->socket, &tdm_api, WP_SLINEAR);
+	mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->socket, &tdm_api);	
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE INIT MTU is %d\n", mtu_mru);
 
-	err = sangoma_tdm_set_codec(tech_pvt->socket, &tdm_api, WP_SLINEAR);	
-	
+	if (mtu_mru != globals.mtu) {
+		sangoma_tdm_set_usr_period(tech_pvt->socket, &tdm_api, (globals.mtu / 8) / 2);
+		mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->socket, &tdm_api);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ADJUSTED MTU is %d\n", mtu_mru);
+	}
 
 	if (switch_core_codec_init
 		(&tech_pvt->read_codec, "L16", rate, 20, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
@@ -455,8 +461,6 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 			
 			if (spri && (tech_pvt->call = pri_new_call(spri->pri))) {
 				struct pri_sr *sr;
-				int mtu_mru;
-				wanpipe_tdm_api_t tdm_api;
 
 				sr = pri_sr_new();
 				pri_sr_set_channel(sr, channo, 0, 0);
@@ -487,9 +491,6 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 				pri_sr_free(sr);
 				chanmap->map[channo] = *new_session;
 				tech_pvt->spri = spri;
-
-				mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->socket, &tdm_api);	
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "MTU is %d\n", mtu_mru);
 			}
 			
 		} else {
@@ -608,8 +609,8 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 	assert(tech_pvt != NULL);
 
 	while (tech_pvt->dtmf_buffer && bwrote < frame->datalen && bytes > 0 && (inuse = switch_buffer_inuse(tech_pvt->dtmf_buffer)) > 0) {
-		if ((bread = switch_buffer_read(tech_pvt->dtmf_buffer, dtmf, PACKET_LEN)) < PACKET_LEN) {
-			while (bread < PACKET_LEN) {
+		if ((bread = switch_buffer_read(tech_pvt->dtmf_buffer, dtmf, globals.mtu)) < globals.mtu) {
+			while (bread < globals.mtu) {
 				dtmf[bread++] = 0;
 			}
 		}
@@ -637,11 +638,11 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 	while (bytes > 0) {
 		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
 		res = sangoma_sendmsg_socket(tech_pvt->socket,
-									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), bp, PACKET_LEN, 0);
+									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), bp, globals.mtu, 0);
 		if (res < 0) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE,
 								  "Bad Write frame len %d write %d bytes returned %d (%s)!\n", frame->datalen,
-								  PACKET_LEN, res, strerror(errno));
+								  globals.mtu, res, strerror(errno));
 			if (errno == EBUSY) {
 				continue;
 			}
@@ -753,8 +754,19 @@ static const switch_loadable_module_interface wanpipe_module_interface = {
 	/*.application_interface */ NULL
 };
 
+static void s_pri_error(struct pri *pri, char *s)
+{
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, s);
+}
+
+static void s_pri_message(struct pri *pri, char *s)
+{
+	s_pri_error(pri, s);
+}
+
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
 {
+	switch_status status = SWITCH_STATUS_SUCCESS;
 
 	memset(SPANS, 0, sizeof(SPANS));
 
@@ -764,13 +776,19 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	}
 
 	/* start the pri's */
-	config_wanpipe(0);
+	if ((status = config_wanpipe(0) != SWITCH_STATUS_SUCCESS)) {
+		return status;
+	}
+
+	pri_set_error(s_pri_error);
+	pri_set_message(s_pri_message);
+
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &wanpipe_module_interface;
 
 	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 
@@ -1076,7 +1094,7 @@ static void pri_thread_launch(struct sangoma_pri *spri)
 
 }
 
-static int config_wanpipe(int reload)
+static switch_status config_wanpipe(int reload)
 {
 	switch_config cfg;
 	char *var, *val;

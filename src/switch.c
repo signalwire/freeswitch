@@ -43,8 +43,36 @@ int main(int argc, char *argv[])
 {
 	char *err = NULL;
 	switch_event *event;
+	int bg = 0;
+	FILE *out = NULL;
 
-	if (switch_core_init() != SWITCH_STATUS_SUCCESS) {
+	if (argv[1] && !strcmp(argv[1], "-nc")) {
+		bg++;
+	}
+
+	if (bg) {
+		int pid;
+#ifdef WIN32
+		char *path = ".\\freeswitch.log";
+#else
+		char *path = "/var/log/freeswitch.log";
+		nice(-20);
+#endif
+
+		if ((out = fopen(path, "a")) == 0) {
+			fprintf(stderr, "Cannot open output file.\n");
+			return 255;
+		}
+
+		(void) signal(SIGHUP, (void *) handle_SIGHUP);
+
+		if ((pid = fork())) {
+			fprintf(stderr, "%d Backgrounding.\n", (int)pid);
+			exit(0);
+		}
+	}
+
+	if (switch_core_init(out) != SWITCH_STATUS_SUCCESS) {
 		err = "Cannot Initilize\n";
 	}
 
@@ -68,17 +96,16 @@ int main(int argc, char *argv[])
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_VERSION_FULL);
 
-	if (argv[1] && !strcmp(argv[1], "-nc")) {
-		(void) signal(SIGHUP, (void *) handle_SIGHUP);
+	if (bg) {
 		RUNNING = 1;
 		while(RUNNING) {
 			switch_yield(10000);
 		}
-	} else {
+	}  else {
 		/* wait for console input */
 		switch_console_loop();
 	}
-
+	
 	if (switch_event_create(&event, SWITCH_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Shutting Down");
 		switch_event_fire(&event);

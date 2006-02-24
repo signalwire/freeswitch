@@ -157,6 +157,11 @@ SWITCH_DECLARE(switch_core_db *) switch_core_db_open_file(char *filename)
 	return db;
 }
 
+SWITCH_DECLARE(void) switch_core_set_console(FILE *handle)
+{
+	runtime.console = handle;
+}
+
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel)
 {
 	FILE *handle = stdout;
@@ -167,7 +172,7 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel)
 		handle = runtime.console;
 		break;
 	default:
-		handle = stdout;
+		handle = runtime.console;
 		break;
 	}
 
@@ -2190,13 +2195,13 @@ static void core_event_handler(switch_event *event)
 	}
 }
 
-SWITCH_DECLARE(switch_status) switch_core_init(void)
+SWITCH_DECLARE(switch_status) switch_core_init(FILE *console)
 {
 #ifdef EMBED_PERL
 	PerlInterpreter *my_perl;
 #endif
 
-	runtime.console = stdout;
+	runtime.console = console ? console : stdout;
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != APR_SUCCESS) {
