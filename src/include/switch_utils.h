@@ -76,7 +76,7 @@ SWITCH_DECLARE(char) switch_rfc2833_to_char(int event);
 
 /*!
   \brief Return the RFC2833 event based on an key character
-  \param the charecter to encode
+  \param key the charecter to encode
   \return the event id for the specified character or -1 on an invalid input
 */
 SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key);
