@@ -52,15 +52,46 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config *cfg, char *file_path)
 		path = path_buf;
 	}
 
-	if (!path || (f = fopen(path, "r")) == 0) {
+	if (!path) {
 		return 0;
 	}
 
 	memset(cfg, 0, sizeof(*cfg));
-	cfg->file = f;
-	cfg->path = path;
+	cfg->lockto = -1;
 
-	return 1;
+	if (!(f = fopen(path, "r"))) {
+		if (file_path[0] != '/') {
+			int last = -1;
+			char *var, *val;
+
+			snprintf(path_buf, sizeof(path_buf), "%s/freeswitch.conf", SWITCH_CONF_DIR);
+			path = path_buf;
+
+			if ((f = fopen(path, "r")) == 0) {
+				return 0;
+			}
+
+			cfg->file = f;
+			cfg->path = path;
+
+			while (switch_config_next_pair(cfg, &var, &val)) {
+				if ((cfg->sectno != last) && !strcmp(cfg->section, file_path)) {
+					cfg->lockto = cfg->sectno;
+					return 1;
+				}
+			}
+
+			switch_config_close_file(cfg);
+			memset(cfg, 0, sizeof(*cfg));
+			return 0;
+		}
+
+		return 0;
+	} else {
+		cfg->file = f;
+		cfg->path = path;
+		return 1;
+	}
 }
 
 
@@ -96,8 +127,21 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 		if (**var == '[' && (end = strchr(*var, ']')) != 0) {
 			*end = '\0';
 			(*var)++;
-			switch_copy_string(cfg->category, *var, sizeof(cfg->category));
-			cfg->catno++;
+			if (**var == '+') {
+				(*var)++;
+				switch_copy_string(cfg->section, *var, sizeof(cfg->section));
+				cfg->sectno++;
+
+				if (cfg->lockto > -1 && cfg->sectno != cfg->lockto) {
+					break;
+				}
+				cfg->catno = 0;
+				cfg->lineno = 0;
+				
+			} else {
+				switch_copy_string(cfg->category, *var, sizeof(cfg->category));
+				cfg->catno++;
+			}
 			continue;
 		}
 

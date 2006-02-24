@@ -73,6 +73,7 @@ static struct {
 	int dtmf_on;
 	int dtmf_off;
 	int supress_dtmf_tone;
+	int configured_spans;
 	char *dialplan;
 } globals;
 
@@ -351,6 +352,12 @@ static switch_status wanpipe_on_transmit(switch_core_session *session)
 static switch_status wanpipe_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
 											  switch_core_session **new_session)
 {
+	if (!globals.configured_spans) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error No Spans Configured.\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+
 	if ((*new_session = switch_core_session_request(&wanpipe_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
 		switch_channel *channel;
@@ -1177,7 +1184,7 @@ static int config_wanpipe(int reload)
 	}
 
 
-
+	globals.configured_spans = 0;
 	for(current_span = 1; current_span < MAX_SPANS; current_span++) {
 		if (SPANS[current_span]) {
 
@@ -1195,6 +1202,7 @@ static int config_wanpipe(int reload)
 			}
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Launch span %d\n", current_span);
 			pri_thread_launch(&SPANS[current_span]->spri);
+			globals.configured_spans++;
 		}
 	}
 

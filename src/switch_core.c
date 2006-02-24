@@ -807,6 +807,8 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 					break;
 				}
 			}
+		} else {
+			return status;
 		}
 	}
 

@@ -70,12 +70,18 @@ struct switch_config {
     char *path;
 	/*! current category */
     char category[256];
+	/*! current section */
+    char section[256];
 	/*! buffer of current line being read */
     char buf[1024];
 	/*! current line number in file */
     int lineno;
 	/*! current category number in file */
 	int catno;
+	/*! current section number in file */
+	int sectno;
+
+	int lockto;
 };
 
 /*!
