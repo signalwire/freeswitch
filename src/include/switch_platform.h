@@ -113,6 +113,7 @@ typedef unsigned long	in_addr_t;
 #else
 #define SWITCH_MOD_DECLARE(type)		__declspec(dllimport) type __cdecl
 #endif
+#define SIGHUP SIGTERM
 #else //not win32
 #define SWITCH_DECLARE(type) type
 #define SWITCH_DECLARE_NONSTD(type) type

@@ -38,16 +38,16 @@ SWITCH_DECLARE(char) switch_rfc2833_to_char(int event)
     return (event > -1 && event < sizeof(RFC2833_CHARS)) ? RFC2833_CHARS[event] : '\0';
 }
 
-SWITCH_DECLARE(int) switch_char_to_rfc2833(char key)
+SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key)
 {
     char *c;
 
     for (c = RFC2833_CHARS; *c ; c++) {
         if (*c == key) {
-            return (c - RFC2833_CHARS);
+            return (unsigned char)(c - RFC2833_CHARS);
         }
     }
-    return -1;
+    return (unsigned char)-1;
 }
 
 SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen)

@@ -673,7 +673,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 			tech_pvt->out_digit_sofar = 0;
 			tech_pvt->out_digit_dur = rdigit->duration;
 			tech_pvt->out_digit = rdigit->digit;
-			tech_pvt->out_digit_packet[0] = switch_char_to_rfc2833(rdigit->digit);
+			tech_pvt->out_digit_packet[0] = (unsigned char)switch_char_to_rfc2833(rdigit->digit);
 			tech_pvt->out_digit_packet[1] = 7;
 
 			ts = tech_pvt->timestamp_dtmf += samples;
@@ -767,7 +767,7 @@ static switch_status exosip_send_dtmf(switch_core_session *session, char *digits
 	for(c = digits; *c; c++) {
 		struct rfc2833_digit *rdigit;
 
-		if ((rdigit = malloc(sizeof(*rdigit)))) {
+		if ((rdigit = malloc(sizeof(*rdigit))) != 0) {
 			memset(rdigit, 0, sizeof(*rdigit));
 			rdigit->digit = *c;
 			rdigit->duration = globals.dtmf_duration * (tech_pvt->read_codec.implementation->samples_per_second / 1000);

@@ -79,7 +79,7 @@ SWITCH_DECLARE(char) switch_rfc2833_to_char(int event);
   \param the charecter to encode
   \return the event id for the specified character or -1 on an invalid input
 */
-SWITCH_DECLARE(int) switch_char_to_rfc2833(char key);
+SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key);
 
 /*!
   \brief Duplicate a string 
