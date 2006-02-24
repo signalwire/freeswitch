@@ -32,7 +32,6 @@
 #include <switch_channel.h>
 
 struct switch_channel {
-	time_t initiated;
 	char *name;
 	switch_buffer *dtmf_buffer;
 	switch_mutex_t *dtmf_mutex;
@@ -46,6 +45,7 @@ struct switch_channel {
 	const struct switch_state_handler_table *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
 	switch_hash *variables;
+	switch_channel_timetable_t times;
 	void *private;
 	int freq;
 	int bits;
@@ -54,7 +54,10 @@ struct switch_channel {
 	int kbps;
 };
 
-
+SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch_channel *channel)
+{
+	return &channel->times;
+}
 
 SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, switch_memory_pool *pool)
 {
@@ -67,7 +70,7 @@ SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, swi
 	switch_core_hash_init(&(*channel)->variables, pool);
 	switch_buffer_create(pool, &(*channel)->dtmf_buffer, 128);
 	switch_mutex_init(&(*channel)->dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
-
+	(*channel)->times.created = switch_time_now();
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -549,6 +552,7 @@ SWITCH_DECLARE(switch_status) switch_channel_hangup(switch_channel *channel)
 {
 	assert(channel != NULL);
 	if (channel->state < CS_HANGUP) {
+		channel->times.hungup = switch_time_now();
 		channel->state = CS_HANGUP;
 		switch_core_session_signal_state_change(channel->session);
 	}
@@ -563,6 +567,7 @@ SWITCH_DECLARE(switch_status) switch_channel_answer(switch_channel *channel)
 	if (switch_core_session_answer_channel(channel->session) == SWITCH_STATUS_SUCCESS) {
 		switch_event *event;
 
+		channel->times.answered = switch_time_now();
 		switch_channel_set_flag(channel, CF_ANSWERED);
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Answer %s!\n", channel->name);
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {

@@ -44,6 +44,12 @@ extern "C" {
 
 #include <switch.h>
 
+typedef struct {
+	switch_time_t created;
+	switch_time_t answered;
+	switch_time_t hungup;
+} switch_channel_timetable_t;
+
 /**
  * @defgroup switch_channel Channel Functions
  * @ingroup FREESWITCH
@@ -66,6 +72,13 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_get_state(switch_channel *ch
   \return current state of channel after application of new state
 */	
 SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *channel, switch_channel_state state);
+
+/*!
+  \brief View the timetable of a channel
+  \param channel channel to retrieve timetable from
+  \returns a pointer to the channel's timetable (created, answered, etc..)
+*/
+SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch_channel *channel);
 
 /*!
   \brief Allocate a new channel
