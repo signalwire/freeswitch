@@ -137,13 +137,17 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 				}
 				cfg->catno = 0;
 				cfg->lineno = 0;
-				
+				*var = "";
+				*val = "";
+				return 1;
 			} else {
 				switch_copy_string(cfg->category, *var, sizeof(cfg->category));
 				cfg->catno++;
 			}
 			continue;
 		}
+
+
 
 		if (**var == '#' || **var == ';' || **var == '\n' || **var == '\r') {
 			continue;
@@ -153,7 +157,8 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 			break;
 		}
 
-		if ((end = strchr(*var, '#')) != 0) {
+
+		if ((end = strchr(*var, '#')) != 0 || (end = strchr(*var, ';')) != 0) {
 			*end = '\0';
 			end--;
 		} else if ((end = strchr(*var, '\n')) != 0) {
@@ -170,6 +175,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 		}
 		*var = p;
 
+		
 		if ((*val = strchr(*var, '=')) == 0) {
 			ret = -1;
 			//log_printf(0, server.log, "Invalid syntax on %s: line %d\n", cfg->path, cfg->lineno);
@@ -198,6 +204,7 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 			break;
 		}
 	}
+
 
 	return ret;
 

@@ -355,6 +355,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	if (switch_config_open_file(&cfg, cf)) {
 		while (switch_config_next_pair(&cfg, &var, &val)) {
 			count++;
+
 			if (!strcasecmp(cfg.category, "modules")) {
 				if (!strcasecmp(var, "load")) {
 					if (!strcasecmp(val, "all")) {
