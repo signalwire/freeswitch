@@ -51,10 +51,10 @@ int main(int argc, char *argv[])
 	}
 
 	if (bg) {
-		int pid;
 #ifdef WIN32
 		char *path = ".\\freeswitch.log";
 #else
+		int pid;
 		char *path = "/var/log/freeswitch.log";
 		nice(-20);
 #endif
@@ -66,10 +66,14 @@ int main(int argc, char *argv[])
 
 		(void) signal(SIGHUP, (void *) handle_SIGHUP);
 
+#ifdef WIN32
+		FreeConsole();
+#else
 		if ((pid = fork())) {
 			fprintf(stderr, "%d Backgrounding.\n", (int)pid);
 			exit(0);
 		}
+#endif
 	}
 
 	if (switch_core_init(out) != SWITCH_STATUS_SUCCESS) {
