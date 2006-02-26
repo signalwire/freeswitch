@@ -39,6 +39,7 @@ AM_CFLAGS 	+= -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\"
 AM_CFLAGS	+= -DSWITCH_PREFIX_DIR=\"$(PREFIX)\"
 AM_CFLAGS	+= -DSWITCH_CONF_DIR=\"$(PREFIX)/conf\"
 AM_CFLAGS	+= -DSWITCH_DB_DIR=\"$(PREFIX)/db\"
+AM_CFLAGS	+= -DSWITCH_LOG_DIR=\"$(PREFIX)/log\"
 
 
 libfreeswitch_la_SOURCES	= \
@@ -183,7 +184,7 @@ modwipe:
 
 install_mod: modules
 	@echo Installing $(NAME)
-	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db $(PREFIX)/bin
+	@mkdir -p $(PREFIX) $(PREFIX)/conf $(PREFIX)/mod $(PREFIX)/db $(PREFIX)/log $(PREFIX)/bin
 	@if [ -f .libs/$(NAME) ] ; then /bin/cp -p .libs/$(NAME) $(PREFIX)/bin ; else /bin/cp -p ./$(NAME) $(PREFIX)/bin ; fi
 	@echo Installing Modules
 	@rm -f build/freeswitch.env
