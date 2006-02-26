@@ -82,7 +82,7 @@ struct switch_core_session {
 	int stream_count;
 
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-	void *private;
+	void *private_info;
 };
 
 struct switch_core_runtime {
@@ -741,20 +741,20 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
 SWITCH_DECLARE(void *) switch_core_session_get_private(switch_core_session *session)
 {
 	assert(session != NULL);
-	return session->private;
+	return session->private_info;
 }
 
 
-SWITCH_DECLARE(switch_status) switch_core_session_set_private(switch_core_session *session, void *private)
+SWITCH_DECLARE(switch_status) switch_core_session_set_private(switch_core_session *session, void *private_info)
 {
 	assert(session != NULL);
-	session->private = private;
+	session->private_info = private_info;
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(int) switch_core_session_add_stream(switch_core_session *session, void *private)
+SWITCH_DECLARE(int) switch_core_session_add_stream(switch_core_session *session, void *private_info)
 {
-	session->streams[session->stream_count++] = private;
+	session->streams[session->stream_count++] = private_info;
 	return session->stream_count - 1;
 }
 

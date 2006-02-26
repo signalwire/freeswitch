@@ -283,24 +283,24 @@ SWITCH_DECLARE(void *) switch_core_session_get_private(switch_core_session *sess
 /*! 
   \brief Add private user data to a session
   \param session the session to add used data to
-  \param private the used data to add
+  \param private_info the used data to add
   \return SWITCH_STATUS_SUCCESS if data is added
 */
-SWITCH_DECLARE(switch_status) switch_core_session_set_private(switch_core_session *session, void *private);
+SWITCH_DECLARE(switch_status) switch_core_session_set_private(switch_core_session *session, void *private_info);
 
 /*!
   \brief Add a logical stream to a session
   \param session the session to add the stream to
-  \param private an optional pointer to private data for the new stream
+  \param private_info an optional pointer to private data for the new stream
   \return the stream id of the new stream
  */
-SWITCH_DECLARE(int) switch_core_session_add_stream(switch_core_session *session, void *private);
+SWITCH_DECLARE(int) switch_core_session_add_stream(switch_core_session *session, void *private_info);
 
 /*!
   \brief Retreive a logical stream from a session
   \param session the session to add the stream to
   \param index the index to retrieve
-  \return the private data (if any)
+  \return the stream
  */
 SWITCH_DECLARE(void *) switch_core_session_get_stream(switch_core_session *session, int index);
 

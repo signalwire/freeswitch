@@ -53,7 +53,7 @@ static switch_status soft_timer_init(switch_timer *timer)
 	struct timer_private *private;
 
 	private = switch_core_alloc(timer->memory_pool, sizeof(*private));
-	timer->private = private;
+	timer->private_info = private;
 
 #ifdef WINTIMER
 	QueryPerformanceFrequency(&private->freq);
@@ -67,7 +67,7 @@ static switch_status soft_timer_init(switch_timer *timer)
 
 static switch_status soft_timer_next(switch_timer *timer)
 {
-	struct timer_private *private = timer->private;
+	struct timer_private *private = timer->private_info;
 
 #ifdef WINTIMER
 	private->base.QuadPart += timer->interval * (private->freq.QuadPart / 1000);
@@ -93,7 +93,7 @@ static switch_status soft_timer_next(switch_timer *timer)
 
 static switch_status soft_timer_destroy(switch_timer *timer)
 {
-	timer->private = NULL;
+	timer->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
 

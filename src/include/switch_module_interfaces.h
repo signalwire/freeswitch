@@ -186,7 +186,7 @@ struct switch_endpoint_interface {
 	const switch_state_handler_table *state_handler;
 
 	/*! private information */
-	void *private;
+	void *private_info;
 
 	/* to facilitate linking */
 	const struct switch_endpoint_interface *next;
@@ -207,7 +207,7 @@ struct switch_timer {
 	/*! the timer's memory pool */
 	switch_memory_pool *memory_pool;
 	/*! private data for loadable modules to store information */
-	void *private;
+	void *private_info;
 };
 
 /*! \brief A table of functions that a timer module implements */
@@ -276,7 +276,7 @@ struct switch_file_handle {
 	/*! the handle's memory pool */
 	switch_memory_pool *memory_pool;
 	/*! private data for the format module to store handle specific info */
-	void *private;
+	void *private_info;
 };
 
 
@@ -316,7 +316,7 @@ struct switch_speech_handle {
 	/*! the handle's memory pool */
 	switch_memory_pool *memory_pool;
 	/*! private data for the format module to store handle specific info */
-	void *private;
+	void *private_info;
 };
 
 
@@ -349,7 +349,7 @@ struct switch_directory_handle {
 	/*! the handle's memory pool */
 	switch_memory_pool *memory_pool;
 	/*! private data for the format module to store handle specific info */
-	void *private;
+	void *private_info;
 };
 
 
@@ -403,7 +403,7 @@ struct switch_codec {
 	/*! the handle's memory pool*/
 	switch_memory_pool *memory_pool;
 	/*! private data for the codec module to store handle specific info */
-	void *private;
+	void *private_info;
 };
 
 /*! \brief A table of settings and callbacks that define a paticular implementation of a codec */

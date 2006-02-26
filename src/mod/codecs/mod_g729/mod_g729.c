@@ -64,7 +64,7 @@ static switch_status switch_g729_init(switch_codec *codec, switch_codec_flag fla
 			g729_init_decoder(&context->decoder_object);
 		}
 
-		codec->private = context;
+		codec->private_info = context;
 
 		return SWITCH_STATUS_SUCCESS;
 
@@ -74,7 +74,7 @@ static switch_status switch_g729_init(switch_codec *codec, switch_codec_flag fla
 
 static switch_status switch_g729_destroy(switch_codec *codec) 
 {
-	codec->private = NULL;
+	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -93,7 +93,7 @@ static switch_status switch_g729_encode(switch_codec *codec,
 										unsigned int *flag) 
 {
 
-	struct g729_context *context = codec->private;
+	struct g729_context *context = codec->private_info;
 	int cbret = 0;
 
 	if (!context) {
@@ -139,7 +139,7 @@ static switch_status switch_g729_decode(switch_codec *codec,
 										unsigned int *flag) 
 {
 
-	struct g729_context *context = codec->private;
+	struct g729_context *context = codec->private_info;
 
 
 	if (!context) {

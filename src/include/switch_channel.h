@@ -234,7 +234,7 @@ SWITCH_DECLARE(const switch_state_handler_table *) switch_channel_get_state_hand
   \param private void pointer to private data
   \return SWITCH_STATUS_SUCCESS if data was set
 */
-SWITCH_DECLARE(switch_status) switch_channel_set_private(switch_channel *channel, void *private);
+SWITCH_DECLARE(switch_status) switch_channel_set_private(switch_channel *channel, void *private_info);
 
 /*!
   \brief Retrieve private from a given channel

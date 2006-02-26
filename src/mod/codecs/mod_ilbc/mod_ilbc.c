@@ -59,14 +59,14 @@ static switch_status switch_ilbc_init(switch_codec *codec, switch_codec_flag fla
 			context->decoder = ilbc_create();
 	}
 
-	codec->private = context;
+	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
 static switch_status switch_ilbc_destroy(switch_codec *codec) 
 {
-	struct ilbc_context *context = codec->private;
+	struct ilbc_context *context = codec->private_info;
 
 	int encoding = (codec->flags & SWITCH_CODEC_FLAG_ENCODE);
 	int decoding = (codec->flags & SWITCH_CODEC_FLAG_DECODE);
@@ -76,7 +76,7 @@ static switch_status switch_ilbc_destroy(switch_codec *codec)
 	if (decoding)
 		ilbc_destroy(context->decoder);
 
-	codec->private = NULL;
+	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -92,7 +92,7 @@ static switch_status switch_ilbc_encode(switch_codec *codec,
 										int *encoded_rate, 
 										unsigned int *flag) 
 {
-	struct ilbc_context *context = codec->private;
+	struct ilbc_context *context = codec->private_info;
 	int cbret = 0;
 
 	if (!context) {
@@ -132,7 +132,7 @@ static switch_status switch_ilbc_decode(switch_codec *codec,
 										int *decoded_rate, 
 										unsigned int *flag) 
 {
-	struct ilbc_context *context = codec->private;
+	struct ilbc_context *context = codec->private_info;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;

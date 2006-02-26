@@ -46,7 +46,7 @@ struct switch_channel {
 	int state_handler_index;
 	switch_hash *variables;
 	switch_channel_timetable_t times;
-	void *private;
+	void *private_info;
 	int freq;
 	int bits;
 	int channels;
@@ -185,17 +185,17 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel *channel, char
 	return switch_core_hash_find(channel->variables, varname);
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_set_private(switch_channel *channel, void *private)
+SWITCH_DECLARE(switch_status) switch_channel_set_private(switch_channel *channel, void *private_info)
 {
 	assert(channel != NULL);
-	channel->private = private;
+	channel->private_info = private_info;
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel *channel)
 {
 	assert(channel != NULL);
-	return channel->private;
+	return channel->private_info;
 }
 
 SWITCH_DECLARE(switch_status) switch_channel_set_name(switch_channel *channel, char *name)

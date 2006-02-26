@@ -152,7 +152,7 @@ static switch_status switch_speex_init(switch_codec *codec, switch_codec_flag fl
 
 
 
-		codec->private = context;
+		codec->private_info = context;
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
@@ -165,7 +165,7 @@ static switch_status switch_speex_encode(switch_codec *codec,
 										 void *encoded_data,
 										 size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
 {
-	struct speex_context *context = codec->private;
+	struct speex_context *context = codec->private_info;
 	short *buf;
 	int is_speech = 1;
 
@@ -220,7 +220,7 @@ static switch_status switch_speex_decode(switch_codec *codec,
 										 void *decoded_data,
 										 size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
 {
-	struct speex_context *context = codec->private;
+	struct speex_context *context = codec->private_info;
 	short *buf;
 
 	if (!context) {
@@ -242,7 +242,7 @@ static switch_status switch_speex_decode(switch_codec *codec,
 static switch_status switch_speex_destroy(switch_codec *codec)
 {
 	int encoding, decoding;
-	struct speex_context *context = codec->private;
+	struct speex_context *context = codec->private_info;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
@@ -261,7 +261,7 @@ static switch_status switch_speex_destroy(switch_codec *codec)
 		speex_decoder_destroy(context->decoder_state);
 	}
 
-	codec->private = NULL;
+	codec->private_info = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
 }

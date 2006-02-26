@@ -139,14 +139,14 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 	handle->sections = context->sfinfo.sections;
 	handle->seekable = context->sfinfo.seekable;
 
-	handle->private = context;
+	handle->private_info = context;
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 switch_status sndfile_file_close(switch_file_handle *handle)
 {
-	sndfile_context *context = handle->private;
+	sndfile_context *context = handle->private_info;
 
 	sf_close(context->handle);
 
@@ -155,7 +155,7 @@ switch_status sndfile_file_close(switch_file_handle *handle)
 
 switch_status sndfile_file_seek(switch_file_handle *handle, unsigned int *cur_sample, unsigned int samples, int whence)
 {
-	sndfile_context *context = handle->private;
+	sndfile_context *context = handle->private_info;
 
 	if (!handle->seekable) {
 		return SWITCH_STATUS_NOTIMPL;
@@ -170,7 +170,7 @@ switch_status sndfile_file_seek(switch_file_handle *handle, unsigned int *cur_sa
 switch_status sndfile_file_read(switch_file_handle *handle, void *data, size_t *len)
 {
 	size_t inlen = *len;
-	sndfile_context *context = handle->private;
+	sndfile_context *context = handle->private_info;
 
 	if (switch_test_flag(handle, SWITCH_FILE_DATA_RAW)) {
 		*len = (size_t) sf_read_raw(context->handle, data, inlen);
@@ -192,7 +192,7 @@ switch_status sndfile_file_read(switch_file_handle *handle, void *data, size_t *
 switch_status sndfile_file_write(switch_file_handle *handle, void *data, size_t *len)
 {
 	size_t inlen = *len;
-	sndfile_context *context = handle->private;
+	sndfile_context *context = handle->private_info;
 
 	if (switch_test_flag(handle, SWITCH_FILE_DATA_RAW)) {
 		*len = (size_t) sf_write_raw(context->handle, data, inlen);

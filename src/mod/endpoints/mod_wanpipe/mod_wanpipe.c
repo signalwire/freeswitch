@@ -313,7 +313,7 @@ static switch_status wanpipe_on_hangup(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	chanmap = tech_pvt->spri->private;
+	chanmap = tech_pvt->spri->private_info;
 
 	sangoma_socket_close(&tech_pvt->socket);
 
@@ -423,7 +423,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 
 			do {
 				if ((spri = &SPANS[span]->spri)) {
-					chanmap = spri->private;
+					chanmap = spri->private_info;
 					if (channo == 0) {
 						if (autochan > 0) {
 							for(channo = 1; channo < SANGOMA_MAX_CHAN_PER_SPAN; channo++) {
@@ -813,7 +813,7 @@ static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 	switch_core_session *session;
 	struct private_object *tech_pvt;
 
-	chanmap = spri->private;
+	chanmap = spri->private_info;
 	if ((session = chanmap->map[event->hangup.channel])) {
 		switch_channel *channel = NULL;
 
@@ -843,7 +843,7 @@ static int on_answer(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 	switch_channel *channel;
 	struct channel_map *chanmap;
 
-	chanmap = spri->private;
+	chanmap = spri->private_info;
 
 	if ((session = chanmap->map[event->answer.channel])) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Answer on channel %d\n", event->answer.channel);
@@ -864,7 +864,7 @@ static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	switch_channel *channel;
 	struct channel_map *chanmap;
 
-	chanmap = spri->private;
+	chanmap = spri->private_info;
 
 	if ((session = chanmap->map[event->proceeding.channel])) {
 		switch_caller_profile *originator;
@@ -902,7 +902,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	struct channel_map *chanmap;
 	struct private_object *tech_pvt;
 
-	chanmap = spri->private;
+	chanmap = spri->private_info;
 
 	if ((session = chanmap->map[event->ringing.channel])) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Ringing on channel %d\n", event->ringing.channel);
@@ -935,7 +935,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 
 
 
-	chanmap = spri->private;
+	chanmap = spri->private_info;
 	if (chanmap->map[event->ring.channel]) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "--Duplicate Ring on channel %d (ignored)\n",
 							  event->ring.channel);
@@ -1027,7 +1027,7 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Restarting channel %d\n", event->restart.channel);
 
-	chanmap = spri->private;
+	chanmap = spri->private_info;
 	
 	if ((session = chanmap->map[event->restart.channel])) {
 		switch_channel *channel;
@@ -1070,7 +1070,7 @@ static void *pri_thread_run(switch_thread *thread, void *obj)
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RESTART, on_restart);
 
 	spri->on_loop = check_flags;
-	spri->private = &chanmap;
+	spri->private_info = &chanmap;
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_PUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_pri._tcp");

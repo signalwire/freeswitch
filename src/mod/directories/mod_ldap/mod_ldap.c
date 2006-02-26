@@ -81,7 +81,7 @@ static switch_status mod_ldap_open(switch_directory_handle *dh, char *source, ch
 	}
 
 	
-	dh->private = context;
+	dh->private_info = context;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -90,7 +90,7 @@ static switch_status mod_ldap_close(switch_directory_handle *dh)
 {
 	struct ldap_context *context;
 
-	context = dh->private;
+	context = dh->private_info;
 	assert(context != NULL);
 
 	ldap_unbind_s(context->ld);
@@ -102,7 +102,7 @@ static switch_status mod_ldap_query(switch_directory_handle *dh, char *base, cha
 {
 	struct ldap_context *context;
 
-	context = dh->private;
+	context = dh->private_info;
 	assert(context != NULL);
 
 	if (ldap_search_s(context->ld, base, LDAP_SCOPE_SUBTREE, query, NULL, 0, &context->msg) != LDAP_SUCCESS) {
@@ -120,7 +120,7 @@ static switch_status mod_ldap_next(switch_directory_handle *dh)
 {
 	struct ldap_context *context;
 
-	context = dh->private;
+	context = dh->private_info;
 	assert(context != NULL);
 
 	context->vitt = 0;
@@ -144,7 +144,7 @@ switch_status mod_ldap_next_pair(switch_directory_handle *dh, char **var, char *
 {
 	struct ldap_context *context;
 
-	context = dh->private;
+	context = dh->private_info;
 	assert(context != NULL);
 
 	*var = *val = NULL;
