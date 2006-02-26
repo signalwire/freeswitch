@@ -30,8 +30,35 @@
  *
  */
 #include <switch.h>
+#ifndef SWITCH_LOG_DIR
+#ifdef WIN32
+#define SWITCH_LOG_DIR ".\\log"
+#else
+#define SWITCH_LOG_DIR "/usr/local/freeswitch/log"
+#endif
+#endif
 
 static int RUNNING = 0;
+
+static int handle_SIGPIPE(int sig)
+{
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Sig Pipe!\n");
+	return 0;
+}
+#ifdef TRAP_BUS
+static int handle_SIGBUS(int sig)
+{
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Sig BUS!\n");
+	return 0;
+}
+#endif
+
+/* no ctl-c mofo */
+static int handle_SIGINT(int sig)
+{
+	return 0;
+}
+
 
 static int handle_SIGHUP(int sig)
 {
@@ -41,30 +68,54 @@ static int handle_SIGHUP(int sig)
 
 int main(int argc, char *argv[])
 {
+	char *lfile = "freeswitch.log";
+	char *pfile = "freeswitch.pid";
+	char path[256] = "";
 	char *err = NULL;
 	switch_event *event;
 	int bg = 0;
-	FILE *out = NULL;
+	FILE *f;
+#ifdef WIN32
+	char sep = '\\';
+#else
+	char sep = '/';
+	int pid;
+	nice(-20);
+
+	if (argv[1] && !strcmp(argv[1], "-stop")) {
+		pid_t pid = 0;
+		snprintf(path, sizeof(path), "%s%c%s", SWITCH_LOG_DIR, sep, pfile);
+		if ((f = fopen(path, "r")) == 0) {
+			fprintf(stderr, "Cannot open pid file %s.\n", path);
+			return 255;
+		}
+		fscanf(f, "%d", &pid);
+		if (pid > 0) {
+			kill(pid, SIGTERM);
+		}
+
+		fclose(f);
+		return 0;
+	}
+#endif
+
+	/* set signal handlers */
+	(void) signal(SIGINT, (void *) handle_SIGINT);
+#ifdef SIGPIPE
+	(void) signal(SIGPIPE, (void *) handle_SIGPIPE);
+#endif
+#ifdef TRAP_BUS
+	(void) signal(SIGBUS, (void *) handle_SIGBUS);
+#endif
+
 
 	if (argv[1] && !strcmp(argv[1], "-nc")) {
 		bg++;
 	}
 
 	if (bg) {
-#ifdef WIN32
-		char *path = ".\\freeswitch.log";
-#else
-		int pid;
-		char *path = "/var/log/freeswitch.log";
-		nice(-20);
-#endif
-
-		if ((out = fopen(path, "a")) == 0) {
-			fprintf(stderr, "Cannot open output file.\n");
-			return 255;
-		}
-
 		(void) signal(SIGHUP, (void *) handle_SIGHUP);
+		(void) signal(SIGTERM, (void *) handle_SIGHUP);
 
 #ifdef WIN32
 		FreeConsole();
@@ -76,7 +127,20 @@ int main(int argc, char *argv[])
 #endif
 	}
 
-	if (switch_core_init(out) != SWITCH_STATUS_SUCCESS) {
+	snprintf(path, sizeof(path), "%s%c%s", SWITCH_LOG_DIR, sep, pfile);
+	if ((f = fopen(path, "w")) == 0) {
+		fprintf(stderr, "Cannot open pid file %s.\n", path);
+		return 255;
+	}
+
+	fprintf(f, "%d", getpid());
+	fclose(f);
+
+	if (bg) {
+		snprintf(path, sizeof(path), "%s%c%s", SWITCH_LOG_DIR, sep, lfile);
+	}
+
+	if (switch_core_init(bg ? path : NULL) != SWITCH_STATUS_SUCCESS) {
 		err = "Cannot Initilize\n";
 	}
 
@@ -99,10 +163,22 @@ int main(int argc, char *argv[])
 	}
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_VERSION_FULL);
+	snprintf(path, sizeof(path), "%s%c%s", SWITCH_LOG_DIR, sep, pfile);
 
 	if (bg) {
+		bg = 0;
 		RUNNING = 1;
 		while(RUNNING) {
+#ifdef WIN32
+		bg++;
+		if(bg == 100) {
+			if ((f = fopen(path, "r")) == 0) {
+				break;
+			}
+			fclose(f);
+			bg = 0;
+		}
+#endif
 			switch_yield(10000);
 		}
 	}  else {
@@ -118,8 +194,7 @@ int main(int argc, char *argv[])
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Clean up modules.\n");
 	switch_loadable_module_shutdown();
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Tearing down environment.\n");
-	switch_core_destroy();
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Exiting Now.\n");
+	switch_core_destroy();
 	return 0;
-
 }

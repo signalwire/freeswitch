@@ -100,8 +100,6 @@ struct switch_core_runtime {
 };
 
 /* Prototypes */
-static int handle_SIGINT(int sig);
-static int handle_SIGPIPE(int sig);
 static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *thread, void *obj);
 static void switch_core_standard_on_init(switch_core_session *session);
 static void switch_core_standard_on_hangup(switch_core_session *session);
@@ -114,24 +112,6 @@ static void switch_core_standard_on_transmit(switch_core_session *session);
 /* The main runtime obj we keep this hidden for ourselves */
 static struct switch_core_runtime runtime;
 
-static int handle_SIGPIPE(int sig)
-{
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Sig Pipe!\n");
-	return 0;
-}
-#ifdef TRAP_BUS
-static int handle_SIGBUS(int sig)
-{
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Sig BUS!\n");
-	return 0;
-}
-#endif
-
-/* no ctl-c mofo */
-static int handle_SIGINT(int sig)
-{
-	return 0;
-}
 static void db_pick_path(char *dbname, char *buf, size_t size)
 {
 
@@ -2195,13 +2175,19 @@ static void core_event_handler(switch_event *event)
 	}
 }
 
-SWITCH_DECLARE(switch_status) switch_core_init(FILE *console)
+SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 {
 #ifdef EMBED_PERL
 	PerlInterpreter *my_perl;
 #endif
-
-	runtime.console = console ? console : stdout;
+	if(console) {
+		if ((runtime.console = fopen(console, "a")) == 0) {
+			fprintf(stderr, "Cannot open output file %s.\n", console);
+			return SWITCH_STATUS_FALSE;
+		}
+	} else {
+		runtime.console = stdout;
+	}
 
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != APR_SUCCESS) {
@@ -2252,14 +2238,6 @@ SWITCH_DECLARE(switch_status) switch_core_init(FILE *console)
 
 	switch_core_hash_init(&runtime.session_table, runtime.memory_pool);
 
-	/* set signal handlers and startup time */
-	(void) signal(SIGINT, (void *) handle_SIGINT);
-#ifdef SIGPIPE
-	(void) signal(SIGPIPE, (void *) handle_SIGPIPE);
-#endif
-#ifdef TRAP_BUS
-	(void) signal(SIGBUS, (void *) handle_SIGBUS);
-#endif
 	time(&runtime.initiated);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -2288,6 +2266,11 @@ SWITCH_DECLARE(switch_status) switch_core_destroy(void)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unallocating memory pool.\n");
 		apr_pool_destroy(runtime.memory_pool);
 		apr_terminate();
+	}
+	
+	if(runtime.console != stdout && runtime.console != stderr) {
+		fclose(runtime.console);
+		runtime.console = NULL;
 	}
 
 	return SWITCH_STATUS_SUCCESS;

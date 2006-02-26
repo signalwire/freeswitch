@@ -106,7 +106,7 @@ struct switch_core_runtime;
   \param console optional FILE stream for output
   \note to be called at application startup
 */
-SWITCH_DECLARE(switch_status) switch_core_init(FILE *console);
+SWITCH_DECLARE(switch_status) switch_core_init(char *console);
 
 /*! 
   \brief Destroy the core
