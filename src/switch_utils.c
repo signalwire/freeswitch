@@ -29,7 +29,25 @@
  * switch_utils.c -- Compatability and Helper Code
  *
  */
-#include <switch_utils.h>
+#include <switch.h>
+
+SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
+{
+	switch(priority) { /*lol*/
+	case SWITCH_PRIORITY_NORMAL:
+		return "NORMAL";
+		break;
+	case SWITCH_PRIORITY_LOW:
+		return "LOW";
+		break;
+	case SWITCH_PRIORITY_HIGH:
+		return "HIGH";
+		break;
+	default:
+		return "INVALID";
+		break;
+	}
+}
 
 static char RFC2833_CHARS[] = "0123456789*#ABCDF";
 

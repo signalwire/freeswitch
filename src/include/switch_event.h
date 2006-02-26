@@ -85,6 +85,8 @@ struct switch_event_subclass {
 struct switch_event {
 	/*! the event id (descriptor) */
 	switch_event_t event_id;
+	/*! the priority of the event */
+	switch_priority_t priority;
 	/*! the owner of the event */
 	char *owner;
 	/*! the subclass of the event */
@@ -138,6 +140,14 @@ SWITCH_DECLARE(switch_status) switch_event_shutdown(void);
   \return SWITCH_STATUS_SUCCESS on success
 */
 SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event **event, switch_event_t event_id, char *subclass_name);
+
+/*!
+  \brief Set the priority of an event
+  \param event the event to set the priority on
+  \param priority the event priority
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status) switch_event_set_priority(switch_event *event, switch_priority_t priority);
 
 /*!
   \brief Retrieve a header value from an event
@@ -252,6 +262,13 @@ SWITCH_DECLARE(switch_status) switch_event_add_body(switch_event *event, char *f
   \return SWITCH_STATUS_SUCCESS on success
 */
 #define switch_event_create(event, id) switch_event_create_subclass(event, id, SWITCH_EVENT_SUBCLASS_ANY)
+
+/*!
+  \brief Deliver an event to all of the registered event listeners
+  \param event the event to send (will be nulled)
+  \note normaly use switch_event_fire for delivering events (only use this when you wish to deliver the event blocking on your thread)
+*/
+SWITCH_DECLARE(void) switch_event_deliver(switch_event **event);
 
 /*!
   \brief Fire an event filling in most of the arguements with obvious values

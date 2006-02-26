@@ -47,6 +47,22 @@ extern "C" {
 #define SWITCH_TRUE 1
 #define SWITCH_FALSE 0
 
+
+/*!
+  \enum switch_priority_t
+  \brief Priority Indication
+<pre>
+    SWITCH_PRIORITY_NORMAL  - Normal Priority
+    SWITCH_PRIORITY_LOW     - Low Priority
+    SWITCH_PRIORITY_HIGH    - High Priority
+</pre>
+ */
+typedef enum {
+	SWITCH_PRIORITY_NORMAL,
+	SWITCH_PRIORITY_LOW,
+	SWITCH_PRIORITY_HIGH,
+} switch_priority_t;
+
 /*!
   \enum switch_ivr_option_t
   \brief Possible options related to ivr functions

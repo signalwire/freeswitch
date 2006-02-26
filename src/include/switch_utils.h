@@ -65,7 +65,12 @@ extern "C" {
 !strcasecmp(expr, "true") ||\
 atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
 
-
+/*!
+  \brief Return a printable name of a switch_priority_t
+  \param priority the priority to get the name of
+  \return the printable form of the priority
+*/
+SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority);
 
 /*!
   \brief Return the RFC2833 character based on an event id
