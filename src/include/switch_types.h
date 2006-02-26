@@ -252,6 +252,7 @@ SWITCH_SPEECH_FLAG_ASR =			(1 <<  1) - Interface can/should convert audio to tex
 SWITCH_SPEECH_FLAG_HASTEXT =		(1 <<  2) - Interface is has text to read.
 SWITCH_SPEECH_FLAG_PEEK =			(1 <<  3) - Read data but do not erase it.
 SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  4) - Free interface's pool on destruction.
+SWITCH_SPEECH_FLAG_BLOCKING =       (1 <<  5) - Indicate that a blocking call is desired 
 </pre>
 */
 typedef enum {
@@ -260,6 +261,7 @@ typedef enum {
 	SWITCH_SPEECH_FLAG_HASTEXT =		(1 <<  2),
 	SWITCH_SPEECH_FLAG_PEEK =			(1 <<  3),
 	SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  4),
+	SWITCH_SPEECH_FLAG_BLOCKING =		(1 <<  5),
 
 } switch_speech_flag;
 

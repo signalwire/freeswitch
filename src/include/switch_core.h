@@ -760,11 +760,18 @@ SWITCH_DECLARE(switch_status) switch_core_file_close(switch_file_handle *fh);
   \brief Open a speech handle
   \param sh a speech handle to use
   \param module_name the speech module to use
+  \param voice_name the desired voice name
+  \param rate the sampling rate
   \param flags asr/tts flags
   \param pool the pool to use (NULL for new pool)
   \return SWITCH_STATUS_SUCCESS if the handle is opened
 */
-SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh, char *module_name, unsigned int flags, switch_memory_pool *pool);
+SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh, 
+													  char *module_name,
+													  char *voice_name,
+													  int rate,
+													  unsigned int flags,
+													  switch_memory_pool *pool);
 
 /*!
   \brief Feed data to the ASR module

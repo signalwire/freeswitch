@@ -81,19 +81,66 @@ static void dirtest_function(switch_core_session *session, char *data)
 
 }
 
+static switch_status show_dtmf(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
+{
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Digits %s\n", dtmf);
+	
+	switch_copy_string((char *)buf, dtmf, buflen);
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+static void tts_function(switch_core_session *session, char *data)
+{
+	switch_channel *channel;
+	switch_codec *codec;
+	char *mydata, *text = NULL, *voice_name = NULL, *tts_name = NULL;
+	char buf[10] = "";
+	char *argv[3];
+	int argc;
+
+	if(!(mydata = switch_core_session_strdup(session, (char *) data))) {
+		return;
+	}
+
+	if ((argc = switch_separate_string(mydata, ':', argv, sizeof(argv) / sizeof(argv[0]))) > 1) {
+		tts_name = argv[0];
+		voice_name = argv[1];
+		text = argv[2];
+	}
+
+	if (voice_name && !text) {
+		text = argv[1];
+		voice_name = NULL;
+	}
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+	
+    switch_channel_answer(channel);
+
+	codec = switch_core_session_get_read_codec(session);
+
+	switch_ivr_speak_text(session, tts_name, voice_name, NULL, codec->implementation->samples_per_second, show_dtmf, text, buf, sizeof(buf));
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Done\n");
+}
+
 static void ivrtest_function(switch_core_session *session, char *data)
 {
 	switch_channel *channel;
 	switch_status status = SWITCH_STATUS_SUCCESS;
+	switch_codec *codec;
 	char buf[10] = "";
 	char term;
-
+	char say[128] = "";
+	
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
 	switch_channel_answer(channel);
-	
-	
+
+	codec = switch_core_session_get_read_codec(session);
+
 	while (switch_channel_get_state(channel) == CS_EXECUTE) {
 		memset(buf, 0, sizeof(buf));
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Enter up to 10 digits, press # to terminate, * to hangup\n");
@@ -118,8 +165,9 @@ static void ivrtest_function(switch_core_session *session, char *data)
 		if (term && term == '*') {
 			break;
 		}
-
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "You Dialed [%s]\n", buf);
+		snprintf(say, sizeof(say), "You Dialed [%s]\n", buf);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, say);
+		switch_ivr_speak_text(session, "cepstral", "david", NULL, codec->implementation->samples_per_second, NULL, say, NULL, 0);
 	}
 	
 }
@@ -146,9 +194,18 @@ static const switch_state_handler_table state_handlers = {
 	/*.on_transmit */ NULL
 };
 
+static const switch_application_interface tts_application_interface = {
+	/*.interface_name */ "tts",
+	/*.application_function */ tts_function,
+	NULL, NULL, NULL,
+	/*.next*/ NULL
+};
+
 static const switch_application_interface dirtest_application_interface = {
 	/*.interface_name */ "dirtest",
-	/*.application_function */ dirtest_function
+	/*.application_function */ dirtest_function,
+	NULL, NULL, NULL,
+	/*.next*/ &tts_application_interface
 };
 
 static const switch_application_interface ivrtest_application_interface = {

@@ -475,6 +475,8 @@ SWITCH_DECLARE(switch_status) switch_core_directory_close(switch_directory_handl
 
 SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh, 
 													  char *module_name, 
+													  char *voice_name,
+													  int rate,
 													  unsigned int flags,
 													  switch_memory_pool *pool)
 {
@@ -495,7 +497,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh,
 		switch_set_flag(sh, SWITCH_SPEECH_FLAG_FREE_POOL);
 	}
 
-	return sh->speech_interface->speech_open(sh, flags);
+	return sh->speech_interface->speech_open(sh, voice_name, rate, flags);
 }
 
 SWITCH_DECLARE(switch_status) switch_core_speech_feed_asr(switch_speech_handle *sh, void *data, unsigned int *len, int rate, unsigned int *flags)

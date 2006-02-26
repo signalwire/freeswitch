@@ -39,7 +39,11 @@ static switch_loadable_module_interface skel_module_interface = {
 	/*.timer_interface */ NULL,
 	/*.dialplan_interface */ NULL,
 	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
+	/*.application_interface */ NULL,
+	/*.api_interface */ NULL,
+	/*.file_interface */ NULL,
+	/*.speech_interface */ NULL,
+	/*.directory_interface */ NULL
 };
 
 switch_status switch_module_load(const switch_loadable_module_interface **interface, char *filename)
