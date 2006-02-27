@@ -386,7 +386,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 													char *tts_name,
 													char *voice_name,
 													char *timer_name,
-													int rate,
+													unsigned int rate,
 													switch_dtmf_callback_function dtmf_callback,
 													char *text,
 													void *buf,
@@ -396,7 +396,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	short abuf[960];
 	char dtmf[128];
 	int interval = 0, samples = 0;
-	size_t len = 0, ilen = 0;
+	size_t len = 0;
+	unsigned int ilen = 0;
 	switch_frame write_frame;
 	switch_timer timer;
 	switch_core_thread_session thread_session;
