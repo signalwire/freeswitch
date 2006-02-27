@@ -300,8 +300,8 @@ struct switch_speech_interface {
 	/*! function to read audio from the TTS*/
 	switch_status (*speech_read_tts)(switch_speech_handle *sh,
 									 void *data,
-									 unsigned int *datalen,
-									 unsigned int *rate,
+									 size_t *datalen,
+									 size_t *rate,
 									 switch_speech_flag *flags);
 
 	const struct switch_speech_interface *next;

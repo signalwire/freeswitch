@@ -523,8 +523,8 @@ SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *
 
 SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
 														  void *data,
-														  unsigned int *datalen,
-														  unsigned int *rate,
+														  size_t *datalen,
+														  size_t *rate,
 														  switch_speech_flag *flags)
 {
 	assert(sh != NULL);
