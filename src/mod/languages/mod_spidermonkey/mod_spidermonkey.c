@@ -62,7 +62,7 @@ static struct {
 } globals;
 
 
-extern JSClass global_class;
+//extern JSClass global_class;
 static JSClass global_class = {
     "Global", JSCLASS_HAS_PRIVATE, 
     JS_PropertyStub,  JS_PropertyStub,  JS_PropertyStub,  JS_PropertyStub, 
