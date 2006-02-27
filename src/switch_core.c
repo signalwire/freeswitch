@@ -514,7 +514,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_interpret_asr(switch_speech_han
 	return sh->speech_interface->speech_interpret_asr(sh, buf, buflen, flags);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *sh, char *text, unsigned int *flags)
+SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *sh, char *text, switch_speech_flag *flags)
 {
 	assert(sh != NULL);
 
@@ -525,7 +525,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *
 														  void *data,
 														  unsigned int *datalen,
 														  unsigned int *rate,
-														  unsigned int *flags)
+														  switch_speech_flag *flags)
 {
 	assert(sh != NULL);
 
@@ -533,7 +533,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *
 }
 
 
-SWITCH_DECLARE(switch_status) switch_core_speech_close(switch_speech_handle *sh, unsigned int *flags)
+SWITCH_DECLARE(switch_status) switch_core_speech_close(switch_speech_handle *sh, switch_speech_flag *flags)
 {
 	return sh->speech_interface->speech_close(sh, flags);
 }

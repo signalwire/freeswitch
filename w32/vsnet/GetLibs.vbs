@@ -26,7 +26,7 @@ BuildModrawaudio=False
 BuildModpcre=False
 BuildModldap=False
 BuildModzeroconf=False
-BuildSpiderMonkey=False
+BuildModSpiderMonkey=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
@@ -89,6 +89,8 @@ If objArgs.Count >=1 Then
 			BuildModldap=True
 		Case "Mod_zeroconf"
 			BuildModzeroconf=True
+		Case "Mod_SpiderMonkey"
+			BuildModSpiderMonkey=True
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
@@ -200,7 +202,7 @@ If BuildModldap Then
 	BuildLibs_ldap BuildDebug, BuildRelease
 End If
 
-If BuildSpiderMonkey Then
+If BuildModSpiderMonkey Then
 	BuildLibs_SpiderMonkey BuildDebug, BuildRelease
 End If
 

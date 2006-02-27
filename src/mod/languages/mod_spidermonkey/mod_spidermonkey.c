@@ -47,6 +47,10 @@
 #include "jsscript.h"
 #include <switch.h>
 
+#ifdef _MSC_VER
+#pragma warning(disable: 4311)
+#endif
+
 static const char modname[] = "mod_spidermonkey";
 
 
@@ -91,12 +95,6 @@ static switch_status init_js(void)
 	globals.gErrFile = NULL;
 	globals.gOutFile = NULL;
 	globals.gStackChunkSize = 8192;
-	if(0) {
-		js_error(NULL, NULL, NULL);
-		if(&global_class);
-
-	}
-
 	globals.gStackBase = (jsuword)&globals.stackDummy;
 	globals.gErrFile = stderr;
 	globals.gOutFile = stdout;
@@ -230,11 +228,12 @@ static JSBool chan_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp
 	int param = 0;
 	JSBool res = JS_TRUE;
 	switch_channel *channel;
+	char *name;
 
 	channel = switch_core_session_get_channel(jc->session);
 	assert(channel != NULL);
 
-	char *name = JS_GetStringBytes(JS_ValueToString(cx, id));
+	name = JS_GetStringBytes(JS_ValueToString(cx, id));
 	/* numbers are our props anything else is a method */
 	if (name[0] >= 48 && name[0] <= 57) {
 		param = atoi(name);
@@ -303,10 +302,11 @@ static JSObject *new_jchan(JSContext *cx, JSObject *obj, switch_core_session *se
 
 static int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval) {
 	JSScript *script;
-	JS_ClearPendingException(cx);
 	char *cptr;
 	char path[512];
 	int res = 0;
+
+	JS_ClearPendingException(cx);
 
 	if (code[0] == '~') {
 		cptr = code + 1;

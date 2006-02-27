@@ -801,7 +801,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_interpret_asr(switch_speech_han
   \param flags flags in/out for fine tuning
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
 */
-SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *sh, char *text, unsigned int *flags);
+SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *sh, char *text, switch_speech_flag *flags);
 
 /*! 
   \brief Read rendered audio from the TTS module
@@ -816,14 +816,14 @@ SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *
 														  void *data,
 														  unsigned int *datalen,
 														  unsigned int *rate,
-														  unsigned int *flags);
+														  switch_speech_flag *flags);
 /*! 
   \brief Close an open speech handle
   \param sh the speech handle to close
   \param flags flags in/out for fine tuning
   \return SWITCH_STATUS_SUCCESS if the file handle was closed
 */
-SWITCH_DECLARE(switch_status) switch_core_speech_close(switch_speech_handle *sh, unsigned int *flags);
+SWITCH_DECLARE(switch_status) switch_core_speech_close(switch_speech_handle *sh, switch_speech_flag *flags);
 ///\}
 
 

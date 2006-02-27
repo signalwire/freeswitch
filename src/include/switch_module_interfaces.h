@@ -290,19 +290,19 @@ struct switch_speech_interface {
 								 int rate,
 								 unsigned int flags);
 	/*! function to close the speech interface */
-	switch_status (*speech_close)(switch_speech_handle *, unsigned int *flags);
+	switch_status (*speech_close)(switch_speech_handle *, switch_speech_flag *flags);
 	/*! function to feed audio to the ASR*/
 	switch_status (*speech_feed_asr)(switch_speech_handle *sh, void *data, unsigned int *len, int rate, unsigned int *flags);
 	/*! function to read text from the ASR*/
 	switch_status (*speech_interpret_asr)(switch_speech_handle *sh, char *buf, unsigned int buflen, unsigned int *flags);
 	/*! function to feed text to the TTS*/
-	switch_status (*speech_feed_tts)(switch_speech_handle *sh, char *text, unsigned int *flags);
+	switch_status (*speech_feed_tts)(switch_speech_handle *sh, char *text, switch_speech_flag *flags);
 	/*! function to read audio from the TTS*/
 	switch_status (*speech_read_tts)(switch_speech_handle *sh,
 									 void *data,
 									 unsigned int *datalen,
 									 unsigned int *rate,
-									 unsigned int *flags);
+									 switch_speech_flag *flags);
 
 	const struct switch_speech_interface *next;
 };

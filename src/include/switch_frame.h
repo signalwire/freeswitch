@@ -53,7 +53,7 @@ struct switch_frame {
 	/*! the entire size of the buffer */
 	size_t buflen;
 	/*! the number of audio samples present (audio only) */
-	int samples;
+	size_t samples;
 	/*! the rate of the frame */
 	int rate;
 };

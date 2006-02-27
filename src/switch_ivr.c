@@ -397,7 +397,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	char dtmf[128];
 	int interval = 0, samples = 0;
 	size_t len = 0;
-	unsigned int ilen = 0;
+	size_t ilen = 0;
 	switch_frame write_frame;
 	switch_timer timer;
 	switch_core_thread_session thread_session;

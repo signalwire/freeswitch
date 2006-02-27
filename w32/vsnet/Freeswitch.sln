@@ -147,6 +147,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_event_multicast", "..\.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libteletone", "..\..\libs\libteletone\libteletone.vcproj", "{89385C74-5860-4174-9CAF-A39E7C48909C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Languages", "Languages", "{0C808854-54D1-4230-BFF5-77B5FD905000}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey", "..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey.vcproj", "{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -259,6 +266,10 @@ Global
 		{89385C74-5860-4174-9CAF-A39E7C48909C}.Debug|Win32.Build.0 = Debug|Win32
 		{89385C74-5860-4174-9CAF-A39E7C48909C}.Release|Win32.ActiveCfg = Release|Win32
 		{89385C74-5860-4174-9CAF-A39E7C48909C}.Release|Win32.Build.0 = Release|Win32
+		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Debug|Win32.Build.0 = Debug|Win32
+		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Release|Win32.ActiveCfg = Release|Win32
+		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -287,5 +298,6 @@ Global
 		{DCC13474-28DF-47CA-A8EB-72F8CE9A78C5} = {2D57D093-3F8D-4729-AD9A-68E945C200A5}
 		{1A1FF289-4FD6-4285-A422-D31DD67A4723} = {CBD81696-EFB4-4D2F-8451-1B8DAA86155A}
 		{EC3E5C7F-EE09-47E2-80FE-546363D14A98} = {B8F5B47B-8568-46EB-B320-64C17D2A98BC}
+		{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F} = {0C808854-54D1-4230-BFF5-77B5FD905000}
 	EndGlobalSection
 EndGlobal
