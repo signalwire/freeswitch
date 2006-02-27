@@ -75,7 +75,7 @@ static swift_result_t write_audio(swift_event *event, swift_event_t type, void *
     return rv;
 }
 
-static switch_status cepstral_speech_open(switch_speech_handle *sh, char *voice_name, int rate, unsigned int flags)
+static switch_status cepstral_speech_open(switch_speech_handle *sh, char *voice_name, int rate, switch_speech_flag flags)
 {
 	if (flags & SWITCH_SPEECH_FLAG_ASR) {
 		return SWITCH_STATUS_FALSE;
@@ -139,7 +139,7 @@ static switch_status cepstral_speech_open(switch_speech_handle *sh, char *voice_
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status cepstral_speech_close(switch_speech_handle *sh, unsigned int *flags)
+static switch_status cepstral_speech_close(switch_speech_handle *sh, switch_speech_flag *flags)
 {
 	cepstral_t *cepstral;
 
@@ -157,7 +157,7 @@ static switch_status cepstral_speech_close(switch_speech_handle *sh, unsigned in
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status cepstral_speech_feed_tts(switch_speech_handle *sh, char *text, unsigned int *flags)
+static switch_status cepstral_speech_feed_tts(switch_speech_handle *sh, char *text, switch_speech_flag *flags)
 {
 	cepstral_t *cepstral;
 
@@ -177,12 +177,12 @@ static switch_status cepstral_speech_read_tts(switch_speech_handle *sh,
 											  void *data,
 											  unsigned int *datalen,
 											  unsigned int *rate,
-											  unsigned int *flags) 
+											  switch_speech_flag *flags) 
 {
 	cepstral_t *cepstral;
-	int desired = *datalen;
+	size_t desired = *datalen;
 	switch_status status = SWITCH_STATUS_FALSE;
-	int used, padding = 0;
+	size_t used, padding = 0;
 
 	assert(sh != NULL);
 	cepstral = sh->private_info;
@@ -224,7 +224,7 @@ static switch_status cepstral_speech_read_tts(switch_speech_handle *sh,
 		switch_mutex_lock(cepstral->audio_lock);
 		*datalen = switch_buffer_read(cepstral->audio_buffer, data, desired);
 		if (padding) {
-			int x = 0;
+			size_t x = 0;
 			unsigned char *p = data;
 			
 			for(x = 0; x < padding; x++) {

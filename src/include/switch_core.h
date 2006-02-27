@@ -770,7 +770,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh,
 													  char *module_name,
 													  char *voice_name,
 													  int rate,
-													  unsigned int flags,
+													  switch_speech_flag flags,
 													  switch_memory_pool *pool);
 
 /*!
@@ -782,7 +782,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh,
   \param flags flags in/out for fine tuning
   \return SWITCH_STATUS_SUCCESS with possible new flags on success
 */
-SWITCH_DECLARE(switch_status) switch_core_speech_feed_asr(switch_speech_handle *sh, void *data, unsigned int *len, int rate, unsigned int *flags);
+SWITCH_DECLARE(switch_status) switch_core_speech_feed_asr(switch_speech_handle *sh, void *data, unsigned int *len, int rate, switch_speech_flag *flags);
 
 /*! 
   \brief Get text back from the ASR module
@@ -792,7 +792,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_feed_asr(switch_speech_handle *
   \param flags flags in/out for fine tuning
   \return SWITCH_STATUS_SUCCESS with possible new flags on success
 */
-SWITCH_DECLARE(switch_status) switch_core_speech_interpret_asr(switch_speech_handle *sh, char *buf, unsigned int buflen, unsigned int *flags);
+SWITCH_DECLARE(switch_status) switch_core_speech_interpret_asr(switch_speech_handle *sh, char *buf, unsigned int buflen, switch_speech_flag *flags);
 
 /*! 
   \brief Feed text to the TTS module
