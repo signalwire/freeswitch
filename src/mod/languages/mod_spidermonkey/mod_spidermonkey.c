@@ -78,7 +78,7 @@ static JSClass global_class = {
 struct dtmf_callback_state {
 	struct js_session *session_state;
 	char code_buffer[1024];
-	int code_buffer_len;
+	size_t code_buffer_len;
 	char ret_buffer[1024];
 	int ret_buffer_len;
 	int digit_count;
@@ -198,9 +198,9 @@ static switch_status js_dtmf_callback(switch_core_session *session, char *dtmf, 
 
 		if (*ret == '+' || *ret == '-') {
 			switch_codec *codec;
-			codec = switch_core_session_get_read_codec(jss->session);
 			unsigned int samps = 0;
 			unsigned int pos = 0;
+			codec = switch_core_session_get_read_codec(jss->session);
 			if (*ret == '+') {
 				ret++;
 				samps = atoi(ret) * (codec->implementation->samples_per_second / 1000);

@@ -75,7 +75,7 @@ static swift_result_t write_audio(swift_event *event, swift_event_t type, void *
     return rv;
 }
 
-static switch_status cepstral_speech_open(switch_speech_handle *sh, char *voice_name, int rate, switch_speech_flag flags)
+static switch_status cepstral_speech_open(switch_speech_handle *sh, char *voice_name, unsigned int rate, switch_speech_flag flags)
 {
 	if (flags & SWITCH_SPEECH_FLAG_ASR) {
 		return SWITCH_STATUS_FALSE;

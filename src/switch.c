@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
 	FILE *f;
 #ifdef WIN32
 	char sep = '\\';
+	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #else
 	char sep = '/';
 	int pid;

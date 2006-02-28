@@ -291,7 +291,7 @@ struct switch_speech_interface {
 	/*! function to open the speech interface */
 	switch_status (*speech_open)(switch_speech_handle *sh,
 								 char *voice_name, 
-								 int rate,
+								 unsigned int rate,
 								 switch_speech_flag flags);
 	/*! function to close the speech interface */
 	switch_status (*speech_close)(switch_speech_handle *, switch_speech_flag *flags);

@@ -364,10 +364,10 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 
 		
 		if (fh->speed && do_speed) {
-			float factor = 0.25 * abs(fh->speed);
-			unsigned int newlen, supplement, step;
+			float factor = 0.25f * abs(fh->speed);
+			size_t newlen, supplement, step;
 			short *bp = write_frame.data;
-			int wrote = 0;
+			size_t wrote = 0;
 			
 			if (!fh->audio_buffer) {
 				switch_buffer_create(fh->memory_pool, &fh->audio_buffer, SWITCH_RECCOMMENDED_BUFFER_SIZE);
@@ -386,7 +386,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 				} else {
 					float f;
 					short s;
-					f = *bp + *(bp+1) + *(bp-1);
+					f = (float)(*bp + *(bp+1) + *(bp-1));
 					f /= 3;
 					s = (short) f;
 					switch_buffer_write(fh->audio_buffer, &s, 2);
@@ -394,7 +394,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 				}
 			}
 			if (wrote < newlen) {
-				unsigned int r = newlen - wrote;
+				size_t r = newlen - wrote;
 				switch_buffer_write(fh->audio_buffer, bp, r*2);
 				wrote += r;
 			}
@@ -452,7 +452,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 													char *tts_name,
 													char *voice_name,
 													char *timer_name,
-													size_t rate,
+													unsigned int rate,
 													switch_dtmf_callback_function dtmf_callback,
 													char *text,
 													void *buf,
@@ -461,7 +461,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	switch_channel *channel;
 	short abuf[960];
 	char dtmf[128];
-	int interval = 0, samples = 0;
+	int interval = 0;
+	unsigned int samples = 0;
 	size_t len = 0;
 	size_t ilen = 0;
 	switch_frame write_frame;
