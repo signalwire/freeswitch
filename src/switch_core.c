@@ -39,15 +39,6 @@ static char *embedding[] = { "", "-e", "" };
 EXTERN_C void xs_init(pTHX);
 #endif
 
-
-#ifndef SWITCH_DB_DIR
-#ifdef WIN32
-#define SWITCH_DB_DIR ".\\db"
-#else
-#define SWITCH_DB_DIR "/usr/local/freeswitch/db"
-#endif
-#endif
-
 struct switch_core_session {
 	unsigned long id;
 	char name[80];
