@@ -469,6 +469,33 @@ Sub BuildLibs_portaudio(BuildDebug, BuildRelease)
 	End If
 End Sub
 
+Sub BuildLibs_libxml2(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "libxml2") Then 
+		WgetUnTarGz "http://xmlsoft.org/sources/libxml2-sources-2.6.23.tar.gz", LibDestDir 
+		If Not FSO.FolderExists(LibDestDir & "libxml2-2.6.23") Then
+			Wscript.echo "Unable to get libxml2 from default download location, Trying backup location:"
+			WgetUnTarGz LibsBase & "libxml2-sources-2.6.23.tar.gz", LibDestDir
+		End If
+		RenameFolder LibDestDir & "libxml2-2.6.23", "libxml2"
+	End If
+	If FSO.FolderExists(LibDestDir & "libxml2") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "libxml2\win32\bin.msvc\libxml2_a.lib") Then 
+				Exec "cscript configure.js compiler=msvc iconv=no debug=yes", Showpath(LibDestDir & "libxml2\win32\" & "\")
+				Exec "nmake /f Makefile.msvc  all  CRUNTIME=" & quote & "/MD /D _CRT_SECURE_NO_DEPRECATE /D _CRT_NONSTDC_NO_DEPRECATE" & quote, Showpath(LibDestDir & "libxml2\win32\" & "\")
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "libxml2\win32\bin.msvc\libxml2_a.lib") Then 
+				Exec "cscript configure.js compiler=msvc iconv=no debug=no", Showpath(LibDestDir & "libxml2\win32\" & "\")
+				Exec "nmake /f Makefile.msvc  all  CRUNTIME=" & quote & "/MD /D _CRT_SECURE_NO_DEPRECATE /D _CRT_NONSTDC_NO_DEPRECATE" & quote, Showpath(LibDestDir & "libxml2\win32\" & "\")
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download libxml2"
+	End If
+End Sub
+
 Sub BuildLibs_libg729(BuildDebug, BuildRelease)
 	If FSO.FolderExists(LibDestDir & "codec\libg729") Then 
 		If BuildDebug Then
@@ -764,6 +791,32 @@ Sub BuildViaVCBuild(ProjectFile, BuildType)
 	MyFile.Close
 
 	Set oExec = WshShell.Exec(UtilsDir & "tmpBuild.Bat")
+	Do
+		strFromProc = OExec.StdOut.ReadLine()
+		WScript.Echo  strFromProc
+	Loop While Not OExec.StdOut.atEndOfStream
+End Sub
+
+Sub Exec(cmdline, strpath)
+	If WshSysEnv("VS80COMNTOOLS")<> "" Then 
+		vcver = "8"
+		Vsvars="call " & quote & Showpath(WshSysEnv("VS80COMNTOOLS")&"\") & "vsvars32.bat" & quote
+	Else If WshSysEnv("VS71COMNTOOLS")<> "" Then
+		vcver = "7"
+		Vsvars="call " & quote & Showpath(WshSysEnv("VS71COMNTOOLS")&"\") & "vsvars32.bat" & quote
+	Else
+		Wscript.Echo("Did not find any Visual Studio .net 2003 or 2005 on your machine")
+		WScript.Quit(1)
+	End If
+	End If
+	Wscript.echo "Executing : " & cmdline
+	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
+	MyFile.WriteLine("@" & "cd " & strpath)
+	MyFile.WriteLine("@" & Vsvars)
+	MyFile.WriteLine("@" & cmdline)
+	MyFile.Close
+
+	Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
 	Do
 		strFromProc = OExec.StdOut.ReadLine()
 		WScript.Echo  strFromProc
