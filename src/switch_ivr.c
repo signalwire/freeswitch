@@ -259,7 +259,6 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_channel_answer(channel);
 
 	write_frame.data = abuf;
 	write_frame.buflen = sizeof(abuf);
@@ -312,7 +311,6 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 		int done = 0;
 		int do_speed = 1;
 		int last_speed = -1;
-
 
 		if (dtmf_callback || buf) {
 			/*
@@ -414,7 +412,6 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 				done = 1;
 				break;
 			}
-
 			if (done) {
 				break;
 			}

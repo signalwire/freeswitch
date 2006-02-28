@@ -85,6 +85,8 @@ struct switch_core_session {
 	void *private_info;
 };
 
+switch_directories SWITCH_GLOBAL_dirs;
+
 struct switch_core_runtime {
 	time_t initiated;
 	unsigned long session_id;
@@ -137,9 +139,19 @@ SWITCH_DECLARE(switch_core_db *) switch_core_db_open_file(char *filename)
 	return db;
 }
 
-SWITCH_DECLARE(void) switch_core_set_console(FILE *handle)
+SWITCH_DECLARE(switch_status) switch_core_set_console(char *console)
 {
-	runtime.console = handle;
+	if ((runtime.console = fopen(console, "a")) == 0) {
+		fprintf(stderr, "Cannot open output file %s.\n", console);
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(FILE *) switch_core_get_console(void)
+{
+	return runtime.console;
 }
 
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel)
@@ -2179,14 +2191,21 @@ static void core_event_handler(switch_event *event)
 
 SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 {
+	memset(&runtime, 0, sizeof(runtime));
+	
+	SWITCH_GLOBAL_dirs.base_dir = SWITCH_PREFIX_DIR;
+	SWITCH_GLOBAL_dirs.mod_dir = SWITCH_MOD_DIR;
+	SWITCH_GLOBAL_dirs.conf_dir = SWITCH_CONF_DIR;
+	SWITCH_GLOBAL_dirs.log_dir = SWITCH_LOG_DIR;
+	SWITCH_GLOBAL_dirs.db_dir = SWITCH_DB_DIR;
+	SWITCH_GLOBAL_dirs.script_dir = SWITCH_SCRIPT_DIR;
+	
+	
 #ifdef EMBED_PERL
 	PerlInterpreter *my_perl;
 #endif
 	if(console) {
-		if ((runtime.console = fopen(console, "a")) == 0) {
-			fprintf(stderr, "Cannot open output file %s.\n", console);
-			return SWITCH_STATUS_FALSE;
-		}
+		switch_core_set_console(console);
 	} else {
 		runtime.console = stdout;
 	}
@@ -2241,7 +2260,6 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 	switch_core_hash_init(&runtime.session_table, runtime.memory_pool);
 
 	time(&runtime.initiated);
-
 	return SWITCH_STATUS_SUCCESS;
 }
 

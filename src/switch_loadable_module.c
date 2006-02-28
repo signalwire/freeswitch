@@ -31,13 +31,6 @@
  */
 #include <switch_console.h>
 
-#ifndef SWITCH_MOD_DIR
-#ifdef WIN32
-#define SWITCH_MOD_DIR ".\\mod"
-#else
-#define SWITCH_MOD_DIR "/usr/local/freeswitch/mod"
-#endif
-#endif
 
 struct switch_loadable_module {
 	char *filename;
@@ -371,7 +364,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid extension for %s\n", val);
 							continue;
 						}
-						process_module_file((char *) SWITCH_MOD_DIR, (char *) val);
+						process_module_file((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val);
 					}
 				}
 			}
@@ -387,8 +380,8 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	}
 
 	if (all) {
-		if (apr_dir_open(&module_dir_handle, SWITCH_MOD_DIR, loadable_modules.pool) != APR_SUCCESS) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open directory: %s\n", SWITCH_MOD_DIR);
+		if (apr_dir_open(&module_dir_handle, SWITCH_GLOBAL_dirs.mod_dir, loadable_modules.pool) != APR_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open directory: %s\n", SWITCH_GLOBAL_dirs.mod_dir);
 			return SWITCH_STATUS_GENERR;
 		}
 	}
@@ -413,7 +406,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				continue;
 			}
 
-			process_module_file((char *) SWITCH_MOD_DIR, (char *) fname);
+			process_module_file((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) fname);
 		}
 		apr_dir_close(module_dir_handle);
 	}

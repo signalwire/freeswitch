@@ -41,6 +41,42 @@ extern "C" {
 #include <switch.h>
 #include <switch_platform.h>
 
+#ifndef SWITCH_PREFIX_DIR
+#define SWITCH_PREFIX_DIR "."
+#endif
+
+#ifndef SWITCH_MOD_DIR
+#define SWITCH_MODDIR "./mod"
+#endif
+
+#ifndef SWITCH_CONF_DIR
+#define SWITCH_CONF_DIR "./conf"
+#endif
+
+#ifndef SWITCH_LOG_DIR
+#define SWITCH_LOG_DIR "./log"
+#endif
+
+#ifndef SWITCH_DB_DIR
+#define SWITCH_DB_DIR "./db"
+#endif
+
+#ifndef SWITCH_SCRIPT_DIR
+#define SWITCH_SCRIPT_DIR "./scripts"
+#endif
+
+struct switch_directories {
+	char *base_dir;
+	char *mod_dir;
+	char *conf_dir;
+	char *log_dir;
+	char *db_dir;
+	char *script_dir;
+};
+
+typedef struct switch_directories switch_directories;
+extern switch_directories SWITCH_GLOBAL_dirs;
+
 #define SWITCH_RECCOMMENDED_BUFFER_SIZE 131072
 #define SWITCH_MAX_CODECS 30
 #define SWITCH_MAX_STATE_HANDLERS 30

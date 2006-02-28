@@ -60,7 +60,7 @@ endif
 endif
 
 CFLAGS += -I$(BASE)/libs/mozilla/js/src -Wall -Wno-format -g -DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/js/src -I$(BASE)/libs/mozilla/js/src/$(OS_CONFIG)_DBG.OBJ -Wall -Wno-format -g -DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/nsprpub/dist/include/nspr -I$(OS_CONFIG)_DBG.OBJ
-LDFLAGS +=-DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/nsprpub/dist/include/nspr -Wall -Wno-format -g -DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/nsprpub/dist/include/nspr
+LDFLAGS +=-DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/nsprpub/dist/include/nspr -Wall -Wno-format -g -DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/nsprpub/dist/include/nspr -lteletone
 OBJS=$(BASE)/libs/mozilla/js/src/$(OS_CONFIG)_DBG.OBJ/libjs.a $(BASE)/libs/mozilla/nsprpub/dist/lib/libnspr4.a
 LINKER=$(CC)
 

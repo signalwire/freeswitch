@@ -31,14 +31,6 @@
  */
 #include <switch_config.h>
 
-#ifndef SWITCH_CONF_DIR
-#ifdef WIN32
-#define SWITCH_CONF_DIR ".\\conf"
-#else
-#define SWITCH_CONF_DIR "/usr/local/freeswitch/conf"
-#endif
-#endif
-
 SWITCH_DECLARE(int) switch_config_open_file(switch_config *cfg, char *file_path)
 {
 	FILE *f;
@@ -48,7 +40,7 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config *cfg, char *file_path)
 	if (file_path[0] == '/') {
 		path = file_path;
 	} else {
-		snprintf(path_buf, sizeof(path_buf), "%s/%s", SWITCH_CONF_DIR, file_path);
+		snprintf(path_buf, sizeof(path_buf), "%s/%s", SWITCH_GLOBAL_dirs.conf_dir, file_path);
 		path = path_buf;
 	}
 
@@ -64,7 +56,7 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config *cfg, char *file_path)
 			int last = -1;
 			char *var, *val;
 
-			snprintf(path_buf, sizeof(path_buf), "%s/freeswitch.conf", SWITCH_CONF_DIR);
+			snprintf(path_buf, sizeof(path_buf), "%s/freeswitch.conf", SWITCH_GLOBAL_dirs.conf_dir);
 			path = path_buf;
 
 			if ((f = fopen(path, "r")) == 0) {

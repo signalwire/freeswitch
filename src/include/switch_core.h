@@ -892,11 +892,16 @@ SWITCH_DECLARE(switch_status) switch_core_directory_close(switch_directory_handl
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel);
 
 /*!
-  \brief Set the output console to the desired FILE stream
-  \param handle the FILE stream
+  \brief Set the output console to the desired file
+  \param console the file path
 */
-SWITCH_DECLARE(void) switch_core_set_console(FILE *handle);
+SWITCH_DECLARE(switch_status) switch_core_set_console(char *console);
 
+/*!
+  \brief Get the output console
+  \return the FILE stream
+*/
+SWITCH_DECLARE(FILE *) switch_core_get_console(void);
 /*! 
   \brief Launch a thread
 */

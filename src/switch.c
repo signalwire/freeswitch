@@ -29,14 +29,8 @@
  * switch.c -- Main
  *
  */
+
 #include <switch.h>
-#ifndef SWITCH_LOG_DIR
-#ifdef WIN32
-#define SWITCH_LOG_DIR ".\\log"
-#else
-#define SWITCH_LOG_DIR "/usr/local/freeswitch/log"
-#endif
-#endif
 
 static int RUNNING = 0;
 
@@ -82,10 +76,17 @@ int main(int argc, char *argv[])
 	char sep = '/';
 	int pid;
 	nice(-20);
+#endif
 
+	if (switch_core_init(NULL) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Cannot Initilize\n");
+		return 255;
+	}
+
+#ifndef WIN32
 	if (argv[1] && !strcmp(argv[1], "-stop")) {
 		pid_t pid = 0;
-		snprintf(path, sizeof(path), "%s%c%s", SWITCH_LOG_DIR, sep, pfile);
+		snprintf(path, sizeof(path), "%s%c%s", SWITCH_GLOBAL_dirs.conf_dir, sep, pfile);
 		if ((f = fopen(path, "r")) == 0) {
 			fprintf(stderr, "Cannot open pid file %s.\n", path);
 			return 255;
@@ -128,7 +129,7 @@ int main(int argc, char *argv[])
 #endif
 	}
 
-	snprintf(path, sizeof(path), "%s%c%s", SWITCH_LOG_DIR, sep, pfile);
+	snprintf(path, sizeof(path), "%s%c%s", SWITCH_GLOBAL_dirs.conf_dir, sep, pfile);
 	if ((f = fopen(path, "w")) == 0) {
 		fprintf(stderr, "Cannot open pid file %s.\n", path);
 		return 255;
@@ -138,13 +139,13 @@ int main(int argc, char *argv[])
 	fclose(f);
 
 	if (bg) {
-		snprintf(path, sizeof(path), "%s%c%s", SWITCH_LOG_DIR, sep, lfile);
+		snprintf(path, sizeof(path), "%s%c%s", SWITCH_GLOBAL_dirs.conf_dir, sep, lfile);
+		if (switch_core_set_console(path) != SWITCH_STATUS_SUCCESS) {
+			err = "Cannot open log file\n";
+		}
 	}
 
-	if (switch_core_init(bg ? path : NULL) != SWITCH_STATUS_SUCCESS) {
-		err = "Cannot Initilize\n";
-	}
-
+	
 	if (!err) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bringing up environment.\n");
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Loading Modules.\n");
@@ -164,7 +165,7 @@ int main(int argc, char *argv[])
 	}
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_VERSION_FULL);
-	snprintf(path, sizeof(path), "%s%c%s", SWITCH_LOG_DIR, sep, pfile);
+	snprintf(path, sizeof(path), "%s%c%s", SWITCH_GLOBAL_dirs.conf_dir, sep, pfile);
 
 	if (bg) {
 		bg = 0;
