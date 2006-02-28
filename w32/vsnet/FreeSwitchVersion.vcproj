@@ -26,7 +26,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Generating switch_version.h"
-				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Version"
+				CommandLine="cscript /nologo &quot;$(InputDir)getlibs.vbs&quot; Version"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -49,7 +49,7 @@
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Generating switch_version.h"
-				CommandLine="cscript /nologo $(InputDir)getlibs.vbs Version"
+				CommandLine="cscript /nologo &quot;$(InputDir)getlibs.vbs&quot; Version"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
