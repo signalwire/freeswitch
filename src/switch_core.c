@@ -416,7 +416,7 @@ SWITCH_DECLARE(switch_status) switch_core_file_write(switch_file_handle *fh, voi
 	return fh->file_interface->file_write(fh, data, len);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_file_seek(switch_file_handle *fh, unsigned int *cur_pos, unsigned int samples,
+SWITCH_DECLARE(switch_status) switch_core_file_seek(switch_file_handle *fh, unsigned int *cur_pos, int64_t samples,
 													int whence)
 {
 	return fh->file_interface->file_seek(fh, cur_pos, samples, whence);

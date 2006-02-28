@@ -245,7 +245,7 @@ struct switch_file_interface {
 	/*! function to write from the file */
 	switch_status (*file_write)(switch_file_handle *, void *data, size_t *len);
 	/*! function to seek to a certian position in the file */
-	switch_status (*file_seek)(switch_file_handle *, unsigned int *cur_pos, unsigned int samples, int whence);
+	switch_status (*file_seek)(switch_file_handle *, unsigned int *cur_pos, int64_t samples, int whence);
 	/*! list of supported file extensions */
 	char **extens;
 	const struct switch_file_interface *next;
@@ -273,10 +273,14 @@ struct switch_file_handle {
 	int seekable;
 	/*! the sample count of the file */
 	unsigned int sample_count;
+	/*! the speed of the file playback*/
+	int speed;
 	/*! the handle's memory pool */
 	switch_memory_pool *memory_pool;
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
+	int64_t pos;
+	switch_buffer *audio_buffer;
 };
 
 

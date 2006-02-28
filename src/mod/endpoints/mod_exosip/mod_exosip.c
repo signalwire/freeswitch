@@ -117,6 +117,8 @@ struct private_object {
 	char call_id[50];
 	int ssrc;
 	char last_digit;
+	unsigned int dc;
+	time_t last_digit_time;
 	switch_mutex_t *rtp_lock;
 	switch_queue_t *dtmf_queue;
 	char out_digit;
@@ -480,6 +482,8 @@ static switch_status exosip_answer_channel(switch_core_session *session)
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
 
+	assert(session != NULL);
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -554,11 +558,24 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 				int duration = (packet[2]<<8) + packet[3];
 				char key = switch_rfc2833_to_char(packet[0]);
 
-				if (duration && end && key != tech_pvt->last_digit) {
-					char digit_str[] = {key, 0};
-					switch_channel_queue_dtmf(channel, digit_str);
-					tech_pvt->last_digit = key;
+				/* SHEESH.... Curse you RFC2833 inventors!!!!*/
+				if ((time(NULL) - tech_pvt->last_digit_time) > 2) {
+					tech_pvt->last_digit = 0;
+					tech_pvt->dc = 0;
 				}
+				if (duration && end) {
+					if (key != tech_pvt->last_digit) {
+						char digit_str[] = {key, 0};
+						time(&tech_pvt->last_digit_time);
+						switch_channel_queue_dtmf(channel, digit_str);
+					}
+					if (++tech_pvt->dc >= 3) {
+						tech_pvt->last_digit = 0;
+						tech_pvt->dc = 0;
+					} else {
+						tech_pvt->last_digit = key;
+					}
+				} 
 			}
 
 			if (globals.supress_telephony_events && payload != tech_pvt->payload_num) {

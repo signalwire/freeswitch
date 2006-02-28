@@ -104,6 +104,11 @@ SWITCH_DECLARE(int) switch_buffer_write(switch_buffer *buffer, void *data, size_
  * \return int size of buffer, or 0 if unable to toss that much data
  */
 SWITCH_DECLARE(int) switch_buffer_toss(switch_buffer *buffer, size_t datalen);
+
+/*! \brief Remove all data from the buffer
+ * \param buffer any buffer of type switch_buffer
+ */
+SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer *buffer);
 /** @} */
 
 

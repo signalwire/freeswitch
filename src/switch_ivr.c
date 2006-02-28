@@ -220,6 +220,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 }
 
 SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session, 
+												   switch_file_handle *fh,
 												   char *file,
 												   char *timer_name,
 												   switch_dtmf_callback_function dtmf_callback,
@@ -230,24 +231,27 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	short abuf[960];
 	char dtmf[128];
 	int interval = 0, samples = 0;
-	size_t len = 0, ilen = 0;
+	size_t len = 0, ilen = 0, olen = 0;
 	switch_frame write_frame;
 	switch_timer timer;
 	switch_core_thread_session thread_session;
 	switch_codec codec;
 	switch_memory_pool *pool = switch_core_session_get_pool(session);
-	switch_file_handle fh;
 	char *codec_name;
 	int x;
 	int stream_id;
 	switch_status status = SWITCH_STATUS_SUCCESS;
-
-	memset(&fh, 0, sizeof(fh));
+	switch_file_handle lfh;
+	
+	if (!fh) {
+		fh = &lfh;
+		memset(fh, 0, sizeof(lfh));
+	}
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	if (switch_core_file_open(&fh,
+	if (switch_core_file_open(fh,
 							  file,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -261,27 +265,27 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	write_frame.buflen = sizeof(abuf);
 
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s %dhz %d channels\n", file, fh.samplerate, fh.channels);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s %dhz %d channels\n", file, fh->samplerate, fh->channels);
 
 	interval = 20;
-	samples = (fh.samplerate / 50) * fh.channels;
+	samples = (fh->samplerate / 50) * fh->channels;
 	len = samples * 2;
 
 	codec_name = "L16";
 
 	if (switch_core_codec_init(&codec,
 							   codec_name,
-							   fh.samplerate,
+							   fh->samplerate,
 							   interval,
-							   fh.channels,
+							   fh->channels,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
 		write_frame.codec = &codec;
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d channels %dms\n",
-							  codec_name, fh.samplerate, fh.channels, interval);
-		switch_core_file_close(&fh);
+							  codec_name, fh->samplerate, fh->channels, interval);
+		switch_core_file_close(fh);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -289,12 +293,12 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 		if (switch_core_timer_init(&timer, timer_name, interval, samples, pool) != SWITCH_STATUS_SUCCESS) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer failed!\n");
 			switch_core_codec_destroy(&codec);
-			switch_core_file_close(&fh);
+			switch_core_file_close(fh);
 			return SWITCH_STATUS_GENERR;
 		}
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %d bytes per %d ms!\n", len, interval);
 	}
-	write_frame.rate = fh.samplerate;
+	write_frame.rate = fh->samplerate;
 
 	if (timer_name) {
 		/* start a thread to absorb incoming audio */
@@ -306,10 +310,11 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	ilen = samples;
 	while (switch_channel_get_state(channel) == CS_EXECUTE) {
 		int done = 0;
+		int do_speed = 1;
+		int last_speed = -1;
+
 
 		if (dtmf_callback || buf) {
-
-
 			/*
 			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
@@ -330,18 +335,77 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 			}
 		}
 		
-		switch_core_file_read(&fh, abuf, &ilen);
+		if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+			memset(abuf, 0, ilen * 2);
+		} else if (fh->audio_buffer && (switch_buffer_inuse(fh->audio_buffer) > (ilen * 2))) {
+			switch_buffer_read(fh->audio_buffer, abuf, ilen * 2);
+			olen = ilen;
+			do_speed = 0;
+		} else {
+			olen = ilen;
+			switch_core_file_read(fh, abuf, &olen);
+		}
 
-		if (done || ilen <= 0) {
+		if (done || olen <= 0) {
 			break;
 		}
 
-		write_frame.datalen = ilen * 2;
-		write_frame.samples = (int) ilen;
-#ifdef SWAP_LINEAR
+		if (fh->speed > 2) {
+			fh->speed = 2;
+		} else if(fh->speed < -2) {
+			fh->speed = -2;
+		}
+		
+		if (fh->audio_buffer && last_speed > -1 && last_speed != fh->speed) {
+			switch_buffer_zero(fh->audio_buffer);
+		}
+
+		
+		if (fh->speed && do_speed) {
+			float factor = 0.25 * abs(fh->speed);
+			unsigned int newlen, supplement, step;
+			short *bp = write_frame.data;
+			int wrote = 0;
+			
+			if (!fh->audio_buffer) {
+				switch_buffer_create(fh->memory_pool, &fh->audio_buffer, SWITCH_RECCOMMENDED_BUFFER_SIZE);
+			} 
+			
+			supplement = (int) (factor * olen);
+			newlen = (fh->speed > 0) ? olen - supplement : olen + supplement;
+			step = (fh->speed > 0) ? (newlen / supplement) : (olen / supplement);
+			
+			while ((wrote + step) < newlen) {
+				switch_buffer_write(fh->audio_buffer, bp, step * 2);
+				wrote += step;
+				bp += step;
+				if (fh->speed > 0) {
+					bp++;
+				} else {
+					float f;
+					short s;
+					f = *bp + *(bp+1) + *(bp-1);
+					f /= 3;
+					s = (short) f;
+					switch_buffer_write(fh->audio_buffer, &s, 2);
+					wrote++;
+				}
+			}
+			if (wrote < newlen) {
+				unsigned int r = newlen - wrote;
+				switch_buffer_write(fh->audio_buffer, bp, r*2);
+				wrote += r;
+			}
+			last_speed = fh->speed;
+			continue;
+		} 
+
+		write_frame.datalen = olen * 2;
+		write_frame.samples = (int) olen;
+#if __BYTE_ORDER == __BIG_ENDIAN
 		switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
 #endif
-
+		
 		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
 			if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Write\n");
@@ -366,7 +430,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	}
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "done playing file\n");
-	switch_core_file_close(&fh);
+	switch_core_file_close(fh);
 
 	switch_core_codec_destroy(&codec);
 

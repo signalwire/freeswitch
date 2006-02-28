@@ -85,6 +85,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
 /*!
   \brief play a file from the disk to the session
   \param session the session to play the file too
+  \param pointer to file handle to use (NULL for builtin one)
   \param file the path to the file
   \param timer_name the name of a timer to use input will be absorbed (NULL to time off the session input).
   \param dtmf_callback code to execute if any dtmf is dialed during the playback
@@ -94,6 +95,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
   \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop playback.
 */
 SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
+												   switch_file_handle *fh,
 												   char *file,
 												   char *timer_name,
 												   switch_dtmf_callback_function dtmf_callback,

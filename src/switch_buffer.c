@@ -138,3 +138,12 @@ SWITCH_DECLARE(int) switch_buffer_write(switch_buffer *buffer, void *data, size_
 	//printf("i %d = %d\n", datalen, buffer->used);
 	return (int) buffer->used;
 }
+
+SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer *buffer)
+{
+	assert(buffer != NULL);
+    assert(buffer->data != NULL);
+
+	buffer->used = 0;
+	
+}

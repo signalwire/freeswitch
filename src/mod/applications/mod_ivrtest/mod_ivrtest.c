@@ -149,7 +149,7 @@ static void ivrtest_function(switch_core_session *session, char *data)
 			/* you could have passed NULL instead of on_dtmf to get this exact behaviour (copy the digits to buf and stop playing)
 			   but you may want to pass the function if you have something cooler to do...
 			*/
-			status = switch_ivr_play_file(session, data, NULL, on_dtmf, buf, sizeof(buf));
+			status = switch_ivr_play_file(session, NULL, data, NULL, on_dtmf, buf, sizeof(buf));
 			
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				switch_channel_hangup(channel);

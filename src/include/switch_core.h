@@ -743,7 +743,7 @@ SWITCH_DECLARE(switch_status) switch_core_file_write(switch_file_handle *fh, voi
   \param whence the indicator (see traditional seek)
   \return SWITCH_STATUS_SUCCESS with cur_pos adjusted to new position
 */
-SWITCH_DECLARE(switch_status) switch_core_file_seek(switch_file_handle *fh, unsigned int *cur_pos, unsigned int samples, int whence);
+SWITCH_DECLARE(switch_status) switch_core_file_seek(switch_file_handle *fh, unsigned int *cur_pos, int64_t samples, int whence);
 
 /*! 
   \brief Close an open file handle

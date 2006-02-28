@@ -138,7 +138,7 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 	handle->format = context->sfinfo.format;
 	handle->sections = context->sfinfo.sections;
 	handle->seekable = context->sfinfo.seekable;
-
+	handle->speed = 0;
 	handle->private_info = context;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -153,15 +153,17 @@ switch_status sndfile_file_close(switch_file_handle *handle)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status sndfile_file_seek(switch_file_handle *handle, unsigned int *cur_sample, unsigned int samples, int whence)
+switch_status sndfile_file_seek(switch_file_handle *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
 	sndfile_context *context = handle->private_info;
 
 	if (!handle->seekable) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "File is not seekable\n");
 		return SWITCH_STATUS_NOTIMPL;
 	}
 
 	*cur_sample = (unsigned int) sf_seek(context->handle, samples, whence);
+	handle->pos = *cur_sample;
 
 	return SWITCH_STATUS_SUCCESS;
 
