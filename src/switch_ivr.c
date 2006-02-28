@@ -337,6 +337,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 		
 		if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
 			memset(abuf, 0, ilen * 2);
+			olen = ilen;
+            do_speed = 0;
 		} else if (fh->audio_buffer && (switch_buffer_inuse(fh->audio_buffer) > (ilen * 2))) {
 			switch_buffer_read(fh->audio_buffer, abuf, ilen * 2);
 			olen = ilen;

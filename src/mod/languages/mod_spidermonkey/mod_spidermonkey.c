@@ -182,12 +182,9 @@ static switch_status js_dtmf_callback(switch_core_session *session, char *dtmf, 
 		
 		if (*ret == 'P') {
 			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-				printf("unpause\n");
 				switch_clear_flag(fh, SWITCH_FILE_PAUSE);
 			} else {
-				printf("pause\n");
 				switch_set_flag(fh, SWITCH_FILE_PAUSE);
-				fh->speed = 0;
 			}
 			return SWITCH_STATUS_SUCCESS;
 		}
