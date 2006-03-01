@@ -36,9 +36,9 @@
 /* TBD (Lots! there are not very many functions in here lol) */
 
 SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_session *session,
-														switch_dtmf_callback_function dtmf_callback,
-														void *buf,
-														unsigned int buflen)
+																 switch_dtmf_callback_function dtmf_callback,
+																 void *buf,
+																 unsigned int buflen)
 {
 	switch_channel *channel;
 	switch_status status = SWITCH_STATUS_SUCCESS;
