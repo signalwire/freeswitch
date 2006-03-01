@@ -801,7 +801,9 @@ static switch_status audio_bridge_on_hangup(switch_core_session *session)
 	//switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
 	if (switch_channel_test_flag(channel, CF_ORIGINATOR) && !switch_channel_test_flag(other_channel, CF_TRANSFER)) {
 		switch_core_session_kill_channel(other_session, SWITCH_SIG_KILL);
+		switch_channel_hangup(other_channel);
 	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -858,8 +860,12 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	int stream_id = 0;
 	switch_frame *read_frame;
 
+
+
 	caller_channel = switch_core_session_get_channel(session);
 	assert(caller_channel != NULL);
+
+	switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 
 	peer_channel = switch_core_session_get_channel(peer_session);
 	assert(peer_channel != NULL);
