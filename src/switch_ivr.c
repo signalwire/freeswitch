@@ -803,6 +803,8 @@ static switch_status audio_bridge_on_hangup(switch_core_session *session)
 		switch_core_session_kill_channel(other_session, SWITCH_SIG_KILL);
 		switch_channel_hangup(other_channel);
 	}
+	
+	switch_channel_clear_flag(channel, CF_ORIGINATOR);
 
 	return SWITCH_STATUS_SUCCESS;
 }
