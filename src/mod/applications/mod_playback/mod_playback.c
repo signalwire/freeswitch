@@ -77,7 +77,7 @@ static void record_function(switch_core_session *session, char *data)
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
-	if (switch_ivr_record_file(session, data, on_dtmf, NULL, 0) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_record_file(session, NULL, data, on_dtmf, NULL, 0) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel);
 	}
 	

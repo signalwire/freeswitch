@@ -141,7 +141,7 @@ static switch_status init_js(void)
 
 }
 
-static switch_status js_dtmf_callback(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status js_stream_dtmf_callback(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	char code[2048];
 	struct dtmf_callback_state *cb_state = buf;
@@ -248,6 +248,158 @@ static switch_status js_dtmf_callback(switch_core_session *session, char *dtmf, 
 	return SWITCH_STATUS_FALSE;
 }
 
+
+static switch_status js_record_dtmf_callback(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
+{
+	char code[2048];
+	struct dtmf_callback_state *cb_state = buf;
+	struct js_session *jss = cb_state->session_state;
+	switch_file_handle *fh = cb_state->extra;
+	jsval rval;
+	char *ret;
+	
+	if(!jss) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (cb_state->digit_count || (cb_state->code_buffer[0] > 47 && cb_state->code_buffer[0] < 58)) {
+		char *d;
+		if (!cb_state->digit_count) {
+			cb_state->digit_count = atoi(cb_state->code_buffer);
+		}
+
+		for(d = dtmf; *d; d++) {
+			cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
+			if ((cb_state->ret_buffer_len > cb_state->digit_count)||
+				(cb_state->ret_buffer_len > sizeof(cb_state->ret_buffer))||
+				(cb_state->ret_buffer_len >= cb_state->digit_count)
+				) {
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		snprintf(code, sizeof(code), "~%s(\"%s\")", cb_state->code_buffer, dtmf);
+		eval_some_js(code, jss->cx, jss->obj, &rval);
+		ret = JS_GetStringBytes(JS_ValueToString(jss->cx, rval));
+
+		if (!strcasecmp(ret, "pause")) {
+			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+				switch_clear_flag(fh, SWITCH_FILE_PAUSE);
+			} else {
+				switch_set_flag(fh, SWITCH_FILE_PAUSE);
+			}
+			return SWITCH_STATUS_SUCCESS;
+		} else if (!strcasecmp(ret, "restart")) {
+			unsigned int pos = 0;
+			fh->speed = 0;
+			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	
+		if (ret) {
+			switch_copy_string(cb_state->ret_buffer, ret, sizeof(cb_state->ret_buffer));
+		}
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
+static switch_status js_speak_dtmf_callback(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
+{
+	char code[2048];
+	struct dtmf_callback_state *cb_state = buf;
+	struct js_session *jss = cb_state->session_state;
+	jsval rval;
+	char *ret;
+	
+	if(!jss) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (cb_state->digit_count || (cb_state->code_buffer[0] > 47 && cb_state->code_buffer[0] < 58)) {
+		char *d;
+		if (!cb_state->digit_count) {
+			cb_state->digit_count = atoi(cb_state->code_buffer);
+		}
+
+		for(d = dtmf; *d; d++) {
+			cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
+			if ((cb_state->ret_buffer_len > cb_state->digit_count)||
+				(cb_state->ret_buffer_len > sizeof(cb_state->ret_buffer))||
+				(cb_state->ret_buffer_len >= cb_state->digit_count)
+				) {
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		snprintf(code, sizeof(code), "~%s(\"%s\")", cb_state->code_buffer, dtmf);
+		eval_some_js(code, jss->cx, jss->obj, &rval);
+		ret = JS_GetStringBytes(JS_ValueToString(jss->cx, rval));
+
+		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	
+		if (ret) {
+			switch_copy_string(cb_state->ret_buffer, ret, sizeof(cb_state->ret_buffer));
+		}
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+    switch_channel *channel;
+	char *file_name = NULL;
+	char *dtmf_callback = NULL;
+	void *bp = NULL;
+	int len = 0;
+	switch_dtmf_callback_function dtmf_func = NULL;
+	struct dtmf_callback_state cb_state = {0};
+	switch_file_handle fh;
+
+	channel = switch_core_session_get_channel(jss->session);
+    assert(channel != NULL);
+	
+	if (argc > 0) {
+		file_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		if (switch_strlen_zero(file_name)) {
+			return JS_FALSE;
+		}
+	}
+	if (argc > 1) {
+		dtmf_callback = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		if (switch_strlen_zero(dtmf_callback)) {
+			dtmf_callback = NULL;
+		} else {
+			memset(&cb_state, 0, sizeof(cb_state));
+			switch_copy_string(cb_state.code_buffer, dtmf_callback, sizeof(cb_state.code_buffer));
+			cb_state.code_buffer_len = strlen(cb_state.code_buffer);
+			cb_state.session_state = jss;
+			dtmf_func = js_record_dtmf_callback;
+			bp = &cb_state;
+			len = sizeof(cb_state);
+		}
+	}
+
+	memset(&fh, 0, sizeof(fh));
+	cb_state.extra = &fh;
+
+	switch_ivr_record_file(jss->session, &fh, file_name, dtmf_func, bp, len);
+	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, cb_state.ret_buffer));
+
+	return (switch_channel_get_state(channel) == CS_EXECUTE) ? JS_TRUE : JS_FALSE;
+}
+
 static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -285,7 +437,7 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 			switch_copy_string(cb_state.code_buffer, dtmf_callback, sizeof(cb_state.code_buffer));
 			cb_state.code_buffer_len = strlen(cb_state.code_buffer);
 			cb_state.session_state = jss;
-			dtmf_func = js_dtmf_callback;
+			dtmf_func = js_stream_dtmf_callback;
 			bp = &cb_state;
 			len = sizeof(cb_state);
 		}
@@ -335,7 +487,7 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 			switch_copy_string(cb_state.code_buffer, dtmf_callback, sizeof(cb_state.code_buffer));
 			cb_state.code_buffer_len = strlen(cb_state.code_buffer);
 			cb_state.session_state = jss;
-			dtmf_func = js_dtmf_callback;
+			dtmf_func = js_speak_dtmf_callback;
 			bp = &cb_state;
 			len = sizeof(cb_state);
 		}
@@ -501,6 +653,7 @@ enum session_tinyid {
 
 static JSFunctionSpec session_methods[] = {
     {"streamFile", session_streamfile, 1}, 
+    {"recordFile", session_recordfile, 1}, 
     {"speak", session_speak, 1}, 
     {"getDigits", session_get_digits, 1},
     {"answer", session_answer, 0}, 

@@ -117,6 +117,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
   \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop recording.
 */
 SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *session,
+													 switch_file_handle *fh,
 													 char *file,
 													 switch_dtmf_callback_function dtmf_callback,
 													 void *buf,

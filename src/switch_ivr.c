@@ -148,6 +148,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
 
 
 SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *session, 
+													 switch_file_handle *fh,
 													 char *file,
 													 switch_dtmf_callback_function dtmf_callback,
 													 void *buf,
@@ -155,13 +156,16 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 {
 	switch_channel *channel;
     char dtmf[128];
-	switch_file_handle fh;
+	switch_file_handle lfh;
 	switch_frame *read_frame;
 	switch_codec codec, *read_codec;
 	char *codec_name;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	
-	memset(&fh, 0, sizeof(fh));
+	if (!fh) {
+		fh = &lfh;
+	}
+	memset(fh, 0, sizeof(*fh));
 
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -169,11 +173,11 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 	read_codec = switch_core_session_get_read_codec(session);
 	assert(read_codec != NULL);
 
-	fh.channels = read_codec->implementation->number_of_channels;
-	fh.samplerate = read_codec->implementation->samples_per_second;
+	fh->channels = read_codec->implementation->number_of_channels;
+	fh->samplerate = read_codec->implementation->samples_per_second;
 
 
-	if (switch_core_file_open(&fh,
+	if (switch_core_file_open(fh,
 							  file,
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
 							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -196,8 +200,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 		switch_core_session_set_read_codec(session, &codec);		
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d channels %dms\n",
-							  codec_name, fh.samplerate, fh.channels, read_codec->implementation->microseconds_per_frame / 1000);
-		switch_core_file_close(&fh);
+							  codec_name, fh->samplerate, fh->channels, read_codec->implementation->microseconds_per_frame / 1000);
+		switch_core_file_close(fh);
 		return SWITCH_STATUS_GENERR;
 	}
 	
@@ -228,13 +232,14 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 		if ((status = switch_core_session_read_frame(session, &read_frame, -1, 0)) != SWITCH_STATUS_SUCCESS) {
 			break;
 		}
-
-		len = (size_t) read_frame->datalen / 2;
-		switch_core_file_write(&fh, read_frame->data, &len);
+		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+			len = (size_t) read_frame->datalen / 2;
+			switch_core_file_write(fh, read_frame->data, &len);
+		}
 	}
 
 	switch_core_session_set_read_codec(session, read_codec);
-	switch_core_file_close(&fh);
+	switch_core_file_close(fh);
 
 	return status;
 }
@@ -755,7 +760,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 		}
 
 	}
-	switch_channel_hangup(chan_b);
+	//switch_channel_hangup(chan_b);
 	data->running = 0;
 
 	return NULL;
@@ -891,8 +896,6 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 				switch_yield(1000);
 			}
 		}
-
-
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
