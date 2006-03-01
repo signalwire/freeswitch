@@ -591,9 +591,9 @@ static JSBool session_wait_for_answer(JSContext *cx, JSObject *obj, uintN argc, 
 	switch_channel *channel;
 	switch_time_t started;
 	unsigned int elapsed;
+	int32 timeout = 60;
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
-	int32 timeout = 60;
 	started = switch_time_now();
 
 	if (argc > 0) {
@@ -1608,16 +1608,16 @@ static void js_exec(switch_core_session *session, char *data)
 	}
 }
 
-static void *js_thread_run(switch_thread *thread, void *obj)
+static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread *thread, void *obj)
 {
 	JSContext *cx = NULL;
 	JSObject *javascript_global_object = NULL;
-	cx = JS_NewContext(globals.rt, globals.gStackChunkSize);
  	char buf[1024];
 	char *code, *next, *arg, *nextarg;
 	jsval rval;
 	int x = 0;
 	char *input_code = obj;
+	cx = JS_NewContext(globals.rt, globals.gStackChunkSize);
 
 	javascript_global_object = JS_NewObject(cx, &global_class, NULL, NULL);
 	env_init(cx, javascript_global_object);
@@ -1718,7 +1718,7 @@ static switch_loadable_module_interface spidermonkey_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-switch_status switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
 {
 	switch_status status;
 
