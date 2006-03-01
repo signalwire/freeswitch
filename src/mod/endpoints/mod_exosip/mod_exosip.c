@@ -579,6 +579,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			}
 
 			if (globals.supress_telephony_events && payload != tech_pvt->payload_num) {
+				switch_yield(1000);
 				continue;
 			}
 			
@@ -592,7 +593,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 				break;
 			}
 
-			switch_yield(100);
+			switch_yield(1000);
 		}
 
 	} else {

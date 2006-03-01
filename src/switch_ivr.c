@@ -772,6 +772,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 			data->running = -1;
 		}
 
+		switch_yield(1000);
 	}
 	//switch_channel_hangup(chan_b);
 	data->running = 0;
