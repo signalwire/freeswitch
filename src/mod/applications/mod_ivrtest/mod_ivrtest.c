@@ -157,7 +157,7 @@ static void ivrtest_function(switch_core_session *session, char *data)
 			}
 		}
 
-		if (switch_ivr_collect_digits_count(session, buf, sizeof(buf), 10, "#*", &term) != SWITCH_STATUS_SUCCESS) {
+		if (switch_ivr_collect_digits_count(session, buf, sizeof(buf), 10, "#*", &term, 10000, 1) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel);
 			break;
 		}

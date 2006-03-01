@@ -857,7 +857,9 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	int refresh;
 	struct iax_event *iaxevent = NULL;
 	switch_event *s_event;
-	load_config();
+	if (load_config() != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_TERM;
+	}
 
 	if (globals.debug) {
 		iax_enable_debug();

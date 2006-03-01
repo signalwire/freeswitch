@@ -80,7 +80,9 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
 															  unsigned int buflen,
 															  unsigned int maxdigits,
 															  const char *terminators,
-															  char *terminator);
+															  char *terminator,
+															  unsigned int timeout,
+                                                              unsigned int poll_channel);
 	
 /*!
   \brief play a file from the disk to the session
@@ -121,6 +123,18 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 													 unsigned int buflen);
 
 
+/*!
+  \brief Speak given text with given tts engine
+  \param session the session to speak on
+  \param voice_name the desired voice
+  \param timer_name optional timer to use for async behaviour
+  \param rate the sample rate
+  \param dtmf_callback code to execute if any dtmf is dialed during the audio
+  \param text the text to speak
+  \param buf an option data pointer to pass to the callback or a string to put encountered digits in
+  \param buflen the len of buf
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
 SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session, 
 													char *tts_name,
 													char *voice_name,
@@ -130,6 +144,17 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 													char *text,
 													void *buf,
 													unsigned int buflen);
+
+/*!
+  \brief Bridge Audio from one session to another
+  \param session one session
+  \param peer_session the other session
+  \param timelimit maximum number of seconds to wait for both channels to be answered
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_session *session, 
+															   switch_core_session *peer_session,
+															   unsigned int timelimit);
 
 /** @} */
 

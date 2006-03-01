@@ -29,6 +29,8 @@
  * mod_spidermonkey.c -- Javascript Module
  *
  */
+#define HAVE_CURL
+
 #include "jstypes.h"
 #include "jsarena.h"
 #include "jsutil.h"
@@ -47,6 +49,9 @@
 #include "jsscript.h"
 #include <libteletone.h>
 #include <switch.h>
+#ifdef HAVE_CURL
+#include <curl/curl.h>
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(disable: 4311)
@@ -68,7 +73,6 @@ static struct {
 } globals;
 
 
-//extern JSClass global_class;
 static JSClass global_class = {
     "Global", JSCLASS_HAS_PRIVATE, 
     JS_PropertyStub,  JS_PropertyStub,  JS_PropertyStub,  JS_PropertyStub, 
@@ -303,11 +307,12 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	char *tts_name = NULL;
 	char *voice_name = NULL;
 	char *text = NULL;
+	char *dtmf_callback = NULL;
 	switch_codec *codec;
-	char buf[10] = "";
 	void *bp = NULL;
 	int len = 0;
-	//switch_dtmf_callback_function dtmf_func = NULL;
+	struct dtmf_callback_state cb_state = {0};
+	switch_dtmf_callback_function dtmf_func = NULL;
 
 	channel = switch_core_session_get_channel(jss->session);
     assert(channel != NULL);
@@ -322,8 +327,18 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 		text = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
 	}
 	if (argc > 3) {
-		bp = buf;
-		len = sizeof(buf);
+		dtmf_callback = JS_GetStringBytes(JS_ValueToString(cx, argv[3]));
+		if (switch_strlen_zero(dtmf_callback)) {
+			dtmf_callback = NULL;
+		} else {
+			memset(&cb_state, 0, sizeof(cb_state));
+			switch_copy_string(cb_state.code_buffer, dtmf_callback, sizeof(cb_state.code_buffer));
+			cb_state.code_buffer_len = strlen(cb_state.code_buffer);
+			cb_state.session_state = jss;
+			dtmf_func = js_dtmf_callback;
+			bp = &cb_state;
+			len = sizeof(cb_state);
+		}
 	}
 
 	if (!tts_name && text) {
@@ -336,15 +351,14 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 						  voice_name && strlen(voice_name) ? voice_name : NULL, 
 						  NULL,
 						  codec->implementation->samples_per_second,
-						  NULL,
+						  dtmf_func,
 						  text,
 						  bp,
 						  len);
-	if(len) {
-		*rval = STRING_TO_JSVAL ( JS_NewStringCopyZ(cx, buf) );
-	}
-	return JS_TRUE;
-	
+
+	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, cb_state.ret_buffer));
+
+	return (switch_channel_get_state(channel) == CS_EXECUTE) ? JS_TRUE : JS_FALSE;
 }
 
 static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -353,15 +367,24 @@ static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval
 	char *terminators = NULL;
 	char *buf;
 	int digits;
-
+	int32 timeout = 5000;
+	int32 poll_chan = 1;
+	
+	
 	if (argc > 0) {
 		char term;
 		digits = atoi(JS_GetStringBytes(JS_ValueToString(cx, argv[0])));
 		if (argc > 1) {
 			terminators = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		}
+		if (argc > 2) {
+			JS_ValueToInt32(cx, argv[2], &timeout);
+		}
+		if (argc > 3) {
+			JS_ValueToInt32(cx, argv[3], &poll_chan);
+		}
 		buf = switch_core_session_alloc(jss->session, digits);
-		switch_ivr_collect_digits_count(jss->session, buf, digits, digits, terminators, &term);
+		switch_ivr_collect_digits_count(jss->session, buf, digits, digits, terminators, &term, timeout, poll_chan ? SWITCH_TRUE : SWITCH_FALSE);
 		*rval = STRING_TO_JSVAL ( JS_NewStringCopyZ(cx, buf) );
 		return JS_TRUE;
 	}
@@ -380,6 +403,95 @@ static JSBool session_answer(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	switch_channel_answer(channel);
 	return JS_TRUE;
 }
+
+#ifdef HAVE_CURL
+
+struct config_data {
+	JSContext *cx;
+	JSObject *obj;
+	char *name;
+};
+
+static size_t realtime_callback(void *ptr, size_t size, size_t nmemb, void *data)
+{
+    register int realsize = size * nmemb;
+	char *line, lineb[2048], *nextline = NULL, *val = NULL, *p = NULL;
+	jsval rval;
+	struct config_data *config_data = data;
+	char code[256];
+
+	if (config_data->name) {
+		switch_copy_string(lineb, (char *) ptr, sizeof(lineb));
+		line = lineb;
+		while (line) {
+			if ((nextline = strchr(line, '\n'))) {
+				*nextline = '\0';
+				nextline++;
+			}
+			
+			if ((val = strchr(line, '='))) {
+                *val = '\0';
+                val++;
+                if (val[0] == '>') {
+                    *val = '\0';
+                    val++;
+                }
+				
+                for (p = line; p && *p == ' '; p++);
+                line = p;
+                for (p=line+strlen(line)-1;*p == ' '; p--)
+                    *p = '\0';
+                for (p = val; p && *p == ' '; p++);
+                val = p;
+                for (p=val+strlen(val)-1;*p == ' '; p--)
+                    *p = '\0';
+
+				snprintf(code, sizeof(code), "~%s[\"%s\"] = \"%s\"", config_data->name, line, val);
+				eval_some_js(code, config_data->cx, config_data->obj, &rval);
+
+            }
+
+			line = nextline;
+		}
+	} 
+	return realsize;
+
+}
+
+
+static JSBool js_fetchurl(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	char *url = NULL, *name = NULL;
+	CURL *curl_handle = NULL;
+	struct config_data config_data;
+	
+	if ( argc > 0 && (url = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
+		if (argc > 1)
+			name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		curl_global_init(CURL_GLOBAL_ALL);
+		curl_handle = curl_easy_init();
+		if (!strncasecmp(url, "https", 5)) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		}
+		config_data.cx = cx;
+		config_data.obj = obj;
+		if (name)
+			config_data.name = name;
+		curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, realtime_callback);
+		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&config_data);
+		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "asterisk-js/1.0");
+		curl_easy_perform(curl_handle);
+		curl_easy_cleanup(curl_handle);
+    } else {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error!\n");
+		return JS_FALSE;
+	}
+
+	return JS_TRUE;
+}
+#endif
 
 /* Session Object */
 /*********************************************************************************/
@@ -643,7 +755,6 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 
 			write_frame.samples = write_frame.datalen / 2;
 			for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
-
 				if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Write\n");
 					break;
@@ -651,7 +762,9 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			}
 		}
 
-		switch_core_thread_session_end(&thread_session);
+		if (tto->timer) {
+			switch_core_thread_session_end(&thread_session);
+		}
 		return JS_TRUE;
 	}
 	
@@ -704,9 +817,158 @@ static JSBool js_log(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 	return JS_FALSE;
 }
 
+static JSBool js_include(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	char *code;
+	if ( argc > 0 && (code = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
+		eval_some_js(code, cx, obj, rval);
+		return JS_TRUE;
+	}
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Arguements\n");
+	return JS_FALSE;
+}
+
+#define B64BUFFLEN 1024
+static const char c64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static int write_buf(int fd, char *buf) {
+
+	size_t len = strlen(buf);
+	if (fd && write(fd, buf, len) != len) {
+		close(fd);
+		return 0;
+	}
+
+	return 1;
+}
+
+static JSBool js_email(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	char *to = NULL, *from = NULL, *headers, *body = NULL, *file = NULL;
+	char *bound = "XXXX_boundary_XXXX";
+	char filename[80], buf[B64BUFFLEN];
+	int fd = 0, ifd = 0;
+	int x=0, y=0, bytes=0, ilen=0;
+	unsigned int b=0, l=0;
+	unsigned char in[B64BUFFLEN];
+	unsigned char out[B64BUFFLEN+512];
+	char *path = NULL;
+
+	
+	if ( 
+		 argc > 3 && 
+		 (from = JS_GetStringBytes(JS_ValueToString(cx, argv[0]))) &&
+		 (to = JS_GetStringBytes(JS_ValueToString(cx, argv[1]))) &&
+		 (headers = JS_GetStringBytes(JS_ValueToString(cx, argv[2]))) &&
+		 (body = JS_GetStringBytes(JS_ValueToString(cx, argv[3]))) 
+		 ) {
+		if ( argc > 4)
+			file = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
+		
+		
+		snprintf(filename, 80, "/tmp/mail.%ld", switch_time_now());
+
+		if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
+			if (file) {
+				path = file;
+				if ((ifd = open(path, O_RDONLY)) < 1) {
+					return JS_FALSE;
+				}
+
+				snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
+				if (!write_buf(fd, buf)) {
+					return JS_FALSE;
+				}
+			}
+			
+			if (!write_buf(fd, headers))
+				return JS_FALSE;
+
+			if (!write_buf(fd, "\n\n"))
+				return JS_FALSE;
+			
+			if (file) {
+				snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
+				if (!write_buf(fd, buf))
+					return JS_FALSE;
+			}
+			
+			if (!write_buf(fd, body))
+				return JS_FALSE;
+			
+			if (file) {
+				snprintf(buf, B64BUFFLEN, "\n\n--%s\nContent-Type: application/octet-stream\nContent-Transfer-Encoding: base64\nContent-Description: Sound attachment.\nContent-Disposition: attachment; filename=\"%s\"\n\n", bound, file);
+				if (!write_buf(fd, buf))
+					return JS_FALSE;
+				
+				while((ilen=read(ifd, in, B64BUFFLEN))) {
+					for (x=0;x<ilen;x++) {
+						b = (b<<8) + in[x];
+						l += 8;
+						while (l >= 6) {
+							out[bytes++] = c64[(b>>(l-=6))%64];
+							if (++y!=72)
+								continue;
+							out[bytes++] = '\n';
+							y=0;
+						}
+					}
+					if (write(fd, &out, bytes) != bytes) { 
+						return -1;
+					} else 
+						bytes=0;
+					
+				}
+				
+				if (l > 0)
+					out[bytes++] = c64[((b%16)<<(6-l))%64];
+				if (l != 0) while (l < 6)
+					out[bytes++] = '=', l += 2;
+	
+				if (write(fd, &out, bytes) != bytes) { 
+					return -1;
+				}
+
+			}
+			
+
+			
+			if (file) {
+				snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
+				if (!write_buf(fd, buf))
+					return JS_FALSE;
+			}
+		}
+
+		if (fd)
+			close(fd);
+		if (ifd)
+			close(ifd);
+
+		snprintf(buf, B64BUFFLEN, "/bin/cat %s | /usr/sbin/sendmail -tf \"%s\" %s", filename, from, to);
+		system(buf);
+		unlink(filename);
+
+
+		if (file) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Emailed file [%s] to [%s]\n", filename, to);
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Emailed data to [%s]\n", to);
+		}
+		return JS_TRUE;
+	}
+	
+
+	return JS_FALSE;
+}
 
 static JSFunctionSpec fs_functions[] = {
 	{"console_log", js_log, 2}, 
+	{"include", js_include, 1}, 
+	{"email", js_email, 2}, 
+#ifdef HAVE_CURL
+	{"fetchURL", js_fetchurl, 1}, 
+#endif 
 	{0}
 };
 
