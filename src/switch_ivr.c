@@ -692,7 +692,9 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	struct switch_core_thread_session *data = obj;
 	int *stream_id_p;
 	int stream_id = 0, ans_a = 0, ans_b = 0;
-	
+	switch_dtmf_callback_function dtmf_callback;
+	void *user_data;
+
 	switch_channel *chan_a, *chan_b;
 	switch_frame *read_frame;
 	switch_core_session *session_a, *session_b;
@@ -701,6 +703,9 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	session_b = data->objs[1];
 
 	stream_id_p = data->objs[2];
+	dtmf_callback = data->objs[3];
+	user_data = data->objs[4];
+
 	if (stream_id_p) {
 		stream_id = *stream_id_p;
 	}
@@ -745,6 +750,14 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 			char dtmf[128];
 			switch_channel_dequeue_dtmf(chan_a, dtmf, sizeof(dtmf));
 			switch_core_session_send_dtmf(session_b, dtmf);
+
+			if (dtmf_callback) {
+				if (dtmf_callback(session_a, dtmf, user_data, 0) != SWITCH_STATUS_SUCCESS) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
+					data->running = -1;
+					break;
+				}
+			}
 		}
 
 		/* read audio from 1 channel and write it to the other */
@@ -829,7 +842,13 @@ static const switch_state_handler_table audio_bridge_caller_state_handlers = {
 
 SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_session *session, 
 															   switch_core_session *peer_session,
-															   unsigned int timelimit)
+															   unsigned int timelimit,
+															   switch_dtmf_callback_function dtmf_callback,
+															   void *session_data,
+															   void *peer_session_data)
+															   
+
+															   
 {
 	struct switch_core_thread_session this_audio_thread, other_audio_thread;
 	switch_channel *caller_channel, *peer_channel;
@@ -847,11 +866,16 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	other_audio_thread.objs[0] = session;
 	other_audio_thread.objs[1] = peer_session;
 	other_audio_thread.objs[2] = &stream_id;
+	other_audio_thread.objs[3] = dtmf_callback;
+	other_audio_thread.objs[4] = session_data;
+
 	other_audio_thread.running = 5;
 
 	this_audio_thread.objs[0] = peer_session;
 	this_audio_thread.objs[1] = session;
 	this_audio_thread.objs[2] = &stream_id;
+	this_audio_thread.objs[3] = dtmf_callback;
+	this_audio_thread.objs[4] = peer_session_data;
 	this_audio_thread.running = 2;
 
 

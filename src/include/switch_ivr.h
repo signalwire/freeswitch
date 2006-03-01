@@ -151,11 +151,17 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
   \param session one session
   \param peer_session the other session
   \param timelimit maximum number of seconds to wait for both channels to be answered
+  \param dtmf_callback code to execute if any dtmf is dialed during the bridge
+  \param session_data data to pass to the DTMF callback for session
+  \param peer_session_data data to pass to the DTMF callback for peer_session
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_session *session, 
 															   switch_core_session *peer_session,
-															   unsigned int timelimit);
+															   unsigned int timelimit,
+															   switch_dtmf_callback_function dtmf_callback,
+															   void *session_data,
+															   void *peer_session_data);
 
 /** @} */
 

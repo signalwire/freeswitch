@@ -69,7 +69,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 		switch_channel_hangup(caller_channel);
 		return;
 	} else {
-		switch_ivr_multi_threaded_bridge(session, peer_session, timelimit);
+		switch_ivr_multi_threaded_bridge(session, peer_session, timelimit, NULL, NULL, NULL);
 	}
 }
 
