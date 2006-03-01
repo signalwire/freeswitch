@@ -550,7 +550,6 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			   && tech_pvt->read_frame.datalen == 0) {
 			tech_pvt->read_frame.datalen =
 				jrtp4c_read(tech_pvt->rtp_session, tech_pvt->read_frame.data, sizeof(tech_pvt->read_buf), &payload);
-
 			/* RFC2833 ... TBD try harder to honor the duration etc.*/
 			if (payload == 101) {
 				unsigned char *packet = tech_pvt->read_frame.data;
@@ -731,7 +730,6 @@ static switch_status exosip_kill_channel(switch_core_session *session, int sig)
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 	switch_set_flag(tech_pvt, TFLAG_BYE);
@@ -1008,7 +1006,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		snprintf(name, sizeof(name), "Exosip/%s-%04x", event->request->from->url->username, rand() & 0xffff);
 		switch_channel_set_name(channel, name);
 
-		if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
+		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																  globals.dialplan,
 																  event->request->from->displayname,
 																  event->request->from->url->username,

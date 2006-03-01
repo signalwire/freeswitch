@@ -973,7 +973,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 			snprintf(ani2str, 5, "%.2d", event->ring.ani2);
 		}
 
-		if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
+		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																  globals.dialplan,
 																  "wanpipe fixme",
 																  event->ring.callingnum,

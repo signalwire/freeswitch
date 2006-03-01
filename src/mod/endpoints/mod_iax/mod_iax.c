@@ -979,7 +979,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 						}
 
 
-						if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
+						if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																				  globals.dialplan,
 																				  iaxevent->ies.calling_name,
 																				  iaxevent->ies.calling_number,

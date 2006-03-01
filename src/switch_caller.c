@@ -31,7 +31,7 @@
  */
 #include <switch_caller.h>
 
-SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_core_session *session,
+SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_pool *pool,
 																  char *dialplan,
 																  char *caller_id_name,
 																  char *caller_id_number,
@@ -42,14 +42,14 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_core_se
 
 	switch_caller_profile *profile = NULL;
 
-	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile))) != 0) {
-		profile->dialplan = switch_core_session_strdup(session, dialplan);
-		profile->caller_id_name = switch_core_session_strdup(session, caller_id_name);
-		profile->caller_id_number = switch_core_session_strdup(session, caller_id_number);
-		profile->network_addr = switch_core_session_strdup(session, network_addr);
-		profile->ani = switch_core_session_strdup(session, ani);
-		profile->ani2 = switch_core_session_strdup(session, ani2);
-		profile->destination_number = switch_core_session_strdup(session, destination_number);
+	if ((profile = switch_core_alloc(pool, sizeof(switch_caller_profile))) != 0) {
+		profile->dialplan = switch_core_strdup(pool, dialplan);
+		profile->caller_id_name = switch_core_strdup(pool, caller_id_name);
+		profile->caller_id_number = switch_core_strdup(pool, caller_id_number);
+		profile->network_addr = switch_core_strdup(pool, network_addr);
+		profile->ani = switch_core_strdup(pool, ani);
+		profile->ani2 = switch_core_strdup(pool, ani2);
+		profile->destination_number = switch_core_strdup(pool, destination_number);
 	}
 
 	return profile;

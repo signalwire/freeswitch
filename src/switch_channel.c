@@ -248,6 +248,12 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_get_state(switch_channel *ch
 	return channel->state;
 }
 
+SWITCH_DECLARE(unsigned int) switch_channel_ready(switch_channel *channel)
+{
+	assert(channel != NULL);
+	return (channel->state > CS_RING && channel->state < CS_HANGUP) ? 1 : 0;
+}
+
 static const char *state_names[] = {
 	"CS_NEW",
 	"CS_INIT",

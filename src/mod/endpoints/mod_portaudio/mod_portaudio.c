@@ -808,7 +808,7 @@ static switch_status place_call(char *dest, char *out, size_t outlen)
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if ((tech_pvt->caller_profile = switch_caller_profile_new(session,
+		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																  globals.dialplan,
 																  globals.cid_name,
 																  globals.cid_num, NULL, NULL, NULL, dest)) != 0) {

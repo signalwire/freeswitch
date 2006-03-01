@@ -239,6 +239,8 @@ CF_RECV_AUDIO   = (1 <<  1) - Channel will receive audio
 CF_ANSWERED     = (1 <<  2) - Channel is answered
 CF_OUTBOUND     = (1 <<  3) - Channel is an outbound channel
 CF_EARLY_MEDIA  = (1 <<  4) - Channel is ready for audio before answer 
+CF_ORIGINATOR	= (1 <<  5) - Channel is an originator
+CF_TRANSFER		= (1 <<  6) - Channel is being transfered
 </pre>
  */
 
@@ -247,7 +249,9 @@ typedef enum {
 	CF_RECV_AUDIO 	= (1 <<  1),
 	CF_ANSWERED   	= (1 <<  2),
 	CF_OUTBOUND   	= (1 <<  3),
-	CF_EARLY_MEDIA	= (1 << 4)
+	CF_EARLY_MEDIA	= (1 <<  4),
+	CF_ORIGINATOR	= (1 <<  5),
+	CF_TRANSFER		= (1 <<  6)
 } switch_channel_flag;
 
 

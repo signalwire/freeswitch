@@ -50,7 +50,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_ses
 		return SWITCH_STATUS_GENERR;
 	}
 
-	while (switch_channel_get_state(channel) == CS_EXECUTE) {
+	while(switch_channel_ready(channel)) {
 		switch_frame *read_frame;
 		char dtmf[128];
 
@@ -105,7 +105,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
 	if (timeout) {
 		started = switch_time_now();
 	}
-	while (switch_channel_get_state(channel) == CS_EXECUTE) {
+
+	while(switch_channel_ready(channel)) {
 		switch_frame *read_frame;
 
 		if (timeout) {
@@ -161,7 +162,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 	switch_codec codec, *read_codec;
 	char *codec_name;
 	switch_status status = SWITCH_STATUS_SUCCESS;
-	
+
 	if (!fh) {
 		fh = &lfh;
 	}
@@ -206,7 +207,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 	}
 	
 
-	while (switch_channel_get_state(channel) == CS_EXECUTE) {
+	while(switch_channel_ready(channel)) {
 		size_t len;
 
 		if (dtmf_callback || buf) {
@@ -267,7 +268,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	int stream_id;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	switch_file_handle lfh;
-	
+
 	if (!fh) {
 		fh = &lfh;
 		memset(fh, 0, sizeof(lfh));
@@ -332,7 +333,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	}
 
 	ilen = samples;
-	while (switch_channel_get_state(channel) == CS_EXECUTE) {
+	while(switch_channel_ready(channel)) {
 		int done = 0;
 		int do_speed = 1;
 		int last_speed = -1;
@@ -586,8 +587,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	}
 
 	ilen = len;
-	while (switch_channel_get_state(channel) == CS_EXECUTE) {
-
+	while(switch_channel_ready(channel)) {
 		if (dtmf_callback || buf) {
 
 
@@ -667,7 +667,6 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "done speaking text\n");
 	switch_core_codec_destroy(&codec);
 	flags = 0;
-	switch_core_codec_destroy(&codec);
 
 	if (timer_name) {
 		/* End the audio absorbing thread */
@@ -798,9 +797,11 @@ static switch_status audio_bridge_on_hangup(switch_core_session *session)
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "CUSTOM HANGUP %s kill %s\n", switch_channel_get_name(channel),
 						  switch_channel_get_name(other_channel));
 
-	switch_core_session_kill_channel(other_session, SWITCH_SIG_KILL);
-	switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
-
+	//switch_core_session_kill_channel(other_session, SWITCH_SIG_KILL);
+	//switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
+	if (switch_channel_test_flag(channel, CF_ORIGINATOR) && !switch_channel_test_flag(other_channel, CF_TRANSFER)) {
+		switch_core_session_kill_channel(other_session, SWITCH_SIG_KILL);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -855,6 +856,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	switch_channel *caller_channel, *peer_channel;
 	time_t start;
 	int stream_id = 0;
+	switch_frame *read_frame;
 
 	caller_channel = switch_core_session_get_channel(session);
 	assert(caller_channel != NULL);
@@ -895,12 +897,15 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	}
 
 	time(&start);
-	while (switch_channel_get_state(caller_channel) == CS_EXECUTE &&
-		   switch_channel_get_state(peer_channel) == CS_TRANSMIT &&
+	while (switch_channel_ready(caller_channel) &&
+		   switch_channel_ready(peer_channel) &&
 		   !switch_channel_test_flag(peer_channel, CF_ANSWERED) &&
 		   !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) &&
 		   ((time(NULL) - start) < timelimit)) {
-		switch_yield(20000);
+		if (switch_core_session_read_frame(session, &read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
+		switch_yield(1000);
 	}
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
@@ -913,7 +918,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 		switch_core_session_launch_thread(session, audio_bridge_thread, (void *) &other_audio_thread);
 		audio_bridge_thread(NULL, (void *) &this_audio_thread);
 
-		switch_channel_hangup(peer_channel);
+		//switch_channel_hangup(peer_channel);
 		if (other_audio_thread.running > 0) {
 			other_audio_thread.running = -1;
 			/* wait for the other audio thread */

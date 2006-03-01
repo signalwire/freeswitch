@@ -158,6 +158,12 @@ SWITCH_DECLARE(switch_status) switch_core_destroy_memory_pool(switch_memory_pool
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session);
 
 /*! 
+  \brief determine if the session's state machine is running
+  \param session the session on which to check
+*/
+SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session *session);
+
+/*! 
   \brief Allocate memory from the main pool with no intention of returning it
   \param memory the number of bytes to allocate
   \return a void pointer to the allocated memory

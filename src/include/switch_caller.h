@@ -134,7 +134,7 @@ extern "C" {
 
 	/*!
       \brief Create a new caller profile object
-	  \param session session associated with the profile (bound by scope)
+	  \param pool memory pool to use
 	  \param dialplan name of the dialplan module in use
 	  \param caller_id_name caller ID name
 	  \param caller_id_number caller ID number
@@ -144,7 +144,7 @@ extern "C" {
 	  \param destination_number destination number
 	  \return a new profile object allocated from the session's memory pool
 	*/
-	SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_core_session *session,
+	SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_pool *pool,
 																	  char *dialplan,
 																	  char *caller_id_name,
 																	  char *caller_id_number,

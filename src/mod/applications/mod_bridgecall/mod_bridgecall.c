@@ -55,7 +55,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 	}
 
 	caller_caller_profile = switch_channel_get_caller_profile(caller_channel);
-	caller_profile = switch_caller_profile_new(session,
+	caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 											   caller_caller_profile->dialplan,
 											   caller_caller_profile->caller_id_name,
 											   caller_caller_profile->caller_id_number,

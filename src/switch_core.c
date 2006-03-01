@@ -42,6 +42,7 @@ EXTERN_C void xs_init(pTHX);
 struct switch_core_session {
 	unsigned long id;
 	char name[80];
+	int thread_running;
 	switch_memory_pool *pool;
 	switch_channel *channel;
 	switch_thread *thread;
@@ -714,9 +715,9 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, 
 	assert(session != NULL);
 	assert(session->pool != NULL);
 
-	if (!todup)
+	if (!todup) {
 		return NULL;
-
+	}
 	len = strlen(todup) + 1;
 
 	if (todup && (duped = apr_palloc(session->pool, len)) != 0) {
@@ -731,10 +732,11 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
 	char *duped = NULL;
 	size_t len;
 	assert(pool != NULL);
-	assert(todup != NULL);
 
-	if (!todup)
+	if (!todup) {
 		return NULL;
+	}
+	
 	len = strlen(todup) + 1;
 
 	if (todup && (duped = apr_palloc(pool, len)) != 0) {
@@ -792,9 +794,11 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 		if ((status =
 			 endpoint_interface->io_routines->outgoing_channel(session, caller_profile,
 															   new_session)) == SWITCH_STATUS_SUCCESS) {
-			for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
-				if ((status = ptr->outgoing_channel(session, caller_profile, *new_session)) != SWITCH_STATUS_SUCCESS) {
-					break;
+			if (session) {
+				for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
+					if ((status = ptr->outgoing_channel(session, caller_profile, *new_session)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
 				}
 			}
 		} else {
@@ -806,7 +810,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 		switch_caller_profile *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
 		switch_channel *channel = NULL, *peer_channel = NULL;
 
-		if ((channel = switch_core_session_get_channel(session)) != 0) {
+		if (session && (channel = switch_core_session_get_channel(session)) != 0) {
 			profile = switch_channel_get_caller_profile(channel);
 		}
 		if ((peer_channel = switch_core_session_get_channel(*new_session)) != 0) {
@@ -820,7 +824,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 				}
 			}
 			if (peer_profile) {
-				if ((cloned_profile = switch_caller_profile_clone(session, peer_profile)) != 0) {
+				if (session && (cloned_profile = switch_caller_profile_clone(session, peer_profile)) != 0) {
 					switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 				}
 			}
@@ -1536,7 +1540,7 @@ SWITCH_DECLARE(switch_status) switch_core_new_memory_pool(switch_memory_pool **p
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if ((apr_pool_create(pool, runtime.memory_pool)) != APR_SUCCESS) {
+	if ((apr_pool_create(pool, runtime.memory_pool)) != SWITCH_STATUS_SUCCESS) {
 		*pool = NULL;
 		return SWITCH_STATUS_MEMERR;
 	}
@@ -1573,6 +1577,12 @@ static void switch_core_standard_on_ring(switch_core_session *session)
 	switch_caller_extension *extension;
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard RING %s\n", switch_channel_get_name(session->channel));
+
+
+	if (switch_channel_test_flag(session->channel, CF_OUTBOUND)) {
+		switch_channel_set_state(session->channel, CS_TRANSMIT);
+		return;
+	}
 
 	if ((caller_profile = switch_channel_get_caller_profile(session->channel)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't get profile!\n");
@@ -1656,6 +1666,11 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session
 	switch_thread_cond_signal(session->cond);
 }
 
+SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session *session)
+{
+	return session->thread_running;
+}
+
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 {
 	switch_channel_state state = CS_NEW, laststate = CS_HANGUP, midstate = CS_DONE;
@@ -1679,8 +1694,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 
 	 */
 	assert(session != NULL);
-
-
+	
+	session->thread_running = 1;
 	endpoint_interface = session->endpoint_interface;
 	assert(endpoint_interface != NULL);
 
@@ -1943,7 +1958,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 			switch_thread_cond_wait(session->cond, session->mutex);
 		} 
 	}
-
+	session->thread_running = 0;
 }
 
 SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session **session)
@@ -2065,10 +2080,11 @@ SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session *sess
 	switch_threadattr_create(&thd_attr, session->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 
-	if (switch_thread_create(&thread, thd_attr, switch_core_session_thread, session, session->pool) != APR_SUCCESS) {
-		switch_core_session_destroy(&session);
+	if (! session->thread_running) {
+		if (switch_thread_create(&thread, thd_attr, switch_core_session_thread, session, session->pool) != SWITCH_STATUS_SUCCESS) {
+			switch_core_session_destroy(&session);
+		}
 	}
-
 }
 
 SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *session, switch_thread_start_t func,
@@ -2227,12 +2243,12 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 	}
 
 	/* INIT APR and Create the pool context */
-	if (apr_initialize() != APR_SUCCESS) {
+	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if (apr_pool_create(&runtime.memory_pool, NULL) != APR_SUCCESS) {
+	if (apr_pool_create(&runtime.memory_pool, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory pool\n");
 		switch_core_destroy();
 		return SWITCH_STATUS_MEMERR;

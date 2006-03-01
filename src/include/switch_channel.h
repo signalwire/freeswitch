@@ -66,6 +66,13 @@ typedef struct {
 SWITCH_DECLARE(switch_channel_state) switch_channel_get_state(switch_channel *channel);
 
 /*!
+  \brief Determine if a channel is ready for io
+  \param channel channel to test
+  \return true if the channel is ready
+*/
+SWITCH_DECLARE(unsigned int) switch_channel_ready(switch_channel *channel);
+
+/*!
   \brief Set the current state of a channel
   \param channel channel to set state of
   \param state new state
