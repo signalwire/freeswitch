@@ -21,3 +21,5 @@ dialplans/mod_pcre
 directories/mod_ldap
 dialplans/mod_dialplan_directory
 event_handlers/mod_zeroconf
+#asr_tts/mod_cepstral
+#languages/mod_spidermonkey
