@@ -2180,15 +2180,13 @@ static void core_event_handler(switch_event *event)
 	}
 }
 
-SWITCH_DECLARE(switch_status) switch_core_init(char *console)
+SWITCH_DECLARE(void) switch_core_set_globals(void)
 {
 #ifdef WIN32
 #define BUFSIZE 50
     char lpPathBuffer[BUFSIZE];
 	DWORD dwBufSize=BUFSIZE;
 #endif
-	memset(&runtime, 0, sizeof(runtime));
-	
 	SWITCH_GLOBAL_dirs.base_dir = SWITCH_PREFIX_DIR;
 	SWITCH_GLOBAL_dirs.mod_dir = SWITCH_MOD_DIR;
 	SWITCH_GLOBAL_dirs.conf_dir = SWITCH_CONF_DIR;
@@ -2205,12 +2203,24 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 	SWITCH_GLOBAL_dirs.temp_dir = "/tmp/";
 #endif
 #endif
+}
+
+SWITCH_DECLARE(switch_status) switch_core_init(char *console)
+{
+
+	memset(&runtime, 0, sizeof(runtime));
 	
-	
+	switch_core_set_globals();
+
 #ifdef EMBED_PERL
 	PerlInterpreter *my_perl;
 #endif
 	if(console) {
+		if (*console != '/') {
+			char path[265];
+			snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, console);
+			console = path;
+		}
 		switch_core_set_console(console);
 	} else {
 		runtime.console = stdout;

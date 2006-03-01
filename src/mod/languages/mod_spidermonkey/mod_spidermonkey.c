@@ -110,6 +110,7 @@ struct teletone_obj {
 	switch_core_session *session;
 	switch_codec codec;
 	switch_buffer *audio_buffer;
+	switch_buffer *loop_buffer;
 	switch_memory_pool *pool;
 	switch_timer *timer;
 	switch_timer timer_base;
@@ -762,7 +763,7 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 	switch_codec *read_codec;
 	switch_memory_pool *pool;
 	char *timer_name = NULL;
-	
+
 	if (argc > 0) {
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
 			if (!(jss = JS_GetPrivate(cx, session_obj))) {
@@ -882,6 +883,7 @@ static JSBool teletone_on_dtmf(JSContext *cx, JSObject *obj, uintN argc, jsval *
 static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
+	int32 loops = 0;
 
 	if (argc > 0) {
 		char *script;
@@ -893,7 +895,23 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		switch_core_thread_session thread_session;
 		switch_channel *channel;
 
+		if (argc > 1) {
+			if (!JS_ValueToInt32(cx, argv[1], &loops)) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot Convert to INT\n");
+				return JS_FALSE;
+			}
+			loops--;
+			if (!tto->loop_buffer) {
+				switch_buffer_create(tto->pool, &tto->loop_buffer, SWITCH_RECCOMMENDED_BUFFER_SIZE);
+			}
+		} 
 
+		if (tto->audio_buffer) {
+			switch_buffer_zero(tto->audio_buffer);
+		}
+		if (tto->loop_buffer) {
+			switch_buffer_zero(tto->loop_buffer);
+		}
 		tto->ts.debug = 1;
 		tto->ts.debug_stream = switch_core_get_console();
 
@@ -944,7 +962,21 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 				}
 			}
 			if ((write_frame.datalen = switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
-				break;
+				if (loops > 0) { 
+					switch_buffer *tmp;
+
+					/* Switcharoo*/
+					tmp = tto->audio_buffer;
+					tto->audio_buffer = tto->loop_buffer;
+					tto->loop_buffer = tmp;
+					loops--;
+					/* try again */
+					if ((write_frame.datalen = switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+						break;
+					}
+				} else {
+					break;
+				}
 			}
 
 			write_frame.samples = write_frame.datalen / 2;
@@ -953,6 +985,9 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Write\n");
 					break;
 				}
+			}
+			if (tto->loop_buffer && loops) {
+				switch_buffer_write(tto->loop_buffer, write_frame.data, write_frame.datalen);
 			}
 		}
 

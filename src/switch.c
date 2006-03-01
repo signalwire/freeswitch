@@ -65,34 +65,30 @@ int main(int argc, char *argv[])
 	char *lfile = "freeswitch.log";
 	char *pfile = "freeswitch.pid";
 	char path[256] = "";
+	char *ppath = NULL;
 	char *err = NULL;
 	switch_event *event;
 	int bg = 0;
 	FILE *f;
 #ifdef WIN32
-	char sep = '\\';
 	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #else
-	char sep = '/';
 	int pid;
 	nice(-20);
 #endif
 
-	if (switch_core_init(NULL) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Cannot Initilize\n");
-		return 255;
-	}
-
 #ifndef WIN32
 	if (argv[1] && !strcmp(argv[1], "-stop")) {
 		pid_t pid = 0;
-		snprintf(path, sizeof(path), "%s%c%s", SWITCH_GLOBAL_dirs.conf_dir, sep, pfile);
+		switch_core_set_globals();
+		snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 		if ((f = fopen(path, "r")) == 0) {
 			fprintf(stderr, "Cannot open pid file %s.\n", path);
 			return 255;
 		}
 		fscanf(f, "%d", &pid);
 		if (pid > 0) {
+			fprintf(stderr, "Killing %d\n", (int) pid);
 			kill(pid, SIGTERM);
 		}
 
@@ -100,6 +96,23 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 #endif
+
+	if (argv[1] && !strcmp(argv[1], "-nc")) {
+		bg++;
+	}
+
+	if (bg) {
+		//snprintf(path, sizeof(path), "%s%c%s", SWITCH_GLOBAL_dirs.log_dir, sep, lfile);
+		ppath = lfile;
+	}
+
+
+	if (switch_core_init(ppath) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Cannot Initilize\n");
+		return 255;
+	}
+
+
 
 	/* set signal handlers */
 	(void) signal(SIGINT, (void *) handle_SIGINT);
@@ -111,9 +124,7 @@ int main(int argc, char *argv[])
 #endif
 
 
-	if (argv[1] && !strcmp(argv[1], "-nc")) {
-		bg++;
-	}
+
 
 	if (bg) {
 		(void) signal(SIGHUP, (void *) handle_SIGHUP);
@@ -129,7 +140,7 @@ int main(int argc, char *argv[])
 #endif
 	}
 
-	snprintf(path, sizeof(path), "%s%c%s", SWITCH_GLOBAL_dirs.conf_dir, sep, pfile);
+	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 	if ((f = fopen(path, "w")) == 0) {
 		fprintf(stderr, "Cannot open pid file %s.\n", path);
 		return 255;
@@ -138,12 +149,6 @@ int main(int argc, char *argv[])
 	fprintf(f, "%d", getpid());
 	fclose(f);
 
-	if (bg) {
-		snprintf(path, sizeof(path), "%s%c%s", SWITCH_GLOBAL_dirs.conf_dir, sep, lfile);
-		if (switch_core_set_console(path) != SWITCH_STATUS_SUCCESS) {
-			err = "Cannot open log file\n";
-		}
-	}
 
 	
 	if (!err) {
@@ -165,7 +170,7 @@ int main(int argc, char *argv[])
 	}
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_VERSION_FULL);
-	snprintf(path, sizeof(path), "%s%c%s", SWITCH_GLOBAL_dirs.conf_dir, sep, pfile);
+	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 
 	if (bg) {
 		bg = 0;

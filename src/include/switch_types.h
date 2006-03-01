@@ -42,9 +42,9 @@ extern "C" {
 #include <switch_platform.h>
 
 #ifdef WIN32
-#define SEP "\\"
+#define SWITCH_PATH_SEPARATOR "\\"
 #else
-#define SEP "/"
+#define SWITCH_PATH_SEPARATOR "/"
 #endif
 
 #ifndef SWITCH_PREFIX_DIR
@@ -52,23 +52,23 @@ extern "C" {
 #endif
 
 #ifndef SWITCH_MOD_DIR
-#define SWITCH_MOD_DIR SWITCH_PREFIX_DIR SEP "mod"
+#define SWITCH_MOD_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "mod"
 #endif
 
 #ifndef SWITCH_CONF_DIR
-#define SWITCH_CONF_DIR SWITCH_PREFIX_DIR SEP "conf"
+#define SWITCH_CONF_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "conf"
 #endif
 
 #ifndef SWITCH_LOG_DIR
-#define SWITCH_LOG_DIR SWITCH_PREFIX_DIR SEP "log"
+#define SWITCH_LOG_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "log"
 #endif
 
 #ifndef SWITCH_DB_DIR
-#define SWITCH_DB_DIR SWITCH_PREFIX_DIR SEP "db"
+#define SWITCH_DB_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "db"
 #endif
 
 #ifndef SWITCH_SCRIPT_DIR
-#define SWITCH_SCRIPT_DIR SWITCH_PREFIX_DIR SEP "scripts"
+#define SWITCH_SCRIPT_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "scripts"
 #endif
 
 struct switch_directories {

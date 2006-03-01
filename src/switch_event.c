@@ -162,6 +162,10 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void 
 				switch_event_deliver(&out_event);
 			}
 		}
+
+		if (THREAD_RUNNING < 0) {
+			THREAD_RUNNING--;
+		}
 		switch_yield(1000);
 	}
 	THREAD_RUNNING = 0;
@@ -230,10 +234,18 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
 
 SWITCH_DECLARE(switch_status) switch_event_shutdown(void)
 {
-	THREAD_RUNNING = -1;
+	int x = 0, last = 0;
 
-	while (THREAD_RUNNING) {
-		switch_yield(1000);
+	if (THREAD_RUNNING > 0) {
+		THREAD_RUNNING = -1;
+
+		while (x < 100 && THREAD_RUNNING) {
+			switch_yield(1000);
+			if (THREAD_RUNNING == last) {
+				x++;
+			}
+			last = THREAD_RUNNING;
+		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }

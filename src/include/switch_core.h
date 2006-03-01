@@ -906,6 +906,11 @@ SWITCH_DECLARE(FILE *) switch_core_get_console(void);
   \brief Launch a thread
 */
 SWITCH_DECLARE(void) switch_core_launch_thread(void *(*func)(switch_thread *, void*), void *obj, switch_memory_pool *pool);
+
+/*!
+  \brief Initiate Globals
+*/
+SWITCH_DECLARE(void) switch_core_set_globals(void);
 ///\}
 
 #ifdef USE_PERL
