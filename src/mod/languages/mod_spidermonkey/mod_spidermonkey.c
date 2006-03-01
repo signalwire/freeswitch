@@ -79,6 +79,9 @@ static JSClass global_class = {
     JS_EnumerateStub, JS_ResolveStub,   JS_ConvertStub,   JS_FinalizeStub
 };
 
+typedef enum {
+	TTF_DTMF = (1 << 0)
+} teletone_flag_t;
 
 struct dtmf_callback_state {
 	struct js_session *session_state;
@@ -107,6 +110,9 @@ struct teletone_obj {
 	switch_memory_pool *pool;
 	switch_timer *timer;
 	switch_timer timer_base;
+	char code_buffer[1024];
+	char ret_val[1024];
+	unsigned int flags;
 };
 
 
@@ -859,6 +865,17 @@ static JSBool teletone_add_tone(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	return JS_FALSE;
 }
 
+static JSBool teletone_on_dtmf(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
+	if (argc > 0) {
+		char *func = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		switch_copy_string(tto->code_buffer, func, sizeof(tto->code_buffer));
+		switch_set_flag(tto, TTF_DTMF);
+	}
+	return JS_TRUE;
+}
+
 static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
@@ -871,6 +888,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		switch_frame *read_frame;
 		int stream_id;
 		switch_core_thread_session thread_session;
+		switch_channel *channel;
 
 
 		tto->ts.debug = 1;
@@ -882,6 +900,8 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		session = tto->session;
 		write_frame.codec = &tto->codec;
 		write_frame.data = fdata;
+
+		channel = switch_core_session_get_channel(session);
 		
 		if (tto->timer) {
 			for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
@@ -890,6 +910,24 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		}
 
 		for(;;) {
+			if (switch_test_flag(tto, TTF_DTMF)) {
+				char dtmf[128];
+				char code[512];
+				char *ret;
+				jsval tt_rval;
+				if (switch_channel_has_dtmf(channel)) {
+					switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+					snprintf(code, sizeof(code), "~%s(\"%s\")", tto->code_buffer, dtmf);
+					eval_some_js(code, cx, obj, &tt_rval);
+					ret = JS_GetStringBytes(JS_ValueToString(cx, tt_rval));
+					if (strcmp(ret, "true") && strcmp(ret, "undefined")) {
+						switch_copy_string(tto->ret_val, ret, sizeof(tto->ret_val));
+						*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, tto->ret_val));
+						return JS_TRUE;
+					}
+				}
+			}
+			
 			if (tto->timer) {
 				int x;
 
@@ -930,6 +968,7 @@ enum teletone_tinyid {
 
 static JSFunctionSpec teletone_methods[] = {
     {"generate", teletone_generate, 1},
+    {"onDTMF", teletone_on_dtmf, 1},
     {"addTone", teletone_add_tone, 10},  
 	{0}
 };
