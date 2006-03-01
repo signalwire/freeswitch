@@ -29,7 +29,11 @@
  * mod_spidermonkey.c -- Javascript Module
  *
  */
+#ifndef HAVE_CURL
 #define HAVE_CURL
+#endif
+
+#include <switch.h>
 
 #include "jstypes.h"
 #include "jsarena.h"
@@ -48,7 +52,6 @@
 #include "jsscope.h"
 #include "jsscript.h"
 #include <libteletone.h>
-#include <switch.h>
 #ifdef HAVE_CURL
 #include <curl/curl.h>
 #endif
@@ -572,7 +575,7 @@ struct config_data {
 
 static size_t realtime_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
-    register int realsize = size * nmemb;
+    register size_t realsize = size * nmemb;
 	char *line, lineb[2048], *nextline = NULL, *val = NULL, *p = NULL;
 	jsval rval;
 	struct config_data *config_data = data;
@@ -1025,7 +1028,7 @@ static const char c64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy
 
 static int write_buf(int fd, char *buf) {
 
-	size_t len = strlen(buf);
+	int len = (int)strlen(buf);
 	if (fd && write(fd, buf, len) != len) {
 		close(fd);
 		return 0;
@@ -1056,9 +1059,8 @@ static JSBool js_email(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 		 ) {
 		if ( argc > 4)
 			file = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
-		
-		
-		snprintf(filename, 80, "/tmp/mail.%ld", switch_time_now());
+
+		snprintf(filename, 80, "%smail.%ld", SWITCH_GLOBAL_dirs.temp_dir, switch_time_now());
 
 		if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
 			if (file) {

@@ -77,6 +77,11 @@ typedef __int64		int64_t;
 typedef unsigned long	in_addr_t;
 #endif
 #define PACKED
+#include <io.h>
+#define write _write
+#define open _open
+#define close _close
+#define read _read
 #else
 /* packed attribute */
 #ifndef PACKED
@@ -88,7 +93,6 @@ typedef unsigned long	in_addr_t;
 #include <stdlib.h>
 #include <time.h>
 #endif
-
 #endif // _MSC_VER
 
 

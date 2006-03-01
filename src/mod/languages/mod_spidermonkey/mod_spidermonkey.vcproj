@@ -42,8 +42,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\src&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;DEBUG;_X86_=1;JSFILE;EXPORT_JS_API"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;DEBUG;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -64,10 +64,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="js32.lib"
+				AdditionalDependencies="js32.lib  curllib.lib ws2_32.lib winmm.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_spidermonkey.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(InputDir)..\..\..\..\libs\js\src\Debug"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\js\src\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\lib\Debug&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_spidermonkey.pdb"
 				SubSystem="2"
@@ -125,8 +125,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\src&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;_X86_=1;JSFILE;EXPORT_JS_API"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -145,10 +145,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="js32.lib"
+				AdditionalDependencies="js32.lib  curllib.lib ws2_32.lib winmm.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_spidermonkey.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="$(InputDir)..\..\..\..\libs\js\Release"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\js\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\lib\Release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

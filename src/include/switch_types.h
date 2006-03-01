@@ -78,10 +78,11 @@ struct switch_directories {
 	char *log_dir;
 	char *db_dir;
 	char *script_dir;
+	char *temp_dir;
 };
 
 typedef struct switch_directories switch_directories;
-extern switch_directories SWITCH_GLOBAL_dirs;
+SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 
 #define SWITCH_RECCOMMENDED_BUFFER_SIZE 131072
 #define SWITCH_MAX_CODECS 30

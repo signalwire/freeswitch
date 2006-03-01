@@ -65,7 +65,9 @@ extern "C" {
 */
 
 #define FALSE   0
+#ifndef TRUE
 #define TRUE    (!FALSE)
+#endif
 
 /* Basic DTMF specs:
  *

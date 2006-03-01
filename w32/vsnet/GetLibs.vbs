@@ -204,6 +204,7 @@ End If
 
 If BuildModSpiderMonkey Then
 	BuildLibs_SpiderMonkey BuildDebug, BuildRelease
+	BuildLibs_curl BuildDebug, BuildRelease
 End If
 
 WScript.Echo "Complete"
@@ -653,6 +654,28 @@ Sub BuildLibs_pcre(BuildDebug, BuildRelease)
 		End If
 	Else
 		Wscript.echo "Unable to download pcre"
+	End If 
+End Sub
+
+Sub BuildLibs_curl(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "curl") Then 
+		WgetUnTarGz LibsBase & "curl-7.15.2.tar.gz", LibDestDir
+		RenameFolder LibDestDir & "curl-7.15.2", "curl"
+		FSO.CopyFile Utilsdir & "curl\curllib.vcproj", LibDestDir & "curl\lib\", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "curl") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "curl\lib\Debug\curllib.lib") Then 
+				BuildViaVCBuild LibDestDir & "curl\lib\curllib.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "curl\lib\Release\curllib.lib") Then 
+				BuildViaVCBuild LibDestDir & "curl\lib\curllib.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download curl"
 	End If 
 End Sub
 

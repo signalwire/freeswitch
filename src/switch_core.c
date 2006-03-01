@@ -76,7 +76,7 @@ struct switch_core_session {
 	void *private_info;
 };
 
-switch_directories SWITCH_GLOBAL_dirs;
+SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs;
 
 struct switch_core_runtime {
 	time_t initiated;
@@ -2182,6 +2182,11 @@ static void core_event_handler(switch_event *event)
 
 SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 {
+#ifdef WIN32
+#define BUFSIZE 50
+    char lpPathBuffer[BUFSIZE];
+	DWORD dwBufSize=BUFSIZE;
+#endif
 	memset(&runtime, 0, sizeof(runtime));
 	
 	SWITCH_GLOBAL_dirs.base_dir = SWITCH_PREFIX_DIR;
@@ -2190,6 +2195,16 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 	SWITCH_GLOBAL_dirs.log_dir = SWITCH_LOG_DIR;
 	SWITCH_GLOBAL_dirs.db_dir = SWITCH_DB_DIR;
 	SWITCH_GLOBAL_dirs.script_dir = SWITCH_SCRIPT_DIR;
+#ifdef SWITCH_TEMP_DIR
+	SWITCH_GLOBAL_dirs.temp_dir = SWITCH_TEMP_DIR;
+#else
+#ifdef WIN32
+	GetTempPath(dwBufSize, lpPathBuffer);
+	SWITCH_GLOBAL_dirs.temp_dir = lpPathBuffer;
+#else
+	SWITCH_GLOBAL_dirs.temp_dir = "/tmp/";
+#endif
+#endif
 	
 	
 #ifdef EMBED_PERL

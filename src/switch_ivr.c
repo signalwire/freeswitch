@@ -109,7 +109,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
 		switch_frame *read_frame;
 
 		if (timeout) {
-			elapsed = (switch_time_now() - started) / 1000;
+			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
 			if (elapsed >= timeout) {
 				break;
 			}
@@ -474,7 +474,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 													char *tts_name,
 													char *voice_name,
 													char *timer_name,
-													unsigned int rate,
+													size_t rate,
 													switch_dtmf_callback_function dtmf_callback,
 													char *text,
 													void *buf,
@@ -484,7 +484,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	short abuf[960];
 	char dtmf[128];
 	int interval = 0;
-	unsigned int samples = 0;
+	size_t samples = 0;
 	size_t len = 0;
 	size_t ilen = 0;
 	switch_frame write_frame;
@@ -511,7 +511,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	if (switch_core_speech_open(&sh,
 								tts_name,
 								voice_name,
-								rate,
+								(unsigned int)rate,
 								flags,
 								switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid TTS module!\n");
@@ -534,7 +534,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 
 	if (switch_core_codec_init(&codec,
 							   codec_name,
-							   rate,
+							   (int)rate,
 							   interval,
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
@@ -550,7 +550,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	}
 
 	if (timer_name) {
-		if (switch_core_timer_init(&timer, timer_name, interval, samples, pool) != SWITCH_STATUS_SUCCESS) {
+		if (switch_core_timer_init(&timer, timer_name, interval, (int)samples, pool) != SWITCH_STATUS_SUCCESS) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer failed!\n");
 			switch_core_codec_destroy(&codec);
 			flags = 0;
@@ -562,7 +562,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 
 	flags = 0;
 	switch_core_speech_feed_tts(&sh, text, &flags);
-	write_frame.rate = rate;
+	write_frame.rate = (int)rate;
 
 	memset(write_frame.data, 0, len);
 	write_frame.datalen = len;
