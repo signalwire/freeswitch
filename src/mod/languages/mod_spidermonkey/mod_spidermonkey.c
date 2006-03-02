@@ -130,8 +130,8 @@ struct fileio_obj {
 	unsigned int flags;
 	switch_file_t *fd;
 	switch_memory_pool *pool;
-	unsigned char *buf;
-	int32 buflen;
+	char *buf;
+	switch_size_t buflen;
 	int32 bufsize;
 };
 
