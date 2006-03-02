@@ -345,12 +345,15 @@ SWITCH_DECLARE(void) switch_core_service_session(switch_core_session *session, s
   \param endpoint_name the name of the module to use for the new session
   \param caller_profile the originator's caller profile
   \param new_session a NULL pointer to aim at the newly created session
+  \param pool optional existing memory pool to donate to the session (WILL BE KEPT)
   \return SWITCH_STATUS_SUCCESS if the session was created
+  \note if the pool arguement is not null the pool will be adopted by the session and your pointer will be nulled
 */
 SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_session *session,
-											 char *endpoint_name,
-											 switch_caller_profile *caller_profile,
-											 switch_core_session **new_session);
+																   char *endpoint_name,
+																   switch_caller_profile *caller_profile,
+																   switch_core_session **new_session,
+																   switch_memory_pool **pool);
 
 /*! 
   \brief Answer the channel of a given session

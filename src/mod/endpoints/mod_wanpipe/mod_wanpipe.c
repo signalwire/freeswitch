@@ -193,7 +193,7 @@ static switch_status wanpipe_on_hangup(switch_core_session *session);
 static switch_status wanpipe_on_loopback(switch_core_session *session);
 static switch_status wanpipe_on_transmit(switch_core_session *session);
 static switch_status wanpipe_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											  switch_core_session **new_session);
+											  switch_core_session **new_session, switch_memory_pool *pool);
 static switch_status wanpipe_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
 										switch_io_flag flags, int stream_id);
 static switch_status wanpipe_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
@@ -356,7 +356,7 @@ static switch_status wanpipe_on_transmit(switch_core_session *session)
 }
 
 static switch_status wanpipe_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											  switch_core_session **new_session)
+											  switch_core_session **new_session, switch_memory_pool *pool)
 {
 	if (!globals.configured_spans) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error No Spans Configured.\n");
@@ -364,7 +364,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 	}
 
 
-	if ((*new_session = switch_core_session_request(&wanpipe_endpoint_interface, NULL))) {
+	if ((*new_session = switch_core_session_request(&wanpipe_endpoint_interface, pool))) {
 		struct private_object *tech_pvt;
 		switch_channel *channel;
 

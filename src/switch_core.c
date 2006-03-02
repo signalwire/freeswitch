@@ -779,7 +779,8 @@ SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session *se
 SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_session *session,
 																   char *endpoint_name,
 																   switch_caller_profile *caller_profile,
-																   switch_core_session **new_session)
+																   switch_core_session **new_session,
+																   switch_memory_pool **pool)
 {
 	struct switch_io_event_hook_outgoing_channel *ptr;
 	switch_status status = SWITCH_STATUS_FALSE;
@@ -793,7 +794,9 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 	if (endpoint_interface->io_routines->outgoing_channel) {
 		if ((status =
 			 endpoint_interface->io_routines->outgoing_channel(session, caller_profile,
-															   new_session)) == SWITCH_STATUS_SUCCESS) {
+															   new_session, *pool)) == SWITCH_STATUS_SUCCESS) {
+			/* session has adopted this pool we cant touch it now */
+			*pool = NULL;
 			if (session) {
 				for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
 					if ((status = ptr->outgoing_channel(session, caller_profile, *new_session)) != SWITCH_STATUS_SUCCESS) {

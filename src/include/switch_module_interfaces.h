@@ -150,7 +150,7 @@ struct switch_io_event_hooks {
 /*! \brief A table of i/o routines that an endpoint interface can implement */
 struct switch_io_routines {
 	/*! creates an outgoing session from given session, caller profile */
-	switch_status (*outgoing_channel)(switch_core_session *, switch_caller_profile *, switch_core_session **);
+	switch_status (*outgoing_channel)(switch_core_session *, switch_caller_profile *, switch_core_session **, switch_memory_pool *);
 	/*! answers the given session's channel */
 	switch_status (*answer_channel)(switch_core_session *);
 	/*! read a frame from a session */

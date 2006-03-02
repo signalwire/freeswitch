@@ -156,7 +156,7 @@ static switch_status exosip_on_hangup(switch_core_session *session);
 static switch_status exosip_on_loopback(switch_core_session *session);
 static switch_status exosip_on_transmit(switch_core_session *session);
 static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											 switch_core_session **new_session);
+											 switch_core_session **new_session, switch_memory_pool *pool);
 static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
 									   switch_io_flag flags, int stream_id);
 static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
@@ -878,9 +878,9 @@ static const switch_loadable_module_interface exosip_module_interface = {
 };
 
 static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											 switch_core_session **new_session)
+											 switch_core_session **new_session, switch_memory_pool *pool)
 {
-	if ((*new_session = switch_core_session_request(&exosip_endpoint_interface, NULL)) != 0) {
+	if ((*new_session = switch_core_session_request(&exosip_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
 		switch_channel *channel;
 

@@ -106,7 +106,6 @@ struct js_session {
 	switch_core_session *session;
 	JSContext *cx;
 	JSObject *obj;
-	switch_memory_pool *pool;
 	unsigned int flags;
 };
 
@@ -922,16 +921,13 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		}
 
 		caller_profile = switch_caller_profile_new(pool, dialplan, cid_name, cid_num, network_addr, ani, ani2, dest);
-		if (switch_core_session_outgoing_channel(session, channel_type, caller_profile, &peer_session) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_outgoing_channel(session, channel_type, caller_profile, &peer_session, &pool) == SWITCH_STATUS_SUCCESS) {
 			jss = switch_core_session_alloc(peer_session, sizeof(*jss));
 			jss->session = peer_session;
 			jss->flags = 0;
 			jss->cx = cx;
 			jss->obj = obj;
 			JS_SetPrivate(cx, obj, jss);
-			if (need_pool) {
-				jss->pool = pool;
-			}
 			switch_core_session_thread_launch(peer_session);
 			switch_set_flag(jss, S_HUP);
 			
@@ -943,7 +939,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Missing Args\n");
 	}
 
-	if (need_pool) {
+	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
 	return JS_FALSE;
@@ -955,10 +951,6 @@ static void session_destroy(JSContext *cx, JSObject *obj)
 	
 	if (cx && obj) {
 		if ((jss = JS_GetPrivate(cx, obj))) {
-			if (jss->pool) {
-				switch_core_destroy_memory_pool(&jss->pool);
-			}
-	
 			if (switch_test_flag(jss, S_HUP)) {
 				switch_channel *channel;
 
