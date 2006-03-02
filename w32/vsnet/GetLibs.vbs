@@ -989,6 +989,7 @@ Sub UnTarGZ(TGZfile, DestFolder)
 	
 	Set objTAR = Nothing
 	Set objGZip = Nothing
+	WScript.Sleep(500)
 End Sub
 
 
@@ -998,6 +999,7 @@ Sub UnZip(Zipfile, DestFolder)
 	wscript.echo("Extracting: " & Zipfile)
 	objZip.UnPack Zipfile, DestFolder
 	Set objZip = Nothing
+	WScript.Sleep(500)
 End Sub
 
 
