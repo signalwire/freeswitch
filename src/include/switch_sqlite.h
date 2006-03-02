@@ -58,7 +58,7 @@ extern "C" {
  * following opaque structure.
 */
 typedef sqlite3 switch_core_db;
-
+typedef sqlite3_stmt switch_core_db_stmt;
 /**
  * Aggregate functions use the following routine to allocate
  * a structure for storing their state.  The first time this routine

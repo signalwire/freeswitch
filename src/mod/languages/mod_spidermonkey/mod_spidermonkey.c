@@ -138,6 +138,7 @@ struct fileio_obj {
 struct db_obj {
 	switch_memory_pool *pool;
 	switch_core_db *db;
+	switch_core_db_stmt *stmt;
 	char *dbname;
 	char code_buffer[2048];
 	JSContext *cx;
@@ -1185,6 +1186,10 @@ static void db_destroy(JSContext *cx, JSObject *obj)
 	
 	if (dbo) {
 		switch_memory_pool *pool = dbo->pool;
+		if (dbo->stmt) {
+			switch_core_db_finalize(dbo->stmt);
+			dbo->stmt = NULL;
+		}
 		switch_core_db_close(dbo->db);
 		switch_core_destroy_memory_pool(&pool);
         pool = NULL;
@@ -1199,7 +1204,7 @@ static int db_callback(void *pArg, int argc, char **argv, char **columnNames)
 	jsval rval;
 	int x = 0;
 
-	snprintf(code, sizeof(code), "~var _Db_RoW_ = {}", dbo->code_buffer);
+	snprintf(code, sizeof(code), "~var _Db_RoW_ = {}");
 	eval_some_js(code, dbo->cx, dbo->obj, &rval);
 
 	for(x=0; x < argc; x++) {
@@ -1244,12 +1249,93 @@ static JSBool db_exec(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	return JS_TRUE;
 }
 
+static JSBool db_next(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct db_obj *dbo = JS_GetPrivate(cx, obj);
+	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+	
+	if (dbo->stmt) {
+		int result = switch_core_db_step(dbo->stmt);
+		int running = 1;
+
+		while (running < 5000) {
+			if (result == SQLITE_ROW) {
+				*rval = BOOLEAN_TO_JSVAL( JS_TRUE );	
+				break;
+			} else if (result == SQLITE_BUSY) {
+				running++;
+				continue;
+			}
+			switch_core_db_finalize(dbo->stmt);
+			dbo->stmt = NULL;
+			break;
+		}
+	}
+
+	return JS_TRUE;
+}
+
+static JSBool db_fetch(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct db_obj *dbo = JS_GetPrivate(cx, obj);
+	int colcount = switch_core_db_column_count(dbo->stmt);
+	char code[1024];
+	int x;
+
+	snprintf(code, sizeof(code), "~var _dB_RoW_DaTa_ = {}");
+	eval_some_js(code, dbo->cx, dbo->obj, rval);
+	if (*rval == JS_FALSE) {
+		return JS_TRUE; 
+	}
+	for (x = 0; x < colcount; x++) {
+		snprintf(code, sizeof(code), "~_dB_RoW_DaTa_[\"%s\"] = \"%s\"", 
+				 switch_core_db_column_name(dbo->stmt, x),
+				 switch_core_db_column_text(dbo->stmt, x));
+
+		eval_some_js(code, dbo->cx, dbo->obj, rval);
+		if (*rval == JS_FALSE) {
+			return JS_TRUE; 
+		}
+	}
+
+	JS_GetProperty(cx, obj, "_dB_RoW_DaTa_", rval);
+
+	return JS_TRUE;
+}
+
+
+static JSBool db_prepare(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct db_obj *dbo = JS_GetPrivate(cx, obj);
+
+	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );	
+
+	if (dbo->stmt) {
+		switch_core_db_finalize(dbo->stmt);
+		dbo->stmt = NULL;
+	}
+
+	if (argc > 0) {		
+		char *sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+
+		if(switch_core_db_prepare(dbo->db, sql, 0, &dbo->stmt, 0)) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error %s\n", switch_core_db_errmsg(dbo->db));
+		} else {
+			*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
+		}
+	}
+	return JS_TRUE;
+}
+
 enum db_tinyid {
 	DB_NAME
 };
 
 static JSFunctionSpec db_methods[] = {
 	{"exec", db_exec, 1},
+	{"next", db_next, 0},
+	{"fetch", db_fetch, 1},
+	{"prepare", db_prepare, 0},
 	{0}
 };
 
