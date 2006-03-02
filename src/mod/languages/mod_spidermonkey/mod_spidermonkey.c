@@ -1513,141 +1513,71 @@ static int env_init(JSContext *cx, JSObject *javascript_object)
 	return 1;
 }
 
-static void js_exec(switch_core_session *session, char *data)
+static void js_parse_and_execute(switch_core_session *session, char *input_code)
 {
-	char *code, *next, *arg, *nextarg;
-	int res=-1;
-	jsval rval;
-	JSContext *cx;
-	JSObject *javascript_global_object, *session_obj;
+	JSObject *javascript_global_object = NULL, *session_obj = NULL;
+	char buf[1024], *script, *arg, *argv[512];
+	int argc = 0, x = 0, y = 0;
+	unsigned int flags = 0;
 	struct js_session jss;
-	int x = 0, y = 0;
-	char buf[512];
-	int flags = 0;
-	switch_channel *channel;
+	JSContext *cx = NULL;
+	jsval rval;
 
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
-	if (!data) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "js requires an argument (filename|code)\n");
-		return;
-	}
-
-	code = switch_core_session_strdup(session,(char *)data);
-	if (code[0] == '-') {
-		if ((next = strchr(code, '|'))) {
-			*next = '\0';
-			next++;
-		}
-		code++;
-		code = next;
-	}
-	
-	if (!code) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "js requires an argument (filename|code)\n");
-		return;
-	}
 	
 	if ((cx = JS_NewContext(globals.rt, globals.gStackChunkSize))) {
 		JS_SetErrorReporter(cx, js_error);
-		if ((javascript_global_object = JS_NewObject(cx, &global_class, NULL, NULL)) && 
-			env_init(cx, javascript_global_object) &&
-			(session_obj = new_js_session(cx, javascript_global_object, session, &jss, "session", flags))) {
-			JS_SetGlobalObject(cx, javascript_global_object);
-			JS_SetPrivate(cx, javascript_global_object, session);
-			res = 0;
-	
+		javascript_global_object = JS_NewObject(cx, &global_class, NULL, NULL);
+		env_init(cx, javascript_global_object);
+		JS_SetGlobalObject(cx, javascript_global_object);
 
-			
-			do {
-				if ((next = strchr(code, '|'))) {
-					*next = '\0';
-					next++;
-				}
-				if ((arg = strchr(code, ':'))) {
-					for (y=0;(arg=strchr(arg, ':'));y++)
-						arg++;
-					arg = strchr(code, ':');
-					*arg = '\0';
-					arg++;
-					snprintf(buf, sizeof(buf), "~var Argv = new Array(%d);", y);
-					eval_some_js(buf, cx, javascript_global_object, &rval);
-					snprintf(buf, sizeof(buf), "~var argc = %d", y);
-					eval_some_js(buf, cx, javascript_global_object, &rval);
-					do {
-						if ((nextarg = strchr(arg, ':'))) {
-							*nextarg = '\0';
-							nextarg++;
-						}
-						snprintf(buf, sizeof(buf), "~Argv[%d] = \"%s\";", x++, arg);
-						eval_some_js(buf, cx, javascript_global_object, &rval);
-						arg = nextarg;
-					} while (arg);
-				}
-				if (!(res=eval_some_js(code, cx, javascript_global_object, &rval))) {
-					break;
-				}
-				code = next;
-			} while (code);
+		/* Emaculent conception of session object into the script if one is available */
+		if (session && (session_obj = new_js_session(cx, javascript_global_object, session, &jss, "session", flags))) {
+			JS_SetPrivate(cx, javascript_global_object, session);
 		}
+	} else {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocation Error!\n");
+		return;
+	}
+
+	script = input_code;
+
+	if ((arg = strchr(script, ' '))) {
+		*arg++ = '\0';
+		argc = switch_separate_string(arg, ':', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 	
+	if (argc) { /* create a js doppleganger of this argc/argv*/
+		snprintf(buf, sizeof(buf), "~var Argv = new Array(%d);", argc);
+		eval_some_js(buf, cx, javascript_global_object, &rval);
+		snprintf(buf, sizeof(buf), "~var argc = %d", argc);
+		eval_some_js(buf, cx, javascript_global_object, &rval);
+
+		for (y = 0; y < argc; y++) {
+			snprintf(buf, sizeof(buf), "~Argv[%d] = \"%s\";", x++, argv[y]);
+			eval_some_js(buf, cx, javascript_global_object, &rval);
+
+		}
+	}
+
 	if (cx) {
+		eval_some_js(script, cx, javascript_global_object, &rval);
 		JS_DestroyContext(cx);
 	}
 }
 
+
+
+
 static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread *thread, void *obj)
 {
-	JSContext *cx = NULL;
-	JSObject *javascript_global_object = NULL;
-	char buf[1024];
-	char *code, *next, *arg, *nextarg;
-	jsval rval;
-	int x = 0;
 	char *input_code = obj;
-	cx = JS_NewContext(globals.rt, globals.gStackChunkSize);
 
-	javascript_global_object = JS_NewObject(cx, &global_class, NULL, NULL);
-	env_init(cx, javascript_global_object);
-	code = input_code;
-
-	do {
-		if ((next = strchr(code, '|'))) {
-			*next = '\0';
-			next++;
-		}
-		if ((arg = strchr(code, ':'))) {
-			int y;
-			for (y=0;(arg=strchr(arg, ':'));y++)
-				arg++;
-			arg = strchr(code, ':');
-			*arg = '\0';
-			arg++;
-			snprintf(buf, sizeof(buf), "~var Argv = new Array(%d);", y);
-			eval_some_js(buf, cx, javascript_global_object, &rval);
-			snprintf(buf, sizeof(buf), "~var argc = %d", y);
-			eval_some_js(buf, cx, javascript_global_object, &rval);
-			do {
-				if ((nextarg = strchr(arg, ':'))) {
-					*nextarg = '\0';
-					nextarg++;
-				}
-				snprintf(buf, sizeof(buf), "~Argv[%d] = \"%s\";", x++, arg);
-				eval_some_js(buf, cx, javascript_global_object, &rval);
-				arg = nextarg;
-			} while (arg);
-		}
-		if (!eval_some_js(code, cx, javascript_global_object, &rval)) {
-			break;
-		}
-		code = next;
-	} while (code);
+	js_parse_and_execute(NULL, input_code);
 
 	if (input_code) {
 		free(input_code);
 	}
+
 	return NULL;
 }
 
@@ -1683,7 +1613,7 @@ static switch_status launch_async(char *text, char *out, size_t outlen)
 
 static const switch_application_interface ivrtest_application_interface = {
 	/*.interface_name */ "javascript",
-	/*.application_function */ js_exec,
+	/*.application_function */ js_parse_and_execute,
 	NULL, NULL, NULL,
 	/*.next*/ NULL
 };
