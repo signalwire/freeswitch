@@ -79,9 +79,9 @@ static struct {
 
 
 static JSClass global_class = {
-    "Global", JSCLASS_HAS_PRIVATE, 
-    JS_PropertyStub,  JS_PropertyStub,  JS_PropertyStub,  JS_PropertyStub, 
-    JS_EnumerateStub, JS_ResolveStub,   JS_ConvertStub,   JS_FinalizeStub
+	"Global", JSCLASS_HAS_PRIVATE, 
+	JS_PropertyStub,  JS_PropertyStub,	JS_PropertyStub,  JS_PropertyStub, 
+	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  JS_FinalizeStub
 };
 
 typedef enum {
@@ -129,9 +129,9 @@ struct teletone_obj {
 
 static void js_error(JSContext *cx, const char *message, JSErrorReport *report)
 {
-    if (message) {
-        switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s\n", message);
-    }
+	if (message) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s\n", message);
+	}
 	
 }
 
@@ -146,15 +146,11 @@ static switch_status init_js(void)
 	globals.gErrFile = stderr;
 	globals.gOutFile = stdout;
 
-
-    if (!(globals.rt = JS_NewRuntime(64L * 1024L * 1024L))) {
+	if (!(globals.rt = JS_NewRuntime(64L * 1024L * 1024L))) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	
-
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 static switch_status js_stream_dtmf_callback(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
@@ -166,7 +162,7 @@ static switch_status js_stream_dtmf_callback(switch_core_session *session, char 
 	jsval rval;
 	char *ret;
 	
-	if(!jss) {
+	if (!jss) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
@@ -232,10 +228,10 @@ static switch_status js_stream_dtmf_callback(switch_core_session *session, char 
 			if ((p = strchr(ret, ':'))) {
 				p++;
 				if (*p == '+' || *p == '-') {
-                    int step;
-                    if (!(step = atoi(p))) {
-                        step = 1000;
-                    }
+					int step;
+					if (!(step = atoi(p))) {
+						step = 1000;
+					}
 					if (step > 0) {
 						samps = step * (codec->implementation->samples_per_second / 1000);
 						switch_core_file_seek(fh, &pos, samps, SEEK_CUR);		
@@ -243,10 +239,10 @@ static switch_status js_stream_dtmf_callback(switch_core_session *session, char 
 						samps = step * (codec->implementation->samples_per_second / 1000);
 						switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
 					}
-                } else {
+				} else {
 					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
 					switch_core_file_seek(fh, &pos, samps, SEEK_SET);
-                }
+				}
 			}
 
 			return SWITCH_STATUS_SUCCESS;
@@ -274,7 +270,7 @@ static switch_status js_record_dtmf_callback(switch_core_session *session, char 
 	jsval rval;
 	char *ret;
 	
-	if(!jss) {
+	if (!jss) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
@@ -334,7 +330,7 @@ static switch_status js_speak_dtmf_callback(switch_core_session *session, char *
 	jsval rval;
 	char *ret;
 	
-	if(!jss) {
+	if (!jss) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
@@ -374,7 +370,7 @@ static switch_status js_speak_dtmf_callback(switch_core_session *session, char *
 static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-    switch_channel *channel;
+	switch_channel *channel;
 	char *file_name = NULL;
 	char *dtmf_callback = NULL;
 	void *bp = NULL;
@@ -384,7 +380,7 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	switch_file_handle fh;
 
 	channel = switch_core_session_get_channel(jss->session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 	
 	if (argc > 0) {
 		file_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -419,7 +415,7 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-    switch_channel *channel;
+	switch_channel *channel;
 	char *file_name = NULL;
 	char *timer_name = NULL;
 	char *dtmf_callback = NULL;
@@ -430,7 +426,7 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	switch_file_handle fh;
 
 	channel = switch_core_session_get_channel(jss->session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 	
 	if (argc > 0) {
 		file_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -471,7 +467,7 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-    switch_channel *channel;
+	switch_channel *channel;
 	char *tts_name = NULL;
 	char *voice_name = NULL;
 	char *text = NULL;
@@ -483,7 +479,7 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	switch_dtmf_callback_function dtmf_func = NULL;
 
 	channel = switch_core_session_get_channel(jss->session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 	
 	if (argc > 0) {
 		tts_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -635,7 +631,7 @@ struct config_data {
 
 static size_t realtime_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
-    register size_t realsize = size * nmemb;
+	register size_t realsize = size * nmemb;
 	char *line, lineb[2048], *nextline = NULL, *val = NULL, *p = NULL;
 	jsval rval;
 	struct config_data *config_data = data;
@@ -651,26 +647,26 @@ static size_t realtime_callback(void *ptr, size_t size, size_t nmemb, void *data
 			}
 			
 			if ((val = strchr(line, '='))) {
-                *val = '\0';
-                val++;
-                if (val[0] == '>') {
-                    *val = '\0';
-                    val++;
-                }
+				*val = '\0';
+				val++;
+				if (val[0] == '>') {
+					*val = '\0';
+					val++;
+				}
 				
-                for (p = line; p && *p == ' '; p++);
-                line = p;
-                for (p=line+strlen(line)-1;*p == ' '; p--)
-                    *p = '\0';
-                for (p = val; p && *p == ' '; p++);
-                val = p;
-                for (p=val+strlen(val)-1;*p == ' '; p--)
-                    *p = '\0';
+				for (p = line; p && *p == ' '; p++);
+				line = p;
+				for (p=line+strlen(line)-1;*p == ' '; p--)
+					*p = '\0';
+				for (p = val; p && *p == ' '; p++);
+				val = p;
+				for (p=val+strlen(val)-1;*p == ' '; p--)
+					*p = '\0';
 
 				snprintf(code, sizeof(code), "~%s[\"%s\"] = \"%s\"", config_data->name, line, val);
 				eval_some_js(code, config_data->cx, config_data->obj, &rval);
 
-            }
+			}
 
 			line = nextline;
 		}
@@ -705,7 +701,7 @@ static JSBool js_fetchurl(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "asterisk-js/1.0");
 		curl_easy_perform(curl_handle);
 		curl_easy_cleanup(curl_handle);
-    } else {
+	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error!\n");
 		return JS_FALSE;
 	}
@@ -717,34 +713,34 @@ static JSBool js_fetchurl(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 /* Session Object */
 /*********************************************************************************/
 enum session_tinyid {
-    SESSION_NAME, SESSION_STATE,
+	SESSION_NAME, SESSION_STATE,
 	PROFILE_DIALPLAN, PROFILE_CID_NAME, PROFILE_CID_NUM, PROFILE_IP, PROFILE_ANI, PROFILE_ANI2, PROFILE_DEST
 };
 
 static JSFunctionSpec session_methods[] = {
-    {"streamFile", session_streamfile, 1}, 
-    {"recordFile", session_recordfile, 1}, 
-    {"speak", session_speak, 1}, 
-    {"getDigits", session_get_digits, 1},
-    {"answer", session_answer, 0}, 
-    {"ready", session_ready, 0}, 
-    {"waitForAnswer", session_wait_for_answer, 0}, 
-    {"hangup", session_hangup, 0}, 
+	{"streamFile", session_streamfile, 1}, 
+	{"recordFile", session_recordfile, 1}, 
+	{"speak", session_speak, 1}, 
+	{"getDigits", session_get_digits, 1},
+	{"answer", session_answer, 0}, 
+	{"ready", session_ready, 0}, 
+	{"waitForAnswer", session_wait_for_answer, 0}, 
+	{"hangup", session_hangup, 0}, 
 	{0}
 };
 
 
 static JSPropertySpec session_props[] = {
-    {"name", SESSION_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
-    {"state", SESSION_STATE, JSPROP_READONLY|JSPROP_PERMANENT}, 
-    {"dialplan", PROFILE_DIALPLAN, JSPROP_READONLY|JSPROP_PERMANENT},
+	{"name", SESSION_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"state", SESSION_STATE, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"dialplan", PROFILE_DIALPLAN, JSPROP_READONLY|JSPROP_PERMANENT},
 	{"caller_id_name", PROFILE_CID_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
-    {"caller_id_num", PROFILE_CID_NUM, JSPROP_READONLY|JSPROP_PERMANENT}, 
-    {"network_addr", PROFILE_IP, JSPROP_READONLY|JSPROP_PERMANENT}, 
-    {"ani", PROFILE_ANI, JSPROP_READONLY|JSPROP_PERMANENT}, 
-    {"ani2", PROFILE_ANI2, JSPROP_READONLY|JSPROP_PERMANENT}, 
-    {"destination", PROFILE_DEST, JSPROP_READONLY|JSPROP_PERMANENT}, 
-    {0}
+	{"caller_id_num", PROFILE_CID_NUM, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"network_addr", PROFILE_IP, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"ani", PROFILE_ANI, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"ani2", PROFILE_ANI2, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"destination", PROFILE_DEST, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{0}
 };
 
 static JSBool session_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
@@ -817,13 +813,13 @@ static JSBool session_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval 
 
 	}
 
-    return res;
+	return res;
 }
 
 JSClass session_class = {
-    "Session", JSCLASS_HAS_PRIVATE, 
-	JS_PropertyStub,  JS_PropertyStub,  session_getProperty,  JS_PropertyStub, 
-    JS_EnumerateStub, JS_ResolveStub,   JS_ConvertStub,   session_destroy, NULL, NULL, NULL,
+	"Session", JSCLASS_HAS_PRIVATE, 
+	JS_PropertyStub,  JS_PropertyStub,	session_getProperty,  JS_PropertyStub, 
+	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  session_destroy, NULL, NULL, NULL,
 	session_construct
 };
 
@@ -838,8 +834,8 @@ static JSObject *new_js_session(JSContext *cx, JSObject *obj, switch_core_sessio
 		jss->cx = cx;
 		jss->obj = obj;
 		if ((JS_SetPrivate(cx, session_obj, jss) &&
-			  JS_DefineProperties(cx, session_obj, session_props) &&
-			  JS_DefineFunctions(cx, session_obj, session_methods))) {
+			 JS_DefineProperties(cx, session_obj, session_props) &&
+			 JS_DefineFunctions(cx, session_obj, session_methods))) {
 			return session_obj;
 		}
 	}
@@ -1128,7 +1124,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		tto->ts.debug = 1;
 		tto->ts.debug_stream = switch_core_get_console();
 
-        script = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		script = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		teletone_run(&tto->ts, script);
 
 		session = tto->session;
@@ -1214,20 +1210,20 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 }
 
 enum teletone_tinyid {
-    TELETONE_NAME
+	TELETONE_NAME
 };
 
 static JSFunctionSpec teletone_methods[] = {
-    {"generate", teletone_generate, 1},
-    {"onDTMF", teletone_on_dtmf, 1},
-    {"addTone", teletone_add_tone, 10},  
+	{"generate", teletone_generate, 1},
+	{"onDTMF", teletone_on_dtmf, 1},
+	{"addTone", teletone_add_tone, 10},	 
 	{0}
 };
 
 
 static JSPropertySpec teletone_props[] = {
-    {"name", TELETONE_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
-    {0}
+	{"name", TELETONE_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{0}
 };
 
 
@@ -1235,13 +1231,13 @@ static JSBool teletone_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval
 {
 	JSBool res = JS_TRUE;
 
-    return res;
+	return res;
 }
 
 JSClass teletone_class = {
-    "TeleTone", JSCLASS_HAS_PRIVATE, 
-	JS_PropertyStub,  JS_PropertyStub,  teletone_getProperty,  JS_PropertyStub, 
-    JS_EnumerateStub, JS_ResolveStub,   JS_ConvertStub,   teletone_destroy, NULL, NULL, NULL,
+	"TeleTone", JSCLASS_HAS_PRIVATE, 
+	JS_PropertyStub,  JS_PropertyStub,	teletone_getProperty,  JS_PropertyStub, 
+	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  teletone_destroy, NULL, NULL, NULL,
 	teletone_construct
 };
 
@@ -1252,7 +1248,7 @@ static JSBool js_log(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 {
 	char *msg;
 
-	if((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
+	if ((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "JS_LOG: %s", msg);
 		return JS_TRUE;
 	} 
@@ -1335,12 +1331,12 @@ static JSBool js_email(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 
 	
 	if ( 
-		 argc > 3 && 
-		 (from = JS_GetStringBytes(JS_ValueToString(cx, argv[0]))) &&
-		 (to = JS_GetStringBytes(JS_ValueToString(cx, argv[1]))) &&
-		 (headers = JS_GetStringBytes(JS_ValueToString(cx, argv[2]))) &&
-		 (body = JS_GetStringBytes(JS_ValueToString(cx, argv[3]))) 
-		 ) {
+		argc > 3 && 
+		(from = JS_GetStringBytes(JS_ValueToString(cx, argv[0]))) &&
+		(to = JS_GetStringBytes(JS_ValueToString(cx, argv[1]))) &&
+		(headers = JS_GetStringBytes(JS_ValueToString(cx, argv[2]))) &&
+		(body = JS_GetStringBytes(JS_ValueToString(cx, argv[3]))) 
+		) {
 		if ( argc > 4)
 			file = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
 
@@ -1398,11 +1394,12 @@ static JSBool js_email(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 					
 				}
 				
-				if (l > 0)
+				if (l > 0) {
 					out[bytes++] = c64[((b%16)<<(6-l))%64];
-				if (l != 0) while (l < 6)
+				}
+				if (l != 0) while (l < 6) {
 					out[bytes++] = '=', l += 2;
-	
+				}
 				if (write(fd, &out, bytes) != bytes) { 
 					return -1;
 				}
@@ -1418,11 +1415,12 @@ static JSBool js_email(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 			}
 		}
 
-		if (fd)
+		if (fd) {
 			close(fd);
-		if (ifd)
+		}
+		if (ifd) {
 			close(ifd);
-
+		}
 		snprintf(buf, B64BUFFLEN, "/bin/cat %s | /usr/sbin/sendmail -tf \"%s\" %s", filename, from, to);
 		system(buf);
 		unlink(filename);
@@ -1529,7 +1527,7 @@ static void js_exec(switch_core_session *session, char *data)
 	switch_channel *channel;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
+	assert(channel != NULL);
 
 	if (!data) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "js requires an argument (filename|code)\n");
@@ -1551,7 +1549,7 @@ static void js_exec(switch_core_session *session, char *data)
 		return;
 	}
 	
-    if ((cx = JS_NewContext(globals.rt, globals.gStackChunkSize))) {
+	if ((cx = JS_NewContext(globals.rt, globals.gStackChunkSize))) {
 		JS_SetErrorReporter(cx, js_error);
 		if ((javascript_global_object = JS_NewObject(cx, &global_class, NULL, NULL)) && 
 			env_init(cx, javascript_global_object) &&
@@ -1604,7 +1602,7 @@ static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread *thread, void *obj)
 {
 	JSContext *cx = NULL;
 	JSObject *javascript_global_object = NULL;
- 	char buf[1024];
+	char buf[1024];
 	char *code, *next, *arg, *nextarg;
 	jsval rval;
 	int x = 0;
@@ -1714,7 +1712,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 {
 	switch_status status;
 
-	if((status = init_js()) != SWITCH_STATUS_SUCCESS) {
+	if ((status = init_js()) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
