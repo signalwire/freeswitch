@@ -22,7 +22,6 @@ BuildModCodecG729=False
 BuildModCodecGSM=False
 BuildModXMPPEvent=False
 BuildModsndfile=False
-BuildModrawaudio=False
 BuildModpcre=False
 BuildModldap=False
 BuildModzeroconf=False
@@ -67,7 +66,7 @@ If objArgs.Count >=1 Then
 			BuildVersion=True
 		Case "Mod_Exosip"   
 			BuildModExosip=True
-		Case "Mod_IaxChan"   
+		Case "Mod_iax"   
 			BuildModIaxChan=True
 		Case "Mod_PortAudio"
 			BuildModPortAudio=True		
@@ -81,8 +80,6 @@ If objArgs.Count >=1 Then
 			BuildModXMPPEvent=True
 		Case "Mod_sndfile"
 			BuildModsndfile=True
-		Case "Mod_rawaudio"
-			BuildModrawaudio=True
 		Case "Mod_pcre"
 			BuildModpcre=True
 		Case "Mod_ldap"
@@ -100,7 +97,6 @@ If objArgs.Count >=1 Then
 			BuildModCodecG729=True
 			BuildModXMPPEvent=True
 			BuildModsndfile=True
-			BuildModrawaudio=True
 			BuildVersion=True
 			BuildModpcre=True
 			BuildModldap=True
@@ -115,7 +111,6 @@ Else
 	BuildModCodecG729=True
 	BuildModXMPPEvent=True
 	BuildModsndfile=True
-	BuildModrawaudio=True
 	BuildVersion=True
 	BuildModldap=True
 	BuildModpcre=True
@@ -188,10 +183,6 @@ End If
 
 If BuildModsndfile Then
 	BuildLibs_libsndfile BuildDebug, BuildRelease
-End If
-
-If BuildModrawaudio Then
-	BuildLibs_libresample BuildDebug, BuildRelease
 End If
 
 If BuildModpcre Then

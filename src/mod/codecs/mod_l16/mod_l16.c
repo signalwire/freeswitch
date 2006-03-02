@@ -30,7 +30,6 @@
  *
  */
 #include <switch.h>
-#include <libresample.h>
 
 static const char modname[] = "mod_rawaudio";
 
