@@ -1572,25 +1572,26 @@ static void switch_core_standard_on_hangup(switch_core_session *session)
 
 static void switch_core_standard_on_ring(switch_core_session *session)
 {
-	switch_dialplan_interface *dialplan_interface;
+	switch_dialplan_interface *dialplan_interface = NULL;
 	switch_caller_profile *caller_profile;
 	switch_caller_extension *extension;
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard RING %s\n", switch_channel_get_name(session->channel));
 
-
-	if (switch_channel_test_flag(session->channel, CF_OUTBOUND)) {
-		switch_channel_set_state(session->channel, CS_TRANSMIT);
-		return;
-	}
-
 	if ((caller_profile = switch_channel_get_caller_profile(session->channel)) == 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't get profile!\n");
 		switch_channel_set_state(session->channel, CS_HANGUP);
 	} else {
-		if ((dialplan_interface = switch_loadable_module_get_dialplan_interface(caller_profile->dialplan)) == 0) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't get dialplan [%s]!\n", caller_profile->dialplan);
-			switch_channel_set_state(session->channel, CS_HANGUP);
+		if (!switch_strlen_zero(caller_profile->dialplan)) {
+			dialplan_interface = switch_loadable_module_get_dialplan_interface(caller_profile->dialplan);
+		}
+
+		if (!dialplan_interface) {
+			if (switch_channel_test_flag(session->channel, CF_OUTBOUND)) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Dialplan, changing state to TRANSMIT\n");
+				switch_channel_set_state(session->channel, CS_TRANSMIT);
+				return;
+			}
 		} else {
 			if ((extension = dialplan_interface->hunt_function(session)) != 0) {
 				switch_channel_set_caller_extension(session->channel, extension);
