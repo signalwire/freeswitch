@@ -85,6 +85,8 @@ typedef apr_int16_t switch_int16_t;
  * @{
  */
 
+typedef apr_size_t switch_size_t;
+
 /** Structure for referencing files. */
 typedef apr_file_t switch_file_t;
 

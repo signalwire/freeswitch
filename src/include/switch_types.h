@@ -487,6 +487,7 @@ typedef switch_status (*switch_waitfor_write_hook)(switch_core_session *, int, i
 typedef switch_status (*switch_send_dtmf_hook)(switch_core_session *, char *);
 typedef switch_status (*switch_api_function)(char *in, char *out, size_t outlen);
 typedef switch_status (*switch_dtmf_callback_function)(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen);
+typedef int (*switch_core_db_callback_func)(void *pArg, int argc, char **argv, char **columnNames);
 
 /* things we don't deserve to know about */
 

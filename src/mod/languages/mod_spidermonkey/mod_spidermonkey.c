@@ -125,6 +125,24 @@ struct teletone_obj {
 	unsigned int flags;
 };
 
+struct fileio_obj {
+	char *path;
+	unsigned int flags;
+	switch_file_t *fd;
+	switch_memory_pool *pool;
+	unsigned char *buf;
+	int32 buflen;
+	int32 bufsize;
+};
+
+struct db_obj {
+	switch_memory_pool *pool;
+	switch_core_db *db;
+	char *dbname;
+	char code_buffer[2048];
+	JSContext *cx;
+	JSObject *obj;
+};
 
 
 static void js_error(JSContext *cx, const char *message, JSErrorReport *report)
@@ -961,6 +979,318 @@ static void session_destroy(JSContext *cx, JSObject *obj)
 	return;
 }
 
+/* FileIO Object */
+/*********************************************************************************/
+static JSBool fileio_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	switch_memory_pool *pool;
+	switch_file_t *fd;
+	char *path, *flags_str;
+	unsigned int flags = 0;
+	struct fileio_obj *fio;
+
+	if (argc > 1) {
+		path = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		flags_str = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		
+		if (strchr(flags_str, 'r')) {
+			flags |= SWITCH_FOPEN_READ;
+		}
+		if (strchr(flags_str, 'w')) {
+			flags |= SWITCH_FOPEN_WRITE;
+		}
+		if (strchr(flags_str, 'c')) {
+			flags |= SWITCH_FOPEN_CREATE;
+		}
+		if (strchr(flags_str, 'a')) {
+			flags |= SWITCH_FOPEN_APPEND;
+		}
+		if (strchr(flags_str, 't')) {
+			flags |= SWITCH_FOPEN_TRUNCATE;
+		}
+		if (strchr(flags_str, 'b')) {
+			flags |= SWITCH_FOPEN_BINARY;
+		}
+		switch_core_new_memory_pool(&pool);
+		if (switch_file_open(&fd, path, flags, SWITCH_FPROT_UREAD|SWITCH_FPROT_UWRITE, pool) != SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot Open File!\n");
+			switch_core_destroy_memory_pool(&pool);
+			return JS_FALSE;
+		}
+		fio = switch_core_alloc(pool, sizeof(*fio));
+		fio->fd = fd;
+		fio->pool = pool;
+		fio->path = switch_core_strdup(pool, path);
+		fio->flags = flags;
+		JS_SetPrivate(cx, obj, fio);
+		return JS_TRUE;
+	}
+
+	return JS_FALSE;
+}
+static void fileio_destroy(JSContext *cx, JSObject *obj)
+{
+	struct fileio_obj *fio = JS_GetPrivate(cx, obj);
+
+	if (fio) {
+		switch_memory_pool *pool = fio->pool;
+		switch_core_destroy_memory_pool(&pool);
+		pool = NULL;
+	}
+}
+
+static JSBool fileio_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct fileio_obj *fio = JS_GetPrivate(cx, obj);
+	int32 bytes = 0;
+	switch_size_t read = 0;
+
+	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+
+	if (!(fio->flags & SWITCH_FOPEN_READ)) {
+		return JS_TRUE;
+	}
+	
+	if (argc > 0) {
+		JS_ValueToInt32(cx, argv[0], &bytes);
+	}
+
+	if (bytes) {
+		if (!fio->buf || fio->bufsize < bytes) {
+			fio->buf = switch_core_alloc(fio->pool, bytes);
+			fio->bufsize = bytes;
+		}
+		read = bytes;
+		switch_file_read(fio->fd, fio->buf, &read);
+		fio->buflen = read;
+		*rval = BOOLEAN_TO_JSVAL( (read > 0) ? JS_TRUE : JS_FALSE );
+	} 
+
+	return JS_TRUE;
+}
+
+static JSBool fileio_data(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct fileio_obj *fio = JS_GetPrivate(cx, obj);
+	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, fio->buf));
+	return JS_TRUE;
+}
+
+static JSBool fileio_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct fileio_obj *fio = JS_GetPrivate(cx, obj);
+	switch_size_t wrote = 0;
+	char *data = NULL;
+
+	if (!(fio->flags & SWITCH_FOPEN_WRITE)) {
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		return JS_TRUE;
+	}
+	
+	if (argc > 0) {
+		data = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+	}
+
+	if (data) {
+		wrote = 0;
+		*rval = BOOLEAN_TO_JSVAL( (switch_file_write(fio->fd, data, &wrote) == SWITCH_STATUS_SUCCESS) ? JS_TRUE : JS_FALSE);
+	}
+
+	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+	return JS_TRUE;
+}
+
+enum fileio_tinyid {
+	FILEIO_PATH
+};
+
+static JSFunctionSpec fileio_methods[] = {
+	{"read", fileio_read, 1},
+	{"write", fileio_write, 1},
+	{"data", fileio_data, 0},
+	{0}
+};
+
+
+static JSPropertySpec fileio_props[] = {
+	{"path", FILEIO_PATH, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{0}
+};
+
+
+static JSBool fileio_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+{
+	JSBool res = JS_TRUE;
+	struct fileio_obj *fio = JS_GetPrivate(cx, obj);
+	char *name;
+	int param = 0;
+	
+	name = JS_GetStringBytes(JS_ValueToString(cx, id));
+    /* numbers are our props anything else is a method */
+    if (name[0] >= 48 && name[0] <= 57) {
+        param = atoi(name);
+    } else {
+        return JS_TRUE;
+    }
+	
+	switch(param) {
+	case FILEIO_PATH:
+		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, fio->path));
+		break;
+	}
+
+	return res;
+}
+
+JSClass fileio_class = {
+	"FileIO", JSCLASS_HAS_PRIVATE, 
+	JS_PropertyStub,  JS_PropertyStub,	fileio_getProperty,  JS_PropertyStub, 
+	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  fileio_destroy, NULL, NULL, NULL,
+	fileio_construct
+};
+
+
+/* DB Object */
+/*********************************************************************************/
+static JSBool db_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	switch_memory_pool *pool;
+	switch_core_db *db;
+	struct db_obj *dbo;
+
+	if (argc > 0) {
+		char *dbname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		switch_core_new_memory_pool(&pool);
+		if (! (db = switch_core_db_open_file(dbname))) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot Open DB!\n");
+			switch_core_destroy_memory_pool(&pool);
+			return JS_FALSE;
+		}
+		dbo = switch_core_alloc(pool, sizeof(*dbo));
+		dbo->pool = pool;
+		dbo->dbname = switch_core_strdup(pool, dbname);
+		dbo->cx = cx;
+		dbo->obj = obj;
+		dbo->db = db;
+		JS_SetPrivate(cx, obj, dbo);
+		return JS_TRUE;
+	}
+
+	return JS_FALSE;
+}
+
+static void db_destroy(JSContext *cx, JSObject *obj)
+{
+	struct db_obj *dbo = JS_GetPrivate(cx, obj);
+	
+	if (dbo) {
+		switch_memory_pool *pool = dbo->pool;
+		switch_core_db_close(dbo->db);
+		switch_core_destroy_memory_pool(&pool);
+        pool = NULL;
+	}
+}
+
+
+static int db_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct db_obj *dbo = pArg;
+	char code[1024];
+	jsval rval;
+	int x = 0;
+
+	snprintf(code, sizeof(code), "~var _Db_RoW_ = {}", dbo->code_buffer);
+	eval_some_js(code, dbo->cx, dbo->obj, &rval);
+
+	for(x=0; x < argc; x++) {
+		snprintf(code, sizeof(code), "~_Db_RoW_[\"%s\"] = \"%s\"", columnNames[x], argv[x]);
+		eval_some_js(code, dbo->cx, dbo->obj, &rval);
+	}
+	snprintf(code, sizeof(code), "~%s(_Db_RoW_)", dbo->code_buffer);
+	eval_some_js(code, dbo->cx, dbo->obj, &rval);
+
+	snprintf(code, sizeof(code), "~delete _Db_RoW_");
+	eval_some_js(code, dbo->cx, dbo->obj, &rval);
+	
+	return 0;
+}
+
+static JSBool db_exec(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct db_obj *dbo = JS_GetPrivate(cx, obj);
+	*rval = BOOLEAN_TO_JSVAL( JS_TRUE );	
+
+	if (argc > 0) {		
+		char *sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		char *err = NULL;
+		void *arg = NULL;
+		switch_core_db_callback_func cb_func = NULL;
+
+			
+		if (argc > 1) {
+			char *js_func = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+			switch_copy_string(dbo->code_buffer, js_func, sizeof(dbo->code_buffer));
+			cb_func = db_callback;
+			arg = dbo;
+		}
+
+		switch_core_db_exec(dbo->db, sql, cb_func, arg, &err);
+		if (err) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error %s\n", err);
+			switch_core_db_free(err);
+			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		}
+	}
+	return JS_TRUE;
+}
+
+enum db_tinyid {
+	DB_NAME
+};
+
+static JSFunctionSpec db_methods[] = {
+	{"exec", db_exec, 1},
+	{0}
+};
+
+
+static JSPropertySpec db_props[] = {
+	{"path", DB_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{0}
+};
+
+
+static JSBool db_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+{
+	JSBool res = JS_TRUE;
+	struct db_obj *dbo = JS_GetPrivate(cx, obj);
+	char *name;
+	int param = 0;
+	
+	name = JS_GetStringBytes(JS_ValueToString(cx, id));
+    /* numbers are our props anything else is a method */
+    if (name[0] >= 48 && name[0] <= 57) {
+        param = atoi(name);
+    } else {
+        return JS_TRUE;
+    }
+	
+	switch(param) {
+	case DB_NAME:
+		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, dbo->dbname));
+		break;
+	}
+
+	return res;
+}
+
+JSClass db_class = {
+	"DB", JSCLASS_HAS_PRIVATE, 
+	JS_PropertyStub,  JS_PropertyStub,	db_getProperty,  JS_PropertyStub, 
+	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  db_destroy, NULL, NULL, NULL,
+	db_construct
+};
+
 /* TeleTone Object */
 /*********************************************************************************/
 static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -1510,6 +1840,30 @@ static int env_init(JSContext *cx, JSObject *javascript_object)
 				 session_methods
 				 );
 
+	JS_InitClass(cx,
+				 javascript_object,
+				 NULL,
+				 &fileio_class,
+				 fileio_construct,
+				 3,
+				 fileio_props,
+				 fileio_methods,
+				 fileio_props,
+				 fileio_methods
+				 );
+
+	JS_InitClass(cx,
+				 javascript_object,
+				 NULL,
+				 &db_class,
+				 db_construct,
+				 3,
+				 db_props,
+				 db_methods,
+				 db_props,
+				 db_methods
+				 );
+
 	return 1;
 }
 
@@ -1547,13 +1901,13 @@ static void js_parse_and_execute(switch_core_session *session, char *input_code)
 	}
 	
 	if (argc) { /* create a js doppleganger of this argc/argv*/
-		snprintf(buf, sizeof(buf), "~var Argv = new Array(%d);", argc);
+		snprintf(buf, sizeof(buf), "~var argv = new Array(%d);", argc);
 		eval_some_js(buf, cx, javascript_global_object, &rval);
 		snprintf(buf, sizeof(buf), "~var argc = %d", argc);
 		eval_some_js(buf, cx, javascript_global_object, &rval);
 
 		for (y = 0; y < argc; y++) {
-			snprintf(buf, sizeof(buf), "~Argv[%d] = \"%s\";", x++, argv[y]);
+			snprintf(buf, sizeof(buf), "~argv[%d] = \"%s\";", x++, argv[y]);
 			eval_some_js(buf, cx, javascript_global_object, &rval);
 
 		}
