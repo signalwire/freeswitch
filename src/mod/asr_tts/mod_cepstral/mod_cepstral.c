@@ -75,12 +75,12 @@ static swift_result_t write_audio(swift_event *event, swift_event_t type, void *
     return rv;
 }
 
-static switch_status cepstral_speech_open(switch_speech_handle *sh, char *voice_name, unsigned int rate, switch_speech_flag flags)
+static switch_status cepstral_speech_open(switch_speech_handle *sh, char *voice_name, int rate, switch_speech_flag *flags)
 {
-	if (flags & SWITCH_SPEECH_FLAG_ASR) {
+	if (*flags & SWITCH_SPEECH_FLAG_ASR) {
 		return SWITCH_STATUS_FALSE;
 	}
-	if (flags & SWITCH_SPEECH_FLAG_TTS) {
+	if (*flags & SWITCH_SPEECH_FLAG_TTS) {
 		cepstral_t *cepstral = switch_core_alloc(sh->memory_pool, sizeof(*cepstral));
 		char srate[25];
 
@@ -175,8 +175,8 @@ static switch_status cepstral_speech_feed_tts(switch_speech_handle *sh, char *te
 
 static switch_status cepstral_speech_read_tts(switch_speech_handle *sh,
 											  void *data,
-											  unsigned int *datalen,
-											  unsigned int *rate,
+											  size_t *datalen,
+											  size_t *rate,
 											  switch_speech_flag *flags) 
 {
 	cepstral_t *cepstral;
@@ -253,7 +253,7 @@ const switch_speech_interface cepstral_speech_interface = {
 	
 };
 
-static switch_loadable_module_interface cepstral_module_interface = {
+const switch_loadable_module_interface cepstral_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,

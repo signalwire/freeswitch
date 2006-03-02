@@ -481,7 +481,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh,
 													  char *module_name, 
 													  char *voice_name,
 													  unsigned int rate,
-													  switch_speech_flag flags,
+													  switch_speech_flag *flags,
 													  switch_memory_pool *pool)
 {
 	switch_status status;
@@ -491,7 +491,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	sh->flags = flags;
+	sh->flags = *flags;
 	if (pool) {
 		sh->memory_pool = pool;
 	} else {
@@ -514,7 +514,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_feed_asr(switch_speech_handle *
 SWITCH_DECLARE(switch_status) switch_core_speech_interpret_asr(switch_speech_handle *sh, char *buf, unsigned int buflen, switch_speech_flag *flags)
 {
 	assert(sh != NULL);
-
+	
 	return sh->speech_interface->speech_interpret_asr(sh, buf, buflen, flags);
 }
 

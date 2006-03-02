@@ -778,7 +778,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh,
 													  char *module_name,
 													  char *voice_name,
 													  unsigned int rate,
-													  switch_speech_flag flags,
+													  switch_speech_flag *flags,
 													  switch_memory_pool *pool);
 
 /*!

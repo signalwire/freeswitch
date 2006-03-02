@@ -513,7 +513,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 								tts_name,
 								voice_name,
 								(unsigned int)rate,
-								flags,
+								&flags,
 								switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid TTS module!\n");
 		return SWITCH_STATUS_FALSE;

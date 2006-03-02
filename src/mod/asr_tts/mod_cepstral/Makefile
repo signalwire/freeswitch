@@ -1,7 +1,12 @@
+ifeq ($(OSARCH),Darwin)
+CFLAGS += -I/Library/Frameworks/swift.framework/Versions/4/Headers
+LDFLAGS += -framework swift -lm
+else
 LDFLAGS += -L/opt/swift/lib -lswift -lceplex_us -lceplang_en -lceplang_de -lceplang_es -lceplang_fr -lceplang_it -lm
 CFLAGS += -I/opt/swift/include
-LINKER=$(CC)
+endif
 
+LINKER=$(CC)
 
 all:	depends $(MODNAME).so
 
