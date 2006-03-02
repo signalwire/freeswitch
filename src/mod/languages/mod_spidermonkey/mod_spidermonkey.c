@@ -935,7 +935,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		}
 
 		caller_profile = switch_caller_profile_new(pool, dialplan, cid_name, cid_num, network_addr, ani, ani2, dest);
-		if (switch_core_session_outgoing_channel(session, channel_type, caller_profile, &peer_session, &pool) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_outgoing_channel(session, channel_type, caller_profile, &peer_session, pool) == SWITCH_STATUS_SUCCESS) {
 			jss = switch_core_session_alloc(peer_session, sizeof(*jss));
 			jss->session = peer_session;
 			jss->flags = 0;

@@ -353,7 +353,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 																   char *endpoint_name,
 																   switch_caller_profile *caller_profile,
 																   switch_core_session **new_session,
-																   switch_memory_pool **pool);
+																   switch_memory_pool *pool);
 
 /*! 
   \brief Answer the channel of a given session
