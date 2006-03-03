@@ -575,7 +575,11 @@ SWITCH_DECLARE(switch_status) switch_channel_pre_answer(switch_channel *channel)
 	msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
 	msg.from = channel->name;
 	status = switch_core_session_message_send(uuid, &msg);
-	switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Pre-Answer %s!\n", channel->name);
+		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+	}
 
 	return status;
 }

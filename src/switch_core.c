@@ -857,9 +857,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_receive_message(switch_core_se
 				}
 			}
 		}
-	} else {
-		status = SWITCH_STATUS_SUCCESS;
-	}
+	} 
 
 	return status;
 }

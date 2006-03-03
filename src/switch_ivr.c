@@ -862,7 +862,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	int stream_id = 0;
 	switch_frame *read_frame;
 
-
+	
 
 	caller_channel = switch_core_session_get_channel(session);
 	assert(caller_channel != NULL);
@@ -896,6 +896,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
 	switch_core_session_thread_launch(peer_session);
 
+
 	for (;;) {
 		int state = switch_channel_get_state(peer_channel);
 		if (state > CS_RING) {
@@ -904,16 +905,23 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 		switch_yield(1000);
 	}
 
+	switch_channel_pre_answer(caller_channel);
+	
 	time(&start);
 	while (switch_channel_ready(caller_channel) &&
 		   switch_channel_ready(peer_channel) &&
 		   !switch_channel_test_flag(peer_channel, CF_ANSWERED) &&
 		   !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) &&
 		   ((time(NULL) - start) < timelimit)) {
-		if (switch_core_session_read_frame(session, &read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
-			break;
+
+		/* read from the channel while we wait if the audio is up on it */
+		if (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+			if (switch_core_session_read_frame(session, &read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		} else {
+			switch_yield(1000);
 		}
-		switch_yield(1000);
 	}
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
