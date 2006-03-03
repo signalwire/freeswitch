@@ -203,11 +203,11 @@ static void process_module_file(char *dir, char *fname)
 		if (strchr(file, '.')) {
 			len = strlen(dir) + strlen(file) + 3;
 			path = (char *) switch_core_alloc(loadable_modules.pool, len);
-			snprintf(path, len, "%s/%s", dir, file);
+			snprintf(path, len, "%s%s%s", dir, SWITCH_PATH_SEPARATOR, file);
 		} else {
 			len = strlen(dir) + strlen(file) + 7;
 			path = (char *) switch_core_alloc(loadable_modules.pool, len);
-			snprintf(path, len, "%s/%s%s", dir, file, ext);
+			snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
 		}
 	}
 
