@@ -716,6 +716,10 @@ Sub BuildLibs_SpiderMonkey(BuildDebug, BuildRelease)
 			If Not FSO.FileExists(LibDestDir & "js\src\Debug\js32.dll") Then 
 				BuildViaVCBuild LibDestDir & "js\src\fdlibm\fdlibm.vcproj", "Debug"
 				BuildViaVCBuild LibDestDir & "js\src\js.vcproj", "Debug"
+				FSO.CopyFile LibDestDir & "js\src\Debug\js32.dll", ScriptDir & "Debug\", True
+				FSO.CopyFile LibDestDir & "js\nspr\lib\libnspr4.dll", ScriptDir & "Debug\", True
+				FSO.CopyFile LibDestDir & "js\nspr\lib\libplc4.dll", ScriptDir & "Debug\", True
+				FSO.CopyFile LibDestDir & "js\nspr\lib\libplds4.dll", ScriptDir & "Debug\", True
 			End If
 		End If
 		If BuildRelease Then
@@ -723,6 +727,10 @@ Sub BuildLibs_SpiderMonkey(BuildDebug, BuildRelease)
 			If Not FSO.FileExists(LibDestDir & "js\src\Release\js32.dll") Then 
 				BuildViaVCBuild LibDestDir & "js\src\fdlibm\fdlibm.vcproj", "Release"
 				BuildViaVCBuild LibDestDir & "js\src\js.vcproj", "Release"
+				FSO.CopyFile LibDestDir & "js\src\Release\js32.dll", ScriptDir & "Release\", True
+				FSO.CopyFile LibDestDir & "js\nspr\lib\libnspr4.dll", ScriptDir & "Release\", True
+				FSO.CopyFile LibDestDir & "js\nspr\lib\libplc4.dll", ScriptDir & "Release\", True
+				FSO.CopyFile LibDestDir & "js\nspr\lib\libplds4.dll", ScriptDir & "Release\", True
 			End If
 		End If
 	Else

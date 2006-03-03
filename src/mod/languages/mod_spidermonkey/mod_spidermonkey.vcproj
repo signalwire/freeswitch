@@ -64,10 +64,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="js32.lib  curllib.lib ws2_32.lib winmm.lib sqlite.lib"
+				AdditionalDependencies="js32.lib  curllib.lib ws2_32.lib winmm.lib sqlite.lib fdlibm.lib libnspr4.lib libplc4.lib  libplds4.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_spidermonkey.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\js\src\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\lib\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\sqlite\Debug&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\js\src\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\lib\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\sqlite\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\js\nspr\lib&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_spidermonkey.pdb"
 				SubSystem="2"
@@ -145,10 +145,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="js32.lib  curllib.lib ws2_32.lib winmm.lib sqlite.lib"
+				AdditionalDependencies="js32.lib  curllib.lib ws2_32.lib winmm.lib sqlite.lib fdlibm.lib libnspr4.lib libplc4.lib  libplds4.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_spidermonkey.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\js\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\lib\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\sqlite\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\js\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\lib\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\sqlite\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\js\nspr\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
