@@ -31,14 +31,6 @@
  */
 #include <switch.h>
 
-#ifdef EMBED_PERL
-#include <EXTERN.h>
-#include <perl.h>
-
-static char *embedding[] = { "", "-e", "" };
-EXTERN_C void xs_init(pTHX);
-#endif
-
 struct switch_core_session {
 	unsigned long id;
 	char name[80];
@@ -87,9 +79,6 @@ struct switch_core_runtime {
 	switch_core_db *db;
 	const struct switch_state_handler_table *state_handlers[SWITCH_MAX_STATE_HANDLERS];
     int state_handler_index;
-#ifdef EMBED_PERL
-	PerlInterpreter *my_perl;
-#endif
 	FILE *console;
 };
 
@@ -163,17 +152,6 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel)
 	return handle;
 }
 
-#ifdef EMBED_PERL
-/* test frontend to the perl interpreter */
-SWITCH_DECLARE(switch_status) switch_core_do_perl(char *txt)
-{
-	PerlInterpreter *my_perl = runtime.my_perl;
-	eval_pv(txt, TRUE);
-	return SWITCH_STATUS_SUCCESS;
-}
-#endif
-
-
 SWITCH_DECLARE(int) switch_core_add_state_handler(const switch_state_handler_table *state_handler)
 {
 	int index = runtime.state_handler_index++;
@@ -194,6 +172,13 @@ SWITCH_DECLARE(const switch_state_handler_table *) switch_core_get_state_handler
 	}
 
 	return runtime.state_handlers[index];
+}
+
+SWITCH_DECLARE(switch_core_session *) switch_core_session_locate(char *uuid_str)
+{
+	switch_core_session *session;
+	session = switch_core_hash_find(runtime.session_table, uuid_str);
+	return session;
 }
 
 SWITCH_DECLARE(switch_status) switch_core_session_message_send(char *uuid_str, switch_core_session_message *message)
@@ -2230,9 +2215,6 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 	
 	switch_core_set_globals();
 
-#ifdef EMBED_PERL
-	PerlInterpreter *my_perl;
-#endif
 	if(console) {
 		if (*console != '/') {
 			char path[265];
@@ -2274,21 +2256,6 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 		}
 	}
 
-#ifdef EMBED_PERL
-	if (!(my_perl = perl_alloc())) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate perl intrepreter\n");
-		switch_core_destroy();
-		return SWITCH_STATUS_MEMERR;
-	}
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocated perl intrepreter.\n");
-
-	PERL_SET_CONTEXT(my_perl);
-	perl_construct(my_perl);
-	perl_parse(my_perl, xs_init, 3, embedding, NULL);
-	perl_run(my_perl);
-	runtime.my_perl = my_perl;
-#endif
-
 	runtime.session_id = 1;
 
 	switch_core_hash_init(&runtime.session_table, runtime.memory_pool);
@@ -2300,15 +2267,6 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 
 SWITCH_DECLARE(switch_status) switch_core_destroy(void)
 {
-
-#ifdef EMBED_PERL
-	if (runtime.my_perl) {
-		perl_destruct(runtime.my_perl);
-		perl_free(runtime.my_perl);
-		runtime.my_perl = NULL;
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unallocated perl interpreter.\n");
-	}
-#endif
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Closing Event Engine.\n");
 	switch_event_shutdown();

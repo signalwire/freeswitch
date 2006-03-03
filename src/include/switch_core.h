@@ -272,6 +272,13 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session *session);
 
 /*! 
+  \brief Locate a session based on it's uuiid
+  \param uuid_str the unique id of the session you want to find
+  \return the session or NULL
+*/
+SWITCH_DECLARE(switch_core_session *) switch_core_session_locate(char *uuid_str);
+
+/*! 
   \brief Send a message to another session using it's uuid
   \param uuid_str the unique id of the session you want to send a message to
   \param message the switch_core_session_message object to send
@@ -920,14 +927,6 @@ SWITCH_DECLARE(void) switch_core_launch_thread(void *(*func)(switch_thread *, vo
 */
 SWITCH_DECLARE(void) switch_core_set_globals(void);
 ///\}
-
-#ifdef USE_PERL
-/*! 
-  \brief Execute some perl when compiled with perl support
-  \return SWITCH_STATUS_SUCCESS on success
-*/
-SWITCH_DECLARE(switch_status) switch_core_do_perl(char *txt);
-#endif 
 
 /*!
   \}

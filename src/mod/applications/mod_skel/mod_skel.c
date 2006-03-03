@@ -46,7 +46,7 @@ static switch_loadable_module_interface skel_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-switch_status switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &skel_module_interface;
@@ -56,3 +56,19 @@ switch_status switch_module_load(const switch_loadable_module_interface **interf
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
+
+/*
+  Called when the system shuts down
+  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
+  {
+  return SWITCH_STATUS_SUCCESS;
+  }
+*/
+
+/*
+  If it exists, this is called in it's own thread when the module-load completes
+  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
+  {
+  return SWITCH_STATUS_SUCCESS;
+  }
+*/

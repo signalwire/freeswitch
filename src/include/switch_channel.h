@@ -220,6 +220,13 @@ SWITCH_DECLARE(switch_status) switch_channel_clear_flag(switch_channel *channel,
 SWITCH_DECLARE(switch_status) switch_channel_answer(switch_channel *channel);
 
 /*!
+  \brief Indicate progress on a channel to attempt early media
+  \param channel channel to pre-answer
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status) switch_channel_pre_answer(switch_channel *channel);
+
+/*!
   \brief add a state handler table to a given channel
   \param channel channel on which to add the state handler table
   \param state_handler table of state handler functions

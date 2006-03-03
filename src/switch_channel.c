@@ -565,6 +565,21 @@ SWITCH_DECLARE(switch_status) switch_channel_hangup(switch_channel *channel)
 	return channel->state;
 }
 
+SWITCH_DECLARE(switch_status) switch_channel_pre_answer(switch_channel *channel)
+{
+	switch_core_session_message msg;
+	char *uuid = switch_core_session_get_uuid(channel->session);
+	switch_status status;
+
+	assert(channel != NULL);	
+	msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
+	msg.from = channel->name;
+	status = switch_core_session_message_send(uuid, &msg);
+	switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status) switch_channel_answer(switch_channel *channel)
 {
 	assert(channel != NULL);
