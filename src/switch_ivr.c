@@ -637,9 +637,6 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 
 		write_frame.datalen = ilen;
 		write_frame.samples = (int) ilen / 2;
-#ifdef SWAP_LINEAR
-		switch_swap_linear(write_frame.data, (int) write_frame.datalen);
-#endif
 
 		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
 			if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {

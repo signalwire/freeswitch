@@ -29,7 +29,7 @@
  * mod_cepstral.c -- Cepstral Interface
  *
  */
-#include <swift.h>
+#include <swift/swift.h>
 #include <switch.h>
 
 static const char modname[] = "mod_cepstral";
