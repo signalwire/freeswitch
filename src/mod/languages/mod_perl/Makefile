@@ -44,3 +44,4 @@ install:
 	mkdir -p $(PREFIX)/perl
 	cp -f $(MODNAME).so $(PREFIX)/mod
 	cp -f fs_perl.so fs_perl.pm $(PREFIX)/perl
+	if [ ! -f $(PREFIX)/perl/freeswitch.pm ] ; then cp -f freeswitch.pm $(PREFIX)/perl ; fi
