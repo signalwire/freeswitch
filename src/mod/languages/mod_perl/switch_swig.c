@@ -1,5 +1,9 @@
 #include <switch.h>
 
+#ifdef _MSC_VER
+#include <perlibs.h>
+#pragma comment(lib, PERL_LIB)
+#endif
 
 void fs_core_set_globals(void)
 {
