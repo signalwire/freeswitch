@@ -22,16 +22,15 @@ if IS64BITLINUX
 AM_CFLAGS += -m64 -march=k8 -fPIC
 endif
 
+#put elsif win here
 if ISMAC
 SOLINK=-dynamic -bundle -undefined suppress -force_flat_namespace
-AM_CFLAGS += -DMACOSX -DSWAP_LINEAR
+AM_CFLAGS += -DMACOSX
+DYNAMIC_LIB_EXTEN=dylib
 else
 SOLINK=-shared -Xlinker -x
+DYNAMIC_LIB_EXTEN=so
 endif
-
-
-
-
 
 AM_CFLAGS  += -fPIC -Wall
 AM_CFLAGS  +=-I$(PWD)/src/sqlite -I$(PWD) -I$(PWD)/src/include -I$(PREFIX)/include
@@ -160,6 +159,7 @@ modules: $(NAME)
 	@./build/addenv.sh build/freeswitch.env PREFIX "$(PREFIX)"
 	@./build/addenv.sh build/freeswitch.env BASE "$(PWD)"
 	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
+	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
 	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
 	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
 	@./build/addenv.sh build/freeswitch.env CFLAGS "-Werror $(AM_CFLAGS)"
@@ -190,9 +190,19 @@ install_mod: modules
 	@echo Installing Modules
 	@rm -f build/freeswitch.env
 	@./build/addenv.sh build/freeswitch.env PREFIX "$(PREFIX)"
+	@./build/addenv.sh build/freeswitch.env MAKE "$(MAKE)"
+	@./build/addenv.sh build/freeswitch.env DYLD_LIBRARY_PATH "$(PREFIX)/lib:$DYLD_LIBRARY_PATH"
+	@./build/addenv.sh build/freeswitch.env LD_LIBRARY_PATH "$(PREFIX)/lib:$LD_LIBRARY_PATH"
+	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
+	@./build/addenv.sh build/freeswitch.env BASE "$(PWD)"
+	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
+	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
+	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
+	@./build/addenv.sh build/freeswitch.env CFLAGS "-Werror $(AM_CFLAGS)"
+	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making clean $$i ; $(PWD)/build/modmake.sh $(PWD) $$i install || exit 1; done
 	@echo done
-	@rm -f build/freeswitch.env
+
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
 
