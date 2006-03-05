@@ -40,7 +40,7 @@ build_triplet = @build@
 host_triplet = @host@
 @ISLINUX_TRUE@am__append_1 = -Wl,-E
 @IS64BITLINUX_TRUE@am__append_2 = -m64 -march=k8 -fPIC
-@ISMAC_TRUE@am__append_3 = -DMACOSX -DSWAP_LINEAR
+@ISMAC_TRUE@am__append_3 = -DMACOSX
 bin_PROGRAMS = freeswitch$(EXEEXT)
 DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
@@ -252,7 +252,11 @@ AM_LDFLAGS = -L$(PREFIX)/lib $(shell $(APR_CONFIG) --link-ld --libs ) \
 	$(am__append_1)
 OSARCH = $(shell uname -s)
 @ISMAC_FALSE@SOLINK = -shared -Xlinker -x
+
+#put elsif win here
 @ISMAC_TRUE@SOLINK = -dynamic -bundle -undefined suppress -force_flat_namespace
+@ISMAC_FALSE@DYNAMIC_LIB_EXTEN = so
+@ISMAC_TRUE@DYNAMIC_LIB_EXTEN = dylib
 libfreeswitch_la_SOURCES = \
 src/include/config.h\
 src/include/switch.h\
@@ -1035,6 +1039,7 @@ modules: $(NAME)
 	@./build/addenv.sh build/freeswitch.env PREFIX "$(PREFIX)"
 	@./build/addenv.sh build/freeswitch.env BASE "$(PWD)"
 	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
+	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
 	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
 	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
 	@./build/addenv.sh build/freeswitch.env CFLAGS "-Werror $(AM_CFLAGS)"
@@ -1065,9 +1070,20 @@ install_mod: modules
 	@echo Installing Modules
 	@rm -f build/freeswitch.env
 	@./build/addenv.sh build/freeswitch.env PREFIX "$(PREFIX)"
+	@./build/addenv.sh build/freeswitch.env MAKE "$(MAKE)"
+	@./build/addenv.sh build/freeswitch.env DYLD_LIBRARY_PATH "$(PREFIX)/lib:$DYLD_LIBRARY_PATH"
+	@./build/addenv.sh build/freeswitch.env LD_LIBRARY_PATH "$(PREFIX)/lib:$LD_LIBRARY_PATH"
+	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
+	@./build/addenv.sh build/freeswitch.env BASE "$(PWD)"
+	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
+	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
+	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
+	@./build/addenv.sh build/freeswitch.env CFLAGS "-Werror $(AM_CFLAGS)"
+	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making clean $$i ; $(PWD)/build/modmake.sh $(PWD) $$i install || exit 1; done
-	@echo done
 	@rm -f build/freeswitch.env
+	@echo done
+
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
 

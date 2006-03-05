@@ -201,6 +201,7 @@ install_mod: modules
 	@./build/addenv.sh build/freeswitch.env CFLAGS "-Werror $(AM_CFLAGS)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making clean $$i ; $(PWD)/build/modmake.sh $(PWD) $$i install || exit 1; done
+	@rm -f build/freeswitch.env
 	@echo done
 
 dox:
