@@ -1039,6 +1039,89 @@ SWIGCLASS_STATIC int swig_magic_readonly(pTHX_ SV *sv, MAGIC *mg) {
 #ifdef __cplusplus
 extern "C" {
 #endif
+XS(_wrap_fs_core_set_globals) {
+    {
+        int argvi = 0;
+        dXSARGS;
+        
+        if ((items < 0) || (items > 0)) {
+            SWIG_croak("Usage: fs_core_set_globals();");
+        }
+        fs_core_set_globals();
+        
+        
+        XSRETURN(argvi);
+        fail:
+        ;
+    }
+    croak(Nullch);
+}
+
+
+XS(_wrap_fs_core_init) {
+    {
+        char *arg1 = (char *) 0 ;
+        int result;
+        int argvi = 0;
+        dXSARGS;
+        
+        if ((items < 1) || (items > 1)) {
+            SWIG_croak("Usage: fs_core_init(path);");
+        }
+        if (!SvOK((SV*) ST(0))) arg1 = 0;
+        else arg1 = (char *) SvPV(ST(0), PL_na);
+        result = (int)fs_core_init(arg1);
+        
+        ST(argvi) = sv_newmortal();
+        sv_setiv(ST(argvi++), (IV) result);
+        XSRETURN(argvi);
+        fail:
+        ;
+    }
+    croak(Nullch);
+}
+
+
+XS(_wrap_fs_loadable_module_init) {
+    {
+        int result;
+        int argvi = 0;
+        dXSARGS;
+        
+        if ((items < 0) || (items > 0)) {
+            SWIG_croak("Usage: fs_loadable_module_init();");
+        }
+        result = (int)fs_loadable_module_init();
+        
+        ST(argvi) = sv_newmortal();
+        sv_setiv(ST(argvi++), (IV) result);
+        XSRETURN(argvi);
+        fail:
+        ;
+    }
+    croak(Nullch);
+}
+
+
+XS(_wrap_fs_console_loop) {
+    {
+        int argvi = 0;
+        dXSARGS;
+        
+        if ((items < 0) || (items > 0)) {
+            SWIG_croak("Usage: fs_console_loop();");
+        }
+        fs_console_loop();
+        
+        
+        XSRETURN(argvi);
+        fail:
+        ;
+    }
+    croak(Nullch);
+}
+
+
 XS(_wrap_fs_console_log) {
     {
         char *arg1 = (char *) 0 ;
@@ -1217,12 +1300,11 @@ XS(_wrap_fs_channel_get_variable) {
     {
         struct switch_core_session *arg1 = (struct switch_core_session *) 0 ;
         char *arg2 = (char *) 0 ;
-        char *arg3 = (char *) 0 ;
         int argvi = 0;
         dXSARGS;
         
-        if ((items < 3) || (items > 3)) {
-            SWIG_croak("Usage: fs_channel_get_variable(session,var,val);");
+        if ((items < 2) || (items > 2)) {
+            SWIG_croak("Usage: fs_channel_get_variable(session,var);");
         }
         {
             if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session,0) < 0) {
@@ -1231,9 +1313,7 @@ XS(_wrap_fs_channel_get_variable) {
         }
         if (!SvOK((SV*) ST(1))) arg2 = 0;
         else arg2 = (char *) SvPV(ST(1), PL_na);
-        if (!SvOK((SV*) ST(2))) arg3 = 0;
-        else arg3 = (char *) SvPV(ST(2), PL_na);
-        fs_channel_get_variable(arg1,arg2,arg3);
+        fs_channel_get_variable(arg1,arg2);
         
         
         XSRETURN(argvi);
@@ -1333,6 +1413,10 @@ static swig_variable_info swig_variables[] = {
 {0,0,0,0}
 };
 static swig_command_info swig_commands[] = {
+{"fs_perlc::fs_core_set_globals", _wrap_fs_core_set_globals},
+{"fs_perlc::fs_core_init", _wrap_fs_core_init},
+{"fs_perlc::fs_loadable_module_init", _wrap_fs_loadable_module_init},
+{"fs_perlc::fs_console_loop", _wrap_fs_console_loop},
 {"fs_perlc::fs_console_log", _wrap_fs_console_log},
 {"fs_perlc::fs_console_clean", _wrap_fs_console_clean},
 {"fs_perlc::fs_core_session_locate", _wrap_fs_core_session_locate},
