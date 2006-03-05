@@ -1,4 +1,4 @@
-LDFLAGS += -lportaudio -L/usr/local/lib
+LDFLAGS += -lportaudio -L$(PREFIX)/lib
 MYOBJS = pablio.o ringbuffer.o
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
