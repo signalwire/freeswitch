@@ -1,5 +1,34 @@
 #include <switch.h>
 
+
+void fs_core_set_globals(void)
+{
+	switch_core_set_globals();
+}
+
+int fs_core_init(char *path)
+{
+	switch_status status;
+
+	if (switch_strlen_zero(path)) {
+		path = NULL;
+	}
+
+	status = switch_core_init(path);
+
+	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+}
+
+int fs_loadable_module_init(void)
+{
+	return switch_loadable_module_init() == SWITCH_STATUS_SUCCESS ? 1 : 0;
+}
+
+void fs_console_loop(void) 
+{
+	switch_console_loop();
+}
+
 void fs_console_log(char *msg)
 {
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, msg);
