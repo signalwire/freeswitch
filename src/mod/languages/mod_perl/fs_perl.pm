@@ -47,7 +47,9 @@ package fs_perl;
 
 *fs_core_set_globals = *fs_perlc::fs_core_set_globals;
 *fs_core_init = *fs_perlc::fs_core_init;
+*fs_core_destroy = *fs_perlc::fs_core_destroy;
 *fs_loadable_module_init = *fs_perlc::fs_loadable_module_init;
+*fs_loadable_module_shutdown = *fs_perlc::fs_loadable_module_shutdown;
 *fs_console_loop = *fs_perlc::fs_console_loop;
 *fs_console_log = *fs_perlc::fs_console_log;
 *fs_console_clean = *fs_perlc::fs_console_clean;

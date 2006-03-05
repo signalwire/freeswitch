@@ -1044,9 +1044,6 @@ XS(_wrap_fs_core_set_globals) {
         int argvi = 0;
         dXSARGS;
         
-        if ((items < 0) || (items > 0)) {
-            SWIG_croak("Usage: fs_core_set_globals();");
-        }
         fs_core_set_globals();
         
         
@@ -1082,16 +1079,49 @@ XS(_wrap_fs_core_init) {
 }
 
 
+XS(_wrap_fs_core_destroy) {
+    {
+        int result;
+        int argvi = 0;
+        dXSARGS;
+        
+        result = (int)fs_core_destroy();
+        
+        ST(argvi) = sv_newmortal();
+        sv_setiv(ST(argvi++), (IV) result);
+        XSRETURN(argvi);
+        fail:
+        ;
+    }
+    croak(Nullch);
+}
+
+
 XS(_wrap_fs_loadable_module_init) {
     {
         int result;
         int argvi = 0;
         dXSARGS;
         
-        if ((items < 0) || (items > 0)) {
-            SWIG_croak("Usage: fs_loadable_module_init();");
-        }
         result = (int)fs_loadable_module_init();
+        
+        ST(argvi) = sv_newmortal();
+        sv_setiv(ST(argvi++), (IV) result);
+        XSRETURN(argvi);
+        fail:
+        ;
+    }
+    croak(Nullch);
+}
+
+
+XS(_wrap_fs_loadable_module_shutdown) {
+    {
+        int result;
+        int argvi = 0;
+        dXSARGS;
+        
+        result = (int)fs_loadable_module_shutdown();
         
         ST(argvi) = sv_newmortal();
         sv_setiv(ST(argvi++), (IV) result);
@@ -1105,15 +1135,15 @@ XS(_wrap_fs_loadable_module_init) {
 
 XS(_wrap_fs_console_loop) {
     {
+        int result;
         int argvi = 0;
         dXSARGS;
         
-        if ((items < 0) || (items > 0)) {
-            SWIG_croak("Usage: fs_console_loop();");
-        }
-        fs_console_loop();
+
+        result = (int)fs_console_loop();
         
-        
+        ST(argvi) = sv_newmortal();
+        sv_setiv(ST(argvi++), (IV) result);
         XSRETURN(argvi);
         fail:
         ;
@@ -1415,7 +1445,9 @@ static swig_variable_info swig_variables[] = {
 static swig_command_info swig_commands[] = {
 {"fs_perlc::fs_core_set_globals", _wrap_fs_core_set_globals},
 {"fs_perlc::fs_core_init", _wrap_fs_core_init},
+{"fs_perlc::fs_core_destroy", _wrap_fs_core_destroy},
 {"fs_perlc::fs_loadable_module_init", _wrap_fs_loadable_module_init},
+{"fs_perlc::fs_loadable_module_shutdown", _wrap_fs_loadable_module_shutdown},
 {"fs_perlc::fs_console_loop", _wrap_fs_console_loop},
 {"fs_perlc::fs_console_log", _wrap_fs_console_log},
 {"fs_perlc::fs_console_clean", _wrap_fs_console_clean},

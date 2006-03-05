@@ -19,14 +19,30 @@ int fs_core_init(char *path)
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
+int fs_core_destroy(void)
+{
+	switch_status status;
+
+	status = switch_core_destroy();
+
+	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+}
+
 int fs_loadable_module_init(void)
 {
 	return switch_loadable_module_init() == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-void fs_console_loop(void) 
+int fs_loadable_module_shutdown(void)
+{
+	switch_loadable_module_shutdown();
+	return 1;
+}
+
+int fs_console_loop(void) 
 {
 	switch_console_loop();
+	return 0;
 }
 
 void fs_console_log(char *msg)
