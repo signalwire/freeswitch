@@ -1051,6 +1051,7 @@ modclean:
 	@rm -f build/freeswitch.env
 	@./build/addenv.sh build/freeswitch.env MAKE "$(MAKE)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
+	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
 	@cd src/mod && for i in `find . -type d -name mod_\*` ; do echo making clean $$i ; $(PWD)/build/modmake.sh $(PWD) $$i clean || exit 1; done
 	@rm -f build/freeswitch.env
 

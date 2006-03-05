@@ -1,18 +1,18 @@
 
-all:	$(MODNAME).so
+all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 g711.o: g711.c g711.h
 	$(CC) $(CFLAGS) -c -O2 -pthread -DLINUX=2 -D_REENTRANT -D_GNU_SOURCE -D_LARGEFILE64_SOURCE g711.c -o g711.o
 
-$(MODNAME).so: $(MODNAME).c g711.o
+$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c g711.o
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o
-	$(CC) $(SOLINK) g711.o $(MODNAME).o -o $(MODNAME).so $(LDFLAGS)
+	$(CC) $(SOLINK) g711.o $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS)
 
 
 
 clean:
-	rm -fr *.so *.o *~
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
 
 install:
-	cp -f $(MODNAME).so $(PREFIX)/mod
+	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
 

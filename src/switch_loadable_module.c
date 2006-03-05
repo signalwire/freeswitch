@@ -188,6 +188,8 @@ static void process_module_file(char *dir, char *fname)
 
 #ifdef WIN32
 	const char *ext = ".dll";
+#elif defined (MACOSX) || defined (DARWIN)
+	const char *ext = ".dylib";
 #else
 	const char *ext = ".so";
 #endif
@@ -201,11 +203,11 @@ static void process_module_file(char *dir, char *fname)
 		path = switch_core_strdup(loadable_modules.pool, file);
 	} else {
 		if (strchr(file, '.')) {
-			len = strlen(dir) + strlen(file) + 3;
+			len = strlen(dir) + strlen(file) + 4;
 			path = (char *) switch_core_alloc(loadable_modules.pool, len);
 			snprintf(path, len, "%s%s%s", dir, SWITCH_PATH_SEPARATOR, file);
 		} else {
-			len = strlen(dir) + strlen(file) + 7;
+			len = strlen(dir) + strlen(file) + 8;
 			path = (char *) switch_core_alloc(loadable_modules.pool, len);
 			snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
 		}
@@ -324,6 +326,9 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 #ifdef WIN32
 	const char *ext = ".dll";
 	const char *EXT = ".DLL";
+#elif defined (MACOSX) || defined (DARWIN)
+	const char *ext = ".dylib";
+	const char *EXT = ".DYLIB";
 #else
 	const char *ext = ".so";
 	const char *EXT = ".SO";

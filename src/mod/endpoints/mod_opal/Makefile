@@ -1,14 +1,14 @@
 #CFLAGS += -I/usr/src/common/src
 LDFLAGS += -liax
 
-all:	$(MODNAME).so
+all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
-$(MODNAME).so: $(MODNAME).c
+$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
-	$(CC) $(SOLINK) -o $(MODNAME).so  $(MODNAME).o $(LDFLAGS)
+	$(CC) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(LDFLAGS)
 
 clean:
-	rm -fr *.so *.o *~
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
 
 install:
-	cp -f $(MODNAME).so $(PREFIX)/mod
+	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod

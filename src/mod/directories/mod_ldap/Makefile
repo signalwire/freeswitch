@@ -4,17 +4,17 @@ LDFLAGS += -lldap_r -llber
 LINKER=$(CC)
 
 
-all:	depends $(MODNAME).so
+all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install openldap-2.3.19.tgz --prefix=$(PREFIX) --disable-bdb --disable-hdb
 
-$(MODNAME).so: $(MODNAME).c
+$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
-	$(LINKER) $(SOLINK) -o $(MODNAME).so  $(MODNAME).o $(LDFLAGS)
+	$(LINKER) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(LDFLAGS)
 
 clean:
-	rm -fr *.so *.o *~
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
 
 install:
-	cp -f $(MODNAME).so $(PREFIX)/mod
+	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
