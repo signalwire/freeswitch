@@ -7,7 +7,9 @@ LDFLAGS +=  $(shell $(PERL) -MExtUtils::Embed -e ldopts)
 LDFLAGS +=  $(shell $(PERL) -MConfig -e 'print $$Config{libs}')  
 OBJS += perlxsi.o
 
-all:	depends $(MODNAME).so fs_perl.so
+
+
+all:	depends $(MODNAME).so fs_perl.$(DYNAMIC_LIB_EXTEN)
 
 .perlok:
 	@(${PERL} -V | grep -i usemultiplicity=define >/dev/null && echo Phew, You have the right perl.) \
@@ -30,18 +32,18 @@ switch_swig_wrap.o: switch_swig_wrap.c
 	$(CC) -w $(CFLAGS) -fPIC -c $< -o $@
 
 
-fs_perl.so: $(MODNAME).so switch_swig_wrap.o switch_swig.o perlxsi.o
-	$(CC) $(SOLINK) -o fs_perl.so switch_swig_wrap.o switch_swig.o perlxsi.o $(LDFLAGS)
+fs_perl.$(DYNAMIC_LIB_EXTEN): $(MODNAME).so switch_swig_wrap.o switch_swig.o perlxsi.o
+	$(CC) $(SOLINK) -o fs_perl.$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o switch_swig.o perlxsi.o $(LDFLAGS)
 
 
 $(MODNAME).so: $(MODNAME).c $(MODNAME).o $(OBJS)
 	$(CC) $(SOLINK) -o $(MODNAME).so  $(MODNAME).o $(OBJS) $(LDFLAGS)
 
 clean:
-	rm -fr *.so *.o *~ perlxsi.c .perlok
+	rm -fr *.dylib *.so *.o *~ perlxsi.c .perlok
 
 install:
 	mkdir -p $(PREFIX)/perl
 	cp -f $(MODNAME).so $(PREFIX)/mod
-	cp -f fs_perl.so fs_perl.pm $(PREFIX)/perl
+	cp -f fs_perl.$(DYNAMIC_LIB_EXTEN) fs_perl.pm $(PREFIX)/perl
 	if [ ! -f $(PREFIX)/perl/freeswitch.pm ] ; then cp -f freeswitch.pm $(PREFIX)/perl ; fi
