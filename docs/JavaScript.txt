@@ -39,8 +39,7 @@ function on_dtmf(digits)
 
 session.answer();
 
-while(session.state == "CS_EXECUTE") {
-		    allDigits = "";
+while(session.ready()) {
 		    return_value = session.streamFile("/tmp/demo.wav", "", "on_dtmf");
 		    if (return_value == "hangup") {
 		       session.hangup(); // or break;
