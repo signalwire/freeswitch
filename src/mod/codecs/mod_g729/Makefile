@@ -1,7 +1,7 @@
 CFLAGS += -I$(PREFIX)/include/g729
 LDFLAGS +=-lg729
 
-all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
+all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install codec/libg729 --prefix=$(PREFIX)
