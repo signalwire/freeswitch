@@ -57,7 +57,7 @@ static void echo_function(switch_core_session *session, char *data)
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
 		switch_core_session_set_read_codec(session, &codec);		
-		switch_core_session_set_read_codec(session, &codec);
+		switch_core_session_set_write_codec(session, &codec);
 		while(switch_channel_ready(channel)) { 
 			switch_core_session_read_frame(session, &frame, -1, 0);
 			switch_core_session_write_frame(session, frame, -1 ,0);
