@@ -662,8 +662,9 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	}
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "done speaking text\n");
+	flags = 0;	
+	switch_core_speech_close(&sh, &flags);
 	switch_core_codec_destroy(&codec);
-	flags = 0;
 
 	if (timer_name) {
 		/* End the audio absorbing thread */

@@ -32,8 +32,8 @@ switch_swig_wrap.o: switch_swig_wrap.c
 	$(CC) -w $(CFLAGS) -fPIC -c $< -o $@
 
 
-fs_perl.$(DYNAMIC_LIB_EXTEN): $(MODNAME).$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o switch_swig.o perlxsi.o
-	$(CC) $(SOLINK) -o fs_perl.$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o switch_swig.o perlxsi.o $(LDFLAGS)
+fs_perl.$(DYNAMIC_LIB_EXTEN): $(MODNAME).$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o switch_swig.o
+	$(CC) $(SOLINK) -o fs_perl.$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o switch_swig.o $(LDFLAGS)
 
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c $(MODNAME).o $(OBJS)
