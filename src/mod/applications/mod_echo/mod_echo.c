@@ -37,13 +37,31 @@ static void echo_function(switch_core_session *session, char *data)
 {
 	switch_channel *channel;
 	switch_frame *frame;
+	char *codec_name; 
+	switch_codec codec, *read_codec;
 
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);	
 
-	while(switch_channel_ready(channel)) { 
-		switch_core_session_read_frame(session, &frame, -1, 0);
-		switch_core_session_write_frame(session, frame, -1 ,0);
+	read_codec = switch_core_session_get_read_codec(session); 
+
+	switch_channel_answer(channel);
+
+	codec_name = "L16";
+	if (switch_core_codec_init(&codec,
+							   codec_name,
+							   read_codec->implementation->samples_per_second,
+							   read_codec->implementation->microseconds_per_frame / 1000,
+							   read_codec->implementation->number_of_channels,
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
+		switch_core_session_set_read_codec(session, &codec);		
+		switch_core_session_set_read_codec(session, &codec);
+		while(switch_channel_ready(channel)) { 
+			switch_core_session_read_frame(session, &frame, -1, 0);
+			switch_core_session_write_frame(session, frame, -1 ,0);
+		}
 	}
 }
 
