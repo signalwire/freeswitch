@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs mod_perl Debug"
+				CommandLine="if not exist perlxsi.c perl -MExtUtils::Embed -e xsinit"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -109,7 +109,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs mod_perl Release"
+				CommandLine="if not exist perlxsi.c perl -MExtUtils::Embed -e xsinit"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -193,6 +193,10 @@
 			>
 			<File
 				RelativePath=".\mod_perl.c"
+				>
+			</File>
+			<File
+				RelativePath=".\perlxsi.c"
 				>
 			</File>
 		</Filter>
