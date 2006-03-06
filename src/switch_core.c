@@ -1621,7 +1621,9 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 		extension->current_application = extension->current_application->next;
 	}
 
-	switch_channel_set_state(session->channel, CS_HANGUP);
+	if (switch_channel_get_state(session->channel) == CS_EXECUTE) {
+		switch_channel_set_state(session->channel, CS_HANGUP);
+	}
 }
 
 static void switch_core_standard_on_loopback(switch_core_session *session)
@@ -1942,6 +1944,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 		if (state < CS_DONE && midstate == switch_channel_get_state(session->channel)) {
 			switch_thread_cond_wait(session->cond, session->mutex);
 		} 
+
 	}
 	session->thread_running = 0;
 }
