@@ -29,7 +29,7 @@
  * switch_loadable_module.c -- Loadable Modules
  *
  */
-#include <switch_console.h>
+#include <switch.h>
 
 
 struct switch_loadable_module {
@@ -310,6 +310,24 @@ static void process_module_file(char *dir, char *fname)
 	}
 }
 
+#ifdef WIN32
+static void switch_loadable_module_path_init()
+{
+	char *path =NULL, *working =NULL;
+	apr_dir_t *perl_dir_handle = NULL;
+
+	apr_env_get(&path, "path", loadable_modules.pool);
+	apr_filepath_get(&working, APR_FILEPATH_NATIVE , loadable_modules.pool);
+
+	if (apr_dir_open(&perl_dir_handle, ".\\perl", loadable_modules.pool) == APR_SUCCESS) {
+			apr_dir_close(perl_dir_handle);
+			apr_env_set("path", 
+						apr_pstrcat(loadable_modules.pool, path, ";", working, "\\perl", NULL), 
+						loadable_modules.pool);
+	}
+}
+#endif
+
 SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 {
 
@@ -337,6 +355,10 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	memset(&loadable_modules, 0, sizeof(loadable_modules));
 	switch_core_new_memory_pool(&loadable_modules.pool);
 
+
+#ifdef WIN32
+	switch_loadable_module_path_init();
+#endif
 
 	switch_core_hash_init(&loadable_modules.module_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.endpoint_hash, loadable_modules.pool);

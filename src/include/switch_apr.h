@@ -64,6 +64,7 @@ extern "C" {
 #define APR_WANT_STDIO
 #define APR_WANT_STRFUNC
 #include <apr_want.h>
+#include <apr_env.h>
 
 /*
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions
