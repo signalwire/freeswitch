@@ -29,9 +29,15 @@
  * mod_perl.c -- Perl
  *
  */
-#include <switch.h>
+
+#ifdef _MSC_VER
+#include <perlibs.h>
+#pragma comment(lib, PERL_LIB)
+#endif
+
 #include <EXTERN.h>
 #include <perl.h>
+#include <switch.h>
 static char *embedding[] = { "", "-e", "" };
 EXTERN_C void xs_init(pTHX);
 

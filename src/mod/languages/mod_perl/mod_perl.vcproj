@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="fs_perl"
-	ProjectGUID="{B0C6CFF9-7DCD-4A21-8BA4-C2011E18DED8}"
-	RootNamespace="fs_perl"
+	Name="mod_perl"
+	ProjectGUID="{7B077E7F-1BE7-4291-AB86-55E527B25CAC}"
+	RootNamespace="mod_perl"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -17,14 +17,15 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
 			ConfigurationType="2"
-			CharacterSet="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist perlxsi.c perl -MExtUtils::Embed -e xsinit"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs mod_perl Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -43,12 +44,13 @@
 				AdditionalOptions="@compiler.opts"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;."
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FS_PERL_EXPORTS;MULTIPLICITY;EMBED_PERL"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;MULTIPLICITY;EMBED_PERL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="4"
+				WarnAsError="true"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
 			/>
@@ -63,11 +65,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/EXPORT:xs_init"
-				OutputFile="$(OutDir)\Perl\$(ProjectName).dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_perl.dll"
 				LinkIncremental="2"
+				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)/mod_perl.pdb"
 				SubSystem="2"
+				ImportLibrary="$(OutDir)/mod_perl.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -93,20 +97,19 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="@xcopy $(InputDir)fs_perl.pm $(Outdir)\Perl\ /C /D /Y&#x0D;&#x0A;@if not exist $(Outdir)\Perl\freeswitch.pm xcopy $(InputDir)freeswitch.pm $(Outdir)\Perl\ /C /Y&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
 			ConfigurationType="2"
-			CharacterSet="1"
-			WholeProgramOptimization="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist perlxsi.c perl -MExtUtils::Embed -e xsinit"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs mod_perl Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -124,10 +127,11 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="@compiler.opts"
 				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;."
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FS_PERL_EXPORTS;MULTIPLICITY;EMBED_PERL"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;MULTIPLICITY;EMBED_PERL"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="4"
+				WarnAsError="true"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 			/>
@@ -142,13 +146,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/EXPORT:xs_init"
-				OutputFile="$(OutDir)\Perl\$(ProjectName).dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_perl.dll"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories=""
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				LinkTimeCodeGeneration="1"
+				ImportLibrary="$(OutDir)/mod_perl.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -174,7 +180,6 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="@xcopy $(InputDir)fs_perl.pm $(Outdir)\Perl\ /C /D /Y&#x0D;&#x0A;@if not exist $(Outdir)\Perl\freeswitch.pm xcopy $(InputDir)freeswitch.pm $(Outdir)\Perl\ /C /Y&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -183,36 +188,12 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\perlxsi.c"
+				RelativePath=".\mod_perl.c"
 				>
-			</File>
-			<File
-				RelativePath=".\switch_swig.c"
-				>
-			</File>
-			<File
-				RelativePath=".\switch_swig_wrap.c"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						WarningLevel="0"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						WarningLevel="0"
-					/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -223,7 +204,7 @@
 		</Filter>
 		<Filter
 			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
