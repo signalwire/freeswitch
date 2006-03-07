@@ -11,8 +11,8 @@ AM_CFLAGS  = -I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags --cppflags --inc
 AM_LDFLAGS = -L$(PREFIX)/lib
 AM_LDFLAGS += $(shell $(APR_CONFIG) --link-ld --libs )
 AM_CFLAGS  += $(shell $(APU_CONFIG) --includes) 
-AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs ) -lsqlite3
-AM_LDFLAGS += -lteletone -lresample -lm -L/usr/local/lib/db42 -L/usr/local/lib
+AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs )
+AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib
 OSARCH=$(shell uname -s)
 if ISLINUX
 AM_LDFLAGS += -Wl,-E
@@ -105,23 +105,26 @@ src/include/switch_types.h\
 src/include/switch_utils.h\
 src/include/switch_version.h
 
+BUILT_SOURCES = version depends
+CLEANFILES = src/include/switch_version.h
 
 
 lib_LTLIBRARIES		= libfreeswitch.la
 libfreeswitch_la_CFLAGS	= $(AM_CFLAGS) -Wall -Werror -Wstrict-prototypes -Wmissing-prototypes -g  
 libfreeswitch_la_LDFLAGS	= -version-info 1:0:0
+libfreeswitch_la_LIBADD  = -lteletone -lresample -lsqlite3
+nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
 bin_PROGRAMS =	freeswitch
-freeswitch_SOURCES = src/switch.c
+freeswitch_SOURCES = 	src/switch.c\
+			src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
-freeswitch_LDFLAGS = -lfreeswitch
-nodist_freeswitch_SOURCES = src/include/switch_version.h
-BUILT_SOURCES = version depends
-CLEANFILES = src/include/switch_version.h
+freeswitch_LDADD = ${top_builddir}/libfreeswitch.la
 
 
 
-version: Makefile
+
+version: Makefile src/include/switch_version.h
 	./build/checkversion.sh
 
 newversion: Makefile

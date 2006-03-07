@@ -68,7 +68,7 @@ am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(library_includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libfreeswitch_la_LIBADD =
+libfreeswitch_la_DEPENDENCIES =
 am_libfreeswitch_la_OBJECTS = libfreeswitch_la-switch_buffer.lo \
 	libfreeswitch_la-switch_caller.lo \
 	libfreeswitch_la-switch_channel.lo \
@@ -81,14 +81,14 @@ am_libfreeswitch_la_OBJECTS = libfreeswitch_la-switch_buffer.lo \
 	libfreeswitch_la-switch_event.lo \
 	libfreeswitch_la-switch_resample.lo \
 	libfreeswitch_la-switch_ivr.lo
-libfreeswitch_la_OBJECTS = $(am_libfreeswitch_la_OBJECTS)
+nodist_libfreeswitch_la_OBJECTS =
+libfreeswitch_la_OBJECTS = $(am_libfreeswitch_la_OBJECTS) \
+	$(nodist_libfreeswitch_la_OBJECTS)
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_freeswitch_OBJECTS = freeswitch-switch.$(OBJEXT)
-nodist_freeswitch_OBJECTS =
-freeswitch_OBJECTS = $(am_freeswitch_OBJECTS) \
-	$(nodist_freeswitch_OBJECTS)
-freeswitch_LDADD = $(LDADD)
+freeswitch_OBJECTS = $(am_freeswitch_OBJECTS)
+freeswitch_DEPENDENCIES = ${top_builddir}/libfreeswitch.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -100,8 +100,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libfreeswitch_la_SOURCES) $(freeswitch_SOURCES) \
-	$(nodist_freeswitch_SOURCES)
+SOURCES = $(libfreeswitch_la_SOURCES) \
+	$(nodist_libfreeswitch_la_SOURCES) $(freeswitch_SOURCES)
 DIST_SOURCES = $(libfreeswitch_la_SOURCES) $(freeswitch_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
@@ -247,9 +247,8 @@ AM_CFLAGS = -I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags \
 	-DSWITCH_LOG_DIR=\"$(PREFIX)/log\" \
 	-DSWITCH_SCRIPT_DIR=\"$(PREFIX)/scripts\"
 AM_LDFLAGS = -L$(PREFIX)/lib $(shell $(APR_CONFIG) --link-ld --libs ) \
-	$(shell $(APU_CONFIG) --link-ld --libs ) -lsqlite3 -lteletone \
-	-lresample -lm -L/usr/local/lib/db42 -L/usr/local/lib \
-	$(am__append_1)
+	$(shell $(APU_CONFIG) --link-ld --libs ) -lm \
+	-L/usr/local/lib/db42 -L/usr/local/lib $(am__append_1)
 OSARCH = $(shell uname -s)
 @ISMAC_FALSE@SOLINK = -shared -Xlinker -x
 
@@ -319,15 +318,18 @@ src/include/switch_types.h\
 src/include/switch_utils.h\
 src/include/switch_version.h
 
+BUILT_SOURCES = version depends
+CLEANFILES = src/include/switch_version.h
 lib_LTLIBRARIES = libfreeswitch.la
 libfreeswitch_la_CFLAGS = $(AM_CFLAGS) -Wall -Werror -Wstrict-prototypes -Wmissing-prototypes -g  
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0
-freeswitch_SOURCES = src/switch.c
+libfreeswitch_la_LIBADD = -lteletone -lresample -lsqlite3
+nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
+freeswitch_SOURCES = src/switch.c\
+			src/include/switch_version.h
+
 freeswitch_CFLAGS = $(AM_CFLAGS)
-freeswitch_LDFLAGS = -lfreeswitch
-nodist_freeswitch_SOURCES = src/include/switch_version.h
-BUILT_SOURCES = version depends
-CLEANFILES = src/include/switch_version.h
+freeswitch_LDADD = ${top_builddir}/libfreeswitch.la
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -1002,7 +1004,7 @@ uninstall-info: uninstall-info-recursive
 	uninstall-libLTLIBRARIES uninstall-library_includeHEADERS
 
 
-version: Makefile
+version: Makefile src/include/switch_version.h
 	./build/checkversion.sh
 
 newversion: Makefile
