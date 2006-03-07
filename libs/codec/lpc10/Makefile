@@ -14,7 +14,7 @@ CC= gcc
 # definitions.
 # 
 
-LIB_TARGET_DIR = ..
+LIB_TARGET_DIR = 
 
 # 
 # -I$(LIB_TARGET_DIR) option needed so that #include "machine.h"
@@ -24,7 +24,7 @@ LIB_TARGET_DIR = ..
 WARNINGS = -Wall
 CFLAGS = -O3 -I$(LIB_TARGET_DIR) $(WARNINGS)
 
-LIB = $(LIB_TARGET_DIR)/liblpc10.a
+LIB = liblpc10.a
 
 .PHONY: all clean
 
@@ -67,4 +67,4 @@ $(LIB):		$(LIB)(f2clib.o)	\
 		$(LIB)(vparms.o)
 
 clean:
-	-rm -f *.o ../liblpc10.a
+	-rm -f *.o liblpc10.a
