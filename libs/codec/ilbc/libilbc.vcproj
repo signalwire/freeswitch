@@ -147,95 +147,95 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\anaFilter.c"
+				RelativePath=".\src\anaFilter.c"
 				>
 			</File>
 			<File
-				RelativePath=".\constants.c"
+				RelativePath=".\src\constants.c"
 				>
 			</File>
 			<File
-				RelativePath=".\createCB.c"
+				RelativePath=".\src\createCB.c"
 				>
 			</File>
 			<File
-				RelativePath=".\doCPLC.c"
+				RelativePath=".\src\doCPLC.c"
 				>
 			</File>
 			<File
-				RelativePath=".\enhancer.c"
+				RelativePath=".\src\enhancer.c"
 				>
 			</File>
 			<File
-				RelativePath=".\filter.c"
+				RelativePath=".\src\filter.c"
 				>
 			</File>
 			<File
-				RelativePath=".\FrameClassify.c"
+				RelativePath=".\src\FrameClassify.c"
 				>
 			</File>
 			<File
-				RelativePath=".\gainquant.c"
+				RelativePath=".\src\gainquant.c"
 				>
 			</File>
 			<File
-				RelativePath=".\getCBvec.c"
+				RelativePath=".\src\getCBvec.c"
 				>
 			</File>
 			<File
-				RelativePath=".\helpfun.c"
+				RelativePath=".\src\helpfun.c"
 				>
 			</File>
 			<File
-				RelativePath=".\hpInput.c"
+				RelativePath=".\src\hpInput.c"
 				>
 			</File>
 			<File
-				RelativePath=".\hpOutput.c"
+				RelativePath=".\src\hpOutput.c"
 				>
 			</File>
 			<File
-				RelativePath=".\iCBConstruct.c"
+				RelativePath=".\src\iCBConstruct.c"
 				>
 			</File>
 			<File
-				RelativePath=".\iCBSearch.c"
+				RelativePath=".\src\iCBSearch.c"
 				>
 			</File>
 			<File
-				RelativePath=".\iLBC_decode.c"
+				RelativePath=".\src\iLBC_decode.c"
 				>
 			</File>
 			<File
-				RelativePath=".\iLBC_encode.c"
+				RelativePath=".\src\iLBC_encode.c"
 				>
 			</File>
 			<File
-				RelativePath=".\LPCdecode.c"
+				RelativePath=".\src\LPCdecode.c"
 				>
 			</File>
 			<File
-				RelativePath=".\LPCencode.c"
+				RelativePath=".\src\LPCencode.c"
 				>
 			</File>
 			<File
-				RelativePath=".\lsf.c"
+				RelativePath=".\src\lsf.c"
 				>
 			</File>
 			<File
-				RelativePath=".\packing.c"
+				RelativePath=".\src\packing.c"
 				>
 			</File>
 			<File
-				RelativePath=".\StateConstructW.c"
+				RelativePath=".\src\StateConstructW.c"
 				>
 			</File>
 			<File
-				RelativePath=".\StateSearchW.c"
+				RelativePath=".\src\StateSearchW.c"
 				>
 			</File>
 			<File
-				RelativePath=".\syntFilter.c"
+				RelativePath=".\src\syntFilter.c"
 				>
 			</File>
 		</Filter>
@@ -245,99 +245,99 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\anaFilter.h"
+				RelativePath=".\src\anaFilter.h"
 				>
 			</File>
 			<File
-				RelativePath=".\constants.h"
+				RelativePath=".\src\constants.h"
 				>
 			</File>
 			<File
-				RelativePath=".\createCB.h"
+				RelativePath=".\src\createCB.h"
 				>
 			</File>
 			<File
-				RelativePath=".\doCPLC.h"
+				RelativePath=".\src\doCPLC.h"
 				>
 			</File>
 			<File
-				RelativePath=".\enhancer.h"
+				RelativePath=".\src\enhancer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\filter.h"
+				RelativePath=".\src\filter.h"
 				>
 			</File>
 			<File
-				RelativePath=".\FrameClassify.h"
+				RelativePath=".\src\FrameClassify.h"
 				>
 			</File>
 			<File
-				RelativePath=".\gainquant.h"
+				RelativePath=".\src\gainquant.h"
 				>
 			</File>
 			<File
-				RelativePath=".\getCBvec.h"
+				RelativePath=".\src\getCBvec.h"
 				>
 			</File>
 			<File
-				RelativePath=".\helpfun.h"
+				RelativePath=".\src\helpfun.h"
 				>
 			</File>
 			<File
-				RelativePath=".\hpInput.h"
+				RelativePath=".\src\hpInput.h"
 				>
 			</File>
 			<File
-				RelativePath=".\hpOutput.h"
+				RelativePath=".\src\hpOutput.h"
 				>
 			</File>
 			<File
-				RelativePath=".\iCBConstruct.h"
+				RelativePath=".\src\iCBConstruct.h"
 				>
 			</File>
 			<File
-				RelativePath=".\iCBSearch.h"
+				RelativePath=".\src\iCBSearch.h"
 				>
 			</File>
 			<File
-				RelativePath=".\iLBC_decode.h"
+				RelativePath=".\src\iLBC_decode.h"
 				>
 			</File>
 			<File
-				RelativePath=".\iLBC_define.h"
+				RelativePath=".\src\iLBC_define.h"
 				>
 			</File>
 			<File
-				RelativePath=".\iLBC_encode.h"
+				RelativePath=".\src\iLBC_encode.h"
 				>
 			</File>
 			<File
-				RelativePath=".\LPCdecode.h"
+				RelativePath=".\src\LPCdecode.h"
 				>
 			</File>
 			<File
-				RelativePath=".\LPCencode.h"
+				RelativePath=".\src\LPCencode.h"
 				>
 			</File>
 			<File
-				RelativePath=".\lsf.h"
+				RelativePath=".\src\lsf.h"
 				>
 			</File>
 			<File
-				RelativePath=".\packing.h"
+				RelativePath=".\src\packing.h"
 				>
 			</File>
 			<File
-				RelativePath=".\StateConstructW.h"
+				RelativePath=".\src\StateConstructW.h"
 				>
 			</File>
 			<File
-				RelativePath=".\StateSearchW.h"
+				RelativePath=".\src\StateSearchW.h"
 				>
 			</File>
 			<File
-				RelativePath=".\syntFilter.h"
+				RelativePath=".\src\syntFilter.h"
 				>
 			</File>
 		</Filter>
