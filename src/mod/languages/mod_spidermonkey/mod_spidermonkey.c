@@ -668,9 +668,10 @@ struct config_data {
 	JSContext *cx;
 	JSObject *obj;
 	char *name;
+	int fd;
 };
 
-static size_t realtime_callback(void *ptr, size_t size, size_t nmemb, void *data)
+static size_t hash_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register size_t realsize = size * nmemb;
 	char *line, lineb[2048], *nextline = NULL, *val = NULL, *p = NULL;
@@ -717,15 +718,27 @@ static size_t realtime_callback(void *ptr, size_t size, size_t nmemb, void *data
 }
 
 
-static JSBool js_fetchurl(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+
+static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
+{
+	register size_t realsize = size * nmemb;
+	struct config_data *config_data = data;
+
+	write(config_data->fd, ptr, realsize);
+	return realsize;
+}
+
+
+static JSBool js_fetchurl_hash(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	char *url = NULL, *name = NULL;
 	CURL *curl_handle = NULL;
 	struct config_data config_data;
 	
-	if ( argc > 0 && (url = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
-		if (argc > 1)
-			name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+	if ( argc > 1 ) {
+		url = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+
 		curl_global_init(CURL_GLOBAL_ALL);
 		curl_handle = curl_easy_init();
 		if (!strncasecmp(url, "https", 5)) {
@@ -734,17 +747,58 @@ static JSBool js_fetchurl(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 		}
 		config_data.cx = cx;
 		config_data.obj = obj;
-		if (name)
+		if (name) {
 			config_data.name = name;
+		}
 		curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, realtime_callback);
+		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, hash_callback);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&config_data);
-		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "asterisk-js/1.0");
+		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-js/1.0");
 		curl_easy_perform(curl_handle);
 		curl_easy_cleanup(curl_handle);
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error!\n");
 		return JS_FALSE;
+	}
+
+	return JS_TRUE;
+}
+
+
+
+static JSBool js_fetchurl_file(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	char *url = NULL, *filename = NULL;
+	CURL *curl_handle = NULL;
+	struct config_data config_data;
+	
+	if ( argc > 1 ) {
+		url = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		filename = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+
+		curl_global_init(CURL_GLOBAL_ALL);
+		curl_handle = curl_easy_init();
+		if (!strncasecmp(url, "https", 5)) {
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+		}
+		config_data.cx = cx;
+		config_data.obj = obj;
+
+		config_data.name = filename;
+		if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC)) > -1) {
+			curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+			curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
+			curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&config_data);
+			curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-js/1.0");
+			curl_easy_perform(curl_handle);
+			curl_easy_cleanup(curl_handle);
+			close(config_data.fd);
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error!\n");
+		}
+	} else {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error!\n");
 	}
 
 	return JS_TRUE;
@@ -1900,7 +1954,8 @@ static JSFunctionSpec fs_functions[] = {
 	{"bridge", js_bridge, 2},
 	{"apiExecute", js_api_execute, 2},
 #ifdef HAVE_CURL
-	{"fetchURL", js_fetchurl, 1}, 
+	{"fetchURLHash", js_fetchurl_hash, 1}, 
+	{"fetchURLFile", js_fetchurl_file, 1}, 
 #endif 
 	{0}
 };
