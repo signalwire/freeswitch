@@ -40,15 +40,15 @@ extern int pitsyn_(integer *order, integer *voice, integer *pitch, real *rms, re
 /* 	PITSYN Version 53 */
 
 /* $Log: pitsyn.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:40:12  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -59,7 +59,8 @@ extern int pitsyn_(integer *order, integer *voice, integer *pitch, real *rms, re
  *
  * Revision 1.1  1996/08/19  22:31:12  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.2  1996/03/25  18:49:07  jaf */
 /* Added commments about which indices of array arguments are read or */
 /* written. */
@@ -149,15 +150,15 @@ extern int pitsyn_(integer *order, integer *voice, integer *pitch, real *rms, re
 
 /*       Arguments */
 /* $Log: pitsyn.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:40:12  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -168,7 +169,8 @@ extern int pitsyn_(integer *order, integer *voice, integer *pitch, real *rms, re
  *
  * Revision 1.1  1996/08/19  22:31:12  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/29  22:03:47  jaf */
 /* Removed definitions for any constants that were no longer used. */
 

@@ -29,15 +29,16 @@ extern int dcbias_(integer *len, real *speech, real *sigout);
 /* 	DCBIAS Version 50 */
 
 /* $Log: dcbias.c,v $
-/* Revision 1.1  2004/05/04 11:16:42  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:42  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:40:23  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/18  21:19:22  jaf */
 /* Just added a few comments about which array indices of the arguments */
 /* are used, and mentioning that this subroutine has no local state. */

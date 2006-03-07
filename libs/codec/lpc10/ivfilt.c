@@ -32,18 +32,19 @@ extern int ivfilt_(real *lpbuf, real *ivbuf, integer *len, integer *nsamp, real 
 /* 	IVFILT Version 48 */
 
 /* $Log: ivfilt.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:31:53  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/15  21:36:29  jaf */
 /* Just added a few comments about which array indices of the arguments */
 /* are used, and mentioning that this subroutine has no local state. */

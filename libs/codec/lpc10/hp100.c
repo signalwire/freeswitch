@@ -39,12 +39,12 @@ extern int inithp100_(void);
 /*      HP100 Version 55 */
 
 /* $Log: hp100.c,v $
-/* Revision 1.1  2004/05/04 11:16:42  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:42  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:28:05  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -55,7 +55,8 @@ extern int inithp100_(void);
  *
  * Revision 1.1  1996/08/19  22:32:04  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.6  1996/03/15  16:45:25  jaf */
 /* Rearranged a few comments. */
 

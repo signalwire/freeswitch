@@ -32,18 +32,19 @@ extern int placev_(integer *osbuf, integer *osptr, integer *oslen, integer *obou
 /* 	PLACEV Version 48 */
 
 /* $Log: placev.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2001/10/16 21:21:14  yurik
-/* Removed warnings on Windows CE. Submitted by Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2001/10/16 21:21:14  yurik
+ * Removed warnings on Windows CE. Submitted by Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:31:02  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.6  1996/03/19  20:42:19  jaf */
 /* Added some conditions satisfied by the output values in VWIN. */
 

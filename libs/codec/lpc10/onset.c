@@ -44,15 +44,15 @@ static real c_b2 = 1.f;
 /* 	ONSET Version 49 */
 
 /* $Log: onset.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:37:55  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -63,7 +63,8 @@ static real c_b2 = 1.f;
  *
  * Revision 1.1  1996/08/19  22:31:18  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.5  1996/03/15  16:41:01  jaf */
 /* Just rearranged INITONSET assignment orders to be consistent with */
 /* order of DATA statements in ONSET. */
@@ -149,15 +150,15 @@ static real c_b2 = 1.f;
 
 /*       Arguments */
 /* $Log: onset.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:37:55  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -168,7 +169,8 @@ static real c_b2 = 1.f;
  *
  * Revision 1.1  1996/08/19  22:31:18  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/29  22:03:47  jaf */
 /* Removed definitions for any constants that were no longer used. */
 

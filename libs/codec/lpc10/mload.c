@@ -29,15 +29,16 @@ extern int mload_(integer *order, integer *awins, integer *awinf, real *speech, 
 /* 	MLOAD Version 48 */
 
 /* $Log: mload.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:31:25  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.5  1996/03/27  23:59:51  jaf */
 /* Added some more accurate comments about which indices of the argument */
 /* array SPEECH are read.  I thought that this might be the cause of a */

@@ -29,15 +29,16 @@ extern int preemp_(real *inbuf, real *pebuf, integer *nsamp, real *coef, real *z
 /* 	PREEMP Version 55 */
 
 /* $Log: preemp.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:30:58  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/14  23:16:29  jaf */
 /* Just added a few comments about which array indices of the arguments */
 /* are used, and mentioning that this subroutine has no local state. */

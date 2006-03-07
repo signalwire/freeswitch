@@ -59,11 +59,11 @@ static real c_b2 = .7f;
 
 /* $Log: synths.c,v $
 /* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:42:59  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -74,7 +74,8 @@ static real c_b2 = .7f;
  *
  * Revision 1.1  1996/08/19  22:30:33  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.5  1996/03/26  19:31:58  jaf */
 /* Commented out trace statements. */
 
@@ -178,12 +179,12 @@ static real c_b2 = .7f;
     real rci[160]	/* was [10][16] */;
 
 /* $Log: synths.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:42:59  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -194,7 +195,8 @@ static real c_b2 = .7f;
  *
  * Revision 1.1  1996/08/19  22:30:33  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/29  22:03:47  jaf */
 /* Removed definitions for any constants that were no longer used. */
 
@@ -209,12 +211,12 @@ static real c_b2 = .7f;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments */
 /* $Log: synths.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:42:59  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -225,7 +227,8 @@ static real c_b2 = .7f;
  *
  * Revision 1.1  1996/08/19  22:30:33  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/29  22:05:55  jaf */
 /* Commented out the common block variables that are not needed by the */
 /* embedded version. */

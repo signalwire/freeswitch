@@ -35,12 +35,12 @@ extern int chanrd_(integer *order, integer *ipitv, integer *irms, integer *irc, 
 /* 	CHANL Version 49 */
 
 /* $Log: chanwr.c,v $
-/* Revision 1.1  2004/05/04 11:16:42  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:42  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:20:24  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -48,7 +48,8 @@ extern int chanrd_(integer *order, integer *ipitv, integer *irms, integer *irc, 
  *
  * Revision 1.1  1996/08/19  22:40:31  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/21  15:14:57  jaf */
 /* Added comments about which indices of argument arrays are read or */
 /* written, and about the one bit of local state in CHANWR.  CHANRD */

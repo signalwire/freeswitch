@@ -51,15 +51,15 @@ extern struct {
 /* 	BSYNZ Version 54 */
 
 /* $Log: bsynz.c,v $
-/* Revision 1.1  2004/05/04 11:16:42  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:42  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:18:55  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -70,7 +70,8 @@ extern struct {
  *
  * Revision 1.1  1996/08/19  22:32:58  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.4  1996/03/27  18:11:22  jaf */
 /* Changed the range of NOISE printed out in the debugging statements, */
 /* even though they are commented out.  I didn't discover this until I */
@@ -150,15 +151,15 @@ extern struct {
     real lpi0, hpi0;
 
 /* $Log: bsynz.c,v $
-/* Revision 1.1  2004/05/04 11:16:42  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:42  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:18:55  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -169,7 +170,8 @@ extern struct {
  *
  * Revision 1.1  1996/08/19  22:32:58  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/29  22:03:47  jaf */
 /* Removed definitions for any constants that were no longer used. */
 
@@ -184,15 +186,15 @@ extern struct {
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments */
 /* $Log: bsynz.c,v $
-/* Revision 1.1  2004/05/04 11:16:42  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:42  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:18:55  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -203,7 +205,8 @@ extern struct {
  *
  * Revision 1.1  1996/08/19  22:32:58  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/29  22:05:55  jaf */
 /* Commented out the common block variables that are not needed by the */
 /* embedded version. */

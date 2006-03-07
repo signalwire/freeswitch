@@ -51,15 +51,15 @@ extern struct {
 /* 	VOICIN Version 52 */
 
 /* $Log: voicin.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:45:00  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -70,7 +70,8 @@ extern struct {
  *
  * Revision 1.1  1996/08/19  22:30:14  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.10  1996/03/29  17:59:14  jaf */
 /* Avoided using VALUE(9), although it shouldn't affect the function of */
 /* the code at all, because it was always multiplied by VDC(9,SNRL), */
@@ -296,15 +297,15 @@ s*/
 /* 	Global Variables: */
 /*       Arguments */
 /* $Log: voicin.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:45:00  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -315,7 +316,8 @@ s*/
  *
  * Revision 1.1  1996/08/19  22:30:14  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/29  22:05:55  jaf */
 /* Commented out the common block variables that are not needed by the */
 /* embedded version. */

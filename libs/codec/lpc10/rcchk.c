@@ -29,15 +29,16 @@ extern int rcchk_(integer *order, real *rc1f, real *rc2f);
 /* 	RCCHK Version 45G */
 
 /* $Log: rcchk.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:30:41  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.4  1996/03/27  18:13:47  jaf */
 /* Commented out a call to subroutine ERROR. */
 

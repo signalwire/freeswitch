@@ -47,12 +47,12 @@ extern struct {
 /* 	DYPTRK Version 52 */
 
 /* $Log: dyptrk.c,v $
-/* Revision 1.1  2004/05/04 11:16:42  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:42  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:25:29  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -63,7 +63,8 @@ extern struct {
  *
  * Revision 1.1  1996/08/19  22:32:26  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.5  1996/03/26  19:35:35  jaf */
 /* Commented out trace statements. */
 
@@ -136,12 +137,12 @@ extern struct {
 
 /*       Arguments */
 /* $Log: dyptrk.c,v $
-/* Revision 1.1  2004/05/04 11:16:42  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:42  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:25:29  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_encoder_state that is passed as an
@@ -152,7 +153,8 @@ extern struct {
  *
  * Revision 1.1  1996/08/19  22:32:26  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/29  22:05:55  jaf */
 /* Commented out the common block variables that are not needed by the */
 /* embedded version. */

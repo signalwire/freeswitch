@@ -37,12 +37,12 @@ extern int deemp_(real *x, integer *n, struct lpc10_decoder_state *st);
 /* 	DEEMP Version 48 */
 
 /* $Log: deemp.c,v $
-/* Revision 1.1  2004/05/04 11:16:42  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:42  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:23:46  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -53,7 +53,8 @@ extern int deemp_(real *x, integer *n, struct lpc10_decoder_state *st);
  *
  * Revision 1.1  1996/08/19  22:32:34  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/20  15:54:37  jaf */
 /* Added comments about which indices of array arguments are read or */
 /* written. */

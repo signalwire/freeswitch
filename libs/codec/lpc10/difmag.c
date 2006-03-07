@@ -29,15 +29,16 @@ extern int difmag_(real *speech, integer *lpita, integer *tau, integer *ltau, in
 /* 	DIFMAG Version 49 */
 
 /* $Log: difmag.c,v $
-/* Revision 1.1  2004/05/04 11:16:42  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:42  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:32:31  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/15  23:09:39  jaf */
 /* Just added a few comments about which array indices of the arguments */
 /* are used, and mentioning that this subroutine has no local state. */

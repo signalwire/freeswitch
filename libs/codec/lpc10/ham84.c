@@ -29,15 +29,16 @@ extern int ham84_(integer *input, integer *output, integer *errcnt);
 /* 	HAM84 Version 45G */
 
 /* $Log: ham84.c,v $
-/* Revision 1.1  2004/05/04 11:16:42  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:42  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:32:07  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/21  15:26:00  jaf */
 /* Put comment header in standard form. */
 

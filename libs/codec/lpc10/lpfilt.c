@@ -29,15 +29,16 @@ extern int lpfilt_(real *inbuf, real *lpbuf, integer *len, integer *nsamp);
 /* 	LPFILT Version 55 */
 
 /* $Log: lpfilt.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:31:35  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/15  16:53:49  jaf */
 /* Just put comment header in standard form. */
 

@@ -36,18 +36,19 @@ static real c_b2 = 1.f;
 /* 	VPARMS Version 50 */
 
 /* $Log: vparms.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.2  2002/02/15 03:57:55  yurik
-/* Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.2  2002/02/15 03:57:55  yurik
+ * Warnings removed during compilation, patch courtesy of Jehan Bing, jehan@bravobrava.com
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.1  1996/08/19  22:30:04  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.6  1996/03/29  18:01:16  jaf */
 /* Added some more comments about the range of INBUF and LPBUF that can */
 /* be read.  Note that it is possible for index VWIN(2)+1 to be read from */

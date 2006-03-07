@@ -67,4 +67,4 @@ $(LIB):		$(LIB)(f2clib.o)	\
 		$(LIB)(vparms.o)
 
 clean:
-	-rm -f *.o
+	-rm -f *.o ../liblpc10.a

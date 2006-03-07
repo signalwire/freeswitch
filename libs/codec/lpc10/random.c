@@ -37,12 +37,12 @@ extern integer random_(struct lpc10_decoder_state *st);
 /* 	RANDOM Version 49 */
 
 /* $Log: random.c,v $
-/* Revision 1.1  2004/05/04 11:16:43  csoutheren
-/* Initial version
-/*
-/* Revision 1.1  2000/06/05 04:45:12  robertj
-/* Added LPC-10 2400bps codec
-/*
+ * Revision 1.1  2004/05/04 11:16:43  csoutheren
+ * Initial version
+ *
+ * Revision 1.1  2000/06/05 04:45:12  robertj
+ * Added LPC-10 2400bps codec
+ *
  * Revision 1.2  1996/08/20  20:41:32  jaf
  * Removed all static local variables that were SAVE'd in the Fortran
  * code, and put them in struct lpc10_decoder_state that is passed as an
@@ -53,7 +53,8 @@ extern integer random_(struct lpc10_decoder_state *st);
  *
  * Revision 1.1  1996/08/19  22:30:49  jaf
  * Initial revision
- * */
+ *
+ */
 /* Revision 1.3  1996/03/20  16:13:54  jaf */
 /* Rearranged comments a little bit, and added comments explaining that */
 /* even though there is local state here, there is no need to create an */
