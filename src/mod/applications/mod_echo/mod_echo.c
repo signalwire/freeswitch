@@ -38,7 +38,7 @@ static void echo_function(switch_core_session *session, char *data)
 	switch_channel *channel;
 
 	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);	
+	assert(channel != NULL);	
 
 	switch_channel_answer(channel);
 
