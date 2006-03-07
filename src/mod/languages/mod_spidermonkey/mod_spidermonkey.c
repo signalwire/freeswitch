@@ -627,6 +627,28 @@ static JSBool session_wait_for_answer(JSContext *cx, JSObject *obj, uintN argc, 
 	return JS_TRUE;
 }
 
+static JSBool session_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	JSBool retval = JS_FALSE;
+	if (argc > 1) {
+		const switch_application_interface *application_interface;
+		char *app_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		char *app_arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		struct js_session *jss = JS_GetPrivate(cx, obj);
+
+		if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
+			if (application_interface->application_function) {
+				application_interface->application_function(jss->session, app_arg);
+				retval = JS_TRUE;
+			}
+		} 
+	}
+	
+	*rval = BOOLEAN_TO_JSVAL( retval );
+	return JS_TRUE;
+}
+
+
 static JSBool session_hangup(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -745,6 +767,7 @@ static JSFunctionSpec session_methods[] = {
 	{"ready", session_ready, 0}, 
 	{"waitForAnswer", session_wait_for_answer, 0}, 
 	{"hangup", session_hangup, 0}, 
+	{"execute", session_execute, 0}, 
 	{0}
 };
 
