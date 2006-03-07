@@ -1697,6 +1697,22 @@ static int write_buf(int fd, char *buf) {
 	return 1;
 }
 
+static JSBool js_api_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+
+	if (argc > 1) {
+		char *cmd = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		char *arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		char retbuf[2048] = "";
+		switch_api_execute(cmd, arg, retbuf, sizeof(retbuf));
+		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, retbuf));
+	} else {
+		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, ""));
+	}
+
+	return JS_TRUE;
+}
+
 static JSBool js_bridge(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss_a = NULL, *jss_b = NULL;
@@ -1753,9 +1769,9 @@ static JSBool js_email(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 		(headers = JS_GetStringBytes(JS_ValueToString(cx, argv[2]))) &&
 		(body = JS_GetStringBytes(JS_ValueToString(cx, argv[3]))) 
 		) {
-		if ( argc > 4)
+		if ( argc > 4) {
 			file = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
-
+		}
 		snprintf(filename, 80, "%smail.%ld", SWITCH_GLOBAL_dirs.temp_dir, switch_time_now());
 
 		if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
@@ -1859,6 +1875,7 @@ static JSFunctionSpec fs_functions[] = {
 	{"include", js_include, 1}, 
 	{"email", js_email, 2}, 
 	{"bridge", js_bridge, 2},
+	{"apiExecute", js_api_execute, 2},
 #ifdef HAVE_CURL
 	{"fetchURL", js_fetchurl, 1}, 
 #endif 
