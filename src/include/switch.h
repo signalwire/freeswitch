@@ -80,8 +80,8 @@ extern "C" {
  *
  *  - Linux (x86)
  *  - Windows (MSVC 2005)
- *  - Mac OS X
- *  - OpenBSD
+ *  - Mac OS X (intel & ppc )
+ *  - OpenBSD, FreeBSD 6
  *
  * \section depends Dependencies
  *  Freeswitch makes heavy use of external libraries.  
