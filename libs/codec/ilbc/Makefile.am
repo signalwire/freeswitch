@@ -38,7 +38,7 @@ libilbc_la_LDFLAGS	=
 
 
 library_includedir	= $(prefix)/include
-library_include_HEADERS = src/iLBC_decode.h src/iLBC_encode.h 
+library_include_HEADERS = src/iLBC_decode.h src/iLBC_encode.h  src/iLBC_define.h
 
 
 
