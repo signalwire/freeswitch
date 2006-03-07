@@ -383,12 +383,13 @@ update(
 		/* UPA1 */
 		/* update predictor pole a[0] */
 		state_ptr->a[0] -= state_ptr->a[0] >> 8;
-		if (dqsez != 0)
-			if (pks1 == 0)
+		if (dqsez != 0) {
+			if (pks1 == 0) {
 				state_ptr->a[0] += 192;
-			else
+			} else {
 				state_ptr->a[0] -= 192;
-
+			}
+		}
 		/* LIMD */
 		a1ul = 15360 - a2p;
 		if (state_ptr->a[0] < -a1ul)
