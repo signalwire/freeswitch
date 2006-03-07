@@ -36,8 +36,8 @@
 static const char modname[] = "mod_ilbc";
 
 struct ilbc_context {
-	ilbc encoder;
-	ilbc decoder;
+	iLBC_Enc_Inst_t encoder;
+	iLBC_Dec_Inst_t decoder;
 };
 
 static switch_status switch_ilbc_init(switch_codec *codec, switch_codec_flag flags,
@@ -54,9 +54,9 @@ static switch_status switch_ilbc_init(switch_codec *codec, switch_codec_flag fla
 	} else {
 		context = switch_core_alloc(codec->memory_pool, sizeof(*context));
 		if (encoding)
-			context->encoder = ilbc_create();
+			initEncode(&context->encoder, 30);
 		if (decoding)
-			context->decoder = ilbc_create();
+			initDecode(&context->decoder, 30, 0);
 	}
 
 	codec->private_info = context;
@@ -66,16 +66,6 @@ static switch_status switch_ilbc_init(switch_codec *codec, switch_codec_flag fla
 
 static switch_status switch_ilbc_destroy(switch_codec *codec) 
 {
-	struct ilbc_context *context = codec->private_info;
-
-	int encoding = (codec->flags & SWITCH_CODEC_FLAG_ENCODE);
-	int decoding = (codec->flags & SWITCH_CODEC_FLAG_DECODE);
-
-	if (encoding)
-		ilbc_destroy(context->encoder);
-	if (decoding)
-		ilbc_destroy(context->decoder);
-
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -105,7 +95,7 @@ static switch_status switch_ilbc_encode(switch_codec *codec,
 		int x;
 		int loops = (int) decoded_data_len / 320;
 		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
-			ilbc_encode(context->encoder, ddp, edp);
+			iLBC_encode(context->encoder, ddp, edp);
 			edp += 33;
 			ddp += 160;
 			new_len += 33;
@@ -146,7 +136,7 @@ static switch_status switch_ilbc_decode(switch_codec *codec,
 		unsigned int new_len = 0;
 
 		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
-			ilbc_decode(context->decoder, edp, ddp);
+			iLBC_decode(context->decoder, edp, ddp);
 			ddp += 160;
 			edp += 33;
 			new_len += 320;

@@ -73,6 +73,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_ses
   \param maxdigits max number of digits to read
   \param terminators digits to end the collection
   \param terminator actual digit that caused the collection to end (if any)
+  \param timeout timeout in ms
+  \param poll_channel flag to specify if you want the function to poll the channel while running
   \return SWITCH_STATUS_SUCCESS to keep the collection moving.
 */
 SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_session *session,
@@ -87,7 +89,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
 /*!
   \brief play a file from the disk to the session
   \param session the session to play the file too
-  \param pointer to file handle to use (NULL for builtin one)
+  \param fh file handle to use (NULL for builtin one)
   \param file the path to the file
   \param timer_name the name of a timer to use input will be absorbed (NULL to time off the session input).
   \param dtmf_callback code to execute if any dtmf is dialed during the playback
@@ -109,6 +111,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 /*!
   \brief record a file from the session to a file
   \param session the session to record from
+  \param fh file handle to use
   \param file the path to the file
   \param dtmf_callback code to execute if any dtmf is dialed during the recording
   \param buf an object to maintain across calls
@@ -127,6 +130,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 /*!
   \brief Speak given text with given tts engine
   \param session the session to speak on
+  \param tts_name the desired tts module
   \param voice_name the desired voice
   \param timer_name optional timer to use for async behaviour
   \param rate the sample rate
