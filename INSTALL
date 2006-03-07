@@ -1,4 +1,6 @@
 UNIX:
+	You will need 'wget' installed in your path so the build system
+	can download the dependancies.
 
 1) Prepare Automake
 	./configure
