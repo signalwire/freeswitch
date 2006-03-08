@@ -12,6 +12,9 @@
 	D31D4FB509BEC85A001112B8 /* libapr-util.a */ = {
 		activeExec = 0;
 	};
+	D31D501E09BEC96E001112B8 /* core_dependencies */ = {
+		activeExec = 0;
+	};
 	D3A7638009BEAAEE002E9B53 /* Project object */ = {
 		activeBuildConfigurationName = Debug;
 		activeBuildStyle = D31D4A3209BEBE12001112B8 /* Development */;

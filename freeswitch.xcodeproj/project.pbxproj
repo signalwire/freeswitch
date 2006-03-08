@@ -7,6 +7,19 @@
 	objects = {
 
 /* Begin PBXAggregateTarget section */
+		D31D501E09BEC96E001112B8 /* core_dependencies */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = D31D502109BEC978001112B8 /* Build configuration list for PBXAggregateTarget "core_dependencies" */;
+			buildPhases = (
+			);
+			buildSettings = {
+				PRODUCT_NAME = core_dependancies;
+			};
+			dependencies = (
+			);
+			name = core_dependencies;
+			productName = core_dependancies;
+		};
 		D3A763FE09BEB271002E9B53 /* All */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = D3A7641D09BEB306002E9B53 /* Build configuration list for PBXAggregateTarget "All" */;
@@ -1800,12 +1813,12 @@
 			isa = PBXGroup;
 			children = (
 				D3A7653209BEB5A3002E9B53 /* existing_frameworks */,
-				D3A7638B09BEAB0A002E9B53 /* core_dependancies */,
+				D3A7638B09BEAB0A002E9B53 /* core_dependencies */,
 				D3A7639409BEAB96002E9B53 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		D3A7638B09BEAB0A002E9B53 /* core_dependancies */ = {
+		D3A7638B09BEAB0A002E9B53 /* core_dependencies */ = {
 			isa = PBXGroup;
 			children = (
 				D31D4A4609BEBE61001112B8 /* apr-1.2.2 */,
@@ -1814,7 +1827,7 @@
 				D3A763E209BEB15E002E9B53 /* teletone */,
 				D3A7643A09BEB500002E9B53 /* sqlite-3.2.8 */,
 			);
-			name = core_dependancies;
+			name = core_dependencies;
 			sourceTree = "<group>";
 		};
 		D3A7638C09BEAB1F002E9B53 /* resample */ = {
@@ -2532,6 +2545,7 @@
 				D31D4DEF09BEC3A1001112B8 /* libapr.a */,
 				D31D4E7909BEC533001112B8 /* libapr-util.dylib */,
 				D31D4FB509BEC85A001112B8 /* libapr-util.a */,
+				D31D501E09BEC96E001112B8 /* core_dependencies */,
 			);
 		};
 /* End PBXProject section */
@@ -3204,6 +3218,28 @@
 			};
 			name = Release;
 		};
+		D31D502209BEC978001112B8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = core_dependancies;
+			};
+			name = Debug;
+		};
+		D31D502309BEC978001112B8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = core_dependancies;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
 		D3A7638209BEAAEE002E9B53 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3462,6 +3498,15 @@
 			buildConfigurations = (
 				D31D501009BEC8B9001112B8 /* Debug */,
 				D31D501109BEC8B9001112B8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D31D502109BEC978001112B8 /* Build configuration list for PBXAggregateTarget "core_dependencies" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D31D502209BEC978001112B8 /* Debug */,
+				D31D502309BEC978001112B8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
