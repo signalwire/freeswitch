@@ -26,6 +26,7 @@
 				D31D500909BEC88B001112B8 /* PBXTargetDependency */,
 				D31D500B09BEC88E001112B8 /* PBXTargetDependency */,
 				D31D508B09BECB94001112B8 /* PBXTargetDependency */,
+				D31D50B109BECE4C001112B8 /* PBXTargetDependency */,
 			);
 			name = All;
 			productName = All;
@@ -675,6 +676,13 @@
 			remoteGlobalIDString = D31D504109BECA92001112B8 /* libfreeswitch.dylib */;
 			remoteInfo = libfreeswitch.dylib;
 		};
+		D31D50B009BECE4C001112B8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D31D508F09BECBA3001112B8 /* freeswitch */;
+			remoteInfo = freeswitch;
+		};
 		D3A763FF09BEB27C002E9B53 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
@@ -993,7 +1001,7 @@
 		D31D505C09BECAED001112B8 /* switch_version.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_version.h; path = src/include/switch_version.h; sourceTree = "<group>"; };
 		D31D505D09BECAED001112B8 /* switch.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch.h; path = src/include/switch.h; sourceTree = "<group>"; };
 		D31D508709BECB84001112B8 /* libresample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libresample.h; path = "libs/libresample-0.1.3/include/libresample.h"; sourceTree = "<group>"; };
-		D31D509009BECBA3001112B8 /* freeswitch */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
+		D31D509009BECBA3001112B8 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D31D509709BECBE3001112B8 /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = src/switch.c; sourceTree = "<group>"; };
 		D3A7639309BEAB96002E9B53 /* libresample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libresample.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3A763A509BEAD00002E9B53 /* filterkit.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = filterkit.c; path = "libs/libresample-0.1.3/src/filterkit.c"; sourceTree = "<group>"; };
@@ -1981,7 +1989,7 @@
 				D3A7638B09BEAB0A002E9B53 /* core_dependencies */,
 				D31D502C09BEC9CC001112B8 /* core_freeswitch */,
 				D3A7653209BEB5A3002E9B53 /* existing_frameworks */,
-				D3A7639409BEAB96002E9B53 /* Products */,
+				D3A7639409BEAB96002E9B53 /* products */,
 			);
 			sourceTree = "<group>";
 		};
@@ -2028,7 +2036,7 @@
 			name = include;
 			sourceTree = "<group>";
 		};
-		D3A7639409BEAB96002E9B53 /* Products */ = {
+		D3A7639409BEAB96002E9B53 /* products */ = {
 			isa = PBXGroup;
 			children = (
 				D3A7639309BEAB96002E9B53 /* libresample.a */,
@@ -2043,7 +2051,7 @@
 				D31D504209BECA92001112B8 /* libfreeswitch.dylib */,
 				D31D509009BECBA3001112B8 /* freeswitch */,
 			);
-			name = Products;
+			name = products;
 			sourceTree = "<group>";
 		};
 		D3A763E209BEB15E002E9B53 /* teletone */ = {
@@ -2783,7 +2791,7 @@
 			);
 			hasScannedForEncodings = 0;
 			mainGroup = D3A7637E09BEAAEE002E9B53;
-			productRefGroup = D3A7639409BEAB96002E9B53 /* Products */;
+			productRefGroup = D3A7639409BEAB96002E9B53 /* products */;
 			projectDirPath = "";
 			targets = (
 				D3A763FE09BEB271002E9B53 /* All */,
@@ -3330,6 +3338,11 @@
 			isa = PBXTargetDependency;
 			target = D31D504109BECA92001112B8 /* libfreeswitch.dylib */;
 			targetProxy = D31D508A09BECB94001112B8 /* PBXContainerItemProxy */;
+		};
+		D31D50B109BECE4C001112B8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D31D508F09BECBA3001112B8 /* freeswitch */;
+			targetProxy = D31D50B009BECE4C001112B8 /* PBXContainerItemProxy */;
 		};
 		D3A7640009BEB27C002E9B53 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
