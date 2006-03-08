@@ -645,42 +645,42 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D31D4A4A09BEBF01001112B8 /* libapr.dylib */;
+			remoteGlobalIDString = D31D4A4A09BEBF01001112B8;
 			remoteInfo = libapr.dylib;
 		};
 		D31D4E7009BEC40D001112B8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D31D4DEF09BEC3A1001112B8 /* libapr.a */;
+			remoteGlobalIDString = D31D4DEF09BEC3A1001112B8;
 			remoteInfo = libapr.a;
 		};
 		D31D500809BEC88B001112B8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D31D4E7909BEC533001112B8 /* libapr-util.dylib */;
+			remoteGlobalIDString = D31D4E7909BEC533001112B8;
 			remoteInfo = "libapr-util.dylib";
 		};
 		D31D500A09BEC88E001112B8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D31D4FB509BEC85A001112B8 /* libapr-util.a */;
+			remoteGlobalIDString = D31D4FB509BEC85A001112B8;
 			remoteInfo = "libapr-util.a";
 		};
 		D31D508A09BECB94001112B8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D31D504109BECA92001112B8 /* libfreeswitch.dylib */;
+			remoteGlobalIDString = D31D504109BECA92001112B8;
 			remoteInfo = libfreeswitch.dylib;
 		};
 		D31D50B009BECE4C001112B8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D31D508F09BECBA3001112B8 /* freeswitch */;
+			remoteGlobalIDString = D31D508F09BECBA3001112B8;
 			remoteInfo = freeswitch;
 		};
 		D3A763FF09BEB27C002E9B53 /* PBXContainerItemProxy */ = {
@@ -965,7 +965,7 @@
 		D31D4F3A09BEC69C001112B8 /* apr_dbm_private.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_dbm_private.h; sourceTree = "<group>"; };
 		D31D4F3B09BEC69C001112B8 /* apu_config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apu_config.h; sourceTree = "<group>"; };
 		D31D4F3E09BEC69C001112B8 /* apu_select_dbm.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apu_select_dbm.h; sourceTree = "<group>"; };
-		D31D4FB609BEC85A001112B8 /* libapr-util.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "libapr-util.a"; path = ".xcodebuild/Debug/libapr-util.a"; sourceTree = "<group>"; };
+		D31D4FB609BEC85A001112B8 /* libapr-util.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libapr-util.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D31D503009BECA2B001112B8 /* switch_buffer.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_buffer.c; path = src/switch_buffer.c; sourceTree = "<group>"; };
 		D31D503109BECA2B001112B8 /* switch_caller.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_caller.c; path = src/switch_caller.c; sourceTree = "<group>"; };
 		D31D503209BECA2B001112B8 /* switch_channel.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_channel.c; path = src/switch_channel.c; sourceTree = "<group>"; };
@@ -978,7 +978,7 @@
 		D31D503909BECA2B001112B8 /* switch_mutex.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_mutex.c; path = src/switch_mutex.c; sourceTree = "<group>"; };
 		D31D503A09BECA2B001112B8 /* switch_resample.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_resample.c; path = src/switch_resample.c; sourceTree = "<group>"; };
 		D31D503B09BECA2B001112B8 /* switch_utils.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_utils.c; path = src/switch_utils.c; sourceTree = "<group>"; };
-		D31D504209BECA92001112B8 /* libfreeswitch.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; name = libfreeswitch.dylib; path = .xcodebuild/Debug/libfreeswitch.dylib; sourceTree = "<group>"; };
+		D31D504209BECA92001112B8 /* libfreeswitch.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libfreeswitch.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D31D504909BECAED001112B8 /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = config.h; path = src/include/config.h; sourceTree = "<group>"; };
 		D31D504A09BECAED001112B8 /* switch_apr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_apr.h; path = src/include/switch_apr.h; sourceTree = "<group>"; };
 		D31D504B09BECAED001112B8 /* switch_buffer.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_buffer.h; path = src/include/switch_buffer.h; sourceTree = "<group>"; };
@@ -2848,7 +2848,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "if [ -e Makefile ]; then\n\texit 0;\nfi\n./configure\n./build/checkversion.sh\nexit 0;\n";
+			shellScript = "if [ -e Makefile ]; then\n\tversion=`/usr/local/bin/svnversion . -n`\n\t/bin/cat src/include/switch_version.h.in | /usr/bin/sed \"s/@SVN_VERSION@/$version/g\" > src/include/\tswitch_version.h\n\techo $version > .version\n\texit 0;\nfi\n./configure\nversion=`/usr/local/bin/svnversion . -n`\n/bin/cat src/include/switch_version.h.in | /usr/bin/sed \"s/@SVN_VERSION@/$version/g\" > src/include/switch_version.h\necho $version > .version\nexit 0;\n";
 		};
 		D31D50A009BECC2C001112B8 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
