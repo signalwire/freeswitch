@@ -1,0 +1,586 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		D3A763FE09BEB271002E9B53 /* All */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = D3A7641D09BEB306002E9B53 /* Build configuration list for PBXAggregateTarget "All" */;
+			buildPhases = (
+			);
+			buildSettings = {
+				PRODUCT_NAME = All;
+			};
+			dependencies = (
+				D3A7640909BEB296002E9B53 /* PBXTargetDependency */,
+				D3A7640009BEB27C002E9B53 /* PBXTargetDependency */,
+				D3A7640209BEB27E002E9B53 /* PBXTargetDependency */,
+			);
+			name = All;
+			productName = All;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		D3A763A809BEAD00002E9B53 /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A509BEAD00002E9B53 /* filterkit.c */; };
+		D3A763A909BEAD00002E9B53 /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A609BEAD00002E9B53 /* resample.c */; };
+		D3A763AA09BEAD00002E9B53 /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A709BEAD00002E9B53 /* resamplesubs.c */; };
+		D3A763AF09BEAD21002E9B53 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3A763AB09BEAD21002E9B53 /* config.h */; };
+		D3A763B009BEAD21002E9B53 /* configtemplate.h in Headers */ = {isa = PBXBuildFile; fileRef = D3A763AC09BEAD21002E9B53 /* configtemplate.h */; };
+		D3A763B109BEAD21002E9B53 /* filterkit.h in Headers */ = {isa = PBXBuildFile; fileRef = D3A763AD09BEAD21002E9B53 /* filterkit.h */; };
+		D3A763B209BEAD21002E9B53 /* resample_defs.h in Headers */ = {isa = PBXBuildFile; fileRef = D3A763AE09BEAD21002E9B53 /* resample_defs.h */; };
+		D3A763F409BEB1ED002E9B53 /* libteletone_detect.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763EA09BEB1AC002E9B53 /* libteletone_detect.c */; };
+		D3A763F509BEB1ED002E9B53 /* libteletone_generate.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763EB09BEB1AC002E9B53 /* libteletone_generate.c */; };
+		D3A763F609BEB1F3002E9B53 /* libteletone_detect.h in Headers */ = {isa = PBXBuildFile; fileRef = D3A763EC09BEB1C3002E9B53 /* libteletone_detect.h */; };
+		D3A763F709BEB1F3002E9B53 /* libteletone_generate.h in Headers */ = {isa = PBXBuildFile; fileRef = D3A763ED09BEB1C3002E9B53 /* libteletone_generate.h */; };
+		D3A763F809BEB1F3002E9B53 /* libteletone.h in Headers */ = {isa = PBXBuildFile; fileRef = D3A763EE09BEB1C3002E9B53 /* libteletone.h */; };
+		D3A7640E09BEB2D7002E9B53 /* libteletone_detect.h in Headers */ = {isa = PBXBuildFile; fileRef = D3A763EC09BEB1C3002E9B53 /* libteletone_detect.h */; };
+		D3A7640F09BEB2D7002E9B53 /* libteletone_generate.h in Headers */ = {isa = PBXBuildFile; fileRef = D3A763ED09BEB1C3002E9B53 /* libteletone_generate.h */; };
+		D3A7641009BEB2D7002E9B53 /* libteletone.h in Headers */ = {isa = PBXBuildFile; fileRef = D3A763EE09BEB1C3002E9B53 /* libteletone.h */; };
+		D3A7641109BEB2DB002E9B53 /* libteletone_detect.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763EA09BEB1AC002E9B53 /* libteletone_detect.c */; };
+		D3A7641209BEB2DB002E9B53 /* libteletone_generate.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763EB09BEB1AC002E9B53 /* libteletone_generate.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D3A763FF09BEB27C002E9B53 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3A763F209BEB1CF002E9B53 /* libteletone.a */;
+			remoteInfo = libteletone.a;
+		};
+		D3A7640109BEB27E002E9B53 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3A7639209BEAB96002E9B53 /* libresample.a */;
+			remoteInfo = libresample.a;
+		};
+		D3A7640809BEB296002E9B53 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3A7640609BEB286002E9B53 /* libteletone.dylib */;
+			remoteInfo = libteletone.dylib;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		D3A7639309BEAB96002E9B53 /* libresample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libresample.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3A763A509BEAD00002E9B53 /* filterkit.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = filterkit.c; path = "libs/libresample-0.1.3/src/filterkit.c"; sourceTree = "<group>"; };
+		D3A763A609BEAD00002E9B53 /* resample.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = resample.c; path = "libs/libresample-0.1.3/src/resample.c"; sourceTree = "<group>"; };
+		D3A763A709BEAD00002E9B53 /* resamplesubs.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = resamplesubs.c; path = "libs/libresample-0.1.3/src/resamplesubs.c"; sourceTree = "<group>"; };
+		D3A763AB09BEAD21002E9B53 /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = config.h; path = "libs/libresample-0.1.3/src/config.h"; sourceTree = "<group>"; };
+		D3A763AC09BEAD21002E9B53 /* configtemplate.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = configtemplate.h; path = "libs/libresample-0.1.3/src/configtemplate.h"; sourceTree = "<group>"; };
+		D3A763AD09BEAD21002E9B53 /* filterkit.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = filterkit.h; path = "libs/libresample-0.1.3/src/filterkit.h"; sourceTree = "<group>"; };
+		D3A763AE09BEAD21002E9B53 /* resample_defs.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = resample_defs.h; path = "libs/libresample-0.1.3/src/resample_defs.h"; sourceTree = "<group>"; };
+		D3A763EA09BEB1AC002E9B53 /* libteletone_detect.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = libteletone_detect.c; path = libs/libteletone/src/libteletone_detect.c; sourceTree = "<group>"; };
+		D3A763EB09BEB1AC002E9B53 /* libteletone_generate.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = libteletone_generate.c; path = libs/libteletone/src/libteletone_generate.c; sourceTree = "<group>"; };
+		D3A763EC09BEB1C3002E9B53 /* libteletone_detect.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libteletone_detect.h; path = libs/libteletone/src/libteletone_detect.h; sourceTree = "<group>"; };
+		D3A763ED09BEB1C3002E9B53 /* libteletone_generate.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libteletone_generate.h; path = libs/libteletone/src/libteletone_generate.h; sourceTree = "<group>"; };
+		D3A763EE09BEB1C3002E9B53 /* libteletone.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libteletone.h; path = libs/libteletone/src/libteletone.h; sourceTree = "<group>"; };
+		D3A763F309BEB1CF002E9B53 /* libteletone.a */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libteletone.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3A7640709BEB286002E9B53 /* libteletone.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; name = libteletone.dylib; path = .xcodebuild/Debug/libteletone.dylib; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D3A7639109BEAB96002E9B53 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3A763F109BEB1CF002E9B53 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3A7640509BEB286002E9B53 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D3A7637E09BEAAEE002E9B53 = {
+			isa = PBXGroup;
+			children = (
+				D3A7638B09BEAB0A002E9B53 /* core_dependancies */,
+				D3A7639409BEAB96002E9B53 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D3A7638B09BEAB0A002E9B53 /* core_dependancies */ = {
+			isa = PBXGroup;
+			children = (
+				D3A763E209BEB15E002E9B53 /* libteletone */,
+				D3A7638C09BEAB1F002E9B53 /* libresample */,
+			);
+			name = core_dependancies;
+			sourceTree = "<group>";
+		};
+		D3A7638C09BEAB1F002E9B53 /* libresample */ = {
+			isa = PBXGroup;
+			children = (
+				D3A7638E09BEAB2A002E9B53 /* include */,
+				D3A7638D09BEAB26002E9B53 /* src */,
+			);
+			name = libresample;
+			sourceTree = "<group>";
+		};
+		D3A7638D09BEAB26002E9B53 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D3A763A509BEAD00002E9B53 /* filterkit.c */,
+				D3A763A609BEAD00002E9B53 /* resample.c */,
+				D3A763A709BEAD00002E9B53 /* resamplesubs.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D3A7638E09BEAB2A002E9B53 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D3A763AB09BEAD21002E9B53 /* config.h */,
+				D3A763AC09BEAD21002E9B53 /* configtemplate.h */,
+				D3A763AD09BEAD21002E9B53 /* filterkit.h */,
+				D3A763AE09BEAD21002E9B53 /* resample_defs.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		D3A7639409BEAB96002E9B53 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D3A7639309BEAB96002E9B53 /* libresample.a */,
+				D3A763F309BEB1CF002E9B53 /* libteletone.a */,
+				D3A7640709BEB286002E9B53 /* libteletone.dylib */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D3A763E209BEB15E002E9B53 /* libteletone */ = {
+			isa = PBXGroup;
+			children = (
+				D3A763E809BEB17E002E9B53 /* include */,
+				D3A763E909BEB190002E9B53 /* src */,
+			);
+			name = libteletone;
+			sourceTree = "<group>";
+		};
+		D3A763E809BEB17E002E9B53 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D3A763EC09BEB1C3002E9B53 /* libteletone_detect.h */,
+				D3A763ED09BEB1C3002E9B53 /* libteletone_generate.h */,
+				D3A763EE09BEB1C3002E9B53 /* libteletone.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		D3A763E909BEB190002E9B53 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D3A763EA09BEB1AC002E9B53 /* libteletone_detect.c */,
+				D3A763EB09BEB1AC002E9B53 /* libteletone_generate.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		D3A7638F09BEAB96002E9B53 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3A763AF09BEAD21002E9B53 /* config.h in Headers */,
+				D3A763B009BEAD21002E9B53 /* configtemplate.h in Headers */,
+				D3A763B109BEAD21002E9B53 /* filterkit.h in Headers */,
+				D3A763B209BEAD21002E9B53 /* resample_defs.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3A763EF09BEB1CF002E9B53 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3A763F609BEB1F3002E9B53 /* libteletone_detect.h in Headers */,
+				D3A763F709BEB1F3002E9B53 /* libteletone_generate.h in Headers */,
+				D3A763F809BEB1F3002E9B53 /* libteletone.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3A7640309BEB286002E9B53 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3A7640E09BEB2D7002E9B53 /* libteletone_detect.h in Headers */,
+				D3A7640F09BEB2D7002E9B53 /* libteletone_generate.h in Headers */,
+				D3A7641009BEB2D7002E9B53 /* libteletone.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		D3A7639209BEAB96002E9B53 /* libresample.a */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3A7639509BEAB97002E9B53 /* Build configuration list for PBXNativeTarget "libresample.a" */;
+			buildPhases = (
+				D3A763D409BEB006002E9B53 /* ShellScript */,
+				D3A7638F09BEAB96002E9B53 /* Headers */,
+				D3A7639009BEAB96002E9B53 /* Sources */,
+				D3A7639109BEAB96002E9B53 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = libresample.a;
+			productName = resample;
+			productReference = D3A7639309BEAB96002E9B53 /* libresample.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		D3A763F209BEB1CF002E9B53 /* libteletone.a */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3A763FB09BEB216002E9B53 /* Build configuration list for PBXNativeTarget "libteletone.a" */;
+			buildPhases = (
+				D3A763EF09BEB1CF002E9B53 /* Headers */,
+				D3A763F009BEB1CF002E9B53 /* Sources */,
+				D3A763F109BEB1CF002E9B53 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = libteletone.a;
+			productName = teletone;
+			productReference = D3A763F309BEB1CF002E9B53 /* libteletone.a */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		D3A7640609BEB286002E9B53 /* libteletone.dylib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3A7641A09BEB306002E9B53 /* Build configuration list for PBXNativeTarget "libteletone.dylib" */;
+			buildPhases = (
+				D3A7640309BEB286002E9B53 /* Headers */,
+				D3A7640409BEB286002E9B53 /* Sources */,
+				D3A7640509BEB286002E9B53 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = libteletone.dylib;
+			productName = teletone;
+			productReference = D3A7640709BEB286002E9B53 /* libteletone.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D3A7638009BEAAEE002E9B53 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = D3A7638109BEAAEE002E9B53 /* Build configuration list for PBXProject "freeswitch" */;
+			buildStyles = (
+			);
+			hasScannedForEncodings = 0;
+			mainGroup = D3A7637E09BEAAEE002E9B53;
+			productRefGroup = D3A7639409BEAB96002E9B53 /* Products */;
+			projectDirPath = "";
+			targets = (
+				D3A763FE09BEB271002E9B53 /* All */,
+				D3A763F209BEB1CF002E9B53 /* libteletone.a */,
+				D3A7639209BEAB96002E9B53 /* libresample.a */,
+				D3A7640609BEB286002E9B53 /* libteletone.dylib */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D3A763D409BEB006002E9B53 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ -d \"libs/libresample-0.1.3\" ]; then\n\texit 0;\nfi\n\ncurl http://svn.freeswitch.org/downloads/libs/libresample-0.1.3.tgz -o libs/libresample-0.1.3.tgz\ncd libs\ntar zxf libresample-0.1.3.tgz\ncd libresample-0.1.3\n./configure\nexit 0;\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D3A7639009BEAB96002E9B53 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3A763A809BEAD00002E9B53 /* filterkit.c in Sources */,
+				D3A763A909BEAD00002E9B53 /* resample.c in Sources */,
+				D3A763AA09BEAD00002E9B53 /* resamplesubs.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3A763F009BEB1CF002E9B53 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3A763F409BEB1ED002E9B53 /* libteletone_detect.c in Sources */,
+				D3A763F509BEB1ED002E9B53 /* libteletone_generate.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3A7640409BEB286002E9B53 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3A7641109BEB2DB002E9B53 /* libteletone_detect.c in Sources */,
+				D3A7641209BEB2DB002E9B53 /* libteletone_generate.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D3A7640009BEB27C002E9B53 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3A763F209BEB1CF002E9B53 /* libteletone.a */;
+			targetProxy = D3A763FF09BEB27C002E9B53 /* PBXContainerItemProxy */;
+		};
+		D3A7640209BEB27E002E9B53 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3A7639209BEAB96002E9B53 /* libresample.a */;
+			targetProxy = D3A7640109BEB27E002E9B53 /* PBXContainerItemProxy */;
+		};
+		D3A7640909BEB296002E9B53 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3A7640609BEB286002E9B53 /* libteletone.dylib */;
+			targetProxy = D3A7640809BEB296002E9B53 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		D3A7638209BEAAEE002E9B53 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Debug;
+		};
+		D3A7638309BEAAEE002E9B53 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+			};
+			name = Release;
+		};
+		D3A7639609BEAB97002E9B53 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				MACH_O_TYPE = staticlib;
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D3A7639709BEAB97002E9B53 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3A763FC09BEB216002E9B53 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = a;
+				EXECUTABLE_PREFIX = lib;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				MACH_O_TYPE = staticlib;
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D3A763FD09BEB216002E9B53 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3A7641B09BEB306002E9B53 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = lib;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D3A7641C09BEB306002E9B53 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3A7641E09BEB306002E9B53 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = All;
+			};
+			name = Debug;
+		};
+		D3A7641F09BEB306002E9B53 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = All;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D3A7638109BEAAEE002E9B53 /* Build configuration list for PBXProject "freeswitch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3A7638209BEAAEE002E9B53 /* Debug */,
+				D3A7638309BEAAEE002E9B53 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3A7639509BEAB97002E9B53 /* Build configuration list for PBXNativeTarget "libresample.a" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3A7639609BEAB97002E9B53 /* Debug */,
+				D3A7639709BEAB97002E9B53 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3A763FB09BEB216002E9B53 /* Build configuration list for PBXNativeTarget "libteletone.a" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3A763FC09BEB216002E9B53 /* Debug */,
+				D3A763FD09BEB216002E9B53 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3A7641A09BEB306002E9B53 /* Build configuration list for PBXNativeTarget "libteletone.dylib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3A7641B09BEB306002E9B53 /* Debug */,
+				D3A7641C09BEB306002E9B53 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3A7641D09BEB306002E9B53 /* Build configuration list for PBXAggregateTarget "All" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3A7641E09BEB306002E9B53 /* Debug */,
+				D3A7641F09BEB306002E9B53 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D3A7638009BEAAEE002E9B53 /* Project object */;
+}
