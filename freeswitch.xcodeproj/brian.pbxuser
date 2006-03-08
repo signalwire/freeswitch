@@ -1,61 +1,19 @@
 // !$*UTF8*$!
 {
-<<<<<<< .mine
-	D30F70E109BF6ECA00A494C4 /* mod_echo.dylib */ = {
-		activeExec = 0;
-	};
 	D31D4A4A09BEBF01001112B8 /* libapr.dylib */ = {
 		activeExec = 0;
-=======
-	D31D503409BECA2B001112B8 /* switch_console.c */ = {
-		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {1011, 2464}}";
-			sepNavSelRange = "{4693, 0}";
-			sepNavVisRect = "{{0, 0}, {1011, 264}}";
-		};
->>>>>>> .r812
 	};
-	D31D503509BECA2B001112B8 /* switch_core.c */ = {
-		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {1332, 32074}}";
-			sepNavSelRange = "{0, 0}";
-			sepNavVisRect = "{{0, 0}, {1332, 762}}";
-			sepNavWindowFrame = "{{84, 69}, {1371, 891}}";
-		};
+	D31D4DEF09BEC3A1001112B8 /* libapr.a */ = {
+		activeExec = 0;
 	};
-	D31D503609BECA2B001112B8 /* switch_event.c */ = {
-		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {728, 7896}}";
-			sepNavSelRange = "{4599, 0}";
-			sepNavVisRect = "{{0, 2266}, {653, 187}}";
-		};
+	D31D4E7909BEC533001112B8 /* libapr-util.dylib */ = {
+		activeExec = 0;
 	};
-	D31D503809BECA2B001112B8 /* switch_loadable_module.c */ = {
-		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {1332, 8022}}";
-			sepNavSelRange = "{12382, 1}";
-			sepNavVisRect = "{{0, 5139}, {1332, 762}}";
-			sepNavWindowFrame = "{{160, 126}, {1371, 891}}";
-		};
+	D31D4FB509BEC85A001112B8 /* libapr-util.a */ = {
+		activeExec = 0;
 	};
 	D31D504109BECA92001112B8 /* libfreeswitch.dylib */ = {
 		activeExec = 0;
-	};
-	D31D505409BECAED001112B8 /* switch_loadable_module.h */ = {
-		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {1332, 3066}}";
-			sepNavSelRange = "{0, 0}";
-			sepNavVisRect = "{{0, 0}, {1332, 762}}";
-			sepNavWindowFrame = "{{38, 111}, {1371, 891}}";
-		};
-	};
-	D31D505C09BECAED001112B8 /* switch_version.h */ = {
-		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {1332, 762}}";
-			sepNavSelRange = "{0, 0}";
-			sepNavVisRect = "{{0, 0}, {1332, 762}}";
-			sepNavWindowFrame = "{{15, 132}, {1371, 891}}";
-		};
 	};
 	D31D508F09BECBA3001112B8 /* freeswitch */ = {
 		activeExec = 0;
@@ -81,24 +39,11 @@
 		environmentEntries = (
 		);
 		executableSystemSymbolLevel = 0;
-		executableUserSymbolLevel = 3;
+		executableUserSymbolLevel = 0;
 		libgmallocEnabled = 0;
 		name = freeswitch;
-		savedGlobals = {
-		};
 		sourceDirectories = (
 		);
-	};
-	D31D509709BECBE3001112B8 /* switch.c */ = {
-		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {668, 2912}}";
-			sepNavSelRange = "{4334, 0}";
-			sepNavVisRect = "{{0, 2603}, {653, 187}}";
-			sepNavWindowFrame = "{{61, 90}, {1371, 891}}";
-		};
-	};
-	D346F17909BF38AE00404918 /* mod_echo.dylib */ = {
-		activeExec = 0;
 	};
 	D3A7638009BEAAEE002E9B53 /* Project object */ = {
 		activeBuildConfigurationName = Debug;
@@ -106,12 +51,10 @@
 		activeExecutable = D31D509109BECBA3001112B8 /* freeswitch */;
 		activeTarget = D3A763FE09BEB271002E9B53 /* All */;
 		addToTargets = (
-<<<<<<< .mine
-			D30F70E109BF6ECA00A494C4 /* mod_echo.dylib */,
-=======
->>>>>>> .r812
+			D31D508F09BECBA3001112B8 /* freeswitch */,
 		);
 		breakpoints = (
+			D3A7673709BEBAFE002E9B53 /* build.c:29 */,
 		);
 		breakpointsGroup = D3A763CD09BEAF2B002E9B53 /* XCBreakpointsBucket */;
 		codeSenseManager = D3A7638509BEAAEE002E9B53 /* Code sense */;
@@ -119,35 +62,13 @@
 			D31D509109BECBA3001112B8 /* freeswitch */,
 		);
 		perUserDictionary = {
-			"PBXConfiguration.PBXBreakpointsDataSource.v1:1CA1AED706398EBD00589147" = {
-				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
-				PBXFileTableDataSourceColumnSortingKey = PBXBreakpointsDataSource_LocationID;
-				PBXFileTableDataSourceColumnWidthsKey = (
-					20,
-					20,
-					210,
-					20,
-					110,
-					109,
-					20,
-				);
-				PBXFileTableDataSourceColumnsKey = (
-					PBXBreakpointsDataSource_ActionID,
-					PBXBreakpointsDataSource_TypeID,
-					PBXBreakpointsDataSource_BreakpointID,
-					PBXBreakpointsDataSource_UseID,
-					PBXBreakpointsDataSource_LocationID,
-					PBXBreakpointsDataSource_ConditionID,
-					PBXBreakpointsDataSource_ContinueID,
-				);
-			};
 			PBXConfiguration.PBXFileTableDataSource3.PBXErrorsWarningsDataSource = {
 				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
 				PBXFileTableDataSourceColumnSortingKey = PBXErrorsWarningsDataSource_LocationID;
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
-					801,
-					251,
+					537,
+					200,
 				);
 				PBXFileTableDataSourceColumnsKey = (
 					PBXErrorsWarningsDataSource_TypeID,
@@ -174,7 +95,7 @@
 				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
-					315,
+					862,
 					20,
 					48,
 					43,
@@ -196,51 +117,11 @@
 				PBXFileTableDataSourceColumnSortingKey = PBXFindDataSource_LocationID;
 				PBXFileTableDataSourceColumnWidthsKey = (
 					200,
-					876,
+					120,
 				);
 				PBXFileTableDataSourceColumnsKey = (
 					PBXFindDataSource_MessageID,
 					PBXFindDataSource_LocationID,
-				);
-			};
-			PBXConfiguration.PBXFileTableDataSource3.PBXSymbolsDataSource = {
-				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
-				PBXFileTableDataSourceColumnSortingKey = PBXSymbolsDataSource_SymbolNameID;
-				PBXFileTableDataSourceColumnWidthsKey = (
-					16,
-					200,
-					50,
-					802,
-				);
-				PBXFileTableDataSourceColumnsKey = (
-					PBXSymbolsDataSource_SymbolTypeIconID,
-					PBXSymbolsDataSource_SymbolNameID,
-					PBXSymbolsDataSource_SymbolTypeID,
-					PBXSymbolsDataSource_ReferenceNameID,
-				);
-			};
-			PBXConfiguration.PBXFileTableDataSource3.XCSCMDataSource = {
-				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
-				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
-				PBXFileTableDataSourceColumnWidthsKey = (
-					20,
-					20,
-					838,
-					20,
-					48,
-					43,
-					43,
-					20,
-				);
-				PBXFileTableDataSourceColumnsKey = (
-					PBXFileDataSource_SCM_ColumnID,
-					PBXFileDataSource_FiletypeID,
-					PBXFileDataSource_Filename_ColumnID,
-					PBXFileDataSource_Built_ColumnID,
-					PBXFileDataSource_ObjectSize_ColumnID,
-					PBXFileDataSource_Errors_ColumnID,
-					PBXFileDataSource_Warnings_ColumnID,
-					PBXFileDataSource_Target_ColumnID,
 				);
 			};
 			PBXConfiguration.PBXTargetDataSource.PBXTargetDataSource = {
@@ -265,13 +146,8 @@
 					PBXFileDataSource_Warnings_ColumnID,
 				);
 			};
-<<<<<<< .mine
-			PBXPerProjectTemplateStateSaveDate = 163541522;
-			PBXWorkspaceStateSaveDate = 163541522;
-=======
-			PBXPerProjectTemplateStateSaveDate = 163539282;
-			PBXWorkspaceStateSaveDate = 163539282;
->>>>>>> .r812
+			PBXPerProjectTemplateStateSaveDate = 163499686;
+			PBXWorkspaceStateSaveDate = 163499686;
 		};
 		sourceControlManager = D3A7638409BEAAEE002E9B53 /* Source Control */;
 		userBuildSettings = {
@@ -292,39 +168,65 @@
 		isa = PBXCodeSenseManager;
 		indexTemplatePath = "";
 	};
+	D3A7639209BEAB96002E9B53 /* libresample.a */ = {
+		activeExec = 0;
+	};
+	D3A763AB09BEAD21002E9B53 /* config.h */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1332, 762}}";
+			sepNavSelRange = "{0, 0}";
+			sepNavVisRect = "{{0, 0}, {1332, 762}}";
+			sepNavWindowFrame = "{{15, 132}, {1371, 891}}";
+		};
+	};
 	D3A763CD09BEAF2B002E9B53 /* XCBreakpointsBucket */ = {
 		isa = XCBreakpointsBucket;
 		name = "Project Breakpoints";
 		objects = (
+			D3A7673709BEBAFE002E9B53 /* build.c:29 */,
 		);
+	};
+	D3A763F209BEB1CF002E9B53 /* libteletone.a */ = {
+		activeExec = 0;
 	};
 	D3A763FE09BEB271002E9B53 /* All */ = {
 		activeExec = 0;
 	};
-	D3C7A71E09BF4674009127A4 /* mod_bridgecall.c */ = {
+	D3A7640609BEB286002E9B53 /* libteletone.dylib */ = {
+		activeExec = 0;
+	};
+	D3A7642E09BEB480002E9B53 /* libsqlite3.dylib */ = {
+		activeExec = 0;
+	};
+	D3A7662C09BEB5EA002E9B53 /* build.c */ = {
 		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {1332, 1414}}";
+			sepNavIntBoundsRect = "{{0, 0}, {1332, 41146}}";
 			sepNavSelRange = "{0, 0}";
-			sepNavVisRect = "{{0, 262}, {1332, 762}}";
-			sepNavWindowFrame = "{{181, 123}, {1371, 891}}";
+			sepNavVisRect = "{{0, 0}, {1332, 762}}";
+			sepNavWindowFrame = "{{61, 90}, {1371, 891}}";
 		};
 	};
-	D3C7A72209BF467F009127A4 /* mod_bridgecall.dylib */ = {
-		activeExec = 0;
+	D3A7665409BEB5EA002E9B53 /* tokenize.c */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1332, 6076}}";
+			sepNavSelRange = "{9603, 37}";
+			sepNavVisRect = "{{0, 4652}, {1332, 762}}";
+			sepNavWindowFrame = "{{107, 48}, {1371, 891}}";
+		};
 	};
-	D3C7A7EC09BF58D2009127A4 /* apr-1.2.2 */ = {
-		activeExec = 0;
+	D3A7673709BEBAFE002E9B53 /* build.c:29 */ = {
+		isa = PBXFileBreakpoint;
+		actions = (
+		);
+		continueAfterActions = 0;
+		delayBeforeContinue = 0;
+		fileReference = D3A7662C09BEB5EA002E9B53 /* build.c */;
+		hitCount = 0;
+		lineNumber = 29;
+		modificationTime = 163494654.595558;
+		state = 1;
 	};
-	D3C7A80209BF5B43009127A4 /* sqlite-3.2.8 */ = {
-		activeExec = 0;
-	};
-	D3C7A84009BF5FC2009127A4 /* apr-util-1.2.2 */ = {
-		activeExec = 0;
-	};
-	D3C7A85C09BF6066009127A4 /* resample-0.1.3 */ = {
-		activeExec = 0;
-	};
-	D3C7A86109BF60A1009127A4 /* teletone */ = {
+	D3A7676B09BEBCF7002E9B53 /* libsqlite3.a */ = {
 		activeExec = 0;
 	};
 }
