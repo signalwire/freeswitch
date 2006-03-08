@@ -6,10 +6,16 @@
 	D31D4DEF09BEC3A1001112B8 /* libapr.a */ = {
 		activeExec = 0;
 	};
+	D31D4E7909BEC533001112B8 /* libapr-util.dylib */ = {
+		activeExec = 0;
+	};
+	D31D4FB509BEC85A001112B8 /* libapr-util.a */ = {
+		activeExec = 0;
+	};
 	D3A7638009BEAAEE002E9B53 /* Project object */ = {
 		activeBuildConfigurationName = Debug;
 		activeBuildStyle = D31D4A3209BEBE12001112B8 /* Development */;
-		activeTarget = D3A763FE09BEB271002E9B53 /* All */;
+		activeTarget = D31D4FB509BEC85A001112B8 /* libapr-util.a */;
 		addToTargets = (
 		);
 		breakpoints = (
