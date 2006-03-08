@@ -1,11 +1,19 @@
 // !$*UTF8*$!
 {
+<<<<<<< .mine
+	D30F70E109BF6ECA00A494C4 /* mod_echo.dylib */ = {
+		activeExec = 0;
+	};
+	D31D4A4A09BEBF01001112B8 /* libapr.dylib */ = {
+		activeExec = 0;
+=======
 	D31D503409BECA2B001112B8 /* switch_console.c */ = {
 		uiCtxt = {
 			sepNavIntBoundsRect = "{{0, 0}, {1011, 2464}}";
 			sepNavSelRange = "{4693, 0}";
 			sepNavVisRect = "{{0, 0}, {1011, 264}}";
 		};
+>>>>>>> .r812
 	};
 	D31D503509BECA2B001112B8 /* switch_core.c */ = {
 		uiCtxt = {
@@ -98,6 +106,10 @@
 		activeExecutable = D31D509109BECBA3001112B8 /* freeswitch */;
 		activeTarget = D3A763FE09BEB271002E9B53 /* All */;
 		addToTargets = (
+<<<<<<< .mine
+			D30F70E109BF6ECA00A494C4 /* mod_echo.dylib */,
+=======
+>>>>>>> .r812
 		);
 		breakpoints = (
 		);
@@ -184,7 +196,7 @@
 				PBXFileTableDataSourceColumnSortingKey = PBXFindDataSource_LocationID;
 				PBXFileTableDataSourceColumnWidthsKey = (
 					200,
-					120,
+					876,
 				);
 				PBXFileTableDataSourceColumnsKey = (
 					PBXFindDataSource_MessageID,
@@ -253,8 +265,13 @@
 					PBXFileDataSource_Warnings_ColumnID,
 				);
 			};
+<<<<<<< .mine
+			PBXPerProjectTemplateStateSaveDate = 163541522;
+			PBXWorkspaceStateSaveDate = 163541522;
+=======
 			PBXPerProjectTemplateStateSaveDate = 163539282;
 			PBXWorkspaceStateSaveDate = 163539282;
+>>>>>>> .r812
 		};
 		sourceControlManager = D3A7638409BEAAEE002E9B53 /* Source Control */;
 		userBuildSettings = {

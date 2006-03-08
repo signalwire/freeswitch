@@ -260,13 +260,24 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateExpansionKey</key>
 							<array>
 								<string>D3A7637E09BEAAEE002E9B53</string>
+								<string>D30F70DB09BF6E9D00A494C4</string>
+								<string>D30F70DC09BF6EA800A494C4</string>
 								<string>1C37FBAC04509CD000000102</string>
+<<<<<<< .mine
+								<string>D30F712C09BF75AC00A494C4</string>
+								<string>D30F712D09BF75AC00A494C4</string>
+=======
 								<string>D3C7A96609BF6AA5009127A4</string>
+>>>>>>> .r812
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
+<<<<<<< .mine
+									<integer>39</integer>
+=======
 									<integer>6</integer>
+>>>>>>> .r812
 								</array>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateVisibleRectKey</key>
@@ -370,9 +381,17 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
+<<<<<<< .mine
+				<string>D30F711A09BF728500A494C4</string>
+=======
 				<string>D3C7A95109BF69FC009127A4</string>
+>>>>>>> .r812
 				<string>1CE0B1FE06471DED0097A5F4</string>
+<<<<<<< .mine
+				<string>D30F711B09BF728500A494C4</string>
+=======
 				<string>D3C7A95209BF69FC009127A4</string>
+>>>>>>> .r812
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -590,7 +609,11 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>D3A763A109BEAC72002E9B53</string>
+<<<<<<< .mine
+				<string>D30F711C09BF728600A494C4</string>
+=======
 				<string>D3C7A95309BF69FC009127A4</string>
+>>>>>>> .r812
 				<string>1CD0528F0623707200166675</string>
 				<string>XCMainBuildResultsModuleGUID</string>
 			</array>
@@ -960,9 +983,17 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>1C0AD2B3069F1EA900FABCE6</string>
+<<<<<<< .mine
+				<string>D30F712409BF745A00A494C4</string>
+=======
 				<string>D3C7A95409BF69FC009127A4</string>
+>>>>>>> .r812
 				<string>1CD0528B0623707200166675</string>
+<<<<<<< .mine
+				<string>D30F712509BF745A00A494C4</string>
+=======
 				<string>D3C7A95509BF69FC009127A4</string>
+>>>>>>> .r812
 			</array>
 			<key>ToolbarConfiguration</key>
 			<string>xcode.toolbar.config.run</string>
