@@ -1,10 +1,16 @@
 // !$*UTF8*$!
 {
+	D31D4A4A09BEBF01001112B8 /* libapr.dylib */ = {
+		activeExec = 0;
+	};
+	D31D4DEF09BEC3A1001112B8 /* libapr.a */ = {
+		activeExec = 0;
+	};
 	D3A7638009BEAAEE002E9B53 /* Project object */ = {
 		activeBuildConfigurationName = Debug;
+		activeBuildStyle = D31D4A3209BEBE12001112B8 /* Development */;
 		activeTarget = D3A763FE09BEB271002E9B53 /* All */;
 		addToTargets = (
-			D3A7642E09BEB480002E9B53 /* libsqlite3.dylib */,
 		);
 		breakpoints = (
 			D3A7673709BEBAFE002E9B53 /* build.c:29 */,
@@ -17,7 +23,7 @@
 				PBXFileTableDataSourceColumnSortingKey = PBXErrorsWarningsDataSource_LocationID;
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
-					300,
+					537,
 					200,
 				);
 				PBXFileTableDataSourceColumnsKey = (
@@ -96,8 +102,8 @@
 					PBXFileDataSource_Warnings_ColumnID,
 				);
 			};
-			PBXPerProjectTemplateStateSaveDate = 163490542;
-			PBXWorkspaceStateSaveDate = 163490542;
+			PBXPerProjectTemplateStateSaveDate = 163495442;
+			PBXWorkspaceStateSaveDate = 163495442;
 		};
 		sourceControlManager = D3A7638409BEAAEE002E9B53 /* Source Control */;
 		userBuildSettings = {

@@ -260,14 +260,14 @@
 								<string>D3A7638B09BEAB0A002E9B53</string>
 								<string>D3A7639409BEAB96002E9B53</string>
 								<string>1C37FBAC04509CD000000102</string>
-								<string>D3A767BE09BEBD94002E9B53</string>
+								<string>D31D4E7309BEC414001112B8</string>
 								<string>1C37FAAC04509CD000000102</string>
 								<string>1C37FABC05509CD000000102</string>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>13</integer>
+									<integer>16</integer>
 								</array>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateVisibleRectKey</key>
@@ -371,9 +371,9 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
-				<string>D3A7639D09BEABD0002E9B53</string>
+				<string>D31D4A4109BEBE2D001112B8</string>
 				<string>1CE0B1FE06471DED0097A5F4</string>
-				<string>D3A7639E09BEABD0002E9B53</string>
+				<string>D31D4A4209BEBE2D001112B8</string>
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -507,7 +507,6 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
-		<string>D3A7642109BEB358002E9B53</string>
 		<string>D3A763A109BEAC72002E9B53</string>
 		<string>/Users/brian/freeswitch/freeswitch.xcodeproj</string>
 	</array>
@@ -555,7 +554,7 @@
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXBuildLogShowsTranscriptDefaultKey</key>
-								<string>{{0, 228}, {1435, 390}}</string>
+								<string>{{0, 154}, {1435, 464}}</string>
 								<key>PBXProjectModuleGUID</key>
 								<string>XCMainBuildResultsModuleGUID</string>
 								<key>PBXProjectModuleLabel</key>
@@ -593,7 +592,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>D3A763A109BEAC72002E9B53</string>
-				<string>D3A763A209BEAC72002E9B53</string>
+				<string>D31D4A4309BEBE2D001112B8</string>
 				<string>1CD0528F0623707200166675</string>
 				<string>XCMainBuildResultsModuleGUID</string>
 			</array>
@@ -604,7 +603,7 @@
 			<key>WindowToolGUID</key>
 			<string>D3A763A109BEAC72002E9B53</string>
 			<key>WindowToolIsVisible</key>
-			<false/>
+			<true/>
 		</dict>
 		<dict>
 			<key>Identifier</key>
