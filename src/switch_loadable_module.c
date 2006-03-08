@@ -380,11 +380,11 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				if (!strcasecmp(var, "load")) {
 					if (!strcasecmp(val, "all")) {
 						if (count == 1) {
-							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Loading all modules.");
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Loading all modules.\n");
 							all = 1;
 							break;
 						} else {
-							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "This option must be the first one to work.");
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "This option must be the first one to work.\n");
 						}
 					} else {
 						if (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
