@@ -13,6 +13,7 @@ Dim vcver, DevEnv, VCBuild
 BuildRelease=False
 BuildDebug=False
 BuildCore=False
+AutoBuild=False
 BuildVersion=False
 BuildModExosip=False
 BuildModIaxChan=False
@@ -60,6 +61,8 @@ End If
 
 If objArgs.Count >=1 Then
 	Select Case objArgs(0)
+		Case "Build"		
+			AutoBuild=True
 		Case "Core"		
 			BuildCore=True
 		Case "Version"		
@@ -123,6 +126,15 @@ End If
 
 If BuildVersion Then
 	CreateSwitchVersion
+End If
+
+If AutoBuild Then
+	If BuildDebug Then
+		BuildViaVCBuild ScriptDir & "Freeswitch.sln", "DEBUG|WIN32"
+	End If
+	If BuildRelease Then
+		BuildViaVCBuild ScriptDir & "Freeswitch.sln", "RELEASE|WIN32"
+	End If
 End If
 
 If BuildCore Then
@@ -807,7 +819,7 @@ End Sub
 
 Sub BuildViaVCBuild(ProjectFile, BuildType)
 	Wscript.echo "Building : " & ProjectFile & " Config type: " & BuildType
-	BuildCmd=quote & VCBuild & quote & " /nologo /nocolor " & quote & ProjectFile & quote & " " & BuildType
+	BuildCmd=quote & VCBuild & quote & " /nologo /nocolor " & quote & ProjectFile & quote & " " & quote & BuildType & quote
 	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpBuild.Bat", True)
 	MyFile.WriteLine("@" & BuildCmd)
 	MyFile.Close
