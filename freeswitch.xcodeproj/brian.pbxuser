@@ -4,6 +4,10 @@
 		activeBuildConfigurationName = Debug;
 		activeTarget = D3A763FE09BEB271002E9B53 /* All */;
 		addToTargets = (
+			D3A7642E09BEB480002E9B53 /* libsqlite3.dylib */,
+		);
+		breakpoints = (
+			D3A7673709BEBAFE002E9B53 /* build.c:29 */,
 		);
 		breakpointsGroup = D3A763CD09BEAF2B002E9B53 /* XCBreakpointsBucket */;
 		codeSenseManager = D3A7638509BEAAEE002E9B53 /* Code sense */;
@@ -41,7 +45,7 @@
 				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
-					1000,
+					862,
 					20,
 					48,
 					43,
@@ -76,7 +80,7 @@
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
 					200,
-					864,
+					682,
 					20,
 					48,
 					43,
@@ -129,6 +133,7 @@
 		isa = XCBreakpointsBucket;
 		name = "Project Breakpoints";
 		objects = (
+			D3A7673709BEBAFE002E9B53 /* build.c:29 */,
 		);
 	};
 	D3A763F209BEB1CF002E9B53 /* libteletone.a */ = {
@@ -138,6 +143,40 @@
 		activeExec = 0;
 	};
 	D3A7640609BEB286002E9B53 /* libteletone.dylib */ = {
+		activeExec = 0;
+	};
+	D3A7642E09BEB480002E9B53 /* libsqlite3.dylib */ = {
+		activeExec = 0;
+	};
+	D3A7662C09BEB5EA002E9B53 /* build.c */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1332, 41146}}";
+			sepNavSelRange = "{0, 0}";
+			sepNavVisRect = "{{0, 0}, {1332, 762}}";
+			sepNavWindowFrame = "{{61, 90}, {1371, 891}}";
+		};
+	};
+	D3A7665409BEB5EA002E9B53 /* tokenize.c */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1332, 6076}}";
+			sepNavSelRange = "{9603, 37}";
+			sepNavVisRect = "{{0, 4652}, {1332, 762}}";
+			sepNavWindowFrame = "{{107, 48}, {1371, 891}}";
+		};
+	};
+	D3A7673709BEBAFE002E9B53 /* build.c:29 */ = {
+		isa = PBXFileBreakpoint;
+		actions = (
+		);
+		continueAfterActions = 0;
+		delayBeforeContinue = 0;
+		fileReference = D3A7662C09BEB5EA002E9B53 /* build.c */;
+		hitCount = 0;
+		lineNumber = 29;
+		modificationTime = 163494654.595558;
+		state = 1;
+	};
+	D3A7676B09BEBCF7002E9B53 /* libsqlite3.a */ = {
 		activeExec = 0;
 	};
 }
