@@ -45,13 +45,15 @@
 		sourceDirectories = (
 		);
 	};
+	D3285C4E09BF7FF700468114 /* mod_echo.dylib */ = {
+		activeExec = 0;
+	};
 	D3A7638009BEAAEE002E9B53 /* Project object */ = {
 		activeBuildConfigurationName = Debug;
 		activeBuildStyle = D31D4A3209BEBE12001112B8 /* Development */;
 		activeExecutable = D31D509109BECBA3001112B8 /* freeswitch */;
-		activeTarget = D3A763FE09BEB271002E9B53 /* All */;
+		activeTarget = D3285C4E09BF7FF700468114 /* mod_echo.dylib */;
 		addToTargets = (
-			D31D508F09BECBA3001112B8 /* freeswitch */,
 		);
 		breakpoints = (
 			D3A7673709BEBAFE002E9B53 /* build.c:29 */,
@@ -124,6 +126,30 @@
 					PBXFindDataSource_LocationID,
 				);
 			};
+			PBXConfiguration.PBXFileTableDataSource3.XCSCMDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					20,
+					20,
+					838,
+					20,
+					48.1626,
+					43,
+					43,
+					20,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXFileDataSource_SCM_ColumnID,
+					PBXFileDataSource_FiletypeID,
+					PBXFileDataSource_Filename_ColumnID,
+					PBXFileDataSource_Built_ColumnID,
+					PBXFileDataSource_ObjectSize_ColumnID,
+					PBXFileDataSource_Errors_ColumnID,
+					PBXFileDataSource_Warnings_ColumnID,
+					PBXFileDataSource_Target_ColumnID,
+				);
+			};
 			PBXConfiguration.PBXTargetDataSource.PBXTargetDataSource = {
 				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
 				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
@@ -146,8 +172,8 @@
 					PBXFileDataSource_Warnings_ColumnID,
 				);
 			};
-			PBXPerProjectTemplateStateSaveDate = 163499686;
-			PBXWorkspaceStateSaveDate = 163499686;
+			PBXPerProjectTemplateStateSaveDate = 163542845;
+			PBXWorkspaceStateSaveDate = 163542845;
 		};
 		sourceControlManager = D3A7638409BEAAEE002E9B53 /* Source Control */;
 		userBuildSettings = {

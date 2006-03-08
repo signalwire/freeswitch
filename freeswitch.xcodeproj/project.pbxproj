@@ -27,6 +27,7 @@
 				D31D500B09BEC88E001112B8 /* PBXTargetDependency */,
 				D31D508B09BECB94001112B8 /* PBXTargetDependency */,
 				D31D50B109BECE4C001112B8 /* PBXTargetDependency */,
+				D3285C6C09BF829700468114 /* PBXTargetDependency */,
 			);
 			name = All;
 			productName = All;
@@ -475,6 +476,14 @@
 		D31D508809BECB84001112B8 /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D508709BECB84001112B8 /* libresample.h */; };
 		D31D509809BECBE3001112B8 /* switch.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D509709BECBE3001112B8 /* switch.c */; };
 		D31D509909BECBF4001112B8 /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
+		D3285C2209BF7AF100468114 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
+		D3285C2309BF7AF100468114 /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
+		D3285C2709BF7B4700468114 /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
+		D3285C5209BF803100468114 /* mod_echo.c in Sources */ = {isa = PBXBuildFile; fileRef = D3285C2009BF790700468114 /* mod_echo.c */; };
+		D3285C5309BF803A00468114 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
+		D3285C5409BF803A00468114 /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
+		D3285C5509BF803A00468114 /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
+		D3285C5609BF803A00468114 /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
 		D3A763A809BEAD00002E9B53 /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A509BEAD00002E9B53 /* filterkit.c */; };
 		D3A763A909BEAD00002E9B53 /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A609BEAD00002E9B53 /* resample.c */; };
 		D3A763AA09BEAD00002E9B53 /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A709BEAD00002E9B53 /* resamplesubs.c */; };
@@ -682,6 +691,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = D31D508F09BECBA3001112B8;
 			remoteInfo = freeswitch;
+		};
+		D3285C6B09BF829700468114 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3285C4E09BF7FF700468114 /* mod_echo.dylib */;
+			remoteInfo = mod_echo.dylib;
 		};
 		D3A763FF09BEB27C002E9B53 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -1003,6 +1019,8 @@
 		D31D508709BECB84001112B8 /* libresample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libresample.h; path = "libs/libresample-0.1.3/include/libresample.h"; sourceTree = "<group>"; };
 		D31D509009BECBA3001112B8 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D31D509709BECBE3001112B8 /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = src/switch.c; sourceTree = "<group>"; };
+		D3285C2009BF790700468114 /* mod_echo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_echo.c; path = src/mod/applications/mod_echo/mod_echo.c; sourceTree = "<group>"; };
+		D3285C4F09BF7FF700468114 /* mod_echo.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = mod_echo.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3A7639309BEAB96002E9B53 /* libresample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libresample.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3A763A509BEAD00002E9B53 /* filterkit.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = filterkit.c; path = "libs/libresample-0.1.3/src/filterkit.c"; sourceTree = "<group>"; };
 		D3A763A609BEAD00002E9B53 /* resample.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = resample.c; path = "libs/libresample-0.1.3/src/resample.c"; sourceTree = "<group>"; };
@@ -1132,7 +1150,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D3285C2209BF7AF100468114 /* libsqlite3.dylib in Frameworks */,
+				D3285C2709BF7B4700468114 /* libapr.dylib in Frameworks */,
+				D3285C2309BF7AF100468114 /* libapr-util.dylib in Frameworks */,
 				D31D509909BECBF4001112B8 /* libfreeswitch.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3285C4D09BF7FF700468114 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3285C5309BF803A00468114 /* libsqlite3.dylib in Frameworks */,
+				D3285C5409BF803A00468114 /* libapr.dylib in Frameworks */,
+				D3285C5509BF803A00468114 /* libapr-util.dylib in Frameworks */,
+				D3285C5609BF803A00468114 /* libfreeswitch.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1982,9 +2014,34 @@
 			name = freeswitch;
 			sourceTree = "<group>";
 		};
+		D3285C1D09BF78BE00468114 /* freeswitch_modules */ = {
+			isa = PBXGroup;
+			children = (
+				D3285C1E09BF78CB00468114 /* applications */,
+			);
+			name = freeswitch_modules;
+			sourceTree = "<group>";
+		};
+		D3285C1E09BF78CB00468114 /* applications */ = {
+			isa = PBXGroup;
+			children = (
+				D3285C1F09BF78D800468114 /* mod_echo */,
+			);
+			name = applications;
+			sourceTree = "<group>";
+		};
+		D3285C1F09BF78D800468114 /* mod_echo */ = {
+			isa = PBXGroup;
+			children = (
+				D3285C2009BF790700468114 /* mod_echo.c */,
+			);
+			name = mod_echo;
+			sourceTree = "<group>";
+		};
 		D3A7637E09BEAAEE002E9B53 = {
 			isa = PBXGroup;
 			children = (
+				D3285C1D09BF78BE00468114 /* freeswitch_modules */,
 				D31D509309BECBCA001112B8 /* freeswitch */,
 				D3A7638B09BEAB0A002E9B53 /* core_dependencies */,
 				D31D502C09BEC9CC001112B8 /* core_freeswitch */,
@@ -2050,6 +2107,7 @@
 				D31D4FB609BEC85A001112B8 /* libapr-util.a */,
 				D31D504209BECA92001112B8 /* libfreeswitch.dylib */,
 				D31D509009BECBA3001112B8 /* freeswitch */,
+				D3285C4F09BF7FF700468114 /* mod_echo.dylib */,
 			);
 			name = products;
 			sourceTree = "<group>";
@@ -2412,6 +2470,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3285C4B09BF7FF700468114 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3A7638F09BEAB96002E9B53 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -2647,6 +2712,32 @@
 			productReference = D31D509009BECBA3001112B8 /* freeswitch */;
 			productType = "com.apple.product-type.tool";
 		};
+		D3285C4E09BF7FF700468114 /* mod_echo.dylib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3285C5009BF800B00468114 /* Build configuration list for PBXNativeTarget "mod_echo.dylib" */;
+			buildPhases = (
+				D3285C4B09BF7FF700468114 /* Headers */,
+				D3285C4C09BF7FF700468114 /* Sources */,
+				D3285C4D09BF7FF700468114 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_echo;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = mod_echo.dylib;
+			productName = mod_echo;
+			productReference = D3285C4F09BF7FF700468114 /* mod_echo.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
 		D3A7639209BEAB96002E9B53 /* libresample.a */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D3A7639509BEAB97002E9B53 /* Build configuration list for PBXNativeTarget "libresample.a" */;
@@ -2806,6 +2897,7 @@
 				D31D4FB509BEC85A001112B8 /* libapr-util.a */,
 				D31D504109BECA92001112B8 /* libfreeswitch.dylib */,
 				D31D508F09BECBA3001112B8 /* freeswitch */,
+				D3285C4E09BF7FF700468114 /* mod_echo.dylib */,
 			);
 		};
 /* End PBXProject section */
@@ -2848,7 +2940,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "if [ -e Makefile ]; then\n\tversion=`/usr/local/bin/svnversion . -n`\n\t/bin/cat src/include/switch_version.h.in | /usr/bin/sed \"s/@SVN_VERSION@/$version/g\" > src/include/\tswitch_version.h\n\techo $version > .version\n\texit 0;\nfi\n./configure\nversion=`/usr/local/bin/svnversion . -n`\n/bin/cat src/include/switch_version.h.in | /usr/bin/sed \"s/@SVN_VERSION@/$version/g\" > src/include/switch_version.h\necho $version > .version\nexit 0;\n";
+			shellScript = "if [ -e Makefile ]; then\n\tversion=`/usr/local/bin/svnversion . -n`\n\t/bin/cat src/include/switch_version.h.in | /usr/bin/sed \"s/@SVN_VERSION@/$version/g\" > src/include/switch_version.h\n\techo $version > .version\n\texit 0;\nfi\n./configure\nversion=`/usr/local/bin/svnversion . -n`\n/bin/cat src/include/switch_version.h.in | /usr/bin/sed \"s/@SVN_VERSION@/$version/g\" > src/include/switch_version.h\necho $version > .version\nexit 0;\n";
 		};
 		D31D50A009BECC2C001112B8 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -3171,6 +3263,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3285C4C09BF7FF700468114 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3285C5209BF803100468114 /* mod_echo.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3A7639009BEAB96002E9B53 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -3344,6 +3444,11 @@
 			target = D31D508F09BECBA3001112B8 /* freeswitch */;
 			targetProxy = D31D50B009BECE4C001112B8 /* PBXContainerItemProxy */;
 		};
+		D3285C6C09BF829700468114 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3285C4E09BF7FF700468114 /* mod_echo.dylib */;
+			targetProxy = D3285C6B09BF829700468114 /* PBXContainerItemProxy */;
+		};
 		D3A7640009BEB27C002E9B53 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D3A763F209BEB1CF002E9B53 /* libteletone.a */;
@@ -3382,7 +3487,8 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
 				OTHER_CFLAGS = (
 					"-g",
 					"-O2",
@@ -3398,31 +3504,6 @@
 				ZERO_LINK = YES;
 			};
 			name = Debug;
-		};
-		D31D4A5109BEBF5D001112B8 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				OTHER_CFLAGS = (
-					"-g",
-					"-O2",
-				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(OTHER_CFLAGS)",
-					"-DDARWIN",
-					"-DSIGPROCMASK_SETS_THREAD_MASK",
-					"-no-cpp-precomp",
-				);
-				PREBINDING = NO;
-				PRODUCT_NAME = apr;
-				ZERO_LINK = NO;
-			};
-			name = Release;
 		};
 		D31D4E6C09BEC3E1001112B8 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3433,7 +3514,8 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
 				OTHER_CFLAGS = (
 					"-g",
 					"-O2",
@@ -3449,30 +3531,6 @@
 				ZERO_LINK = YES;
 			};
 			name = Debug;
-		};
-		D31D4E6D09BEC3E1001112B8 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				OTHER_CFLAGS = (
-					"-g",
-					"-O2",
-				);
-				OTHER_CPLUSPLUSFLAGS = (
-					"$(OTHER_CFLAGS)",
-					"-DDARWIN",
-					"-DSIGPROCMASK_SETS_THREAD_MASK",
-					"-no-cpp-precomp",
-				);
-				PREBINDING = NO;
-				PRODUCT_NAME = apr;
-				ZERO_LINK = NO;
-			};
-			name = Release;
 		};
 		D31D4E7E09BEC574001112B8 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3484,7 +3542,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
+				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
 				OTHER_LDFLAGS = (
 					"-liconv",
 					"-lsqlite3",
@@ -3496,21 +3554,6 @@
 			};
 			name = Debug;
 		};
-		D31D4E7F09BEC574001112B8 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = "apr-util";
-				ZERO_LINK = NO;
-			};
-			name = Release;
-		};
 		D31D501009BEC8B9001112B8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3520,58 +3563,41 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
+				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
 				PREBINDING = NO;
 				PRODUCT_NAME = "apr-util";
 				ZERO_LINK = YES;
 			};
 			name = Debug;
 		};
-		D31D501109BEC8B9001112B8 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = "apr-util";
-				ZERO_LINK = NO;
-			};
-			name = Release;
-		};
 		D31D504709BECAAA001112B8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
+				DSTROOT = "/tmp/$(PROJECT_NAME).dst";
 				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
+				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
+				OTHER_CFLAGS = (
+					"-DMACOSX",
+					"-fPIC",
+					"-Wall",
+					"-g",
+					"-O2",
+					"-DDARWIN",
+					"-DSIGPROCMASK_SETS_THREAD_MASK",
+					"-no-cpp-precomp",
+					"-DSWITCH_PREFIX_DIR=\"$(FREESWITCH_PATH)\"",
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = freeswitch;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
-		};
-		D31D504809BECAAA001112B8 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = freeswitch;
-				ZERO_LINK = NO;
-			};
-			name = Release;
 		};
 		D31D509509BECBCB001112B8 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3582,7 +3608,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(HOME)/bin";
+				INSTALL_PATH = "$(FREESWITCH_PATH)/bin";
 				LIBRARY_SEARCH_PATHS = (
 					"$(LIBRARY_SEARCH_PATHS)",
 					"$(SRCROOT)/.xcodebuild/Debug",
@@ -3593,37 +3619,31 @@
 			};
 			name = Debug;
 		};
-		D31D509609BECBCB001112B8 /* Release */ = {
+		D3285C5109BF800B00468114 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = "$(HOME)/bin";
-				LIBRARY_SEARCH_PATHS = (
-					"$(LIBRARY_SEARCH_PATHS)",
-					"$(SRCROOT)/.xcodebuild/Debug",
-				);
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = "$(FREESWITCH_PATH)/mod";
 				PREBINDING = NO;
-				PRODUCT_NAME = freeswitch;
-				ZERO_LINK = NO;
+				PRODUCT_NAME = mod_echo;
+				ZERO_LINK = YES;
 			};
-			name = Release;
+			name = Debug;
 		};
 		D3A7638209BEAAEE002E9B53 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
+				FREESWITCH_PATH = /usr/local/freeswitch;
+				INSTALL_PATH = "$(FREESWITCH_PATH)";
 			};
 			name = Debug;
-		};
-		D3A7638309BEAAEE002E9B53 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-			};
-			name = Release;
 		};
 		D3A7639609BEAB97002E9B53 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3634,27 +3654,13 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
+				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
 				MACH_O_TYPE = staticlib;
 				PREBINDING = NO;
 				PRODUCT_NAME = resample;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
-		};
-		D3A7639709BEAB97002E9B53 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = resample;
-				ZERO_LINK = NO;
-			};
-			name = Release;
 		};
 		D3A763FC09BEB216002E9B53 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3667,28 +3673,13 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
+				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
 				MACH_O_TYPE = staticlib;
 				PREBINDING = NO;
 				PRODUCT_NAME = teletone;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
-		};
-		D3A763FD09BEB216002E9B53 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = teletone;
-				ZERO_LINK = NO;
-			};
-			name = Release;
 		};
 		D3A7641B09BEB306002E9B53 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3700,27 +3691,12 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
+				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
 				PREBINDING = NO;
 				PRODUCT_NAME = teletone;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
-		};
-		D3A7641C09BEB306002E9B53 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = teletone;
-				ZERO_LINK = NO;
-			};
-			name = Release;
 		};
 		D3A7641E09BEB306002E9B53 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -3733,17 +3709,6 @@
 			};
 			name = Debug;
 		};
-		D3A7641F09BEB306002E9B53 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				PRODUCT_NAME = All;
-				ZERO_LINK = NO;
-			};
-			name = Release;
-		};
 		D3A7643609BEB4A7002E9B53 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3754,6 +3719,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
 				INSTALL_PATH = /usr/local/lib;
 				OTHER_CFLAGS = (
 					"-DNDEBUG",
@@ -3778,21 +3744,6 @@
 			};
 			name = Debug;
 		};
-		D3A7643709BEB4A7002E9B53 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				EXECUTABLE_PREFIX = lib;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = sqlite3;
-				ZERO_LINK = NO;
-			};
-			name = Release;
-		};
 		D3A767B609BEBD34002E9B53 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3802,7 +3753,8 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
 				OTHER_CFLAGS = (
 					"-DNDEBUG",
 					"-DSQLITE_TEST=1",
@@ -3820,20 +3772,6 @@
 			};
 			name = Debug;
 		};
-		D3A767B709BEBD34002E9B53 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = sqlite3;
-				ZERO_LINK = NO;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -3841,118 +3779,113 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D31D4A5009BEBF5D001112B8 /* Debug */,
-				D31D4A5109BEBF5D001112B8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		D31D4E6B09BEC3E1001112B8 /* Build configuration list for PBXNativeTarget "libapr.a" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D31D4E6C09BEC3E1001112B8 /* Debug */,
-				D31D4E6D09BEC3E1001112B8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		D31D4E7D09BEC574001112B8 /* Build configuration list for PBXNativeTarget "libapr-util.dylib" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D31D4E7E09BEC574001112B8 /* Debug */,
-				D31D4E7F09BEC574001112B8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		D31D500F09BEC8B9001112B8 /* Build configuration list for PBXNativeTarget "libapr-util.a" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D31D501009BEC8B9001112B8 /* Debug */,
-				D31D501109BEC8B9001112B8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		D31D504609BECAAA001112B8 /* Build configuration list for PBXNativeTarget "libfreeswitch.dylib" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D31D504709BECAAA001112B8 /* Debug */,
-				D31D504809BECAAA001112B8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		D31D509409BECBCB001112B8 /* Build configuration list for PBXNativeTarget "freeswitch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D31D509509BECBCB001112B8 /* Debug */,
-				D31D509609BECBCB001112B8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
+		};
+		D3285C5009BF800B00468114 /* Build configuration list for PBXNativeTarget "mod_echo.dylib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3285C5109BF800B00468114 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
 		};
 		D3A7638109BEAAEE002E9B53 /* Build configuration list for PBXProject "freeswitch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3A7638209BEAAEE002E9B53 /* Debug */,
-				D3A7638309BEAAEE002E9B53 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		D3A7639509BEAB97002E9B53 /* Build configuration list for PBXNativeTarget "libresample.a" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3A7639609BEAB97002E9B53 /* Debug */,
-				D3A7639709BEAB97002E9B53 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		D3A763FB09BEB216002E9B53 /* Build configuration list for PBXNativeTarget "libteletone.a" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3A763FC09BEB216002E9B53 /* Debug */,
-				D3A763FD09BEB216002E9B53 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		D3A7641A09BEB306002E9B53 /* Build configuration list for PBXNativeTarget "libteletone.dylib" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3A7641B09BEB306002E9B53 /* Debug */,
-				D3A7641C09BEB306002E9B53 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		D3A7641D09BEB306002E9B53 /* Build configuration list for PBXAggregateTarget "All" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3A7641E09BEB306002E9B53 /* Debug */,
-				D3A7641F09BEB306002E9B53 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		D3A7643509BEB4A7002E9B53 /* Build configuration list for PBXNativeTarget "libsqlite3.dylib" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3A7643609BEB4A7002E9B53 /* Debug */,
-				D3A7643709BEB4A7002E9B53 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 		D3A767B509BEBD34002E9B53 /* Build configuration list for PBXNativeTarget "libsqlite3.a" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3A767B609BEBD34002E9B53 /* Debug */,
-				D3A767B709BEBD34002E9B53 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
+			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
