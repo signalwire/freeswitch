@@ -261,15 +261,13 @@
 							<array>
 								<string>D3A7637E09BEAAEE002E9B53</string>
 								<string>D3285C1D09BF78BE00468114</string>
+								<string>D3A7639409BEAB96002E9B53</string>
 								<string>1C37FBAC04509CD000000102</string>
-								<string>1C08E77C0454961000C914BD</string>
-								<string>E2644B35053B69B200211256</string>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>21</integer>
-									<integer>8</integer>
+									<integer>20</integer>
 								</array>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateVisibleRectKey</key>
@@ -373,9 +371,9 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
-				<string>D3285C0C09BF775000468114</string>
+				<string>D331517D09BF94DC0040C1CF</string>
 				<string>1CE0B1FE06471DED0097A5F4</string>
-				<string>D3285C0D09BF775000468114</string>
+				<string>D331517E09BF94DC0040C1CF</string>
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -557,7 +555,7 @@
 							<key>ContentConfiguration</key>
 							<dict>
 								<key>PBXBuildLogShowsTranscriptDefaultKey</key>
-								<string>{{0, 73}, {1435, 545}}</string>
+								<string>{{0, 5}, {1435, 613}}</string>
 								<key>PBXProjectModuleGUID</key>
 								<string>XCMainBuildResultsModuleGUID</string>
 								<key>PBXProjectModuleLabel</key>
@@ -595,7 +593,7 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>D3A763A109BEAC72002E9B53</string>
-				<string>D3285C0E09BF775000468114</string>
+				<string>D331517F09BF94DC0040C1CF</string>
 				<string>1CD0528F0623707200166675</string>
 				<string>XCMainBuildResultsModuleGUID</string>
 			</array>
@@ -900,8 +898,8 @@
 										<string>yes</string>
 										<key>sizes</key>
 										<array>
-											<string>{{0, 0}, {367, 168}}</string>
-											<string>{{0, 173}, {367, 270}}</string>
+											<string>{{0, 0}, {493, 168}}</string>
+											<string>{{0, 173}, {493, 270}}</string>
 										</array>
 									</dict>
 									<key>VerticalSplitView</key>
@@ -950,9 +948,9 @@
 			<key>TableOfContents</key>
 			<array>
 				<string>1C0AD2B3069F1EA900FABCE6</string>
-				<string>D3285C1309BF779F00468114</string>
+				<string>D331518109BF95E60040C1CF</string>
 				<string>1CD0528B0623707200166675</string>
-				<string>D3285C1409BF779F00468114</string>
+				<string>D331518209BF95E60040C1CF</string>
 			</array>
 			<key>ToolbarConfiguration</key>
 			<string>xcode.toolbar.config.run</string>

@@ -696,7 +696,7 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3285C4E09BF7FF700468114 /* mod_echo.dylib */;
+			remoteGlobalIDString = D3285C4E09BF7FF700468114;
 			remoteInfo = mod_echo.dylib;
 		};
 		D3A763FF09BEB27C002E9B53 /* PBXContainerItemProxy */ = {
@@ -1942,12 +1942,12 @@
 			path = "libs/apr-util-1.2.2/include/private";
 			sourceTree = "<group>";
 		};
-		D31D502C09BEC9CC001112B8 /* core_freeswitch */ = {
+		D31D502C09BEC9CC001112B8 /* freeswitch_core */ = {
 			isa = PBXGroup;
 			children = (
 				D31D502D09BEC9DE001112B8 /* freeswitch */,
 			);
-			name = core_freeswitch;
+			name = freeswitch_core;
 			sourceTree = "<group>";
 		};
 		D31D502D09BEC9DE001112B8 /* freeswitch */ = {
@@ -2043,14 +2043,14 @@
 			children = (
 				D3285C1D09BF78BE00468114 /* freeswitch_modules */,
 				D31D509309BECBCA001112B8 /* freeswitch */,
-				D3A7638B09BEAB0A002E9B53 /* core_dependencies */,
-				D31D502C09BEC9CC001112B8 /* core_freeswitch */,
+				D3A7638B09BEAB0A002E9B53 /* dependencies_core */,
+				D31D502C09BEC9CC001112B8 /* freeswitch_core */,
 				D3A7653209BEB5A3002E9B53 /* existing_frameworks */,
 				D3A7639409BEAB96002E9B53 /* products */,
 			);
 			sourceTree = "<group>";
 		};
-		D3A7638B09BEAB0A002E9B53 /* core_dependencies */ = {
+		D3A7638B09BEAB0A002E9B53 /* dependencies_core */ = {
 			isa = PBXGroup;
 			children = (
 				D31D4A4609BEBE61001112B8 /* apr-1.2.2 */,
@@ -2059,7 +2059,7 @@
 				D3A763E209BEB15E002E9B53 /* teletone */,
 				D3A7643A09BEB500002E9B53 /* sqlite-3.2.8 */,
 			);
-			name = core_dependencies;
+			name = dependencies_core;
 			sourceTree = "<group>";
 		};
 		D3A7638C09BEAB1F002E9B53 /* resample */ = {
@@ -2768,6 +2768,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D3A763FB09BEB216002E9B53 /* Build configuration list for PBXNativeTarget "libteletone.a" */;
 			buildPhases = (
+				D33151A809BF9D0D0040C1CF /* ShellScript */,
 				D3A763EF09BEB1CF002E9B53 /* Headers */,
 				D3A763F009BEB1CF002E9B53 /* Sources */,
 				D3A763F109BEB1CF002E9B53 /* Frameworks */,
@@ -2954,6 +2955,19 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
 			shellScript = "if [ -d \".xcodebuild/Debug/mod\" ]; then\n\texit 0;\nfi\nmkdir .xcodebuild/Debug/{mod,log,conf,db}\ntouch .xcodebuild/Debug/conf/freeswitch.conf\ntouch .xcodebuild/Debug/conf/modules.conf";
+		};
+		D33151A809BF9D0D0040C1CF /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "";
 		};
 		D3A763D409BEB006002E9B53 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -3488,7 +3502,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
-				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				OTHER_CFLAGS = (
 					"-g",
 					"-O2",
@@ -3509,13 +3523,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
-				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				OTHER_CFLAGS = (
 					"-g",
 					"-O2",
@@ -3542,7 +3557,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				OTHER_LDFLAGS = (
 					"-liconv",
 					"-lsqlite3",
@@ -3563,7 +3578,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				PREBINDING = NO;
 				PRODUCT_NAME = "apr-util";
 				ZERO_LINK = YES;
@@ -3574,14 +3589,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
-				DSTROOT = "/tmp/$(PROJECT_NAME).dst";
 				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				OTHER_CFLAGS = (
 					"-DMACOSX",
 					"-fPIC",
@@ -3591,7 +3605,12 @@
 					"-DDARWIN",
 					"-DSIGPROCMASK_SETS_THREAD_MASK",
 					"-no-cpp-precomp",
-					"-DSWITCH_PREFIX_DIR=\"$(FREESWITCH_PATH)\"",
+					"-DSWITCH_MOD_DIR=\"$(SWITCH_MOD_DIR)\"",
+					"-DSWITCH_PREFIX_DIR=\"$(SWITCH_PREFIX_DIR)\"",
+					"-DSWITCH_CONF_DIR=\"$(SWITCH_CONF_DIR)\"",
+					"-DSWITCH_DB_DIR=\"$(SWITCH_DB_DIR)\"",
+					"-DSWITCH_LOG_DIR=\"$(SWITCH_LOG_DIR)\"",
+					"-DSWITCH_SCRIPT_DIR=\"$(SWITCH_SCRIPT_DIR)\"",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = freeswitch;
@@ -3608,13 +3627,14 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(FREESWITCH_PATH)/bin";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/bin";
 				LIBRARY_SEARCH_PATHS = (
 					"$(LIBRARY_SEARCH_PATHS)",
 					"$(SRCROOT)/.xcodebuild/Debug",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = freeswitch;
+				STRIP_INSTALLED_PRODUCT = YES;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -3623,13 +3643,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
+				DSTROOT = /;
 				EXECUTABLE_PREFIX = "";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(FREESWITCH_PATH)/mod";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/mod";
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_echo;
 				ZERO_LINK = YES;
@@ -3640,8 +3661,24 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
-				FREESWITCH_PATH = /usr/local/freeswitch;
-				INSTALL_PATH = "$(FREESWITCH_PATH)";
+				DSTROOT = /;
+				FREESWITCH_INSTALL = "$(SWITCH_PREFIX_DIR)";
+				INSTALL_MODE_FLAG = "ug+rwX";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)";
+				OTHER_CFLAGS = (
+					"-DSWITCH_MOD_DIR=\"$(SWITCH_MOD_DIR)\"",
+					"-DSWITCH_PREFIX_DIR=\"$(SWITCH_PREFIX_DIR)\"",
+					"-DSWITCH_CONF_DIR=\"$(SWITCH_CONF_DIR)\"",
+					"-DSWITCH_DB_DIR=\"$(SWITCH_DB_DIR)\"",
+					"-DSWITCH_LOG_DIR=\"$(SWITCH_LOG_DIR)\"",
+					"-DSWITCH_SCRIPT_DIR=\"$(SWITCH_SCRIPT_DIR)\"",
+				);
+				SWITCH_CONF = "$(SWITCH_PREFIX_DIR)/conf";
+				SWITCH_DB_DIR = "$(SWITCH_PREFIX_DIR)/db";
+				SWITCH_LOG_DIR = "$(SWITCH_PREFIX_DIR)/log";
+				SWITCH_MOD_DIR = "$(SWITCH_PREFIX_DIR)/mod";
+				SWITCH_PREFIX_DIR = "/usr/local/$(PROJECT_NAME)";
+				SWITCH_SCRIPT_DIR = "$(SWITCH_PREFIX_DIR)/scripts";
 			};
 			name = Debug;
 		};
@@ -3654,7 +3691,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				MACH_O_TYPE = staticlib;
 				PREBINDING = NO;
 				PRODUCT_NAME = resample;
@@ -3673,7 +3710,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				MACH_O_TYPE = staticlib;
 				PREBINDING = NO;
 				PRODUCT_NAME = teletone;
@@ -3691,7 +3728,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				PREBINDING = NO;
 				PRODUCT_NAME = teletone;
 				ZERO_LINK = YES;
@@ -3720,7 +3757,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
-				INSTALL_PATH = /usr/local/lib;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				OTHER_CFLAGS = (
 					"-DNDEBUG",
 					"-DSQLITE_TEST=1",
@@ -3754,7 +3791,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
-				INSTALL_PATH = "$(FREESWITCH_PATH)/lib";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				OTHER_CFLAGS = (
 					"-DNDEBUG",
 					"-DSQLITE_TEST=1",
