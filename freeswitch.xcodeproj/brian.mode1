@@ -256,20 +256,12 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateExpansionKey</key>
 							<array>
 								<string>D3A7637E09BEAAEE002E9B53</string>
-								<string>D31D509309BECBCA001112B8</string>
 								<string>D3A7639409BEAB96002E9B53</string>
 								<string>1C37FBAC04509CD000000102</string>
-								<string>D31D509E09BECC15001112B8</string>
 								<string>1C37FABC05509CD000000102</string>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
-							<array>
-								<array>
-									<integer>31</integer>
-									<integer>30</integer>
-									<integer>18</integer>
-								</array>
-							</array>
+							<array/>
 							<key>PBXSmartGroupTreeModuleOutlineStateVisibleRectKey</key>
 							<string>{{0, 0}, {368, 812}}</string>
 						</dict>

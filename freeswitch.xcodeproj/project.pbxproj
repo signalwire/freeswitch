@@ -993,7 +993,7 @@
 		D31D505C09BECAED001112B8 /* switch_version.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_version.h; path = src/include/switch_version.h; sourceTree = "<group>"; };
 		D31D505D09BECAED001112B8 /* switch.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch.h; path = src/include/switch.h; sourceTree = "<group>"; };
 		D31D508709BECB84001112B8 /* libresample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libresample.h; path = "libs/libresample-0.1.3/include/libresample.h"; sourceTree = "<group>"; };
-		D31D509009BECBA3001112B8 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
+		D31D509009BECBA3001112B8 /* freeswitch */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D31D509709BECBE3001112B8 /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = src/switch.c; sourceTree = "<group>"; };
 		D3A7639309BEAB96002E9B53 /* libresample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libresample.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3A763A509BEAD00002E9B53 /* filterkit.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = filterkit.c; path = "libs/libresample-0.1.3/src/filterkit.c"; sourceTree = "<group>"; };
@@ -2826,7 +2826,7 @@
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
+			shellPath = /bin/bash;
 			shellScript = "if [ -d \"libs/apr-util-1.2.2\" ]; then\n\texit 0;\nfi\n\ncurl http://svn.freeswitch.org/downloads/libs/apr-util-1.2.2.tar.gz -o libs/apr-util-1.2.2.tar.gz\ncd libs\ntar zxf apr-util-1.2.2.tar.gz\ncd apr-util-1.2.2\n./configure --with-apr=../apr-1.2.2\nexit 0;";
 		};
 		D31D504309BECAA1001112B8 /* ShellScript */ = {
