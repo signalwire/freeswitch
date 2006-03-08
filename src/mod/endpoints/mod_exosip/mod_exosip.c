@@ -982,7 +982,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 	int mline = 0, pos = 0;
 	switch_channel *channel = NULL;
 	char name[128];
-	char *dpayload, *dname, *drate;
+	char *dpayload, *dname = NULL, *drate = NULL;
 	char *remote_sdp_str = NULL;
 
 	if ((session = switch_core_session_request(&exosip_endpoint_interface, NULL)) != 0) {

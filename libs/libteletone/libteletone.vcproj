@@ -62,6 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				ModuleDefinitionFile="$(InputDir)teletone.def"
 				OptimizeReferences="1"
 				EnableCOMDATFolding="1"
 				OptimizeForWindows98="1"
@@ -136,6 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				ModuleDefinitionFile="$(InputDir)teletone.def"
 			/>
 			<Tool
 				Name="VCALinkTool"

@@ -148,7 +148,7 @@
 				AdditionalDependencies="js32.lib  curllib.lib ws2_32.lib winmm.lib sqlite.lib fdlibm.lib libnspr4.lib libplc4.lib  libplds4.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_spidermonkey.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\js\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\lib\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\sqlite\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\js\nspr\lib&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\js\src\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\lib\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\sqlite\Release&quot;;&quot;$(InputDir)..\..\..\..\libs\js\nspr\lib&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
