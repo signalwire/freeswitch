@@ -721,7 +721,7 @@ static size_t hash_callback(void *ptr, size_t size, size_t nmemb, void *data)
 
 static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
-	register size_t realsize = size * nmemb;
+	register unsigned int realsize = (unsigned int)(size * nmemb);
 	struct config_data *config_data = data;
 
 	write(config_data->fd, ptr, realsize);
