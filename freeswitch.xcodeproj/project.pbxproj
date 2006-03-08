@@ -7,19 +7,6 @@
 	objects = {
 
 /* Begin PBXAggregateTarget section */
-		D31D501E09BEC96E001112B8 /* core_dependencies */ = {
-			isa = PBXAggregateTarget;
-			buildConfigurationList = D31D502109BEC978001112B8 /* Build configuration list for PBXAggregateTarget "core_dependencies" */;
-			buildPhases = (
-			);
-			buildSettings = {
-				PRODUCT_NAME = core_dependancies;
-			};
-			dependencies = (
-			);
-			name = core_dependencies;
-			productName = core_dependancies;
-		};
 		D3A763FE09BEB271002E9B53 /* All */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = D3A7641D09BEB306002E9B53 /* Build configuration list for PBXAggregateTarget "All" */;
@@ -38,6 +25,7 @@
 				D31D4E7109BEC40D001112B8 /* PBXTargetDependency */,
 				D31D500909BEC88B001112B8 /* PBXTargetDependency */,
 				D31D500B09BEC88E001112B8 /* PBXTargetDependency */,
+				D31D508B09BECB94001112B8 /* PBXTargetDependency */,
 			);
 			name = All;
 			productName = All;
@@ -445,6 +433,47 @@
 		D31D500309BEC87B001112B8 /* apr_strmatch.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D4EC009BEC643001112B8 /* apr_strmatch.c */; };
 		D31D500409BEC87B001112B8 /* apr_uri.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D4EE109BEC644001112B8 /* apr_uri.c */; };
 		D31D500609BEC87B001112B8 /* xlate.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D4EE609BEC644001112B8 /* xlate.c */; };
+		D31D505E09BECAF7001112B8 /* switch_buffer.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503009BECA2B001112B8 /* switch_buffer.c */; };
+		D31D505F09BECAF7001112B8 /* switch_caller.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503109BECA2B001112B8 /* switch_caller.c */; };
+		D31D506009BECAF7001112B8 /* switch_channel.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503209BECA2B001112B8 /* switch_channel.c */; };
+		D31D506109BECAF7001112B8 /* switch_config.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503309BECA2B001112B8 /* switch_config.c */; };
+		D31D506209BECAF7001112B8 /* switch_console.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503409BECA2B001112B8 /* switch_console.c */; };
+		D31D506309BECAF7001112B8 /* switch_core.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503509BECA2B001112B8 /* switch_core.c */; };
+		D31D506409BECAF7001112B8 /* switch_event.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503609BECA2B001112B8 /* switch_event.c */; };
+		D31D506509BECAF7001112B8 /* switch_ivr.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503709BECA2B001112B8 /* switch_ivr.c */; };
+		D31D506609BECAF7001112B8 /* switch_loadable_module.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503809BECA2B001112B8 /* switch_loadable_module.c */; };
+		D31D506709BECAF7001112B8 /* switch_mutex.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503909BECA2B001112B8 /* switch_mutex.c */; };
+		D31D506809BECAF7001112B8 /* switch_resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503A09BECA2B001112B8 /* switch_resample.c */; };
+		D31D506909BECAF7001112B8 /* switch_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D503B09BECA2B001112B8 /* switch_utils.c */; };
+		D31D506A09BECAFB001112B8 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D504909BECAED001112B8 /* config.h */; };
+		D31D506B09BECAFB001112B8 /* switch_apr.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D504A09BECAED001112B8 /* switch_apr.h */; };
+		D31D506C09BECAFB001112B8 /* switch_buffer.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D504B09BECAED001112B8 /* switch_buffer.h */; };
+		D31D506D09BECAFB001112B8 /* switch_caller.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D504C09BECAED001112B8 /* switch_caller.h */; };
+		D31D506E09BECAFB001112B8 /* switch_channel.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D504D09BECAED001112B8 /* switch_channel.h */; };
+		D31D506F09BECAFB001112B8 /* switch_config.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D504E09BECAED001112B8 /* switch_config.h */; };
+		D31D507009BECAFB001112B8 /* switch_console.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D504F09BECAED001112B8 /* switch_console.h */; };
+		D31D507109BECAFB001112B8 /* switch_core.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505009BECAED001112B8 /* switch_core.h */; };
+		D31D507209BECAFB001112B8 /* switch_event.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505109BECAED001112B8 /* switch_event.h */; };
+		D31D507309BECAFB001112B8 /* switch_frame.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505209BECAED001112B8 /* switch_frame.h */; };
+		D31D507409BECAFB001112B8 /* switch_ivr.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505309BECAED001112B8 /* switch_ivr.h */; };
+		D31D507509BECAFB001112B8 /* switch_loadable_module.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505409BECAED001112B8 /* switch_loadable_module.h */; };
+		D31D507609BECAFB001112B8 /* switch_module_interfaces.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505509BECAED001112B8 /* switch_module_interfaces.h */; };
+		D31D507709BECAFB001112B8 /* switch_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505609BECAED001112B8 /* switch_mutex.h */; };
+		D31D507809BECAFB001112B8 /* switch_platform.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505709BECAED001112B8 /* switch_platform.h */; };
+		D31D507909BECAFB001112B8 /* switch_resample.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505809BECAED001112B8 /* switch_resample.h */; };
+		D31D507A09BECAFB001112B8 /* switch_sqlite.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505909BECAED001112B8 /* switch_sqlite.h */; };
+		D31D507B09BECAFB001112B8 /* switch_types.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505A09BECAED001112B8 /* switch_types.h */; };
+		D31D507C09BECAFB001112B8 /* switch_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505B09BECAED001112B8 /* switch_utils.h */; };
+		D31D507D09BECAFB001112B8 /* switch_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505C09BECAED001112B8 /* switch_version.h */; };
+		D31D507E09BECAFB001112B8 /* switch.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505D09BECAED001112B8 /* switch.h */; };
+		D31D508109BECB41001112B8 /* libresample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7639309BEAB96002E9B53 /* libresample.a */; };
+		D31D508209BECB44001112B8 /* libteletone.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A763F309BEB1CF002E9B53 /* libteletone.a */; };
+		D31D508309BECB49001112B8 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
+		D31D508409BECB4F001112B8 /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
+		D31D508509BECB51001112B8 /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
+		D31D508809BECB84001112B8 /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D508709BECB84001112B8 /* libresample.h */; };
+		D31D509809BECBE3001112B8 /* switch.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D509709BECBE3001112B8 /* switch.c */; };
+		D31D509909BECBF4001112B8 /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
 		D3A763A809BEAD00002E9B53 /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A509BEAD00002E9B53 /* filterkit.c */; };
 		D3A763A909BEAD00002E9B53 /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A609BEAD00002E9B53 /* resample.c */; };
 		D3A763AA09BEAD00002E9B53 /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A709BEAD00002E9B53 /* resamplesubs.c */; };
@@ -638,6 +667,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = D31D4FB509BEC85A001112B8 /* libapr-util.a */;
 			remoteInfo = "libapr-util.a";
+		};
+		D31D508A09BECB94001112B8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D31D504109BECA92001112B8 /* libfreeswitch.dylib */;
+			remoteInfo = libfreeswitch.dylib;
 		};
 		D3A763FF09BEB27C002E9B53 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -922,6 +958,43 @@
 		D31D4F3B09BEC69C001112B8 /* apu_config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apu_config.h; sourceTree = "<group>"; };
 		D31D4F3E09BEC69C001112B8 /* apu_select_dbm.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apu_select_dbm.h; sourceTree = "<group>"; };
 		D31D4FB609BEC85A001112B8 /* libapr-util.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = "libapr-util.a"; path = ".xcodebuild/Debug/libapr-util.a"; sourceTree = "<group>"; };
+		D31D503009BECA2B001112B8 /* switch_buffer.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_buffer.c; path = src/switch_buffer.c; sourceTree = "<group>"; };
+		D31D503109BECA2B001112B8 /* switch_caller.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_caller.c; path = src/switch_caller.c; sourceTree = "<group>"; };
+		D31D503209BECA2B001112B8 /* switch_channel.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_channel.c; path = src/switch_channel.c; sourceTree = "<group>"; };
+		D31D503309BECA2B001112B8 /* switch_config.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_config.c; path = src/switch_config.c; sourceTree = "<group>"; };
+		D31D503409BECA2B001112B8 /* switch_console.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_console.c; path = src/switch_console.c; sourceTree = "<group>"; };
+		D31D503509BECA2B001112B8 /* switch_core.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_core.c; path = src/switch_core.c; sourceTree = "<group>"; };
+		D31D503609BECA2B001112B8 /* switch_event.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_event.c; path = src/switch_event.c; sourceTree = "<group>"; };
+		D31D503709BECA2B001112B8 /* switch_ivr.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_ivr.c; path = src/switch_ivr.c; sourceTree = "<group>"; };
+		D31D503809BECA2B001112B8 /* switch_loadable_module.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_loadable_module.c; path = src/switch_loadable_module.c; sourceTree = "<group>"; };
+		D31D503909BECA2B001112B8 /* switch_mutex.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_mutex.c; path = src/switch_mutex.c; sourceTree = "<group>"; };
+		D31D503A09BECA2B001112B8 /* switch_resample.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_resample.c; path = src/switch_resample.c; sourceTree = "<group>"; };
+		D31D503B09BECA2B001112B8 /* switch_utils.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_utils.c; path = src/switch_utils.c; sourceTree = "<group>"; };
+		D31D504209BECA92001112B8 /* libfreeswitch.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; name = libfreeswitch.dylib; path = .xcodebuild/Debug/libfreeswitch.dylib; sourceTree = "<group>"; };
+		D31D504909BECAED001112B8 /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = config.h; path = src/include/config.h; sourceTree = "<group>"; };
+		D31D504A09BECAED001112B8 /* switch_apr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_apr.h; path = src/include/switch_apr.h; sourceTree = "<group>"; };
+		D31D504B09BECAED001112B8 /* switch_buffer.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_buffer.h; path = src/include/switch_buffer.h; sourceTree = "<group>"; };
+		D31D504C09BECAED001112B8 /* switch_caller.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_caller.h; path = src/include/switch_caller.h; sourceTree = "<group>"; };
+		D31D504D09BECAED001112B8 /* switch_channel.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_channel.h; path = src/include/switch_channel.h; sourceTree = "<group>"; };
+		D31D504E09BECAED001112B8 /* switch_config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_config.h; path = src/include/switch_config.h; sourceTree = "<group>"; };
+		D31D504F09BECAED001112B8 /* switch_console.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_console.h; path = src/include/switch_console.h; sourceTree = "<group>"; };
+		D31D505009BECAED001112B8 /* switch_core.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_core.h; path = src/include/switch_core.h; sourceTree = "<group>"; };
+		D31D505109BECAED001112B8 /* switch_event.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_event.h; path = src/include/switch_event.h; sourceTree = "<group>"; };
+		D31D505209BECAED001112B8 /* switch_frame.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_frame.h; path = src/include/switch_frame.h; sourceTree = "<group>"; };
+		D31D505309BECAED001112B8 /* switch_ivr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_ivr.h; path = src/include/switch_ivr.h; sourceTree = "<group>"; };
+		D31D505409BECAED001112B8 /* switch_loadable_module.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_loadable_module.h; path = src/include/switch_loadable_module.h; sourceTree = "<group>"; };
+		D31D505509BECAED001112B8 /* switch_module_interfaces.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_module_interfaces.h; path = src/include/switch_module_interfaces.h; sourceTree = "<group>"; };
+		D31D505609BECAED001112B8 /* switch_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_mutex.h; path = src/include/switch_mutex.h; sourceTree = "<group>"; };
+		D31D505709BECAED001112B8 /* switch_platform.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_platform.h; path = src/include/switch_platform.h; sourceTree = "<group>"; };
+		D31D505809BECAED001112B8 /* switch_resample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_resample.h; path = src/include/switch_resample.h; sourceTree = "<group>"; };
+		D31D505909BECAED001112B8 /* switch_sqlite.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_sqlite.h; path = src/include/switch_sqlite.h; sourceTree = "<group>"; };
+		D31D505A09BECAED001112B8 /* switch_types.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_types.h; path = src/include/switch_types.h; sourceTree = "<group>"; };
+		D31D505B09BECAED001112B8 /* switch_utils.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_utils.h; path = src/include/switch_utils.h; sourceTree = "<group>"; };
+		D31D505C09BECAED001112B8 /* switch_version.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_version.h; path = src/include/switch_version.h; sourceTree = "<group>"; };
+		D31D505D09BECAED001112B8 /* switch.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch.h; path = src/include/switch.h; sourceTree = "<group>"; };
+		D31D508709BECB84001112B8 /* libresample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libresample.h; path = "libs/libresample-0.1.3/include/libresample.h"; sourceTree = "<group>"; };
+		D31D509009BECBA3001112B8 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
+		D31D509709BECBE3001112B8 /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = src/switch.c; sourceTree = "<group>"; };
 		D3A7639309BEAB96002E9B53 /* libresample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libresample.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3A763A509BEAD00002E9B53 /* filterkit.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = filterkit.c; path = "libs/libresample-0.1.3/src/filterkit.c"; sourceTree = "<group>"; };
 		D3A763A609BEAD00002E9B53 /* resample.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = resample.c; path = "libs/libresample-0.1.3/src/resample.c"; sourceTree = "<group>"; };
@@ -1032,6 +1105,26 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D31D504009BECA92001112B8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D31D508109BECB41001112B8 /* libresample.a in Frameworks */,
+				D31D508209BECB44001112B8 /* libteletone.a in Frameworks */,
+				D31D508309BECB49001112B8 /* libsqlite3.dylib in Frameworks */,
+				D31D508409BECB4F001112B8 /* libapr.dylib in Frameworks */,
+				D31D508509BECB51001112B8 /* libapr-util.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D31D508E09BECBA3001112B8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D31D509909BECBF4001112B8 /* libfreeswitch.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1809,11 +1902,85 @@
 			path = "libs/apr-util-1.2.2/include/private";
 			sourceTree = "<group>";
 		};
+		D31D502C09BEC9CC001112B8 /* core_freeswitch */ = {
+			isa = PBXGroup;
+			children = (
+				D31D502D09BEC9DE001112B8 /* freeswitch */,
+			);
+			name = core_freeswitch;
+			sourceTree = "<group>";
+		};
+		D31D502D09BEC9DE001112B8 /* freeswitch */ = {
+			isa = PBXGroup;
+			children = (
+				D31D502F09BECA14001112B8 /* src */,
+				D31D502E09BEC9F0001112B8 /* include */,
+			);
+			name = freeswitch;
+			sourceTree = "<group>";
+		};
+		D31D502E09BEC9F0001112B8 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D31D504909BECAED001112B8 /* config.h */,
+				D31D504A09BECAED001112B8 /* switch_apr.h */,
+				D31D504B09BECAED001112B8 /* switch_buffer.h */,
+				D31D504C09BECAED001112B8 /* switch_caller.h */,
+				D31D504D09BECAED001112B8 /* switch_channel.h */,
+				D31D504E09BECAED001112B8 /* switch_config.h */,
+				D31D504F09BECAED001112B8 /* switch_console.h */,
+				D31D505009BECAED001112B8 /* switch_core.h */,
+				D31D505109BECAED001112B8 /* switch_event.h */,
+				D31D505209BECAED001112B8 /* switch_frame.h */,
+				D31D505309BECAED001112B8 /* switch_ivr.h */,
+				D31D505409BECAED001112B8 /* switch_loadable_module.h */,
+				D31D505509BECAED001112B8 /* switch_module_interfaces.h */,
+				D31D505609BECAED001112B8 /* switch_mutex.h */,
+				D31D505709BECAED001112B8 /* switch_platform.h */,
+				D31D505809BECAED001112B8 /* switch_resample.h */,
+				D31D505909BECAED001112B8 /* switch_sqlite.h */,
+				D31D505A09BECAED001112B8 /* switch_types.h */,
+				D31D505B09BECAED001112B8 /* switch_utils.h */,
+				D31D505C09BECAED001112B8 /* switch_version.h */,
+				D31D505D09BECAED001112B8 /* switch.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		D31D502F09BECA14001112B8 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D31D503009BECA2B001112B8 /* switch_buffer.c */,
+				D31D503109BECA2B001112B8 /* switch_caller.c */,
+				D31D503209BECA2B001112B8 /* switch_channel.c */,
+				D31D503309BECA2B001112B8 /* switch_config.c */,
+				D31D503409BECA2B001112B8 /* switch_console.c */,
+				D31D503509BECA2B001112B8 /* switch_core.c */,
+				D31D503609BECA2B001112B8 /* switch_event.c */,
+				D31D503709BECA2B001112B8 /* switch_ivr.c */,
+				D31D503809BECA2B001112B8 /* switch_loadable_module.c */,
+				D31D503909BECA2B001112B8 /* switch_mutex.c */,
+				D31D503A09BECA2B001112B8 /* switch_resample.c */,
+				D31D503B09BECA2B001112B8 /* switch_utils.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D31D509309BECBCA001112B8 /* freeswitch */ = {
+			isa = PBXGroup;
+			children = (
+				D31D509709BECBE3001112B8 /* switch.c */,
+			);
+			name = freeswitch;
+			sourceTree = "<group>";
+		};
 		D3A7637E09BEAAEE002E9B53 = {
 			isa = PBXGroup;
 			children = (
-				D3A7653209BEB5A3002E9B53 /* existing_frameworks */,
+				D31D509309BECBCA001112B8 /* freeswitch */,
 				D3A7638B09BEAB0A002E9B53 /* core_dependencies */,
+				D31D502C09BEC9CC001112B8 /* core_freeswitch */,
+				D3A7653209BEB5A3002E9B53 /* existing_frameworks */,
 				D3A7639409BEAB96002E9B53 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -1852,6 +2019,7 @@
 		D3A7638E09BEAB2A002E9B53 /* include */ = {
 			isa = PBXGroup;
 			children = (
+				D31D508709BECB84001112B8 /* libresample.h */,
 				D3A763AB09BEAD21002E9B53 /* config.h */,
 				D3A763AC09BEAD21002E9B53 /* configtemplate.h */,
 				D3A763AD09BEAD21002E9B53 /* filterkit.h */,
@@ -1872,6 +2040,8 @@
 				D31D4DF009BEC3A1001112B8 /* libapr.a */,
 				D31D4E7A09BEC533001112B8 /* libapr-util.dylib */,
 				D31D4FB609BEC85A001112B8 /* libapr-util.a */,
+				D31D504209BECA92001112B8 /* libfreeswitch.dylib */,
+				D31D509009BECBA3001112B8 /* freeswitch */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2206,6 +2376,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D31D503E09BECA92001112B8 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D31D506A09BECAFB001112B8 /* config.h in Headers */,
+				D31D506B09BECAFB001112B8 /* switch_apr.h in Headers */,
+				D31D506C09BECAFB001112B8 /* switch_buffer.h in Headers */,
+				D31D506D09BECAFB001112B8 /* switch_caller.h in Headers */,
+				D31D506E09BECAFB001112B8 /* switch_channel.h in Headers */,
+				D31D506F09BECAFB001112B8 /* switch_config.h in Headers */,
+				D31D507009BECAFB001112B8 /* switch_console.h in Headers */,
+				D31D507109BECAFB001112B8 /* switch_core.h in Headers */,
+				D31D507209BECAFB001112B8 /* switch_event.h in Headers */,
+				D31D507309BECAFB001112B8 /* switch_frame.h in Headers */,
+				D31D507409BECAFB001112B8 /* switch_ivr.h in Headers */,
+				D31D507509BECAFB001112B8 /* switch_loadable_module.h in Headers */,
+				D31D507609BECAFB001112B8 /* switch_module_interfaces.h in Headers */,
+				D31D507709BECAFB001112B8 /* switch_mutex.h in Headers */,
+				D31D507809BECAFB001112B8 /* switch_platform.h in Headers */,
+				D31D507909BECAFB001112B8 /* switch_resample.h in Headers */,
+				D31D507A09BECAFB001112B8 /* switch_sqlite.h in Headers */,
+				D31D507B09BECAFB001112B8 /* switch_types.h in Headers */,
+				D31D507C09BECAFB001112B8 /* switch_utils.h in Headers */,
+				D31D507D09BECAFB001112B8 /* switch_version.h in Headers */,
+				D31D507E09BECAFB001112B8 /* switch.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3A7638F09BEAB96002E9B53 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -2214,6 +2412,7 @@
 				D3A763B009BEAD21002E9B53 /* configtemplate.h in Headers */,
 				D3A763B109BEAD21002E9B53 /* filterkit.h in Headers */,
 				D3A763B209BEAD21002E9B53 /* resample_defs.h in Headers */,
+				D31D508809BECB84001112B8 /* libresample.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2388,6 +2587,58 @@
 			productReference = D31D4FB609BEC85A001112B8 /* libapr-util.a */;
 			productType = "com.apple.product-type.library.static";
 		};
+		D31D504109BECA92001112B8 /* libfreeswitch.dylib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D31D504609BECAAA001112B8 /* Build configuration list for PBXNativeTarget "libfreeswitch.dylib" */;
+			buildPhases = (
+				D31D504309BECAA1001112B8 /* ShellScript */,
+				D31D503E09BECA92001112B8 /* Headers */,
+				D31D503F09BECA92001112B8 /* Sources */,
+				D31D504009BECA92001112B8 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = libfreeswitch.dylib;
+			productName = freeswitch;
+			productReference = D31D504209BECA92001112B8 /* libfreeswitch.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		D31D508F09BECBA3001112B8 /* freeswitch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D31D509409BECBCB001112B8 /* Build configuration list for PBXNativeTarget "freeswitch" */;
+			buildPhases = (
+				D31D50A009BECC2C001112B8 /* ShellScript */,
+				D31D508D09BECBA3001112B8 /* Sources */,
+				D31D508E09BECBA3001112B8 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(HOME)/bin";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = freeswitch;
+			productName = freeswitch;
+			productReference = D31D509009BECBA3001112B8 /* freeswitch */;
+			productType = "com.apple.product-type.tool";
+		};
 		D3A7639209BEAB96002E9B53 /* libresample.a */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D3A7639509BEAB97002E9B53 /* Build configuration list for PBXNativeTarget "libresample.a" */;
@@ -2545,7 +2796,8 @@
 				D31D4DEF09BEC3A1001112B8 /* libapr.a */,
 				D31D4E7909BEC533001112B8 /* libapr-util.dylib */,
 				D31D4FB509BEC85A001112B8 /* libapr-util.a */,
-				D31D501E09BEC96E001112B8 /* core_dependencies */,
+				D31D504109BECA92001112B8 /* libfreeswitch.dylib */,
+				D31D508F09BECBA3001112B8 /* freeswitch */,
 			);
 		};
 /* End PBXProject section */
@@ -2576,6 +2828,32 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [ -d \"libs/apr-util-1.2.2\" ]; then\n\texit 0;\nfi\n\ncurl http://svn.freeswitch.org/downloads/libs/apr-util-1.2.2.tar.gz -o libs/apr-util-1.2.2.tar.gz\ncd libs\ntar zxf apr-util-1.2.2.tar.gz\ncd apr-util-1.2.2\n./configure --with-apr=../apr-1.2.2\nexit 0;";
+		};
+		D31D504309BECAA1001112B8 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ -e Makefile ]; then\n\texit 0;\nfi\n./configure\n./build/checkversion.sh\nexit 0;\n";
+		};
+		D31D50A009BECC2C001112B8 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ -d \".xcodebuild/Debug/mod\" ]; then\n\texit 0;\nfi\nmkdir .xcodebuild/Debug/{mod,log,conf,db}\ntouch .xcodebuild/Debug/conf/freeswitch.conf\ntouch .xcodebuild/Debug/conf/modules.conf";
 		};
 		D3A763D409BEB006002E9B53 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -2858,6 +3136,33 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D31D503F09BECA92001112B8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D31D505E09BECAF7001112B8 /* switch_buffer.c in Sources */,
+				D31D505F09BECAF7001112B8 /* switch_caller.c in Sources */,
+				D31D506009BECAF7001112B8 /* switch_channel.c in Sources */,
+				D31D506109BECAF7001112B8 /* switch_config.c in Sources */,
+				D31D506209BECAF7001112B8 /* switch_console.c in Sources */,
+				D31D506309BECAF7001112B8 /* switch_core.c in Sources */,
+				D31D506409BECAF7001112B8 /* switch_event.c in Sources */,
+				D31D506509BECAF7001112B8 /* switch_ivr.c in Sources */,
+				D31D506609BECAF7001112B8 /* switch_loadable_module.c in Sources */,
+				D31D506709BECAF7001112B8 /* switch_mutex.c in Sources */,
+				D31D506809BECAF7001112B8 /* switch_resample.c in Sources */,
+				D31D506909BECAF7001112B8 /* switch_utils.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D31D508D09BECBA3001112B8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D31D509809BECBE3001112B8 /* switch.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3A7639009BEAB96002E9B53 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -3020,6 +3325,11 @@
 			isa = PBXTargetDependency;
 			target = D31D4FB509BEC85A001112B8 /* libapr-util.a */;
 			targetProxy = D31D500A09BEC88E001112B8 /* PBXContainerItemProxy */;
+		};
+		D31D508B09BECB94001112B8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D31D504109BECA92001112B8 /* libfreeswitch.dylib */;
+			targetProxy = D31D508A09BECB94001112B8 /* PBXContainerItemProxy */;
 		};
 		D3A7640009BEB27C002E9B53 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -3218,24 +3528,72 @@
 			};
 			name = Release;
 		};
-		D31D502209BEC978001112B8 /* Debug */ = {
+		D31D504709BECAAA001112B8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = lib;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D31D504809BECAAA001112B8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D31D509509BECBCB001112B8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				PRODUCT_NAME = core_dependancies;
+				INSTALL_PATH = "$(HOME)/bin";
+				LIBRARY_SEARCH_PATHS = (
+					"$(LIBRARY_SEARCH_PATHS)",
+					"$(SRCROOT)/.xcodebuild/Debug",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				ZERO_LINK = YES;
 			};
 			name = Debug;
 		};
-		D31D502309BEC978001112B8 /* Release */ = {
+		D31D509609BECBCB001112B8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				PRODUCT_NAME = core_dependancies;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(HOME)/bin";
+				LIBRARY_SEARCH_PATHS = (
+					"$(LIBRARY_SEARCH_PATHS)",
+					"$(SRCROOT)/.xcodebuild/Debug",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
 				ZERO_LINK = NO;
 			};
 			name = Release;
@@ -3502,11 +3860,20 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D31D502109BEC978001112B8 /* Build configuration list for PBXAggregateTarget "core_dependencies" */ = {
+		D31D504609BECAAA001112B8 /* Build configuration list for PBXNativeTarget "libfreeswitch.dylib" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D31D502209BEC978001112B8 /* Debug */,
-				D31D502309BEC978001112B8 /* Release */,
+				D31D504709BECAAA001112B8 /* Debug */,
+				D31D504809BECAAA001112B8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D31D509409BECBCB001112B8 /* Build configuration list for PBXNativeTarget "freeswitch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D31D509509BECBCB001112B8 /* Debug */,
+				D31D509609BECBCB001112B8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

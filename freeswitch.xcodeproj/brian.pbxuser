@@ -12,20 +12,55 @@
 	D31D4FB509BEC85A001112B8 /* libapr-util.a */ = {
 		activeExec = 0;
 	};
-	D31D501E09BEC96E001112B8 /* core_dependencies */ = {
+	D31D504109BECA92001112B8 /* libfreeswitch.dylib */ = {
 		activeExec = 0;
+	};
+	D31D508F09BECBA3001112B8 /* freeswitch */ = {
+		activeExec = 0;
+		executables = (
+			D31D509109BECBA3001112B8 /* freeswitch */,
+		);
+	};
+	D31D509109BECBA3001112B8 /* freeswitch */ = {
+		isa = PBXExecutable;
+		activeArgIndex = 2147483647;
+		activeArgIndices = (
+		);
+		argumentStrings = (
+		);
+		autoAttachOnCrash = 1;
+		configStateDict = {
+		};
+		customDataFormattersEnabled = 1;
+		debuggerPlugin = GDBDebugging;
+		disassemblyDisplayState = 0;
+		dylibVariantSuffix = "";
+		enableDebugStr = 1;
+		environmentEntries = (
+		);
+		executableSystemSymbolLevel = 0;
+		executableUserSymbolLevel = 0;
+		libgmallocEnabled = 0;
+		name = freeswitch;
+		sourceDirectories = (
+		);
 	};
 	D3A7638009BEAAEE002E9B53 /* Project object */ = {
 		activeBuildConfigurationName = Debug;
 		activeBuildStyle = D31D4A3209BEBE12001112B8 /* Development */;
-		activeTarget = D31D4FB509BEC85A001112B8 /* libapr-util.a */;
+		activeExecutable = D31D509109BECBA3001112B8 /* freeswitch */;
+		activeTarget = D31D508F09BECBA3001112B8 /* freeswitch */;
 		addToTargets = (
+			D31D508F09BECBA3001112B8 /* freeswitch */,
 		);
 		breakpoints = (
 			D3A7673709BEBAFE002E9B53 /* build.c:29 */,
 		);
 		breakpointsGroup = D3A763CD09BEAF2B002E9B53 /* XCBreakpointsBucket */;
 		codeSenseManager = D3A7638509BEAAEE002E9B53 /* Code sense */;
+		executables = (
+			D31D509109BECBA3001112B8 /* freeswitch */,
+		);
 		perUserDictionary = {
 			PBXConfiguration.PBXFileTableDataSource3.PBXErrorsWarningsDataSource = {
 				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
