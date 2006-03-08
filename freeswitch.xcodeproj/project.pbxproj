@@ -224,6 +224,13 @@
 			remoteGlobalIDString = D3C7A86109BF60A1009127A4 /* teletone */;
 			remoteInfo = teletone;
 		};
+		D3C7A95809BF6A15009127A4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D31D504109BECA92001112B8 /* libfreeswitch.dylib */;
+			remoteInfo = libfreeswitch.dylib;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -533,6 +540,7 @@
 				ZERO_LINK = YES;
 			};
 			dependencies = (
+				D3C7A95909BF6A15009127A4 /* PBXTargetDependency */,
 			);
 			name = freeswitch;
 			productName = freeswitch;
@@ -611,15 +619,15 @@
 			projectDirPath = "";
 			targets = (
 				D3A763FE09BEB271002E9B53 /* All */,
-				D31D504109BECA92001112B8 /* libfreeswitch.dylib */,
-				D31D508F09BECBA3001112B8 /* freeswitch */,
-				D346F17909BF38AE00404918 /* mod_echo.dylib */,
-				D3C7A72209BF467F009127A4 /* mod_bridgecall.dylib */,
 				D3C7A7EC09BF58D2009127A4 /* apr-1.2.2 */,
 				D3C7A80209BF5B43009127A4 /* sqlite-3.2.8 */,
 				D3C7A84009BF5FC2009127A4 /* apr-util-1.2.2 */,
 				D3C7A85C09BF6066009127A4 /* resample-0.1.3 */,
 				D3C7A86109BF60A1009127A4 /* teletone */,
+				D31D504109BECA92001112B8 /* libfreeswitch.dylib */,
+				D31D508F09BECBA3001112B8 /* freeswitch */,
+				D346F17909BF38AE00404918 /* mod_echo.dylib */,
+				D3C7A72209BF467F009127A4 /* mod_bridgecall.dylib */,
 			);
 		};
 /* End PBXProject section */
@@ -822,6 +830,11 @@
 			isa = PBXTargetDependency;
 			target = D3C7A86109BF60A1009127A4 /* teletone */;
 			targetProxy = D3C7A87309BF60F2009127A4 /* PBXContainerItemProxy */;
+		};
+		D3C7A95909BF6A15009127A4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D31D504109BECA92001112B8 /* libfreeswitch.dylib */;
+			targetProxy = D3C7A95809BF6A15009127A4 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1032,7 +1045,25 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
+				HEADER_SEARCH_PATHS = "$(INSTALL_PATH)/../lib";
+				INSTALL_PATH = /usr/local/freeswitch/lib;
+				OTHER_CFLAGS = (
+					"-DHAVE_CONFIG_H",
+					"-I.",
+					"-I./src/include",
+					"-I$(INSTALL_PATH)/../include",
+					"-g",
+					"-O2",
+					"-DMACOSX",
+					"-DSIGPROCMASK_SETS_THREAD_MASK",
+					"-no-cpp-precomp",
+					"-I$(INSTALL_PATH)/../include/apr-1",
+				);
+				OTHER_LDFLAGS = (
+					"-lapr-1",
+					"-lexpat",
+					"-liconv",
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_bridgecall;
 				ZERO_LINK = YES;

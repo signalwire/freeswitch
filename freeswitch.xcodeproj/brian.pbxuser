@@ -96,7 +96,7 @@
 		activeBuildConfigurationName = Debug;
 		activeBuildStyle = D31D4A3209BEBE12001112B8 /* Development */;
 		activeExecutable = D31D509109BECBA3001112B8 /* freeswitch */;
-		activeTarget = D346F17909BF38AE00404918 /* mod_echo.dylib */;
+		activeTarget = D3A763FE09BEB271002E9B53 /* All */;
 		addToTargets = (
 		);
 		breakpoints = (
@@ -253,8 +253,8 @@
 					PBXFileDataSource_Warnings_ColumnID,
 				);
 			};
-			PBXPerProjectTemplateStateSaveDate = 163528575;
-			PBXWorkspaceStateSaveDate = 163528575;
+			PBXPerProjectTemplateStateSaveDate = 163539282;
+			PBXWorkspaceStateSaveDate = 163539282;
 		};
 		sourceControlManager = D3A7638409BEAAEE002E9B53 /* Source Control */;
 		userBuildSettings = {
