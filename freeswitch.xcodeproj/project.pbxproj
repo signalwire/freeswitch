@@ -27,8 +27,7 @@
 				D31D500B09BEC88E001112B8 /* PBXTargetDependency */,
 				D31D508B09BECB94001112B8 /* PBXTargetDependency */,
 				D31D50B109BECE4C001112B8 /* PBXTargetDependency */,
-				D3285C6C09BF829700468114 /* PBXTargetDependency */,
-				D33151ED09BFA9930040C1CF /* PBXTargetDependency */,
+				D331528609BFB1D90040C1CF /* PBXTargetDependency */,
 			);
 			name = All;
 			productName = All;
@@ -470,36 +469,76 @@
 		D31D507D09BECAFB001112B8 /* switch_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505C09BECAED001112B8 /* switch_version.h */; };
 		D31D507E09BECAFB001112B8 /* switch.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D505D09BECAED001112B8 /* switch.h */; };
 		D31D508109BECB41001112B8 /* libresample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7639309BEAB96002E9B53 /* libresample.a */; };
-		D31D508209BECB44001112B8 /* libteletone.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A763F309BEB1CF002E9B53 /* libteletone.a */; };
-		D31D508309BECB49001112B8 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
-		D31D508409BECB4F001112B8 /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
-		D31D508509BECB51001112B8 /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
+		D31D508309BECB49001112B8 /* libsqlite3.2.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */; };
+		D31D508409BECB4F001112B8 /* libapr-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr-1.0.2.2.dylib */; };
+		D31D508509BECB51001112B8 /* libaprutil-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libaprutil-1.0.2.2.dylib */; };
 		D31D508809BECB84001112B8 /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D31D508709BECB84001112B8 /* libresample.h */; };
 		D31D509809BECBE3001112B8 /* switch.c in Sources */ = {isa = PBXBuildFile; fileRef = D31D509709BECBE3001112B8 /* switch.c */; };
 		D31D509909BECBF4001112B8 /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
-		D3285C2209BF7AF100468114 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
-		D3285C2309BF7AF100468114 /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
-		D3285C2709BF7B4700468114 /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
-		D3285C5209BF803100468114 /* mod_echo.c in Sources */ = {isa = PBXBuildFile; fileRef = D3285C2009BF790700468114 /* mod_echo.c */; };
-		D3285C5309BF803A00468114 /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
-		D3285C5409BF803A00468114 /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
-		D3285C5509BF803A00468114 /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
-		D3285C5609BF803A00468114 /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
-		D33151E609BFA96B0040C1CF /* mod_bridgecall.c in Sources */ = {isa = PBXBuildFile; fileRef = D33151E009BFA9390040C1CF /* mod_bridgecall.c */; };
-		D33151E709BFA9820040C1CF /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
-		D33151E809BFA9820040C1CF /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
-		D33151E909BFA9820040C1CF /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
-		D33151EA09BFA9820040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
-		D33151F809BFAA1E0040C1CF /* mod_ivrtest.c in Sources */ = {isa = PBXBuildFile; fileRef = D33151F209BFA9FA0040C1CF /* mod_ivrtest.c */; };
-		D33151F909BFAA2D0040C1CF /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
-		D33151FA09BFAA2D0040C1CF /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
-		D33151FB09BFAA2D0040C1CF /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
-		D33151FC09BFAA2D0040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
-		D331520F09BFAAE50040C1CF /* mod_playback.c in Sources */ = {isa = PBXBuildFile; fileRef = D331520E09BFAAE50040C1CF /* mod_playback.c */; };
-		D331521009BFAB0D0040C1CF /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
-		D331521109BFAB0D0040C1CF /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
-		D331521209BFAB0D0040C1CF /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
-		D331521309BFAB0D0040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
+		D3285C2209BF7AF100468114 /* libsqlite3.2.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */; };
+		D3285C2309BF7AF100468114 /* libaprutil-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libaprutil-1.0.2.2.dylib */; };
+		D3285C2709BF7B4700468114 /* libapr-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr-1.0.2.2.dylib */; };
+		D331523309BFAEFF0040C1CF /* pablio.c in Sources */ = {isa = PBXBuildFile; fileRef = D331522B09BFAEFF0040C1CF /* pablio.c */; };
+		D331523409BFAEFF0040C1CF /* pablio.h in Headers */ = {isa = PBXBuildFile; fileRef = D331522C09BFAEFF0040C1CF /* pablio.h */; };
+		D331523509BFAEFF0040C1CF /* ringbuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = D331522D09BFAEFF0040C1CF /* ringbuffer.c */; };
+		D331523609BFAEFF0040C1CF /* ringbuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = D331522E09BFAEFF0040C1CF /* ringbuffer.h */; };
+		D331524609BFAF3A0040C1CF /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D331523C09BFAF320040C1CF /* CoreAudio.framework */; };
+		D331525309BFAF7A0040C1CF /* pa_convert.c in Sources */ = {isa = PBXBuildFile; fileRef = D331524D09BFAF7A0040C1CF /* pa_convert.c */; };
+		D331525409BFAF7A0040C1CF /* pa_host.h in Headers */ = {isa = PBXBuildFile; fileRef = D331524E09BFAF7A0040C1CF /* pa_host.h */; };
+		D331525509BFAF7A0040C1CF /* pa_lib.c in Sources */ = {isa = PBXBuildFile; fileRef = D331524F09BFAF7A0040C1CF /* pa_lib.c */; };
+		D331525609BFAF7A0040C1CF /* pa_trace.c in Sources */ = {isa = PBXBuildFile; fileRef = D331525009BFAF7A0040C1CF /* pa_trace.c */; };
+		D331525709BFAF7A0040C1CF /* pa_trace.h in Headers */ = {isa = PBXBuildFile; fileRef = D331525109BFAF7A0040C1CF /* pa_trace.h */; };
+		D331525809BFAF7A0040C1CF /* portaudio.h in Headers */ = {isa = PBXBuildFile; fileRef = D331525209BFAF7A0040C1CF /* portaudio.h */; };
+		D331526C09BFB0500040C1CF /* pa_mac_core.c in Sources */ = {isa = PBXBuildFile; fileRef = D331526B09BFB0500040C1CF /* pa_mac_core.c */; };
+		D33152B509BFBB830040C1CF /* exports.c in Sources */ = {isa = PBXBuildFile; fileRef = D33152B309BFBB830040C1CF /* exports.c */; };
+		D33152B709BFBB830040C1CF /* exports.c in Sources */ = {isa = PBXBuildFile; fileRef = D33152B309BFBB830040C1CF /* exports.c */; };
+		D331550F09BFD8880040C1CF /* libsqlite3.2.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */; };
+		D331551009BFD8880040C1CF /* libapr-1.0.2.2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4DF009BEC3A1001112B8 /* libapr-1.0.2.2.a */; };
+		D331551E09BFD91E0040C1CF /* libteletone.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7640709BEB286002E9B53 /* libteletone.dylib */; };
+		D331554409BFDA750040C1CF /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D331554209BFDA750040C1CF /* System.framework */; };
+		D331554509BFDA750040C1CF /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D331554209BFDA750040C1CF /* System.framework */; };
+		D331554609BFDA750040C1CF /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D331554209BFDA750040C1CF /* System.framework */; };
+		D331554709BFDA750040C1CF /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D331554209BFDA750040C1CF /* System.framework */; };
+		D331554809BFDA750040C1CF /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D331554209BFDA750040C1CF /* System.framework */; };
+		D331554D09BFDA750040C1CF /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D331554209BFDA750040C1CF /* System.framework */; };
+		D33156FB09BFEE570040C1CF /* mod_echo.c in Sources */ = {isa = PBXBuildFile; fileRef = D3285C2009BF790700468114 /* mod_echo.c */; };
+		D33156FD09BFEE720040C1CF /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D331554209BFDA750040C1CF /* System.framework */; };
+		D33156FE09BFEE720040C1CF /* libsqlite3.2.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */; };
+		D33156FF09BFEE720040C1CF /* libapr-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr-1.0.2.2.dylib */; };
+		D331570009BFEE720040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libaprutil-1.0.2.2.dylib */; };
+		D331570109BFEE720040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
+		D331571D09BFF2300040C1CF /* libteletone.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7640709BEB286002E9B53 /* libteletone.dylib */; };
+		D331574D09BFF31B0040C1CF /* mod_bridgecall.c in Sources */ = {isa = PBXBuildFile; fileRef = D33151E009BFA9390040C1CF /* mod_bridgecall.c */; };
+		D331574E09BFF32D0040C1CF /* libteletone.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7640709BEB286002E9B53 /* libteletone.dylib */; };
+		D331574F09BFF32D0040C1CF /* libsqlite3.2.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */; };
+		D331575009BFF32D0040C1CF /* libapr-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr-1.0.2.2.dylib */; };
+		D331575109BFF32D0040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libaprutil-1.0.2.2.dylib */; };
+		D331575209BFF32D0040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
+		D331576809BFF3CA0040C1CF /* mod_l16.c in Sources */ = {isa = PBXBuildFile; fileRef = D331529D09BFB3560040C1CF /* mod_l16.c */; };
+		D331576909BFF3DA0040C1CF /* libteletone.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7640709BEB286002E9B53 /* libteletone.dylib */; };
+		D331576A09BFF3DA0040C1CF /* libsqlite3.2.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */; };
+		D331576B09BFF3DA0040C1CF /* libapr-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr-1.0.2.2.dylib */; };
+		D331576C09BFF3DA0040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libaprutil-1.0.2.2.dylib */; };
+		D331576D09BFF3DA0040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
+		D331578209BFF4A70040C1CF /* mod_playback.c in Sources */ = {isa = PBXBuildFile; fileRef = D331520E09BFAAE50040C1CF /* mod_playback.c */; };
+		D331578309BFF4B40040C1CF /* libteletone.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7640709BEB286002E9B53 /* libteletone.dylib */; };
+		D331578409BFF4B40040C1CF /* libsqlite3.2.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */; };
+		D331578509BFF4B40040C1CF /* libapr-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr-1.0.2.2.dylib */; };
+		D331578609BFF4B40040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libaprutil-1.0.2.2.dylib */; };
+		D331578F09BFF4D40040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
+		D33157A909BFF5B10040C1CF /* libteletone.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7640709BEB286002E9B53 /* libteletone.dylib */; };
+		D33157AA09BFF5B10040C1CF /* libsqlite3.2.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */; };
+		D33157AB09BFF5B10040C1CF /* libapr-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr-1.0.2.2.dylib */; };
+		D33157AC09BFF5B10040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libaprutil-1.0.2.2.dylib */; };
+		D33157AD09BFF5B10040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
+		D33157AF09BFF5BE0040C1CF /* mod_portaudio.c in Sources */ = {isa = PBXBuildFile; fileRef = D331527409BFB1190040C1CF /* mod_portaudio.c */; };
+		D33157D109BFF7740040C1CF /* portaudio-0.18.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D331521F09BFABD40040C1CF /* portaudio-0.18.dylib */; };
+		D33157DF09BFF8120040C1CF /* mod_dialplan_demo.c in Sources */ = {isa = PBXBuildFile; fileRef = D33157D509BFF7DF0040C1CF /* mod_dialplan_demo.c */; };
+		D33157E009BFF8260040C1CF /* libteletone.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7640709BEB286002E9B53 /* libteletone.dylib */; };
+		D33157E109BFF8260040C1CF /* libsqlite3.2.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */; };
+		D33157E209BFF8260040C1CF /* libapr-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr-1.0.2.2.dylib */; };
+		D33157E309BFF8260040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libaprutil-1.0.2.2.dylib */; };
+		D33157E409BFF8260040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
 		D3A763A809BEAD00002E9B53 /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A509BEAD00002E9B53 /* filterkit.c */; };
 		D3A763A909BEAD00002E9B53 /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A609BEAD00002E9B53 /* resample.c */; };
 		D3A763AA09BEAD00002E9B53 /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A709BEAD00002E9B53 /* resamplesubs.c */; };
@@ -517,7 +556,6 @@
 		D3A7641009BEB2D7002E9B53 /* libteletone.h in Headers */ = {isa = PBXBuildFile; fileRef = D3A763EE09BEB1C3002E9B53 /* libteletone.h */; };
 		D3A7641109BEB2DB002E9B53 /* libteletone_detect.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763EA09BEB1AC002E9B53 /* libteletone_detect.c */; };
 		D3A7641209BEB2DB002E9B53 /* libteletone_generate.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763EB09BEB1AC002E9B53 /* libteletone_generate.c */; };
-		D3A7662609BEB5BE002E9B53 /* Tcl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7643E09BEB59F002E9B53 /* Tcl.framework */; };
 		D3A7666009BEB5EA002E9B53 /* alter.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7662709BEB5EA002E9B53 /* alter.c */; };
 		D3A7666109BEB5EA002E9B53 /* analyze.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7662809BEB5EA002E9B53 /* analyze.c */; };
 		D3A7666209BEB5EA002E9B53 /* attach.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7662909BEB5EA002E9B53 /* attach.c */; };
@@ -535,7 +573,6 @@
 		D3A7667009BEB5EA002E9B53 /* insert.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7663709BEB5EA002E9B53 /* insert.c */; };
 		D3A7667109BEB5EA002E9B53 /* legacy.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7663809BEB5EA002E9B53 /* legacy.c */; };
 		D3A7667509BEB5EA002E9B53 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7663C09BEB5EA002E9B53 /* main.c */; };
-		D3A7667609BEB5EA002E9B53 /* md5.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7663D09BEB5EA002E9B53 /* md5.c */; };
 		D3A7667809BEB5EA002E9B53 /* os_test.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7663F09BEB5EA002E9B53 /* os_test.c */; };
 		D3A7667909BEB5EA002E9B53 /* os_unix.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664009BEB5EA002E9B53 /* os_unix.c */; };
 		D3A7667A09BEB5EA002E9B53 /* os_win.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664109BEB5EA002E9B53 /* os_win.c */; };
@@ -548,12 +585,6 @@
 		D3A7668109BEB5EA002E9B53 /* select.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664809BEB5EA002E9B53 /* select.c */; };
 		D3A7668309BEB5EA002E9B53 /* showjournal.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664A09BEB5EA002E9B53 /* showjournal.c */; };
 		D3A7668409BEB5EA002E9B53 /* table.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664B09BEB5EA002E9B53 /* table.c */; };
-		D3A7668509BEB5EA002E9B53 /* tclsqlite.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664C09BEB5EA002E9B53 /* tclsqlite.c */; };
-		D3A7668609BEB5EA002E9B53 /* test1.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664D09BEB5EA002E9B53 /* test1.c */; };
-		D3A7668709BEB5EA002E9B53 /* test2.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664E09BEB5EA002E9B53 /* test2.c */; };
-		D3A7668809BEB5EA002E9B53 /* test3.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664F09BEB5EA002E9B53 /* test3.c */; };
-		D3A7668909BEB5EA002E9B53 /* test4.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7665009BEB5EA002E9B53 /* test4.c */; };
-		D3A7668A09BEB5EA002E9B53 /* test5.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7665109BEB5EA002E9B53 /* test5.c */; };
 		D3A7668D09BEB5EA002E9B53 /* tokenize.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7665409BEB5EA002E9B53 /* tokenize.c */; };
 		D3A7668E09BEB5EA002E9B53 /* trigger.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7665509BEB5EA002E9B53 /* trigger.c */; };
 		D3A7668F09BEB5EA002E9B53 /* update.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7665609BEB5EA002E9B53 /* update.c */; };
@@ -613,7 +644,6 @@
 		D3A7678909BEBD09002E9B53 /* select.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664809BEB5EA002E9B53 /* select.c */; };
 		D3A7678A09BEBD09002E9B53 /* showjournal.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664A09BEB5EA002E9B53 /* showjournal.c */; };
 		D3A7678B09BEBD09002E9B53 /* table.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664B09BEB5EA002E9B53 /* table.c */; };
-		D3A7678C09BEBD09002E9B53 /* tclsqlite.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664C09BEB5EA002E9B53 /* tclsqlite.c */; };
 		D3A7678D09BEBD09002E9B53 /* test1.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664D09BEB5EA002E9B53 /* test1.c */; };
 		D3A7678E09BEBD09002E9B53 /* test2.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664E09BEB5EA002E9B53 /* test2.c */; };
 		D3A7678F09BEBD09002E9B53 /* test3.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A7664F09BEB5EA002E9B53 /* test3.c */; };
@@ -708,19 +738,12 @@
 			remoteGlobalIDString = D31D508F09BECBA3001112B8;
 			remoteInfo = freeswitch;
 		};
-		D3285C6B09BF829700468114 /* PBXContainerItemProxy */ = {
+		D331528509BFB1D90040C1CF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3285C4E09BF7FF700468114;
-			remoteInfo = mod_echo.dylib;
-		};
-		D33151EC09BFA9930040C1CF /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D33151E409BFA9420040C1CF /* mod_bridgecall.dylib */;
-			remoteInfo = mod_bridgecall.dylib;
+			remoteGlobalIDString = D331521E09BFABD40040C1CF /* portaudio.dylib */;
+			remoteInfo = portaudio.dylib;
 		};
 		D3A763FF09BEB27C002E9B53 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -760,7 +783,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		D31D4A4B09BEBF01001112B8 /* libapr.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libapr.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D31D4A4B09BEBF01001112B8 /* libapr-1.0.2.2.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = "libapr-1.0.2.2.dylib"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D31D4A6C09BEC0D8001112B8 /* dso.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = dso.c; sourceTree = "<group>"; };
 		D31D4AB609BEC0D8001112B8 /* global_mutex.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = global_mutex.c; sourceTree = "<group>"; };
 		D31D4AB709BEC0D8001112B8 /* proc_mutex.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = proc_mutex.c; sourceTree = "<group>"; };
@@ -883,8 +906,8 @@
 		D31D4DC309BEC31C001112B8 /* seek.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = seek.c; sourceTree = "<group>"; };
 		D31D4DC409BEC31C001112B8 /* tempdir.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = tempdir.c; sourceTree = "<group>"; };
 		D31D4DE709BEC378001112B8 /* apr_atomic.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_atomic.c; sourceTree = "<group>"; };
-		D31D4DF009BEC3A1001112B8 /* libapr.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libapr.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		D31D4E7A09BEC533001112B8 /* libapr-util.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = "libapr-util.dylib"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D31D4DF009BEC3A1001112B8 /* libapr-1.0.2.2.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libapr-1.0.2.2.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D31D4E7A09BEC533001112B8 /* libaprutil-1.0.2.2.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = "libaprutil-1.0.2.2.dylib"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D31D4E8A09BEC643001112B8 /* apr_brigade.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_brigade.c; sourceTree = "<group>"; };
 		D31D4E8B09BEC643001112B8 /* apr_buckets.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_buckets.c; sourceTree = "<group>"; };
 		D31D4E8C09BEC643001112B8 /* apr_buckets_alloc.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_buckets_alloc.c; sourceTree = "<group>"; };
@@ -1004,7 +1027,7 @@
 		D31D4F3A09BEC69C001112B8 /* apr_dbm_private.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_dbm_private.h; sourceTree = "<group>"; };
 		D31D4F3B09BEC69C001112B8 /* apu_config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apu_config.h; sourceTree = "<group>"; };
 		D31D4F3E09BEC69C001112B8 /* apu_select_dbm.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apu_select_dbm.h; sourceTree = "<group>"; };
-		D31D4FB609BEC85A001112B8 /* libapr-util.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libapr-util.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D31D4FB609BEC85A001112B8 /* libaprutil-1.0.2.2.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libaprutil-1.0.2.2.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		D31D503009BECA2B001112B8 /* switch_buffer.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_buffer.c; path = src/switch_buffer.c; sourceTree = "<group>"; };
 		D31D503109BECA2B001112B8 /* switch_caller.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_caller.c; path = src/switch_caller.c; sourceTree = "<group>"; };
 		D31D503209BECA2B001112B8 /* switch_channel.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_channel.c; path = src/switch_channel.c; sourceTree = "<group>"; };
@@ -1043,13 +1066,39 @@
 		D31D509009BECBA3001112B8 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D31D509709BECBE3001112B8 /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = src/switch.c; sourceTree = "<group>"; };
 		D3285C2009BF790700468114 /* mod_echo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_echo.c; path = src/mod/applications/mod_echo/mod_echo.c; sourceTree = "<group>"; };
-		D3285C4F09BF7FF700468114 /* mod_echo.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = mod_echo.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D33151E009BFA9390040C1CF /* mod_bridgecall.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_bridgecall.c; path = src/mod/applications/mod_bridgecall/mod_bridgecall.c; sourceTree = "<group>"; };
-		D33151E509BFA9420040C1CF /* mod_bridgecall.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = mod_bridgecall.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D33151F209BFA9FA0040C1CF /* mod_ivrtest.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_ivrtest.c; path = src/mod/applications/mod_ivrtest/mod_ivrtest.c; sourceTree = "<group>"; };
-		D33151F709BFAA080040C1CF /* mod_ivrtest.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = mod_ivrtest.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		D331520A09BFAAB80040C1CF /* mod_playback.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = mod_playback.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D331520E09BFAAE50040C1CF /* mod_playback.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_playback.c; path = src/mod/applications/mod_playback/mod_playback.c; sourceTree = "<group>"; };
+		D331521F09BFABD40040C1CF /* portaudio-0.18.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = "portaudio-0.18.dylib"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D331522B09BFAEFF0040C1CF /* pablio.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pablio.c; path = libs/portaudio/pablio/pablio.c; sourceTree = "<group>"; };
+		D331522C09BFAEFF0040C1CF /* pablio.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pablio.h; path = libs/portaudio/pablio/pablio.h; sourceTree = "<group>"; };
+		D331522D09BFAEFF0040C1CF /* ringbuffer.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = ringbuffer.c; path = libs/portaudio/pablio/ringbuffer.c; sourceTree = "<group>"; };
+		D331522E09BFAEFF0040C1CF /* ringbuffer.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = ringbuffer.h; path = libs/portaudio/pablio/ringbuffer.h; sourceTree = "<group>"; };
+		D331522F09BFAEFF0040C1CF /* test_rw_echo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = test_rw_echo.c; path = libs/portaudio/pablio/test_rw_echo.c; sourceTree = "<group>"; };
+		D331523009BFAEFF0040C1CF /* test_rw.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = test_rw.c; path = libs/portaudio/pablio/test_rw.c; sourceTree = "<group>"; };
+		D331523109BFAEFF0040C1CF /* test_w_saw.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = test_w_saw.c; path = libs/portaudio/pablio/test_w_saw.c; sourceTree = "<group>"; };
+		D331523209BFAEFF0040C1CF /* test_w_saw8.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = test_w_saw8.c; path = libs/portaudio/pablio/test_w_saw8.c; sourceTree = "<group>"; };
+		D331523C09BFAF320040C1CF /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = /System/Library/Frameworks/CoreAudio.framework; sourceTree = "<absolute>"; };
+		D331524D09BFAF7A0040C1CF /* pa_convert.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pa_convert.c; path = libs/portaudio/pa_common/pa_convert.c; sourceTree = "<group>"; };
+		D331524E09BFAF7A0040C1CF /* pa_host.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pa_host.h; path = libs/portaudio/pa_common/pa_host.h; sourceTree = "<group>"; };
+		D331524F09BFAF7A0040C1CF /* pa_lib.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pa_lib.c; path = libs/portaudio/pa_common/pa_lib.c; sourceTree = "<group>"; };
+		D331525009BFAF7A0040C1CF /* pa_trace.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pa_trace.c; path = libs/portaudio/pa_common/pa_trace.c; sourceTree = "<group>"; };
+		D331525109BFAF7A0040C1CF /* pa_trace.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pa_trace.h; path = libs/portaudio/pa_common/pa_trace.h; sourceTree = "<group>"; };
+		D331525209BFAF7A0040C1CF /* portaudio.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = portaudio.h; path = libs/portaudio/pa_common/portaudio.h; sourceTree = "<group>"; };
+		D331526B09BFB0500040C1CF /* pa_mac_core.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pa_mac_core.c; path = libs/portaudio/pa_mac_core/pa_mac_core.c; sourceTree = "<group>"; };
+		D331527409BFB1190040C1CF /* mod_portaudio.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_portaudio.c; path = src/mod/endpoints/mod_portaudio/mod_portaudio.c; sourceTree = "<group>"; };
+		D331529D09BFB3560040C1CF /* mod_l16.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_l16.c; path = src/mod/codecs/mod_l16/mod_l16.c; sourceTree = "<group>"; };
+		D33152B309BFBB830040C1CF /* exports.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = exports.c; path = "libs/apr-1.2.2/exports.c"; sourceTree = "<group>"; };
+		D331554209BFDA750040C1CF /* System.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = System.framework; path = /System/Library/Frameworks/System.framework; sourceTree = "<absolute>"; };
+		D33156F509BFEE0C0040C1CF /* mod_echo.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mod_echo.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		D331574709BFF2BF0040C1CF /* mod_bridgecall.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mod_bridgecall.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		D331576109BFF39E0040C1CF /* mod_l16.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mod_l16.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		D331577D09BFF47E0040C1CF /* mod_playback.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mod_playback.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		D33157A409BFF58C0040C1CF /* mod_portaudio.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mod_portaudio.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		D33157A509BFF58D0040C1CF /* mod_portaudio-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "mod_portaudio-Info.plist"; sourceTree = "<group>"; };
+		D33157D509BFF7DF0040C1CF /* mod_dialplan_demo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_dialplan_demo.c; path = src/mod/dialplans/mod_dialplan_demo/mod_dialplan_demo.c; sourceTree = "<group>"; };
+		D33157DA09BFF7EF0040C1CF /* mod_dialplan_demo.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = mod_dialplan_demo.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		D33157DB09BFF7EF0040C1CF /* mod_dialplan_demo-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "mod_dialplan_demo-Info.plist"; sourceTree = "<group>"; };
 		D3A7639309BEAB96002E9B53 /* libresample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libresample.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3A763A509BEAD00002E9B53 /* filterkit.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = filterkit.c; path = "libs/libresample-0.1.3/src/filterkit.c"; sourceTree = "<group>"; };
 		D3A763A609BEAD00002E9B53 /* resample.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = resample.c; path = "libs/libresample-0.1.3/src/resample.c"; sourceTree = "<group>"; };
@@ -1065,8 +1114,7 @@
 		D3A763EE09BEB1C3002E9B53 /* libteletone.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libteletone.h; path = libs/libteletone/src/libteletone.h; sourceTree = "<group>"; };
 		D3A763F309BEB1CF002E9B53 /* libteletone.a */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libteletone.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3A7640709BEB286002E9B53 /* libteletone.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libteletone.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libsqlite3.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		D3A7643E09BEB59F002E9B53 /* Tcl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Tcl.framework; path = /System/Library/Frameworks/Tcl.framework; sourceTree = "<absolute>"; };
+		D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libsqlite3.2.8.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3A7662709BEB5EA002E9B53 /* alter.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = alter.c; path = "libs/sqlite-3.2.8/src/alter.c"; sourceTree = "<group>"; };
 		D3A7662809BEB5EA002E9B53 /* analyze.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = analyze.c; path = "libs/sqlite-3.2.8/src/analyze.c"; sourceTree = "<group>"; };
 		D3A7662909BEB5EA002E9B53 /* attach.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = attach.c; path = "libs/sqlite-3.2.8/src/attach.c"; sourceTree = "<group>"; };
@@ -1097,7 +1145,6 @@
 		D3A7664809BEB5EA002E9B53 /* select.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = select.c; path = "libs/sqlite-3.2.8/src/select.c"; sourceTree = "<group>"; };
 		D3A7664A09BEB5EA002E9B53 /* showjournal.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = showjournal.c; path = "libs/sqlite-3.2.8/tool/showjournal.c"; sourceTree = "<group>"; };
 		D3A7664B09BEB5EA002E9B53 /* table.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = table.c; path = "libs/sqlite-3.2.8/src/table.c"; sourceTree = "<group>"; };
-		D3A7664C09BEB5EA002E9B53 /* tclsqlite.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = tclsqlite.c; path = "libs/sqlite-3.2.8/src/tclsqlite.c"; sourceTree = "<group>"; };
 		D3A7664D09BEB5EA002E9B53 /* test1.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = test1.c; path = "libs/sqlite-3.2.8/src/test1.c"; sourceTree = "<group>"; };
 		D3A7664E09BEB5EA002E9B53 /* test2.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = test2.c; path = "libs/sqlite-3.2.8/src/test2.c"; sourceTree = "<group>"; };
 		D3A7664F09BEB5EA002E9B53 /* test3.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = test3.c; path = "libs/sqlite-3.2.8/src/test3.c"; sourceTree = "<group>"; };
@@ -1131,7 +1178,7 @@
 		D3A766A609BEB615002E9B53 /* vdbeInt.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = vdbeInt.h; path = "libs/sqlite-3.2.8/src/vdbeInt.h"; sourceTree = "<group>"; };
 		D3A766D509BEB776002E9B53 /* keywordhash.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = keywordhash.h; path = "libs/sqlite-3.2.8/keywordhash.h"; sourceTree = "<group>"; };
 		D3A766DA09BEB7CF002E9B53 /* opcodes.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = opcodes.c; path = "libs/sqlite-3.2.8/opcodes.c"; sourceTree = "<group>"; };
-		D3A7676C09BEBCF7002E9B53 /* libsqlite3.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libsqlite3.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3A7676C09BEBCF7002E9B53 /* libsqlite3.2.8.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libsqlite3.2.8.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1139,6 +1186,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D331554609BFDA750040C1CF /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1153,6 +1201,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D331550F09BFD8880040C1CF /* libsqlite3.2.8.dylib in Frameworks */,
+				D331551009BFD8880040C1CF /* libapr-1.0.2.2.a in Frameworks */,
+				D331554709BFDA750040C1CF /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1167,11 +1218,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D331551E09BFD91E0040C1CF /* libteletone.dylib in Frameworks */,
 				D31D508109BECB41001112B8 /* libresample.a in Frameworks */,
-				D31D508209BECB44001112B8 /* libteletone.a in Frameworks */,
-				D31D508309BECB49001112B8 /* libsqlite3.dylib in Frameworks */,
-				D31D508409BECB4F001112B8 /* libapr.dylib in Frameworks */,
-				D31D508509BECB51001112B8 /* libapr-util.dylib in Frameworks */,
+				D31D508309BECB49001112B8 /* libsqlite3.2.8.dylib in Frameworks */,
+				D31D508409BECB4F001112B8 /* libapr-1.0.2.2.dylib in Frameworks */,
+				D31D508509BECB51001112B8 /* libaprutil-1.0.2.2.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1179,54 +1230,94 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D3285C2209BF7AF100468114 /* libsqlite3.dylib in Frameworks */,
-				D3285C2709BF7B4700468114 /* libapr.dylib in Frameworks */,
-				D3285C2309BF7AF100468114 /* libapr-util.dylib in Frameworks */,
+				D3285C2209BF7AF100468114 /* libsqlite3.2.8.dylib in Frameworks */,
+				D3285C2709BF7B4700468114 /* libapr-1.0.2.2.dylib in Frameworks */,
+				D3285C2309BF7AF100468114 /* libaprutil-1.0.2.2.dylib in Frameworks */,
 				D31D509909BECBF4001112B8 /* libfreeswitch.dylib in Frameworks */,
+				D331554809BFDA750040C1CF /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D3285C4D09BF7FF700468114 /* Frameworks */ = {
+		D331521D09BFABD40040C1CF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D3285C5309BF803A00468114 /* libsqlite3.dylib in Frameworks */,
-				D3285C5409BF803A00468114 /* libapr.dylib in Frameworks */,
-				D3285C5509BF803A00468114 /* libapr-util.dylib in Frameworks */,
-				D3285C5609BF803A00468114 /* libfreeswitch.dylib in Frameworks */,
+				D331524609BFAF3A0040C1CF /* CoreAudio.framework in Frameworks */,
+				D331554D09BFDA750040C1CF /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D33151E309BFA9420040C1CF /* Frameworks */ = {
+		D33156F309BFEE0C0040C1CF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D33151E709BFA9820040C1CF /* libsqlite3.dylib in Frameworks */,
-				D33151E809BFA9820040C1CF /* libapr.dylib in Frameworks */,
-				D33151E909BFA9820040C1CF /* libapr-util.dylib in Frameworks */,
-				D33151EA09BFA9820040C1CF /* libfreeswitch.dylib in Frameworks */,
+				D33156FD09BFEE720040C1CF /* System.framework in Frameworks */,
+				D33156FE09BFEE720040C1CF /* libsqlite3.2.8.dylib in Frameworks */,
+				D33156FF09BFEE720040C1CF /* libapr-1.0.2.2.dylib in Frameworks */,
+				D331570009BFEE720040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */,
+				D331570109BFEE720040C1CF /* libfreeswitch.dylib in Frameworks */,
+				D331571D09BFF2300040C1CF /* libteletone.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D33151F509BFAA080040C1CF /* Frameworks */ = {
+		D331574509BFF2BF0040C1CF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D33151F909BFAA2D0040C1CF /* libsqlite3.dylib in Frameworks */,
-				D33151FA09BFAA2D0040C1CF /* libapr.dylib in Frameworks */,
-				D33151FB09BFAA2D0040C1CF /* libapr-util.dylib in Frameworks */,
-				D33151FC09BFAA2D0040C1CF /* libfreeswitch.dylib in Frameworks */,
+				D331574E09BFF32D0040C1CF /* libteletone.dylib in Frameworks */,
+				D331574F09BFF32D0040C1CF /* libsqlite3.2.8.dylib in Frameworks */,
+				D331575009BFF32D0040C1CF /* libapr-1.0.2.2.dylib in Frameworks */,
+				D331575109BFF32D0040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */,
+				D331575209BFF32D0040C1CF /* libfreeswitch.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D331520809BFAAB80040C1CF /* Frameworks */ = {
+		D331575F09BFF39E0040C1CF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D331521009BFAB0D0040C1CF /* libsqlite3.dylib in Frameworks */,
-				D331521109BFAB0D0040C1CF /* libapr.dylib in Frameworks */,
-				D331521209BFAB0D0040C1CF /* libapr-util.dylib in Frameworks */,
-				D331521309BFAB0D0040C1CF /* libfreeswitch.dylib in Frameworks */,
+				D331576909BFF3DA0040C1CF /* libteletone.dylib in Frameworks */,
+				D331576A09BFF3DA0040C1CF /* libsqlite3.2.8.dylib in Frameworks */,
+				D331576B09BFF3DA0040C1CF /* libapr-1.0.2.2.dylib in Frameworks */,
+				D331576C09BFF3DA0040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */,
+				D331576D09BFF3DA0040C1CF /* libfreeswitch.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D331577B09BFF47E0040C1CF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D331578F09BFF4D40040C1CF /* libfreeswitch.dylib in Frameworks */,
+				D331578309BFF4B40040C1CF /* libteletone.dylib in Frameworks */,
+				D331578409BFF4B40040C1CF /* libsqlite3.2.8.dylib in Frameworks */,
+				D331578509BFF4B40040C1CF /* libapr-1.0.2.2.dylib in Frameworks */,
+				D331578609BFF4B40040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D33157A209BFF58C0040C1CF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33157A909BFF5B10040C1CF /* libteletone.dylib in Frameworks */,
+				D33157AA09BFF5B10040C1CF /* libsqlite3.2.8.dylib in Frameworks */,
+				D33157AB09BFF5B10040C1CF /* libapr-1.0.2.2.dylib in Frameworks */,
+				D33157AC09BFF5B10040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */,
+				D33157D109BFF7740040C1CF /* portaudio-0.18.dylib in Frameworks */,
+				D33157AD09BFF5B10040C1CF /* libfreeswitch.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D33157D809BFF7EF0040C1CF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33157E009BFF8260040C1CF /* libteletone.dylib in Frameworks */,
+				D33157E109BFF8260040C1CF /* libsqlite3.2.8.dylib in Frameworks */,
+				D33157E209BFF8260040C1CF /* libapr-1.0.2.2.dylib in Frameworks */,
+				D33157E309BFF8260040C1CF /* libaprutil-1.0.2.2.dylib in Frameworks */,
+				D33157E409BFF8260040C1CF /* libfreeswitch.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1248,6 +1339,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D331554409BFDA750040C1CF /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1255,7 +1347,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D3A7662609BEB5BE002E9B53 /* Tcl.framework in Frameworks */,
+				D331554509BFDA750040C1CF /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1281,6 +1373,7 @@
 		D31D4A5509BEC06C001112B8 /* src */ = {
 			isa = PBXGroup;
 			children = (
+				D33152B309BFBB830040C1CF /* exports.c */,
 				D31D4DE109BEC378001112B8 /* atomic */,
 				D31D4D9A09BEC31C001112B8 /* file_io */,
 				D31D4A6009BEC0D8001112B8 /* dso */,
@@ -2079,6 +2172,9 @@
 		D3285C1D09BF78BE00468114 /* freeswitch_modules */ = {
 			isa = PBXGroup;
 			children = (
+				D33157D309BFF7A20040C1CF /* dialplans */,
+				D331529209BFB2BC0040C1CF /* codecs */,
+				D331521809BFAB320040C1CF /* endpoints */,
 				D33151EE09BFA9A50040C1CF /* asr_tts */,
 				D3285C1E09BF78CB00468114 /* applications */,
 			);
@@ -2135,15 +2231,112 @@
 			name = mod_playback;
 			sourceTree = "<group>";
 		};
+		D331521809BFAB320040C1CF /* endpoints */ = {
+			isa = PBXGroup;
+			children = (
+				D331527309BFB0C90040C1CF /* mod_portaudio */,
+			);
+			name = endpoints;
+			sourceTree = "<group>";
+		};
+		D331522009BFABEE0040C1CF /* freeswitch_module_dependencies */ = {
+			isa = PBXGroup;
+			children = (
+				D331522309BFAC1C0040C1CF /* portaudio */,
+			);
+			name = freeswitch_module_dependencies;
+			sourceTree = "<group>";
+		};
+		D331522309BFAC1C0040C1CF /* portaudio */ = {
+			isa = PBXGroup;
+			children = (
+				D331522409BFAC290040C1CF /* include */,
+				D331522509BFAC320040C1CF /* src */,
+			);
+			name = portaudio;
+			sourceTree = "<group>";
+		};
+		D331522409BFAC290040C1CF /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D331524E09BFAF7A0040C1CF /* pa_host.h */,
+				D331525109BFAF7A0040C1CF /* pa_trace.h */,
+				D331525209BFAF7A0040C1CF /* portaudio.h */,
+				D331522C09BFAEFF0040C1CF /* pablio.h */,
+				D331522E09BFAEFF0040C1CF /* ringbuffer.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		D331522509BFAC320040C1CF /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D331526B09BFB0500040C1CF /* pa_mac_core.c */,
+				D331524D09BFAF7A0040C1CF /* pa_convert.c */,
+				D331524F09BFAF7A0040C1CF /* pa_lib.c */,
+				D331525009BFAF7A0040C1CF /* pa_trace.c */,
+				D331522B09BFAEFF0040C1CF /* pablio.c */,
+				D331522D09BFAEFF0040C1CF /* ringbuffer.c */,
+				D331522F09BFAEFF0040C1CF /* test_rw_echo.c */,
+				D331523009BFAEFF0040C1CF /* test_rw.c */,
+				D331523109BFAEFF0040C1CF /* test_w_saw.c */,
+				D331523209BFAEFF0040C1CF /* test_w_saw8.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D331527309BFB0C90040C1CF /* mod_portaudio */ = {
+			isa = PBXGroup;
+			children = (
+				D331527409BFB1190040C1CF /* mod_portaudio.c */,
+			);
+			name = mod_portaudio;
+			sourceTree = "<group>";
+		};
+		D331529209BFB2BC0040C1CF /* codecs */ = {
+			isa = PBXGroup;
+			children = (
+				D331529309BFB2DE0040C1CF /* mod_l16 */,
+			);
+			name = codecs;
+			sourceTree = "<group>";
+		};
+		D331529309BFB2DE0040C1CF /* mod_l16 */ = {
+			isa = PBXGroup;
+			children = (
+				D331529D09BFB3560040C1CF /* mod_l16.c */,
+			);
+			name = mod_l16;
+			sourceTree = "<group>";
+		};
+		D33157D309BFF7A20040C1CF /* dialplans */ = {
+			isa = PBXGroup;
+			children = (
+				D33157D409BFF7C50040C1CF /* mod_dialplan_demo */,
+			);
+			name = dialplans;
+			sourceTree = "<group>";
+		};
+		D33157D409BFF7C50040C1CF /* mod_dialplan_demo */ = {
+			isa = PBXGroup;
+			children = (
+				D33157D509BFF7DF0040C1CF /* mod_dialplan_demo.c */,
+			);
+			name = mod_dialplan_demo;
+			sourceTree = "<group>";
+		};
 		D3A7637E09BEAAEE002E9B53 = {
 			isa = PBXGroup;
 			children = (
+				D331522009BFABEE0040C1CF /* freeswitch_module_dependencies */,
 				D3285C1D09BF78BE00468114 /* freeswitch_modules */,
 				D31D509309BECBCA001112B8 /* freeswitch */,
 				D3A7638B09BEAB0A002E9B53 /* dependencies_core */,
 				D31D502C09BEC9CC001112B8 /* freeswitch_core */,
 				D3A7653209BEB5A3002E9B53 /* existing_frameworks */,
 				D3A7639409BEAB96002E9B53 /* products */,
+				D33157A509BFF58D0040C1CF /* mod_portaudio-Info.plist */,
+				D33157DB09BFF7EF0040C1CF /* mod_dialplan_demo-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -2196,18 +2389,21 @@
 				D3A7639309BEAB96002E9B53 /* libresample.a */,
 				D3A763F309BEB1CF002E9B53 /* libteletone.a */,
 				D3A7640709BEB286002E9B53 /* libteletone.dylib */,
-				D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */,
-				D3A7676C09BEBCF7002E9B53 /* libsqlite3.a */,
-				D31D4A4B09BEBF01001112B8 /* libapr.dylib */,
-				D31D4DF009BEC3A1001112B8 /* libapr.a */,
-				D31D4E7A09BEC533001112B8 /* libapr-util.dylib */,
-				D31D4FB609BEC85A001112B8 /* libapr-util.a */,
+				D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */,
+				D3A7676C09BEBCF7002E9B53 /* libsqlite3.2.8.a */,
+				D31D4A4B09BEBF01001112B8 /* libapr-1.0.2.2.dylib */,
+				D31D4DF009BEC3A1001112B8 /* libapr-1.0.2.2.a */,
+				D31D4E7A09BEC533001112B8 /* libaprutil-1.0.2.2.dylib */,
+				D31D4FB609BEC85A001112B8 /* libaprutil-1.0.2.2.a */,
 				D31D504209BECA92001112B8 /* libfreeswitch.dylib */,
 				D31D509009BECBA3001112B8 /* freeswitch */,
-				D3285C4F09BF7FF700468114 /* mod_echo.dylib */,
-				D33151E509BFA9420040C1CF /* mod_bridgecall.dylib */,
-				D33151F709BFAA080040C1CF /* mod_ivrtest.dylib */,
-				D331520A09BFAAB80040C1CF /* mod_playback.dylib */,
+				D331521F09BFABD40040C1CF /* portaudio-0.18.dylib */,
+				D33156F509BFEE0C0040C1CF /* mod_echo.bundle */,
+				D331574709BFF2BF0040C1CF /* mod_bridgecall.bundle */,
+				D331576109BFF39E0040C1CF /* mod_l16.bundle */,
+				D331577D09BFF47E0040C1CF /* mod_playback.bundle */,
+				D33157A409BFF58C0040C1CF /* mod_portaudio.bundle */,
+				D33157DA09BFF7EF0040C1CF /* mod_dialplan_demo.bundle */,
 			);
 			name = products;
 			sourceTree = "<group>";
@@ -2305,7 +2501,6 @@
 				D3A7664809BEB5EA002E9B53 /* select.c */,
 				D3A7664A09BEB5EA002E9B53 /* showjournal.c */,
 				D3A7664B09BEB5EA002E9B53 /* table.c */,
-				D3A7664C09BEB5EA002E9B53 /* tclsqlite.c */,
 				D3A7664D09BEB5EA002E9B53 /* test1.c */,
 				D3A7664E09BEB5EA002E9B53 /* test2.c */,
 				D3A7664F09BEB5EA002E9B53 /* test3.c */,
@@ -2330,7 +2525,8 @@
 		D3A7653209BEB5A3002E9B53 /* existing_frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				D3A7643E09BEB59F002E9B53 /* Tcl.framework */,
+				D331554209BFDA750040C1CF /* System.framework */,
+				D331523C09BFAF320040C1CF /* CoreAudio.framework */,
 			);
 			name = existing_frameworks;
 			sourceTree = "<group>";
@@ -2570,31 +2766,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D3285C4B09BF7FF700468114 /* Headers */ = {
+		D331521B09BFABD40040C1CF /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D33151E109BFA9420040C1CF /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D33151F309BFAA080040C1CF /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D331520609BFAAB80040C1CF /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
+				D331523409BFAEFF0040C1CF /* pablio.h in Headers */,
+				D331523609BFAEFF0040C1CF /* ringbuffer.h in Headers */,
+				D331525409BFAF7A0040C1CF /* pa_host.h in Headers */,
+				D331525709BFAF7A0040C1CF /* pa_trace.h in Headers */,
+				D331525809BFAF7A0040C1CF /* portaudio.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2677,9 +2857,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		D31D4A4A09BEBF01001112B8 /* libapr.dylib */ = {
+		D31D4A4A09BEBF01001112B8 /* libapr-1.0.2.2.dylib */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D31D4A4F09BEBF5D001112B8 /* Build configuration list for PBXNativeTarget "libapr.dylib" */;
+			buildConfigurationList = D31D4A4F09BEBF5D001112B8 /* Build configuration list for PBXNativeTarget "libapr-1.0.2.2.dylib" */;
 			buildPhases = (
 				D31D4A4C09BEBF57001112B8 /* ShellScript */,
 				D31D4A4709BEBF01001112B8 /* Headers */,
@@ -2699,14 +2879,14 @@
 			};
 			dependencies = (
 			);
-			name = libapr.dylib;
+			name = "libapr-1.0.2.2.dylib";
 			productName = apr;
-			productReference = D31D4A4B09BEBF01001112B8 /* libapr.dylib */;
+			productReference = D31D4A4B09BEBF01001112B8 /* libapr-1.0.2.2.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
-		D31D4DEF09BEC3A1001112B8 /* libapr.a */ = {
+		D31D4DEF09BEC3A1001112B8 /* libapr-1.0.2.2.a */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D31D4E6B09BEC3E1001112B8 /* Build configuration list for PBXNativeTarget "libapr.a" */;
+			buildConfigurationList = D31D4E6B09BEC3E1001112B8 /* Build configuration list for PBXNativeTarget "libapr-1.0.2.2.a" */;
 			buildPhases = (
 				D31D4DEC09BEC3A1001112B8 /* Headers */,
 				D31D4DED09BEC3A1001112B8 /* Sources */,
@@ -2724,14 +2904,14 @@
 			};
 			dependencies = (
 			);
-			name = libapr.a;
+			name = "libapr-1.0.2.2.a";
 			productName = apr;
-			productReference = D31D4DF009BEC3A1001112B8 /* libapr.a */;
+			productReference = D31D4DF009BEC3A1001112B8 /* libapr-1.0.2.2.a */;
 			productType = "com.apple.product-type.library.static";
 		};
-		D31D4E7909BEC533001112B8 /* libapr-util.dylib */ = {
+		D31D4E7909BEC533001112B8 /* libaprutil-1.0.2.2.dylib */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D31D4E7D09BEC574001112B8 /* Build configuration list for PBXNativeTarget "libapr-util.dylib" */;
+			buildConfigurationList = D31D4E7D09BEC574001112B8 /* Build configuration list for PBXNativeTarget "libaprutil-1.0.2.2.dylib" */;
 			buildPhases = (
 				D31D4E7B09BEC556001112B8 /* ShellScript */,
 				D31D4E7609BEC533001112B8 /* Headers */,
@@ -2751,14 +2931,14 @@
 			};
 			dependencies = (
 			);
-			name = "libapr-util.dylib";
+			name = "libaprutil-1.0.2.2.dylib";
 			productName = "apr-util";
-			productReference = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */;
+			productReference = D31D4E7A09BEC533001112B8 /* libaprutil-1.0.2.2.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
-		D31D4FB509BEC85A001112B8 /* libapr-util.a */ = {
+		D31D4FB509BEC85A001112B8 /* libaprutil-1.0.2.2.a */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D31D500F09BEC8B9001112B8 /* Build configuration list for PBXNativeTarget "libapr-util.a" */;
+			buildConfigurationList = D31D500F09BEC8B9001112B8 /* Build configuration list for PBXNativeTarget "libaprutil-1.0.2.2.a" */;
 			buildPhases = (
 				D31D4FB209BEC85A001112B8 /* Headers */,
 				D31D4FB309BEC85A001112B8 /* Sources */,
@@ -2776,9 +2956,9 @@
 			};
 			dependencies = (
 			);
-			name = "libapr-util.a";
+			name = "libaprutil-1.0.2.2.a";
 			productName = "apr-util";
-			productReference = D31D4FB609BEC85A001112B8 /* libapr-util.a */;
+			productReference = D31D4FB609BEC85A001112B8 /* libaprutil-1.0.2.2.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 		D31D504109BECA92001112B8 /* libfreeswitch.dylib */ = {
@@ -2833,13 +3013,14 @@
 			productReference = D31D509009BECBA3001112B8 /* freeswitch */;
 			productType = "com.apple.product-type.tool";
 		};
-		D3285C4E09BF7FF700468114 /* mod_echo.dylib */ = {
+		D331521E09BFABD40040C1CF /* portaudio-0.18.dylib */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D3285C5009BF800B00468114 /* Build configuration list for PBXNativeTarget "mod_echo.dylib" */;
+			buildConfigurationList = D331522109BFABEE0040C1CF /* Build configuration list for PBXNativeTarget "portaudio-0.18.dylib" */;
 			buildPhases = (
-				D3285C4B09BF7FF700468114 /* Headers */,
-				D3285C4C09BF7FF700468114 /* Sources */,
-				D3285C4D09BF7FF700468114 /* Frameworks */,
+				D331522609BFAC570040C1CF /* ShellScript */,
+				D331521B09BFABD40040C1CF /* Headers */,
+				D331521C09BFABD40040C1CF /* Sources */,
+				D331521D09BFABD40040C1CF /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -2848,94 +3029,358 @@
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_MODEL_TUNING = G5;
 				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = portaudio;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = "portaudio-0.18.dylib";
+			productName = portaudio;
+			productReference = D331521F09BFABD40040C1CF /* portaudio-0.18.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		D33156F409BFEE0C0040C1CF /* mod_echo.bundle */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D33156F709BFEE0C0040C1CF /* Build configuration list for PBXNativeTarget "mod_echo.bundle" */;
+			buildPhases = (
+				D33156F109BFEE0C0040C1CF /* Resources */,
+				D33156F209BFEE0C0040C1CF /* Sources */,
+				D33156F309BFEE0C0040C1CF /* Frameworks */,
+				D331570609BFEEA40040C1CF /* ShellScript */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
+				INFOPLIST_FILE = "mod_echo-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Carbon,
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_echo;
+				WRAPPER_EXTENSION = bundle;
 				ZERO_LINK = YES;
 			};
 			dependencies = (
 			);
-			name = mod_echo.dylib;
+			name = mod_echo.bundle;
 			productName = mod_echo;
-			productReference = D3285C4F09BF7FF700468114 /* mod_echo.dylib */;
-			productType = "com.apple.product-type.library.dynamic";
+			productReference = D33156F509BFEE0C0040C1CF /* mod_echo.bundle */;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>mod_echo</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.yourcompany.mod_echo</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>CSResourcesFileMapped</key>
+	<string>yes</string>
+</dict>
+</plist>
+";
+			productType = "com.apple.product-type.bundle";
 		};
-		D33151E409BFA9420040C1CF /* mod_bridgecall.dylib */ = {
+		D331574609BFF2BF0040C1CF /* mod_bridgecall.bundle */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D33151EF09BFA9A60040C1CF /* Build configuration list for PBXNativeTarget "mod_bridgecall.dylib" */;
+			buildConfigurationList = D331574909BFF2BF0040C1CF /* Build configuration list for PBXNativeTarget "mod_bridgecall.bundle" */;
 			buildPhases = (
-				D33151E109BFA9420040C1CF /* Headers */,
-				D33151E209BFA9420040C1CF /* Sources */,
-				D33151E309BFA9420040C1CF /* Frameworks */,
+				D331574309BFF2BF0040C1CF /* Resources */,
+				D331574409BFF2BF0040C1CF /* Sources */,
+				D331574509BFF2BF0040C1CF /* Frameworks */,
+				D331575309BFF3430040C1CF /* ShellScript */,
 			);
 			buildRules = (
 			);
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
+				INFOPLIST_FILE = "mod_bridgecall-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Carbon,
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_bridgecall;
+				WRAPPER_EXTENSION = bundle;
 				ZERO_LINK = YES;
 			};
 			dependencies = (
 			);
-			name = mod_bridgecall.dylib;
+			name = mod_bridgecall.bundle;
 			productName = mod_bridgecall;
-			productReference = D33151E509BFA9420040C1CF /* mod_bridgecall.dylib */;
-			productType = "com.apple.product-type.library.dynamic";
+			productReference = D331574709BFF2BF0040C1CF /* mod_bridgecall.bundle */;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>mod_bridgecall</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.yourcompany.mod_bridgecall</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>CSResourcesFileMapped</key>
+	<string>yes</string>
+</dict>
+</plist>
+";
+			productType = "com.apple.product-type.bundle";
 		};
-		D33151F609BFAA080040C1CF /* mod_ivrtest.dylib */ = {
+		D331576009BFF39E0040C1CF /* mod_l16.bundle */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D331520409BFAA440040C1CF /* Build configuration list for PBXNativeTarget "mod_ivrtest.dylib" */;
+			buildConfigurationList = D331576309BFF39E0040C1CF /* Build configuration list for PBXNativeTarget "mod_l16.bundle" */;
 			buildPhases = (
-				D33151F309BFAA080040C1CF /* Headers */,
-				D33151F409BFAA080040C1CF /* Sources */,
-				D33151F509BFAA080040C1CF /* Frameworks */,
+				D331575D09BFF39E0040C1CF /* Resources */,
+				D331575E09BFF39E0040C1CF /* Sources */,
+				D331575F09BFF39E0040C1CF /* Frameworks */,
+				D331577109BFF3F30040C1CF /* ShellScript */,
 			);
 			buildRules = (
 			);
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
+				INFOPLIST_FILE = "mod_l16-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Carbon,
+				);
 				PREBINDING = NO;
-				PRODUCT_NAME = mod_ivrtest;
+				PRODUCT_NAME = mod_l16;
+				WRAPPER_EXTENSION = bundle;
 				ZERO_LINK = YES;
 			};
 			dependencies = (
 			);
-			name = mod_ivrtest.dylib;
-			productName = mod_ivrtest;
-			productReference = D33151F709BFAA080040C1CF /* mod_ivrtest.dylib */;
-			productType = "com.apple.product-type.library.dynamic";
+			name = mod_l16.bundle;
+			productName = mod_l16;
+			productReference = D331576109BFF39E0040C1CF /* mod_l16.bundle */;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>mod_l16</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.yourcompany.mod_l16</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>CSResourcesFileMapped</key>
+	<string>yes</string>
+</dict>
+</plist>
+";
+			productType = "com.apple.product-type.bundle";
 		};
-		D331520909BFAAB80040C1CF /* mod_playback.dylib */ = {
+		D331577C09BFF47E0040C1CF /* mod_playback.bundle */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D331520C09BFAACD0040C1CF /* Build configuration list for PBXNativeTarget "mod_playback.dylib" */;
+			buildConfigurationList = D331577F09BFF47E0040C1CF /* Build configuration list for PBXNativeTarget "mod_playback.bundle" */;
 			buildPhases = (
-				D331520609BFAAB80040C1CF /* Headers */,
-				D331520709BFAAB80040C1CF /* Sources */,
-				D331520809BFAAB80040C1CF /* Frameworks */,
+				D331577909BFF47E0040C1CF /* Resources */,
+				D331577A09BFF47E0040C1CF /* Sources */,
+				D331577B09BFF47E0040C1CF /* Frameworks */,
+				D331579909BFF5330040C1CF /* ShellScript */,
 			);
 			buildRules = (
 			);
 			buildSettings = {
-				EXECUTABLE_PREFIX = lib;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
+				INFOPLIST_FILE = "mod_playback-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Carbon,
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_playback;
+				WRAPPER_EXTENSION = bundle;
 				ZERO_LINK = YES;
 			};
 			dependencies = (
 			);
-			name = mod_playback.dylib;
+			name = mod_playback.bundle;
 			productName = mod_playback;
-			productReference = D331520A09BFAAB80040C1CF /* mod_playback.dylib */;
-			productType = "com.apple.product-type.library.dynamic";
+			productReference = D331577D09BFF47E0040C1CF /* mod_playback.bundle */;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>mod_playback</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.yourcompany.mod_playback</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>CSResourcesFileMapped</key>
+	<string>yes</string>
+</dict>
+</plist>
+";
+			productType = "com.apple.product-type.bundle";
+		};
+		D33157A309BFF58C0040C1CF /* mod_portaudio.bundle */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D33157A609BFF58D0040C1CF /* Build configuration list for PBXNativeTarget "mod_portaudio.bundle" */;
+			buildPhases = (
+				D33157A009BFF58C0040C1CF /* Resources */,
+				D33157A109BFF58C0040C1CF /* Sources */,
+				D33157A209BFF58C0040C1CF /* Frameworks */,
+				D33157B209BFF5D30040C1CF /* ShellScript */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
+				INFOPLIST_FILE = "mod_portaudio-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Carbon,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_portaudio;
+				WRAPPER_EXTENSION = bundle;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = mod_portaudio.bundle;
+			productName = mod_portaudio;
+			productReference = D33157A409BFF58C0040C1CF /* mod_portaudio.bundle */;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>mod_portaudio</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.yourcompany.mod_portaudio</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>CSResourcesFileMapped</key>
+	<string>yes</string>
+</dict>
+</plist>
+";
+			productType = "com.apple.product-type.bundle";
+		};
+		D33157D909BFF7EF0040C1CF /* mod_dialplan_demo.bundle */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D33157DC09BFF7F00040C1CF /* Build configuration list for PBXNativeTarget "mod_dialplan_demo.bundle" */;
+			buildPhases = (
+				D33157D609BFF7EF0040C1CF /* Resources */,
+				D33157D709BFF7EF0040C1CF /* Sources */,
+				D33157D809BFF7EF0040C1CF /* Frameworks */,
+				D33157E609BFF8340040C1CF /* ShellScript */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/Carbon.framework/Headers/Carbon.h";
+				INFOPLIST_FILE = "mod_dialplan_demo-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Carbon,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_dialplan_demo;
+				WRAPPER_EXTENSION = bundle;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = mod_dialplan_demo.bundle;
+			productName = mod_dialplan_demo;
+			productReference = D33157DA09BFF7EF0040C1CF /* mod_dialplan_demo.bundle */;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>mod_dialplan_demo</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.yourcompany.mod_dialplan_demo</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>BNDL</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+	<key>CSResourcesFileMapped</key>
+	<string>yes</string>
+</dict>
+</plist>
+";
+			productType = "com.apple.product-type.bundle";
 		};
 		D3A7639209BEAB96002E9B53 /* libresample.a */ = {
 			isa = PBXNativeTarget;
@@ -3016,9 +3461,9 @@
 			productReference = D3A7640709BEB286002E9B53 /* libteletone.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
-		D3A7642E09BEB480002E9B53 /* libsqlite3.dylib */ = {
+		D3A7642E09BEB480002E9B53 /* libsqlite3.2.8.dylib */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D3A7643509BEB4A7002E9B53 /* Build configuration list for PBXNativeTarget "libsqlite3.dylib" */;
+			buildConfigurationList = D3A7643509BEB4A7002E9B53 /* Build configuration list for PBXNativeTarget "libsqlite3.2.8.dylib" */;
 			buildPhases = (
 				D3A7643009BEB495002E9B53 /* ShellScript */,
 				D3A7642B09BEB480002E9B53 /* Headers */,
@@ -3038,14 +3483,14 @@
 			};
 			dependencies = (
 			);
-			name = libsqlite3.dylib;
+			name = libsqlite3.2.8.dylib;
 			productName = sqlite3;
-			productReference = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */;
+			productReference = D3A7642F09BEB480002E9B53 /* libsqlite3.2.8.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
-		D3A7676B09BEBCF7002E9B53 /* libsqlite3.a */ = {
+		D3A7676B09BEBCF7002E9B53 /* libsqlite3.2.8.a */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D3A767B509BEBD34002E9B53 /* Build configuration list for PBXNativeTarget "libsqlite3.a" */;
+			buildConfigurationList = D3A767B509BEBD34002E9B53 /* Build configuration list for PBXNativeTarget "libsqlite3.2.8.a" */;
 			buildPhases = (
 				D3A7676809BEBCF7002E9B53 /* Headers */,
 				D3A7676909BEBCF7002E9B53 /* Sources */,
@@ -3063,9 +3508,9 @@
 			};
 			dependencies = (
 			);
-			name = libsqlite3.a;
+			name = libsqlite3.2.8.a;
 			productName = sqlite3;
-			productReference = D3A7676C09BEBCF7002E9B53 /* libsqlite3.a */;
+			productReference = D3A7676C09BEBCF7002E9B53 /* libsqlite3.2.8.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
@@ -3089,21 +3534,69 @@
 				D3A763F209BEB1CF002E9B53 /* libteletone.a */,
 				D3A7639209BEAB96002E9B53 /* libresample.a */,
 				D3A7640609BEB286002E9B53 /* libteletone.dylib */,
-				D3A7642E09BEB480002E9B53 /* libsqlite3.dylib */,
-				D3A7676B09BEBCF7002E9B53 /* libsqlite3.a */,
-				D31D4A4A09BEBF01001112B8 /* libapr.dylib */,
-				D31D4DEF09BEC3A1001112B8 /* libapr.a */,
-				D31D4E7909BEC533001112B8 /* libapr-util.dylib */,
-				D31D4FB509BEC85A001112B8 /* libapr-util.a */,
+				D3A7642E09BEB480002E9B53 /* libsqlite3.2.8.dylib */,
+				D3A7676B09BEBCF7002E9B53 /* libsqlite3.2.8.a */,
+				D31D4A4A09BEBF01001112B8 /* libapr-1.0.2.2.dylib */,
+				D31D4DEF09BEC3A1001112B8 /* libapr-1.0.2.2.a */,
+				D31D4E7909BEC533001112B8 /* libaprutil-1.0.2.2.dylib */,
+				D31D4FB509BEC85A001112B8 /* libaprutil-1.0.2.2.a */,
 				D31D504109BECA92001112B8 /* libfreeswitch.dylib */,
 				D31D508F09BECBA3001112B8 /* freeswitch */,
-				D3285C4E09BF7FF700468114 /* mod_echo.dylib */,
-				D33151E409BFA9420040C1CF /* mod_bridgecall.dylib */,
-				D33151F609BFAA080040C1CF /* mod_ivrtest.dylib */,
-				D331520909BFAAB80040C1CF /* mod_playback.dylib */,
+				D331521E09BFABD40040C1CF /* portaudio-0.18.dylib */,
+				D33156F409BFEE0C0040C1CF /* mod_echo.bundle */,
+				D331574609BFF2BF0040C1CF /* mod_bridgecall.bundle */,
+				D331576009BFF39E0040C1CF /* mod_l16.bundle */,
+				D331577C09BFF47E0040C1CF /* mod_playback.bundle */,
+				D33157A309BFF58C0040C1CF /* mod_portaudio.bundle */,
+				D33157D909BFF7EF0040C1CF /* mod_dialplan_demo.bundle */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D33156F109BFEE0C0040C1CF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D331574309BFF2BF0040C1CF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D331575D09BFF39E0040C1CF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D331577909BFF47E0040C1CF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D33157A009BFF58C0040C1CF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D33157D609BFF7EF0040C1CF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		D31D4A4C09BEBF57001112B8 /* ShellScript */ = {
@@ -3117,7 +3610,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "if [ -d \"libs/apr-1.2.2\" ]; then\n\texit 0;\nfi\n\ncurl http://svn.freeswitch.org/downloads/libs/apr-1.2.2.tar.gz -o libs/apr-1.2.2.tar.gz\ncd libs\ntar zxf apr-1.2.2.tar.gz\ncd apr-1.2.2\n./configure\nexit 0;";
+			shellScript = "if [ -d \"libs/apr-1.2.2\" ]; then\n\texit 0;\nfi\n\ncurl http://svn.freeswitch.org/downloads/libs/apr-1.2.2.tar.gz -o libs/apr-1.2.2.tar.gz\ncd libs\ntar zxf apr-1.2.2.tar.gz\ncd apr-1.2.2\n./configure\nmake apr.exp\nexit 0;";
 		};
 		D31D4E7B09BEC556001112B8 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -3170,6 +3663,97 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
 			shellScript = "";
+		};
+		D331522609BFAC570040C1CF /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ -d \"libs/portaudio\" ]; then\n\texit 0;\nfi\n\ncurl http://svn.freeswitch.org/downloads/libs/portaudio.tar.gz -o libs/portaudio.tar.gz\ncd libs\ntar zxf portaudio.tar.gz\nexit 0\n";
+		};
+		D331570609BFEEA40040C1CF /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "cp -f .xcodebuild/Debug/mod_echo.bundle/Contents/MacOS/mod_echo $FREESWITCH_INSTALL/mod/mod_echo.dylib\nln -sf $FREESWITCH_INSTALL/mod/mod_echo.dylib .xcodebuild/Debug/mod/mod_echo.dylib\nexit 0";
+		};
+		D331575309BFF3430040C1CF /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "cp -f .xcodebuild/Debug/mod_bridgecall.bundle/Contents/MacOS/mod_bridgecall $FREESWITCH_INSTALL/mod/mod_bridgecall.dylib\nln -sf $FREESWITCH_INSTALL/mod/mod_bridgecall.dylib .xcodebuild/Debug/mod/mod_bridgecall.dylib\nexit 0";
+		};
+		D331577109BFF3F30040C1CF /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "cp -f .xcodebuild/Debug/mod_l16.bundle/Contents/MacOS/mod_l16 $FREESWITCH_INSTALL/mod/mod_l16.dylib\nln -sf $FREESWITCH_INSTALL/mod/mod_l16.dylib .xcodebuild/Debug/mod/mod_l16.dylib\nexit 0";
+		};
+		D331579909BFF5330040C1CF /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "cp -f .xcodebuild/Debug/mod_playback.bundle/Contents/MacOS/mod_playback $FREESWITCH_INSTALL/mod/mod_playback.dylib\nln -sf $FREESWITCH_INSTALL/mod/mod_playback.dylib .xcodebuild/Debug/mod/mod_playback.dylib\nexit 0";
+		};
+		D33157B209BFF5D30040C1CF /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "cp -f .xcodebuild/Debug/mod_portaudio.bundle/Contents/MacOS/mod_portaudio $FREESWITCH_INSTALL/mod/mod_portaudio.dylib\nln -sf $FREESWITCH_INSTALL/mod/mod_portaudio.dylib .xcodebuild/Debug/mod/mod_portaudio.dylib\nexit 0";
+		};
+		D33157E609BFF8340040C1CF /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "cp -f .xcodebuild/Debug/mod_dialplan_demo.bundle/Contents/MacOS/mod_dialplan_demo $FREESWITCH_INSTALL/mod/mod_dialplan_demo.dylib\nln -sf $FREESWITCH_INSTALL/mod/mod_dialplan_demo.dylib .xcodebuild/Debug/mod/mod_dialplan_demo.dylib\nexit 0";
 		};
 		D3A763D409BEB006002E9B53 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -3272,6 +3856,7 @@
 				D31D4D8509BEC23C001112B8 /* timestr.c in Sources */,
 				D31D4D8609BEC23C001112B8 /* groupinfo.c in Sources */,
 				D31D4D8709BEC23C001112B8 /* userinfo.c in Sources */,
+				D33152B709BFBB830040C1CF /* exports.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3347,6 +3932,7 @@
 				D31D4E6709BEC3BE001112B8 /* timestr.c in Sources */,
 				D31D4E6809BEC3BE001112B8 /* groupinfo.c in Sources */,
 				D31D4E6909BEC3BE001112B8 /* userinfo.c in Sources */,
+				D33152B509BFBB830040C1CF /* exports.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3479,35 +4065,64 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D3285C4C09BF7FF700468114 /* Sources */ = {
+		D331521C09BFABD40040C1CF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D3285C5209BF803100468114 /* mod_echo.c in Sources */,
+				D331523309BFAEFF0040C1CF /* pablio.c in Sources */,
+				D331523509BFAEFF0040C1CF /* ringbuffer.c in Sources */,
+				D331525309BFAF7A0040C1CF /* pa_convert.c in Sources */,
+				D331525509BFAF7A0040C1CF /* pa_lib.c in Sources */,
+				D331525609BFAF7A0040C1CF /* pa_trace.c in Sources */,
+				D331526C09BFB0500040C1CF /* pa_mac_core.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D33151E209BFA9420040C1CF /* Sources */ = {
+		D33156F209BFEE0C0040C1CF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D33151E609BFA96B0040C1CF /* mod_bridgecall.c in Sources */,
+				D33156FB09BFEE570040C1CF /* mod_echo.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D33151F409BFAA080040C1CF /* Sources */ = {
+		D331574409BFF2BF0040C1CF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D33151F809BFAA1E0040C1CF /* mod_ivrtest.c in Sources */,
+				D331574D09BFF31B0040C1CF /* mod_bridgecall.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D331520709BFAAB80040C1CF /* Sources */ = {
+		D331575E09BFF39E0040C1CF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D331520F09BFAAE50040C1CF /* mod_playback.c in Sources */,
+				D331576809BFF3CA0040C1CF /* mod_l16.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D331577A09BFF47E0040C1CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D331578209BFF4A70040C1CF /* mod_playback.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D33157A109BFF58C0040C1CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33157AF09BFF5BE0040C1CF /* mod_portaudio.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D33157D709BFF7EF0040C1CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33157DF09BFF8120040C1CF /* mod_dialplan_demo.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3560,7 +4175,6 @@
 				D3A7667009BEB5EA002E9B53 /* insert.c in Sources */,
 				D3A7667109BEB5EA002E9B53 /* legacy.c in Sources */,
 				D3A7667509BEB5EA002E9B53 /* main.c in Sources */,
-				D3A7667609BEB5EA002E9B53 /* md5.c in Sources */,
 				D3A7667809BEB5EA002E9B53 /* os_test.c in Sources */,
 				D3A7667909BEB5EA002E9B53 /* os_unix.c in Sources */,
 				D3A7667A09BEB5EA002E9B53 /* os_win.c in Sources */,
@@ -3573,12 +4187,6 @@
 				D3A7668109BEB5EA002E9B53 /* select.c in Sources */,
 				D3A7668309BEB5EA002E9B53 /* showjournal.c in Sources */,
 				D3A7668409BEB5EA002E9B53 /* table.c in Sources */,
-				D3A7668509BEB5EA002E9B53 /* tclsqlite.c in Sources */,
-				D3A7668609BEB5EA002E9B53 /* test1.c in Sources */,
-				D3A7668709BEB5EA002E9B53 /* test2.c in Sources */,
-				D3A7668809BEB5EA002E9B53 /* test3.c in Sources */,
-				D3A7668909BEB5EA002E9B53 /* test4.c in Sources */,
-				D3A7668A09BEB5EA002E9B53 /* test5.c in Sources */,
 				D3A7668D09BEB5EA002E9B53 /* tokenize.c in Sources */,
 				D3A7668E09BEB5EA002E9B53 /* trigger.c in Sources */,
 				D3A7668F09BEB5EA002E9B53 /* update.c in Sources */,
@@ -3630,7 +4238,6 @@
 				D3A7678909BEBD09002E9B53 /* select.c in Sources */,
 				D3A7678A09BEBD09002E9B53 /* showjournal.c in Sources */,
 				D3A7678B09BEBD09002E9B53 /* table.c in Sources */,
-				D3A7678C09BEBD09002E9B53 /* tclsqlite.c in Sources */,
 				D3A7678D09BEBD09002E9B53 /* test1.c in Sources */,
 				D3A7678E09BEBD09002E9B53 /* test2.c in Sources */,
 				D3A7678F09BEBD09002E9B53 /* test3.c in Sources */,
@@ -3656,22 +4263,22 @@
 /* Begin PBXTargetDependency section */
 		D31D4E6F09BEC40B001112B8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D31D4A4A09BEBF01001112B8 /* libapr.dylib */;
+			target = D31D4A4A09BEBF01001112B8 /* libapr-1.0.2.2.dylib */;
 			targetProxy = D31D4E6E09BEC40B001112B8 /* PBXContainerItemProxy */;
 		};
 		D31D4E7109BEC40D001112B8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D31D4DEF09BEC3A1001112B8 /* libapr.a */;
+			target = D31D4DEF09BEC3A1001112B8 /* libapr-1.0.2.2.a */;
 			targetProxy = D31D4E7009BEC40D001112B8 /* PBXContainerItemProxy */;
 		};
 		D31D500909BEC88B001112B8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D31D4E7909BEC533001112B8 /* libapr-util.dylib */;
+			target = D31D4E7909BEC533001112B8 /* libaprutil-1.0.2.2.dylib */;
 			targetProxy = D31D500809BEC88B001112B8 /* PBXContainerItemProxy */;
 		};
 		D31D500B09BEC88E001112B8 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D31D4FB509BEC85A001112B8 /* libapr-util.a */;
+			target = D31D4FB509BEC85A001112B8 /* libaprutil-1.0.2.2.a */;
 			targetProxy = D31D500A09BEC88E001112B8 /* PBXContainerItemProxy */;
 		};
 		D31D508B09BECB94001112B8 /* PBXTargetDependency */ = {
@@ -3684,15 +4291,10 @@
 			target = D31D508F09BECBA3001112B8 /* freeswitch */;
 			targetProxy = D31D50B009BECE4C001112B8 /* PBXContainerItemProxy */;
 		};
-		D3285C6C09BF829700468114 /* PBXTargetDependency */ = {
+		D331528609BFB1D90040C1CF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D3285C4E09BF7FF700468114 /* mod_echo.dylib */;
-			targetProxy = D3285C6B09BF829700468114 /* PBXContainerItemProxy */;
-		};
-		D33151ED09BFA9930040C1CF /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D33151E409BFA9420040C1CF /* mod_bridgecall.dylib */;
-			targetProxy = D33151EC09BFA9930040C1CF /* PBXContainerItemProxy */;
+			target = D331521E09BFABD40040C1CF /* portaudio-0.18.dylib */;
+			targetProxy = D331528509BFB1D90040C1CF /* PBXContainerItemProxy */;
 		};
 		D3A7640009BEB27C002E9B53 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -3711,12 +4313,12 @@
 		};
 		D3A767BA09BEBD8B002E9B53 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D3A7642E09BEB480002E9B53 /* libsqlite3.dylib */;
+			target = D3A7642E09BEB480002E9B53 /* libsqlite3.2.8.dylib */;
 			targetProxy = D3A767B909BEBD8B002E9B53 /* PBXContainerItemProxy */;
 		};
 		D3A767BC09BEBD8D002E9B53 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D3A7676B09BEBCF7002E9B53 /* libsqlite3.a */;
+			target = D3A7676B09BEBCF7002E9B53 /* libsqlite3.2.8.a */;
 			targetProxy = D3A767BB09BEBD8D002E9B53 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -3726,6 +4328,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 3.0.0;
+				DYLIB_CURRENT_VERSION = 3.2.0;
 				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
@@ -3744,8 +4348,9 @@
 					"-DSIGPROCMASK_SETS_THREAD_MASK",
 					"-no-cpp-precomp",
 				);
+				OTHER_LDFLAGS = "-lpthread";
 				PREBINDING = NO;
-				PRODUCT_NAME = apr;
+				PRODUCT_NAME = "apr-1.0.2.2";
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -3772,8 +4377,9 @@
 					"-DSIGPROCMASK_SETS_THREAD_MASK",
 					"-no-cpp-precomp",
 				);
+				OTHER_LDFLAGS = "";
 				PREBINDING = NO;
-				PRODUCT_NAME = apr;
+				PRODUCT_NAME = "apr-1.0.2.2";
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -3782,6 +4388,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 3.0.0;
+				DYLIB_CURRENT_VERSION = 3.2.0;
 				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
@@ -3791,11 +4399,10 @@
 				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				OTHER_LDFLAGS = (
 					"-liconv",
-					"-lsqlite3",
-					"-lapr",
+					"-lexpat",
 				);
 				PREBINDING = NO;
-				PRODUCT_NAME = "apr-util";
+				PRODUCT_NAME = "aprutil-1.0.2.2";
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -3811,7 +4418,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
 				PREBINDING = NO;
-				PRODUCT_NAME = "apr-util";
+				PRODUCT_NAME = "aprutil-1.0.2.2";
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -3820,6 +4427,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 2.0.0;
+				DYLIB_CURRENT_VERSION = 2.0.0;
 				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
@@ -3843,6 +4452,11 @@
 					"-DSWITCH_LOG_DIR=\"$(SWITCH_LOG_DIR)\"",
 					"-DSWITCH_SCRIPT_DIR=\"$(SWITCH_SCRIPT_DIR)\"",
 				);
+				OTHER_LDFLAGS = (
+					"-lresample",
+					"-liconv",
+					"-lexpat",
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = freeswitch;
 				ZERO_LINK = YES;
@@ -3863,78 +4477,146 @@
 					"$(LIBRARY_SEARCH_PATHS)",
 					"$(SRCROOT)/.xcodebuild/Debug",
 				);
-				PREBINDING = NO;
+				OTHER_LDFLAGS = (
+					"-lexpat",
+					"-liconv",
+				);
+				PREBINDING = YES;
 				PRODUCT_NAME = freeswitch;
 				STRIP_INSTALLED_PRODUCT = YES;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
 		};
-		D3285C5109BF800B00468114 /* Debug */ = {
+		D331522209BFABEE0040C1CF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
-				DSTROOT = /;
 				EXECUTABLE_PREFIX = "";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(FREESWITCH_INSTALL)/mod";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
+				OTHER_LDFLAGS = "-lm";
+				PREBINDING = NO;
+				PRODUCT_NAME = "portaudio-0.18";
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D33156F809BFEE0C0040C1CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = bundle;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/lib";
+				OTHER_LDFLAGS = "";
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_echo;
+				WRAPPER_EXTENSION = bundle;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
 		};
-		D33151F009BFA9A60040C1CF /* Debug */ = {
+		D331574A09BFF2BF0040C1CF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
-				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_EXTENSION = bundel;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(FREESWITCH_INSTALL)/mod";
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INSTALL_PATH = "$(HOME)/Library/Bundles";
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_bridgecall;
+				WRAPPER_EXTENSION = bundle;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
 		};
-		D331520509BFAA440040C1CF /* Debug */ = {
+		D331576409BFF39E0040C1CF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
-				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_EXTENSION = bundle;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INSTALL_PATH = "$(FREESWITCH_INSTALL)/mod";
 				PREBINDING = NO;
-				PRODUCT_NAME = mod_ivrtest;
+				PRODUCT_NAME = mod_l16;
+				WRAPPER_EXTENSION = bundle;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
 		};
-		D331520D09BFAACD0040C1CF /* Debug */ = {
+		D331578009BFF47E0040C1CF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
-				EXECUTABLE_PREFIX = "";
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INSTALL_PATH = "$(FREESWITCH_INSTALL)/mod";
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_playback;
+				WRAPPER_EXTENSION = bundle;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D33157A709BFF58D0040C1CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = bundle;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/mod";
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_portaudio;
+				WRAPPER_EXTENSION = bundle;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D33157DD09BFF7F00040C1CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = bundle;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/mod";
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_dialplan_demo;
+				WRAPPER_EXTENSION = bundle;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -3957,7 +4639,7 @@
 					"-DSWITCH_SCRIPT_DIR=\"$(SWITCH_SCRIPT_DIR)\"",
 				);
 				STRIP_INSTALLED_PRODUCT = NO;
-				SWITCH_CONF = "$(SWITCH_PREFIX_DIR)/conf";
+				SWITCH_CONF_DIR = "$(SWITCH_PREFIX_DIR)/conf";
 				SWITCH_DB_DIR = "$(SWITCH_PREFIX_DIR)/db";
 				SWITCH_LOG_DIR = "$(SWITCH_PREFIX_DIR)/log";
 				SWITCH_MOD_DIR = "$(SWITCH_PREFIX_DIR)/mod";
@@ -4034,6 +4716,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 9.0.0;
+				DYLIB_CURRENT_VERSION = 9.6.0;
 				EXECUTABLE_PREFIX = lib;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
@@ -4053,14 +4737,9 @@
 					"-DHAVE_READLINE=1",
 					"-I/usr/include/readline",
 				);
-				OTHER_LDFLAGS = (
-					"-Wl,-search_paths_first",
-					"-lreadline",
-					"-lncurses",
-					"-liconv",
-				);
+				OTHER_LDFLAGS = "";
 				PREBINDING = NO;
-				PRODUCT_NAME = sqlite3;
+				PRODUCT_NAME = sqlite3.2.8;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -4088,7 +4767,7 @@
 					"-I/usr/include/readline",
 				);
 				PREBINDING = NO;
-				PRODUCT_NAME = sqlite3;
+				PRODUCT_NAME = sqlite3.2.8;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -4096,7 +4775,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D31D4A4F09BEBF5D001112B8 /* Build configuration list for PBXNativeTarget "libapr.dylib" */ = {
+		D31D4A4F09BEBF5D001112B8 /* Build configuration list for PBXNativeTarget "libapr-1.0.2.2.dylib" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D31D4A5009BEBF5D001112B8 /* Debug */,
@@ -4104,7 +4783,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		D31D4E6B09BEC3E1001112B8 /* Build configuration list for PBXNativeTarget "libapr.a" */ = {
+		D31D4E6B09BEC3E1001112B8 /* Build configuration list for PBXNativeTarget "libapr-1.0.2.2.a" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D31D4E6C09BEC3E1001112B8 /* Debug */,
@@ -4112,7 +4791,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		D31D4E7D09BEC574001112B8 /* Build configuration list for PBXNativeTarget "libapr-util.dylib" */ = {
+		D31D4E7D09BEC574001112B8 /* Build configuration list for PBXNativeTarget "libaprutil-1.0.2.2.dylib" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D31D4E7E09BEC574001112B8 /* Debug */,
@@ -4120,7 +4799,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		D31D500F09BEC8B9001112B8 /* Build configuration list for PBXNativeTarget "libapr-util.a" */ = {
+		D31D500F09BEC8B9001112B8 /* Build configuration list for PBXNativeTarget "libaprutil-1.0.2.2.a" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D31D501009BEC8B9001112B8 /* Debug */,
@@ -4144,34 +4823,58 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		D3285C5009BF800B00468114 /* Build configuration list for PBXNativeTarget "mod_echo.dylib" */ = {
+		D331522109BFABEE0040C1CF /* Build configuration list for PBXNativeTarget "portaudio-0.18.dylib" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D3285C5109BF800B00468114 /* Debug */,
+				D331522209BFABEE0040C1CF /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		D33151EF09BFA9A60040C1CF /* Build configuration list for PBXNativeTarget "mod_bridgecall.dylib" */ = {
+		D33156F709BFEE0C0040C1CF /* Build configuration list for PBXNativeTarget "mod_echo.bundle" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D33151F009BFA9A60040C1CF /* Debug */,
+				D33156F809BFEE0C0040C1CF /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		D331520409BFAA440040C1CF /* Build configuration list for PBXNativeTarget "mod_ivrtest.dylib" */ = {
+		D331574909BFF2BF0040C1CF /* Build configuration list for PBXNativeTarget "mod_bridgecall.bundle" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D331520509BFAA440040C1CF /* Debug */,
+				D331574A09BFF2BF0040C1CF /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		D331520C09BFAACD0040C1CF /* Build configuration list for PBXNativeTarget "mod_playback.dylib" */ = {
+		D331576309BFF39E0040C1CF /* Build configuration list for PBXNativeTarget "mod_l16.bundle" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D331520D09BFAACD0040C1CF /* Debug */,
+				D331576409BFF39E0040C1CF /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D331577F09BFF47E0040C1CF /* Build configuration list for PBXNativeTarget "mod_playback.bundle" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D331578009BFF47E0040C1CF /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D33157A609BFF58D0040C1CF /* Build configuration list for PBXNativeTarget "mod_portaudio.bundle" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D33157A709BFF58D0040C1CF /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D33157DC09BFF7F00040C1CF /* Build configuration list for PBXNativeTarget "mod_dialplan_demo.bundle" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D33157DD09BFF7F00040C1CF /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -4216,7 +4919,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		D3A7643509BEB4A7002E9B53 /* Build configuration list for PBXNativeTarget "libsqlite3.dylib" */ = {
+		D3A7643509BEB4A7002E9B53 /* Build configuration list for PBXNativeTarget "libsqlite3.2.8.dylib" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3A7643609BEB4A7002E9B53 /* Debug */,
@@ -4224,7 +4927,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		D3A767B509BEBD34002E9B53 /* Build configuration list for PBXNativeTarget "libsqlite3.a" */ = {
+		D3A767B509BEBD34002E9B53 /* Build configuration list for PBXNativeTarget "libsqlite3.2.8.a" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3A767B609BEBD34002E9B53 /* Debug */,
