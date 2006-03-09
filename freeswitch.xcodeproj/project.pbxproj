@@ -28,6 +28,7 @@
 				D31D508B09BECB94001112B8 /* PBXTargetDependency */,
 				D31D50B109BECE4C001112B8 /* PBXTargetDependency */,
 				D3285C6C09BF829700468114 /* PBXTargetDependency */,
+				D33151ED09BFA9930040C1CF /* PBXTargetDependency */,
 			);
 			name = All;
 			productName = All;
@@ -484,6 +485,21 @@
 		D3285C5409BF803A00468114 /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
 		D3285C5509BF803A00468114 /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
 		D3285C5609BF803A00468114 /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
+		D33151E609BFA96B0040C1CF /* mod_bridgecall.c in Sources */ = {isa = PBXBuildFile; fileRef = D33151E009BFA9390040C1CF /* mod_bridgecall.c */; };
+		D33151E709BFA9820040C1CF /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
+		D33151E809BFA9820040C1CF /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
+		D33151E909BFA9820040C1CF /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
+		D33151EA09BFA9820040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
+		D33151F809BFAA1E0040C1CF /* mod_ivrtest.c in Sources */ = {isa = PBXBuildFile; fileRef = D33151F209BFA9FA0040C1CF /* mod_ivrtest.c */; };
+		D33151F909BFAA2D0040C1CF /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
+		D33151FA09BFAA2D0040C1CF /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
+		D33151FB09BFAA2D0040C1CF /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
+		D33151FC09BFAA2D0040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
+		D331520F09BFAAE50040C1CF /* mod_playback.c in Sources */ = {isa = PBXBuildFile; fileRef = D331520E09BFAAE50040C1CF /* mod_playback.c */; };
+		D331521009BFAB0D0040C1CF /* libsqlite3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A7642F09BEB480002E9B53 /* libsqlite3.dylib */; };
+		D331521109BFAB0D0040C1CF /* libapr.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4A4B09BEBF01001112B8 /* libapr.dylib */; };
+		D331521209BFAB0D0040C1CF /* libapr-util.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D4E7A09BEC533001112B8 /* libapr-util.dylib */; };
+		D331521309BFAB0D0040C1CF /* libfreeswitch.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = D31D504209BECA92001112B8 /* libfreeswitch.dylib */; };
 		D3A763A809BEAD00002E9B53 /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A509BEAD00002E9B53 /* filterkit.c */; };
 		D3A763A909BEAD00002E9B53 /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A609BEAD00002E9B53 /* resample.c */; };
 		D3A763AA09BEAD00002E9B53 /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A763A709BEAD00002E9B53 /* resamplesubs.c */; };
@@ -698,6 +714,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = D3285C4E09BF7FF700468114;
 			remoteInfo = mod_echo.dylib;
+		};
+		D33151EC09BFA9930040C1CF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D3A7638009BEAAEE002E9B53 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D33151E409BFA9420040C1CF /* mod_bridgecall.dylib */;
+			remoteInfo = mod_bridgecall.dylib;
 		};
 		D3A763FF09BEB27C002E9B53 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -1021,6 +1044,12 @@
 		D31D509709BECBE3001112B8 /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = src/switch.c; sourceTree = "<group>"; };
 		D3285C2009BF790700468114 /* mod_echo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_echo.c; path = src/mod/applications/mod_echo/mod_echo.c; sourceTree = "<group>"; };
 		D3285C4F09BF7FF700468114 /* mod_echo.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = mod_echo.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D33151E009BFA9390040C1CF /* mod_bridgecall.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_bridgecall.c; path = src/mod/applications/mod_bridgecall/mod_bridgecall.c; sourceTree = "<group>"; };
+		D33151E509BFA9420040C1CF /* mod_bridgecall.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = mod_bridgecall.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D33151F209BFA9FA0040C1CF /* mod_ivrtest.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_ivrtest.c; path = src/mod/applications/mod_ivrtest/mod_ivrtest.c; sourceTree = "<group>"; };
+		D33151F709BFAA080040C1CF /* mod_ivrtest.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = mod_ivrtest.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D331520A09BFAAB80040C1CF /* mod_playback.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = mod_playback.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D331520E09BFAAE50040C1CF /* mod_playback.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_playback.c; path = src/mod/applications/mod_playback/mod_playback.c; sourceTree = "<group>"; };
 		D3A7639309BEAB96002E9B53 /* libresample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libresample.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3A763A509BEAD00002E9B53 /* filterkit.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = filterkit.c; path = "libs/libresample-0.1.3/src/filterkit.c"; sourceTree = "<group>"; };
 		D3A763A609BEAD00002E9B53 /* resample.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = resample.c; path = "libs/libresample-0.1.3/src/resample.c"; sourceTree = "<group>"; };
@@ -1165,6 +1194,39 @@
 				D3285C5409BF803A00468114 /* libapr.dylib in Frameworks */,
 				D3285C5509BF803A00468114 /* libapr-util.dylib in Frameworks */,
 				D3285C5609BF803A00468114 /* libfreeswitch.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D33151E309BFA9420040C1CF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33151E709BFA9820040C1CF /* libsqlite3.dylib in Frameworks */,
+				D33151E809BFA9820040C1CF /* libapr.dylib in Frameworks */,
+				D33151E909BFA9820040C1CF /* libapr-util.dylib in Frameworks */,
+				D33151EA09BFA9820040C1CF /* libfreeswitch.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D33151F509BFAA080040C1CF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33151F909BFAA2D0040C1CF /* libsqlite3.dylib in Frameworks */,
+				D33151FA09BFAA2D0040C1CF /* libapr.dylib in Frameworks */,
+				D33151FB09BFAA2D0040C1CF /* libapr-util.dylib in Frameworks */,
+				D33151FC09BFAA2D0040C1CF /* libfreeswitch.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D331520809BFAAB80040C1CF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D331521009BFAB0D0040C1CF /* libsqlite3.dylib in Frameworks */,
+				D331521109BFAB0D0040C1CF /* libapr.dylib in Frameworks */,
+				D331521209BFAB0D0040C1CF /* libapr-util.dylib in Frameworks */,
+				D331521309BFAB0D0040C1CF /* libfreeswitch.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2017,6 +2079,7 @@
 		D3285C1D09BF78BE00468114 /* freeswitch_modules */ = {
 			isa = PBXGroup;
 			children = (
+				D33151EE09BFA9A50040C1CF /* asr_tts */,
 				D3285C1E09BF78CB00468114 /* applications */,
 			);
 			name = freeswitch_modules;
@@ -2025,6 +2088,9 @@
 		D3285C1E09BF78CB00468114 /* applications */ = {
 			isa = PBXGroup;
 			children = (
+				D331520B09BFAACC0040C1CF /* mod_playback */,
+				D33151F109BFA9B50040C1CF /* mod_ivrtest */,
+				D33151DF09BFA9050040C1CF /* mod_bridgecall */,
 				D3285C1F09BF78D800468114 /* mod_echo */,
 			);
 			name = applications;
@@ -2036,6 +2102,37 @@
 				D3285C2009BF790700468114 /* mod_echo.c */,
 			);
 			name = mod_echo;
+			sourceTree = "<group>";
+		};
+		D33151DF09BFA9050040C1CF /* mod_bridgecall */ = {
+			isa = PBXGroup;
+			children = (
+				D33151E009BFA9390040C1CF /* mod_bridgecall.c */,
+			);
+			name = mod_bridgecall;
+			sourceTree = "<group>";
+		};
+		D33151EE09BFA9A50040C1CF /* asr_tts */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = asr_tts;
+			sourceTree = "<group>";
+		};
+		D33151F109BFA9B50040C1CF /* mod_ivrtest */ = {
+			isa = PBXGroup;
+			children = (
+				D33151F209BFA9FA0040C1CF /* mod_ivrtest.c */,
+			);
+			name = mod_ivrtest;
+			sourceTree = "<group>";
+		};
+		D331520B09BFAACC0040C1CF /* mod_playback */ = {
+			isa = PBXGroup;
+			children = (
+				D331520E09BFAAE50040C1CF /* mod_playback.c */,
+			);
+			name = mod_playback;
 			sourceTree = "<group>";
 		};
 		D3A7637E09BEAAEE002E9B53 = {
@@ -2108,6 +2205,9 @@
 				D31D504209BECA92001112B8 /* libfreeswitch.dylib */,
 				D31D509009BECBA3001112B8 /* freeswitch */,
 				D3285C4F09BF7FF700468114 /* mod_echo.dylib */,
+				D33151E509BFA9420040C1CF /* mod_bridgecall.dylib */,
+				D33151F709BFAA080040C1CF /* mod_ivrtest.dylib */,
+				D331520A09BFAAB80040C1CF /* mod_playback.dylib */,
 			);
 			name = products;
 			sourceTree = "<group>";
@@ -2477,6 +2577,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D33151E109BFA9420040C1CF /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D33151F309BFAA080040C1CF /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D331520609BFAAB80040C1CF /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3A7638F09BEAB96002E9B53 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -2738,6 +2859,84 @@
 			productReference = D3285C4F09BF7FF700468114 /* mod_echo.dylib */;
 			productType = "com.apple.product-type.library.dynamic";
 		};
+		D33151E409BFA9420040C1CF /* mod_bridgecall.dylib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D33151EF09BFA9A60040C1CF /* Build configuration list for PBXNativeTarget "mod_bridgecall.dylib" */;
+			buildPhases = (
+				D33151E109BFA9420040C1CF /* Headers */,
+				D33151E209BFA9420040C1CF /* Sources */,
+				D33151E309BFA9420040C1CF /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_bridgecall;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = mod_bridgecall.dylib;
+			productName = mod_bridgecall;
+			productReference = D33151E509BFA9420040C1CF /* mod_bridgecall.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		D33151F609BFAA080040C1CF /* mod_ivrtest.dylib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D331520409BFAA440040C1CF /* Build configuration list for PBXNativeTarget "mod_ivrtest.dylib" */;
+			buildPhases = (
+				D33151F309BFAA080040C1CF /* Headers */,
+				D33151F409BFAA080040C1CF /* Sources */,
+				D33151F509BFAA080040C1CF /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_ivrtest;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = mod_ivrtest.dylib;
+			productName = mod_ivrtest;
+			productReference = D33151F709BFAA080040C1CF /* mod_ivrtest.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		D331520909BFAAB80040C1CF /* mod_playback.dylib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D331520C09BFAACD0040C1CF /* Build configuration list for PBXNativeTarget "mod_playback.dylib" */;
+			buildPhases = (
+				D331520609BFAAB80040C1CF /* Headers */,
+				D331520709BFAAB80040C1CF /* Sources */,
+				D331520809BFAAB80040C1CF /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_playback;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = mod_playback.dylib;
+			productName = mod_playback;
+			productReference = D331520A09BFAAB80040C1CF /* mod_playback.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
 		D3A7639209BEAB96002E9B53 /* libresample.a */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D3A7639509BEAB97002E9B53 /* Build configuration list for PBXNativeTarget "libresample.a" */;
@@ -2899,6 +3098,9 @@
 				D31D504109BECA92001112B8 /* libfreeswitch.dylib */,
 				D31D508F09BECBA3001112B8 /* freeswitch */,
 				D3285C4E09BF7FF700468114 /* mod_echo.dylib */,
+				D33151E409BFA9420040C1CF /* mod_bridgecall.dylib */,
+				D33151F609BFAA080040C1CF /* mod_ivrtest.dylib */,
+				D331520909BFAAB80040C1CF /* mod_playback.dylib */,
 			);
 		};
 /* End PBXProject section */
@@ -2954,7 +3156,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "if [ -d \".xcodebuild/Debug/mod\" ]; then\n\texit 0;\nfi\nmkdir .xcodebuild/Debug/{mod,log,conf,db}\ntouch .xcodebuild/Debug/conf/freeswitch.conf\ntouch .xcodebuild/Debug/conf/modules.conf";
+			shellScript = "if [ -d \".xcodebuild/Debug/mod\" ]; then\n\texit 0;\nfi\nmkdir -p .xcodebuild/Debug/{mod,log,conf,db,scripts,bin,lib}\ncp conf/freeswitch.conf .xcodebuild/Debug/conf/freeswitch.conf\n";
 		};
 		D33151A809BF9D0D0040C1CF /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -3285,6 +3487,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D33151E209BFA9420040C1CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33151E609BFA96B0040C1CF /* mod_bridgecall.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D33151F409BFAA080040C1CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33151F809BFAA1E0040C1CF /* mod_ivrtest.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D331520709BFAAB80040C1CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D331520F09BFAAE50040C1CF /* mod_playback.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3A7639009BEAB96002E9B53 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -3462,6 +3688,11 @@
 			isa = PBXTargetDependency;
 			target = D3285C4E09BF7FF700468114 /* mod_echo.dylib */;
 			targetProxy = D3285C6B09BF829700468114 /* PBXContainerItemProxy */;
+		};
+		D33151ED09BFA9930040C1CF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D33151E409BFA9420040C1CF /* mod_bridgecall.dylib */;
+			targetProxy = D33151EC09BFA9930040C1CF /* PBXContainerItemProxy */;
 		};
 		D3A7640009BEB27C002E9B53 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -3657,9 +3888,61 @@
 			};
 			name = Debug;
 		};
+		D33151F009BFA9A60040C1CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/mod";
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_bridgecall;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D331520509BFAA440040C1CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/mod";
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_ivrtest;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D331520D09BFAACD0040C1CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL)/mod";
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_playback;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
 		D3A7638209BEAAEE002E9B53 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = "$(NATIVE_ARCH)";
 				COPY_PHASE_STRIP = NO;
 				DSTROOT = /;
 				FREESWITCH_INSTALL = "$(SWITCH_PREFIX_DIR)";
@@ -3673,6 +3956,7 @@
 					"-DSWITCH_LOG_DIR=\"$(SWITCH_LOG_DIR)\"",
 					"-DSWITCH_SCRIPT_DIR=\"$(SWITCH_SCRIPT_DIR)\"",
 				);
+				STRIP_INSTALLED_PRODUCT = NO;
 				SWITCH_CONF = "$(SWITCH_PREFIX_DIR)/conf";
 				SWITCH_DB_DIR = "$(SWITCH_PREFIX_DIR)/db";
 				SWITCH_LOG_DIR = "$(SWITCH_PREFIX_DIR)/log";
@@ -3864,6 +4148,30 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3285C5109BF800B00468114 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D33151EF09BFA9A60040C1CF /* Build configuration list for PBXNativeTarget "mod_bridgecall.dylib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D33151F009BFA9A60040C1CF /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D331520409BFAA440040C1CF /* Build configuration list for PBXNativeTarget "mod_ivrtest.dylib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D331520509BFAA440040C1CF /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D331520C09BFAACD0040C1CF /* Build configuration list for PBXNativeTarget "mod_playback.dylib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D331520D09BFAACD0040C1CF /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

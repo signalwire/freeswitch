@@ -48,12 +48,22 @@
 	D3285C4E09BF7FF700468114 /* mod_echo.dylib */ = {
 		activeExec = 0;
 	};
+	D33151E409BFA9420040C1CF /* mod_bridgecall.dylib */ = {
+		activeExec = 0;
+	};
+	D33151F609BFAA080040C1CF /* mod_ivrtest.dylib */ = {
+		activeExec = 0;
+	};
+	D331520909BFAAB80040C1CF /* mod_playback.dylib */ = {
+		activeExec = 0;
+	};
 	D3A7638009BEAAEE002E9B53 /* Project object */ = {
 		activeBuildConfigurationName = Debug;
 		activeBuildStyle = D31D4A3209BEBE12001112B8 /* Development */;
 		activeExecutable = D31D509109BECBA3001112B8 /* freeswitch */;
-		activeTarget = D3A763FE09BEB271002E9B53 /* All */;
+		activeTarget = D331520909BFAAB80040C1CF /* mod_playback.dylib */;
 		addToTargets = (
+			D331520909BFAAB80040C1CF /* mod_playback.dylib */,
 		);
 		breakpoints = (
 			D3A7673709BEBAFE002E9B53 /* build.c:29 */,
