@@ -8,10 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		D37F3EDD09C0F707002C93D4 /* libteletone_detect.c in Sources */ = {isa = PBXBuildFile; fileRef = D37F3ED809C0F707002C93D4 /* libteletone_detect.c */; };
-		D37F3EDE09C0F707002C93D4 /* libteletone_detect.h in Headers */ = {isa = PBXBuildFile; fileRef = D37F3ED909C0F707002C93D4 /* libteletone_detect.h */; };
+		D37F3EDE09C0F707002C93D4 /* libteletone_detect.h in Headers */ = {isa = PBXBuildFile; fileRef = D37F3ED909C0F707002C93D4 /* libteletone_detect.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		D37F3EDF09C0F707002C93D4 /* libteletone_generate.c in Sources */ = {isa = PBXBuildFile; fileRef = D37F3EDA09C0F707002C93D4 /* libteletone_generate.c */; };
-		D37F3EE009C0F707002C93D4 /* libteletone_generate.h in Headers */ = {isa = PBXBuildFile; fileRef = D37F3EDB09C0F707002C93D4 /* libteletone_generate.h */; };
-		D37F3EE109C0F707002C93D4 /* libteletone.h in Headers */ = {isa = PBXBuildFile; fileRef = D37F3EDC09C0F707002C93D4 /* libteletone.h */; };
+		D37F3EE009C0F707002C93D4 /* libteletone_generate.h in Headers */ = {isa = PBXBuildFile; fileRef = D37F3EDB09C0F707002C93D4 /* libteletone_generate.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		D37F3EE109C0F707002C93D4 /* libteletone.h in Headers */ = {isa = PBXBuildFile; fileRef = D37F3EDC09C0F707002C93D4 /* libteletone.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildStyle section */
@@ -32,7 +32,7 @@
 /* End PBXBuildStyle section */
 
 /* Begin PBXFileReference section */
-		D37F3EC409C0F660002C93D4 /* teletone.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = teletone.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D37F3EC409C0F660002C93D4 /* teletone.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = teletone.framework; path = build/teletone/teletone.framework; sourceTree = "<group>"; };
 		D37F3EC609C0F660002C93D4 /* teletone-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "teletone-Info.plist"; sourceTree = "<group>"; };
 		D37F3ED809C0F707002C93D4 /* libteletone_detect.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = libteletone_detect.c; path = ../../../libs/libteletone/src/libteletone_detect.c; sourceTree = "<group>"; };
 		D37F3ED909C0F707002C93D4 /* libteletone_detect.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libteletone_detect.h; path = ../../../libs/libteletone/src/libteletone_detect.h; sourceTree = "<group>"; };
@@ -57,6 +57,7 @@
 			children = (
 				D37F3EC509C0F660002C93D4 /* teletone */,
 				D37F3EC609C0F660002C93D4 /* teletone-Info.plist */,
+				D37F3EC409C0F660002C93D4 /* teletone.framework */,
 			);
 			sourceTree = "<group>";
 		};
@@ -65,7 +66,6 @@
 			children = (
 				D37F3ED309C0F6AC002C93D4 /* src */,
 				D37F3ED409C0F6B1002C93D4 /* include */,
-				D37F3EC409C0F660002C93D4 /* teletone.framework */,
 			);
 			name = teletone;
 			sourceTree = "<group>";

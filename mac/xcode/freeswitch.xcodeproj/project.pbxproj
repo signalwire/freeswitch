@@ -139,12 +139,20 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(FRAMEWORK_SEARCH_PATHS)",
 					"$(SRCROOT)/libs/build/libfreeswitch",
+					/Library/Frameworks,
 				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = (
+					"../../libs/apr-1.2.2",
+					"../../libs/apr-1.2.2/include",
+					"../../libs/apr-util-1.2.2",
+					"../../libs/apr-util-1.2.2/include",
+					../../src/include,
+				);
 				INSTALL_PATH = /usr/local/freeswitch/bin;
 				OTHER_CFLAGS = (
 					"-DMACOSX",
@@ -171,7 +179,7 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = freeswitch;
-				USER_HEADER_SEARCH_PATHS = "../../libs/apr-1.2.2 ../../libs/apr-1.2.2/include ../../libs/apr-util-1.2.2 ../../libs/apr-util-1.2.2/include ../../src/include";
+				USER_HEADER_SEARCH_PATHS = "";
 				ZERO_LINK = YES;
 			};
 			name = freeswitch;

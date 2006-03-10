@@ -19,28 +19,28 @@
 		D33CA8A509C123DD0087B539 /* switch_mutex.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89909C123DD0087B539 /* switch_mutex.c */; };
 		D33CA8A609C123DD0087B539 /* switch_resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89A09C123DD0087B539 /* switch_resample.c */; };
 		D33CA8A709C123DD0087B539 /* switch_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89B09C123DD0087B539 /* switch_utils.c */; };
-		D33CA8BB09C123F60087B539 /* switch_apr.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8A809C123F60087B539 /* switch_apr.h */; };
-		D33CA8BC09C123F60087B539 /* switch_buffer.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8A909C123F60087B539 /* switch_buffer.h */; };
-		D33CA8BD09C123F60087B539 /* switch_caller.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AA09C123F60087B539 /* switch_caller.h */; };
-		D33CA8BE09C123F60087B539 /* switch_channel.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AB09C123F60087B539 /* switch_channel.h */; };
-		D33CA8BF09C123F60087B539 /* switch_config.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AC09C123F60087B539 /* switch_config.h */; };
-		D33CA8C009C123F60087B539 /* switch_console.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AD09C123F60087B539 /* switch_console.h */; };
-		D33CA8C109C123F60087B539 /* switch_core.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AE09C123F60087B539 /* switch_core.h */; };
-		D33CA8C209C123F60087B539 /* switch_event.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AF09C123F60087B539 /* switch_event.h */; };
-		D33CA8C309C123F60087B539 /* switch_frame.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B009C123F60087B539 /* switch_frame.h */; };
-		D33CA8C409C123F60087B539 /* switch_ivr.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B109C123F60087B539 /* switch_ivr.h */; };
-		D33CA8C509C123F60087B539 /* switch_loadable_module.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B209C123F60087B539 /* switch_loadable_module.h */; };
-		D33CA8C609C123F60087B539 /* switch_module_interfaces.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B309C123F60087B539 /* switch_module_interfaces.h */; };
-		D33CA8C709C123F60087B539 /* switch_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B409C123F60087B539 /* switch_mutex.h */; };
-		D33CA8C809C123F60087B539 /* switch_platform.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B509C123F60087B539 /* switch_platform.h */; };
-		D33CA8C909C123F60087B539 /* switch_resample.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B609C123F60087B539 /* switch_resample.h */; };
-		D33CA8CA09C123F60087B539 /* switch_sqlite.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B709C123F60087B539 /* switch_sqlite.h */; };
-		D33CA8CB09C123F60087B539 /* switch_types.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B809C123F60087B539 /* switch_types.h */; };
-		D33CA8CC09C123F60087B539 /* switch_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B909C123F60087B539 /* switch_utils.h */; };
-		D33CA8CD09C123F60087B539 /* switch.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8BA09C123F60087B539 /* switch.h */; };
-		D33CA8D909C124B70087B539 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8D709C124B70087B539 /* config.h */; };
-		D33CA8DA09C124B70087B539 /* switch_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8D809C124B70087B539 /* switch_version.h */; };
-		D33CA8ED09C1256F0087B539 /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8EC09C1256F0087B539 /* libresample.h */; };
+		D33CA8BB09C123F60087B539 /* switch_apr.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8A809C123F60087B539 /* switch_apr.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8BC09C123F60087B539 /* switch_buffer.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8A909C123F60087B539 /* switch_buffer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8BD09C123F60087B539 /* switch_caller.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AA09C123F60087B539 /* switch_caller.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8BE09C123F60087B539 /* switch_channel.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AB09C123F60087B539 /* switch_channel.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8BF09C123F60087B539 /* switch_config.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AC09C123F60087B539 /* switch_config.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8C009C123F60087B539 /* switch_console.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AD09C123F60087B539 /* switch_console.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8C109C123F60087B539 /* switch_core.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AE09C123F60087B539 /* switch_core.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8C209C123F60087B539 /* switch_event.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AF09C123F60087B539 /* switch_event.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8C309C123F60087B539 /* switch_frame.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B009C123F60087B539 /* switch_frame.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8C409C123F60087B539 /* switch_ivr.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B109C123F60087B539 /* switch_ivr.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8C509C123F60087B539 /* switch_loadable_module.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B209C123F60087B539 /* switch_loadable_module.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8C609C123F60087B539 /* switch_module_interfaces.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B309C123F60087B539 /* switch_module_interfaces.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8C709C123F60087B539 /* switch_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B409C123F60087B539 /* switch_mutex.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8C809C123F60087B539 /* switch_platform.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B509C123F60087B539 /* switch_platform.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8C909C123F60087B539 /* switch_resample.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B609C123F60087B539 /* switch_resample.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8CA09C123F60087B539 /* switch_sqlite.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B709C123F60087B539 /* switch_sqlite.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8CB09C123F60087B539 /* switch_types.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B809C123F60087B539 /* switch_types.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8CC09C123F60087B539 /* switch_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B909C123F60087B539 /* switch_utils.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8CD09C123F60087B539 /* switch.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8BA09C123F60087B539 /* switch.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8D909C124B70087B539 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8D709C124B70087B539 /* config.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		D33CA8DA09C124B70087B539 /* switch_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8D809C124B70087B539 /* switch_version.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D33CA8ED09C1256F0087B539 /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8EC09C1256F0087B539 /* libresample.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		D33CA8F909C125D90087B539 /* libresample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D33CA8F809C125D90087B539 /* libresample.a */; };
 /* End PBXBuildFile section */
 
@@ -351,6 +351,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(FRAMEWORK_SEARCH_PATHS)",
 					/Library/Frameworks,
+					"$(SRCROOT)/build/Release",
 				);
 				FRAMEWORK_VERSION = A;
 				FREESWITCH_PATH = /usr/local/freeswitch;
@@ -361,10 +362,11 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				HEADER_SEARCH_PATHS = (
-					"../../../../libs/apr-1.2.2",
-					"../../../libs/apr-1.2.2/include",
-					"../../../../libs/apr-util-1.2.2",
-					"../../../libs/apr-util-1.2.2/include",
+					"../../libs/apr-1.2.2",
+					"../../libs/apr-1.2.2/include",
+					"../../libs/apr-util-1.2.2",
+					"../../libs/apr-util-1.2.2/include",
+					../../src/include,
 				);
 				INFOPLIST_FILE = "libfreeswitch-Info.plist";
 				INSTALL_PATH = /Library/Frameworks;

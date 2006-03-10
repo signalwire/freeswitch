@@ -7,38 +7,38 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D3F0202109C119A200120915 /* apr_anylock.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200109C119A200120915 /* apr_anylock.h */; };
-		D3F0202209C119A200120915 /* apr_base64.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200209C119A200120915 /* apr_base64.h */; };
-		D3F0202309C119A200120915 /* apr_buckets.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200309C119A200120915 /* apr_buckets.h */; };
-		D3F0202409C119A200120915 /* apr_date.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200409C119A200120915 /* apr_date.h */; };
-		D3F0202509C119A200120915 /* apr_dbd.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200509C119A200120915 /* apr_dbd.h */; };
-		D3F0202609C119A200120915 /* apr_dbm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200609C119A200120915 /* apr_dbm.h */; };
-		D3F0202709C119A200120915 /* apr_hooks.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200709C119A200120915 /* apr_hooks.h */; };
-		D3F0202809C119A200120915 /* apr_ldap_init.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200809C119A200120915 /* apr_ldap_init.h */; };
-		D3F0202909C119A200120915 /* apr_ldap_option.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200909C119A200120915 /* apr_ldap_option.h */; };
-		D3F0202A09C119A200120915 /* apr_ldap_url.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200A09C119A200120915 /* apr_ldap_url.h */; };
-		D3F0202B09C119A200120915 /* apr_ldap.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200B09C119A200120915 /* apr_ldap.h */; };
-		D3F0202C09C119A200120915 /* apr_md4.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200C09C119A200120915 /* apr_md4.h */; };
-		D3F0202D09C119A200120915 /* apr_md5.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200D09C119A200120915 /* apr_md5.h */; };
-		D3F0202E09C119A200120915 /* apr_optional_hooks.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200E09C119A200120915 /* apr_optional_hooks.h */; };
-		D3F0202F09C119A200120915 /* apr_optional.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200F09C119A200120915 /* apr_optional.h */; };
-		D3F0203009C119A200120915 /* apr_queue.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201009C119A200120915 /* apr_queue.h */; };
-		D3F0203109C119A200120915 /* apr_reslist.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201109C119A200120915 /* apr_reslist.h */; };
-		D3F0203209C119A200120915 /* apr_rmm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201209C119A200120915 /* apr_rmm.h */; };
-		D3F0203309C119A200120915 /* apr_sdbm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201309C119A200120915 /* apr_sdbm.h */; };
-		D3F0203409C119A200120915 /* apr_sha1.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201409C119A200120915 /* apr_sha1.h */; };
-		D3F0203509C119A200120915 /* apr_strmatch.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201509C119A200120915 /* apr_strmatch.h */; };
-		D3F0203609C119A200120915 /* apr_uri.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201609C119A200120915 /* apr_uri.h */; };
-		D3F0203709C119A200120915 /* apr_uuid.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201709C119A200120915 /* apr_uuid.h */; };
-		D3F0203809C119A200120915 /* apr_xlate.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201809C119A200120915 /* apr_xlate.h */; };
-		D3F0203909C119A200120915 /* apr_xml.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201909C119A200120915 /* apr_xml.h */; };
-		D3F0203A09C119A200120915 /* apu_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201A09C119A200120915 /* apu_version.h */; };
-		D3F0203B09C119A200120915 /* apu_want.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201B09C119A200120915 /* apu_want.h */; };
-		D3F0203C09C119A200120915 /* apu.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201C09C119A200120915 /* apu.h */; };
-		D3F0203D09C119A200120915 /* apr_dbd_internal.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201D09C119A200120915 /* apr_dbd_internal.h */; };
-		D3F0203E09C119A200120915 /* apr_dbm_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201E09C119A200120915 /* apr_dbm_private.h */; };
-		D3F0203F09C119A200120915 /* apu_config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201F09C119A200120915 /* apu_config.h */; };
-		D3F0204009C119A200120915 /* apu_select_dbm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0202009C119A200120915 /* apu_select_dbm.h */; };
+		D3F0202109C119A200120915 /* apr_anylock.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200109C119A200120915 /* apr_anylock.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202209C119A200120915 /* apr_base64.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200209C119A200120915 /* apr_base64.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202309C119A200120915 /* apr_buckets.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200309C119A200120915 /* apr_buckets.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202409C119A200120915 /* apr_date.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200409C119A200120915 /* apr_date.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202509C119A200120915 /* apr_dbd.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200509C119A200120915 /* apr_dbd.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202609C119A200120915 /* apr_dbm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200609C119A200120915 /* apr_dbm.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202709C119A200120915 /* apr_hooks.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200709C119A200120915 /* apr_hooks.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202809C119A200120915 /* apr_ldap_init.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200809C119A200120915 /* apr_ldap_init.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202909C119A200120915 /* apr_ldap_option.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200909C119A200120915 /* apr_ldap_option.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202A09C119A200120915 /* apr_ldap_url.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200A09C119A200120915 /* apr_ldap_url.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202B09C119A200120915 /* apr_ldap.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200B09C119A200120915 /* apr_ldap.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202C09C119A200120915 /* apr_md4.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200C09C119A200120915 /* apr_md4.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202D09C119A200120915 /* apr_md5.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200D09C119A200120915 /* apr_md5.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202E09C119A200120915 /* apr_optional_hooks.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200E09C119A200120915 /* apr_optional_hooks.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0202F09C119A200120915 /* apr_optional.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200F09C119A200120915 /* apr_optional.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203009C119A200120915 /* apr_queue.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201009C119A200120915 /* apr_queue.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203109C119A200120915 /* apr_reslist.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201109C119A200120915 /* apr_reslist.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203209C119A200120915 /* apr_rmm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201209C119A200120915 /* apr_rmm.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203309C119A200120915 /* apr_sdbm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201309C119A200120915 /* apr_sdbm.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203409C119A200120915 /* apr_sha1.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201409C119A200120915 /* apr_sha1.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203509C119A200120915 /* apr_strmatch.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201509C119A200120915 /* apr_strmatch.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203609C119A200120915 /* apr_uri.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201609C119A200120915 /* apr_uri.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203709C119A200120915 /* apr_uuid.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201709C119A200120915 /* apr_uuid.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203809C119A200120915 /* apr_xlate.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201809C119A200120915 /* apr_xlate.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203909C119A200120915 /* apr_xml.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201909C119A200120915 /* apr_xml.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203A09C119A200120915 /* apu_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201A09C119A200120915 /* apu_version.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203B09C119A200120915 /* apu_want.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201B09C119A200120915 /* apu_want.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203C09C119A200120915 /* apu.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201C09C119A200120915 /* apu.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203D09C119A200120915 /* apr_dbd_internal.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201D09C119A200120915 /* apr_dbd_internal.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203E09C119A200120915 /* apr_dbm_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201E09C119A200120915 /* apr_dbm_private.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0203F09C119A200120915 /* apu_config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0201F09C119A200120915 /* apu_config.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0204009C119A200120915 /* apu_select_dbm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0202009C119A200120915 /* apu_select_dbm.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3F020CB09C119FF00120915 /* apr_base64.c in Sources */ = {isa = PBXBuildFile; fileRef = D3F0206909C119C100120915 /* apr_base64.c */; };
 		D3F020CC09C119FF00120915 /* apr_brigade.c in Sources */ = {isa = PBXBuildFile; fileRef = D3F0204209C119C100120915 /* apr_brigade.c */; };
 		D3F020CD09C119FF00120915 /* apr_buckets.c in Sources */ = {isa = PBXBuildFile; fileRef = D3F0204309C119C100120915 /* apr_buckets.c */; };
@@ -84,9 +84,9 @@
 		D3F0213409C11C1200120915 /* sdbm_hash.c in Sources */ = {isa = PBXBuildFile; fileRef = D3F0206209C119C100120915 /* sdbm_hash.c */; };
 		D3F0213509C11C1200120915 /* sdbm_lock.c in Sources */ = {isa = PBXBuildFile; fileRef = D3F0206309C119C100120915 /* sdbm_lock.c */; };
 		D3F0214109C11C9500120915 /* sdbm_pair.c in Sources */ = {isa = PBXBuildFile; fileRef = D3F0214009C11C9500120915 /* sdbm_pair.c */; };
-		D3F0214809C11D5E00120915 /* sdbm_pair.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0214509C11D5E00120915 /* sdbm_pair.h */; };
-		D3F0214909C11D5E00120915 /* sdbm_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0214609C11D5E00120915 /* sdbm_private.h */; };
-		D3F0214A09C11D5E00120915 /* sdbm_tune.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0214709C11D5E00120915 /* sdbm_tune.h */; };
+		D3F0214809C11D5E00120915 /* sdbm_pair.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0214509C11D5E00120915 /* sdbm_pair.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0214909C11D5E00120915 /* sdbm_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0214609C11D5E00120915 /* sdbm_private.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3F0214A09C11D5E00120915 /* sdbm_tune.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0214709C11D5E00120915 /* sdbm_tune.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildStyle section */
