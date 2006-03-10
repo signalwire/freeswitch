@@ -67,7 +67,7 @@
 				AdditionalDependencies="libg729.lib FreeSwitchCore.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_g729.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\apr\Debug&quot;;&quot;$(InputDir)..\..\..\..\libs\codec\libg729\Debug&quot;;..\..\..\..\w32\vsnet\Debug"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\codec\libg729\Debug&quot;;..\..\..\..\w32\vsnet\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_g729.pdb"
 				SubSystem="2"

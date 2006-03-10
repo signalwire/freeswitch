@@ -147,7 +147,7 @@
 				AdditionalDependencies="libpcre.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_pcre.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\pcre\win32\Release&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\pcre\win32\Release&quot;;$(OutDir)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
