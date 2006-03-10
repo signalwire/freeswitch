@@ -39,6 +39,11 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
+
+#ifndef FREESWITCHCORE_EXPORTS
+#pragma comment(lib, "FreeSwitchCore.lib")
+#endif
+
 /* disable the following warnings 
  * C4152: non standard extension, function/data ptr conversion in expression
  * C4054: A function pointer is cast (possibly incorrectly) to a data pointer.
