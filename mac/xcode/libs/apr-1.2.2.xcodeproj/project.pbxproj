@@ -130,6 +130,23 @@
 		D32C93F909C1123F00FCE413 /* apr_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A909C10E6D00FCE413 /* apr_private.h */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXBuildStyle section */
+		D3F01FCE09C1180000120915 /* Development */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Development;
+		};
+		D3F01FCF09C1180000120915 /* Deployment */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+			};
+			name = Deployment;
+		};
+/* End PBXBuildStyle section */
+
 /* Begin PBXFileReference section */
 		D32C90E609C10C4600FCE413 /* apr.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = apr.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D32C90E809C10C4600FCE413 /* apr-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "apr-Info.plist"; sourceTree = "<group>"; };
@@ -840,7 +857,11 @@
 		D32C90D809C10C3300FCE413 /* Project object */ = {
 			isa = PBXProject;
 			buildConfigurationList = D32C90D909C10C3300FCE413 /* Build configuration list for PBXProject "apr-1.2.2" */;
+			buildSettings = {
+			};
 			buildStyles = (
+				D3F01FCE09C1180000120915 /* Development */,
+				D3F01FCF09C1180000120915 /* Deployment */,
 			);
 			hasScannedForEncodings = 0;
 			mainGroup = D32C90D609C10C3300FCE413;

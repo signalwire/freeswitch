@@ -199,9 +199,13 @@
 				<string>active-target-popup</string>
 				<string>action</string>
 				<string>NSToolbarFlexibleSpaceItem</string>
-				<string>buildOrClean</string>
-				<string>build-and-runOrDebug</string>
+				<string>build</string>
+				<string>clean</string>
+				<string>clean-target</string>
 				<string>com.apple.ide.PBXToolbarStopButton</string>
+				<string>run</string>
+				<string>build-and-run</string>
+				<string>build-and-runOrDebug</string>
 				<string>get-info</string>
 				<string>toggle-editor</string>
 				<string>NSToolbarFlexibleSpaceItem</string>
@@ -257,12 +261,13 @@
 							<array>
 								<string>D32C90D609C10C3300FCE413</string>
 								<string>1C37FBAC04509CD000000102</string>
-								<string>D32C940609C113F500FCE413</string>
+								<string>D3F01FF409C1186B00120915</string>
 								<string>1C37FABC05509CD000000102</string>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
+									<integer>6</integer>
 									<integer>5</integer>
 									<integer>4</integer>
 								</array>
@@ -287,7 +292,7 @@
 							<real>186</real>
 						</array>
 						<key>RubberWindowFrame</key>
-						<string>82 140 918 606 0 0 1024 746 </string>
+						<string>589 422 918 606 0 0 1680 1028 </string>
 					</dict>
 					<key>Module</key>
 					<string>PBXSmartGroupTreeModule</string>
@@ -324,7 +329,7 @@
 								<key>Frame</key>
 								<string>{{0, 0}, {710, 0}}</string>
 								<key>RubberWindowFrame</key>
-								<string>82 140 918 606 0 0 1024 746 </string>
+								<string>589 422 918 606 0 0 1680 1028 </string>
 							</dict>
 							<key>Module</key>
 							<string>PBXNavigatorGroup</string>
@@ -344,7 +349,7 @@
 								<key>Frame</key>
 								<string>{{0, 5}, {710, 560}}</string>
 								<key>RubberWindowFrame</key>
-								<string>82 140 918 606 0 0 1024 746 </string>
+								<string>589 422 918 606 0 0 1680 1028 </string>
 							</dict>
 							<key>Module</key>
 							<string>XCDetailModule</string>
@@ -368,9 +373,9 @@
 			</array>
 			<key>TableOfContents</key>
 			<array>
-				<string>D32C90F309C10CA000FCE413</string>
+				<string>D3F01FF509C1186B00120915</string>
 				<string>1CE0B1FE06471DED0097A5F4</string>
-				<string>D32C90F409C10CA000FCE413</string>
+				<string>D3F01FF609C1186B00120915</string>
 				<string>1CE0B20306471E060097A5F4</string>
 				<string>1CE0B20506471E060097A5F4</string>
 			</array>
@@ -504,11 +509,10 @@
 	<integer>5</integer>
 	<key>WindowOrderList</key>
 	<array>
-		<string>D32C90FA09C10E0E00FCE413</string>
 		<string>/Users/brian/freeswitch/mac/xcode/libs/apr-1.2.2.xcodeproj</string>
 	</array>
 	<key>WindowString</key>
-	<string>82 140 918 606 0 0 1024 746 </string>
+	<string>589 422 918 606 0 0 1680 1028 </string>
 	<key>WindowTools</key>
 	<array>
 		<dict>
