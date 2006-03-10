@@ -46,7 +46,7 @@
 		D37F3E0909C0E61D002C93D4 /* vdbefifo.c in Sources */ = {isa = PBXBuildFile; fileRef = D37F3DE309C0E61D002C93D4 /* vdbefifo.c */; };
 		D37F3E0A09C0E61D002C93D4 /* vdbemem.c in Sources */ = {isa = PBXBuildFile; fileRef = D37F3DE409C0E61D002C93D4 /* vdbemem.c */; };
 		D37F3E0B09C0E61D002C93D4 /* where.c in Sources */ = {isa = PBXBuildFile; fileRef = D37F3DE509C0E61D002C93D4 /* where.c */; };
-		D37F3EF709C0F85F002C93D4 /* sqlite3.h in Headers */ = {isa = PBXBuildFile; fileRef = D37F3EF609C0F85F002C93D4 /* sqlite3.h */; };
+		D37F3EF709C0F85F002C93D4 /* sqlite3.h in Headers */ = {isa = PBXBuildFile; fileRef = D37F3EF609C0F85F002C93D4 /* sqlite3.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildStyle section */
