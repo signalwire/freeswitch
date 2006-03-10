@@ -975,6 +975,7 @@
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
 				NATIVE_ARCH = "ppc i386";
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 			};
 			name = Debug;
 		};
@@ -983,6 +984,7 @@
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
 				NATIVE_ARCH = "ppc i386";
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 			};
 			name = Release;
 		};

@@ -260,23 +260,18 @@
 							<key>PBXSmartGroupTreeModuleOutlineStateExpansionKey</key>
 							<array>
 								<string>D3F01FC009C117F300120915</string>
-								<string>D3F01FE409C1182700120915</string>
-								<string>D3F01FFF09C1196600120915</string>
-								<string>D3F0205A09C119C100120915</string>
-								<string>D3F0206009C119C100120915</string>
 								<string>1C37FBAC04509CD000000102</string>
-								<string>D3F0213D09C11C6300120915</string>
-								<string>D3F0213E09C11C6300120915</string>
+								<string>D3F0215309C11DBC00120915</string>
 								<string>1C37FABC05509CD000000102</string>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateSelectionKey</key>
 							<array>
 								<array>
-									<integer>27</integer>
+									<integer>4</integer>
 								</array>
 							</array>
 							<key>PBXSmartGroupTreeModuleOutlineStateVisibleRectKey</key>
-							<string>{{0, 135}, {186, 532}}</string>
+							<string>{{0, 0}, {186, 532}}</string>
 						</dict>
 						<key>PBXTopSmartGroupGIDs</key>
 						<array/>
