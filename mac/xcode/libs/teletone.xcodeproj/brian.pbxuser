@@ -1,0 +1,86 @@
+// !$*UTF8*$!
+{
+	D37F3EB609C0F652002C93D4 /* Project object */ = {
+		activeBuildConfigurationName = teletone;
+		activeBuildStyle = D3DA9F7C09C102D200AA370C /* Development */;
+		activeTarget = D37F3EC309C0F660002C93D4 /* teletone.framework */;
+		addToTargets = (
+			D37F3EC309C0F660002C93D4 /* teletone.framework */,
+		);
+		codeSenseManager = D37F3EBB09C0F652002C93D4 /* Code sense */;
+		perUserDictionary = {
+			PBXConfiguration.PBXFileTableDataSource3.PBXFileTableDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					20,
+					243,
+					20,
+					48,
+					43,
+					43,
+					20,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXFileDataSource_FiletypeID,
+					PBXFileDataSource_Filename_ColumnID,
+					PBXFileDataSource_Built_ColumnID,
+					PBXFileDataSource_ObjectSize_ColumnID,
+					PBXFileDataSource_Errors_ColumnID,
+					PBXFileDataSource_Warnings_ColumnID,
+					PBXFileDataSource_Target_ColumnID,
+				);
+			};
+			PBXConfiguration.PBXTargetDataSource.PBXTargetDataSource = {
+				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
+				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
+				PBXFileTableDataSourceColumnWidthsKey = (
+					20,
+					200,
+					63,
+					20,
+					48,
+					43,
+					43,
+				);
+				PBXFileTableDataSourceColumnsKey = (
+					PBXFileDataSource_FiletypeID,
+					PBXFileDataSource_Filename_ColumnID,
+					PBXTargetDataSource_PrimaryAttribute,
+					PBXFileDataSource_Built_ColumnID,
+					PBXFileDataSource_ObjectSize_ColumnID,
+					PBXFileDataSource_Errors_ColumnID,
+					PBXFileDataSource_Warnings_ColumnID,
+				);
+			};
+			PBXPerProjectTemplateStateSaveDate = 163644114;
+			PBXWorkspaceStateSaveDate = 163644114;
+		};
+		sourceControlManager = D37F3EBA09C0F652002C93D4 /* Source Control */;
+		userBuildSettings = {
+		};
+	};
+	D37F3EBA09C0F652002C93D4 /* Source Control */ = {
+		isa = PBXSourceControlManager;
+		fallbackIsa = XCSourceControlManager;
+		isSCMEnabled = 0;
+		scmConfiguration = {
+		};
+		scmType = "";
+	};
+	D37F3EBB09C0F652002C93D4 /* Code sense */ = {
+		isa = PBXCodeSenseManager;
+		indexTemplatePath = "";
+	};
+	D37F3EC309C0F660002C93D4 /* teletone.framework */ = {
+		activeExec = 0;
+	};
+	D37F3EC609C0F660002C93D4 /* teletone-Info.plist */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {1332, 762}}";
+			sepNavSelRange = "{0, 0}";
+			sepNavVisRect = "{{0, 0}, {1332, 762}}";
+			sepNavWindowFrame = "{{84, 69}, {1371, 891}}";
+		};
+	};
+}
