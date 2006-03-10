@@ -17,6 +17,23 @@
 		D3DA9FF109C109E700AA370C /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DA9FCA09C1086700AA370C /* libresample.h */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXBuildStyle section */
+		D33CA84309C122F80087B539 /* Development */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Development;
+		};
+		D33CA84409C122F80087B539 /* Deployment */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+			};
+			name = Deployment;
+		};
+/* End PBXBuildStyle section */
+
 /* Begin PBXFileReference section */
 		D3DA9FCA09C1086700AA370C /* libresample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libresample.h; path = "../../../libs/libresample-0.1.3/include/libresample.h"; sourceTree = SOURCE_ROOT; };
 		D3DA9FCC09C1088100AA370C /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = config.h; path = "../../../libs/libresample-0.1.3/src/config.h"; sourceTree = SOURCE_ROOT; };
@@ -129,7 +146,11 @@
 		D3DA9FA209C1072700AA370C /* Project object */ = {
 			isa = PBXProject;
 			buildConfigurationList = D3DA9FA309C1072700AA370C /* Build configuration list for PBXProject "resample" */;
+			buildSettings = {
+			};
 			buildStyles = (
+				D33CA84309C122F80087B539 /* Development */,
+				D33CA84409C122F80087B539 /* Deployment */,
 			);
 			hasScannedForEncodings = 0;
 			mainGroup = D3DA9FA009C1072700AA370C;
