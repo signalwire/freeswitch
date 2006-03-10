@@ -1,0 +1,1058 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D32C938109C1122300FCE413 /* exports.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C929809C1114B00FCE413 /* exports.c */; };
+		D32C938209C1122300FCE413 /* apr_atomic.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C928509C1114B00FCE413 /* apr_atomic.c */; };
+		D32C938309C1122300FCE413 /* dso.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C929409C1114B00FCE413 /* dso.c */; };
+		D32C938409C1122300FCE413 /* copy.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92B509C1114B00FCE413 /* copy.c */; };
+		D32C938509C1122300FCE413 /* dir.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92B609C1114B00FCE413 /* dir.c */; };
+		D32C938609C1122300FCE413 /* fileacc.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92B709C1114B00FCE413 /* fileacc.c */; };
+		D32C938709C1122300FCE413 /* filedup.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92B809C1114B00FCE413 /* filedup.c */; };
+		D32C938809C1122300FCE413 /* filepath.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92B909C1114B00FCE413 /* filepath.c */; };
+		D32C938909C1122300FCE413 /* filepath_util.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92BA09C1114B00FCE413 /* filepath_util.c */; };
+		D32C938A09C1122300FCE413 /* filestat.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92BB09C1114B00FCE413 /* filestat.c */; };
+		D32C938B09C1122300FCE413 /* flock.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92BC09C1114B00FCE413 /* flock.c */; };
+		D32C938C09C1122300FCE413 /* fullrw.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92BD09C1114B00FCE413 /* fullrw.c */; };
+		D32C938D09C1122300FCE413 /* mktemp.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92BE09C1114B00FCE413 /* mktemp.c */; };
+		D32C938E09C1122300FCE413 /* open.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92BF09C1114B00FCE413 /* open.c */; };
+		D32C938F09C1122300FCE413 /* pipe.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92C009C1114B00FCE413 /* pipe.c */; };
+		D32C939009C1122300FCE413 /* readwrite.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92C109C1114B00FCE413 /* readwrite.c */; };
+		D32C939109C1122300FCE413 /* seek.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92C209C1114B00FCE413 /* seek.c */; };
+		D32C939209C1122300FCE413 /* tempdir.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92C309C1114B00FCE413 /* tempdir.c */; };
+		D32C939309C1122300FCE413 /* global_mutex.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92E209C1114B00FCE413 /* global_mutex.c */; };
+		D32C939409C1122300FCE413 /* proc_mutex.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92E309C1114B00FCE413 /* proc_mutex.c */; };
+		D32C939509C1122300FCE413 /* thread_cond.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92E409C1114B00FCE413 /* thread_cond.c */; };
+		D32C939609C1122300FCE413 /* thread_mutex.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92E509C1114B00FCE413 /* thread_mutex.c */; };
+		D32C939709C1122300FCE413 /* thread_rwlock.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92E609C1114B00FCE413 /* thread_rwlock.c */; };
+		D32C939809C1122300FCE413 /* apr_pools.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92EE09C1114B00FCE413 /* apr_pools.c */; };
+		D32C939909C1122300FCE413 /* charset.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92F809C1114B00FCE413 /* charset.c */; };
+		D32C939A09C1122300FCE413 /* env.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92F909C1114B00FCE413 /* env.c */; };
+		D32C939B09C1122300FCE413 /* errorcodes.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92FA09C1114B00FCE413 /* errorcodes.c */; };
+		D32C939C09C1122300FCE413 /* getopt.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92FB09C1114B00FCE413 /* getopt.c */; };
+		D32C939D09C1122300FCE413 /* otherchild.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92FC09C1114B00FCE413 /* otherchild.c */; };
+		D32C939E09C1122300FCE413 /* rand.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92FD09C1114B00FCE413 /* rand.c */; };
+		D32C939F09C1122300FCE413 /* start.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C92FF09C1114B00FCE413 /* start.c */; };
+		D32C93A009C1122300FCE413 /* version.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C930009C1114B00FCE413 /* version.c */; };
+		D32C93A109C1122300FCE413 /* common.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C930C09C1114C00FCE413 /* common.c */; };
+		D32C93A209C1122300FCE413 /* mmap.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C930D09C1114C00FCE413 /* mmap.c */; };
+		D32C93A309C1122300FCE413 /* inet_ntop.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C931E09C1114C00FCE413 /* inet_ntop.c */; };
+		D32C93A409C1122300FCE413 /* inet_pton.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C931F09C1114C00FCE413 /* inet_pton.c */; };
+		D32C93A509C1122300FCE413 /* multicast.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C932009C1114C00FCE413 /* multicast.c */; };
+		D32C93A609C1122300FCE413 /* sendrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C932109C1114C00FCE413 /* sendrecv.c */; };
+		D32C93A709C1122300FCE413 /* sockaddr.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C932209C1114C00FCE413 /* sockaddr.c */; };
+		D32C93A809C1122300FCE413 /* sockets.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C932309C1114C00FCE413 /* sockets.c */; };
+		D32C93A909C1122300FCE413 /* sockopt.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C932409C1114C00FCE413 /* sockopt.c */; };
+		D32C93AA09C1122300FCE413 /* apr_getpass.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C932A09C1114C00FCE413 /* apr_getpass.c */; };
+		D32C93AB09C1122300FCE413 /* epoll.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C933009C1114C00FCE413 /* epoll.c */; };
+		D32C93AC09C1122300FCE413 /* kqueue.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C933109C1114C00FCE413 /* kqueue.c */; };
+		D32C93AD09C1122300FCE413 /* poll.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C933209C1114C00FCE413 /* poll.c */; };
+		D32C93AE09C1122300FCE413 /* port.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C933309C1114C00FCE413 /* port.c */; };
+		D32C93AF09C1122300FCE413 /* select.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C933409C1114C00FCE413 /* select.c */; };
+		D32C93B009C1122300FCE413 /* apr_random.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C933709C1114C00FCE413 /* apr_random.c */; };
+		D32C93B109C1122300FCE413 /* sha2.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C933809C1114C00FCE413 /* sha2.c */; };
+		D32C93B209C1122300FCE413 /* sha2_glue.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C933A09C1114C00FCE413 /* sha2_glue.c */; };
+		D32C93B309C1122300FCE413 /* shm.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C934109C1114C00FCE413 /* shm.c */; };
+		D32C93B409C1122300FCE413 /* apr_cpystrn.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C934509C1114C00FCE413 /* apr_cpystrn.c */; };
+		D32C93B509C1122300FCE413 /* apr_fnmatch.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C934609C1114C00FCE413 /* apr_fnmatch.c */; };
+		D32C93B609C1122300FCE413 /* apr_snprintf.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C934709C1114C00FCE413 /* apr_snprintf.c */; };
+		D32C93B709C1122300FCE413 /* apr_strings.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C934809C1114C00FCE413 /* apr_strings.c */; };
+		D32C93B809C1122300FCE413 /* apr_strnatcmp.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C934909C1114C00FCE413 /* apr_strnatcmp.c */; };
+		D32C93B909C1122300FCE413 /* apr_strtok.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C934A09C1114C00FCE413 /* apr_strtok.c */; };
+		D32C93BA09C1122300FCE413 /* waitio.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C934D09C1114C00FCE413 /* waitio.c */; };
+		D32C93BB09C1122300FCE413 /* apr_hash.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C934F09C1114C00FCE413 /* apr_hash.c */; };
+		D32C93BC09C1122300FCE413 /* apr_tables.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C935009C1114C00FCE413 /* apr_tables.c */; };
+		D32C93BD09C1122300FCE413 /* proc.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C936409C1114C00FCE413 /* proc.c */; };
+		D32C93BE09C1122300FCE413 /* procsup.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C936509C1114C00FCE413 /* procsup.c */; };
+		D32C93BF09C1122300FCE413 /* signals.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C936609C1114C00FCE413 /* signals.c */; };
+		D32C93C009C1122300FCE413 /* thread.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C936709C1114C00FCE413 /* thread.c */; };
+		D32C93C109C1122300FCE413 /* threadpriv.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C936809C1114C00FCE413 /* threadpriv.c */; };
+		D32C93C209C1122300FCE413 /* time.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C937009C1114C00FCE413 /* time.c */; };
+		D32C93C309C1122300FCE413 /* timestr.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C937109C1114C00FCE413 /* timestr.c */; };
+		D32C93C409C1122300FCE413 /* groupinfo.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C937B09C1114C00FCE413 /* groupinfo.c */; };
+		D32C93C509C1122300FCE413 /* userinfo.c in Sources */ = {isa = PBXBuildFile; fileRef = D32C937C09C1114C00FCE413 /* userinfo.c */; };
+		D32C93C609C1123F00FCE413 /* apr.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C914F09C10E6D00FCE413 /* apr.h */; };
+		D32C93C709C1123F00FCE413 /* apr_allocator.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915309C10E6D00FCE413 /* apr_allocator.h */; };
+		D32C93C809C1123F00FCE413 /* apr_atomic.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915409C10E6D00FCE413 /* apr_atomic.h */; };
+		D32C93C909C1123F00FCE413 /* apr_dso.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915509C10E6D00FCE413 /* apr_dso.h */; };
+		D32C93CA09C1123F00FCE413 /* apr_env.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915609C10E6D00FCE413 /* apr_env.h */; };
+		D32C93CB09C1123F00FCE413 /* apr_errno.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915709C10E6D00FCE413 /* apr_errno.h */; };
+		D32C93CC09C1123F00FCE413 /* apr_file_info.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915809C10E6D00FCE413 /* apr_file_info.h */; };
+		D32C93CD09C1123F00FCE413 /* apr_file_io.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915909C10E6D00FCE413 /* apr_file_io.h */; };
+		D32C93CE09C1123F00FCE413 /* apr_fnmatch.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915A09C10E6D00FCE413 /* apr_fnmatch.h */; };
+		D32C93CF09C1123F00FCE413 /* apr_general.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915B09C10E6D00FCE413 /* apr_general.h */; };
+		D32C93D009C1123F00FCE413 /* apr_getopt.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915C09C10E6D00FCE413 /* apr_getopt.h */; };
+		D32C93D109C1123F00FCE413 /* apr_global_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915D09C10E6D00FCE413 /* apr_global_mutex.h */; };
+		D32C93D209C1123F00FCE413 /* apr_hash.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915E09C10E6D00FCE413 /* apr_hash.h */; };
+		D32C93D309C1123F00FCE413 /* apr_inherit.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C915F09C10E6D00FCE413 /* apr_inherit.h */; };
+		D32C93D409C1123F00FCE413 /* apr_lib.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916009C10E6D00FCE413 /* apr_lib.h */; };
+		D32C93D509C1123F00FCE413 /* apr_mmap.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916109C10E6D00FCE413 /* apr_mmap.h */; };
+		D32C93D609C1123F00FCE413 /* apr_network_io.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916209C10E6D00FCE413 /* apr_network_io.h */; };
+		D32C93D709C1123F00FCE413 /* apr_poll.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916309C10E6D00FCE413 /* apr_poll.h */; };
+		D32C93D809C1123F00FCE413 /* apr_pools.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916409C10E6D00FCE413 /* apr_pools.h */; };
+		D32C93D909C1123F00FCE413 /* apr_portable.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916509C10E6D00FCE413 /* apr_portable.h */; };
+		D32C93DA09C1123F00FCE413 /* apr_proc_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916609C10E6D00FCE413 /* apr_proc_mutex.h */; };
+		D32C93DB09C1123F00FCE413 /* apr_random.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916709C10E6D00FCE413 /* apr_random.h */; };
+		D32C93DC09C1123F00FCE413 /* apr_ring.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916809C10E6D00FCE413 /* apr_ring.h */; };
+		D32C93DD09C1123F00FCE413 /* apr_shm.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916909C10E6D00FCE413 /* apr_shm.h */; };
+		D32C93DE09C1123F00FCE413 /* apr_signal.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916A09C10E6D00FCE413 /* apr_signal.h */; };
+		D32C93DF09C1123F00FCE413 /* apr_strings.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916B09C10E6D00FCE413 /* apr_strings.h */; };
+		D32C93E009C1123F00FCE413 /* apr_support.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916C09C10E6D00FCE413 /* apr_support.h */; };
+		D32C93E109C1123F00FCE413 /* apr_tables.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916D09C10E6D00FCE413 /* apr_tables.h */; };
+		D32C93E209C1123F00FCE413 /* apr_thread_cond.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916E09C10E6D00FCE413 /* apr_thread_cond.h */; };
+		D32C93E309C1123F00FCE413 /* apr_thread_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C916F09C10E6D00FCE413 /* apr_thread_mutex.h */; };
+		D32C93E409C1123F00FCE413 /* apr_thread_proc.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C917009C10E6D00FCE413 /* apr_thread_proc.h */; };
+		D32C93E509C1123F00FCE413 /* apr_thread_rwlock.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C917109C10E6D00FCE413 /* apr_thread_rwlock.h */; };
+		D32C93E609C1123F00FCE413 /* apr_time.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C917209C10E6D00FCE413 /* apr_time.h */; };
+		D32C93E709C1123F00FCE413 /* apr_user.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C917309C10E6D00FCE413 /* apr_user.h */; };
+		D32C93E809C1123F00FCE413 /* apr_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C917409C10E6D00FCE413 /* apr_version.h */; };
+		D32C93E909C1123F00FCE413 /* apr_want.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C917509C10E6D00FCE413 /* apr_want.h */; };
+		D32C93EA09C1123F00FCE413 /* apr_private_common.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C917909C10E6D00FCE413 /* apr_private_common.h */; };
+		D32C93EB09C1123F00FCE413 /* apr_arch_dso.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C919B09C10E6D00FCE413 /* apr_arch_dso.h */; };
+		D32C93EC09C1123F00FCE413 /* apr_arch_file_io.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C919C09C10E6D00FCE413 /* apr_arch_file_io.h */; };
+		D32C93ED09C1123F00FCE413 /* apr_arch_global_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C919D09C10E6D00FCE413 /* apr_arch_global_mutex.h */; };
+		D32C93EE09C1123F00FCE413 /* apr_arch_inherit.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C919E09C10E6D00FCE413 /* apr_arch_inherit.h */; };
+		D32C93EF09C1123F00FCE413 /* apr_arch_internal_time.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C919F09C10E6D00FCE413 /* apr_arch_internal_time.h */; };
+		D32C93F009C1123F00FCE413 /* apr_arch_misc.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A009C10E6D00FCE413 /* apr_arch_misc.h */; };
+		D32C93F109C1123F00FCE413 /* apr_arch_networkio.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A109C10E6D00FCE413 /* apr_arch_networkio.h */; };
+		D32C93F209C1123F00FCE413 /* apr_arch_poll_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A209C10E6D00FCE413 /* apr_arch_poll_private.h */; };
+		D32C93F309C1123F00FCE413 /* apr_arch_proc_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A309C10E6D00FCE413 /* apr_arch_proc_mutex.h */; };
+		D32C93F409C1123F00FCE413 /* apr_arch_shm.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A409C10E6D00FCE413 /* apr_arch_shm.h */; };
+		D32C93F509C1123F00FCE413 /* apr_arch_thread_cond.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A509C10E6D00FCE413 /* apr_arch_thread_cond.h */; };
+		D32C93F609C1123F00FCE413 /* apr_arch_thread_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A609C10E6D00FCE413 /* apr_arch_thread_mutex.h */; };
+		D32C93F709C1123F00FCE413 /* apr_arch_thread_rwlock.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A709C10E6D00FCE413 /* apr_arch_thread_rwlock.h */; };
+		D32C93F809C1123F00FCE413 /* apr_arch_threadproc.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A809C10E6D00FCE413 /* apr_arch_threadproc.h */; };
+		D32C93F909C1123F00FCE413 /* apr_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A909C10E6D00FCE413 /* apr_private.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		D32C90E609C10C4600FCE413 /* apr.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = apr.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D32C90E809C10C4600FCE413 /* apr-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "apr-Info.plist"; sourceTree = "<group>"; };
+		D32C914F09C10E6D00FCE413 /* apr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr.h; path = "../../../libs/apr-1.2.2/include/apr.h"; sourceTree = "<group>"; };
+		D32C915309C10E6D00FCE413 /* apr_allocator.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_allocator.h; path = "../../../libs/apr-1.2.2/include/apr_allocator.h"; sourceTree = "<group>"; };
+		D32C915409C10E6D00FCE413 /* apr_atomic.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_atomic.h; path = "../../../libs/apr-1.2.2/include/apr_atomic.h"; sourceTree = "<group>"; };
+		D32C915509C10E6D00FCE413 /* apr_dso.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_dso.h; path = "../../../libs/apr-1.2.2/include/apr_dso.h"; sourceTree = "<group>"; };
+		D32C915609C10E6D00FCE413 /* apr_env.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_env.h; path = "../../../libs/apr-1.2.2/include/apr_env.h"; sourceTree = "<group>"; };
+		D32C915709C10E6D00FCE413 /* apr_errno.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_errno.h; path = "../../../libs/apr-1.2.2/include/apr_errno.h"; sourceTree = "<group>"; };
+		D32C915809C10E6D00FCE413 /* apr_file_info.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_file_info.h; path = "../../../libs/apr-1.2.2/include/apr_file_info.h"; sourceTree = "<group>"; };
+		D32C915909C10E6D00FCE413 /* apr_file_io.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_file_io.h; path = "../../../libs/apr-1.2.2/include/apr_file_io.h"; sourceTree = "<group>"; };
+		D32C915A09C10E6D00FCE413 /* apr_fnmatch.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_fnmatch.h; path = "../../../libs/apr-1.2.2/include/apr_fnmatch.h"; sourceTree = "<group>"; };
+		D32C915B09C10E6D00FCE413 /* apr_general.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_general.h; path = "../../../libs/apr-1.2.2/include/apr_general.h"; sourceTree = "<group>"; };
+		D32C915C09C10E6D00FCE413 /* apr_getopt.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_getopt.h; path = "../../../libs/apr-1.2.2/include/apr_getopt.h"; sourceTree = "<group>"; };
+		D32C915D09C10E6D00FCE413 /* apr_global_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_global_mutex.h; path = "../../../libs/apr-1.2.2/include/apr_global_mutex.h"; sourceTree = "<group>"; };
+		D32C915E09C10E6D00FCE413 /* apr_hash.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_hash.h; path = "../../../libs/apr-1.2.2/include/apr_hash.h"; sourceTree = "<group>"; };
+		D32C915F09C10E6D00FCE413 /* apr_inherit.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_inherit.h; path = "../../../libs/apr-1.2.2/include/apr_inherit.h"; sourceTree = "<group>"; };
+		D32C916009C10E6D00FCE413 /* apr_lib.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_lib.h; path = "../../../libs/apr-1.2.2/include/apr_lib.h"; sourceTree = "<group>"; };
+		D32C916109C10E6D00FCE413 /* apr_mmap.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_mmap.h; path = "../../../libs/apr-1.2.2/include/apr_mmap.h"; sourceTree = "<group>"; };
+		D32C916209C10E6D00FCE413 /* apr_network_io.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_network_io.h; path = "../../../libs/apr-1.2.2/include/apr_network_io.h"; sourceTree = "<group>"; };
+		D32C916309C10E6D00FCE413 /* apr_poll.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_poll.h; path = "../../../libs/apr-1.2.2/include/apr_poll.h"; sourceTree = "<group>"; };
+		D32C916409C10E6D00FCE413 /* apr_pools.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_pools.h; path = "../../../libs/apr-1.2.2/include/apr_pools.h"; sourceTree = "<group>"; };
+		D32C916509C10E6D00FCE413 /* apr_portable.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_portable.h; path = "../../../libs/apr-1.2.2/include/apr_portable.h"; sourceTree = "<group>"; };
+		D32C916609C10E6D00FCE413 /* apr_proc_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_proc_mutex.h; path = "../../../libs/apr-1.2.2/include/apr_proc_mutex.h"; sourceTree = "<group>"; };
+		D32C916709C10E6D00FCE413 /* apr_random.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_random.h; path = "../../../libs/apr-1.2.2/include/apr_random.h"; sourceTree = "<group>"; };
+		D32C916809C10E6D00FCE413 /* apr_ring.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_ring.h; path = "../../../libs/apr-1.2.2/include/apr_ring.h"; sourceTree = "<group>"; };
+		D32C916909C10E6D00FCE413 /* apr_shm.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_shm.h; path = "../../../libs/apr-1.2.2/include/apr_shm.h"; sourceTree = "<group>"; };
+		D32C916A09C10E6D00FCE413 /* apr_signal.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_signal.h; path = "../../../libs/apr-1.2.2/include/apr_signal.h"; sourceTree = "<group>"; };
+		D32C916B09C10E6D00FCE413 /* apr_strings.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_strings.h; path = "../../../libs/apr-1.2.2/include/apr_strings.h"; sourceTree = "<group>"; };
+		D32C916C09C10E6D00FCE413 /* apr_support.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_support.h; path = "../../../libs/apr-1.2.2/include/apr_support.h"; sourceTree = "<group>"; };
+		D32C916D09C10E6D00FCE413 /* apr_tables.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_tables.h; path = "../../../libs/apr-1.2.2/include/apr_tables.h"; sourceTree = "<group>"; };
+		D32C916E09C10E6D00FCE413 /* apr_thread_cond.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_cond.h; path = "../../../libs/apr-1.2.2/include/apr_thread_cond.h"; sourceTree = "<group>"; };
+		D32C916F09C10E6D00FCE413 /* apr_thread_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_mutex.h; path = "../../../libs/apr-1.2.2/include/apr_thread_mutex.h"; sourceTree = "<group>"; };
+		D32C917009C10E6D00FCE413 /* apr_thread_proc.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_proc.h; path = "../../../libs/apr-1.2.2/include/apr_thread_proc.h"; sourceTree = "<group>"; };
+		D32C917109C10E6D00FCE413 /* apr_thread_rwlock.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_rwlock.h; path = "../../../libs/apr-1.2.2/include/apr_thread_rwlock.h"; sourceTree = "<group>"; };
+		D32C917209C10E6D00FCE413 /* apr_time.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_time.h; path = "../../../libs/apr-1.2.2/include/apr_time.h"; sourceTree = "<group>"; };
+		D32C917309C10E6D00FCE413 /* apr_user.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_user.h; path = "../../../libs/apr-1.2.2/include/apr_user.h"; sourceTree = "<group>"; };
+		D32C917409C10E6D00FCE413 /* apr_version.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_version.h; path = "../../../libs/apr-1.2.2/include/apr_version.h"; sourceTree = "<group>"; };
+		D32C917509C10E6D00FCE413 /* apr_want.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_want.h; path = "../../../libs/apr-1.2.2/include/apr_want.h"; sourceTree = "<group>"; };
+		D32C917909C10E6D00FCE413 /* apr_private_common.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_private_common.h; sourceTree = "<group>"; };
+		D32C919B09C10E6D00FCE413 /* apr_arch_dso.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_dso.h; sourceTree = "<group>"; };
+		D32C919C09C10E6D00FCE413 /* apr_arch_file_io.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_file_io.h; sourceTree = "<group>"; };
+		D32C919D09C10E6D00FCE413 /* apr_arch_global_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_global_mutex.h; sourceTree = "<group>"; };
+		D32C919E09C10E6D00FCE413 /* apr_arch_inherit.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_inherit.h; sourceTree = "<group>"; };
+		D32C919F09C10E6D00FCE413 /* apr_arch_internal_time.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_internal_time.h; sourceTree = "<group>"; };
+		D32C91A009C10E6D00FCE413 /* apr_arch_misc.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_misc.h; sourceTree = "<group>"; };
+		D32C91A109C10E6D00FCE413 /* apr_arch_networkio.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_networkio.h; sourceTree = "<group>"; };
+		D32C91A209C10E6D00FCE413 /* apr_arch_poll_private.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_poll_private.h; sourceTree = "<group>"; };
+		D32C91A309C10E6D00FCE413 /* apr_arch_proc_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_proc_mutex.h; sourceTree = "<group>"; };
+		D32C91A409C10E6D00FCE413 /* apr_arch_shm.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_shm.h; sourceTree = "<group>"; };
+		D32C91A509C10E6D00FCE413 /* apr_arch_thread_cond.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_thread_cond.h; sourceTree = "<group>"; };
+		D32C91A609C10E6D00FCE413 /* apr_arch_thread_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_thread_mutex.h; sourceTree = "<group>"; };
+		D32C91A709C10E6D00FCE413 /* apr_arch_thread_rwlock.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_thread_rwlock.h; sourceTree = "<group>"; };
+		D32C91A809C10E6D00FCE413 /* apr_arch_threadproc.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_threadproc.h; sourceTree = "<group>"; };
+		D32C91A909C10E6D00FCE413 /* apr_private.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_private.h; sourceTree = "<group>"; };
+		D32C928509C1114B00FCE413 /* apr_atomic.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_atomic.c; sourceTree = "<group>"; };
+		D32C929409C1114B00FCE413 /* dso.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = dso.c; sourceTree = "<group>"; };
+		D32C929809C1114B00FCE413 /* exports.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = exports.c; path = "../../../libs/apr-1.2.2/exports.c"; sourceTree = SOURCE_ROOT; };
+		D32C92B509C1114B00FCE413 /* copy.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = copy.c; sourceTree = "<group>"; };
+		D32C92B609C1114B00FCE413 /* dir.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = dir.c; sourceTree = "<group>"; };
+		D32C92B709C1114B00FCE413 /* fileacc.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = fileacc.c; sourceTree = "<group>"; };
+		D32C92B809C1114B00FCE413 /* filedup.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = filedup.c; sourceTree = "<group>"; };
+		D32C92B909C1114B00FCE413 /* filepath.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = filepath.c; sourceTree = "<group>"; };
+		D32C92BA09C1114B00FCE413 /* filepath_util.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = filepath_util.c; sourceTree = "<group>"; };
+		D32C92BB09C1114B00FCE413 /* filestat.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = filestat.c; sourceTree = "<group>"; };
+		D32C92BC09C1114B00FCE413 /* flock.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = flock.c; sourceTree = "<group>"; };
+		D32C92BD09C1114B00FCE413 /* fullrw.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = fullrw.c; sourceTree = "<group>"; };
+		D32C92BE09C1114B00FCE413 /* mktemp.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = mktemp.c; sourceTree = "<group>"; };
+		D32C92BF09C1114B00FCE413 /* open.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = open.c; sourceTree = "<group>"; };
+		D32C92C009C1114B00FCE413 /* pipe.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = pipe.c; sourceTree = "<group>"; };
+		D32C92C109C1114B00FCE413 /* readwrite.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = readwrite.c; sourceTree = "<group>"; };
+		D32C92C209C1114B00FCE413 /* seek.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = seek.c; sourceTree = "<group>"; };
+		D32C92C309C1114B00FCE413 /* tempdir.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = tempdir.c; sourceTree = "<group>"; };
+		D32C92E209C1114B00FCE413 /* global_mutex.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = global_mutex.c; sourceTree = "<group>"; };
+		D32C92E309C1114B00FCE413 /* proc_mutex.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = proc_mutex.c; sourceTree = "<group>"; };
+		D32C92E409C1114B00FCE413 /* thread_cond.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = thread_cond.c; sourceTree = "<group>"; };
+		D32C92E509C1114B00FCE413 /* thread_mutex.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = thread_mutex.c; sourceTree = "<group>"; };
+		D32C92E609C1114B00FCE413 /* thread_rwlock.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = thread_rwlock.c; sourceTree = "<group>"; };
+		D32C92EE09C1114B00FCE413 /* apr_pools.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_pools.c; sourceTree = "<group>"; };
+		D32C92F809C1114B00FCE413 /* charset.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = charset.c; sourceTree = "<group>"; };
+		D32C92F909C1114B00FCE413 /* env.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = env.c; sourceTree = "<group>"; };
+		D32C92FA09C1114B00FCE413 /* errorcodes.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = errorcodes.c; sourceTree = "<group>"; };
+		D32C92FB09C1114B00FCE413 /* getopt.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = getopt.c; sourceTree = "<group>"; };
+		D32C92FC09C1114B00FCE413 /* otherchild.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = otherchild.c; sourceTree = "<group>"; };
+		D32C92FD09C1114B00FCE413 /* rand.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = rand.c; sourceTree = "<group>"; };
+		D32C92FF09C1114B00FCE413 /* start.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = start.c; sourceTree = "<group>"; };
+		D32C930009C1114B00FCE413 /* version.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = version.c; sourceTree = "<group>"; };
+		D32C930C09C1114C00FCE413 /* common.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = common.c; sourceTree = "<group>"; };
+		D32C930D09C1114C00FCE413 /* mmap.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = mmap.c; sourceTree = "<group>"; };
+		D32C931E09C1114C00FCE413 /* inet_ntop.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = inet_ntop.c; sourceTree = "<group>"; };
+		D32C931F09C1114C00FCE413 /* inet_pton.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = inet_pton.c; sourceTree = "<group>"; };
+		D32C932009C1114C00FCE413 /* multicast.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = multicast.c; sourceTree = "<group>"; };
+		D32C932109C1114C00FCE413 /* sendrecv.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sendrecv.c; sourceTree = "<group>"; };
+		D32C932209C1114C00FCE413 /* sockaddr.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sockaddr.c; sourceTree = "<group>"; };
+		D32C932309C1114C00FCE413 /* sockets.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sockets.c; sourceTree = "<group>"; };
+		D32C932409C1114C00FCE413 /* sockopt.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sockopt.c; sourceTree = "<group>"; };
+		D32C932A09C1114C00FCE413 /* apr_getpass.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_getpass.c; sourceTree = "<group>"; };
+		D32C933009C1114C00FCE413 /* epoll.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = epoll.c; sourceTree = "<group>"; };
+		D32C933109C1114C00FCE413 /* kqueue.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = kqueue.c; sourceTree = "<group>"; };
+		D32C933209C1114C00FCE413 /* poll.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = poll.c; sourceTree = "<group>"; };
+		D32C933309C1114C00FCE413 /* port.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = port.c; sourceTree = "<group>"; };
+		D32C933409C1114C00FCE413 /* select.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = select.c; sourceTree = "<group>"; };
+		D32C933709C1114C00FCE413 /* apr_random.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_random.c; sourceTree = "<group>"; };
+		D32C933809C1114C00FCE413 /* sha2.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sha2.c; sourceTree = "<group>"; };
+		D32C933909C1114C00FCE413 /* sha2.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = sha2.h; sourceTree = "<group>"; };
+		D32C933A09C1114C00FCE413 /* sha2_glue.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sha2_glue.c; sourceTree = "<group>"; };
+		D32C934109C1114C00FCE413 /* shm.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = shm.c; sourceTree = "<group>"; };
+		D32C934509C1114C00FCE413 /* apr_cpystrn.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_cpystrn.c; sourceTree = "<group>"; };
+		D32C934609C1114C00FCE413 /* apr_fnmatch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_fnmatch.c; sourceTree = "<group>"; };
+		D32C934709C1114C00FCE413 /* apr_snprintf.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_snprintf.c; sourceTree = "<group>"; };
+		D32C934809C1114C00FCE413 /* apr_strings.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_strings.c; sourceTree = "<group>"; };
+		D32C934909C1114C00FCE413 /* apr_strnatcmp.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_strnatcmp.c; sourceTree = "<group>"; };
+		D32C934A09C1114C00FCE413 /* apr_strtok.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_strtok.c; sourceTree = "<group>"; };
+		D32C934D09C1114C00FCE413 /* waitio.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = waitio.c; sourceTree = "<group>"; };
+		D32C934F09C1114C00FCE413 /* apr_hash.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_hash.c; sourceTree = "<group>"; };
+		D32C935009C1114C00FCE413 /* apr_tables.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_tables.c; sourceTree = "<group>"; };
+		D32C936409C1114C00FCE413 /* proc.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = proc.c; sourceTree = "<group>"; };
+		D32C936509C1114C00FCE413 /* procsup.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = procsup.c; sourceTree = "<group>"; };
+		D32C936609C1114C00FCE413 /* signals.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = signals.c; sourceTree = "<group>"; };
+		D32C936709C1114C00FCE413 /* thread.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = thread.c; sourceTree = "<group>"; };
+		D32C936809C1114C00FCE413 /* threadpriv.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = threadpriv.c; sourceTree = "<group>"; };
+		D32C937009C1114C00FCE413 /* time.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = time.c; sourceTree = "<group>"; };
+		D32C937109C1114C00FCE413 /* timestr.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = timestr.c; sourceTree = "<group>"; };
+		D32C937B09C1114C00FCE413 /* groupinfo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = groupinfo.c; sourceTree = "<group>"; };
+		D32C937C09C1114C00FCE413 /* userinfo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = userinfo.c; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		D32C90D609C10C3300FCE413 = {
+			isa = PBXGroup;
+			children = (
+				D32C90E709C10C4600FCE413 /* apr-1.2.2 */,
+				D32C90E809C10C4600FCE413 /* apr-Info.plist */,
+				D32C90E609C10C4600FCE413 /* apr.framework */,
+			);
+			sourceTree = "<group>";
+		};
+		D32C90E709C10C4600FCE413 /* apr-1.2.2 */ = {
+			isa = PBXGroup;
+			children = (
+				D32C90EE09C10C8C00FCE413 /* include */,
+				D32C927E09C10F3100FCE413 /* src */,
+			);
+			name = "apr-1.2.2";
+			sourceTree = "<group>";
+		};
+		D32C90EE09C10C8C00FCE413 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D32C914F09C10E6D00FCE413 /* apr.h */,
+				D32C915309C10E6D00FCE413 /* apr_allocator.h */,
+				D32C915409C10E6D00FCE413 /* apr_atomic.h */,
+				D32C915509C10E6D00FCE413 /* apr_dso.h */,
+				D32C915609C10E6D00FCE413 /* apr_env.h */,
+				D32C915709C10E6D00FCE413 /* apr_errno.h */,
+				D32C915809C10E6D00FCE413 /* apr_file_info.h */,
+				D32C915909C10E6D00FCE413 /* apr_file_io.h */,
+				D32C915A09C10E6D00FCE413 /* apr_fnmatch.h */,
+				D32C915B09C10E6D00FCE413 /* apr_general.h */,
+				D32C915C09C10E6D00FCE413 /* apr_getopt.h */,
+				D32C915D09C10E6D00FCE413 /* apr_global_mutex.h */,
+				D32C915E09C10E6D00FCE413 /* apr_hash.h */,
+				D32C915F09C10E6D00FCE413 /* apr_inherit.h */,
+				D32C916009C10E6D00FCE413 /* apr_lib.h */,
+				D32C916109C10E6D00FCE413 /* apr_mmap.h */,
+				D32C916209C10E6D00FCE413 /* apr_network_io.h */,
+				D32C916309C10E6D00FCE413 /* apr_poll.h */,
+				D32C916409C10E6D00FCE413 /* apr_pools.h */,
+				D32C916509C10E6D00FCE413 /* apr_portable.h */,
+				D32C916609C10E6D00FCE413 /* apr_proc_mutex.h */,
+				D32C916709C10E6D00FCE413 /* apr_random.h */,
+				D32C916809C10E6D00FCE413 /* apr_ring.h */,
+				D32C916909C10E6D00FCE413 /* apr_shm.h */,
+				D32C916A09C10E6D00FCE413 /* apr_signal.h */,
+				D32C916B09C10E6D00FCE413 /* apr_strings.h */,
+				D32C916C09C10E6D00FCE413 /* apr_support.h */,
+				D32C916D09C10E6D00FCE413 /* apr_tables.h */,
+				D32C916E09C10E6D00FCE413 /* apr_thread_cond.h */,
+				D32C916F09C10E6D00FCE413 /* apr_thread_mutex.h */,
+				D32C917009C10E6D00FCE413 /* apr_thread_proc.h */,
+				D32C917109C10E6D00FCE413 /* apr_thread_rwlock.h */,
+				D32C917209C10E6D00FCE413 /* apr_time.h */,
+				D32C917309C10E6D00FCE413 /* apr_user.h */,
+				D32C917409C10E6D00FCE413 /* apr_version.h */,
+				D32C917509C10E6D00FCE413 /* apr_want.h */,
+				D32C917609C10E6D00FCE413 /* arch */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		D32C917609C10E6D00FCE413 /* arch */ = {
+			isa = PBXGroup;
+			children = (
+				D32C917909C10E6D00FCE413 /* apr_private_common.h */,
+				D32C919A09C10E6D00FCE413 /* unix */,
+			);
+			name = arch;
+			path = "../../../libs/apr-1.2.2/include/arch";
+			sourceTree = "<group>";
+		};
+		D32C919A09C10E6D00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C919B09C10E6D00FCE413 /* apr_arch_dso.h */,
+				D32C919C09C10E6D00FCE413 /* apr_arch_file_io.h */,
+				D32C919D09C10E6D00FCE413 /* apr_arch_global_mutex.h */,
+				D32C919E09C10E6D00FCE413 /* apr_arch_inherit.h */,
+				D32C919F09C10E6D00FCE413 /* apr_arch_internal_time.h */,
+				D32C91A009C10E6D00FCE413 /* apr_arch_misc.h */,
+				D32C91A109C10E6D00FCE413 /* apr_arch_networkio.h */,
+				D32C91A209C10E6D00FCE413 /* apr_arch_poll_private.h */,
+				D32C91A309C10E6D00FCE413 /* apr_arch_proc_mutex.h */,
+				D32C91A409C10E6D00FCE413 /* apr_arch_shm.h */,
+				D32C91A509C10E6D00FCE413 /* apr_arch_thread_cond.h */,
+				D32C91A609C10E6D00FCE413 /* apr_arch_thread_mutex.h */,
+				D32C91A709C10E6D00FCE413 /* apr_arch_thread_rwlock.h */,
+				D32C91A809C10E6D00FCE413 /* apr_arch_threadproc.h */,
+				D32C91A909C10E6D00FCE413 /* apr_private.h */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C927E09C10F3100FCE413 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D32C929809C1114B00FCE413 /* exports.c */,
+				D32C927F09C1114B00FCE413 /* atomic */,
+				D32C928809C1114B00FCE413 /* dso */,
+				D32C929909C1114B00FCE413 /* file_io */,
+				D32C92D109C1114B00FCE413 /* locks */,
+				D32C92EC09C1114B00FCE413 /* memory */,
+				D32C92EF09C1114B00FCE413 /* misc */,
+				D32C930A09C1114C00FCE413 /* mmap */,
+				D32C931009C1114C00FCE413 /* network_io */,
+				D32C932909C1114C00FCE413 /* passwd */,
+				D32C932B09C1114C00FCE413 /* poll */,
+				D32C933509C1114C00FCE413 /* random */,
+				D32C933B09C1114C00FCE413 /* shmem */,
+				D32C934409C1114C00FCE413 /* strings */,
+				D32C934B09C1114C00FCE413 /* support */,
+				D32C934E09C1114C00FCE413 /* tables */,
+				D32C935109C1114C00FCE413 /* threadproc */,
+				D32C936E09C1114C00FCE413 /* time */,
+				D32C937609C1114C00FCE413 /* user */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D32C927F09C1114B00FCE413 /* atomic */ = {
+			isa = PBXGroup;
+			children = (
+				D32C928409C1114B00FCE413 /* unix */,
+			);
+			name = atomic;
+			path = "../../../libs/apr-1.2.2/atomic";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C928409C1114B00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C928509C1114B00FCE413 /* apr_atomic.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C928809C1114B00FCE413 /* dso */ = {
+			isa = PBXGroup;
+			children = (
+				D32C929309C1114B00FCE413 /* unix */,
+			);
+			name = dso;
+			path = "../../../libs/apr-1.2.2/dso";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C929309C1114B00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C929409C1114B00FCE413 /* dso.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C929909C1114B00FCE413 /* file_io */ = {
+			isa = PBXGroup;
+			children = (
+				D32C92B409C1114B00FCE413 /* unix */,
+			);
+			name = file_io;
+			path = "../../../libs/apr-1.2.2/file_io";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C92B409C1114B00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C92B509C1114B00FCE413 /* copy.c */,
+				D32C92B609C1114B00FCE413 /* dir.c */,
+				D32C92B709C1114B00FCE413 /* fileacc.c */,
+				D32C92B809C1114B00FCE413 /* filedup.c */,
+				D32C92B909C1114B00FCE413 /* filepath.c */,
+				D32C92BA09C1114B00FCE413 /* filepath_util.c */,
+				D32C92BB09C1114B00FCE413 /* filestat.c */,
+				D32C92BC09C1114B00FCE413 /* flock.c */,
+				D32C92BD09C1114B00FCE413 /* fullrw.c */,
+				D32C92BE09C1114B00FCE413 /* mktemp.c */,
+				D32C92BF09C1114B00FCE413 /* open.c */,
+				D32C92C009C1114B00FCE413 /* pipe.c */,
+				D32C92C109C1114B00FCE413 /* readwrite.c */,
+				D32C92C209C1114B00FCE413 /* seek.c */,
+				D32C92C309C1114B00FCE413 /* tempdir.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C92D109C1114B00FCE413 /* locks */ = {
+			isa = PBXGroup;
+			children = (
+				D32C92E109C1114B00FCE413 /* unix */,
+			);
+			name = locks;
+			path = "../../../libs/apr-1.2.2/locks";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C92E109C1114B00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C92E209C1114B00FCE413 /* global_mutex.c */,
+				D32C92E309C1114B00FCE413 /* proc_mutex.c */,
+				D32C92E409C1114B00FCE413 /* thread_cond.c */,
+				D32C92E509C1114B00FCE413 /* thread_mutex.c */,
+				D32C92E609C1114B00FCE413 /* thread_rwlock.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C92EC09C1114B00FCE413 /* memory */ = {
+			isa = PBXGroup;
+			children = (
+				D32C92ED09C1114B00FCE413 /* unix */,
+			);
+			name = memory;
+			path = "../../../libs/apr-1.2.2/memory";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C92ED09C1114B00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C92EE09C1114B00FCE413 /* apr_pools.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C92EF09C1114B00FCE413 /* misc */ = {
+			isa = PBXGroup;
+			children = (
+				D32C92F709C1114B00FCE413 /* unix */,
+			);
+			name = misc;
+			path = "../../../libs/apr-1.2.2/misc";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C92F709C1114B00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C92F809C1114B00FCE413 /* charset.c */,
+				D32C92F909C1114B00FCE413 /* env.c */,
+				D32C92FA09C1114B00FCE413 /* errorcodes.c */,
+				D32C92FB09C1114B00FCE413 /* getopt.c */,
+				D32C92FC09C1114B00FCE413 /* otherchild.c */,
+				D32C92FD09C1114B00FCE413 /* rand.c */,
+				D32C92FF09C1114B00FCE413 /* start.c */,
+				D32C930009C1114B00FCE413 /* version.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C930A09C1114C00FCE413 /* mmap */ = {
+			isa = PBXGroup;
+			children = (
+				D32C930B09C1114C00FCE413 /* unix */,
+			);
+			name = mmap;
+			path = "../../../libs/apr-1.2.2/mmap";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C930B09C1114C00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C930C09C1114C00FCE413 /* common.c */,
+				D32C930D09C1114C00FCE413 /* mmap.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C931009C1114C00FCE413 /* network_io */ = {
+			isa = PBXGroup;
+			children = (
+				D32C931D09C1114C00FCE413 /* unix */,
+			);
+			name = network_io;
+			path = "../../../libs/apr-1.2.2/network_io";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C931D09C1114C00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C931E09C1114C00FCE413 /* inet_ntop.c */,
+				D32C931F09C1114C00FCE413 /* inet_pton.c */,
+				D32C932009C1114C00FCE413 /* multicast.c */,
+				D32C932109C1114C00FCE413 /* sendrecv.c */,
+				D32C932209C1114C00FCE413 /* sockaddr.c */,
+				D32C932309C1114C00FCE413 /* sockets.c */,
+				D32C932409C1114C00FCE413 /* sockopt.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C932909C1114C00FCE413 /* passwd */ = {
+			isa = PBXGroup;
+			children = (
+				D32C932A09C1114C00FCE413 /* apr_getpass.c */,
+			);
+			name = passwd;
+			path = "../../../libs/apr-1.2.2/passwd";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C932B09C1114C00FCE413 /* poll */ = {
+			isa = PBXGroup;
+			children = (
+				D32C932F09C1114C00FCE413 /* unix */,
+			);
+			name = poll;
+			path = "../../../libs/apr-1.2.2/poll";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C932F09C1114C00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C933009C1114C00FCE413 /* epoll.c */,
+				D32C933109C1114C00FCE413 /* kqueue.c */,
+				D32C933209C1114C00FCE413 /* poll.c */,
+				D32C933309C1114C00FCE413 /* port.c */,
+				D32C933409C1114C00FCE413 /* select.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C933509C1114C00FCE413 /* random */ = {
+			isa = PBXGroup;
+			children = (
+				D32C933609C1114C00FCE413 /* unix */,
+			);
+			name = random;
+			path = "../../../libs/apr-1.2.2/random";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C933609C1114C00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C933709C1114C00FCE413 /* apr_random.c */,
+				D32C933809C1114C00FCE413 /* sha2.c */,
+				D32C933909C1114C00FCE413 /* sha2.h */,
+				D32C933A09C1114C00FCE413 /* sha2_glue.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C933B09C1114C00FCE413 /* shmem */ = {
+			isa = PBXGroup;
+			children = (
+				D32C934009C1114C00FCE413 /* unix */,
+			);
+			name = shmem;
+			path = "../../../libs/apr-1.2.2/shmem";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C934009C1114C00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C934109C1114C00FCE413 /* shm.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C934409C1114C00FCE413 /* strings */ = {
+			isa = PBXGroup;
+			children = (
+				D32C934509C1114C00FCE413 /* apr_cpystrn.c */,
+				D32C934609C1114C00FCE413 /* apr_fnmatch.c */,
+				D32C934709C1114C00FCE413 /* apr_snprintf.c */,
+				D32C934809C1114C00FCE413 /* apr_strings.c */,
+				D32C934909C1114C00FCE413 /* apr_strnatcmp.c */,
+				D32C934A09C1114C00FCE413 /* apr_strtok.c */,
+			);
+			name = strings;
+			path = "../../../libs/apr-1.2.2/strings";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C934B09C1114C00FCE413 /* support */ = {
+			isa = PBXGroup;
+			children = (
+				D32C934C09C1114C00FCE413 /* unix */,
+			);
+			name = support;
+			path = "../../../libs/apr-1.2.2/support";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C934C09C1114C00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C934D09C1114C00FCE413 /* waitio.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C934E09C1114C00FCE413 /* tables */ = {
+			isa = PBXGroup;
+			children = (
+				D32C934F09C1114C00FCE413 /* apr_hash.c */,
+				D32C935009C1114C00FCE413 /* apr_tables.c */,
+			);
+			name = tables;
+			path = "../../../libs/apr-1.2.2/tables";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C935109C1114C00FCE413 /* threadproc */ = {
+			isa = PBXGroup;
+			children = (
+				D32C936309C1114C00FCE413 /* unix */,
+			);
+			name = threadproc;
+			path = "../../../libs/apr-1.2.2/threadproc";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C936309C1114C00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C936409C1114C00FCE413 /* proc.c */,
+				D32C936509C1114C00FCE413 /* procsup.c */,
+				D32C936609C1114C00FCE413 /* signals.c */,
+				D32C936709C1114C00FCE413 /* thread.c */,
+				D32C936809C1114C00FCE413 /* threadpriv.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C936E09C1114C00FCE413 /* time */ = {
+			isa = PBXGroup;
+			children = (
+				D32C936F09C1114C00FCE413 /* unix */,
+			);
+			name = time;
+			path = "../../../libs/apr-1.2.2/time";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C936F09C1114C00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C937009C1114C00FCE413 /* time.c */,
+				D32C937109C1114C00FCE413 /* timestr.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D32C937609C1114C00FCE413 /* user */ = {
+			isa = PBXGroup;
+			children = (
+				D32C937A09C1114C00FCE413 /* unix */,
+			);
+			name = user;
+			path = "../../../libs/apr-1.2.2/user";
+			sourceTree = SOURCE_ROOT;
+		};
+		D32C937A09C1114C00FCE413 /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D32C937B09C1114C00FCE413 /* groupinfo.c */,
+				D32C937C09C1114C00FCE413 /* userinfo.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		D32C90E109C10C4600FCE413 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D32C93C609C1123F00FCE413 /* apr.h in Headers */,
+				D32C93C709C1123F00FCE413 /* apr_allocator.h in Headers */,
+				D32C93C809C1123F00FCE413 /* apr_atomic.h in Headers */,
+				D32C93C909C1123F00FCE413 /* apr_dso.h in Headers */,
+				D32C93CA09C1123F00FCE413 /* apr_env.h in Headers */,
+				D32C93CB09C1123F00FCE413 /* apr_errno.h in Headers */,
+				D32C93CC09C1123F00FCE413 /* apr_file_info.h in Headers */,
+				D32C93CD09C1123F00FCE413 /* apr_file_io.h in Headers */,
+				D32C93CE09C1123F00FCE413 /* apr_fnmatch.h in Headers */,
+				D32C93CF09C1123F00FCE413 /* apr_general.h in Headers */,
+				D32C93D009C1123F00FCE413 /* apr_getopt.h in Headers */,
+				D32C93D109C1123F00FCE413 /* apr_global_mutex.h in Headers */,
+				D32C93D209C1123F00FCE413 /* apr_hash.h in Headers */,
+				D32C93D309C1123F00FCE413 /* apr_inherit.h in Headers */,
+				D32C93D409C1123F00FCE413 /* apr_lib.h in Headers */,
+				D32C93D509C1123F00FCE413 /* apr_mmap.h in Headers */,
+				D32C93D609C1123F00FCE413 /* apr_network_io.h in Headers */,
+				D32C93D709C1123F00FCE413 /* apr_poll.h in Headers */,
+				D32C93D809C1123F00FCE413 /* apr_pools.h in Headers */,
+				D32C93D909C1123F00FCE413 /* apr_portable.h in Headers */,
+				D32C93DA09C1123F00FCE413 /* apr_proc_mutex.h in Headers */,
+				D32C93DB09C1123F00FCE413 /* apr_random.h in Headers */,
+				D32C93DC09C1123F00FCE413 /* apr_ring.h in Headers */,
+				D32C93DD09C1123F00FCE413 /* apr_shm.h in Headers */,
+				D32C93DE09C1123F00FCE413 /* apr_signal.h in Headers */,
+				D32C93DF09C1123F00FCE413 /* apr_strings.h in Headers */,
+				D32C93E009C1123F00FCE413 /* apr_support.h in Headers */,
+				D32C93E109C1123F00FCE413 /* apr_tables.h in Headers */,
+				D32C93E209C1123F00FCE413 /* apr_thread_cond.h in Headers */,
+				D32C93E309C1123F00FCE413 /* apr_thread_mutex.h in Headers */,
+				D32C93E409C1123F00FCE413 /* apr_thread_proc.h in Headers */,
+				D32C93E509C1123F00FCE413 /* apr_thread_rwlock.h in Headers */,
+				D32C93E609C1123F00FCE413 /* apr_time.h in Headers */,
+				D32C93E709C1123F00FCE413 /* apr_user.h in Headers */,
+				D32C93E809C1123F00FCE413 /* apr_version.h in Headers */,
+				D32C93E909C1123F00FCE413 /* apr_want.h in Headers */,
+				D32C93EA09C1123F00FCE413 /* apr_private_common.h in Headers */,
+				D32C93EB09C1123F00FCE413 /* apr_arch_dso.h in Headers */,
+				D32C93EC09C1123F00FCE413 /* apr_arch_file_io.h in Headers */,
+				D32C93ED09C1123F00FCE413 /* apr_arch_global_mutex.h in Headers */,
+				D32C93EE09C1123F00FCE413 /* apr_arch_inherit.h in Headers */,
+				D32C93EF09C1123F00FCE413 /* apr_arch_internal_time.h in Headers */,
+				D32C93F009C1123F00FCE413 /* apr_arch_misc.h in Headers */,
+				D32C93F109C1123F00FCE413 /* apr_arch_networkio.h in Headers */,
+				D32C93F209C1123F00FCE413 /* apr_arch_poll_private.h in Headers */,
+				D32C93F309C1123F00FCE413 /* apr_arch_proc_mutex.h in Headers */,
+				D32C93F409C1123F00FCE413 /* apr_arch_shm.h in Headers */,
+				D32C93F509C1123F00FCE413 /* apr_arch_thread_cond.h in Headers */,
+				D32C93F609C1123F00FCE413 /* apr_arch_thread_mutex.h in Headers */,
+				D32C93F709C1123F00FCE413 /* apr_arch_thread_rwlock.h in Headers */,
+				D32C93F809C1123F00FCE413 /* apr_arch_threadproc.h in Headers */,
+				D32C93F909C1123F00FCE413 /* apr_private.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		D32C90E509C10C4600FCE413 /* apr.framework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D32C90E909C10C4700FCE413 /* Build configuration list for PBXNativeTarget "apr.framework" */;
+			buildPhases = (
+				D32C90F609C10CBF00FCE413 /* Prepare Source */,
+				D32C90E109C10C4600FCE413 /* Headers */,
+				D32C90E309C10C4600FCE413 /* Sources */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
+				INFOPLIST_FILE = "apr-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Foundation,
+					"-framework",
+					AppKit,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = apr;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = apr.framework;
+			productName = apr;
+			productReference = D32C90E609C10C4600FCE413 /* apr.framework */;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>${EXECUTABLE_NAME}</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.yourcompany.apr</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>FMWK</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+</dict>
+</plist>
+";
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D32C90D809C10C3300FCE413 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = D32C90D909C10C3300FCE413 /* Build configuration list for PBXProject "apr-1.2.2" */;
+			buildStyles = (
+			);
+			hasScannedForEncodings = 0;
+			mainGroup = D32C90D609C10C3300FCE413;
+			productRefGroup = D32C90E709C10C4600FCE413 /* apr-1.2.2 */;
+			projectDirPath = "";
+			targets = (
+				D32C90E509C10C4600FCE413 /* apr.framework */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D32C90F609C10CBF00FCE413 /* Prepare Source */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Prepare Source";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ -e ../../../libs/apr-1.2.2/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl http://svn.freeswitch.org/downloads/libs/apr-1.2.2.tar.gz -o ../../../libs/apr-1.2.2.tar.gz\ncd ../../../libs\ntar zxfv apr-1.2.2.tar.gz\ncd apr-1.2.2\n./configure\nmake apr.exp\ntouch .complete";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D32C90E309C10C4600FCE413 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D32C938109C1122300FCE413 /* exports.c in Sources */,
+				D32C938209C1122300FCE413 /* apr_atomic.c in Sources */,
+				D32C938309C1122300FCE413 /* dso.c in Sources */,
+				D32C938409C1122300FCE413 /* copy.c in Sources */,
+				D32C938509C1122300FCE413 /* dir.c in Sources */,
+				D32C938609C1122300FCE413 /* fileacc.c in Sources */,
+				D32C938709C1122300FCE413 /* filedup.c in Sources */,
+				D32C938809C1122300FCE413 /* filepath.c in Sources */,
+				D32C938909C1122300FCE413 /* filepath_util.c in Sources */,
+				D32C938A09C1122300FCE413 /* filestat.c in Sources */,
+				D32C938B09C1122300FCE413 /* flock.c in Sources */,
+				D32C938C09C1122300FCE413 /* fullrw.c in Sources */,
+				D32C938D09C1122300FCE413 /* mktemp.c in Sources */,
+				D32C938E09C1122300FCE413 /* open.c in Sources */,
+				D32C938F09C1122300FCE413 /* pipe.c in Sources */,
+				D32C939009C1122300FCE413 /* readwrite.c in Sources */,
+				D32C939109C1122300FCE413 /* seek.c in Sources */,
+				D32C939209C1122300FCE413 /* tempdir.c in Sources */,
+				D32C939309C1122300FCE413 /* global_mutex.c in Sources */,
+				D32C939409C1122300FCE413 /* proc_mutex.c in Sources */,
+				D32C939509C1122300FCE413 /* thread_cond.c in Sources */,
+				D32C939609C1122300FCE413 /* thread_mutex.c in Sources */,
+				D32C939709C1122300FCE413 /* thread_rwlock.c in Sources */,
+				D32C939809C1122300FCE413 /* apr_pools.c in Sources */,
+				D32C939909C1122300FCE413 /* charset.c in Sources */,
+				D32C939A09C1122300FCE413 /* env.c in Sources */,
+				D32C939B09C1122300FCE413 /* errorcodes.c in Sources */,
+				D32C939C09C1122300FCE413 /* getopt.c in Sources */,
+				D32C939D09C1122300FCE413 /* otherchild.c in Sources */,
+				D32C939E09C1122300FCE413 /* rand.c in Sources */,
+				D32C939F09C1122300FCE413 /* start.c in Sources */,
+				D32C93A009C1122300FCE413 /* version.c in Sources */,
+				D32C93A109C1122300FCE413 /* common.c in Sources */,
+				D32C93A209C1122300FCE413 /* mmap.c in Sources */,
+				D32C93A309C1122300FCE413 /* inet_ntop.c in Sources */,
+				D32C93A409C1122300FCE413 /* inet_pton.c in Sources */,
+				D32C93A509C1122300FCE413 /* multicast.c in Sources */,
+				D32C93A609C1122300FCE413 /* sendrecv.c in Sources */,
+				D32C93A709C1122300FCE413 /* sockaddr.c in Sources */,
+				D32C93A809C1122300FCE413 /* sockets.c in Sources */,
+				D32C93A909C1122300FCE413 /* sockopt.c in Sources */,
+				D32C93AA09C1122300FCE413 /* apr_getpass.c in Sources */,
+				D32C93AB09C1122300FCE413 /* epoll.c in Sources */,
+				D32C93AC09C1122300FCE413 /* kqueue.c in Sources */,
+				D32C93AD09C1122300FCE413 /* poll.c in Sources */,
+				D32C93AE09C1122300FCE413 /* port.c in Sources */,
+				D32C93AF09C1122300FCE413 /* select.c in Sources */,
+				D32C93B009C1122300FCE413 /* apr_random.c in Sources */,
+				D32C93B109C1122300FCE413 /* sha2.c in Sources */,
+				D32C93B209C1122300FCE413 /* sha2_glue.c in Sources */,
+				D32C93B309C1122300FCE413 /* shm.c in Sources */,
+				D32C93B409C1122300FCE413 /* apr_cpystrn.c in Sources */,
+				D32C93B509C1122300FCE413 /* apr_fnmatch.c in Sources */,
+				D32C93B609C1122300FCE413 /* apr_snprintf.c in Sources */,
+				D32C93B709C1122300FCE413 /* apr_strings.c in Sources */,
+				D32C93B809C1122300FCE413 /* apr_strnatcmp.c in Sources */,
+				D32C93B909C1122300FCE413 /* apr_strtok.c in Sources */,
+				D32C93BA09C1122300FCE413 /* waitio.c in Sources */,
+				D32C93BB09C1122300FCE413 /* apr_hash.c in Sources */,
+				D32C93BC09C1122300FCE413 /* apr_tables.c in Sources */,
+				D32C93BD09C1122300FCE413 /* proc.c in Sources */,
+				D32C93BE09C1122300FCE413 /* procsup.c in Sources */,
+				D32C93BF09C1122300FCE413 /* signals.c in Sources */,
+				D32C93C009C1122300FCE413 /* thread.c in Sources */,
+				D32C93C109C1122300FCE413 /* threadpriv.c in Sources */,
+				D32C93C209C1122300FCE413 /* time.c in Sources */,
+				D32C93C309C1122300FCE413 /* timestr.c in Sources */,
+				D32C93C409C1122300FCE413 /* groupinfo.c in Sources */,
+				D32C93C509C1122300FCE413 /* userinfo.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D32C90DA09C10C3300FCE413 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				NATIVE_ARCH = "ppc i386";
+			};
+			name = Debug;
+		};
+		D32C90DB09C10C3300FCE413 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				NATIVE_ARCH = "ppc i386";
+			};
+			name = Release;
+		};
+		D32C90EA09C10C4700FCE413 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DSTROOT = /;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				INFOPLIST_FILE = "apr-Info.plist";
+				INSTALL_PATH = /Library/Frameworks;
+				OTHER_CFLAGS = (
+					"-g",
+					"-O2",
+				);
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-DDARWIN",
+					"-DSIGPROCMASK_SETS_THREAD_MASK",
+					"-no-cpp-precomp",
+				);
+				OTHER_LDFLAGS = "-lpthread";
+				PREBINDING = NO;
+				PRODUCT_NAME = apr;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D32C90EB09C10C4700FCE413 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DSTROOT = /;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_WARN_INHIBIT_ALL_WARNINGS = YES;
+				INFOPLIST_FILE = "apr-Info.plist";
+				INSTALL_PATH = /Library/Frameworks;
+				OTHER_CFLAGS = (
+					"-g",
+					"-O2",
+				);
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-DDARWIN",
+					"-DSIGPROCMASK_SETS_THREAD_MASK",
+					"-no-cpp-precomp",
+				);
+				OTHER_LDFLAGS = "-lpthread";
+				PREBINDING = NO;
+				PRODUCT_NAME = apr;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D32C90D909C10C3300FCE413 /* Build configuration list for PBXProject "apr-1.2.2" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D32C90DA09C10C3300FCE413 /* Debug */,
+				D32C90DB09C10C3300FCE413 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D32C90E909C10C4700FCE413 /* Build configuration list for PBXNativeTarget "apr.framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D32C90EA09C10C4700FCE413 /* Debug */,
+				D32C90EB09C10C4700FCE413 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D32C90D809C10C3300FCE413 /* Project object */;
+}

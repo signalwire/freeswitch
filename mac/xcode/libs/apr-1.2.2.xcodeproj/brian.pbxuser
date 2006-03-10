@@ -1,22 +1,20 @@
 // !$*UTF8*$!
 {
-	D37F3CC609C0E093002C93D4 /* Project object */ = {
-		activeBuildConfigurationName = "sqlite-3.2.8";
-		activeBuildStyle = D37F3E6109C0E9B8002C93D4 /* Development */;
-		activeTarget = D37F3CD609C0E0CC002C93D4 /* sqlite.framework */;
+	D32C90D809C10C3300FCE413 /* Project object */ = {
+		activeBuildConfigurationName = Debug;
+		activeTarget = D32C90E509C10C4600FCE413 /* apr.framework */;
 		addToTargets = (
-			D37F3CD609C0E0CC002C93D4 /* sqlite.framework */,
 		);
-		breakpointsGroup = D37F3D7A09C0E24A002C93D4 /* XCBreakpointsBucket */;
-		codeSenseManager = D37F3CCB09C0E093002C93D4 /* Code sense */;
+		breakpointsGroup = D32C90F909C10D0B00FCE413 /* XCBreakpointsBucket */;
+		codeSenseManager = D32C90DD09C10C3300FCE413 /* Code sense */;
 		perUserDictionary = {
 			PBXConfiguration.PBXFileTableDataSource3.PBXErrorsWarningsDataSource = {
 				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
 				PBXFileTableDataSourceColumnSortingKey = PBXErrorsWarningsDataSource_LocationID;
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
-					573,
-					266,
+					300,
+					200,
 				);
 				PBXFileTableDataSourceColumnsKey = (
 					PBXErrorsWarningsDataSource_TypeID,
@@ -24,26 +22,12 @@
 					PBXErrorsWarningsDataSource_LocationID,
 				);
 			};
-			PBXConfiguration.PBXFileTableDataSource3.PBXExecutablesDataSource = {
-				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
-				PBXFileTableDataSourceColumnSortingKey = PBXExecutablesDataSource_NameID;
-				PBXFileTableDataSourceColumnWidthsKey = (
-					22,
-					300,
-					536.5835,
-				);
-				PBXFileTableDataSourceColumnsKey = (
-					PBXExecutablesDataSource_ActiveFlagID,
-					PBXExecutablesDataSource_NameID,
-					PBXExecutablesDataSource_CommentsID,
-				);
-			};
 			PBXConfiguration.PBXFileTableDataSource3.PBXFileTableDataSource = {
 				PBXFileTableDataSourceColumnSortingDirectionKey = "-1";
 				PBXFileTableDataSourceColumnSortingKey = PBXFileDataSource_Filename_ColumnID;
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
-					649,
+					471,
 					20,
 					48,
 					43,
@@ -66,7 +50,7 @@
 				PBXFileTableDataSourceColumnWidthsKey = (
 					20,
 					200,
-					469,
+					63,
 					20,
 					48,
 					43,
@@ -82,14 +66,14 @@
 					PBXFileDataSource_Warnings_ColumnID,
 				);
 			};
-			PBXPerProjectTemplateStateSaveDate = 163646481;
-			PBXWorkspaceStateSaveDate = 163646481;
+			PBXPerProjectTemplateStateSaveDate = 163646515;
+			PBXWorkspaceStateSaveDate = 163646515;
 		};
-		sourceControlManager = D37F3CCA09C0E093002C93D4 /* Source Control */;
+		sourceControlManager = D32C90DC09C10C3300FCE413 /* Source Control */;
 		userBuildSettings = {
 		};
 	};
-	D37F3CCA09C0E093002C93D4 /* Source Control */ = {
+	D32C90DC09C10C3300FCE413 /* Source Control */ = {
 		isa = PBXSourceControlManager;
 		fallbackIsa = XCSourceControlManager;
 		isSCMEnabled = 0;
@@ -97,25 +81,25 @@
 		};
 		scmType = "";
 	};
-	D37F3CCB09C0E093002C93D4 /* Code sense */ = {
+	D32C90DD09C10C3300FCE413 /* Code sense */ = {
 		isa = PBXCodeSenseManager;
 		indexTemplatePath = "";
 	};
-	D37F3CD609C0E0CC002C93D4 /* sqlite.framework */ = {
+	D32C90E509C10C4600FCE413 /* apr.framework */ = {
 		activeExec = 0;
 	};
-	D37F3CD909C0E0CC002C93D4 /* sqlite-Info.plist */ = {
-		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {1332, 762}}";
-			sepNavSelRange = "{360, 0}";
-			sepNavVisRect = "{{0, 0}, {1332, 762}}";
-			sepNavWindowFrame = "{{107, 48}, {1371, 891}}";
-		};
-	};
-	D37F3D7A09C0E24A002C93D4 /* XCBreakpointsBucket */ = {
+	D32C90F909C10D0B00FCE413 /* XCBreakpointsBucket */ = {
 		isa = XCBreakpointsBucket;
 		name = "Project Breakpoints";
 		objects = (
 		);
+	};
+	D32C929809C1114B00FCE413 /* exports.c */ = {
+		uiCtxt = {
+			sepNavIntBoundsRect = "{{0, 0}, {711, 8988}}";
+			sepNavSelRange = "{0, 0}";
+			sepNavVisRect = "{{0, 0}, {711, 429}}";
+			sepNavWindowFrame = "{{15, 183}, {750, 558}}";
+		};
 	};
 }
