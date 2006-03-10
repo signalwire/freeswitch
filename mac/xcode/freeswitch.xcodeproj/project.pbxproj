@@ -1,0 +1,201 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D3EA84AB09C12851006A903B /* switch.c in Sources */ = {isa = PBXBuildFile; fileRef = D3EA84AA09C12851006A903B /* switch.c */; };
+		D3EA84FA09C12D63006A903B /* freeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3EA84D309C12AD6006A903B /* freeswitch.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXBuildStyle section */
+		D3EA849909C127D3006A903B /* Development */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Development;
+		};
+		D3EA849A09C127D3006A903B /* Deployment */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+			};
+			name = Deployment;
+		};
+/* End PBXBuildStyle section */
+
+/* Begin PBXFileReference section */
+		D3EA84A109C127DC006A903B /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3EA84AA09C12851006A903B /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = ../../src/switch.c; sourceTree = SOURCE_ROOT; };
+		D3EA84D309C12AD6006A903B /* freeswitch.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = freeswitch.framework; path = libs/build/libfreeswitch/freeswitch.framework; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D3EA849F09C127DC006A903B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3EA84FA09C12D63006A903B /* freeswitch.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D33CA85C09C123560087B539 = {
+			isa = PBXGroup;
+			children = (
+				D3EA84A209C127DC006A903B /* freeswitch */,
+				D3EA84A109C127DC006A903B /* freeswitch */,
+				D3EA84D309C12AD6006A903B /* freeswitch.framework */,
+			);
+			sourceTree = "<group>";
+		};
+		D3EA84A209C127DC006A903B /* freeswitch */ = {
+			isa = PBXGroup;
+			children = (
+				D3EA84AA09C12851006A903B /* switch.c */,
+			);
+			name = freeswitch;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D3EA84A009C127DC006A903B /* freeswitch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3EA84A409C127DC006A903B /* Build configuration list for PBXNativeTarget "freeswitch" */;
+			buildPhases = (
+				D3EA849E09C127DC006A903B /* Sources */,
+				D3EA849F09C127DC006A903B /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(HOME)/bin";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = freeswitch;
+			productName = freeswitch;
+			productReference = D3EA84A109C127DC006A903B /* freeswitch */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D33CA85E09C123560087B539 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = D33CA85F09C123560087B539 /* Build configuration list for PBXProject "freeswitch" */;
+			buildSettings = {
+			};
+			buildStyles = (
+				D3EA849909C127D3006A903B /* Development */,
+				D3EA849A09C127D3006A903B /* Deployment */,
+			);
+			hasScannedForEncodings = 0;
+			mainGroup = D33CA85C09C123560087B539;
+			productRefGroup = D3EA84A209C127DC006A903B /* freeswitch */;
+			projectDirPath = "";
+			targets = (
+				D3EA84A009C127DC006A903B /* freeswitch */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D3EA849E09C127DC006A903B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3EA84AB09C12851006A903B /* switch.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D33CA86009C123560087B539 /* freeswitch */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = freeswitch;
+		};
+		D3EA84A509C127DC006A903B /* freeswitch */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DSTROOT = /;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(FRAMEWORK_SEARCH_PATHS)",
+					"$(SRCROOT)/libs/build/libfreeswitch",
+				);
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/freeswitch/bin;
+				OTHER_CFLAGS = (
+					"-DMACOSX",
+					"-DSWITCH_MOD_DIR=\"$(FREESWITCH_PATH)/mod\"",
+					"-DSWITCH_PREFIX_DIR=\"$(FREESWITCH_PATH)\"",
+					"-DSWITCH_CONF_DIR=\"$(FREESWITCH_PATH)/conf\"",
+					"-DSWITCH_DB_DIR=\"$(FREESWITCH_PATH)/db\"",
+					"-DSWITCH_LOG_DIR=\"$(FREESWITCH_PATH)/log\"",
+					"-DSWITCH_SCRIPT_DIR=\"$(FREESWITCH_PATH)/scripts\"",
+				);
+				OTHER_LDFLAGS = (
+					"-framework",
+					freeswitch,
+					"-framework",
+					apr,
+					"-framework",
+					aprutil,
+					"-framework",
+					teletone,
+					"-framework",
+					sqlite,
+					"-liconv",
+					"-lpthread",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				USER_HEADER_SEARCH_PATHS = "../../libs/apr-1.2.2 ../../libs/apr-1.2.2/include ../../libs/apr-util-1.2.2 ../../libs/apr-util-1.2.2/include ../../src/include";
+				ZERO_LINK = YES;
+			};
+			name = freeswitch;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D33CA85F09C123560087B539 /* Build configuration list for PBXProject "freeswitch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D33CA86009C123560087B539 /* freeswitch */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = freeswitch;
+		};
+		D3EA84A409C127DC006A903B /* Build configuration list for PBXNativeTarget "freeswitch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3EA84A509C127DC006A903B /* freeswitch */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = freeswitch;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D33CA85E09C123560087B539 /* Project object */;
+}

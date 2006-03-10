@@ -1,0 +1,424 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D33CA89C09C123DD0087B539 /* switch_buffer.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89009C123DD0087B539 /* switch_buffer.c */; };
+		D33CA89D09C123DD0087B539 /* switch_caller.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89109C123DD0087B539 /* switch_caller.c */; };
+		D33CA89E09C123DD0087B539 /* switch_channel.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89209C123DD0087B539 /* switch_channel.c */; };
+		D33CA89F09C123DD0087B539 /* switch_config.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89309C123DD0087B539 /* switch_config.c */; };
+		D33CA8A009C123DD0087B539 /* switch_console.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89409C123DD0087B539 /* switch_console.c */; };
+		D33CA8A109C123DD0087B539 /* switch_core.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89509C123DD0087B539 /* switch_core.c */; };
+		D33CA8A209C123DD0087B539 /* switch_event.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89609C123DD0087B539 /* switch_event.c */; };
+		D33CA8A309C123DD0087B539 /* switch_ivr.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89709C123DD0087B539 /* switch_ivr.c */; };
+		D33CA8A409C123DD0087B539 /* switch_loadable_module.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89809C123DD0087B539 /* switch_loadable_module.c */; };
+		D33CA8A509C123DD0087B539 /* switch_mutex.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89909C123DD0087B539 /* switch_mutex.c */; };
+		D33CA8A609C123DD0087B539 /* switch_resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89A09C123DD0087B539 /* switch_resample.c */; };
+		D33CA8A709C123DD0087B539 /* switch_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = D33CA89B09C123DD0087B539 /* switch_utils.c */; };
+		D33CA8BB09C123F60087B539 /* switch_apr.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8A809C123F60087B539 /* switch_apr.h */; };
+		D33CA8BC09C123F60087B539 /* switch_buffer.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8A909C123F60087B539 /* switch_buffer.h */; };
+		D33CA8BD09C123F60087B539 /* switch_caller.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AA09C123F60087B539 /* switch_caller.h */; };
+		D33CA8BE09C123F60087B539 /* switch_channel.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AB09C123F60087B539 /* switch_channel.h */; };
+		D33CA8BF09C123F60087B539 /* switch_config.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AC09C123F60087B539 /* switch_config.h */; };
+		D33CA8C009C123F60087B539 /* switch_console.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AD09C123F60087B539 /* switch_console.h */; };
+		D33CA8C109C123F60087B539 /* switch_core.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AE09C123F60087B539 /* switch_core.h */; };
+		D33CA8C209C123F60087B539 /* switch_event.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8AF09C123F60087B539 /* switch_event.h */; };
+		D33CA8C309C123F60087B539 /* switch_frame.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B009C123F60087B539 /* switch_frame.h */; };
+		D33CA8C409C123F60087B539 /* switch_ivr.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B109C123F60087B539 /* switch_ivr.h */; };
+		D33CA8C509C123F60087B539 /* switch_loadable_module.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B209C123F60087B539 /* switch_loadable_module.h */; };
+		D33CA8C609C123F60087B539 /* switch_module_interfaces.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B309C123F60087B539 /* switch_module_interfaces.h */; };
+		D33CA8C709C123F60087B539 /* switch_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B409C123F60087B539 /* switch_mutex.h */; };
+		D33CA8C809C123F60087B539 /* switch_platform.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B509C123F60087B539 /* switch_platform.h */; };
+		D33CA8C909C123F60087B539 /* switch_resample.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B609C123F60087B539 /* switch_resample.h */; };
+		D33CA8CA09C123F60087B539 /* switch_sqlite.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B709C123F60087B539 /* switch_sqlite.h */; };
+		D33CA8CB09C123F60087B539 /* switch_types.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B809C123F60087B539 /* switch_types.h */; };
+		D33CA8CC09C123F60087B539 /* switch_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8B909C123F60087B539 /* switch_utils.h */; };
+		D33CA8CD09C123F60087B539 /* switch.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8BA09C123F60087B539 /* switch.h */; };
+		D33CA8D909C124B70087B539 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8D709C124B70087B539 /* config.h */; };
+		D33CA8DA09C124B70087B539 /* switch_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8D809C124B70087B539 /* switch_version.h */; };
+		D33CA8ED09C1256F0087B539 /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8EC09C1256F0087B539 /* libresample.h */; };
+		D33CA8F909C125D90087B539 /* libresample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D33CA8F809C125D90087B539 /* libresample.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXBuildStyle section */
+		D33CA87C09C123840087B539 /* Development */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Development;
+		};
+		D33CA87D09C123840087B539 /* Deployment */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+			};
+			name = Deployment;
+		};
+/* End PBXBuildStyle section */
+
+/* Begin PBXFileReference section */
+		D33CA88609C123900087B539 /* freeswitch.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = freeswitch.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D33CA88809C123900087B539 /* libfreeswitch-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "libfreeswitch-Info.plist"; sourceTree = "<group>"; };
+		D33CA89009C123DD0087B539 /* switch_buffer.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_buffer.c; path = ../../../src/switch_buffer.c; sourceTree = SOURCE_ROOT; };
+		D33CA89109C123DD0087B539 /* switch_caller.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_caller.c; path = ../../../src/switch_caller.c; sourceTree = SOURCE_ROOT; };
+		D33CA89209C123DD0087B539 /* switch_channel.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_channel.c; path = ../../../src/switch_channel.c; sourceTree = SOURCE_ROOT; };
+		D33CA89309C123DD0087B539 /* switch_config.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_config.c; path = ../../../src/switch_config.c; sourceTree = SOURCE_ROOT; };
+		D33CA89409C123DD0087B539 /* switch_console.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_console.c; path = ../../../src/switch_console.c; sourceTree = SOURCE_ROOT; };
+		D33CA89509C123DD0087B539 /* switch_core.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_core.c; path = ../../../src/switch_core.c; sourceTree = SOURCE_ROOT; };
+		D33CA89609C123DD0087B539 /* switch_event.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_event.c; path = ../../../src/switch_event.c; sourceTree = SOURCE_ROOT; };
+		D33CA89709C123DD0087B539 /* switch_ivr.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_ivr.c; path = ../../../src/switch_ivr.c; sourceTree = SOURCE_ROOT; };
+		D33CA89809C123DD0087B539 /* switch_loadable_module.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_loadable_module.c; path = ../../../src/switch_loadable_module.c; sourceTree = SOURCE_ROOT; };
+		D33CA89909C123DD0087B539 /* switch_mutex.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_mutex.c; path = ../../../src/switch_mutex.c; sourceTree = SOURCE_ROOT; };
+		D33CA89A09C123DD0087B539 /* switch_resample.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_resample.c; path = ../../../src/switch_resample.c; sourceTree = SOURCE_ROOT; };
+		D33CA89B09C123DD0087B539 /* switch_utils.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_utils.c; path = ../../../src/switch_utils.c; sourceTree = SOURCE_ROOT; };
+		D33CA8A809C123F60087B539 /* switch_apr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_apr.h; path = ../../../src/include/switch_apr.h; sourceTree = SOURCE_ROOT; };
+		D33CA8A909C123F60087B539 /* switch_buffer.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_buffer.h; path = ../../../src/include/switch_buffer.h; sourceTree = SOURCE_ROOT; };
+		D33CA8AA09C123F60087B539 /* switch_caller.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_caller.h; path = ../../../src/include/switch_caller.h; sourceTree = SOURCE_ROOT; };
+		D33CA8AB09C123F60087B539 /* switch_channel.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_channel.h; path = ../../../src/include/switch_channel.h; sourceTree = SOURCE_ROOT; };
+		D33CA8AC09C123F60087B539 /* switch_config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_config.h; path = ../../../src/include/switch_config.h; sourceTree = SOURCE_ROOT; };
+		D33CA8AD09C123F60087B539 /* switch_console.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_console.h; path = ../../../src/include/switch_console.h; sourceTree = SOURCE_ROOT; };
+		D33CA8AE09C123F60087B539 /* switch_core.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_core.h; path = ../../../src/include/switch_core.h; sourceTree = SOURCE_ROOT; };
+		D33CA8AF09C123F60087B539 /* switch_event.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_event.h; path = ../../../src/include/switch_event.h; sourceTree = SOURCE_ROOT; };
+		D33CA8B009C123F60087B539 /* switch_frame.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_frame.h; path = ../../../src/include/switch_frame.h; sourceTree = SOURCE_ROOT; };
+		D33CA8B109C123F60087B539 /* switch_ivr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_ivr.h; path = ../../../src/include/switch_ivr.h; sourceTree = SOURCE_ROOT; };
+		D33CA8B209C123F60087B539 /* switch_loadable_module.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_loadable_module.h; path = ../../../src/include/switch_loadable_module.h; sourceTree = SOURCE_ROOT; };
+		D33CA8B309C123F60087B539 /* switch_module_interfaces.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_module_interfaces.h; path = ../../../src/include/switch_module_interfaces.h; sourceTree = SOURCE_ROOT; };
+		D33CA8B409C123F60087B539 /* switch_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_mutex.h; path = ../../../src/include/switch_mutex.h; sourceTree = SOURCE_ROOT; };
+		D33CA8B509C123F60087B539 /* switch_platform.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_platform.h; path = ../../../src/include/switch_platform.h; sourceTree = SOURCE_ROOT; };
+		D33CA8B609C123F60087B539 /* switch_resample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_resample.h; path = ../../../src/include/switch_resample.h; sourceTree = SOURCE_ROOT; };
+		D33CA8B709C123F60087B539 /* switch_sqlite.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_sqlite.h; path = ../../../src/include/switch_sqlite.h; sourceTree = SOURCE_ROOT; };
+		D33CA8B809C123F60087B539 /* switch_types.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_types.h; path = ../../../src/include/switch_types.h; sourceTree = SOURCE_ROOT; };
+		D33CA8B909C123F60087B539 /* switch_utils.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_utils.h; path = ../../../src/include/switch_utils.h; sourceTree = SOURCE_ROOT; };
+		D33CA8BA09C123F60087B539 /* switch.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch.h; path = ../../../src/include/switch.h; sourceTree = SOURCE_ROOT; };
+		D33CA8D709C124B70087B539 /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = config.h; path = ../../../src/include/config.h; sourceTree = SOURCE_ROOT; };
+		D33CA8D809C124B70087B539 /* switch_version.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_version.h; path = ../../../src/include/switch_version.h; sourceTree = SOURCE_ROOT; };
+		D33CA8EC09C1256F0087B539 /* libresample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libresample.h; path = "../../../libs/libresample-0.1.3/include/libresample.h"; sourceTree = SOURCE_ROOT; };
+		D33CA8F809C125D90087B539 /* libresample.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libresample.a; path = build/resample/libresample.a; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D33CA88409C123900087B539 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33CA8F909C125D90087B539 /* libresample.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D33CA86809C1236E0087B539 = {
+			isa = PBXGroup;
+			children = (
+				D33CA88709C123900087B539 /* libfreeswitch */,
+				D33CA88809C123900087B539 /* libfreeswitch-Info.plist */,
+				D33CA8F809C125D90087B539 /* libresample.a */,
+				D33CA88609C123900087B539 /* freeswitch.framework */,
+			);
+			sourceTree = "<group>";
+		};
+		D33CA88709C123900087B539 /* libfreeswitch */ = {
+			isa = PBXGroup;
+			children = (
+				D33CA88F09C123C40087B539 /* src */,
+				D33CA88E09C123BF0087B539 /* include */,
+			);
+			name = libfreeswitch;
+			sourceTree = "<group>";
+		};
+		D33CA88E09C123BF0087B539 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D33CA8EC09C1256F0087B539 /* libresample.h */,
+				D33CA8D709C124B70087B539 /* config.h */,
+				D33CA8D809C124B70087B539 /* switch_version.h */,
+				D33CA8A809C123F60087B539 /* switch_apr.h */,
+				D33CA8A909C123F60087B539 /* switch_buffer.h */,
+				D33CA8AA09C123F60087B539 /* switch_caller.h */,
+				D33CA8AB09C123F60087B539 /* switch_channel.h */,
+				D33CA8AC09C123F60087B539 /* switch_config.h */,
+				D33CA8AD09C123F60087B539 /* switch_console.h */,
+				D33CA8AE09C123F60087B539 /* switch_core.h */,
+				D33CA8AF09C123F60087B539 /* switch_event.h */,
+				D33CA8B009C123F60087B539 /* switch_frame.h */,
+				D33CA8B109C123F60087B539 /* switch_ivr.h */,
+				D33CA8B209C123F60087B539 /* switch_loadable_module.h */,
+				D33CA8B309C123F60087B539 /* switch_module_interfaces.h */,
+				D33CA8B409C123F60087B539 /* switch_mutex.h */,
+				D33CA8B509C123F60087B539 /* switch_platform.h */,
+				D33CA8B609C123F60087B539 /* switch_resample.h */,
+				D33CA8B709C123F60087B539 /* switch_sqlite.h */,
+				D33CA8B809C123F60087B539 /* switch_types.h */,
+				D33CA8B909C123F60087B539 /* switch_utils.h */,
+				D33CA8BA09C123F60087B539 /* switch.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		D33CA88F09C123C40087B539 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D33CA89009C123DD0087B539 /* switch_buffer.c */,
+				D33CA89109C123DD0087B539 /* switch_caller.c */,
+				D33CA89209C123DD0087B539 /* switch_channel.c */,
+				D33CA89309C123DD0087B539 /* switch_config.c */,
+				D33CA89409C123DD0087B539 /* switch_console.c */,
+				D33CA89509C123DD0087B539 /* switch_core.c */,
+				D33CA89609C123DD0087B539 /* switch_event.c */,
+				D33CA89709C123DD0087B539 /* switch_ivr.c */,
+				D33CA89809C123DD0087B539 /* switch_loadable_module.c */,
+				D33CA89909C123DD0087B539 /* switch_mutex.c */,
+				D33CA89A09C123DD0087B539 /* switch_resample.c */,
+				D33CA89B09C123DD0087B539 /* switch_utils.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		D33CA88109C123900087B539 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33CA8BB09C123F60087B539 /* switch_apr.h in Headers */,
+				D33CA8BC09C123F60087B539 /* switch_buffer.h in Headers */,
+				D33CA8BD09C123F60087B539 /* switch_caller.h in Headers */,
+				D33CA8BE09C123F60087B539 /* switch_channel.h in Headers */,
+				D33CA8BF09C123F60087B539 /* switch_config.h in Headers */,
+				D33CA8C009C123F60087B539 /* switch_console.h in Headers */,
+				D33CA8C109C123F60087B539 /* switch_core.h in Headers */,
+				D33CA8C209C123F60087B539 /* switch_event.h in Headers */,
+				D33CA8C309C123F60087B539 /* switch_frame.h in Headers */,
+				D33CA8C409C123F60087B539 /* switch_ivr.h in Headers */,
+				D33CA8C509C123F60087B539 /* switch_loadable_module.h in Headers */,
+				D33CA8C609C123F60087B539 /* switch_module_interfaces.h in Headers */,
+				D33CA8C709C123F60087B539 /* switch_mutex.h in Headers */,
+				D33CA8C809C123F60087B539 /* switch_platform.h in Headers */,
+				D33CA8C909C123F60087B539 /* switch_resample.h in Headers */,
+				D33CA8CA09C123F60087B539 /* switch_sqlite.h in Headers */,
+				D33CA8CB09C123F60087B539 /* switch_types.h in Headers */,
+				D33CA8CC09C123F60087B539 /* switch_utils.h in Headers */,
+				D33CA8CD09C123F60087B539 /* switch.h in Headers */,
+				D33CA8D909C124B70087B539 /* config.h in Headers */,
+				D33CA8DA09C124B70087B539 /* switch_version.h in Headers */,
+				D33CA8ED09C1256F0087B539 /* libresample.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		D33CA88509C123900087B539 /* freeswitch.framework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D33CA88909C123910087B539 /* Build configuration list for PBXNativeTarget "freeswitch.framework" */;
+			buildPhases = (
+				D33CA8CE09C124400087B539 /* Prepare Source */,
+				D33CA88109C123900087B539 /* Headers */,
+				D33CA88309C123900087B539 /* Sources */,
+				D33CA88409C123900087B539 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = "freeswitch-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = freeswitch.framework;
+			productName = freeswitch;
+			productReference = D33CA88609C123900087B539 /* freeswitch.framework */;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>${EXECUTABLE_NAME}</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.yourcompany.freeswitch</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>FMWK</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+</dict>
+</plist>
+";
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D33CA86A09C1236E0087B539 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = D33CA86B09C1236E0087B539 /* Build configuration list for PBXProject "libfreeswitch" */;
+			buildSettings = {
+			};
+			buildStyles = (
+				D33CA87C09C123840087B539 /* Development */,
+				D33CA87D09C123840087B539 /* Deployment */,
+			);
+			hasScannedForEncodings = 0;
+			mainGroup = D33CA86809C1236E0087B539;
+			productRefGroup = D33CA88709C123900087B539 /* libfreeswitch */;
+			projectDirPath = "";
+			targets = (
+				D33CA88509C123900087B539 /* freeswitch.framework */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D33CA8CE09C124400087B539 /* Prepare Source */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Prepare Source";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "
+
+";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D33CA88309C123900087B539 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D33CA89C09C123DD0087B539 /* switch_buffer.c in Sources */,
+				D33CA89D09C123DD0087B539 /* switch_caller.c in Sources */,
+				D33CA89E09C123DD0087B539 /* switch_channel.c in Sources */,
+				D33CA89F09C123DD0087B539 /* switch_config.c in Sources */,
+				D33CA8A009C123DD0087B539 /* switch_console.c in Sources */,
+				D33CA8A109C123DD0087B539 /* switch_core.c in Sources */,
+				D33CA8A209C123DD0087B539 /* switch_event.c in Sources */,
+				D33CA8A309C123DD0087B539 /* switch_ivr.c in Sources */,
+				D33CA8A409C123DD0087B539 /* switch_loadable_module.c in Sources */,
+				D33CA8A509C123DD0087B539 /* switch_mutex.c in Sources */,
+				D33CA8A609C123DD0087B539 /* switch_resample.c in Sources */,
+				D33CA8A709C123DD0087B539 /* switch_utils.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D33CA86C09C1236E0087B539 /* libfreeswitch */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DSTROOT = /;
+				INSTALL_PATH = /Library/Frameworks;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = libfreeswitch;
+		};
+		D33CA88A09C123910087B539 /* libfreeswitch */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DSTROOT = /;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(FRAMEWORK_SEARCH_PATHS)",
+					/Library/Frameworks,
+				);
+				FRAMEWORK_VERSION = A;
+				FREESWITCH_PATH = /usr/local/freeswitch;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				HEADER_SEARCH_PATHS = (
+					"../../../../libs/apr-1.2.2",
+					"../../../libs/apr-1.2.2/include",
+					"../../../../libs/apr-util-1.2.2",
+					"../../../libs/apr-util-1.2.2/include",
+				);
+				INFOPLIST_FILE = "libfreeswitch-Info.plist";
+				INSTALL_PATH = /Library/Frameworks;
+				LIBRARY_SEARCH_PATHS = (
+					"$(LIBRARY_SEARCH_PATHS)",
+					"$(SRCROOT)/build/resample",
+				);
+				OTHER_CFLAGS = (
+					"-DMACOSX",
+					"-DSWITCH_MOD_DIR=\"$(FREESWITCH_PATH)/mod\"",
+					"-DSWITCH_PREFIX_DIR=\"$(FREESWITCH_PATH)\"",
+					"-DSWITCH_CONF_DIR=\"$(FREESWITCH_PATH)/conf\"",
+					"-DSWITCH_DB_DIR=\"$(FREESWITCH_PATH)/db\"",
+					"-DSWITCH_LOG_DIR=\"$(FREESWITCH_PATH)/log\"",
+					"-DSWITCH_SCRIPT_DIR=\"$(FREESWITCH_PATH)/scripts\"",
+				);
+				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
+				OTHER_LDFLAGS = (
+					"-framework",
+					apr,
+					"-framework",
+					aprutil,
+					"-framework",
+					sqlite,
+					"-lpthread",
+					"-liconv",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				WARNING_LDFLAGS = "";
+				ZERO_LINK = YES;
+			};
+			name = libfreeswitch;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D33CA86B09C1236E0087B539 /* Build configuration list for PBXProject "libfreeswitch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D33CA86C09C1236E0087B539 /* libfreeswitch */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = libfreeswitch;
+		};
+		D33CA88909C123910087B539 /* Build configuration list for PBXNativeTarget "freeswitch.framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D33CA88A09C123910087B539 /* libfreeswitch */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = libfreeswitch;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D33CA86A09C1236E0087B539 /* Project object */;
+}
