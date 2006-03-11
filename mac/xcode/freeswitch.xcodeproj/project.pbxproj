@@ -7,8 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D35430C709C37820000A33C3 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D35430C209C37820000A33C3 /* apr.framework */; };
+		D35430C809C37820000A33C3 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D35430C309C37820000A33C3 /* aprutil.framework */; };
+		D35430C909C37820000A33C3 /* freeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D35430C409C37820000A33C3 /* freeswitch.framework */; };
+		D35430CA09C37820000A33C3 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D35430C509C37820000A33C3 /* sqlite.framework */; };
+		D35430CB09C37820000A33C3 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D35430C609C37820000A33C3 /* teletone.framework */; };
 		D3EA84AB09C12851006A903B /* switch.c in Sources */ = {isa = PBXBuildFile; fileRef = D3EA84AA09C12851006A903B /* switch.c */; };
-		D3EA84FA09C12D63006A903B /* freeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3EA84D309C12AD6006A903B /* freeswitch.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildStyle section */
@@ -29,9 +33,13 @@
 /* End PBXBuildStyle section */
 
 /* Begin PBXFileReference section */
+		D35430C209C37820000A33C3 /* apr.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = apr.framework; path = /Library/Frameworks/apr.framework; sourceTree = "<absolute>"; };
+		D35430C309C37820000A33C3 /* aprutil.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = aprutil.framework; path = /Library/Frameworks/aprutil.framework; sourceTree = "<absolute>"; };
+		D35430C409C37820000A33C3 /* freeswitch.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = freeswitch.framework; path = /Library/Frameworks/freeswitch.framework; sourceTree = "<absolute>"; };
+		D35430C509C37820000A33C3 /* sqlite.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = sqlite.framework; path = /Library/Frameworks/sqlite.framework; sourceTree = "<absolute>"; };
+		D35430C609C37820000A33C3 /* teletone.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = teletone.framework; path = /Library/Frameworks/teletone.framework; sourceTree = "<absolute>"; };
 		D3EA84A109C127DC006A903B /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3EA84AA09C12851006A903B /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = ../../src/switch.c; sourceTree = SOURCE_ROOT; };
-		D3EA84D309C12AD6006A903B /* freeswitch.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = freeswitch.framework; path = libs/build/libfreeswitch/freeswitch.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,7 +47,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D3EA84FA09C12D63006A903B /* freeswitch.framework in Frameworks */,
+				D35430C709C37820000A33C3 /* apr.framework in Frameworks */,
+				D35430C809C37820000A33C3 /* aprutil.framework in Frameworks */,
+				D35430C909C37820000A33C3 /* freeswitch.framework in Frameworks */,
+				D35430CA09C37820000A33C3 /* sqlite.framework in Frameworks */,
+				D35430CB09C37820000A33C3 /* teletone.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -49,9 +61,13 @@
 		D33CA85C09C123560087B539 = {
 			isa = PBXGroup;
 			children = (
+				D35430C209C37820000A33C3 /* apr.framework */,
+				D35430C309C37820000A33C3 /* aprutil.framework */,
+				D35430C409C37820000A33C3 /* freeswitch.framework */,
+				D35430C509C37820000A33C3 /* sqlite.framework */,
+				D35430C609C37820000A33C3 /* teletone.framework */,
 				D3EA84A209C127DC006A903B /* freeswitch */,
 				D3EA84A109C127DC006A903B /* freeswitch */,
-				D3EA84D309C12AD6006A903B /* freeswitch.framework */,
 			);
 			sourceTree = "<group>";
 		};
@@ -147,11 +163,9 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				HEADER_SEARCH_PATHS = (
-					"../../libs/apr-1.2.2",
-					"../../libs/apr-1.2.2/include",
-					"../../libs/apr-util-1.2.2",
-					"../../libs/apr-util-1.2.2/include",
-					../../src/include,
+					/Library/Frameworks/apr.framework/Headers,
+					/Library/Frameworks/aprutil.framework/Headers,
+					/Library/Frameworks/freeswitch.framework/Headers,
 				);
 				INSTALL_PATH = /usr/local/freeswitch/bin;
 				OTHER_CFLAGS = (

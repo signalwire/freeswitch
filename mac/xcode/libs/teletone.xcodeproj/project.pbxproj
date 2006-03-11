@@ -32,7 +32,7 @@
 /* End PBXBuildStyle section */
 
 /* Begin PBXFileReference section */
-		D37F3EC409C0F660002C93D4 /* teletone.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; name = teletone.framework; path = build/teletone/teletone.framework; sourceTree = "<group>"; };
+		D37F3EC409C0F660002C93D4 /* teletone.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = teletone.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D37F3EC609C0F660002C93D4 /* teletone-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "teletone-Info.plist"; sourceTree = "<group>"; };
 		D37F3ED809C0F707002C93D4 /* libteletone_detect.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = libteletone_detect.c; path = ../../../libs/libteletone/src/libteletone_detect.c; sourceTree = "<group>"; };
 		D37F3ED909C0F707002C93D4 /* libteletone_detect.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libteletone_detect.h; path = ../../../libs/libteletone/src/libteletone_detect.h; sourceTree = "<group>"; };

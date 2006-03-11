@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D3542F0509C3760C000A33C3 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3542F0409C3760C000A33C3 /* apr.framework */; };
+		D3542FF809C37707000A33C3 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3542FF709C37707000A33C3 /* sqlite.framework */; };
 		D3F0202109C119A200120915 /* apr_anylock.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200109C119A200120915 /* apr_anylock.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3F0202209C119A200120915 /* apr_base64.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200209C119A200120915 /* apr_base64.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3F0202309C119A200120915 /* apr_buckets.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F0200309C119A200120915 /* apr_buckets.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -107,6 +109,8 @@
 /* End PBXBuildStyle section */
 
 /* Begin PBXFileReference section */
+		D3542F0409C3760C000A33C3 /* apr.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = apr.framework; path = /Library/Frameworks/apr.framework; sourceTree = "<absolute>"; };
+		D3542FF709C37707000A33C3 /* sqlite.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = sqlite.framework; path = /Library/Frameworks/sqlite.framework; sourceTree = "<absolute>"; };
 		D3F01FE309C1182700120915 /* aprutil.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = aprutil.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3F01FE509C1182700120915 /* aprutil-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "aprutil-Info.plist"; sourceTree = "<group>"; };
 		D3F0200109C119A200120915 /* apr_anylock.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_anylock.h; path = "../../../libs/apr-util-1.2.2/include/apr_anylock.h"; sourceTree = SOURCE_ROOT; };
@@ -197,6 +201,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D3542F0509C3760C000A33C3 /* apr.framework in Frameworks */,
+				D3542FF809C37707000A33C3 /* sqlite.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -209,6 +215,8 @@
 				D3F01FE409C1182700120915 /* aprutil-1.2.2 */,
 				D3F01FE509C1182700120915 /* aprutil-Info.plist */,
 				D3F01FE309C1182700120915 /* aprutil.framework */,
+				D3542FF709C37707000A33C3 /* sqlite.framework */,
+				D3542F0409C3760C000A33C3 /* apr.framework */,
 			);
 			sourceTree = "<group>";
 		};

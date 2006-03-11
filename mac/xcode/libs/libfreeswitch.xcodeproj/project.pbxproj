@@ -42,6 +42,10 @@
 		D33CA8DA09C124B70087B539 /* switch_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8D809C124B70087B539 /* switch_version.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D33CA8ED09C1256F0087B539 /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D33CA8EC09C1256F0087B539 /* libresample.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		D33CA8F909C125D90087B539 /* libresample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D33CA8F809C125D90087B539 /* libresample.a */; };
+		D354302A09C37727000A33C3 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D354302609C37727000A33C3 /* apr.framework */; };
+		D354302B09C37727000A33C3 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D354302709C37727000A33C3 /* aprutil.framework */; };
+		D354302C09C37727000A33C3 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D354302809C37727000A33C3 /* sqlite.framework */; };
+		D354302D09C37727000A33C3 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D354302909C37727000A33C3 /* teletone.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildStyle section */
@@ -99,6 +103,10 @@
 		D33CA8D809C124B70087B539 /* switch_version.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_version.h; path = ../../../src/include/switch_version.h; sourceTree = SOURCE_ROOT; };
 		D33CA8EC09C1256F0087B539 /* libresample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libresample.h; path = "../../../libs/libresample-0.1.3/include/libresample.h"; sourceTree = SOURCE_ROOT; };
 		D33CA8F809C125D90087B539 /* libresample.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libresample.a; path = build/resample/libresample.a; sourceTree = "<group>"; };
+		D354302609C37727000A33C3 /* apr.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = apr.framework; path = /Library/Frameworks/apr.framework; sourceTree = "<absolute>"; };
+		D354302709C37727000A33C3 /* aprutil.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = aprutil.framework; path = /Library/Frameworks/aprutil.framework; sourceTree = "<absolute>"; };
+		D354302809C37727000A33C3 /* sqlite.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = sqlite.framework; path = /Library/Frameworks/sqlite.framework; sourceTree = "<absolute>"; };
+		D354302909C37727000A33C3 /* teletone.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = teletone.framework; path = /Library/Frameworks/teletone.framework; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,6 +115,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				D33CA8F909C125D90087B539 /* libresample.a in Frameworks */,
+				D354302A09C37727000A33C3 /* apr.framework in Frameworks */,
+				D354302B09C37727000A33C3 /* aprutil.framework in Frameworks */,
+				D354302C09C37727000A33C3 /* sqlite.framework in Frameworks */,
+				D354302D09C37727000A33C3 /* teletone.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,8 +130,12 @@
 			children = (
 				D33CA88709C123900087B539 /* libfreeswitch */,
 				D33CA88809C123900087B539 /* libfreeswitch-Info.plist */,
-				D33CA8F809C125D90087B539 /* libresample.a */,
 				D33CA88609C123900087B539 /* freeswitch.framework */,
+				D33CA8F809C125D90087B539 /* libresample.a */,
+				D354302609C37727000A33C3 /* apr.framework */,
+				D354302709C37727000A33C3 /* aprutil.framework */,
+				D354302809C37727000A33C3 /* sqlite.framework */,
+				D354302909C37727000A33C3 /* teletone.framework */,
 			);
 			sourceTree = "<group>";
 		};
@@ -349,8 +365,8 @@
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				FRAMEWORK_SEARCH_PATHS = (
-					"$(FRAMEWORK_SEARCH_PATHS)",
 					/Library/Frameworks,
+					"$(FRAMEWORK_SEARCH_PATHS)",
 					"$(SRCROOT)/build/Release",
 				);
 				FRAMEWORK_VERSION = A;
@@ -362,11 +378,8 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				HEADER_SEARCH_PATHS = (
-					"../../libs/apr-1.2.2",
-					"../../libs/apr-1.2.2/include",
-					"../../libs/apr-util-1.2.2",
-					"../../libs/apr-util-1.2.2/include",
-					../../src/include,
+					/Library/Frameworks/apr.framework/Headers,
+					/Library/Frameworks/aprutil.framework/Headers,
 				);
 				INFOPLIST_FILE = "libfreeswitch-Info.plist";
 				INSTALL_PATH = /Library/Frameworks;
@@ -375,6 +388,14 @@
 					"$(SRCROOT)/build/resample",
 				);
 				OTHER_CFLAGS = (
+					"-framework",
+					apr,
+					"-framework",
+					aprutil,
+					"-framework",
+					sqlite,
+					"-lpthread",
+					"-liconv",
 					"-DMACOSX",
 					"-DSWITCH_MOD_DIR=\"$(FREESWITCH_PATH)/mod\"",
 					"-DSWITCH_PREFIX_DIR=\"$(FREESWITCH_PATH)\"",
