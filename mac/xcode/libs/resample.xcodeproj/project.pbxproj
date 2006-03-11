@@ -197,6 +197,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
+				NATIVE_ARCH = "ppc i386";
 			};
 			name = resample;
 		};

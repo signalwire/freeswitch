@@ -353,6 +353,7 @@
 				COPY_PHASE_STRIP = NO;
 				DSTROOT = /;
 				INSTALL_PATH = /Library/Frameworks;
+				NATIVE_ARCH = "ppc i386";
 				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 			};
 			name = libfreeswitch;
