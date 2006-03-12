@@ -1033,7 +1033,7 @@ Sub UnTarGZ(TGZfile, DestFolder)
 		WScript.Sleep(500)
 		FSO.DeleteFile Left(TGZfile, Len(TGZfile)-3) ,true 
 	End If
-	
+	WScript.Sleep(500)
 End Sub
 
 
