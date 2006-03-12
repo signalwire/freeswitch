@@ -41,6 +41,8 @@ If objArgs.Count >=1 Then
 		GetVCBuild
 		Wscript.echo "Detected VCBuild: " & VCBuild
 	End If
+Else
+	GetTarGZObjects UtilsDir
 End If
 
 ' **************
@@ -979,46 +981,77 @@ Sub GetTarGZObjects(DestFolder)
 
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
 
-	If Not FSO.FileExists(DestFolder & "XTar.dll") Then 
-		Wget ToolsBase & "XTar.dll", DestFolder
+	If Not FSO.FileExists(DestFolder & "7za.exe") Then 
+		Wget ToolsBase & "7za.exe", DestFolder
 	End If
 
-	If Not FSO.FileExists(DestFolder & "XGZip.dll") Then 
-		Wget ToolsBase & "XGZip.dll", DestFolder
-	End If
-	
-	If Not FSO.FileExists(DestFolder & "XZip.dll") Then 
-		Wget ToolsBase & "XZip.dll", DestFolder
-	End If
-	
-	WshShell.Run "regsvr32 /s " & DestFolder & "XTar.dll", 6, True
-	
-	WshShell.Run "regsvr32 /s " & DestFolder & "XGZip.dll", 6, True
+'	If Not FSO.FileExists(DestFolder & "XTar.dll") Then 
+'		Wget ToolsBase & "XTar.dll", DestFolder
+'	End If
 
-	WshShell.Run "regsvr32 /s " & DestFolder & "XZip.dll", 6, True
+'	If Not FSO.FileExists(DestFolder & "XGZip.dll") Then 
+'		Wget ToolsBase & "XGZip.dll", DestFolder
+'	End If
+	
+'	If Not FSO.FileExists(DestFolder & "XZip.dll") Then 
+'		Wget ToolsBase & "XZip.dll", DestFolder
+'	End If
+	
+'	WshShell.Run "regsvr32 /s " & DestFolder & "XTar.dll", 6, True
+	
+'	WshShell.Run "regsvr32 /s " & DestFolder & "XGZip.dll", 6, True
+
+	'WshShell.Run "regsvr32 /s " & DestFolder & "XZip.dll", 6, True
 	
 End Sub
 
 Sub UnTarGZ(TGZfile, DestFolder)
-
-	Set objTAR = WScript.CreateObject("XStandard.TAR")
-	Set objGZip = WScript.CreateObject("XStandard.GZip")
 	wscript.echo("Extracting: " & TGZfile)
-	objGZip.Decompress TGZfile, Destfolder
-	objTAR.UnPack Left(TGZfile, Len(TGZfile)-3), Destfolder
+'	Set objTAR = WScript.CreateObject("XStandard.TAR")
+'	Set objGZip = WScript.CreateObject("XStandard.GZip")
+'	objGZip.Decompress TGZfile, Destfolder
+'	objTAR.UnPack Left(TGZfile, Len(TGZfile)-3), Destfolder
 	
-	Set objTAR = Nothing
-	Set objGZip = Nothing
-	WScript.Sleep(500)
+'	Set objTAR = Nothing
+'	Set objGZip = Nothing
+'	WScript.Sleep(500)
+	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
+	MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & TGZfile & " -y -o" & DestFolder)
+	MyFile.Close
+	Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
+	Do
+		WScript.Echo OExec.StdOut.ReadLine()
+	Loop While Not OExec.StdOut.atEndOfStream
+	If FSO.FileExists(Left(TGZfile, Len(TGZfile)-3)) Then  
+		Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
+		MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & Left(TGZfile, Len(TGZfile)-3) & " -y -o" & DestFolder)
+		MyFile.Close
+		Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
+		Do
+			WScript.Echo OExec.StdOut.ReadLine()
+		Loop While Not OExec.StdOut.atEndOfStream
+		WScript.Sleep(500)
+		FSO.DeleteFile Left(TGZfile, Len(TGZfile)-3) ,true 
+	End If
+	
 End Sub
 
 
 Sub UnZip(Zipfile, DestFolder)
-	Dim objZip
-	Set objZip = WScript.CreateObject("XStandard.Zip")
-	wscript.echo("Extracting: " & Zipfile)
-	objZip.UnPack Zipfile, DestFolder
-	Set objZip = Nothing
+'	Dim objZip
+'	Set objZip = WScript.CreateObject("XStandard.Zip")
+'	wscript.echo("Extracting: " & Zipfile)
+'	objZip.UnPack Zipfile, DestFolder
+'	Set objZip = Nothing
+'	WScript.Sleep(500)
+	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
+	MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & Zipfile & " -y -o" & DestFolder)
+	MyFile.Close
+
+	Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
+	Do
+		WScript.Echo OExec.StdOut.ReadLine()
+	Loop While Not OExec.StdOut.atEndOfStream
 	WScript.Sleep(500)
 End Sub
 
