@@ -64,7 +64,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="js32.lib  curllib.lib ws2_32.lib winmm.lib sqlite.lib fdlibm.lib libnspr4.lib libplc4.lib  libplds4.lib"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="js32.lib  curllib.lib ws2_32.lib winmm.lib sqlite.lib fdlibm.lib libnspr4.lib libplc4.lib  libplds4.lib libteletone.lib FreeSwitchCore.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_spidermonkey.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\js\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\curl\lib\$(OutDir)&quot;;&quot;..\..\..\..\libs\sqlite\$(OutDir)&quot;;..\..\..\..\libs\js\nspr\lib;&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;"
@@ -145,7 +146,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="js32.lib  curllib.lib ws2_32.lib winmm.lib sqlite.lib fdlibm.lib libnspr4.lib libplc4.lib  libplds4.lib"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="js32.lib  curllib.lib ws2_32.lib winmm.lib sqlite.lib fdlibm.lib libnspr4.lib libplc4.lib  libplds4.lib libteletone.lib FreeSwitchCore.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_spidermonkey.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\js\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\curl\lib\$(OutDir)&quot;;&quot;..\..\..\..\libs\sqlite\$(OutDir)&quot;;..\..\..\..\libs\js\nspr\lib;&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;"
