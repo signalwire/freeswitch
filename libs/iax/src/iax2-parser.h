@@ -86,9 +86,9 @@ struct iax_frame {
 	/* How many retries so far? */
 	int retries;
 	/* Outgoing relative timestamp (ms) */
-	unsigned int ts;
+	time_in_ms_t ts;
 	/* How long to wait before retrying */
-	int retrytime;
+	time_in_ms_t retrytime;
 	/* Are we received out of order?  */
 	int outoforder;
 	/* Have we been sent at all yet? */

@@ -14,6 +14,9 @@
 #ifndef _IAX2_H
 #define _IAX2_H
 
+typedef long long time_in_ms_t;
+#define iax_abs(x) ((x) >= 0 ? (x) : -(x))
+
 /* Max version of IAX protocol we support */
 #define IAX_PROTO_VERSION 2
 

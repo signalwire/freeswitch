@@ -62,14 +62,14 @@ void gettimeofday(struct timeval *tv, void /*struct timezone*/ *tz);
 #include <time.h>
 
 #endif
+
+#include "iax2.h"
+#include "iax-client.h"
+#include "md5.h"
+
 #ifdef NEWJB
 #include "jitterbuf.h"
 #endif
-
-typedef long long time_in_ms_t;
-
-#include "iax-client.h"
-#include "md5.h"
 
 /*
 	work around jitter-buffer shrinking in asterisk:
@@ -172,17 +172,17 @@ struct iax_session {
 	/* Per session capability */
 	int capability;
 	/* Last received timestamp */
-	unsigned int last_ts;
+	time_in_ms_t last_ts;
 	/* Last transmitted timestamp */
-	unsigned int lastsent;
+	time_in_ms_t lastsent;
 	/* Last transmitted voice timestamp */
 	unsigned int lastvoicets;
 	/* Next predicted voice ts */
-	unsigned int nextpred;
+	time_in_ms_t nextpred;
 	/* True if the last voice we transmitted was not silence/CNG */
 	int notsilenttx;
 	/* Our last measured ping time */
-	unsigned int pingtime;
+	time_in_ms_t pingtime;
 	/* Address of peer */
 	struct sockaddr_in peeraddr;
 	/* Our call number */
@@ -403,7 +403,7 @@ static int inaddrcmp(struct sockaddr_in *sin1, struct sockaddr_in *sin2)
 	return (sin1->sin_addr.s_addr != sin2->sin_addr.s_addr) || (sin1->sin_port != sin2->sin_port);
 }
 
-static int iax_sched_add(struct iax_event *event, struct iax_frame *frame, sched_func func, void *arg, int ms)
+static int iax_sched_add(struct iax_event *event, struct iax_frame *frame, sched_func func, void *arg, time_in_ms_t ms)
 {
 
 	/* Schedule event to be delivered to the client
@@ -469,27 +469,27 @@ static int iax_sched_del(struct iax_event *event, struct iax_frame *frame, sched
 }
 
 
-int iax_time_to_next_event(void)
+time_in_ms_t iax_time_to_next_event(void)
 {
 	struct iax_sched *cur = schedq;
-	int min = 999999999;
+	time_in_ms_t minimum = 999999999;
 	
 	/* If there are no pending events, we don't need to timeout */
 	if (!cur)
 		return -1;
 
 	while(cur) {
-		if (cur->when < min) {
-			min = cur->when;
+		if (cur->when < minimum) {
+			minimum = cur->when;
 		}
 		cur = cur->next;
 	}
 
-	if (min <= 0) {
+	if (minimum <= 0) {
 		return -1;
 	}
 
-	return (int) (min - current_time_in_ms());
+	return minimum - current_time_in_ms();
 }
 
 struct iax_session *iax_session_new(void)
@@ -540,7 +540,7 @@ static int iax_session_valid(struct iax_session *session)
 	return 0;
 }
 
-int iax_get_netstats(struct iax_session *session, int *rtt, struct iax_netstat *local, struct iax_netstat *remote) {
+int iax_get_netstats(struct iax_session *session, time_in_ms_t *rtt, struct iax_netstat *local, struct iax_netstat *remote) {
 
   if(!iax_session_valid(session)) return -1;
 
@@ -567,9 +567,9 @@ int iax_get_netstats(struct iax_session *session, int *rtt, struct iax_netstat *
   return 0;
 }
 
-static int calc_timestamp(struct iax_session *session, unsigned int ts, struct ast_frame *f)
+static time_in_ms_t calc_timestamp(struct iax_session *session, time_in_ms_t ts, struct ast_frame *f)
 {
-	unsigned int ms;
+	time_in_ms_t ms;
 	time_in_ms_t time_in_ms;
 	int voice = 0;
 	int genuine = 0;
@@ -607,7 +607,7 @@ static int calc_timestamp(struct iax_session *session, unsigned int ts, struct a
 
 		/* If we haven't most recently sent silence, and we're
 		 * close in time, use predicted time */
-		if(session->notsilenttx && abs(ms - session->nextpred) <= 240) {
+		if(session->notsilenttx && iax_abs(ms - session->nextpred) <= 240) {
 		    /* Adjust our txcore, keeping voice and non-voice
 		     * synchronized */
 			session->offset += (int)(ms - session->nextpred)/10;
@@ -623,7 +623,7 @@ static int calc_timestamp(struct iax_session *session, unsigned int ts, struct a
 		     * time.  Also, round ms to the next multiple of
 		     * frame size (so our silent periods are multiples
 		     * of frame size too) */
-		    int diff = ms % (f->samples / 8);
+		    time_in_ms_t diff = ms % (f->samples / 8);
 		    if(diff)
 			ms += f->samples/8 - diff;
 		    session->nextpred = ms; 
@@ -639,7 +639,7 @@ static int calc_timestamp(struct iax_session *session, unsigned int ts, struct a
 		if (genuine) {
 			if (ms <= session->lastsent)
 				ms = session->lastsent + 3;
-		} else if (abs(ms - session->lastsent) <= 240) {
+		} else if (iax_abs(ms - session->lastsent) <= 240) {
 			ms = session->lastsent + 3;
 		}
 	      
@@ -1014,7 +1014,7 @@ static unsigned char compress_subclass(int subclass)
 	return power | IAX_FLAG_SC_LOG;
 }
 
-static int iax_send(struct iax_session *pvt, struct ast_frame *f, unsigned int ts, int seqno, int now, int transfer, int final) 
+static int iax_send(struct iax_session *pvt, struct ast_frame *f, time_in_ms_t ts, int seqno, int now, int transfer, int final) 
 {
 	/* Queue a packet for delivery on a given private structure.  Use "ts" for
 	   timestamp, or calculate if ts is 0.  Send immediately without retransmission
@@ -1025,8 +1025,8 @@ static int iax_send(struct iax_session *pvt, struct ast_frame *f, unsigned int t
 	struct iax_frame *fr;
 	int res;
 	int sendmini=0;
-	unsigned int lastsent;
-	unsigned int fts;
+	time_in_ms_t lastsent;
+	time_in_ms_t fts;
 	
 	if (!pvt) {
 		IAXERROR "No private structure for packet?\n");
@@ -1084,7 +1084,7 @@ static int iax_send(struct iax_session *pvt, struct ast_frame *f, unsigned int t
 		fr->iseqno = pvt->iseqno;
 		fh = (struct ast_iax2_full_hdr *)(((char *)fr->af.data) - sizeof(struct ast_iax2_full_hdr));
 		fh->scallno = htons(fr->callno | IAX_FLAG_FULL);
-		fh->ts = htonl(fr->ts);
+		fh->ts = htonl((u_long)(fr->ts));
 		fh->oseqno = fr->oseqno;
 		if (transfer) {
 			fh->iseqno = 0;
@@ -1125,7 +1125,7 @@ static int iax_send(struct iax_session *pvt, struct ast_frame *f, unsigned int t
 		/* Mini frame will do */
 		mh = (struct ast_iax2_mini_hdr *)(((char *)fr->af.data) - sizeof(struct ast_iax2_mini_hdr));
 		mh->callno = htons(fr->callno);
-		mh->ts = htons(fr->ts & 0xFFFF);
+		mh->ts = htons((u_short)(fr->ts & 0xFFFF));
 		fr->datalen = fr->af.datalen + sizeof(struct ast_iax2_mini_hdr);
 		fr->data = mh;
 		fr->retries = -1;
@@ -1162,7 +1162,7 @@ static int iax_predestroy(struct iax_session *pvt)
 }
 #endif
 
-static int __send_command(struct iax_session *i, char type, int command, unsigned int ts, unsigned char *data, int datalen, int seqno, 
+static int __send_command(struct iax_session *i, char type, int command, time_in_ms_t ts, unsigned char *data, int datalen, int seqno, 
 		int now, int transfer, int final, int samples)
 {
 	struct ast_frame f;
@@ -1181,7 +1181,7 @@ static int __send_command(struct iax_session *i, char type, int command, unsigne
 	return iax_send(i, &f, ts, seqno, now, transfer, final);
 }
 
-static int send_command(struct iax_session *i, char type, int command, unsigned int ts, unsigned char *data, int datalen, int seqno)
+static int send_command(struct iax_session *i, char type, int command, time_in_ms_t ts, unsigned char *data, int datalen, int seqno)
 {
 	return __send_command(i, type, command, ts, data, datalen, seqno, 0, 0, 0, 0);
 }
@@ -1483,8 +1483,8 @@ static void destroy_session(struct iax_session *session)
 	}
 }
 
-static int iax_send_lagrp(struct iax_session *session, unsigned int ts);
-static int iax_send_pong(struct iax_session *session, unsigned int ts);
+static int iax_send_lagrp(struct iax_session *session, time_in_ms_t ts);
+static int iax_send_pong(struct iax_session *session, time_in_ms_t ts);
 
 static struct iax_event *handle_event(struct iax_event *event)
 {
@@ -1673,7 +1673,7 @@ int iax_send_link_reject(struct iax_session *session)
 	return send_command(session, AST_FRAME_HTML, AST_HTML_LINKREJECT, 0, NULL, 0, -1);
 }
 
-static int iax_send_pong(struct iax_session *session, unsigned int ts)
+static int iax_send_pong(struct iax_session *session, time_in_ms_t ts)
 {
         struct iax_ie_data ied;
 
@@ -1683,7 +1683,7 @@ static int iax_send_pong(struct iax_session *session, unsigned int ts)
 	    jb_info stats;
 	    jb_getinfo(session->jb, &stats);
 
-	    iax_ie_append_int(&ied,IAX_IE_RR_JITTER, stats.jitter);
+	    iax_ie_append_int(&ied,IAX_IE_RR_JITTER, (int)stats.jitter);
 	    /* XXX: should be short-term loss pct.. */
 	    if(stats.frames_in == 0) stats.frames_in = 1;
 	    iax_ie_append_int(&ied,IAX_IE_RR_LOSS, 
@@ -1722,7 +1722,7 @@ static void send_ping(void *s)
 	return;
 }
 
-static int iax_send_lagrp(struct iax_session *session, unsigned int ts)
+static int iax_send_lagrp(struct iax_session *session, time_in_ms_t ts)
 {
 	return send_command(session, AST_FRAME_IAX, IAX_COMMAND_LAGRP, ts, NULL, 0, -1);
 }
@@ -1997,7 +1997,7 @@ int iax_call(struct iax_session *session, char *cidnum, char *cidname, char *ich
 	return res;
 }
 
-static int calc_rxstamp(struct iax_session *session)
+static time_in_ms_t calc_rxstamp(struct iax_session *session)
 {
 	time_in_ms_t time_in_ms;
 
@@ -2139,7 +2139,7 @@ static int display_time(int ms)
 /* From chan_iax2/steve davies:  need to get permission from steve or digium, I guess */
 static time_in_ms_t unwrap_timestamp(time_in_ms_t ts, time_in_ms_t last)
 {
-        int x;
+        time_in_ms_t x;
 
         if ( (ts & 0xFFFF0000) == (last & 0xFFFF0000) ) {
                 x = ts - last;
@@ -2165,7 +2165,7 @@ static time_in_ms_t unwrap_timestamp(time_in_ms_t ts, time_in_ms_t last)
 #endif
 
 
-static struct iax_event *schedule_delivery(struct iax_event *e, unsigned int ts, int updatehistory)
+static struct iax_event *schedule_delivery(struct iax_event *e, time_in_ms_t ts, int updatehistory)
 {
 	/* 
 	 * This is the core of the IAX jitterbuffer delivery mechanism: 
@@ -2397,7 +2397,7 @@ static struct iax_event *iax_header_to_event(struct iax_session *session,
 	struct iax_sched *sch;
 	unsigned int ts;
 	int subclass = uncompress_subclass(fh->csub);
-	int nowts;
+	time_in_ms_t nowts;
 	int updatehistory = 1;
 	ts = ntohl(fh->ts);
 	/* don't run last_ts backwards; i.e. for retransmits and the like */
@@ -2824,7 +2824,7 @@ static struct iax_event *iax_miniheader_to_event(struct iax_session *session,
 						int datalen)
 {
 	struct iax_event *e;
-	unsigned int ts;
+	time_in_ms_t ts;
 	int updatehistory = 1;
 	e = (struct iax_event *)malloc(sizeof(struct iax_event) + datalen);
 	if (e) {
@@ -3120,7 +3120,7 @@ struct iax_event *iax_get_event(int blocking)
 	if (blocking) {
 		/* Block until there is data if desired */
 		fd_set fds;
-		int nextEventTime;
+		time_in_ms_t nextEventTime;
 		
 		FD_ZERO(&fds);
 		FD_SET(netfd, &fds);
@@ -3135,8 +3135,8 @@ struct iax_event *iax_get_event(int blocking)
 		{ 
 			struct timeval nextEvent; 
 
-			nextEvent.tv_sec = nextEventTime / 1000; 
-			nextEvent.tv_usec = (nextEventTime % 1000) * 1000;
+			nextEvent.tv_sec = (long)(nextEventTime / 1000); 
+			nextEvent.tv_usec = (long)((nextEventTime % 1000) * 1000);
 
 			select(netfd + 1, &fds, NULL, NULL, &nextEvent); 
 		} 

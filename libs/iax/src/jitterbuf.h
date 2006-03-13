@@ -69,24 +69,24 @@ typedef struct jb_info {
 	long frames_dropped; 	/* number of frames dropped (shrinkage) */
 	long frames_ooo; 	/* number of frames received out-of-order */
 	long frames_cur; 	/* number of frames presently in jb, awaiting delivery.*/
-	long jitter; 		/* jitter measured within current history interval*/
-	long min;		/* minimum lateness within current history interval */
-	long current; 		/* the present jitterbuffer adjustment */
-	long target; 		/* the target jitterbuffer adjustment */
+	time_in_ms_t jitter; 		/* jitter measured within current history interval*/
+	time_in_ms_t min;		/* minimum lateness within current history interval */
+	time_in_ms_t current; 		/* the present jitterbuffer adjustment */
+	time_in_ms_t target; 		/* the target jitterbuffer adjustment */
 	long losspct; 		/* recent lost frame percentage (* 1000) */
-	long next_voice_ts;	/* the ts of the next frame to be read from the jb - in receiver's time */
+	time_in_ms_t next_voice_ts;	/* the ts of the next frame to be read from the jb - in receiver's time */
 	long last_voice_ms;	/* the duration of the last voice frame */
-	long silence_begin_ts;	/* the time of the last CNG frame, when in silence */
-	long last_adjustment;   /* the time of the last adjustment */
-	long last_delay;        /* the last now added to history */
+	time_in_ms_t silence_begin_ts;	/* the time of the last CNG frame, when in silence */
+	time_in_ms_t last_adjustment;   /* the time of the last adjustment */
+	time_in_ms_t last_delay;        /* the last now added to history */
 	long cnt_delay_discont;	/* the count of discontinuous delays */
-	long resync_offset;     /* the amount to offset ts to support resyncs */
+	time_in_ms_t resync_offset;     /* the amount to offset ts to support resyncs */
 	long cnt_contig_interp; /* the number of contiguous interp frames returned */
 } jb_info;
 
 typedef struct jb_frame {
 	void *data;		/* the frame data */
-	long ts;	/* the relative delivery time expected */
+	time_in_ms_t ts;	/* the relative delivery time expected */
 	long ms;	/* the time covered by this frame, in sec/8000 */
 	int  type;	/* the type of frame */
 	struct jb_frame *next, *prev;
@@ -96,10 +96,10 @@ typedef struct jitterbuf {
 	jb_info info;
 
 	/* history */
-	long history[JB_HISTORY_SZ];   		/* history */
+	time_in_ms_t history[JB_HISTORY_SZ];   		/* history */
 	int  hist_ptr;				/* points to index in history for next entry */
-	long hist_maxbuf[JB_HISTORY_MAXBUF_SZ];	/* a sorted buffer of the max delays (highest first) */
-	long hist_minbuf[JB_HISTORY_MAXBUF_SZ];	/* a sorted buffer of the min delays (lowest first) */
+	time_in_ms_t hist_maxbuf[JB_HISTORY_MAXBUF_SZ];	/* a sorted buffer of the max delays (highest first) */
+	time_in_ms_t hist_minbuf[JB_HISTORY_MAXBUF_SZ];	/* a sorted buffer of the min delays (lowest first) */
 	int  hist_maxbuf_valid;			/* are the "maxbuf"/minbuf valid? */
 
 
@@ -125,7 +125,7 @@ extern void			jb_reset(jitterbuf *jb);
  * JB_DROP: Drop this frame immediately
  * JB_SCHED: Frame added. Call jb_next() to get a new time for the next frame
  */
-extern int 			jb_put(jitterbuf *jb, void *data, int type, long ms, long ts, long now);
+extern int 			jb_put(jitterbuf *jb, void *data, int type, long ms, time_in_ms_t ts, time_in_ms_t now);
 
 /* get a frame for time now (receiver's time)  return value is one of
  * JB_OK:  You've got frame!
@@ -134,14 +134,14 @@ extern int 			jb_put(jitterbuf *jb, void *data, int type, long ms, long ts, long
  * JB_INTERP: Please interpolate an interpl-length frame for this time (either we need to grow, or there was a lost frame) 
  * JB_EMPTY: The jb is empty.
  */
-extern int			jb_get(jitterbuf *jb, jb_frame *frame, long now, long interpl);
+extern int			jb_get(jitterbuf *jb, jb_frame *frame, time_in_ms_t now, long interpl);
 
 /* unconditionally get frames from jitterbuf until empty */
 extern int jb_getall(jitterbuf *jb, jb_frame *frameout);
 
 /* when is the next frame due out, in receiver's time (0=EMPTY) 
  * This value may change as frames are added (esp non-audio frames) */
-extern long			jb_next(jitterbuf *jb);
+extern time_in_ms_t		jb_next(jitterbuf *jb);
 
 /* get jitterbuf info: only "statistics" may be valid */
 extern int			jb_getinfo(jitterbuf *jb, jb_info *stats);

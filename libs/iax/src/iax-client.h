@@ -107,7 +107,7 @@ typedef int (*recvfrom_t)(int s, void *buf, size_t len, int flags, struct sockad
 struct iax_event {
 	int etype;						/* Type of event */
 	int subclass;					/* Subclass data (event specific) */
-	unsigned int ts;				/* Timestamp */
+	time_in_ms_t ts;				/* Timestamp */
 	struct iax_session *session;	/* Applicable session */
 	int datalen;					/* Length of raw data */
 	struct iax_ies ies;				/* IE's for IAX2 frames */
@@ -133,7 +133,7 @@ extern int iax_shutdown(void);
 extern int iax_get_fd(void);
 
 /* Find out how many milliseconds until the next scheduled event */
-extern int iax_time_to_next_event(void);
+extern time_in_ms_t iax_time_to_next_event(void);
 
 /* Generate a new IAX session */
 extern struct iax_session *iax_session_new(void);
@@ -196,16 +196,16 @@ extern void iax_disable_debug(void);
 extern int iax_setup_transfer(struct iax_session *s0, struct iax_session *s1);
 
 struct iax_netstat {
-	int jitter;
+	time_in_ms_t jitter;
 	int losspct;
 	int losscnt;
 	int packets;
-	int delay;
+	time_in_ms_t delay;
 	int dropped;
 	int ooo;
 };
 /* fills in rtt, and an iax_netstat structure for each of local/remote directions of call */
-extern int iax_get_netstats(struct iax_session *s, int *rtt, struct iax_netstat *local, struct iax_netstat *remote);
+extern int iax_get_netstats(struct iax_session *s, time_in_ms_t *rtt, struct iax_netstat *local, struct iax_netstat *remote);
 
 
 extern void iax_set_private(struct iax_session *s, void *pvt);

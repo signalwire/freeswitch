@@ -13,6 +13,7 @@
  * Copyright on this file is disclaimed to Digium for inclusion in Asterisk
  */
 
+#include "iax2.h"
 #include "jitterbuf.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -123,11 +124,11 @@ static int longcmp(const void *a, const void *b)
 }
 #endif
 
-static int history_put(jitterbuf *jb, long ts, long now, long ms) 
+static int history_put(jitterbuf *jb, time_in_ms_t ts, time_in_ms_t now, long ms) 
 {
-	long delay = now - (ts - jb->info.resync_offset);
-	long threshold = 2 * jb->info.jitter + jb->info.conf.resync_threshold;
-	long kicked;
+	time_in_ms_t delay = now - (ts - jb->info.resync_offset);
+	time_in_ms_t threshold = 2 * jb->info.jitter + jb->info.conf.resync_threshold;
+	time_in_ms_t kicked;
 
 	/* don't add special/negative times to history */
 	if (ts <= 0) 
@@ -135,7 +136,7 @@ static int history_put(jitterbuf *jb, long ts, long now, long ms)
 
 	/* check for drastic change in delay */
 	if (jb->info.conf.resync_threshold != -1) {
-		if (abs(delay - jb->info.last_delay) > threshold) {
+		if (iax_abs(delay - jb->info.last_delay) > threshold) {
 			jb->info.cnt_delay_discont++;
 			if (jb->info.cnt_delay_discont > 3) {
 				/* resync the jitterbuffer */
@@ -222,7 +223,7 @@ static void history_calc_maxbuf(jitterbuf *jb)
     i = (jb->hist_ptr > JB_HISTORY_SZ) ? (jb->hist_ptr - JB_HISTORY_SZ) : 0; 
 
     for(;i<jb->hist_ptr;i++) {
-	long toins = jb->history[i % JB_HISTORY_SZ];
+	time_in_ms_t toins = jb->history[i % JB_HISTORY_SZ];
 
 	/* if the maxbuf should get this */
 	if(toins > jb->hist_maxbuf[JB_HISTORY_MAXBUF_SZ-1])  {
@@ -276,7 +277,7 @@ static void history_calc_maxbuf(jitterbuf *jb)
 
 static void history_get(jitterbuf *jb) 
 {
-    long max, min, jitter;
+    time_in_ms_t max, min, jitter;
     int index;
     int count;
 
@@ -316,12 +317,12 @@ static void history_get(jitterbuf *jb)
 }
 
 /* returns 1 if frame was inserted into head of queue, 0 otherwise */
-static int queue_put(jitterbuf *jb, void *data, int type, long ms, long ts) 
+static int queue_put(jitterbuf *jb, void *data, int type, long ms, time_in_ms_t ts) 
 {
     jb_frame *frame;
     jb_frame *p;
 	int head = 0;
-	long resync_ts = ts - jb->info.resync_offset;
+	time_in_ms_t resync_ts = ts - jb->info.resync_offset;
 
     frame = jb->free;
     if(frame) {
@@ -382,19 +383,19 @@ static int queue_put(jitterbuf *jb, void *data, int type, long ms, long ts)
 	return head;
 }
 
-static long queue_next(jitterbuf *jb) 
+static time_in_ms_t queue_next(jitterbuf *jb) 
 {
     if(jb->frames) return jb->frames->ts;
     else return -1;
 }
 
-static long queue_last(jitterbuf *jb) 
+static time_in_ms_t queue_last(jitterbuf *jb) 
 {
     if(jb->frames) return jb->frames->prev->ts;
     else return -1;
 }
 
-static jb_frame *_queue_get(jitterbuf *jb, long ts, int all) 
+static jb_frame *_queue_get(jitterbuf *jb, time_in_ms_t ts, int all) 
 {
     jb_frame *frame;
     frame = jb->frames;
@@ -429,7 +430,7 @@ static jb_frame *_queue_get(jitterbuf *jb, long ts, int all)
     return NULL;
 }
 
-static jb_frame *queue_get(jitterbuf *jb, long ts) 
+static jb_frame *queue_get(jitterbuf *jb, time_in_ms_t ts) 
 {
     return _queue_get(jb,ts,0);
 }
@@ -504,7 +505,7 @@ static void jb_dbgqueue(jitterbuf *jb)
 }
 #endif
 
-int jb_put(jitterbuf *jb, void *data, int type, long ms, long ts, long now) 
+int jb_put(jitterbuf *jb, void *data, int type, long ms, time_in_ms_t ts, time_in_ms_t now) 
 {
     jb_dbg2("jb_put(%x,%x,%ld,%ld,%ld)\n", jb, data, ms, ts, now);
 
@@ -526,10 +527,10 @@ int jb_put(jitterbuf *jb, void *data, int type, long ms, long ts, long now)
 }
 
 
-static int _jb_get(jitterbuf *jb, jb_frame *frameout, long now, long interpl) 
+static int _jb_get(jitterbuf *jb, jb_frame *frameout, time_in_ms_t now, long interpl) 
 {
     jb_frame *frame;
-    long diff;
+    time_in_ms_t diff;
 
     /*if((now - jb_next(jb)) > 2 * jb->info.last_voice_ms) jb_warn("SCHED: %ld", (now - jb_next(jb))); */
     /* get jitter info */
@@ -742,10 +743,10 @@ static int _jb_get(jitterbuf *jb, jb_frame *frameout, long now, long interpl)
   }
 }
 
-long jb_next(jitterbuf *jb) 
+time_in_ms_t jb_next(jitterbuf *jb) 
 {
     if(jb->info.silence_begin_ts) {
-      long next = queue_next(jb);
+      time_in_ms_t next = queue_next(jb);
       if(next > 0) { 
         /* shrink during silence */
         if (jb->info.target - jb->info.current < -JB_TARGET_EXTRA)
@@ -758,7 +759,7 @@ long jb_next(jitterbuf *jb)
     }
 }
 
-int jb_get(jitterbuf *jb, jb_frame *frameout, long now, long interpl) 
+int jb_get(jitterbuf *jb, jb_frame *frameout, time_in_ms_t now, long interpl) 
 {
     int ret = _jb_get(jb,frameout,now,interpl);
 #if 0
