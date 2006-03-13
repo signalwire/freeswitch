@@ -37,12 +37,12 @@ FreeswitchDir=Showpath(ScriptDir & "..\..")
 UtilsDir=Showpath(ScriptDir & "Tools")
 If objArgs.Count >=1 Then
 	If objArgs(0) <> "Version" Then
-		GetTarGZObjects UtilsDir
+		GetCompressionTools UtilsDir
 		GetVCBuild
 		Wscript.echo "Detected VCBuild: " & VCBuild
 	End If
 Else
-	GetTarGZObjects UtilsDir
+	GetCompressionTools UtilsDir
 End If
 
 ' **************
@@ -219,10 +219,10 @@ WScript.Echo "Complete"
 '  ******************
 Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "apr-util") Then 
-		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-util-1.2.2.tar.gz", LibDestDir
+		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-util-1.2.2.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "apr-util-1.2.2") Then
 			Wscript.echo "Unable to get apr-util from default download location, Trying backup location:"
-			WgetUnTarGz LibsBase & "apr-util-1.2.2.tar.gz", LibDestDir
+			WgetUnCompress LibsBase & "apr-util-1.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "apr-util-1.2.2", "apr-util"
 		FSO.CopyFile Utilsdir & "apr\xml.vcproj", LibDestDir & "apr-util\xml\expat\lib\", True
@@ -259,10 +259,10 @@ End Sub
 
 Sub BuildLibs_apriconv(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "apr-iconv") Then 
-		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-iconv-1.1.1.tar.gz", LibDestDir
+		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-iconv-1.1.1.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "apr-iconv-1.1.1") Then
 			Wscript.echo "Unable to get apr-iconv from default download location, Trying backup location:"
-			WgetUnTarGz LibsBase & "apr-iconv-1.1.1.tar.gz", LibDestDir
+			WgetUnCompress LibsBase & "apr-iconv-1.1.1.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "apr-iconv-1.1.1", "apr-iconv"
 		FSO.CopyFile Utilsdir & "apr\apriconv.vcproj", LibDestDir & "apr-iconv\", True
@@ -285,10 +285,10 @@ End Sub
 
 Sub BuildLibs_apr(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "apr") Then 
-		WgetUnTarGz "ftp://ftp.wayne.edu/apache/apr/apr-1.2.2.tar.gz", LibDestDir
+		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-1.2.2.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "apr-1.2.2") Then
 			Wscript.echo "Unable to get apr from default download location, Trying backup location:"
-			WgetUnTarGz LibsBase & "apr-1.2.2.tar.gz", LibDestDir
+			WgetUnCompress LibsBase & "apr-1.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "apr-1.2.2", "apr"
 		FSO.CopyFile Utilsdir & "apr\apr.vcproj", LibDestDir & "apr\", True
@@ -312,10 +312,10 @@ End Sub
 
 Sub BuildLibs_exosip(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "libeXosip2") Then 
-		WgetUnTarGz "http://www.antisip.com/download/libeXosip2-2.2.2.tar.gz", LibDestDir
+		WgetUnCompress "http://www.antisip.com/download/libeXosip2-2.2.2.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "libeXosip2-2.2.2") Then
 			Wscript.echo "Unable to get eXosip from default download location, Trying backup location:"
-			WgetUnTarGz LibsBase & "libeXosip2-2.2.2.tar.gz", LibDestDir
+			WgetUnCompress LibsBase & "libeXosip2-2.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "libeXosip2-2.2.2", "libeXosip2"
 		FindReplaceInFile LibDestDir & "libeXosip2\platform\vsnet\eXosip.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
@@ -338,10 +338,10 @@ End Sub
 
 Sub BuildLibs_libosip2(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "osip") Then
-		WgetUnTarGz "http://www.antisip.com/download/libosip2-2.2.2.tar.gz", LibDestDir
+		WgetUnCompress "http://www.antisip.com/download/libosip2-2.2.2.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "libosip2-2.2.2") Then
 			Wscript.echo "Unable to get osip from default download location, Trying backup location:"
-			WgetUnTarGz LibsBase & "libosip2-2.2.2.tar.gz", LibDestDir
+			WgetUnCompress LibsBase & "libosip2-2.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "libosip2-2.2.2", "osip"
 		FindReplaceInFile LibDestDir & "osip\platform\vsnet\osipparser2.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
@@ -385,10 +385,10 @@ End Sub
 
 Sub BuildLibs_sqlite(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "sqlite") Then 
-		WgetUnZip "http://www.sqlite.org/sqlite-source-3_2_7.zip", LibDestDir 
+		WgetUnCompress "http://www.sqlite.org/sqlite-source-3_2_7.zip", LibDestDir 
 		If Not FSO.FolderExists(LibDestDir & "sqlite-source-3_2_7") Then
 			Wscript.echo "Unable to get SQLite from default download location, Trying backup location:"
-			WgetUnTarGz LibsBase & "sqlite-source-3_2_7.zip", LibDestDir
+			WgetUnCompress LibsBase & "sqlite-source-3_2_7.zip", LibDestDir
 		End If
 		RenameFolder LibDestDir & "sqlite-source-3_2_7", "sqlite"
 		FSO.CopyFile Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\", True
@@ -412,10 +412,10 @@ End Sub
 
 Sub BuildLibs_iksemel(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "iksemel") Then 
-		WgetUnTarGz "http://jabberstudio.2nw.net/iksemel/iksemel-1.2.tar.gz", LibDestDir 
+		WgetUnCompress "http://jabberstudio.2nw.net/iksemel/iksemel-1.2.tar.gz", LibDestDir 
 		If Not FSO.FolderExists(LibDestDir & "iksemel-1.2") Then
 			Wscript.echo "Unable to get iksemel from default download location, Trying backup location:"
-			WgetUnTarGz LibsBase & "iksemel-1.2.tar.gz", LibDestDir
+			WgetUnCompress LibsBase & "iksemel-1.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "iksemel-1.2", "iksemel"
 		FSO.CopyFile Utilsdir & "iksemel\iksemel.vcproj", LibDestDir & "iksemel\", True
@@ -456,7 +456,7 @@ End Sub
 
 Sub BuildLibs_portaudio(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "PortAudio") Then 
-		WgetUnZip LibsBase & "portaudio_v18_1.zip", LibDestDir
+		WgetUnCompress LibsBase & "portaudio_v18_1.zip", LibDestDir
 		RenameFolder LibDestDir & "portaudio_v18_1", "PortAudio"
 	End If 
 	If FSO.FolderExists(LibDestDir & "PortAudio") Then 
@@ -477,10 +477,10 @@ End Sub
 
 Sub BuildLibs_libxml2(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "libxml2") Then 
-		WgetUnTarGz "http://xmlsoft.org/sources/libxml2-sources-2.6.23.tar.gz", LibDestDir 
+		WgetUnCompress "http://xmlsoft.org/sources/libxml2-sources-2.6.23.tar.gz", LibDestDir 
 		If Not FSO.FolderExists(LibDestDir & "libxml2-2.6.23") Then
 			Wscript.echo "Unable to get libxml2 from default download location, Trying backup location:"
-			WgetUnTarGz LibsBase & "libxml2-sources-2.6.23.tar.gz", LibDestDir
+			WgetUnCompress LibsBase & "libxml2-sources-2.6.23.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "libxml2-2.6.23", "libxml2"
 	End If
@@ -536,10 +536,10 @@ End Sub
 
 Sub BuildLibs_SpeexCodec(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "speex") Then 
-		WgetUnTarGz "http://downloads.us.xiph.org/releases/speex/speex-1.1.11.1.tar.gz", LibDestDir
+		WgetUnCompress "http://downloads.us.xiph.org/releases/speex/speex-1.1.11.1.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "speex-1.1.11.1") Then
 			Wscript.echo "Unable to get libspeex from default download location, Trying backup location:"
-			WgetUnTarGz LibsBase & "speex-1.1.11.1.tar.gz", LibDestDir
+			WgetUnCompress LibsBase & "speex-1.1.11.1.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "speex-1.1.11.1", "speex"
 		FSO.CopyFile Utilsdir & "libspeex.vcproj", LibDestDir & "speex\win32\libspeex\", True
@@ -562,7 +562,7 @@ End Sub
 
 Sub BuildLibs_libsndfile(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "libsndfile") Then 
-		WgetUnTarGz LibsBase & "libsndfile-1.0.12.tar.gz", LibDestDir
+		WgetUnCompress LibsBase & "libsndfile-1.0.12.tar.gz", LibDestDir
 		RenameFolder LibDestDir & "libsndfile-1.0.12", "libsndfile"
 		FSO.CopyFile Utilsdir & "libsndfile.vcproj", LibDestDir & "libsndfile\Win32\", True
 	End If 
@@ -584,7 +584,7 @@ End Sub
 
 Sub BuildLibs_howl(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "howl") Then 
-		WgetUnTarGz LibsBase & "howl-1.0.0.tar.gz", LibDestDir
+		WgetUnCompress LibsBase & "howl-1.0.0.tar.gz", LibDestDir
 		RenameFolder LibDestDir & "howl-1.0.0", "howl"
 		FSO.CopyFile Utilsdir & "howl\libhowl.vcproj", LibDestDir & "howl\src\lib\howl\Win32\", True
 		FSO.CopyFile Utilsdir & "howl\libmDNSResponder.vcproj", LibDestDir & "howl\src\lib\mDNSResponder\Win32\", True
@@ -613,7 +613,7 @@ End Sub
 
 Sub BuildLibs_libresample(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "libresample") Then 
-		WgetUnZip LibsBase & "libresample-0.1.3.zip", LibDestDir
+		WgetUnCompress LibsBase & "libresample-0.1.3.zip", LibDestDir
 		RenameFolder LibDestDir & "libresample-0.1.3", "libresample"
 	End If 
 	If FSO.FolderExists(LibDestDir & "libresample") Then 
@@ -634,7 +634,7 @@ End Sub
 
 Sub BuildLibs_pcre(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "pcre") Then 
-		WgetUnTarGz LibsBase & "pcre-6.4.tar.gz", LibDestDir
+		WgetUnCompress LibsBase & "pcre-6.4.tar.gz", LibDestDir
 		RenameFolder LibDestDir & "pcre-6.4", "pcre"
 		If Not FSO.FolderExists(LibDestDir & "pcre\win32") Then
 			FSO.CreateFolder(LibDestDir & "pcre\win32")
@@ -664,7 +664,7 @@ End Sub
 
 Sub BuildLibs_curl(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "curl") Then 
-		WgetUnTarGz LibsBase & "curl-7.15.2.tar.gz", LibDestDir
+		WgetUnCompress LibsBase & "curl-7.15.2.tar.gz", LibDestDir
 		RenameFolder LibDestDir & "curl-7.15.2", "curl"
 		FSO.CopyFile Utilsdir & "curl\curllib.vcproj", LibDestDir & "curl\lib\", True
 	End If 
@@ -686,7 +686,7 @@ End Sub
 
 Sub	BuildLibs_ldap(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "openldap") Then 
-		WgetUnTarGz LibsBase & "openldap-2.3.19.tar.gz", LibDestDir
+		WgetUnCompress LibsBase & "openldap-2.3.19.tar.gz", LibDestDir
 		RenameFolder LibDestDir & "openldap-2.3.19", "openldap"
 		FSO.CopyFile Utilsdir & "openldap\lber_types.h", LibDestDir & "openldap\include\", True
 		FSO.CopyFile Utilsdir & "openldap\ldap_config.h", LibDestDir & "openldap\include\", True
@@ -717,10 +717,10 @@ End Sub
 
 Sub BuildLibs_SpiderMonkey(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "js") Then 
-		WgetUnZip LibsBase & "js20051231.zip", LibDestDir
+		WgetUnCompress LibsBase & "js20051231.zip", LibDestDir
 		RenameFolder LibDestDir & "js20051231", "js"
-		WgetUnZip LibsBase & "nspr-4.6.1.winnt5.debug.zip", LibDestDir & "js"
-		WgetUnZip LibsBase & "nspr-4.6.1.winnt5.release.zip", LibDestDir & "js"
+		WgetUnCompress LibsBase & "nspr-4.6.1.winnt5.debug.zip", LibDestDir & "js"
+		WgetUnCompress LibsBase & "nspr-4.6.1.winnt5.release.zip", LibDestDir & "js"
 		FSO.CreateFolder LibDestDir & "js\nspr\"
 		FSO.CopyFolder LibDestDir & "js\nspr-4.6.1.winnt5.debug\nspr-4.6.1\*", LibDestDir & "js\nspr\",true
 	End If 
@@ -774,7 +774,7 @@ Sub CreateSwitchVersion()
 		VERSION=strFromProc
 	Loop While Not OExec.StdOut.atEndOfStream
 	If VERSION = "" Then
-		WgetUnZip ToolsBase & "svnversion.zip", UtilsDir 
+		WgetUnCompress ToolsBase & "svnversion.zip", UtilsDir 
 		Set oExec = WshShell.Exec(UtilsDir & "svnversion\tmpVersion.Bat")
 		Do
 			strFromProc = OExec.StdOut.ReadLine()
@@ -796,27 +796,6 @@ Sub CreateSwitchVersion()
 		FSO.CopyFile FreeswitchDir & "src\include\switch_version.h.in", FreeswitchDir & "src\include\switch_version.h", true
 		FindReplaceInFile FreeswitchDir & "src\include\switch_version.h", "@SVN_VERSION@", VERSION
 	End If
-End Sub
-
-Sub UpgradeViaDevEnv(ProjectFile)
-	Set oExec = WshShell.Exec(quote & DevEnv & quote & " " & quote & ProjectFile & quote & " /Upgrade ")
-	Do While oExec.Status <> 1
-	WScript.Sleep 100
-	Loop
-End Sub
-
-Sub BuildViaDevEnv(ProjectFile, BuildType)
-	Wscript.echo "Building : " & ProjectFile & " Config type: " & BuildType
-	BuildCmd=quote & DevEnv & quote & " " & quote & ProjectFile & quote & " /Build " & BuildType
-	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpBuild.Bat", True)
-	MyFile.WriteLine("@" & BuildCmd)
-	MyFile.Close
-
-	Set oExec = WshShell.Exec(UtilsDir & "tmpBuild.Bat")
-	Do
-		strFromProc = OExec.StdOut.ReadLine()
-		WScript.Echo  strFromProc
-	Loop While Not OExec.StdOut.atEndOfStream
 End Sub
 
 Sub BuildViaVCBuild(ProjectFile, BuildType)
@@ -873,50 +852,9 @@ Sub GetVCBuild()
 	End If
 End Sub
 
-Sub GetDevEnv()
-	If WshSysEnv("VS80COMNTOOLS")<> "" Then 
-		vcver = "8"
-		DevEnv=Showpath(WshSysEnv("VS80COMNTOOLS")&"..\IDE\") & "devenv"
-	Else If WshSysEnv("VS71COMNTOOLS")<> "" Then
-		vcver = "7"
-		DevEnv=Showpath(WshSysEnv("VS71COMNTOOLS")&"..\IDE\") & "devenv"
-	Else
-		Wscript.Echo("Did not find any Visual Studio .net 2003 or 2005 on your machine")
-		WScript.Quit(1)
-	End If
-	End If
-End Sub
-
-
 Sub RenameFolder(FolderName, NewFolderName)
 	Set Folder=FSO.GetFolder(FolderName)
 	Folder.Name = NewFolderName
-End Sub
-
-Sub Upgrade(OldFileName, NewFileName)
-	If WshSysEnv("VS80COMNTOOLS")<> "" Then 
-		Wscript.echo "8.0"
-		Set vcProj = CreateObject("VisualStudio.VCProjectEngine.8.0")
-		
-	Else If WshSysEnv("VS71COMNTOOLS")<> "" Then
-		Wscript.echo "7.1"
-		Set vcProj = CreateObject("VisualStudio.VCProjectEngine.7.1")
-	Else
-		Wscript.Echo("Did not find any Visual Studio .net 2003 or 2005 on your machine")
-		WScript.Quit(1)
-	End If
-	End If
-		
-	Set vcProject = vcProj.LoadProject(OldFileName)
-	If Not FSO.FileExists(vcProject.ProjectFile) Then
-		'   // specify name and location of new project file
-		vcProject.ProjectFile = NewFileName
-	'   // call the project engine to save this off. 
-	'   // when no name is shown, it will create one with the .vcproj name
-	vcProject.Save()
-	End If
-'	WScript.Echo("New Project Name: "+vcProject.ProjectFile+"")
-'On Error GoTo 0
 End Sub
 
 Sub Unix2dos(FileName)
@@ -954,17 +892,8 @@ Sub FindReplaceInFile(FileName, sFind, sReplace)
 	fNewFile.WriteLine sText
 	fNewFile.Close
 End Sub
-	
-Sub WgetUnTarGZ(URL, DestFolder)
-	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
-	StartPos = InstrRev(URL, "/", -1, 1)   
-	strlength = Len(URL)
-	filename=Right(URL,strlength-StartPos)
-	Wget URL, DestFolder
-	UnTarGZ Destfolder & filename, DestFolder
-End Sub
 
-Sub WgetUnZip(URL, DestFolder)
+Sub WgetUnCompress(URL, DestFolder)
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
 	StartPos = InstrRev(URL, "/", -1, 1) 
 	strlength = Len(URL)
@@ -972,92 +901,47 @@ Sub WgetUnZip(URL, DestFolder)
 	NameEnd = InstrRev(filename, ".",-1, 1)
 	filestrlength = Len(filename)
 	filebase = Left(filename,NameEnd)
+	fileext = Right(filename, Len(filename) - NameEnd)
 	Wget URL, DestFolder
-	UnZip Destfolder & filename, DestFolder & filebase
+	If fileext = "zip" Then
+		UnCompress Destfolder & filename, DestFolder & filebase
+	Else
+		UnCompress Destfolder & filename, DestFolder	
+	End If
 End Sub
 
-Sub GetTarGZObjects(DestFolder)
+Sub GetCompressionTools(DestFolder)
 	Dim oExec
-
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
-
 	If Not FSO.FileExists(DestFolder & "7za.exe") Then 
 		Wget ToolsBase & "7za.exe", DestFolder
-	End If
-
-'	If Not FSO.FileExists(DestFolder & "XTar.dll") Then 
-'		Wget ToolsBase & "XTar.dll", DestFolder
-'	End If
-
-'	If Not FSO.FileExists(DestFolder & "XGZip.dll") Then 
-'		Wget ToolsBase & "XGZip.dll", DestFolder
-'	End If
-	
-'	If Not FSO.FileExists(DestFolder & "XZip.dll") Then 
-'		Wget ToolsBase & "XZip.dll", DestFolder
-'	End If
-	
-'	WshShell.Run "regsvr32 /s " & DestFolder & "XTar.dll", 6, True
-	
-'	WshShell.Run "regsvr32 /s " & DestFolder & "XGZip.dll", 6, True
-
-	'WshShell.Run "regsvr32 /s " & DestFolder & "XZip.dll", 6, True
-	
+	End If	
 End Sub
 
-Sub UnTarGZ(TGZfile, DestFolder)
-	wscript.echo("Extracting: " & TGZfile)
-'	Set objTAR = WScript.CreateObject("XStandard.TAR")
-'	Set objGZip = WScript.CreateObject("XStandard.GZip")
-'	objGZip.Decompress TGZfile, Destfolder
-'	objTAR.UnPack Left(TGZfile, Len(TGZfile)-3), Destfolder
-	
-'	Set objTAR = Nothing
-'	Set objGZip = Nothing
-'	WScript.Sleep(500)
+Sub UnCompress(Archive, DestFolder)
+	wscript.echo("Extracting: " & Archive)
 	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
-	MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & TGZfile & " -y -o" & DestFolder)
+	MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & Archive & " -y -o" & DestFolder)
 	MyFile.Close
 	Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
 	Do
 		WScript.Echo OExec.StdOut.ReadLine()
 	Loop While Not OExec.StdOut.atEndOfStream
-	If FSO.FileExists(Left(TGZfile, Len(TGZfile)-3)) Then  
+	If FSO.FileExists(Left(Archive, Len(Archive)-3)) Then  
 		Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
-		MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & Left(TGZfile, Len(TGZfile)-3) & " -y -o" & DestFolder)
+		MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & Left(Archive, Len(Archive)-3) & " -y -o" & DestFolder)
 		MyFile.Close
 		Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
 		Do
 			WScript.Echo OExec.StdOut.ReadLine()
 		Loop While Not OExec.StdOut.atEndOfStream
 		WScript.Sleep(500)
-		FSO.DeleteFile Left(TGZfile, Len(TGZfile)-3) ,true 
+		FSO.DeleteFile Left(Archive, Len(Archive)-3) ,true 
 	End If
 	WScript.Sleep(500)
 End Sub
 
-
-Sub UnZip(Zipfile, DestFolder)
-'	Dim objZip
-'	Set objZip = WScript.CreateObject("XStandard.Zip")
-'	wscript.echo("Extracting: " & Zipfile)
-'	objZip.UnPack Zipfile, DestFolder
-'	Set objZip = Nothing
-'	WScript.Sleep(500)
-	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
-	MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & Zipfile & " -y -o" & DestFolder)
-	MyFile.Close
-
-	Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
-	Do
-		WScript.Echo OExec.StdOut.ReadLine()
-	Loop While Not OExec.StdOut.atEndOfStream
-	WScript.Sleep(500)
-End Sub
-
-
 Sub Wget(URL, DestFolder)
-
 	StartPos = InstrRev(URL, "/", -1, 1)   
 	strlength = Len(URL)
 	filename=Right(URL,strlength-StartPos)
@@ -1074,15 +958,9 @@ Sub Wget(URL, DestFolder)
 	oStream.type = adTypeBinary
 	oStream.open
 	oStream.write xml.responseBody
-	
-	' Do not overwrite an existing file
-	'oStream.savetofile DestFolder & filename, adSaveCreateNotExist
-	
-	' Use this form to overwrite a file if it already exists
-	 oStream.savetofile DestFolder & filename, adSaveCreateOverWrite
+	oStream.savetofile DestFolder & filename, adSaveCreateOverWrite
 	
 	oStream.close
-	
 End Sub
 
 Function Showpath(folderspec)
