@@ -30,8 +30,8 @@ BuildModSpiderMonkey=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
-ToolsBase="http://www.freeswitch.org/downloads/win32/"
-LibsBase="http://www.freeswitch.org/downloads/libs/"
+ToolsBase="http://svn.freeswitch.org/downloads/win32/"
+LibsBase="http://svn.freeswitch.org/downloads/libs/"
 LibDestDir=Showpath(ScriptDir & "..\..\libs")
 FreeswitchDir=Showpath(ScriptDir & "..\..")
 UtilsDir=Showpath(ScriptDir & "Tools")
