@@ -35,8 +35,10 @@
 #define RTPCONFIG_H
 
 #if (defined(WIN32) || defined(_WIN32_WCE))
+typedef SOCKET jrtp_socket_t;
 #include "rtpconfig_win.h"
 #else
+typedef int jrtp_socket_t;
 #include "rtpconfig_unix.h"
 #endif // WIN32
 

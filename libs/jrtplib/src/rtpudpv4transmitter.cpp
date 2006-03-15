@@ -673,6 +673,17 @@ int RTPUDPv4Transmitter::AbortWait()
 	return 0;
 }
 
+jrtp_socket_t RTPUDPv4Transmitter::GetRTPSocket()
+{
+	return rtpsock;
+}
+
+jrtp_socket_t RTPUDPv4Transmitter::GetRTCPSocket()
+{
+	return rtcpsock;
+}
+
+
 int RTPUDPv4Transmitter::SendRTPData(const void *data,size_t len)	
 {
 	if (!init)

@@ -201,6 +201,7 @@ static RTPErrorInfo ErrorDescriptions[]=
 	{ ERR_RTP_GSTV4TRANS_SRCADDRNOTSET, "Got packet but src address information was not set, returning"},
 	{ ERR_RTP_GSTV4TRANS_NOTNETBUFFER, "Received buffer is not a GstNetBuffer"},
 	{ ERR_RTP_GSTV4TRANS_WAITNOTIMPLEMENTED, "The WaitForIncomingData is not implemented in the Gst transmitter"},
+	{ ERR_RTP_INVALID_PACKET_VERISON, "The packet is not the correct version of RTP"},
 	{ 0,0 }
 };
 

@@ -1037,7 +1037,7 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	}
 	
 	if ((fd = sangoma_create_socket_intr(spri->span, event->restart.channel)) < 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open fd!\n");
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open fd [%s]!\n", strerror(errno));
 	} else {
 		close(fd);
 	}

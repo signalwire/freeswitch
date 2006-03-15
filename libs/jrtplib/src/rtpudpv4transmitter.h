@@ -71,29 +71,16 @@ private:
 class RTPUDPv4TransmissionInfo : public RTPTransmissionInfo
 {
 public:
-#if ! (defined(WIN32) || defined(_WIN32_WCE))
-	RTPUDPv4TransmissionInfo(std::list<u_int32_t> iplist,int rtpsock,int rtcpsock) : RTPTransmissionInfo(RTPTransmitter::IPv4UDPProto) 
-#else
-	RTPUDPv4TransmissionInfo(std::list<u_int32_t> iplist,SOCKET rtpsock,SOCKET rtcpsock) : RTPTransmissionInfo(RTPTransmitter::IPv4UDPProto) 
-#endif  // WIN32
-												{ localIPlist = iplist; rtpsocket = rtpsock; rtcpsocket = rtcpsock; }
+
+	RTPUDPv4TransmissionInfo(std::list<u_int32_t> iplist,jrtp_socket_t rtpsock,jrtp_socket_t rtcpsock) : RTPTransmissionInfo(RTPTransmitter::IPv4UDPProto) 
+		{ localIPlist = iplist; rtpsocket = rtpsock; rtcpsocket = rtcpsock; }
 
 	~RTPUDPv4TransmissionInfo()								{ }
 	std::list<u_int32_t> GetLocalIPList() const						{ return localIPlist; }
-#if ! (defined(WIN32) || defined(_WIN32_WCE))
-	int GetRTPSocket() const								{ return rtpsocket; }
-	int GetRTCPSocket() const								{ return rtcpsocket; }
-#else
-	SOCKET GetRTPSocket() const								{ return rtpsocket; }
-	SOCKET GetRTCPSocket() const								{ return rtcpsocket; }
-#endif // WIN32
+
 private:
 	std::list<u_int32_t> localIPlist;
-#if ! (defined(WIN32) || defined(_WIN32_WCE))
-	int rtpsocket,rtcpsocket;
-#else
-	SOCKET rtpsocket,rtcpsocket;
-#endif // WIN32
+	jrtp_socket_t rtpsocket,rtcpsocket;
 };
 	
 #ifdef RTP_SUPPORT_INLINETEMPLATEPARAM
@@ -112,6 +99,8 @@ public:
 	RTPUDPv4Transmitter();
 	~RTPUDPv4Transmitter();
 
+	jrtp_socket_t RTPUDPv4Transmitter::GetRTPSocket();
+	jrtp_socket_t RTPUDPv4Transmitter::GetRTCPSocket();
 	int Init(bool treadsafe);
 	int Create(size_t maxpacksize,const RTPTransmissionParams *transparams);
 	void Destroy();
@@ -173,11 +162,7 @@ private:
 	bool init;
 	bool created;
 	bool waitingfordata;
-#if (defined(WIN32) || defined(_WIN32_WCE))
-	SOCKET rtpsock,rtcpsock;
-#else // not using winsock
-	int rtpsock,rtcpsock;
-#endif // WIN32
+	jrtp_socket_t rtpsock,rtcpsock;
 	u_int32_t bindIP;
 	std::list<u_int32_t> localIPs;
 	u_int16_t portbase;
@@ -208,11 +193,7 @@ private:
 	RTPKeyHashTable<const u_int32_t,PortInfo*,RTPUDPv4Trans_GetHashIndex_u_int32_t,RTPUDPV4TRANS_HASHSIZE> acceptignoreinfo;
 
 	// notification descriptors for AbortWait (0 is for reading, 1 for writing)
-#if (defined(WIN32) || defined(_WIN32_WCE))
-	SOCKET abortdesc[2];
-#else
-	int abortdesc[2];
-#endif // WIN32
+	jrtp_socket_t abortdesc[2];
 	int CreateAbortDescriptors();
 	void DestroyAbortDescriptors();
 	void AbortWaitInternal();

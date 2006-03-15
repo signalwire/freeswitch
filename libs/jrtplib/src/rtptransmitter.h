@@ -61,6 +61,9 @@ public:
 	virtual int Create(size_t maxpacksize,const RTPTransmissionParams *transparams) = 0;
 	virtual void Destroy() = 0;
 
+	virtual jrtp_socket_t GetRTPSocket() {}
+	virtual jrtp_socket_t GetRTCPSocket() {}
+
 	// The user MUST delete the returned instance when it is no longer needed
 	virtual RTPTransmissionInfo *GetTransmissionInfo() = 0;
 
@@ -108,6 +111,7 @@ public:
 	
 	virtual bool NewDataAvailable() = 0;
 	virtual RTPRawPacket *GetNextPacket() = 0;
+
 #ifdef RTPDEBUG
 	virtual void Dump() = 0;
 #endif // RTPDEBUG

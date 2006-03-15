@@ -1026,6 +1026,15 @@ int RTPSession::SetLocalNote(const void *s,size_t len)
 	return status;
 }
 
+#if ! (defined(WIN32) || defined(_WIN32_WCE))
+int RTPSession::GetRTPSocket(void)
+#else
+SOCKET RTPSession::GetRTPSocket(void)
+#endif // WIN32
+{
+	return rtptrans->GetRTPSocket();
+}
+
 int RTPSession::ProcessPolledData()
 {
 	RTPRawPacket *rawpack;
@@ -1039,15 +1048,23 @@ int RTPSession::ProcessPolledData()
 		// since our sources instance also uses the scheduler (analysis of incoming packets)
 		// we'll lock it
 		SCHED_LOCK
-		if ((status = sources.ProcessRawPacket(rawpack,rtptrans,acceptownpackets)) < 0)
-		{
+
+
+		status = sources.ProcessRawPacket(rawpack,rtptrans,acceptownpackets);
+		if (status == ERR_RTP_INVALID_PACKET_VERISON) {
+			OnInvalidRawPacketType(rawpack, rtptrans->GetRTPSocket());
+			status = 0;
+		}
+
+		if (status < 0)
+			{
 			SCHED_UNLOCK
 			SOURCES_UNLOCK
 			delete rawpack;
 			return status;
 		}
 		SCHED_UNLOCK
-				
+
 		if (sources.DetectedOwnCollision()) // collision handling!
 		{
 			bool created;

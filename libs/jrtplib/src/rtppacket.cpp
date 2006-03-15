@@ -113,16 +113,17 @@ int RTPPacket::ParseRawPacket(RTPRawPacket &rawpack)
 	if (!rawpack.IsRTP()) // If we didn't receive it on the RTP port, we'll ignore it
 		return ERR_RTP_PACKET_INVALIDPACKET;
 	
-	// The length should be at least the size of the RTP header
-	packetlen = rawpack.GetDataLength();
-	if (packetlen < sizeof(RTPHeader))
-		return ERR_RTP_PACKET_INVALIDPACKET;
-	
 	packetbytes = (u_int8_t *)rawpack.GetData();
 	rtpheader = (RTPHeader *)packetbytes;
 	
+
 	// The version number should be correct
-	if (rtpheader->version != RTP_VERSION)
+	if (rtpheader->version != RTP_VERSION) {
+		return ERR_RTP_INVALID_PACKET_VERISON;
+	}
+	// The length should be at least the size of the RTP header
+	packetlen = rawpack.GetDataLength();
+	if (packetlen < sizeof(RTPHeader))
 		return ERR_RTP_PACKET_INVALIDPACKET;
 	
 	// We'll check if this is possibly a RTCP packet. For this to be possible

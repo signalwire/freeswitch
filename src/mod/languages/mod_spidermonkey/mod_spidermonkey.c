@@ -491,6 +491,7 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	char *voice_name = NULL;
 	char *text = NULL;
 	char *dtmf_callback = NULL;
+	char *timer_name = NULL;
 	switch_codec *codec;
 	void *bp = NULL;
 	int len = 0;
@@ -524,6 +525,10 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 		}
 	}
 
+	if (argc > 4) {
+		timer_name = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
+	}
+
 	if (!tts_name && text) {
 		return JS_FALSE;
 	}
@@ -532,7 +537,7 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	switch_ivr_speak_text(jss->session,
 						  tts_name,
 						  voice_name && strlen(voice_name) ? voice_name : NULL, 
-						  NULL,
+						  timer_name,
 						  codec->implementation->samples_per_second,
 						  dtmf_func,
 						  text,

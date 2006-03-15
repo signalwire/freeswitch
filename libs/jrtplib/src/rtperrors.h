@@ -197,6 +197,6 @@ std::string RTPGetErrorString(int errcode);
 #define ERR_RTP_GSTV4TRANS_SRCADDRNOTSET        		-157
 #define ERR_RTP_GSTV4TRANS_NOTNETBUFFER         		-158
 #define ERR_RTP_GSTV4TRANS_WAITNOTIMPLEMENTED			-159
-
+#define ERR_RTP_INVALID_PACKET_VERISON					-160
 #endif // RTPERRORS_H
 

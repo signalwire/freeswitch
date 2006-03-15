@@ -83,7 +83,7 @@ static void event_handler(switch_event *event)
 		msg = iks_make_msg(IKS_TYPE_NONE, globals.target_jid, buf);
 		iks_insert_attrib(msg, "subject", "Event");
 		iks_send(globals.session.parser, msg);
-
+		iks_delete(msg);
 		break;
 	}
 }

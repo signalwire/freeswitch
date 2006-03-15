@@ -47,4 +47,3 @@
 //#define RTP_SUPPORT_IPV6MULTICAST
 
 #endif // RTPCONFIG_WIN_H
-

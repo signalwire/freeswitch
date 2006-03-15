@@ -893,11 +893,19 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	switch_channel_add_state_handler(caller_channel, &audio_bridge_caller_state_handlers);
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
 	switch_core_session_thread_launch(peer_session);
-
+	time(&start);
 
 	for (;;) {
 		int state = switch_channel_get_state(peer_channel);
 		if (state > CS_RING) {
+			break;
+		}
+		
+		if (!switch_channel_ready(caller_channel)) {
+			break;
+		}
+		
+		if ((time(NULL) - start) > timelimit) {
 			break;
 		}
 		switch_yield(1000);
@@ -905,12 +913,14 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 
 	switch_channel_pre_answer(caller_channel);
 	
-	time(&start);
+
 	while (switch_channel_ready(caller_channel) &&
 		   switch_channel_ready(peer_channel) &&
 		   !switch_channel_test_flag(peer_channel, CF_ANSWERED) &&
 		   !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) &&
 		   ((time(NULL) - start) < timelimit)) {
+
+
 
 		/* read from the channel while we wait if the audio is up on it */
 		if (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
