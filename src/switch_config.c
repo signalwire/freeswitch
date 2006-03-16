@@ -106,6 +106,10 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 
 	*var = *val = NULL;
 
+	if (!cfg->path) {
+		return 0;
+	}
+
 	for (;;) {
 		cfg->lineno++;
 
@@ -113,7 +117,6 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char
 			ret = 0;
 			break;
 		}
-
 		*var = cfg->buf;
 
 		if (**var == '[' && (end = strchr(*var, ']')) != 0) {
