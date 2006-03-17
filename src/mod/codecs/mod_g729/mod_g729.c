@@ -189,7 +189,7 @@ static switch_status switch_g729_decode(switch_codec *codec,
 	} else {
 
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "yo this frame is an odd size [%d]\n", encoded_data_len);
-
+		return SWITCH_STATUS_FALSE;
 	}
 
 
@@ -201,6 +201,22 @@ static switch_status switch_g729_decode(switch_codec *codec,
 
 
 /* Registration */ 
+
+static const switch_codec_implementation g729_10ms_8k_implementation = { 
+	/*.samples_per_second */ 8000, 
+	/*.bits_per_second */ 32000, 
+	/*.microseconds_per_frame */ 10000, 
+	/*.samples_per_frame */ 80, 
+	/*.bytes_per_frame */ 160, 
+	/*.encoded_bytes_per_frame */ 10, 
+	/*.number_of_channels */ 1, 
+	/*.pref_frames_per_packet */ 1, 
+	/*.max_frames_per_packet */ 1, 
+	/*.init */ switch_g729_init, 
+	/*.encode */ switch_g729_encode, 
+	/*.decode */ switch_g729_decode, 
+	/*.destroy */ switch_g729_destroy, 
+};
 
 static const switch_codec_implementation g729_8k_implementation = { 
 	/*.samples_per_second */ 8000, 
@@ -216,6 +232,7 @@ static const switch_codec_implementation g729_8k_implementation = {
 	/*.encode */ switch_g729_encode, 
 	/*.decode */ switch_g729_decode, 
 	/*.destroy */ switch_g729_destroy, 
+	&g729_10ms_8k_implementation
 };
 
 

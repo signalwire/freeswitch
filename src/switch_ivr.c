@@ -691,6 +691,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	int stream_id = 0, ans_a = 0, ans_b = 0;
 	switch_dtmf_callback_function dtmf_callback;
 	void *user_data;
+	int *his_status;
 
 	switch_channel *chan_a, *chan_b;
 	switch_frame *read_frame;
@@ -702,6 +703,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	stream_id_p = data->objs[2];
 	dtmf_callback = data->objs[3];
 	user_data = data->objs[4];
+	his_status = data->objs[5];
 
 	if (stream_id_p) {
 		stream_id = *stream_id_p;
@@ -715,7 +717,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	ans_b = switch_channel_test_flag(chan_b, CF_ANSWERED);
 
 
-	while (data->running > 0) {
+	while (data->running > 0 && *his_status > 0) {
 		switch_channel_state b_state = switch_channel_get_state(chan_b);
 
 		switch (b_state) {
@@ -877,7 +879,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	other_audio_thread.objs[2] = &stream_id;
 	other_audio_thread.objs[3] = dtmf_callback;
 	other_audio_thread.objs[4] = session_data;
-
+	other_audio_thread.objs[5] = &this_audio_thread.running;
 	other_audio_thread.running = 5;
 
 	this_audio_thread.objs[0] = peer_session;
@@ -885,6 +887,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	this_audio_thread.objs[2] = &stream_id;
 	this_audio_thread.objs[3] = dtmf_callback;
 	this_audio_thread.objs[4] = peer_session_data;
+	this_audio_thread.objs[5] = &other_audio_thread.running;
 	this_audio_thread.running = 2;
 
 
