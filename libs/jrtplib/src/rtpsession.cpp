@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -35,7 +35,6 @@
 #include "rtppollthread.h"
 #include "rtpudpv4transmitter.h"
 #include "rtpudpv6transmitter.h"
-#include "rtpgsttransmitter.h"
 #include "rtpsessionparams.h"
 #include "rtpdefines.h"
 #include "rtprawpacket.h"
@@ -113,11 +112,6 @@ int RTPSession::Create(const RTPSessionParams &sessparams,const RTPTransmissionP
 		rtptrans = new RTPUDPv6Transmitter();
 		break;
 #endif // RTP_SUPPORT_IPV6
-#ifdef RTP_SUPPORT_GST
-	case RTPTransmitter::IPv4GSTProto:
-		rtptrans = new RTPGSTv4Transmitter();
-		break;
-#endif // RTP_SUPPORT_GST
 	case RTPTransmitter::UserDefinedProto:
 		rtptrans = NewUserDefinedTransmitter();
 		if (rtptrans == 0)
@@ -177,7 +171,7 @@ int RTPSession::Create(const RTPSessionParams &sessparams,const RTPTransmissionP
 	// Init the RTCP packet builder
 	
 	double timestampunit = sessparams.GetOwnTimestampUnit();
-	u_int8_t buf[1024];
+	uint8_t buf[1024];
 	size_t buflen = 1024;
 	
 	if ((status = CreateCNAME(buf,&buflen,sessparams.GetResolveLocalHostname())) < 0)
@@ -419,12 +413,12 @@ bool RTPSession::IsActive()
 	return created;
 }
 
-u_int32_t RTPSession::GetLocalSSRC()
+uint32_t RTPSession::GetLocalSSRC()
 {
 	if (!created)
 		return 0;
 	
-	u_int32_t ssrc;
+	uint32_t ssrc;
 
 	BUILDER_LOCK
 	ssrc = packetbuilder.GetSSRC();
@@ -508,7 +502,7 @@ int RTPSession::SendPacket(const void *data,size_t len)
 }
 
 int RTPSession::SendPacket(const void *data,size_t len,
-                u_int8_t pt,bool mark,u_int32_t timestampinc, u_int32_t mseq)
+                uint8_t pt,bool mark,uint32_t timestampinc, uint32_t mseq)
 {
 	int status;
 
@@ -535,7 +529,7 @@ int RTPSession::SendPacket(const void *data,size_t len,
 }
 
 int RTPSession::SendPacketEx(const void *data,size_t len,
-                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords)
+                  uint16_t hdrextID,const void *hdrextdata,size_t numhdrextwords)
 {
 	int status;
 	
@@ -562,8 +556,8 @@ int RTPSession::SendPacketEx(const void *data,size_t len,
 }
 
 int RTPSession::SendPacketEx(const void *data,size_t len,
-                  u_int8_t pt,bool mark,u_int32_t timestampinc,
-                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords)
+                  uint8_t pt,bool mark,uint32_t timestampinc,
+                  uint16_t hdrextID,const void *hdrextdata,size_t numhdrextwords)
 {
 	int status;
 	
@@ -589,7 +583,7 @@ int RTPSession::SendPacketEx(const void *data,size_t len,
 	return 0;
 }
 
-int RTPSession::SetDefaultPayloadType(u_int8_t pt)
+int RTPSession::SetDefaultPayloadType(uint8_t pt)
 {
 	if (!created)
 		return ERR_RTP_SESSION_NOTCREATED;
@@ -615,7 +609,7 @@ int RTPSession::SetDefaultMark(bool m)
 	return status;
 }
 
-int RTPSession::SetDefaultTimestampIncrement(u_int32_t timestampinc)
+int RTPSession::SetDefaultTimestampIncrement(uint32_t timestampinc)
 {
 	if (!created)
 		return ERR_RTP_SESSION_NOTCREATED;
@@ -628,7 +622,7 @@ int RTPSession::SetDefaultTimestampIncrement(u_int32_t timestampinc)
 	return status;
 }
 
-int RTPSession::IncrementTimestamp(u_int32_t inc)
+int RTPSession::IncrementTimestamp(uint32_t inc)
 {
 	if (!created)
 		return ERR_RTP_SESSION_NOTCREATED;
@@ -650,6 +644,19 @@ int RTPSession::IncrementTimestampDefault()
 	
 	BUILDER_LOCK
 	status = packetbuilder.IncrementTimestampDefault();
+	BUILDER_UNLOCK
+	return status;
+}
+
+int RTPSession::SetPreTransmissionDelay(const RTPTime &delay)
+{
+	if (!created)
+		return ERR_RTP_SESSION_NOTCREATED;
+
+	int status;
+
+	BUILDER_LOCK
+	status = rtcpbuilder.SetPreTransmissionDelay(delay);
 	BUILDER_UNLOCK
 	return status;
 }
@@ -764,7 +771,7 @@ RTPSourceData *RTPSession::GetCurrentSourceInfo()
 	return sources.GetCurrentSourceInfo();
 }
 
-RTPSourceData *RTPSession::GetSourceInfo(u_int32_t ssrc)
+RTPSourceData *RTPSession::GetSourceInfo(uint32_t ssrc)
 {
 	if (!created)
 		return 0;
@@ -1103,7 +1110,7 @@ int RTPSession::ProcessPolledData()
 				// and reset the packet count in the transmitter
 				
 				BUILDER_LOCK
-				u_int32_t newssrc = packetbuilder.CreateNewSSRC(sources);
+				uint32_t newssrc = packetbuilder.CreateNewSSRC(sources);
 				BUILDER_UNLOCK
 					
 				rtptrans->ResetPacketCount();
@@ -1202,7 +1209,7 @@ int RTPSession::ProcessPolledData()
 	return 0;
 }
 
-int RTPSession::CreateCNAME(u_int8_t *buffer,size_t *bufferlength,bool resolve)
+int RTPSession::CreateCNAME(uint8_t *buffer,size_t *bufferlength,bool resolve)
 {
 #ifndef WIN32
 	bool gotlogin = true;
@@ -1253,7 +1260,7 @@ int RTPSession::CreateCNAME(u_int8_t *buffer,size_t *bufferlength,bool resolve)
 
 	size_t offset = strlen((const char *)buffer);
 	if (offset < (*bufferlength-1))
-		buffer[offset] = (u_int8_t)'@';
+		buffer[offset] = (uint8_t)'@';
 	offset++;
 
 	size_t buflen2 = *bufferlength-offset;

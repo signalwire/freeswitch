@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -38,7 +38,7 @@
 
 #define RTPINTERNALSOURCEDATA_MAXPROBATIONPACKETS		32
 
-RTPInternalSourceData::RTPInternalSourceData(u_int32_t ssrc,RTPSources::ProbationType probtype):RTPSourceData(ssrc)
+RTPInternalSourceData::RTPInternalSourceData(uint32_t ssrc,RTPSources::ProbationType probtype):RTPSourceData(ssrc)
 {
 #ifdef RTP_SUPPORT_PROBATION
 	probationtype = probtype;
@@ -131,7 +131,7 @@ int RTPInternalSourceData::ProcessRTPPacket(RTPPacket *rtppack,const RTPTime &re
 	
 	std::list<RTPPacket*>::iterator it,start;
 	bool done = false;
-	u_int32_t newseqnr = rtppack->GetExtendedSequenceNumber();
+	uint32_t newseqnr = rtppack->GetExtendedSequenceNumber();
 	
 	it = packetlist.end();
 	--it;
@@ -140,7 +140,7 @@ int RTPInternalSourceData::ProcessRTPPacket(RTPPacket *rtppack,const RTPTime &re
 	while (!done)
 	{
 		RTPPacket *p;
-		u_int32_t seqnr;
+		uint32_t seqnr;
 		
 		p = *it;
 		seqnr = p->GetExtendedSequenceNumber();
@@ -171,7 +171,7 @@ int RTPInternalSourceData::ProcessRTPPacket(RTPPacket *rtppack,const RTPTime &re
 	return 0;
 }
 
-int RTPInternalSourceData::ProcessSDESItem(u_int8_t id,const u_int8_t *data,size_t itemlen,const RTPTime &receivetime,bool *cnamecollis)
+int RTPInternalSourceData::ProcessSDESItem(uint8_t id,const uint8_t *data,size_t itemlen,const RTPTime &receivetime,bool *cnamecollis)
 {
 	*cnamecollis = false;
 	
@@ -182,7 +182,7 @@ int RTPInternalSourceData::ProcessSDESItem(u_int8_t id,const u_int8_t *data,size
 	case RTCP_SDES_ID_CNAME:
 		{
 			size_t curlen;
-			u_int8_t *oldcname;
+			uint8_t *oldcname;
 			
 			// NOTE: we're going to make sure that the CNAME is only set once.
 			oldcname = SDESinf.GetCNAME(&curlen);
@@ -206,7 +206,7 @@ int RTPInternalSourceData::ProcessSDESItem(u_int8_t id,const u_int8_t *data,size
 		break;
 	case RTCP_SDES_ID_NAME:
 		{
-			u_int8_t *oldname;
+			uint8_t *oldname;
 			size_t oldlen;
 
 			oldname = SDESinf.GetName(&oldlen);
@@ -216,7 +216,7 @@ int RTPInternalSourceData::ProcessSDESItem(u_int8_t id,const u_int8_t *data,size
 		break;
 	case RTCP_SDES_ID_EMAIL:
 		{
-			u_int8_t *oldemail;
+			uint8_t *oldemail;
 			size_t oldlen;
 
 			oldemail = SDESinf.GetEMail(&oldlen);
@@ -230,7 +230,7 @@ int RTPInternalSourceData::ProcessSDESItem(u_int8_t id,const u_int8_t *data,size
 		return SDESinf.SetLocation(data,itemlen);
 	case RTCP_SDES_ID_TOOL:
 		{
-			u_int8_t *oldtool;
+			uint8_t *oldtool;
 			size_t oldlen;
 
 			oldtool = SDESinf.GetTool(&oldlen);
@@ -247,7 +247,7 @@ int RTPInternalSourceData::ProcessSDESItem(u_int8_t id,const u_int8_t *data,size
 
 #ifdef RTP_SUPPORT_SDESPRIV
 
-int RTPInternalSourceData::ProcessPrivateSDESItem(const u_int8_t *prefix,size_t prefixlen,const u_int8_t *value,size_t valuelen,const RTPTime &receivetime)
+int RTPInternalSourceData::ProcessPrivateSDESItem(const uint8_t *prefix,size_t prefixlen,const uint8_t *value,size_t valuelen,const RTPTime &receivetime)
 {
 	int status;
 	
@@ -260,7 +260,7 @@ int RTPInternalSourceData::ProcessPrivateSDESItem(const u_int8_t *prefix,size_t 
 
 #endif // RTP_SUPPORT_SDESPRIV
 
-int RTPInternalSourceData::ProcessBYEPacket(const u_int8_t *reason,size_t reasonlen,const RTPTime &receivetime)
+int RTPInternalSourceData::ProcessBYEPacket(const uint8_t *reason,size_t reasonlen,const RTPTime &receivetime)
 {
 	if (byereason)
 	{
@@ -270,7 +270,7 @@ int RTPInternalSourceData::ProcessBYEPacket(const u_int8_t *reason,size_t reason
 	}
 
 	byetime = receivetime;
-	byereason = new u_int8_t[reasonlen];
+	byereason = new uint8_t[reasonlen];
 	if (byereason == 0)
 		return ERR_RTP_OUTOFMEM;
 	memcpy(byereason,reason,reasonlen);

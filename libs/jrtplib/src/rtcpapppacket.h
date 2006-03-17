@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -46,13 +46,13 @@ class RTCPCompoundPacket;
 class RTCPAPPPacket : public RTCPPacket
 {
 public:
-	RTCPAPPPacket(u_int8_t *data,size_t datalen);
+	RTCPAPPPacket(uint8_t *data,size_t datalen);
 	~RTCPAPPPacket()							{ }
 
-	u_int8_t GetSubType() const;
-	u_int32_t GetSSRC() const;
-	u_int8_t *GetName(); // Note that the name always consists of 4 octets and is not null-terminated
-	u_int8_t *GetAPPData();
+	uint8_t GetSubType() const;
+	uint32_t GetSSRC() const;
+	uint8_t *GetName(); // Note that the name always consists of 4 octets and is not null-terminated
+	uint8_t *GetAPPData();
 	size_t GetAPPDataLength() const;
 #ifdef RTPDEBUG
 	void Dump();
@@ -61,7 +61,7 @@ private:
 	size_t appdatalen;
 };
 
-inline u_int8_t RTCPAPPPacket::GetSubType() const
+inline uint8_t RTCPAPPPacket::GetSubType() const
 {
 	if (!knownformat)
 		return 0;
@@ -69,30 +69,30 @@ inline u_int8_t RTCPAPPPacket::GetSubType() const
 	return hdr->count;
 }
 
-inline u_int32_t RTCPAPPPacket::GetSSRC() const
+inline uint32_t RTCPAPPPacket::GetSSRC() const
 {
 	if (!knownformat)
 		return 0;
 
-	u_int32_t *ssrc = (u_int32_t *)(data+sizeof(RTCPCommonHeader));
+	uint32_t *ssrc = (uint32_t *)(data+sizeof(RTCPCommonHeader));
 	return ntohl(*ssrc);	
 }
 
-inline u_int8_t *RTCPAPPPacket::GetName()
+inline uint8_t *RTCPAPPPacket::GetName()
 {
 	if (!knownformat)
 		return 0;
 
-	return (data+sizeof(RTCPCommonHeader)+sizeof(u_int32_t));	
+	return (data+sizeof(RTCPCommonHeader)+sizeof(uint32_t));	
 }
 
-inline u_int8_t *RTCPAPPPacket::GetAPPData()
+inline uint8_t *RTCPAPPPacket::GetAPPData()
 {
 	if (!knownformat)
 		return 0;
 	if (appdatalen == 0)
 		return 0;
-	return (data+sizeof(RTCPCommonHeader)+sizeof(u_int32_t)*2);
+	return (data+sizeof(RTCPCommonHeader)+sizeof(uint32_t)*2);
 }
 
 inline size_t RTCPAPPPacket::GetAPPDataLength() const

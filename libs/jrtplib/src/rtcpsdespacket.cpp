@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -37,7 +37,7 @@
 
 #include "rtpdebug.h"
 
-RTCPSDESPacket::RTCPSDESPacket(u_int8_t *data,size_t datalength)
+RTCPSDESPacket::RTCPSDESPacket(uint8_t *data,size_t datalength)
 	: RTCPPacket(SDES,data,datalength)
 {
 	knownformat = false;
@@ -50,7 +50,7 @@ RTCPSDESPacket::RTCPSDESPacket(u_int8_t *data,size_t datalength)
 	
 	if (hdr->padding)
 	{
-		u_int8_t padcount = data[datalength-1];
+		uint8_t padcount = data[datalength-1];
 		if ((padcount & 0x03) != 0) // not a multiple of four! (see rfc 3550 p 37)
 			return;
 		if (((size_t)padcount) >= len)
@@ -66,7 +66,7 @@ RTCPSDESPacket::RTCPSDESPacket(u_int8_t *data,size_t datalength)
 	else
 	{
 		int ssrccount = (int)(hdr->count);
-		u_int8_t *chunk;
+		uint8_t *chunk;
 		int chunkoffset;
 		
 		if (len < sizeof(RTCPCommonHeader))
@@ -79,11 +79,11 @@ RTCPSDESPacket::RTCPSDESPacket(u_int8_t *data,size_t datalength)
 		{
 			chunkoffset = 0;
 			
-			if (len < (sizeof(u_int32_t)*2)) // chunk must contain at least a SSRC identifier
+			if (len < (sizeof(uint32_t)*2)) // chunk must contain at least a SSRC identifier
 				return;                  // and a (possibly empty) item
 			
-			len -= sizeof(u_int32_t);
-			chunkoffset = sizeof(u_int32_t);
+			len -= sizeof(uint32_t);
+			chunkoffset = sizeof(uint32_t);
 
 			bool done = false;
 			while (!done)

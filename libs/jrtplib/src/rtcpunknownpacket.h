@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -42,7 +42,7 @@ class RTCPCompoundPacket;
 class RTCPUnknownPacket : public RTCPPacket
 {
 public:
-	RTCPUnknownPacket(u_int8_t *data,size_t datalen) :
+	RTCPUnknownPacket(uint8_t *data,size_t datalen) :
 		RTCPPacket(Unknown,data,datalen)                                         
 	{
 	       // Since we don't expect a format, we'll trivially put knownformat = true

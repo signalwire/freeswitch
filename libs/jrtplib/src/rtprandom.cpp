@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -53,12 +53,12 @@ bool RTPRandom::init = false;
 RTPRandom::RTPRandom()
 {
 #if defined(RTP_SUPPORT_GNUDRAND) || defined(RTP_SUPPORT_RANDR)
-	u_int32_t x;
+	uint32_t x;
 
-	x = (u_int32_t)getpid();
-	x += (u_int32_t)time(0);
-	x -= (u_int32_t)clock();
-	x ^= (u_int32_t)(this);
+	x = (uint32_t)getpid();
+	x += (uint32_t)time(0);
+	x -= (uint32_t)clock();
+	x ^= (uint32_t)(this);
 
 #ifdef RTP_SUPPORT_GNUDRAND
 	srand48_r(x,&drandbuffer);
@@ -70,14 +70,14 @@ RTPRandom::RTPRandom()
 	if (init)
 		return;
 
-	u_int32_t x;
+	uint32_t x;
 
 #ifndef _WIN32_WCE
-	x = (u_int32_t)getpid();
-	x += (u_int32_t)time(0);
-	x -= (u_int32_t)clock();
+	x = (uint32_t)getpid();
+	x += (uint32_t)time(0);
+	x -= (uint32_t)clock();
 #else
-	x = (u_int32_t)GetCurrentProcessId();
+	x = (uint32_t)GetCurrentProcessId();
 
 	FILETIME ft;
 	SYSTEMTIME st;
@@ -87,7 +87,7 @@ RTPRandom::RTPRandom()
 	
 	x += ft.dwLowDateTime;
 #endif // _WIN32_WCE
-	x ^= (u_int32_t)(this);
+	x ^= (uint32_t)(this);
 	srand((unsigned int)x);
 
 	init = true;
@@ -100,27 +100,27 @@ RTPRandom::~RTPRandom()
 
 #ifdef RTP_SUPPORT_GNUDRAND
 
-u_int8_t RTPRandom::GetRandom8()
+uint8_t RTPRandom::GetRandom8()
 {
 	double x;
 	drand48_r(&drandbuffer,&x);
-	u_int8_t y = (u_int8_t)(x*256.0);
+	uint8_t y = (uint8_t)(x*256.0);
 	return y;
 }
 
-u_int16_t RTPRandom::GetRandom16()
+uint16_t RTPRandom::GetRandom16()
 {
 	double x;
 	drand48_r(&drandbuffer,&x);
-	u_int16_t y = (u_int16_t)(x*65536.0);
+	uint16_t y = (uint16_t)(x*65536.0);
 	return y;
 }
 
-u_int32_t RTPRandom::GetRandom32()
+uint32_t RTPRandom::GetRandom32()
 {
-	u_int32_t a = GetRandom16();
-	u_int32_t b = GetRandom16();
-	u_int32_t y = (a << 16)|b;
+	uint32_t a = GetRandom16();
+	uint32_t b = GetRandom16();
+	uint32_t y = (a << 16)|b;
 	return y;
 }
 
@@ -134,31 +134,31 @@ double RTPRandom::GetRandomDouble()
 #else 
 #ifdef RTP_SUPPORT_RANDR
 
-u_int8_t RTPRandom::GetRandom8()
+uint8_t RTPRandom::GetRandom8()
 {
-	u_int8_t x;
+	uint8_t x;
 
-	x = (u_int8_t)(256.0*((double)rand_r(&state))/((double)RAND_MAX+1.0));
+	x = (uint8_t)(256.0*((double)rand_r(&state))/((double)RAND_MAX+1.0));
 	return x;
 }
 
-u_int16_t RTPRandom::GetRandom16()
+uint16_t RTPRandom::GetRandom16()
 {
-	u_int16_t x;
+	uint16_t x;
 
-	x = (u_int16_t)(65536.0*((double)rand_r(&state))/((double)RAND_MAX+1.0));
+	x = (uint16_t)(65536.0*((double)rand_r(&state))/((double)RAND_MAX+1.0));
 	return x;
 }
 
-u_int32_t RTPRandom::GetRandom32()
+uint32_t RTPRandom::GetRandom32()
 {
-	u_int32_t x,y;
+	uint32_t x,y;
 
-	x = (u_int32_t)(65536.0*((double)rand_r(&state))/((double)RAND_MAX+1.0));
+	x = (uint32_t)(65536.0*((double)rand_r(&state))/((double)RAND_MAX+1.0));
 	y = x;
-	x = (u_int32_t)(65536.0*((double)rand_r(&state))/((double)RAND_MAX+1.0));
+	x = (uint32_t)(65536.0*((double)rand_r(&state))/((double)RAND_MAX+1.0));
 	y ^= (x<<8);
-	x = (u_int32_t)(65536.0*((double)rand_r(&state))/((double)RAND_MAX+1.0));
+	x = (uint32_t)(65536.0*((double)rand_r(&state))/((double)RAND_MAX+1.0));
 	y ^= (x<<16);
 
 	return y;
@@ -172,31 +172,31 @@ double RTPRandom::GetRandomDouble()
 
 #else
 
-u_int8_t RTPRandom::GetRandom8()
+uint8_t RTPRandom::GetRandom8()
 {
-	u_int8_t x;
+	uint8_t x;
 
-	x = (u_int8_t)(256.0*((double)rand())/((double)RAND_MAX+1.0));
+	x = (uint8_t)(256.0*((double)rand())/((double)RAND_MAX+1.0));
 	return x;
 }
 
-u_int16_t RTPRandom::GetRandom16()
+uint16_t RTPRandom::GetRandom16()
 {
-	u_int16_t x;
+	uint16_t x;
 
-	x = (u_int16_t)(65536.0*((double)rand())/((double)RAND_MAX+1.0));
+	x = (uint16_t)(65536.0*((double)rand())/((double)RAND_MAX+1.0));
 	return x;
 }
 
-u_int32_t RTPRandom::GetRandom32()
+uint32_t RTPRandom::GetRandom32()
 {
-	u_int32_t x,y;
+	uint32_t x,y;
 
-	x = (u_int32_t)(65536.0*((double)rand())/((double)RAND_MAX+1.0));
+	x = (uint32_t)(65536.0*((double)rand())/((double)RAND_MAX+1.0));
 	y = x;
-	x = (u_int32_t)(65536.0*((double)rand())/((double)RAND_MAX+1.0));
+	x = (uint32_t)(65536.0*((double)rand())/((double)RAND_MAX+1.0));
 	y ^= (x<<8);
-	x = (u_int32_t)(65536.0*((double)rand())/((double)RAND_MAX+1.0));
+	x = (uint32_t)(65536.0*((double)rand())/((double)RAND_MAX+1.0));
 	y ^= (x<<16);
 
 	return y;

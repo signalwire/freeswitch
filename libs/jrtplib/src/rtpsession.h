@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -72,7 +72,7 @@ public:
 	void BYEDestroy(const RTPTime &maxwaittime,const void *reason,size_t reasonlength);
 	bool IsActive();
 	
-	u_int32_t GetLocalSSRC();
+	uint32_t GetLocalSSRC();
 	
 	int AddDestination(const RTPAddress &addr);
 	int DeleteDestination(const RTPAddress &addr);
@@ -85,17 +85,18 @@ public:
 
 	int SendPacket(const void *data,size_t len);
 	int SendPacket(const void *data,size_t len,
-	                u_int8_t pt,bool mark,u_int32_t timestampinc, u_int32_t mseq = 0);
+	                uint8_t pt,bool mark,uint32_t timestampinc, uint32_t mseq = 0);
 	int SendPacketEx(const void *data,size_t len,
-	                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords);
+	                  uint16_t hdrextID,const void *hdrextdata,size_t numhdrextwords);
 	int SendPacketEx(const void *data,size_t len,
-	                  u_int8_t pt,bool mark,u_int32_t timestampinc,
-	                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords);
-	int SetDefaultPayloadType(u_int8_t pt);
+	                  uint8_t pt,bool mark,uint32_t timestampinc,
+	                  uint16_t hdrextID,const void *hdrextdata,size_t numhdrextwords);
+	int SetDefaultPayloadType(uint8_t pt);
 	int SetDefaultMark(bool m);
-	int SetDefaultTimestampIncrement(u_int32_t timestampinc);
-	int IncrementTimestamp(u_int32_t inc);
+	int SetDefaultTimestampIncrement(uint32_t timestampinc);
+	int IncrementTimestamp(uint32_t inc);
 	int IncrementTimestampDefault();
+	int SetPreTransmissionDelay(const RTPTime &delay);
 	
 	RTPTransmissionInfo *GetTransmissionInfo();
 	int Poll();
@@ -115,7 +116,7 @@ public:
 	bool GotoNextSourceWithData();
 	bool GotoPreviousSourceWithData();
 	RTPSourceData *GetCurrentSourceInfo();
-	RTPSourceData *GetSourceInfo(u_int32_t ssrc);
+	RTPSourceData *GetSourceInfo(uint32_t ssrc);
 	RTPPacket *GetNextPacket();
 	int EndDataAccess();
 	
@@ -158,7 +159,7 @@ protected:
 	                                  const RTPAddress *senderaddress) 				{ }
 	virtual void OnSSRCCollision(RTPSourceData *srcdat,const RTPAddress *senderaddress,bool isrtp)	{ }
 	virtual void OnCNAMECollision(RTPSourceData *srcdat,const RTPAddress *senderaddress,
-	                              const u_int8_t *cname,size_t cnamelength)				{ }
+	                              const uint8_t *cname,size_t cnamelength)				{ }
 	virtual void OnNewSource(RTPSourceData *srcdat)			 				{ }
 	virtual void OnRemoveSource(RTPSourceData *srcdat)						{ }
 	virtual void OnTimeout(RTPSourceData *srcdat)							{ }
@@ -179,7 +180,7 @@ protected:
 	virtual void OnPollThreadStep()									{ }
 #endif // RTP_SUPPORT_THREAD
 private:
-	int CreateCNAME(u_int8_t *buffer,size_t *bufferlength,bool resolve);
+	int CreateCNAME(uint8_t *buffer,size_t *bufferlength,bool resolve);
 	int ProcessPolledData();
 	int ProcessRTCPCompoundPacket(RTCPCompoundPacket &rtcpcomppack,RTPRawPacket *pack);
 	

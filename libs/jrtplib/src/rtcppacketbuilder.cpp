@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -40,7 +40,7 @@
 #include "rtpdebug.h"
 
 RTCPPacketBuilder::RTCPPacketBuilder(RTPSources &s,RTPPacketBuilder &pb)
-	: sources(s),rtppacketbuilder(pb),prevbuildtime(0,0)
+	: sources(s),rtppacketbuilder(pb),prevbuildtime(0,0),transmissiondelay(0,0)
 {
 	init = false;
 #if (defined(WIN32) || defined(_WIN32_WCE))
@@ -70,7 +70,7 @@ int RTCPPacketBuilder::Init(size_t maxpacksize,double tsunit,const void *cname,s
 	
 	int status;
 	
-	if ((status = ownsdesinfo.SetCNAME((const u_int8_t *)cname,cnamelen)) < 0)
+	if ((status = ownsdesinfo.SetCNAME((const uint8_t *)cname,cnamelen)) < 0)
 		return status;
 	
 	ClearAllSourceFlags();
@@ -83,6 +83,7 @@ int RTCPPacketBuilder::Init(size_t maxpacksize,double tsunit,const void *cname,s
 	interval_note = -1;
 
 	sdesbuildcount = 0;
+	transmissiondelay = RTPTime(0,0);
 
 	firstpacket = true;
 	processingsdes = false;
@@ -126,20 +127,21 @@ int RTCPPacketBuilder::BuildNextPacket(RTCPCompoundPacket **pack)
 			sender = true;
 	}
 	
-	u_int32_t ssrc = rtppacketbuilder.GetSSRC();
+	uint32_t ssrc = rtppacketbuilder.GetSSRC();
 	RTPTime curtime = RTPTime::CurrentTime();
 
 	if (sender)
 	{
 		RTPTime rtppacktime = rtppacketbuilder.GetPacketTime();
-		u_int32_t rtppacktimestamp = rtppacketbuilder.GetPacketTimestamp();
-		u_int32_t packcount = rtppacketbuilder.GetPacketCount();
-		u_int32_t octetcount = rtppacketbuilder.GetPayloadOctetCount();
+		uint32_t rtppacktimestamp = rtppacketbuilder.GetPacketTimestamp();
+		uint32_t packcount = rtppacketbuilder.GetPacketCount();
+		uint32_t octetcount = rtppacketbuilder.GetPayloadOctetCount();
 		RTPTime diff = curtime;
 		diff -= rtppacktime;
+		diff += transmissiondelay; // the sample being sampled at this very instant will need a larger timestamp
 		
-		u_int32_t tsdiff = (u_int32_t)((diff.GetDouble()/timestampunit)+0.5);
-		u_int32_t rtptimestamp = rtppacktimestamp+tsdiff;
+		uint32_t tsdiff = (uint32_t)((diff.GetDouble()/timestampunit)+0.5);
+		uint32_t rtptimestamp = rtppacktimestamp+tsdiff;
 		RTPNTPTime ntptimestamp = curtime.GetNTPTime();
 
 		if ((status = rtcpcomppack->StartSenderReport(ssrc,ntptimestamp,rtptimestamp,packcount,octetcount)) < 0)
@@ -161,7 +163,7 @@ int RTCPPacketBuilder::BuildNextPacket(RTCPCompoundPacket **pack)
 		}
 	}
 
-	u_int8_t *owncname;
+	uint8_t *owncname;
 	size_t owncnamelen;
 
 	owncname = ownsdesinfo.GetCNAME(&owncnamelen);
@@ -360,12 +362,12 @@ int RTCPPacketBuilder::FillInReportBlocks(RTCPCompoundPacketBuilder *rtcpcomppac
 				}
 				else
 				{
-					u_int32_t rr_ssrc = srcdat->GetSSRC();
-					u_int32_t num = srcdat->INF_GetNumPacketsReceivedInInterval();
-					u_int32_t prevseq = srcdat->INF_GetSavedExtendedSequenceNumber();
-					u_int32_t curseq = srcdat->INF_GetExtendedHighestSequenceNumber();
-					u_int32_t expected = curseq-prevseq;
-					u_int8_t fraclost;
+					uint32_t rr_ssrc = srcdat->GetSSRC();
+					uint32_t num = srcdat->INF_GetNumPacketsReceivedInInterval();
+					uint32_t prevseq = srcdat->INF_GetSavedExtendedSequenceNumber();
+					uint32_t curseq = srcdat->INF_GetExtendedHighestSequenceNumber();
+					uint32_t expected = curseq-prevseq;
+					uint8_t fraclost;
 					
 					if (expected < num) // got duplicates
 						fraclost = 0;
@@ -373,18 +375,18 @@ int RTCPPacketBuilder::FillInReportBlocks(RTCPCompoundPacketBuilder *rtcpcomppac
 					{
 						double lost = (double)(expected-num);
 						double frac = lost/((double)expected);
-						fraclost = (u_int8_t)(frac*256.0);
+						fraclost = (uint8_t)(frac*256.0);
 					}
 
 					expected = curseq-srcdat->INF_GetBaseSequenceNumber();
 					num = srcdat->INF_GetNumPacketsReceived();
 
-					u_int32_t diff = expected-num;
+					uint32_t diff = expected-num;
 					int32_t *packlost = (int32_t *)&diff;
 					
-					u_int32_t jitter = srcdat->INF_GetJitter();
-					u_int32_t lsr;
-					u_int32_t dlsr; 	
+					uint32_t jitter = srcdat->INF_GetJitter();
+					uint32_t lsr;
+					uint32_t dlsr; 	
 
 					if (!srcdat->SR_HasInfo())
 					{
@@ -394,15 +396,15 @@ int RTCPPacketBuilder::FillInReportBlocks(RTCPCompoundPacketBuilder *rtcpcomppac
 					else
 					{
 						RTPNTPTime srtime = srcdat->SR_GetNTPTimestamp();
-						u_int32_t m = (srtime.GetMSW()&0xFFFF);
-						u_int32_t l = ((srtime.GetLSW()>>16)&0xFFFF);
+						uint32_t m = (srtime.GetMSW()&0xFFFF);
+						uint32_t l = ((srtime.GetLSW()>>16)&0xFFFF);
 						lsr = ((m<<16)|l);
 
 						RTPTime diff = curtime;
 						diff -= srcdat->SR_GetReceiveTime();
 						double diff2 = diff.GetDouble();
 						diff2 *= 65536.0;
-						dlsr = (u_int32_t)diff2;
+						dlsr = (uint32_t)diff2;
 					}
 
 					status = rtcpcomppack->AddReportBlock(rr_ssrc,fraclost,*packlost,curseq,jitter,lsr,dlsr);
@@ -498,7 +500,7 @@ int RTCPPacketBuilder::FillInReportBlocks(RTCPCompoundPacketBuilder *rtcpcomppac
 int RTCPPacketBuilder::FillInSDES(RTCPCompoundPacketBuilder *rtcpcomppack,bool *full,bool *processedall,int *added)
 {
 	int status;
-	u_int8_t *data;
+	uint8_t *data;
 	size_t datalen;
 	
 	*full = false;
@@ -642,7 +644,7 @@ int RTCPPacketBuilder::BuildBYEPacket(RTCPCompoundPacket **pack,const void *reas
 		return status;
 	}
 	
-	u_int32_t ssrc = rtppacketbuilder.GetSSRC();
+	uint32_t ssrc = rtppacketbuilder.GetSSRC();
 	bool useSR = false;
 	
 	if (useSRifpossible)
@@ -660,14 +662,14 @@ int RTCPPacketBuilder::BuildBYEPacket(RTCPCompoundPacket **pack,const void *reas
 	{
 		RTPTime curtime = RTPTime::CurrentTime();
 		RTPTime rtppacktime = rtppacketbuilder.GetPacketTime();
-		u_int32_t rtppacktimestamp = rtppacketbuilder.GetPacketTimestamp();
-		u_int32_t packcount = rtppacketbuilder.GetPacketCount();
-		u_int32_t octetcount = rtppacketbuilder.GetPayloadOctetCount();
+		uint32_t rtppacktimestamp = rtppacketbuilder.GetPacketTimestamp();
+		uint32_t packcount = rtppacketbuilder.GetPacketCount();
+		uint32_t octetcount = rtppacketbuilder.GetPayloadOctetCount();
 		RTPTime diff = curtime;
 		diff -= rtppacktime;
 		
-		u_int32_t tsdiff = (u_int32_t)((diff.GetDouble()/timestampunit)+0.5);
-		u_int32_t rtptimestamp = rtppacktimestamp+tsdiff;
+		uint32_t tsdiff = (uint32_t)((diff.GetDouble()/timestampunit)+0.5);
+		uint32_t rtptimestamp = rtppacktimestamp+tsdiff;
 		RTPNTPTime ntptimestamp = curtime.GetNTPTime();
 
 		if ((status = rtcpcomppack->StartSenderReport(ssrc,ntptimestamp,rtptimestamp,packcount,octetcount)) < 0)
@@ -689,7 +691,7 @@ int RTCPPacketBuilder::BuildBYEPacket(RTCPCompoundPacket **pack,const void *reas
 		}
 	}
 
-	u_int8_t *owncname;
+	uint8_t *owncname;
 	size_t owncnamelen;
 
 	owncname = ownsdesinfo.GetCNAME(&owncnamelen);
@@ -709,11 +711,11 @@ int RTCPPacketBuilder::BuildBYEPacket(RTCPCompoundPacket **pack,const void *reas
 		return status;
 	}
 
-	u_int32_t ssrcs[1];
+	uint32_t ssrcs[1];
 
 	ssrcs[0] = ssrc;
 	
-	if ((status = rtcpcomppack->AddBYEPacket(ssrcs,1,(const u_int8_t *)reason,reasonlength)) < 0)
+	if ((status = rtcpcomppack->AddBYEPacket(ssrcs,1,(const uint8_t *)reason,reasonlength)) < 0)
 	{
 		delete rtcpcomppack;
 		if (status == ERR_RTP_RTCPCOMPPACKBUILDER_NOTENOUGHBYTESLEFT)

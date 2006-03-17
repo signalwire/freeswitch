@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -43,21 +43,21 @@
 class RTPInternalSourceData : public RTPSourceData
 {
 public:
-	RTPInternalSourceData(u_int32_t ssrc, RTPSources::ProbationType probtype);
+	RTPInternalSourceData(uint32_t ssrc, RTPSources::ProbationType probtype);
 	~RTPInternalSourceData();
 
 	int ProcessRTPPacket(RTPPacket *rtppack,const RTPTime &receivetime,bool *stored);
-	void ProcessSenderInfo(const RTPNTPTime &ntptime,u_int32_t rtptime,u_int32_t packetcount,
-	                       u_int32_t octetcount,const RTPTime &receivetime)				{ SRprevinf = SRinf; SRinf.Set(ntptime,rtptime,packetcount,octetcount,receivetime); stats.SetLastMessageTime(receivetime); }
-	void ProcessReportBlock(u_int8_t fractionlost,int32_t lostpackets,u_int32_t exthighseqnr,
-	                        u_int32_t jitter,u_int32_t lsr,u_int32_t dlsr,
+	void ProcessSenderInfo(const RTPNTPTime &ntptime,uint32_t rtptime,uint32_t packetcount,
+	                       uint32_t octetcount,const RTPTime &receivetime)				{ SRprevinf = SRinf; SRinf.Set(ntptime,rtptime,packetcount,octetcount,receivetime); stats.SetLastMessageTime(receivetime); }
+	void ProcessReportBlock(uint8_t fractionlost,int32_t lostpackets,uint32_t exthighseqnr,
+	                        uint32_t jitter,uint32_t lsr,uint32_t dlsr,
 				const RTPTime &receivetime)						{ RRprevinf = RRinf; RRinf.Set(fractionlost,lostpackets,exthighseqnr,jitter,lsr,dlsr,receivetime); stats.SetLastMessageTime(receivetime); }
 	void UpdateMessageTime(const RTPTime &receivetime)						{ stats.SetLastMessageTime(receivetime); }
-	int ProcessSDESItem(u_int8_t id,const u_int8_t *data,size_t itemlen,const RTPTime &receivetime,bool *cnamecollis);
+	int ProcessSDESItem(uint8_t id,const uint8_t *data,size_t itemlen,const RTPTime &receivetime,bool *cnamecollis);
 #ifdef RTP_SUPPORT_SDESPRIV
-	int ProcessPrivateSDESItem(const u_int8_t *prefix,size_t prefixlen,const u_int8_t *value,size_t valuelen,const RTPTime &receivetime);
+	int ProcessPrivateSDESItem(const uint8_t *prefix,size_t prefixlen,const uint8_t *value,size_t valuelen,const RTPTime &receivetime);
 #endif // RTP_SUPPORT_SDESPRIV
-	int ProcessBYEPacket(const u_int8_t *reason,size_t reasonlen,const RTPTime &receivetime);
+	int ProcessBYEPacket(const uint8_t *reason,size_t reasonlen,const RTPTime &receivetime);
 		
 	int SetRTPDataAddress(const RTPAddress *a);
 	int SetRTCPDataAddress(const RTPAddress *a);

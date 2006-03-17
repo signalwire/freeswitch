@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -52,7 +52,7 @@ public:
 	virtual ~RTCPCompoundPacket();
 	int GetCreationError()								{ return error; }
 
-	u_int8_t *GetCompoundPacketData()						{ return compoundpacket; }
+	uint8_t *GetCompoundPacketData()						{ return compoundpacket; }
 	size_t GetCompoundPacketLength()						{ return compoundpacketlength; }
 
 	void GotoFirstPacket()								{ rtcppackit = rtcppacklist.begin(); }
@@ -68,7 +68,7 @@ protected:
 	
 	int error;
 
-	u_int8_t *compoundpacket;
+	uint8_t *compoundpacket;
 	size_t compoundpacketlength;
 	
 	std::list<RTCPPacket *> rtcppacklist;

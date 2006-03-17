@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -59,7 +59,7 @@ RTCPCompoundPacket::RTCPCompoundPacket(RTPRawPacket &rawpack)
 		return;
 	}
 
-	u_int8_t *data = rawpack.GetData();
+	uint8_t *data = rawpack.GetData();
 	size_t datalen = rawpack.GetDataLength();
 	bool first;
 	
@@ -98,7 +98,7 @@ RTCPCompoundPacket::RTCPCompoundPacket(RTPRawPacket &rawpack)
 		
 		length = (size_t)ntohs(rtcphdr->length);
 		length++;
-		length *= sizeof(u_int32_t);
+		length *= sizeof(uint32_t);
 
 		if (length > datalen) // invalid length field
 		{

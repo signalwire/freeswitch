@@ -29,7 +29,7 @@ int main(void)
 		exit(-1);
 	}
 	
-	u_int8_t localip[]={127,0,0,1};
+	uint8_t localip[]={127,0,0,1};
 	RTPIPv4Address addr(localip,9000);
 	
 	status = session.AddDestination(addr);
@@ -43,7 +43,7 @@ int main(void)
 	session.SetDefaultMark(false);
 	session.SetDefaultTimestampIncrement(160);
 	
-	u_int8_t silencebuffer[160];
+	uint8_t silencebuffer[160];
 	for (int i = 0 ; i < 160 ; i++)
 		silencebuffer[i] = 128;
 

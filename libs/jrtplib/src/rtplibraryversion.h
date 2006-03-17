@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -55,9 +55,12 @@ private:
 inline std::string RTPLibraryVersion::GetVersionString() const
 {
 	char str[16];
-
-	sprintf(str,"%d.%d.%d",majornr,minornr,debugnr);
 	
+#if (defined(WIN32) || defined(_WIN32_WCE))
+	_snprintf(str,16,"%d.%d.%d",majornr,minornr,debugnr);
+#else
+	snprintf(str,16,"%d.%d.%d",majornr,minornr,debugnr);
+#endif // WIN32 || _WIN32_WCE
 	return std::string(str);
 }
 

@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -58,21 +58,24 @@
 class RTPUDPv6TransmissionParams : public RTPTransmissionParams
 {
 public:
-	RTPUDPv6TransmissionParams():RTPTransmissionParams(RTPTransmitter::IPv6UDPProto)	{ portbase = RTPUDPV6TRANS_DEFAULTPORTBASE; for (int i = 0 ; i < 16 ; i++) bindIP.s6_addr[i] = 0; multicastTTL = 1; }
+	RTPUDPv6TransmissionParams():RTPTransmissionParams(RTPTransmitter::IPv6UDPProto)	{ portbase = RTPUDPV6TRANS_DEFAULTPORTBASE; for (int i = 0 ; i < 16 ; i++) bindIP.s6_addr[i] = 0; multicastTTL = 1; mcastifidx = 0; }
 	void SetBindIP(in6_addr ip)								{ bindIP = ip; }
-	void SetPortbase(u_int16_t pbase)							{ portbase = pbase; }
-	void SetMulticastTTL(u_int8_t mcastTTL)							{ multicastTTL = mcastTTL; }
+	void SetMulticastInterfaceIndex(unsigned int idx)					{ mcastifidx = idx; }
+	void SetPortbase(uint16_t pbase)							{ portbase = pbase; }
+	void SetMulticastTTL(uint8_t mcastTTL)							{ multicastTTL = mcastTTL; }
 	void SetLocalIPList(std::list<in6_addr> &iplist)					{ localIPs = iplist; } 
 	void ClearLocalIPList()									{ localIPs.clear(); }
 	in6_addr GetBindIP() const								{ return bindIP; }
-	u_int16_t GetPortbase() const								{ return portbase; }
-	u_int8_t GetMulticastTTL() const							{ return multicastTTL; }
+	unsigned int GetMulticastInterfaceIndex() const						{ return mcastifidx; }
+	uint16_t GetPortbase() const								{ return portbase; }
+	uint8_t GetMulticastTTL() const							{ return multicastTTL; }
 	const std::list<in6_addr> &GetLocalIPList() const					{ return localIPs; }
 private:
-	u_int16_t portbase;
+	uint16_t portbase;
 	in6_addr bindIP;
+	unsigned int mcastifidx;
 	std::list<in6_addr> localIPs;
-	u_int8_t multicastTTL;
+	uint8_t multicastTTL;
 };
 
 class RTPUDPv6TransmissionInfo : public RTPTransmissionInfo
@@ -91,8 +94,8 @@ private:
 };
 		
 #ifdef RTP_SUPPORT_INLINETEMPLATEPARAM
-	inline int RTPUDPv6Trans_GetHashIndex_IPv6Dest(const RTPIPv6Destination &d)		{ in6_addr ip = d.GetIP(); return ((((u_int32_t)ip.s6_addr[12])<<24)|(((u_int32_t)ip.s6_addr[13])<<16)|(((u_int32_t)ip.s6_addr[14])<<8)|((u_int32_t)ip.s6_addr[15]))%RTPUDPV6TRANS_HASHSIZE; }
-	inline int RTPUDPv6Trans_GetHashIndex_in6_addr(const in6_addr &ip)			{ return ((((u_int32_t)ip.s6_addr[12])<<24)|(((u_int32_t)ip.s6_addr[13])<<16)|(((u_int32_t)ip.s6_addr[14])<<8)|((u_int32_t)ip.s6_addr[15]))%RTPUDPV6TRANS_HASHSIZE; }
+	inline int RTPUDPv6Trans_GetHashIndex_IPv6Dest(const RTPIPv6Destination &d)		{ in6_addr ip = d.GetIP(); return ((((uint32_t)ip.s6_addr[12])<<24)|(((uint32_t)ip.s6_addr[13])<<16)|(((uint32_t)ip.s6_addr[14])<<8)|((uint32_t)ip.s6_addr[15]))%RTPUDPV6TRANS_HASHSIZE; }
+	inline int RTPUDPv6Trans_GetHashIndex_in6_addr(const in6_addr &ip)			{ return ((((uint32_t)ip.s6_addr[12])<<24)|(((uint32_t)ip.s6_addr[13])<<16)|(((uint32_t)ip.s6_addr[14])<<8)|((uint32_t)ip.s6_addr[15]))%RTPUDPV6TRANS_HASHSIZE; }
 #else // No support for inline function as template parameter
 	int RTPUDPv6Trans_GetHashIndex_IPv6Dest(const RTPIPv6Destination &d);
 	int RTPUDPv6Trans_GetHashIndex_in6_addr(const in6_addr &ip);
@@ -113,7 +116,7 @@ public:
 	void Destroy();
 	RTPTransmissionInfo *GetTransmissionInfo();
 
-	int GetLocalHostName(u_int8_t *buffer,size_t *bufferlength);
+	int GetLocalHostName(uint8_t *buffer,size_t *bufferlength);
 	bool ComesFromThisTransmitter(const RTPAddress *addr);
 	size_t GetHeaderOverhead()								{ return RTPUDPV6TRANS_HEADERSIZE; }
 	
@@ -125,8 +128,8 @@ public:
 	int SendRTCPData(const void *data,size_t len);
 
 	void ResetPacketCount();
-	u_int32_t GetNumRTPPacketsSent();
-	u_int32_t GetNumRTCPPacketsSent();
+	uint32_t GetNumRTPPacketsSent();
+	uint32_t GetNumRTCPPacketsSent();
 				
 	int AddDestination(const RTPAddress &addr);
 	int DeleteDestination(const RTPAddress &addr);
@@ -158,12 +161,12 @@ private:
 	void AddLoopbackAddress();
 	void FlushPackets();
 	int PollSocket(bool rtp);
-	int ProcessAddAcceptIgnoreEntry(in6_addr ip,u_int16_t port);
-	int ProcessDeleteAcceptIgnoreEntry(in6_addr ip,u_int16_t port);
+	int ProcessAddAcceptIgnoreEntry(in6_addr ip,uint16_t port);
+	int ProcessDeleteAcceptIgnoreEntry(in6_addr ip,uint16_t port);
 #ifdef RTP_SUPPORT_IPV6MULTICAST
-	bool SetMulticastTTL(u_int8_t ttl);
+	bool SetMulticastTTL(uint8_t ttl);
 #endif // RTP_SUPPORT_IPV6MULTICAST
-	bool ShouldAcceptData(in6_addr srcip,u_int16_t srcport);
+	bool ShouldAcceptData(in6_addr srcip,uint16_t srcport);
 	void ClearAcceptIgnoreInfo();
 	
 	bool init;
@@ -171,12 +174,13 @@ private:
 	bool waitingfordata;
 	jrtp_socket_t rtpsock,rtcpsock;
 	in6_addr bindIP;
+	unsigned int mcastifidx;
 	std::list<in6_addr> localIPs;
-	u_int16_t portbase;
-	u_int8_t multicastTTL;
+	uint16_t portbase;
+	uint8_t multicastTTL;
 	RTPTransmitter::ReceiveMode receivemode;
 
-	u_int8_t *localhostname;
+	uint8_t *localhostname;
 	size_t localhostnamelength;
 	
 	RTPHashTable<const RTPIPv6Destination,RTPUDPv6Trans_GetHashIndex_IPv6Dest,RTPUDPV6TRANS_HASHSIZE> destinations;
@@ -194,7 +198,7 @@ private:
 		PortInfo() { all = false; }
 		
 		bool all;
-		std::list<u_int16_t> portlist;
+		std::list<uint16_t> portlist;
 	};
 
 	RTPKeyHashTable<const in6_addr,PortInfo*,RTPUDPv6Trans_GetHashIndex_in6_addr,RTPUDPV6TRANS_HASHSIZE> acceptignoreinfo;
@@ -209,7 +213,7 @@ private:
 	int threadsafe;
 #endif // RTP_SUPPORT_THREAD
 
-	u_int32_t rtppackcount,rtcppackcount;
+	uint32_t rtppackcount,rtcppackcount;
 };
 
 #endif // RTP_SUPPORT_IPV6

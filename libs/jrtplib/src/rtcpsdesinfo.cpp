@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -46,7 +46,7 @@ void RTCPSDESInfo::Clear()
 }
 
 #ifdef RTP_SUPPORT_SDESPRIV
-int RTCPSDESInfo::SetPrivateValue(const u_int8_t *prefix,size_t prefixlen,const u_int8_t *value,size_t valuelen)
+int RTCPSDESInfo::SetPrivateValue(const uint8_t *prefix,size_t prefixlen,const uint8_t *value,size_t valuelen)
 {
 	std::list<SDESPrivateItem *>::const_iterator it;
 	bool found;
@@ -55,7 +55,7 @@ int RTCPSDESInfo::SetPrivateValue(const u_int8_t *prefix,size_t prefixlen,const 
 	it = privitems.begin();
 	while (!found && it != privitems.end())
 	{
-		u_int8_t *p;
+		uint8_t *p;
 		size_t l;
 		
 		p = (*it)->GetPrefix(&l);
@@ -96,7 +96,7 @@ int RTCPSDESInfo::SetPrivateValue(const u_int8_t *prefix,size_t prefixlen,const 
 	return item->SetInfo(value,valuelen);
 }
 
-int RTCPSDESInfo::DeletePrivatePrefix(const u_int8_t *prefix,size_t prefixlen)
+int RTCPSDESInfo::DeletePrivatePrefix(const uint8_t *prefix,size_t prefixlen)
 {
 	std::list<SDESPrivateItem *>::iterator it;
 	bool found;
@@ -105,7 +105,7 @@ int RTCPSDESInfo::DeletePrivatePrefix(const u_int8_t *prefix,size_t prefixlen)
 	it = privitems.begin();
 	while (!found && it != privitems.end())
 	{
-		u_int8_t *p;
+		uint8_t *p;
 		size_t l;
 		
 		p = (*it)->GetPrefix(&l);
@@ -134,7 +134,7 @@ void RTCPSDESInfo::GotoFirstPrivateValue()
 	curitem = privitems.begin();
 }
 
-bool RTCPSDESInfo::GetNextPrivateValue(u_int8_t **prefix,size_t *prefixlen,u_int8_t **value,size_t *valuelen)
+bool RTCPSDESInfo::GetNextPrivateValue(uint8_t **prefix,size_t *prefixlen,uint8_t **value,size_t *valuelen)
 {
 	if (curitem == privitems.end())
 		return false;
@@ -144,7 +144,7 @@ bool RTCPSDESInfo::GetNextPrivateValue(u_int8_t **prefix,size_t *prefixlen,u_int
 	return true;
 }
 
-bool RTCPSDESInfo::GetPrivateValue(const u_int8_t *prefix,size_t prefixlen,u_int8_t **value,size_t *valuelen) const
+bool RTCPSDESInfo::GetPrivateValue(const uint8_t *prefix,size_t prefixlen,uint8_t **value,size_t *valuelen) const
 {
 	std::list<SDESPrivateItem *>::const_iterator it;
 	bool found;
@@ -153,7 +153,7 @@ bool RTCPSDESInfo::GetPrivateValue(const u_int8_t *prefix,size_t prefixlen,u_int
 	it = privitems.begin();
 	while (!found && it != privitems.end())
 	{
-		u_int8_t *p;
+		uint8_t *p;
 		size_t l;
 		
 		p = (*it)->GetPrefix(&l);

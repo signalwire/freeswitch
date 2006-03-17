@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -47,14 +47,14 @@ public:
 	RTPPacket(RTPRawPacket &rawpack);
 
 	// if maxpacksize == 0, it is ignored
-	RTPPacket(u_int8_t payloadtype,const void *payloaddata,size_t payloadlen,u_int16_t seqnr,
-		  u_int32_t timestamp,u_int32_t ssrc,bool gotmarker,u_int8_t numcsrcs,const u_int32_t *csrcs,
-		  bool gotextension,u_int16_t extensionid,u_int16_t extensionlen_numwords,const void *extensiondata,
+	RTPPacket(uint8_t payloadtype,const void *payloaddata,size_t payloadlen,uint16_t seqnr,
+		  uint32_t timestamp,uint32_t ssrc,bool gotmarker,uint8_t numcsrcs,const uint32_t *csrcs,
+		  bool gotextension,uint16_t extensionid,uint16_t extensionlen_numwords,const void *extensiondata,
 		  size_t maxpacksize = 0);
 	// pretty much the same function, except that here the data is placed in an external buffer
-	RTPPacket(u_int8_t payloadtype,const void *payloaddata,size_t payloadlen,u_int16_t seqnr,
-		  u_int32_t timestamp,u_int32_t ssrc,bool gotmarker,u_int8_t numcsrcs,const u_int32_t *csrcs,
-		  bool gotextension,u_int16_t extensionid,u_int16_t extensionlen_numwords,const void *extensiondata,
+	RTPPacket(uint8_t payloadtype,const void *payloaddata,size_t payloadlen,uint16_t seqnr,
+		  uint32_t timestamp,uint32_t ssrc,bool gotmarker,uint8_t numcsrcs,const uint32_t *csrcs,
+		  bool gotextension,uint16_t extensionid,uint16_t extensionlen_numwords,const void *extensiondata,
 		  void *buffer,size_t buffersize);
 
 	virtual ~RTPPacket()							{ if (packet && !externalbuffer) delete [] packet; }
@@ -64,27 +64,27 @@ public:
 	bool HasMarker() const							{ return hasmarker; }
 	
 	int GetCSRCCount() const						{ return numcsrcs; }
-	u_int32_t GetCSRC(int num) const;
+	uint32_t GetCSRC(int num) const;
 	
-	u_int8_t GetPayloadType() const						{ return payloadtype; }
+	uint8_t GetPayloadType() const						{ return payloadtype; }
 
 	// On reception, this is actually a 16 bit value. The high 16 bits
 	// are filled in when the packet is processed in the source
 	// table
-	u_int32_t GetExtendedSequenceNumber() const				{ return extseqnr; }
-	u_int16_t GetSequenceNumber() const					{ return (u_int16_t)(extseqnr&0x0000FFFF); }
-	void SetExtendedSequenceNumber(u_int32_t seq)				{ extseqnr = seq; }
+	uint32_t GetExtendedSequenceNumber() const				{ return extseqnr; }
+	uint16_t GetSequenceNumber() const					{ return (uint16_t)(extseqnr&0x0000FFFF); }
+	void SetExtendedSequenceNumber(uint32_t seq)				{ extseqnr = seq; }
 
-	u_int32_t GetTimestamp() const						{ return timestamp; }
-	u_int32_t GetSSRC() const						{ return ssrc; }
+	uint32_t GetTimestamp() const						{ return timestamp; }
+	uint32_t GetSSRC() const						{ return ssrc; }
 
-	u_int8_t *GetPacketData() const						{ return packet; }
-	u_int8_t *GetPayloadData() const					{ return payload; }
+	uint8_t *GetPacketData() const						{ return packet; }
+	uint8_t *GetPayloadData() const					{ return payload; }
 	size_t GetPacketLength() const						{ return packetlength; }
 	size_t GetPayloadLength() const						{ return payloadlength; }
 	
-	u_int16_t GetExtensionID() const					{ return extid; }
-	u_int8_t *GetExtensionData() const					{ return extension; }
+	uint16_t GetExtensionID() const					{ return extid; }
+	uint8_t *GetExtensionData() const					{ return extension; }
 	size_t GetExtensionLength() const					{ return extensionlength; }
 #ifdef RTPDEBUG
 	void Dump();
@@ -96,9 +96,9 @@ public:
 private:
 	void Clear();
 	int ParseRawPacket(RTPRawPacket &rawpack);
-	int BuildPacket(u_int8_t payloadtype,const void *payloaddata,size_t payloadlen,u_int16_t seqnr,
-	                u_int32_t timestamp,u_int32_t ssrc,bool gotmarker,u_int8_t numcsrcs,const u_int32_t *csrcs,
-	                bool gotextension,u_int16_t extensionid,u_int16_t extensionlen_numwords,const void *extensiondata,
+	int BuildPacket(uint8_t payloadtype,const void *payloaddata,size_t payloadlen,uint16_t seqnr,
+	                uint32_t timestamp,uint32_t ssrc,bool gotmarker,uint8_t numcsrcs,const uint32_t *csrcs,
+	                bool gotextension,uint16_t extensionid,uint16_t extensionlen_numwords,const void *extensiondata,
 	                void *buffer,size_t maxsize);
 
 	int error;
@@ -106,13 +106,13 @@ private:
 	bool hasextension,hasmarker;
 	int numcsrcs;
 
-	u_int8_t payloadtype;
-	u_int32_t extseqnr,timestamp,ssrc;
-	u_int8_t *packet,*payload;
+	uint8_t payloadtype;
+	uint32_t extseqnr,timestamp,ssrc;
+	uint8_t *packet,*payload;
 	size_t packetlength,payloadlength;
 
-	u_int16_t extid;
-	u_int8_t *extension;
+	uint16_t extid;
+	uint8_t *extension;
 	size_t extensionlength;
 
 	bool externalbuffer;

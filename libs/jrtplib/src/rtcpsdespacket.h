@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -49,7 +49,7 @@ class RTCPSDESPacket : public RTCPPacket
 public:
 	enum ItemType { None,CNAME,NAME,EMAIL,PHONE,LOC,TOOL,NOTE,PRIV,Unknown };
 	
-	RTCPSDESPacket(u_int8_t *data,size_t datalen);
+	RTCPSDESPacket(uint8_t *data,size_t datalen);
 	~RTCPSDESPacket()							{ }
 
 	int GetChunkCount() const;
@@ -57,26 +57,26 @@ public:
 	bool GotoFirstChunk();
 	bool GotoNextChunk();
 
-	u_int32_t GetChunkSSRC() const;
+	uint32_t GetChunkSSRC() const;
 	bool GotoFirstItem();
 	bool GotoNextItem();
 
 	ItemType GetItemType() const;
 	size_t GetItemLength() const;
-	u_int8_t *GetItemData();
+	uint8_t *GetItemData();
 
 #ifdef RTP_SUPPORT_SDESPRIV
 	size_t GetPRIVPrefixLength() const;
-	u_int8_t *GetPRIVPrefixData();
+	uint8_t *GetPRIVPrefixData();
 	size_t GetPRIVValueLength() const;
-	u_int8_t *GetPRIVValueData();
+	uint8_t *GetPRIVValueData();
 #endif // RTP_SUPPORT_SDESPRIV
 
 #ifdef RTPDEBUG
 	void Dump();
 #endif // RTPDEBUG
 private:
-	u_int8_t *currentchunk;
+	uint8_t *currentchunk;
 	int curchunknum;
 	size_t itemoffset;
 };
@@ -98,7 +98,7 @@ inline bool RTCPSDESPacket::GotoFirstChunk()
 	}
 	currentchunk = data+sizeof(RTCPCommonHeader);
 	curchunknum = 1;
-	itemoffset = sizeof(u_int32_t);
+	itemoffset = sizeof(uint32_t);
 	return true;
 }
 
@@ -111,8 +111,8 @@ inline bool RTCPSDESPacket::GotoNextChunk()
 	if (curchunknum == GetChunkCount())
 		return false;
 	
-	size_t offset = sizeof(u_int32_t);
-	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+sizeof(u_int32_t));
+	size_t offset = sizeof(uint32_t);
+	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+sizeof(uint32_t));
 	
 	while (sdeshdr->id != 0)
 	{
@@ -125,17 +125,17 @@ inline bool RTCPSDESPacket::GotoNextChunk()
 		offset += (4-(offset&0x03));
 	currentchunk += offset;
 	curchunknum++;
-	itemoffset = sizeof(u_int32_t);
+	itemoffset = sizeof(uint32_t);
 	return true;
 }
 
-inline u_int32_t RTCPSDESPacket::GetChunkSSRC() const
+inline uint32_t RTCPSDESPacket::GetChunkSSRC() const
 {
 	if (!knownformat)
 		return 0;
 	if (currentchunk == 0)
 		return 0;
-	u_int32_t *ssrc = (u_int32_t *)currentchunk;
+	uint32_t *ssrc = (uint32_t *)currentchunk;
 	return ntohl(*ssrc);
 }
 
@@ -145,7 +145,7 @@ inline bool RTCPSDESPacket::GotoFirstItem()
 		return false;
 	if (currentchunk == 0)
 		return false;
-	itemoffset = sizeof(u_int32_t);
+	itemoffset = sizeof(uint32_t);
 	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+itemoffset);
 	if (sdeshdr->id == 0)
 		return false;
@@ -218,7 +218,7 @@ inline size_t RTCPSDESPacket::GetItemLength() const
 	return (size_t)(sdeshdr->length);
 }
 
-inline u_int8_t *RTCPSDESPacket::GetItemData()
+inline uint8_t *RTCPSDESPacket::GetItemData()
 {
 	if (!knownformat)
 		return 0;
@@ -242,14 +242,14 @@ inline size_t RTCPSDESPacket::GetPRIVPrefixLength() const
 		return 0;
 	if (sdeshdr->length == 0)
 		return 0;
-	u_int8_t *preflen = currentchunk+itemoffset+sizeof(RTCPSDESHeader);
+	uint8_t *preflen = currentchunk+itemoffset+sizeof(RTCPSDESHeader);
 	size_t prefixlength = (size_t)(*preflen);
 	if (prefixlength > (size_t)((sdeshdr->length)-1))
 		return 0;
 	return prefixlength;
 }
 
-inline u_int8_t *RTCPSDESPacket::GetPRIVPrefixData()
+inline uint8_t *RTCPSDESPacket::GetPRIVPrefixData()
 {
 	if (!knownformat)
 		return 0;
@@ -260,7 +260,7 @@ inline u_int8_t *RTCPSDESPacket::GetPRIVPrefixData()
 		return 0;
 	if (sdeshdr->length == 0)
 		return 0;
-	u_int8_t *preflen = currentchunk+itemoffset+sizeof(RTCPSDESHeader);
+	uint8_t *preflen = currentchunk+itemoffset+sizeof(RTCPSDESHeader);
 	size_t prefixlength = (size_t)(*preflen);
 	if (prefixlength > (size_t)((sdeshdr->length)-1))
 		return 0;
@@ -280,14 +280,14 @@ inline size_t RTCPSDESPacket::GetPRIVValueLength() const
 		return 0;
 	if (sdeshdr->length == 0)
 		return 0;
-	u_int8_t *preflen = currentchunk+itemoffset+sizeof(RTCPSDESHeader);
+	uint8_t *preflen = currentchunk+itemoffset+sizeof(RTCPSDESHeader);
 	size_t prefixlength = (size_t)(*preflen);
 	if (prefixlength > (size_t)((sdeshdr->length)-1))
 		return 0;
 	return ((size_t)(sdeshdr->length))-prefixlength-1;
 }
 
-inline u_int8_t *RTCPSDESPacket::GetPRIVValueData()
+inline uint8_t *RTCPSDESPacket::GetPRIVValueData()
 {
 	if (!knownformat)
 		return 0;
@@ -298,7 +298,7 @@ inline u_int8_t *RTCPSDESPacket::GetPRIVValueData()
 		return 0;
 	if (sdeshdr->length == 0)
 		return 0;
-	u_int8_t *preflen = currentchunk+itemoffset+sizeof(RTCPSDESHeader);
+	uint8_t *preflen = currentchunk+itemoffset+sizeof(RTCPSDESHeader);
 	size_t prefixlength = (size_t)(*preflen);
 	if (prefixlength > (size_t)((sdeshdr->length)-1))
 		return 0;

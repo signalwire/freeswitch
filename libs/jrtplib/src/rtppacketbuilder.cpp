@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -63,7 +63,7 @@ int RTPPacketBuilder::Init(size_t max)
 		return ERR_RTP_PACKBUILD_INVALIDMAXPACKETSIZE;
 	
 	maxpacksize = max;
-	buffer = new u_int8_t [max];
+	buffer = new uint8_t [max];
 	if (buffer == 0)
 		return ERR_RTP_OUTOFMEM;
 	packetlength = 0;
@@ -90,11 +90,11 @@ void RTPPacketBuilder::Destroy()
 
 int RTPPacketBuilder::SetMaximumPacketSize(size_t max)
 {
-	u_int8_t *newbuf;
+	uint8_t *newbuf;
 
 	if (max <= 0)
 		return ERR_RTP_PACKBUILD_INVALIDMAXPACKETSIZE;
-	newbuf = new u_int8_t[max];
+	newbuf = new uint8_t[max];
 	if (newbuf == 0)
 		return ERR_RTP_OUTOFMEM;
 	
@@ -104,7 +104,7 @@ int RTPPacketBuilder::SetMaximumPacketSize(size_t max)
 	return 0;
 }
 
-int RTPPacketBuilder::AddCSRC(u_int32_t csrc)
+int RTPPacketBuilder::AddCSRC(uint32_t csrc)
 {
 	if (!init)
 		return ERR_RTP_PACKBUILD_NOTINIT;
@@ -123,7 +123,7 @@ int RTPPacketBuilder::AddCSRC(u_int32_t csrc)
 	return 0;
 }
 
-int RTPPacketBuilder::DeleteCSRC(u_int32_t csrc)
+int RTPPacketBuilder::DeleteCSRC(uint32_t csrc)
 {
 	if (!init)
 		return ERR_RTP_PACKBUILD_NOTINIT;
@@ -156,7 +156,7 @@ void RTPPacketBuilder::ClearCSRCList()
 	numcsrcs = 0;
 }
 
-u_int32_t RTPPacketBuilder::CreateNewSSRC()
+uint32_t RTPPacketBuilder::CreateNewSSRC()
 {
 	ssrc = rtprnd.GetRandom32();
 	timestamp = rtprnd.GetRandom32();
@@ -168,7 +168,7 @@ u_int32_t RTPPacketBuilder::CreateNewSSRC()
 	return ssrc;
 }
 
-u_int32_t RTPPacketBuilder::CreateNewSSRC(RTPSources &sources)
+uint32_t RTPPacketBuilder::CreateNewSSRC(RTPSources &sources)
 {
 	bool found;
 	
@@ -201,7 +201,7 @@ int RTPPacketBuilder::BuildPacket(const void *data,size_t len)
 }
 
 int RTPPacketBuilder::BuildPacket(const void *data,size_t len,
-                u_int8_t pt,bool mark,u_int32_t timestampinc)
+                uint8_t pt,bool mark,uint32_t timestampinc)
 {
 	if (!init)
 		return ERR_RTP_PACKBUILD_NOTINIT;
@@ -209,7 +209,7 @@ int RTPPacketBuilder::BuildPacket(const void *data,size_t len,
 }
 
 int RTPPacketBuilder::BuildPacket(const void *data,size_t len,
-                u_int8_t pt,bool mark,u_int32_t timestampinc, u_int32_t mseq)
+                uint8_t pt,bool mark,uint32_t timestampinc, uint32_t mseq)
 {
 	if (!init)
 		return ERR_RTP_PACKBUILD_NOTINIT;
@@ -217,7 +217,7 @@ int RTPPacketBuilder::BuildPacket(const void *data,size_t len,
 }
 
 int RTPPacketBuilder::BuildPacketEx(const void *data,size_t len,
-                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords)
+                  uint16_t hdrextID,const void *hdrextdata,size_t numhdrextwords)
 {
 	if (!init)
 		return ERR_RTP_PACKBUILD_NOTINIT;
@@ -231,8 +231,8 @@ int RTPPacketBuilder::BuildPacketEx(const void *data,size_t len,
 }
 
 int RTPPacketBuilder::BuildPacketEx(const void *data,size_t len,
-                  u_int8_t pt,bool mark,u_int32_t timestampinc,
-		  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords)
+                  uint8_t pt,bool mark,uint32_t timestampinc,
+		  uint16_t hdrextID,const void *hdrextdata,size_t numhdrextwords)
 {
 	if (!init)
 		return ERR_RTP_PACKBUILD_NOTINIT;
@@ -241,11 +241,11 @@ int RTPPacketBuilder::BuildPacketEx(const void *data,size_t len,
 }
 
 int RTPPacketBuilder::PrivateBuildPacket(const void *data,size_t len,
-	                  u_int8_t pt,bool mark,u_int32_t timestampinc,bool gotextension,
-	                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords, u_int32_t mseq)
+	                  uint8_t pt,bool mark,uint32_t timestampinc,bool gotextension,
+	                  uint16_t hdrextID,const void *hdrextdata,size_t numhdrextwords, uint32_t mseq)
 {
 	RTPPacket p(pt,data,len, mseq ? mseq : seqnr,timestamp,ssrc,mark,numcsrcs,csrcs,gotextension,hdrextID,
-	            (u_int16_t)numhdrextwords,hdrextdata,buffer,maxpacksize);
+	            (uint16_t)numhdrextwords,hdrextdata,buffer,maxpacksize);
 	int status = p.GetCreationError();
 
 	if (status < 0)
@@ -265,7 +265,7 @@ int RTPPacketBuilder::PrivateBuildPacket(const void *data,size_t len,
 		prevrtptimestamp = timestamp;
 	}
 	
-	numpayloadbytes += (u_int32_t)p.GetPayloadLength();
+	numpayloadbytes += (uint32_t)p.GetPayloadLength();
 	numpackets++;
 	timestamp += timestampinc;
 	if (!mseq) {

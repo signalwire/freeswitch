@@ -47,8 +47,8 @@ protected:
 		if (dat->IsOwnSSRC())
 			return;
 
-		u_int32_t ip;
-		u_int16_t port;
+		uint32_t ip;
+		uint16_t port;
 		
 		if (dat->GetRTPDataAddress() != 0)
 		{
@@ -58,7 +58,7 @@ protected:
 		}
 		else if (dat->GetRTCPDataAddress() != 0)
 		{
-			const RTPIPv4Address *addr = (const RTPIPv4Address *)(dat->GetRTPDataAddress());
+			const RTPIPv4Address *addr = (const RTPIPv4Address *)(dat->GetRTCPDataAddress());
 			ip = addr->GetIP();
 			port = addr->GetPort()-1;
 		}
@@ -78,8 +78,8 @@ protected:
 		if (dat->IsOwnSSRC())
 			return;
 		
-		u_int32_t ip;
-		u_int16_t port;
+		uint32_t ip;
+		uint16_t port;
 		
 		if (dat->GetRTPDataAddress() != 0)
 		{
@@ -89,7 +89,7 @@ protected:
 		}
 		else if (dat->GetRTCPDataAddress() != 0)
 		{
-			const RTPIPv4Address *addr = (const RTPIPv4Address *)(dat->GetRTPDataAddress());
+			const RTPIPv4Address *addr = (const RTPIPv4Address *)(dat->GetRTCPDataAddress());
 			ip = addr->GetIP();
 			port = addr->GetPort()-1;
 		}
@@ -111,8 +111,8 @@ protected:
 		if (dat->ReceivedBYE())
 			return;
 		
-		u_int32_t ip;
-		u_int16_t port;
+		uint32_t ip;
+		uint16_t port;
 		
 		if (dat->GetRTPDataAddress() != 0)
 		{
@@ -122,7 +122,7 @@ protected:
 		}
 		else if (dat->GetRTCPDataAddress() != 0)
 		{
-			const RTPIPv4Address *addr = (const RTPIPv4Address *)(dat->GetRTPDataAddress());
+			const RTPIPv4Address *addr = (const RTPIPv4Address *)(dat->GetRTCPDataAddress());
 			ip = addr->GetIP();
 			port = addr->GetPort()-1;
 		}
@@ -150,8 +150,8 @@ int main(void)
 #endif // WIN32
 	
 	MyRTPSession sess;
-	u_int16_t portbase,destport;
-	u_int32_t destip;
+	uint16_t portbase,destport;
+	uint32_t destip;
 	std::string ipstr;
 	int status,i,num;
 

@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -43,9 +43,9 @@ class RTPRandom
 public:
 	RTPRandom();
 	~RTPRandom();
-	u_int8_t GetRandom8();
-	u_int16_t GetRandom16();
-	u_int32_t GetRandom32();
+	uint8_t GetRandom8();
+	uint16_t GetRandom16();
+	uint32_t GetRandom32();
 	double GetRandomDouble(); // returns random value between 0.0 and 1.0
 private:
 #ifdef RTP_SUPPORT_GNUDRAND

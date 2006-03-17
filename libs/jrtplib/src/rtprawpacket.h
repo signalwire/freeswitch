@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -42,24 +42,24 @@
 class RTPRawPacket
 {
 public:	
-	RTPRawPacket(u_int8_t *data,size_t datalen,RTPAddress *address,RTPTime &recvtime,bool rtp);
+	RTPRawPacket(uint8_t *data,size_t datalen,RTPAddress *address,RTPTime &recvtime,bool rtp);
 	~RTPRawPacket();
 	
-	u_int8_t *GetData()						{ return packetdata; }
+	uint8_t *GetData()						{ return packetdata; }
 	size_t GetDataLength() const					{ return packetdatalength; }
 	RTPTime GetReceiveTime() const					{ return receivetime; }
 	const RTPAddress *GetSenderAddress() const			{ return senderaddress; }
 	bool IsRTP() const						{ return isrtp; }
 	void ZeroData()							{ packetdata = 0; packetdatalength = 0; }
 private:
-	u_int8_t *packetdata;
+	uint8_t *packetdata;
 	size_t packetdatalength;
 	RTPTime receivetime;
 	RTPAddress *senderaddress;
 	bool isrtp;
 };
 
-inline RTPRawPacket::RTPRawPacket(u_int8_t *data,size_t datalen,RTPAddress *address,RTPTime &recvtime,bool rtp):receivetime(recvtime)
+inline RTPRawPacket::RTPRawPacket(uint8_t *data,size_t datalen,RTPAddress *address,RTPTime &recvtime,bool rtp):receivetime(recvtime)
 {
 	packetdata = data;
 	packetdatalength = datalen;

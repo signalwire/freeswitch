@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -50,75 +50,75 @@ public:
 	~RTPPacketBuilder();
 	int Init(size_t maxpacksize);
 	void Destroy();
-	u_int32_t GetPacketCount()					{ if (!init) return 0; return numpackets; }
-	u_int32_t GetPayloadOctetCount()				{ if (!init) return 0; return numpayloadbytes; }
+	uint32_t GetPacketCount()					{ if (!init) return 0; return numpackets; }
+	uint32_t GetPayloadOctetCount()				{ if (!init) return 0; return numpayloadbytes; }
 	int SetMaximumPacketSize(size_t maxpacksize);
 
-	int AddCSRC(u_int32_t csrc);
-	int DeleteCSRC(u_int32_t csrc);
+	int AddCSRC(uint32_t csrc);
+	int DeleteCSRC(uint32_t csrc);
 	void ClearCSRCList();	
 	
 	int BuildPacket(const void *data,size_t len);
 	int BuildPacket(const void *data,size_t len,
-	                u_int8_t pt,bool mark,u_int32_t timestampinc);
+	                uint8_t pt,bool mark,uint32_t timestampinc);
 	int BuildPacket(const void *data,size_t len,
-	                u_int8_t pt,bool mark,u_int32_t timestampinc, u_int32_t mseq);
+	                uint8_t pt,bool mark,uint32_t timestampinc, uint32_t mseq);
 	int BuildPacketEx(const void *data,size_t len,
-	                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords);
+	                  uint16_t hdrextID,const void *hdrextdata,size_t numhdrextwords);
 	int BuildPacketEx(const void *data,size_t len,
-	                  u_int8_t pt,bool mark,u_int32_t timestampinc,
-	                  u_int16_t hdrextID,const void *hdrextdata,size_t numhdrextwords);
-	u_int8_t *GetPacket()						{ if (!init) return 0; return buffer; }
+	                  uint8_t pt,bool mark,uint32_t timestampinc,
+	                  uint16_t hdrextID,const void *hdrextdata,size_t numhdrextwords);
+	uint8_t *GetPacket()						{ if (!init) return 0; return buffer; }
 	size_t GetPacketLength()					{ if (!init) return 0; return packetlength; }
 	
-	int SetDefaultPayloadType(u_int8_t pt);
+	int SetDefaultPayloadType(uint8_t pt);
 	int SetDefaultMark(bool m);
-	int SetDefaultTimestampIncrement(u_int32_t timestampinc);
-	int IncrementTimestamp(u_int32_t inc);
+	int SetDefaultTimestampIncrement(uint32_t timestampinc);
+	int IncrementTimestamp(uint32_t inc);
 	int IncrementTimestampDefault();
 	
-	u_int32_t CreateNewSSRC();
-	u_int32_t CreateNewSSRC(RTPSources &sources);
-	u_int32_t GetSSRC() const					{ if (!init) return 0; return ssrc; }
-	u_int32_t GetTimestamp() const					{ if (!init) return 0; return timestamp; }
-	u_int16_t GetSequenceNumber() const				{ if (!init) return 0; return seqnr; }
+	uint32_t CreateNewSSRC();
+	uint32_t CreateNewSSRC(RTPSources &sources);
+	uint32_t GetSSRC() const					{ if (!init) return 0; return ssrc; }
+	uint32_t GetTimestamp() const					{ if (!init) return 0; return timestamp; }
+	uint16_t GetSequenceNumber() const				{ if (!init) return 0; return seqnr; }
 
 	// note: these are not necessarily from the last packet!
 	RTPTime GetPacketTime() const					{ if (!init) return RTPTime(0,0); return lastwallclocktime; }
-	u_int32_t GetPacketTimestamp() const				{ if (!init) return 0; return lastrtptimestamp; }
+	uint32_t GetPacketTimestamp() const				{ if (!init) return 0; return lastrtptimestamp; }
 private:
 	int PrivateBuildPacket(const void *data,size_t len,
-	                  u_int8_t pt,bool mark,u_int32_t timestampinc,bool gotextension,
-	                  u_int16_t hdrextID = 0,const void *hdrextdata = 0,size_t numhdrextwords = 0,  u_int32_t mseq = 0);
+	                  uint8_t pt,bool mark,uint32_t timestampinc,bool gotextension,
+	                  uint16_t hdrextID = 0,const void *hdrextdata = 0,size_t numhdrextwords = 0,  uint32_t mseq = 0);
 
 	RTPRandom rtprnd;	
 	size_t maxpacksize;
-	u_int8_t *buffer;
+	uint8_t *buffer;
 	size_t packetlength;
 	
-	u_int32_t numpayloadbytes;
-	u_int32_t numpackets;
+	uint32_t numpayloadbytes;
+	uint32_t numpackets;
 	bool init;
 
-	u_int32_t ssrc;
-	u_int32_t timestamp;
-	u_int16_t seqnr;
+	uint32_t ssrc;
+	uint32_t timestamp;
+	uint16_t seqnr;
 
-	u_int32_t defaulttimestampinc;
-	u_int8_t defaultpayloadtype;
+	uint32_t defaulttimestampinc;
+	uint8_t defaultpayloadtype;
 	bool defaultmark;
 
 	bool deftsset,defptset,defmarkset;
 
-	u_int32_t csrcs[RTP_MAXCSRCS];
+	uint32_t csrcs[RTP_MAXCSRCS];
 	int numcsrcs;
 
 	RTPTime lastwallclocktime;
-	u_int32_t lastrtptimestamp;
-	u_int32_t prevrtptimestamp;
+	uint32_t lastrtptimestamp;
+	uint32_t prevrtptimestamp;
 };
 
-inline int RTPPacketBuilder::SetDefaultPayloadType(u_int8_t pt)
+inline int RTPPacketBuilder::SetDefaultPayloadType(uint8_t pt)
 {
 	if (!init)
 		return ERR_RTP_PACKBUILD_NOTINIT;
@@ -136,7 +136,7 @@ inline int RTPPacketBuilder::SetDefaultMark(bool m)
 	return 0;
 }
 
-inline int RTPPacketBuilder::SetDefaultTimestampIncrement(u_int32_t timestampinc)
+inline int RTPPacketBuilder::SetDefaultTimestampIncrement(uint32_t timestampinc)
 {
 	if (!init)
 		return ERR_RTP_PACKBUILD_NOTINIT;
@@ -145,7 +145,7 @@ inline int RTPPacketBuilder::SetDefaultTimestampIncrement(u_int32_t timestampinc
 	return 0;
 }
 
-inline int RTPPacketBuilder::IncrementTimestamp(u_int32_t inc)
+inline int RTPPacketBuilder::IncrementTimestamp(uint32_t inc)
 {
 	if (!init)
 		return ERR_RTP_PACKBUILD_NOTINIT;

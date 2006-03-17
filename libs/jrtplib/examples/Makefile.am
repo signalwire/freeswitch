@@ -5,6 +5,6 @@ example2_SOURCES = example2.cpp
 example3_SOURCES = example3.cpp
 example4_SOURCES = example4.cpp
 
-INCLUDES = @RTP_JTHREADINCLUDES@ @RTP_GSTINCLUDES@ -I ../src/
+INCLUDES = @RTP_JTHREADINCLUDES@ -I ../src/
 LDADD = ../src/.libs/libjrtp.a @RTP_LINKLIBS@
 

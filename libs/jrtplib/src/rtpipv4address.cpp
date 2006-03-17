@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -72,9 +72,9 @@ RTPAddress *RTPIPv4Address::CreateCopy() const
 #ifdef RTPDEBUG
 std::string RTPIPv4Address::GetAddressString() const
 {
-	char str[1024];
+	char str[24];
 
-	sprintf(str,"%d.%d.%d.%d:%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),
+	snprintf(str,24,"%d.%d.%d.%d:%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),
 	                             (int)(ip&0xFF),(int)port);
 	return std::string(str);
 }

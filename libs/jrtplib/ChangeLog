@@ -1,10 +1,24 @@
-							      October 2, 2005
+							     January 19, 2006
 				
 				
 				JRTPLIB ChangeLog
 				
 				   -----------
 
+ 3.4.0 (January 2006)
+ 	* Changed u_int32_t like types to uint32_t like types. Thanks to
+	  Panagiotis Issaris (takis.issaris@uhasselt.be) for informing me
+	  that these are C99 compliant.
+	* Changed sprintf functions to safer snprintf functions. Thanks to
+	  Panagiotis Issaris (takis.issaris@uhasselt.be) for pointing this
+	  out.
+	* Fixed bug in RTPSources (counters were not reset when the source
+	  table was cleared). Thanks to Justin Matthews (jmatthewsr@yahoo.com)
+	  for pointing this out.
+	* Fixed bug in RTPHashTable and RTPKeyHashTable. Thanks to 
+	  Tom Pijsel (tom.pijsel@twelvecubes.com) for bringing this to my
+	  attention.
+	* Fixed bug in example3.cpp
 
  3.3.0 (October 2005)
  	* Now it is possible to use a user-defined transmission component.

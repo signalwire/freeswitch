@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -55,7 +55,7 @@ void RTPSessionSources::OnSSRCCollision(RTPSourceData *srcdat,const RTPAddress *
 	rtpsession.OnSSRCCollision(srcdat,senderaddress,isrtp);
 }
 
-void RTPSessionSources::OnCNAMECollision(RTPSourceData *srcdat,const RTPAddress *senderaddress,const u_int8_t *cname,size_t cnamelength)
+void RTPSessionSources::OnCNAMECollision(RTPSourceData *srcdat,const RTPAddress *senderaddress,const uint8_t *cname,size_t cnamelength)
 {
 	rtpsession.OnCNAMECollision(srcdat,senderaddress,cname,cnamelength);
 }

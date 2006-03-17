@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -40,6 +40,6 @@
 #include "rtpconfig_unix.h"
 #endif // WIN32
 
-// #define RTPDEBUG
+//#define RTPDEBUG
 
 #endif // RTPCONFIG_H

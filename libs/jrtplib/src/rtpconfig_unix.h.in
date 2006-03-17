@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -65,8 +65,6 @@
 @RTP_SUPPORT_IPV6MULTICAST@
 
 @RTP_SUPPORT_IFADDRS@
-
-@RTP_SUPPORT_GST@
 
 #endif // RTPCONFIG_UNIX_H
 

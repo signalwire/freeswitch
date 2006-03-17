@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -48,15 +48,15 @@ class RTPIPv6Address : public RTPAddress
 {
 public:
 	RTPIPv6Address():RTPAddress(IPv6Address)						{ for (int i = 0 ; i < 16 ; i++) ip.s6_addr[i] = 0; port = 0; }
-	RTPIPv6Address(const u_int8_t ip[16],u_int16_t port = 0):RTPAddress(IPv6Address)	{ SetIP(ip); RTPIPv6Address::port = port; }
-	RTPIPv6Address(in6_addr ip,u_int16_t port = 0):RTPAddress(IPv6Address)			{ RTPIPv6Address::ip = ip; RTPIPv6Address::port = port; }
+	RTPIPv6Address(const uint8_t ip[16],uint16_t port = 0):RTPAddress(IPv6Address)	{ SetIP(ip); RTPIPv6Address::port = port; }
+	RTPIPv6Address(in6_addr ip,uint16_t port = 0):RTPAddress(IPv6Address)			{ RTPIPv6Address::ip = ip; RTPIPv6Address::port = port; }
 	~RTPIPv6Address()									{ }
 	void SetIP(in6_addr ip)									{ RTPIPv6Address::ip = ip; }
-	void SetIP(const u_int8_t ip[16])							{ for (int i = 0 ; i < 16 ; i++) RTPIPv6Address::ip.s6_addr[i] = ip[i]; }
-	void SetPort(u_int16_t port)								{ RTPIPv6Address::port = port; }
-	void GetIP(u_int8_t ip[16]) const							{ for (int i = 0 ; i < 16 ; i++) ip[i] = RTPIPv6Address::ip.s6_addr[i]; }
+	void SetIP(const uint8_t ip[16])							{ for (int i = 0 ; i < 16 ; i++) RTPIPv6Address::ip.s6_addr[i] = ip[i]; }
+	void SetPort(uint16_t port)								{ RTPIPv6Address::port = port; }
+	void GetIP(uint8_t ip[16]) const							{ for (int i = 0 ; i < 16 ; i++) ip[i] = RTPIPv6Address::ip.s6_addr[i]; }
 	in6_addr GetIP() const									{ return ip; }
-	u_int16_t GetPort() const								{ return port; }
+	uint16_t GetPort() const								{ return port; }
 
 	RTPAddress *CreateCopy() const;
 	bool IsSameAddress(const RTPAddress *addr) const;
@@ -66,7 +66,7 @@ public:
 #endif // RTPDEBUG
 private:
 	in6_addr ip;
-	u_int16_t port;
+	uint16_t port;
 };
 
 #endif // RTP_SUPPORT_IPV6

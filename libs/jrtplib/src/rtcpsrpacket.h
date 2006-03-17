@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -47,28 +47,28 @@ class RTCPCompoundPacket;
 class RTCPSRPacket : public RTCPPacket
 {
 public:
-	RTCPSRPacket(u_int8_t *data,size_t datalength);
+	RTCPSRPacket(uint8_t *data,size_t datalength);
 	~RTCPSRPacket()								{ }
 
 	// Sender info
 	
-	u_int32_t GetSenderSSRC() const;
+	uint32_t GetSenderSSRC() const;
 	RTPNTPTime GetNTPTimestamp() const;
-	u_int32_t GetRTPTimestamp() const;
-	u_int32_t GetSenderPacketCount() const;
-	u_int32_t GetSenderOctetCount() const;
+	uint32_t GetRTPTimestamp() const;
+	uint32_t GetSenderPacketCount() const;
+	uint32_t GetSenderOctetCount() const;
 
 	// Reportblocks
 	
 	int GetReceptionReportCount() const;
 	// Note: the validity of index is NOT checked!
-	u_int32_t GetSSRC(int index) const;
-	u_int8_t GetFractionLost(int index) const;
+	uint32_t GetSSRC(int index) const;
+	uint8_t GetFractionLost(int index) const;
 	int32_t GetLostPacketCount(int index) const;
-	u_int32_t GetExtendedHighestSequenceNumber(int index) const;
-	u_int32_t GetJitter(int index) const;
-	u_int32_t GetLSR(int index) const;
-	u_int32_t GetDLSR(int index) const;
+	uint32_t GetExtendedHighestSequenceNumber(int index) const;
+	uint32_t GetJitter(int index) const;
+	uint32_t GetLSR(int index) const;
+	uint32_t GetDLSR(int index) const;
 
 #ifdef RTPDEBUG
 	void Dump();
@@ -77,12 +77,12 @@ private:
 	RTCPReceiverReport *GotoReport(int index) const;
 };
 
-inline u_int32_t RTCPSRPacket::GetSenderSSRC() const
+inline uint32_t RTCPSRPacket::GetSenderSSRC() const
 {
 	if (!knownformat)
 		return 0;
 	
-	u_int32_t *ssrcptr = (u_int32_t *)(data+sizeof(RTCPCommonHeader));
+	uint32_t *ssrcptr = (uint32_t *)(data+sizeof(RTCPCommonHeader));
 	return ntohl(*ssrcptr);
 }
 
@@ -91,31 +91,31 @@ inline RTPNTPTime RTCPSRPacket::GetNTPTimestamp() const
 	if (!knownformat)
 		return RTPNTPTime(0,0);
 
-	RTCPSenderReport *sr = (RTCPSenderReport *)(data+sizeof(RTCPCommonHeader)+sizeof(u_int32_t));
+	RTCPSenderReport *sr = (RTCPSenderReport *)(data+sizeof(RTCPCommonHeader)+sizeof(uint32_t));
 	return RTPNTPTime(ntohl(sr->ntptime_msw),ntohl(sr->ntptime_lsw));
 }
 
-inline u_int32_t RTCPSRPacket::GetRTPTimestamp() const
+inline uint32_t RTCPSRPacket::GetRTPTimestamp() const
 {
 	if (!knownformat)
 		return 0;
-	RTCPSenderReport *sr = (RTCPSenderReport *)(data+sizeof(RTCPCommonHeader)+sizeof(u_int32_t));
+	RTCPSenderReport *sr = (RTCPSenderReport *)(data+sizeof(RTCPCommonHeader)+sizeof(uint32_t));
 	return ntohl(sr->rtptimestamp);
 }
 
-inline u_int32_t RTCPSRPacket::GetSenderPacketCount() const
+inline uint32_t RTCPSRPacket::GetSenderPacketCount() const
 {
 	if (!knownformat)
 		return 0;
-	RTCPSenderReport *sr = (RTCPSenderReport *)(data+sizeof(RTCPCommonHeader)+sizeof(u_int32_t));
+	RTCPSenderReport *sr = (RTCPSenderReport *)(data+sizeof(RTCPCommonHeader)+sizeof(uint32_t));
 	return ntohl(sr->packetcount);
 }
 	
-inline u_int32_t RTCPSRPacket::GetSenderOctetCount() const
+inline uint32_t RTCPSRPacket::GetSenderOctetCount() const
 {
 	if (!knownformat)
 		return 0;
-	RTCPSenderReport *sr = (RTCPSenderReport *)(data+sizeof(RTCPCommonHeader)+sizeof(u_int32_t));
+	RTCPSenderReport *sr = (RTCPSenderReport *)(data+sizeof(RTCPCommonHeader)+sizeof(uint32_t));
 	return ntohl(sr->octetcount);
 }
 
@@ -129,11 +129,11 @@ inline int RTCPSRPacket::GetReceptionReportCount() const
 
 inline RTCPReceiverReport *RTCPSRPacket::GotoReport(int index) const
 {
-	RTCPReceiverReport *r = (RTCPReceiverReport *)(data+sizeof(RTCPCommonHeader)+sizeof(u_int32_t)+sizeof(RTCPSenderReport)+index*sizeof(RTCPReceiverReport));
+	RTCPReceiverReport *r = (RTCPReceiverReport *)(data+sizeof(RTCPCommonHeader)+sizeof(uint32_t)+sizeof(RTCPSenderReport)+index*sizeof(RTCPReceiverReport));
 	return r;
 }
 
-inline u_int32_t RTCPSRPacket::GetSSRC(int index) const
+inline uint32_t RTCPSRPacket::GetSSRC(int index) const
 {
 	if (!knownformat)
 		return 0;
@@ -141,7 +141,7 @@ inline u_int32_t RTCPSRPacket::GetSSRC(int index) const
 	return ntohl(r->ssrc);
 }
 
-inline u_int8_t RTCPSRPacket::GetFractionLost(int index) const
+inline uint8_t RTCPSRPacket::GetFractionLost(int index) const
 {
 	if (!knownformat)
 		return 0;
@@ -154,14 +154,14 @@ inline int32_t RTCPSRPacket::GetLostPacketCount(int index) const
 	if (!knownformat)
 		return 0;
 	RTCPReceiverReport *r = GotoReport(index);
-	u_int32_t count = ((u_int32_t)r->packetslost[2])|(((u_int32_t)r->packetslost[1])<<8)|(((u_int32_t)r->packetslost[0])<<16);
+	uint32_t count = ((uint32_t)r->packetslost[2])|(((uint32_t)r->packetslost[1])<<8)|(((uint32_t)r->packetslost[0])<<16);
 	if ((count&0x00800000) != 0) // test for negative number
 		count |= 0xFF000000;
 	int32_t *count2 = (int32_t *)(&count);
 	return (*count2);
 }
 
-inline u_int32_t RTCPSRPacket::GetExtendedHighestSequenceNumber(int index) const
+inline uint32_t RTCPSRPacket::GetExtendedHighestSequenceNumber(int index) const
 {
 	if (!knownformat)
 		return 0;
@@ -169,7 +169,7 @@ inline u_int32_t RTCPSRPacket::GetExtendedHighestSequenceNumber(int index) const
 	return ntohl(r->exthighseqnr);
 }
 
-inline u_int32_t RTCPSRPacket::GetJitter(int index) const
+inline uint32_t RTCPSRPacket::GetJitter(int index) const
 {
 	if (!knownformat)
 		return 0;
@@ -177,7 +177,7 @@ inline u_int32_t RTCPSRPacket::GetJitter(int index) const
 	return ntohl(r->jitter);
 }
 
-inline u_int32_t RTCPSRPacket::GetLSR(int index) const
+inline uint32_t RTCPSRPacket::GetLSR(int index) const
 {
 	if (!knownformat)
 		return 0;
@@ -185,7 +185,7 @@ inline u_int32_t RTCPSRPacket::GetLSR(int index) const
 	return ntohl(r->lsr);
 }
 
-inline u_int32_t RTCPSRPacket::GetDLSR(int index) const
+inline uint32_t RTCPSRPacket::GetDLSR(int index) const
 {
 	if (!knownformat)
 		return 0;

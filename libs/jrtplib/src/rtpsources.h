@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -42,9 +42,9 @@
 #define RTPSOURCES_HASHSIZE							8317
 
 #ifdef RTP_SUPPORT_INLINETEMPLATEPARAM
-	inline int RTPSources_GetHashIndex(const u_int32_t &ssrc)	{ return ssrc%RTPSOURCES_HASHSIZE; }
+	inline int RTPSources_GetHashIndex(const uint32_t &ssrc)	{ return ssrc%RTPSOURCES_HASHSIZE; }
 #else // can't use inline function as template parameter
-	int RTPSources_GetHashIndex(const u_int32_t &ssrc);
+	int RTPSources_GetHashIndex(const uint32_t &ssrc);
 #endif // RTP_SUPPORT_INLINETEMPLATEPARAM
 	
 class RTPNTPTime;
@@ -69,7 +69,7 @@ public:
 	void SetProbationType(ProbationType probtype)							{ probationtype = probtype; }
 #endif // RTP_SUPPORT_PROBATION
 
-	int CreateOwnSSRC(u_int32_t ssrc);
+	int CreateOwnSSRC(uint32_t ssrc);
 	int DeleteOwnSSRC();
 	void SentRTPPacket();
 
@@ -81,26 +81,26 @@ public:
 	int ProcessRTCPCompoundPacket(RTCPCompoundPacket *rtcpcomppack,const RTPTime &receivetime,
 	                              const RTPAddress *senderaddress);
 	
-	int ProcessRTCPSenderInfo(u_int32_t ssrc,const RTPNTPTime &ntptime,u_int32_t rtptime,
-	                          u_int32_t packetcount,u_int32_t octetcount,const RTPTime &receivetime,
+	int ProcessRTCPSenderInfo(uint32_t ssrc,const RTPNTPTime &ntptime,uint32_t rtptime,
+	                          uint32_t packetcount,uint32_t octetcount,const RTPTime &receivetime,
 				  const RTPAddress *senderaddress);
-	int ProcessRTCPReportBlock(u_int32_t ssrc,u_int8_t fractionlost,int32_t lostpackets,
-	                           u_int32_t exthighseqnr,u_int32_t jitter,u_int32_t lsr,
-				   u_int32_t dlsr,const RTPTime &receivetime,const RTPAddress *senderaddress);
-	int ProcessSDESNormalItem(u_int32_t ssrc,RTCPSDESPacket::ItemType t,size_t itemlength,
+	int ProcessRTCPReportBlock(uint32_t ssrc,uint8_t fractionlost,int32_t lostpackets,
+	                           uint32_t exthighseqnr,uint32_t jitter,uint32_t lsr,
+				   uint32_t dlsr,const RTPTime &receivetime,const RTPAddress *senderaddress);
+	int ProcessSDESNormalItem(uint32_t ssrc,RTCPSDESPacket::ItemType t,size_t itemlength,
 	                          const void *itemdata,const RTPTime &receivetime,const RTPAddress *senderaddress);
 #ifdef RTP_SUPPORT_SDESPRIV
-	int ProcessSDESPrivateItem(u_int32_t ssrc,size_t prefixlen,const void *prefixdata,
+	int ProcessSDESPrivateItem(uint32_t ssrc,size_t prefixlen,const void *prefixdata,
 	                           size_t valuelen,const void *valuedata,const RTPTime &receivetime,
 				   const RTPAddress *senderaddress);
 #endif //RTP_SUPPORT_SDESPRIV
-	int ProcessBYE(u_int32_t ssrc,size_t reasonlength,const void *reasondata,const RTPTime &receivetime,
+	int ProcessBYE(uint32_t ssrc,size_t reasonlength,const void *reasondata,const RTPTime &receivetime,
 	               const RTPAddress *senderaddress);
 
 	// If no specific info was sent to us, but we did receive a packet from a SSRC, the following
 	// function can be used to update the time at which we last heard something from the SSRC.
 	// This way, premature timeouts can be avoided. 
-	int UpdateReceiveTime(u_int32_t ssrc,const RTPTime &receivetime,const RTPAddress *senderaddress);
+	int UpdateReceiveTime(uint32_t ssrc,const RTPTime &receivetime,const RTPAddress *senderaddress);
 	
 	bool GotoFirstSource();
 	bool GotoNextSource();
@@ -109,9 +109,9 @@ public:
 	bool GotoNextSourceWithData();
 	bool GotoPreviousSourceWithData();
 	RTPSourceData *GetCurrentSourceInfo();
-	RTPSourceData *GetSourceInfo(u_int32_t ssrc);
+	RTPSourceData *GetSourceInfo(uint32_t ssrc);
 	RTPPacket *GetNextPacket();
-	bool GotEntry(u_int32_t ssrc);
+	bool GotEntry(uint32_t ssrc);
 	RTPSourceData *GetOwnSourceInfo()								{ return (RTPSourceData *)owndata; }
 
 	void Timeout(const RTPTime &curtime,const RTPTime &timeoutdelay);
@@ -138,7 +138,7 @@ protected:
 	                                  const RTPAddress *senderaddress) 				{ }
 	virtual void OnSSRCCollision(RTPSourceData *srcdat,const RTPAddress *senderaddress,bool isrtp)  { }
 	virtual void OnCNAMECollision(RTPSourceData *srcdat,const RTPAddress *senderaddress,
-	                              const u_int8_t *cname,size_t cnamelength)				{ }
+	                              const uint8_t *cname,size_t cnamelength)				{ }
 	virtual void OnNewSource(RTPSourceData *srcdat)			 				{ }
 	virtual void OnRemoveSource(RTPSourceData *srcdat)						{ }
 	virtual void OnTimeout(RTPSourceData *srcdat)							{ }
@@ -153,11 +153,11 @@ protected:
 	virtual void OnNoteTimeout(RTPSourceData *srcdat)						{ }
 private:
 	void ClearSourceList();
-	int ObtainSourceDataInstance(u_int32_t ssrc,RTPInternalSourceData **srcdat,bool *created);
-	int GetRTCPSourceData(u_int32_t ssrc,const RTPAddress *senderaddress,RTPInternalSourceData **srcdat,bool *newsource);
+	int ObtainSourceDataInstance(uint32_t ssrc,RTPInternalSourceData **srcdat,bool *created);
+	int GetRTCPSourceData(uint32_t ssrc,const RTPAddress *senderaddress,RTPInternalSourceData **srcdat,bool *newsource);
 	bool CheckCollision(RTPInternalSourceData *srcdat,const RTPAddress *senderaddress,bool isrtp);
 	
-	RTPKeyHashTable<const u_int32_t,RTPInternalSourceData*,RTPSources_GetHashIndex,RTPSOURCES_HASHSIZE> sourcelist;
+	RTPKeyHashTable<const uint32_t,RTPInternalSourceData*,RTPSources_GetHashIndex,RTPSOURCES_HASHSIZE> sourcelist;
 	
 	int sendercount;
 	int totalcount;

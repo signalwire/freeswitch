@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -54,7 +54,7 @@ bool RTPIPv6Address::IsSameAddress(const RTPAddress *addr) const
 		return false;
 
 	const RTPIPv6Address *addr2 = (const RTPIPv6Address *)addr;
-	const u_int8_t *ip2 = addr2->ip.s6_addr;
+	const uint8_t *ip2 = addr2->ip.s6_addr;
 	
 	if (port != addr2->port)
 		return false;
@@ -75,7 +75,7 @@ bool RTPIPv6Address::IsFromSameHost(const RTPAddress *addr) const
 		return false;
 
 	const RTPIPv6Address *addr2 = (const RTPIPv6Address *)addr;
-	const u_int8_t *ip2 = addr2->ip.s6_addr;
+	const uint8_t *ip2 = addr2->ip.s6_addr;
 	for (int i = 0 ; i < 16 ; i++)
 	{
 		if (ip.s6_addr[i] != ip2[i])
@@ -87,17 +87,17 @@ bool RTPIPv6Address::IsFromSameHost(const RTPAddress *addr) const
 #ifdef RTPDEBUG
 std::string RTPIPv6Address::GetAddressString() const
 {
-	char str[256];
-	u_int16_t ip16[8];
+	char str[48];
+	uint16_t ip16[8];
 	int i,j;
 
 	for (i = 0,j = 0 ; j < 8 ; j++,i += 2)
 	{
-		ip16[j] = (((u_int16_t)ip.s6_addr[i])<<8);
-		ip16[j] |= ((u_int16_t)ip.s6_addr[i+1]);
+		ip16[j] = (((uint16_t)ip.s6_addr[i])<<8);
+		ip16[j] |= ((uint16_t)ip.s6_addr[i+1]);
 	}
 	
-	sprintf(str,"%04X:%04X:%04X:%04X:%04X:%04X:%04X:%04X - %d",(int)ip16[0],(int)ip16[1],(int)ip16[2],(int)ip16[3],(int)ip16[4],(int)ip16[5],(int)ip16[6],(int)ip16[7],(int)port);
+	snprintf(str,48,"%04X:%04X:%04X:%04X:%04X:%04X:%04X:%04X/%d",(int)ip16[0],(int)ip16[1],(int)ip16[2],(int)ip16[3],(int)ip16[4],(int)ip16[5],(int)ip16[6],(int)ip16[7],(int)port);
 	return std::string(str);
 }
 #endif // RTPDEBUG

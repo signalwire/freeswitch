@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -57,6 +57,7 @@ public:
 
 	int SetTimestampUnit(double tsunit)						{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; if (tsunit < 0) return ERR_RTP_RTCPPACKETBUILDER_ILLEGALTIMESTAMPUNIT; timestampunit = tsunit; return 0; }
 	int SetMaximumPacketSize(size_t maxpacksize)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; if (maxpacksize < RTP_MINPACKETSIZE) return ERR_RTP_RTCPPACKETBUILDER_ILLEGALMAXPACKSIZE; maxpacketsize = maxpacksize; return 0; }
+	int SetPreTransmissionDelay(const RTPTime &delay)				{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; transmissiondelay = delay; return 0; }
 	
 	int BuildNextPacket(RTCPCompoundPacket **pack);
 	int BuildBYEPacket(RTCPCompoundPacket **pack,const void *reason,size_t reasonlength,bool useSRifpossible = true);
@@ -67,12 +68,12 @@ public:
 	void SetPhoneInterval(int count)						{ if (!init) return; interval_phone = count; }
 	void SetToolInterval(int count)							{ if (!init) return; interval_tool = count; }
 	void SetNoteInterval(int count)							{ if (!init) return; interval_note = count; }
-	int SetLocalName(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetName((const u_int8_t *)s,len); }
-	int SetLocalEMail(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetEMail((const u_int8_t *)s,len); }
-	int SetLocalLocation(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetLocation((const u_int8_t *)s,len); }
-	int SetLocalPhone(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetPhone((const u_int8_t *)s,len); }
-	int SetLocalTool(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetTool((const u_int8_t *)s,len); }
-	int SetLocalNote(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetNote((const u_int8_t *)s,len); }
+	int SetLocalName(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetName((const uint8_t *)s,len); }
+	int SetLocalEMail(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetEMail((const uint8_t *)s,len); }
+	int SetLocalLocation(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetLocation((const uint8_t *)s,len); }
+	int SetLocalPhone(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetPhone((const uint8_t *)s,len); }
+	int SetLocalTool(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetTool((const uint8_t *)s,len); }
+	int SetLocalNote(const void *s,size_t len)					{ if (!init) return ERR_RTP_RTCPPACKETBUILDER_NOTINIT; return ownsdesinfo.SetNote((const uint8_t *)s,len); }
 private:
 	void ClearAllSourceFlags();
 	int FillInReportBlocks(RTCPCompoundPacketBuilder *pack,const RTPTime &curtime,int maxcount,bool *full,int *added,int *skipped,bool *atendoflist);
@@ -86,7 +87,7 @@ private:
 	size_t maxpacketsize;
 	double timestampunit;
 	bool firstpacket;
-	RTPTime prevbuildtime;
+	RTPTime prevbuildtime,transmissiondelay;
 
 	class RTCPSDESInfoInternal : public RTCPSDESInfo
 	{

@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -48,45 +48,45 @@ public:
 	virtual ~RTCPSDESInfo()							{ Clear(); }
 	void Clear();
 
-	int SetCNAME(const u_int8_t *s,size_t l)				{ return SetNonPrivateItem(RTCP_SDES_ID_CNAME-1,s,l); }
-	int SetName(const u_int8_t *s,size_t l)					{ return SetNonPrivateItem(RTCP_SDES_ID_NAME-1,s,l); }
-	int SetEMail(const u_int8_t *s,size_t l)				{ return SetNonPrivateItem(RTCP_SDES_ID_EMAIL-1,s,l); }
-	int SetPhone(const u_int8_t *s,size_t l)				{ return SetNonPrivateItem(RTCP_SDES_ID_PHONE-1,s,l); }
-	int SetLocation(const u_int8_t *s,size_t l)				{ return SetNonPrivateItem(RTCP_SDES_ID_LOCATION-1,s,l); }
-	int SetTool(const u_int8_t *s,size_t l)					{ return SetNonPrivateItem(RTCP_SDES_ID_TOOL-1,s,l); }
-	int SetNote(const u_int8_t *s,size_t l)					{ return SetNonPrivateItem(RTCP_SDES_ID_NOTE-1,s,l); }
+	int SetCNAME(const uint8_t *s,size_t l)				{ return SetNonPrivateItem(RTCP_SDES_ID_CNAME-1,s,l); }
+	int SetName(const uint8_t *s,size_t l)					{ return SetNonPrivateItem(RTCP_SDES_ID_NAME-1,s,l); }
+	int SetEMail(const uint8_t *s,size_t l)				{ return SetNonPrivateItem(RTCP_SDES_ID_EMAIL-1,s,l); }
+	int SetPhone(const uint8_t *s,size_t l)				{ return SetNonPrivateItem(RTCP_SDES_ID_PHONE-1,s,l); }
+	int SetLocation(const uint8_t *s,size_t l)				{ return SetNonPrivateItem(RTCP_SDES_ID_LOCATION-1,s,l); }
+	int SetTool(const uint8_t *s,size_t l)					{ return SetNonPrivateItem(RTCP_SDES_ID_TOOL-1,s,l); }
+	int SetNote(const uint8_t *s,size_t l)					{ return SetNonPrivateItem(RTCP_SDES_ID_NOTE-1,s,l); }
 
 #ifdef RTP_SUPPORT_SDESPRIV
-	int SetPrivateValue(const u_int8_t *prefix,size_t prefixlen,const u_int8_t *value,size_t valuelen);
-	int DeletePrivatePrefix(const u_int8_t *s,size_t len);
+	int SetPrivateValue(const uint8_t *prefix,size_t prefixlen,const uint8_t *value,size_t valuelen);
+	int DeletePrivatePrefix(const uint8_t *s,size_t len);
 #endif // RTP_SUPPORT_SDESPRIV
 	
-	u_int8_t *GetCNAME(size_t *len) const					{ return GetNonPrivateItem(RTCP_SDES_ID_CNAME-1,len); }
-	u_int8_t *GetName(size_t *len) const					{ return GetNonPrivateItem(RTCP_SDES_ID_NAME-1,len); }
-	u_int8_t *GetEMail(size_t *len) const					{ return GetNonPrivateItem(RTCP_SDES_ID_EMAIL-1,len); }
-	u_int8_t *GetPhone(size_t *len) const					{ return GetNonPrivateItem(RTCP_SDES_ID_PHONE-1,len); }
-	u_int8_t *GetLocation(size_t *len) const				{ return GetNonPrivateItem(RTCP_SDES_ID_LOCATION-1,len); }
-	u_int8_t *GetTool(size_t *len) const					{ return GetNonPrivateItem(RTCP_SDES_ID_TOOL-1,len); }
-	u_int8_t *GetNote(size_t *len) const 					{ return GetNonPrivateItem(RTCP_SDES_ID_NOTE-1,len); }
+	uint8_t *GetCNAME(size_t *len) const					{ return GetNonPrivateItem(RTCP_SDES_ID_CNAME-1,len); }
+	uint8_t *GetName(size_t *len) const					{ return GetNonPrivateItem(RTCP_SDES_ID_NAME-1,len); }
+	uint8_t *GetEMail(size_t *len) const					{ return GetNonPrivateItem(RTCP_SDES_ID_EMAIL-1,len); }
+	uint8_t *GetPhone(size_t *len) const					{ return GetNonPrivateItem(RTCP_SDES_ID_PHONE-1,len); }
+	uint8_t *GetLocation(size_t *len) const				{ return GetNonPrivateItem(RTCP_SDES_ID_LOCATION-1,len); }
+	uint8_t *GetTool(size_t *len) const					{ return GetNonPrivateItem(RTCP_SDES_ID_TOOL-1,len); }
+	uint8_t *GetNote(size_t *len) const 					{ return GetNonPrivateItem(RTCP_SDES_ID_NOTE-1,len); }
 
 #ifdef RTP_SUPPORT_SDESPRIV
 	void GotoFirstPrivateValue();
-	bool GetNextPrivateValue(u_int8_t **prefix,size_t *prefixlen,u_int8_t **value,size_t *valuelen);
-	bool GetPrivateValue(const u_int8_t *prefix,size_t prefixlen,u_int8_t **value,size_t *valuelen) const;
+	bool GetNextPrivateValue(uint8_t **prefix,size_t *prefixlen,uint8_t **value,size_t *valuelen);
+	bool GetPrivateValue(const uint8_t *prefix,size_t prefixlen,uint8_t **value,size_t *valuelen) const;
 #endif // RTP_SUPPORT_SDESPRIV
 private:
-	int SetNonPrivateItem(int itemno,const u_int8_t *s,size_t l)		{ if (l > RTCP_SDES_MAXITEMLENGTH) return ERR_RTP_SDES_LENGTHTOOBIG; return nonprivateitems[itemno].SetInfo(s,l); }
-	u_int8_t *GetNonPrivateItem(int itemno,size_t *len) const		{ return nonprivateitems[itemno].GetInfo(len); }
+	int SetNonPrivateItem(int itemno,const uint8_t *s,size_t l)		{ if (l > RTCP_SDES_MAXITEMLENGTH) return ERR_RTP_SDES_LENGTHTOOBIG; return nonprivateitems[itemno].SetInfo(s,l); }
+	uint8_t *GetNonPrivateItem(int itemno,size_t *len) const		{ return nonprivateitems[itemno].GetInfo(len); }
 
 	class SDESItem
 	{
 	public:
 		SDESItem() 							{ str = 0; length = 0; }
 		~SDESItem() 							{ if (str) delete [] str; }
-		u_int8_t *GetInfo(size_t *len) const				{ *len = length; return str; }
-		int SetInfo(const u_int8_t *s,size_t len)			{ return SetString(&str,&length,s,len); }
+		uint8_t *GetInfo(size_t *len) const				{ *len = length; return str; }
+		int SetInfo(const uint8_t *s,size_t len)			{ return SetString(&str,&length,s,len); }
 	protected:
-		static int SetString(u_int8_t **dest,size_t *destlen,const u_int8_t *s,size_t len)
+		static int SetString(uint8_t **dest,size_t *destlen,const uint8_t *s,size_t len)
 		{
 			if (len <= 0)
 			{
@@ -98,7 +98,7 @@ private:
 			else
 			{
 				len = (len>RTCP_SDES_MAXITEMLENGTH)?RTCP_SDES_MAXITEMLENGTH:len;
-				u_int8_t *str2 = new u_int8_t[len];
+				uint8_t *str2 = new uint8_t[len];
 				if (str2 == 0)
 					return ERR_RTP_OUTOFMEM;
 				memcpy(str2,s,len);
@@ -110,7 +110,7 @@ private:
 			return 0;
 		}
 	private:
-		u_int8_t *str;
+		uint8_t *str;
 		size_t length;
 	};
 
@@ -122,10 +122,10 @@ private:
 	public:
 		SDESPrivateItem()						{ prefixlen = 0; prefix = 0; }
 		~SDESPrivateItem()						{ if (prefix) delete [] prefix; }
-		u_int8_t *GetPrefix(size_t *len) const				{ *len = prefixlen; return prefix; }
-		int SetPrefix(const u_int8_t *s,size_t len)			{ return SetString(&prefix,&prefixlen,s,len); }
+		uint8_t *GetPrefix(size_t *len) const				{ *len = prefixlen; return prefix; }
+		int SetPrefix(const uint8_t *s,size_t len)			{ return SetString(&prefix,&prefixlen,s,len); }
 	private:
-		u_int8_t *prefix;
+		uint8_t *prefix;
 		size_t prefixlen;
 	};
 

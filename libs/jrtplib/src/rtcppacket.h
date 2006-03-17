@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -44,21 +44,21 @@ class RTCPPacket
 public:
 	enum PacketType { SR,RR,SDES,BYE,APP,Unknown };
 protected:
-	RTCPPacket(PacketType t,u_int8_t *d,size_t dlen) : data(d),datalen(dlen),packettype(t) { knownformat = false; }
+	RTCPPacket(PacketType t,uint8_t *d,size_t dlen) : data(d),datalen(dlen),packettype(t) { knownformat = false; }
 public:
 	virtual ~RTCPPacket()								{ }	
 
 	bool IsKnownFormat() const							{ return knownformat; }
 	
 	PacketType GetPacketType() const						{ return packettype; }
-	u_int8_t *GetPacketData()							{ return data; }
+	uint8_t *GetPacketData()							{ return data; }
 	size_t GetPacketLength() const							{ return datalen; }
 
 #ifdef RTPDEBUG
 	virtual void Dump();
 #endif // RTPDEBUG
 protected:
-	u_int8_t *data;
+	uint8_t *data;
 	size_t datalen;
 	bool knownformat;
 private:

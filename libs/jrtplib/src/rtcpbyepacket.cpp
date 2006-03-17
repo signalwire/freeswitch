@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -37,7 +37,7 @@
 
 #include "rtpdebug.h"
 
-RTCPBYEPacket::RTCPBYEPacket(u_int8_t *data,size_t datalength)
+RTCPBYEPacket::RTCPBYEPacket(uint8_t *data,size_t datalength)
 	: RTCPPacket(BYE,data,datalength)
 {
 	knownformat = false;
@@ -49,7 +49,7 @@ RTCPBYEPacket::RTCPBYEPacket(u_int8_t *data,size_t datalength)
 	hdr = (RTCPCommonHeader *)data;
 	if (hdr->padding)
 	{
-		u_int8_t padcount = data[datalength-1];
+		uint8_t padcount = data[datalength-1];
 		if ((padcount & 0x03) != 0) // not a multiple of four! (see rfc 3550 p 37)
 			return;
 		if (((size_t)padcount) >= len)
@@ -57,12 +57,12 @@ RTCPBYEPacket::RTCPBYEPacket(u_int8_t *data,size_t datalength)
 		len -= (size_t)padcount;
 	}
 	
-	size_t ssrclen = ((size_t)(hdr->count))*sizeof(u_int32_t) + sizeof(RTCPCommonHeader);
+	size_t ssrclen = ((size_t)(hdr->count))*sizeof(uint32_t) + sizeof(RTCPCommonHeader);
 	if (ssrclen > len)
 		return;
 	if (ssrclen < len) // there's probably a reason for leaving
 	{
-		u_int8_t *reasonlength = (data+ssrclen);
+		uint8_t *reasonlength = (data+ssrclen);
 		size_t reaslen = (size_t)(*reasonlength);
 		if (reaslen > (len-ssrclen-1))
 			return;

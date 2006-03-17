@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -37,7 +37,7 @@
 
 #include "rtpdebug.h"
 
-RTCPSRPacket::RTCPSRPacket(u_int8_t *data,size_t datalength)
+RTCPSRPacket::RTCPSRPacket(uint8_t *data,size_t datalength)
 	: RTCPPacket(SR,data,datalength)
 {
 	knownformat = false;
@@ -49,7 +49,7 @@ RTCPSRPacket::RTCPSRPacket(u_int8_t *data,size_t datalength)
 	hdr = (RTCPCommonHeader *)data;
 	if (hdr->padding)
 	{
-		u_int8_t padcount = data[datalength-1];
+		uint8_t padcount = data[datalength-1];
 		if ((padcount & 0x03) != 0) // not a multiple of four! (see rfc 3550 p 37)
 			return;
 		if (((size_t)padcount) >= len)
@@ -57,7 +57,7 @@ RTCPSRPacket::RTCPSRPacket(u_int8_t *data,size_t datalength)
 		len -= (size_t)padcount;
 	}
 
-	expectedlength = sizeof(RTCPCommonHeader)+sizeof(u_int32_t)+sizeof(RTCPSenderReport);
+	expectedlength = sizeof(RTCPCommonHeader)+sizeof(uint32_t)+sizeof(RTCPSenderReport);
 	expectedlength += sizeof(RTCPReceiverReport)*((int)hdr->count);
 
 	if (expectedlength != len)
@@ -88,7 +88,7 @@ void RTCPSRPacket::Dump()
 		{
 			std::cout << "    Report block " << i << std::endl;
 			std::cout << "        SSRC:           " << GetSSRC(i) << std::endl;
-			std::cout << "        Fraction lost:  " << (u_int32_t)GetFractionLost(i) << std::endl;
+			std::cout << "        Fraction lost:  " << (uint32_t)GetFractionLost(i) << std::endl;
 			std::cout << "        Packets lost:   " << GetLostPacketCount(i) << std::endl;
 			std::cout << "        Seq. nr.:       " << GetExtendedHighestSequenceNumber(i) << std::endl;
 			std::cout << "        Jitter:         " << GetJitter(i) << std::endl;

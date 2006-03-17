@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -30,9 +30,9 @@
 
 */
 
-#ifndef RTPIPV6DESTINATION
+#ifndef RTPIPV6DESTINATION_H
 
-#define RTPIPV6DESTINATION
+#define RTPIPV6DESTINATION_H
 
 #include "rtpconfig.h"
 
@@ -51,33 +51,33 @@
 class RTPIPv6Destination
 {
 public:
-	RTPIPv6Destination(in6_addr ip,u_int16_t portbase)	 			{ RTPIPv6Destination::ip = ip; rtpport_nbo = htons(portbase); rtcpport_nbo = htons(portbase+1); }
+	RTPIPv6Destination(in6_addr ip,uint16_t portbase)	 			{ RTPIPv6Destination::ip = ip; rtpport_nbo = htons(portbase); rtcpport_nbo = htons(portbase+1); }
 	in6_addr GetIP() const								{ return ip; }
-	u_int16_t GetRTPPort_NBO() const						{ return rtpport_nbo; }
-	u_int16_t GetRTCPPort_NBO() const						{ return rtcpport_nbo; }
+	uint16_t GetRTPPort_NBO() const						{ return rtpport_nbo; }
+	uint16_t GetRTCPPort_NBO() const						{ return rtcpport_nbo; }
 	bool operator==(const RTPIPv6Destination &src) const				{ if (src.rtpport_nbo == rtpport_nbo && (memcmp(&(src.ip),&ip,sizeof(in6_addr)) == 0)) return true; return false; } // NOTE: I only check IP and portbase
 #ifdef RTPDEBUG
 	std::string GetDestinationString() const;
 #endif // RTPDEBUG
 private:
 	in6_addr ip;
-	u_int16_t rtpport_nbo,rtcpport_nbo;
+	uint16_t rtpport_nbo,rtcpport_nbo;
 };
 
 #ifdef RTPDEBUG
 inline std::string RTPIPv6Destination::GetDestinationString() const
 {
-	u_int16_t ip16[8];
-	char str[1024];
-	u_int16_t portbase = ntohs(rtpport_nbo);
+	uint16_t ip16[8];
+	char str[48];
+	uint16_t portbase = ntohs(rtpport_nbo);
 	int i,j;
-	for (i = 0,j = 0 ; j < 8 ; j++,i += 2)	{ ip16[j] = (((u_int16_t)ip.s6_addr[i])<<8); ip16[j] |= ((u_int16_t)ip.s6_addr[i+1]); }
-	sprintf(str,"%04X:%04X:%04X:%04X:%04X:%04X:%04X:%04X/%d",(int)ip16[0],(int)ip16[1],(int)ip16[2],(int)ip16[3],(int)ip16[4],(int)ip16[5],(int)ip16[6],(int)ip16[7],(int)portbase);
+	for (i = 0,j = 0 ; j < 8 ; j++,i += 2)	{ ip16[j] = (((uint16_t)ip.s6_addr[i])<<8); ip16[j] |= ((uint16_t)ip.s6_addr[i+1]); }
+	snprintf(str,48,"%04X:%04X:%04X:%04X:%04X:%04X:%04X:%04X/%d",(int)ip16[0],(int)ip16[1],(int)ip16[2],(int)ip16[3],(int)ip16[4],(int)ip16[5],(int)ip16[6],(int)ip16[7],(int)portbase);
 	return std::string(str);
 }
 #endif // RTPDEBUG
 
 #endif // RTP_SUPPORT_IPV6
 
-#endif // RTPIPV6DESTINATION
+#endif // RTPIPV6DESTINATION_H
 

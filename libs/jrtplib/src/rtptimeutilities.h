@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -50,11 +50,11 @@
 class RTPNTPTime
 {
 public:
-	RTPNTPTime(u_int32_t m,u_int32_t l)							{ msw = m ; lsw = l; }
-	u_int32_t GetMSW() const								{ return msw; }
-	u_int32_t GetLSW() const								{ return lsw; }
+	RTPNTPTime(uint32_t m,uint32_t l)							{ msw = m ; lsw = l; }
+	uint32_t GetMSW() const								{ return msw; }
+	uint32_t GetLSW() const								{ return lsw; }
 private:
-	u_int32_t msw,lsw;
+	uint32_t msw,lsw;
 };
 
 class RTPTime
@@ -65,9 +65,9 @@ public:
 		
 	RTPTime(double t);
 	RTPTime(RTPNTPTime ntptime);
-	RTPTime(u_int32_t seconds,u_int32_t microseconds)				{ sec = seconds; microsec = microseconds; }
-	u_int32_t GetSeconds() const							{ return sec; }
-	u_int32_t GetMicroSeconds() const						{ return microsec; }
+	RTPTime(uint32_t seconds,uint32_t microseconds)					{ sec = seconds; microsec = microseconds; }
+	uint32_t GetSeconds() const							{ return sec; }
+	uint32_t GetMicroSeconds() const						{ return microsec; }
 	double GetDouble() const 							{ return (((double)sec)+(((double)microsec)/1000000.0)); }
 	RTPTime &operator-=(const RTPTime &t);
 	RTPTime &operator+=(const RTPTime &t);
@@ -77,16 +77,16 @@ public:
 	bool operator<=(const RTPTime &t) const;
 	bool operator>=(const RTPTime &t) const;
 private:
-	u_int32_t sec,microsec;
+	uint32_t sec,microsec;
 };
 
 inline RTPTime::RTPTime(double t)
 {
-	sec = (u_int32_t)t;
+	sec = (uint32_t)t;
 
 	double t2 = t-((double)sec);
 	t2 *= 1000000.0;
-	microsec = (u_int32_t)t2;
+	microsec = (uint32_t)t2;
 }
 
 inline RTPTime::RTPTime(RTPNTPTime ntptime)
@@ -103,7 +103,7 @@ inline RTPTime::RTPTime(RTPNTPTime ntptime)
 		double x = (double)ntptime.GetLSW();
 		x /= (65536.0*65536.0);
 		x *= 1000000.0;
-		microsec = (u_int32_t)x;
+		microsec = (uint32_t)x;
 	}
 }
 
@@ -137,7 +137,7 @@ inline RTPTime RTPTime::CurrentTime()
 
 	microdiff = emulate_microseconds - initmicroseconds;
 
-	return RTPTime((u_int32_t)((microseconds + microdiff) / 1000000ui64),((u_int32_t)((microseconds + microdiff) % 1000000ui64)));
+	return RTPTime((uint32_t)((microseconds + microdiff) / 1000000ui64),((uint32_t)((microseconds + microdiff) % 1000000ui64)));
 }
 
 inline void RTPTime::Wait(const RTPTime &delay)
@@ -164,7 +164,7 @@ inline RTPTime RTPTime::CurrentTime()
 	struct timeval tv;
 	
 	gettimeofday(&tv,0);
-	return RTPTime((u_int32_t)tv.tv_sec,(u_int32_t)tv.tv_usec);
+	return RTPTime((uint32_t)tv.tv_sec,(uint32_t)tv.tv_usec);
 }
 
 inline void RTPTime::Wait(const RTPTime &delay)
@@ -204,13 +204,13 @@ inline RTPTime &RTPTime::operator+=(const RTPTime &t)
 
 inline RTPNTPTime RTPTime::GetNTPTime() const
 {
-	u_int32_t msw = sec+RTP_NTPTIMEOFFSET;
-	u_int32_t lsw;
+	uint32_t msw = sec+RTP_NTPTIMEOFFSET;
+	uint32_t lsw;
 	double x;
 	
       	x = microsec/1000000.0;
 	x *= (65536.0*65536.0);
-	lsw = (u_int32_t)x;
+	lsw = (uint32_t)x;
 
 	return RTPNTPTime(msw,lsw);
 }

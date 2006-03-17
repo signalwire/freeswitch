@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -169,38 +169,38 @@ static RTPErrorInfo ErrorDescriptions[]=
 	{ ERR_RTP_TRANS_BUFFERLENGTHTOOSMALL,"The hostname is larger than the specified buffer size"},
 	{ ERR_RTP_SDES_MAXPRIVITEMS,"The maximum number of SDES private item prefixes was reached"},
 	{ ERR_RTP_INTERNALSOURCEDATA_INVALIDPROBATIONTYPE,"An invalid probation type was specified"},
-	{ ERR_RTP_GSTV4TRANS_ALREADYCREATED, "The transmitter was already created"},
-	{ ERR_RTP_GSTV4TRANS_ALREADYINIT, "The transmitter was already initialize"},
-	{ ERR_RTP_GSTV4TRANS_ALREADYWAITING, "The transmitter is already waiting for incoming data"},
-	{ ERR_RTP_GSTV4TRANS_CANTBINDRTCPSOCKET, "The 'bind' call for the RTCP socket failed"},
-	{ ERR_RTP_GSTV4TRANS_CANTBINDRTPSOCKET, "The 'bind' call for the RTP socket failed"},
-	{ ERR_RTP_GSTV4TRANS_CANTCALCULATELOCALIP, "The local IP addresses could not be determined"},
-	{ ERR_RTP_GSTV4TRANS_CANTCREATEABORTDESCRIPTORS, "Couldn't create the sockets used to abort waiting for incoming data"},
-	{ ERR_RTP_GSTV4TRANS_CANTCREATEPIPE, "Couldn't create the pipe used to abort waiting for incoming data"},
-	{ ERR_RTP_GSTV4TRANS_CANTCREATESOCKET, "Couldn't create the RTP or RTCP socket"},
-	{ ERR_RTP_GSTV4TRANS_CANTINITMUTEX, "Failed to initialize a mutex used by the transmitter"},
-	{ ERR_RTP_GSTV4TRANS_CANTSETRTCPRECEIVEBUF, "Couldn't set the receive buffer size for the RTCP socket"},
-	{ ERR_RTP_GSTV4TRANS_CANTSETRTCPTRANSMITBUF, "Couldn't set the transmission buffer size for the RTCP socket"},
-	{ ERR_RTP_GSTV4TRANS_CANTSETRTPRECEIVEBUF, "Couldn't set the receive buffer size for the RTP socket"},
-	{ ERR_RTP_GSTV4TRANS_CANTSETRTPTRANSMITBUF, "Couldn't set the transmission buffer size for the RTP socket"},
-	{ ERR_RTP_GSTV4TRANS_COULDNTJOINMULTICASTGROUP, "Unable to join the specified multicast group"},
-	{ ERR_RTP_GSTV4TRANS_DIFFERENTRECEIVEMODE, "The function called doens't match the current receive mode"},
-	{ ERR_RTP_GSTV4TRANS_ERRORINSELECT, "Error in the transmitter's 'select' call"},
-	{ ERR_RTP_GSTV4TRANS_ILLEGALPARAMETERS, "Illegal parameters type passed to the transmitter"},
-	{ ERR_RTP_GSTV4TRANS_INVALIDADDRESSTYPE, "Specified address type isn't compatible with this transmitter"},
-	{ ERR_RTP_GSTV4TRANS_NOLOCALIPS, "Couldn't determine the local host name since the local IP list is empty"},
-	{ ERR_RTP_GSTV4TRANS_NOMULTICASTSUPPORT, "Multicast support is not available"},
-	{ ERR_RTP_GSTV4TRANS_NOSUCHENTRY, "Specified entry could not be found"},
-	{ ERR_RTP_GSTV4TRANS_NOTAMULTICASTADDRESS, "The specified address is not a multicast address"},
-	{ ERR_RTP_GSTV4TRANS_NOTCREATED, "The 'Create' call for this transmitter has not been called"},
-	{ ERR_RTP_GSTV4TRANS_NOTINIT, "The 'Init' call for this transmitter has not been called"},
-	{ ERR_RTP_GSTV4TRANS_NOTWAITING, "The transmitter is not waiting for incoming data"},
-	{ ERR_RTP_GSTV4TRANS_PORTBASENOTEVEN, "The specified port base is not an even number"},
-	{ ERR_RTP_GSTV4TRANS_SPECIFIEDSIZETOOBIG, "The maximum packet size is too big for this transmitter"},
-	{ ERR_RTP_GSTV4TRANS_INVALIDEVENT, "Expecting UNKNOWN_EVENT to set source address but got another type of event"},
-	{ ERR_RTP_GSTV4TRANS_SRCADDRNOTSET, "Got packet but src address information was not set, returning"},
-	{ ERR_RTP_GSTV4TRANS_NOTNETBUFFER, "Received buffer is not a GstNetBuffer"},
-	{ ERR_RTP_GSTV4TRANS_WAITNOTIMPLEMENTED, "The WaitForIncomingData is not implemented in the Gst transmitter"},
+	{ ERR_RTP_FAKETRANS_ALREADYCREATED, "The transmitter was already created"},
+	{ ERR_RTP_FAKETRANS_ALREADYINIT, "The transmitter was already initialize"},
+	{ ERR_RTP_FAKETRANS_ALREADYWAITING, "The transmitter is already waiting for incoming data"},
+	{ ERR_RTP_FAKETRANS_CANTBINDRTCPSOCKET, "The 'bind' call for the RTCP socket failed"},
+	{ ERR_RTP_FAKETRANS_CANTBINDRTPSOCKET, "The 'bind' call for the RTP socket failed"},
+	{ ERR_RTP_FAKETRANS_CANTCALCULATELOCALIP, "The local IP addresses could not be determined"},
+	{ ERR_RTP_FAKETRANS_CANTCREATEABORTDESCRIPTORS, "Couldn't create the sockets used to abort waiting for incoming data"},
+	{ ERR_RTP_FAKETRANS_CANTCREATEPIPE, "Couldn't create the pipe used to abort waiting for incoming data"},
+	{ ERR_RTP_FAKETRANS_CANTCREATESOCKET, "Couldn't create the RTP or RTCP socket"},
+	{ ERR_RTP_FAKETRANS_CANTINITMUTEX, "Failed to initialize a mutex used by the transmitter"},
+	{ ERR_RTP_FAKETRANS_CANTSETRTCPRECEIVEBUF, "Couldn't set the receive buffer size for the RTCP socket"},
+	{ ERR_RTP_FAKETRANS_CANTSETRTCPTRANSMITBUF, "Couldn't set the transmission buffer size for the RTCP socket"},
+	{ ERR_RTP_FAKETRANS_CANTSETRTPRECEIVEBUF, "Couldn't set the receive buffer size for the RTP socket"},
+	{ ERR_RTP_FAKETRANS_CANTSETRTPTRANSMITBUF, "Couldn't set the transmission buffer size for the RTP socket"},
+	{ ERR_RTP_FAKETRANS_COULDNTJOINMULTICASTGROUP, "Unable to join the specified multicast group"},
+	{ ERR_RTP_FAKETRANS_DIFFERENTRECEIVEMODE, "The function called doens't match the current receive mode"},
+	{ ERR_RTP_FAKETRANS_ERRORINSELECT, "Error in the transmitter's 'select' call"},
+	{ ERR_RTP_FAKETRANS_ILLEGALPARAMETERS, "Illegal parameters type passed to the transmitter"},
+	{ ERR_RTP_FAKETRANS_INVALIDADDRESSTYPE, "Specified address type isn't compatible with this transmitter"},
+	{ ERR_RTP_FAKETRANS_NOLOCALIPS, "Couldn't determine the local host name since the local IP list is empty"},
+	{ ERR_RTP_FAKETRANS_NOMULTICASTSUPPORT, "Multicast support is not available"},
+	{ ERR_RTP_FAKETRANS_NOSUCHENTRY, "Specified entry could not be found"},
+	{ ERR_RTP_FAKETRANS_NOTAMULTICASTADDRESS, "The specified address is not a multicast address"},
+	{ ERR_RTP_FAKETRANS_NOTCREATED, "The 'Create' call for this transmitter has not been called"},
+	{ ERR_RTP_FAKETRANS_NOTINIT, "The 'Init' call for this transmitter has not been called"},
+	{ ERR_RTP_FAKETRANS_NOTWAITING, "The transmitter is not waiting for incoming data"},
+	{ ERR_RTP_FAKETRANS_PORTBASENOTEVEN, "The specified port base is not an even number"},
+	{ ERR_RTP_FAKETRANS_SPECIFIEDSIZETOOBIG, "The maximum packet size is too big for this transmitter"},
+	{ ERR_RTP_FAKETRANS_INVALIDEVENT, "Expecting UNKNOWN_EVENT to set source address but got another type of event"},
+	{ ERR_RTP_FAKETRANS_SRCADDRNOTSET, "Got packet but src address information was not set, returning"},
+	{ ERR_RTP_FAKETRANS_NOTNETBUFFER, "Received buffer is not a GstNetBuffer"},
+	{ ERR_RTP_FAKETRANS_WAITNOTIMPLEMENTED, "The WaitForIncomingData is not implemented in the Gst transmitter"},
 	{ ERR_RTP_INVALID_PACKET_VERISON, "The packet is not the correct version of RTP"},
 	{ 0,0 }
 };
@@ -219,6 +219,12 @@ std::string RTPGetErrorString(int errcode)
 			return std::string(ErrorDescriptions[i].description);
 		i++;
 	}
-	return std::string("Unknown error code");
+	char str[16];
+#if defined(WIN32) || defined(_WIN32_WCE)
+	_snprintf(str,16,"(%d)",errcode);
+#else
+	snprintf(str,16,"(%d)",errcode);
+#endif // WIN32 || _WIN32_WCE
+	return std::string("Unknown error code") + std::string(str);
 }
 

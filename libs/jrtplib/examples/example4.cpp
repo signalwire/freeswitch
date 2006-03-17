@@ -92,8 +92,8 @@ int main(void)
 #endif // WIN32
 	
 	MyRTPSession sess;
-	u_int16_t portbase,destport;
-	u_int32_t destip;
+	uint16_t portbase,destport;
+	uint32_t destip;
 	std::string ipstr;
 	int status,i,num;
 

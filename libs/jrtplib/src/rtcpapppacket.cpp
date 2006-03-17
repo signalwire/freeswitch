@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -38,7 +38,7 @@
 
 #include "rtpdebug.h"
 
-RTCPAPPPacket::RTCPAPPPacket(u_int8_t *data,size_t datalength)
+RTCPAPPPacket::RTCPAPPPacket(uint8_t *data,size_t datalength)
 	: RTCPPacket(APP,data,datalength)
 {
 	knownformat = false;
@@ -49,7 +49,7 @@ RTCPAPPPacket::RTCPAPPPacket(u_int8_t *data,size_t datalength)
 	hdr = (RTCPCommonHeader *)data;
 	if (hdr->padding)
 	{
-		u_int8_t padcount = data[datalength-1];
+		uint8_t padcount = data[datalength-1];
 		if ((padcount & 0x03) != 0) // not a multiple of four! (see rfc 3550 p 37)
 			return;
 		if (((size_t)padcount) >= len)
@@ -57,9 +57,9 @@ RTCPAPPPacket::RTCPAPPPacket(u_int8_t *data,size_t datalength)
 		len -= (size_t)padcount;
 	}
 	
-	if (len < (sizeof(RTCPCommonHeader)+sizeof(u_int32_t)*2))
+	if (len < (sizeof(RTCPCommonHeader)+sizeof(uint32_t)*2))
 		return;
-	len -= (sizeof(RTCPCommonHeader)+sizeof(u_int32_t)*2);
+	len -= (sizeof(RTCPCommonHeader)+sizeof(uint32_t)*2);
 	appdatalen = len;
 	knownformat = true;
 }

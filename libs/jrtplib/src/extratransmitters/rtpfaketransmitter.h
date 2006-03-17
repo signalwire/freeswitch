@@ -1,13 +1,25 @@
 /*
 
+  This class allows for jrtp to process packets without sending them out 
+  anywhere.
+  The incoming messages are handed in to jrtp through the TransmissionParams 
+  and can be retreived from jrtp through the normal polling mecanisms.
+  The outgoing RTP/RTCP packets are given to jrtp through the normal
+  session->SendPacket() and those packets are handed back out to the
+  client through a callback function (packet_ready_cb).
+  
+  example usage : Allows for integration of RTP into gstreamer.
+  
+  Copyright (c) 2005 Philippe Khalaf <burger@speedy.org>
+  
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2006 Jori Liesenborgs
+  Copyright (c) 1999-2004 Jori Liesenborgs
 
-  Contact: jori@lumumba.uhasselt.be
+  Contact: jori@lumumba.luc.ac.be
 
   This library was developed at the "Expertisecentrum Digitale Media"
-  (http://www.edm.uhasselt.be), a research center of the Hasselt University
-  (http://www.uhasselt.be). The library is based upon work done for 
+  (http://www.edm.luc.ac.be), a research center of the "Limburgs Universitair
+  Centrum" (http://www.luc.ac.be). The library is based upon work done for 
   my thesis at the School for Knowledge Technology (Belgium/The Netherlands).
 
   Permission is hereby granted, free of charge, to any person obtaining a
@@ -30,11 +42,12 @@
 
 */
 
-#ifndef RTPUDPV4TRANSMITTER_H
+#ifndef RTPFAKETRANSMITTER_H
 
-#define RTPUDPV4TRANSMITTER_H
+#define RTPFAKETRANSMITTER_H
 
 #include "rtpconfig.h"
+
 #include "rtptransmitter.h"
 #include "rtpipv4destination.h"
 #include "rtphashtable.h"
@@ -45,64 +58,83 @@
 	#include <jmutex.h>
 #endif // RTP_SUPPORT_THREAD
 
-#define RTPUDPV4TRANS_HASHSIZE									8317
-#define RTPUDPV4TRANS_DEFAULTPORTBASE								5000
+#define RTPFAKETRANS_HASHSIZE									8317
+#define RTPFAKETRANS_DEFAULTPORTBASE								5000
 
-class RTPUDPv4TransmissionParams : public RTPTransmissionParams
+// Definition of a callback that is called when a packet is ready for sending
+// params (*data, data_len, dest_addr, dest_port, rtp [1 if rtp, 0 if rtcp])
+typedef void(*packet_ready_cb)(uint8_t*, uint16_t, uint32_t, uint16_t, int rtp);
+
+class RTPFakeTransmissionParams : public RTPTransmissionParams
 {
 public:
-	RTPUDPv4TransmissionParams():RTPTransmissionParams(RTPTransmitter::IPv4UDPProto)	{ portbase = RTPUDPV4TRANS_DEFAULTPORTBASE; bindIP = 0; multicastTTL = 1; mcastifaceIP = 0; }
+	RTPFakeTransmissionParams():RTPTransmissionParams(RTPTransmitter::UserDefinedProto)	{ portbase = RTPFAKETRANS_DEFAULTPORTBASE; bindIP = 0; multicastTTL = 1; currentdata = NULL;}
 	void SetBindIP(uint32_t ip)								{ bindIP = ip; }
-	void SetMulticastInterfaceIP(uint32_t ip)						{ mcastifaceIP = ip; }
 	void SetPortbase(uint16_t pbase)							{ portbase = pbase; }
 	void SetMulticastTTL(uint8_t mcastTTL)							{ multicastTTL = mcastTTL; }
 	void SetLocalIPList(std::list<uint32_t> &iplist)					{ localIPs = iplist; } 
 	void ClearLocalIPList()									{ localIPs.clear(); }
+    void SetCurrentData(uint8_t *data)                      { currentdata = data; }
+    void SetCurrentDataLen(uint16_t len)                   { currentdatalen = len; }
+    void SetCurrentDataAddr(uint32_t addr)                 { currentdataaddr = addr; }
+    void SetCurrentDataPort(uint16_t port)                 { currentdataport = port; }
+    void SetCurrentDataType(bool type)                      { currentdatatype = type; }
+    void SetPacketReadyCB(packet_ready_cb cb)                 { packetreadycb = cb; };
 	uint32_t GetBindIP() const								{ return bindIP; }
-	uint32_t GetMulticastInterfaceIP() const						{ return mcastifaceIP; }
 	uint16_t GetPortbase() const								{ return portbase; }
 	uint8_t GetMulticastTTL() const							{ return multicastTTL; }
 	const std::list<uint32_t> &GetLocalIPList() const					{ return localIPs; }
+    uint8_t* GetCurrentData() const                     { return currentdata; }
+    uint16_t GetCurrentDataLen() const                     { return currentdatalen; }
+    uint32_t GetCurrentDataAddr() const                { return currentdataaddr; }
+    uint16_t GetCurrentDataPort() const                 { return currentdataport; }
+    bool GetCurrentDataType() const                     { return currentdatatype; }
+    packet_ready_cb GetPacketReadyCB() const             { return packetreadycb; }
 private:
 	uint16_t portbase;
-	uint32_t bindIP, mcastifaceIP;
+	uint32_t bindIP;
 	std::list<uint32_t> localIPs;
 	uint8_t multicastTTL;
+    uint8_t* currentdata;
+    uint16_t currentdatalen;
+    uint32_t currentdataaddr;
+    uint16_t currentdataport;
+    bool currentdatatype;
+    packet_ready_cb packetreadycb;
 };
 
-class RTPUDPv4TransmissionInfo : public RTPTransmissionInfo
+class RTPFakeTransmissionInfo : public RTPTransmissionInfo
 {
 public:
+	RTPFakeTransmissionInfo(std::list<uint32_t> iplist,
+            RTPFakeTransmissionParams *transparams) : 
+        RTPTransmissionInfo(RTPTransmitter::UserDefinedProto) 
+    { localIPlist = iplist; params = transparams; } 
 
-	RTPUDPv4TransmissionInfo(std::list<uint32_t> iplist,jrtp_socket_t rtpsock,jrtp_socket_t rtcpsock) : RTPTransmissionInfo(RTPTransmitter::IPv4UDPProto) 
-		{ localIPlist = iplist; rtpsocket = rtpsock; rtcpsocket = rtcpsock; }
-
-	~RTPUDPv4TransmissionInfo()								{ }
+	~RTPFakeTransmissionInfo()								{ }
 	std::list<uint32_t> GetLocalIPList() const						{ return localIPlist; }
-
+    RTPFakeTransmissionParams* GetTransParams()             { return params; }
 private:
 	std::list<uint32_t> localIPlist;
-	jrtp_socket_t rtpsocket,rtcpsocket;
+    RTPFakeTransmissionParams *params;
 };
 	
 #ifdef RTP_SUPPORT_INLINETEMPLATEPARAM
-	inline int RTPUDPv4Trans_GetHashIndex_IPv4Dest(const RTPIPv4Destination &d)				{ return d.GetIP_HBO()%RTPUDPV4TRANS_HASHSIZE; }
-	inline int RTPUDPv4Trans_GetHashIndex_uint32_t(const uint32_t &k)					{ return k%RTPUDPV4TRANS_HASHSIZE; }
+	inline int RTPFakeTrans_GetHashIndex_IPv4Dest(const RTPIPv4Destination &d)				{ return d.GetIP_HBO()%RTPFAKETRANS_HASHSIZE; }
+	inline int RTPFakeTrans_GetHashIndex_uint32_t(const uint32_t &k)					{ return k%RTPFAKETRANS_HASHSIZE; }
 #else // No support for inline function as template parameter
-	int RTPUDPv4Trans_GetHashIndex_IPv4Dest(const RTPIPv4Destination &d);
-	int RTPUDPv4Trans_GetHashIndex_uint32_t(const uint32_t &k);
+	int RTPFakeTrans_GetHashIndex_IPv4Dest(const RTPIPv4Destination &d);
+	int RTPFakeTrans_GetHashIndex_uint32_t(const uint32_t &k);
 #endif // RTP_SUPPORT_INLINETEMPLATEPARAM
 
-#define RTPUDPV4TRANS_HEADERSIZE						(20+8)
+#define RTPFAKETRANS_HEADERSIZE						(20+8)
 	
-class RTPUDPv4Transmitter : public RTPTransmitter
+class RTPFakeTransmitter : public RTPTransmitter
 {
 public:
-	RTPUDPv4Transmitter();
-	~RTPUDPv4Transmitter();
+	RTPFakeTransmitter();
+	~RTPFakeTransmitter();
 
-	jrtp_socket_t RTPUDPv4Transmitter::GetRTPSocket();
-	jrtp_socket_t RTPUDPv4Transmitter::GetRTCPSocket();
 	int Init(bool treadsafe);
 	int Create(size_t maxpacksize,const RTPTransmissionParams *transparams);
 	void Destroy();
@@ -110,7 +142,7 @@ public:
 
 	int GetLocalHostName(uint8_t *buffer,size_t *bufferlength);
 	bool ComesFromThisTransmitter(const RTPAddress *addr);
-	size_t GetHeaderOverhead()							{ return RTPUDPV4TRANS_HEADERSIZE; }
+	size_t GetHeaderOverhead()							{ return RTPFAKETRANS_HEADERSIZE; }
 	
 	int Poll();
 	int WaitForIncomingData(const RTPTime &delay,bool *dataavailable = 0);
@@ -152,7 +184,7 @@ private:
 	void GetLocalIPList_DNS();
 	void AddLoopbackAddress();
 	void FlushPackets();
-	int PollSocket(bool rtp);
+	int FakePoll();
 	int ProcessAddAcceptIgnoreEntry(uint32_t ip,uint16_t port);
 	int ProcessDeleteAcceptIgnoreEntry(uint32_t ip,uint16_t port);
 #ifdef RTP_SUPPORT_IPV4MULTICAST
@@ -161,11 +193,10 @@ private:
 	bool ShouldAcceptData(uint32_t srcip,uint16_t srcport);
 	void ClearAcceptIgnoreInfo();
 	
+    RTPFakeTransmissionParams *params;
 	bool init;
 	bool created;
 	bool waitingfordata;
-	jrtp_socket_t rtpsock,rtcpsock;
-	uint32_t bindIP, mcastifaceIP;
 	std::list<uint32_t> localIPs;
 	uint16_t portbase;
 	uint8_t multicastTTL;
@@ -174,9 +205,9 @@ private:
 	uint8_t *localhostname;
 	size_t localhostnamelength;
 	
-	RTPHashTable<const RTPIPv4Destination,RTPUDPv4Trans_GetHashIndex_IPv4Dest,RTPUDPV4TRANS_HASHSIZE> destinations;
+	RTPHashTable<const RTPIPv4Destination,RTPFakeTrans_GetHashIndex_IPv4Dest,RTPFAKETRANS_HASHSIZE> destinations;
 #ifdef RTP_SUPPORT_IPV4MULTICAST
-	RTPHashTable<const uint32_t,RTPUDPv4Trans_GetHashIndex_uint32_t,RTPUDPV4TRANS_HASHSIZE> multicastgroups;
+//	RTPHashTable<const uint32_t,RTPFakeTrans_GetHashIndex_uint32_t,RTPFAKETRANS_HASHSIZE> multicastgroups;
 #endif // RTP_SUPPORT_IPV4MULTICAST
 	std::list<RTPRawPacket*> rawpacketlist;
 
@@ -192,10 +223,8 @@ private:
 		std::list<uint16_t> portlist;
 	};
 
-	RTPKeyHashTable<const uint32_t,PortInfo*,RTPUDPv4Trans_GetHashIndex_uint32_t,RTPUDPV4TRANS_HASHSIZE> acceptignoreinfo;
+	RTPKeyHashTable<const uint32_t,PortInfo*,RTPFakeTrans_GetHashIndex_uint32_t,RTPFAKETRANS_HASHSIZE> acceptignoreinfo;
 
-	// notification descriptors for AbortWait (0 is for reading, 1 for writing)
-	jrtp_socket_t abortdesc[2];
 	int CreateAbortDescriptors();
 	void DestroyAbortDescriptors();
 	void AbortWaitInternal();
@@ -207,5 +236,5 @@ private:
 	uint32_t rtppackcount,rtcppackcount;
 };
 
-#endif // RTPUDPV4TRANSMITTER_H
+#endif // RTPFakeTRANSMITTER_H
 

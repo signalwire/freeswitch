@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -50,23 +50,23 @@ public:
 	int InitBuild(size_t maxpacketsize);
 	int InitBuild(void *externalbuffer,size_t buffersize);
 	
-	int StartSenderReport(u_int32_t senderssrc,const RTPNTPTime &ntptimestamp,u_int32_t rtptimestamp,
-	                    u_int32_t packetcount,u_int32_t octetcount);
-	int StartReceiverReport(u_int32_t senderssrc);
-	int AddReportBlock(u_int32_t ssrc,u_int8_t fractionlost,int32_t packetslost,u_int32_t exthighestseq,
-	                   u_int32_t jitter,u_int32_t lsr,u_int32_t dlsr);
+	int StartSenderReport(uint32_t senderssrc,const RTPNTPTime &ntptimestamp,uint32_t rtptimestamp,
+	                    uint32_t packetcount,uint32_t octetcount);
+	int StartReceiverReport(uint32_t senderssrc);
+	int AddReportBlock(uint32_t ssrc,uint8_t fractionlost,int32_t packetslost,uint32_t exthighestseq,
+	                   uint32_t jitter,uint32_t lsr,uint32_t dlsr);
 	
-	int AddSDESSource(u_int32_t ssrc);
-	int AddSDESNormalItem(RTCPSDESPacket::ItemType t,const void *itemdata,u_int8_t itemlength);
+	int AddSDESSource(uint32_t ssrc);
+	int AddSDESNormalItem(RTCPSDESPacket::ItemType t,const void *itemdata,uint8_t itemlength);
 #ifdef RTP_SUPPORT_SDESPRIV
-	int AddSDESPrivateItem(const void *prefixdata,u_int8_t prefixlength,const void *valuedata,
-	                       u_int8_t valuelength);
+	int AddSDESPrivateItem(const void *prefixdata,uint8_t prefixlength,const void *valuedata,
+	                       uint8_t valuelength);
 #endif // RTP_SUPPORT_SDESPRIV
 
-	int AddBYEPacket(u_int32_t *ssrcs,u_int8_t numssrcs,const void *reasondata,u_int8_t reasonlength);
+	int AddBYEPacket(uint32_t *ssrcs,uint8_t numssrcs,const void *reasondata,uint8_t reasonlength);
 
 	// note: appdatalen must be a multiple of 4 (32 bits) !
-	int AddAPPPacket(u_int8_t subtype,u_int32_t ssrc,const u_int8_t name[4],const void *appdata,size_t appdatalen);
+	int AddAPPPacket(uint8_t subtype,uint32_t ssrc,const uint8_t name[4],const void *appdata,size_t appdatalen);
 
 	int EndBuild();
 private:
@@ -74,16 +74,16 @@ private:
 	{
 	public:
 		Buffer():packetdata(0),packetlength(0) { }
-		Buffer(u_int8_t *data,size_t len):packetdata(data),packetlength(len) { }			
+		Buffer(uint8_t *data,size_t len):packetdata(data),packetlength(len) { }			
 		
-		u_int8_t *packetdata;
+		uint8_t *packetdata;
 		size_t packetlength;
 	};
 
 	class Report
 	{
 	public:
-		Report() { headerdata = (u_int8_t *)headerdata32; isSR = false; headerlength = 0; }
+		Report() { headerdata = (uint8_t *)headerdata32; isSR = false; headerlength = 0; }
 		~Report() { Clear(); }
 
 		void Clear()
@@ -114,7 +114,7 @@ private:
 				r = n%31;
 				if (r != 0)
 					d++;
-				x += d*(sizeof(RTCPCommonHeader)+sizeof(u_int32_t)); /* header and SSRC */
+				x += d*(sizeof(RTCPCommonHeader)+sizeof(uint32_t)); /* header and SSRC */
 				if (isSR)
 					x += sizeof(RTCPSenderReport);
 			}
@@ -130,7 +130,7 @@ private:
 			r = n%31;
 			if (r != 0)
 				d++;
-			x += d*(sizeof(RTCPCommonHeader)+sizeof(u_int32_t)); /* header and SSRC */
+			x += d*(sizeof(RTCPCommonHeader)+sizeof(uint32_t)); /* header and SSRC */
 			if (isSR)
 				x += sizeof(RTCPSenderReport);
 			return x;
@@ -138,8 +138,8 @@ private:
 		
 		bool isSR;
 
-		u_int8_t *headerdata;
-		u_int32_t headerdata32[(sizeof(u_int32_t)+sizeof(RTCPSenderReport))/sizeof(u_int32_t)]; // either for ssrc and sender info or just ssrc
+		uint8_t *headerdata;
+		uint32_t headerdata32[(sizeof(uint32_t)+sizeof(RTCPSenderReport))/sizeof(uint32_t)]; // either for ssrc and sender info or just ssrc
 		size_t headerlength;
 		std::list<Buffer> reportblocks;
 	};
@@ -147,7 +147,7 @@ private:
 	class SDESSource
 	{
 	public:
-		SDESSource(u_int32_t s) : ssrc(s),totalitemsize(0) { }
+		SDESSource(uint32_t s) : ssrc(s),totalitemsize(0) { }
 		~SDESSource()
 		{
 			std::list<Buffer>::const_iterator it;
@@ -161,32 +161,32 @@ private:
 		{
 			size_t x,r;
 			x = totalitemsize + 1; // +1 for the 0 byte which terminates the item list
-			r = x%sizeof(u_int32_t);
+			r = x%sizeof(uint32_t);
 			if (r != 0)
-				x += (sizeof(u_int32_t)-r); // make sure it ends on a 32 bit boundary
-			x += sizeof(u_int32_t); // for ssrc
+				x += (sizeof(uint32_t)-r); // make sure it ends on a 32 bit boundary
+			x += sizeof(uint32_t); // for ssrc
 			return x;
 		}
 
-		size_t NeededBytesWithExtraItem(u_int8_t itemdatalength)
+		size_t NeededBytesWithExtraItem(uint8_t itemdatalength)
 		{
 			size_t x,r;
 			x = totalitemsize + sizeof(RTCPSDESHeader) + (size_t)itemdatalength + 1;
-			r = x%sizeof(u_int32_t);
+			r = x%sizeof(uint32_t);
 			if (r != 0)
-				x += (sizeof(u_int32_t)-r); // make sure it ends on a 32 bit boundary
-			x += sizeof(u_int32_t); // for ssrc
+				x += (sizeof(uint32_t)-r); // make sure it ends on a 32 bit boundary
+			x += sizeof(uint32_t); // for ssrc
 			return x;
 		}
 		
-		void AddItem(u_int8_t *buf,size_t len)
+		void AddItem(uint8_t *buf,size_t len)
 		{
 			Buffer b(buf,len);
 			totalitemsize += len;
 			items.push_back(b);	
 		}
 		
-		u_int32_t ssrc;
+		uint32_t ssrc;
 		std::list<Buffer> items;
 	private:
 		size_t totalitemsize;
@@ -207,7 +207,7 @@ private:
 			sdessources.clear();
 		}
 
-		int AddSSRC(u_int32_t ssrc)
+		int AddSSRC(uint32_t ssrc)
 		{
 			SDESSource *s = new SDESSource(ssrc);
 			if (s == 0)
@@ -218,7 +218,7 @@ private:
 			return 0;
 		}
 
-		int AddItem(u_int8_t *buf,size_t len)
+		int AddItem(uint8_t *buf,size_t len)
 		{
 			if (sdessources.empty())
 				return ERR_RTP_RTCPCOMPPACKBUILDER_NOCURRENTSOURCE;
@@ -246,7 +246,7 @@ private:
 			return x;
 		}
 		
-		size_t NeededBytesWithExtraItem(u_int8_t itemdatalength)
+		size_t NeededBytesWithExtraItem(uint8_t itemdatalength)
 		{
 			std::list<SDESSource *>::const_iterator it;
 			size_t x = 0;
@@ -280,7 +280,7 @@ private:
 				x += (*it)->NeededBytes();
 			
 			// for the extra source we'll need at least 8 bytes (ssrc and four 0 bytes)
-			x += sizeof(u_int32_t)*2;
+			x += sizeof(uint32_t)*2;
 			
 			n = sdessources.size() + 1; // also, the number of sources will increase
 			d = n/31;
@@ -297,7 +297,7 @@ private:
 	};
 
 	size_t maximumpacketsize;
-	u_int8_t *buffer;
+	uint8_t *buffer;
 	bool external;
 	bool arebuilding;
 	

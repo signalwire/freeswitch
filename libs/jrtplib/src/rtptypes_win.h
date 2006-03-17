@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -41,15 +41,22 @@
 #else
 	#include <winsock2.h>	
 	#include <ws2tcpip.h>
-
-	typedef short int16_t;
-	typedef char int8_t;
 #endif // _WIN32_WCE
 
-typedef unsigned long u_int32_t;
-typedef unsigned short u_int16_t;
-typedef unsigned char u_int8_t;
-typedef long int32_t;
+#ifndef INTTYPES_DEFINED
+
+#define INTTYPES_DEFINED
+
+typedef char int8_t;
+typedef unsigned char uint8_t;
+typedef short int16_t;
+typedef unsigned short uint16_t;
+typedef int int32_t;
+typedef unsigned int uint32_t;
+typedef __int64 int64_t;
+typedef unsigned __int64 uint64_t;
+
+#endif // INTTYPES_DEFINED
 
 #endif // RTPTYPES_H
 

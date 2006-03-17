@@ -9,7 +9,7 @@ int main(void)
 	if (sizeof(char) == 1)
 	{
 		printf("typedef char int8_t;\n");
-		printf("typedef unsigned char u_int8_t;\n");
+		printf("typedef unsigned char uint8_t;\n");
 	}
 	else
 		return -1;
@@ -17,7 +17,7 @@ int main(void)
 	if (sizeof(short) == 2)
 	{
 		printf("typedef short int16_t;\n");
-		printf("typedef unsigned short u_int16_t;\n");
+		printf("typedef unsigned short uint16_t;\n");
 	}
 	else
 		return -1;
@@ -25,14 +25,14 @@ int main(void)
 	if (sizeof(int) == 4)
 	{
 		printf("typedef int int32_t;\n");
-		printf("typedef unsigned int u_int32_t;\n\n");
+		printf("typedef unsigned int uint32_t;\n\n");
 		printf("#endif // RTPTYPES_H\n");
 		return 0;
 	}
 	if (sizeof(long) == 4)
 	{
 		printf("typedef long int32_t;\n");
-		printf("typedef unsigned long u_int32_t;\n\n");
+		printf("typedef unsigned long uint32_t;\n\n");
 		printf("#endif // RTPTYPES_H\n");
 		return 0;
 	}

@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -52,7 +52,7 @@
 #include "rtpdebug.h"
 
 #ifndef RTP_SUPPORT_INLINETEMPLATEPARAM
-	int RTPSources_GetHashIndex(const u_int32_t &ssrc)       { return ssrc%RTPSOURCES_HASHSIZE; }
+	int RTPSources_GetHashIndex(const uint32_t &ssrc)       { return ssrc%RTPSOURCES_HASHSIZE; }
 #endif // !RTP_SUPPORT_INLINETEMPLATEPARAM
 	
 RTPSources::RTPSources(ProbationType probtype)
@@ -89,9 +89,12 @@ void RTPSources::ClearSourceList()
 	}
 	sourcelist.Clear();
 	owndata = 0;
+	totalcount = 0;
+	sendercount = 0;
+	activecount = 0;
 }
 
-int RTPSources::CreateOwnSSRC(u_int32_t ssrc)
+int RTPSources::CreateOwnSSRC(uint32_t ssrc)
 {
 	if (owndata != 0)
 		return ERR_RTP_SOURCES_ALREADYHAVEOWNSSRC;
@@ -123,7 +126,7 @@ int RTPSources::DeleteOwnSSRC()
 	if (owndata == 0)
 		return ERR_RTP_SOURCES_DONTHAVEOWNSSRC;
 
-	u_int32_t ssrc = owndata->GetSSRC();
+	uint32_t ssrc = owndata->GetSSRC();
 
 	sourcelist.GotoElement(ssrc);
 	sourcelist.DeleteCurrentElement();
@@ -286,7 +289,7 @@ int RTPSources::ProcessRawPacket(RTPRawPacket *rawpack,RTPTransmitter *rtptrans[
 
 int RTPSources::ProcessRTPPacket(RTPPacket *rtppack,const RTPTime &receivetime,const RTPAddress *senderaddress,bool *stored)
 {
-	u_int32_t ssrc;
+	uint32_t ssrc;
 	RTPInternalSourceData *srcdat;
 	int status;
 	bool created;
@@ -362,7 +365,7 @@ int RTPSources::ProcessRTCPCompoundPacket(RTCPCompoundPacket *rtcpcomppack,const
 	RTCPPacket *rtcppack;
 	int status;
 	bool gotownssrc = ((owndata == 0)?false:true);
-	u_int32_t ownssrc = ((owndata != 0)?owndata->GetSSRC():0);
+	uint32_t ownssrc = ((owndata != 0)?owndata->GetSSRC():0);
 	
 	OnRTCPCompoundPacket(rtcpcomppack,receivetime,senderaddress);
 	
@@ -376,7 +379,7 @@ int RTPSources::ProcessRTCPCompoundPacket(RTCPCompoundPacket *rtcpcomppack,const
 			case RTCPPacket::SR:
 				{
 					RTCPSRPacket *p = (RTCPSRPacket *)rtcppack;
-					u_int32_t senderssrc = p->GetSenderSSRC();
+					uint32_t senderssrc = p->GetSenderSSRC();
 					
 					status = ProcessRTCPSenderInfo(senderssrc,p->GetNTPTimestamp(),p->GetRTPTimestamp(),
 						                       p->GetSenderPacketCount(),p->GetSenderOctetCount(),
@@ -413,7 +416,7 @@ int RTPSources::ProcessRTCPCompoundPacket(RTCPCompoundPacket *rtcpcomppack,const
 			case RTCPPacket::RR:
 				{
 					RTCPRRPacket *p = (RTCPRRPacket *)rtcppack;
-					u_int32_t senderssrc = p->GetSenderSSRC();
+					uint32_t senderssrc = p->GetSenderSSRC();
 					
 					bool gotinfo = false;
 
@@ -450,7 +453,7 @@ int RTPSources::ProcessRTCPCompoundPacket(RTCPCompoundPacket *rtcpcomppack,const
 					{
 						do
 						{
-							u_int32_t sdesssrc = p->GetChunkSSRC();
+							uint32_t sdesssrc = p->GetChunkSSRC();
 							bool updated = false;
 							if (p->GotoFirstItem())
 							{
@@ -495,7 +498,7 @@ int RTPSources::ProcessRTCPCompoundPacket(RTCPCompoundPacket *rtcpcomppack,const
 
 					for (i = 0 ; i < num ; i++)
 					{
-						u_int32_t byessrc = p->GetSSRC(i);
+						uint32_t byessrc = p->GetSSRC(i);
 						status = ProcessBYE(byessrc,p->GetReasonLength(),p->GetReasonData(),receivetime,senderaddress);
 						if (status < 0)
 							return status;
@@ -614,7 +617,7 @@ RTPSourceData *RTPSources::GetCurrentSourceInfo()
 	return sourcelist.GetCurrentElement();
 }
 
-RTPSourceData *RTPSources::GetSourceInfo(u_int32_t ssrc)
+RTPSourceData *RTPSources::GetSourceInfo(uint32_t ssrc)
 {
 	if (sourcelist.GotoElement(ssrc) < 0)
 		return 0;
@@ -623,7 +626,7 @@ RTPSourceData *RTPSources::GetSourceInfo(u_int32_t ssrc)
 	return sourcelist.GetCurrentElement();
 }
 
-bool RTPSources::GotEntry(u_int32_t ssrc)
+bool RTPSources::GotEntry(uint32_t ssrc)
 {
 	return sourcelist.HasElement(ssrc);
 }
@@ -638,8 +641,8 @@ RTPPacket *RTPSources::GetNextPacket()
 	return pack;
 }
 
-int RTPSources::ProcessRTCPSenderInfo(u_int32_t ssrc,const RTPNTPTime &ntptime,u_int32_t rtptime,
-                          u_int32_t packetcount,u_int32_t octetcount,const RTPTime &receivetime,
+int RTPSources::ProcessRTCPSenderInfo(uint32_t ssrc,const RTPNTPTime &ntptime,uint32_t rtptime,
+                          uint32_t packetcount,uint32_t octetcount,const RTPTime &receivetime,
 			  const RTPAddress *senderaddress)
 {
 	RTPInternalSourceData *srcdat;
@@ -661,9 +664,9 @@ int RTPSources::ProcessRTCPSenderInfo(u_int32_t ssrc,const RTPNTPTime &ntptime,u
 	return 0;
 }
 
-int RTPSources::ProcessRTCPReportBlock(u_int32_t ssrc,u_int8_t fractionlost,int32_t lostpackets,
-                           u_int32_t exthighseqnr,u_int32_t jitter,u_int32_t lsr,
-			   u_int32_t dlsr,const RTPTime &receivetime,const RTPAddress *senderaddress)
+int RTPSources::ProcessRTCPReportBlock(uint32_t ssrc,uint8_t fractionlost,int32_t lostpackets,
+                           uint32_t exthighseqnr,uint32_t jitter,uint32_t lsr,
+			   uint32_t dlsr,const RTPTime &receivetime,const RTPAddress *senderaddress)
 {
 	RTPInternalSourceData *srcdat;
 	bool created;
@@ -684,13 +687,13 @@ int RTPSources::ProcessRTCPReportBlock(u_int32_t ssrc,u_int8_t fractionlost,int3
 	return 0;
 }
 
-int RTPSources::ProcessSDESNormalItem(u_int32_t ssrc,RTCPSDESPacket::ItemType t,size_t itemlength,
+int RTPSources::ProcessSDESNormalItem(uint32_t ssrc,RTCPSDESPacket::ItemType t,size_t itemlength,
                           const void *itemdata,const RTPTime &receivetime,const RTPAddress *senderaddress)
 {
 	RTPInternalSourceData *srcdat;
 	bool created,cnamecollis;
 	int status;
-	u_int8_t id;
+	uint8_t id;
 	bool prevactive;
 
 	switch(t)
@@ -727,7 +730,7 @@ int RTPSources::ProcessSDESNormalItem(u_int32_t ssrc,RTCPSDESPacket::ItemType t,
 		return 0;
 
 	prevactive = srcdat->IsActive();
-	status = srcdat->ProcessSDESItem(id,(const u_int8_t *)itemdata,itemlength,receivetime,&cnamecollis);
+	status = srcdat->ProcessSDESItem(id,(const uint8_t *)itemdata,itemlength,receivetime,&cnamecollis);
 	if (!prevactive && srcdat->IsActive())
 		activecount++;
 	
@@ -735,13 +738,13 @@ int RTPSources::ProcessSDESNormalItem(u_int32_t ssrc,RTCPSDESPacket::ItemType t,
 	if (created)
 		OnNewSource(srcdat);
 	if (cnamecollis)
-		OnCNAMECollision(srcdat,senderaddress,(const u_int8_t *)itemdata,itemlength);
+		OnCNAMECollision(srcdat,senderaddress,(const uint8_t *)itemdata,itemlength);
 	
 	return status;
 }
 
 #ifdef RTP_SUPPORT_SDESPRIV
-int RTPSources::ProcessSDESPrivateItem(u_int32_t ssrc,size_t prefixlen,const void *prefixdata,
+int RTPSources::ProcessSDESPrivateItem(uint32_t ssrc,size_t prefixlen,const void *prefixdata,
                            size_t valuelen,const void *valuedata,const RTPTime &receivetime,
 			   const RTPAddress *senderaddress)
 {
@@ -755,7 +758,7 @@ int RTPSources::ProcessSDESPrivateItem(u_int32_t ssrc,size_t prefixlen,const voi
 	if (srcdat == 0)
 		return 0;
 
-	status = srcdat->ProcessPrivateSDESItem((const u_int8_t *)prefixdata,prefixlen,(const u_int8_t *)valuedata,valuelen,receivetime);
+	status = srcdat->ProcessPrivateSDESItem((const uint8_t *)prefixdata,prefixlen,(const uint8_t *)valuedata,valuelen,receivetime);
 	// Call the callback
 	if (created)
 		OnNewSource(srcdat);
@@ -763,7 +766,7 @@ int RTPSources::ProcessSDESPrivateItem(u_int32_t ssrc,size_t prefixlen,const voi
 }
 #endif //RTP_SUPPORT_SDESPRIV
 
-int RTPSources::ProcessBYE(u_int32_t ssrc,size_t reasonlength,const void *reasondata,
+int RTPSources::ProcessBYE(uint32_t ssrc,size_t reasonlength,const void *reasondata,
 		           const RTPTime &receivetime,const RTPAddress *senderaddress)
 {
 	RTPInternalSourceData *srcdat;
@@ -782,7 +785,7 @@ int RTPSources::ProcessBYE(u_int32_t ssrc,size_t reasonlength,const void *reason
 		return 0;
 	
 	prevactive = srcdat->IsActive();
-	srcdat->ProcessBYEPacket((const u_int8_t *)reasondata,reasonlength,receivetime);
+	srcdat->ProcessBYEPacket((const uint8_t *)reasondata,reasonlength,receivetime);
 	if (prevactive && !srcdat->IsActive())
 		activecount--;
 	
@@ -793,7 +796,7 @@ int RTPSources::ProcessBYE(u_int32_t ssrc,size_t reasonlength,const void *reason
 	return 0;
 }
 
-int RTPSources::ObtainSourceDataInstance(u_int32_t ssrc,RTPInternalSourceData **srcdat,bool *created)
+int RTPSources::ObtainSourceDataInstance(uint32_t ssrc,RTPInternalSourceData **srcdat,bool *created)
 {
 	RTPInternalSourceData *srcdat2;
 	int status;
@@ -825,7 +828,7 @@ int RTPSources::ObtainSourceDataInstance(u_int32_t ssrc,RTPInternalSourceData **
 }
 
 	
-int RTPSources::GetRTCPSourceData(u_int32_t ssrc,const RTPAddress *senderaddress,
+int RTPSources::GetRTCPSourceData(uint32_t ssrc,const RTPAddress *senderaddress,
 		                  RTPInternalSourceData **srcdat2,bool *newsource)
 {
 	int status;
@@ -854,7 +857,7 @@ int RTPSources::GetRTCPSourceData(u_int32_t ssrc,const RTPAddress *senderaddress
 	return 0;
 }
 
-int RTPSources::UpdateReceiveTime(u_int32_t ssrc,const RTPTime &receivetime,const RTPAddress *senderaddress)
+int RTPSources::UpdateReceiveTime(uint32_t ssrc,const RTPTime &receivetime,const RTPAddress *senderaddress)
 {
 	RTPInternalSourceData *srcdat;
 	bool created;
@@ -1080,7 +1083,7 @@ void RTPSources::NoteTimeout(const RTPTime &curtime,const RTPTime &timeoutdelay)
 	while (sourcelist.HasCurrentElement())
 	{
 		RTPInternalSourceData *srcdat = sourcelist.GetCurrentElement();
-		u_int8_t *note;
+		uint8_t *note;
 		size_t notelen;
 
 		note = srcdat->SDES_GetNote(&notelen);
@@ -1147,7 +1150,7 @@ void RTPSources::MultipleTimeouts(const RTPTime &curtime,const RTPTime &senderti
 		RTPInternalSourceData *srcdat = sourcelist.GetCurrentElement();
 		bool deleted,issender,isactive;
 		bool byetimeout,normaltimeout,notetimeout;
-		u_int8_t *note;
+		uint8_t *note;
 		size_t notelen;
 		
 		issender = srcdat->IsSender();

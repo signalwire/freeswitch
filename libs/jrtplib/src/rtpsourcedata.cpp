@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -88,15 +88,15 @@ void RTPSourceStats::ProcessPacket(RTPPacket *pack,const RTPTime &receivetime,do
 
 			if (probation)  
 			{	
-				u_int16_t pseq;
-				u_int32_t pseq2;
+				uint16_t pseq;
+				uint32_t pseq2;
 	
 				pseq = prevseqnr;
 				pseq++;
-				pseq2 = (u_int32_t)pseq;
+				pseq2 = (uint32_t)pseq;
 				if (pseq2 == pack->GetExtendedSequenceNumber()) // ok, its the next expected packet
 				{
-					prevseqnr = (u_int16_t)pack->GetExtendedSequenceNumber();
+					prevseqnr = (uint16_t)pack->GetExtendedSequenceNumber();
 					probation--;	
 					if (probation == 0) // probation over
 						acceptpack = true;
@@ -106,14 +106,14 @@ void RTPSourceStats::ProcessPacket(RTPPacket *pack,const RTPTime &receivetime,do
 				else // not next packet
 				{
 					probation = RTP_PROBATIONCOUNT;
-					prevseqnr = (u_int16_t)pack->GetExtendedSequenceNumber();
+					prevseqnr = (uint16_t)pack->GetExtendedSequenceNumber();
 					*onprobation = true;
 				}
 			}
 			else // first packet received with this SSRC ID, start probation
 			{
 				probation = RTP_PROBATIONCOUNT;
-				prevseqnr = (u_int16_t)pack->GetExtendedSequenceNumber();	
+				prevseqnr = (uint16_t)pack->GetExtendedSequenceNumber();	
 				*onprobation = true;
 			}
 	
@@ -139,8 +139,8 @@ void RTPSourceStats::ProcessPacket(RTPPacket *pack,const RTPTime &receivetime,do
 	}
 	else // already got packets
 	{
-		u_int16_t maxseq16;
-		u_int32_t extseqnr;
+		uint16_t maxseq16;
+		uint32_t extseqnr;
 
 		// Adjust max extended sequence number and set extende seq nr of packet
 
@@ -148,7 +148,7 @@ void RTPSourceStats::ProcessPacket(RTPPacket *pack,const RTPTime &receivetime,do
 		packetsreceived++;
 		numnewpackets++;
 
-		maxseq16 = (u_int16_t)(exthighseqnr&0x0000FFFF);
+		maxseq16 = (uint16_t)(exthighseqnr&0x0000FFFF);
 		if (pack->GetExtendedSequenceNumber() >= maxseq16)
 		{
 			extseqnr = numcycles+pack->GetExtendedSequenceNumber();
@@ -156,12 +156,12 @@ void RTPSourceStats::ProcessPacket(RTPPacket *pack,const RTPTime &receivetime,do
 		}
 		else
 		{
-			u_int16_t dif1,dif2;
+			uint16_t dif1,dif2;
 
-			dif1 = ((u_int16_t)pack->GetExtendedSequenceNumber());
+			dif1 = ((uint16_t)pack->GetExtendedSequenceNumber());
 			dif1 -= maxseq16;
 			dif2 = maxseq16;
-			dif2 -= ((u_int16_t)pack->GetExtendedSequenceNumber());
+			dif2 -= ((uint16_t)pack->GetExtendedSequenceNumber());
 			if (dif1 < dif2)
 			{
 				numcycles += 0x00010000;
@@ -190,7 +190,7 @@ void RTPSourceStats::ProcessPacket(RTPPacket *pack,const RTPTime &receivetime,do
 			diff -= djitter;
 			diff /= 16.0;
 			djitter += diff;
-			jitter = (u_int32_t)djitter;
+			jitter = (uint32_t)djitter;
 		}
 		else
 		{
@@ -206,7 +206,7 @@ void RTPSourceStats::ProcessPacket(RTPPacket *pack,const RTPTime &receivetime,do
 	}
 }
 
-RTPSourceData::RTPSourceData(u_int32_t s) : byetime(0,0)
+RTPSourceData::RTPSourceData(uint32_t s) : byetime(0,0)
 {
 	ssrc = s;
 	issender = false;
@@ -251,7 +251,7 @@ double RTPSourceData::INF_GetEstimatedTimestampUnit() const
 
 	t1 -= t2; // get the time difference
 	
-	u_int32_t tsdiff = SRinf.GetRTPTimestamp()-SRprevinf.GetRTPTimestamp();
+	uint32_t tsdiff = SRinf.GetRTPTimestamp()-SRprevinf.GetRTPTimestamp();
 	
 	return (t1.GetDouble()/((double)tsdiff));
 }
@@ -264,7 +264,7 @@ RTPTime RTPSourceData::INF_GetRoundtripTime() const
 		return RTPTime(0,0);
 
 	RTPNTPTime recvtime = RRinf.GetReceiveTime().GetNTPTime();
-	u_int32_t rtt = ((recvtime.GetMSW()&0xFFFF)<<16)|((recvtime.GetLSW()>>16)&0xFFFF);
+	uint32_t rtt = ((recvtime.GetMSW()&0xFFFF)<<16)|((recvtime.GetLSW()>>16)&0xFFFF);
 	rtt -= RRinf.GetLastSRTimestamp();
 	rtt -= RRinf.GetDelaySinceLastSR();
 
@@ -375,7 +375,7 @@ void RTPSourceData::Dump()
 
 	size_t len;
 	char str[1024];
-	u_int8_t *val;
+	uint8_t *val;
 	
 	if ((val = SDESinf.GetCNAME(&len)) != 0)
 	{
@@ -421,7 +421,7 @@ void RTPSourceData::Dump()
 	}
 #ifdef RTP_SUPPORT_SDESPRIV
 	SDESinf.GotoFirstPrivateValue();
-	u_int8_t *pref;
+	uint8_t *pref;
 	size_t preflen;
 	while (SDESinf.GetNextPrivateValue(&pref,&preflen,&val,&len))
 	{

@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -46,14 +46,14 @@ class RTCPCompoundPacket;
 class RTCPBYEPacket : public RTCPPacket
 {
 public:
-	RTCPBYEPacket(u_int8_t *data,size_t datalen);
+	RTCPBYEPacket(uint8_t *data,size_t datalen);
 	~RTCPBYEPacket()							{ }
 	
 	int GetSSRCCount() const;
-	u_int32_t GetSSRC(int index) const; // note: no check is performed to see if index is valid!
+	uint32_t GetSSRC(int index) const; // note: no check is performed to see if index is valid!
 	bool HasReasonForLeaving() const;
 	size_t GetReasonLength() const;
-	u_int8_t *GetReasonData();
+	uint8_t *GetReasonData();
 
 #ifdef RTPDEBUG
 	void Dump();
@@ -71,11 +71,11 @@ inline int RTCPBYEPacket::GetSSRCCount() const
 	return (int)(hdr->count);
 }
 
-inline u_int32_t RTCPBYEPacket::GetSSRC(int index) const
+inline uint32_t RTCPBYEPacket::GetSSRC(int index) const
 {
 	if (!knownformat)
 		return 0;
-	u_int32_t *ssrc = (u_int32_t *)(data+sizeof(RTCPCommonHeader)+sizeof(u_int32_t)*index);
+	uint32_t *ssrc = (uint32_t *)(data+sizeof(RTCPCommonHeader)+sizeof(uint32_t)*index);
 	return ntohl(*ssrc);
 }
 
@@ -94,17 +94,17 @@ inline size_t RTCPBYEPacket::GetReasonLength() const
 		return 0;
 	if (reasonoffset == 0)
 		return 0;
-	u_int8_t *reasonlen = (data+reasonoffset);
+	uint8_t *reasonlen = (data+reasonoffset);
 	return (size_t)(*reasonlen);
 }
 
-inline u_int8_t *RTCPBYEPacket::GetReasonData()
+inline uint8_t *RTCPBYEPacket::GetReasonData()
 {
 	if (!knownformat)
 		return 0;
 	if (reasonoffset == 0)
 		return 0;
-	u_int8_t *reasonlen = (data+reasonoffset);
+	uint8_t *reasonlen = (data+reasonoffset);
 	if ((*reasonlen) == 0)
 		return 0;
 	return (data+reasonoffset+1);	

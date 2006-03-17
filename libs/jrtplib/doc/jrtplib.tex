@@ -1,6 +1,6 @@
 \documentclass[12pt,a4paper]{article}
 
-\newcommand{\jversion}{3.3.0}
+\newcommand{\jversion}{3.4.0}
 \newcommand{\headerfile}[1]{\marginpar{\scriptsize Header:\\{\tt #1}}}
 \newcommand{\inherits}[1]{\marginpar{\scriptsize Inherits:\\{\tt #1}}}
 \newcommand{\Paragraph}[1]{\paragraph{#1}\ \\\addcontentsline{toc}{subsection}{\ \hspace{3cm}\ {#1}}}
@@ -22,7 +22,7 @@
 \begin{document}
 	\title{\ \vspace{3.5cm}\ \\{\bf JRTPLIB \jversion}}
 	\author{Jori Liesenborgs\\{\tt jori@lumumba.uhasselt.be}}
-	\date{October 2, 2005\\\vspace{0.5cm}\ \\
+	\date{January 19, 2006\\\vspace{0.5cm}\ \\
 	      {\small{\em Developed at the The Expertise Centre for \\Digital Media (EDM),
 	      a research institute\\of the Hasselt University}\\\ \\
 		  {\tt http://www.edm.uhasselt.be/}\\
@@ -111,7 +111,7 @@
 			CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 			SOFTWARE.}
 
-		There are two reason for using this license. First, since this is the
+		There are two reasons for using this license. First, since this is the
 		license of the 2.x series, it only seemed natural that this rewrite
 		would contain the same license. Second, since the RTP protocol is
 		deliberately incomplete RTP profiles can, for example, define additional
@@ -510,12 +510,12 @@ session.BYEDestroy(delay,"Time's up",9);
 
 				The abstract class {\tt RTPTransmitter} specifies the interface for
 				actual transmission components. Currently, three implementations exist:
-				an UDP over IPv4 transmitter, an UDP over IPv6 transmitter and a 
-				GStreamer transmission component. The {\tt TransmissionProtocol} type 
+				an UDP over IPv4 transmitter and an UDP over IPv6 transmitter. 
+				The {\tt TransmissionProtocol} type 
 				is used to specify a specific kind of transmitter:
 				\begin{verbatim}
 					enum TransmissionProtocol { IPv4UDPProto, IPv6UDPProto, 
-					                            IPv4GSTProto, UserDefinedProto };
+					                            UserDefinedProto };
 				\end{verbatim}
 				The {\tt UserDefinedProto} can be used to select your own transmission
 				component when using the {\tt RTPSession} class. In this case, you'll
@@ -1994,6 +1994,12 @@ session.BYEDestroy(delay,"Time's up",9);
 					\item {\tt int SetMaximumPacketSize(size\_t maxpacksize)}\\
 						Sets the maximum size allowed size of an RTCP compound
 						packet to {\tt maxpacksize}.
+					\item {\tt int SetPreTransmissionDelay(const RTPTime \&delay)}\\
+						This function allows you to inform RTCP packet builder about the
+						delay between sampling the first sample of a packet and
+						sending the packet. This delay is taken into account when
+						calculating the relation between RTP timestamp and wallclock
+						time, used for inter-media synchronization.
 					\item {\tt int BuildNextPacket(RTCPCompoundPacket **pack)}\\
 						Builds the next RTCP compound packet which should be
 						sent and stores it in {\tt pack}.
@@ -2420,6 +2426,12 @@ session.BYEDestroy(delay,"Time's up",9);
 						timestamp with the appropriate amount so that the next
 						packets will still be played at the correct time at
 						other hosts.						
+					\item {\tt int SetPreTransmissionDelay(const RTPTime \&delay)}\\
+						This function allows you to inform the library about the
+						delay between sampling the first sample of a packet and
+						sending the packet. This delay is taken into account when
+						calculating the relation between RTP timestamp and wallclock
+						time, used for inter-media synchronization.
 					\item {\tt RTPTransmissionInfo *GetTransmissionInfo()}\\
 					    This function returns an instance of a subclass of {\tt RTPTransmissionInfo}
 						which will give some additional information about the transmitter

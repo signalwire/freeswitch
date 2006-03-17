@@ -1,7 +1,7 @@
 /*
 
   This file is a part of JRTPLIB
-  Copyright (c) 1999-2005 Jori Liesenborgs
+  Copyright (c) 1999-2006 Jori Liesenborgs
 
   Contact: jori@lumumba.uhasselt.be
 
@@ -48,7 +48,7 @@ class RTPTransmissionInfo;
 class RTPTransmitter
 {
 public:
-	enum TransmissionProtocol { IPv4UDPProto, IPv6UDPProto, IPv4GSTProto, UserDefinedProto };
+	enum TransmissionProtocol { IPv4UDPProto, IPv6UDPProto, UserDefinedProto };
 	enum ReceiveMode { AcceptAll,AcceptSome,IgnoreSome };
 protected:
 	RTPTransmitter()															{ }
@@ -72,7 +72,7 @@ public:
 	// If the size is ok, bufferlength is adjusted so that it indicates the
 	// amount of bytes in the buffer that are part of the hostname.
 	// The buffer is NOT null terminated!
-	virtual int GetLocalHostName(u_int8_t *buffer,size_t *bufferlength) = 0;
+	virtual int GetLocalHostName(uint8_t *buffer,size_t *bufferlength) = 0;
 
 	virtual bool ComesFromThisTransmitter(const RTPAddress *addr) = 0;
 	virtual size_t GetHeaderOverhead() = 0;
@@ -87,8 +87,8 @@ public:
 	virtual int SendRTCPData(const void *data,size_t len) = 0;
 
 	virtual void ResetPacketCount() = 0;
-	virtual u_int32_t GetNumRTPPacketsSent() = 0;
-	virtual u_int32_t GetNumRTCPPacketsSent() = 0;
+	virtual uint32_t GetNumRTPPacketsSent() = 0;
+	virtual uint32_t GetNumRTCPPacketsSent() = 0;
 	
 	virtual int AddDestination(const RTPAddress &addr) = 0;
 	virtual int DeleteDestination(const RTPAddress &addr) = 0;
