@@ -1026,11 +1026,7 @@ int RTPSession::SetLocalNote(const void *s,size_t len)
 	return status;
 }
 
-#if ! (defined(WIN32) || defined(_WIN32_WCE))
-int RTPSession::GetRTPSocket(void)
-#else
-SOCKET RTPSession::GetRTPSocket(void)
-#endif // WIN32
+jrtp_socket_t RTPSession::GetRTPSocket(void)
 {
 	return rtptrans->GetRTPSocket();
 }

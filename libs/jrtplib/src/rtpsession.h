@@ -143,11 +143,7 @@ public:
 	int SetLocalPhone(const void *s,size_t len);
 	int SetLocalTool(const void *s,size_t len);
 	int SetLocalNote(const void *s,size_t len);
-#if ! (defined(WIN32) || defined(_WIN32_WCE))
-	int GetRTPSocket(void);
-#else
-	SOCKET GetRTPSocket(void); 
-#endif // WIN32
+	jrtp_socket_t GetRTPSocket(void);
 
 #ifdef RTPDEBUG
 	void DumpSources();
@@ -173,11 +169,7 @@ protected:
 	                                 const RTPAddress *senderaddress)				{ }
 	virtual void OnUnknownPacketFormat(RTCPPacket *rtcppack,const RTPTime &receivetime,
 	                                   const RTPAddress *senderaddress)				{ }
-#if (defined(WIN32) || defined(_WIN32_WCE))
-	virtual void OnInvalidRawPacketType(RTPRawPacket *rawpacket, SOCKET socket)	{ }
-#else
-	virtual void OnInvalidRawPacketType(RTPRawPacket *rawpacket, int socket)	{ }
-#endif
+	virtual void OnInvalidRawPacketType(RTPRawPacket *rawpacket, jrtp_socket_t socket)	{ }
 	virtual void OnNoteTimeout(RTPSourceData *srcdat)						{ }
 	virtual void OnBYEPacket(RTPSourceData *srcdat)							{ }
 

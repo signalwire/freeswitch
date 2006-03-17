@@ -1300,12 +1300,11 @@ int RTPUDPv4Transmitter::PollSocket(bool rtp)
 	int recvlen;
 	char packetbuffer[RTPUDPV4TRANS_MAXPACKSIZE];
 #if (defined(WIN32) || defined(_WIN32_WCE))
-	SOCKET sock;
 	unsigned long len;
 #else 
 	size_t len;
-	int sock;
 #endif // WIN32
+	jrtp_socket_t sock;
 	struct sockaddr_in srcaddr;
 	
 	if (rtp)

@@ -1314,12 +1314,11 @@ int RTPUDPv6Transmitter::PollSocket(bool rtp)
 	RTPSOCKLENTYPE fromlen;
 	int recvlen;
 	char packetbuffer[RTPUDPV6TRANS_MAXPACKSIZE];
+	jrtp_socket_t sock;
 #if (defined(WIN32) || defined(_WIN32_WCE))
-	SOCKET sock;
 	unsigned long len;
 #else 
 	size_t len;
-	int sock;
 #endif // WIN32
 	struct sockaddr_in6 srcaddr;
 	

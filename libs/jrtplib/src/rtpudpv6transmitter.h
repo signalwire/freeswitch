@@ -78,29 +78,16 @@ private:
 class RTPUDPv6TransmissionInfo : public RTPTransmissionInfo
 {
 public:
-#if ! (defined(WIN32) || defined(_WIN32_WCE))
-	RTPUDPv6TransmissionInfo(std::list<in6_addr> iplist,int rtpsock,int rtcpsock) : RTPTransmissionInfo(RTPTransmitter::IPv6UDPProto) 
-#else
-	RTPUDPv6TransmissionInfo(std::list<in6_addr> iplist,SOCKET rtpsock,SOCKET rtcpsock) : RTPTransmissionInfo(RTPTransmitter::IPv6UDPProto) 
-#endif  // WIN32
+	RTPUDPv6TransmissionInfo(std::list<in6_addr> iplist,jrtp_socket_t rtpsock,jrtp_socket_t rtcpsock) : RTPTransmissionInfo(RTPTransmitter::IPv6UDPProto) 
 												{ localIPlist = iplist; rtpsocket = rtpsock; rtcpsocket = rtcpsock; }
 
 	~RTPUDPv6TransmissionInfo()								{ }
 	std::list<in6_addr> GetLocalIPList() const						{ return localIPlist; }
-#if ! (defined(WIN32) || defined(_WIN32_WCE))
-	int GetRTPSocket() const								{ return rtpsocket; }
-	int GetRTCPSocket() const								{ return rtcpsocket; }
-#else
-	SOCKET GetRTPSocket() const								{ return rtpsocket; }
-	SOCKET GetRTCPSocket() const								{ return rtcpsocket; }
-#endif // WIN32
+	jrtp_socket_t GetRTPSocket() const								{ return rtpsocket; }
+	jrtp_socket_t GetRTCPSocket() const								{ return rtcpsocket; }
 private:
 	std::list<in6_addr> localIPlist;
-#if ! (defined(WIN32) || defined(_WIN32_WCE))
-	int rtpsocket,rtcpsocket;
-#else
-	SOCKET rtpsocket,rtcpsocket;
-#endif // WIN32
+	jrtp_socket_t rtpsocket,rtcpsocket;
 };
 		
 #ifdef RTP_SUPPORT_INLINETEMPLATEPARAM
@@ -182,11 +169,7 @@ private:
 	bool init;
 	bool created;
 	bool waitingfordata;
-#if (defined(WIN32) || defined(_WIN32_WCE))
-	SOCKET rtpsock,rtcpsock;
-#else // not using winsock
-	int rtpsock,rtcpsock;
-#endif // WIN32
+	jrtp_socket_t rtpsock,rtcpsock;
 	in6_addr bindIP;
 	std::list<in6_addr> localIPs;
 	u_int16_t portbase;
@@ -217,11 +200,7 @@ private:
 	RTPKeyHashTable<const in6_addr,PortInfo*,RTPUDPv6Trans_GetHashIndex_in6_addr,RTPUDPV6TRANS_HASHSIZE> acceptignoreinfo;
 
 	// notification descriptors for AbortWait (0 is for reading, 1 for writing)
-#if (defined(WIN32) || defined(_WIN32_WCE))
-	SOCKET abortdesc[2];
-#else
-	int abortdesc[2];
-#endif // WIN32
+	jrtp_socket_t abortdesc[2];
 	int CreateAbortDescriptors();
 	void DestroyAbortDescriptors();
 	void AbortWaitInternal();
