@@ -57,7 +57,7 @@ static switch_status switch_g729_init(switch_codec *codec, switch_codec_flag fla
 	} else {
 
 		if (encoding) {
-			g729_init_coder(&context->encoder_object, 0);
+			g729_init_coder(&context->encoder_object, 1);
 		}
 
 		if (decoding) {
@@ -140,7 +140,8 @@ static switch_status switch_g729_decode(switch_codec *codec,
 {
 
 	struct g729_context *context = codec->private_info;
-
+	int divisor = 10;
+	int plen = 10;
 
 	if (!context) {
 
@@ -149,43 +150,52 @@ static switch_status switch_g729_decode(switch_codec *codec,
 	}
 
 
+	if (encoded_data_len % 2 == 0) {
 
-	if (encoded_data_len % 10 == 0) {
-
-		int loops = (int) encoded_data_len / 10;
-
-		char *edp = encoded_data;
-
-		short *ddp = decoded_data;
-
-		int x;
-
-		unsigned int new_len = 0;
-
-		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
-
-			g729_decoder(&context->decoder_object, ddp, edp, 10);
-
-			ddp += 80;
-
-			edp += 10;
-
-			new_len += 160;
-
-		}
-
-		if (new_len <= *decoded_data_len) {
-
-			*decoded_data_len = new_len;
-
+		if (encoded_data_len % 12 == 0) {
+			return SWITCH_STATUS_BREAK;
+			//divisor = 12;
+			//plen = 10;
+		} else if (encoded_data_len % 10 != 0) {
+			//*decoded_data_len = (encoded_data_len / 2) * 160;
+			//memset(decoded_data, 255, *decoded_data_len);
+			return SWITCH_STATUS_BREAK;
 		} else {
-
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!!\n");
-
-			return SWITCH_STATUS_FALSE;
-
+			divisor = plen = 10;
 		}
 
+		if (encoded_data_len % divisor == 0) {
+
+			int loops = (int) encoded_data_len / divisor;
+
+			char *edp = encoded_data;
+
+			short *ddp = decoded_data;
+
+			int x;
+
+			unsigned int new_len = 0;
+
+			for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
+				g729_decoder(&context->decoder_object, ddp, edp, plen);
+
+				ddp += 80;
+				edp += divisor;
+				new_len += 160;
+			}
+
+			if (new_len <= *decoded_data_len) {
+
+				*decoded_data_len = new_len;
+
+			} else {
+
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!!\n");
+
+				return SWITCH_STATUS_FALSE;
+
+			}
+		} 
 	} else {
 
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "yo this frame is an odd size [%d]\n", encoded_data_len);

@@ -712,7 +712,7 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 		write(tech_pvt->fd, bp, (int) globals.mtu);
 #endif
 		towrite = bytes >= globals.mtu ? globals.mtu : bytes;
-	
+		//printf("write %d\n", towrite);
 		res = sangoma_sendmsg_socket(tech_pvt->socket,
 									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), bp, towrite, 0);
 		if (res < 0) {

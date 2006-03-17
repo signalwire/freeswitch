@@ -1071,7 +1071,6 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 											  session->write_codec->implementation->samples_per_second,
 											  session->raw_write_frame.data,
 											  &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &flag);
-
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
 				write_frame = &session->raw_write_frame;
@@ -1086,6 +1085,9 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				break;
 			case SWITCH_STATUS_SUCCESS:
 				write_frame = &session->raw_write_frame;
+				break;
+			case SWITCH_STATUS_BREAK:
+				return SWITCH_STATUS_SUCCESS;
 				break;
 			case SWITCH_STATUS_NOOP:
 				write_frame = frame;
@@ -1119,7 +1121,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				if (!session->raw_write_buffer) {
 					size_t bytes = session->write_codec->implementation->bytes_per_frame * 10;
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-										  "Engaging Write Buffer at %d bytes to accomidate %d->%d\n",
+										  "Engaging Write Buffer at %d bytes to accomodate %d->%d\n",
 										  bytes,
 										  write_frame->datalen, session->write_codec->implementation->bytes_per_frame);
 					if ((status =
