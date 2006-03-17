@@ -16,7 +16,7 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\LibR"
+			OutputDirectory=".\Release"
 			IntermediateDirectory=".\LibR"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\LibR\xml.lib"
+				OutputFile="$(OutDir)\xml.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -91,7 +91,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\LibD"
+			OutputDirectory=".\Debug"
 			IntermediateDirectory=".\LibD"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
@@ -140,7 +140,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\LibD\xml.lib"
+				OutputFile="$(OutDir)\xml.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool

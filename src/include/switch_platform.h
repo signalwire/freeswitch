@@ -42,6 +42,9 @@ extern "C" {
 
 #ifndef FREESWITCHCORE_EXPORTS
 #pragma comment(lib, "FreeSwitchCore.lib")
+#pragma comment(lib, "libapr-1.lib")
+#pragma comment(lib, "libaprutil-1.lib")
+#pragma comment(lib, "libapriconv-1.lib")
 #endif
 
 /* disable the following warnings 

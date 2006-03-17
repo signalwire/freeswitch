@@ -61,8 +61,8 @@ public:
 	virtual int Create(size_t maxpacksize,const RTPTransmissionParams *transparams) = 0;
 	virtual void Destroy() = 0;
 
-	virtual jrtp_socket_t GetRTPSocket() {}
-	virtual jrtp_socket_t GetRTCPSocket() {}
+	virtual jrtp_socket_t GetRTPSocket() = 0;
+	virtual jrtp_socket_t GetRTCPSocket() = 0;
 
 	// The user MUST delete the returned instance when it is no longer needed
 	virtual RTPTransmissionInfo *GetTransmissionInfo() = 0;

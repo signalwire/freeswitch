@@ -227,29 +227,33 @@ Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 		RenameFolder LibDestDir & "apr-util-1.2.2", "apr-util"
 		FSO.CopyFile Utilsdir & "apr\xml.vcproj", LibDestDir & "apr-util\xml\expat\lib\", True
 		FSO.CopyFile Utilsdir & "apr\gen_uri_delims.vcproj", LibDestDir & "apr-util\uri\", True
-		FSO.CopyFile Utilsdir & "apr\aprutil.vcproj", LibDestDir & "apr-util\", True
+		FSO.CopyFile Utilsdir & "apr\libaprutil.vcproj", LibDestDir & "apr-util\", True
 	End If 
 	If FSO.FolderExists(LibDestDir & "apr-util") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "apr-util\uri\uri_delims.h") Then 
 				BuildViaVCBuild LibDestDir & "apr-util\uri\gen_uri_delims.vcproj", "Debug"
 			End If
-			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\LibD\xml.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\Debug\xml.lib") Then 
 				BuildViaVCBuild LibDestDir & "apr-util\xml\expat\lib\xml.vcproj", "Debug"
 			End If
-			If Not FSO.FileExists(LibDestDir & "apr-util\LibD\aprutil-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr-util\aprutil.vcproj", "Debug"
+			If Not FSO.FileExists(LibDestDir & "apr-util\Debug\libaprutil-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-util\libaprutil.vcproj", "Debug"
+				FSO.CopyFile LibDestDir & "apr-util\Debug\libaprutil-1.dll", ScriptDir & "Debug\", True
+				FSO.CopyFile LibDestDir & "apr-util\Debug\libaprutil-1.lib", ScriptDir & "Debug\", True
 			End If
 		End If
 		If BuildRelease Then
 			If Not FSO.FileExists(LibDestDir & "apr-util\uri\uri_delims.h") Then 
 				BuildViaVCBuild LibDestDir & "apr-util\uri\gen_uri_delims.vcproj", "Release"
 			End If
-			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\LibR\xml.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\Release\xml.lib") Then 
 				BuildViaVCBuild LibDestDir & "apr-util\xml\expat\lib\xml.vcproj", "Release"
 			End If
-			If Not FSO.FileExists(LibDestDir & "apr-util\LibR\aprutil-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr-util\aprutil.vcproj", "Release"
+			If Not FSO.FileExists(LibDestDir & "apr-util\Release\libaprutil-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-util\libaprutil.vcproj", "Release"
+				FSO.CopyFile LibDestDir & "apr-util\Release\libaprutil-1.dll", ScriptDir & "Release\", True
+				FSO.CopyFile LibDestDir & "apr-util\Release\libaprutil-1.lib", ScriptDir & "Release\", True
 			End If
 		End If
 	Else
@@ -265,17 +269,21 @@ Sub BuildLibs_apriconv(BuildDebug, BuildRelease)
 			WgetUnCompress LibsBase & "apr-iconv-1.1.1.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "apr-iconv-1.1.1", "apr-iconv"
-		FSO.CopyFile Utilsdir & "apr\apriconv.vcproj", LibDestDir & "apr-iconv\", True
+		FSO.CopyFile Utilsdir & "apr\libapriconv.vcproj", LibDestDir & "apr-iconv\", True
 	End If 
 	If FSO.FolderExists(LibDestDir & "apr-iconv") Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "apr-iconv\LibD\apriconv-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr-iconv\apriconv.vcproj", "Debug"
+			If Not FSO.FileExists(LibDestDir & "apr-iconv\Debug\libapriconv-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-iconv\libapriconv.vcproj", "Debug"
+				FSO.CopyFile LibDestDir & "apr-iconv\Debug\libapriconv-1.dll", ScriptDir & "Debug\", True
+				FSO.CopyFile LibDestDir & "apr-iconv\Debug\libapriconv-1.lib", ScriptDir & "Debug\", True
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "apr-iconv\LibR\apriconv-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr-iconv\apriconv.vcproj", "Release"
+			If Not FSO.FileExists(LibDestDir & "apr-iconv\Release\libapriconv-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr-iconv\libapriconv.vcproj", "Release"
+				FSO.CopyFile LibDestDir & "apr-iconv\Release\libapriconv-1.dll", ScriptDir & "Release\", True
+				FSO.CopyFile LibDestDir & "apr-iconv\Release\libapriconv-1.lib", ScriptDir & "Release\", True
 			End If
 		End If
 	Else
@@ -291,18 +299,22 @@ Sub BuildLibs_apr(BuildDebug, BuildRelease)
 			WgetUnCompress LibsBase & "apr-1.2.2.tar.gz", LibDestDir
 		End If
 		RenameFolder LibDestDir & "apr-1.2.2", "apr"
-		FSO.CopyFile Utilsdir & "apr\apr.vcproj", LibDestDir & "apr\", True
+		FSO.CopyFile Utilsdir & "apr\libapr.vcproj", LibDestDir & "apr\", True
 		FindReplaceInFile LibDestDir & "apr\file_io\unix\fullrw.c", "int i;", "unsigned int i;"
 	End If 
 	If FSO.FolderExists(LibDestDir & "apr") Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "apr\LibD\apr-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr\apr.vcproj", "Debug"
+			If Not FSO.FileExists(LibDestDir & "apr\Debug\libapr-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr\libapr.vcproj", "Debug"
+				FSO.CopyFile LibDestDir & "apr\Debug\libapr-1.dll", ScriptDir & "Debug\", True
+				FSO.CopyFile LibDestDir & "apr\Debug\libapr-1.lib", ScriptDir & "Debug\", True
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "apr\LibR\apr-1.lib") Then 
-				BuildViaVCBuild LibDestDir & "apr\apr.vcproj", "Release"
+			If Not FSO.FileExists(LibDestDir & "apr\Release\libapr-1.lib") Then 
+				BuildViaVCBuild LibDestDir & "apr\libapr.vcproj", "Release"
+				FSO.CopyFile LibDestDir & "apr\Release\libapr-1.dll", ScriptDir & "Release\", True
+				FSO.CopyFile LibDestDir & "apr\Release\libapr-1.lib", ScriptDir & "Release\", True
 			End If
 		End If
 	Else
@@ -369,13 +381,17 @@ Sub BuildLibs_jrtplib(BuildDebug, BuildRelease)
 
 	If FSO.FolderExists(LibDestDir & "jrtplib")Then 
 		If BuildDebug Then
-			If (Not FSO.FileExists(LibDestDir & "jrtplib\Debug\jrtplib.lib")) Then 
-				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Debug"
+			If (Not FSO.FileExists(LibDestDir & "jrtplib\Debug Dll\jrtplib.lib")) Then 
+				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Debug Dll"
+				FSO.CopyFile LibDestDir & "jrtplib\Debug Dll\jrtplib.dll", ScriptDir & "Debug\", True
+				FSO.CopyFile LibDestDir & "jrtplib\Debug Dll\jrtplib.lib", ScriptDir & "Debug\", True
 			End If
 		End If
 		If BuildRelease Then
-			If (Not FSO.FileExists(LibDestDir & "jrtplib\Release\jrtplib.lib")) Then 
-				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Release"
+			If (Not FSO.FileExists(LibDestDir & "jrtplib\Release Dll\jrtplib.lib")) Then 
+				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Release Dll"
+				FSO.CopyFile LibDestDir & "jrtplib\Release Dll\jrtplib.dll", ScriptDir & "Release\", True
+				FSO.CopyFile LibDestDir & "jrtplib\Release Dll\jrtplib.lib", ScriptDir & "Release\", True
 			End If
 		End If
 	Else

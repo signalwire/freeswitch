@@ -1,0 +1,13 @@
+EXPORTS
+jrtp4c_new
+jrtp4c_destroy
+jrtp4c_get_rtp_socket
+jrtp4c_set_invald_handler
+jrtp4c_read
+jrtp4c_write
+jrtp4c_write_payload
+jrtp4c_start
+jrtp4c_get_ssrc
+jrtp4c_killread
+jrtp4c_set_private
+jrtp4c_get_private

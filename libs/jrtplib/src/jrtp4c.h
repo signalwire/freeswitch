@@ -45,12 +45,14 @@ typedef enum {
 #ifndef uint32_t
 #ifdef WIN32
 typedef unsigned int uint32_t;
+typedef unsigned __int16 uint16_t;
 #else
 #include <stdint.h>
 #endif
 #endif
+
 #ifdef WIN32
-typedef SOCKET jrtp_sock_t;
+typedef SOCKET jrtp_socket_t;
 #else 
 typedef int jrtp_socket_t;
 #endif 

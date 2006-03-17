@@ -32,6 +32,8 @@
 
 #if ! (defined(WIN32) || defined(_WIN32_WCE))
 	#include "rtptypes_unix.h"
+	typedef int jrtp_socket_t;
 #else
 	#include "rtptypes_win.h"
+	typedef SOCKET jrtp_socket_t;
 #endif // WIN32
