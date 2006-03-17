@@ -6175,19 +6175,6 @@ SED=$lt_cv_path_SED
 AC_MSG_RESULT([$SED])
 ])
 
-Alternatively you may set the $1_CFLAGS and $1_LIBS environment variables
-to avoid the need to call pkg-config.  See the pkg-config man page for
-more details.
-
-To get pkg-config, see <http://www.freedesktop.org/software/pkgconfig>.])],
-		[$4])
-else
-	$1[]_CFLAGS=$pkg_cv_[]$1[]_CFLAGS
-	$1[]_LIBS=$pkg_cv_[]$1[]_LIBS
-	ifelse([$3], , :, [$3])
-fi[]dnl
-])# PKG_CHECK_MODULES
-
 # Copyright (C) 2002, 2003, 2005  Free Software Foundation, Inc.
 #
 # This file is free software; the Free Software Foundation

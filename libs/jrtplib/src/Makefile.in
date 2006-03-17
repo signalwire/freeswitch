@@ -61,13 +61,13 @@ am_libjrtp_la_OBJECTS = rtpdebug.lo rtpsession.lo rtperrors.lo \
 	rtpudpv4transmitter.lo rtcpsdesinfo.lo rtppollthread.lo \
 	rtppacket.lo rtppacketbuilder.lo rtpsessionparams.lo \
 	rtpsources.lo rtpinternalsourcedata.lo rtpsourcedata.lo \
-	rtpipv4address.lo rtcpcompoundpacket.lo rtcpapppacket.lo jrtp4c.lo \
-	rtcpbyepacket.lo rtcprrpacket.lo rtcpsdespacket.lo \
-	rtcpsrpacket.lo rtplibraryversion.lo rtcppacket.lo \
-	rtcpcompoundpacketbuilder.lo rtprandom.lo rtcpscheduler.lo \
-	rtcppacketbuilder.lo rtpsessionsources.lo rtpcollisionlist.lo \
-	rtpipv6address.lo rtpudpv6transmitter.lo rtptimeutilities.lo \
-	rtpfaketransmitter.lo jmutex.lo jthread.lo
+	rtpipv4address.lo rtcpcompoundpacket.lo jrtp4c.lo \
+	rtcpapppacket.lo rtcpbyepacket.lo rtcprrpacket.lo \
+	rtcpsdespacket.lo rtcpsrpacket.lo rtplibraryversion.lo \
+	rtcppacket.lo rtcpcompoundpacketbuilder.lo rtprandom.lo \
+	rtcpscheduler.lo rtcppacketbuilder.lo rtpsessionsources.lo \
+	rtpcollisionlist.lo rtpipv6address.lo rtpudpv6transmitter.lo \
+	rtptimeutilities.lo rtpfaketransmitter.lo jmutex.lo jthread.lo
 libjrtp_la_OBJECTS = $(am_libjrtp_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -173,7 +173,6 @@ ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
 ac_ct_RANLIB = @ac_ct_RANLIB@
 ac_ct_STRIP = @ac_ct_STRIP@
-ac_pt_PKG_CONFIG = @ac_pt_PKG_CONFIG@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -227,7 +226,8 @@ libjrtp_la_SOURCES = rtpdebug.cpp rtpsession.cpp rtpconfig_win.h \
 		     rtcppacketbuilder.cpp rtpsessionsources.cpp \
 		     rtpcollisionlist.cpp rtpipv6address.cpp \
 		     rtpudpv6transmitter.cpp rtptimeutilities.cpp \
-		     extratransmitters/rtpfaketransmitter.cpp pthread/jmutex.cpp pthread/jthread.cpp
+ 		     extratransmitters/rtpfaketransmitter.cpp \
+ 		     pthread/jmutex.cpp pthread/jthread.cpp
 
 libjrtp_la_LDFLAGS = -release 3.4.0 @RTP_LINKLIBS@
 libjrtpinclude_HEADERS = rtcpapppacket.h rtcpbyepacket.h rtcpcompoundpacket.h \
@@ -243,7 +243,8 @@ libjrtpinclude_HEADERS = rtcpapppacket.h rtcpbyepacket.h rtcpcompoundpacket.h \
 			 rtptypes_win.h rtpudpv4transmitter.h rtpsessionsources.h \
 			 rtpcollisionlist.h rtpipv6address.h rtpipv6destination.h \
 			 rtpudpv6transmitter.h rtptypes.h rtptypes_unix.h \
-			 extratransmitters/rtpfaketransmitter.h jmutex.h jthread.h jrtp4c.h
+			 extratransmitters/rtpfaketransmitter.h \
+			 jmutex.h jthread.h jrtp4c.h
 
 EXTRA_DIST = rtpconfig_unix.h.in win32/jthread.cpp win32/jmutex.cpp
 libjrtpincludedir = ${includedir}/jrtplib3
@@ -374,6 +375,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
+rtpfaketransmitter.lo: extratransmitters/rtpfaketransmitter.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT rtpfaketransmitter.lo -MD -MP -MF "$(DEPDIR)/rtpfaketransmitter.Tpo" -c -o rtpfaketransmitter.lo `test -f 'extratransmitters/rtpfaketransmitter.cpp' || echo '$(srcdir)/'`extratransmitters/rtpfaketransmitter.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rtpfaketransmitter.Tpo" "$(DEPDIR)/rtpfaketransmitter.Plo"; else rm -f "$(DEPDIR)/rtpfaketransmitter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='extratransmitters/rtpfaketransmitter.cpp' object='rtpfaketransmitter.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o rtpfaketransmitter.lo `test -f 'extratransmitters/rtpfaketransmitter.cpp' || echo '$(srcdir)/'`extratransmitters/rtpfaketransmitter.cpp
+
 jmutex.lo: pthread/jmutex.cpp
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT jmutex.lo -MD -MP -MF "$(DEPDIR)/jmutex.Tpo" -c -o jmutex.lo `test -f 'pthread/jmutex.cpp' || echo '$(srcdir)/'`pthread/jmutex.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/jmutex.Tpo" "$(DEPDIR)/jmutex.Plo"; else rm -f "$(DEPDIR)/jmutex.Tpo"; exit 1; fi
@@ -387,13 +395,6 @@ jthread.lo: pthread/jthread.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='pthread/jthread.cpp' object='jthread.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o jthread.lo `test -f 'pthread/jthread.cpp' || echo '$(srcdir)/'`pthread/jthread.cpp
-
-rtpfaketransmitter.lo: extratransmitters/rtpfaketransmitter.cpp
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT rtpfaketransmitter.lo -MD -MP -MF "$(DEPDIR)/rtpfaketransmitter.Tpo" -c -o rtpfaketransmitter.lo `test -f 'extratransmitters/rtpfaketransmitter.cpp' || echo '$(srcdir)/'`extratransmitters/rtpfaketransmitter.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rtpfaketransmitter.Tpo" "$(DEPDIR)/rtpfaketransmitter.Plo"; else rm -f "$(DEPDIR)/rtpfaketransmitter.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='extratransmitters/rtpfaketransmitter.cpp' object='rtpfaketransmitter.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o rtpfaketransmitter.lo `test -f 'extratransmitters/rtpfaketransmitter.cpp' || echo '$(srcdir)/'`extratransmitters/rtpfaketransmitter.cpp
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -471,8 +472,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/win32
-	$(mkdir_p) $(distdir)/extratransmitters
+	$(mkdir_p) $(distdir)/extratransmitters $(distdir)/win32
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
