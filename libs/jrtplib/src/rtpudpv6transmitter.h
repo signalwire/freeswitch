@@ -119,6 +119,8 @@ public:
 	RTPUDPv6Transmitter();
 	~RTPUDPv6Transmitter();
 
+	jrtp_socket_t RTPUDPv6Transmitter::GetRTPSocket();
+	jrtp_socket_t RTPUDPv6Transmitter::GetRTCPSocket();
 	int Init(bool treadsafe);
 	int Create(size_t maxpacksize,const RTPTransmissionParams *transparams);
 	void Destroy();
