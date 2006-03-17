@@ -268,7 +268,7 @@ int RTPPacketBuilder::PrivateBuildPacket(const void *data,size_t len,
 	numpayloadbytes += (u_int32_t)p.GetPayloadLength();
 	numpackets++;
 	timestamp += timestampinc;
-	if (mseq) {
+	if (!mseq) {
 		seqnr++;
 	}
 
