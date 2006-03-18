@@ -35,7 +35,7 @@
 static int switch_console_process(char *cmd)
 {
 	char *arg = NULL;
-	char retbuf[1024] = "";
+	char retbuf[SWITCH_RECCOMMENDED_BUFFER_SIZE * 10] = "";
 
 #ifdef EMBED_PERL
 	const char *perlhelp = "perl - execute some perl. (print to STDERR if you want to see it.)\n";
