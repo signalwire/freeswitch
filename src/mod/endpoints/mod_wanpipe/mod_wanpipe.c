@@ -224,10 +224,11 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
-	wanpipe_tdm_api_t tdm_api;
+	wanpipe_tdm_api_t tdm_api = {};
 	int err = 0;
 	int mtu_mru;
 	unsigned int rate = 8000;
+	int new_mtu = ((globals.mtu / 8) / 2);
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -238,13 +239,20 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 
 	err = sangoma_tdm_set_codec(tech_pvt->socket, &tdm_api, WP_SLINEAR);
+	
 	mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->socket, &tdm_api);	
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE INIT MTU is %d\n", mtu_mru);
 
 	if (mtu_mru != globals.mtu) {
-		sangoma_tdm_set_usr_period(tech_pvt->socket, &tdm_api, (globals.mtu / 8) / 2);
+		sangoma_tdm_set_usr_period(tech_pvt->socket, &tdm_api, 40);
+		err = sangoma_tdm_set_usr_period(tech_pvt->socket, &tdm_api, new_mtu);
 		mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->socket, &tdm_api);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ADJUSTED MTU is %d\n", mtu_mru);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ADJUSTED MTU AFTER SETTING IT TO %d is %d %d [%s]\n", new_mtu, mtu_mru, err, strerror(err));
+		if (mtu_mru != globals.mtu) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Failure to adjust MTU\n");
+			switch_channel_hangup(channel);
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
 	if (switch_core_codec_init
@@ -286,6 +294,10 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 	tech_pvt->tone_session.wait = globals.dtmf_off * (tech_pvt->tone_session.rate / 1000);
 	
 	teletone_dtmf_detect_init (&tech_pvt->dtmf_detect, rate);
+
+	if (switch_test_flag(tech_pvt, TFLAG_NOSIG)) {
+		switch_channel_answer(channel);
+	}
 
 
 	/* Move Channel's State Machine to RING */
@@ -366,6 +378,17 @@ static switch_status wanpipe_on_loopback(switch_core_session *session)
 
 static switch_status wanpipe_on_transmit(switch_core_session *session)
 {
+	struct private_object *tech_pvt;
+	switch_channel *channel;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE TRANSMIT\n");
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -461,7 +484,6 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 						return SWITCH_STATUS_GENERR;
 					}
 					switch_set_flag(tech_pvt, TFLAG_NOSIG);
-					switch_channel_answer(channel);
 				} else {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid address\n");
 					switch_core_session_destroy(new_session);
@@ -634,8 +656,8 @@ static switch_status wanpipe_read_frame(switch_core_session *session, switch_fra
 		}
 	}
 
-	if (tech_pvt->skip_read_frames) {
-		memset(tech_pvt->read_frame.data, 255, tech_pvt->read_frame.datalen);
+	if (tech_pvt->skip_read_frames > 0) {
+		memset(tech_pvt->read_frame.data, 0, tech_pvt->read_frame.datalen);
 		tech_pvt->skip_read_frames--;
 	}
 
@@ -665,8 +687,6 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-
-	//printf("write %d\n", frame->datalen);
 
 	while (tech_pvt->dtmf_buffer && bwrote < frame->datalen && bytes > 0 && (inuse = switch_buffer_inuse(tech_pvt->dtmf_buffer)) > 0) {
 		if ((bread = switch_buffer_read(tech_pvt->dtmf_buffer, dtmf, globals.mtu)) < globals.mtu) {
@@ -712,7 +732,7 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 		write(tech_pvt->fd, bp, (int) globals.mtu);
 #endif
 		towrite = bytes >= globals.mtu ? globals.mtu : bytes;
-		//printf("write %d\n", towrite);
+
 		res = sangoma_sendmsg_socket(tech_pvt->socket,
 									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), bp, towrite, 0);
 		if (res < 0) {
@@ -731,7 +751,8 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 			res = 0;
 		}
 	}
-
+	
+	//printf("write %d %d\n", frame->datalen, status);	
 	return status;
 }
 

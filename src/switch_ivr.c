@@ -763,7 +763,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 		if (switch_core_session_read_frame(session_a, &read_frame, -1, stream_id) == SWITCH_STATUS_SUCCESS
 			&& read_frame->datalen) {
 			if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "write: %s Bad Frame.... Bubye!\n", switch_channel_get_name(chan_b));
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "write: %s Bad Frame....[%d] Bubye!\n", switch_channel_get_name(chan_b), read_frame->datalen);
 				data->running = -1;
 			}
 		} else {

@@ -1047,6 +1047,9 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 	unsigned int flag = 0, need_codec = 0, perfect = 0;
 	switch_io_flag io_flag = SWITCH_IO_FLAG_NOOP;
 
+
+	assert(frame->codec != NULL);
+
 	/* if you think this code is redundant.... too bad! I like to understand what I'm doing */
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		need_codec = TRUE;
@@ -1071,6 +1074,8 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 											  session->write_codec->implementation->samples_per_second,
 											  session->raw_write_frame.data,
 											  &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &flag);
+			
+			
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
 				write_frame = &session->raw_write_frame;
@@ -1114,6 +1119,8 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 			write_frame->datalen = session->write_resampler->to_len * 2;
 			write_frame->rate = session->write_resampler->to_rate;
 		}
+
+
 		if (session->write_codec) {
 			if (write_frame->datalen == session->write_codec->implementation->bytes_per_frame) {
 				perfect = TRUE;
@@ -1132,11 +1139,13 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 					}
 				}
 				if (!(switch_buffer_write(session->raw_write_buffer, write_frame->data, write_frame->datalen))) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Buffer Failed!\n");
 					return SWITCH_STATUS_MEMERR;
 				}
 			}
 
 			if (perfect) {
+
 				enc_frame = write_frame;
 				session->enc_write_frame.datalen = session->enc_write_frame.buflen;
 
@@ -1175,6 +1184,11 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				size_t frames = (used / bytes);
 
 
+
+
+
+
+			status = SWITCH_STATUS_SUCCESS;
 				if (frames) {
 					size_t x;
 					for (x = 0; x < frames; x++) {
@@ -1184,6 +1198,8 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 							enc_frame = &session->raw_write_frame;
 							session->raw_write_frame.rate = session->write_codec->implementation->samples_per_second;
 							session->enc_write_frame.datalen = session->enc_write_frame.buflen;
+
+
 							status = switch_core_codec_encode(session->write_codec,
 															  frame->codec,
 															  enc_frame->data,
@@ -1193,8 +1209,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 															  &session->enc_write_frame.datalen,
 															  &session->enc_write_frame.rate, &flag);
 
-
-
+							
 							switch (status) {
 							case SWITCH_STATUS_RESAMPLE:
 								write_frame = &session->enc_write_frame;
@@ -1240,16 +1255,16 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 								write_frame->datalen = session->read_resampler->to_len * 2;
 								write_frame->rate = session->read_resampler->to_rate;
 							}
-							status = perform_write(session, write_frame, timeout, io_flag, stream_id);
+							return perform_write(session, write_frame, timeout, io_flag, stream_id);
 						}
 					}
-					return status;
 				}
 			}
 		}
 	} else {
-		status = perform_write(session, frame, timeout, io_flag, stream_id);
+		return perform_write(session, frame, timeout, io_flag, stream_id);
 	}
+
 	return status;
 }
 
