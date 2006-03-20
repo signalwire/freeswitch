@@ -1,7 +1,7 @@
 EXTRA_DIST =
 SUBDIRS = 
 AUTOMAKE_OPTS= gnu
-MAKE=gmake
+MAKE=make
 NAME=teletone
 
 AM_CC=gcc
