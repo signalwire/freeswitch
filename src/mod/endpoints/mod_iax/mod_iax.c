@@ -620,7 +620,7 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 
 		if (timeout > -1) {
 			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
-			if (elapsed >= timeout) {
+			if (elapsed >= (unsigned int)timeout) {
 				return SWITCH_STATUS_SUCCESS;
 			}
 		}
