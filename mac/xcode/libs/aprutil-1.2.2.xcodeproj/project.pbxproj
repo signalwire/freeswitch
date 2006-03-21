@@ -492,7 +492,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D3F01FE609C1182800120915 /* Build configuration list for PBXNativeTarget "aprutil.framework" */;
 			buildPhases = (
-				D3F01FEF09C1186300120915 /* ShellScript */,
+				D3F01FEF09C1186300120915 /* Prepare Source */,
 				D3F01FDE09C1182700120915 /* Headers */,
 				D3F01FDF09C1182700120915 /* Resources */,
 				D3F01FE009C1182700120915 /* Sources */,
@@ -574,13 +574,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		D3F01FEF09C1186300120915 /* ShellScript */ = {
+		D3F01FEF09C1186300120915 /* Prepare Source */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
 			);
+			name = "Prepare Source";
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -719,10 +720,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				HEADER_SEARCH_PATHS = (
-					"../../../../libs/apr-1.2.2",
-					"../../../libs/apr-1.2.2/include",
-				);
+				HEADER_SEARCH_PATHS = /Library/Frameworks/apr.framework/Headers;
 				INFOPLIST_FILE = "aprutil-Info.plist";
 				INSTALL_PATH = /Library/Frameworks;
 				OTHER_LDFLAGS = (

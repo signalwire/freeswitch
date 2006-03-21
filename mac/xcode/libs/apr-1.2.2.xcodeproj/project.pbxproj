@@ -113,20 +113,6 @@
 		D3542E4E09C36DE7000A33C3 /* apr_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C917409C10E6D00FCE413 /* apr_version.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3542E4F09C36DE7000A33C3 /* apr_want.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C917509C10E6D00FCE413 /* apr_want.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3542E5009C36DE7000A33C3 /* apr_private_common.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C917909C10E6D00FCE413 /* apr_private_common.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5109C36DE7000A33C3 /* apr_arch_dso.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C919B09C10E6D00FCE413 /* apr_arch_dso.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5209C36DE7000A33C3 /* apr_arch_file_io.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C919C09C10E6D00FCE413 /* apr_arch_file_io.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5309C36DE7000A33C3 /* apr_arch_global_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C919D09C10E6D00FCE413 /* apr_arch_global_mutex.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5409C36DE7000A33C3 /* apr_arch_inherit.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C919E09C10E6D00FCE413 /* apr_arch_inherit.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5509C36DE7000A33C3 /* apr_arch_internal_time.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C919F09C10E6D00FCE413 /* apr_arch_internal_time.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5609C36DE7000A33C3 /* apr_arch_misc.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A009C10E6D00FCE413 /* apr_arch_misc.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5709C36DE7000A33C3 /* apr_arch_networkio.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A109C10E6D00FCE413 /* apr_arch_networkio.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5809C36DE7000A33C3 /* apr_arch_poll_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A209C10E6D00FCE413 /* apr_arch_poll_private.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5909C36DE7000A33C3 /* apr_arch_proc_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A309C10E6D00FCE413 /* apr_arch_proc_mutex.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5A09C36DE7000A33C3 /* apr_arch_shm.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A409C10E6D00FCE413 /* apr_arch_shm.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5B09C36DE7000A33C3 /* apr_arch_thread_cond.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A509C10E6D00FCE413 /* apr_arch_thread_cond.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5C09C36DE7000A33C3 /* apr_arch_thread_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A609C10E6D00FCE413 /* apr_arch_thread_mutex.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5D09C36DE7000A33C3 /* apr_arch_thread_rwlock.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A709C10E6D00FCE413 /* apr_arch_thread_rwlock.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3542E5E09C36DE7000A33C3 /* apr_arch_threadproc.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A809C10E6D00FCE413 /* apr_arch_threadproc.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3542E5F09C36DE7000A33C3 /* apr_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A909C10E6D00FCE413 /* apr_private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
@@ -772,20 +758,6 @@
 				D3542E4E09C36DE7000A33C3 /* apr_version.h in Headers */,
 				D3542E4F09C36DE7000A33C3 /* apr_want.h in Headers */,
 				D3542E5009C36DE7000A33C3 /* apr_private_common.h in Headers */,
-				D3542E5109C36DE7000A33C3 /* apr_arch_dso.h in Headers */,
-				D3542E5209C36DE7000A33C3 /* apr_arch_file_io.h in Headers */,
-				D3542E5309C36DE7000A33C3 /* apr_arch_global_mutex.h in Headers */,
-				D3542E5409C36DE7000A33C3 /* apr_arch_inherit.h in Headers */,
-				D3542E5509C36DE7000A33C3 /* apr_arch_internal_time.h in Headers */,
-				D3542E5609C36DE7000A33C3 /* apr_arch_misc.h in Headers */,
-				D3542E5709C36DE7000A33C3 /* apr_arch_networkio.h in Headers */,
-				D3542E5809C36DE7000A33C3 /* apr_arch_poll_private.h in Headers */,
-				D3542E5909C36DE7000A33C3 /* apr_arch_proc_mutex.h in Headers */,
-				D3542E5A09C36DE7000A33C3 /* apr_arch_shm.h in Headers */,
-				D3542E5B09C36DE7000A33C3 /* apr_arch_thread_cond.h in Headers */,
-				D3542E5C09C36DE7000A33C3 /* apr_arch_thread_mutex.h in Headers */,
-				D3542E5D09C36DE7000A33C3 /* apr_arch_thread_rwlock.h in Headers */,
-				D3542E5E09C36DE7000A33C3 /* apr_arch_threadproc.h in Headers */,
 				D3542E5F09C36DE7000A33C3 /* apr_private.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -886,7 +858,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "if [ -e ../../../libs/apr-1.2.2/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl http://svn.freeswitch.org/downloads/libs/apr-1.2.2.tar.gz -o ../../../libs/apr-1.2.2.tar.gz\ncd ../../../libs\ntar zxfv apr-1.2.2.tar.gz\ncd apr-1.2.2\n./configure\nmake apr.exp\ntouch .complete";
+			shellScript = "if [ -e ../../../libs/apr-1.2.2/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl http://svn.freeswitch.org/downloads/libs/apr-1.2.2.tar.gz -o ../../../libs/apr-1.2.2.tar.gz\ncd ../../../libs\ntar zxfv apr-1.2.2.tar.gz\ncd apr-1.2.2\n./configure --enable-layout=\"Mac OS X Server\"\nmake apr.exp\ntouch .complete";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1027,9 +999,9 @@
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
 				DSTROOT = /;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				FRAMEWORK_VERSION = A;
+				DYLIB_COMPATIBILITY_VERSION = 3.2.0;
+				DYLIB_CURRENT_VERSION = 3.0.0;
+				FRAMEWORK_VERSION = 2.0;
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G5;

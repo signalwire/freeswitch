@@ -389,14 +389,6 @@
 					"$(SRCROOT)/build/resample",
 				);
 				OTHER_CFLAGS = (
-					"-framework",
-					apr,
-					"-framework",
-					aprutil,
-					"-framework",
-					sqlite,
-					"-lpthread",
-					"-liconv",
 					"-DMACOSX",
 					"-DSWITCH_MOD_DIR=\"$(FREESWITCH_PATH)/mod\"",
 					"-DSWITCH_PREFIX_DIR=\"$(FREESWITCH_PATH)\"",
