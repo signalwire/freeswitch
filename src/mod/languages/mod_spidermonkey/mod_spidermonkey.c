@@ -1547,13 +1547,16 @@ static void teletone_destroy(JSContext *cx, JSObject *obj)
 	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
 	switch_memory_pool *pool;
 	if (tto) {
-		pool = tto->pool;
 		if (tto->timer) {
 			switch_core_timer_destroy(tto->timer);
 		}
 		teletone_destroy_session(&tto->ts);
-		switch_core_destroy_memory_pool(&pool);
 		switch_core_codec_destroy(&tto->codec);
+		pool = tto->pool;
+		tto->pool = NULL;
+		if (pool) {
+			switch_core_destroy_memory_pool(&pool);
+		}
 	}
 }
 
