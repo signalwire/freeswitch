@@ -592,6 +592,8 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
+	switch_time_t started = switch_time_now();
+	unsigned int elapsed;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -615,6 +617,15 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 			*frame = &tech_pvt->read_frame;
 			return SWITCH_STATUS_SUCCESS;
 		}
+
+		if (timeout > -1) {
+			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
+			if (elapsed >= timeout) {
+				return SWITCH_STATUS_SUCCESS;
+			}
+		}
+		
+
 		switch_yield(1000);
 	}
 

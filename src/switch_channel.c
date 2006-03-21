@@ -571,7 +571,12 @@ SWITCH_DECLARE(switch_status) switch_channel_pre_answer(switch_channel *channel)
 	char *uuid = switch_core_session_get_uuid(channel->session);
 	switch_status status;
 
-	assert(channel != NULL);	
+	assert(channel != NULL);
+
+	if (channel->state >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
 	msg.from = channel->name;
 	status = switch_core_session_message_send(uuid, &msg);
@@ -588,6 +593,9 @@ SWITCH_DECLARE(switch_status) switch_channel_answer(switch_channel *channel)
 {
 	assert(channel != NULL);
 
+	if (channel->state >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (switch_core_session_answer_channel(channel->session) == SWITCH_STATUS_SUCCESS) {
 		switch_event *event;

@@ -468,7 +468,7 @@ static void activate_rtp(struct private_object *tech_pvt)
 		switch_set_flag(tech_pvt, TFLAG_RTP);
 	} else {
 		switch_channel *channel = switch_core_session_get_channel(tech_pvt->session);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Oh oh? [%s]\n", err);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "RTP REPORTS ERROR: [%s]\n", err);
 		switch_channel_hangup(channel);
 		switch_set_flag(tech_pvt, TFLAG_BYE);
 		switch_clear_flag(tech_pvt, TFLAG_IO);
@@ -518,6 +518,8 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
 	switch_channel *channel = NULL;
 	int payload = 0;
+	switch_time_t started = switch_time_now();
+	unsigned int elapsed;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -550,6 +552,14 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			   && tech_pvt->read_frame.datalen == 0) {
 			tech_pvt->read_frame.datalen =
 				jrtp4c_read(tech_pvt->rtp_session, tech_pvt->read_frame.data, sizeof(tech_pvt->read_buf), &payload);
+
+			if (timeout > -1) {
+				elapsed = (unsigned int)((switch_time_now() - started) / 1000);
+				if (elapsed >= timeout) {
+					return SWITCH_STATUS_SUCCESS;
+				}
+			}
+
 			/* RFC2833 ... TBD try harder to honor the duration etc.*/
 			if (payload == 101) {
 				unsigned char *packet = tech_pvt->read_frame.data;
@@ -578,6 +588,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			}
 
 			if (globals.supress_telephony_events && payload != tech_pvt->payload_num) {
+				tech_pvt->read_frame.datalen = 0;
 				switch_yield(1000);
 				continue;
 			}

@@ -855,7 +855,7 @@ static const switch_loadable_module_interface wanpipe_module_interface = {
 
 static void s_pri_error(struct pri *pri, char *s)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, s);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, s);
 }
 
 static void s_pri_message(struct pri *pri, char *s)
@@ -1125,7 +1125,13 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	switch_core_session *session;
 	struct channel_map *chanmap;
 
+
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Restarting channel %d\n", event->restart.channel);
+
+	if (event->restart.channel < 1) {
+		return 0;
+	}
+
 
 	chanmap = spri->private_info;
 	
