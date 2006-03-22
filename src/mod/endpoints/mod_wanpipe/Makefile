@@ -1,5 +1,5 @@
 CFLAGS +=-I/usr/local/include -I/usr/src/libpri -I/usr/src/linux/include -I. -I/usr/include
-CFLAGS +=-D__LINUX__ -D_REENTRANT -D_GNU_SOURCE -O6 -march=i686 -DAFT_A104
+CFLAGS +=-D__LINUX__ -D_REENTRANT -D_GNU_SOURCE -DAFT_A104
 LDFLAGS += -lsangoma
 
 
@@ -12,6 +12,7 @@ endif
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libsangoma --prefix=$(PREFIX)
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 

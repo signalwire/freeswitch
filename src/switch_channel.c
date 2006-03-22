@@ -395,7 +395,9 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s State Change %s -> %s\n", channel->name,
 							  state_names[last_state], state_names[state]);
 		channel->state = state;
-		switch_core_session_signal_state_change(channel->session);
+		if (state < CS_DONE) {
+			switch_core_session_signal_state_change(channel->session);
+		}
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s Invalid State Change %s -> %s\n", channel->name,
 							  state_names[last_state], state_names[state]);
@@ -560,6 +562,7 @@ SWITCH_DECLARE(switch_status) switch_channel_hangup(switch_channel *channel)
 	if (channel->state < CS_HANGUP) {
 		channel->times.hungup = switch_time_now();
 		channel->state = CS_HANGUP;
+		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
 		switch_core_session_signal_state_change(channel->session);
 	}
 	return channel->state;
