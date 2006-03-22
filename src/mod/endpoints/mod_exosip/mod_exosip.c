@@ -37,7 +37,7 @@
 #include <osip2/osip_mt.h>
 #include <osip_rfc3264.h>
 #include <osipparser2/osip_port.h>
-#define ENABLE_TRACE
+
 
 static const char modname[] = "mod_exosip";
 #define STRLEN 15
@@ -953,8 +953,6 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	/* NOTE:  **interface is **_interface because the common lib redefines interface to struct in some situations */
 
 
-	osip_trace_initialize(10, stdout);
-
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
@@ -1554,6 +1552,10 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	switch_event *s_event;
 
 	config_exosip(0);
+
+	if (globals.debug) {
+		osip_trace_initialize(globals.debug, stdout);
+	}
 
 	if (eXosip_init()) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "eXosip_init initialization failed!\n");
