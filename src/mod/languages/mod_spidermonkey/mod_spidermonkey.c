@@ -963,7 +963,6 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	switch_memory_pool *pool = NULL;
-	int need_pool = 1;
 	if (argc > 2) {
 		struct js_session *jss = NULL;
 		JSObject *session_obj;
@@ -983,8 +982,6 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			struct js_session *old_jss = NULL;
 			if ((old_jss = JS_GetPrivate(cx, session_obj))) {
 				session = old_jss->session;
-				pool = switch_core_session_get_pool(session);
-				need_pool = 0;
 			}
 		}
 
@@ -1010,11 +1007,9 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			ani2 = JS_GetStringBytes(JS_ValueToString(cx, argv[8]));
 		}
 		
-		if (need_pool) {
-			if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
-				return JS_FALSE;
-			}
+		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
+			return JS_FALSE;
 		}
 
 		caller_profile = switch_caller_profile_new(pool, dialplan, cid_name, cid_num, network_addr, ani, ani2, dest);
