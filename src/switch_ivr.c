@@ -877,7 +877,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	other_audio_thread.objs[0] = session;
 	other_audio_thread.objs[1] = peer_session;
 	other_audio_thread.objs[2] = &stream_id;
-	other_audio_thread.objs[3] = dtmf_callback;
+	other_audio_thread.objs[3] = (void *) dtmf_callback;
 	other_audio_thread.objs[4] = session_data;
 	other_audio_thread.objs[5] = &this_audio_thread.running;
 	other_audio_thread.running = 5;
@@ -885,7 +885,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	this_audio_thread.objs[0] = peer_session;
 	this_audio_thread.objs[1] = session;
 	this_audio_thread.objs[2] = &stream_id;
-	this_audio_thread.objs[3] = dtmf_callback;
+	this_audio_thread.objs[3] = (void *) dtmf_callback;
 	this_audio_thread.objs[4] = peer_session_data;
 	this_audio_thread.objs[5] = &other_audio_thread.running;
 	this_audio_thread.running = 2;

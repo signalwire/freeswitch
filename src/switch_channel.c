@@ -556,7 +556,7 @@ SWITCH_DECLARE(switch_caller_extension *) switch_channel_get_caller_extension(sw
 }
 
 
-SWITCH_DECLARE(switch_status) switch_channel_hangup(switch_channel *channel)
+SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *channel)
 {
 	assert(channel != NULL);
 	if (channel->state < CS_HANGUP) {

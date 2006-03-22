@@ -551,7 +551,8 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 						pri_sr_free(sr);
 						return SWITCH_STATUS_GENERR;
 					}
-					if ((tech_pvt->socket = sangoma_create_socket_intr(spri->span, channo)) < 0) {
+
+					if ((tech_pvt->socket = sangoma_open_tdmapi_span_chan(spri->span, channo)) < 0) {
 						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open fd!\n");
 						switch_core_session_destroy(new_session);
 						pri_sr_free(sr);
@@ -1060,7 +1061,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
-			sprintf(name, "w%dg%d", spri->span, event->ring.channel);
+			sprintf(name, "s%dc%d", spri->span, event->ring.channel);
 			switch_channel_set_name(channel, name);
 
 		} else {
@@ -1095,7 +1096,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 		tech_pvt->callno = event->ring.channel;
 		tech_pvt->span = spri->span;
 
-		if ((fd = sangoma_create_socket_intr(spri->span, event->ring.channel)) < 0) {
+		if ((fd = sangoma_open_tdmapi_span_chan(spri->span, event->ring.channel)) < 0) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open fd!\n");
 		}
 		//sangoma_tdm_set_hw_period(fd, &tdm_api, 480);
@@ -1142,7 +1143,7 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 		switch_channel_hangup(channel);
 	}
 	
-	if ((fd = sangoma_create_socket_intr(spri->span, event->restart.channel)) < 0) {
+	if ((fd = sangoma_open_tdmapi_span_chan(spri->span, event->restart.channel)) < 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open fd [%s]!\n", strerror(errno));
 	} else {
 		close(fd);
