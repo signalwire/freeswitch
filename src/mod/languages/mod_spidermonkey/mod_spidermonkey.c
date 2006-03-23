@@ -977,7 +977,8 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		char *ani = "";
 		char *ani2 = "";
 
-		
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
 			struct js_session *old_jss = NULL;
 			if ((old_jss = JS_GetPrivate(cx, session_obj))) {
@@ -1022,19 +1023,15 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			JS_SetPrivate(cx, obj, jss);
 			switch_core_session_thread_launch(peer_session);
 			switch_set_flag(jss, S_HUP);
-			
 			return JS_TRUE;
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot Create Channel\n");
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot Create Channel\n");			
 		}
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Missing Args\n");
 	}
 
-	if (pool) {
-		switch_core_destroy_memory_pool(&pool);
-	}
-	return JS_FALSE;
+	return JS_TRUE;
 }
 
 static void session_destroy(JSContext *cx, JSObject *obj)

@@ -421,8 +421,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 		switch_channel *channel;
 
 		switch_core_session_add_stream(*new_session, NULL);
-		if ((tech_pvt =
-			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
+		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
@@ -449,7 +448,13 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 				if ((p = strchr(num, '/'))) {
 					*p++ = '\0';
 					if (*num != 'a') {
-						span = atoi(num);
+						if (num && *num > 47 && *num < 58) {
+							span = atoi(num);
+						} else {
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invlid Syntax\n");
+							switch_core_session_destroy(new_session);
+							return SWITCH_STATUS_GENERR;
+						}
 					} else {
 						span = 1;
 						autospan = 1;
@@ -461,10 +466,18 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 							autochan = 1;
 						} else if (*num == 'A') {
 							autochan = -1;
-						} else {
+						} else if (num && *num > 47 && *num < 58) {
 							channo = atoi(num);
+						} else {
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invlid Syntax\n");
+                            switch_core_session_destroy(new_session);
+                            return SWITCH_STATUS_GENERR;
 						}
 						caller_profile->destination_number = p;
+					} else {
+						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invlid Syntax\n");
+						switch_core_session_destroy(new_session);
+						return SWITCH_STATUS_GENERR;
 					}
 				}
 			}
@@ -1168,7 +1181,7 @@ static void *pri_thread_run(switch_thread *thread, void *obj)
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANY, on_anything);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RING, on_ring);
 	//SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_RINGING, on_ringing);
-	//SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_SETUP_ACK, on_ringing);
+	//SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_SETUP_ACK, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_PROCEEDING, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANSWER, on_answer);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_HANGUP_REQ, on_hangup);
