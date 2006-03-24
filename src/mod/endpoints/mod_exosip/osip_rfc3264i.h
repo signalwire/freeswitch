@@ -22,7 +22,7 @@
 
 #include <osipparser2/osip_list.h>
 #include <osipparser2/sdp_message.h>
-#include <osipparser2/osip_rfc3264.h>
+#include <osip_rfc3264.h>
 
 #ifndef DOXYGEN
 
