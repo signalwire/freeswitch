@@ -500,4 +500,8 @@ struct switch_api_interface {
 	const struct switch_api_interface *next;
 };
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif

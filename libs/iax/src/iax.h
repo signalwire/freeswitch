@@ -71,7 +71,7 @@ struct iax_full_hdr {
 	unsigned short seqno;	/* Packet number */
 	char type;				/* Frame type */
 	unsigned char csub;		/* Compressed subclass */
-	char data[0];
+	char data[];
 };
 
 /* Mini header is used only for voice frames -- delivered unreliably */
@@ -80,7 +80,7 @@ struct iax_mini_hdr {
 	unsigned short ts;		/* 16-bit Timestamp (high 16 bits from last IAX_full_hdr) */
 							/* Frametype implicitly VOICE_FRAME */
 							/* subclass implicit from last IAX_full_hdr */
-	char data[0];
+	char data[];
 };
 
 #endif

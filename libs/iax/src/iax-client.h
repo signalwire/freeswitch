@@ -111,7 +111,7 @@ struct iax_event {
 	struct iax_session *session;	/* Applicable session */
 	int datalen;					/* Length of raw data */
 	struct iax_ies ies;				/* IE's for IAX2 frames */
-	unsigned char data[0];			/* Raw data if applicable */
+	unsigned char data[];			/* Raw data if applicable */
 };
 
 #if defined(__cplusplus)

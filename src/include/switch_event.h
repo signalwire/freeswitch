@@ -288,4 +288,8 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event **event);
 #define switch_event_fire_data(event, data) switch_event_fire_detailed(__FILE__, (char * )__FUNCTION__, __LINE__, event, data)
 ///\}
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif
