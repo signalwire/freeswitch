@@ -872,7 +872,9 @@ static const switch_loadable_module_interface wanpipe_module_interface = {
 
 static void s_pri_error(struct pri *pri, char *s)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, s);
+	if (globals.debug) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, s);
+	}
 }
 
 static void s_pri_message(struct pri *pri, char *s)
@@ -886,6 +888,9 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 
 	memset(SPANS, 0, sizeof(SPANS));
 
+	pri_set_error(s_pri_error);
+	pri_set_message(s_pri_message);
+
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
@@ -895,10 +900,6 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	if ((status = config_wanpipe(0) != SWITCH_STATUS_SUCCESS)) {
 		return status;
 	}
-
-	pri_set_error(s_pri_error);
-	pri_set_message(s_pri_message);
-
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &wanpipe_module_interface;
@@ -949,7 +950,7 @@ static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 		chanmap->map[event->hangup.channel] = NULL;
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Hanging up channel %d\n", event->hangup.channel);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Hanging up channel s%dc%d\n", spri->span, event->hangup.channel);
 	return 0;
 }
 
@@ -963,12 +964,12 @@ static int on_answer(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 	chanmap = spri->private_info;
 
 	if ((session = chanmap->map[event->answer.channel])) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Answer on channel %d\n", event->answer.channel);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Answer on channel s%dc%d\n", spri->span, event->answer.channel);
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 		switch_channel_answer(channel);
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Answer on channel %d but it's not in use?\n", event->answer.channel);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Answer on channel s%dc%d but it's not in use?\n", spri->span, event->answer.channel);
 	}
 	
 	return 0;
@@ -986,7 +987,7 @@ static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	if ((session = chanmap->map[event->proceeding.channel])) {
 		switch_caller_profile *originator;
 
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Proceeding on channel %d\n", event->proceeding.channel);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Proceeding on channel s%dc%d\n", spri->span, event->proceeding.channel);
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 		
@@ -1005,7 +1006,7 @@ static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 
 		//switch_channel_answer(channel);
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Proceeding on channel %d but it's not in use?\n", event->proceeding.channel);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Proceeding on channel s%dc%d but it's not in use?\n", spri->span, event->proceeding.channel);
 	}
 
 	return 0;
@@ -1022,7 +1023,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	chanmap = spri->private_info;
 
 	if ((session = chanmap->map[event->ringing.channel])) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Ringing on channel %d\n", event->ringing.channel);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Ringing on channel s%dc%d\n", spri->span, event->ringing.channel);
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 
@@ -1036,7 +1037,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 		tech_pvt->callno = event->ring.channel;
 		tech_pvt->span = spri->span;
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Ringing on channel %d but it's not in use?\n", event->ringing.channel);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Ringing on channel s%dc%d but it's not in use?\n", spri->span, event->ringing.channel);
 	}
 
 	return 0;
@@ -1054,12 +1055,12 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 
 	chanmap = spri->private_info;
 	if (chanmap->map[event->ring.channel]) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "--Duplicate Ring on channel %d (ignored)\n",
-							  event->ring.channel);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "--Duplicate Ring on channel s%dc%d (ignored)\n",
+							  spri->span, event->ring.channel);
 		return 0;
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Ring on channel %d (from %s to %s)\n", event->ring.channel,
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Ring on channel s%dc%d (from %s to %s)\n", spri->span, event->ring.channel,
 						  event->ring.callingnum, event->ring.callednum);
 
 
@@ -1092,7 +1093,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																  globals.dialplan,
-																  "wanpipe fixme",
+																  "N/A",
 																  event->ring.callingnum,
 																  event->ring.callingani,
 																  switch_strlen_zero(ani2str) ? NULL : ani2str,
@@ -1143,7 +1144,7 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	struct channel_map *chanmap;
 
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Restarting channel %d\n", event->restart.channel);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Restarting s%dc%d\n", spri->span, event->restart.channel);
 
 	if (event->restart.channel < 1) {
 		return 0;
@@ -1155,7 +1156,7 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	if ((session = chanmap->map[event->restart.channel])) {
 		switch_channel *channel;
 		channel = switch_core_session_get_channel(session);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hanging Up %s\n", switch_channel_get_name(channel));
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hanging Up channel %s\n", switch_channel_get_name(channel));
 		switch_channel_hangup(channel);
 	}
 	
