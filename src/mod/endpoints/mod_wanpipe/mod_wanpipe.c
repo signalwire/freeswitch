@@ -456,7 +456,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 							return SWITCH_STATUS_GENERR;
 						}
 					} else {
-						span = 1;
+						span = 0;
 						autospan = 1;
 					}
 					num = p;
@@ -482,8 +482,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 				}
 			}
 
-			snprintf(name, sizeof(name), "WanPipe/%s-%04x", caller_profile->destination_number, rand() & 0xffff);
-			switch_channel_set_name(channel, name);			
+
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 
@@ -504,7 +503,10 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 				}
 			} else {
 				do {
-					if ((spri = &SPANS[span]->spri)) {
+					if (autospan) {
+						span++;
+					}
+					if ((spri = &SPANS[span]->spri) && switch_test_flag(spri, SANGOMA_PRI_READY)) {
 						chanmap = spri->private_info;
 						if (channo == 0) {
 							if (autochan > 0) {
@@ -534,7 +536,6 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 					}
 				} while(autospan && span < MAX_SPANS && !spri && !channo);
 
-
 				if (!spri || channo == 0 || channo == (SANGOMA_MAX_CHAN_PER_SPAN)) {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Free Channels!\n");
 					switch_core_session_destroy(new_session);
@@ -543,7 +544,9 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 			
 				if (spri && (tech_pvt->call = pri_new_call(spri->pri))) {
 					struct pri_sr *sr;
-
+					
+					snprintf(name, sizeof(name), "WanPipe/s%dc%d/%s-%04x", spri->span, channo, caller_profile->destination_number, rand() & 0xffff);
+					switch_channel_set_name(channel, name);			
 					sr = pri_sr_new();
 					pri_sr_set_channel(sr, channo, 0, 0);
 					pri_sr_set_bearer(sr, 0, SPANS[span]->l1);
@@ -1164,9 +1167,32 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	return 0;
 }
 
+static int on_dchan_up(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event)
+{
+
+	if (!switch_test_flag(spri, SANGOMA_PRI_READY)) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Span %d D-Chan UP!\n", spri->span);
+		switch_set_flag(spri, SANGOMA_PRI_READY);
+	}
+
+	return 0;
+}
+
+static int on_dchan_down(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event)
+{
+
+	if (switch_test_flag(spri, SANGOMA_PRI_READY)) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Span %d D-Chan DOWN!\n", spri->span);
+		switch_clear_flag(spri, SANGOMA_PRI_READY);
+	}
+	
+	return 0;
+}
+
 static int on_anything(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Caught Event %d (%s)\n", event_type,
+
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Caught Event span %d %d (%s)\n", spri->span, event_type,
 						  sangoma_pri_event_str(event_type));
 	return 0;
 }
@@ -1184,6 +1210,8 @@ static void *pri_thread_run(switch_thread *thread, void *obj)
 	//SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_SETUP_ACK, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_PROCEEDING, on_proceed);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_ANSWER, on_answer);
+	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_DCHAN_UP, on_dchan_up);
+	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_DCHAN_DOWN, on_dchan_down);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_HANGUP_REQ, on_hangup);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_HANGUP, on_hangup);
 	SANGOMA_MAP_PRI_EVENT((*spri), SANGOMA_PRI_EVENT_INFO_RECEIVED, on_info);
