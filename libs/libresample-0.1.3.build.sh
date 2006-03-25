@@ -1,5 +1,6 @@
+#!/bin/sh
 ./configure $@
-make
+$MAKE
 cp *.a $PREFIX/lib
 cp include/* $PREFIX/include
 ranlib $PREFIX/lib/libresample.a
