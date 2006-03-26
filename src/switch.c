@@ -115,12 +115,12 @@ int main(int argc, char *argv[])
 
 
 	/* set signal handlers */
-	(void) signal(SIGINT, (void *) handle_SIGINT);
+	signal(SIGINT, (void *) handle_SIGINT);
 #ifdef SIGPIPE
-	(void) signal(SIGPIPE, (void *) handle_SIGPIPE);
+	signal(SIGPIPE, (void *) handle_SIGPIPE);
 #endif
 #ifdef TRAP_BUS
-	(void) signal(SIGBUS, (void *) handle_SIGBUS);
+	signal(SIGBUS, (void *) handle_SIGBUS);
 #endif
 
 
