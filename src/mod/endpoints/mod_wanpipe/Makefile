@@ -12,7 +12,7 @@ endif
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libsangoma --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libsangoma --prefix=$(PREFIX) --with-libpri=/usr/src/libpri
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 

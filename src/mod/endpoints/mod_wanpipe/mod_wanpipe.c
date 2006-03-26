@@ -61,7 +61,8 @@ typedef enum {
 	TFLAG_DESTROY = (1 << 7),
 	TFLAG_ABORT = (1 << 8),
 	TFLAG_SWITCH = (1 << 9),
-	TFLAG_NOSIG = (1 << 10)
+	TFLAG_NOSIG = (1 << 10),
+	TFLAG_BYE = (1 << 11)
 } TFLAGS;
 
 
@@ -336,6 +337,7 @@ static switch_status wanpipe_on_hangup(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	switch_set_flag(tech_pvt, TFLAG_BYE);
 
 	if (!switch_test_flag(tech_pvt, TFLAG_NOSIG)) {
 		chanmap = tech_pvt->spri->private_info;
@@ -397,9 +399,11 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 											  switch_core_session **new_session, switch_memory_pool *pool)
 {
 	char *bchan = NULL;
+	char name[128] = "";
+		
 
 	if (outbound_profile && outbound_profile->destination_number) {
-		bchan = strchr(outbound_profile->destination_number, '%');
+		bchan = strchr(outbound_profile->destination_number, '=');
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -434,7 +438,6 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 
 		
 		if (outbound_profile) {
-			char name[128];
 			switch_caller_profile *caller_profile;
 			struct sangoma_pri *spri;
 			int span = 0, autospan = 0, autochan = 0;
@@ -496,6 +499,9 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 						return SWITCH_STATUS_GENERR;
 					}
 					switch_set_flag(tech_pvt, TFLAG_NOSIG);
+					snprintf(name, sizeof(name), "WanPipe/%s/nosig-%04x", bchan, rand() & 0xffff);
+					switch_channel_set_name(channel, name);			
+
 				} else {
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid address\n");
 					switch_core_session_destroy(new_session);
@@ -628,7 +634,8 @@ static switch_status wanpipe_read_frame(switch_core_session *session, switch_fra
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (tech_pvt->socket <= 0) {
+
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -637,6 +644,9 @@ static switch_status wanpipe_read_frame(switch_core_session *session, switch_fra
 	*frame = NULL;
 	memset(tech_pvt->databuf, 0, sizeof(tech_pvt->databuf));
 	while (bytes < globals.mtu) {
+		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+			return SWITCH_STATUS_GENERR;
+		}
 		if ((res = sangoma_socket_waitfor(tech_pvt->socket, timeout, POLLIN | POLLERR)) < 0) {
 			return SWITCH_STATUS_GENERR;
 		} else if (res == 0) {
@@ -657,6 +667,11 @@ static switch_status wanpipe_read_frame(switch_core_session *session, switch_fra
 		bytes += res;
 		bp += bytes;
 	}
+
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+		return SWITCH_STATUS_GENERR;
+	}
+
 	tech_pvt->read_frame.datalen = bytes;
 	tech_pvt->read_frame.samples = bytes / 2;
 
@@ -706,11 +721,17 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 
 
 	while (tech_pvt->dtmf_buffer && bwrote < frame->datalen && bytes > 0 && (inuse = switch_buffer_inuse(tech_pvt->dtmf_buffer)) > 0) {
+		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+			return SWITCH_STATUS_GENERR;
+		}
+
 		if ((bread = switch_buffer_read(tech_pvt->dtmf_buffer, dtmf, globals.mtu)) < globals.mtu) {
 			while (bread < globals.mtu) {
 				dtmf[bread++] = 0;
 			}
 		}
+
+
 		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
 
 
@@ -737,6 +758,10 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 		}
 	}
 
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+		return SWITCH_STATUS_GENERR;
+	}
+
 	if (tech_pvt->skip_write_frames) {
 		tech_pvt->skip_write_frames--;
 		return SWITCH_STATUS_SUCCESS;
@@ -744,6 +769,11 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 
 	while (bytes > 0) {
 		unsigned int towrite;
+		
+		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+			return SWITCH_STATUS_GENERR;
+		}
+
 		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
 #ifdef DOTRACE	
 		write(tech_pvt->fd, bp, (int) globals.mtu);
@@ -823,9 +853,8 @@ static switch_status wanpipe_kill_channel(switch_core_session *session, int sig)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-
+	switch_set_flag(tech_pvt, TFLAG_BYE);
 	switch_clear_flag(tech_pvt, TFLAG_MEDIA);
-
 
 	return SWITCH_STATUS_SUCCESS;
 

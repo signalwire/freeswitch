@@ -31,11 +31,12 @@
  */
 #include <switch_console.h>
 #include <switch.h>
+#define CMD_BUFLEN SWITCH_RECCOMMENDED_BUFFER_SIZE * 10
 
 static int switch_console_process(char *cmd)
 {
 	char *arg = NULL;
-	char *retbuf = (char *)malloc(SWITCH_RECCOMMENDED_BUFFER_SIZE * 10);
+	char *retbuf = (char *)malloc(CMD_BUFLEN);
 
 #ifdef EMBED_PERL
 	const char *perlhelp = "perl - execute some perl. (print to STDERR if you want to see it.)\n";
@@ -73,7 +74,7 @@ static int switch_console_process(char *cmd)
 	if ((arg = strchr(cmd, ' ')) != 0) {
 		*arg++ = '\0';
 	}
-	if (switch_api_execute(cmd, arg, retbuf, sizeof(retbuf)) == SWITCH_STATUS_SUCCESS) {
+	if (switch_api_execute(cmd, arg, retbuf, CMD_BUFLEN) == SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "",
 							  retbuf);
 	} else {
