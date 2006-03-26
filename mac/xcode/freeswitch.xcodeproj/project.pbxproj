@@ -39,7 +39,7 @@
 		D35430C509C37820000A33C3 /* sqlite.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = sqlite.framework; path = /Library/Frameworks/sqlite.framework; sourceTree = "<absolute>"; };
 		D35430C609C37820000A33C3 /* teletone.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = teletone.framework; path = /Library/Frameworks/teletone.framework; sourceTree = "<absolute>"; };
 		D3814F8D09CFA28200553C1B /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = config.h; path = ../../src/include/config.h; sourceTree = SOURCE_ROOT; };
-		D3EA84A109C127DC006A903B /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3EA84A109C127DC006A903B /* freeswitch */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3EA84AA09C12851006A903B /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = ../../src/switch.c; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 

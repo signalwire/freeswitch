@@ -13,8 +13,8 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleSignature</key>
-	<string>????</string>
+	<string>BKW</string>
 	<key>CFBundleVersion</key>
-	<string>1.0</string>
+	<string>3.2.8</string>
 </dict>
 </plist>

@@ -7,6 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D342280B09D7559500A49F95 /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DA9FCE09C1088100AA370C /* filterkit.c */; };
+		D342280C09D7559500A49F95 /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DA9FD109C1088100AA370C /* resample.c */; };
+		D342280D09D7559500A49F95 /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DA9FD209C1088100AA370C /* resamplesubs.c */; };
+		D342281109D755BD00A49F95 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DA9FCC09C1088100AA370C /* config.h */; };
+		D342281209D755BD00A49F95 /* configtemplate.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DA9FCD09C1088100AA370C /* configtemplate.h */; };
+		D342281309D755BD00A49F95 /* filterkit.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DA9FCF09C1088100AA370C /* filterkit.h */; };
+		D342281409D755BD00A49F95 /* resample_defs.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DA9FD009C1088100AA370C /* resample_defs.h */; };
+		D342281509D755BD00A49F95 /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DA9FCA09C1086700AA370C /* libresample.h */; };
+		D342282309D7560900A49F95 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DA9FCC09C1088100AA370C /* config.h */; };
+		D342282409D7560900A49F95 /* configtemplate.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DA9FCD09C1088100AA370C /* configtemplate.h */; };
+		D342282509D7560900A49F95 /* filterkit.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DA9FCF09C1088100AA370C /* filterkit.h */; };
+		D342282609D7560900A49F95 /* resample_defs.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DA9FD009C1088100AA370C /* resample_defs.h */; };
+		D342282709D7560900A49F95 /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DA9FCA09C1086700AA370C /* libresample.h */; };
+		D342282809D7560F00A49F95 /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DA9FCE09C1088100AA370C /* filterkit.c */; };
+		D342282909D7560F00A49F95 /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DA9FD109C1088100AA370C /* resample.c */; };
+		D342282A09D7560F00A49F95 /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DA9FD209C1088100AA370C /* resamplesubs.c */; };
 		D3DA9FEA09C109D400AA370C /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DA9FCE09C1088100AA370C /* filterkit.c */; };
 		D3DA9FEB09C109D400AA370C /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DA9FD109C1088100AA370C /* resample.c */; };
 		D3DA9FEC09C109D400AA370C /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DA9FD209C1088100AA370C /* resamplesubs.c */; };
@@ -35,6 +51,9 @@
 /* End PBXBuildStyle section */
 
 /* Begin PBXFileReference section */
+		D342280A09D7556F00A49F95 /* libresample.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; name = libresample.dylib; path = build/resample/libresample.dylib; sourceTree = "<group>"; };
+		D342281E09D755F500A49F95 /* resample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = resample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D342281F09D755F500A49F95 /* resample-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "resample-Info.plist"; sourceTree = "<group>"; };
 		D3DA9FCA09C1086700AA370C /* libresample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libresample.h; path = "../../../libs/libresample-0.1.3/include/libresample.h"; sourceTree = SOURCE_ROOT; };
 		D3DA9FCC09C1088100AA370C /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = config.h; path = "../../../libs/libresample-0.1.3/src/config.h"; sourceTree = SOURCE_ROOT; };
 		D3DA9FCD09C1088100AA370C /* configtemplate.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = configtemplate.h; path = "../../../libs/libresample-0.1.3/src/configtemplate.h"; sourceTree = SOURCE_ROOT; };
@@ -47,6 +66,20 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		D342280809D7556F00A49F95 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D342281C09D755F500A49F95 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3DA9FE409C109A100AA370C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -61,6 +94,7 @@
 			isa = PBXGroup;
 			children = (
 				D3DA9FB409C1074000AA370C /* resample */,
+				D342281F09D755F500A49F95 /* resample-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -70,6 +104,8 @@
 				D3DA9FBB09C1079E00AA370C /* include */,
 				D3DA9FBC09C107A500AA370C /* src */,
 				D3DA9FE609C109A100AA370C /* libresample.a */,
+				D342280A09D7556F00A49F95 /* libresample.dylib */,
+				D342281E09D755F500A49F95 /* resample.framework */,
 			);
 			name = resample;
 			sourceTree = "<group>";
@@ -99,6 +135,30 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		D342280609D7556F00A49F95 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D342281109D755BD00A49F95 /* config.h in Headers */,
+				D342281209D755BD00A49F95 /* configtemplate.h in Headers */,
+				D342281309D755BD00A49F95 /* filterkit.h in Headers */,
+				D342281409D755BD00A49F95 /* resample_defs.h in Headers */,
+				D342281509D755BD00A49F95 /* libresample.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D342281909D755F500A49F95 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D342282309D7560900A49F95 /* config.h in Headers */,
+				D342282409D7560900A49F95 /* configtemplate.h in Headers */,
+				D342282509D7560900A49F95 /* filterkit.h in Headers */,
+				D342282609D7560900A49F95 /* resample_defs.h in Headers */,
+				D342282709D7560900A49F95 /* libresample.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3DA9FE209C109A100AA370C /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -114,6 +174,91 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		D342280909D7556F00A49F95 /* libresample.dylib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D342281709D755DF00A49F95 /* Build configuration list for PBXNativeTarget "libresample.dylib" */;
+			buildPhases = (
+				D342280609D7556F00A49F95 /* Headers */,
+				D342280709D7556F00A49F95 /* Sources */,
+				D342280809D7556F00A49F95 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = libresample.dylib;
+			productName = resample;
+			productReference = D342280A09D7556F00A49F95 /* libresample.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		D342281D09D755F500A49F95 /* resample.framework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D342282009D755F500A49F95 /* Build configuration list for PBXNativeTarget "resample.framework" */;
+			buildPhases = (
+				D342281909D755F500A49F95 /* Headers */,
+				D342281A09D755F500A49F95 /* Resources */,
+				D342281B09D755F500A49F95 /* Sources */,
+				D342281C09D755F500A49F95 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			buildSettings = {
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
+				INFOPLIST_FILE = "resample-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Foundation,
+					"-framework",
+					AppKit,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				ZERO_LINK = YES;
+			};
+			dependencies = (
+			);
+			name = resample.framework;
+			productName = resample;
+			productReference = D342281E09D755F500A49F95 /* resample.framework */;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>${EXECUTABLE_NAME}</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.yourcompany.resample</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>FMWK</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
+</dict>
+</plist>
+";
+			productType = "com.apple.product-type.framework";
+		};
 		D3DA9FE509C109A100AA370C /* libresample.a */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D3DA9FF309C109EF00AA370C /* Build configuration list for PBXNativeTarget "libresample.a" */;
@@ -158,9 +303,21 @@
 			projectDirPath = "";
 			targets = (
 				D3DA9FE509C109A100AA370C /* libresample.a */,
+				D342280909D7556F00A49F95 /* libresample.dylib */,
+				D342281D09D755F500A49F95 /* resample.framework */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D342281A09D755F500A49F95 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		D3DA9FFD09C10A1F00AA370C /* Prepare Source */ = {
@@ -180,6 +337,26 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		D342280709D7556F00A49F95 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D342280B09D7559500A49F95 /* filterkit.c in Sources */,
+				D342280C09D7559500A49F95 /* resample.c in Sources */,
+				D342280D09D7559500A49F95 /* resamplesubs.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D342281B09D755F500A49F95 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D342282809D7560F00A49F95 /* filterkit.c in Sources */,
+				D342282909D7560F00A49F95 /* resample.c in Sources */,
+				D342282A09D7560F00A49F95 /* resamplesubs.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3DA9FE309C109A100AA370C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -193,6 +370,36 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		D342281809D755DF00A49F95 /* resample */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				ZERO_LINK = YES;
+			};
+			name = resample;
+		};
+		D342282109D755F500A49F95 /* resample */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = "resample-Info.plist";
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				ZERO_LINK = YES;
+			};
+			name = resample;
+		};
 		D3DA9FA409C1072700AA370C /* resample */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -220,6 +427,22 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		D342281709D755DF00A49F95 /* Build configuration list for PBXNativeTarget "libresample.dylib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D342281809D755DF00A49F95 /* resample */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = resample;
+		};
+		D342282009D755F500A49F95 /* Build configuration list for PBXNativeTarget "resample.framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D342282109D755F500A49F95 /* resample */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = resample;
+		};
 		D3DA9FA309C1072700AA370C /* Build configuration list for PBXProject "resample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
