@@ -686,7 +686,7 @@ struct audio_bridge_data {
 
 static void *audio_bridge_thread(switch_thread *thread, void *obj)
 {
-	struct switch_core_thread_session *data = obj;
+	struct switch_core_thread_session *his_thread, *data = obj;
 	int *stream_id_p;
 	int stream_id = 0, ans_a = 0, ans_b = 0;
 	switch_dtmf_callback_function dtmf_callback;
@@ -703,7 +703,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	stream_id_p = data->objs[2];
 	dtmf_callback = data->objs[3];
 	user_data = data->objs[4];
-	his_status = data->objs[5];
+	his_thread = data->objs[5];
 
 	if (stream_id_p) {
 		stream_id = *stream_id_p;
@@ -717,7 +717,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	ans_b = switch_channel_test_flag(chan_b, CF_ANSWERED);
 
 
-	while (data->running > 0 && *his_status > 0) {
+	while (data->running > 0 && his_thread->running > 0) {
 		switch_channel_state b_state = switch_channel_get_state(chan_b);
 
 		switch (b_state) {
@@ -771,42 +771,30 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 			data->running = -1;
 		}
 
-		switch_yield(1000);
+		//switch_yield(1000);
 	}
-	//switch_channel_hangup(chan_b);
-	data->running = 0;
-
-	return NULL;
-}
 
 
-static switch_status audio_bridge_on_hangup(switch_core_session *session)
-{
-	switch_core_session *other_session;
-	switch_channel *channel = NULL, *other_channel = NULL;
 
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
-	other_session = switch_channel_get_private(channel);
-	assert(other_session != NULL);
-
-	other_channel = switch_core_session_get_channel(other_session);
-	assert(other_channel != NULL);
-
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "CUSTOM HANGUP %s kill %s\n", switch_channel_get_name(channel),
-						  switch_channel_get_name(other_channel));
-
-	//switch_core_session_kill_channel(other_session, SWITCH_SIG_KILL);
-	//switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
-	if (switch_channel_test_flag(channel, CF_ORIGINATOR) && !switch_channel_test_flag(other_channel, CF_TRANSFER)) {
-		switch_core_session_kill_channel(other_session, SWITCH_SIG_KILL);
-		switch_channel_hangup(other_channel);
+	if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
+		if (!switch_channel_test_flag(other_channel, CF_TRANSFER)) {
+			switch_core_session_kill_channel(other_session, SWITCH_SIG_KILL);
+			switch_channel_hangup(other_channel);
+		}
+		switch_channel_clear_flag(channel, CF_ORIGINATOR);
 	}
 	
-	switch_channel_clear_flag(channel, CF_ORIGINATOR);
-
-	return SWITCH_STATUS_SUCCESS;
+	data->running = 0;
+	
+	if (his_thread->running > 0) {
+		his_thread->running = -1;
+		/* wait for the other audio thread */
+		while (his_thread->running) {
+			switch_yield(1000);
+		}
+	}
+	switch_sleep(500000);
+	return NULL;
 }
 
 static switch_status audio_bridge_on_ring(switch_core_session *session)
@@ -832,7 +820,7 @@ static const switch_state_handler_table audio_bridge_peer_state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_ring */ audio_bridge_on_ring,
 	/*.on_execute */ NULL,
-	/*.on_hangup */ audio_bridge_on_hangup,
+	/*.on_hangup */ NULL,
 	/*.on_loopback */ NULL,
 	/*.on_transmit */ NULL
 };
@@ -879,7 +867,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	other_audio_thread.objs[2] = &stream_id;
 	other_audio_thread.objs[3] = (void *) dtmf_callback;
 	other_audio_thread.objs[4] = session_data;
-	other_audio_thread.objs[5] = &this_audio_thread.running;
+	other_audio_thread.objs[5] = &this_audio_thread;
 	other_audio_thread.running = 5;
 
 	this_audio_thread.objs[0] = peer_session;
@@ -887,7 +875,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	this_audio_thread.objs[2] = &stream_id;
 	this_audio_thread.objs[3] = (void *) dtmf_callback;
 	this_audio_thread.objs[4] = peer_session_data;
-	this_audio_thread.objs[5] = &other_audio_thread.running;
+	this_audio_thread.objs[5] = &other_audio_thread;
 	this_audio_thread.running = 2;
 
 
@@ -946,14 +934,6 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 		switch_core_session_launch_thread(session, audio_bridge_thread, (void *) &other_audio_thread);
 		audio_bridge_thread(NULL, (void *) &this_audio_thread);
 
-		//switch_channel_hangup(peer_channel);
-		if (other_audio_thread.running > 0) {
-			other_audio_thread.running = -1;
-			/* wait for the other audio thread */
-			while (other_audio_thread.running) {
-				switch_yield(1000);
-			}
-		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
