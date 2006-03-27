@@ -691,7 +691,6 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	int stream_id = 0, ans_a = 0, ans_b = 0;
 	switch_dtmf_callback_function dtmf_callback;
 	void *user_data;
-	int *his_status;
 
 	switch_channel *chan_a, *chan_b;
 	switch_frame *read_frame;
@@ -776,12 +775,12 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 
 
 
-	if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
-		if (!switch_channel_test_flag(other_channel, CF_TRANSFER)) {
-			switch_core_session_kill_channel(other_session, SWITCH_SIG_KILL);
-			switch_channel_hangup(other_channel);
+	if (switch_channel_test_flag(chan_a, CF_ORIGINATOR)) {
+		if (!switch_channel_test_flag(chan_b, CF_TRANSFER)) {
+			switch_core_session_kill_channel(session_b, SWITCH_SIG_KILL);
+			switch_channel_hangup(chan_b);
 		}
-		switch_channel_clear_flag(channel, CF_ORIGINATOR);
+		switch_channel_clear_flag(chan_a, CF_ORIGINATOR);
 	}
 	
 	data->running = 0;
@@ -825,14 +824,6 @@ static const switch_state_handler_table audio_bridge_peer_state_handlers = {
 	/*.on_transmit */ NULL
 };
 
-static const switch_state_handler_table audio_bridge_caller_state_handlers = {
-	/*.on_init */ NULL,
-	/*.on_ring */ NULL,
-	/*.on_execute */ NULL,
-	/*.on_hangup */ audio_bridge_on_hangup,
-	/*.on_loopback */ NULL,
-	/*.on_transmit */ NULL
-};
 
 SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_session *session, 
 															   switch_core_session *peer_session,
@@ -881,7 +872,6 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 
 	switch_channel_set_private(caller_channel, peer_session);
 	switch_channel_set_private(peer_channel, session);
-	switch_channel_add_state_handler(caller_channel, &audio_bridge_caller_state_handlers);
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
 	switch_core_session_thread_launch(peer_session);
 	time(&start);
