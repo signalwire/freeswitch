@@ -1541,7 +1541,7 @@ SWITCH_DECLARE(switch_status) switch_core_new_memory_pool(switch_memory_pool **p
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if ((apr_pool_create(pool, runtime.memory_pool)) != SWITCH_STATUS_SUCCESS) {
+	if ((apr_pool_create(pool, NULL)) != SWITCH_STATUS_SUCCESS) {
 		*pool = NULL;
 		return SWITCH_STATUS_MEMERR;
 	}
