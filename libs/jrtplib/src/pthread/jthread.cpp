@@ -27,6 +27,9 @@
 
 #include "jthread.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
 JThread::JThread()
 {
@@ -48,18 +51,24 @@ int JThread::Start()
 	{
 		if (!runningmutex.IsInitialized())
 		{
-			if (runningmutex.Init() < 0)
+			if (runningmutex.Init() < 0) {
+				printf("STUPID 1\n");
 				return ERR_JTHREAD_CANTINITMUTEX;
+			}
 		}
 		if (!continuemutex.IsInitialized())
 		{
-			if (continuemutex.Init() < 0)
+			if (continuemutex.Init() < 0) {
+				printf("STUPID 2\n");
 				return ERR_JTHREAD_CANTINITMUTEX;
+			}
 		}
 		if (!continuemutex2.IsInitialized())
 		{
-			if (continuemutex2.Init() < 0)
+			if (continuemutex2.Init() < 0) {
+				printf("STUPID 3\n");
 				return ERR_JTHREAD_CANTINITMUTEX;
+			}
 		}
 		mutexinit = true;
 	}
@@ -68,6 +77,7 @@ int JThread::Start()
 	if (running)
 	{
 		runningmutex.Unlock();
+		printf("STUPID 4\n");
 		return ERR_JTHREAD_ALREADYRUNNING;
 	}
 	runningmutex.Unlock();
@@ -77,6 +87,7 @@ int JThread::Start()
 	if (status != 0)
 	{
 		continuemutex.Unlock();
+		printf("STUPID 5 %d (%s) (%s)\n", strerror(errno), strerror(status));
 		return ERR_JTHREAD_CANTSTARTTHREAD;
 	}
 	

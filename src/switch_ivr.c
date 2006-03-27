@@ -903,12 +903,17 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 
 		/* read from the channel while we wait if the audio is up on it */
 		if (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+
 			if (switch_core_session_read_frame(session, &read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
-			if (switch_core_session_write_frame(session, read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
-				break;
+			if (read_frame) {
+				memset(read_frame->data, 0, read_frame->datalen);
+				if (switch_core_session_write_frame(session, read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
 			}
+
 		} else {
 			switch_yield(1000);
 		}
