@@ -30,6 +30,7 @@
  *
  */
 #include <switch.h>
+//#define DEBUG_ALLOC
 
 struct switch_core_session {
 	unsigned long id;
@@ -46,14 +47,14 @@ struct switch_core_session {
 	switch_buffer *raw_write_buffer;
 	switch_frame raw_write_frame;
 	switch_frame enc_write_frame;
-	unsigned char *raw_write_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
-	unsigned char *enc_write_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	uint8_t raw_write_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	uint8_t enc_write_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 
 	switch_buffer *raw_read_buffer;
 	switch_frame raw_read_frame;
 	switch_frame enc_read_frame;
-	unsigned char *raw_read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
-	unsigned char *enc_read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	uint8_t raw_read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	uint8_t enc_read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 
 
 	switch_audio_resampler *read_resampler;
@@ -655,6 +656,11 @@ SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session *session, s
 	assert(session != NULL);
 	assert(session->pool != NULL);
 
+#ifdef DEBUG_ALLOC
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate %d\n", memory);
+#endif
+
+
 	if ((ptr = apr_palloc(session->pool, memory)) != 0) {
 		memset(ptr, 0, memory);
 	}
@@ -668,6 +674,10 @@ SWITCH_DECLARE(void *) switch_core_permenant_alloc(size_t memory)
 {
 	void *ptr = NULL;
 	assert(runtime.memory_pool != NULL);
+
+#ifdef DEBUG_ALLOC
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Perm Allocate %d\n", memory);
+#endif
 
 	if ((ptr = apr_palloc(runtime.memory_pool, memory)) != 0) {
 		memset(ptr, 0, memory);
@@ -686,6 +696,11 @@ SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup)
 		return NULL;
 
 	len = strlen(todup) + 1;
+
+#ifdef DEBUG_ALLOC
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Perm Allocate %d\n", len);
+#endif
+
 	if (todup && (duped = apr_palloc(runtime.memory_pool, len)) != 0) {
 		strncpy(duped, todup, len);
 	}
@@ -705,6 +720,10 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, 
 	}
 	len = strlen(todup) + 1;
 
+#ifdef DEBUG_ALLOC
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate %d\n", len);
+#endif
+
 	if (todup && (duped = apr_palloc(session->pool, len)) != 0) {
 		strncpy(duped, todup, len);
 	}
@@ -723,6 +742,10 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
 	}
 	
 	len = strlen(todup) + 1;
+
+#ifdef DEBUG_ALLOC
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate %d\n", len);
+#endif
 
 	if (todup && (duped = apr_palloc(pool, len)) != 0) {
 		strncpy(duped, todup, len);
@@ -2107,6 +2130,11 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, size_t memory
 {
 	void *ptr = NULL;
 	assert(pool != NULL);
+	assert(memory < 1000000);
+
+#ifdef DEBUG_ALLOC
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate %d\n", memory);
+#endif
 
 	if ((ptr = apr_palloc(pool, memory)) != 0) {
 		memset(ptr, 0, memory);
@@ -2256,7 +2284,7 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 
 
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocated memory pool.\n");
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocated memory pool. Sessions are %d bytes\n", sizeof(struct switch_core_session));
 	switch_event_init(runtime.memory_pool);
 
 	assert(runtime.memory_pool != NULL);
