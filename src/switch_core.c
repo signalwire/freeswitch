@@ -992,7 +992,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 				}
 			}
 
-			if (switch_buffer_inuse(session->raw_read_buffer) >= session->read_codec->implementation->bytes_per_frame) {
+			if (perfect || switch_buffer_inuse(session->raw_read_buffer) >= session->read_codec->implementation->bytes_per_frame) {
 				unsigned int flag = 0;
 
 				if (perfect) {
