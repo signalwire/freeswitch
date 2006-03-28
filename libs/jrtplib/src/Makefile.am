@@ -14,8 +14,7 @@ libjrtp_la_SOURCES = rtpdebug.cpp rtpsession.cpp rtpconfig_win.h \
 		     rtcppacketbuilder.cpp rtpsessionsources.cpp \
 		     rtpcollisionlist.cpp rtpipv6address.cpp \
 		     rtpudpv6transmitter.cpp rtptimeutilities.cpp \
- 		     extratransmitters/rtpfaketransmitter.cpp \
- 		     pthread/jmutex.cpp pthread/jthread.cpp
+		     pthread/jmutex.cpp pthread/jthread.cpp
 libjrtp_la_LDFLAGS = -release 3.5.2 @RTP_LINKLIBS@
 libjrtpinclude_HEADERS = rtcpapppacket.h rtcpbyepacket.h rtcpcompoundpacket.h \
 			 rtcpcompoundpacketbuilder.h rtcppacket.h rtcppacketbuilder.h \
@@ -30,7 +29,6 @@ libjrtpinclude_HEADERS = rtcpapppacket.h rtcpbyepacket.h rtcpcompoundpacket.h \
 			 rtptypes_win.h rtpudpv4transmitter.h rtpsessionsources.h \
 			 rtpcollisionlist.h rtpipv6address.h rtpipv6destination.h \
 			 rtpudpv6transmitter.h rtptypes.h rtptypes_unix.h \
-			 extratransmitters/rtpfaketransmitter.h \
 			 jmutex.h jthread.h jrtp4c.h jmutexautolock.h
 EXTRA_DIST = rtpconfig_unix.h.in win32/jthread.cpp win32/jmutex.cpp
 libjrtpincludedir = ${includedir}/jrtplib3
