@@ -45,6 +45,7 @@ JThread::~JThread()
 int JThread::Start()
 {
 	int status;
+    pthread_attr_t attr;
 
 	if (!mutexinit)
 	{
@@ -75,7 +76,9 @@ int JThread::Start()
 	runningmutex.Unlock();
 	
 	continuemutex.Lock();
-	status = pthread_create(&threadid,NULL,TheThread,this);
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	status = pthread_create(&threadid,&attr,TheThread,this);
 	if (status != 0)
 	{
 		continuemutex.Unlock();
