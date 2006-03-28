@@ -90,7 +90,7 @@ public:
 private:
 	bool acceptown;
 	bool usepollthread;
-	int maxpacksize;
+	size_t maxpacksize;
 	double owntsunit;
 	RTPTransmitter::ReceiveMode receivemode;
 	bool resolvehostname;

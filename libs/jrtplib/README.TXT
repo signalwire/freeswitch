@@ -1,8 +1,8 @@
 ------------------------------------------------------------------------------
-                                                              January 19, 2006
+                                                                March 26, 2006
 
 
-                                   JRTPLIB (v3.4.0)
+                                   JRTPLIB (v3.5.2)
 
 
                       Developed at the The Expertise Centre for 
@@ -15,6 +15,7 @@
 
 LIBRARY LOCATION AND CONTACT
 ============================
+
 Normally, you should be able to download the latest version of the library
 from this url:
 	http://research.edm.uhasselt.be/jori/jrtplib/jrtplib.html
@@ -29,6 +30,7 @@ instructions.
 
 ACKNOWLEDGMENT
 ==============
+
 I would like thank the people at the Expertise Centre for Digital Media
 for giving me the opportunity to create this rewrite of the library.
 
@@ -104,9 +106,6 @@ INSTALLATION NOTES
 		Enables support for JThread.
 	- RTP_SUPPORT_SDESPRIV:
 		Enables support for RTCP SDES private items.
-	- RTP_SUPPORT_INLINETEMPLATEPARAM:
-		If set, the compiler should be able to handle an inline
-		function as a template parameter.
 	- RTP_SUPPORT_PROBATION:
 		If set, a few consecutive RTP packets are needed to validate
 		a member.

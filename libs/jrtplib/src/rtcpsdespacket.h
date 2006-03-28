@@ -114,7 +114,7 @@ inline bool RTCPSDESPacket::GotoNextChunk()
 	size_t offset = sizeof(uint32_t);
 	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+sizeof(uint32_t));
 	
-	while (sdeshdr->id != 0)
+	while (sdeshdr->sdesid != 0)
 	{
 		offset += sizeof(RTCPSDESHeader);
 		offset += (size_t)(sdeshdr->length);
@@ -147,7 +147,7 @@ inline bool RTCPSDESPacket::GotoFirstItem()
 		return false;
 	itemoffset = sizeof(uint32_t);
 	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+itemoffset);
-	if (sdeshdr->id == 0)
+	if (sdeshdr->sdesid == 0)
 		return false;
 	return true;
 }
@@ -160,14 +160,14 @@ inline bool RTCPSDESPacket::GotoNextItem()
 		return false;
 	
 	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+itemoffset);
-	if (sdeshdr->id == 0)
+	if (sdeshdr->sdesid == 0)
 		return false;
 	
 	size_t offset = itemoffset;
 	offset += sizeof(RTCPSDESHeader);
 	offset += (size_t)(sdeshdr->length);
 	sdeshdr = (RTCPSDESHeader *)(currentchunk+offset);
-	if (sdeshdr->id == 0)
+	if (sdeshdr->sdesid == 0)
 		return false;
 	itemoffset = offset;
 	return true;
@@ -180,7 +180,7 @@ inline RTCPSDESPacket::ItemType RTCPSDESPacket::GetItemType() const
 	if (currentchunk == 0)
 		return None;
 	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+itemoffset);
-	switch (sdeshdr->id)
+	switch (sdeshdr->sdesid)
 	{
 	case 0:
 		return None;
@@ -213,7 +213,7 @@ inline size_t RTCPSDESPacket::GetItemLength() const
 	if (currentchunk == 0)
 		return None;
 	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+itemoffset);
-	if (sdeshdr->id == 0)
+	if (sdeshdr->sdesid == 0)
 		return 0;
 	return (size_t)(sdeshdr->length);
 }
@@ -225,7 +225,7 @@ inline uint8_t *RTCPSDESPacket::GetItemData()
 	if (currentchunk == 0)
 		return 0;
 	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+itemoffset);
-	if (sdeshdr->id == 0)
+	if (sdeshdr->sdesid == 0)
 		return 0;
 	return (currentchunk+itemoffset+sizeof(RTCPSDESHeader));
 }
@@ -238,7 +238,7 @@ inline size_t RTCPSDESPacket::GetPRIVPrefixLength() const
 	if (currentchunk == 0)
 		return 0;
 	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+itemoffset);
-	if (sdeshdr->id != RTCP_SDES_ID_PRIVATE)
+	if (sdeshdr->sdesid != RTCP_SDES_ID_PRIVATE)
 		return 0;
 	if (sdeshdr->length == 0)
 		return 0;
@@ -256,7 +256,7 @@ inline uint8_t *RTCPSDESPacket::GetPRIVPrefixData()
 	if (currentchunk == 0)
 		return 0;
 	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+itemoffset);
-	if (sdeshdr->id != RTCP_SDES_ID_PRIVATE)
+	if (sdeshdr->sdesid != RTCP_SDES_ID_PRIVATE)
 		return 0;
 	if (sdeshdr->length == 0)
 		return 0;
@@ -276,7 +276,7 @@ inline size_t RTCPSDESPacket::GetPRIVValueLength() const
 	if (currentchunk == 0)
 		return 0;
 	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+itemoffset);
-	if (sdeshdr->id != RTCP_SDES_ID_PRIVATE)
+	if (sdeshdr->sdesid != RTCP_SDES_ID_PRIVATE)
 		return 0;
 	if (sdeshdr->length == 0)
 		return 0;
@@ -294,7 +294,7 @@ inline uint8_t *RTCPSDESPacket::GetPRIVValueData()
 	if (currentchunk == 0)
 		return 0;
 	RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(currentchunk+itemoffset);
-	if (sdeshdr->id != RTCP_SDES_ID_PRIVATE)
+	if (sdeshdr->sdesid != RTCP_SDES_ID_PRIVATE)
 		return 0;
 	if (sdeshdr->length == 0)
 		return 0;

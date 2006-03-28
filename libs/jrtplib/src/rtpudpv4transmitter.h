@@ -85,13 +85,17 @@ private:
 	jrtp_socket_t rtpsocket,rtcpsocket;
 };
 	
-#ifdef RTP_SUPPORT_INLINETEMPLATEPARAM
-	inline int RTPUDPv4Trans_GetHashIndex_IPv4Dest(const RTPIPv4Destination &d)				{ return d.GetIP_HBO()%RTPUDPV4TRANS_HASHSIZE; }
-	inline int RTPUDPv4Trans_GetHashIndex_uint32_t(const uint32_t &k)					{ return k%RTPUDPV4TRANS_HASHSIZE; }
-#else // No support for inline function as template parameter
-	int RTPUDPv4Trans_GetHashIndex_IPv4Dest(const RTPIPv4Destination &d);
-	int RTPUDPv4Trans_GetHashIndex_uint32_t(const uint32_t &k);
-#endif // RTP_SUPPORT_INLINETEMPLATEPARAM
+class RTPUDPv4Trans_GetHashIndex_IPv4Dest
+{
+public:
+	static int GetIndex(const RTPIPv4Destination &d)							{ return d.GetIP_HBO()%RTPUDPV4TRANS_HASHSIZE; }
+};
+
+class RTPUDPv4Trans_GetHashIndex_uint32_t
+{
+public:
+	static int GetIndex(const uint32_t &k)									{ return k%RTPUDPV4TRANS_HASHSIZE; }
+};
 
 #define RTPUDPV4TRANS_HEADERSIZE						(20+8)
 	

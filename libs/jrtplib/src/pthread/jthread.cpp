@@ -3,7 +3,7 @@
     This file is a part of the JThread package, which contains some object-
     oriented thread wrappers for different thread implementations.
 
-    Copyright (c) 2000-2005  Jori Liesenborgs (jori@lumumba.uhasselt.be)
+    Copyright (c) 2000-2006  Jori Liesenborgs (jori@lumumba.uhasselt.be)
 
     Permission is hereby granted, free of charge, to any person obtaining a
     copy of this software and associated documentation files (the "Software"),
@@ -26,6 +26,8 @@
 */
 
 #include "jthread.h"
+#include <sys/time.h>
+#include <time.h>
 #include <stdlib.h>
 
 JThread::JThread()
@@ -86,6 +88,13 @@ int JThread::Start()
 	while (!running)
 	{
 		runningmutex.Unlock();
+		
+		struct timespec req,rem;
+
+		req.tv_sec = 0;
+		req.tv_nsec = 1000000;
+		nanosleep(&req,&rem);
+
 		runningmutex.Lock();
 	}
 	runningmutex.Unlock();

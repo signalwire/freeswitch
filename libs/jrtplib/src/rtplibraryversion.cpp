@@ -31,9 +31,20 @@
 */
 
 #include "rtplibraryversion.h"
+#include "rtpdefines.h"
 
 RTPLibraryVersion RTPLibraryVersion::GetVersion()
 {
-	return RTPLibraryVersion(3,4,0);
+	return RTPLibraryVersion(3,5,2);
 }
+
+std::string RTPLibraryVersion::GetVersionString() const
+{
+	char str[16];
+	
+	RTP_SNPRINTF(str,16,"%d.%d.%d",majornr,minornr,debugnr);
+	
+	return std::string(str);
+}
+
 

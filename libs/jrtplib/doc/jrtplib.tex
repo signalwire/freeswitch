@@ -1,6 +1,6 @@
 \documentclass[12pt,a4paper]{article}
 
-\newcommand{\jversion}{3.4.0}
+\newcommand{\jversion}{3.5.2}
 \newcommand{\headerfile}[1]{\marginpar{\scriptsize Header:\\{\tt #1}}}
 \newcommand{\inherits}[1]{\marginpar{\scriptsize Inherits:\\{\tt #1}}}
 \newcommand{\Paragraph}[1]{\paragraph{#1}\ \\\addcontentsline{toc}{subsection}{\ \hspace{3cm}\ {#1}}}
@@ -22,7 +22,7 @@
 \begin{document}
 	\title{\ \vspace{3.5cm}\ \\{\bf JRTPLIB \jversion}}
 	\author{Jori Liesenborgs\\{\tt jori@lumumba.uhasselt.be}}
-	\date{January 19, 2006\\\vspace{0.5cm}\ \\
+	\date{March 26, 2006\\\vspace{0.5cm}\ \\
 	      {\small{\em Developed at the The Expertise Centre for \\Digital Media (EDM),
 	      a research institute\\of the Hasselt University}\\\ \\
 		  {\tt http://www.edm.uhasselt.be/}\\
@@ -198,7 +198,7 @@ if (status < 0)
 			Suppose that we want to send our data to a process running on the
 			same host at port $9000$, we can do the following:
 			\begin{lstlisting}[frame=tb]{}
-u_int8_t localip[]={127,0,0,1};
+uint8_t localip[]={127,0,0,1};
 RTPIPv4Address addr(localip,9000);
 
 status = session.AddDestination(addr);
@@ -233,7 +233,7 @@ session.SetDefaultTimestampIncrement(160);
 			$0.020$ seconds. We'll also store the current time so we'll know
 			when one minute has passed.
 			\begin{lstlisting}[frame=tb]{}
-u_int8_t silencebuffer[160];
+uint8_t silencebuffer[160];
 
 for (int i = 0 ; i < 160 ; i++)
 	silencebuffer[i] = 128;
@@ -371,12 +371,12 @@ session.BYEDestroy(delay,"Time's up",9);
 					and least significant word (LSW) of an NTP timestamp. The
 					class has the following members:
 					\begin{itemize}
-						\item {\tt RTPNTPTime(u\_int32\_t m, u\_int32\_t l)}\\
+						\item {\tt RTPNTPTime(uint32\_t m, uint32\_t l)}\\
 							This constructor creates and instance with MSW {\tt m}
 							and LSW {\tt l}.
-						\item {\tt u\_int32\_t GetMSW() const}\\
+						\item {\tt uint32\_t GetMSW() const}\\
 							Returns the most significant word.
-						\item {\tt u\_int32\_t GetLSW() const}\\
+						\item {\tt uint32\_t GetLSW() const}\\
 							Returns the least significant word.
 					\end{itemize}
 	
@@ -386,7 +386,7 @@ session.BYEDestroy(delay,"Time's up",9);
 					etc. It stores a number of seconds and a number of microseconds and
 					it has the following interface:
 					\begin{itemize}
-						\item {\tt RTPTime(u\_int32\_t seconds, u\_int32\_t microseconds)}\\
+						\item {\tt RTPTime(uint32\_t seconds, uint32\_t microseconds)}\\
 							Creates an instance corresponding to {\tt seconds} and
 							{\tt microseconds}.
 						\item {\tt RTPTime(double t)}\\
@@ -396,9 +396,9 @@ session.BYEDestroy(delay,"Time's up",9);
 							Creates an instance that corresponds to {\tt ntptime}. If
 							the conversion cannot be made, both the seconds and the
 							microseconds are set to zero.
-						\item {\tt u\_int32\_t GetSeconds() const}\\
+						\item {\tt uint32\_t GetSeconds() const}\\
 							Returns the number of seconds stored in this instance.
-						\item {\tt u\_int32\_t GetMicroSeconds() const}\\
+						\item {\tt uint32\_t GetMicroSeconds() const}\\
 							Returns the number of microseconds stored in this instance.
 						\item {\tt double GetDouble() const}\\
 							Returns the time stored in this instance, expressed in
@@ -430,11 +430,11 @@ session.BYEDestroy(delay,"Time's up",9);
 				The {\tt RTPRandom} class can be used to generate random numbers.
 				It has the following member functions:
 				\begin{itemize}
-					\item {\tt u\_int8\_t GetRandom8()}\\
+					\item {\tt uint8\_t GetRandom8()}\\
 						Returns a random eight bit value.
-					\item {\tt u\_int16\_t GetRandom16()}\\
+					\item {\tt uint16\_t GetRandom16()}\\
 						Returns a random sixteen bit value.
-					\item {\tt u\_int32\_t GetRandom32()}\\
+					\item {\tt uint32\_t GetRandom32()}\\
 						Returns a random thirty-two bit value.
 					\item {\tt double GetRandomDouble()}\\
 						Returns a random number between $0.0$ and $1.0$.
@@ -447,58 +447,58 @@ session.BYEDestroy(delay,"Time's up",9);
 				\begin{itemize}
 					\item {\tt void Clear()}\\
 						Clears all SDES information.
-					\item {\tt int SetCNAME(const u\_int8\_t *s, size\_t l)}\\
+					\item {\tt int SetCNAME(const uint8\_t *s, size\_t l)}\\
 						Sets the SDES CNAME item to {\tt s} with length {\tt l}.
-					\item {\tt int SetName(const u\_int8\_t *s, size\_t l)}\\
+					\item {\tt int SetName(const uint8\_t *s, size\_t l)}\\
 						Sets the SDES name item to {\tt s} with length {\tt l}.
-					\item {\tt int SetEMail(const u\_int8\_t *s, size\_t l)}\\
+					\item {\tt int SetEMail(const uint8\_t *s, size\_t l)}\\
 						Sets the SDES e-mail item to {\tt s} with length {\tt l}.
-					\item {\tt int SetPhone(const u\_int8\_t *s, size\_t l)}\\
+					\item {\tt int SetPhone(const uint8\_t *s, size\_t l)}\\
 						Sets the SDES phone item to {\tt s} with length {\tt l}.
-					\item {\tt int SetLocation(const u\_int8\_t *s, size\_t l)}\\
+					\item {\tt int SetLocation(const uint8\_t *s, size\_t l)}\\
 						Sets the SDES location item to {\tt s} with length {\tt l}.
-					\item {\tt int SetTool(const u\_int8\_t *s, size\_t l)}\\
+					\item {\tt int SetTool(const uint8\_t *s, size\_t l)}\\
 						Sets the SDES tool item to {\tt s} with length {\tt l}.
-					\item {\tt int SetNote(const u\_int8\_t *s, size\_t l)}\\
+					\item {\tt int SetNote(const uint8\_t *s, size\_t l)}\\
 						Sets the SDES note item to {\tt s} with length {\tt l}.
-					\item {\tt u\_int8\_t *GetCNAME(size\_t *len) const}\\
+					\item {\tt uint8\_t *GetCNAME(size\_t *len) const}\\
 						Returns the SDES CNAME item and stores its length in {\tt len}.
-					\item {\tt u\_int8\_t *GetName(size\_t *len) const}\\
+					\item {\tt uint8\_t *GetName(size\_t *len) const}\\
 						Returns the SDES name item and stores its length in {\tt len}.
-					\item {\tt u\_int8\_t *GetEMail(size\_t *len) const}\\
+					\item {\tt uint8\_t *GetEMail(size\_t *len) const}\\
 						Returns the SDES e-mail item and stores its length in {\tt len}.
-					\item {\tt u\_int8\_t *GetPhone(size\_t *len) const}\\
+					\item {\tt uint8\_t *GetPhone(size\_t *len) const}\\
 						Returns the SDES phone item and stores its length in {\tt len}.
-					\item {\tt u\_int8\_t *GetLocation(size\_t *len) const}\\
+					\item {\tt uint8\_t *GetLocation(size\_t *len) const}\\
 						Returns the SDES location item and stores its length in {\tt len}.
-					\item {\tt u\_int8\_t *GetTool(size\_t *len) const}\\
+					\item {\tt uint8\_t *GetTool(size\_t *len) const}\\
 						Returns the SDES tool item and stores its length in {\tt len}.
-					\item {\tt u\_int8\_t *GetNote(size\_t *len) const }\\
+					\item {\tt uint8\_t *GetNote(size\_t *len) const }\\
 						Returns the SDES note item and stores its length in {\tt len}.
 				\end{itemize}
 
 				If SDES private item support was enabled at compile time, the following
 				member functions are also available:
 				\begin{itemize}
-					\item {\tt int SetPrivateValue(const u\_int8\_t *prefix, size\_t prefixlen, const u\_int8\_t *value, size\_t valuelen)}\\
+					\item {\tt int SetPrivateValue(const uint8\_t *prefix, size\_t prefixlen, const uint8\_t *value, size\_t valuelen)}\\
 						Sets the entry for the prefix string specified by {\tt prefix} with
 						length {\tt prefixlen} to contain the value string specified by
 						{\tt value} with length {\tt valuelen}. If the maximum allowed
 						number of prefixes was reached, the error code
 						{\tt ERR\_\-RTP\_\-SDES\_\-MAX\-PRIV\-ITEMS} is returned.
-					\item {\tt int DeletePrivatePrefix(const u\_int8\_t *s, size\_t len)}\\
+					\item {\tt int DeletePrivatePrefix(const uint8\_t *s, size\_t len)}\\
 						Deletes the entry for the prefix specified by {\tt s} with length
 						{\tt len}.
 					\item {\tt void GotoFirstPrivateValue()}\\
 						Starts the iteration over the stored SDES private item prefixes
 						and their associated values.
-					\item {\tt bool GetNextPrivateValue(u\_int8\_t **prefix, size\_t *prefixlen, u\_int8\_t **value, size\_t *valuelen)}\\
+					\item {\tt bool GetNextPrivateValue(uint8\_t **prefix, size\_t *prefixlen, uint8\_t **value, size\_t *valuelen)}\\
 						If available, returns {\tt true} and stores the next SDES
 						private item prefix in {\tt prefix} and its length in
 						{\tt prefixlen}. The associated value and its length are
 						then stored in {\tt value} and {\tt valuelen}. Otherwise,
 						it returns {\tt false}.
-					\item {\tt bool GetPrivateValue(const u\_int8\_t *prefix, size\_t prefixlen, u\_int8\_t **value, size\_t *valuelen) const}\\ 
+					\item {\tt bool GetPrivateValue(const uint8\_t *prefix, size\_t prefixlen, uint8\_t **value, size\_t *valuelen) const}\\ 
 						Looks for the entry which corresponds to the SDES private
 						item prefix {\tt prefix} with length {\tt prefixlen}. If found,
 						the function returns {\tt true} and stores the associated
@@ -568,7 +568,7 @@ session.BYEDestroy(delay,"Time's up",9);
 						an instance of {\tt RTP\-UDPv4\-Trans\-mission\-Info} or {\tt RTP\-UDPv6\-Trans\-mission\-Info}
 						is returned, depending on the type of the transmitter. The user
 						has to delete the returned instance when it is no longer needed.
-					\item {\tt int GetLocalHostName(u\_int8\_t *buffer, size\_t *bufferlength)}\\
+					\item {\tt int GetLocalHostName(uint8\_t *buffer, size\_t *bufferlength)}\\
 						Looks up the local host name based upon internal information about
 						the local host's addresses. This function might take some time
 						since a DNS query might be done. {\tt bufferlength} should initially
@@ -609,9 +609,9 @@ session.BYEDestroy(delay,"Time's up",9);
 					\item {\tt void ResetPacketCount()}\\
 						The transmitter keeps track of the amount of RTP and RTCP 
 						packets that were sent. This functions resets those counts.
-					\item {\tt u\_int32\_t GetNumRTPPacketsSent()}\\
+					\item {\tt uint32\_t GetNumRTPPacketsSent()}\\
 						Returns the number of RTP packets sent.
-					\item {\tt u\_int32\_t GetNumRTCPPacketsSent()}\\
+					\item {\tt uint32\_t GetNumRTCPPacketsSent()}\\
 						Returns the number of RTCP packets sent.
 					\item {\tt int AddDestination(const RTPAddress \&addr)}\\
 						Adds the address specified by {\tt addr} to the list of
@@ -704,29 +704,29 @@ session.BYEDestroy(delay,"Time's up",9);
 					By default, the multicast TTL is set to $1$ and the portbase
 					is set to $5000$. The interface of this class is the following:
 					\begin{itemize}
-						\item {\tt void SetBindIP(u\_int32\_t ip)}\\
+						\item {\tt void SetBindIP(uint32\_t ip)}\\
 							Sets the IP address which is used to bind the sockets
 							to {\tt ip}.
-						\item {\tt void SetPortbase(u\_int16\_t pbase)}\\
+						\item {\tt void SetPortbase(uint16\_t pbase)}\\
 							Sets the RTP portbase to {\tt pbase}. This has to be
 							an even number.
-						\item {\tt void SetMulticastTTL(u\_int8\_t mcastTTL)}\\
+						\item {\tt void SetMulticastTTL(uint8\_t mcastTTL)}\\
 							Sets the multicast TTL to be used to {\tt mcastTTL}.
-						\item {\tt void SetLocalIPList(std::list<u\_int32\_t> \&iplist)}\\
+						\item {\tt void SetLocalIPList(std::list<uint32\_t> \&iplist)}\\
 							Passes a list of IP addresses which will be used as
 							the local IP addresses.
 						\item {\tt void ClearLocalIPList()}\\
 							Clears the list of local IP addresses. An empty list
 							will make the transmission component itself determine the
 							local IP addresses.
-						\item {\tt u\_int32\_t GetBindIP() const}\\
+						\item {\tt uint32\_t GetBindIP() const}\\
 							Returns the IP address which will be used to bind the
 							sockets.
-						\item {\tt u\_int16\_t GetPortbase() const}\\
+						\item {\tt uint16\_t GetPortbase() const}\\
 							Returns the RTP portbase which will be used.
-						\item {\tt u\_int8\_t GetMulticastTTL() const}\\
+						\item {\tt uint8\_t GetMulticastTTL() const}\\
 							Returns the multicast TTL which will be used.
-						\item {\tt const std::list<u\_int32\_t> \&GetLocalIPList() const}\\
+						\item {\tt const std::list<uint32\_t> \&GetLocalIPList() const}\\
 							Returns the list of local IP addresses.
 					\end{itemize}
 
@@ -741,10 +741,10 @@ session.BYEDestroy(delay,"Time's up",9);
 						\item {\tt void SetBindIP(in6\_addr ip)}\\
 							Sets the IP address which is used to bind the sockets
 							to {\tt ip}.
-						\item {\tt void SetPortbase(u\_int16\_t pbase)}\\
+						\item {\tt void SetPortbase(uint16\_t pbase)}\\
 							Sets the RTP portbase to {\tt pbase}. This has to be
 							an even number.
-						\item {\tt void SetMulticastTTL(u\_int8\_t mcastTTL)}\\
+						\item {\tt void SetMulticastTTL(uint8\_t mcastTTL)}\\
 							Sets the multicast TTL to be used to {\tt mcastTTL}.
 						\item {\tt void SetLocalIPList(std::list<in6\_addr> \&iplist)}\\
 							Passes a list of IP addresses which will be used as
@@ -756,9 +756,9 @@ session.BYEDestroy(delay,"Time's up",9);
 						\item {\tt in6\_addr GetBindIP() const}\\
 							Returns the IP address which will be used to bind the
 							sockets.
-						\item {\tt u\_int16\_t GetPortbase() const}\\
+						\item {\tt uint16\_t GetPortbase() const}\\
 							Returns the RTP portbase which will be used.
-						\item {\tt u\_int8\_t GetMulticastTTL() const}\\
+						\item {\tt uint8\_t GetMulticastTTL() const}\\
 							Returns the multicast TTL which will be used.
 						\item {\tt const std::list<in6\_addr> \&GetLocalIPList() const}\\
 							Returns the list of local IP addresses.
@@ -782,7 +782,7 @@ session.BYEDestroy(delay,"Time's up",9);
 					information about the UDP over IPv4 transmission component. The
 					following member functions are available:
 					\begin{itemize}
-						\item {\tt std::list<u\_int32\_t> GetLocalIPList() const}\\
+						\item {\tt std::list<uint32\_t> GetLocalIPList() const}\\
 							Returns the list of IPv4 addresses the transmitter
 							considers to be the local IP addresses.
 						\item {\tt int GetRTPSocket() const}\\
@@ -847,24 +847,24 @@ session.BYEDestroy(delay,"Time's up",9);
 					This class is used by the UDP over IPv4 transmission component.
 					The following member functions are defined in this class:
 					\begin{itemize}
-						\item {\tt RTPIPv4Address(u\_int32\_t ip = 0, u\_int16\_t port = 0)}\\
+						\item {\tt RTPIPv4Address(uint32\_t ip = 0, uint16\_t port = 0)}\\
 							Creates an instance with IP address {\tt ip} and port number {\tt port}.
 							Both are interpreted in host byte order.
-						\item {\tt RTPIPv4Address(const u\_int8\_t ip[4], u\_int16\_t port = 0)}\\
+						\item {\tt RTPIPv4Address(const uint8\_t ip[4], uint16\_t port = 0)}\\
 							Creates an instance with IP address {\tt ip} and port {\tt port}.
 							The port number is interpreted in host byte order.
-						\item {\tt void SetIP(u\_int32\_t ip)}\\
+						\item {\tt void SetIP(uint32\_t ip)}\\
 							Sets the IP address for this instance to {\tt ip} which is
 							assumed to be in host byte order.
-						\item {\tt void SetIP(const u\_int8\_t ip[4])}\\
+						\item {\tt void SetIP(const uint8\_t ip[4])}\\
 							Sets the IP address of this instance to {\tt ip}.
-						\item {\tt void SetPort(u\_int16\_t port)}\\
+						\item {\tt void SetPort(uint16\_t port)}\\
 							Sets the port number for this instance to {\tt port} which
 							is interpreted in host byte order.
-						\item {\tt u\_int32\_t GetIP() const}\\
+						\item {\tt uint32\_t GetIP() const}\\
 							Returns the IP address contained in this instance in
 							host byte order.
-						\item {\tt u\_int16\_t GetPort() const}\\
+						\item {\tt uint16\_t GetPort() const}\\
 							Returns the port number of this instance in host byte
 							order.
 					\end{itemize}
@@ -884,26 +884,26 @@ session.BYEDestroy(delay,"Time's up",9);
 						\item {\tt RTPIPv6Address()}\\
 							Creates an instance with IP address and port number set to
 							zero.
-						\item {\tt RTPIPv6Address(const u\_int8\_t ip[16], u\_int16\_t port = 0)}\\
+						\item {\tt RTPIPv6Address(const uint8\_t ip[16], uint16\_t port = 0)}\\
 							Creates an instance with IP address {\tt ip} and port
 							number {\tt port}. The port number is assumed to be in
 							host byte order.
-						\item {\tt RTPIPv6Address(in6\_addr ip, u\_int16\_t port = 0)}\\
+						\item {\tt RTPIPv6Address(in6\_addr ip, uint16\_t port = 0)}\\
 							Creates an instance with IP address {\tt ip} and port
 							number {\tt port}. The port number is assumed to be in
 							host byte order.
 						\item {\tt void SetIP(in6\_addr ip)}\\
 							Sets the IP address for this instance to {\tt ip}.
-						\item {\tt void SetIP(const u\_int8\_t ip[16])}\\
+						\item {\tt void SetIP(const uint8\_t ip[16])}\\
 							Sets the IP address for this instance to {\tt ip}.
-						\item {\tt void SetPort(u\_int16\_t port)}\\
+						\item {\tt void SetPort(uint16\_t port)}\\
 							Sets the port number for this instance to {\tt port}, which
 							is interpreted in host byte order.
-						\item {\tt void GetIP(u\_int8\_t ip[16]) const}\\
+						\item {\tt void GetIP(uint8\_t ip[16]) const}\\
 							Copies the IP address of this instance in {\tt ip}.
 						\item {\tt in6\_addr GetIP() const}\\
 							Returns the IP address of this instance.
-						\item {\tt u\_int16\_t GetPort() const}\\
+						\item {\tt uint16\_t GetPort() const}\\
 							Returns the port number contained in this instance in
 							host byte order.
 					\end{itemize}
@@ -920,7 +920,7 @@ session.BYEDestroy(delay,"Time's up",9);
 				to store the incoming RTP and RTCP data in. It has the following 
 				interface:
 				\begin{itemize}
-					\item {\tt RTPRawPacket(u\_int8\_t *data, size\_t datalen, RTPAddress *address, RTPTime \&recvtime, bool rtp)}\\
+					\item {\tt RTPRawPacket(uint8\_t *data, size\_t datalen, RTPAddress *address, RTPTime \&recvtime, bool rtp)}\\
 						Creates an instance which stores data from {\tt data} with
 						length {\tt datalen}. Only the pointer to the data is stored,
 						no actual copy is made! The address from which this packet
@@ -928,7 +928,7 @@ session.BYEDestroy(delay,"Time's up",9);
 						the packet was received is set to {\tt recvtime}. The flag
 						which indicates whether this data is RTP or RTCP data is set
 						to {\tt rtp}.
-					\item {\tt u\_int8\_t *GetData()}\\
+					\item {\tt uint8\_t *GetData()}\\
 						Returns the pointer to the data which is contained in this
 						packet.
 					\item {\tt size\_t GetDataLength() const}\\
@@ -960,9 +960,9 @@ session.BYEDestroy(delay,"Time's up",9);
 					\item {\tt RTPPacket(RTPRawPacket \&rawpack)}\\
 						Creates an RTPPacket instance based upon the data in
 						{\tt rawpack}.
-					\item {\tt RTPPacket(u\_int8\_t payloadtype, const void *payloaddata, size\_t payloadlen, u\_int16\_t seqnr,
-									u\_int32\_t timestamp, u\_int32\_t ssrc, bool gotmarker, u\_int8\_t numcsrcs, const u\_int32\_t *csrcs,
-									bool gotextension, u\_int16\_t extensionid, u\_int16\_t extensionlen\_numwords, const void *extensiondata,
+					\item {\tt RTPPacket(uint8\_t payloadtype, const void *payloaddata, size\_t payloadlen, uint16\_t seqnr,
+									uint32\_t timestamp, uint32\_t ssrc, bool gotmarker, uint8\_t numcsrcs, const uint32\_t *csrcs,
+									bool gotextension, uint16\_t extensionid, uint16\_t extensionlen\_numwords, const void *extensiondata,
 									size\_t maxpacksize = 0)}\\
 						Creates an new buffer for an RTP packet and fills in the fields
 						according to the specified parameters. If {\tt maxpacksize} is
@@ -970,9 +970,9 @@ session.BYEDestroy(delay,"Time's up",9);
 						would exceed {\tt maxpacksize}. The arguments of the constructor
 						are self-explanatory. Note that the size of a header extension is
 						specified in a number of $32$-bit words.
-					\item {\tt RTPPacket(u\_int8\_t payloadtype, const void *payloaddata, size\_t payloadlen, u\_int16\_t seqnr,
-									u\_int32\_t timestamp, u\_int32\_t ssrc, bool gotmarker, u\_int8\_t numcsrcs, const u\_int32\_t *csrcs,
-									bool gotextension, u\_int16\_t extensionid, u\_int16\_t extensionlen\_numwords, const void *extensiondata,
+					\item {\tt RTPPacket(uint8\_t payloadtype, const void *payloaddata, size\_t payloadlen, uint16\_t seqnr,
+									uint32\_t timestamp, uint32\_t ssrc, bool gotmarker, uint8\_t numcsrcs, const uint32\_t *csrcs,
+									bool gotextension, uint16\_t extensionid, uint16\_t extensionlen\_numwords, const void *extensiondata,
 									void *buffer, size\_t buffersize)}\\
 						Pretty much the same function as the previous one, except that data is stored
 						in an external buffer {\tt buffer} with buffer size {\tt buffersize}.
@@ -987,35 +987,35 @@ session.BYEDestroy(delay,"Time's up",9);
 						otherwise.
 					\item {\tt int GetCSRCCount() const}\\
 						Returns the number of CSRCs contained in this packet.
-					\item {\tt u\_int32\_t GetCSRC(int num) const}\\
+					\item {\tt uint32\_t GetCSRC(int num) const}\\
 						Returns a specific CSRC identifier. The parameter {\tt num} 
 						can go from $0$ to {\tt GetCSRCCount()}-$1$.
-					\item {\tt u\_int8\_t GetPayloadType() const}\\
+					\item {\tt uint8\_t GetPayloadType() const}\\
 						Returns the payload type of the packet.
-					\item {\tt u\_int32\_t GetExtendedSequenceNumber() const}\\
+					\item {\tt uint32\_t GetExtendedSequenceNumber() const}\\
 						Returns the extended sequence number of the packet. When
 						the packet is just received, only the low $16$ bits will
 						be set. The high $16$ bits can be filled in later.
-					\item {\tt u\_int16\_t GetSequenceNumber() const}\\
+					\item {\tt uint16\_t GetSequenceNumber() const}\\
 						Returns the sequence number of this packet.
-					\item {\tt void SetExtendedSequenceNumber(u\_int32\_t seq)}\\
+					\item {\tt void SetExtendedSequenceNumber(uint32\_t seq)}\\
 						Sets the extended sequence number of this packet to {\tt seq}.
-					\item {\tt u\_int32\_t GetTimestamp() const}\\
+					\item {\tt uint32\_t GetTimestamp() const}\\
 						Returns the timestamp of this packet.
-					\item {\tt u\_int32\_t GetSSRC() const}\\
+					\item {\tt uint32\_t GetSSRC() const}\\
 						Returns the SSRC identifier stored in this packet.
-					\item {\tt u\_int8\_t *GetPacketData() const}\\
+					\item {\tt uint8\_t *GetPacketData() const}\\
 						Returns a pointer to the data of the entire packet.
-					\item {\tt u\_int8\_t *GetPayloadData() const}\\
+					\item {\tt uint8\_t *GetPayloadData() const}\\
 						Returns a pointer to the actual payload data.
 					\item {\tt size\_t GetPacketLength() const}\\
 						Returns the length of the entire packet.
 					\item {\tt size\_t GetPayloadLength() const}\\
 						Returns the payload length.
-					\item {\tt u\_int16\_t GetExtensionID() const}\\
+					\item {\tt uint16\_t GetExtensionID() const}\\
 						If a header extension is present, this function
 						returns the extension identifier.
-					\item {\tt u\_int8\_t *GetExtensionData() const}\\
+					\item {\tt uint8\_t *GetExtensionData() const}\\
 						Returns a pointer to the header extension data.
 					\item {\tt size\_t GetExtensionLength() const}\\
 						Returns the length of the header extension data.
@@ -1039,7 +1039,7 @@ session.BYEDestroy(delay,"Time's up",9);
 						be parsed, this function returns the error code of
 						what went wrong. If the packet had an invalid format,
 						the return value is {\tt ERR\_\-RTP\_\-RTCPCOMPOUND\_\-INVALID\-PACKET}.
-					\item {\tt u\_int8\_t *GetCompoundPacketData()}\\
+					\item {\tt uint8\_t *GetCompoundPacketData()}\\
 						Returns a pointer to the data of the entire RTCP compound packet.
 					\item {\tt size\_t GetCompoundPacketLength()}\\
 						Returns the size of the entire RTCP compound packet
@@ -1078,7 +1078,7 @@ session.BYEDestroy(delay,"Time's up",9);
 								\item {\tt RTCPPacket::APP}: indicates an {\tt RTCPAPPPacket} instance
 								\item {\tt RTCPPacket::Unknown}: indicates an {\tt RTCPUnknownPacket} instance
 							\end{itemize}
-						\item {\tt u\_int8\_t *GetPacketData()}\\
+						\item {\tt uint8\_t *GetPacketData()}\\
 							Returns a pointer to the data of this RTCP packet.
 						\item {\tt size\_t GetPacketLength() const}\\
 							Returns the length of this RTCP packet.
@@ -1089,33 +1089,33 @@ session.BYEDestroy(delay,"Time's up",9);
 					This class describes an RTCP sender report packet. The interface
 					is the following:
 					\begin{itemize}
-						\item {\tt RTCPSRPacket(u\_int8\_t *data, size\_t datalen)}\\
+						\item {\tt RTCPSRPacket(uint8\_t *data, size\_t datalen)}\\
 							Creates an instance based on the data in {\tt data} with
 							length {\tt datalen}. Since the {\tt data} pointer
 							is referenced inside the class (no copy of the data is
 							made) one must make sure that the memory it points to is
 							valid as long as the class instance exists.
-						\item {\tt u\_int32\_t GetSenderSSRC() const}\\
+						\item {\tt uint32\_t GetSenderSSRC() const}\\
 							Returns the SSRC of the participant who sent this packet.
 						\item {\tt RTPNTPTime GetNTPTimestamp() const}\\
 							Returns the NTP timestamp contained in the sender report.
-						\item {\tt u\_int32\_t GetRTPTimestamp() const}\\
+						\item {\tt uint32\_t GetRTPTimestamp() const}\\
 							Returns the RTP timestamp contained in the sender report.
-						\item {\tt u\_int32\_t GetSenderPacketCount() const}\\
+						\item {\tt uint32\_t GetSenderPacketCount() const}\\
 							Returns the sender's packet count contained in the
 							sender report.
-						\item {\tt u\_int32\_t GetSenderOctetCount() const}\\
+						\item {\tt uint32\_t GetSenderOctetCount() const}\\
 							Returns the sender's octet count contained in the sender
 							report.
 						\item {\tt int GetReceptionReportCount() const}\\
 							Returns the number of reception report blocks present
 							in this packet.
-						\item {\tt u\_int32\_t GetSSRC(int index) const}\\
+						\item {\tt uint32\_t GetSSRC(int index) const}\\
 							Returns the SSRC of the reception report block described
 							by {\tt index} which may have a value from $0$ to
 							{\tt GetReceptionReportCount()}-$1$. Note that no
 							check is performed to see if {\tt index} is valid.
-						\item {\tt u\_int8\_t GetFractionLost(int index) const}\\
+						\item {\tt uint8\_t GetFractionLost(int index) const}\\
 							Returns the `fraction lost' field of the reception 
 							report described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
@@ -1125,22 +1125,22 @@ session.BYEDestroy(delay,"Time's up",9);
 							report block described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
 							no check is performed to see if {\tt index} is valid.
-						\item {\tt u\_int32\_t GetExtendedHighestSequenceNumber(int index) const}\\
+						\item {\tt uint32\_t GetExtendedHighestSequenceNumber(int index) const}\\
 							Returns the extended highest sequence number of the reception 
 							report block described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReception\-Report\-Count()}-$1$. Note that 
 							no check is performed to see if {\tt index} is valid.
-						\item {\tt u\_int32\_t GetJitter(int index) const}\\
+						\item {\tt uint32\_t GetJitter(int index) const}\\
 							Returns the jitter field of the reception 
 							report block described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
 							no check is performed to see if {\tt index} is valid.
-						\item {\tt u\_int32\_t GetLSR(int index) const}\\
+						\item {\tt uint32\_t GetLSR(int index) const}\\
 							Returns the LSR field of the reception 
 							report block described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
 							no check is performed to see if {\tt index} is valid.
-						\item {\tt u\_int32\_t GetDLSR(int index) const}\\
+						\item {\tt uint32\_t GetDLSR(int index) const}\\
 							Returns the DLSR field of the reception 
 							report block described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
@@ -1152,23 +1152,23 @@ session.BYEDestroy(delay,"Time's up",9);
 					This class describes an RTCP receiver report packet. The interface
 					is the following:
 					\begin{itemize}
-						\item {\tt RTCPRRPacket(u\_int8\_t *data, size\_t datalen)}\\
+						\item {\tt RTCPRRPacket(uint8\_t *data, size\_t datalen)}\\
 							Creates an instance based on the data in {\tt data} with
 							length {\tt datalen}. Since the {\tt data} pointer
 							is referenced inside the class (no copy of the data is
 							made) one must make sure that the memory it points to is
 							valid as long as the class instance exists.
-						\item {\tt u\_int32\_t GetSenderSSRC() const}\\
+						\item {\tt uint32\_t GetSenderSSRC() const}\\
 							Returns the SSRC of the participant who sent this packet.
 						\item {\tt int GetReceptionReportCount() const}\\
 							Returns the number of reception report blocks present
 							in this packet.
-						\item {\tt u\_int32\_t GetSSRC(int index) const}\\
+						\item {\tt uint32\_t GetSSRC(int index) const}\\
 							Returns the SSRC of the reception report block described
 							by {\tt index} which may have a value from $0$ to
 							{\tt GetReceptionReportCount()}-$1$. Note that no
 							check is performed to see if {\tt index} is valid.
-						\item {\tt u\_int8\_t GetFractionLost(int index) const}\\
+						\item {\tt uint8\_t GetFractionLost(int index) const}\\
 							Returns the `fraction lost' field of the reception 
 							report described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
@@ -1178,22 +1178,22 @@ session.BYEDestroy(delay,"Time's up",9);
 							report block described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
 							no check is performed to see if {\tt index} is valid.
-						\item {\tt u\_int32\_t GetExtendedHighestSequenceNumber(int index) const}\\
+						\item {\tt uint32\_t GetExtendedHighestSequenceNumber(int index) const}\\
 							Returns the extended highest sequence number of the reception 
 							report block described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReception\-Report\-Count()}-$1$. Note that 
 							no check is performed to see if {\tt index} is valid.
-						\item {\tt u\_int32\_t GetJitter(int index) const}\\
+						\item {\tt uint32\_t GetJitter(int index) const}\\
 							Returns the jitter field of the reception 
 							report block described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
 							no check is performed to see if {\tt index} is valid.
-						\item {\tt u\_int32\_t GetLSR(int index) const}\\
+						\item {\tt uint32\_t GetLSR(int index) const}\\
 							Returns the LSR field of the reception 
 							report block described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
 							no check is performed to see if {\tt index} is valid.
-						\item {\tt u\_int32\_t GetDLSR(int index) const}\\
+						\item {\tt uint32\_t GetDLSR(int index) const}\\
 							Returns the DLSR field of the reception 
 							report block described by {\tt index} which may have a value 
 							from $0$ to {\tt GetReceptionReportCount()}-$1$. Note that 
@@ -1215,7 +1215,7 @@ session.BYEDestroy(delay,"Time's up",9);
 
 					The class interface is the following:
 					\begin{itemize}
-						\item {\tt RTCPSDESPacket(u\_int8\_t *data, size\_t datalen)}\\
+						\item {\tt RTCPSDESPacket(uint8\_t *data, size\_t datalen)}\\
 							Creates an instance based on the data in {\tt data} with
 							length {\tt datalen}. Since the {\tt data} pointer
 							is referenced inside the class (no copy of the data is
@@ -1233,7 +1233,7 @@ session.BYEDestroy(delay,"Time's up",9);
 							Sets the current chunk to the next available chunk.
 							If no next chunk is present, this function returns
 							{\tt false}, otherwise it returns {\tt true}.
-						\item {\tt u\_int32\_t GetChunkSSRC() const}\\
+						\item {\tt uint32\_t GetChunkSSRC() const}\\
 							Returns the SSRC identifier of the current chunk.
 						\item {\tt bool GotoFirstItem()}\\
 							Starts the iteration over the SDES items in the current
@@ -1250,7 +1250,7 @@ session.BYEDestroy(delay,"Time's up",9);
 						\item {\tt size\_t GetItemLength() const}\\
 							Returns the item length of the current item in the current
 							chunk.
-						\item {\tt u\_int8\_t *GetItemData()}\\
+						\item {\tt uint8\_t *GetItemData()}\\
 							Returns the item data of the current item in the current
 							chunk.
 					\end{itemize}
@@ -1261,12 +1261,12 @@ session.BYEDestroy(delay,"Time's up",9);
 						\item {\tt size\_t GetPRIVPrefixLength()}\\
 							Returns the length of the prefix string of the private
 							item.
-						\item {\tt u\_int8\_t *GetPRIVPrefixData()}\\
+						\item {\tt uint8\_t *GetPRIVPrefixData()}\\
 							Returns the actual data of the prefix string.
 						\item {\tt size\_t GetPRIVValueLength()}\\
 							Returns the length of the value string of the private
 							item.
-						\item {\tt u\_int8\_t *GetPRIVValueData()}\\
+						\item {\tt uint8\_t *GetPRIVValueData()}\\
 							Returns the actual value data of the private item.
 					\end{itemize}
 
@@ -1275,20 +1275,20 @@ session.BYEDestroy(delay,"Time's up",9);
 					The class {\tt RTCPAPPPacket} describes an RTCP APP packet.
 					The following member functions are available:
 					\begin{itemize}
-						\item {\tt RTCPAPPPacket(u\_int8\_t *data, size\_t datalen)}\\
+						\item {\tt RTCPAPPPacket(uint8\_t *data, size\_t datalen)}\\
 							Creates an instance based on the data in {\tt data} with
 							length {\tt datalen}. Since the {\tt data} pointer
 							is referenced inside the class (no copy of the data is
 							made) one must make sure that the memory it points to is
 							valid as long as the class instance exists.
-						\item {\tt u\_int8\_t GetSubType() const}\\
+						\item {\tt uint8\_t GetSubType() const}\\
 							Returns the subtype contained in the APP packet.
-						\item {\tt u\_int32\_t GetSSRC() const}\\
+						\item {\tt uint32\_t GetSSRC() const}\\
 							Returns the SSRC of the source which sent this packet.
-						\item {\tt u\_int8\_t *GetName()}\\
+						\item {\tt uint8\_t *GetName()}\\
 							Returns the name contained in the APP packet. This always
 							consists of four bytes and is not NULL-terminated.
-						\item {\tt u\_int8\_t *GetAPPData()}\\
+						\item {\tt uint8\_t *GetAPPData()}\\
 							Returns a pointer to the actual data.
 						\item {\tt size\_t GetAPPDataLength() const}\\
 							Returns the length of the actual data.
@@ -1299,7 +1299,7 @@ session.BYEDestroy(delay,"Time's up",9);
 					An RTCP BYE packet is represented by the class {\tt RTCPBYEPacket}
 					which has the following member functions:
 					\begin{itemize}
-						\item {\tt RTCPBYEPacket(u\_int8\_t *data, size\_t datalen)}\\
+						\item {\tt RTCPBYEPacket(uint8\_t *data, size\_t datalen)}\\
 							Creates an instance based on the data in {\tt data} with
 							length {\tt datalen}. Since the {\tt data} pointer
 							is referenced inside the class (no copy of the data is
@@ -1308,7 +1308,7 @@ session.BYEDestroy(delay,"Time's up",9);
 						\item {\tt int GetSSRCCount() const}\\
 							Returns the number of SSRC identifiers present in this
 							BYE packet.
-						\item {\tt u\_int32\_t GetSSRC(int index) const}\\
+						\item {\tt uint32\_t GetSSRC(int index) const}\\
 							Returns the SSRC described by {\tt index} which may have a value 
 							from $0$ to {\tt GetSSRCCount()}-$1$. Note that 
 							no check is performed to see if {\tt index} is valid.
@@ -1318,7 +1318,7 @@ session.BYEDestroy(delay,"Time's up",9);
 						\item {\tt size\_t GetReasonLength() const}\\
 							Returns the length of the string which describes why
 							the source(s) left.
-						\item {\tt u\_int8\_t *GetReasonData()}\\
+						\item {\tt uint8\_t *GetReasonData()}\\
 							Returns the actual reason data.
 					\end{itemize}
 	
@@ -1330,7 +1330,7 @@ session.BYEDestroy(delay,"Time's up",9);
 					function will trivially return {\tt true}. Only the following
 					constructor is available:
 					\begin{itemize}
-						\item {\tt RTCPUnknownPacket(u\_int8\_t *data, size\_t datalen)}\\
+						\item {\tt RTCPUnknownPacket(uint8\_t *data, size\_t datalen)}\\
 							Creates an instance based on the data in {\tt data} with
 							length {\tt datalen}. Since the {\tt data} pointer
 							is referenced inside the class (no copy of the data is
@@ -1355,33 +1355,33 @@ session.BYEDestroy(delay,"Time's up",9);
 					\item {\tt int InitBuild(void *externalbuffer, size\_t buffersize)}\\
 						Starts building a packet. Data will be stored in {\tt externalbuffer} which
 						can contain {\tt buffersize} bytes.
-					\item {\tt int StartSenderReport(u\_int32\_t senderssrc, const RTPNTPTime \&ntptimestamp, u\_int32\_t rtptimestamp,
-					                                 u\_int32\_t packetcount, u\_int32\_t octetcount)}\\
+					\item {\tt int StartSenderReport(uint32\_t senderssrc, const RTPNTPTime \&ntptimestamp, uint32\_t rtptimestamp,
+					                                 uint32\_t packetcount, uint32\_t octetcount)}\\
 						Tells the packet builder that the packet should start with a sender report which
 						will contain the sender information specified by this function's
 						arguments. Once the sender report is started, report blocks can be
 						added using the {\tt AddReportBlock} function. 
-					\item {\tt int StartReceiverReport(u\_int32\_t senderssrc)}\\
+					\item {\tt int StartReceiverReport(uint32\_t senderssrc)}\\
 						Tells the packet builder that the packet should start with a receiver report which
 						will contain the sender SSRC {\tt senderssrc}. Once the sender report is started, 
 						report blocks can be added using the {\tt AddReportBlock} function. 
-					\item {\tt int AddReportBlock(u\_int32\_t ssrc, u\_int8\_t fractionlost, int32\_t packetslost, u\_int32\_t exthighestseq,
-					                              u\_int32\_t jitter, u\_int32\_t lsr, u\_int32\_t dlsr)}\\
+					\item {\tt int AddReportBlock(uint32\_t ssrc, uint8\_t fractionlost, int32\_t packetslost, uint32\_t exthighestseq,
+					                              uint32\_t jitter, uint32\_t lsr, uint32\_t dlsr)}\\
 						Adds the report block information specified by the function's
 						arguments. If more than 31 report blocks are added, the builder
 						will automatically use a new RTCP receiver report packet.
-					\item {\tt int AddSDESSource(u\_int32\_t ssrc)}\\
+					\item {\tt int AddSDESSource(uint32\_t ssrc)}\\
 						Starts an SDES chunk for participant {\tt ssrc}.
-					\item {\tt int AddSDESNormalItem(RTCPSDESPacket::ItemType t, const void *itemdata, u\_int8\_t itemlength)}\\
+					\item {\tt int AddSDESNormalItem(RTCPSDESPacket::ItemType t, const void *itemdata, uint8\_t itemlength)}\\
 						Adds a normal (non-private) SDES item of type {\tt t} to the current SDES
 						chunk. The item's value will have length {\tt itemlength} and will contain
 						the data {\tt itemdata}.
-					\item {\tt int AddBYEPacket(u\_int32\_t *ssrcs, u\_int8\_t numssrcs, const void *reasondata, u\_int8\_t reasonlength)}\\
+					\item {\tt int AddBYEPacket(uint32\_t *ssrcs, uint8\_t numssrcs, const void *reasondata, uint8\_t reasonlength)}\\
 						Adds a BYE packet to the compound packet. It will contain {\tt numssrcs}
 						source identifiers specified in {\tt ssrcs} and will indicate
 						as reason for leaving the string of length {\tt reasonlength}
 						containing data {\tt reasondata}.
-					\item {\tt int AddAPPPacket(u\_int8\_t subtype, u\_int32\_t ssrc, const u\_int8\_t name[4], const void *appdata, size\_t appdatalen)}\\
+					\item {\tt int AddAPPPacket(uint8\_t subtype, uint32\_t ssrc, const uint8\_t name[4], const void *appdata, size\_t appdatalen)}\\
 						Adds the APP packet specified by the arguments to the
 						compound packet. Note that {\tt appdatalen} has to be
 						a multiple of four.
@@ -1394,8 +1394,8 @@ session.BYEDestroy(delay,"Time's up",9);
 				If the library was compiled with SDES private item support, the
 				following member function is also available:
 				\begin{itemize}
-					\item {\tt int AddSDESPrivateItem(const void *prefixdata, u\_int8\_t prefixlength, const void *valuedata,
-	                                                  u\_int8\_t valuelength)}\\
+					\item {\tt int AddSDESPrivateItem(const void *prefixdata, uint8\_t prefixlength, const void *valuedata,
+	                                                  uint8\_t valuelength)}\\
 						Adds an SDES PRIV item described by the function's arguments
 						to the current SDES chunk.
 				\end{itemize}
@@ -1431,7 +1431,7 @@ session.BYEDestroy(delay,"Time's up",9);
 						enabled at compilation time.
 					\item {\tt void Clear()}\\
 						Clears the source table.
-					\item {\tt int CreateOwnSSRC(u\_int32\_t ssrc)}\\
+					\item {\tt int CreateOwnSSRC(uint32\_t ssrc)}\\
 						Creates an entry for our own SSRC identifier.
 					\item {\tt int DeleteOwnSSRC()}\\
 						Deletes the entry for our own SSRC identifier.
@@ -1462,38 +1462,38 @@ session.BYEDestroy(delay,"Time's up",9);
 						which was received at time {\tt receivetime} from {\tt
 						senderaddress}. The {\tt senderaddress} parameter must
 						be NULL if the packet was sent by the local participant.
-					\item {\tt int ProcessRTCPSenderInfo(u\_int32\_t ssrc, const RTPNTPTime \&ntptime, u\_int32\_t rtptime,
-					                                     u\_int32\_t packetcount, u\_int32\_t octetcount, const RTPTime \&receivetime,
+					\item {\tt int ProcessRTCPSenderInfo(uint32\_t ssrc, const RTPNTPTime \&ntptime, uint32\_t rtptime,
+					                                     uint32\_t packetcount, uint32\_t octetcount, const RTPTime \&receivetime,
 					                                     const RTPAddress *senderaddress)}\\
 						Process the sender information of SSRC {\tt ssrc} into
 						the source table. The information was received at time
 						{\tt receivetime} from address {\tt senderaddress}. The
 						{\tt senderaddress} parameter must be NULL if the packet
 						was sent by the local participant.
-					\item {\tt int ProcessRTCPReportBlock(u\_int32\_t ssrc, u\_int8\_t fractionlost, int32\_t lostpackets,
-					                                      u\_int32\_t exthighseqnr, u\_int32\_t jitter, u\_int32\_t lsr,
-					                                      u\_int32\_t dlsr, const RTPTime \&receivetime, const RTPAddress *senderaddress)}\\
+					\item {\tt int ProcessRTCPReportBlock(uint32\_t ssrc, uint8\_t fractionlost, int32\_t lostpackets,
+					                                      uint32\_t exthighseqnr, uint32\_t jitter, uint32\_t lsr,
+					                                      uint32\_t dlsr, const RTPTime \&receivetime, const RTPAddress *senderaddress)}\\
 						Processes the report block information which was sent
 						by participant {\tt ssrc} into the source table. The
 						information was received at time {\tt receivetime} from
 						address {\tt senderaddress}. The {\tt senderaddress}
 						parameter must be NULL if the packet was sent by the
 						local participant.
-					\item {\tt int ProcessSDESNormalItem(u\_int32\_t ssrc, RTCPSDESPacket::ItemType t, size\_t itemlength,
+					\item {\tt int ProcessSDESNormalItem(uint32\_t ssrc, RTCPSDESPacket::ItemType t, size\_t itemlength,
 					                                     const void *itemdata, const RTPTime \&receivetime, const RTPAddress *senderaddress)}\\
 						Processes the non-private SDES item from source {\tt
 						ssrc} into the source table. The information was
 						received at time {\tt receivetime} from address {\tt
 						senderaddress}. The {\tt senderaddress} parameter must
 						be NULL if the packet was sent by the local participant.
-					\item {\tt int ProcessBYE(u\_int32\_t ssrc, size\_t reasonlength, const void *reasondata, const RTPTime \&receivetime,
+					\item {\tt int ProcessBYE(uint32\_t ssrc, size\_t reasonlength, const void *reasondata, const RTPTime \&receivetime,
 					                          const RTPAddress *senderaddress)}\\
 						Processes the BYE message for SSRC {\tt ssrc}. The
 						information was received at time {\tt receivetime} from
 						address {\tt senderaddress}. The {\tt senderaddress}
 						parameter must be NULL if the packet was sent by the
 						local participant.
-					\item {\tt int UpdateReceiveTime(u\_int32\_t ssrc, const RTPTime \&receivetime, const RTPAddress *senderaddress)}\\
+					\item {\tt int UpdateReceiveTime(uint32\_t ssrc, const RTPTime \&receivetime, const RTPAddress *senderaddress)}\\
 						If we heard from source {\tt ssrc}, but no actual
 						data was added to the source table (for example, if
 						no report block was meant for us), this function can
@@ -1533,13 +1533,13 @@ session.BYEDestroy(delay,"Time's up",9);
 					\item {\tt RTPSourceData *GetCurrentSourceInfo()}\\
 						Returns the {\tt RTPSourceData} instance for the currently
 						selected participant.
-					\item {\tt RTPSourceData *GetSourceInfo(u\_int32\_t ssrc)}\\
+					\item {\tt RTPSourceData *GetSourceInfo(uint32\_t ssrc)}\\
 						Returns the {\tt RTPSourceData} instance for the participant
 						identified by {\tt ssrc}, or NULL if no such entry exists.
 					\item {\tt RTPPacket *GetNextPacket()}\\
 						Extracts the next packet from the received packets queue
 						of the current participant.
-					\item {\tt bool GotEntry(u\_int32\_t ssrc)}\\
+					\item {\tt bool GotEntry(uint32\_t ssrc)}\\
 						Returns {\tt true} if an entry for participant {\tt ssrc} exists
 						and {\tt false} otherwise.
 					\item {\tt RTPSourceData *GetOwnSourceInfo()}\\
@@ -1580,7 +1580,7 @@ session.BYEDestroy(delay,"Time's up",9);
 				If SDES private item support was enabled at compile-time, the following
 				member function is also available: 
 				\begin{itemize}
-					\item {\tt int ProcessSDESPrivateItem(u\_int32\_t ssrc, size\_t prefixlen, const void *prefixdata,
+					\item {\tt int ProcessSDESPrivateItem(uint32\_t ssrc, size\_t prefixlen, const void *prefixdata,
 	                                                      size\_t valuelen, const void *valuedata, const RTPTime \&receivetime,
 					                                      const RTPAddress *senderaddress)}\\
 						Processes the SDES private item from source {\tt ssrc}
@@ -1607,7 +1607,7 @@ session.BYEDestroy(delay,"Time's up",9);
 						addresses and {\tt isrtp} indicates against which address of
 						{\tt srcdat} the check failed.
 					\item {\tt void OnCNAMECollision(RTPSourceData *srcdat, const RTPAddress *senderaddress,
-					                                         const u\_int8\_t *cname, size\_t cnamelength)}\\
+					                                         const uint8\_t *cname, size\_t cnamelength)}\\
 						Is called when another CNAME was received than the one
 						already present for source {\tt srcdat}.
 					\item {\tt void OnNewSource(RTPSourceData *srcdat)}\\
@@ -1646,7 +1646,7 @@ session.BYEDestroy(delay,"Time's up",9);
 				The {\tt RTPSourceData} class contains all information about a member
 				of the session. The interface is the following:
 				\begin{itemize}
-					\item {\tt u\_int32\_t GetSSRC() const}\\
+					\item {\tt uint32\_t GetSSRC() const}\\
 						Returns the SSRC identifier for this member.
 					\item {\tt bool HasData() const}\\
 						Returns {\tt true} if there are RTP packets which can be extracted.
@@ -1696,7 +1696,7 @@ session.BYEDestroy(delay,"Time's up",9);
 					\item {\tt bool ReceivedBYE() const}\\
 						Returns {\tt true} if we received a BYE message for this participant and
 						{\tt false} otherwise.
-					\item {\tt u\_int8\_t *GetBYEReason(size\_t *len) const}\\
+					\item {\tt uint8\_t *GetBYEReason(size\_t *len) const}\\
 						Returns the reason for leaving contained in the BYE packet of this participant.
 						The length of the reason is stored in {\tt len}.
 					\item {\tt RTPTime GetBYETime() const}\\
@@ -1714,11 +1714,11 @@ session.BYEDestroy(delay,"Time's up",9);
 						Returns {\tt true} if an RTCP sender report has been received from this participant.
 					\item {\tt RTPNTPTime SR\_GetNTPTimestamp() const}\\
 						Returns the NTP timestamp contained in the last sender report.
-					\item {\tt u\_int32\_t SR\_GetRTPTimestamp() const}\\
+					\item {\tt uint32\_t SR\_GetRTPTimestamp() const}\\
 						Returns the RTP timestamp contained in the last sender report.
-					\item {\tt u\_int32\_t SR\_GetPacketCount() const}\\
+					\item {\tt uint32\_t SR\_GetPacketCount() const}\\
 						Returns the packet count contained in the last sender report.
-					\item {\tt u\_int32\_t SR\_GetByteCount() const}\\
+					\item {\tt uint32\_t SR\_GetByteCount() const}\\
 						Returns the octet count contained in the last sender report.
 					\item {\tt RTPTime SR\_GetReceiveTime() const}\\
 						Returns the time at which the last sender report was received.
@@ -1726,11 +1726,11 @@ session.BYEDestroy(delay,"Time's up",9);
 						Returns {\tt true} if more than one RTCP sender report has been received.
 					\item {\tt RTPNTPTime SR\_Prev\_GetNTPTimestamp() const}\\
 						Returns the NTP timestamp contained in the second to last sender report.
-					\item {\tt u\_int32\_t SR\_Prev\_GetRTPTimestamp() const}\\
+					\item {\tt uint32\_t SR\_Prev\_GetRTPTimestamp() const}\\
 						Returns the RTP timestamp contained in the second to last sender report.
-					\item {\tt u\_int32\_t SR\_Prev\_GetPacketCount() const}\\
+					\item {\tt uint32\_t SR\_Prev\_GetPacketCount() const}\\
 						Returns the packet count contained in the second to last sender report.
-					\item {\tt u\_int32\_t SR\_Prev\_GetByteCount() const}\\
+					\item {\tt uint32\_t SR\_Prev\_GetByteCount() const}\\
 						Returns the octet count contained in the second to last sender report.
 					\item {\tt RTPTime SR\_Prev\_GetReceiveTime() const}\\
 						Returns the time at which the second to last sender report was received.
@@ -1741,13 +1741,13 @@ session.BYEDestroy(delay,"Time's up",9);
 						Returns the fraction lost value from the last report.
 					\item {\tt int32\_t	RR\_GetPacketsLost() const}\\
 						Returns the number of lost packets contained in the last report.
-					\item {\tt u\_int32\_t RR\_GetExtendedHighestSequenceNumber() const}\\
+					\item {\tt uint32\_t RR\_GetExtendedHighestSequenceNumber() const}\\
 						Returns the extended highest sequence number contained in the last report.
-					\item {\tt u\_int32\_t RR\_GetJitter() const}\\
+					\item {\tt uint32\_t RR\_GetJitter() const}\\
 						Returns the jitter value from the last report.
-					\item {\tt u\_int32\_t RR\_GetLastSRTimestamp() const}\\
+					\item {\tt uint32\_t RR\_GetLastSRTimestamp() const}\\
 						Returns the LSR value from the last report.
-					\item {\tt u\_int32\_t RR\_GetDelaySinceLastSR() const}\\
+					\item {\tt uint32\_t RR\_GetDelaySinceLastSR() const}\\
 						Returns the DLSR value from the last report.
 					\item {\tt RTPTime RR\_GetReceiveTime() const}\\
 						Returns the time at which the last report was received.
@@ -1758,13 +1758,13 @@ session.BYEDestroy(delay,"Time's up",9);
 						Returns the fraction lost value from the second to last report.
 					\item {\tt int32\_t	RR\_Prev\_GetPacketsLost() const}\\
 						Returns the number of lost packets contained in the second to last report.
-					\item {\tt u\_int32\_t RR\_Prev\_GetExtendedHighestSequenceNumber() const}\\
+					\item {\tt uint32\_t RR\_Prev\_GetExtendedHighestSequenceNumber() const}\\
 						Returns the extended highest sequence number contained in the second to last report.
-					\item {\tt u\_int32\_t RR\_Prev\_GetJitter() const}\\
+					\item {\tt uint32\_t RR\_Prev\_GetJitter() const}\\
 						Returns the jitter value from the second to last report.
-					\item {\tt u\_int32\_t RR\_Prev\_GetLastSRTimestamp() const}\\
+					\item {\tt uint32\_t RR\_Prev\_GetLastSRTimestamp() const}\\
 						Returns the LSR value from the second to last report.
-					\item {\tt u\_int32\_t RR\_Prev\_GetDelaySinceLastSR() const}\\
+					\item {\tt uint32\_t RR\_Prev\_GetDelaySinceLastSR() const}\\
 						Returns the DLSR value from the second to last report.
 					\item {\tt RTPTime RR\_Prev\_GetReceiveTime() const}\\
 						Returns the time at which the second to last report was received.
@@ -1773,12 +1773,12 @@ session.BYEDestroy(delay,"Time's up",9);
 						participant.
 					\item {\tt int32\_t INF\_GetNumPacketsReceived() const}\\
 						Returns the total number of received packets from this participant.
-					\item {\tt u\_int32\_t INF\_GetBaseSequenceNumber() const}\\
+					\item {\tt uint32\_t INF\_GetBaseSequenceNumber() const}\\
 						Returns the base sequence number of this participant.
-					\item {\tt u\_int32\_t INF\_GetExtendedHighestSequenceNumber() const}\\
+					\item {\tt uint32\_t INF\_GetExtendedHighestSequenceNumber() const}\\
 						Returns the extended highest sequence number received from this
 						participant.
-					\item {\tt u\_int32\_t INF\_GetJitter() const}\\
+					\item {\tt uint32\_t INF\_GetJitter() const}\\
 						Returns the current jitter value for this participant.
 					\item {\tt RTPTime INF\_GetLastMessageTime() const}\\
 						Returns the time at which something was last heard from this member.
@@ -1787,10 +1787,10 @@ session.BYEDestroy(delay,"Time's up",9);
 					\item {\tt double INF\_GetEstimatedTimestampUnit() const}\\
 						Returns the estimated timestamp unit. The estimate is made from two
 						consecutive sender reports.
-					\item {\tt u\_int32\_t INF\_GetNumPacketsReceivedInInterval() const}\\
+					\item {\tt uint32\_t INF\_GetNumPacketsReceivedInInterval() const}\\
 						Returns the number of packets received since a new interval was
 						started with {\tt INF\_StartNewInterval}.
-					\item {\tt u\_int32\_t INF\_GetSavedExtendedSequenceNumber() const}\\
+					\item {\tt uint32\_t INF\_GetSavedExtendedSequenceNumber() const}\\
 						Returns the extended sequence number which was stored by the
 						{\tt INF\_StartNewInterval} call.
 					\item {\tt void INF\_StartNewInterval()}\\
@@ -1802,25 +1802,25 @@ session.BYEDestroy(delay,"Time's up",9);
 						last receiver report.
 					\item {\tt RTPTime INF\_GetLastSDESNoteTime() const}\\
 						Returns the time at which the last SDES NOTE item was received.
-					\item {\tt u\_int8\_t *SDES\_GetCNAME(size\_t *len) const}\\
+					\item {\tt uint8\_t *SDES\_GetCNAME(size\_t *len) const}\\
 						Returns a pointer to the SDES CNAME item of this participant and stores
 						its length in {\tt len}.
-					\item {\tt u\_int8\_t *SDES\_GetName(size\_t *len) const}\\
+					\item {\tt uint8\_t *SDES\_GetName(size\_t *len) const}\\
 						Returns a pointer to the SDES name item of this participant and stores
 						its length in {\tt len}.
-					\item {\tt u\_int8\_t *SDES\_GetEMail(size\_t *len) const}\\
+					\item {\tt uint8\_t *SDES\_GetEMail(size\_t *len) const}\\
 						Returns a pointer to the SDES e-mail item of this participant and stores
 						its length in {\tt len}.
-					\item {\tt u\_int8\_t *SDES\_GetPhone(size\_t *len) const}\\
+					\item {\tt uint8\_t *SDES\_GetPhone(size\_t *len) const}\\
 						Returns a pointer to the SDES phone item of this participant and stores
 						its length in {\tt len}.
-					\item {\tt u\_int8\_t *SDES\_GetLocation(size\_t *len) const}\\
+					\item {\tt uint8\_t *SDES\_GetLocation(size\_t *len) const}\\
 						Returns a pointer to the SDES location item of this participant and stores
 						its length in {\tt len}.
-					\item {\tt u\_int8\_t *SDES\_GetTool(size\_t *len) const}\\
+					\item {\tt uint8\_t *SDES\_GetTool(size\_t *len) const}\\
 						Returns a pointer to the SDES tool item of this participant and stores
 						its length in {\tt len}.
-					\item {\tt u\_int8\_t *SDES\_GetNote(size\_t *len) const}\\
+					\item {\tt uint8\_t *SDES\_GetNote(size\_t *len) const}\\
 						Returns a pointer to the SDES note item of this participant and stores
 						its length in {\tt len}.
 				\end{itemize}
@@ -1831,13 +1831,13 @@ session.BYEDestroy(delay,"Time's up",9);
 					\item {\tt void SDES\_GotoFirstPrivateValue()}\\
 						Starts the iteration over the stored SDES private item prefixes
 						and their associated values.
-					\item {\tt bool SDES\_GetNextPrivateValue(u\_int8\_t **prefix, size\_t *prefixlen, u\_int8\_t **value, size\_t *valuelen) }\\
+					\item {\tt bool SDES\_GetNextPrivateValue(uint8\_t **prefix, size\_t *prefixlen, uint8\_t **value, size\_t *valuelen) }\\
 						If available, returns {\tt true} and stores the next SDES
 						private item prefix in {\tt prefix} and its length in
 						{\tt prefixlen}. The associated value and its length are
 						then stored in {\tt value} and {\tt valuelen}. Otherwise,
 						it returns {\tt false}.
-					\item {\tt bool SDES\_GetPrivateValue(u\_int8\_t *prefix, size\_t prefixlen, u\_int8\_t **value, size\_t *valuelen) const}\\
+					\item {\tt bool SDES\_GetPrivateValue(uint8\_t *prefix, size\_t prefixlen, uint8\_t **value, size\_t *valuelen) const}\\
 						Looks for the entry which corresponds to the SDES private
 						item prefix {\tt prefix} with length {\tt prefixlen}. If found,
 						the function returns {\tt true} and stores the associated
@@ -1858,18 +1858,18 @@ session.BYEDestroy(delay,"Time's up",9);
 						below {\tt maxpacksize}
 					\item {\tt void Destroy()}\\
 						Cleans up the builder.
-					\item {\tt u\_int32\_t GetPacketCount()}\\
+					\item {\tt uint32\_t GetPacketCount()}\\
 						Returns the number of packets which have been created with
 						the current SSRC identifier.
-					\item {\tt u\_int32\_t GetPayloadOctetCount()}\\
+					\item {\tt uint32\_t GetPayloadOctetCount()}\\
 						Returns the number of payload octets which have been generated
 						with this SSRC identifier.
 					\item {\tt int SetMaximumPacketSize(size\_t maxpacksize)}\\
 						Sets the maximum allowed packet size to {\tt maxpacksize}.
-					\item {\tt int AddCSRC(u\_int32\_t csrc)}\\
+					\item {\tt int AddCSRC(uint32\_t csrc)}\\
 						Adds a CSRC to the CSRC list which will be stored in the
 						RTP packets.
-					\item {\tt int DeleteCSRC(u\_int32\_t csrc)}\\
+					\item {\tt int DeleteCSRC(uint32\_t csrc)}\\
 						Deletes a CSRC from the list which will be stored in the
 						RTP packets.
 					\item {\tt void ClearCSRCList()}\\
@@ -1880,13 +1880,13 @@ session.BYEDestroy(delay,"Time's up",9);
 						used will be those that have been set using the 
 						{\tt SetDefault} functions below.
 					\item {\tt int BuildPacket(const void *data, size\_t len,
-					                           u\_int8\_t pt, bool mark, u\_int32\_t timestampinc)}\\
+					                           uint8\_t pt, bool mark, uint32\_t timestampinc)}\\
 						Builds a packet with payload {\tt data} and payload length
 						{\tt len}. The payload type will be set to {\tt pt}, the
 						marker bit to {\tt mark} and after building this packet,
 						the timestamp will be incremented with {\tt timestamp}.
 					\item {\tt int BuildPacketEx(const void *data, size\_t len,
-					                             u\_int16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
+					                             uint16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
 						Builds a packet with payload {\tt data} and payload length
 						{\tt len}. The payload type, marker and timestamp increment
 						used will be those that have been set using the 
@@ -1896,8 +1896,8 @@ session.BYEDestroy(delay,"Time's up",9);
 						is given by {\tt numhdrextwords} which expresses the length
 						in a number of $32$-bit words.
 					\item {\tt int BuildPacketEx(const void *data, size\_t len,
-					                             u\_int8\_t pt, bool mark, u\_int32\_t timestampinc,
-					                             u\_int16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
+					                             uint8\_t pt, bool mark, uint32\_t timestampinc,
+					                             uint16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
 						Builds a packet with payload {\tt data} and payload
 						length {\tt len}. The payload type will be set to {\tt
 						pt}, the marker bit to {\tt mark} and after building
@@ -1907,17 +1907,17 @@ session.BYEDestroy(delay,"Time's up",9);
 						hdrextdata}. The length of the header extension data is
 						given by {\tt numhdrextwords} which expresses the length
 						in a number of $32$-bit words.
-					\item {\tt u\_int8\_t *GetPacket()}\\
+					\item {\tt uint8\_t *GetPacket()}\\
 						Returns a pointer to the last built RTP packet data.
 					\item {\tt size\_t GetPacketLength()}\\
 						Returns the size of the last built RTP packet.
-					\item {\tt int SetDefaultPayloadType(u\_int8\_t pt)}\\
+					\item {\tt int SetDefaultPayloadType(uint8\_t pt)}\\
 						Sets the default payload type to {\tt pt}.
 					\item {\tt int SetDefaultMark(bool m)}\\
 						Sets the default marker bit to {\tt m}.
-					\item {\tt int SetDefaultTimestampIncrement(u\_int32\_t timestampinc)}\\
+					\item {\tt int SetDefaultTimestampIncrement(uint32\_t timestampinc)}\\
 						Sets the default timestamp increment to {\tt timestampinc}.
-					\item {\tt int IncrementTimestamp(u\_int32\_t inc)}\\
+					\item {\tt int IncrementTimestamp(uint32\_t inc)}\\
 						This function increments the timestamp with the amount
 						given by {\tt inc}. This can be useful if, for example,
 						a packet was not sent because it contained only silence.
@@ -1934,28 +1934,28 @@ session.BYEDestroy(delay,"Time's up",9);
 						timestamp with the appropriate amount so that the next
 						packets will still be played at the correct time at
 						other hosts.						
-					\item {\tt u\_int32\_t CreateNewSSRC()}\\
+					\item {\tt uint32\_t CreateNewSSRC()}\\
 						Creates a new SSRC to be used in generated packets. This
 						will also generate new timestamp and sequence number
 						offsets.
-					\item {\tt u\_int32\_t CreateNewSSRC(RTPSources \&sources)}\\
+					\item {\tt uint32\_t CreateNewSSRC(RTPSources \&sources)}\\
 						Creates a new SSRC to be used in generated packets. This
 						will also generate new timestamp and sequence number
 						offsets. The source table {\tt sources} is used to make
 						sure that the chosen SSRC isn't used by another participant
 						yet.
-					\item {\tt u\_int32\_t GetSSRC()}\\
+					\item {\tt uint32\_t GetSSRC()}\\
 						Returns the current SSRC identifier.
-					\item {\tt u\_int32\_t GetTimestamp()}\\
+					\item {\tt uint32\_t GetTimestamp()}\\
 						Returns the current RTP timestamp.
-					\item {\tt u\_int16\_t GetSequenceNumber()}\\
+					\item {\tt uint16\_t GetSequenceNumber()}\\
 						Returns the current sequence number.
 					\item {\tt RTPTime GetPacketTime()}\\
 						Returns the time at which a packet was generated. This
 						is not necessarily the time at which the last RTP packet
 						was generated: if the timestamp increment was zero, the
 						time is not updated.
-					\item {\tt u\_int32\_t GetPacketTimestamp()}\\
+					\item {\tt uint32\_t GetPacketTimestamp()}\\
 						Returns the RTP timestamp which corresponds to the time 
 						returned by the previous function.
 				\end{itemize}
@@ -2360,7 +2360,7 @@ session.BYEDestroy(delay,"Time's up",9);
 						leaving {\tt reason} with length {\tt reasonlength}.
 					\item {\tt bool IsActive()}\\
 						Returns whether the session has been created or not.
-					\item {\tt u\_int32\_t GetLocalSSRC()}\\
+					\item {\tt uint32\_t GetLocalSSRC()}\\
 						Returns our own SSRC.
 					\item {\tt int AddDestination(const RTPAddress \&addr)}\\
 						Adds {\tt addr} to the list of destinations.
@@ -2381,12 +2381,12 @@ session.BYEDestroy(delay,"Time's up",9);
 						The used payload type, marker and timestamp increment will be those that
 						have been set using the {\tt SetDefault} member functions.
 					\item {\tt int SendPacket(const void *data, size\_t len,
-					                          u\_int8\_t pt, bool mark, u\_int32\_t timestampinc)}\\
+					                          uint8\_t pt, bool mark, uint32\_t timestampinc)}\\
 						Sends the RTP packet with payload {\tt data} which has length {\tt len}.
 						It will use payload type {\tt pt}, marker {\tt mark} and after the packet
 						has been built, the timestamp will be incremented by {\tt timestampinc}.
 					\item {\tt int SendPacketEx(const void *data, size\_t len,
-					                            u\_int16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
+					                            uint16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
 						Sends the RTP packet with payload {\tt data} which has length {\tt len}.
 						The packet will contain a header extension with identifier {\tt hdrextID} and
 						containing data {\tt hdrextdata}. The length of this data is given by
@@ -2394,22 +2394,22 @@ session.BYEDestroy(delay,"Time's up",9);
 						The used payload type, marker and timestamp increment will be those that
 						have been set using the {\tt SetDefault} member functions.
 					\item {\tt int SendPacketEx(const void *data, size\_t len,
-					                            u\_int8\_t pt, bool mark, u\_int32\_t timestampinc,
-					                            u\_int16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
+					                            uint8\_t pt, bool mark, uint32\_t timestampinc,
+					                            uint16\_t hdrextID, const void *hdrextdata, size\_t numhdrextwords)}\\
 						Sends the RTP packet with payload {\tt data} which has length {\tt len}.
 						It will use payload type {\tt pt}, marker {\tt mark} and after the packet
 						has been built, the timestamp will be incremented by {\tt timestampinc}.
 						The packet will contain a header extension with identifier {\tt hdrextID} and
 						containing data {\tt hdrextdata}. The length of this data is given by
 						{\tt numhdrextwords} and is specified in a number of 32-bit words.
-					\item {\tt int SetDefaultPayloadType(u\_int8\_t pt)}\\
+					\item {\tt int SetDefaultPayloadType(uint8\_t pt)}\\
 						Sets the default payload type for RTP packets to {\tt pt}.
 					\item {\tt int SetDefaultMark(bool m)}\\
 						Sets the default marker for RTP packets to {\tt m}.
-					\item {\tt int SetDefaultTimestampIncrement(u\_int32\_t timestampinc)}\\
+					\item {\tt int SetDefaultTimestampIncrement(uint32\_t timestampinc)}\\
 						Sets the default value to increment the timestamp with to
 						{\tt timestampinc}.
-					\item {\tt int IncrementTimestamp(u\_int32\_t inc)}\\
+					\item {\tt int IncrementTimestamp(uint32\_t inc)}\\
 						This function increments the timestamp with the amount
 						given by {\tt inc}. This can be useful if, for example,
 						a packet was not sent because it contained only silence.
@@ -2492,7 +2492,7 @@ session.BYEDestroy(delay,"Time's up",9);
 					\item {\tt RTPSourceData *GetCurrentSourceInfo()}\\
 						Returns the {\tt RTPSourceData} instance for the currently
 						selected participant.
-					\item {\tt RTPSourceData *GetSourceInfo(u\_int32\_t ssrc)}\\
+					\item {\tt RTPSourceData *GetSourceInfo(uint32\_t ssrc)}\\
 						Returns the {\tt RTPSourceData} instance for the participant
 						identified by {\tt ssrc}, or NULL if no such entry exists.
 					\item {\tt RTPPacket *GetNextPacket()}\\
@@ -2614,10 +2614,10 @@ session.BYEDestroy(delay,"Time's up",9);
 				\begin{itemize}
 					\item {\tt void OnRTPPacket(RTPPacket *pack, const RTPTime \&receivetime,
 					                                    const RTPAddress *senderaddress)}\\
-						Is called when an RTP packet is about to be processed.
+						Is called when an incoming RTP packet is about to be processed.
 					\item {\tt void OnRTCPCompoundPacket(RTCPCompoundPacket *pack, const RTPTime \&receivetime,
 					                                             const RTPAddress *senderaddress)}\\
-						Is called when an RTCP packet is about to be processed.
+						Is called when an incoming RTCP packet is about to be processed.
 					\item {\tt void OnSSRCCollision(RTPSourceData *srcdat, const RTPAddress *senderaddress, bool isrtp)}\\
 						Is called when an SSRC collision was detected. The instance
 						{\tt srcdat} is the one present in the table, the address
@@ -2625,7 +2625,7 @@ session.BYEDestroy(delay,"Time's up",9);
 						addresses and {\tt isrtp} indicates against which address of
 						{\tt srcdat} the check failed.
 					\item {\tt void OnCNAMECollision(RTPSourceData *srcdat, const RTPAddress *senderaddress,
-					                                         const u\_int8\_t *cname, size\_t cnamelength)}\\
+					                                         const uint8\_t *cname, size\_t cnamelength)}\\
 						Is called when another CNAME was received than the one
 						already present for source {\tt srcdat}.
 					\item {\tt void OnNewSource(RTPSourceData *srcdat)}\\
@@ -2656,6 +2656,9 @@ session.BYEDestroy(delay,"Time's up",9);
 					\item {\tt void OnNoteTimeout(RTPSourceData *srcdat)}\\
 						Is called when the SDES NOTE item for source {\tt srcdat}
 						has been timed out.
+					\item {\tt void OnSendRTCPCompoundPacket(RTCPCompoundPacket *pack)}\\
+						Is called when an RTCP compound packet has just been sent. Useful
+						to inspect outgoing RTCP data.
 					\item {\tt void OnPollThreadError(int errcode)}\\
 						Is called when error {\tt errcode} was detected in the
 						poll thread.

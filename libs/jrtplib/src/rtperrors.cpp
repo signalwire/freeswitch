@@ -31,6 +31,7 @@
 */
 
 #include "rtperrors.h"
+#include "rtpdefines.h"
 
 #include "rtpdebug.h"
 
@@ -219,12 +220,11 @@ std::string RTPGetErrorString(int errcode)
 			return std::string(ErrorDescriptions[i].description);
 		i++;
 	}
+
 	char str[16];
-#if defined(WIN32) || defined(_WIN32_WCE)
-	_snprintf(str,16,"(%d)",errcode);
-#else
-	snprintf(str,16,"(%d)",errcode);
-#endif // WIN32 || _WIN32_WCE
+	
+	RTP_SNPRINTF(str,16,"(%d)",errcode);
+	
 	return std::string("Unknown error code") + std::string(str);
 }
 

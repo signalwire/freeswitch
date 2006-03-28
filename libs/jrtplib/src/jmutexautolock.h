@@ -25,46 +25,19 @@
 
 */
 
-#ifndef JMUTEX_H
+#ifndef JMUTEXAUTOLOCK_H
 
-#define JMUTEX_H
+#define JMUTEXAUTOLOCK_H
 
-#if (defined(WIN32) || defined(_WIN32_WCE))
-	#ifndef _WIN32_WCE
-		#include <process.h>
-	#endif // _WIN32_WCE
-	#include <winsock2.h>
-	#include <windows.h>
+#include "jmutex.h"
 
-	//#define JMUTEX_CRITICALSECTION
-#else // using pthread
-	#include <pthread.h>
-#endif // WIN32
-
-#define ERR_JMUTEX_ALREADYINIT						-1
-#define ERR_JMUTEX_NOTINIT						-2
-#define ERR_JMUTEX_CANTCREATEMUTEX					-3
-
-class JMutex
+class JMutexAutoLock
 {
 public:
-	JMutex();
-	~JMutex();
-	int Init();
-	int Lock();
-	int Unlock();
-	bool IsInitialized() 						{ return initialized; }
+	JMutexAutoLock(JMutex &m) : mutex(m)						{ mutex.Lock(); }
+	~JMutexAutoLock()								{ mutex.Unlock(); }
 private:
-#if (defined(WIN32) || defined(_WIN32_WCE))
-#ifdef JMUTEX_CRITICALSECTION
-	CRITICAL_SECTION mutex;
-#else // Use standard mutex
-	HANDLE mutex;
-#endif // JMUTEX_CRITICALSECTION
-#else // pthread mutex
-	pthread_mutex_t mutex;
-#endif // WIN32
-	bool initialized;
+	JMutex &mutex;
 };
 
-#endif // JMUTEX_H
+#endif // JMUTEXAUTOLOCK_H

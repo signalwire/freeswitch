@@ -35,6 +35,7 @@
 #ifdef RTP_SUPPORT_IPV6
 
 #ifdef RTPDEBUG
+	#include "rtpdefines.h"
 	#include <stdio.h>
 #endif // RTPDEBUG
 
@@ -97,7 +98,7 @@ std::string RTPIPv6Address::GetAddressString() const
 		ip16[j] |= ((uint16_t)ip.s6_addr[i+1]);
 	}
 	
-	snprintf(str,48,"%04X:%04X:%04X:%04X:%04X:%04X:%04X:%04X/%d",(int)ip16[0],(int)ip16[1],(int)ip16[2],(int)ip16[3],(int)ip16[4],(int)ip16[5],(int)ip16[6],(int)ip16[7],(int)port);
+	RTP_SNPRINTF(str,48,"%04X:%04X:%04X:%04X:%04X:%04X:%04X:%04X/%d",(int)ip16[0],(int)ip16[1],(int)ip16[2],(int)ip16[3],(int)ip16[4],(int)ip16[5],(int)ip16[6],(int)ip16[7],(int)port);
 	return std::string(str);
 }
 #endif // RTPDEBUG

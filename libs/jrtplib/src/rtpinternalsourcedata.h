@@ -53,7 +53,7 @@ public:
 	                        uint32_t jitter,uint32_t lsr,uint32_t dlsr,
 				const RTPTime &receivetime)						{ RRprevinf = RRinf; RRinf.Set(fractionlost,lostpackets,exthighseqnr,jitter,lsr,dlsr,receivetime); stats.SetLastMessageTime(receivetime); }
 	void UpdateMessageTime(const RTPTime &receivetime)						{ stats.SetLastMessageTime(receivetime); }
-	int ProcessSDESItem(uint8_t id,const uint8_t *data,size_t itemlen,const RTPTime &receivetime,bool *cnamecollis);
+	int ProcessSDESItem(uint8_t sdesid,const uint8_t *data,size_t itemlen,const RTPTime &receivetime,bool *cnamecollis);
 #ifdef RTP_SUPPORT_SDESPRIV
 	int ProcessPrivateSDESItem(const uint8_t *prefix,size_t prefixlen,const uint8_t *value,size_t valuelen,const RTPTime &receivetime);
 #endif // RTP_SUPPORT_SDESPRIV

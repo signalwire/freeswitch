@@ -41,11 +41,11 @@
 
 #define RTPSOURCES_HASHSIZE							8317
 
-#ifdef RTP_SUPPORT_INLINETEMPLATEPARAM
-	inline int RTPSources_GetHashIndex(const uint32_t &ssrc)	{ return ssrc%RTPSOURCES_HASHSIZE; }
-#else // can't use inline function as template parameter
-	int RTPSources_GetHashIndex(const uint32_t &ssrc);
-#endif // RTP_SUPPORT_INLINETEMPLATEPARAM
+class RTPSources_GetHashIndex
+{
+public:
+	static int GetIndex(const uint32_t &ssrc)				{ return ssrc%RTPSOURCES_HASHSIZE; }
+};
 	
 class RTPNTPTime;
 class RTPTransmitter;

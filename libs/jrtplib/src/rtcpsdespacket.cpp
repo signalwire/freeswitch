@@ -92,7 +92,7 @@ RTCPSDESPacket::RTCPSDESPacket(uint8_t *data,size_t datalength)
 					return;
 				
 				RTCPSDESHeader *sdeshdr = (RTCPSDESHeader *)(chunk+chunkoffset);
-				if (sdeshdr->id == 0) // end of item list
+				if (sdeshdr->sdesid == 0) // end of item list
 				{
 					len--;
 					chunkoffset++;

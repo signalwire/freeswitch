@@ -41,7 +41,7 @@
 #include <iostream>
 #endif // RTPDEBUG
 
-template<class Key,class Element,int GetIndex(const Key &k),int hashsize>
+template<class Key,class Element,class GetIndex,int hashsize>
 class RTPKeyHashTable
 {
 public:
@@ -91,7 +91,7 @@ private:
 	HashElement *curhashelem;
 };
 
-template<class Key,class Element,int GetIndex(const Key &k),int hashsize>
+template<class Key,class Element,class GetIndex,int hashsize>
 inline RTPKeyHashTable<Key,Element,GetIndex,hashsize>::RTPKeyHashTable()
 {
 	for (int i = 0 ; i < hashsize ; i++)
@@ -100,7 +100,7 @@ inline RTPKeyHashTable<Key,Element,GetIndex,hashsize>::RTPKeyHashTable()
 	lasthashelem = 0;
 }
 
-template<class Key,class Element,int GetIndex(const Key &k),int hashsize>
+template<class Key,class Element,class GetIndex,int hashsize>
 inline int RTPKeyHashTable<Key,Element,GetIndex,hashsize>::DeleteCurrentElement()
 {
 	if (curhashelem)
@@ -156,13 +156,13 @@ inline int RTPKeyHashTable<Key,Element,GetIndex,hashsize>::DeleteCurrentElement(
 	return 0;
 }
 	
-template<class Key,class Element,int GetIndex(const Key &k),int hashsize>
+template<class Key,class Element,class GetIndex,int hashsize>
 inline int RTPKeyHashTable<Key,Element,GetIndex,hashsize>::GotoElement(const Key &k)
 {
 	int index;
 	bool found;
 	
-	index = GetIndex(k);
+	index = GetIndex::GetIndex(k);
 	if (index >= hashsize)
 		return ERR_RTP_KEYHASHTABLE_FUNCTIONRETURNEDINVALIDHASHINDEX;
 	
@@ -180,14 +180,14 @@ inline int RTPKeyHashTable<Key,Element,GetIndex,hashsize>::GotoElement(const Key
 	return 0;
 }
 
-template<class Key,class Element,int GetIndex(const Key &k),int hashsize>
+template<class Key,class Element,class GetIndex,int hashsize>
 inline bool RTPKeyHashTable<Key,Element,GetIndex,hashsize>::HasElement(const Key &k)
 {
 	int index;
 	bool found;
 	HashElement *tmp;
 	
-	index = GetIndex(k);
+	index = GetIndex::GetIndex(k);
 	if (index >= hashsize)
 		return false;
 	
@@ -203,21 +203,21 @@ inline bool RTPKeyHashTable<Key,Element,GetIndex,hashsize>::HasElement(const Key
 	return found;
 }
 
-template<class Key,class Element,int GetIndex(const Key &k),int hashsize>
+template<class Key,class Element,class GetIndex,int hashsize>
 inline void RTPKeyHashTable<Key,Element,GetIndex,hashsize>::GotoNextElement()
 {
 	if (curhashelem)
 		curhashelem = curhashelem->listnext;
 }
 
-template<class Key,class Element,int GetIndex(const Key &k),int hashsize>
+template<class Key,class Element,class GetIndex,int hashsize>
 inline void RTPKeyHashTable<Key,Element,GetIndex,hashsize>::GotoPreviousElement()
 {
 	if (curhashelem)
 		curhashelem = curhashelem->listprev;
 }
 
-template<class Key,class Element,int GetIndex(const Key &k),int hashsize>
+template<class Key,class Element,class GetIndex,int hashsize>
 inline void RTPKeyHashTable<Key,Element,GetIndex,hashsize>::Clear()
 {
 	HashElement *tmp1,*tmp2;
@@ -236,14 +236,14 @@ inline void RTPKeyHashTable<Key,Element,GetIndex,hashsize>::Clear()
 	lasthashelem = 0;
 }
 
-template<class Key,class Element,int GetIndex(const Key &k),int hashsize>
+template<class Key,class Element,class GetIndex,int hashsize>
 inline int RTPKeyHashTable<Key,Element,GetIndex,hashsize>::AddElement(const Key &k,const Element &elem)
 {
 	int index;
 	bool found;
 	HashElement *e,*newelem;
 	
-	index = GetIndex(k);
+	index = GetIndex::GetIndex(k);
 	if (index >= hashsize)
 		return ERR_RTP_KEYHASHTABLE_FUNCTIONRETURNEDINVALIDHASHINDEX;
 	
@@ -287,7 +287,7 @@ inline int RTPKeyHashTable<Key,Element,GetIndex,hashsize>::AddElement(const Key 
 	return 0;
 }
 
-template<class Key,class Element,int GetIndex(const Key &k),int hashsize>
+template<class Key,class Element,class GetIndex,int hashsize>
 inline int RTPKeyHashTable<Key,Element,GetIndex,hashsize>::DeleteElement(const Key &k)
 {
 	int status;
@@ -299,7 +299,7 @@ inline int RTPKeyHashTable<Key,Element,GetIndex,hashsize>::DeleteElement(const K
 }
 
 #ifdef RTPDEBUG
-template<class Key,class Element,int GetIndex(const Key &k),int hashsize>
+template<class Key,class Element,class GetIndex,int hashsize>
 inline void RTPKeyHashTable<Key,Element,GetIndex,hashsize>::Dump()
 {
 	HashElement *e;

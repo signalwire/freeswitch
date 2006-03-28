@@ -64,7 +64,7 @@ struct RTPHeader
 
 struct RTPExtensionHeader
 {
-	uint16_t id;
+	uint16_t extid;
 	uint16_t length;
 };
 
@@ -111,7 +111,7 @@ struct RTCPReceiverReport
 
 struct RTCPSDESHeader
 {
-	uint8_t id;
+	uint8_t sdesid;
 	uint8_t length;
 };
 

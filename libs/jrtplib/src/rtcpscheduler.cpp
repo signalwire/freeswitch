@@ -186,6 +186,11 @@ bool RTCPScheduler::IsTime()
 
 	RTPTime currenttime = RTPTime::CurrentTime();
 
+//	// TODO: for debugging
+//	double diff = nextrtcptime.GetDouble() - currenttime.GetDouble();
+//
+//	std::cout << "Delay till next RTCP interval: " << diff << std::endl;
+	
 	if (currenttime < nextrtcptime) // timer has not yet expired
 		return false;
 
@@ -204,6 +209,8 @@ bool RTCPScheduler::IsTime()
 	else
 		checktime = CalculateBYETransmissionInterval();
 	
+//	std::cout << "Calculated checktime: " << checktime.GetDouble() << std::endl;
+	
 	checktime += prevrtcptime;
 	
 	if (checktime <= currenttime) // Okay
@@ -214,6 +221,8 @@ bool RTCPScheduler::IsTime()
 		CalculateNextRTCPTime();
 		return true;
 	}
+
+//	std::cout << "New delay: " << nextrtcptime.GetDouble() - currenttime.GetDouble() << std::endl;
 	
 	nextrtcptime = checktime;
 	pmembers = sources.GetActiveMemberCount();
@@ -237,6 +246,10 @@ RTPTime RTCPScheduler::CalculateDeterministicInterval(bool sender /* = false */)
 {
 	int numsenders = sources.GetSenderCount();
 	int numtotal = sources.GetActiveMemberCount();
+
+//	std::cout << "CalculateDeterministicInterval" << std::endl;
+//	std::cout << "  numsenders: " << numsenders << std::endl;
+//	std::cout << "  numtotal: " << numtotal << std::endl;
 
 	// Try to avoid division by zero:
 	if (numtotal == 0)
@@ -273,6 +286,9 @@ RTPTime RTCPScheduler::CalculateDeterministicInterval(bool sender /* = false */)
 	double ntimesC = n*C;
 	double Td = (tmin>ntimesC)?tmin:ntimesC;
 
+	// TODO: for debugging
+//	std::cout << "  Td: " << Td << std::endl;
+
 	return RTPTime(Td);
 }
 
@@ -281,9 +297,15 @@ RTPTime RTCPScheduler::CalculateTransmissionInterval(bool sender)
 	RTPTime Td = CalculateDeterministicInterval(sender);
 	double td,mul,T;
 
+//	std::cout << "CalculateTransmissionInterval" << std::endl;
+
 	td = Td.GetDouble();
 	mul = rtprand.GetRandomDouble()+0.5; // gives random value between 0.5 and 1.5
 	T = (td*mul)/1.21828; // see RFC 3550 p 30
+
+//	std::cout << "  Td: " << td << std::endl;
+//	std::cout << "  mul: " << mul << std::endl;
+//	std::cout << "  T: " << T << std::endl;
 
 	return RTPTime(T);
 }
@@ -298,9 +320,22 @@ void RTCPScheduler::PerformReverseReconsideration()
 	
 	RTPTime tc = RTPTime::CurrentTime();
 	RTPTime tn_min_tc = nextrtcptime;
-	tn_min_tc -= tc;
+
+	if (tn_min_tc > tc)
+		tn_min_tc -= tc;
+	else
+		tn_min_tc = RTPTime(0,0);
+
+//	std::cout << "+tn_min_tc0 " << nextrtcptime.GetDouble()-tc.GetDouble() << std::endl;
+//	std::cout << "-tn_min_tc0 " << -nextrtcptime.GetDouble()+tc.GetDouble() << std::endl;
+//	std::cout << "tn_min_tc " << tn_min_tc.GetDouble() << std::endl;
+	
 	RTPTime tc_min_tp = tc;
-	tc_min_tp -= prevrtcptime;
+
+	if (tc_min_tp > prevrtcptime)
+		tc_min_tp -= prevrtcptime;
+	else
+		tc_min_tp = 0;
 	
 	if (pmembers == 0) // avoid division by zero
 		pmembers++;

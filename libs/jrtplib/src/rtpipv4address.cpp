@@ -32,6 +32,7 @@
 
 #include "rtpipv4address.h"
 #ifdef RTPDEBUG
+	#include "rtpdefines.h" 
 	#include <stdio.h>
 #endif // RTPDEBUG
 
@@ -74,7 +75,7 @@ std::string RTPIPv4Address::GetAddressString() const
 {
 	char str[24];
 
-	snprintf(str,24,"%d.%d.%d.%d:%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),
+	RTP_SNPRINTF(str,24,"%d.%d.%d.%d:%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),
 	                             (int)(ip&0xFF),(int)port);
 	return std::string(str);
 }

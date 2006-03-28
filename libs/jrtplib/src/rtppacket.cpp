@@ -175,7 +175,7 @@ int RTPPacket::ParseRawPacket(RTPRawPacket &rawpack)
 	RTPPacket::hasextension = hasextension;
 	if (hasextension)
 	{
-		RTPPacket::extid = ntohs(rtpextheader->id);
+		RTPPacket::extid = ntohs(rtpextheader->extid);
 		RTPPacket::extensionlength = ((int)ntohs(rtpextheader->length))*sizeof(uint32_t);
 		RTPPacket::extension = ((uint8_t *)rtpextheader)+sizeof(RTPExtensionHeader);
 	}
@@ -305,7 +305,7 @@ int RTPPacket::BuildPacket(uint8_t payloadtype,const void *payloaddata,size_t pa
 	{
 		RTPExtensionHeader *rtpexthdr = (RTPExtensionHeader *)payload;
 
-		rtpexthdr->id = htons(extensionid);
+		rtpexthdr->extid = htons(extensionid);
 		rtpexthdr->length = htons((uint16_t)extensionlen_numwords);
 		
 		payload += sizeof(RTPExtensionHeader);

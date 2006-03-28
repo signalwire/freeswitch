@@ -40,7 +40,8 @@
 #include <iostream>
 #endif // RTPDEBUG
 
-template<class Element,int GetIndex(const Element &k),int hashsize>
+//template<class Element,int GetIndex(const Element &k),int hashsize>
+template<class Element,class GetIndex,int hashsize>
 class RTPHashTable
 {
 public:
@@ -87,7 +88,7 @@ private:
 	HashElement *curhashelem;
 };
 
-template<class Element,int GetIndex(const Element &e),int hashsize>
+template<class Element,class GetIndex,int hashsize>
 inline RTPHashTable<Element,GetIndex,hashsize>::RTPHashTable()
 {
 	for (int i = 0 ; i < hashsize ; i++)
@@ -96,7 +97,7 @@ inline RTPHashTable<Element,GetIndex,hashsize>::RTPHashTable()
 	lasthashelem = 0;
 }
 
-template<class Element,int GetIndex(const Element &e),int hashsize>
+template<class Element,class GetIndex,int hashsize>
 inline int RTPHashTable<Element,GetIndex,hashsize>::DeleteCurrentElement()
 {
 	if (curhashelem)
@@ -152,13 +153,13 @@ inline int RTPHashTable<Element,GetIndex,hashsize>::DeleteCurrentElement()
 	return 0;
 }
 
-template<class Element,int GetIndex(const Element &e),int hashsize>
+template<class Element,class GetIndex,int hashsize>
 inline int RTPHashTable<Element,GetIndex,hashsize>::GotoElement(const Element &e)
 {
 	int index;
 	bool found;
 	
-	index = GetIndex(e);
+	index = GetIndex::GetIndex(e);
 	if (index >= hashsize)
 		return ERR_RTP_HASHTABLE_FUNCTIONRETURNEDINVALIDHASHINDEX;
 	
@@ -176,14 +177,14 @@ inline int RTPHashTable<Element,GetIndex,hashsize>::GotoElement(const Element &e
 	return 0;
 }
 
-template<class Element,int GetIndex(const Element &e),int hashsize>
+template<class Element,class GetIndex,int hashsize>
 inline bool RTPHashTable<Element,GetIndex,hashsize>::HasElement(const Element &e)
 {
 	int index;
 	bool found;
 	HashElement *tmp;
 	
-	index = GetIndex(e);
+	index = GetIndex::GetIndex(e);
 	if (index >= hashsize)
 		return false;
 	
@@ -199,21 +200,21 @@ inline bool RTPHashTable<Element,GetIndex,hashsize>::HasElement(const Element &e
 	return found;
 }
 
-template<class Element,int GetIndex(const Element &e),int hashsize>
+template<class Element,class GetIndex,int hashsize>
 inline void RTPHashTable<Element,GetIndex,hashsize>::GotoNextElement()
 {
 	if (curhashelem)
 		curhashelem = curhashelem->listnext;
 }
 
-template<class Element,int GetIndex(const Element &e),int hashsize>
+template<class Element,class GetIndex,int hashsize>
 inline void RTPHashTable<Element,GetIndex,hashsize>::GotoPreviousElement()
 {
 	if (curhashelem)
 		curhashelem = curhashelem->listprev;
 }
 
-template<class Element,int GetIndex(const Element &e),int hashsize>
+template<class Element,class GetIndex,int hashsize>
 inline void RTPHashTable<Element,GetIndex,hashsize>::Clear()
 {
 	HashElement *tmp1,*tmp2;
@@ -232,14 +233,14 @@ inline void RTPHashTable<Element,GetIndex,hashsize>::Clear()
 	lasthashelem = 0;
 }
 
-template<class Element,int GetIndex(const Element &e),int hashsize>
+template<class Element,class GetIndex,int hashsize>
 inline int RTPHashTable<Element,GetIndex,hashsize>::AddElement(const Element &elem)
 {
 	int index;
 	bool found;
 	HashElement *e,*newelem;
 	
-	index = GetIndex(elem);
+	index = GetIndex::GetIndex(elem);
 	if (index >= hashsize)
 		return ERR_RTP_HASHTABLE_FUNCTIONRETURNEDINVALIDHASHINDEX;
 	
@@ -283,7 +284,7 @@ inline int RTPHashTable<Element,GetIndex,hashsize>::AddElement(const Element &el
 	return 0;
 }
 
-template<class Element,int GetIndex(const Element &e),int hashsize>
+template<class Element,class GetIndex,int hashsize>
 inline int RTPHashTable<Element,GetIndex,hashsize>::DeleteElement(const Element &elem)
 {
 	int status;
@@ -295,7 +296,7 @@ inline int RTPHashTable<Element,GetIndex,hashsize>::DeleteElement(const Element 
 }
 
 #ifdef RTPDEBUG
-template<class Element,int GetIndex(const Element &e),int hashsize>
+template<class Element,class GetIndex,int hashsize>
 inline void RTPHashTable<Element,GetIndex,hashsize>::Dump()
 {
 	HashElement *e;

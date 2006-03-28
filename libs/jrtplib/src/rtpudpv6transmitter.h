@@ -93,13 +93,17 @@ private:
 	jrtp_socket_t rtpsocket,rtcpsocket;
 };
 		
-#ifdef RTP_SUPPORT_INLINETEMPLATEPARAM
-	inline int RTPUDPv6Trans_GetHashIndex_IPv6Dest(const RTPIPv6Destination &d)		{ in6_addr ip = d.GetIP(); return ((((uint32_t)ip.s6_addr[12])<<24)|(((uint32_t)ip.s6_addr[13])<<16)|(((uint32_t)ip.s6_addr[14])<<8)|((uint32_t)ip.s6_addr[15]))%RTPUDPV6TRANS_HASHSIZE; }
-	inline int RTPUDPv6Trans_GetHashIndex_in6_addr(const in6_addr &ip)			{ return ((((uint32_t)ip.s6_addr[12])<<24)|(((uint32_t)ip.s6_addr[13])<<16)|(((uint32_t)ip.s6_addr[14])<<8)|((uint32_t)ip.s6_addr[15]))%RTPUDPV6TRANS_HASHSIZE; }
-#else // No support for inline function as template parameter
-	int RTPUDPv6Trans_GetHashIndex_IPv6Dest(const RTPIPv6Destination &d);
-	int RTPUDPv6Trans_GetHashIndex_in6_addr(const in6_addr &ip);
-#endif // RTP_SUPPORT_INLINETEMPLATEPARAM
+class RTPUDPv6Trans_GetHashIndex_IPv6Dest
+{
+public:
+	static int GetIndex(const RTPIPv6Destination &d)					{ in6_addr ip = d.GetIP(); return ((((uint32_t)ip.s6_addr[12])<<24)|(((uint32_t)ip.s6_addr[13])<<16)|(((uint32_t)ip.s6_addr[14])<<8)|((uint32_t)ip.s6_addr[15]))%RTPUDPV6TRANS_HASHSIZE; }
+};
+
+class RTPUDPv6Trans_GetHashIndex_in6_addr
+{
+public:
+	static int GetIndex(const in6_addr &ip)							{ return ((((uint32_t)ip.s6_addr[12])<<24)|(((uint32_t)ip.s6_addr[13])<<16)|(((uint32_t)ip.s6_addr[14])<<8)|((uint32_t)ip.s6_addr[15]))%RTPUDPV6TRANS_HASHSIZE; }
+};
 
 #define RTPUDPV6TRANS_HEADERSIZE								(40+8)
 	

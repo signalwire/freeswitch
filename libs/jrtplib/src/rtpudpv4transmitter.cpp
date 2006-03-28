@@ -34,6 +34,7 @@
 #include "rtprawpacket.h"
 #include "rtpipv4address.h"
 #include "rtptimeutilities.h"
+#include "rtpdefines.h"
 #include <stdio.h>
 #if (defined(WIN32) || defined(_WIN32_WCE))
 	#define RTPSOCKERR								INVALID_SOCKET
@@ -104,11 +105,6 @@
 										mreq.imr_interface.s_addr = htonl(mcastifaceIP);\
 										status = setsockopt(socket,IPPROTO_IP,type,(const char *)&mreq,sizeof(struct ip_mreq));\
 									}
-#ifndef RTP_SUPPORT_INLINETEMPLATEPARAM
-	int RTPUDPv4Trans_GetHashIndex_IPv4Dest(const RTPIPv4Destination &d)				{ return d.GetIP_HBO()%RTPUDPV4TRANS_HASHSIZE; }
-	int RTPUDPv4Trans_GetHashIndex_uint32_t(const uint32_t &k)					{ return k%RTPUDPV4TRANS_HASHSIZE; }
-#endif // !RTP_SUPPORT_INLINETEMPLATEPARAM
-	
 #ifdef RTP_SUPPORT_THREAD
 	#define MAINMUTEX_LOCK 		{ if (threadsafe) mainmutex.Lock(); }
 	#define MAINMUTEX_UNLOCK	{ if (threadsafe) mainmutex.Unlock(); }
@@ -512,11 +508,7 @@ int RTPUDPv4Transmitter::GetLocalHostName(uint8_t *buffer,size_t *bufferlength)
 			it = localIPs.begin();
 			ip = (*it);
 			
-#if (defined(WIN32) || defined(_WIN32_WCE))
-			_snprintf(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
-#else
-			snprintf(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
-#endif // WIN32 || _WIN32_WCE
+			RTP_SNPRINTF(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
 			len = strlen(str);
 	
 			localhostnamelength = len;
@@ -1360,7 +1352,7 @@ int RTPUDPv4Transmitter::PollSocket(bool rtp)
 	{
 		RTPTime curtime = RTPTime::CurrentTime();
 		fromlen = sizeof(struct sockaddr_in);
-		recvlen = recvfrom(sock,packetbuffer,(int)len,0,(struct sockaddr *)&srcaddr,&fromlen);
+		recvlen = recvfrom(sock,packetbuffer,RTPUDPV4TRANS_MAXPACKSIZE,0,(struct sockaddr *)&srcaddr,&fromlen);
 		if (recvlen > 0)
 		{
 			bool acceptdata;
@@ -1918,16 +1910,16 @@ void RTPUDPv4Transmitter::Dump()
 			std::cout << "RTP socket descriptor:          " << rtpsock << std::endl;
 			std::cout << "RTCP socket descriptor:         " << rtcpsock << std::endl;
 			ip = bindIP;
-			snprintf(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
+			RTP_SNPRINTF(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
 			std::cout << "Bind IP address:                " << str << std::endl;
 			ip = mcastifaceIP;
-			snprintf(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
+			RTP_SNPRINTF(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
 			std::cout << "Multicast interface IP address: " << str << std::endl;
 			std::cout << "Local IP addresses:" << std::endl;
 			for (it = localIPs.begin() ; it != localIPs.end() ; it++)
 			{
 				ip = (*it);
-				snprintf(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
+				RTP_SNPRINTF(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
 				std::cout << "    " << str << std::endl;
 			}
 			std::cout << "Multicast TTL:                  " << (int)multicastTTL << std::endl;
@@ -1950,7 +1942,7 @@ void RTPUDPv4Transmitter::Dump()
 				while(acceptignoreinfo.HasCurrentElement())
 				{
 					ip = acceptignoreinfo.GetCurrentKey();
-					snprintf(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
+					RTP_SNPRINTF(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
 					PortInfo *pinfo = acceptignoreinfo.GetCurrentElement();
 					std::cout << "    " << str << ": ";
 					if (pinfo->all)
@@ -2004,7 +1996,7 @@ void RTPUDPv4Transmitter::Dump()
 				do
 				{
 					ip = multicastgroups.GetCurrentElement();
-					snprintf(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
+					RTP_SNPRINTF(str,16,"%d.%d.%d.%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF));
 					std::cout << "    " << str << std::endl;
 					multicastgroups.GotoNextElement();
 				} while (multicastgroups.HasCurrentElement());

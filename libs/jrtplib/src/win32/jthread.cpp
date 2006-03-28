@@ -3,7 +3,7 @@
     This file is a part of the JThread package, which contains some object-
     oriented thread wrappers for different thread implementations.
 
-    Copyright (c) 2000-2005  Jori Liesenborgs (jori@lumumba.uhasselt.be)
+    Copyright (c) 2000-2006  Jori Liesenborgs (jori@lumumba.uhasselt.be)
 
     Permission is hereby granted, free of charge, to any person obtaining a
     copy of this software and associated documentation files (the "Software"),
@@ -90,6 +90,7 @@ int JThread::Start()
 	while (!running)
 	{
 		runningmutex.Unlock();
+		Sleep(1);
 		runningmutex.Lock();
 	}
 	runningmutex.Unlock();

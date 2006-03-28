@@ -52,17 +52,5 @@ private:
 	int debugnr,minornr,majornr;
 };
 
-inline std::string RTPLibraryVersion::GetVersionString() const
-{
-	char str[16];
-	
-#if (defined(WIN32) || defined(_WIN32_WCE))
-	_snprintf(str,16,"%d.%d.%d",majornr,minornr,debugnr);
-#else
-	snprintf(str,16,"%d.%d.%d",majornr,minornr,debugnr);
-#endif // WIN32 || _WIN32_WCE
-	return std::string(str);
-}
-
 #endif // RTPLIBRARYVERSION_H
 

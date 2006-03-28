@@ -380,6 +380,9 @@ void RTPSession::BYEDestroy(const RTPTime &maxwaittime,const void *reason,size_t
 				byepackets.pop_front();
 			
 				rtptrans->SendRTCPData(pack->GetCompoundPacketData(),pack->GetCompoundPacketLength());
+				
+				OnSendRTCPCompoundPacket(pack); // we'll place this after the actual send to avoid tampering
+				
 				delete pack;
 				if (!byepackets.empty()) // more bye packets to send, schedule them
 					rtcpsched.ScheduleBYEPacket((*(byepackets.begin()))->GetCompoundPacketLength());
@@ -1178,6 +1181,8 @@ int RTPSession::ProcessPolledData()
 				delete pack;
 				return status;
 			}
+
+			OnSendRTCPCompoundPacket(pack); // we'll place this after the actual send to avoid tampering
 		}
 		else
 		{
@@ -1190,6 +1195,8 @@ int RTPSession::ProcessPolledData()
 				delete pack;
 				return status;
 			}
+
+			OnSendRTCPCompoundPacket(pack); // we'll place this after the actual send to avoid tampering
 			
 			if (!byepackets.empty()) // more bye packets to send, schedule them
 			{
@@ -1250,9 +1257,14 @@ int RTPSession::CreateCNAME(uint8_t *buffer,size_t *bufferlength,bool resolve)
 #ifndef _WIN32_WCE
 	DWORD len = *bufferlength;
 	if (!GetUserName((LPTSTR)buffer,&len))
-		strcpy((char *)buffer,"unknown");
+#if (defined(_MSC_VER) && _MSC_VER >= 1400 ) // Check if we can use the secure strncpy_s
+		strncpy_s((char *)buffer,*bufferlength,"unknown",_TRUNCATE);
+#else
+		strncpy((char *)buffer,"unknown",*bufferlength);
+#endif // Less secure version
+
 #else 
-	strcpy((char *)buffer,"unknown");
+	strncpy((char *)buffer,"unknown",*bufferlength);
 #endif // _WIN32_WCE
 	
 #endif // WIN32
@@ -1276,9 +1288,17 @@ int RTPSession::CreateCNAME(uint8_t *buffer,size_t *bufferlength,bool resolve)
 	{
 		char hostname[1024];
 		
-		strcpy(hostname,"localhost"); // just in case gethostname fails
+#if defined(WIN32) && !defined(_WIN32_WCE) && (defined(_MSC_VER) && _MSC_VER >= 1400 ) // Check if we can use the secure strncpy_s
+		strncpy_s(hostname,1024,"localhost",_TRUNCATE); // just in case gethostname fails
+#else
+		strncpy(hostname,"localhost",1024); // just in case gethostname fails
+#endif
 		gethostname(hostname,1024);
+#if defined(WIN32) && !defined(_WIN32_WCE) && (defined(_MSC_VER) && _MSC_VER >= 1400 ) // Check if we can use the secure strncpy_s
+		strncpy_s((char *)(buffer+offset),buflen2,hostname,_TRUNCATE);
+#else
 		strncpy((char *)(buffer+offset),hostname,buflen2);
+#endif
 		*bufferlength = offset+strlen(hostname);
 	}
 	if (*bufferlength > RTCP_SDES_MAXITEMLENGTH)

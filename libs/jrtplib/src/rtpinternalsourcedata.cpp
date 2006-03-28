@@ -171,13 +171,13 @@ int RTPInternalSourceData::ProcessRTPPacket(RTPPacket *rtppack,const RTPTime &re
 	return 0;
 }
 
-int RTPInternalSourceData::ProcessSDESItem(uint8_t id,const uint8_t *data,size_t itemlen,const RTPTime &receivetime,bool *cnamecollis)
+int RTPInternalSourceData::ProcessSDESItem(uint8_t sdesid,const uint8_t *data,size_t itemlen,const RTPTime &receivetime,bool *cnamecollis)
 {
 	*cnamecollis = false;
 	
 	stats.SetLastMessageTime(receivetime);
 	
-	switch(id)
+	switch(sdesid)
 	{
 	case RTCP_SDES_ID_CNAME:
 		{

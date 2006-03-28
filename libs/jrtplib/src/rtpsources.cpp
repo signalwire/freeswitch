@@ -51,10 +51,6 @@
 
 #include "rtpdebug.h"
 
-#ifndef RTP_SUPPORT_INLINETEMPLATEPARAM
-	int RTPSources_GetHashIndex(const uint32_t &ssrc)       { return ssrc%RTPSOURCES_HASHSIZE; }
-#endif // !RTP_SUPPORT_INLINETEMPLATEPARAM
-	
 RTPSources::RTPSources(ProbationType probtype)
 {
 	totalcount = 0;
@@ -693,31 +689,31 @@ int RTPSources::ProcessSDESNormalItem(uint32_t ssrc,RTCPSDESPacket::ItemType t,s
 	RTPInternalSourceData *srcdat;
 	bool created,cnamecollis;
 	int status;
-	uint8_t id;
+	uint8_t sdesid;
 	bool prevactive;
 
 	switch(t)
 	{
 	case RTCPSDESPacket::CNAME:
-		id = RTCP_SDES_ID_CNAME;
+		sdesid = RTCP_SDES_ID_CNAME;
 		break;
 	case RTCPSDESPacket::NAME:
-		id = RTCP_SDES_ID_NAME;
+		sdesid = RTCP_SDES_ID_NAME;
 		break;
 	case RTCPSDESPacket::EMAIL:
-		id = RTCP_SDES_ID_EMAIL;
+		sdesid = RTCP_SDES_ID_EMAIL;
 		break;
 	case RTCPSDESPacket::PHONE:
-		id = RTCP_SDES_ID_PHONE;
+		sdesid = RTCP_SDES_ID_PHONE;
 		break;
 	case RTCPSDESPacket::LOC:
-		id = RTCP_SDES_ID_LOCATION;
+		sdesid = RTCP_SDES_ID_LOCATION;
 		break;
 	case RTCPSDESPacket::TOOL:
-		id = RTCP_SDES_ID_TOOL;
+		sdesid = RTCP_SDES_ID_TOOL;
 		break;
 	case RTCPSDESPacket::NOTE:
-		id = RTCP_SDES_ID_NOTE;
+		sdesid = RTCP_SDES_ID_NOTE;
 		break;
 	default:
 		return ERR_RTP_SOURCES_ILLEGALSDESTYPE;
@@ -730,7 +726,7 @@ int RTPSources::ProcessSDESNormalItem(uint32_t ssrc,RTCPSDESPacket::ItemType t,s
 		return 0;
 
 	prevactive = srcdat->IsActive();
-	status = srcdat->ProcessSDESItem(id,(const uint8_t *)itemdata,itemlength,receivetime,&cnamecollis);
+	status = srcdat->ProcessSDESItem(sdesid,(const uint8_t *)itemdata,itemlength,receivetime,&cnamecollis);
 	if (!prevactive && srcdat->IsActive())
 		activecount++;
 	
@@ -1233,6 +1229,7 @@ void RTPSources::MultipleTimeouts(const RTPTime &curtime,const RTPTime &senderti
 				OnBYETimeout(srcdat);
 			if (normaltimeout)
 				OnTimeout(srcdat);
+			OnRemoveSource(srcdat);
 			delete srcdat;
 		}
 	}	

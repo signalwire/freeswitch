@@ -39,6 +39,7 @@
 	#include <netinet/in.h>
 #endif // WIN32
 #ifdef RTPDEBUG
+	#include "rtpdefines.h"
 	#include <stdio.h>
 	#include <string>
 #endif // RTPDEBUG
@@ -71,7 +72,7 @@ inline std::string RTPIPv4Destination::GetDestinationString() const
 	uint32_t ip = ipaddr_hbo;
 	uint16_t portbase = ntohs(rtpport_nbo);
 	
-	snprintf(str,24,"%d.%d.%d.%d:%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF),(int)(portbase));
+	RTP_SNPRINTF(str,24,"%d.%d.%d.%d:%d",(int)((ip>>24)&0xFF),(int)((ip>>16)&0xFF),(int)((ip>>8)&0xFF),(int)(ip&0xFF),(int)(portbase));
 	return std::string(str);
 }
 #endif // RTPDEBUG

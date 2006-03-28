@@ -72,4 +72,15 @@
 #define RTCP_DEFAULTIMMEDIATEBYE					true
 #define RTCP_DEFAULTSRBYE						true
 
+#if (defined(WIN32) || defined(_WIN32_WCE))
+	#if (!defined(_WIN32_WCE)) && (defined(_MSC_VER) && _MSC_VER >= 1400 )
+		#define RTP_SNPRINTF _snprintf_s
+	#else
+		#define RTP_SNPRINTF _snprintf
+	#endif
+#else
+	#define RTP_SNPRINTF snprintf
+#endif // WIN32 || _WIN32_WCE
+
 #endif // RTPDEFINES_H
+

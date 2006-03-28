@@ -1,5 +1,5 @@
 AC_INIT(configure.in)
-AM_INIT_AUTOMAKE(jrtplib,3.4.0)
+AM_INIT_AUTOMAKE(jrtplib,3.5.2)
 
 RTP_FILIO="// Don't have <sys/filio.h>"
 RTP_SOCKIO="// Don't have <sys/sockio.h>"
@@ -10,7 +10,6 @@ RTP_SUPPORT_IPV4MULTICAST="// No IPv4 multicasting support"
 RTP_SUPPORT_IPV6MULTICAST="// No IPv6 multicasting support"
 RTP_SUPPORT_THREAD="// No support for jthread"
 RTP_SUPPORT_SDESPRIV="// No support for SDES PRIV items"
-RTP_SUPPORT_INLINETEMPLATEPARAM="// Compiler doesn't support inline functions as template parameter"
 RTP_SUPPORT_PROBATION="// Do not wait for a number of consecutive packets to validate source"
 RTP_SUPPORT_GNUDRAND="// Not using drand48_r and srand48_r"
 RTP_SUPPORT_RANDR="// Not using rand_r"
@@ -201,21 +200,7 @@ AC_TRY_COMPILE([
 	])
 
 dnl ---------------------------------------------------------------------------
-dnl Check if compiler can handle inline function in template argument
-dnl ---------------------------------------------------------------------------
-
-AC_MSG_CHECKING(if compiler supports an inline function as a template argument)
-AC_TRY_COMPILE([
-	#include "src/rtphashtable.h"
-	inline int GetIndex(const int &elem) { return elem%10; }],[
-	RTPHashTable<int,GetIndex,10> table; ],
-	[AC_MSG_RESULT(yes)
-		RTP_SUPPORT_INLINETEMPLATEPARAM="#define RTP_SUPPORT_INLINETEMPLATEPARAM"],
-	AC_MSG_RESULT(no)
-	)
-	
-dnl ---------------------------------------------------------------------------
-dnl Check for u_int32_t etc
+dnl Check for uint32_t etc
 dnl ---------------------------------------------------------------------------
 
 AC_MSG_CHECKING(if types like uint32_t exist)
