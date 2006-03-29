@@ -30,7 +30,7 @@
  *
  */
 #include <switch.h>
-#define DEBUG_ALLOC
+//#define DEBUG_ALLOC
 
 struct switch_core_session {
 	unsigned long id;
