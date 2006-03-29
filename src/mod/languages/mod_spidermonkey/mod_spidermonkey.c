@@ -32,7 +32,7 @@
 #ifndef HAVE_CURL
 #define HAVE_CURL
 #endif
-
+#define JS_BUFFER_SIZE 131072
 #include <switch.h>
 
 #include "jstypes.h"
@@ -1523,7 +1523,7 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 		}
 	}
 
-	switch_buffer_create(pool, &tto->audio_buffer, SWITCH_RECCOMMENDED_BUFFER_SIZE);
+	switch_buffer_create(pool, &tto->audio_buffer, JS_BUFFER_SIZE);
 	tto->pool = pool;
 	tto->obj = obj;
 	tto->cx = cx;
@@ -1604,7 +1604,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			}
 			loops--;
 			if (!tto->loop_buffer) {
-				switch_buffer_create(tto->pool, &tto->loop_buffer, SWITCH_RECCOMMENDED_BUFFER_SIZE);
+				switch_buffer_create(tto->pool, &tto->loop_buffer, JS_BUFFER_SIZE);
 			}
 		} 
 
@@ -1633,6 +1633,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		}
 
 		for(;;) {
+
 			if (switch_test_flag(tto, TTF_DTMF)) {
 				char dtmf[128];
 				char code[512];
@@ -1677,7 +1678,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 						break;
 					}
 				} else {
-					break;
+					continue;
 				}
 			}
 
