@@ -143,8 +143,12 @@ void jrtp4c_destroy(struct jrtp4c **jrtp4c)
 	jrtp4c_killread(*jrtp4c);
 
 	while (((*jrtp4c)->flags & JF_READ) || ((*jrtp4c)->flags & JF_WRITE)) {
+#ifdef WIN32
+		Sleep(1);
+#else
 		usleep(1000);
 		sched_yield();
+#endif
 	};
 
 	(*jrtp4c)->session->BYEDestroy(RTPTime(10,0),0,0);
