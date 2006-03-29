@@ -30,7 +30,7 @@
  *
  */
 #include <switch.h>
-//#define DEBUG_ALLOC
+#define DEBUG_ALLOC
 
 struct switch_core_session {
 	unsigned long id;
@@ -892,6 +892,8 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 	switch_status status = SWITCH_STATUS_FALSE;
 	int need_codec = 0, perfect = 0;
 
+	assert(session != NULL);
+	*frame = NULL;
 
 	if (session->endpoint_interface->io_routines->read_frame) {
 		if ((status = session->endpoint_interface->io_routines->read_frame(session,
@@ -913,6 +915,9 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 		return status;
 	}
 
+	assert(session != NULL);
+	assert(*frame != NULL);
+	
 	/* if you think this code is redundant.... too bad! I like to understand what I'm doing */
 	if ((session->read_codec && (*frame)->codec
 		 && session->read_codec->implementation != (*frame)->codec->implementation)) {
@@ -1070,7 +1075,8 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 	unsigned int flag = 0, need_codec = 0, perfect = 0;
 	switch_io_flag io_flag = SWITCH_IO_FLAG_NOOP;
 
-
+	assert(session != NULL);
+	assert(frame != NULL);
 	assert(frame->codec != NULL);
 
 	/* if you think this code is redundant.... too bad! I like to understand what I'm doing */
@@ -1560,11 +1566,9 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_send_dtmf(switc
 SWITCH_DECLARE(switch_status) switch_core_new_memory_pool(switch_memory_pool **pool)
 {
 
-	if (runtime.memory_pool == NULL) {
-		return SWITCH_STATUS_MEMERR;
-	}
+	assert(runtime.memory_pool != NULL);
 
-	if ((apr_pool_create(pool, NULL)) != SWITCH_STATUS_SUCCESS) {
+	if ((apr_pool_create(pool, runtime.memory_pool)) != SWITCH_STATUS_SUCCESS) {
 		*pool = NULL;
 		return SWITCH_STATUS_MEMERR;
 	}
@@ -2001,9 +2005,12 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session **session)
 
 SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash **hash, switch_memory_pool *pool)
 {
+	assert(pool != NULL);
+
 	if ((*hash = apr_hash_make(pool)) != 0) {
 		return SWITCH_STATUS_SUCCESS;
 	}
+
 	return SWITCH_STATUS_GENERR;
 }
 
@@ -2130,10 +2137,10 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, size_t memory
 {
 	void *ptr = NULL;
 	assert(pool != NULL);
-	assert(memory < 1000000);
 
 #ifdef DEBUG_ALLOC
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate %d\n", memory);
+	//assert(memory < 600000);
 #endif
 
 	if ((ptr = apr_palloc(pool, memory)) != 0) {

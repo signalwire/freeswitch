@@ -22,12 +22,18 @@ extern "C" {
 struct jrtp4c;
 
 class JRTP4C: public RTPSession  {
-	// add virtuals later 
 public:
 	JRTP4C(): RTPSession() { }
 	void OnInvalidRawPacketType(RTPRawPacket *rawpacket, jrtp_socket_t socket);
 	struct jrtp4c *myjrtp4c;
 };
+
+typedef enum {
+	JF_READY = ( 1 << 0),
+	JF_RUNNING = ( 1 << 1),
+	JF_READ = (1 << 2),
+	JF_WRITE = (1 << 3)
+} jrtp4cflags;
 
 struct jrtp4c {
 	JRTP4C *session;
@@ -36,6 +42,7 @@ struct jrtp4c {
 	int payload;
 	invalid_handler on_invalid;
 	void *private_data;
+	uint32_t flags;
 };
 
 void JRTP4C::OnInvalidRawPacketType(RTPRawPacket *rawpacket, jrtp_socket_t socket)	
@@ -125,11 +132,21 @@ struct jrtp4c *jrtp4c_new(char *rx_ip, int rx_port, char *tx_ip, int tx_port, in
 	jrtp4c->session->SetDefaultPayloadType(payload);		
 	jrtp4c->payload = payload;
 	jrtp4c->session->myjrtp4c = jrtp4c;
+
+	jrtp4c->flags |= JF_READY;
+
 	return jrtp4c;
 }
 
 void jrtp4c_destroy(struct jrtp4c **jrtp4c)
 {
+	jrtp4c_killread(*jrtp4c);
+
+	while (((*jrtp4c)->flags & JF_READ) || ((*jrtp4c)->flags & JF_WRITE)) {
+		usleep(1000);
+		sched_yield();
+	};
+
 	(*jrtp4c)->session->BYEDestroy(RTPTime(10,0),0,0);
 	delete (*jrtp4c)->session;
 	delete (*jrtp4c)->transparams;
@@ -145,29 +162,63 @@ void jrtp4c_set_invald_handler(struct jrtp4c *jrtp4c, invalid_handler on_invalid
 
 jrtp_socket_t jrtp4c_get_rtp_socket(struct jrtp4c *jrtp4c)
 {
-
+	if (!jrtp4c->flags & JF_READY) {
+		return -1;
+	}
 	return jrtp4c->session->GetRTPSocket();
 }
 
 void jrtp4c_killread(struct jrtp4c *jrtp4c)
 {
+
+	jrtp4c->flags &= ~JF_READY;
 	jrtp4c->session->AbortWait();
 }
 
 int jrtp4c_read(struct jrtp4c *jrtp4c, void *data, int datalen, int *payload_type)
 {
-	RTPPacket *pack;
-	int slen = 0;
+	RTPPacket *pack = NULL;
+	int status, slen = 0;
 	bool hasdata = 0;
 
-	*payload_type = 0;
+	*payload_type = -1;
+
+	if (!(jrtp4c->flags & JF_READY)) {
+		return -1;
+	}
+
+	jrtp4c->flags |= JF_READ;
+
+	if ((status = jrtp4c->session->Poll()) < 0) {
+		jrtp4c->flags &= ~JF_READ;
+		return status;
+	}
+
+	if (!(jrtp4c->flags & JF_READY)) {
+		jrtp4c->flags &= ~JF_READ;
+		return -1;
+	}
 
 	jrtp4c->session->BeginDataAccess();
+	//jrtp4c->session->WaitForIncomingData(RTPTime(.5), &hasdata);
 
-	jrtp4c->session->WaitForIncomingData(RTPTime(.5), &hasdata);
+	/*
+	if (!(jrtp4c->flags & JF_READY)) {
+		jrtp4c->session->EndDataAccess();
+		jrtp4c->flags &= ~JF_READ;
+		return -1;
+	}
+	
+	if (!hasdata) {
+		jrtp4c->session->EndDataAccess();
+		jrtp4c->flags &= ~JF_READ;
+		return 0;
+	}
+	*/
 
 	if (!jrtp4c->session->GotoFirstSourceWithData()) {
 		jrtp4c->session->EndDataAccess();
+		jrtp4c->flags &= ~JF_READ;
 		return 0;
 	}
 
@@ -179,7 +230,6 @@ int jrtp4c_read(struct jrtp4c *jrtp4c, void *data, int datalen, int *payload_typ
 			slen = datalen;
 		}
 
-		
 		*payload_type = pack->GetPayloadType();
 
 		memcpy(data, pack->GetPayloadData(), slen);
@@ -187,29 +237,52 @@ int jrtp4c_read(struct jrtp4c *jrtp4c, void *data, int datalen, int *payload_typ
 		delete pack;
 	}
 	jrtp4c->session->EndDataAccess();
-
+	jrtp4c->flags &= ~JF_READ;
 	return slen;
 
 }
 
 int jrtp4c_write(struct jrtp4c *jrtp4c, void *data, int datalen, uint32_t ts)
 {
-	return jrtp4c->session->SendPacket(data, datalen, jrtp4c->payload, false, ts);
+	int ret;
+
+	if (!(jrtp4c->flags & JF_READY)) {
+		return -1;
+	}
+
+	jrtp4c->flags |= JF_WRITE;
+	ret = jrtp4c->session->SendPacket(data, datalen, jrtp4c->payload, false, ts);
+	jrtp4c->flags &= ~JF_WRITE;
+
+	return ret;
 }
 
 int jrtp4c_write_payload(struct jrtp4c *jrtp4c, void *data, int datalen, int payload, uint32_t ts, uint32_t mseq)
 {
-	return jrtp4c->session->SendPacket(data, datalen, payload, false, ts, mseq);
+	int ret;
+
+	if (!(jrtp4c->flags & JF_READY)) {
+		return -1;
+	}
+
+	jrtp4c->flags |= JF_WRITE;
+	ret = jrtp4c->session->SendPacket(data, datalen, payload, false, ts, mseq);
+	jrtp4c->flags &= ~JF_WRITE;
+
+	return ret;
 }
 
 uint32_t jrtp4c_start(struct jrtp4c *jrtp4c)
 {
-	//jrtp4c->session->BeginDataAccess();
+	jrtp4c->flags |= JF_RUNNING;
 	return 0;
 }
 
 uint32_t jrtp4c_get_ssrc(struct jrtp4c *jrtp4c)
 {
+	if (!(jrtp4c->flags & JF_READY)) {
+		return -1;
+	}
 	return jrtp4c->ssrc;
 }
 

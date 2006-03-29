@@ -43,7 +43,7 @@
 static const char modname[] = "mod_exosip";
 #define STRLEN 15
 
-static switch_memory_pool *module_pool;
+static switch_memory_pool *module_pool = NULL;
 
 typedef enum {
 	PFLAG_ANSWER = (1 << 0),

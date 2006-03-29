@@ -124,6 +124,7 @@ RANLIB = @RANLIB@
 RTP_ENDIAN = @RTP_ENDIAN@
 RTP_FILIO = @RTP_FILIO@
 RTP_HAVE_SOCKADDR_LEN = @RTP_HAVE_SOCKADDR_LEN@
+RTP_JTHREADINCLUDES = @RTP_JTHREADINCLUDES@
 RTP_LINKLIBS = @RTP_LINKLIBS@
 RTP_SOCKIO = @RTP_SOCKIO@
 RTP_SOCKLENTYPE_UINT = @RTP_SOCKLENTYPE_UINT@
@@ -185,7 +186,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = src tools doc pkgconfig
+SUBDIRS = src 
 EXTRA_DIST = LICENSE.MIT ChangeLog README.TXT jrtplib.dsw jrtplib.dsp jrtplib.vcproj \
 	     jrtplib.sln jrtplib_wce.vcproj jrtplib_wce.sln
 

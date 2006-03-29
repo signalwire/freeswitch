@@ -50,7 +50,7 @@
 
 static const char modname[] = "mod_woomera";
 
-static switch_memory_pool *module_pool;
+static switch_memory_pool *module_pool = NULL;
 
 #define STRLEN 15
 #define FRAME_LEN 480

@@ -44,7 +44,7 @@
 
 static const char modname[] = "mod_iax";
 
-static switch_memory_pool *module_pool;
+static switch_memory_pool *module_pool = NULL;
 static int running = 1;
 
 

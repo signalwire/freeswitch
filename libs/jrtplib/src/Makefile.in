@@ -67,7 +67,7 @@ am_libjrtp_la_OBJECTS = rtpdebug.lo rtpsession.lo rtperrors.lo \
 	rtcppacket.lo rtcpcompoundpacketbuilder.lo rtprandom.lo \
 	rtcpscheduler.lo rtcppacketbuilder.lo rtpsessionsources.lo \
 	rtpcollisionlist.lo rtpipv6address.lo rtpudpv6transmitter.lo \
-	rtptimeutilities.lo jmutex.lo jthread.lo
+	rtptimeutilities.lo
 libjrtp_la_OBJECTS = $(am_libjrtp_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -149,6 +149,7 @@ RANLIB = @RANLIB@
 RTP_ENDIAN = @RTP_ENDIAN@
 RTP_FILIO = @RTP_FILIO@
 RTP_HAVE_SOCKADDR_LEN = @RTP_HAVE_SOCKADDR_LEN@
+RTP_JTHREADINCLUDES = @RTP_JTHREADINCLUDES@
 RTP_LINKLIBS = @RTP_LINKLIBS@
 RTP_SOCKIO = @RTP_SOCKIO@
 RTP_SOCKLENTYPE_UINT = @RTP_SOCKLENTYPE_UINT@
@@ -225,8 +226,7 @@ libjrtp_la_SOURCES = rtpdebug.cpp rtpsession.cpp rtpconfig_win.h \
 		     rtprandom.cpp rtcpscheduler.cpp \
 		     rtcppacketbuilder.cpp rtpsessionsources.cpp \
 		     rtpcollisionlist.cpp rtpipv6address.cpp \
-		     rtpudpv6transmitter.cpp rtptimeutilities.cpp \
-		     pthread/jmutex.cpp pthread/jthread.cpp
+		     rtpudpv6transmitter.cpp rtptimeutilities.cpp
 
 libjrtp_la_LDFLAGS = -release 3.5.2 @RTP_LINKLIBS@
 libjrtpinclude_HEADERS = rtcpapppacket.h rtcpbyepacket.h rtcpcompoundpacket.h \
@@ -242,9 +242,9 @@ libjrtpinclude_HEADERS = rtcpapppacket.h rtcpbyepacket.h rtcpcompoundpacket.h \
 			 rtptypes_win.h rtpudpv4transmitter.h rtpsessionsources.h \
 			 rtpcollisionlist.h rtpipv6address.h rtpipv6destination.h \
 			 rtpudpv6transmitter.h rtptypes.h rtptypes_unix.h \
-			 jmutex.h jthread.h jrtp4c.h jmutexautolock.h
+			 jrtp4c.h
 
-EXTRA_DIST = rtpconfig_unix.h.in win32/jthread.cpp win32/jmutex.cpp
+EXTRA_DIST = rtpconfig_unix.h.in
 libjrtpincludedir = ${includedir}/jrtplib3
 all: all-am
 
@@ -317,9 +317,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jmutex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jrtp4c.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jthread.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtcpapppacket.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtcpbyepacket.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtcpcompoundpacket.Plo@am__quote@
@@ -371,20 +369,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
-
-jmutex.lo: pthread/jmutex.cpp
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT jmutex.lo -MD -MP -MF "$(DEPDIR)/jmutex.Tpo" -c -o jmutex.lo `test -f 'pthread/jmutex.cpp' || echo '$(srcdir)/'`pthread/jmutex.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/jmutex.Tpo" "$(DEPDIR)/jmutex.Plo"; else rm -f "$(DEPDIR)/jmutex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='pthread/jmutex.cpp' object='jmutex.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o jmutex.lo `test -f 'pthread/jmutex.cpp' || echo '$(srcdir)/'`pthread/jmutex.cpp
-
-jthread.lo: pthread/jthread.cpp
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT jthread.lo -MD -MP -MF "$(DEPDIR)/jthread.Tpo" -c -o jthread.lo `test -f 'pthread/jthread.cpp' || echo '$(srcdir)/'`pthread/jthread.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/jthread.Tpo" "$(DEPDIR)/jthread.Plo"; else rm -f "$(DEPDIR)/jthread.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='pthread/jthread.cpp' object='jthread.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o jthread.lo `test -f 'pthread/jthread.cpp' || echo '$(srcdir)/'`pthread/jthread.cpp
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -462,7 +446,6 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/win32
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

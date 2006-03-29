@@ -69,8 +69,71 @@ dnl ---------------------------------------------------------------------------
 dnl Check for the jthread headers
 dnl ---------------------------------------------------------------------------
 
-RTP_SUPPORT_THREAD="#define RTP_SUPPORT_THREAD"
-RTP_LINKLIBS="$RTP_LINKLIBS -lpthread"
+AC_ARG_ENABLE(jthread,[  --disable-jthread       Disable support for JThread],[
+	if test "$enableval" = yes ; then
+		checkjthread="yes"
+	else
+		checkjthread="no"
+	fi],[
+	checkjthread="yes"
+	])
+
+if test "$checkjthread" = "yes" ; then
+	searchdirs="/usr/include/jthread /usr/local/include/jthread"
+
+	AC_MSG_CHECKING(for JThread include files)
+	AC_ARG_WITH(jthread-includes,[  --with-jthread-includes Directory where JThread include files are located],
+		[
+		if test -e "$withval"/jthread.h && test -e "$withval"/jmutex.h ; then
+			AC_MSG_RESULT(in "$withval")
+			AC_MSG_CHECKING(JThread version)
+			AC_COMPILE_IFELSE([ 
+				#include "$withval/jthread.h"
+				class MyThread : public JThread
+				{
+				public:
+					void *Thread() { JThread::ThreadStarted(); return 0; }
+				};],[
+				RTP_JTHREADINCLUDES="-I $withval"
+				RTP_SUPPORT_THREAD="#define RTP_SUPPORT_THREAD"
+				RTP_LINKLIBS="$RTP_LINKLIBS -ljthread -lpthread"
+				AC_MSG_RESULT(>= 1.1.0) ],[
+				AC_MSG_RESULT(< 1.1.0)
+				AC_MSG_WARN(You need at least JThread version 1.1.0. Support for JThread has been disabled)])
+		else
+			AC_MSG_RESULT(not found)
+			AC_MSG_WARN(The JThread include files were not found in $withval. Support for JThread has been disabled)
+		fi
+		],
+		[
+			for i in $searchdirs ; do
+				if test -e $i/jthread.h && test -e $i/jmutex.h ; then
+					RTP_JTHREADINCLUDEDIR="$i"
+					AC_MSG_RESULT($i)
+					break
+				fi
+			done
+			if test "BLAAI$RTP_JTHREADINCLUDEDIR" = "BLAAI" ; then
+				AC_MSG_RESULT(not found)
+				AC_MSG_WARN(Unable to locate the JThread include files. Please specify the include path with --with-jthread-includes if they exist on your system. JThread support has been disabled)
+			else
+				AC_MSG_CHECKING(JThread version)
+				AC_COMPILE_IFELSE([ 
+					#include "$RTP_JTHREADINCLUDEDIR/jthread.h"
+					class MyThread : public JThread
+					{
+					public:
+						void *Thread() { JThread::ThreadStarted(); return 0; }
+					};],[
+					RTP_JTHREADINCLUDES="-I $RTP_JTHREADINCLUDEDIR"
+					RTP_SUPPORT_THREAD="#define RTP_SUPPORT_THREAD"
+					RTP_LINKLIBS="$RTP_LINKLIBS -ljthread -lpthread"
+					AC_MSG_RESULT(>= 1.1.0) ],[
+					AC_MSG_RESULT(< 1.1.0)
+					AC_MSG_WARN(You need at least JThread version 1.1.0. Support for JThread has been disabled)])
+			fi
+		])
+fi
 	
 dnl ---------------------------------------------------------------------------
 dnl Check if sys/filio.h exists (used on solaris)
@@ -360,11 +423,13 @@ AC_CHECK_HEADER(ifaddrs.h,[RTP_SUPPORT_IFADDRS="#define RTP_SUPPORT_IFADDRS"])
 dnl ---------------------------------------------------------------------------
 dnl Finish up...
 dnl ---------------------------------------------------------------------------
+AM_CONDITIONAL(IS64BITLINUX, [test `uname -m` = x86_64])
 
 AC_SUBST(RTP_FILIO)
 AC_SUBST(RTP_SOCKIO)
 AC_SUBST(RTP_ENDIAN)
 AC_SUBST(RTP_SOCKLENTYPE_UINT)
+AC_SUBST(RTP_JTHREADINCLUDES)
 AC_SUBST(RTP_HAVE_SOCKADDR_LEN)
 AC_SUBST(RTP_SUPPORT_IPV4MULTICAST)
 AC_SUBST(RTP_SUPPORT_THREAD)
@@ -383,10 +448,10 @@ AC_OUTPUT(Makefile \
 	  src/rtpconfig_unix.h \
 	  doc/Makefile \
 	  tools/Makefile \
+	  examples/Makefile \
           pkgconfig/Makefile \
           pkgconfig/jrtplib.pc \
           pkgconfig/jrtplib-uninstalled.pc \
           )
 
 
-AM_CONDITIONAL(IS64BITLINUX, [test `uname -m` = x86_64])

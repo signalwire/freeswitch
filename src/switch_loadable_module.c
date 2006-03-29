@@ -134,7 +134,6 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 
 	if (err) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error Loading module %s\n**%s**\n", filename, err);
-		apr_dso_unload(dso);
 		return SWITCH_STATUS_GENERR;
 	}
 

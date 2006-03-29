@@ -41,7 +41,7 @@
 
 static const char modname[] = "mod_portaudio";
 
-static switch_memory_pool *module_pool;
+static switch_memory_pool *module_pool = NULL;
 //static int running = 1;
 
 #define SAMPLE_TYPE  paInt16

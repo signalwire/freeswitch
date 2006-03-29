@@ -2140,6 +2140,11 @@ static void js_thread_launch(char *text)
 static switch_status launch_async(char *text, char *out, size_t outlen)
 {
 
+	if (switch_strlen_zero(text)) {
+		switch_copy_string(out, "INVALID", outlen);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	js_thread_launch(text);
 	switch_copy_string(out, "OK", outlen);
 	return SWITCH_STATUS_SUCCESS;

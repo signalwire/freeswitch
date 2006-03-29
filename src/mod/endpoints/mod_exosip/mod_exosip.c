@@ -42,7 +42,7 @@
 static const char modname[] = "mod_exosip";
 #define STRLEN 15
 
-static switch_memory_pool *module_pool;
+static switch_memory_pool *module_pool = NULL;
 
 
 
@@ -178,8 +178,12 @@ static void sdp_add_rfc2833(struct osip_rfc3264 *cnf, int rate);
 static struct private_object *get_pvt_by_call_id(int id)
 {
 	char name[50];
+	struct private_object *tech_pvt = NULL;
 	snprintf(name, sizeof(name), "%d", id);
-	return (struct private_object *) switch_core_hash_find(globals.call_hash, name);
+	eXosip_lock();
+	tech_pvt = (struct private_object *) switch_core_hash_find(globals.call_hash, name);
+	eXosip_unlock();
+	return tech_pvt;
 }
 
 static switch_status exosip_on_execute(switch_core_session *session)
@@ -376,16 +380,15 @@ static switch_status exosip_on_hangup(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	deactivate_rtp(tech_pvt);
 
+	eXosip_lock();
 	switch_core_hash_delete(globals.call_hash, tech_pvt->call_id);
-
-
 	switch_set_flag(tech_pvt, TFLAG_BYE);
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 
-	deactivate_rtp(tech_pvt);
-
 	i = eXosip_call_terminate(tech_pvt->cid, tech_pvt->did);
+	eXosip_unlock();
 
 	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -412,7 +415,8 @@ static switch_status exosip_on_transmit(switch_core_session *session)
 
 static void deactivate_rtp(struct private_object *tech_pvt)
 {
-	int loops = 0;
+	int loops = 0;//, sock = -1;
+
 	if (tech_pvt->rtp_session) {
 		switch_mutex_lock(tech_pvt->rtp_lock);
 
@@ -420,7 +424,11 @@ static void deactivate_rtp(struct private_object *tech_pvt)
 			switch_yield(10000);
 			loops++;
 		}
-
+		/*
+		if ((sock = jrtp4c_get_rtp_socket(tech_pvt->rtp_session)) > -1) {
+			close(sock);
+		}
+		*/
 		jrtp4c_destroy(&tech_pvt->rtp_session);
 		tech_pvt->rtp_session = NULL;
 		switch_mutex_unlock(tech_pvt->rtp_lock);
@@ -792,6 +800,10 @@ static switch_status exosip_kill_channel(switch_core_session *session, int sig)
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 	switch_set_flag(tech_pvt, TFLAG_BYE);
 
+	if (tech_pvt->rtp_session) {
+		jrtp4c_killread(tech_pvt->rtp_session);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 
 }
@@ -878,17 +890,19 @@ static switch_status exosip_receive_message(switch_core_session *session, switch
 				/* Transmit 183 Progress with SDP */
 				eXosip_lock();
 				eXosip_call_build_answer(tech_pvt->tid, 183, &progress);
-				sdp_message_to_str(tech_pvt->local_sdp, &buf);
-				osip_message_set_body(progress, buf, strlen(buf));
-				osip_message_set_content_type(progress, "application/sdp");
-				free(buf);
-				eXosip_call_send_answer(tech_pvt->tid, 183, progress);
+				if (progress) {
+					sdp_message_to_str(tech_pvt->local_sdp, &buf);
+					osip_message_set_body(progress, buf, strlen(buf));
+					osip_message_set_content_type(progress, "application/sdp");
+					free(buf);
+					eXosip_call_send_answer(tech_pvt->tid, 183, progress);
+					switch_set_flag(tech_pvt, TFLAG_EARLY_MEDIA);
+					switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+				}
 				eXosip_unlock();
-				switch_set_flag(tech_pvt, TFLAG_EARLY_MEDIA);
-				switch_channel_set_flag(channel, CF_EARLY_MEDIA);
 			}
 		}
-
+		
 		break;
 	default:
 		break;
@@ -1003,6 +1017,9 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
+
+	switch_mutex_init(&globals.port_lock, SWITCH_MUTEX_NESTED, module_pool);
+	switch_core_hash_init(&globals.call_hash, module_pool);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &exosip_module_interface;
@@ -1163,7 +1180,9 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		tech_pvt->remote_sdp_audio_port = atoi(remote_med->m_port);
 
 		snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", event->cid);
+		eXosip_lock();
 		switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);
+		eXosip_unlock();
 
 		if (!dname) {
 			exosip_on_hangup(session);
@@ -1530,7 +1549,7 @@ static int config_exosip(int reload)
 	char *cf = "exosip.conf";
 
 	globals.bytes_per_frame = DEFAULT_BYTES_PER_FRAME;
-	switch_core_hash_init(&globals.call_hash, module_pool);
+
 
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
@@ -1590,7 +1609,6 @@ static int config_exosip(int reload)
 		set_global_dialplan("default");
 	}
 
-	switch_mutex_init(&globals.port_lock, SWITCH_MUTEX_NESTED, module_pool);
 
 	/* Setup the user agent */
 	eXosip_set_user_agent("FreeSWITCH");

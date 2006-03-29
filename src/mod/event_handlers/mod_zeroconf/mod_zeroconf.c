@@ -34,7 +34,7 @@
 
 static const char modname[] = "mod_zeroconf";
 
-static switch_memory_pool *module_pool;
+static switch_memory_pool *module_pool = NULL;
 
 static struct {
 	sw_discovery discovery;

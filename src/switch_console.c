@@ -33,16 +33,11 @@
 #include <switch.h>
 #define CMD_BUFLEN SWITCH_RECCOMMENDED_BUFFER_SIZE * 10
 
-static int switch_console_process(char *cmd)
+static int switch_console_process(char *cmd, char *retbuf, int retlen)
 {
 	char *arg = NULL;
-	char *retbuf = (char *)malloc(CMD_BUFLEN);
 
-#ifdef EMBED_PERL
-	const char *perlhelp = "perl - execute some perl. (print to STDERR if you want to see it.)\n";
-#else
-	const char *perlhelp = "";
-#endif
+
 	if (!strcmp(cmd, "shutdown") || !strcmp(cmd, "...")) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bye!\n");
 		return 0;
@@ -55,18 +50,10 @@ static int switch_console_process(char *cmd)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE,
 							  "\n"
 							  "Valid Commands:\n\n"
-							  "version\n" "help - umm yeah..\n" "%sshutdown - stop the program\n\n", perlhelp);
+							  "version\n" "help - umm yeah..\n" "shutdown - stop the program\n\n");
 		return 1;
 	}
 
-#ifdef EMBED_PERL
-	if (!strncmp(cmd, "perl ", 5)) {
-		cmd += 5;
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Executing perl code [%s]\n", cmd);
-		switch_core_do_perl(cmd);
-		return 1;
-	}
-#endif
 	if ((arg = strchr(cmd, '\r')) != 0  || (arg = strchr(cmd, '\n')) != 0 )  {
 		*arg = '\0';
 		arg = NULL;
@@ -74,7 +61,7 @@ static int switch_console_process(char *cmd)
 	if ((arg = strchr(cmd, ' ')) != 0) {
 		*arg++ = '\0';
 	}
-	if (switch_api_execute(cmd, arg, retbuf, CMD_BUFLEN) == SWITCH_STATUS_SUCCESS) {
+	if (switch_api_execute(cmd, arg, retbuf, retlen) == SWITCH_STATUS_SUCCESS) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "",
 							  retbuf);
 	} else {
@@ -144,7 +131,10 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	char hostname[256];
 	char cmd[2048];
 	int running = 1, x = 0, activity = 1;
+	char *retbuf = (char *)malloc(CMD_BUFLEN);
 
+
+	assert(retbuf != NULL);
 	gethostname(hostname, sizeof(hostname));
 
 
@@ -169,8 +159,10 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 			}
 		}
 		if (cmd[0]) {
-			running = switch_console_process(cmd);
+			running = switch_console_process(cmd, retbuf, CMD_BUFLEN);
 		}
 	}
+	
+	free(retbuf);
 
 }

@@ -1,4 +1,4 @@
-SUBDIRS = src tools doc pkgconfig
+SUBDIRS = src 
 EXTRA_DIST = LICENSE.MIT ChangeLog README.TXT jrtplib.dsw jrtplib.dsp jrtplib.vcproj \
 	     jrtplib.sln jrtplib_wce.vcproj jrtplib_wce.sln
 

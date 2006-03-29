@@ -84,7 +84,7 @@ struct switch_directories {
 typedef struct switch_directories switch_directories;
 SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 
-#define SWITCH_RECCOMMENDED_BUFFER_SIZE 131072
+#define SWITCH_RECCOMMENDED_BUFFER_SIZE 2048
 #define SWITCH_MAX_CODECS 30
 #define SWITCH_MAX_STATE_HANDLERS 30
 #define SWITCH_TRUE 1

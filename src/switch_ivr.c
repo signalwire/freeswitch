@@ -773,7 +773,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 		//switch_yield(1000);
 	}
 
-
+	data->running = 0;
 
 	if (switch_channel_test_flag(chan_a, CF_ORIGINATOR)) {
 		if (!switch_channel_test_flag(chan_b, CF_TRANSFER)) {
@@ -783,16 +783,18 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 		switch_channel_clear_flag(chan_a, CF_ORIGINATOR);
 	}
 	
-	data->running = 0;
-	
-	if (his_thread->running > 0) {
+	while (his_thread->running > 0) {
 		his_thread->running = -1;
 		/* wait for the other audio thread */
-		while (his_thread->running) {
+		while (his_thread->running == -1) {
 			switch_yield(1000);
 		}
 	}
-	switch_sleep(500000);
+
+	data->running = 0;		
+	switch_sleep(200000);
+	data->running = 0;
+
 	return NULL;
 }
 
@@ -839,7 +841,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	switch_channel *caller_channel, *peer_channel;
 	time_t start;
 	int stream_id = 0;
-	switch_frame *read_frame;
+	switch_frame *read_frame = NULL;
 
 	
 
@@ -903,7 +905,6 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 
 		/* read from the channel while we wait if the audio is up on it */
 		if (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
-
 			if (switch_core_session_read_frame(session, &read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}

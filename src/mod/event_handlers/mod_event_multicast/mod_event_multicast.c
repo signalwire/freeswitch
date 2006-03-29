@@ -33,7 +33,7 @@
 
 static const char modname[] = "mod_event_multicast";
 
-static switch_memory_pool *module_pool;
+static switch_memory_pool *module_pool = NULL;
 
 static struct {
 	char *address;
