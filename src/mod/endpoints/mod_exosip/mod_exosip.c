@@ -90,7 +90,6 @@ static struct {
 	switch_mutex_t *port_lock;
 	int running;
 	int codec_ms;
-	int supress_telephony_events;
 	int dtmf_duration;
 	unsigned int flags;
 } globals;
@@ -637,7 +636,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			}
 
 
-			if (globals.supress_telephony_events && payload != tech_pvt->payload_num) {
+			if (payload != tech_pvt->payload_num) {
 				tech_pvt->read_frame.datalen = 0;
 				switch_yield(1000);
 				continue;
@@ -1582,8 +1581,6 @@ static int config_exosip(int reload)
 				globals.rtp_end = atoi(val);
 			} else if (!strcmp(var, "codec_ms")) {
 				globals.codec_ms = atoi(val);
-			} else if (!strcmp(var, "supress_telephony_events")) {
-				globals.supress_telephony_events = switch_true(val);
 			} else if (!strcmp(var, "dtmf_duration")) {
 				int dur = atoi(val);
 				if (dur > 10 && dur < 8000) {

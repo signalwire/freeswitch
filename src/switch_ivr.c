@@ -792,9 +792,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	}
 
 	data->running = 0;		
-	switch_sleep(200000);
-	data->running = 0;
-
+	switch_sleep(500000);
 	return NULL;
 }
 

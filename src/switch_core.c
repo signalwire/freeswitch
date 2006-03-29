@@ -2080,7 +2080,7 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 			ts->pool = pool;
 		}
 		ts->objs[0] = obj;
-
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_thread_create(&thread, thd_attr, func, ts, pool);
 	}
 
@@ -2114,6 +2114,7 @@ SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session *sess
 	switch_threadattr_detach_set(thd_attr, 1);
 
 	if (! session->thread_running) {
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		if (switch_thread_create(&thread, thd_attr, switch_core_session_thread, session, session->pool) != SWITCH_STATUS_SUCCESS) {
 			switch_core_session_destroy(&session);
 		}
@@ -2128,6 +2129,7 @@ SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *sess
 	switch_threadattr_create(&thd_attr, session->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, func, obj, session->pool);
 
 }

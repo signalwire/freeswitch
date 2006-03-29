@@ -338,6 +338,8 @@ typedef apr_threadattr_t switch_threadattr_t;
 #define SWITCH_THREAD_FUNC APR_THREAD_FUNC
 typedef apr_thread_start_t switch_thread_start_t;
 
+#define switch_threadattr_stacksize_set apr_threadattr_stacksize_set
+
 /**
  * Create and initialize a new threadattr variable
  * @param new_attr The newly created threadattr.
