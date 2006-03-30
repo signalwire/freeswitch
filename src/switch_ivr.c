@@ -691,7 +691,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	switch_dtmf_callback_function dtmf_callback;
 	void *user_data;
 
-	assert(thread != NULL);
+	assert(!thread || thread);
 	switch_channel *chan_a, *chan_b;
 	switch_frame *read_frame;
 	switch_core_session *session_a, *session_b;
