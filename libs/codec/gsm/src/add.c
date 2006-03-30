@@ -18,8 +18,7 @@
 #include	"gsm.h"
 #include	"proto.h"
 
-#define	saturate(x) 	\
-	((x) < MIN_WORD ? MIN_WORD : (x) > MAX_WORD ? MAX_WORD: (x))
+#define	saturate(x)	((x) < MIN_WORD ? MIN_WORD : (x) > MAX_WORD ? MAX_WORD: (x))
 
 word gsm_add P2((a,b), word a, word b)
 {
