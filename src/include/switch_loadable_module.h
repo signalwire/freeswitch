@@ -165,7 +165,6 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool,
 
 /*!
   \brief Retrieve the list of loaded codecs into an array based on another array showing the sorted order
-  \param pool the memory pool to use for the hash index
   \param array the array to populate
   \param arraylen the max size in elements of the array
   \param prefs the array of preferred codec names
@@ -173,8 +172,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool,
   \return the number of elements added to the array
   \note this function only considers codecs that are listed in the "prefs" array and ignores the rest.
 */
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool *pool,
-															 switch_codec_interface **array,
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_codec_interface **array,
 															 int arraylen, 
 															 char **prefs, 
 															 int preflen);
@@ -187,7 +185,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool 
   \param len the length in bytes of retbuf
   \return the status returned by the API call
 */
-SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *retbuf, size_t len);
+SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *retbuf, switch_size_t len);
 
 /* Prototypes of module interface functions */
 

@@ -33,6 +33,9 @@
 #define HAVE_CURL
 #endif
 #define JS_BUFFER_SIZE 131072
+#ifdef __ICC
+#pragma warning (disable:310 193 1418)
+#endif
 #include <switch.h>
 
 #include "jstypes.h"
@@ -1363,8 +1366,8 @@ static JSBool db_fetch(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 	}
 	for (x = 0; x < colcount; x++) {
 		snprintf(code, sizeof(code), "~_dB_RoW_DaTa_[\"%s\"] = \"%s\"", 
-				 switch_core_db_column_name(dbo->stmt, x),
-				 switch_core_db_column_text(dbo->stmt, x));
+				 (char *) switch_core_db_column_name(dbo->stmt, x),
+				 (char *) switch_core_db_column_text(dbo->stmt, x));
 
 		eval_some_js(code, dbo->cx, dbo->obj, rval);
 		if (*rval == JS_FALSE) {
@@ -1517,7 +1520,7 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 								   (read_codec->implementation->samples_per_second / 50) * read_codec->implementation->number_of_channels,
 								   pool) == SWITCH_STATUS_SUCCESS) {
 			tto->timer = &tto->timer_base;
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Timer INIT Success %d\n", ms);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Timer INIT Success %u\n", ms);
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Timer INIT Failed\n");
 		}
@@ -1653,9 +1656,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			}
 			
 			if (tto->timer) {
-				int x;
-
-				if ((x = switch_core_timer_next(tto->timer)) < 0) {
+				if (switch_core_timer_next(tto->timer)< 0) {
 					break;
 				}
 
@@ -1850,7 +1851,7 @@ static JSBool js_email(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 		if ( argc > 4) {
 			file = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
 		}
-		snprintf(filename, 80, "%smail.%ld", SWITCH_GLOBAL_dirs.temp_dir, switch_time_now());
+		snprintf(filename, 80, "%smail.%ld%04x", SWITCH_GLOBAL_dirs.temp_dir, time(NULL), rand() & 0xffff);
 
 		if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
 			if (file) {
@@ -2051,7 +2052,7 @@ static int env_init(JSContext *cx, JSObject *javascript_object)
 
 static void js_parse_and_execute(switch_core_session *session, char *input_code)
 {
-	JSObject *javascript_global_object = NULL, *session_obj = NULL;
+	JSObject *javascript_global_object = NULL;
 	char buf[1024], *script, *arg, *argv[512];
 	int argc = 0, x = 0, y = 0;
 	unsigned int flags = 0;
@@ -2067,7 +2068,7 @@ static void js_parse_and_execute(switch_core_session *session, char *input_code)
 		JS_SetGlobalObject(cx, javascript_global_object);
 
 		/* Emaculent conception of session object into the script if one is available */
-		if (session && (session_obj = new_js_session(cx, javascript_global_object, session, &jss, "session", flags))) {
+		if (session && new_js_session(cx, javascript_global_object, session, &jss, "session", flags)) {
 			JS_SetPrivate(cx, javascript_global_object, session);
 		}
 	} else {

@@ -33,11 +33,11 @@
 
 struct switch_buffer {
 	unsigned char *data;
-	size_t used;
-	size_t datalen;
+	switch_size_t used;
+	switch_size_t datalen;
 };
 
-SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool *pool, switch_buffer **buffer, size_t max_len)
+SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool *pool, switch_buffer **buffer, switch_size_t max_len)
 {
 	switch_buffer *new_buffer;
 
@@ -50,33 +50,33 @@ SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool *pool, swi
 	return SWITCH_STATUS_MEMERR;
 }
 
-SWITCH_DECLARE(int) switch_buffer_len(switch_buffer *buffer)
+SWITCH_DECLARE(switch_size_t) switch_buffer_len(switch_buffer *buffer)
 {
 
 	assert(buffer != NULL);
 
-	return (int) buffer->datalen;
+	return buffer->datalen;
 
 }
 
 
-SWITCH_DECLARE(int) switch_buffer_freespace(switch_buffer *buffer)
+SWITCH_DECLARE(switch_size_t) switch_buffer_freespace(switch_buffer *buffer)
 {
 	assert(buffer != NULL);
 
-	return (int) (buffer->datalen - buffer->used);
+	return (switch_size_t) (buffer->datalen - buffer->used);
 }
 
-SWITCH_DECLARE(size_t) switch_buffer_inuse(switch_buffer *buffer)
+SWITCH_DECLARE(switch_size_t) switch_buffer_inuse(switch_buffer *buffer)
 {
 	assert(buffer != NULL);
 
-	return (int) buffer->used;
+	return buffer->used;
 }
 
-SWITCH_DECLARE(int) switch_buffer_toss(switch_buffer *buffer, size_t datalen)
+SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer *buffer, switch_size_t datalen)
 {
-	size_t reading = 0;
+	switch_size_t reading = 0;
 
 	assert(buffer != NULL);
 
@@ -92,12 +92,12 @@ SWITCH_DECLARE(int) switch_buffer_toss(switch_buffer *buffer, size_t datalen)
 	memmove(buffer->data, buffer->data + reading, buffer->datalen - reading);
 	buffer->used -= datalen;
 
-	return (int) buffer->datalen;
+	return buffer->datalen;
 }
 
-SWITCH_DECLARE(int) switch_buffer_read(switch_buffer *buffer, void *data, size_t datalen)
+SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer *buffer, void *data, switch_size_t datalen)
 {
-	size_t reading = 0;
+	switch_size_t reading = 0;
 
 	assert(buffer != NULL);
 	assert(data != NULL);
@@ -116,12 +116,12 @@ SWITCH_DECLARE(int) switch_buffer_read(switch_buffer *buffer, void *data, size_t
 	memmove(buffer->data, buffer->data + reading, buffer->datalen - reading);
 	buffer->used -= reading;
 	//printf("o %d = %d\n", reading, buffer->used);
-	return (int) reading;
+	return reading;
 }
 
-SWITCH_DECLARE(int) switch_buffer_write(switch_buffer *buffer, void *data, size_t datalen)
+SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer *buffer, void *data, switch_size_t datalen)
 {
-	size_t freespace;
+	switch_size_t freespace;
 
 	assert(buffer != NULL);
 	assert(data != NULL);
@@ -136,7 +136,7 @@ SWITCH_DECLARE(int) switch_buffer_write(switch_buffer *buffer, void *data, size_
 		buffer->used += datalen;
 	}
 	//printf("i %d = %d\n", datalen, buffer->used);
-	return (int) buffer->used;
+	return buffer->used;
 }
 
 SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer *buffer)

@@ -33,6 +33,9 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */  
+#ifdef __ICC
+#pragma warning (disable:810 869 981 279 1469)
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

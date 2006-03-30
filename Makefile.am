@@ -57,7 +57,6 @@ src/include/switch_frame.h\
 src/include/switch_ivr.h\
 src/include/switch_loadable_module.h\
 src/include/switch_module_interfaces.h\
-src/include/switch_mutex.h\
 src/include/switch_platform.h\
 src/include/switch_resample.h\
 src/include/switch_sqlite.h\
@@ -71,7 +70,6 @@ src/switch_config.c \
 src/switch_console.c \
 src/switch_core.c \
 src/switch_loadable_module.c \
-src/switch_mutex.c \
 src/switch_utils.c \
 src/switch_event.c \
 src/switch_resample.c \
@@ -97,7 +95,6 @@ src/include/switch_frame.h\
 src/include/switch_ivr.h\
 src/include/switch_loadable_module.h\
 src/include/switch_module_interfaces.h\
-src/include/switch_mutex.h\
 src/include/switch_platform.h\
 src/include/switch_resample.h\
 src/include/switch_sqlite.h\

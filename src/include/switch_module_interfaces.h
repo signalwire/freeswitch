@@ -197,7 +197,7 @@ struct switch_timer {
 	/*! time interval expressed in milliseconds */
 	int interval;
 	/*! flags to control behaviour */
-	unsigned int flags;
+	uint32_t flags;
 	/*! sample count to increment by on each cycle */
 	unsigned int samples;
 	/*! current sample count based on samples parameter */
@@ -241,9 +241,9 @@ struct switch_file_interface {
 	/*! function to close the file */
 	switch_status (*file_close)(switch_file_handle *);
 	/*! function to read from the file */
-	switch_status (*file_read)(switch_file_handle *, void *data, size_t *len);
+	switch_status (*file_read)(switch_file_handle *, void *data, switch_size_t *len);
 	/*! function to write from the file */
-	switch_status (*file_write)(switch_file_handle *, void *data, size_t *len);
+	switch_status (*file_write)(switch_file_handle *, void *data, switch_size_t *len);
 	/*! function to seek to a certian position in the file */
 	switch_status (*file_seek)(switch_file_handle *, unsigned int *cur_pos, int64_t samples, int whence);
 	/*! list of supported file extensions */
@@ -256,7 +256,7 @@ struct switch_file_handle {
 	/*! the interface of the module that implemented the current file type */
 	const struct switch_file_interface *file_interface;
 	/*! flags to control behaviour */
-	unsigned int flags;
+	uint32_t flags;
 	/*! a file descriptor if neceessary */
 	switch_file_t *fd;
 	/*! samples position of the handle */
@@ -304,8 +304,8 @@ struct switch_speech_interface {
 	/*! function to read audio from the TTS*/
 	switch_status (*speech_read_tts)(switch_speech_handle *sh,
 									 void *data,
-									 size_t *datalen,
-									 size_t *rate,
+									 switch_size_t *datalen,
+									 switch_size_t *rate,
 									 switch_speech_flag *flags);
 
 	const struct switch_speech_interface *next;
@@ -317,7 +317,7 @@ struct switch_speech_handle {
 	/*! the interface of the module that implemented the current speech interface */
 	const struct switch_speech_interface *speech_interface;
 	/*! flags to control behaviour */
-	unsigned int flags;
+	uint32_t flags;
 
 	/*! the handle's memory pool */
 	switch_memory_pool *memory_pool;
@@ -350,7 +350,7 @@ struct switch_directory_handle {
 	/*! the interface of the module that implemented the current directory interface */
 	const struct switch_directory_interface *directory_interface;
 	/*! flags to control behaviour */
-	unsigned int flags;
+	uint32_t flags;
 
 	/*! the handle's memory pool */
 	switch_memory_pool *memory_pool;
@@ -405,7 +405,7 @@ struct switch_codec {
 	/*! codec settings for this handle */
 	struct switch_codec_settings codec_settings;
 	/*! flags to modify behaviour */
-	switch_codec_flag flags;
+	uint32_t flags;
 	/*! the handle's memory pool*/
 	switch_memory_pool *memory_pool;
 	/*! private data for the codec module to store handle specific info */
@@ -423,7 +423,7 @@ struct switch_codec_implementation {
 	/*! number of samples that denote one frame */
 	int samples_per_frame;
 	/*! number of bytes that denote one frame decompressed */
-	size_t bytes_per_frame;
+	switch_size_t bytes_per_frame;
 	/*! number of bytes that denote one frame compressed */
 	int encoded_bytes_per_frame;
 	/*! number of channels represented */
@@ -433,25 +433,25 @@ struct switch_codec_implementation {
 	/*! max number of frames to send in one network packet */
 	int max_frames_per_packet;
 	/*! function to initialize a codec handle using this implementation */
-	switch_status (*init)(switch_codec *, switch_codec_flag, const switch_codec_settings *codec_settings);
+	switch_status (*init)(switch_codec *, uint32_t, const switch_codec_settings *codec_settings);
 	/*! function to encode raw data into encoded data */
 	switch_status (*encode)(switch_codec *codec,
 						 switch_codec *other_codec,
 						 void *decoded_data,
-						 size_t decoded_data_len,
+						 switch_size_t decoded_data_len,
 						 int decoded_rate,
 						 void *encoded_data,
-						 size_t *encoded_data_len,
+						 switch_size_t *encoded_data_len,
 						 int *encoded_rate,
 						 unsigned int *flag);
 	/*! function to decode encoded data into raw data */
 	switch_status (*decode)(switch_codec *codec,
 						 switch_codec *other_codec,
 						 void *encoded_data,
-						 size_t encoded_data_len,
+						 switch_size_t encoded_data_len,
 						 int encoded_rate,
 						 void *decoded_data,
-						 size_t *decoded_data_len,
+						 switch_size_t *decoded_data_len,
 						 int *decoded_rate,
 						 unsigned int *flag);
 	/*! deinitalize a codec handle using this implementation */

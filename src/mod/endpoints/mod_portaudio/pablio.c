@@ -38,6 +38,10 @@
  * PLB021214 - check for valid stream in CloseAudioStream() to prevent hang.
  *             add timeOutMSec to CloseAudioStream() to prevent hang.
  */ 
+
+#ifdef __ICC
+#pragma warning (disable:810 869 981 279 1469)
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

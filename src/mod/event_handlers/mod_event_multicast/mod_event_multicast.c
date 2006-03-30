@@ -95,7 +95,6 @@ static void event_handler(switch_event *event)
 	switch (event->event_id) {
 	case SWITCH_EVENT_LOG:
 		return;
-		break;
 	default:
 		switch_event_serialize(event, buf, sizeof(buf), NULL);
 		len = strlen(buf);
@@ -191,7 +190,6 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 {
 	switch_event *local_event;
-	switch_status status;
 	char buf[1024];
 	
 	globals.running = 1;
@@ -199,7 +197,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 		switch_sockaddr_t addr = {0};
 		size_t len = sizeof(buf);
 		memset(buf, 0, len);
-		if ((status = switch_socket_recvfrom(&addr, globals.udp_socket, 0, buf, &len)) == SWITCH_STATUS_SUCCESS) {
+		if (switch_socket_recvfrom(&addr, globals.udp_socket, 0, buf, &len) == SWITCH_STATUS_SUCCESS) {
 			if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {
 				char *var, *val, *term = NULL;
 				switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");

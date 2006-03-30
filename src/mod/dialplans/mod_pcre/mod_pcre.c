@@ -42,7 +42,7 @@ static const char modname[] = "mod_pcre";
 				re = NULL;\
 			}
 
-switch_caller_extension *dialplan_hunt(switch_core_session *session)
+static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 {
 	switch_caller_profile *caller_profile;
 	switch_caller_extension *extension = NULL;

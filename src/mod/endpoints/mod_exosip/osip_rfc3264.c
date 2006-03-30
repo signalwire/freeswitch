@@ -17,6 +17,10 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#ifdef __ICC
+#pragma warning (disable:810 869 1418 981)
+#endif
+
 #include <stdlib.h>
 
 #include <osipparser2/osip_port.h>

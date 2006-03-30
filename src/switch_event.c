@@ -45,7 +45,7 @@ static switch_hash *CUSTOM_HASH = NULL;
 static int THREAD_RUNNING = 0;
 
 #if 0
-static void *locked_alloc(size_t len)
+static void *locked_alloc(switch_size_t len)
 {
 	void *mem;
 
@@ -146,6 +146,8 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void 
 	void *pop;
 	int i, len[3] = {0,0,0};
 
+	assert(thread != NULL);
+	assert(obj == NULL);
 	assert(POOL_LOCK != NULL);
 	assert(RUNTIME_POOL != NULL);
 	THREAD_RUNNING = 1;
@@ -161,10 +163,12 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void 
 		   ) {
 
 		for(i = 0; i < 3; i++) {
-			queue = queues[i];
-			while (queue && switch_queue_trypop(queue, &pop) == SWITCH_STATUS_SUCCESS) {
-				out_event = pop;
-				switch_event_deliver(&out_event);
+			if (len[i]) {
+				queue = queues[i];
+				while (queue && switch_queue_trypop(queue, &pop) == SWITCH_STATUS_SUCCESS) {
+					out_event = pop;
+					switch_event_deliver(&out_event);
+				}
 			}
 		}
 
@@ -361,7 +365,7 @@ SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, switc
 
 		header->name = DUP(header_name);
 		header->value = DUP(data);
-		if (((stack = SWITCH_STACK_TOP)) != 0) {
+		if (stack == SWITCH_STACK_TOP) {
 			header->next = event->headers;
 			event->headers = header;
 		} else {
@@ -404,10 +408,9 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event **event)
 
 	for (hp = ep->headers; hp;) {
 		this = hp;
-		FREE(hp->name);
-		FREE(hp->value);
 		hp = hp->next;
-		
+		FREE(this->name);
+		FREE(this->value);
 	}
 	FREE(ep->body);
 	FREE(ep);
@@ -448,9 +451,9 @@ SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_even
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, size_t buflen, char *fmt, ...)
+SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, switch_size_t buflen, char *fmt, ...)
 {
-	size_t len = 0;
+	switch_size_t len = 0;
 	switch_event_header *hp;
 	char *data = NULL, *body = NULL;
 	int ret = 0;
@@ -507,7 +510,7 @@ SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func,
 
 	switch_time_exp_t tm;
 	char date[80] = "";
-	size_t retsize;
+	switch_size_t retsize;
 
 	assert(BLOCK != NULL);
 	assert(RUNTIME_POOL != NULL);

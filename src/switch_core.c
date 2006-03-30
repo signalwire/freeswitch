@@ -33,7 +33,7 @@
 //#define DEBUG_ALLOC
 
 struct switch_core_session {
-	unsigned long id;
+	uint32_t id;
 	char name[80];
 	int thread_running;
 	switch_memory_pool *pool;
@@ -74,7 +74,7 @@ SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs;
 
 struct switch_core_runtime {
 	time_t initiated;
-	unsigned long session_id;
+	uint32_t session_id;
 	apr_pool_t *memory_pool;
 	switch_hash *session_table;
 	switch_core_db *db;
@@ -96,7 +96,7 @@ static void switch_core_standard_on_transmit(switch_core_session *session);
 /* The main runtime obj we keep this hidden for ourselves */
 static struct switch_core_runtime runtime;
 
-static void db_pick_path(char *dbname, char *buf, size_t size)
+static void db_pick_path(char *dbname, char *buf, switch_size_t size)
 {
 
 	memset(buf, 0, size);
@@ -227,7 +227,7 @@ SWITCH_DECLARE(switch_codec *) switch_core_session_get_write_codec(switch_core_s
 }
 
 SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, int rate, int ms,
-													 int channels, switch_codec_flag flags,
+													 int channels, uint32_t flags,
 													 const switch_codec_settings *codec_settings,
 													 switch_memory_pool *pool)
 {
@@ -282,10 +282,10 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 													   switch_codec *other_codec,
 													   void *decoded_data,
-													   size_t decoded_data_len,
+													   switch_size_t decoded_data_len,
 													   int decoded_rate,
 													   void *encoded_data,
-													   size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
+													   switch_size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
 {
 	assert(codec != NULL);
 	assert(encoded_data != NULL);
@@ -313,10 +313,10 @@ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 													   switch_codec *other_codec,
 													   void *encoded_data,
-													   size_t encoded_data_len,
+													   switch_size_t encoded_data_len,
 													   int encoded_rate,
 													   void *decoded_data,
-													   size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
+													   switch_size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
 {
 
 	assert(codec != NULL);
@@ -392,14 +392,14 @@ SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char
 	return fh->file_interface->file_open(fh, file_path);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_file_read(switch_file_handle *fh, void *data, size_t *len)
+SWITCH_DECLARE(switch_status) switch_core_file_read(switch_file_handle *fh, void *data, switch_size_t *len)
 {
 	assert(fh != NULL);
 
 	return fh->file_interface->file_read(fh, data, len);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_file_write(switch_file_handle *fh, void *data, size_t *len)
+SWITCH_DECLARE(switch_status) switch_core_file_write(switch_file_handle *fh, void *data, switch_size_t *len)
 {
 	assert(fh != NULL);
 
@@ -513,8 +513,8 @@ SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *
 
 SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
 														  void *data,
-														  size_t *datalen,
-														  size_t *rate,
+														  switch_size_t *datalen,
+														  switch_size_t *rate,
 														  switch_speech_flag *flags)
 {
 	assert(sh != NULL);
@@ -599,6 +599,7 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 	switch_frame *read_frame;
 	int stream_id = *stream_id_p;
 
+	assert(thread != NULL);
 	assert(session != NULL);
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -612,7 +613,6 @@ static void *switch_core_service_thread(switch_thread *thread, void *obj)
 		default:
 			data->running = -1;
 			continue;
-			break;
 		}
 
 		switch_yield(10000);
@@ -650,7 +650,7 @@ SWITCH_DECLARE(switch_memory_pool *) switch_core_session_get_pool(switch_core_se
 
 /* **ONLY** alloc things with this function that **WILL NOT** outlive
    the session itself or expect an earth shattering KABOOM!*/
-SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session *session, size_t memory)
+SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session *session, switch_size_t memory)
 {
 	void *ptr = NULL;
 	assert(session != NULL);
@@ -670,7 +670,7 @@ SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session *session, s
 /* **ONLY** alloc things with these functions that **WILL NOT** need
    to be freed *EVER* ie this is for *PERMENANT* memory allocation */
 
-SWITCH_DECLARE(void *) switch_core_permenant_alloc(size_t memory)
+SWITCH_DECLARE(void *) switch_core_permenant_alloc(switch_size_t memory)
 {
 	void *ptr = NULL;
 	assert(runtime.memory_pool != NULL);
@@ -688,7 +688,7 @@ SWITCH_DECLARE(void *) switch_core_permenant_alloc(size_t memory)
 SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup)
 {
 	char *duped = NULL;
-	size_t len;
+	switch_size_t len;
 
 	assert(runtime.memory_pool != NULL);
 
@@ -711,7 +711,7 @@ SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup)
 SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, char *todup)
 {
 	char *duped = NULL;
-	size_t len;
+	switch_size_t len;
 	assert(session != NULL);
 	assert(session->pool != NULL);
 
@@ -734,7 +734,7 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, 
 SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
 {
 	char *duped = NULL;
-	size_t len;
+	switch_size_t len;
 	assert(pool != NULL);
 
 	if (!todup) {
@@ -963,9 +963,9 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 				break;
 			default:
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s decoder error!\n",
+
 									  session->read_codec->codec_interface->interface_name);
 				return status;
-				break;
 			}
 		}
 		if (session->read_resampler) {
@@ -988,8 +988,8 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 				perfect = TRUE;
 			} else {
 				if (!session->raw_read_buffer) {
-					size_t bytes = session->read_codec->implementation->bytes_per_frame * 10;
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Engaging Read Buffer at %d bytes\n", bytes);
+					switch_size_t bytes = session->read_codec->implementation->bytes_per_frame * 10;
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Engaging Read Buffer at %u bytes\n", bytes);
 					switch_buffer_create(session->pool, &session->raw_read_buffer, bytes);
 				}
 				if (!switch_buffer_write(session->raw_read_buffer, read_frame->data, read_frame->datalen)) {
@@ -1013,13 +1013,14 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 				}
 				session->enc_read_frame.datalen = session->enc_read_frame.buflen;
 				status = switch_core_codec_encode(session->read_codec,
-												  (*frame)->codec,
-												  session->raw_read_frame.data,
-												  session->raw_read_frame.datalen,
-												  (*frame)->codec->implementation->samples_per_second,
+												  enc_frame->codec,
+												  enc_frame->data,
+												  enc_frame->datalen,
+												  enc_frame->codec->implementation->samples_per_second,
 												  session->enc_read_frame.data,
 												  &session->enc_read_frame.datalen,
-												  &session->enc_read_frame.rate, &flag);
+												  &session->enc_read_frame.rate, 
+												  &flag);
 
 
 				switch (status) {
@@ -1122,7 +1123,6 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				break;
 			case SWITCH_STATUS_BREAK:
 				return SWITCH_STATUS_SUCCESS;
-				break;
 			case SWITCH_STATUS_NOOP:
 				write_frame = frame;
 				status = SWITCH_STATUS_SUCCESS;
@@ -1131,7 +1131,6 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s decoder error!\n",
 									  frame->codec->codec_interface->interface_name);
 				return status;
-				break;
 			}
 		}
 		if (session->write_resampler) {
@@ -1155,9 +1154,9 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				perfect = TRUE;
 			} else {
 				if (!session->raw_write_buffer) {
-					size_t bytes = session->write_codec->implementation->bytes_per_frame * 10;
+					switch_size_t bytes = session->write_codec->implementation->bytes_per_frame * 10;
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-										  "Engaging Write Buffer at %d bytes to accomodate %d->%d\n",
+										  "Engaging Write Buffer at %u bytes to accomodate %u->%u\n",
 										  bytes,
 										  write_frame->datalen, session->write_codec->implementation->bytes_per_frame);
 					if ((status =
@@ -1202,15 +1201,14 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 										  session->read_codec->codec_interface->interface_name);
 					write_frame = NULL;
 					return status;
-					break;
 				}
 
 				status = perform_write(session, write_frame, timeout, io_flag, stream_id);
 				return status;
 			} else {
-				size_t used = switch_buffer_inuse(session->raw_write_buffer);
-				size_t bytes = session->write_codec->implementation->bytes_per_frame;
-				size_t frames = (used / bytes);
+				switch_size_t used = switch_buffer_inuse(session->raw_write_buffer);
+				switch_size_t bytes = session->write_codec->implementation->bytes_per_frame;
+				switch_size_t frames = (used / bytes);
 
 
 
@@ -1219,7 +1217,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 
 			status = SWITCH_STATUS_SUCCESS;
 				if (frames) {
-					size_t x;
+					switch_size_t x;
 					for (x = 0; x < frames; x++) {
 						if ((session->raw_write_frame.datalen =
 							 switch_buffer_read(session->raw_write_buffer, session->raw_write_frame.data, bytes)) != 0) {
@@ -1264,7 +1262,6 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 													  session->read_codec->codec_interface->interface_name);
 								write_frame = NULL;
 								return status;
-								break;
 							}
 
 							if (session->read_resampler) {
@@ -1672,13 +1669,12 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 
 static void switch_core_standard_on_loopback(switch_core_session *session)
 {
-	switch_channel_state state;
 	switch_frame *frame;
 	int stream_id;
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard LOOPBACK\n");
 
-	while ((state = switch_channel_get_state(session->channel)) == CS_LOOPBACK) {
+	while (switch_channel_get_state(session->channel) == CS_LOOPBACK) {
 		for (stream_id = 0; stream_id < session->stream_count; stream_id++) {
 			if (switch_core_session_read_frame(session, &frame, -1, stream_id) == SWITCH_STATUS_SUCCESS) {
 				switch_core_session_write_frame(session, frame, -1, stream_id);
@@ -1689,6 +1685,7 @@ static void switch_core_standard_on_loopback(switch_core_session *session)
 
 static void switch_core_standard_on_transmit(switch_core_session *session)
 {
+	assert(session != NULL);
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard TRANSMIT\n");
 }
 
@@ -1754,7 +1751,6 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				break;
 			case CS_DONE:
 				continue;
-				break;
 			case CS_HANGUP:	/* Deactivate and end the thread */
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "(%s) State HANGUP\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_hangup ||
@@ -2016,6 +2012,7 @@ SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash **hash, switch_m
 
 SWITCH_DECLARE(switch_status) switch_core_hash_destroy(switch_hash *hash)
 {
+	assert(hash != NULL);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2088,19 +2085,16 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 
 static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *thread, void *obj)
 {
-	unsigned int id;
 	switch_core_session *session = obj;
 	session->thread = thread;
+	session->id = runtime.session_id++;
 
-	id = runtime.session_id++;
-	session->id = id;
-
-	snprintf(session->name, sizeof(session->name), "%ld", session->id);
+	snprintf(session->name, sizeof(session->name), "%u", session->id);
 
 	switch_core_hash_insert(runtime.session_table, session->uuid_str, session);
 	switch_core_session_run(session);
 	switch_core_hash_delete(runtime.session_table, session->uuid_str);
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Session %ld (%s) Ended\n", id, switch_channel_get_name(session->channel));
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Session %u (%s) Ended\n", session->id, switch_channel_get_name(session->channel));
 	switch_core_session_destroy(&session);
 	return NULL;
 }
@@ -2135,7 +2129,7 @@ SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *sess
 }
 
 
-SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, size_t memory)
+SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, switch_size_t memory)
 {
 	void *ptr = NULL;
 	assert(pool != NULL);
@@ -2179,7 +2173,7 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_e
 		return NULL;
 	}
 
-	switch_channel_init(session->channel, session, CS_NEW, CF_SEND_AUDIO | CF_RECV_AUDIO);
+	switch_channel_init(session->channel, session, CS_NEW, (CF_SEND_AUDIO | CF_RECV_AUDIO));
 
 	/* The session *IS* the pool you may not alter it because you have no idea how
 	   its all private it will be passed to the thread run function */
@@ -2222,14 +2216,13 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request_by_name(char *
 
 static void core_event_handler(switch_event *event)
 {
-	char buf[1024];
+	//char buf[1024];
 
 	switch (event->event_id) {
 	case SWITCH_EVENT_LOG:
 		return;
-		break;
 	default:
-		buf[0] = '\0';
+		//buf[0] = '\0';
 		//switch_event_serialize(event, buf, sizeof(buf), NULL);
 		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "\nCORE EVENT\n--------------------------------\n%s\n", buf);
 		break;
@@ -2293,7 +2286,7 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 
 
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocated memory pool. Sessions are %d bytes\n", sizeof(struct switch_core_session));
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocated memory pool. Sessions are %u bytes\n", sizeof(struct switch_core_session));
 	switch_event_init(runtime.memory_pool);
 
 	assert(runtime.memory_pool != NULL);

@@ -37,7 +37,7 @@ struct switch_channel {
 	switch_mutex_t *dtmf_mutex;
 	switch_core_session *session;
 	switch_channel_state state;
-	switch_channel_flag flags;
+	uint32_t flags;
 	switch_caller_profile *caller_profile;
 	switch_caller_profile *originator_caller_profile;
 	switch_caller_profile *originatee_caller_profile;
@@ -115,9 +115,9 @@ SWITCH_DECLARE(switch_status) switch_channel_get_raw_mode(switch_channel *channe
 }
 
 
-SWITCH_DECLARE(size_t) switch_channel_has_dtmf(switch_channel *channel)
+SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel *channel)
 {
-	size_t has;
+	switch_size_t has;
 
 	assert(channel != NULL);
 	switch_mutex_lock(channel->dtmf_mutex);
@@ -130,22 +130,27 @@ SWITCH_DECLARE(size_t) switch_channel_has_dtmf(switch_channel *channel)
 SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel *channel, char *dtmf)
 {
 	switch_status status;
+	register switch_size_t len, inuse;
 
 	assert(channel != NULL);
 
 	switch_mutex_lock(channel->dtmf_mutex);
-	if (switch_buffer_inuse(channel->dtmf_buffer) + strlen(dtmf) > (size_t) switch_buffer_len(channel->dtmf_buffer)) {
+
+	inuse = switch_buffer_inuse(channel->dtmf_buffer);
+	len = strlen(dtmf);
+	
+	if (len + inuse > switch_buffer_len(channel->dtmf_buffer)) {
 		switch_buffer_toss(channel->dtmf_buffer, strlen(dtmf));
 	}
 
-	status = switch_buffer_write(channel->dtmf_buffer, dtmf, strlen(dtmf));
+	status = switch_buffer_write(channel->dtmf_buffer, dtmf, len) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MEMERR;
 	switch_mutex_unlock(channel->dtmf_mutex);
 
 	return status;
 }
 
 
-SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, size_t len)
+SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, switch_size_t len)
 {
 	int bytes;
 	switch_event *event;
@@ -170,7 +175,7 @@ SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *d
 
 SWITCH_DECLARE(switch_status) switch_channel_init(switch_channel *channel,
 												  switch_core_session *session,
-												  switch_channel_state state, switch_channel_flag flags)
+												  switch_channel_state state, uint32_t flags)
 {
 	assert(channel != NULL);
 	channel->state = state;
@@ -225,21 +230,19 @@ SWITCH_DECLARE(switch_status) switch_channel_set_variable(switch_channel *channe
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_test_flag(switch_channel *channel, int flags)
+SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel *channel, switch_channel_flag flags)
 {
-	return switch_test_flag(channel, flags);
+	return switch_test_flag(channel, flags) ? 1 : 0;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_set_flag(switch_channel *channel, int flags)
+SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel *channel, switch_channel_flag flags)
 {
 	switch_set_flag(channel, flags);
-	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_clear_flag(switch_channel *channel, int flags)
+SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel *channel, switch_channel_flag flags)
 {
-	switch_set_flag(channel, flags);
-	return SWITCH_STATUS_SUCCESS;
+	switch_clear_flag(channel, flags);
 }
 
 SWITCH_DECLARE(switch_channel_state) switch_channel_get_state(switch_channel *channel)
@@ -447,9 +450,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 	for (hi = switch_hash_first(switch_core_session_get_pool(channel->session), channel->variables); hi;
 		 hi = switch_hash_next(hi)) {
 		char buf[1024];
-		switch_event_subclass *subclass;
 		switch_hash_this(hi, &var, NULL, &val);
-		subclass = val;
 		snprintf(buf, sizeof(buf), "variable_%s", (char *) var);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, buf, (char *) val);
 	}

@@ -32,18 +32,26 @@
 #include <switch.h>
 
 
+typedef switch_status (*switch_module_load_t) (switch_loadable_module_interface **, char *);
+typedef switch_status (*switch_module_reload_t) (void);
+typedef switch_status (*switch_module_pause_t) (void);
+typedef switch_status (*switch_module_resume_t) (void);
+typedef switch_status (*switch_module_status_t) (void);
+typedef switch_status (*switch_module_runtime_t) (void);
+typedef switch_status (*switch_module_shutdown_t) (void);
+
+
 struct switch_loadable_module {
 	char *filename;
 	const switch_loadable_module_interface *interface;
 	void *lib;
-	switch_status (*switch_module_load) (switch_loadable_module_interface **, char *);
-	switch_status (*switch_module_reload) (void);
-	switch_status (*switch_module_pause) (void);
-	switch_status (*switch_module_resume) (void);
-	switch_status (*switch_module_status) (void);
-	switch_status (*switch_module_runtime) (void);
-	switch_status (*switch_module_shutdown) (void);
-
+	switch_module_load_t switch_module_load;
+	switch_module_reload_t switch_module_reload;
+	switch_module_pause_t switch_module_pause;
+	switch_module_resume_t switch_module_resume;
+	switch_module_status_t switch_module_status;
+	switch_module_runtime_t switch_module_runtime;
+	switch_module_shutdown_t switch_module_shutdown;
 };
 
 struct switch_loadable_module_container {
@@ -64,6 +72,9 @@ static struct switch_loadable_module_container loadable_modules;
 
 static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 {
+
+	assert(thread != NULL);
+
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	switch_core_thread_session *ts = obj;
 	switch_loadable_module *module = ts->objs[0];
@@ -85,6 +96,9 @@ static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 	return NULL;
 }
 
+
+typedef switch_status (*switch_load_fp_t)(switch_loadable_module_interface **, char *);
+
 static switch_status switch_loadable_module_load_file(char *filename, switch_memory_pool *pool,
 													  switch_loadable_module **new_module)
 {
@@ -92,7 +106,8 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 	apr_dso_handle_t *dso = NULL;
 	apr_status_t status = SWITCH_STATUS_SUCCESS;
 	apr_dso_handle_sym_t function_handle = NULL;
-	switch_status (*load_func_ptr) (switch_loadable_module_interface **, char *) = NULL;
+	//switch_status (*load_func_ptr) (switch_loadable_module_interface **, char *) = NULL;
+	switch_load_fp_t load_func_ptr = NULL;
 	int loading = 1;
 	const char *err = NULL;
 	switch_loadable_module_interface *interface = NULL;
@@ -111,7 +126,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 		}
 
 		status = apr_dso_sym(&function_handle, dso, "switch_module_load");
-		load_func_ptr = function_handle;
+		load_func_ptr = (switch_load_fp_t) function_handle;
 
 		if (load_func_ptr == NULL) {
 			err = "Cannot Load";
@@ -142,27 +157,27 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 	module->switch_module_load = load_func_ptr;
 
 	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_reload")) == APR_SUCCESS) {
-		module->switch_module_reload = function_handle;
+		module->switch_module_reload = (switch_module_reload_t) function_handle;
 	}
 
 	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_pause")) == APR_SUCCESS) {
-		module->switch_module_pause = function_handle;
+		module->switch_module_pause = (switch_module_pause_t) function_handle;
 	}
 
 	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_resume")) == APR_SUCCESS) {
-		module->switch_module_resume = function_handle;
+		module->switch_module_resume = (switch_module_resume_t) function_handle;
 	}
 
 	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_status")) == APR_SUCCESS) {
-		module->switch_module_status = function_handle;
+		module->switch_module_status = (switch_module_status_t) function_handle;
 	}
 
 	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_shutdown")) == APR_SUCCESS) {
-		module->switch_module_shutdown = function_handle;
+		module->switch_module_shutdown = (switch_module_shutdown_t) function_handle;
 	}
 
 	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_runtime")) == APR_SUCCESS) {
-		module->switch_module_runtime = function_handle;
+		module->switch_module_runtime = (switch_module_runtime_t) function_handle;
 	}
 
 	module->lib = dso;
@@ -180,7 +195,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 
 static void process_module_file(char *dir, char *fname)
 {
-	size_t len = 0;
+	switch_size_t len = 0;
 	char *path;
 	char *file;
 	switch_loadable_module *new_module = NULL;
@@ -202,11 +217,15 @@ static void process_module_file(char *dir, char *fname)
 		path = switch_core_strdup(loadable_modules.pool, file);
 	} else {
 		if (strchr(file, '.')) {
-			len = strlen(dir) + strlen(file) + 4;
+			len = strlen(dir);
+			len += strlen(file);
+			len += 4;
 			path = (char *) switch_core_alloc(loadable_modules.pool, len);
 			snprintf(path, len, "%s%s%s", dir, SWITCH_PATH_SEPARATOR, file);
 		} else {
-			len = strlen(dir) + strlen(file) + 8;
+			len = strlen(dir);
+			len += strlen(file);
+			len += 8;
 			path = (char *) switch_core_alloc(loadable_modules.pool, len);
 			snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
 		}
@@ -330,7 +349,6 @@ static void switch_loadable_module_path_init()
 SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 {
 
-	char *ptr = NULL;
 	apr_finfo_t finfo = {0};
 	apr_dir_t *module_dir_handle = NULL;
 	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
@@ -424,7 +442,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				fname = finfo.name;
 			}
 
-			if ((ptr = (char *) fname) == 0) {
+			if (!fname) {
 				continue;
 			}
 
@@ -451,10 +469,10 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 		module = (switch_loadable_module *) val;
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Checking %s\t", module->interface->module_name);
 		if (module->switch_module_shutdown) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "(yes)\n", module->interface->module_name);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "(yes)\n");
 			module->switch_module_shutdown();
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "(no)\n", module->interface->module_name);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "(no)\n");
 		}
 	}
 
@@ -524,7 +542,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool, 
 
 }
 
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool *pool, switch_codec_interface **array,
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_codec_interface **array,
 															 int arraylen, char **prefs, int preflen)
 {
 	int x, i = 0;
@@ -542,7 +560,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_memory_pool 
 	return i;
 }
 
-SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *retbuf, size_t len)
+SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *retbuf, switch_size_t len)
 {
 	switch_api_interface *api;
 	switch_status status;

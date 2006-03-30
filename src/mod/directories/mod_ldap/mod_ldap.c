@@ -140,7 +140,7 @@ static switch_status mod_ldap_next(switch_directory_handle *dh)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status mod_ldap_next_pair(switch_directory_handle *dh, char **var, char **val)
+static switch_status mod_ldap_next_pair(switch_directory_handle *dh, char **var, char **val)
 {
 	struct ldap_context *context;
 

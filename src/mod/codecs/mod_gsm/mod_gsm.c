@@ -121,11 +121,11 @@ static switch_status switch_gsm_decode(switch_codec *codec, switch_codec *other_
 		if (new_len <= *decoded_data_len) {
 			*decoded_data_len = new_len;
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!! %d %d\n", new_len, *decoded_data_len);
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!! %u %u\n", new_len, *decoded_data_len);
 			return SWITCH_STATUS_FALSE;
 		}
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "yo this frame is an odd size [%d]\n", encoded_data_len);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "yo this frame is an odd size [%u]\n", encoded_data_len);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }

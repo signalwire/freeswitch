@@ -36,6 +36,7 @@ static int RUNNING = 0;
 
 static int handle_SIGPIPE(int sig)
 {
+	if(sig);
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Sig Pipe!\n");
 	return 0;
 }
@@ -50,12 +51,14 @@ static int handle_SIGBUS(int sig)
 /* no ctl-c mofo */
 static int handle_SIGINT(int sig)
 {
+	if (sig);
 	return 0;
 }
 
 
 static int handle_SIGHUP(int sig)
 {
+	if(sig);
 	RUNNING = 0;
 	return 0;
 }
@@ -113,6 +116,9 @@ int main(int argc, char *argv[])
 	}
 
 
+#ifdef __ICC
+#pragma warning (disable:167)
+#endif
 
 	/* set signal handlers */
 	signal(SIGINT, (void *) handle_SIGINT);

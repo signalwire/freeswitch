@@ -172,7 +172,7 @@ static void event_handler(switch_event *event)
 											   my_service_reply,
 											   NULL,
 											   &globals.disc_id)) != SW_OKAY) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "publish failed: %d\n", result);
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "publish failed: %u\n", result);
 				sw_text_record_fina(text_record);
 				switch_mutex_unlock(globals.zc_lock);
 				return;

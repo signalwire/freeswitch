@@ -40,7 +40,7 @@ $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c $(MODNAME).o $(OBJS)
 	$(CC) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
 
 clean:
-	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ perlxsi.c .perlok
+	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .perlok
 
 install:
 	mkdir -p $(PREFIX)/perl

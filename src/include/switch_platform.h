@@ -38,6 +38,10 @@
 extern "C" {
 #endif
 
+#ifdef __ICC
+#pragma warning (disable:810 869 981 279 1469)
+#endif
+
 #ifdef _MSC_VER
 
 #ifndef FREESWITCHCORE_EXPORTS

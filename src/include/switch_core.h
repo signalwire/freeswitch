@@ -59,22 +59,22 @@ struct switch_core_session_message {
 	/*! optional string arg*/
 	char *string_arg;
 	/*! optional string arg*/
-	size_t string_arg_size;
+	switch_size_t string_arg_size;
 	/*! optional arbitrary pointer arg */
 	void *pointer_arg;
 	/*! optional arbitrary pointer arg's size */
-	size_t pointer_arg_size;
+	switch_size_t pointer_arg_size;
 
 	/*! optional numeric reply*/
 	int numeric_reply;
 	/*! optional string reply*/
 	char *string_reply;
 	/*! optional string reply*/
-	size_t string_reply_size;
+	switch_size_t string_reply_size;
 	/*! optional arbitrary pointer reply */
 	void *pointer_reply;
 	/*! optional arbitrary pointer reply's size */
-	size_t pointer_reply_size;
+	switch_size_t pointer_reply_size;
 
 };
 
@@ -169,7 +169,7 @@ SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session *ses
   \return a void pointer to the allocated memory
   \note this memory never goes out of scope until the core is destroyed
 */
-SWITCH_DECLARE(void *) switch_core_permenant_alloc(size_t memory);
+SWITCH_DECLARE(void *) switch_core_permenant_alloc(switch_size_t memory);
 
 /*! 
   \brief Allocate memory directly from a memory pool
@@ -177,7 +177,7 @@ SWITCH_DECLARE(void *) switch_core_permenant_alloc(size_t memory);
   \param memory the number of bytes to allocate
   \return a void pointer to the allocated memory
 */
-SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, size_t memory);
+SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, switch_size_t memory);
 
 /*! 
   \brief Allocate memory from a session's pool
@@ -186,7 +186,7 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, size_t memory
   \return a void pointer to the newly allocated memory
   \note the memory will be in scope as long as the session exists
 */
-SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session *session, size_t memory);
+SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session *session, switch_size_t memory);
 
 /*! 
   \brief Copy a string using permenant memory allocation
@@ -610,7 +610,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec,
 													 int rate, 
 													 int ms, 
 													 int channels, 
-													 switch_codec_flag flags, 
+													 uint32_t flags,
 													 const switch_codec_settings *codec_settings, 
 													 switch_memory_pool *pool);
 
@@ -631,10 +631,10 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec,
 SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 								 switch_codec *other_codec,
 								 void *decoded_data,
-								 size_t decoded_data_len,
+								 switch_size_t decoded_data_len,
 								 int decoded_rate,
 								 void *encoded_data,
-								 size_t *encoded_data_len,
+								 switch_size_t *encoded_data_len,
 								 int *encoded_rate,
 								 unsigned int *flag);
 
@@ -655,10 +655,10 @@ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 								 switch_codec *other_codec,
 								 void *encoded_data,
-								 size_t encoded_data_len,
+								 switch_size_t encoded_data_len,
 								 int encoded_rate,
 								 void *decoded_data,
-								 size_t *decoded_data_len,
+								 switch_size_t *decoded_data_len,
 								 int *decoded_rate,
 								 unsigned int *flag);
 
@@ -739,7 +739,7 @@ SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char
   \param len the max size of the buffer
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes read if successful
 */
-SWITCH_DECLARE(switch_status) switch_core_file_read(switch_file_handle *fh, void *data, size_t *len);
+SWITCH_DECLARE(switch_status) switch_core_file_read(switch_file_handle *fh, void *data, switch_size_t *len);
 
 /*! 
   \brief Write media to a file handle
@@ -748,7 +748,7 @@ SWITCH_DECLARE(switch_status) switch_core_file_read(switch_file_handle *fh, void
   \param len the amount of data to write from the buffer
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
 */
-SWITCH_DECLARE(switch_status) switch_core_file_write(switch_file_handle *fh, void *data, size_t *len);
+SWITCH_DECLARE(switch_status) switch_core_file_write(switch_file_handle *fh, void *data, switch_size_t *len);
 
 /*! 
   \brief Seek a position in a file
@@ -829,8 +829,8 @@ SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *
 */
 	SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
 														  void *data,
-														  size_t *datalen,
-														  size_t *rate,
+														  switch_size_t *datalen,
+														  switch_size_t *rate,
 														  switch_speech_flag *flags);
 /*! 
   \brief Close an open speech handle

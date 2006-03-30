@@ -63,13 +63,13 @@ struct switch_audio_resampler {
 	/*! the size of the from buffer used */
 	int from_len;
 	/*! the total size of the from buffer */
-	size_t from_size;
+	switch_size_t from_size;
 	/*! a pointer to store a float buffer for resampled data */
 	float *to;
 	/*! the size of the to buffer used */
 	int to_len;
 	/*! the total size of the to buffer */
-	size_t to_size;
+	switch_size_t to_size;
 };
 
 /*!
@@ -84,9 +84,9 @@ struct switch_audio_resampler {
  */
 SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **new_resampler,
 													 int from_rate,
-													 size_t from_size,
+													 switch_size_t from_size,
 													 int to_rate,
-													 size_t to_size,
+													 switch_size_t to_size,
 													 switch_memory_pool *pool);
 
 /*!
@@ -114,7 +114,7 @@ SWITCH_DECLARE(int) switch_resample_process(switch_audio_resampler *resampler, f
   \param len the length of the buffers
   \return the size of the converted buffer
  */
-SWITCH_DECLARE(size_t) switch_float_to_short(float *f, short *s, size_t len);
+SWITCH_DECLARE(switch_size_t) switch_float_to_short(float *f, short *s, switch_size_t len);
 
 /*!
   \brief Convert an array of chars to an array of floats

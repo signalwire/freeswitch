@@ -229,7 +229,7 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
   \return SWITCH_STATUS_SUCCESS if the operation was successful
   \note the body supplied by this function will supersede an existing body the event may have
 */
-SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, size_t buflen, char *fmt, ...);
+SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, switch_size_t buflen, char *fmt, ...);
 
 /*!
   \brief Determine if the event system has been initilized

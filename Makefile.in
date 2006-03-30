@@ -46,12 +46,10 @@ DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure $(top_srcdir)/src/include/config.h.in \
 	$(top_srcdir)/src/include/switch_version.h.in AUTHORS COPYING \
-	ChangeLog INSTALL NEWS TODO build/config/compile \
+	ChangeLog INSTALL NEWS build/config/compile \
 	build/config/config.guess build/config/config.sub \
 	build/config/depcomp build/config/install-sh \
-	build/config/ltmain.sh build/config/missing compile \
-	config.guess config.sub depcomp install-sh ltmain.sh missing \
-	mkinstalldirs
+	build/config/ltmain.sh build/config/missing mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -80,7 +78,6 @@ am_libfreeswitch_la_OBJECTS = libfreeswitch_la-switch_buffer.lo \
 	libfreeswitch_la-switch_console.lo \
 	libfreeswitch_la-switch_core.lo \
 	libfreeswitch_la-switch_loadable_module.lo \
-	libfreeswitch_la-switch_mutex.lo \
 	libfreeswitch_la-switch_utils.lo \
 	libfreeswitch_la-switch_event.lo \
 	libfreeswitch_la-switch_resample.lo \
@@ -275,7 +272,6 @@ src/include/switch_frame.h\
 src/include/switch_ivr.h\
 src/include/switch_loadable_module.h\
 src/include/switch_module_interfaces.h\
-src/include/switch_mutex.h\
 src/include/switch_platform.h\
 src/include/switch_resample.h\
 src/include/switch_sqlite.h\
@@ -289,7 +285,6 @@ src/switch_config.c \
 src/switch_console.c \
 src/switch_core.c \
 src/switch_loadable_module.c \
-src/switch_mutex.c \
 src/switch_utils.c \
 src/switch_event.c \
 src/switch_resample.c \
@@ -314,7 +309,6 @@ src/include/switch_frame.h\
 src/include/switch_ivr.h\
 src/include/switch_loadable_module.h\
 src/include/switch_module_interfaces.h\
-src/include/switch_mutex.h\
 src/include/switch_platform.h\
 src/include/switch_resample.h\
 src/include/switch_sqlite.h\
@@ -468,7 +462,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_event.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_ivr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_loadable_module.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_mutex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_resample.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_utils.Plo@am__quote@
 
@@ -541,13 +534,6 @@ libfreeswitch_la-switch_loadable_module.lo: src/switch_loadable_module.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/switch_loadable_module.c' object='libfreeswitch_la-switch_loadable_module.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfreeswitch_la_CFLAGS) $(CFLAGS) -c -o libfreeswitch_la-switch_loadable_module.lo `test -f 'src/switch_loadable_module.c' || echo '$(srcdir)/'`src/switch_loadable_module.c
-
-libfreeswitch_la-switch_mutex.lo: src/switch_mutex.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfreeswitch_la_CFLAGS) $(CFLAGS) -MT libfreeswitch_la-switch_mutex.lo -MD -MP -MF "$(DEPDIR)/libfreeswitch_la-switch_mutex.Tpo" -c -o libfreeswitch_la-switch_mutex.lo `test -f 'src/switch_mutex.c' || echo '$(srcdir)/'`src/switch_mutex.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libfreeswitch_la-switch_mutex.Tpo" "$(DEPDIR)/libfreeswitch_la-switch_mutex.Plo"; else rm -f "$(DEPDIR)/libfreeswitch_la-switch_mutex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/switch_mutex.c' object='libfreeswitch_la-switch_mutex.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfreeswitch_la_CFLAGS) $(CFLAGS) -c -o libfreeswitch_la-switch_mutex.lo `test -f 'src/switch_mutex.c' || echo '$(srcdir)/'`src/switch_mutex.c
 
 libfreeswitch_la-switch_utils.lo: src/switch_utils.c
 @am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfreeswitch_la_CFLAGS) $(CFLAGS) -MT libfreeswitch_la-switch_utils.lo -MD -MP -MF "$(DEPDIR)/libfreeswitch_la-switch_utils.Tpo" -c -o libfreeswitch_la-switch_utils.lo `test -f 'src/switch_utils.c' || echo '$(srcdir)/'`src/switch_utils.c; \

@@ -105,7 +105,7 @@ SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, swi
 SWITCH_DECLARE(switch_status) switch_channel_init(switch_channel *channel,
 								switch_core_session *session,
 								switch_channel_state state,
-								switch_channel_flag flags);
+								uint32_t flags);
 
 /*!
   \brief Set the given channel's caller profile
@@ -192,25 +192,23 @@ SWITCH_DECLARE(switch_caller_extension *) switch_channel_get_caller_extension(sw
   \brief Test for presence of given flag(s) on a given channel
   \param channel channel to test 
   \param flags or'd list of channel flags to test
-  \return SWITCH_STATUS_SUCCESS if provided flags are set
+  \return TRUE if flags were present
 */
-SWITCH_DECLARE(switch_status) switch_channel_test_flag(switch_channel *channel, int flags);
+SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel *channel, switch_channel_flag flags);
 
 /*!
   \brief Set given flag(s) on a given channel
   \param channel channel on which to set flag(s)
   \param flags or'd list of flags to set
-  \return SWITCH_STATUS_SUCCESS if flags were set
 */
-SWITCH_DECLARE(switch_status) switch_channel_set_flag(switch_channel *channel, int flags);
+SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel *channel, switch_channel_flag flags);
 
 /*!
   \brief Clear given flag(s) from a channel
   \param channel channel to clear flags from
   \param flags or'd list of flags to clear
-  \return SWITCH_STATUS_SUCCESS if flags were cleared
 */
-SWITCH_DECLARE(switch_status) switch_channel_clear_flag(switch_channel *channel, int flags);
+SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel *channel, switch_channel_flag flags);
 
 /*!
   \brief Answer a channel (initiate/acknowledge a successful connection)
@@ -284,7 +282,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *chann
   \param channel channel to test
   \return number of digits in the queue
 */
-SWITCH_DECLARE(size_t) switch_channel_has_dtmf(switch_channel *channel);
+SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel *channel);
 
 /*!
   \brief Queue DTMF on a given channel
@@ -301,7 +299,7 @@ SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel *channel,
   \param len max size in bytes of the buffer
   \return number of bytes read into the buffer
 */
-SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, size_t len);
+SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, switch_size_t len);
 
 /*!
   \brief Render the name of the provided state enum

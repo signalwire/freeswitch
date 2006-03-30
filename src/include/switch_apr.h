@@ -1342,6 +1342,74 @@ DoxyDefine(apr_status_t switch_queue_trypop(switch_queue_t *queue, void **data);
 DoxyDefine(apr_status_t switch_queue_trypush(switch_queue_t *queue, void *data);)
 #define switch_queue_trypush apr_queue_trypush
 
+/**
+ * @defgroup switch_thread_mutex Thread Mutex Routines
+ * @ingroup switch_apr
+ * @{
+ */
+
+/** Opaque thread-local mutex structure */
+typedef apr_thread_mutex_t switch_mutex_t;
+
+/** Lock Flags */
+
+#define SWITCH_MUTEX_DEFAULT APR_THREAD_MUTEX_DEFAULT	/**< platform-optimal lock behavior */
+#define SWITCH_MUTEX_NESTED APR_THREAD_MUTEX_NESTED	/**< enable nested (recursive) locks */
+#define	SWITCH_MUTEX_UNNESTED APR_THREAD_MUTEX_UNNESTED	/**< disable nested locks */
+
+
+/**
+ * Create and initialize a mutex that can be used to synchronize threads.
+ * @param lock the memory address where the newly created mutex will be
+ *        stored.
+ * @param flags Or'ed value of:
+ * <PRE>
+ *           SWITCH_THREAD_MUTEX_DEFAULT   platform-optimal lock behavior.
+ *           SWITCH_THREAD_MUTEX_NESTED    enable nested (recursive) locks.
+ *           SWITCH_THREAD_MUTEX_UNNESTED  disable nested locks (non-recursive).
+ * </PRE>
+ * @param pool the pool from which to allocate the mutex.
+ * @warning Be cautious in using SWITCH_THREAD_MUTEX_DEFAULT.  While this is the
+ * most optimial mutex based on a given platform's performance charateristics,
+ * it will behave as either a nested or an unnested lock.
+ *
+SWITCH_DECLARE(switch_status) switch_mutex_init(switch_mutex_t **lock,
+												switch_lock_flag flags,
+												switch_memory_pool *pool);
+*/
+#define switch_mutex_init apr_thread_mutex_create
+/**
+ * Destroy the mutex and free the memory associated with the lock.
+ * @param lock the mutex to destroy.
+ */
+//SWITCH_DECLARE(switch_status) switch_mutex_destroy(switch_mutex_t *lock);
+#define switch_mutex_destroy apr_thread_mutex_destroy
+
+/**
+ * Acquire the lock for the given mutex. If the mutex is already locked,
+ * the current thread will be put to sleep until the lock becomes available.
+ * @param lock the mutex on which to acquire the lock.
+ */
+//SWITCH_DECLARE(switch_status) switch_mutex_lock(switch_mutex_t *lock);
+#define switch_mutex_lock apr_thread_mutex_lock
+
+/**
+ * Release the lock for the given mutex.
+ * @param lock the mutex from which to release the lock.
+ */
+//SWITCH_DECLARE(switch_status) switch_mutex_unlock(switch_mutex_t *lock);
+#define switch_mutex_unlock apr_thread_mutex_unlock
+
+/**
+ * Attempt to acquire the lock for the given mutex. If the mutex has already
+ * been acquired, the call returns immediately with APR_EBUSY. Note: it
+ * is important that the APR_STATUS_IS_EBUSY(s) macro be used to determine
+ * if the return value was APR_EBUSY, for portability reasons.
+ * @param lock the mutex on which to attempt the lock acquiring.
+ */
+//SWITCH_DECLARE(switch_status) switch_mutex_trylock(switch_mutex_t *lock);
+#define switch_mutex_trylock apr_thread_mutex_trylock
+
 /** @} */
 /** @} */
 

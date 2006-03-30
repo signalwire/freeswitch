@@ -144,7 +144,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 													char *tts_name,
 													char *voice_name,
 													char *timer_name,
-													size_t rate,
+													switch_size_t rate,
 													switch_dtmf_callback_function dtmf_callback,
 													char *text,
 													void *buf,

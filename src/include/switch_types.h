@@ -36,6 +36,9 @@
 
 #ifdef __cplusplus
 extern "C" {
+#ifdef _FORMATBUG
+}
+#endif
 #endif
 
 #include <switch.h>
@@ -426,7 +429,6 @@ typedef enum {
 	SWITCH_EVENT_ALL
 } switch_event_t;
 
-
 typedef struct switch_core_session_message switch_core_session_message;
 typedef struct switch_audio_resampler switch_audio_resampler;
 typedef struct switch_event_header switch_event_header;
@@ -486,7 +488,7 @@ typedef switch_status (*switch_kill_channel_hook)(switch_core_session *, int);
 typedef switch_status (*switch_waitfor_read_hook)(switch_core_session *, int, int);
 typedef switch_status (*switch_waitfor_write_hook)(switch_core_session *, int, int);
 typedef switch_status (*switch_send_dtmf_hook)(switch_core_session *, char *);
-typedef switch_status (*switch_api_function)(char *in, char *out, size_t outlen);
+typedef switch_status (*switch_api_function)(char *in, char *out, switch_size_t outlen);
 typedef switch_status (*switch_dtmf_callback_function)(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen);
 typedef int (*switch_core_db_callback_func)(void *pArg, int argc, char **argv, char **columnNames);
 

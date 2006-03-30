@@ -31,7 +31,7 @@
  */
 #include <switch_console.h>
 #include <switch.h>
-#define CMD_BUFLEN SWITCH_RECCOMMENDED_BUFFER_SIZE * 10
+#define CMD_BUFLEN 1024 * 1000
 
 static int switch_console_process(char *cmd, char *retbuf, int retlen)
 {
@@ -62,8 +62,7 @@ static int switch_console_process(char *cmd, char *retbuf, int retlen)
 		*arg++ = '\0';
 	}
 	if (switch_api_execute(cmd, arg, retbuf, retlen) == SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "",
-							  retbuf);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unknown Command: %s\n", cmd);
 	}
@@ -98,7 +97,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *fi
 		if (channel == SWITCH_CHANNEL_ID_CONSOLE_CLEAN) {
 			fprintf(handle, "%s", data);
 		} else {
-			size_t retsize;
+			switch_size_t retsize;
 			switch_time_exp_t tm;
 			switch_event *event;
 			switch_time_exp_lt(&tm, switch_time_now());
@@ -152,7 +151,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 
 		memset(&cmd, 0, sizeof(cmd));
 		for (x = 0; x < sizeof(cmd); x++) {
-			cmd[x] = (char)getchar();
+			cmd[x] = (char) getchar();
 			if (cmd[x] == '\n') {
 				cmd[x] = '\0';
 				break;

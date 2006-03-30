@@ -35,7 +35,7 @@
 
 static const char modname[] = "mod_speexcodec";
 
-const struct switch_codec_settings default_codec_settings = {
+static const struct switch_codec_settings default_codec_settings = {
 	/*.quality */ 5,
 	/*.complexity */ 5,
 	/*.enhancement */ 1,

@@ -187,6 +187,7 @@ static switch_status switch_g711a_destroy(switch_codec *codec)
 
 /* Registration */
 
+#if 0
 
 static const switch_codec_implementation g711u_8k_60ms_implementation = {
 	/*.samples_per_second */ 8000,
@@ -204,6 +205,7 @@ static const switch_codec_implementation g711u_8k_60ms_implementation = {
 	/*.destroy */ switch_g711u_destroy
 };
 
+
 static const switch_codec_implementation g711u_8k_30ms_implementation = {
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 96000,
@@ -220,7 +222,7 @@ static const switch_codec_implementation g711u_8k_30ms_implementation = {
 	/*.destroy */ switch_g711u_destroy,
 	/*.next */ &g711u_8k_60ms_implementation
 };
-
+#endif
 
 static const switch_codec_implementation g711u_16k_implementation = {
 	/*.samples_per_second */ 16000,

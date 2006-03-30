@@ -103,7 +103,7 @@ static void tts_function(switch_core_session *session, char *data)
 		return;
 	}
 
-	if ((argc = switch_separate_string(mydata, ':', argv, sizeof(argv) / sizeof(argv[0]))) > 1) {
+	if ((argc = switch_separate_string(mydata, ':', argv, sizeof(argv) / sizeof(argv[0]))) > 1 && argc) {
 		tts_name = argv[0];
 		voice_name = argv[1];
 		text = argv[2];

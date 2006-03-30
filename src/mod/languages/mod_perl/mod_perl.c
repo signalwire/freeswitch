@@ -29,7 +29,9 @@
  * mod_perl.c -- Perl
  *
  */
-
+#ifdef __ICC
+#pragma warning (disable:1419)
+#endif
 #ifdef _MSC_VER
 #include <perlibs.h>
 #pragma comment(lib, PERL_LIB)

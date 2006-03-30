@@ -29,6 +29,10 @@
  * mod_cepstral.c -- Cepstral Interface
  *
  */
+#ifdef __ICC
+#pragma warning (disable:188)
+#endif
+
 #include <swift.h>
 #include <switch.h>
 
@@ -56,7 +60,6 @@ static swift_result_t write_audio(swift_event *event, swift_event_t type, void *
     swift_event_t rv = SWIFT_SUCCESS;
     void *buf = NULL;
     int len = 0;
-	int wrote;
 	
 	cepstral = udata;
 	assert(cepstral != NULL);
@@ -64,7 +67,7 @@ static swift_result_t write_audio(swift_event *event, swift_event_t type, void *
 	/* Only proceed when we have success */
     if (!SWIFT_FAILED((rv = swift_event_get_audio(event, &buf, &len)))) {
 		switch_mutex_lock(cepstral->audio_lock);
-		if ((wrote=switch_buffer_write(cepstral->audio_buffer, buf, len)) <= 0) {
+		if (switch_buffer_write(cepstral->audio_buffer, buf, len) <= 0) {
 			rv = SWIFT_UNKNOWN_ERROR;
 		}
 		switch_mutex_unlock(cepstral->audio_lock);
@@ -242,7 +245,7 @@ static switch_status cepstral_speech_read_tts(switch_speech_handle *sh,
 	return status;
 }
 
-const switch_speech_interface cepstral_speech_interface = {
+static const switch_speech_interface cepstral_speech_interface = {
 	/*.interface_name*/			"cepstral",
 	/*.speech_open*/			cepstral_speech_open,
 	/*.speech_close*/			cepstral_speech_close,
@@ -253,7 +256,7 @@ const switch_speech_interface cepstral_speech_interface = {
 	
 };
 
-const switch_loadable_module_interface cepstral_module_interface = {
+static const switch_loadable_module_interface cepstral_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,

@@ -39,6 +39,9 @@
  */
 
 #include "g711.h"
+#ifdef __ICC
+#pragma warning (disable:810 869 1418)
+#endif
 
 /*
  * g711.c

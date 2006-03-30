@@ -329,8 +329,8 @@ static switch_status woomerachan_kill_channel(switch_core_session *session, int 
 	udp_socket_close(tech_pvt);
 
 	switch_channel_hangup(channel);
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s WOOMERACHAN KILL %d\n", switch_channel_get_name(channel),
-						  tech_pvt->udp_socket);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s WOOMERACHAN KILL\n", switch_channel_get_name(channel));
+						  
 
 
 	return SWITCH_STATUS_SUCCESS;
@@ -355,7 +355,7 @@ static switch_status woomerachan_waitfor_read(switch_core_session *session, int 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	return switch_socket_waitfor(&tech_pvt->read_poll, ms);
+	return switch_socket_waitfor(&tech_pvt->read_poll, ms) ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status woomerachan_waitfor_write(switch_core_session *session, int ms, int stream_id)
@@ -375,7 +375,6 @@ static switch_status woomerachan_read_frame(switch_core_session *session, switch
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
 	switch_frame *pframe;
-	switch_status status;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -395,12 +394,12 @@ static switch_status woomerachan_read_frame(switch_core_session *session, switch
 	*frame = pframe;
 
 	pframe->datalen = sizeof(tech_pvt->databuf);
-	if ((status =
-		 switch_socket_recvfrom(tech_pvt->udpread, tech_pvt->udp_socket, 0, tech_pvt->databuf,
-								&pframe->datalen)) == SWITCH_STATUS_SUCCESS) {
+	if (switch_socket_recvfrom(tech_pvt->udpread, tech_pvt->udp_socket, 0, tech_pvt->databuf, &pframe->datalen) == SWITCH_STATUS_SUCCESS) {
 		pframe->samples = (int) pframe->datalen / 2;
+		return SWITCH_STATUS_SUCCESS;
 	}
-	return status;
+
+	return SWITCH_STATUS_FALSE;
 }
 
 static switch_status woomerachan_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
@@ -408,7 +407,7 @@ static switch_status woomerachan_write_frame(switch_core_session *session, switc
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
-	switch_frame *pframe;
+	//switch_frame *pframe;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -420,9 +419,12 @@ static switch_status woomerachan_write_frame(switch_core_session *session, switc
 		return SWITCH_STATUS_GENERR;
 	}
 
-	pframe = &tech_pvt->frame;
-	return switch_socket_sendto(tech_pvt->udp_socket, tech_pvt->udpwrite, 0, frame->data, &frame->datalen);
+	//pframe = &tech_pvt->frame;
+	if (switch_socket_sendto(tech_pvt->udp_socket, tech_pvt->udpwrite, 0, frame->data, &frame->datalen) == SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
+	return SWITCH_STATUS_GENERR;
 }
 
 static const switch_state_handler_table woomerachan_event_handlers = {
@@ -623,10 +625,9 @@ static int woomera_dequeue_event(woomera_event_queue * event_queue, woomera_mess
 static int woomera_message_parse(switch_socket_t *fd, woomera_message * wmsg, int timeout, woomera_profile * profile,
 								 woomera_event_queue * event_queue)
 {
-	char *cur, *cr, *next = NULL, *eor = NULL;
+	char *cur, *cr, *next = NULL;
 	char buf[2048] = "", *ptr;
 	int bytes = 0;
-	int failto = 0;
 
 	memset(wmsg, 0, sizeof(woomera_message));
 
@@ -636,14 +637,13 @@ static int woomera_message_parse(switch_socket_t *fd, woomera_message * wmsg, in
 
 	if (timeout < 0) {
 		timeout = abs(timeout);
-		failto = 1;
 	} else if (timeout == 0) {
 		timeout = -1;
 	}
 
 	ptr = buf;
 	bytes = 0;
-	while ((eor = strstr(buf, WOOMERA_RECORD_SEPERATOR)) == 0) {
+	while (!strstr(buf, WOOMERA_RECORD_SEPERATOR)) {
 		size_t len = 1;
 
 		if (!profile->thread_running) {
@@ -774,14 +774,12 @@ static int connect_woomera(switch_socket_t **new_sock, woomera_profile * profile
 {
 
 	switch_sockaddr_t *sa;
-	switch_status status;
 
-	status = switch_sockaddr_info_get(&sa, profile->woomera_host, AF_INET, profile->woomera_port, 0, module_pool);
-	if (status != SWITCH_STATUS_SUCCESS) {
+	if (switch_sockaddr_info_get(&sa, profile->woomera_host, AF_INET, profile->woomera_port, 0, module_pool) != SWITCH_STATUS_SUCCESS) {
 		return -1;
 	}
-	status = switch_socket_create(new_sock, AF_INET, SOCK_STREAM, 0, module_pool);
-	if (status != SWITCH_STATUS_SUCCESS) {
+
+	if (switch_socket_create(new_sock, AF_INET, SOCK_STREAM, 0, module_pool) != SWITCH_STATUS_SUCCESS) {
 		return -1;
 	}
 	/*
@@ -791,8 +789,7 @@ static int connect_woomera(switch_socket_t **new_sock, woomera_profile * profile
 	   return -1;
 	   }
 	 */
-	status = switch_socket_connect((*new_sock), sa);
-	if (status != SWITCH_STATUS_SUCCESS) {
+	if (switch_socket_connect((*new_sock), sa) != SWITCH_STATUS_SUCCESS) {
 		return -1;
 	}
 
@@ -1220,7 +1217,7 @@ static void *woomera_thread_run(void *obj)
 											  profile->woomera_host, profile->woomera_port);
 					}
 				}*/
-				continue;
+				//continue;
 			}
 
 			if (!strcasecmp(wmsg.command, "INCOMING")) {

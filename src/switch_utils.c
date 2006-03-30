@@ -36,16 +36,12 @@ SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
 	switch(priority) { /*lol*/
 	case SWITCH_PRIORITY_NORMAL:
 		return "NORMAL";
-		break;
 	case SWITCH_PRIORITY_LOW:
 		return "LOW";
-		break;
 	case SWITCH_PRIORITY_HIGH:
 		return "HIGH";
-		break;
 	default:
 		return "INVALID";
-		break;
 	}
 }
 
@@ -53,19 +49,24 @@ static char RFC2833_CHARS[] = "0123456789*#ABCDF";
 
 SWITCH_DECLARE(char) switch_rfc2833_to_char(int event)
 {
-    return (event > -1 && event < sizeof(RFC2833_CHARS)) ? RFC2833_CHARS[event] : '\0';
+	if (event > -1 && event < sizeof(RFC2833_CHARS)) {
+		return RFC2833_CHARS[event];
+	}
+	return '\0';
 }
 
 SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key)
 {
     char *c;
+	unsigned char counter = 0;
 
     for (c = RFC2833_CHARS; *c ; c++) {
         if (*c == key) {
-            return (unsigned char)(c - RFC2833_CHARS);
+            return counter;
         }
-    }
-    return (unsigned char)-1;
+		counter++;
+	}
+    return '\0';
 }
 
 SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen)
@@ -123,10 +124,9 @@ SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll,
 														  switch_int16_t flags, switch_memory_pool *pool)
 {
 	switch_pollset_t *pollset;
-	switch_status status;
 
-	if ((status = switch_pollset_create(&pollset, 1, pool, flags)) != SWITCH_STATUS_SUCCESS) {
-		return status;
+	if (switch_pollset_create(&pollset, 1, pool, flags) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
 	}
 
 	poll->desc_type = SWITCH_POLL_SOCKET;
@@ -134,16 +134,19 @@ SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll,
 	poll->desc.s = sock;
 	poll->client_data = sock;
 
-	return switch_pollset_add(pollset, poll);
+	if (switch_pollset_add(pollset, poll) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
 SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 {
-	switch_status status;
 	int nsds = 0;
 
-	if ((status = switch_poll(poll, 1, &nsds, ms)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_poll(poll, 1, &nsds, ms) != SWITCH_STATUS_SUCCESS) {
 		return -1;
 	}
 

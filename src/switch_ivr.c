@@ -200,7 +200,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
 		switch_core_session_set_read_codec(session, &codec);		
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d channels %dms\n",
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%uhz %u channels %dms\n",
 							  codec_name, fh->samplerate, fh->channels, read_codec->implementation->microseconds_per_frame / 1000);
 		switch_core_file_close(fh);
 		return SWITCH_STATUS_GENERR;
@@ -208,7 +208,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 	
 
 	while(switch_channel_ready(channel)) {
-		size_t len;
+		switch_size_t len;
 
 		if (dtmf_callback || buf) {
 			/*
@@ -234,7 +234,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 			break;
 		}
 		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-			len = (size_t) read_frame->datalen / 2;
+			len = (switch_size_t) read_frame->datalen / 2;
 			switch_core_file_write(fh, read_frame->data, &len);
 		}
 	}
@@ -257,14 +257,13 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	short abuf[960];
 	char dtmf[128];
 	int interval = 0, samples = 0;
-	size_t len = 0, ilen = 0, olen = 0;
+	switch_size_t len = 0, ilen = 0, olen = 0;
 	switch_frame write_frame;
 	switch_timer timer;
 	switch_core_thread_session thread_session;
 	switch_codec codec;
 	switch_memory_pool *pool = switch_core_session_get_pool(session);
 	char *codec_name;
-	int x;
 	int stream_id;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	switch_file_handle lfh;
@@ -290,7 +289,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	write_frame.buflen = sizeof(abuf);
 
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s %dhz %d channels\n", file, fh->samplerate, fh->channels);
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s %uhz %u channels\n", file, fh->samplerate, fh->channels);
 
 	interval = 20;
 	samples = (fh->samplerate / 50) * fh->channels;
@@ -308,7 +307,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
 		write_frame.codec = &codec;
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d channels %dms\n",
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%uhz %u channels %dms\n",
 							  codec_name, fh->samplerate, fh->channels, interval);
 		switch_core_file_close(fh);
 		return SWITCH_STATUS_GENERR;
@@ -321,7 +320,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 			switch_core_file_close(fh);
 			return SWITCH_STATUS_GENERR;
 		}
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %d bytes per %d ms!\n", len, interval);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %u bytes per %d ms!\n", len, interval);
 	}
 	write_frame.rate = fh->samplerate;
 
@@ -389,9 +388,9 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 		
 		if (fh->speed && do_speed) {
 			float factor = 0.25f * abs(fh->speed);
-			size_t newlen, supplement, step;
+			switch_size_t newlen, supplement, step;
 			short *bp = write_frame.data;
-			size_t wrote = 0;
+			switch_size_t wrote = 0;
 			
 			if (!fh->audio_buffer) {
 				switch_buffer_create(fh->memory_pool, &fh->audio_buffer, SWITCH_RECCOMMENDED_BUFFER_SIZE);
@@ -418,7 +417,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 				}
 			}
 			if (wrote < newlen) {
-				size_t r = newlen - wrote;
+				switch_size_t r = newlen - wrote;
 				switch_buffer_write(fh->audio_buffer, bp, r*2);
 				wrote += r;
 			}
@@ -443,7 +442,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 			}
 		}
 		if (timer_name) {
-			if ((x = switch_core_timer_next(&timer)) < 0) {
+			if (switch_core_timer_next(&timer) < 0) {
 				break;
 			}
 		} else { /* time off the channel (if you must) */
@@ -475,7 +474,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 													char *tts_name,
 													char *voice_name,
 													char *timer_name,
-													size_t rate,
+													switch_size_t rate,
 													switch_dtmf_callback_function dtmf_callback,
 													char *text,
 													void *buf,
@@ -485,9 +484,9 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	short abuf[960];
 	char dtmf[128];
 	int interval = 0;
-	size_t samples = 0;
-	size_t len = 0;
-	size_t ilen = 0;
+	switch_size_t samples = 0;
+	switch_size_t len = 0;
+	switch_size_t ilen = 0;
 	switch_frame write_frame;
 	switch_timer timer;
 	switch_core_thread_session thread_session;
@@ -501,7 +500,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	switch_speech_handle sh;
-	switch_speech_flag flags = SWITCH_SPEECH_FLAG_TTS;
+	uint32_t flags = SWITCH_SPEECH_FLAG_TTS;
 
 
 	memset(&sh, 0, sizeof(sh));
@@ -543,8 +542,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activated\n");
 		write_frame.codec = &codec;
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%dhz %d channels %dms\n",
-							  codec_name, rate, 1, interval);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Raw Codec Activation Failed %s@%uhz 1 channel %dms\n",
+							  codec_name, rate, interval);
 		flags = 0;
 		switch_core_speech_close(&sh, &flags);
 		return SWITCH_STATUS_GENERR;
@@ -558,7 +557,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 			switch_core_speech_close(&sh, &flags);
 			return SWITCH_STATUS_GENERR;
 		}
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %d bytes per %d ms!\n", len, interval);
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "setup timer success %u bytes per %d ms!\n", len, interval);
 	}
 
 	flags = 0;
@@ -692,6 +691,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	switch_dtmf_callback_function dtmf_callback;
 	void *user_data;
 
+	assert(thread != NULL);
 	switch_channel *chan_a, *chan_b;
 	switch_frame *read_frame;
 	switch_core_session *session_a, *session_b;
@@ -700,7 +700,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	session_b = data->objs[1];
 
 	stream_id_p = data->objs[2];
-	dtmf_callback = data->objs[3];
+	dtmf_callback = (switch_dtmf_callback_function) data->objs[3];
 	user_data = data->objs[4];
 	his_thread = data->objs[5];
 
@@ -723,7 +723,6 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 		case CS_HANGUP:
 			data->running = -1;
 			continue;
-			break;
 		default:
 			break;
 		}
@@ -762,7 +761,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 		if (switch_core_session_read_frame(session_a, &read_frame, -1, stream_id) == SWITCH_STATUS_SUCCESS
 			&& read_frame->datalen) {
 			if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "write: %s Bad Frame....[%d] Bubye!\n", switch_channel_get_name(chan_b), read_frame->datalen);
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "write: %s Bad Frame....[%u] Bubye!\n", switch_channel_get_name(chan_b), read_frame->datalen);
 				data->running = -1;
 			}
 		} else {

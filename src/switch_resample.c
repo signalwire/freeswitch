@@ -48,10 +48,11 @@
 
 SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **new_resampler,
 													 int from_rate,
-													 size_t from_size,
-													 int to_rate, size_t to_size, switch_memory_pool *pool)
+													 switch_size_t from_size,
+													 int to_rate, switch_size_t to_size, switch_memory_pool *pool)
 {
 	switch_audio_resampler *resampler;
+	double lto_rate, lfrom_rate;
 
 	if ((resampler = switch_core_alloc(pool, sizeof(*resampler))) == 0) {
 		return SWITCH_STATUS_MEMERR;
@@ -59,7 +60,9 @@ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **ne
 
 	resampler->from_rate = from_rate;
 	resampler->to_rate = to_rate;
-	resampler->factor = ((double) resampler->to_rate / (double) resampler->from_rate);
+	lto_rate = (double) resampler->to_rate;
+	lfrom_rate = (double) resampler->from_rate;
+	resampler->factor = (lto_rate / lfrom_rate);
 
 	resampler->resampler = resample_open(QUALITY, resampler->factor, resampler->factor);
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Resampler %d->%d %f\n", resampler->from_rate,
@@ -103,9 +106,9 @@ SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler *resampler)
 }
 
 
-SWITCH_DECLARE(size_t) switch_float_to_short(float *f, short *s, size_t len)
+SWITCH_DECLARE(switch_size_t) switch_float_to_short(float *f, short *s, switch_size_t len)
 {
-	size_t i;
+	switch_size_t i;
 	float ft;
 	for (i = 0; i < len; i++) {
 		ft = f[i] * NORMFACT;

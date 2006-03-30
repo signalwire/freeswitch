@@ -191,7 +191,7 @@ static int str2dp(char *dp)
 	return PRI_UNKNOWN;
 }
 
-static const switch_endpoint_interface wanpipe_endpoint_interface;
+
 
 static void set_global_dialplan(char *dialplan);
 static int str2node(char *node);
@@ -394,6 +394,307 @@ static switch_status wanpipe_on_transmit(switch_core_session *session)
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE TRANSMIT\n");
 	return SWITCH_STATUS_SUCCESS;
 }
+
+
+static switch_status wanpipe_answer_channel(switch_core_session *session)
+{
+	struct private_object *tech_pvt;
+	switch_channel *channel = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	if (switch_test_flag(tech_pvt, TFLAG_INBOUND) && !switch_test_flag(tech_pvt, TFLAG_NOSIG)) {
+		pri_answer(tech_pvt->spri->pri, tech_pvt->call, 0, 1);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+static switch_status wanpipe_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
+										switch_io_flag flags, int stream_id)
+{
+	struct private_object *tech_pvt;
+	switch_channel *channel = NULL;
+	uint8_t *bp;
+	int bytes = 0, res = 0;
+	char digit_str[80];
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	bp = tech_pvt->databuf;
+
+	*frame = NULL;
+	memset(tech_pvt->databuf, 0, sizeof(tech_pvt->databuf));
+	while (bytes < globals.mtu) {
+		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+			return SWITCH_STATUS_GENERR;
+		}
+		if ((res = sangoma_socket_waitfor(tech_pvt->socket, timeout, POLLIN | POLLERR)) < 0) {
+			return SWITCH_STATUS_GENERR;
+		} else if (res == 0) {
+			tech_pvt->read_frame.datalen = 0;
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		if ((res = sangoma_readmsg_socket(tech_pvt->socket,
+										  &tech_pvt->hdrframe,
+										  sizeof(tech_pvt->hdrframe), bp, sizeof(tech_pvt->databuf) - bytes, 0)) < 0) {
+			if (errno == EBUSY) {
+				continue;
+			} else {
+				return SWITCH_STATUS_GENERR;
+			}
+
+		}
+		bytes += res;
+		bp += bytes;
+	}
+
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	tech_pvt->read_frame.datalen = bytes;
+	tech_pvt->read_frame.samples = bytes / 2;
+
+	res = teletone_dtmf_detect (&tech_pvt->dtmf_detect, tech_pvt->read_frame.data, tech_pvt->read_frame.samples);
+	res = teletone_dtmf_get(&tech_pvt->dtmf_detect, digit_str, sizeof(digit_str));
+
+	if(digit_str[0]) {
+		switch_channel_queue_dtmf(channel, digit_str);
+		if (globals.debug) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DTMF DETECTED: [%s]\n", digit_str);
+		}
+		if (globals.supress_dtmf_tone) {
+			memset(tech_pvt->read_frame.data, 0, tech_pvt->read_frame.datalen);
+		}
+	}
+
+	if (tech_pvt->skip_read_frames > 0) {
+		memset(tech_pvt->read_frame.data, 0, tech_pvt->read_frame.datalen);
+		tech_pvt->skip_read_frames--;
+	}
+
+#ifdef DOTRACE	
+	write(tech_pvt->fd2, tech_pvt->read_frame.data, (int) tech_pvt->read_frame.datalen);
+#endif
+	//printf("read %d\n", tech_pvt->read_frame.datalen);
+	*frame = &tech_pvt->read_frame;
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status wanpipe_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
+										 switch_io_flag flags, int stream_id)
+{
+	struct private_object *tech_pvt;
+	switch_channel *channel = NULL;
+	int result = 0;
+	int bytes = frame->datalen;
+	uint8_t *bp = frame->data;
+	unsigned char dtmf[1024];
+	int bread, bwrote = 0;
+	switch_status status = SWITCH_STATUS_SUCCESS;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+
+	while (tech_pvt->dtmf_buffer && bwrote < frame->datalen && bytes > 0 && switch_buffer_inuse(tech_pvt->dtmf_buffer) > 0) {
+		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+			return SWITCH_STATUS_GENERR;
+		}
+
+		if ((bread = switch_buffer_read(tech_pvt->dtmf_buffer, dtmf, globals.mtu)) < globals.mtu) {
+			while (bread < globals.mtu) {
+				dtmf[bread++] = 0;
+			}
+		}
+
+
+		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
+
+
+#ifdef DOTRACE	
+		write(tech_pvt->fd, dtmf, (int) bread);
+#endif
+		result = sangoma_sendmsg_socket(tech_pvt->socket,
+									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), dtmf, bread, 0);
+		if (result < 0) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE,
+								  "Bad Write %d bytes returned %d (%s)!\n", bread,
+								  result, strerror(errno));
+			if (errno == EBUSY) {
+				continue;
+			}
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Failed!\n");
+			status = SWITCH_STATUS_GENERR;
+			break;
+		} else {
+			bytes -= result;
+			bwrote += result;
+			bp += result;
+			result = 0;
+		}
+	}
+
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (tech_pvt->skip_write_frames) {
+		tech_pvt->skip_write_frames--;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	while (bytes > 0) {
+		unsigned int towrite;
+		
+		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+			return SWITCH_STATUS_GENERR;
+		}
+
+		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
+#ifdef DOTRACE	
+		write(tech_pvt->fd, bp, (int) globals.mtu);
+#endif
+		towrite = bytes >= globals.mtu ? globals.mtu : bytes;
+
+		result = sangoma_sendmsg_socket(tech_pvt->socket,
+									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), bp, towrite, 0);
+		if (result < 0) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE,
+								  "Bad Write frame len %u write %d bytes returned %d (%s)!\n", frame->datalen,
+								  globals.mtu, result, strerror(errno));
+			if (errno == EBUSY) {
+				continue;
+			}
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Failed!\n");
+			status = SWITCH_STATUS_GENERR;
+			break;
+		} else {
+			bytes -= result;
+			bp += result;
+			result = 0;
+		}
+	}
+	
+	//printf("write %d %d\n", frame->datalen, status);	
+	return status;
+}
+
+static switch_status wanpipe_send_dtmf(switch_core_session *session, char *digits)
+{
+	struct private_object *tech_pvt;
+	switch_channel *channel = NULL;
+	switch_status status = SWITCH_STATUS_SUCCESS;
+	int wrote = 0;
+	char *cur = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	if (!tech_pvt->dtmf_buffer) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate DTMF Buffer....");
+		if (switch_buffer_create(switch_core_session_get_pool(session), &tech_pvt->dtmf_buffer, 3192) != SWITCH_STATUS_SUCCESS) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "FAILURE!\n");
+			return SWITCH_STATUS_FALSE;
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "SUCCESS!\n");
+		}
+	}
+	for (cur = digits; *cur; cur++) {
+		if ((wrote = teletone_mux_tones(&tech_pvt->tone_session, &tech_pvt->tone_session.TONES[(int)*cur]))) {
+			switch_buffer_write(tech_pvt->dtmf_buffer, tech_pvt->tone_session.buffer, wrote * 2);
+		}
+	}
+
+	tech_pvt->skip_read_frames = 200;
+	
+	return status;
+}
+
+static switch_status wanpipe_receive_message(switch_core_session *session, switch_core_session_message *msg)
+{
+	return SWITCH_STATUS_FALSE;
+}
+
+static switch_status wanpipe_kill_channel(switch_core_session *session, int sig)
+{
+	struct private_object *tech_pvt;
+	switch_channel *channel = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	switch_set_flag(tech_pvt, TFLAG_BYE);
+	switch_clear_flag(tech_pvt, TFLAG_MEDIA);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+
+static const switch_io_routines wanpipe_io_routines = {
+	/*.outgoing_channel */ wanpipe_outgoing_channel,
+	/*.answer_channel */ wanpipe_answer_channel,
+	/*.read_frame */ wanpipe_read_frame,
+	/*.write_frame */ wanpipe_write_frame,
+	/*.kill_channel */ wanpipe_kill_channel,
+	/*.waitfor_read */ NULL,
+	/*.waitfor_read */ NULL,
+	/*.send_dtmf*/ wanpipe_send_dtmf,
+	/*.receive_message*/ wanpipe_receive_message
+};
+
+static const switch_state_handler_table wanpipe_state_handlers = {
+	/*.on_init */ wanpipe_on_init,
+	/*.on_ring */ wanpipe_on_ring,
+	/*.on_execute */ NULL,
+	/*.on_hangup */ wanpipe_on_hangup,
+	/*.on_loopback */ wanpipe_on_loopback,
+	/*.on_transmit */ wanpipe_on_transmit
+};
+
+static const switch_endpoint_interface wanpipe_endpoint_interface = {
+	/*.interface_name */ "wanpipe",
+	/*.io_routines */ &wanpipe_io_routines,
+	/*.state_handlers */ &wanpipe_state_handlers,
+	/*.private */ NULL,
+	/*.next */ NULL
+};
+
+static const switch_loadable_module_interface wanpipe_module_interface = {
+	/*.module_name */ modname,
+	/*.endpoint_interface */ &wanpipe_endpoint_interface,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ NULL,
+	/*.codec_interface */ NULL,
+	/*.application_interface */ NULL
+};
+
 
 static switch_status wanpipe_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
 											  switch_core_session **new_session, switch_memory_pool *pool)
@@ -600,304 +901,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 	return SWITCH_STATUS_GENERR;
 }
 
-static switch_status wanpipe_answer_channel(switch_core_session *session)
-{
-	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
 
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
-
-	if (switch_test_flag(tech_pvt, TFLAG_INBOUND) && !switch_test_flag(tech_pvt, TFLAG_NOSIG)) {
-		pri_answer(tech_pvt->spri->pri, tech_pvt->call, 0, 1);
-	}
-	return SWITCH_STATUS_SUCCESS;
-}
-
-
-
-static switch_status wanpipe_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
-										switch_io_flag flags, int stream_id)
-{
-	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
-	void *bp;
-	int bytes = 0, res = 0;
-	char digit_str[80];
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
-
-
-	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
-		return SWITCH_STATUS_GENERR;
-	}
-
-	bp = tech_pvt->databuf;
-
-	*frame = NULL;
-	memset(tech_pvt->databuf, 0, sizeof(tech_pvt->databuf));
-	while (bytes < globals.mtu) {
-		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
-			return SWITCH_STATUS_GENERR;
-		}
-		if ((res = sangoma_socket_waitfor(tech_pvt->socket, timeout, POLLIN | POLLERR)) < 0) {
-			return SWITCH_STATUS_GENERR;
-		} else if (res == 0) {
-			tech_pvt->read_frame.datalen = 0;
-			return SWITCH_STATUS_SUCCESS;
-		}
-
-		if ((res = sangoma_readmsg_socket(tech_pvt->socket,
-										  &tech_pvt->hdrframe,
-										  sizeof(tech_pvt->hdrframe), bp, sizeof(tech_pvt->databuf) - bytes, 0)) < 0) {
-			if (errno == EBUSY) {
-				continue;
-			} else {
-				return SWITCH_STATUS_GENERR;
-			}
-
-		}
-		bytes += res;
-		bp += bytes;
-	}
-
-	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
-		return SWITCH_STATUS_GENERR;
-	}
-
-	tech_pvt->read_frame.datalen = bytes;
-	tech_pvt->read_frame.samples = bytes / 2;
-
-	res = teletone_dtmf_detect (&tech_pvt->dtmf_detect, tech_pvt->read_frame.data, tech_pvt->read_frame.samples);
-	res = teletone_dtmf_get(&tech_pvt->dtmf_detect, digit_str, sizeof(digit_str));
-
-	if(digit_str[0]) {
-		switch_channel_queue_dtmf(channel, digit_str);
-		if (globals.debug) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DTMF DETECTED: [%s]\n", digit_str);
-		}
-		if (globals.supress_dtmf_tone) {
-			memset(tech_pvt->read_frame.data, 0, tech_pvt->read_frame.datalen);
-		}
-	}
-
-	if (tech_pvt->skip_read_frames > 0) {
-		memset(tech_pvt->read_frame.data, 0, tech_pvt->read_frame.datalen);
-		tech_pvt->skip_read_frames--;
-	}
-
-#ifdef DOTRACE	
-	write(tech_pvt->fd2, tech_pvt->read_frame.data, (int) tech_pvt->read_frame.datalen);
-#endif
-	//printf("read %d\n", tech_pvt->read_frame.datalen);
-	*frame = &tech_pvt->read_frame;
-	return SWITCH_STATUS_SUCCESS;
-}
-
-static switch_status wanpipe_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
-										 switch_io_flag flags, int stream_id)
-{
-	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
-	int res = 0;
-	int bytes = frame->datalen;
-	void *bp = frame->data;
-	unsigned char dtmf[1024];
-	int inuse, bread, bwrote = 0;
-	switch_status status = SWITCH_STATUS_SUCCESS;
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
-
-
-	while (tech_pvt->dtmf_buffer && bwrote < frame->datalen && bytes > 0 && (inuse = switch_buffer_inuse(tech_pvt->dtmf_buffer)) > 0) {
-		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
-			return SWITCH_STATUS_GENERR;
-		}
-
-		if ((bread = switch_buffer_read(tech_pvt->dtmf_buffer, dtmf, globals.mtu)) < globals.mtu) {
-			while (bread < globals.mtu) {
-				dtmf[bread++] = 0;
-			}
-		}
-
-
-		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
-
-
-#ifdef DOTRACE	
-		write(tech_pvt->fd, dtmf, (int) bread);
-#endif
-		res = sangoma_sendmsg_socket(tech_pvt->socket,
-									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), dtmf, bread, 0);
-		if (res < 0) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-								  "Bad Write %d bytes returned %d (%s)!\n", bread,
-								  res, strerror(errno));
-			if (errno == EBUSY) {
-				continue;
-			}
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Failed!\n");
-			status = SWITCH_STATUS_GENERR;
-			break;
-		} else {
-			bytes -= res;
-			bwrote += res;
-			bp += res;
-			res = 0;
-		}
-	}
-
-	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
-		return SWITCH_STATUS_GENERR;
-	}
-
-	if (tech_pvt->skip_write_frames) {
-		tech_pvt->skip_write_frames--;
-		return SWITCH_STATUS_SUCCESS;
-	}
-
-	while (bytes > 0) {
-		unsigned int towrite;
-		
-		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
-			return SWITCH_STATUS_GENERR;
-		}
-
-		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
-#ifdef DOTRACE	
-		write(tech_pvt->fd, bp, (int) globals.mtu);
-#endif
-		towrite = bytes >= globals.mtu ? globals.mtu : bytes;
-
-		res = sangoma_sendmsg_socket(tech_pvt->socket,
-									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), bp, towrite, 0);
-		if (res < 0) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-								  "Bad Write frame len %d write %d bytes returned %d (%s)!\n", frame->datalen,
-								  globals.mtu, res, strerror(errno));
-			if (errno == EBUSY) {
-				continue;
-			}
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Failed!\n");
-			status = SWITCH_STATUS_GENERR;
-			break;
-		} else {
-			bytes -= res;
-			bp += res;
-			res = 0;
-		}
-	}
-	
-	//printf("write %d %d\n", frame->datalen, status);	
-	return status;
-}
-
-static switch_status wanpipe_send_dtmf(switch_core_session *session, char *digits)
-{
-	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
-	switch_status status = SWITCH_STATUS_SUCCESS;
-	int wrote = 0;
-	char *cur = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
-
-	if (!tech_pvt->dtmf_buffer) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate DTMF Buffer....");
-		if (switch_buffer_create(switch_core_session_get_pool(session), &tech_pvt->dtmf_buffer, 3192) != SWITCH_STATUS_SUCCESS) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "FAILURE!\n");
-			return SWITCH_STATUS_FALSE;
-		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "SUCCESS!\n");
-		}
-	}
-	for (cur = digits; *cur; cur++) {
-		if ((wrote = teletone_mux_tones(&tech_pvt->tone_session, &tech_pvt->tone_session.TONES[(int)*cur]))) {
-			switch_buffer_write(tech_pvt->dtmf_buffer, tech_pvt->tone_session.buffer, wrote * 2);
-		}
-	}
-
-	tech_pvt->skip_read_frames = 200;
-	
-	return status;
-}
-
-static switch_status wanpipe_receive_message(switch_core_session *session, switch_core_session_message *msg)
-{
-	return SWITCH_STATUS_FALSE;
-}
-
-static switch_status wanpipe_kill_channel(switch_core_session *session, int sig)
-{
-	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
-
-	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
-
-	switch_set_flag(tech_pvt, TFLAG_BYE);
-	switch_clear_flag(tech_pvt, TFLAG_MEDIA);
-
-	return SWITCH_STATUS_SUCCESS;
-
-}
-
-
-static const switch_io_routines wanpipe_io_routines = {
-	/*.outgoing_channel */ wanpipe_outgoing_channel,
-	/*.answer_channel */ wanpipe_answer_channel,
-	/*.read_frame */ wanpipe_read_frame,
-	/*.write_frame */ wanpipe_write_frame,
-	/*.kill_channel */ wanpipe_kill_channel,
-	/*.waitfor_read */ NULL,
-	/*.waitfor_read */ NULL,
-	/*.send_dtmf*/ wanpipe_send_dtmf,
-	/*.receive_message*/ wanpipe_receive_message
-};
-
-static const switch_state_handler_table wanpipe_state_handlers = {
-	/*.on_init */ wanpipe_on_init,
-	/*.on_ring */ wanpipe_on_ring,
-	/*.on_execute */ NULL,
-	/*.on_hangup */ wanpipe_on_hangup,
-	/*.on_loopback */ wanpipe_on_loopback,
-	/*.on_transmit */ wanpipe_on_transmit
-};
-
-static const switch_endpoint_interface wanpipe_endpoint_interface = {
-	/*.interface_name */ "wanpipe",
-	/*.io_routines */ &wanpipe_io_routines,
-	/*.state_handlers */ &wanpipe_state_handlers,
-	/*.private */ NULL,
-	/*.next */ NULL
-};
-
-static const switch_loadable_module_interface wanpipe_module_interface = {
-	/*.module_name */ modname,
-	/*.endpoint_interface */ &wanpipe_endpoint_interface,
-	/*.timer_interface */ NULL,
-	/*.dialplan_interface */ NULL,
-	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
-};
 
 static void s_pri_error(struct pri *pri, char *s)
 {
@@ -926,7 +930,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	}
 
 	/* start the pri's */
-	if ((status = config_wanpipe(0) != SWITCH_STATUS_SUCCESS)) {
+	if ((status = config_wanpipe(0)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 
@@ -1222,7 +1226,7 @@ static int on_dchan_down(struct sangoma_pri *spri, sangoma_pri_event_t event_typ
 static int on_anything(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event)
 {
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Caught Event span %d %d (%s)\n", spri->span, event_type,
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Caught Event span %d %u (%s)\n", spri->span, event_type,
 						  sangoma_pri_event_str(event_type));
 	return 0;
 }
@@ -1276,7 +1280,6 @@ static switch_status config_wanpipe(int reload)
 {
 	switch_config cfg;
 	char *var, *val;
-	int count = 0;
 	char *cf = "wanpipe.conf";
 	int current_span = 0;
 
@@ -1404,7 +1407,7 @@ static switch_status config_wanpipe(int reload)
 
 
 
-	return count;
+	return SWITCH_STATUS_SUCCESS;
 
 }
 

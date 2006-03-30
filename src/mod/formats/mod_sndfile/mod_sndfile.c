@@ -41,7 +41,7 @@ struct sndfile_context {
 
 typedef struct sndfile_context sndfile_context;
 
-switch_status sndfile_file_open(switch_file_handle *handle, char *path)
+static switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 {
 	sndfile_context *context;
 	int mode = 0;
@@ -144,7 +144,7 @@ switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status sndfile_file_close(switch_file_handle *handle)
+static switch_status sndfile_file_close(switch_file_handle *handle)
 {
 	sndfile_context *context = handle->private_info;
 
@@ -153,7 +153,7 @@ switch_status sndfile_file_close(switch_file_handle *handle)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status sndfile_file_seek(switch_file_handle *handle, unsigned int *cur_sample, int64_t samples, int whence)
+static switch_status sndfile_file_seek(switch_file_handle *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
 	sndfile_context *context = handle->private_info;
 
@@ -169,7 +169,7 @@ switch_status sndfile_file_seek(switch_file_handle *handle, unsigned int *cur_sa
 
 }
 
-switch_status sndfile_file_read(switch_file_handle *handle, void *data, size_t *len)
+static switch_status sndfile_file_read(switch_file_handle *handle, void *data, size_t *len)
 {
 	size_t inlen = *len;
 	sndfile_context *context = handle->private_info;
@@ -191,7 +191,7 @@ switch_status sndfile_file_read(switch_file_handle *handle, void *data, size_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status sndfile_file_write(switch_file_handle *handle, void *data, size_t *len)
+static switch_status sndfile_file_write(switch_file_handle *handle, void *data, size_t *len)
 {
 	size_t inlen = *len;
 	sndfile_context *context = handle->private_info;

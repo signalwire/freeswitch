@@ -282,8 +282,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 		sdp_message_m_media_add(tech_pvt->local_sdp, "audio", port, NULL, "RTP/AVP");
 		/* Add in every codec we support on this outbound call */
 		if (globals.codec_string) {
-			num_codecs = switch_loadable_module_get_codecs_sorted(switch_core_session_get_pool(tech_pvt->session),
-																  codecs,
+			num_codecs = switch_loadable_module_get_codecs_sorted(codecs,
 																  SWITCH_MAX_CODECS,
 																  globals.codec_order,
 																  globals.codec_order_last);
@@ -301,7 +300,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 			for (i = 0; i < num_codecs; i++) {
 				int x = 0;
 
-				snprintf(tmp, sizeof(tmp), "%i", codecs[i]->ianacode);
+				snprintf(tmp, sizeof(tmp), "%u", codecs[i]->ianacode);
 				sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(tmp));
 				for (imp = codecs[i]->implementations; imp; imp = imp->next) {
 					/* Add to SDP config */
@@ -309,8 +308,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 								  imp->samples_per_second, x++);
 					/* Add to SDP message */
 
-					snprintf(tmp, sizeof(tmp), "%i %s/%i", codecs[i]->ianacode, codecs[i]->iananame,
-							 imp->samples_per_second);
+					snprintf(tmp, sizeof(tmp), "%u %s/%d", codecs[i]->ianacode, codecs[i]->iananame, imp->samples_per_second);
 					sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(tmp));
 					memset(tmp, 0, sizeof(tmp));
 				} 
@@ -464,7 +462,7 @@ static void activate_rtp(struct private_object *tech_pvt)
 		bw *= 8;
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activating RTP %s:%d->%s:%d codec: %d ms: %d\n",
+	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activating RTP %s:%d->%s:%d codec: %u ms: %d\n",
 						  tech_pvt->local_sdp_audio_ip,
 						  tech_pvt->local_sdp_audio_port,
 						  tech_pvt->remote_sdp_audio_ip,
@@ -684,7 +682,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
 	switch_status status = SWITCH_STATUS_SUCCESS;
-	int bytes = 0, samples = 0, ms = 0, frames = 0;
+	int bytes = 0, samples = 0, frames = 0;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -712,7 +710,6 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 		frames = ((int) frame->datalen / bytes);
 		samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
-		ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame / 1000;
 	} else {
 		assert(0);
 	}
@@ -739,8 +736,12 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 
 		for (x = 0; x < loops; x++) {
 			jrtp4c_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
-			printf("Send %s packet for [%c] ts=%d sofar=%d dur=%d\n", loops == 1 ? "middle" : "end", tech_pvt->out_digit, ts, 
-				   tech_pvt->out_digit_sofar, duration);
+			printf("Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", 
+				   loops == 1 ? "middle" : "end",
+				   tech_pvt->out_digit,
+				   ts, 
+				   tech_pvt->out_digit_sofar,
+				   duration);
 		}
 	}
 
@@ -762,7 +763,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 			tech_pvt->out_digit_seq++;
 			for (x = 0; x < 3; x++) {
 				jrtp4c_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
-				printf("Send start packet for [%c] ts=%d sofar=%d dur=%d\n", tech_pvt->out_digit, ts, 
+				printf("Send start packet for [%c] ts=%d sofar=%u dur=%d\n", tech_pvt->out_digit, ts, 
 					   tech_pvt->out_digit_sofar, 0);
 			}
 
@@ -1111,8 +1112,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 
 
 		if (globals.codec_string) {
-			num_codecs = switch_loadable_module_get_codecs_sorted(switch_core_session_get_pool(tech_pvt->session),
-																  codecs,
+			num_codecs = switch_loadable_module_get_codecs_sorted(codecs,
 																  SWITCH_MAX_CODECS,
 																  globals.codec_order,
 																  globals.codec_order_last);
@@ -1245,7 +1245,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 	}
 
 
-	return 0;
+	return SWITCH_STATUS_SUCCESS;
 
 }
 
@@ -1624,7 +1624,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	config_exosip(0);
 
 	if (globals.debug) {
-		osip_trace_initialize(globals.debug, stdout);
+		osip_trace_initialize((osip_trace_level_t) globals.debug, stdout);
 	}
 
 	if (eXosip_init()) {

@@ -215,8 +215,7 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 	int x, srate = 8000;
 
 	if (globals.codec_string) {
-		if ((num_codecs = switch_loadable_module_get_codecs_sorted(switch_core_session_get_pool(tech_pvt->session),
-																	codecs,
+		if ((num_codecs = switch_loadable_module_get_codecs_sorted(codecs,
 																	SWITCH_MAX_CODECS,
 																	globals.codec_order,
 																	globals.codec_order_last)) <= 0) {
@@ -863,9 +862,7 @@ static switch_status load_config(void)
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 {
-	int res;
-	int netfd;
-	int refresh;
+	//int refresh;
 	struct iax_event *iaxevent = NULL;
 	switch_event *s_event;
 	if (load_config() != SWITCH_STATUS_SUCCESS) {
@@ -875,14 +872,14 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	if (globals.debug) {
 		iax_enable_debug();
 	}
-	if (((res = iax_init(globals.port) < 0)) != 0) {
+	if (iax_init(globals.port) < 0) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error Binding Port!\n");
 		return SWITCH_STATUS_TERM;
 	}
 
 	iax_set_error(iax_err_cb);
 	iax_set_output(iax_out_cb);
-	netfd = iax_get_fd();
+	//netfd = iax_get_fd();
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "IAX Ready Port %d\n", globals.port);
 
@@ -912,8 +909,8 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 			switch (iaxevent->etype) {
 			case IAX_EVENT_REGACK:
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Registration completed successfully.\n");
-				if (iaxevent->ies.refresh)
-					refresh = iaxevent->ies.refresh;
+				//if (iaxevent->ies.refresh)
+				//refresh = iaxevent->ies.refresh;
 				break;
 			case IAX_EVENT_REGREJ:
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Registration failed.\n");
@@ -927,7 +924,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 
 					if (iax_set_codec(tech_pvt, iaxevent->session, &format, &cap, &iaxevent->ies.samprate, IAX_SET) !=
 						SWITCH_STATUS_SUCCESS) {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WTF? %d %d\n", iaxevent->ies.format,
+						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WTF? %u %u\n", iaxevent->ies.format,
 											  iaxevent->ies.capability);
 					}
 				}
@@ -961,7 +958,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 			case IAX_EVENT_CONNECT:
 				// incoming call detected
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE,
-									  "Incoming call connected %s, %s, %s %d/%d\n",
+									  "Incoming call connected %s, %s, %s %u/%u\n",
 									  iaxevent->ies.called_number,
 									  iaxevent->ies.calling_number,
 									  iaxevent->ies.calling_name, iaxevent->ies.format, iaxevent->ies.capability);

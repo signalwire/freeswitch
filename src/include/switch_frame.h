@@ -49,13 +49,15 @@ struct switch_frame {
 	/*! the frame data */
 	void *data;
 	/*! the size of the buffer that is in use */
-	size_t datalen;
+	switch_size_t datalen;
 	/*! the entire size of the buffer */
-	size_t buflen;
+	switch_size_t buflen;
 	/*! the number of audio samples present (audio only) */
-	size_t samples;
+	switch_size_t samples;
 	/*! the rate of the frame */
 	int rate;
+	/*! the timestamp of the frame */
+	int32_t timestamp;
 };
 
 #ifdef __cplusplus

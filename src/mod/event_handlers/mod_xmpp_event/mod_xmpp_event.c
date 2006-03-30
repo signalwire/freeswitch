@@ -144,13 +144,13 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_jid, globals.jid)
 
 }
 
-int on_result(struct session *sess, ikspak * pak)
+static int on_result(struct session *sess, ikspak * pak)
 {
 
 	return IKS_FILTER_EAT;
 }
 
-int on_stream(struct session *sess, int type, iks * node)
+static int on_stream(struct session *sess, int type, iks * node)
 {
 	sess->counter = opt_timeout;
 
@@ -216,7 +216,7 @@ int on_stream(struct session *sess, int type, iks * node)
 	return IKS_OK;
 }
 
-int on_msg(void *user_data, ikspak * pak)
+static int on_msg(void *user_data, ikspak * pak)
 {
 	char *cmd = iks_find_cdata(pak->x, "body");
 	char *arg = NULL;
@@ -238,13 +238,13 @@ int on_msg(void *user_data, ikspak * pak)
 	return 0;
 }
 
-int on_error(void *user_data, ikspak * pak)
+static int on_error(void *user_data, ikspak * pak)
 {
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "authorization failed\n");
 	return IKS_FILTER_EAT;
 }
 
-void on_log(struct session *sess, const char *data, size_t size, int is_incoming)
+static void on_log(struct session *sess, const char *data, size_t size, int is_incoming)
 {
 	if (iks_is_secure(sess->parser))
 		fprintf(stderr, "Sec");
@@ -255,7 +255,7 @@ void on_log(struct session *sess, const char *data, size_t size, int is_incoming
 	fprintf(stderr, "[%s]\n", data);
 }
 
-void j_setup_filter(struct session *sess)
+static void j_setup_filter(struct session *sess)
 {
 	if (my_filter)
 		iks_filter_delete(my_filter);
