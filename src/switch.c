@@ -127,8 +127,8 @@ int main(int argc, char *argv[])
 
 
 	if (bg) {
-		(void) signal(SIGHUP, (void *) handle_SIGHUP);
-		(void) signal(SIGTERM, (void *) handle_SIGHUP);
+		signal(SIGHUP, (void *) handle_SIGHUP);
+		signal(SIGTERM, (void *) handle_SIGHUP);
 
 #ifdef WIN32
 		FreeConsole();
