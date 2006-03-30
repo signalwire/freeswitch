@@ -1,3 +1,6 @@
+#ifdef __ICC
+#pragma warning (disable:1419)
+#endif
 #include <EXTERN.h>
 #include <perl.h>
 

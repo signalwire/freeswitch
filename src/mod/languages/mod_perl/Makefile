@@ -16,10 +16,7 @@ all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) fs_perl.$(DYNAMIC_LIB_EXTEN)
 	|| ((echo Sorry, you need to compile perl with threads and multiplicity.&& exit 1))
 	@touch .perlok
 
-perlxsi.c: .perlok
-	perl -MExtUtils::Embed -e xsinit
-
-depends: perlxsi.c
+depends:
 
 %.o:  %.c
 	$(CC) $(CFLAGS) -fPIC -c $< -o $@
