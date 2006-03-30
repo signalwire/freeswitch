@@ -46,8 +46,12 @@ DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure $(top_srcdir)/src/include/config.h.in \
 	$(top_srcdir)/src/include/switch_version.h.in AUTHORS COPYING \
-	ChangeLog INSTALL NEWS TODO compile config.guess config.sub \
-	depcomp install-sh ltmain.sh missing mkinstalldirs
+	ChangeLog INSTALL NEWS TODO build/config/compile \
+	build/config/config.guess build/config/config.sub \
+	build/config/depcomp build/config/install-sh \
+	build/config/ltmain.sh build/config/missing compile \
+	config.guess config.sub depcomp install-sh ltmain.sh missing \
+	mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -55,7 +59,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/src/include/config.h
 CONFIG_CLEAN_FILES = src/include/switch_version.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -90,7 +94,7 @@ am_freeswitch_OBJECTS = freeswitch-switch.$(OBJEXT)
 freeswitch_OBJECTS = $(am_freeswitch_OBJECTS)
 freeswitch_DEPENDENCIES = ${top_builddir}/libfreeswitch.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
-depcomp = $(SHELL) $(top_srcdir)/depcomp
+depcomp = $(SHELL) $(top_srcdir)/build/config/depcomp
 am__depfiles_maybe = depfiles
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -160,18 +164,10 @@ INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 IS64BITLINUX_FALSE = @IS64BITLINUX_FALSE@
 IS64BITLINUX_TRUE = @IS64BITLINUX_TRUE@
-ISGCC_FALSE = @ISGCC_FALSE@
-ISGCC_TRUE = @ISGCC_TRUE@
 ISLINUX_FALSE = @ISLINUX_FALSE@
 ISLINUX_TRUE = @ISLINUX_TRUE@
 ISMAC_FALSE = @ISMAC_FALSE@
 ISMAC_TRUE = @ISMAC_TRUE@
-ISSUN64_FALSE = @ISSUN64_FALSE@
-ISSUN64_TRUE = @ISSUN64_TRUE@
-ISSUNOS_FALSE = @ISSUNOS_FALSE@
-ISSUNOS_TRUE = @ISSUNOS_TRUE@
-ISSUNSPARC_FALSE = @ISSUNSPARC_FALSE@
-ISSUNSPARC_TRUE = @ISSUNSPARC_TRUE@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -757,7 +753,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/src/include
+	$(mkdir_p) $(distdir)/build/config $(distdir)/src/include
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
