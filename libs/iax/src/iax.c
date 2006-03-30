@@ -286,7 +286,11 @@ void iax_disable_debug(void)
 #ifdef	WIN32
 #define G __FILE__, __LINE__,
 #else
+#ifdef __GNUC__
 #define G __FILE__, __LINE__, __PRETTY_FUNCTION__, 
+#else
+#define G __FILE__, __LINE__, __func__,  
+#endif
 #endif
 
 #define DEBU __debug 

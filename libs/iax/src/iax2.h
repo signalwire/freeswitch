@@ -154,11 +154,16 @@ typedef long long time_in_ms_t;
 #define IAX_DPSTATUS_IGNOREPAT		(1 << 14)
 #define IAX_DPSTATUS_MATCHMORE		(1 << 15)
 
-#if defined(_MSC_VER)
+#if defined __GNUC__
+#define __PACKED __attribute__ ((__packed__))
+#else
+#if defined (_MSC_VER) 
 #pragma pack(push,1)
 #define __PACKED
 #else
-#define __PACKED __attribute__ ((__packed__))
+#pragma pack(1)
+#define __PACKED   
+#endif
 #endif
 
 /* Full frames are always delivered reliably */
@@ -218,8 +223,12 @@ struct ast_iax2_firmware_header {
 } __PACKED;
 
 
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 #pragma pack(pop)
+#else
+#ifndef __GNUC__
+#pragma pack()
+#endif
 #endif
 
 #undef __PACKED
