@@ -11,9 +11,10 @@ AC_PREFIX_DEFAULT(/usr/local/freeswitch)
 
 # Checks for programs.
 AC_PROG_CC
+AC_PROG_AWK
 AC_PROG_MAKE_SET
-AC_PROG_LIBTOOL
 AC_PROG_INSTALL
+AC_PROG_LIBTOOL
 
 # Checks for header files.
 AC_HEADER_DIRENT
@@ -45,6 +46,9 @@ AC_CONFIG_FILES([Makefile])
 AM_CONDITIONAL(ISLINUX, [test `uname -s` = Linux])
 AM_CONDITIONAL(ISMAC, [test `uname -s` = Darwin])
 AM_CONDITIONAL(IS64BITLINUX, [test `uname -m` = x86_64])
-
+AM_CONDITIONAL(ISSUNOS, [test `uname -s` = SunOS])
+AM_CONDITIONAL(ISSUN64, [test `isainfo -b` = 64])
+AM_CONDITIONAL(ISSUNSPARC, [test `isainfo -n` = sparcv9])
+AM_CONDITIONAL(ISGCC, [test `echo $GCC` = true])
 
 AC_OUTPUT([src/include/switch_version.h])
