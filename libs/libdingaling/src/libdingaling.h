@@ -204,6 +204,13 @@ char *ldl_session_get_id(ldl_session_t *session);
 char *ldl_session_get_caller(ldl_session_t *session);
 
 /*!
+  \brief Set the ip of a session
+  \param session the session to set the ip on
+  \param ip the ip
+*/
+void ldl_session_set_ip(ldl_session_t *session, char *ip);
+
+/*!
   \brief Get the ip of a session
   \param session the session to get the ip from
   \return the ip

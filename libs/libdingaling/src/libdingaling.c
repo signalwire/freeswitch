@@ -118,6 +118,7 @@ struct ldl_session {
 	char *id;
 	char *initiator;
 	char *them;
+	char *ip;
 	ldl_payload_t payloads[LDL_MAX_PAYLOADS];
 	unsigned int payload_len;
 	ldl_candidate_t candidates[LDL_MAX_CANDIDATES];
@@ -801,9 +802,14 @@ char *ldl_session_get_caller(ldl_session_t *session)
 	return session->them;
 }
 
+void ldl_session_set_ip(ldl_session_t *session, char *ip)
+{
+	session->ip = apr_pstrdup(session->pool, ip);
+}
+
 char *ldl_session_get_ip(ldl_session_t *session)
 {
-	return NULL;
+	return session->ip;
 }
 
 void ldl_session_set_private(ldl_session_t *session, void *private_data)
