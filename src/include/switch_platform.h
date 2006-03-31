@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
 #ifdef __ICC
-#pragma warning (disable:810 869 981 279 1469)
+#pragma warning (disable:810 869 981 279 1469 188)
 #endif
 
 #ifdef _MSC_VER
