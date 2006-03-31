@@ -1294,6 +1294,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						}
 
 						tech_pvt->remote_ip = switch_core_session_strdup(session, candidates[x].address);
+						ldl_session_set_ip(dlsession, tech_pvt->remote_ip);
 						tech_pvt->remote_port = candidates[x].port;
 						tech_pvt->remote_user = switch_core_session_strdup(session, candidates[x].username);
 						
