@@ -433,7 +433,7 @@ struct switch_codec_implementation {
 	/*! max number of frames to send in one network packet */
 	int max_frames_per_packet;
 	/*! function to initialize a codec handle using this implementation */
-	switch_status (*init)(switch_codec *, uint32_t, const switch_codec_settings *codec_settings);
+	switch_status (*init)(switch_codec *, switch_codec_flag, const switch_codec_settings *codec_settings);
 	/*! function to encode raw data into encoded data */
 	switch_status (*encode)(switch_codec *codec,
 						 switch_codec *other_codec,

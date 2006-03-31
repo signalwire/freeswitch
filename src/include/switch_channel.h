@@ -299,7 +299,7 @@ SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel *channel,
   \param len max size in bytes of the buffer
   \return number of bytes read into the buffer
 */
-SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, switch_size_t len);
+SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, switch_size_t len);
 
 /*!
   \brief Render the name of the provided state enum

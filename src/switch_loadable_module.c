@@ -73,13 +73,13 @@ static struct switch_loadable_module_container loadable_modules;
 static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 {
 
-	assert(thread != NULL);
 
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	switch_core_thread_session *ts = obj;
 	switch_loadable_module *module = ts->objs[0];
 	int restarts;
 
+	assert(thread != NULL);
 	assert(module != NULL);
 
 	for (restarts = 0; status != SWITCH_STATUS_TERM; restarts++) {

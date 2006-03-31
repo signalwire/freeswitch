@@ -115,11 +115,12 @@ void fs_channel_set_state(struct switch_core_session *session, char *state)
 
 int fs_ivr_play_file(struct switch_core_session *session, char *file, char *timer_name) 
 {
+	switch_status status;
 	if (switch_strlen_zero(timer_name)) {
 		timer_name = NULL;
 	}
 	
-	switch_status status = switch_ivr_play_file(session, NULL, file, timer_name, NULL, NULL, 0);
+	status = switch_ivr_play_file(session, NULL, file, timer_name, NULL, NULL, 0);
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 

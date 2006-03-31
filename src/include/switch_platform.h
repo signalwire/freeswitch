@@ -59,8 +59,9 @@ extern "C" {
  * C4200: Non standard extension C zero sized array
  * C4204: nonstandard extension used : non-constant aggregate initializer 
  * C4706: assignment within conditional expression
+ * C4055: type cast from data pointer to function pointer (apr carries function pointers as data pointers)
  */
-#pragma warning(disable:4152 4054 4100 4142 4200 4204 4706)
+#pragma warning(disable:4152 4054 4100 4142 4200 4204 4706 4055)
 
 #if (_MSC_VER >= 1400) // VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE

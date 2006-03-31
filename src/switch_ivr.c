@@ -500,7 +500,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	switch_speech_handle sh;
-	uint32_t flags = SWITCH_SPEECH_FLAG_TTS;
+	switch_speech_flag flags = SWITCH_SPEECH_FLAG_TTS;
 
 
 	memset(&sh, 0, sizeof(sh));
@@ -691,10 +691,11 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	switch_dtmf_callback_function dtmf_callback;
 	void *user_data;
 
-	assert(!thread || thread);
 	switch_channel *chan_a, *chan_b;
 	switch_frame *read_frame;
 	switch_core_session *session_a, *session_b;
+
+	assert(!thread || thread);
 
 	session_a = data->objs[0];
 	session_b = data->objs[1];

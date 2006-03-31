@@ -150,9 +150,9 @@ SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel *channel,
 }
 
 
-SWITCH_DECLARE(int) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, switch_size_t len)
+SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, switch_size_t len)
 {
-	int bytes;
+	switch_size_t bytes;
 	switch_event *event;
 
 	assert(channel != NULL);

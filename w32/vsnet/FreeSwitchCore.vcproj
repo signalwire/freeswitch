@@ -232,10 +232,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\switch_mutex.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\switch_resample.c"
 				>
 			</File>
@@ -299,10 +295,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_module_interfaces.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_mutex.h"
 				>
 			</File>
 			<File
