@@ -724,7 +724,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 		stun_packet_attribute_add_username(packet, login, 32);
 		sendto(tech_pvt->rtp_sock, (char *)packet, stun_packet_length(packet), 0 ,(struct sockaddr *)&servaddr, sizeof(servaddr));
 		//xstun
-		printf("XXXX SEND STUN REQ %s U=%s to %s:%d\n", packet->header.id, login, tech_pvt->remote_ip, tech_pvt->remote_port);
+		//printf("XXXX SEND STUN REQ %s U=%s to %s:%d\n", packet->header.id, login, tech_pvt->remote_ip, tech_pvt->remote_port);
 		tech_pvt->stuncount = 25;
 	} else {
 		tech_pvt->stuncount--;
