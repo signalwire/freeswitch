@@ -27,6 +27,7 @@ BuildModpcre=False
 BuildModldap=False
 BuildModzeroconf=False
 BuildModSpiderMonkey=False
+BuildModDingaling=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
@@ -93,6 +94,8 @@ If objArgs.Count >=1 Then
 			BuildModzeroconf=True
 		Case "Mod_SpiderMonkey"
 			BuildModSpiderMonkey=True
+		Case "Mod_Dingaling"
+			BuildModDingaling=True
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
@@ -106,6 +109,8 @@ If objArgs.Count >=1 Then
 			BuildModpcre=True
 			BuildModldap=True
 			BuildModzeroconf=True
+			BuildModSpiderMonkey=True
+			BuildModDingaling=True
 	End Select
 Else
 	BuildCore=True
@@ -120,6 +125,8 @@ Else
 	BuildModldap=True
 	BuildModpcre=True
 	BuildModzeroconf=True
+	BuildModSpiderMonkey=True
+	BuildModDingaling=True
 End If
 
 ' ******************
@@ -169,6 +176,16 @@ If BuildModExosip Then
 		FSO.CreateFolder(LibDestDir & "include\jrtplib3")
 	End If
 	FSO.CopyFile LibDestDir & "jrtplib\src\*.h", LibDestDir & "include\jrtplib3"
+End If
+
+If BuildModDingaling Then
+	BuildLibs_iksemel BuildDebug, BuildRelease
+	BuildLibs_jrtplib BuildDebug, BuildRelease
+	If Not FSO.FolderExists(LibDestDir & "include\jrtplib3") Then
+		FSO.CreateFolder(LibDestDir & "include\jrtplib3")
+	End If
+	FSO.CopyFile LibDestDir & "jrtplib\src\*.h", LibDestDir & "include\jrtplib3"
+	BuildLibs_libdingaling BuildDebug, BuildRelease
 End If
 
 If BuildModIaxChan Then
@@ -517,6 +534,22 @@ Sub BuildLibs_libxml2(BuildDebug, BuildRelease)
 		Wscript.echo "Unable to download libxml2"
 	End If
 End Sub
+
+Sub BuildLibs_libdingaling(BuildDebug, BuildRelease)
+	If FSO.FolderExists(LibDestDir & "libdingaling") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "libdingaling\Debug\libdingaling.lib") Then 
+				BuildViaVCBuild LibDestDir & "libdingaling\libdingaling.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "libdingaling\Release\libdingaling.lib") Then 
+				BuildViaVCBuild LibDestDir & "libdingaling\libdingaling.vcproj", "Release"
+			End If
+		End If
+	End If 
+End Sub
+
 
 Sub BuildLibs_libg729(BuildDebug, BuildRelease)
 	If FSO.FolderExists(LibDestDir & "codec\libg729") Then 
