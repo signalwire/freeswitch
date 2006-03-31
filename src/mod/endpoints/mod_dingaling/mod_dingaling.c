@@ -497,7 +497,9 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 			if (tech_pvt->dlsession) {
 				ldl_session_terminate(tech_pvt->dlsession);
 			}
-			jrtp4c_killread(tech_pvt->rtp_session);
+			if (tech_pvt->rtp_session) {
+				jrtp4c_killread(tech_pvt->rtp_session);
+			}
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 		}
 	}
@@ -722,8 +724,8 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 		stun_packet_attribute_add_username(packet, login, 32);
 		sendto(tech_pvt->rtp_sock, (char *)packet, stun_packet_length(packet), 0 ,(struct sockaddr *)&servaddr, sizeof(servaddr));
 		//xstun
-		//printf("SEND STUN REQ %s U=%s to %s:%d\n", packet->header.id, login, tech_pvt->remote_ip, tech_pvt->remote_port);
-		tech_pvt->stuncount = 75;
+		//printf("XXXX SEND STUN REQ %s U=%s to %s:%d\n", packet->header.id, login, tech_pvt->remote_ip, tech_pvt->remote_port);
+		tech_pvt->stuncount = 25;
 	} else {
 		tech_pvt->stuncount--;
 	}
@@ -1399,7 +1401,6 @@ static void stun_callback(struct jrtp4c *jrtp4c, jrtp_socket_t sock, void *data,
 	packet = stun_packet_parse(buf, sizeof(buf));
 	tech_pvt->last_stun = switch_time_now();
 	
-	
 #if 0
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "read %d\ntype: [%s] (0x%04x)\nlength 0x%04x\nid %s\n", 
 						  len,
@@ -1434,7 +1435,8 @@ static void stun_callback(struct jrtp4c *jrtp4c, jrtp_socket_t sock, void *data,
 		}
 	} while (stun_packet_next_attribute(attr));
 
-	if (packet->header.type == STUN_BINDING_REQUEST) {
+
+	if (packet->header.type == STUN_BINDING_REQUEST && strstr(username,tech_pvt->remote_user)) {
 		uint8_t buf[512];
 		stun_packet_t *rpacket;
 		struct sockaddr_in servaddr;
@@ -1442,8 +1444,7 @@ static void stun_callback(struct jrtp4c *jrtp4c, jrtp_socket_t sock, void *data,
 
 		servaddr.sin_addr.s_addr = ip;
 		remote_ip = inet_ntoa(servaddr.sin_addr);
-
-
+		
 		memset(buf, 0, sizeof(buf));
 		rpacket = stun_packet_build_header(STUN_BINDING_RESPONSE, packet->header.id, buf);
 		stun_packet_attribute_add_username(rpacket, username, 32);
