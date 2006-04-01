@@ -29,3 +29,4 @@ ldl_session_create
 ldl_handle_probe
 ldl_handle_ready
 ldl_session_get_id
+ldl_session_set_ip
