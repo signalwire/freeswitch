@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="libapr"
-	ProjectGUID="{7F12EAA4-8E4D-4878-9D69-64B8EA1B7A76}"
+	ProjectGUID="{F6C55D93-B927-4483-BB69-15AEF3DD2DFF}"
 	>
 	<Platforms>
 		<Platform
@@ -45,9 +45,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="./include,./include/arch,./include/arch/win32,./include/arch/unix"
-				PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+				PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\Debug/libapr.pch"
 				AssemblerListingLocation=".\Debug/"
@@ -144,7 +145,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="./include,./include/arch,./include/arch/win32,./include/arch/unix"
-				PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+				PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"

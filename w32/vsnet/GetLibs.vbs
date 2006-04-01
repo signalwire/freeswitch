@@ -236,21 +236,17 @@ WScript.Echo "Complete"
 '  ******************
 Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "apr-util") Then 
-		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-util-1.2.2.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "apr-util-1.2.2") Then
+		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-util-1.2.6.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "apr-util-1.2.6") Then
 			Wscript.echo "Unable to get apr-util from default download location, Trying backup location:"
-			WgetUnCompress LibsBase & "apr-util-1.2.2.tar.gz", LibDestDir
+			WgetUnCompress LibsBase & "apr-util-1.2.6.tar.gz", LibDestDir
 		End If
-		RenameFolder LibDestDir & "apr-util-1.2.2", "apr-util"
+		RenameFolder LibDestDir & "apr-util-1.2.6", "apr-util"
 		FSO.CopyFile Utilsdir & "apr\xml.vcproj", LibDestDir & "apr-util\xml\expat\lib\", True
-		FSO.CopyFile Utilsdir & "apr\gen_uri_delims.vcproj", LibDestDir & "apr-util\uri\", True
 		FSO.CopyFile Utilsdir & "apr\libaprutil.vcproj", LibDestDir & "apr-util\", True
 	End If 
 	If FSO.FolderExists(LibDestDir & "apr-util") Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "apr-util\uri\uri_delims.h") Then 
-				BuildViaVCBuild LibDestDir & "apr-util\uri\gen_uri_delims.vcproj", "Debug"
-			End If
 			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\Debug\xml.lib") Then 
 				BuildViaVCBuild LibDestDir & "apr-util\xml\expat\lib\xml.vcproj", "Debug"
 			End If
@@ -261,9 +257,6 @@ Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "apr-util\uri\uri_delims.h") Then 
-				BuildViaVCBuild LibDestDir & "apr-util\uri\gen_uri_delims.vcproj", "Release"
-			End If
 			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\Release\xml.lib") Then 
 				BuildViaVCBuild LibDestDir & "apr-util\xml\expat\lib\xml.vcproj", "Release"
 			End If
@@ -310,14 +303,14 @@ End Sub
 
 Sub BuildLibs_apr(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "apr") Then 
-		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-1.2.2.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "apr-1.2.2") Then
+		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-1.2.6.tar.gz", LibDestDir
+		If Not FSO.FolderExists(LibDestDir & "apr-1.2.6") Then
 			Wscript.echo "Unable to get apr from default download location, Trying backup location:"
-			WgetUnCompress LibsBase & "apr-1.2.2.tar.gz", LibDestDir
+			WgetUnCompress LibsBase & "apr-1.2.6.tar.gz", LibDestDir
 		End If
-		RenameFolder LibDestDir & "apr-1.2.2", "apr"
+		RenameFolder LibDestDir & "apr-1.2.6", "apr"
 		FSO.CopyFile Utilsdir & "apr\libapr.vcproj", LibDestDir & "apr\", True
-		FindReplaceInFile LibDestDir & "apr\file_io\unix\fullrw.c", "int i;", "unsigned int i;"
+		FSO.CopyFile Utilsdir & "apr\apr.hw", LibDestDir & "apr\include\", True
 	End If 
 	If FSO.FolderExists(LibDestDir & "apr") Then 
 		If BuildDebug Then

@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="libaprutil"
-	ProjectGUID="{FE09581F-2B4D-42E3-99CC-7F1B0324C29D}"
+	ProjectGUID="{F057DA7F-79E5-4B00-845C-EF446EF055E3}"
 	>
 	<Platforms>
 		<Platform
@@ -45,9 +45,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="./include,../apr/include,./include/private,../apr-iconv/include,./dbm/sdbm,./xml/expat/lib"
-				PreprocessorDefinitions="_DEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+				PreprocessorDefinitions="_DEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\Debug/libaprutil.pch"
 				AssemblerListingLocation=".\Debug/"
@@ -71,11 +72,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib mswsock.lib wldap32.lib libapr-1.lib libapriconv-1.lib xml.lib"
+				AdditionalDependencies="ws2_32.lib mswsock.lib wldap32.lib  xml.lib libapr-1.lib libapriconv-1.lib"
 				OutputFile="Debug/libaprutil-1.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\apr\$(OutDir);..\apr-iconv\$(OutDir);.\xml\expat\lib\$(OutDir)"
+				AdditionalLibraryDirectories="xml\expat\lib\LibD;..\apr\Debug;..\apr-iconv\Debug"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/libaprutil-1.pdb"
 				SubSystem="2"
@@ -145,7 +146,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="./include,../apr/include,./include/private,../apr-iconv/include,./dbm/sdbm,./xml/expat/lib"
-				PreprocessorDefinitions="NDEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+				PreprocessorDefinitions="NDEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -171,11 +172,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib mswsock.lib wldap32.lib libapr-1.lib libapriconv-1.lib xml.lib"
+				AdditionalDependencies="ws2_32.lib mswsock.lib wldap32.lib  xml.lib libapr-1.lib libapriconv-1.lib"
 				OutputFile="Release/libaprutil-1.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\apr\$(OutDir);..\apr-iconv\$(OutDir);.\xml\expat\lib\$(OutDir)"
+				AdditionalLibraryDirectories="xml\expat\lib\LibR;..\apr\Release;..\apr-iconv\Release"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Release/libaprutil-1.pdb"
 				SubSystem="2"
@@ -1381,30 +1382,6 @@
 						Description="Creating apu_want.h from apu_want.hw"
 						CommandLine="type .\include\apu_want.hw &gt; .\include\apu_want.h&#x0D;&#x0A;"
 						Outputs=".\include\apu_want.h"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="uri\gen_uri_delims.exe"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Generating uri_delims.h"
-						CommandLine=".\uri\gen_uri_delims.exe &gt;.\uri\uri_delims.h&#x0D;&#x0A;"
-						Outputs=".\uri\uri_delims.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Generating uri_delims.h"
-						CommandLine=".\uri\gen_uri_delims.exe &gt;.\uri\uri_delims.h&#x0D;&#x0A;"
-						Outputs=".\uri\uri_delims.h"
 					/>
 				</FileConfiguration>
 			</File>

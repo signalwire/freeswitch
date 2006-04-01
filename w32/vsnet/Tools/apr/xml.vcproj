@@ -3,8 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="xml"
-	ProjectGUID="{57ACC5C6-CE0E-4BAA-8EBD-21AA92F6C6EF}"
-	RootNamespace="xml"
+	ProjectGUID="{155844C3-EC5F-407F-97A4-A2DDADED9B2F}"
 	>
 	<Platforms>
 		<Platform
@@ -16,7 +15,7 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\Release"
+			OutputDirectory=".\LibR"
 			IntermediateDirectory=".\LibR"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
@@ -44,7 +43,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;NDEBUG;_WINDOWS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;VERSION=\&quot;expat_1.95.2\&quot;"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -68,7 +67,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\xml.lib"
+				OutputFile=".\LibR\xml.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -91,7 +90,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
+			OutputDirectory=".\LibD"
 			IntermediateDirectory=".\LibD"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
@@ -116,9 +115,10 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/EHsc "
 				Optimization="0"
 				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;_DEBUG;_WINDOWS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;VERSION=\&quot;expat_1.95.2\&quot;"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\LibD/xml.pch"
 				AssemblerListingLocation=".\LibD/"
@@ -140,7 +140,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)\xml.lib"
+				OutputFile=".\LibD\xml.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -178,7 +178,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1;$(NoInherit)"
+						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -187,7 +187,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1;$(NoInherit)"
+						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
 			</File>
@@ -200,7 +200,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1;$(NoInherit)"
+						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -209,7 +209,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1;$(NoInherit)"
+						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
 			</File>
@@ -222,7 +222,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1;$(NoInherit)"
+						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -231,7 +231,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1;$(NoInherit)"
+						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
 			</File>
@@ -245,7 +245,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1;$(NoInherit)"
+						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -255,7 +255,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1;$(NoInherit)"
+						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
 			</File>
@@ -269,7 +269,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1;$(NoInherit)"
+						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -279,7 +279,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;VERSION=\&quot;expat_1.95.1\&quot;;XML_MAJOR_VERSION=1;XML_MINOR_VERSION=95;XML_MICRO_VERSION=1;$(NoInherit)"
+						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
 			</File>
