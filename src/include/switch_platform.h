@@ -103,6 +103,8 @@ typedef unsigned long	in_addr_t;
 #define PACKED __attribute__ ((__packed__))
 #endif
 #include <sys/types.h>
+#include <stdio.h>
+#include <inttypes.h>
 #ifndef getpid
 #include <unistd.h>
 #include <stdlib.h>

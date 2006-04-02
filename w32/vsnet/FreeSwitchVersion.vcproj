@@ -121,10 +121,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\include\switch_mutex.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\include\switch_types.h"
 				>
 			</File>
