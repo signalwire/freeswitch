@@ -560,8 +560,12 @@ SWITCH_DECLARE(switch_caller_extension *) switch_channel_get_caller_extension(sw
 SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *channel)
 {
 	assert(channel != NULL);
-	if (channel->state < CS_HANGUP) {
+
+	if (!channel->times.hungup) {
 		channel->times.hungup = switch_time_now();
+	}
+
+	if (channel->state < CS_HANGUP) {
 		channel->state = CS_HANGUP;
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
 		switch_core_session_signal_state_change(channel->session);
