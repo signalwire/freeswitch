@@ -112,14 +112,14 @@ CLEANFILES = src/include/switch_version.h
 lib_LTLIBRARIES		= libfreeswitch.la
 libfreeswitch_la_CFLAGS	= $(AM_CFLAGS) -Wall -Werror -Wstrict-prototypes -Wmissing-prototypes -g  
 libfreeswitch_la_LDFLAGS	= -version-info 1:0:0
-libfreeswitch_la_LIBADD  = -lteletone -lresample -lsqlite3
+libfreeswitch_la_LIBADD  = -lteletone -lresample -lsrtp -lsqlite3
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
 bin_PROGRAMS =	freeswitch
 freeswitch_SOURCES = 	src/switch.c\
 			src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
-freeswitch_LDADD = ${top_builddir}/libfreeswitch.la -lsrtp
+freeswitch_LDADD = ${top_builddir}/libfreeswitch.la 
 
 
 
