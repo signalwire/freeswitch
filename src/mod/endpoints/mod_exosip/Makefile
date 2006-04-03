@@ -1,5 +1,5 @@
 CFLAGS += -I.
-LDFLAGS += -leXosip2  -ljrtp
+LDFLAGS += -leXosip2
 OBJS=osip_rfc3264.o
 ifeq ($(OSARCH),Darwin)
 	LINKER=g++
