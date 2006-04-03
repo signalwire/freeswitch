@@ -39,6 +39,7 @@ extern "C" {
 #endif
 
 #ifdef WIN32
+#include <winsock2.h>
 typedef SOCKET switch_raw_socket_t;
 #else 
 typedef int switch_raw_socket_t;

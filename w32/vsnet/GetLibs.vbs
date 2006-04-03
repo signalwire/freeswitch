@@ -247,7 +247,7 @@ Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 	End If 
 	If FSO.FolderExists(LibDestDir & "apr-util") Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\Debug\xml.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\LibD\xml.lib") Then 
 				BuildViaVCBuild LibDestDir & "apr-util\xml\expat\lib\xml.vcproj", "Debug"
 			End If
 			If Not FSO.FileExists(LibDestDir & "apr-util\Debug\libaprutil-1.lib") Then 
@@ -257,7 +257,7 @@ Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\Release\xml.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\LibR<p align="center"></p>\xml.lib") Then 
 				BuildViaVCBuild LibDestDir & "apr-util\xml\expat\lib\xml.vcproj", "Release"
 			End If
 			If Not FSO.FileExists(LibDestDir & "apr-util\Release\libaprutil-1.lib") Then 
