@@ -12,7 +12,7 @@ AM_LDFLAGS = -L$(PREFIX)/lib
 AM_LDFLAGS += $(shell $(APR_CONFIG) --link-ld --libs )
 AM_CFLAGS  += $(shell $(APU_CONFIG) --includes) 
 AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs )
-AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib -lsrtp
+AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib 
 OSARCH=$(shell uname -s)
 if ISLINUX
 AM_LDFLAGS += -Wl,-E
@@ -119,7 +119,7 @@ bin_PROGRAMS =	freeswitch
 freeswitch_SOURCES = 	src/switch.c\
 			src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
-freeswitch_LDADD = ${top_builddir}/libfreeswitch.la
+freeswitch_LDADD = ${top_builddir}/libfreeswitch.la -lsrtp
 
 
 

@@ -251,7 +251,7 @@ AM_CFLAGS = -I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags \
 	-DSWITCH_SCRIPT_DIR=\"$(PREFIX)/scripts\"
 AM_LDFLAGS = -L$(PREFIX)/lib $(shell $(APR_CONFIG) --link-ld --libs ) \
 	$(shell $(APU_CONFIG) --link-ld --libs ) -lm \
-	-L/usr/local/lib/db42 -L/usr/local/lib -lsrtp $(am__append_1)
+	-L/usr/local/lib/db42 -L/usr/local/lib $(am__append_1)
 OSARCH = $(shell uname -s)
 @ISMAC_FALSE@SOLINK = -shared -Xlinker -x
 
@@ -332,7 +332,7 @@ freeswitch_SOURCES = src/switch.c\
 			src/include/switch_version.h
 
 freeswitch_CFLAGS = $(AM_CFLAGS)
-freeswitch_LDADD = ${top_builddir}/libfreeswitch.la
+freeswitch_LDADD = ${top_builddir}/libfreeswitch.la -lsrtp
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
