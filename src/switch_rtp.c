@@ -264,7 +264,7 @@ int switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *
 {
 	int32_t bytes;
 	struct sockaddr_in in;
-	int len = sizeof(struct sockaddr_in);
+	unsigned int len = sizeof(struct sockaddr_in);
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 		return -1;
@@ -292,7 +292,7 @@ int switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_
 {
 	int32_t bytes;
 	struct sockaddr_in in;
-	int len = sizeof(struct sockaddr_in);
+	unsigned int len = sizeof(struct sockaddr_in);
 
 	*data = NULL;
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
