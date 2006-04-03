@@ -1948,7 +1948,7 @@ am__tar='${AMTAR} chof - "$$tardir"'; am__untar='${AMTAR} xf -'
 
 
 
-          ac_config_headers="$ac_config_headers src/include/config.h"
+          ac_config_headers="$ac_config_headers src/include/switch_am_config.h"
 
 
 
@@ -22268,7 +22268,7 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/include/switch_version.h" ) CONFIG_FILES="$CONFIG_FILES src/include/switch_version.h" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
-  "src/include/config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/include/config.h" ;;
+  "src/include/switch_am_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/include/switch_am_config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;

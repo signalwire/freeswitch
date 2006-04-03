@@ -7,12 +7,12 @@ NAME=freeswitch
 PREFIX=$(prefix)
 APR_CONFIG=$(prefix)/bin/apr-1-config
 APU_CONFIG=$(prefix)/bin/apu-1-config
-AM_CFLAGS  = -I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags --cppflags --includes)
+AM_CFLAGS  = -I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags --cppflags --includes) -I${prefix}/include/srtp
 AM_LDFLAGS = -L$(PREFIX)/lib
 AM_LDFLAGS += $(shell $(APR_CONFIG) --link-ld --libs )
 AM_CFLAGS  += $(shell $(APU_CONFIG) --includes) 
 AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs )
-AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib
+AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib -lsrtp
 OSARCH=$(shell uname -s)
 if ISLINUX
 AM_LDFLAGS += -Wl,-E
@@ -43,7 +43,7 @@ AM_CFLAGS	+= -DSWITCH_SCRIPT_DIR=\"$(PREFIX)/scripts\"
 
 
 libfreeswitch_la_SOURCES	= \
-src/include/config.h\
+src/include/switch_am_config.h\
 src/include/switch.h\
 src/include/switch_apr.h\
 src/include/switch_buffer.h\
@@ -63,6 +63,8 @@ src/include/switch_sqlite.h\
 src/include/switch_types.h\
 src/include/switch_utils.h\
 src/include/switch_version.h\
+src/inclide/switch_rtp.h\
+src/switch_rtp.c\
 src/switch_buffer.c \
 src/switch_caller.c \
 src/switch_channel.c \
@@ -81,7 +83,7 @@ src/switch_ivr.c
 #libdir = $(PREFIX)/lib
 library_includedir	= $(PREFIX)/include
 library_include_HEADERS = \
-src/include/config.h\
+src/include/switch_am_config.h\
 src/include/switch.h\
 src/include/switch_apr.h\
 src/include/switch_buffer.h\
@@ -100,6 +102,7 @@ src/include/switch_resample.h\
 src/include/switch_sqlite.h\
 src/include/switch_types.h\
 src/include/switch_utils.h\
+src/include/switch_rtp.h\
 src/include/switch_version.h
 
 BUILT_SOURCES = version depends
@@ -146,6 +149,7 @@ depends:
 	./build/buildlib.sh . install apr-util-1.2.6.tar.gz --with-apr=../apr-1.2.6 --prefix=$(PREFIX)
 	./build/buildlib.sh . libresample-0.1.3.tgz --prefix=$(PREFIX)
 	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
+	./build/buildlib.sh . install srtp.tgz --prefix=$(PREFIX)
 	rm build/freeswitch.env
 
 

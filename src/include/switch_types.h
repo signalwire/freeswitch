@@ -94,6 +94,18 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 #define SWITCH_TRUE 1
 #define SWITCH_FALSE 0
 
+/*!
+  \enum switch_rtp_flag_t
+  \brief RTP Related Flags
+<pre>
+    SWITCH_RTP_NOBLOCK      - Do not block
+    SWITCH_RTP_FLAG_IO      - IO is ready
+</pre>
+ */
+typedef enum {
+	SWITCH_RTP_NOBLOCK = ( 1 << 0),
+	SWITCH_RTP_FLAG_IO = (1 << 1)
+} switch_rtp_flag_t;
 
 /*!
   \enum switch_priority_t
@@ -429,6 +441,8 @@ typedef enum {
 	SWITCH_EVENT_ALL
 } switch_event_t;
 
+
+typedef struct switch_rtp switch_rtp;
 typedef struct switch_core_session_message switch_core_session_message;
 typedef struct switch_audio_resampler switch_audio_resampler;
 typedef struct switch_event_header switch_event_header;

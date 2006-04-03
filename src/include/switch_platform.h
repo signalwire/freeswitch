@@ -38,6 +38,12 @@
 extern "C" {
 #endif
 
+#ifdef WIN32
+typedef SOCKET switch_raw_socket_t;
+#else 
+typedef int switch_raw_socket_t;
+#endif 
+
 #ifdef __ICC
 #pragma warning (disable:810 869 981 279 1469 188)
 #endif

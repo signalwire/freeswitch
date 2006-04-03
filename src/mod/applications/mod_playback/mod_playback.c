@@ -64,6 +64,8 @@ static void playback_function(switch_core_session *session, char *data)
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
+	switch_channel_answer(channel);
+
 	if (switch_ivr_play_file(session, NULL, file_name, timer_name, on_dtmf, NULL, 0) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel);
 	}

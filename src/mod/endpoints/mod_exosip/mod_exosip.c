@@ -32,7 +32,6 @@
 
 #define HAVE_APR
 #include <switch.h>
-#include <jrtplib3/jrtp4c.h>
 #include <eXosip2/eXosip.h>
 #include <osip2/osip_mt.h>
 #include <osip_rfc3264.h>
@@ -101,8 +100,7 @@ struct private_object {
 	switch_frame cng_frame;
 	switch_codec read_codec;
 	switch_codec write_codec;
-	unsigned char read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
-	unsigned char cng_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	unsigned char cng_buf[320];
 	switch_caller_profile *caller_profile;
 	int cid;
 	int did;
@@ -111,7 +109,7 @@ struct private_object {
 	int32_t timestamp_recv;
 	int32_t timestamp_dtmf;
 	int payload_num;
-	struct jrtp4c *rtp_session;
+	struct switch_rtp *rtp_session;
 	struct osip_rfc3264 *sdp_config;
 	sdp_message_t *remote_sdp;
 	sdp_message_t *local_sdp;
@@ -248,8 +246,8 @@ static switch_status exosip_on_init(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	tech_pvt->read_frame.data = tech_pvt->read_buf;
-	tech_pvt->read_frame.buflen = sizeof(tech_pvt->read_buf);
+	tech_pvt->read_frame.data = tech_pvt->cng_buf;
+	tech_pvt->read_frame.buflen = sizeof(tech_pvt->cng_buf);
 
 	tech_pvt->cng_frame.data = tech_pvt->cng_buf;
 	tech_pvt->cng_frame.buflen = sizeof(tech_pvt->cng_buf);
@@ -422,11 +420,11 @@ static void deactivate_rtp(struct private_object *tech_pvt)
 			loops++;
 		}
 		/*
-		if ((sock = jrtp4c_get_rtp_socket(tech_pvt->rtp_session)) > -1) {
+		if ((sock = switch_rtp_get_rtp_socket(tech_pvt->rtp_session)) > -1) {
 			close(sock);
 		}
 		*/
-		jrtp4c_destroy(&tech_pvt->rtp_session);
+		switch_rtp_destroy(&tech_pvt->rtp_session);
 		tech_pvt->rtp_session = NULL;
 		switch_mutex_unlock(tech_pvt->rtp_lock);
 	}
@@ -469,17 +467,18 @@ static void activate_rtp(struct private_object *tech_pvt)
 						  tech_pvt->remote_sdp_audio_port, tech_pvt->read_codec.codec_interface->ianacode, ms);
 
 
-
-	tech_pvt->rtp_session = jrtp4c_new(tech_pvt->local_sdp_audio_ip,
-									   tech_pvt->local_sdp_audio_port,
-									   tech_pvt->remote_sdp_audio_ip,
-									   tech_pvt->remote_sdp_audio_port,
-									   tech_pvt->read_codec.codec_interface->ianacode,
-									   tech_pvt->read_codec.implementation->samples_per_second, &err);
+	
+	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
+										   tech_pvt->local_sdp_audio_port,
+										   tech_pvt->remote_sdp_audio_ip,
+										   tech_pvt->remote_sdp_audio_port,
+										   tech_pvt->read_codec.codec_interface->ianacode,
+										   0,
+										   &err, switch_core_session_get_pool(tech_pvt->session));
 
 	if (tech_pvt->rtp_session) {
-		tech_pvt->ssrc = jrtp4c_get_ssrc(tech_pvt->rtp_session);
-		jrtp4c_start(tech_pvt->rtp_session);
+		tech_pvt->ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
+		switch_rtp_start(tech_pvt->rtp_session);
 		switch_set_flag(tech_pvt, TFLAG_RTP);
 	} else {
 		switch_channel *channel = switch_core_session_get_channel(tech_pvt->session);
@@ -565,7 +564,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 		while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO)
 			   && tech_pvt->read_frame.datalen == 0) {
 			now = switch_time_now();
-			tech_pvt->read_frame.datalen = jrtp4c_read(tech_pvt->rtp_session, tech_pvt->read_frame.data, sizeof(tech_pvt->read_buf), &payload);
+			tech_pvt->read_frame.datalen = switch_rtp_zerocopy_read(tech_pvt->rtp_session, &tech_pvt->read_frame.data, &payload);
 			
 			if (switch_test_flag(tech_pvt, TFLAG_SILENCE)) {
 				if (tech_pvt->read_frame.datalen) {
@@ -659,7 +658,8 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 		}
 
 	} else {
-		memset(tech_pvt->read_buf, 0, 160);
+		memset(tech_pvt->cng_buf, 0, 160);
+		tech_pvt->read_frame.data = tech_pvt->cng_buf;
 		tech_pvt->read_frame.datalen = 160;
 	}
 
@@ -735,7 +735,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 		
 
 		for (x = 0; x < loops; x++) {
-			jrtp4c_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+			switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
 			printf("Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", 
 				   loops == 1 ? "middle" : "end",
 				   tech_pvt->out_digit,
@@ -762,7 +762,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 			ts = tech_pvt->timestamp_dtmf += samples;
 			tech_pvt->out_digit_seq++;
 			for (x = 0; x < 3; x++) {
-				jrtp4c_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+				switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
 				printf("Send start packet for [%c] ts=%d sofar=%u dur=%d\n", tech_pvt->out_digit, ts, 
 					   tech_pvt->out_digit_sofar, 0);
 			}
@@ -776,7 +776,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	//printf("%s %s->%s send %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->remote_sdp_audio_ip, frame->datalen, samples, frames, ms, tech_pvt->timestamp_send);
 
 
-	jrtp4c_write(tech_pvt->rtp_session, frame->data, (int) frame->datalen, samples);
+	switch_rtp_write(tech_pvt->rtp_session, frame->data, (int) frame->datalen, samples);
 	tech_pvt->timestamp_send += (int) samples;
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);
@@ -801,7 +801,7 @@ static switch_status exosip_kill_channel(switch_core_session *session, int sig)
 	switch_set_flag(tech_pvt, TFLAG_BYE);
 
 	if (tech_pvt->rtp_session) {
-		jrtp4c_killread(tech_pvt->rtp_session);
+		switch_rtp_killread(tech_pvt->rtp_session);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

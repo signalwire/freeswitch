@@ -32,7 +32,6 @@
 #include <switch.h>
 #include <libdingaling.h>
 #include <stun_parser.h>
-#include <jrtplib3/jrtp4c.h>
 #ifdef _MSC_VER
 #include <Winsock2.h>
 #else
@@ -113,7 +112,7 @@ struct private_object {
 	switch_codec_interface *codecs[SWITCH_MAX_CODECS];
 	unsigned int num_codecs;
 	int codec_index;
-	struct jrtp4c *rtp_session;
+	struct switch_rtp *rtp_session;
 	ldl_session_t *dlsession;
 	char *remote_ip;
 	uint16_t remote_port;
@@ -121,7 +120,7 @@ struct private_object {
 	char *remote_user;
 	unsigned int cand_id;
 	unsigned int desc_id;
-	jrtp_socket_t rtp_sock;
+	switch_raw_socket_t rtp_sock;
 	char last_digit;
 	unsigned int dc;
 	time_t last_digit_time;
@@ -177,7 +176,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 static switch_status channel_kill_channel(switch_core_session *session, int sig);
 static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *msg);
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
-static void stun_callback(struct jrtp4c *jrtp4c, jrtp_socket_t sock, void *data, unsigned int len, uint32_t ip, uint16_t port);
+static void stun_callback(struct switch_rtp *switch_rtp, switch_raw_socket_t sock, void *data, unsigned int len, uint32_t ip, uint16_t port);
 static switch_status load_config(void);
 
 
@@ -361,6 +360,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 							
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
+	//switch_set_flag(tech_pvt, TFLAG_SILENCE);
 
 	//printf("WAIT %s %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_OUTBOUND));
 
@@ -465,7 +465,7 @@ static switch_status channel_on_hangup(switch_core_session *session)
 	}
 
 	if (tech_pvt->rtp_session) {
-		jrtp4c_destroy(&tech_pvt->rtp_session);
+		switch_rtp_destroy(&tech_pvt->rtp_session);
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "NUKE RTP\n");
 		tech_pvt->rtp_session = NULL;
 	}
@@ -498,7 +498,7 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 				ldl_session_terminate(tech_pvt->dlsession);
 			}
 			if (tech_pvt->rtp_session) {
-				jrtp4c_killread(tech_pvt->rtp_session);
+				switch_rtp_killread(tech_pvt->rtp_session);
 			}
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 		}
@@ -582,7 +582,7 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 
 	while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 		payload = -1;
-		tech_pvt->read_frame.datalen = jrtp4c_read(tech_pvt->rtp_session, tech_pvt->read_frame.data, sizeof(tech_pvt->read_buf), &payload);
+		tech_pvt->read_frame.datalen = switch_rtp_read(tech_pvt->rtp_session, tech_pvt->read_frame.data, sizeof(tech_pvt->read_buf), &payload);
 		if (switch_test_flag(tech_pvt, TFLAG_SILENCE)) {
 			if (tech_pvt->read_frame.datalen) {
 				switch_clear_flag(tech_pvt, TFLAG_SILENCE);
@@ -631,9 +631,9 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 		}
 
 
-		
 		if (switch_test_flag(tech_pvt->profile, PFLAG_GENSILENCE)) {
 			if ((switch_test_flag(tech_pvt, TFLAG_SILENCE) || payload == 13) && tech_pvt->cng_frame.datalen) {
+				memset(tech_pvt->cng_frame.data, 255, tech_pvt->cng_frame.datalen);
 				*frame = &tech_pvt->cng_frame;
 				//printf("GENERATE bytes=%d payload=%d frames=%d samples=%d ms=%d ts=%d sampcount=%d\n", tech_pvt->cng_frame.datalen, payload, frames, samples, ms, tech_pvt->timestamp_recv, tech_pvt->read_frame.samples);
 				switch_set_flag(tech_pvt, TFLAG_SILENCE);
@@ -767,9 +767,11 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 		
 
 		for (x = 0; x < loops; x++) {
-			jrtp4c_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+			switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+			/*
 			printf("Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", loops == 1 ? "middle" : "end", tech_pvt->out_digit, ts, 
 				   tech_pvt->out_digit_sofar, duration);
+			*/
 		}
 	}
 
@@ -790,9 +792,11 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 			ts = tech_pvt->timestamp_dtmf += samples;
 			tech_pvt->out_digit_seq++;
 			for (x = 0; x < 3; x++) {
-				jrtp4c_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+				switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+				/*
 				printf("Send start packet for [%c] ts=%d sofar=%u dur=%d\n", tech_pvt->out_digit, ts, 
 					   tech_pvt->out_digit_sofar, 0);
+				*/
 			}
 
 			free(rdigit);
@@ -803,10 +807,10 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 
 
 
-	//printf("%s send %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), frame->datalen, samples, frames, ms, tech_pvt->timestamp_send);
+	//printf("%s send %d bytes %d samples in %d frames ts=%d\n", switch_channel_get_name(channel), frame->datalen, samples, frames, tech_pvt->timestamp_send);
 
 
-	jrtp4c_write(tech_pvt->rtp_session, frame->data, (int) frame->datalen, samples);
+	switch_rtp_write(tech_pvt->rtp_session, frame->data, (int) frame->datalen, samples);
 	tech_pvt->timestamp_send += (int) samples;
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);
@@ -1335,21 +1339,22 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							const char *err;
 							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SETUP RTP %s:%d -> %s:%d\n", profile->ip, cand[0].port, tech_pvt->remote_ip, tech_pvt->remote_port);
 
-							if (!(tech_pvt->rtp_session = jrtp4c_new(profile->ip,
-																	 cand[0].port,
-																	 tech_pvt->remote_ip,
-																	 tech_pvt->remote_port,
-																	 tech_pvt->codec_num,
-																	 8000, &err))) {
+							if (!(tech_pvt->rtp_session = switch_rtp_new(profile->ip,
+																		 cand[0].port,
+																		 tech_pvt->remote_ip,
+																		 tech_pvt->remote_port,
+																		 tech_pvt->codec_num,
+																		 switch_test_flag(tech_pvt->profile, PFLAG_GENSILENCE) ? SWITCH_RTP_NOBLOCK : 0,
+																		 &err, switch_core_session_get_pool(tech_pvt->session)))) {
 								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "RTP ERROR %s\n", err);
 								switch_channel_hangup(channel);
 								return LDL_STATUS_FALSE;
 							}
-							tech_pvt->rtp_sock = jrtp4c_get_rtp_socket(tech_pvt->rtp_session);
-							jrtp4c_set_invald_handler(tech_pvt->rtp_session, stun_callback);
-							jrtp4c_set_private(tech_pvt->rtp_session, tech_pvt);
+							tech_pvt->rtp_sock = switch_rtp_get_rtp_socket(tech_pvt->rtp_session);
+							switch_rtp_set_invald_handler(tech_pvt->rtp_session, stun_callback);
+							switch_rtp_set_private(tech_pvt->rtp_session, tech_pvt);
 							switch_set_flag(tech_pvt, TFLAG_RTP_READY);
-							jrtp4c_start(tech_pvt->rtp_session);
+							switch_rtp_start(tech_pvt->rtp_session);
 						}
 						
 						return LDL_STATUS_SUCCESS;
@@ -1386,7 +1391,7 @@ static ldl_status handle_response(ldl_handle_t *handle, char *id)
 	return LDL_STATUS_SUCCESS;
 }
 
-static void stun_callback(struct jrtp4c *jrtp4c, jrtp_socket_t sock, void *data, unsigned int len, uint32_t ip, uint16_t port)
+static void stun_callback(struct switch_rtp *switch_rtp, switch_raw_socket_t sock, void *data, unsigned int len, uint32_t ip, uint16_t port)
 {
 	stun_packet_t *packet;
 	stun_packet_attribute_t *attr;
@@ -1394,7 +1399,7 @@ static void stun_callback(struct jrtp4c *jrtp4c, jrtp_socket_t sock, void *data,
 	struct private_object *tech_pvt;
 	unsigned char buf[512] = {0};
 
-	tech_pvt = jrtp4c_get_private(jrtp4c);
+	tech_pvt = switch_rtp_get_private(switch_rtp);
 	assert(tech_pvt != NULL);
 
 	memcpy(buf, data, len);

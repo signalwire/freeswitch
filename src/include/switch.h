@@ -43,7 +43,7 @@ extern "C" {
 #include <switch_platform.h>
 
 #ifndef WIN32
-#include <config.h>
+#include <switch_am_config.h>
 #endif
 
 #include <assert.h>
@@ -65,6 +65,8 @@ extern "C" {
 #include <switch_event.h>
 #include <switch_resample.h>
 #include <switch_ivr.h>
+#include <switch_rtp.h>
+#include <switch_stun.h>
 #ifdef __cplusplus
 }
 #endif

@@ -6,7 +6,7 @@ AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 AC_CONFIG_AUX_DIR(build/config)
 AM_INIT_AUTOMAKE(libfreeswitch,0.1)
 AC_CONFIG_SRCDIR([src/switch.c])
-AC_CONFIG_HEADER([src/include/config.h])
+AC_CONFIG_HEADER([src/include/switch_am_config.h])
 
 AC_PREFIX_DEFAULT(/usr/local/freeswitch)
 

@@ -1,0 +1,379 @@
+/* 
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthmct@yahoo.com>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * 
+ * Anthony Minessale II <anthmct@yahoo.com>
+ *
+ *
+ * switch_rtp.c -- RTP
+ *
+ */
+
+#ifdef HAVE_SYS_SOCKET_H
+# include <sys/socket.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+# include <netinet/in.h>
+#elif defined HAVE_WINSOCK2_H
+# include <winsock2.h>
+# include <ws2tcpip.h>
+# define RTPW_USE_WINSOCK2	1
+#endif
+#ifdef HAVE_ARPA_INET_H
+# include <arpa/inet.h>
+#endif
+
+
+
+#ifdef RTPW_USE_WINSOCK2
+# define DICT_FILE        "words.txt"
+#else
+# define DICT_FILE        "/usr/share/dict/words"
+#endif
+#define USEC_RATE        (5e5)
+#define MAX_WORD_LEN     128  
+#define ADDR_IS_MULTICAST(a) IN_MULTICAST(htonl(a))
+#define MAX_KEY_LEN      64
+#define MASTER_KEY_LEN   30
+
+#include <switch.h>
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef PACKAGE_BUGREPORT
+#include <datatypes.h>
+#include <srtp.h>
+
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
+#define do_close(s) if (s > -1) {close(s); s = -1;}
+
+#define rtp_header_len 12
+
+typedef srtp_hdr_t rtp_hdr_t;
+
+#define RTP_MAX_BUF_LEN 16384
+
+typedef struct {
+  srtp_hdr_t header;        
+  char body[RTP_MAX_BUF_LEN];  
+} rtp_msg_t;
+
+
+struct switch_rtp {
+	switch_raw_socket_t sock;
+
+	struct sockaddr_in local_addr;
+	rtp_msg_t send_msg;
+	srtp_ctx_t *send_ctx;
+
+	struct sockaddr_in remote_addr;
+	rtp_msg_t recv_msg;
+	srtp_ctx_t *recv_ctx;
+	
+	uint32_t seq;
+	uint32_t payload;
+	
+	switch_rtp_invalid_handler invalid_handler;
+	void *private_data;
+
+	uint32_t ts;
+	uint32_t flags;
+};
+
+static int global_init = 0;
+
+static void init_rtp(void)
+{
+	if (global_init) {
+		return;
+	}
+
+#ifdef RTPW_USE_WINSOCK2
+  WORD wVersionRequested = MAKEWORD(2, 0);
+  WSADATA wsaData;
+
+  ret = WSAStartup(wVersionRequested, &wsaData);
+#endif
+
+  srtp_init();
+  global_init = 1;
+
+}
+
+switch_rtp *switch_rtp_new(char *rx_ip,
+						   int rx_port,
+						   char *tx_ip,
+						   int tx_port,
+						   int payload,
+						   switch_rtp_flag_t flags,
+						   const char **err,
+						   switch_memory_pool *pool)
+{
+	switch_raw_socket_t sock;
+	switch_rtp *rtp_session = NULL;
+	struct in_addr rx_addr, tx_addr;
+	srtp_policy_t policy;
+	char key[MAX_KEY_LEN];
+	uint32_t ssrc = rand() & 0xffff;
+
+	if (!global_init) {
+		init_rtp();
+	}
+
+	if ((sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
+		*err = "Socket Error!\n";
+		return NULL;
+	}
+
+	if (!inet_aton(rx_ip, &rx_addr)) {
+		*err = "RX Address Error!\n";
+		return NULL;
+	}	
+
+	if (!inet_aton(tx_ip, &tx_addr)) {
+		*err = "TX Address Error!\n";
+		return NULL;
+	}	
+
+	if (!(rtp_session = switch_core_alloc(pool, sizeof(*rtp_session)))) {
+		*err = "Memory Error!";
+		return NULL;
+	}
+
+	rtp_session->flags = flags;
+	rtp_session->local_addr.sin_addr = rx_addr;
+	rtp_session->local_addr.sin_family = PF_INET;
+	rtp_session->local_addr.sin_port   = htons(rx_port);
+
+	rtp_session->remote_addr.sin_addr = tx_addr;
+	rtp_session->remote_addr.sin_family = PF_INET;
+	rtp_session->remote_addr.sin_port   = htons(tx_port);
+	rtp_session->sock = sock;
+
+	
+	if (bind(sock, (struct sockaddr *)&rtp_session->local_addr, sizeof(rtp_session->local_addr)) < 0) {
+		*err = "Bind Err!";
+		close(sock);
+		return NULL;
+	}
+
+	if switch_test_flag(rtp_session, SWITCH_RTP_NOBLOCK) {
+		fcntl(sock, F_SETFL, O_NONBLOCK);
+	}
+
+    policy.key                 = (uint8_t *)key;
+    policy.ssrc.type           = ssrc_specific;
+    policy.ssrc.value          = ssrc;
+    policy.rtp.cipher_type     = NULL_CIPHER;
+    policy.rtp.cipher_key_len  = 0; 
+    policy.rtp.auth_type       = NULL_AUTH;
+    policy.rtp.auth_key_len    = 0;
+    policy.rtp.auth_tag_len    = 0;
+    policy.rtp.sec_serv        = sec_serv_none;   
+    policy.rtcp.cipher_type    = NULL_CIPHER;
+    policy.rtcp.cipher_key_len = 0; 
+    policy.rtcp.auth_type      = NULL_AUTH;
+    policy.rtcp.auth_key_len   = 0;
+    policy.rtcp.auth_tag_len   = 0;
+    policy.rtcp.sec_serv       = sec_serv_none;   
+    policy.next                = NULL;
+
+
+	rtp_session->send_msg.header.ssrc    = htonl(ssrc);
+	rtp_session->send_msg.header.ts      = 0;
+	rtp_session->send_msg.header.seq     = (uint16_t) rand();
+	rtp_session->send_msg.header.m       = 0;
+	rtp_session->send_msg.header.pt      = htonl(payload);
+	rtp_session->send_msg.header.version = 2;
+	rtp_session->send_msg.header.p       = 0;
+	rtp_session->send_msg.header.x       = 0;
+	rtp_session->send_msg.header.cc      = 0;
+
+
+	rtp_session->recv_msg.header.ssrc    = htonl(ssrc);
+	rtp_session->recv_msg.header.ts      = 0;
+	rtp_session->recv_msg.header.seq     = 0;
+	rtp_session->recv_msg.header.m       = 0;
+	rtp_session->recv_msg.header.pt      = htonl(payload);
+	rtp_session->recv_msg.header.version = 2;
+	rtp_session->recv_msg.header.p       = 0;
+	rtp_session->recv_msg.header.x       = 0;
+	rtp_session->recv_msg.header.cc      = 0;
+
+	rtp_session->seq = rtp_session->send_msg.header.seq;
+	rtp_session->payload = payload;
+	srtp_create(&rtp_session->recv_ctx, &policy);
+	srtp_create(&rtp_session->send_ctx, &policy);
+
+	return rtp_session;
+}
+
+void switch_rtp_killread(switch_rtp *rtp_session)
+{
+	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
+	shutdown(rtp_session->sock, SHUT_RDWR);
+}
+
+
+void switch_rtp_destroy(switch_rtp **rtp_session)
+{
+
+	switch_rtp_killread(*rtp_session);
+	do_close((*rtp_session)->sock);
+	*rtp_session = NULL;
+	return;
+}
+
+switch_raw_socket_t switch_rtp_get_rtp_socket(switch_rtp *rtp_session)
+{
+	return rtp_session->sock;
+}
+
+void switch_rtp_set_invald_handler(switch_rtp *rtp_session, switch_rtp_invalid_handler on_invalid)
+{
+	rtp_session->invalid_handler = on_invalid;
+}
+
+int switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type)
+{
+	int32_t bytes;
+	struct sockaddr_in in;
+	int len = sizeof(struct sockaddr_in);
+
+	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
+		return -1;
+	}
+
+	bytes = recvfrom(rtp_session->sock, (void *)&rtp_session->recv_msg, sizeof(rtp_msg_t), 0, (struct sockaddr *) &in, &len);
+	if (bytes <= 0) {
+		return 0;
+	}
+	
+	if (rtp_session->recv_msg.header.version != 2) {
+		if (rtp_session->invalid_handler) {
+			rtp_session->invalid_handler(rtp_session, rtp_session->sock, (void *) &rtp_session->recv_msg, bytes, in.sin_addr.s_addr, in.sin_port);
+		}
+		return 0;
+	}
+	memcpy(data, rtp_session->recv_msg.body, bytes);
+	*payload_type = rtp_session->recv_msg.header.pt;
+	return bytes - rtp_header_len;
+
+}
+
+
+int switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type)
+{
+	int32_t bytes;
+	struct sockaddr_in in;
+	int len = sizeof(struct sockaddr_in);
+
+	*data = NULL;
+	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
+		return -1;
+	}
+
+	bytes = recvfrom(rtp_session->sock, (void *)&rtp_session->recv_msg, sizeof(rtp_msg_t), 0, (struct sockaddr *) &in, &len);
+	if (bytes <= 0) {
+		return 0;
+	}
+	
+	if (rtp_session->recv_msg.header.version != 2) {
+		if (rtp_session->invalid_handler) {
+			rtp_session->invalid_handler(rtp_session, rtp_session->sock, (void *) &rtp_session->recv_msg, bytes, in.sin_addr.s_addr, ntohs(in.sin_port));
+		}
+		return 0;
+	}
+	*payload_type = rtp_session->recv_msg.header.pt;
+	*data = rtp_session->recv_msg.body;
+
+	return bytes - rtp_header_len;
+}
+
+int switch_rtp_write(switch_rtp *rtp_session, void *data, int datalen, uint32_t ts)
+{
+	int32_t bytes;
+
+	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
+		return -1;
+	}
+	rtp_session->ts += ts;
+	rtp_session->seq = ntohs(rtp_session->seq) + 1;
+	rtp_session->seq = htons(rtp_session->seq);
+	rtp_session->send_msg.header.seq = rtp_session->seq;
+	rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
+	rtp_session->payload = htonl(rtp_session->payload);
+
+	memcpy(rtp_session->send_msg.body, data, datalen);
+	bytes = sendto(rtp_session->sock, (void*)&rtp_session->send_msg,
+				   datalen + rtp_header_len, 0, (struct sockaddr *)&rtp_session->remote_addr, sizeof (struct sockaddr_in));
+
+	return bytes;
+}
+
+int switch_rtp_write_payload(switch_rtp *rtp_session, void *data, int datalen, int payload, uint32_t ts, uint32_t mseq)
+{
+	int32_t bytes;
+
+	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
+		return -1;
+	}
+	rtp_session->ts += ts;
+	rtp_session->send_msg.header.seq = htons(mseq);
+	rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
+	rtp_session->send_msg.header.pt = htonl(payload);
+
+	memcpy(rtp_session->send_msg.body, data, datalen);
+	bytes = sendto(rtp_session->sock, (void*)&rtp_session->send_msg,
+				   datalen + rtp_header_len, 0, (struct sockaddr *)&rtp_session->remote_addr, sizeof (struct sockaddr_in));
+	
+	return bytes;
+}
+
+uint32_t switch_rtp_start(switch_rtp *rtp_session)
+{
+	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_IO);
+	return 0;
+}
+
+uint32_t switch_rtp_get_ssrc(switch_rtp *rtp_session)
+{
+	return rtp_session->send_msg.header.ssrc;
+}
+
+void switch_rtp_set_private(switch_rtp *rtp_session, void *private_data)
+{
+	rtp_session->private_data = private_data;
+}
+
+void *switch_rtp_get_private(switch_rtp *rtp_session)
+{
+	return rtp_session->private_data;
+}
+

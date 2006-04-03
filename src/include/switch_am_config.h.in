@@ -1,4 +1,6 @@
-/* src/include/config.h.in.  Generated from configure.in by autoheader.  */
+#ifndef SWITCH_AM_CONFIG_H
+#define SWITCH_AM_CONFIG_H
+/* src/include/switch_am_config.h.in.  Generated from configure.in by autoheader.  */
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
@@ -114,3 +116,4 @@
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 #undef size_t
+#endif
