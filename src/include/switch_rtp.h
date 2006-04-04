@@ -51,7 +51,7 @@ extern "C" {
 typedef void (*switch_rtp_invalid_handler)(switch_rtp *rtp_session,
 										   switch_socket_t *sock,
 										   void *data,
-										   unsigned int datalen,
+										   switch_size_t datalen,
 										   switch_sockaddr_t *from_addr);
 
 

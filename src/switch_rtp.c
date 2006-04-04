@@ -245,7 +245,7 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
 	}
 	memcpy(data, rtp_session->recv_msg.body, bytes);
 	*payload_type = rtp_session->recv_msg.header.pt;
-	return bytes - rtp_header_len;
+	return (int)(bytes - rtp_header_len);
 
 }
 
@@ -274,7 +274,7 @@ SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **dat
 	*payload_type = rtp_session->recv_msg.header.pt;
 	*data = rtp_session->recv_msg.body;
 
-	return bytes - rtp_header_len;
+	return (int)(bytes - rtp_header_len);
 }
 
 SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int datalen, uint32_t ts)

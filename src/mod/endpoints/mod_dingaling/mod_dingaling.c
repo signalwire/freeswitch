@@ -177,7 +177,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 static switch_status channel_kill_channel(switch_core_session *session, int sig);
 static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *msg);
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
-static void stun_callback(struct switch_rtp *switch_rtp, switch_socket_t *sock, void *data, unsigned int len, switch_sockaddr_t *from_addr);
+static void stun_callback(struct switch_rtp *switch_rtp, switch_socket_t *sock, void *data, switch_size_t len, switch_sockaddr_t *from_addr);
 static switch_status load_config(void);
 
 
@@ -1402,7 +1402,7 @@ static ldl_status handle_response(ldl_handle_t *handle, char *id)
 	return LDL_STATUS_SUCCESS;
 }
 
-static void stun_callback(struct switch_rtp *switch_rtp, switch_socket_t *sock, void *data, unsigned int len, switch_sockaddr_t *from_addr)
+static void stun_callback(struct switch_rtp *switch_rtp, switch_socket_t *sock, void *data, switch_size_t len, switch_sockaddr_t *from_addr)
 {
 	stun_packet_t *packet;
 	stun_packet_attribute_t *attr;
