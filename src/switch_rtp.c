@@ -29,11 +29,6 @@
  * switch_rtp.c -- RTP
  *
  */
-#define USEC_RATE        (5e5)
-#define MAX_WORD_LEN     128  
-#define ADDR_IS_MULTICAST(a) IN_MULTICAST(htonl(a))
-#define MAX_KEY_LEN      64
-#define MASTER_KEY_LEN   30
 
 #include <switch.h>
 #undef PACKAGE_NAME
@@ -44,11 +39,11 @@
 #include <datatypes.h>
 #include <srtp.h>
 
+#define MAX_KEY_LEN      64
 #define rtp_header_len 12
+#define RTP_MAX_BUF_LEN 16384
 
 typedef srtp_hdr_t rtp_hdr_t;
-
-#define RTP_MAX_BUF_LEN 16384
 
 typedef struct {
   srtp_hdr_t header;        
@@ -88,7 +83,6 @@ static void init_rtp(void)
 
   srtp_init();
   global_init = 1;
-
 }
 
 SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
@@ -164,7 +158,6 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
     policy.rtcp.sec_serv       = sec_serv_none;   
     policy.next                = NULL;
 
-
 	rtp_session->send_msg.header.ssrc    = htonl(ssrc);
 	rtp_session->send_msg.header.ts      = 0;
 	rtp_session->send_msg.header.seq     = (uint16_t) rand();
@@ -174,7 +167,6 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
 	rtp_session->send_msg.header.p       = 0;
 	rtp_session->send_msg.header.x       = 0;
 	rtp_session->send_msg.header.cc      = 0;
-
 
 	rtp_session->recv_msg.header.ssrc    = htonl(ssrc);
 	rtp_session->recv_msg.header.ts      = 0;
@@ -198,13 +190,11 @@ SWITCH_DECLARE(void) switch_rtp_killread(switch_rtp *rtp_session)
 {
 	apr_socket_shutdown(rtp_session->sock, APR_SHUTDOWN_READWRITE);
 	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
-	
 }
 
 
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp **rtp_session)
 {
-
 	switch_rtp_killread(*rtp_session);
 	switch_socket_close((*rtp_session)->sock);
 	*rtp_session = NULL;
@@ -230,7 +220,6 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
 	}
 	bytes = sizeof(rtp_msg_t);
 
-
 	switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
 
 	if (bytes <= 0) {
@@ -246,7 +235,6 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
 	memcpy(data, rtp_session->recv_msg.body, bytes);
 	*payload_type = rtp_session->recv_msg.header.pt;
 	return (int)(bytes - rtp_header_len);
-
 }
 
 SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type)
