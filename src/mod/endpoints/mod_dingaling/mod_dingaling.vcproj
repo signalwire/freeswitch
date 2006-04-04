@@ -65,10 +65,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIMBCTD"
-				AdditionalDependencies="libdingaling.lib Ws2_32.lib jrtplib.lib iksemel.lib "
+				AdditionalDependencies="libdingaling.lib Ws2_32.lib iksemel.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_dingaling.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\libdingaling\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\jrtplib\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\iksemel\$(OutDir)&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\libdingaling\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\iksemel\$(OutDir)&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/mod_dingaling.pdb"
 				SubSystem="2"
@@ -146,10 +146,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libdingaling.lib Ws2_32.lib jrtplib.lib iksemel.lib "
+				AdditionalDependencies="libdingaling.lib Ws2_32.lib iksemel.lib"
 				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_dingaling.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\libdingaling\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\jrtplib\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\iksemel\$(OutDir)&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\libdingaling\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\iksemel\$(OutDir)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"

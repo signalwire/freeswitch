@@ -174,21 +174,11 @@ End If
 If BuildModExosip Then
 	BuildLibs_libosip2 BuildDebug, BuildRelease
 	BuildLibs_exosip BuildDebug, BuildRelease
-	BuildLibs_jrtplib BuildDebug, BuildRelease
-	If Not FSO.FolderExists(LibDestDir & "include\jrtplib3") Then
-		FSO.CreateFolder(LibDestDir & "include\jrtplib3")
-	End If
-	FSO.CopyFile LibDestDir & "jrtplib\src\*.h", LibDestDir & "include\jrtplib3"
 End If
 
 If BuildModDingaling Then
 	BuildLibs_iksemel BuildDebug, BuildRelease
 	BuildLibs_jrtplib BuildDebug, BuildRelease
-	If Not FSO.FolderExists(LibDestDir & "include\jrtplib3") Then
-		FSO.CreateFolder(LibDestDir & "include\jrtplib3")
-	End If
-	FSO.CopyFile LibDestDir & "jrtplib\src\*.h", LibDestDir & "include\jrtplib3"
-	BuildLibs_libdingaling BuildDebug, BuildRelease
 End If
 
 If BuildModIaxChan Then
@@ -408,28 +398,6 @@ Sub BuildLibs_srtp(BuildDebug, BuildRelease)
 	Else
 		Wscript.echo "Unable to download srtp"
 	End If
-End Sub
-
-Sub BuildLibs_jrtplib(BuildDebug, BuildRelease)
-
-	If FSO.FolderExists(LibDestDir & "jrtplib")Then 
-		If BuildDebug Then
-			If (Not FSO.FileExists(LibDestDir & "jrtplib\Debug Dll\jrtplib.lib")) Then 
-				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Debug Dll"
-				FSO.CopyFile LibDestDir & "jrtplib\Debug Dll\jrtplib.dll", ScriptDir & "Debug\", True
-				FSO.CopyFile LibDestDir & "jrtplib\Debug Dll\jrtplib.lib", ScriptDir & "Debug\", True
-			End If
-		End If
-		If BuildRelease Then
-			If (Not FSO.FileExists(LibDestDir & "jrtplib\Release Dll\jrtplib.lib")) Then 
-				BuildViaVCBuild LibDestDir & "jrtplib\jrtplib.vcproj", "Release Dll"
-				FSO.CopyFile LibDestDir & "jrtplib\Release Dll\jrtplib.dll", ScriptDir & "Release\", True
-				FSO.CopyFile LibDestDir & "jrtplib\Release Dll\jrtplib.lib", ScriptDir & "Release\", True
-			End If
-		End If
-	Else
-		Wscript.echo "Unable to download JRtplib"
-	End If 
 End Sub
 
 Sub BuildLibs_sqlite(BuildDebug, BuildRelease)
