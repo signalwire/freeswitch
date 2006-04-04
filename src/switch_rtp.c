@@ -391,7 +391,9 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int da
 	bytes = datalen + rtp_header_len;
 	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&rtp_session->send_msg, &bytes);
 	if (rtp_session->ice_user) {
-		ice_out(rtp_session);
+		if (ice_out(rtp_session) != SWITCH_STATUS_SUCCESS) {
+			return -1;
+		}
 	}
 
 	return (int)bytes;
@@ -412,9 +414,11 @@ SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data
 	memcpy(rtp_session->send_msg.body, data, datalen);
 	bytes = datalen + rtp_header_len;
 	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&rtp_session->send_msg, &bytes);
-	
+
 	if (rtp_session->ice_user) {
-		ice_out(rtp_session);
+		if (ice_out(rtp_session) != SWITCH_STATUS_SUCCESS) {
+			return -1;
+		}
 	}
 	
 	return (int)bytes;
