@@ -759,8 +759,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 		}
 
 		/* read audio from 1 channel and write it to the other */
-		if (switch_core_session_read_frame(session_a, &read_frame, -1, stream_id) == SWITCH_STATUS_SUCCESS
-			&& read_frame->datalen) {
+		if (switch_core_session_read_frame(session_a, &read_frame, -1, stream_id) == SWITCH_STATUS_SUCCESS && read_frame->datalen) {
 			if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "write: %s Bad Frame....[%u] Bubye!\n", switch_channel_get_name(chan_b), read_frame->datalen);
 				data->running = -1;
@@ -775,7 +774,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 
 	data->running = 0;
 
-	if (switch_channel_test_flag(chan_a, CF_ORIGINATOR)) {
+	if (his_thread->running > 0 && switch_channel_test_flag(chan_a, CF_ORIGINATOR)) {
 		if (!switch_channel_test_flag(chan_b, CF_TRANSFER)) {
 			switch_core_session_kill_channel(session_b, SWITCH_SIG_KILL);
 			switch_channel_hangup(chan_b);
@@ -792,7 +791,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	}
 
 	data->running = 0;		
-	switch_sleep(500000);
+	switch_sleep(1000000);
 	return NULL;
 }
 

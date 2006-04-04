@@ -420,13 +420,15 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 	switch_hash_index_t *hi;
 	void *val;
 	const void *var;
+	char state_num[25];
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 	originator_caller_profile = switch_channel_get_originator_caller_profile(channel);
 	originatee_caller_profile = switch_channel_get_originatee_caller_profile(channel);
 
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State",
-							(char *) switch_channel_state_name(channel->state));
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", (char *) switch_channel_state_name(channel->state));
+	snprintf(state_num, sizeof(state_num), "%d", channel->state);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", (char *) state_num);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
 
@@ -470,6 +472,15 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel *channel, 
 
 	if (!caller_profile->chan_name) {
 		caller_profile->chan_name = switch_core_session_strdup(channel->session, channel->name);
+	}
+
+	if (!channel->caller_profile) {
+		switch_event *event;
+
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CREATE) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
+		}
 	}
 
 	channel->caller_profile = caller_profile;

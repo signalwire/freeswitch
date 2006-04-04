@@ -78,6 +78,7 @@ struct switch_core_runtime {
 	apr_pool_t *memory_pool;
 	switch_hash *session_table;
 	switch_core_db *db;
+	switch_core_db *event_db;
 	const struct switch_state_handler_table *state_handlers[SWITCH_MAX_STATE_HANDLERS];
     int state_handler_index;
 	FILE *console;
@@ -120,6 +121,44 @@ SWITCH_DECLARE(switch_core_db *) switch_core_db_open_file(char *filename)
 	}
 	return db;
 }
+
+#if 0
+static void check_table_exists(switch_core_db *db, char *test_sql, char *create_sql) {
+    char *errmsg;
+
+    if(db) {
+        if(test_sql) {
+            switch_core_db_exec(
+                         db,
+                         test_sql,
+                         NULL,
+                         NULL,
+                         &errmsg
+                         );
+
+            if (errmsg) {
+                switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SQL ERR [%s]\n[%s]\nAuto Generating Table!\n", errmsg, test_sql);
+                switch_core_db_free(errmsg);
+                errmsg = NULL;
+                switch_core_db_exec(
+									db,
+                             create_sql,
+                             NULL,
+                             NULL,
+                             &errmsg
+                             );
+                if (errmsg) {
+                    switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SQL ERR [%s]\n[%s]\n", errmsg, create_sql);
+                    switch_core_db_free(errmsg);
+                    errmsg = NULL;
+                }
+            }
+        }
+    }
+
+}
+#endif
+
 
 SWITCH_DECLARE(switch_status) switch_core_set_console(char *console)
 {
@@ -1628,6 +1667,7 @@ static void switch_core_standard_on_ring(switch_core_session *session)
 static void switch_core_standard_on_execute(switch_core_session *session)
 {
 	switch_caller_extension *extension;
+	switch_event *event;
 	const switch_application_interface *application_interface;
 
 
@@ -1657,7 +1697,13 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 			switch_channel_set_state(session->channel, CS_HANGUP);
 			return;
 		}
-
+		
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXEC) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(session->channel, event);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", extension->current_application->application_name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", extension->current_application->application_data);
+			switch_event_fire(&event);
+		}
 		application_interface->application_function(session, extension->current_application->application_data);
 		extension->current_application = extension->current_application->next;
 	}
@@ -2216,9 +2262,69 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request_by_name(char *
 
 static void core_event_handler(switch_event *event)
 {
-	//char buf[1024];
+	char buf[1024];
+	char *sql = NULL;
+	char *errmsg;
+
+	if (!runtime.event_db) {
+		runtime.event_db = switch_core_db_handle();
+	}
 
 	switch (event->event_id) {
+	case SWITCH_EVENT_CHANNEL_CREATE:
+		snprintf(buf, sizeof(buf), "insert into calls (uuid,created,name,state) values('%s','%s','%s','%s')",
+				 switch_event_get_header(event, "unique-id"),
+				 switch_event_get_header(event, "event-date-local"),
+				 switch_event_get_header(event, "channel-name"),
+				 switch_event_get_header(event, "channel-state")
+				 );
+		sql = buf;
+		break;
+	case SWITCH_EVENT_CHANNEL_EXEC:
+		snprintf(buf, sizeof(buf), "update calls set application='%s',application_data='%s' where uuid='%s'",
+				 switch_event_get_header(event, "application"),
+				 switch_event_get_header(event, "application-data"),
+				 switch_event_get_header(event, "unique-id")
+				 );
+		sql = buf;
+		break;
+	case SWITCH_EVENT_CHANNEL_STATE:
+		if (event) {
+			char *state = switch_event_get_header(event, "channel-state-number");
+			switch_channel_state state_i = atoi(state);
+
+			switch(state_i) {
+			case CS_HANGUP:
+				snprintf(buf, sizeof(buf), "delete from calls where uuid='%s'", switch_event_get_header(event, "unique-id"));
+				sql = buf;
+				break;
+			case CS_RING:
+				snprintf(buf, sizeof(buf), "update calls set state='%s',cid_name='%s',cid_num='%s',ip_addr='%s',dest='%s'"
+						 "where uuid='%s'",
+						 switch_event_get_header(event, "channel-state"),
+						 switch_event_get_header(event, "caller-caller-id-name"),
+						 switch_event_get_header(event, "caller-caller-id-number"),
+						 switch_event_get_header(event, "caller-network-addr"),
+						 switch_event_get_header(event, "caller-destination-number"),
+						 switch_event_get_header(event, "unique-id")
+						 );
+				sql = buf;
+				break;
+			default:
+				snprintf(buf, sizeof(buf), "update calls set state='%s' where uuid='%s'", 
+						 switch_event_get_header(event, "channel-state"),
+						 switch_event_get_header(event, "unique-id")
+						 );
+				sql = buf;
+				break;
+			}
+		
+		}
+		break;
+	case SWITCH_EVENT_SHUTDOWN:
+		snprintf(buf, sizeof(buf), "delete from calls");
+		sql = buf;
+		break;
 	case SWITCH_EVENT_LOG:
 		return;
 	default:
@@ -2226,6 +2332,29 @@ static void core_event_handler(switch_event *event)
 		//switch_event_serialize(event, buf, sizeof(buf), NULL);
 		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "\nCORE EVENT\n--------------------------------\n%s\n", buf);
 		break;
+	}
+
+
+
+	if (sql) {
+		uint8_t max = 25;
+		while(max > 0) {
+			switch_core_db_exec(
+								runtime.event_db,
+								sql,
+								NULL,
+								NULL,
+								&errmsg
+								);		
+			if (errmsg) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SQL ERR [%s]\n", errmsg);
+				switch_core_db_free(errmsg);
+				switch_yield(100000);
+				max--;
+			} else {
+				break;
+			}
+		}
 	}
 }
 
@@ -2295,7 +2424,24 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 	if ((runtime.db = switch_core_db_handle()) == 0 ) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error Opening DB!\n");
 	} else {
+		char create_calls_sql[] =
+			"CREATE TABLE calls (\n"
+			"   uuid  VARCHAR(255),\n"
+			"   created  VARCHAR(255),\n"
+			"   name  VARCHAR(255),\n"
+			"   state  VARCHAR(255),\n"
+			"   cid_name  VARCHAR(255),\n"
+			"   cid_num  VARCHAR(255),\n"
+			"   ip_addr  VARCHAR(255),\n"
+			"   dest  VARCHAR(255),\n"
+			"   application  VARCHAR(255),\n"
+			"   application_data  VARCHAR(255)\n"
+			");\n";
+
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Opening DB\n");
+		switch_core_db_exec(runtime.db, "drop table calls", NULL, NULL, NULL);
+		switch_core_db_exec(runtime.db, create_calls_sql, NULL, NULL, NULL);
+		
 		if (switch_event_bind("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL) !=
 			SWITCH_STATUS_SUCCESS) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't bind event handler!\n");
