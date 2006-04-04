@@ -230,7 +230,7 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp *rtp_session, swit
 
 SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type)
 {
-	uint32_t bytes;
+	switch_size_t bytes;
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 		return -1;
@@ -259,7 +259,7 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
 
 SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type)
 {
-	uint32_t bytes;
+	switch_size_t bytes;
 
 	*data = NULL;
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
