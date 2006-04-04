@@ -29,11 +29,6 @@
  * switch_rtp.c -- RTP
  *
  */
-#ifdef RTPW_USE_WINSOCK2
-# define DICT_FILE        "words.txt"
-#else
-# define DICT_FILE        "/usr/share/dict/words"
-#endif
 #define USEC_RATE        (5e5)
 #define MAX_WORD_LEN     128  
 #define ADDR_IS_MULTICAST(a) IN_MULTICAST(htonl(a))
@@ -49,7 +44,6 @@
 #include <datatypes.h>
 #include <srtp.h>
 
-
 #define rtp_header_len 12
 
 typedef srtp_hdr_t rtp_hdr_t;
@@ -60,7 +54,6 @@ typedef struct {
   srtp_hdr_t header;        
   char body[RTP_MAX_BUF_LEN];  
 } rtp_msg_t;
-
 
 struct switch_rtp {
 	switch_socket_t *sock;
@@ -256,7 +249,6 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
 
 }
 
-
 SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type)
 {
 	switch_size_t bytes;
@@ -346,4 +338,3 @@ SWITCH_DECLARE(void *)switch_rtp_get_private(switch_rtp *rtp_session)
 {
 	return rtp_session->private_data;
 }
-
