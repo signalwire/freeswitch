@@ -49,11 +49,11 @@ extern "C" {
 
 
 typedef void (*switch_rtp_invalid_handler)(switch_rtp *rtp_session,
-										   switch_raw_socket_t sock,
+										   switch_socket_t *sock,
 										   void *data,
 										   unsigned int datalen,
-										   uint32_t fromip,
-										   uint16_t fromport);
+										   switch_sockaddr_t *from_addr);
+
 
 switch_rtp *switch_rtp_new(char *rx_ip,
 						   int rx_port,
@@ -65,7 +65,7 @@ switch_rtp *switch_rtp_new(char *rx_ip,
 						   switch_memory_pool *pool);
 
 void switch_rtp_destroy(switch_rtp **rtp_session);
-switch_raw_socket_t switch_rtp_get_rtp_socket(switch_rtp *rtp_session);
+switch_socket_t *switch_rtp_get_rtp_socket(switch_rtp *rtp_session);
 void switch_rtp_set_invald_handler(switch_rtp *rtp_session, switch_rtp_invalid_handler on_invalid);
 int switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type);
 int switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type);

@@ -29,23 +29,6 @@
  * switch_rtp.c -- RTP
  *
  */
-
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef HAVE_NETINET_IN_H
-# include <netinet/in.h>
-#elif defined HAVE_WINSOCK2_H
-# include <winsock2.h>
-# include <ws2tcpip.h>
-# define RTPW_USE_WINSOCK2	1
-#endif
-#ifdef HAVE_ARPA_INET_H
-# include <arpa/inet.h>
-#endif
-
-
-
 #ifdef RTPW_USE_WINSOCK2
 # define DICT_FILE        "words.txt"
 #else
@@ -66,12 +49,6 @@
 #include <datatypes.h>
 #include <srtp.h>
 
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-
-#define do_close(s) if (s > -1) {close(s); s = -1;}
 
 #define rtp_header_len 12
 
@@ -86,13 +63,13 @@ typedef struct {
 
 
 struct switch_rtp {
-	switch_raw_socket_t sock;
+	switch_socket_t *sock;
 
-	struct sockaddr_in local_addr;
+	switch_sockaddr_t *local_addr;
 	rtp_msg_t send_msg;
 	srtp_ctx_t *send_ctx;
 
-	struct sockaddr_in remote_addr;
+	switch_sockaddr_t *remote_addr;
 	rtp_msg_t recv_msg;
 	srtp_ctx_t *recv_ctx;
 	
@@ -104,6 +81,8 @@ struct switch_rtp {
 
 	uint32_t ts;
 	uint32_t flags;
+	switch_memory_pool *pool;
+	switch_sockaddr_t *from_addr;
 };
 
 static int global_init = 0;
@@ -113,13 +92,6 @@ static void init_rtp(void)
 	if (global_init) {
 		return;
 	}
-
-#ifdef RTPW_USE_WINSOCK2
-  WORD wVersionRequested = MAKEWORD(2, 0);
-  WSADATA wsaData;
-
-  ret = WSAStartup(wVersionRequested, &wsaData);
-#endif
 
   srtp_init();
   global_init = 1;
@@ -135,9 +107,10 @@ switch_rtp *switch_rtp_new(char *rx_ip,
 						   const char **err,
 						   switch_memory_pool *pool)
 {
-	switch_raw_socket_t sock;
+	switch_socket_t *sock;
 	switch_rtp *rtp_session = NULL;
-	struct in_addr rx_addr, tx_addr;
+	switch_sockaddr_t *rx_addr;
+	switch_sockaddr_t *tx_addr;
 	srtp_policy_t policy;
 	char key[MAX_KEY_LEN];
 	uint32_t ssrc = rand() & 0xffff;
@@ -146,45 +119,39 @@ switch_rtp *switch_rtp_new(char *rx_ip,
 		init_rtp();
 	}
 
-	if ((sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0) {
-		*err = "Socket Error!\n";
+	if (switch_sockaddr_info_get(&rx_addr, rx_ip, SWITCH_UNSPEC, rx_port, 0, pool) != SWITCH_STATUS_SUCCESS) {
+		*err = "RX Address Error!";
 		return NULL;
 	}
 
-	if (!inet_aton(rx_ip, &rx_addr)) {
-		*err = "RX Address Error!\n";
+	if (switch_sockaddr_info_get(&tx_addr, tx_ip, SWITCH_UNSPEC, tx_port, 0, pool) != SWITCH_STATUS_SUCCESS) {
+		*err = "TX Address Error!";
 		return NULL;
-	}	
+	}
 
-	if (!inet_aton(tx_ip, &tx_addr)) {
-		*err = "TX Address Error!\n";
+	if (switch_socket_create(&sock, AF_INET, SOCK_DGRAM, 0, pool) != SWITCH_STATUS_SUCCESS) {
+		*err = "Socket Error!";
 		return NULL;
-	}	
+	}
+
+	if (switch_socket_bind(sock, rx_addr) != SWITCH_STATUS_SUCCESS) {
+		*err = "Bind Error!";
+		return NULL;
+	}
 
 	if (!(rtp_session = switch_core_alloc(pool, sizeof(*rtp_session)))) {
 		*err = "Memory Error!";
 		return NULL;
 	}
 
-	rtp_session->flags = flags;
-	rtp_session->local_addr.sin_addr = rx_addr;
-	rtp_session->local_addr.sin_family = PF_INET;
-	rtp_session->local_addr.sin_port   = htons(rx_port);
-
-	rtp_session->remote_addr.sin_addr = tx_addr;
-	rtp_session->remote_addr.sin_family = PF_INET;
-	rtp_session->remote_addr.sin_port   = htons(tx_port);
 	rtp_session->sock = sock;
-
+	rtp_session->local_addr = rx_addr;
+	rtp_session->remote_addr = tx_addr;
+	rtp_session->pool = pool;
+	switch_sockaddr_info_get(&rtp_session->from_addr, NULL, SWITCH_UNSPEC, 0, 0, rtp_session->pool);
 	
-	if (bind(sock, (struct sockaddr *)&rtp_session->local_addr, sizeof(rtp_session->local_addr)) < 0) {
-		*err = "Bind Err!";
-		close(sock);
-		return NULL;
-	}
-
 	if switch_test_flag(rtp_session, SWITCH_RTP_NOBLOCK) {
-		fcntl(sock, F_SETFL, O_NONBLOCK);
+		switch_socket_opt_set(rtp_session->sock, APR_SO_NONBLOCK, TRUE);
 	}
 
     policy.key                 = (uint8_t *)key;
@@ -236,8 +203,9 @@ switch_rtp *switch_rtp_new(char *rx_ip,
 
 void switch_rtp_killread(switch_rtp *rtp_session)
 {
+	apr_socket_shutdown(rtp_session->sock, APR_SHUTDOWN_READWRITE);
 	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
-	shutdown(rtp_session->sock, SHUT_RDWR);
+	
 }
 
 
@@ -245,12 +213,12 @@ void switch_rtp_destroy(switch_rtp **rtp_session)
 {
 
 	switch_rtp_killread(*rtp_session);
-	do_close((*rtp_session)->sock);
+	switch_socket_close((*rtp_session)->sock);
 	*rtp_session = NULL;
 	return;
 }
 
-switch_raw_socket_t switch_rtp_get_rtp_socket(switch_rtp *rtp_session)
+switch_socket_t *switch_rtp_get_rtp_socket(switch_rtp *rtp_session)
 {
 	return rtp_session->sock;
 }
@@ -262,22 +230,23 @@ void switch_rtp_set_invald_handler(switch_rtp *rtp_session, switch_rtp_invalid_h
 
 int switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type)
 {
-	int32_t bytes;
-	struct sockaddr_in in;
-	unsigned int len = sizeof(struct sockaddr_in);
+	switch_size_t bytes;
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 		return -1;
 	}
+	bytes = sizeof(rtp_msg_t);
 
-	bytes = recvfrom(rtp_session->sock, (void *)&rtp_session->recv_msg, sizeof(rtp_msg_t), 0, (struct sockaddr *) &in, &len);
+
+	switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
+
 	if (bytes <= 0) {
 		return 0;
 	}
 	
 	if (rtp_session->recv_msg.header.version != 2) {
 		if (rtp_session->invalid_handler) {
-			rtp_session->invalid_handler(rtp_session, rtp_session->sock, (void *) &rtp_session->recv_msg, bytes, in.sin_addr.s_addr, in.sin_port);
+			rtp_session->invalid_handler(rtp_session, rtp_session->sock, (void *) &rtp_session->recv_msg, bytes, rtp_session->from_addr);
 		}
 		return 0;
 	}
@@ -290,23 +259,23 @@ int switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *
 
 int switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type)
 {
-	int32_t bytes;
-	struct sockaddr_in in;
-	unsigned int len = sizeof(struct sockaddr_in);
+	switch_size_t bytes;
 
 	*data = NULL;
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 		return -1;
 	}
 
-	bytes = recvfrom(rtp_session->sock, (void *)&rtp_session->recv_msg, sizeof(rtp_msg_t), 0, (struct sockaddr *) &in, &len);
+	bytes = sizeof(rtp_msg_t);
+	switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
+
 	if (bytes <= 0) {
 		return 0;
 	}
 	
 	if (rtp_session->recv_msg.header.version != 2) {
 		if (rtp_session->invalid_handler) {
-			rtp_session->invalid_handler(rtp_session, rtp_session->sock, (void *) &rtp_session->recv_msg, bytes, in.sin_addr.s_addr, ntohs(in.sin_port));
+			rtp_session->invalid_handler(rtp_session, rtp_session->sock, (void *) &rtp_session->recv_msg, bytes, rtp_session->from_addr);
 		}
 		return 0;
 	}
@@ -318,7 +287,7 @@ int switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_
 
 int switch_rtp_write(switch_rtp *rtp_session, void *data, int datalen, uint32_t ts)
 {
-	int32_t bytes;
+	switch_size_t bytes;
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 		return -1;
@@ -331,15 +300,16 @@ int switch_rtp_write(switch_rtp *rtp_session, void *data, int datalen, uint32_t 
 	rtp_session->payload = htonl(rtp_session->payload);
 
 	memcpy(rtp_session->send_msg.body, data, datalen);
-	bytes = sendto(rtp_session->sock, (void*)&rtp_session->send_msg,
-				   datalen + rtp_header_len, 0, (struct sockaddr *)&rtp_session->remote_addr, sizeof (struct sockaddr_in));
+
+	bytes = datalen + rtp_header_len;
+	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&rtp_session->send_msg, &bytes);
 
 	return bytes;
 }
 
 int switch_rtp_write_payload(switch_rtp *rtp_session, void *data, int datalen, int payload, uint32_t ts, uint32_t mseq)
 {
-	int32_t bytes;
+	switch_size_t bytes;
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 		return -1;
@@ -350,8 +320,8 @@ int switch_rtp_write_payload(switch_rtp *rtp_session, void *data, int datalen, i
 	rtp_session->send_msg.header.pt = htonl(payload);
 
 	memcpy(rtp_session->send_msg.body, data, datalen);
-	bytes = sendto(rtp_session->sock, (void*)&rtp_session->send_msg,
-				   datalen + rtp_header_len, 0, (struct sockaddr *)&rtp_session->remote_addr, sizeof (struct sockaddr_in));
+	bytes = datalen + rtp_header_len;
+	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&rtp_session->send_msg, &bytes);
 	
 	return bytes;
 }
