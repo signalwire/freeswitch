@@ -1,12 +1,4 @@
 EXPORTS
-stun_random_string
-stun_packet_parse
-stun_value_to_name
-stun_packet_attribute_get_mapped_address
-stun_packet_attribute_get_username
-stun_packet_build_header
-stun_packet_attribute_add_username
-stun_packet_attribute_add_binded_address
 ldl_session_get_caller
 ldl_session_get_ip
 ldl_session_set_private

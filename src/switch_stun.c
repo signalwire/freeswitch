@@ -141,7 +141,7 @@ SWITCH_DECLARE(switch_stun_packet_t *)switch_stun_packet_parse(uint8_t *buf, uin
 	return packet;
 }
 
-SWITCH_DECLARE(const char *)switch_stun_value_to_name(int32_t type, int32_t value)
+SWITCH_DECLARE(const char *)switch_stun_value_to_name(int32_t type, uint32_t value)
 
 {
 	uint32_t x = 0;
@@ -235,7 +235,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_s
 	i = (uint8_t *) &ip->address;
 
 	for(x = 0; x < 4 ; x++) {
-		i[x] = atoi(p);
+		i[x] = (uint8_t)atoi(p);
 		if ((p = strchr(p, '.'))) {
 			p++;
 		} else {

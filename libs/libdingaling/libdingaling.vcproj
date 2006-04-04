@@ -304,10 +304,6 @@
 				RelativePath=".\src\libdingaling.c"
 				>
 			</File>
-			<File
-				RelativePath=".\src\stun_parser.c"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -320,10 +316,6 @@
 			</File>
 			<File
 				RelativePath=".\src\libdingaling.h"
-				>
-			</File>
-			<File
-				RelativePath=".\src\stun_parser.h"
 				>
 			</File>
 		</Filter>

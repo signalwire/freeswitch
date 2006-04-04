@@ -240,6 +240,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_stun.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_utils.c"
 				>
 			</File>
@@ -315,6 +319,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_sqlite.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_stun.h"
 				>
 			</File>
 			<File

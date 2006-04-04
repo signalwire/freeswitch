@@ -143,7 +143,7 @@ SWITCH_DECLARE(switch_stun_packet_t *)switch_stun_packet_parse(uint8_t *buf, uin
   \param value the value to look up
   \return a sring version of value
 */
-SWITCH_DECLARE(const char *)switch_stun_value_to_name(int32_t type, int32_t value);
+SWITCH_DECLARE(const char *)switch_stun_value_to_name(int32_t type, uint32_t value);
 
 
 /*!
