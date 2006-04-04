@@ -149,7 +149,7 @@ depends:
 	./build/buildlib.sh . install apr-util-1.2.6.tar.gz --with-apr=../apr-1.2.6 --prefix=$(PREFIX)
 	./build/buildlib.sh . libresample-0.1.3.tgz --prefix=$(PREFIX)
 	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
-	./build/buildlib.sh . install srtp.tgz --prefix=$(PREFIX) --enable-pic
+	./build/buildlib.sh . install srtp.tgz --prefix=$(PREFIX)
 	rm build/freeswitch.env
 
 
