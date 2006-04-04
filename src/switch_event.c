@@ -155,12 +155,15 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void 
 	queues[0] = EVENT_QUEUE[SWITCH_PRIORITY_HIGH];
 	queues[1] = EVENT_QUEUE[SWITCH_PRIORITY_NORMAL];
 	queues[2] = EVENT_QUEUE[SWITCH_PRIORITY_LOW];
+	
+	for(;;) {
+		len[1] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_NORMAL]);
+		len[2] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_LOW]);
+		len[0] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_HIGH]);
 
-	while (THREAD_RUNNING == 1 || 
-		   (len[1] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_NORMAL])) ||
-		   (len[2] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_LOW])) ||
-		   (len[0] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_HIGH]))
-		   ) {
+		if (THREAD_RUNNING != 1 && !len[0] && !len[1] && !len[2]) {
+			break;
+		}
 
 		for(i = 0; i < 3; i++) {
 			if (len[i]) {
