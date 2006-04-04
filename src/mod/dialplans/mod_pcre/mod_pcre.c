@@ -56,6 +56,7 @@ static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 	pcre *re = NULL;
 	int match_count = 0;
 	int ovector[30];
+	int skip = 0;
 
 	channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(channel);
@@ -75,6 +76,17 @@ static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 			exten_name = cfg.category;
 			cleanre();
 			match_count = 0;
+			skip = 0;
+
+			if (!strcasecmp(exten_name, "outbound") && !switch_channel_test_flag(channel, CF_OUTBOUND)) {
+				skip = 1;
+			} else if (!strcasecmp(exten_name, "inbound") && switch_channel_test_flag(channel, CF_OUTBOUND)) {
+				skip = 1;
+			}
+		}
+
+		if (skip) {
+			continue;
 		}
 
 		if (!strcasecmp(var, "regex")) {
