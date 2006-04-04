@@ -126,6 +126,7 @@ struct private_object {
 	switch_queue_t *dtmf_queue;
 	char out_digit;
 	switch_time_t cng_next;
+	switch_time_t last_read;
 	unsigned char out_digit_packet[4];
 	unsigned int out_digit_sofar;
 	unsigned int out_digit_dur;
@@ -551,7 +552,14 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	} else {
 		assert(0);
 	}
-
+	
+	if (tech_pvt->last_read) {
+		elapsed = (unsigned int)((switch_time_now() - tech_pvt->last_read) / 1000);
+		if (elapsed > 60000) {
+			return SWITCH_STATUS_TIMEOUT;
+		}
+	}
+	
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
 
 		if (!switch_test_flag(tech_pvt, TFLAG_RTP)) {
@@ -560,6 +568,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 
 		assert(tech_pvt->rtp_session != NULL);
 		tech_pvt->read_frame.datalen = 0;
+
 
 		while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO)
 			   && tech_pvt->read_frame.datalen == 0) {
@@ -640,6 +649,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			}
 			
 			if (tech_pvt->read_frame.datalen > 0) {
+				tech_pvt->last_read = switch_time_now();
 				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 				frames = (tech_pvt->read_frame.datalen / bytes);
 				samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
