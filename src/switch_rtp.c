@@ -71,9 +71,94 @@ struct switch_rtp {
 	uint32_t flags;
 	switch_memory_pool *pool;
 	switch_sockaddr_t *from_addr;
+
+	char *ice_user;
+	char *user_ice;
+	switch_time_t last_stun;
+	uint8_t stuncount;
 };
 
 static int global_init = 0;
+
+static switch_status ice_out(switch_rtp *rtp_session)
+{
+
+	assert(rtp_session != NULL);
+	assert(rtp_session->ice_user != NULL);
+
+	if (rtp_session->stuncount == 0) {
+		uint8_t buf[256] = {0};
+		switch_stun_packet_t *packet;
+		unsigned int elapsed;
+		switch_size_t bytes;
+
+		if (rtp_session->last_stun) {
+			elapsed = (unsigned int)((switch_time_now() - rtp_session->last_stun) / 1000);
+
+			if (elapsed > 10000) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No stun for a long time (PUNT!)\n");
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+		
+		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
+		switch_stun_packet_attribute_add_username(packet, rtp_session->ice_user, 32);
+		bytes = switch_stun_packet_length(packet);
+		switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void *)packet, &bytes);
+		rtp_session->stuncount = 25;
+	} else {
+		rtp_session->stuncount--;
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static void handle_ice(switch_rtp *rtp_session, void *data, switch_size_t len)
+{
+	switch_stun_packet_t *packet;
+	switch_stun_packet_attribute_t *attr;
+	char username[33] = {0};
+	unsigned char buf[512] = {0};
+
+	memcpy(buf, data, len);
+	packet = switch_stun_packet_parse(buf, sizeof(buf));
+	rtp_session->last_stun = switch_time_now();
+	
+	switch_stun_packet_first_attribute(packet, attr);
+
+	do {
+		switch(attr->type) {
+		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
+			if (attr->type) {
+				char ip[16];
+				uint16_t port;
+				switch_stun_packet_attribute_get_mapped_address(attr, ip, &port);
+			}
+			break;
+		case SWITCH_STUN_ATTR_USERNAME:
+			if(attr->type) {
+				switch_stun_packet_attribute_get_username(attr, username, 32);
+			}
+			break;
+		}
+	} while (switch_stun_packet_next_attribute(attr));
+
+
+	if (packet->header.type == SWITCH_STUN_BINDING_REQUEST && !strcmp(rtp_session->user_ice, username)) {
+		uint8_t buf[512];
+		switch_stun_packet_t *rpacket;
+		char *remote_ip;
+		switch_size_t bytes;
+
+		memset(buf, 0, sizeof(buf));
+		rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, buf);
+		switch_stun_packet_attribute_add_username(rpacket, username, 32);
+		switch_sockaddr_ip_get(&remote_ip, rtp_session->from_addr);
+		switch_stun_packet_attribute_add_binded_address(rpacket, remote_ip, rtp_session->from_addr->port);
+		bytes = switch_stun_packet_length(rpacket);
+		switch_socket_sendto(rtp_session->sock, rtp_session->from_addr, 0, (void*)rpacket, &bytes);
+	}
+}
+
 
 static void init_rtp(void)
 {
@@ -86,13 +171,13 @@ static void init_rtp(void)
 }
 
 SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
-						   switch_port_t rx_port,
-						   char *tx_ip,
-						   switch_port_t tx_port,
-						   int payload,
-						   switch_rtp_flag_t flags,
-						   const char **err,
-						   switch_memory_pool *pool)
+										   switch_port_t rx_port,
+										   char *tx_ip,
+										   switch_port_t tx_port,
+										   int payload,
+										   switch_rtp_flag_t flags,
+										   const char **err,
+										   switch_memory_pool *pool)
 {
 	switch_socket_t *sock;
 	switch_rtp *rtp_session = NULL;
@@ -186,6 +271,19 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
 	return rtp_session;
 }
 
+SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp *rtp_session, char *login, char *rlogin)
+{
+	char ice_user[80];
+	char user_ice[80];
+
+	snprintf(ice_user, sizeof(ice_user), "%s%s", login, rlogin);
+	snprintf(user_ice, sizeof(user_ice), "%s%s", rlogin, login);
+	rtp_session->ice_user = switch_core_strdup(rtp_session->pool, ice_user);
+	rtp_session->user_ice = switch_core_strdup(rtp_session->pool, user_ice);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(void) switch_rtp_killread(switch_rtp *rtp_session)
 {
 	apr_socket_shutdown(rtp_session->sock, APR_SHUTDOWN_READWRITE);
@@ -227,6 +325,10 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
 	}
 	
 	if (rtp_session->recv_msg.header.version != 2) {
+		if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
+			handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
+		}	
+
 		if (rtp_session->invalid_handler) {
 			rtp_session->invalid_handler(rtp_session, rtp_session->sock, (void *) &rtp_session->recv_msg, bytes, rtp_session->from_addr);
 		}
@@ -252,8 +354,12 @@ SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **dat
 	if (bytes <= 0) {
 		return 0;
 	}
-	
+
 	if (rtp_session->recv_msg.header.version != 2) {
+		if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
+			handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
+		}	
+
 		if (rtp_session->invalid_handler) {
 			rtp_session->invalid_handler(rtp_session, rtp_session->sock, (void *) &rtp_session->recv_msg, bytes, rtp_session->from_addr);
 		}
@@ -272,6 +378,7 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int da
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 		return -1;
 	}
+
 	rtp_session->ts += ts;
 	rtp_session->seq = ntohs(rtp_session->seq) + 1;
 	rtp_session->seq = htons(rtp_session->seq);
@@ -283,6 +390,9 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int da
 
 	bytes = datalen + rtp_header_len;
 	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&rtp_session->send_msg, &bytes);
+	if (rtp_session->ice_user) {
+		ice_out(rtp_session);
+	}
 
 	return (int)bytes;
 }
@@ -302,6 +412,10 @@ SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data
 	memcpy(rtp_session->send_msg.body, data, datalen);
 	bytes = datalen + rtp_header_len;
 	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&rtp_session->send_msg, &bytes);
+	
+	if (rtp_session->ice_user) {
+		ice_out(rtp_session);
+	}
 	
 	return (int)bytes;
 }

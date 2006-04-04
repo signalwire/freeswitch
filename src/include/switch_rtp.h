@@ -64,6 +64,7 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
 						   const char **err,
 						   switch_memory_pool *pool);
 
+SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp *rtp_session, char *login, char *rlogin);
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp **rtp_session);
 SWITCH_DECLARE(switch_socket_t *)switch_rtp_get_rtp_socket(switch_rtp *rtp_session);
 SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp *rtp_session, switch_rtp_invalid_handler on_invalid);

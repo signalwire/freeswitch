@@ -113,11 +113,9 @@ struct private_object {
 	char *remote_user;
 	unsigned int cand_id;
 	unsigned int desc_id;
-	switch_socket_t *rtp_sock;
 	char last_digit;
 	unsigned int dc;
 	time_t last_digit_time;
-	switch_mutex_t *rtp_lock;
 	switch_queue_t *dtmf_queue;
 	char out_digit;
 	unsigned char out_digit_packet[4];
@@ -127,16 +125,10 @@ struct private_object {
 	int32_t timestamp_send;
 	int32_t timestamp_recv;
 	int32_t timestamp_dtmf;
-	int8_t stuncount;
 	char *codec_name;
 	int codec_num;
 	switch_time_t cng_next;
-	switch_time_t last_stun;
 };
-
-
-
-
 
 struct rfc2833_digit {
 	char digit;
@@ -169,7 +161,6 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 static switch_status channel_kill_channel(switch_core_session *session, int sig);
 static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *msg);
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
-static void switch_stun_callback(struct switch_rtp *switch_rtp, switch_socket_t *sock, void *data, switch_size_t len, switch_sockaddr_t *from_addr);
 static switch_status load_config(void);
 
 
@@ -691,37 +682,6 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 
 	assert(tech_pvt->rtp_session != NULL);
 
-
-	if (tech_pvt->stuncount == 0) {
-		uint8_t buf[256] = {0};
-		char login[80];
-		switch_stun_packet_t *packet;
-		//struct sockaddr_in servaddr;
-		unsigned int elapsed;
-		switch_size_t bytes;
-
-		if (tech_pvt->last_stun) {
-			elapsed = (unsigned int)((switch_time_now() - tech_pvt->last_stun) / 1000);
-
-			if (elapsed > 10000) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No stun for a long time (PUNT!)\n");
-				return SWITCH_STATUS_FALSE;
-			}
-		}
-		
-		snprintf(login, sizeof(login), "%s%s", tech_pvt->remote_user, tech_pvt->local_user);
-		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
-		switch_stun_packet_attribute_add_username(packet, login, 32);
-		bytes = switch_stun_packet_length(packet);
-		switch_socket_sendto(tech_pvt->rtp_sock, tech_pvt->switch_stun_addr, 0, (void *)packet, &bytes);
-
-		//sendto(tech_pvt->rtp_sock, (char *)packet, switch_stun_packet_length(packet), 0 ,(struct sockaddr *)&servaddr, sizeof(servaddr));
-		//xstun
-		//printf("XXXX SEND STUN REQ %s U=%s to %s:%d\n", packet->header.id, login, tech_pvt->remote_ip, tech_pvt->remote_port);
-		tech_pvt->stuncount = 25;
-	} else {
-		tech_pvt->stuncount--;
-	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_RTP_READY)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -1353,10 +1313,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 								switch_channel_hangup(channel);
 								return LDL_STATUS_FALSE;
 							}
-							tech_pvt->rtp_sock = switch_rtp_get_rtp_socket(tech_pvt->rtp_session);
-							switch_rtp_set_invald_handler(tech_pvt->rtp_session, switch_stun_callback);
-							switch_rtp_set_private(tech_pvt->rtp_session, tech_pvt);
 							switch_set_flag(tech_pvt, TFLAG_RTP_READY);
+							switch_rtp_activate_ice(tech_pvt->rtp_session, tech_pvt->remote_user, tech_pvt->local_user);
 							switch_rtp_start(tech_pvt->rtp_session);
 						}
 						
@@ -1394,75 +1352,3 @@ static ldl_status handle_response(ldl_handle_t *handle, char *id)
 	return LDL_STATUS_SUCCESS;
 }
 
-static void switch_stun_callback(struct switch_rtp *switch_rtp, switch_socket_t *sock, void *data, switch_size_t len, switch_sockaddr_t *from_addr)
-{
-	switch_stun_packet_t *packet;
-	switch_stun_packet_attribute_t *attr;
-	char username[33] = {0};
-	struct private_object *tech_pvt;
-	unsigned char buf[512] = {0};
-
-	tech_pvt = switch_rtp_get_private(switch_rtp);
-	assert(tech_pvt != NULL);
-
-	memcpy(buf, data, len);
-	packet = switch_stun_packet_parse(buf, sizeof(buf));
-	tech_pvt->last_stun = switch_time_now();
-	
-#if 0
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "read %d\ntype: [%s] (0x%04x)\nlength 0x%04x\nid %s\n", 
-						  len,
-						  switch_stun_value_to_name(SWITCH_STUN_TYPE_PACKET_TYPE, packet->header.type),
-						  packet->header.type,
-						  packet->header.length,
-						  packet->header.id);
-#endif
-
-	switch_stun_packet_first_attribute(packet, attr);
-
-	do {
-		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ATTRIBUTE [%s] (0x%04x) [%04x bytes]\n", switch_stun_value_to_name(SWITCH_STUN_TYPE_ATTRIBUTE, attr->type), attr->type, attr->length);
-
-		switch(attr->type) {
-		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
-			if (attr->type) {
-				char ip[16];
-				uint16_t port;
-				switch_stun_packet_attribute_get_mapped_address(attr, ip, &port);
-				//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "IP/PORT: %s:%d\n", ip, port);
-			}
-			break;
-		case SWITCH_STUN_ATTR_USERNAME:
-			if(attr->type) {
-				
-				if (switch_stun_packet_attribute_get_username(attr, username, 32)) {
-					//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "USERNAME: %s\n", username);
-				}
-			}
-			break;
-		}
-	} while (switch_stun_packet_next_attribute(attr));
-
-
-	if (packet->header.type == SWITCH_STUN_BINDING_REQUEST && strstr(username,tech_pvt->remote_user)) {
-		uint8_t buf[512];
-		switch_stun_packet_t *rpacket;
-		char *remote_ip;
-		switch_size_t bytes;
-
-		memset(buf, 0, sizeof(buf));
-		rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, buf);
-		switch_stun_packet_attribute_add_username(rpacket, username, 32);
-		switch_sockaddr_ip_get(&remote_ip, from_addr);
-		switch_stun_packet_attribute_add_binded_address(rpacket, remote_ip, from_addr->port);
-		//xstun
-		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "RESPONSE TO BIND %s:%d [%s]\n", remote_ip, port, username);			
-		//sendto(sock, (char *)rpacket, switch_stun_packet_length(rpacket), 0 ,(struct sockaddr *)&servaddr, sizeof(servaddr));
-		bytes = switch_stun_packet_length(rpacket);
-		switch_socket_sendto(tech_pvt->rtp_sock, from_addr, 0, (void*)rpacket, &bytes);
-		//switch_set_flag(tech_pvt, TFLAG_IO);
-	}
-	
-
-	
-}
