@@ -66,6 +66,7 @@ extern "C" {
 #include <switch_resample.h>
 #include <switch_ivr.h>
 #include <switch_rtp.h>
+#include <switch_stun.h>
 #ifdef __cplusplus
 }
 #endif

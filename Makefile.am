@@ -63,7 +63,8 @@ src/include/switch_sqlite.h\
 src/include/switch_types.h\
 src/include/switch_utils.h\
 src/include/switch_version.h\
-src/inclide/switch_rtp.h\
+src/include/switch_rtp.h\
+src/include/switch_stun.h\
 src/switch_rtp.c\
 src/switch_buffer.c \
 src/switch_caller.c \
@@ -75,7 +76,8 @@ src/switch_loadable_module.c \
 src/switch_utils.c \
 src/switch_event.c \
 src/switch_resample.c \
-src/switch_ivr.c
+src/switch_ivr.c \
+src/switch_stun.c
 
 
 
@@ -103,7 +105,8 @@ src/include/switch_sqlite.h\
 src/include/switch_types.h\
 src/include/switch_utils.h\
 src/include/switch_rtp.h\
-src/include/switch_version.h
+src/include/switch_version.h\
+src/include/switch_stun.h
 
 BUILT_SOURCES = version depends
 CLEANFILES = src/include/switch_version.h

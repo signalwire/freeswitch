@@ -31,14 +31,6 @@
  */
 #include <switch.h>
 #include <libdingaling.h>
-#include <stun_parser.h>
-#ifdef _MSC_VER
-#include <Winsock2.h>
-#else
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#endif
 
 static const char modname[] = "mod_dingaling";
 
@@ -103,7 +95,7 @@ struct private_object {
 	struct switch_frame read_frame;
 	struct switch_frame cng_frame;
 	struct mdl_profile *profile;
-	switch_sockaddr_t *stun_addr;
+	switch_sockaddr_t *switch_stun_addr;
 	unsigned char read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	unsigned char cng_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	switch_core_session *session;
@@ -177,7 +169,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 static switch_status channel_kill_channel(switch_core_session *session, int sig);
 static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *msg);
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
-static void stun_callback(struct switch_rtp *switch_rtp, switch_socket_t *sock, void *data, switch_size_t len, switch_sockaddr_t *from_addr);
+static void switch_stun_callback(struct switch_rtp *switch_rtp, switch_socket_t *sock, void *data, switch_size_t len, switch_sockaddr_t *from_addr);
 static switch_status load_config(void);
 
 
@@ -293,7 +285,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 				ldl_candidate_t cand[1];
 				char *advip = tech_pvt->profile->extip ? tech_pvt->profile->extip : tech_pvt->profile->ip;
 				memset(cand, 0, sizeof(cand));
-				stun_random_string(tech_pvt->local_user, 16, NULL);
+				switch_stun_random_string(tech_pvt->local_user, 16, NULL);
 
 				cand[0].name = "rtp";
 				cand[0].address = advip;
@@ -703,7 +695,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 	if (tech_pvt->stuncount == 0) {
 		uint8_t buf[256] = {0};
 		char login[80];
-		stun_packet_t *packet;
+		switch_stun_packet_t *packet;
 		//struct sockaddr_in servaddr;
 		unsigned int elapsed;
 		switch_size_t bytes;
@@ -718,12 +710,12 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 		}
 		
 		snprintf(login, sizeof(login), "%s%s", tech_pvt->remote_user, tech_pvt->local_user);
-		packet = stun_packet_build_header(STUN_BINDING_REQUEST, NULL, buf);
-		stun_packet_attribute_add_username(packet, login, 32);
-		bytes = stun_packet_length(packet);
-		switch_socket_sendto(tech_pvt->rtp_sock, tech_pvt->stun_addr, 0, (void *)packet, &bytes);
+		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
+		switch_stun_packet_attribute_add_username(packet, login, 32);
+		bytes = switch_stun_packet_length(packet);
+		switch_socket_sendto(tech_pvt->rtp_sock, tech_pvt->switch_stun_addr, 0, (void *)packet, &bytes);
 
-		//sendto(tech_pvt->rtp_sock, (char *)packet, stun_packet_length(packet), 0 ,(struct sockaddr *)&servaddr, sizeof(servaddr));
+		//sendto(tech_pvt->rtp_sock, (char *)packet, switch_stun_packet_length(packet), 0 ,(struct sockaddr *)&servaddr, sizeof(servaddr));
 		//xstun
 		//printf("XXXX SEND STUN REQ %s U=%s to %s:%d\n", packet->header.id, login, tech_pvt->remote_ip, tech_pvt->remote_port);
 		tech_pvt->stuncount = 25;
@@ -957,7 +949,7 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 		switch_channel_set_flag(channel, CF_OUTBOUND);
 		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
 		
-		stun_random_string(sess_id, 10, "0123456789");
+		switch_stun_random_string(sess_id, 10, "0123456789");
 
 		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, mdl_profile->login);
 		tech_pvt->profile = mdl_profile;
@@ -1305,7 +1297,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						tech_pvt->remote_port = candidates[x].port;
 						tech_pvt->remote_user = switch_core_session_strdup(session, candidates[x].username);
 						
-						if (switch_sockaddr_info_get(&tech_pvt->stun_addr,
+						if (switch_sockaddr_info_get(&tech_pvt->switch_stun_addr,
 													 tech_pvt->remote_ip, 
 													 SWITCH_UNSPEC,
 													 tech_pvt->remote_port,
@@ -1332,7 +1324,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						}
 						
 						memset(cand, 0, sizeof(cand));
-						stun_random_string(tech_pvt->local_user, 16, NULL);
+						switch_stun_random_string(tech_pvt->local_user, 16, NULL);
 
 						cand[0].name = "rtp";
 						cand[0].address = advip;
@@ -1362,7 +1354,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 								return LDL_STATUS_FALSE;
 							}
 							tech_pvt->rtp_sock = switch_rtp_get_rtp_socket(tech_pvt->rtp_session);
-							switch_rtp_set_invald_handler(tech_pvt->rtp_session, stun_callback);
+							switch_rtp_set_invald_handler(tech_pvt->rtp_session, switch_stun_callback);
 							switch_rtp_set_private(tech_pvt->rtp_session, tech_pvt);
 							switch_set_flag(tech_pvt, TFLAG_RTP_READY);
 							switch_rtp_start(tech_pvt->rtp_session);
@@ -1402,10 +1394,10 @@ static ldl_status handle_response(ldl_handle_t *handle, char *id)
 	return LDL_STATUS_SUCCESS;
 }
 
-static void stun_callback(struct switch_rtp *switch_rtp, switch_socket_t *sock, void *data, switch_size_t len, switch_sockaddr_t *from_addr)
+static void switch_stun_callback(struct switch_rtp *switch_rtp, switch_socket_t *sock, void *data, switch_size_t len, switch_sockaddr_t *from_addr)
 {
-	stun_packet_t *packet;
-	stun_packet_attribute_t *attr;
+	switch_stun_packet_t *packet;
+	switch_stun_packet_attribute_t *attr;
 	char username[33] = {0};
 	struct private_object *tech_pvt;
 	unsigned char buf[512] = {0};
@@ -1414,59 +1406,59 @@ static void stun_callback(struct switch_rtp *switch_rtp, switch_socket_t *sock, 
 	assert(tech_pvt != NULL);
 
 	memcpy(buf, data, len);
-	packet = stun_packet_parse(buf, sizeof(buf));
+	packet = switch_stun_packet_parse(buf, sizeof(buf));
 	tech_pvt->last_stun = switch_time_now();
 	
 #if 0
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "read %d\ntype: [%s] (0x%04x)\nlength 0x%04x\nid %s\n", 
 						  len,
-						  stun_value_to_name(STUN_TYPE_PACKET_TYPE, packet->header.type),
+						  switch_stun_value_to_name(SWITCH_STUN_TYPE_PACKET_TYPE, packet->header.type),
 						  packet->header.type,
 						  packet->header.length,
 						  packet->header.id);
 #endif
 
-	stun_packet_first_attribute(packet, attr);
+	switch_stun_packet_first_attribute(packet, attr);
 
 	do {
-		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ATTRIBUTE [%s] (0x%04x) [%04x bytes]\n", stun_value_to_name(STUN_TYPE_ATTRIBUTE, attr->type), attr->type, attr->length);
+		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ATTRIBUTE [%s] (0x%04x) [%04x bytes]\n", switch_stun_value_to_name(SWITCH_STUN_TYPE_ATTRIBUTE, attr->type), attr->type, attr->length);
 
 		switch(attr->type) {
-		case STUN_ATTR_MAPPED_ADDRESS:
+		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
 			if (attr->type) {
 				char ip[16];
 				uint16_t port;
-				stun_packet_attribute_get_mapped_address(attr, ip, &port);
+				switch_stun_packet_attribute_get_mapped_address(attr, ip, &port);
 				//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "IP/PORT: %s:%d\n", ip, port);
 			}
 			break;
-		case STUN_ATTR_USERNAME:
+		case SWITCH_STUN_ATTR_USERNAME:
 			if(attr->type) {
 				
-				if (stun_packet_attribute_get_username(attr, username, 32)) {
+				if (switch_stun_packet_attribute_get_username(attr, username, 32)) {
 					//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "USERNAME: %s\n", username);
 				}
 			}
 			break;
 		}
-	} while (stun_packet_next_attribute(attr));
+	} while (switch_stun_packet_next_attribute(attr));
 
 
-	if (packet->header.type == STUN_BINDING_REQUEST && strstr(username,tech_pvt->remote_user)) {
+	if (packet->header.type == SWITCH_STUN_BINDING_REQUEST && strstr(username,tech_pvt->remote_user)) {
 		uint8_t buf[512];
-		stun_packet_t *rpacket;
+		switch_stun_packet_t *rpacket;
 		char *remote_ip;
 		switch_size_t bytes;
 
 		memset(buf, 0, sizeof(buf));
-		rpacket = stun_packet_build_header(STUN_BINDING_RESPONSE, packet->header.id, buf);
-		stun_packet_attribute_add_username(rpacket, username, 32);
+		rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, buf);
+		switch_stun_packet_attribute_add_username(rpacket, username, 32);
 		switch_sockaddr_ip_get(&remote_ip, from_addr);
-		stun_packet_attribute_add_binded_address(rpacket, remote_ip, from_addr->port);
+		switch_stun_packet_attribute_add_binded_address(rpacket, remote_ip, from_addr->port);
 		//xstun
 		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "RESPONSE TO BIND %s:%d [%s]\n", remote_ip, port, username);			
-		//sendto(sock, (char *)rpacket, stun_packet_length(rpacket), 0 ,(struct sockaddr *)&servaddr, sizeof(servaddr));
-		bytes = stun_packet_length(rpacket);
+		//sendto(sock, (char *)rpacket, switch_stun_packet_length(rpacket), 0 ,(struct sockaddr *)&servaddr, sizeof(servaddr));
+		bytes = switch_stun_packet_length(rpacket);
 		switch_socket_sendto(tech_pvt->rtp_sock, from_addr, 0, (void*)rpacket, &bytes);
 		//switch_set_flag(tech_pvt, TFLAG_IO);
 	}

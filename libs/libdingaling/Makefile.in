@@ -62,8 +62,7 @@ am__installdirs = "$(DESTDIR)$(libdir)" \
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdingaling_la_LIBADD =
-am_libdingaling_la_OBJECTS = libdingaling_la-libdingaling.lo \
-	libdingaling_la-stun_parser.lo
+am_libdingaling_la_OBJECTS = libdingaling_la-libdingaling.lo
 libdingaling_la_OBJECTS = $(am_libdingaling_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -212,11 +211,11 @@ AM_LDFLAGS = -liksemel -L$(PREFIX)/lib $(shell $(APR_CONFIG) --link-ld \
 APR_CONFIG = $(prefix)/bin/apr-1-config
 APU_CONFIG = $(prefix)/bin/apu-1-config
 lib_LTLIBRARIES = libdingaling.la
-libdingaling_la_SOURCES = src/libdingaling.c src/stun_parser.c
+libdingaling_la_SOURCES = src/libdingaling.c
 libdingaling_la_CFLAGS = $(AM_CFLAGS)
 libdingaling_la_LDFLAGS = 
 library_includedir = $(prefix)/include
-library_include_HEADERS = src/libdingaling.h src/stun_parser.h
+library_include_HEADERS = src/libdingaling.h
 all: all-recursive
 
 .SUFFIXES:
@@ -291,7 +290,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdingaling_la-libdingaling.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdingaling_la-stun_parser.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -320,13 +318,6 @@ libdingaling_la-libdingaling.lo: src/libdingaling.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/libdingaling.c' object='libdingaling_la-libdingaling.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdingaling_la_CFLAGS) $(CFLAGS) -c -o libdingaling_la-libdingaling.lo `test -f 'src/libdingaling.c' || echo '$(srcdir)/'`src/libdingaling.c
-
-libdingaling_la-stun_parser.lo: src/stun_parser.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdingaling_la_CFLAGS) $(CFLAGS) -MT libdingaling_la-stun_parser.lo -MD -MP -MF "$(DEPDIR)/libdingaling_la-stun_parser.Tpo" -c -o libdingaling_la-stun_parser.lo `test -f 'src/stun_parser.c' || echo '$(srcdir)/'`src/stun_parser.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdingaling_la-stun_parser.Tpo" "$(DEPDIR)/libdingaling_la-stun_parser.Plo"; else rm -f "$(DEPDIR)/libdingaling_la-stun_parser.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/stun_parser.c' object='libdingaling_la-stun_parser.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdingaling_la_CFLAGS) $(CFLAGS) -c -o libdingaling_la-stun_parser.lo `test -f 'src/stun_parser.c' || echo '$(srcdir)/'`src/stun_parser.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
