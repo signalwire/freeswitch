@@ -1,9 +1,8 @@
-LDFLAGS += -ldingaling -ljrtp
+LDFLAGS += -ldingaling
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	#MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install jrtplib --prefix=$(PREFIX) --disable-gst
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install iksemel-1.2.tar.gz --prefix=$(PREFIX)
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libdingaling --prefix=$(PREFIX)
 
