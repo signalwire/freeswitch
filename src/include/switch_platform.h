@@ -38,13 +38,6 @@
 extern "C" {
 #endif
 
-#ifdef WIN32
-#include <winsock2.h>
-typedef SOCKET switch_raw_socket_t;
-#else 
-typedef int switch_raw_socket_t;
-#endif 
-
 #ifdef __ICC
 #pragma warning (disable:810 869 981 279 1469 188)
 #endif
@@ -67,8 +60,9 @@ typedef int switch_raw_socket_t;
  * C4204: nonstandard extension used : non-constant aggregate initializer 
  * C4706: assignment within conditional expression
  * C4055: type cast from data pointer to function pointer (apr carries function pointers as data pointers)
+ * C4214: nonstandard extension used : bit field types other than int
  */
-#pragma warning(disable:4152 4054 4100 4142 4200 4204 4706 4055)
+#pragma warning(disable:4152 4054 4100 4142 4200 4204 4706 4055 4214)
 
 #if (_MSC_VER >= 1400) // VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE

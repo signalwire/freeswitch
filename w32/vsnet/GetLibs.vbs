@@ -162,6 +162,9 @@ If BuildCore Then
 	FSO.CopyFile LibDestDir & "libresample\include\*.h", LibDestDir & "include"
 	BuildLibs_sqlite BuildDebug, BuildRelease	
 	FSO.CopyFile LibDestDir & "sqlite\*.h", LibDestDir & "include"
+	BuildLibs_srtp BuildDebug, BuildRelease
+	FSO.CopyFile LibDestDir & "srtp\include\*.h", LibDestDir & "include"
+	FSO.CopyFile LibDestDir & "srtp\crypto\include\*.h", LibDestDir & "include"
 End If
 
 If BuildModzeroconf Then
@@ -257,7 +260,7 @@ Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\LibR<p align="center"></p>\xml.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\LibR\xml.lib") Then 
 				BuildViaVCBuild LibDestDir & "apr-util\xml\expat\lib\xml.vcproj", "Release"
 			End If
 			If Not FSO.FileExists(LibDestDir & "apr-util\Release\libaprutil-1.lib") Then 
@@ -385,6 +388,26 @@ Sub BuildLibs_libosip2(BuildDebug, BuildRelease)
 	Else
 		Wscript.echo "Unable to download Osip"
 	End If 
+End Sub
+
+Sub BuildLibs_srtp(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "srtp") Then 
+		WgetUnCompress LibsBase & "srtp.zip", LibDestDir
+	End If 
+	If FSO.FolderExists(LibDestDir & "srtp") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "srtp\Debug\srtp.lib") Then 
+				BuildViaVCBuild LibDestDir & "srtp\srtp.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "srtp\Release\srtp.lib") Then 
+				BuildViaVCBuild LibDestDir & "srtp\srtp.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download srtp"
+	End If
 End Sub
 
 Sub BuildLibs_jrtplib(BuildDebug, BuildRelease)

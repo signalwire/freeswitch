@@ -64,10 +64,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresampled.lib"
+				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresampled.lib srtp.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
 				AddModuleNamesToAssembly=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FreeSwitchCore.pdb"
@@ -149,10 +149,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresample.lib"
+				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresample.lib srtp.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -236,6 +236,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_rtp.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_utils.c"
 				>
 			</File>
@@ -303,6 +307,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_resample.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_rtp.h"
 				>
 			</File>
 			<File

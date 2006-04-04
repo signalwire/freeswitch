@@ -131,7 +131,7 @@ struct private_object {
 	unsigned char out_digit_packet[4];
 	unsigned int out_digit_sofar;
 	unsigned int out_digit_dur;
-	unsigned int out_digit_seq;
+	uint16_t out_digit_seq;
 	int32_t timestamp_send;
 	int32_t timestamp_recv;
 	int32_t timestamp_dtmf;

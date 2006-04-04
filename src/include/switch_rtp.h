@@ -55,31 +55,27 @@ typedef void (*switch_rtp_invalid_handler)(switch_rtp *rtp_session,
 										   switch_sockaddr_t *from_addr);
 
 
-switch_rtp *switch_rtp_new(char *rx_ip,
-						   int rx_port,
+SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
+						   switch_port_t rx_port,
 						   char *tx_ip,
-						   int tx_port,
+						   switch_port_t tx_port,
 						   int payload,
 						   switch_rtp_flag_t flags,
 						   const char **err,
 						   switch_memory_pool *pool);
 
-void switch_rtp_destroy(switch_rtp **rtp_session);
-switch_socket_t *switch_rtp_get_rtp_socket(switch_rtp *rtp_session);
-void switch_rtp_set_invald_handler(switch_rtp *rtp_session, switch_rtp_invalid_handler on_invalid);
-int switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type);
-int switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type);
-int switch_rtp_write(switch_rtp *rtp_session, void *data, int datalen, uint32_t ts);
-int switch_rtp_write_payload(switch_rtp *rtp_session, void *data, int datalen, int payload, uint32_t ts, uint32_t mseq);
-uint32_t switch_rtp_start(switch_rtp *rtp_session);
-uint32_t switch_rtp_get_ssrc(switch_rtp *rtp_session);
-void switch_rtp_killread(switch_rtp *rtp_session);
-void switch_rtp_set_private(switch_rtp *rtp_session, void *private_data);
-void *switch_rtp_get_private(switch_rtp *rtp_session);
-
-
-
-#include <switch.h>
+SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp **rtp_session);
+SWITCH_DECLARE(switch_socket_t *)switch_rtp_get_rtp_socket(switch_rtp *rtp_session);
+SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp *rtp_session, switch_rtp_invalid_handler on_invalid);
+SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type);
+SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type);
+SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int datalen, uint32_t ts);
+SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data, int datalen, uint8_t payload, uint32_t ts, uint16_t mseq);
+SWITCH_DECLARE(uint32_t) switch_rtp_start(switch_rtp *rtp_session);
+SWITCH_DECLARE(uint32_t) switch_rtp_get_ssrc(switch_rtp *rtp_session);
+SWITCH_DECLARE(void) switch_rtp_killread(switch_rtp *rtp_session);
+SWITCH_DECLARE(void) switch_rtp_set_private(switch_rtp *rtp_session, void *private_data);
+SWITCH_DECLARE(void *)switch_rtp_get_private(switch_rtp *rtp_session);
 
 #ifdef __cplusplus
 }

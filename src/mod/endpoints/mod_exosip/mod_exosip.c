@@ -80,8 +80,8 @@ static struct {
 	int bytes_per_frame;
 	char *dialplan;
 	int port;
-	int rtp_start;
-	int rtp_end;
+	switch_port_t rtp_start;
+	switch_port_t rtp_end;
 	char *codec_string;
 	char *codec_order[SWITCH_MAX_CODECS];
 	int codec_order_last;
@@ -114,9 +114,9 @@ struct private_object {
 	sdp_message_t *remote_sdp;
 	sdp_message_t *local_sdp;
 	char remote_sdp_audio_ip[50];
-	int remote_sdp_audio_port;
+	switch_port_t remote_sdp_audio_port;
 	char local_sdp_audio_ip[50];
-	int local_sdp_audio_port;
+	switch_port_t local_sdp_audio_port;
 	char call_id[50];
 	int ssrc;
 	char last_digit;
@@ -129,13 +129,13 @@ struct private_object {
 	unsigned char out_digit_packet[4];
 	unsigned int out_digit_sofar;
 	unsigned int out_digit_dur;
-	unsigned int out_digit_seq;
+	uint16_t out_digit_seq;
 };
 
 
-static int next_rtp_port(void)
+static switch_port_t next_rtp_port(void)
 {
-	int port;
+	switch_port_t port;
 
 	switch_mutex_lock(globals.port_lock);
 	port = globals.rtp_start;
@@ -1176,7 +1176,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		remote_med = eXosip_get_audio_media(remote_sdp);
 		snprintf(tech_pvt->remote_sdp_audio_ip, 50, conn->c_addr);
 
-		tech_pvt->remote_sdp_audio_port = atoi(remote_med->m_port);
+		tech_pvt->remote_sdp_audio_port = (switch_port_t)atoi(remote_med->m_port);
 
 		snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", event->cid);
 		eXosip_lock();
@@ -1346,7 +1346,7 @@ static void handle_answer(eXosip_event_t * event)
 	remote_med = eXosip_get_audio_media(remote_sdp);
 
 	/* Grab IP/port */
-	tech_pvt->remote_sdp_audio_port = atoi(remote_med->m_port);
+	tech_pvt->remote_sdp_audio_port = (switch_port_t)atoi(remote_med->m_port);
 	snprintf(tech_pvt->remote_sdp_audio_ip, 50, conn->c_addr);
 
 	/* Grab codec elements */
@@ -1576,9 +1576,9 @@ static int config_exosip(int reload)
 				globals.codec_order_last =
 					switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
 			} else if (!strcmp(var, "rtp_min_port")) {
-				globals.rtp_start = atoi(val);
+				globals.rtp_start = (switch_port_t)atoi(val);
 			} else if (!strcmp(var, "rtp_max_port")) {
-				globals.rtp_end = atoi(val);
+				globals.rtp_end = (switch_port_t)atoi(val);
 			} else if (!strcmp(var, "codec_ms")) {
 				globals.codec_ms = atoi(val);
 			} else if (!strcmp(var, "dtmf_duration")) {
