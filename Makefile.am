@@ -12,7 +12,7 @@ AM_LDFLAGS = -L$(PREFIX)/lib
 AM_LDFLAGS += $(shell $(APR_CONFIG) --link-ld --libs )
 AM_CFLAGS  += $(shell $(APU_CONFIG) --includes) 
 AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs )
-AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib
+AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib 
 OSARCH=$(shell uname -s)
 if ISLINUX
 AM_LDFLAGS += -Wl,-E
@@ -149,7 +149,7 @@ depends:
 	./build/buildlib.sh . install apr-util-1.2.6.tar.gz --with-apr=../apr-1.2.6 --prefix=$(PREFIX)
 	./build/buildlib.sh . libresample-0.1.3.tgz --prefix=$(PREFIX)
 	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
-	./build/buildlib.sh . install srtp.tgz --prefix=$(PREFIX)
+	./build/buildlib.sh . install srtp.tgz --prefix=$(PREFIX) --enable-pic
 	rm build/freeswitch.env
 
 
