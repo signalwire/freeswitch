@@ -266,3 +266,105 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_pa
 	packet->header.length += htons(sizeof(switch_stun_packet_attribute_t)) + attribute->length;
 	return 1;
 }
+
+SWITCH_DECLARE(switch_status) switch_stun_lookup (char **ip, 
+												  switch_port_t *port,
+												  char *stunip,
+												  switch_port_t stunport,
+												  char **err,
+												  switch_memory_pool *pool)
+	 
+{
+	switch_sockaddr_t *local_addr = NULL, *remote_addr = NULL, *from_addr = NULL;
+	switch_socket_t *sock = NULL;
+	uint8_t buf[256] = {0};
+	switch_stun_packet_t *packet;
+	switch_stun_packet_attribute_t *attr;
+	switch_size_t bytes = 0;
+	char username[33] = {0};
+	char rip[16];
+	uint16_t rport = 0;
+	switch_time_t started = 0;
+	unsigned int elapsed = 0;
+
+	*err = "Success";
+
+	switch_sockaddr_info_get(&from_addr, NULL, SWITCH_UNSPEC, 0, 0, pool);
+
+	if (switch_sockaddr_info_get(&local_addr, *ip, SWITCH_UNSPEC, *port, 0, pool) != SWITCH_STATUS_SUCCESS) {
+		*err = "Local Address Error!";
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_sockaddr_info_get(&remote_addr, stunip, SWITCH_UNSPEC, stunport, 0, pool) != SWITCH_STATUS_SUCCESS) {
+		*err = "Remote Address Error!";
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_socket_create(&sock, AF_INET, SOCK_DGRAM, 0, pool) != SWITCH_STATUS_SUCCESS) {
+		*err = "Socket Error!";
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (switch_socket_bind(sock, local_addr) != SWITCH_STATUS_SUCCESS) {
+		*err = "Bind Error!";
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	switch_socket_opt_set(sock, APR_SO_NONBLOCK, TRUE);
+	packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
+	switch_stun_random_string(username, 32, NULL);
+	switch_stun_packet_attribute_add_username(packet, username, 32);
+	bytes = switch_stun_packet_length(packet);
+	switch_socket_sendto(sock, remote_addr, 0, (void *)packet, &bytes);
+	started = switch_time_now();
+	
+	*ip = NULL;
+	*port = 0;
+
+
+	for(;;) {
+		bytes = sizeof(buf);
+		if (switch_socket_recvfrom(from_addr, sock, 0, (char *)&buf, &bytes) == SWITCH_STATUS_SUCCESS && bytes > 0) {
+			break;
+		}
+
+		if ((elapsed = (unsigned int)((switch_time_now() - started) / 1000)) > 5000) {
+			*err = "Timeout";
+			switch_socket_shutdown(sock, APR_SHUTDOWN_READWRITE);
+			switch_socket_close(sock);
+			return SWITCH_STATUS_TIMEOUT;
+		}
+		switch_yield(1000);
+	}
+	switch_socket_close(sock);
+
+	packet = switch_stun_packet_parse(buf, sizeof(buf));
+	switch_stun_packet_first_attribute(packet, attr);
+
+	do {
+		switch(attr->type) {
+		case SWITCH_STUN_ATTR_MAPPED_ADDRESS:
+			if (attr->type) {
+				switch_stun_packet_attribute_get_mapped_address(attr, rip, &rport);
+			}
+			break;
+		case SWITCH_STUN_ATTR_USERNAME:
+			if(attr->type) {
+				switch_stun_packet_attribute_get_username(attr, username, 32);
+			}
+			break;
+		}
+	} while (switch_stun_packet_next_attribute(attr));
+
+	if (packet->header.type == SWITCH_STUN_BINDING_RESPONSE) {
+		*ip = switch_core_strdup(pool, rip);
+		*port = rport;
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		*err = "Invalid Reply";
+	}
+	
+
+	return SWITCH_STATUS_FALSE;
+}

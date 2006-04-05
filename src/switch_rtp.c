@@ -42,6 +42,11 @@
 #define MAX_KEY_LEN      64
 #define rtp_header_len 12
 #define RTP_MAX_BUF_LEN 16384
+#define RTP_START_PORT 16384
+#define RTP_END_PORT 32768
+
+static switch_port_t NEXT_PORT = RTP_START_PORT;
+static switch_mutex_t *port_lock = NULL;
 
 typedef srtp_hdr_t rtp_hdr_t;
 
@@ -160,14 +165,29 @@ static void handle_ice(switch_rtp *rtp_session, void *data, switch_size_t len)
 }
 
 
-static void init_rtp(void)
+SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool *pool)
 {
 	if (global_init) {
 		return;
 	}
 
   srtp_init();
+  switch_mutex_init(&port_lock, SWITCH_MUTEX_NESTED, pool);
   global_init = 1;
+}
+
+SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void)
+{
+	switch_port_t port;
+
+	switch_mutex_lock(port_lock);
+	port = NEXT_PORT;
+	NEXT_PORT += 2;
+	if (port > RTP_END_PORT) {
+		port = RTP_START_PORT;
+	}
+	switch_mutex_unlock(port_lock);
+	return port;
 }
 
 SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
@@ -187,9 +207,6 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
 	char key[MAX_KEY_LEN];
 	uint32_t ssrc = rand() & 0xffff;
 
-	if (!global_init) {
-		init_rtp();
-	}
 
 	if (switch_sockaddr_info_get(&rx_addr, rx_ip, SWITCH_UNSPEC, rx_port, 0, pool) != SWITCH_STATUS_SUCCESS) {
 		*err = "RX Address Error!";
@@ -281,6 +298,12 @@ SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp *rtp_session, c
 	rtp_session->ice_user = switch_core_strdup(rtp_session->pool, ice_user);
 	rtp_session->user_ice = switch_core_strdup(rtp_session->pool, user_ice);
 
+	if (rtp_session->ice_user) {
+		if (ice_out(rtp_session) != SWITCH_STATUS_SUCCESS) {
+			return -1;
+		}
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -319,7 +342,7 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
 	bytes = sizeof(rtp_msg_t);
 
 	switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
-
+	
 	if (bytes <= 0) {
 		return 0;
 	}

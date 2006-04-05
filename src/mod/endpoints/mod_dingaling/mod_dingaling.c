@@ -68,7 +68,6 @@ static struct {
 	int codec_rates_last;
 	unsigned int flags;
 	unsigned int init;
-	uint16_t rtp_port;
 	switch_hash *profile_hash;
 	int running;
 	int handles;
@@ -95,7 +94,6 @@ struct private_object {
 	struct switch_frame read_frame;
 	struct switch_frame cng_frame;
 	struct mdl_profile *profile;
-	switch_sockaddr_t *switch_stun_addr;
 	unsigned char read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	unsigned char cng_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	switch_core_session *session;
@@ -108,7 +106,8 @@ struct private_object {
 	struct switch_rtp *rtp_session;
 	ldl_session_t *dlsession;
 	char *remote_ip;
-	uint16_t remote_port;
+	switch_port_t local_port;
+	switch_port_t remote_port;
 	char local_user[16];
 	char *remote_user;
 	unsigned int cand_id;
@@ -135,12 +134,6 @@ struct rfc2833_digit {
 	int duration;
 };
 
-static uint16_t next_rtp_port(void)
-{
-	uint16_t ret = globals.rtp_port++;
-	globals.rtp_port++;
-	return ret;
-}
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
@@ -280,7 +273,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 
 				cand[0].name = "rtp";
 				cand[0].address = advip;
-				cand[0].port = next_rtp_port();
+				cand[0].port = tech_pvt->local_port;
 				cand[0].username = tech_pvt->local_user;
 				cand[0].password = tech_pvt->local_user;
 				cand[0].pref = 1;
@@ -878,13 +871,13 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 		}
 
 		switch_core_session_add_stream(*new_session, NULL);
-		if ((tech_pvt =
-			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
+		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
 			tech_pvt->codec_index = -1;
+			tech_pvt->local_port = switch_rtp_request_port();
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
@@ -1009,7 +1002,6 @@ static switch_status load_config(void)
 	int lastcat = -1;
 
 	memset(&globals, 0, sizeof(globals));
-	globals.rtp_port = 10000;
 	globals.running = 1;
 
 	switch_core_hash_init(&globals.profile_hash, module_pool);	
@@ -1134,6 +1126,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				tech_pvt->session = session;
 				tech_pvt->codec_index = -1;
 				tech_pvt->profile = profile;
+				tech_pvt->local_port = switch_rtp_request_port();
 			} else {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
 				switch_core_session_destroy(&session);
@@ -1219,7 +1212,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		if (signal) {
 			ldl_candidate_t *candidates;
 			unsigned int len = 0;
-
+			char *err;
 
 
 			if (ldl_session_get_candidates(dlsession, &candidates, &len) == LDL_STATUS_SUCCESS) {
@@ -1257,17 +1250,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						tech_pvt->remote_port = candidates[x].port;
 						tech_pvt->remote_user = switch_core_session_strdup(session, candidates[x].username);
 						
-						if (switch_sockaddr_info_get(&tech_pvt->switch_stun_addr,
-													 tech_pvt->remote_ip, 
-													 SWITCH_UNSPEC,
-													 tech_pvt->remote_port,
-													 0, 
-													 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Address Error!\n");
-							return LDL_STATUS_FALSE;
-						}
-
-
+						
 						if (tech_pvt->codec_index < 0) {
 							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Don't have my codec yet here's one\n");
 							tech_pvt->codec_name = tech_pvt->codecs[0]->iananame;
@@ -1286,24 +1269,44 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						memset(cand, 0, sizeof(cand));
 						switch_stun_random_string(tech_pvt->local_user, 16, NULL);
 
-						cand[0].name = "rtp";
+
+						cand[0].port = tech_pvt->local_port;
 						cand[0].address = advip;
-						cand[0].port = next_rtp_port();
+
+						if (!strncasecmp(advip, "stun:", 5)) {
+							cand[0].address = profile->ip;
+							if (switch_stun_lookup(&cand[0].address,
+												   &cand[0].port,
+												   advip + 5,
+												   SWITCH_STUN_DEFAULT_PORT,
+												   &err,
+												   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", advip + 5, SWITCH_STUN_DEFAULT_PORT, err);
+								switch_channel_hangup(channel);
+								return LDL_STATUS_FALSE;
+							}
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success %s:%d\n", cand[0].address, cand[0].port);
+							cand[0].type = "stun";
+						} else {
+							cand[0].type = "local";
+						}
+						
+						cand[0].name = "rtp";
 						cand[0].username = tech_pvt->local_user;
 						cand[0].password = tech_pvt->local_user;
 						cand[0].pref = 1;
 						cand[0].protocol = "udp";
-						cand[0].type = "local";
+						
 						tech_pvt->cand_id = ldl_session_candidates(dlsession, cand, 1);
 						tech_pvt->desc_id = ldl_session_describe(dlsession, payloads, 1, LDL_DESCRIPTION_ACCEPT);
 
 
 						if (!tech_pvt->rtp_session) {
 							const char *err;
-							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SETUP RTP %s:%d -> %s:%d\n", profile->ip, cand[0].port, tech_pvt->remote_ip, tech_pvt->remote_port);
+							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SETUP RTP %s:%d -> %s:%d\n", profile->ip, tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
 
 							if (!(tech_pvt->rtp_session = switch_rtp_new(profile->ip,
-																		 cand[0].port,
+																		 tech_pvt->local_port,
 																		 tech_pvt->remote_ip,
 																		 tech_pvt->remote_port,
 																		 tech_pvt->codec_num,

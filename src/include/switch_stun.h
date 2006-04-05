@@ -36,7 +36,7 @@
 */
 #ifndef _SWITCH_STUN_PARSER_H
 #define _SWITCH_STUN_PARSER_H
-
+#define SWITCH_STUN_DEFAULT_PORT 3478
 #define SWITCH_STUN_PACKET_MIN_LEN 20
 
 typedef enum {
@@ -195,6 +195,23 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_pa
   \return true or false
 */
 SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_stun_packet_t *packet, char *ipstr,  uint16_t port);
+
+/*!
+  \brief Perform a stun lookup
+  \param ip the local ip to use (replaced with stun results)
+  \param port the local port to use (replaced with stun results)
+  \param stunip the ip of the stun server
+  \param pool the memory pool to use
+  \return SUCCESS or FAIL
+*/
+SWITCH_DECLARE(switch_status) switch_stun_lookup (char **ip, 
+												  switch_port_t *port,
+												  char *stunip,
+												  switch_port_t stunport,
+												  char **err,
+												  switch_memory_pool *pool);
+
+
 
 /*!
   \brief set a switch_stun_packet_attribute_t pointer to point at the first attribute in a packet

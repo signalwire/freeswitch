@@ -80,13 +80,10 @@ static struct {
 	int bytes_per_frame;
 	char *dialplan;
 	int port;
-	switch_port_t rtp_start;
-	switch_port_t rtp_end;
 	char *codec_string;
 	char *codec_order[SWITCH_MAX_CODECS];
 	int codec_order_last;
 	switch_hash *call_hash;
-	switch_mutex_t *port_lock;
 	int running;
 	int codec_ms;
 	int dtmf_duration;
@@ -133,20 +130,6 @@ struct private_object {
 	uint16_t out_digit_seq;
 };
 
-
-static switch_port_t next_rtp_port(void)
-{
-	switch_port_t port;
-
-	switch_mutex_lock(globals.port_lock);
-	port = globals.rtp_start;
-	globals.rtp_start += 2;
-	if (port >= globals.rtp_end) {
-		port = globals.rtp_start;
-	}
-	switch_mutex_unlock(globals.port_lock);
-	return port;
-}
 
 struct rfc2833_digit {
 	char digit;
@@ -268,7 +251,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 		osip_rfc3264_init(&tech_pvt->sdp_config);
 		/* Decide on local IP and rtp port */
 		strncpy(tech_pvt->local_sdp_audio_ip, localip, sizeof(tech_pvt->local_sdp_audio_ip));
-		tech_pvt->local_sdp_audio_port = next_rtp_port();
+		tech_pvt->local_sdp_audio_port = switch_rtp_request_port();
 		/* Initialize SDP */
 		sdp_message_init(&tech_pvt->local_sdp);
 		sdp_message_v_version_set(tech_pvt->local_sdp, "0");
@@ -1028,7 +1011,6 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 		return SWITCH_STATUS_TERM;
 	}
 
-	switch_mutex_init(&globals.port_lock, SWITCH_MUTEX_NESTED, module_pool);
 	switch_core_hash_init(&globals.call_hash, module_pool);
 
 	/* connect my internal structure to the blank pointer passed to me */
@@ -1116,7 +1098,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		}
 
 		eXosip_guess_localip(AF_INET, tech_pvt->local_sdp_audio_ip, 50);
-		tech_pvt->local_sdp_audio_port = next_rtp_port();
+		tech_pvt->local_sdp_audio_port = switch_rtp_request_port();
 		osip_rfc3264_init(&tech_pvt->sdp_config);
 		/* Add in what codecs we support locally */
 
@@ -1565,8 +1547,6 @@ static int config_exosip(int reload)
 		return SWITCH_STATUS_TERM;
 	}
 
-	globals.rtp_start = 16384;
-	globals.rtp_end = 32768;
 	globals.dtmf_duration = 100;
 
 	while (switch_config_next_pair(&cfg, &var, &val)) {
@@ -1583,12 +1563,7 @@ static int config_exosip(int reload)
 				set_global_dialplan(val);
 			} else if (!strcmp(var, "codec_prefs")) {
 				set_global_codec_string(val);
-				globals.codec_order_last =
-					switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
-			} else if (!strcmp(var, "rtp_min_port")) {
-				globals.rtp_start = (switch_port_t)atoi(val);
-			} else if (!strcmp(var, "rtp_max_port")) {
-				globals.rtp_end = (switch_port_t)atoi(val);
+				globals.codec_order_last = switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
 			} else if (!strcmp(var, "codec_ms")) {
 				globals.codec_ms = atoi(val);
 			} else if (!strcmp(var, "dtmf_duration")) {

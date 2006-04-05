@@ -2414,11 +2414,10 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 	}
 
 
-
+	assert(runtime.memory_pool != NULL);
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocated memory pool. Sessions are %u bytes\n", sizeof(struct switch_core_session));
 	switch_event_init(runtime.memory_pool);
-
-	assert(runtime.memory_pool != NULL);
+	switch_rtp_init(runtime.memory_pool);
 
 	/* Activate SQL database */
 	if ((runtime.db = switch_core_db_handle()) == 0 ) {

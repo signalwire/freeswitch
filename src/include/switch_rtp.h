@@ -55,6 +55,9 @@ typedef void (*switch_rtp_invalid_handler)(switch_rtp *rtp_session,
 										   switch_sockaddr_t *from_addr);
 
 
+SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool *pool);
+SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void);
+
 SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
 						   switch_port_t rx_port,
 						   char *tx_ip,

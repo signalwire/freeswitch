@@ -780,6 +780,9 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 			switch_channel_hangup(chan_b);
 		}
 		switch_channel_clear_flag(chan_a, CF_ORIGINATOR);
+	} else if (!switch_channel_test_flag(chan_a, CF_ORIGINATOR) && !switch_channel_test_flag(chan_a, CF_TRANSFER)) {
+		switch_core_session_kill_channel(session_a, SWITCH_SIG_KILL);
+		switch_channel_hangup(chan_a);
 	}
 	
 	while (his_thread->running > 0) {
