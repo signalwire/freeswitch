@@ -79,6 +79,7 @@ static struct {
 	int debug;
 	int bytes_per_frame;
 	char *dialplan;
+	char *host;
 	int port;
 	char *codec_string;
 	char *codec_order[SWITCH_MAX_CODECS];
@@ -137,6 +138,7 @@ struct rfc2833_digit {
 };
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_host, globals.host)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
 
 static switch_status exosip_on_init(switch_core_session *session);
@@ -1555,6 +1557,8 @@ static int config_exosip(int reload)
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "port")) {
 				globals.port = atoi(val);
+			} else if (!strcmp(var, "host")) {
+				set_global_host(val);
 			} else if (!strcmp(var, "cng")) {
 				if (switch_true(val)) {
 					switch_set_flag(&globals, TFLAG_SILENCE);
@@ -1577,6 +1581,11 @@ static int config_exosip(int reload)
 		}
 	}
 
+	if (!globals.host) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Setting host to 'localhost' Good luck with that...\n");
+		set_global_host("localhost");
+	}
+
 	if (!globals.codec_ms) {
 		globals.codec_ms = 20;
 	}
@@ -1584,6 +1593,8 @@ static int config_exosip(int reload)
 	if (!globals.port) {
 		globals.port = 5060;
 	}
+	
+	
 
 	switch_config_close_file(&cfg);
 
