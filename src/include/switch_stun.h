@@ -105,7 +105,7 @@ typedef struct {
 typedef struct {
 	int16_t type;
 	uint16_t length;
-	char value[0];
+	char value[];
 } switch_stun_packet_attribute_t;
 
 typedef struct {
