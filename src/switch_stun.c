@@ -121,7 +121,6 @@ SWITCH_DECLARE(switch_stun_packet_t *)switch_stun_packet_parse(uint8_t *buf, uin
 	packet = (switch_stun_packet_t *) buf;
 	packet->header.type = ntohs(packet->header.type);
 	packet->header.length = ntohs(packet->header.length);
-	attr = &packet->first_attribute;
 	switch_stun_packet_first_attribute(packet, attr);
 	do {
 		attr->length = ntohs(attr->length);

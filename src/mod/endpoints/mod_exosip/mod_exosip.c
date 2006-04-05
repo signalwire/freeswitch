@@ -242,18 +242,42 @@ static switch_status exosip_on_init(switch_core_session *session)
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		char *dest_uri;
+		char *ip, *err;
+		switch_port_t sdp_port;
 		switch_codec_interface *codecs[SWITCH_MAX_CODECS];
 		int num_codecs = 0;
 		/* do SIP Goodies... */
 
+		/* Decide on local IP and rtp port */
+		tech_pvt->local_sdp_audio_port = switch_rtp_request_port();
+		sdp_port = tech_pvt->local_sdp_audio_port;
 		/* Generate callerid URI */
-		eXosip_guess_localip(AF_INET, localip, 128);
-		snprintf(from_uri, sizeof(from_uri), "<sip:%s@%s>", tech_pvt->caller_profile->caller_id_number, localip);
+
+		if (!strncasecmp(globals.host, "stun:", 5)) {
+			if (switch_stun_lookup(&ip,
+								   &sdp_port,
+								   globals.host + 5,
+								   SWITCH_STUN_DEFAULT_PORT,
+								   &err,
+								   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", globals.port + 5, SWITCH_STUN_DEFAULT_PORT, err);
+				switch_channel_hangup(channel);
+				return SWITCH_STATUS_FALSE;
+			}
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success [%s]:[%d]\n", ip, sdp_port);
+		} else if (!strcasecmp(globals.host, "guess")) {
+			eXosip_guess_localip(AF_INET, localip, 128);			
+			ip = localip;
+		} else {
+			ip = globals.host;
+		}
+
+		snprintf(from_uri, sizeof(from_uri), "<sip:%s@%s>", tech_pvt->caller_profile->caller_id_number, ip);
+
 		/* Setup codec negotiation stuffs */
 		osip_rfc3264_init(&tech_pvt->sdp_config);
-		/* Decide on local IP and rtp port */
-		strncpy(tech_pvt->local_sdp_audio_ip, localip, sizeof(tech_pvt->local_sdp_audio_ip));
-		tech_pvt->local_sdp_audio_port = switch_rtp_request_port();
+		strncpy(tech_pvt->local_sdp_audio_ip, ip, sizeof(tech_pvt->local_sdp_audio_ip));
+
 		/* Initialize SDP */
 		sdp_message_init(&tech_pvt->local_sdp);
 		sdp_message_v_version_set(tech_pvt->local_sdp, "0");
@@ -262,7 +286,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 		sdp_message_s_name_set(tech_pvt->local_sdp, "SIP Call");
 		sdp_message_c_connection_add(tech_pvt->local_sdp, -1, "IN", "IP4", tech_pvt->local_sdp_audio_ip, NULL, NULL);
 		sdp_message_t_time_descr_add(tech_pvt->local_sdp, "0", "0");
-		snprintf(port, sizeof(port), "%i", tech_pvt->local_sdp_audio_port);
+		snprintf(port, sizeof(port), "%i", sdp_port);
 		sdp_message_m_media_add(tech_pvt->local_sdp, "audio", port, NULL, "RTP/AVP");
 		/* Add in every codec we support on this outbound call */
 		if (globals.codec_string) {
@@ -1059,6 +1083,8 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		struct private_object *tech_pvt;
 		switch_codec_interface *codecs[SWITCH_MAX_CODECS];
 		int num_codecs = 0;
+		switch_port_t sdp_port;
+		char *ip, *err;
 
 		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
@@ -1099,11 +1125,32 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			return SWITCH_STATUS_GENERR;
 		}
 
-		eXosip_guess_localip(AF_INET, tech_pvt->local_sdp_audio_ip, 50);
 		tech_pvt->local_sdp_audio_port = switch_rtp_request_port();
+		sdp_port = tech_pvt->local_sdp_audio_port;
+
+		if (!strncasecmp(globals.host, "stun:", 5)) {
+			if (switch_stun_lookup(&ip,
+								   &sdp_port,
+								   globals.host + 5,
+								   SWITCH_STUN_DEFAULT_PORT,
+								   &err,
+								   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", globals.port + 5, SWITCH_STUN_DEFAULT_PORT, err);
+				switch_channel_hangup(channel);
+				return SWITCH_STATUS_FALSE;
+			}
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success [%s]:[%d]\n", ip, sdp_port);
+			switch_copy_string(tech_pvt->local_sdp_audio_ip, ip, sizeof(tech_pvt->local_sdp_audio_ip));
+		} else if (!strcasecmp(globals.host, "guess")) {
+			eXosip_guess_localip(AF_INET, tech_pvt->local_sdp_audio_ip, sizeof(tech_pvt->local_sdp_audio_ip));			
+			ip = tech_pvt->local_sdp_audio_ip;
+		} else {
+			ip = globals.host;
+			switch_copy_string(tech_pvt->local_sdp_audio_ip, ip, sizeof(tech_pvt->local_sdp_audio_ip));
+		}
+
 		osip_rfc3264_init(&tech_pvt->sdp_config);
 		/* Add in what codecs we support locally */
-
 
 		if (globals.codec_string) {
 			num_codecs = switch_loadable_module_get_codecs_sorted(codecs,
@@ -1112,9 +1159,8 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 																  globals.codec_order_last);
 			
 		} else {
-			num_codecs =
-				switch_loadable_module_get_codecs(switch_core_session_get_pool(session), codecs,
-												  sizeof(codecs) / sizeof(codecs[0]));
+			num_codecs = switch_loadable_module_get_codecs(switch_core_session_get_pool(session), codecs,
+														   sizeof(codecs) / sizeof(codecs[0]));
 		}
 
 		if (num_codecs > 0) {
@@ -1162,8 +1208,8 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		sdp_message_o_origin_set(tech_pvt->local_sdp, "FreeSWITCH", "0", "0", "IN", "IP4",
 								 tech_pvt->local_sdp_audio_ip);
 		sdp_message_s_name_set(tech_pvt->local_sdp, "SIP Call");
-		sdp_message_c_connection_add(tech_pvt->local_sdp, -1, "IN", "IP4", tech_pvt->local_sdp_audio_ip, NULL, NULL);
-		snprintf(port, sizeof(port), "%i", tech_pvt->local_sdp_audio_port);
+		sdp_message_c_connection_add(tech_pvt->local_sdp, -1, "IN", "IP4", ip, NULL, NULL);
+		snprintf(port, sizeof(port), "%i", sdp_port);
 		sdp_message_m_port_set(tech_pvt->local_sdp, 0, osip_strdup(port));
 
 		conn = eXosip_get_audio_connection(remote_sdp);
@@ -1582,8 +1628,8 @@ static int config_exosip(int reload)
 	}
 
 	if (!globals.host) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Setting host to 'localhost' Good luck with that...\n");
-		set_global_host("localhost");
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Setting host to 'guess'\n");
+		set_global_host("guess");
 	}
 
 	if (!globals.codec_ms) {

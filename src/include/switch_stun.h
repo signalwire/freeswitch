@@ -110,7 +110,7 @@ typedef struct {
 
 typedef struct {
 	switch_stun_packet_header_t header;
-	switch_stun_packet_attribute_t first_attribute;
+	uint8_t first_attribute[];
 } switch_stun_packet_t;
 
 typedef struct {
@@ -218,7 +218,7 @@ SWITCH_DECLARE(switch_status) switch_stun_lookup (char **ip,
   \param packet the packet in question
   \param attribute the pointer to set up
 */
-#define switch_stun_packet_first_attribute(packet, attribute) 	attribute = &packet->first_attribute;
+#define switch_stun_packet_first_attribute(packet, attribute) 	attribute = (switch_stun_packet_attribute_t *)(&packet->first_attribute);
 
 /*!
   \brief Increment an attribute pointer to the next attribute in it's packet

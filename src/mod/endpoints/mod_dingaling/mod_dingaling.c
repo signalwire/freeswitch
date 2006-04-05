@@ -268,17 +268,38 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 			if (! switch_test_flag(tech_pvt, TFLAG_RTP_READY)) {
 				ldl_candidate_t cand[1];
 				char *advip = tech_pvt->profile->extip ? tech_pvt->profile->extip : tech_pvt->profile->ip;
+				char *err;
+
 				memset(cand, 0, sizeof(cand));
 				switch_stun_random_string(tech_pvt->local_user, 16, NULL);
 
-				cand[0].name = "rtp";
-				cand[0].address = advip;
+
 				cand[0].port = tech_pvt->local_port;
+				cand[0].address = advip;
+				
+				if (!strncasecmp(advip, "stun:", 5)) {
+					cand[0].address = tech_pvt->profile->ip;
+					if (switch_stun_lookup(&cand[0].address,
+										   &cand[0].port,
+										   advip + 5,
+										   SWITCH_STUN_DEFAULT_PORT,
+										   &err,
+										   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", advip + 5, SWITCH_STUN_DEFAULT_PORT, err);
+						switch_channel_hangup(channel);
+						break;
+					}
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success %s:%d\n", cand[0].address, cand[0].port);
+					cand[0].type = "stun";
+				} else {
+					cand[0].type = "local";
+				}
+
+				cand[0].name = "rtp";
 				cand[0].username = tech_pvt->local_user;
 				cand[0].password = tech_pvt->local_user;
 				cand[0].pref = 1;
 				cand[0].protocol = "udp";
-				cand[0].type = "local";
 				tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, 1);
 			}
 		}
