@@ -307,7 +307,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp *rtp_session, c
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void) switch_rtp_killread(switch_rtp *rtp_session)
+SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp *rtp_session)
 {
 	apr_socket_shutdown(rtp_session->sock, APR_SHUTDOWN_READWRITE);
 	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
@@ -316,7 +316,7 @@ SWITCH_DECLARE(void) switch_rtp_killread(switch_rtp *rtp_session)
 
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp **rtp_session)
 {
-	switch_rtp_killread(*rtp_session);
+	switch_rtp_kill_socket(*rtp_session);
 	switch_socket_close((*rtp_session)->sock);
 	*rtp_session = NULL;
 	return;

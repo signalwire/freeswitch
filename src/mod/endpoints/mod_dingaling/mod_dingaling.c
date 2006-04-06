@@ -496,7 +496,7 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 				ldl_session_terminate(tech_pvt->dlsession);
 			}
 			if (tech_pvt->rtp_session) {
-				switch_rtp_killread(tech_pvt->rtp_session);
+				switch_rtp_kill_socket(tech_pvt->rtp_session);
 			}
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 		}

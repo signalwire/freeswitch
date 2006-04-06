@@ -820,7 +820,7 @@ static switch_status exosip_kill_channel(switch_core_session *session, int sig)
 	switch_set_flag(tech_pvt, TFLAG_BYE);
 
 	if (tech_pvt->rtp_session) {
-		switch_rtp_killread(tech_pvt->rtp_session);
+		switch_rtp_kill_socket(tech_pvt->rtp_session);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
