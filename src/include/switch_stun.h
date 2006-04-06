@@ -201,6 +201,8 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_binded_address(switch_s
   \param ip the local ip to use (replaced with stun results)
   \param port the local port to use (replaced with stun results)
   \param stunip the ip of the stun server
+  \param stunport the port of the stun server
+  \param err a pointer to describe errors
   \param pool the memory pool to use
   \return SUCCESS or FAIL
 */

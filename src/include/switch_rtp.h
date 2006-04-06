@@ -142,6 +142,7 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
   \brief Read data from a given RTP session without copying
   \param rtp_session the RTP session to read from
   \param data a pointer to point directly to the RTP read buffer
+  \param payload_type the inia payload of the packet
   \return the number of bytes read
 */
 SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type);
