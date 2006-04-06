@@ -1278,7 +1278,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							}
 							switch_set_flag(tech_pvt, TFLAG_RTP_READY);
 							switch_rtp_activate_ice(tech_pvt->rtp_session, tech_pvt->remote_user, tech_pvt->local_user);
-							switch_rtp_start(tech_pvt->rtp_session);
 						}
 						
 						return LDL_STATUS_SUCCESS;

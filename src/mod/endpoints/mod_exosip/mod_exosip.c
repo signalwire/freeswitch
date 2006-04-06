@@ -480,7 +480,6 @@ static void activate_rtp(struct private_object *tech_pvt)
 
 	if (tech_pvt->rtp_session) {
 		tech_pvt->ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
-		switch_rtp_start(tech_pvt->rtp_session);
 		switch_set_flag(tech_pvt, TFLAG_RTP);
 	} else {
 		switch_channel *channel = switch_core_session_get_channel(tech_pvt->session);

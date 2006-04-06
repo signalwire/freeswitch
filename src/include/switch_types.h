@@ -182,6 +182,7 @@ typedef enum {
     SWITCH_STATUS_GENERR	- A general Error
     SWITCH_STATUS_INUSE		- An indication that requested resource is in use
 	SWITCH_STATUS_BREAK     - A non-fatal break of an operation
+    SWITCH_STATUS_SOCKERR  - A socket error
 </pre>
  */
 typedef enum {
@@ -197,6 +198,7 @@ typedef enum {
 	SWITCH_STATUS_GENERR,
 	SWITCH_STATUS_INUSE,
 	SWITCH_STATUS_BREAK,
+	SWITCH_STATUS_SOCKERR
 } switch_status;
 
 /*!

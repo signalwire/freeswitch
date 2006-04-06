@@ -70,10 +70,26 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool *pool);
 SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void);
 
 /*! 
-  \brief prepare a new RTP session handle
-  \param rx_ip the local address
+  \brief create a new RTP session handle
+  \param new_rtp_session a poiter to aim at the new session
+  \param payload the IANA payload number
+  \param flags flags to control behaviour
+  \param err a pointer to resolve error messages
+  \param pool a memory pool to use for the session
+  \return the new RTP session or NULL on failure
+*/
+SWITCH_DECLARE(switch_status)switch_rtp_create(switch_rtp **new_rtp_session,
+											int payload,
+											switch_rtp_flag_t flags,
+											const char **err,
+											switch_memory_pool *pool);
+
+
+/*!
+  \brief prepare a new RTP session handle and fully initilize it
+  \param rx_host the local address
   \param rx_port the local port
-  \param tx_ip the remote address
+  \param tx_host the remote address
   \param tx_port the remote port
   \param payload the IANA payload number
   \param flags flags to control behaviour
@@ -81,14 +97,35 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void);
   \param pool a memory pool to use for the session
   \return the new RTP session or NULL on failure
 */
-SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
-						   switch_port_t rx_port,
-						   char *tx_ip,
-						   switch_port_t tx_port,
-						   int payload,
-						   switch_rtp_flag_t flags,
-						   const char **err,
-						   switch_memory_pool *pool);
+SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_host,
+										   switch_port_t rx_port,
+										   char *tx_host,
+										   switch_port_t tx_port,
+										   int payload,
+										   switch_rtp_flag_t flags,
+										   const char **err,
+										   switch_memory_pool *pool);
+
+
+/*! 
+  \brief Assign a remote address to the RTP session
+  \param rtp_session an RTP session to assign the remote address to
+  \param host the ip or fqhn of the remote address
+  \param port the remote port
+  \param err pointer for error messages
+*/
+SWITCH_DECLARE(switch_status) switch_rtp_set_remote_address(switch_rtp *rtp_session, char *host, switch_port_t port, const char **err);
+
+/*! 
+  \brief Assign a local address to the RTP session
+  \param rtp_session an RTP session to assign the local address to
+  \param host the ip or fqhn of the local address
+  \param port the local port
+  \param err pointer for error messages
+  \note this call also binds the RTP session's socket to the new address
+*/
+SWITCH_DECLARE(switch_status) switch_rtp_set_local_address(switch_rtp *rtp_session, char *host, switch_port_t port, const char **err);
+
 /*! 
   \brief Kill the socket on an existing RTP session
   \param rtp_session an RTP session to kill the socket of
@@ -113,13 +150,6 @@ SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp *rtp_session, c
   \return the socket from the RTP session
 */
 SWITCH_DECLARE(switch_socket_t *)switch_rtp_get_rtp_socket(switch_rtp *rtp_session);
-
-/*! 
-  \brief Activate a given RTP session
-  \param rtp_session the RTP session to activate
-  \return 0
-*/
-SWITCH_DECLARE(uint32_t) switch_rtp_start(switch_rtp *rtp_session);
 
 /*! 
   \brief Set a callback function to execute when an invalid RTP packet is encountered

@@ -193,52 +193,65 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void)
 	return port;
 }
 
-SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
-										   switch_port_t rx_port,
-										   char *tx_ip,
-										   switch_port_t tx_port,
-										   int payload,
-										   switch_rtp_flag_t flags,
-										   const char **err,
-										   switch_memory_pool *pool)
+
+SWITCH_DECLARE(switch_status) switch_rtp_set_local_address(switch_rtp *rtp_session, char *host, switch_port_t port, const char **err)
 {
-	switch_socket_t *sock;
+	*err = "Success";
+
+	if (switch_sockaddr_info_get(&rtp_session->local_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
+		*err = "Local Address Error!";
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (rtp_session->sock) {
+		switch_socket_close(rtp_session->sock);
+		rtp_session->sock = NULL;
+	}
+	
+	if (switch_socket_create(&rtp_session->sock, AF_INET, SOCK_DGRAM, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
+		*err = "Socket Error!";
+		return SWITCH_STATUS_SOCKERR;
+	}
+
+	if (switch_socket_bind(rtp_session->sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
+		*err = "Bind Error!";
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_IO);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status) switch_rtp_set_remote_address(switch_rtp *rtp_session, char *host, switch_port_t port, const char **err)
+{
+	*err = "Success";
+
+	if (switch_sockaddr_info_get(&rtp_session->remote_addr, host, SWITCH_UNSPEC, port, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
+		*err = "Remote Address Error!";
+		return SWITCH_STATUS_FALSE;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
+												int payload,
+												switch_rtp_flag_t flags, 
+												const char **err,
+												switch_memory_pool *pool)
+{
 	switch_rtp *rtp_session = NULL;
-	switch_sockaddr_t *rx_addr;
-	switch_sockaddr_t *tx_addr;
 	srtp_policy_t policy;
 	char key[MAX_KEY_LEN];
 	uint32_t ssrc = rand() & 0xffff;
 
-
-	if (switch_sockaddr_info_get(&rx_addr, rx_ip, SWITCH_UNSPEC, rx_port, 0, pool) != SWITCH_STATUS_SUCCESS) {
-		*err = "RX Address Error!";
-		return NULL;
-	}
-
-	if (switch_sockaddr_info_get(&tx_addr, tx_ip, SWITCH_UNSPEC, tx_port, 0, pool) != SWITCH_STATUS_SUCCESS) {
-		*err = "TX Address Error!";
-		return NULL;
-	}
-
-	if (switch_socket_create(&sock, AF_INET, SOCK_DGRAM, 0, pool) != SWITCH_STATUS_SUCCESS) {
-		*err = "Socket Error!";
-		return NULL;
-	}
-
-	if (switch_socket_bind(sock, rx_addr) != SWITCH_STATUS_SUCCESS) {
-		*err = "Bind Error!";
-		return NULL;
-	}
-
+	*new_rtp_session = NULL;
+	
 	if (!(rtp_session = switch_core_alloc(pool, sizeof(*rtp_session)))) {
 		*err = "Memory Error!";
-		return NULL;
+		return SWITCH_STATUS_MEMERR;
 	}
 
-	rtp_session->sock = sock;
-	rtp_session->local_addr = rx_addr;
-	rtp_session->remote_addr = tx_addr;
 	rtp_session->pool = pool;
 	switch_sockaddr_info_get(&rtp_session->from_addr, NULL, SWITCH_UNSPEC, 0, 0, rtp_session->pool);
 	
@@ -288,8 +301,37 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_ip,
 	srtp_create(&rtp_session->recv_ctx, &policy);
 	srtp_create(&rtp_session->send_ctx, &policy);
 
+	*new_rtp_session = rtp_session;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_host,
+										   switch_port_t rx_port,
+										   char *tx_host,
+										   switch_port_t tx_port,
+										   int payload,
+										   switch_rtp_flag_t flags,
+										   const char **err,
+										   switch_memory_pool *pool) 
+{
+	switch_rtp *rtp_session;
+
+	if (switch_rtp_create(&rtp_session, payload, flags, err, pool) != SWITCH_STATUS_SUCCESS) {
+		return NULL;
+	}
+
+	if (switch_rtp_set_remote_address(rtp_session, tx_host, tx_port, err) != SWITCH_STATUS_SUCCESS) {
+		return NULL;
+	}
+
+	if (switch_rtp_set_local_address(rtp_session, rx_host, rx_port, err) != SWITCH_STATUS_SUCCESS) {
+		return NULL;
+	}
+
 	return rtp_session;
 }
+
 
 SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp *rtp_session, char *login, char *rlogin)
 {
@@ -459,12 +501,6 @@ SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data
 	}
 	
 	return (int)bytes;
-}
-
-SWITCH_DECLARE(uint32_t) switch_rtp_start(switch_rtp *rtp_session)
-{
-	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_IO);
-	return 0;
 }
 
 SWITCH_DECLARE(uint32_t) switch_rtp_get_ssrc(switch_rtp *rtp_session)
