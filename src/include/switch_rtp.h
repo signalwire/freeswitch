@@ -46,7 +46,7 @@ extern "C" {
 #endif
 
 
-///\defgroup rtp RTP (RealTime Transport)
+///\defgroup rtp RTP (RealTime Transport Protocol)
 ///\ingroup core1
 ///\{
 typedef void (*switch_rtp_invalid_handler)(switch_rtp *rtp_session,
