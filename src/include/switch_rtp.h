@@ -175,6 +175,7 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
   \param rtp_session the RTP session to read from
   \param data a pointer to point directly to the RTP read buffer
   \param payload_type the IANA payload of the packet
+  \param flags flags
   \return the number of bytes read
 */
 SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type, switch_frame_flag *flags);
@@ -185,7 +186,6 @@ SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **dat
   \param data data to write
   \param datalen the size of the data
   \param ts then number of bytes to increment the timestamp by
-  \param flags flags
   \return the number of bytes written
 */
 SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int datalen, uint32_t ts);
