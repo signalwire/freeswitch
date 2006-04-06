@@ -249,6 +249,7 @@ static switch_status setup_formats(void)
 	char *extras[] = { "r8", "r16", "r24", "r32", "gsm", NULL };
 	int exlen = (sizeof(extras) / sizeof(extras[0]));
 	buffer[0] = 0;
+	
 	sf_command(NULL, SFC_GET_LIB_VERSION, buffer, sizeof(buffer));
 	if (strlen(buffer) < 1) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Line %d: could not retrieve lib version.\n", __LINE__);
@@ -288,9 +289,11 @@ static switch_status setup_formats(void)
 			sf_command(NULL, SFC_GET_FORMAT_SUBTYPE, &info, sizeof(info));
 			format = (format & SF_FORMAT_TYPEMASK) | info.format;
 			sfinfo.format = format;
+			/*
 			if (sf_format_check(&sfinfo)) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "   %s\n", info.name);
 			}
+			*/
 		}
 
 	}
@@ -302,6 +305,7 @@ static switch_status setup_formats(void)
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN,
 						  "================================================================================\n");
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
