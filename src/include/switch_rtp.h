@@ -74,7 +74,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void);
   \param rx_port the local port
   \param tx_ip the remote address
   \param tx_port the remote port
-  \param payload the iana payload number
+  \param payload the IANA payload number
   \param flags flags to control behaviour
   \param err a pointer to resolve error messages
   \param pool a memory pool to use for the session
@@ -133,7 +133,7 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp *rtp_session, swit
   \param rtp_session the RTP session to read from
   \param data the data to read
   \param datalen the length of the data
-  \param payload_type the inia payload of the packet
+  \param payload_type the IANA payload of the packet
   \return the number of bytes read
 */
 SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type);
@@ -142,7 +142,7 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
   \brief Read data from a given RTP session without copying
   \param rtp_session the RTP session to read from
   \param data a pointer to point directly to the RTP read buffer
-  \param payload_type the inia payload of the packet
+  \param payload_type the IANA payload of the packet
   \return the number of bytes read
 */
 SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type);
@@ -162,7 +162,7 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int da
   \param rtp_session the RTP session to write to
   \param data data to write
   \param datalen the size of the data
-  \param payload the iana payload number
+  \param payload the IANA payload number
   \param ts then number of bytes to increment the timestamp by
   \param mseq the specific sequence number to use
   \return the number of bytes written
