@@ -250,25 +250,36 @@ typedef enum {
   \brief Channel Flags
 
 <pre>
-CF_SEND_AUDIO   = (1 <<  0) - Channel will send audio
-CF_RECV_AUDIO   = (1 <<  1) - Channel will receive audio
-CF_ANSWERED     = (1 <<  2) - Channel is answered
-CF_OUTBOUND     = (1 <<  3) - Channel is an outbound channel
-CF_EARLY_MEDIA  = (1 <<  4) - Channel is ready for audio before answer 
-CF_ORIGINATOR	= (1 <<  5) - Channel is an originator
-CF_TRANSFER		= (1 <<  6) - Channel is being transfered
+CF_ANSWERED     = (1 <<  0) - Channel is answered
+CF_OUTBOUND     = (1 <<  1) - Channel is an outbound channel
+CF_EARLY_MEDIA  = (1 <<  2) - Channel is ready for audio before answer 
+CF_ORIGINATOR	= (1 <<  3) - Channel is an originator
+CF_TRANSFER		= (1 <<  4) - Channel is being transfered
+CF_ACCEPT_CNG     = (1 <<  5) - Channel will accept CNG frames
 </pre>
  */
 
 typedef enum {
-	CF_SEND_AUDIO 	= (1 <<  0),
-	CF_RECV_AUDIO 	= (1 <<  1),
-	CF_ANSWERED   	= (1 <<  2),
-	CF_OUTBOUND   	= (1 <<  3),
-	CF_EARLY_MEDIA	= (1 <<  4),
-	CF_ORIGINATOR	= (1 <<  5),
-	CF_TRANSFER		= (1 <<  6)
+	CF_ANSWERED   	= (1 <<  0),
+	CF_OUTBOUND   	= (1 <<  1),
+	CF_EARLY_MEDIA	= (1 <<  2),
+	CF_ORIGINATOR	= (1 <<  3),
+	CF_TRANSFER		= (1 <<  4),
+	CF_ACCEPT_CNG     = (1 <<  5)
 } switch_channel_flag;
+
+
+/*!
+  \enum switch_frame_flag
+  \brief Frame Flags
+
+<pre>
+CF_CNG   = (1 <<  0) - Frame represents comfort noise
+</pre>
+ */
+typedef enum {
+	SFF_CNG = (1 << 0)
+} switch_frame_flag;
 
 
 /*!

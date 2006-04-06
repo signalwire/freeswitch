@@ -45,6 +45,7 @@ extern "C" {
 #endif
 #endif
 
+#define SWITCH_RTP_MAX_BUF_LEN 16384
 
 ///\defgroup rtp RTP (RealTime Transport Protocol)
 ///\ingroup core1
@@ -134,9 +135,10 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp *rtp_session, swit
   \param data the data to read
   \param datalen the length of the data
   \param payload_type the IANA payload of the packet
+  \param flags flags
   \return the number of bytes read
 */
-SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type);
+SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type, switch_frame_flag *flags);
 
 /*! 
   \brief Read data from a given RTP session without copying
@@ -145,7 +147,7 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
   \param payload_type the IANA payload of the packet
   \return the number of bytes read
 */
-SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type);
+SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type, switch_frame_flag *flags);
 
 /*! 
   \brief Write data to a given RTP session
@@ -153,6 +155,7 @@ SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **dat
   \param data data to write
   \param datalen the size of the data
   \param ts then number of bytes to increment the timestamp by
+  \param flags flags
   \return the number of bytes written
 */
 SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int datalen, uint32_t ts);

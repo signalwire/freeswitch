@@ -957,9 +957,11 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 	assert(session != NULL);
 	assert(*frame != NULL);
 	
-	/* if you think this code is redundant.... too bad! I like to understand what I'm doing */
-	if ((session->read_codec && (*frame)->codec
-		 && session->read_codec->implementation != (*frame)->codec->implementation)) {
+	if (switch_test_flag(*frame, SFF_CNG)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if ((session->read_codec && (*frame)->codec && session->read_codec->implementation != (*frame)->codec->implementation)) {
 		need_codec = TRUE;
 	}
 
@@ -1086,8 +1088,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 	return status;
 }
 
-static switch_status perform_write(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags,
-								   int stream_id)
+static switch_status perform_write(switch_core_session *session, switch_frame *frame, int timeout, switch_io_flag flags, int stream_id)
 {
 	struct switch_io_event_hook_write_frame *ptr;
 	switch_status status = SWITCH_STATUS_FALSE;
@@ -1119,7 +1120,16 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 	assert(frame != NULL);
 	assert(frame->codec != NULL);
 
-	/* if you think this code is redundant.... too bad! I like to understand what I'm doing */
+	if (switch_test_flag(frame, SFF_CNG)) {
+
+		if (switch_channel_test_flag(session->channel, CF_ACCEPT_CNG)) { 
+			return perform_write(session, frame, timeout, flag, stream_id);
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		need_codec = TRUE;
 	}
@@ -2219,7 +2229,7 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_e
 		return NULL;
 	}
 
-	switch_channel_init(session->channel, session, CS_NEW, (CF_SEND_AUDIO | CF_RECV_AUDIO));
+	switch_channel_init(session->channel, session, CS_NEW, 0);
 
 	/* The session *IS* the pool you may not alter it because you have no idea how
 	   its all private it will be passed to the thread run function */

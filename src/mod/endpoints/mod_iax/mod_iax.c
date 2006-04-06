@@ -653,6 +653,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 		switch_swap_linear(frame->data, (int) frame->datalen / 2);
 	}
 #endif
+	//printf("Send %ld %d\n", time(NULL), (int) frame->datalen);
 	iax_send_voice(tech_pvt->iax_session, tech_pvt->codec, frame->data, (int) frame->datalen,
 				   tech_pvt->write_codec.implementation->samples_per_frame);
 

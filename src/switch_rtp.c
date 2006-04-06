@@ -41,9 +41,9 @@
 
 #define MAX_KEY_LEN      64
 #define rtp_header_len 12
-#define RTP_MAX_BUF_LEN 16384
 #define RTP_START_PORT 16384
 #define RTP_END_PORT 32768
+#define SWITCH_RTP_CNG_PAYLOAD 13
 
 static switch_port_t NEXT_PORT = RTP_START_PORT;
 static switch_mutex_t *port_lock = NULL;
@@ -51,8 +51,8 @@ static switch_mutex_t *port_lock = NULL;
 typedef srtp_hdr_t rtp_hdr_t;
 
 typedef struct {
-  srtp_hdr_t header;        
-  char body[RTP_MAX_BUF_LEN];  
+	srtp_hdr_t header;        
+	char body[SWITCH_RTP_MAX_BUF_LEN];  
 } rtp_msg_t;
 
 struct switch_rtp {
@@ -84,6 +84,9 @@ struct switch_rtp {
 };
 
 static int global_init = 0;
+
+
+
 
 static switch_status ice_out(switch_rtp *rtp_session)
 {
@@ -332,7 +335,7 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp *rtp_session, swit
 	rtp_session->invalid_handler = on_invalid;
 }
 
-SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type)
+SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type, switch_frame_flag *flags)
 {
 	switch_size_t bytes;
 
@@ -359,10 +362,16 @@ SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_
 	}
 	memcpy(data, rtp_session->recv_msg.body, bytes);
 	*payload_type = rtp_session->recv_msg.header.pt;
+
+	if (*payload_type == SWITCH_RTP_CNG_PAYLOAD) {
+		*flags |= SFF_CNG;
+	}
+
 	return (int)(bytes - rtp_header_len);
+
 }
 
-SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type)
+SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type, switch_frame_flag *flags)
 {
 	switch_size_t bytes;
 
@@ -391,6 +400,10 @@ SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **dat
 	*payload_type = rtp_session->recv_msg.header.pt;
 	*data = rtp_session->recv_msg.body;
 
+	if (*payload_type == SWITCH_RTP_CNG_PAYLOAD) {
+		*flags |= SFF_CNG;
+	}
+
 	return (int)(bytes - rtp_header_len);
 }
 
@@ -410,7 +423,7 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int da
 	rtp_session->payload = htonl(rtp_session->payload);
 
 	memcpy(rtp_session->send_msg.body, data, datalen);
-
+	
 	bytes = datalen + rtp_header_len;
 	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&rtp_session->send_msg, &bytes);
 	if (rtp_session->ice_user) {
@@ -435,6 +448,7 @@ SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data
 	rtp_session->send_msg.header.pt = (uint8_t)htonl(payload);
 
 	memcpy(rtp_session->send_msg.body, data, datalen);
+
 	bytes = datalen + rtp_header_len;
 	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&rtp_session->send_msg, &bytes);
 

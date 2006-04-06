@@ -56,8 +56,8 @@ struct switch_frame {
 	switch_size_t samples;
 	/*! the rate of the frame */
 	int rate;
-	/*! the timestamp of the frame */
-	int32_t timestamp;
+	/*! frame flags */
+	switch_frame_flag flags;
 };
 
 #ifdef __cplusplus

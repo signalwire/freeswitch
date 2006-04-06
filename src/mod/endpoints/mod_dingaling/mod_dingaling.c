@@ -46,12 +46,7 @@ typedef enum {
 	TFLAG_VOICE = (1 << 6),
 	TFLAG_RTP_READY = (1 << 7),
 	TFLAG_CODEC_READY = (1 << 8),
-	TFLAG_SILENCE = (1 << 9)
 } TFLAGS;
-
-typedef enum {
-	PFLAG_GENSILENCE = (1 << 0)
-} PFLAGS;
 
 typedef enum {
 	GFLAG_MY_CODEC_PREFS = (1 << 0)
@@ -92,10 +87,7 @@ struct private_object {
 	switch_codec read_codec;
 	switch_codec write_codec;
 	struct switch_frame read_frame;
-	struct switch_frame cng_frame;
 	struct mdl_profile *profile;
-	unsigned char read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
-	unsigned char cng_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 	switch_core_session *session;
 	switch_caller_profile *caller_profile;
 	unsigned short samprate;
@@ -126,7 +118,6 @@ struct private_object {
 	int32_t timestamp_dtmf;
 	char *codec_name;
 	int codec_num;
-	switch_time_t cng_next;
 };
 
 struct rfc2833_digit {
@@ -317,13 +308,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 	}
 
 
-	tech_pvt->read_frame.data = tech_pvt->read_buf;
-	tech_pvt->read_frame.buflen = sizeof(tech_pvt->read_buf);
 
-	tech_pvt->cng_frame.data = tech_pvt->cng_buf;
-	tech_pvt->cng_frame.buflen = sizeof(tech_pvt->cng_buf);
-
-	
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   tech_pvt->codec_name,
 							   8000,
@@ -337,9 +322,6 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 	}
 	tech_pvt->read_frame.rate = tech_pvt->read_codec.implementation->samples_per_second;
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
-	tech_pvt->cng_frame.rate = tech_pvt->read_codec.implementation->samples_per_second;
-	tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
-	memset(tech_pvt->cng_buf,255, sizeof(tech_pvt->cng_buf));
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Set Read Codec to %s\n", tech_pvt->codec_name);
 
@@ -358,7 +340,6 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 							
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
-	//switch_set_flag(tech_pvt, TFLAG_SILENCE);
 
 	//printf("WAIT %s %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_OUTBOUND));
 
@@ -401,6 +382,8 @@ static switch_status channel_on_init(switch_core_session *session)
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
+
+	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 
 	/* Move Channel's State Machine to RING */
 	switch_channel_set_state(channel, CS_RING);
@@ -557,7 +540,6 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
 	switch_channel *channel = NULL;
 	int payload = 0;
-	switch_time_t now;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -578,28 +560,12 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	assert(tech_pvt->rtp_session != NULL);
 	tech_pvt->read_frame.datalen = 0;
 
+	
 	while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 		payload = -1;
-		tech_pvt->read_frame.datalen = switch_rtp_read(tech_pvt->rtp_session, tech_pvt->read_frame.data, sizeof(tech_pvt->read_buf), &payload);
-		if (switch_test_flag(tech_pvt, TFLAG_SILENCE)) {
-			if (tech_pvt->read_frame.datalen) {
-				switch_clear_flag(tech_pvt, TFLAG_SILENCE);
-			} else {
-				now = switch_time_now();
-				if (now >= tech_pvt->cng_next) {
-					tech_pvt->cng_next += ms;
-					if (!tech_pvt->cng_frame.datalen) {
-						tech_pvt->cng_frame.datalen = bytes;
-					}
-					memset(tech_pvt->cng_frame.data, 255, tech_pvt->cng_frame.datalen);
-					//printf("GENERATE X bytes=%d payload=%d frames=%d samples=%d ms=%d ts=%d sampcount=%d\n", tech_pvt->cng_frame.datalen, payload, frames, samples, ms, tech_pvt->timestamp_recv, tech_pvt->read_frame.samples);
-					*frame = &tech_pvt->cng_frame;
-					return SWITCH_STATUS_SUCCESS;
-				}
-				switch_yield(1000);
-				continue;
-			}
-		}
+		tech_pvt->read_frame.flags = 0;
+		tech_pvt->read_frame.datalen = switch_rtp_zerocopy_read(tech_pvt->rtp_session, &tech_pvt->read_frame.data, &payload, &tech_pvt->read_frame.flags);
+		
 
 		/* RFC2833 ... TBD try harder to honor the duration etc.*/
 		if (payload == 101) {
@@ -629,23 +595,6 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 		}
 
 
-		if (switch_test_flag(tech_pvt->profile, PFLAG_GENSILENCE)) {
-			if ((switch_test_flag(tech_pvt, TFLAG_SILENCE) || payload == 13) && tech_pvt->cng_frame.datalen) {
-				memset(tech_pvt->cng_frame.data, 255, tech_pvt->cng_frame.datalen);
-				*frame = &tech_pvt->cng_frame;
-				//printf("GENERATE bytes=%d payload=%d frames=%d samples=%d ms=%d ts=%d sampcount=%d\n", tech_pvt->cng_frame.datalen, payload, frames, samples, ms, tech_pvt->timestamp_recv, tech_pvt->read_frame.samples);
-				switch_set_flag(tech_pvt, TFLAG_SILENCE);
-				tech_pvt->cng_next = switch_time_now() + ms;
-				return SWITCH_STATUS_SUCCESS;
-			}
-		}
-
-
-		if (payload != tech_pvt->codec_num) {
-			switch_yield(1000);
-			continue;
-		}
-
 		if (tech_pvt->read_frame.datalen > 0) {
 			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 			frames = (tech_pvt->read_frame.datalen / bytes);
@@ -653,14 +602,8 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 			ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
 			tech_pvt->timestamp_recv += (int32_t) samples;
 			tech_pvt->read_frame.samples = (int) samples;
-			if (switch_test_flag(tech_pvt->profile, PFLAG_GENSILENCE)) {
-				//memcpy(tech_pvt->cng_buf, tech_pvt->read_buf, tech_pvt->read_frame.datalen);
-				tech_pvt->cng_frame.datalen = tech_pvt->read_frame.datalen;
-				tech_pvt->cng_frame.samples = tech_pvt->read_frame.samples;
-				switch_clear_flag(tech_pvt, TFLAG_SILENCE);
-			}
 
-			//printf("READ bytes=%d payload=%d frames=%d samples=%d ms=%d ts=%d sampcount=%d\n", tech_pvt->read_frame.datalen, payload, frames, samples, ms, tech_pvt->timestamp_recv, tech_pvt->read_frame.samples);
+			//printf("READ bytes=%d payload=%d frames=%d samples=%d ms=%d ts=%d sampcount=%d\n", (int)tech_pvt->read_frame.datalen, (int)payload, (int)frames, (int)samples, (int)ms, (int)tech_pvt->timestamp_recv, (int)tech_pvt->read_frame.samples);
 			break;
 		}
 
@@ -1072,10 +1015,6 @@ static switch_status load_config(void)
 				profile->name = switch_core_strdup(module_pool, val);
 			} else if (!strcmp(var, "message")) {
 				profile->message = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "generate_silence")) {
-				if (switch_true(val)) {
-					switch_set_flag(profile, PFLAG_GENSILENCE);
-				}
 			} else if (!strcmp(var, "ip")) {
 				profile->ip = switch_core_strdup(module_pool, val);
 			} else if (!strcmp(var, "extip")) {
@@ -1331,7 +1270,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 																		 tech_pvt->remote_ip,
 																		 tech_pvt->remote_port,
 																		 tech_pvt->codec_num,
-																		 switch_test_flag(tech_pvt->profile, PFLAG_GENSILENCE) ? SWITCH_RTP_NOBLOCK : 0,
+																		 0,
 																		 &err, switch_core_session_get_pool(tech_pvt->session)))) {
 								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "RTP ERROR %s\n", err);
 								switch_channel_hangup(channel);

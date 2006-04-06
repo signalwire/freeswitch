@@ -66,8 +66,7 @@ typedef enum {
 	TFLAG_RTP = (1 << 7),
 	TFLAG_BYE = (1 << 8),
 	TFLAG_ANS = (1 << 9),
-	TFLAG_EARLY_MEDIA = (1 << 10),
-	TFLAG_SILENCE = (1 << 11)
+	TFLAG_EARLY_MEDIA = (1 << 10)
 	
 } TFLAGS;
 
@@ -95,10 +94,8 @@ struct private_object {
 	unsigned int flags;
 	switch_core_session *session;
 	switch_frame read_frame;
-	switch_frame cng_frame;
 	switch_codec read_codec;
 	switch_codec write_codec;
-	unsigned char cng_buf[320];
 	switch_caller_profile *caller_profile;
 	int cid;
 	int did;
@@ -123,7 +120,6 @@ struct private_object {
 	switch_mutex_t *rtp_lock;
 	switch_queue_t *dtmf_queue;
 	char out_digit;
-	switch_time_t cng_next;
 	switch_time_t last_read;
 	unsigned char out_digit_packet[4];
 	unsigned int out_digit_sofar;
@@ -232,11 +228,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	tech_pvt->read_frame.data = tech_pvt->cng_buf;
-	tech_pvt->read_frame.buflen = sizeof(tech_pvt->cng_buf);
-
-	tech_pvt->cng_frame.data = tech_pvt->cng_buf;
-	tech_pvt->cng_frame.buflen = sizeof(tech_pvt->cng_buf);
+	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "EXOSIP INIT\n");
 
@@ -582,27 +574,8 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 		while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO)
 			   && tech_pvt->read_frame.datalen == 0) {
 			now = switch_time_now();
-			tech_pvt->read_frame.datalen = switch_rtp_zerocopy_read(tech_pvt->rtp_session, &tech_pvt->read_frame.data, &payload);
-			
-			if (switch_test_flag(tech_pvt, TFLAG_SILENCE)) {
-				if (tech_pvt->read_frame.datalen) {
-					switch_clear_flag(tech_pvt, TFLAG_SILENCE);
-				} else {
-					now = switch_time_now();
-					if (now >= tech_pvt->cng_next) {
-						tech_pvt->cng_next += ms;
-						if (!tech_pvt->cng_frame.datalen) {
-							tech_pvt->cng_frame.datalen = bytes;
-						}
-						memset(tech_pvt->cng_frame.data, 255, tech_pvt->cng_frame.datalen);
-						//printf("GENERATE X bytes=%d payload=%d frames=%d samples=%d ms=%d ts=%d sampcount=%d\n", tech_pvt->cng_frame.datalen, payload, frames, samples, ms, tech_pvt->timestamp_recv, tech_pvt->read_frame.samples);
-						*frame = &tech_pvt->cng_frame;
-						return SWITCH_STATUS_SUCCESS;
-					}
-					switch_yield(1000);
-					continue;
-				}
-			}
+			tech_pvt->read_frame.flags = 0;
+			tech_pvt->read_frame.datalen = switch_rtp_zerocopy_read(tech_pvt->rtp_session, &tech_pvt->read_frame.data, &payload, &tech_pvt->read_frame.flags);
 			
 
 			if (timeout > -1) {
@@ -640,23 +613,6 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			}
 
 
-			if (switch_test_flag(&globals, TFLAG_SILENCE)) {
-				if ((switch_test_flag(tech_pvt, TFLAG_SILENCE) || payload == 13) && tech_pvt->cng_frame.datalen) {
-					*frame = &tech_pvt->cng_frame;
-					//printf("GENERATE bytes=%d payload=%d frames=%d samples=%d ms=%d ts=%d sampcount=%d\n", tech_pvt->cng_frame.datalen, payload, frames, samples, ms, tech_pvt->timestamp_recv, tech_pvt->read_frame.samples);
-					switch_set_flag(tech_pvt, TFLAG_SILENCE);
-					tech_pvt->cng_next = switch_time_now() + ms;
-					return SWITCH_STATUS_SUCCESS;
-				}
-			}
-
-
-			if (payload != tech_pvt->payload_num) {
-				tech_pvt->read_frame.datalen = 0;
-				switch_yield(1000);
-				continue;
-			}
-			
 			if (tech_pvt->read_frame.datalen > 0) {
 				tech_pvt->last_read = switch_time_now();
 				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
@@ -665,21 +621,12 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 				ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
 				tech_pvt->timestamp_recv += (int32_t) samples;
 				tech_pvt->read_frame.samples = (int) samples;
-				if (switch_test_flag(&globals, TFLAG_SILENCE)) {
-					tech_pvt->cng_frame.datalen = tech_pvt->read_frame.datalen;
-					tech_pvt->cng_frame.samples = tech_pvt->read_frame.samples;
-					switch_clear_flag(tech_pvt, TFLAG_SILENCE);
-				}
 				break;
 			}
 
 			switch_yield(1000);
 		}
 
-	} else {
-		memset(tech_pvt->cng_buf, 0, 160);
-		tech_pvt->read_frame.data = tech_pvt->cng_buf;
-		tech_pvt->read_frame.datalen = 160;
 	}
 
 	switch_clear_flag(tech_pvt, TFLAG_READING);
@@ -1263,9 +1210,6 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 					ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
 					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Inbound Codec %s/%d %d ms\n", dname, rate, ms);
 					tech_pvt->read_frame.codec = &tech_pvt->read_codec;
-					tech_pvt->cng_frame.rate = tech_pvt->read_codec.implementation->samples_per_second;
-					tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
-					memset(tech_pvt->cng_buf,255, sizeof(tech_pvt->cng_buf));
 					switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 					switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
 				}
@@ -1432,9 +1376,6 @@ static void handle_answer(eXosip_event_t * event)
 				ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activate Outbound Codec %s/%d %d ms\n", dname, rate, ms);
 				tech_pvt->read_frame.codec = &tech_pvt->read_codec;
-				tech_pvt->cng_frame.rate = tech_pvt->read_codec.implementation->samples_per_second;
-				tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
-				memset(tech_pvt->cng_buf,255, sizeof(tech_pvt->cng_buf));
 				switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 				switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 			}
@@ -1605,10 +1546,6 @@ static int config_exosip(int reload)
 				globals.port = atoi(val);
 			} else if (!strcmp(var, "host")) {
 				set_global_host(val);
-			} else if (!strcmp(var, "cng")) {
-				if (switch_true(val)) {
-					switch_set_flag(&globals, TFLAG_SILENCE);
-				}
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
 			} else if (!strcmp(var, "codec_prefs")) {
