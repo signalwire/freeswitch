@@ -372,6 +372,16 @@ SWITCH_DECLARE(switch_socket_t *)switch_rtp_get_rtp_socket(switch_rtp *rtp_sessi
 	return rtp_session->sock;
 }
 
+SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp *rtp_session, uint32_t payload)
+{
+	rtp_session->payload = payload;
+}
+
+SWITCH_DECLARE(uint32_t) switch_rtp_get_default_payload(switch_rtp *rtp_session)
+{
+	return rtp_session->payload;
+}
+
 SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp *rtp_session, switch_rtp_invalid_handler on_invalid)
 {
 	rtp_session->invalid_handler = on_invalid;
@@ -453,7 +463,7 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int da
 {
 	switch_size_t bytes;
 
-	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
+	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
 		return -1;
 	}
 
@@ -481,7 +491,7 @@ SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data
 {
 	switch_size_t bytes;
 
-	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
+	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
 		return -1;
 	}
 	rtp_session->ts += ts;

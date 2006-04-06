@@ -152,6 +152,21 @@ SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp *rtp_session, c
 SWITCH_DECLARE(switch_socket_t *)switch_rtp_get_rtp_socket(switch_rtp *rtp_session);
 
 /*! 
+  \brief Set the default payload number for a given RTP session
+  \param rtp_session the RTP session to set the payload number on
+  \param payload the new default payload number 
+*/
+SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp *rtp_session, uint32_t payload);
+
+/*! 
+  \brief Get the default payload number for a given RTP session
+  \param rtp_session the RTP session to get the payload number from
+  \return the default payload of the RTP session
+*/
+SWITCH_DECLARE(uint32_t) switch_rtp_get_default_payload(switch_rtp *rtp_session);
+
+
+/*! 
   \brief Set a callback function to execute when an invalid RTP packet is encountered
   \param rtp_session the RTP session
   \param on_invalid the function to set
