@@ -1090,7 +1090,7 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
 		new_handle->pool = pool;
 		apr_queue_create(&new_handle->queue, LDL_HANDLE_QLEN, new_handle->pool);
 		apr_queue_create(&new_handle->retry_queue, LDL_HANDLE_QLEN, new_handle->pool);
-		new_handle->features |= IKS_STREAM_BIND|IKS_STREAM_SESSION|IKS_STREAM_SASL_PLAIN;
+		new_handle->features |= IKS_STREAM_BIND|IKS_STREAM_SESSION |IKS_STREAM_SASL_PLAIN;
 		new_handle->sessions = apr_hash_make(new_handle->pool);
 		new_handle->retry_hash = apr_hash_make(new_handle->pool);
 		new_handle->probe_hash = apr_hash_make(new_handle->pool);

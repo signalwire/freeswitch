@@ -100,7 +100,7 @@ struct private_object {
 	char *remote_ip;
 	switch_port_t local_port;
 	switch_port_t remote_port;
-	char local_user[16];
+	char local_user[17];
 	char *remote_user;
 	unsigned int cand_id;
 	unsigned int desc_id;
