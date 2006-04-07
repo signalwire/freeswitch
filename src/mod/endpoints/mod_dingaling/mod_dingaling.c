@@ -269,14 +269,22 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 				cand[0].address = advip;
 				
 				if (!strncasecmp(advip, "stun:", 5)) {
+					char *stun_ip = advip + 5;
+
+					if (!stun_ip) {
+						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! NO STUN SERVER!\n");
+						switch_channel_hangup(channel);
+						break;
+					}
+
 					cand[0].address = tech_pvt->profile->ip;
 					if (switch_stun_lookup(&cand[0].address,
 										   &cand[0].port,
-										   advip + 5,
+										   stun_ip,
 										   SWITCH_STUN_DEFAULT_PORT,
 										   &err,
 										   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", advip + 5, SWITCH_STUN_DEFAULT_PORT, err);
+						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
 						switch_channel_hangup(channel);
 						break;
 					}
@@ -1234,14 +1242,22 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						cand[0].address = advip;
 
 						if (!strncasecmp(advip, "stun:", 5)) {
+							char *stun_ip = advip + 5;
+
+							if (!stun_ip) {
+								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! NO STUN SERVER!\n");
+								switch_channel_hangup(channel);
+								break;
+							}
+
 							cand[0].address = profile->ip;
 							if (switch_stun_lookup(&cand[0].address,
 												   &cand[0].port,
-												   advip + 5,
+												   stun_ip,
 												   SWITCH_STUN_DEFAULT_PORT,
 												   &err,
 												   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", advip + 5, SWITCH_STUN_DEFAULT_PORT, err);
+								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
 								switch_channel_hangup(channel);
 								return LDL_STATUS_FALSE;
 							}

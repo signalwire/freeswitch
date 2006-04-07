@@ -78,7 +78,8 @@ static struct {
 	int debug;
 	int bytes_per_frame;
 	char *dialplan;
-	char *host;
+	char *extip;
+	char *ip;
 	int port;
 	char *codec_string;
 	char *codec_order[SWITCH_MAX_CODECS];
@@ -117,7 +118,6 @@ struct private_object {
 	char last_digit;
 	unsigned int dc;
 	time_t last_digit_time;
-	switch_mutex_t *rtp_lock;
 	switch_queue_t *dtmf_queue;
 	char out_digit;
 	switch_time_t last_read;
@@ -134,7 +134,8 @@ struct rfc2833_digit {
 };
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_host, globals.host)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_extip, globals.extip)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
 
 static switch_status exosip_on_init(switch_core_session *session);
@@ -150,7 +151,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 static int config_exosip(int reload);
 static switch_status parse_sdp_media(sdp_media_t * media, char **dname, char **drate, char **dpayload);
 static switch_status exosip_kill_channel(switch_core_session *session, int sig);
-static void activate_rtp(struct private_object *tech_pvt);
+static switch_status activate_rtp(struct private_object *tech_pvt);
 static void deactivate_rtp(struct private_object *tech_pvt);
 static void sdp_add_rfc2833(struct osip_rfc3264 *cnf, int rate);
 
@@ -219,7 +220,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
-	char from_uri[512] = "", localip[128] = "", port[7] = "", *buf = NULL, tmp[512] = "";
+	char from_uri[512] = "", port[7] = "", *buf = NULL, tmp[512] = "";
 	osip_message_t *invite = NULL;
 
 	channel = switch_core_session_get_channel(session);
@@ -246,31 +247,43 @@ static switch_status exosip_on_init(switch_core_session *session)
 		/* Generate callerid URI */
 
 
-		eXosip_guess_localip(AF_INET, localip, 128);
-		ip = localip;
-
-
-		if (!strncasecmp(globals.host, "stun:", 5)) {
-			if (switch_stun_lookup(&ip,
-								   &sdp_port,
-								   globals.host + 5,
-								   SWITCH_STUN_DEFAULT_PORT,
-								   &err,
-								   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", globals.host + 5, SWITCH_STUN_DEFAULT_PORT, err);
-				switch_channel_hangup(channel);
-				return SWITCH_STATUS_FALSE;
-			}
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success [%s]:[%d]\n", ip, sdp_port);
-		} else if (strcasecmp(globals.host, "guess")){
-			ip = globals.host;
+		if (!strcasecmp(globals.ip, "guess")) {
+			eXosip_guess_localip(AF_INET, tech_pvt->local_sdp_audio_ip, sizeof(tech_pvt->local_sdp_audio_ip));
+		} else {
+			switch_copy_string(tech_pvt->local_sdp_audio_ip, globals.ip, sizeof(tech_pvt->local_sdp_audio_ip));
 		}
 
+		ip = tech_pvt->local_sdp_audio_ip;
+
+		if (globals.extip) {
+			if (!strncasecmp(globals.extip, "stun:", 5)) {
+				char *stun_ip = globals.extip + 5;
+
+				if (!stun_ip) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! NO STUN SERVER\n");
+					switch_channel_hangup(channel);
+					return SWITCH_STATUS_FALSE;
+				}
+				if (switch_stun_lookup(&ip,
+									   &sdp_port,
+									   stun_ip,
+									   SWITCH_STUN_DEFAULT_PORT,
+									   &err,
+									   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
+					switch_channel_hangup(channel);
+					return SWITCH_STATUS_FALSE;
+				}
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success [%s]:[%d]\n", ip, sdp_port);
+			} else {
+				ip = globals.extip;
+			}
+		}
 		snprintf(from_uri, sizeof(from_uri), "<sip:%s@%s>", tech_pvt->caller_profile->caller_id_number, ip);
 
 		/* Setup codec negotiation stuffs */
 		osip_rfc3264_init(&tech_pvt->sdp_config);
-		strncpy(tech_pvt->local_sdp_audio_ip, localip, sizeof(tech_pvt->local_sdp_audio_ip));
+		
 
 		/* Initialize SDP */
 		sdp_message_init(&tech_pvt->local_sdp);
@@ -416,8 +429,6 @@ static void deactivate_rtp(struct private_object *tech_pvt)
 	int loops = 0;//, sock = -1;
 
 	if (tech_pvt->rtp_session) {
-		switch_mutex_lock(tech_pvt->rtp_lock);
-
 		while (loops < 10 && (switch_test_flag(tech_pvt, TFLAG_READING) || switch_test_flag(tech_pvt, TFLAG_WRITING))) {
 			switch_yield(10000);
 			loops++;
@@ -429,11 +440,10 @@ static void deactivate_rtp(struct private_object *tech_pvt)
 		*/
 		switch_rtp_destroy(&tech_pvt->rtp_session);
 		tech_pvt->rtp_session = NULL;
-		switch_mutex_unlock(tech_pvt->rtp_lock);
 	}
 }
 
-static void activate_rtp(struct private_object *tech_pvt)
+static switch_status activate_rtp(struct private_object *tech_pvt)
 {
 	int bw, ms;
 	switch_channel *channel;
@@ -445,14 +455,7 @@ static void activate_rtp(struct private_object *tech_pvt)
 	assert(channel != NULL);
 
 	if (tech_pvt->rtp_session) {
-		return;
-	}
-
-	switch_mutex_lock(tech_pvt->rtp_lock);
-
-	if (tech_pvt->rtp_session) {
-		switch_mutex_unlock(tech_pvt->rtp_lock);
-		return;
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
@@ -488,9 +491,10 @@ static void activate_rtp(struct private_object *tech_pvt)
 		switch_channel_hangup(channel);
 		switch_set_flag(tech_pvt, TFLAG_BYE);
 		switch_clear_flag(tech_pvt, TFLAG_IO);
+		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_mutex_unlock(tech_pvt->rtp_lock);
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status exosip_answer_channel(switch_core_session *session)
@@ -670,7 +674,6 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	}
 
 	switch_set_flag(tech_pvt, TFLAG_WRITING);
-	//switch_mutex_lock(tech_pvt->rtp_lock);
 
 	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
 		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
@@ -746,7 +749,6 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	tech_pvt->timestamp_send += (int) samples;
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);
-	//switch_mutex_unlock(tech_pvt->rtp_lock);
 	return status;
 }
 
@@ -928,7 +930,6 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
-			switch_mutex_init(&tech_pvt->rtp_lock, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
 			tech_pvt->session = *new_session;
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
@@ -1039,7 +1040,6 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
 			tech_pvt->session = session;
-			switch_mutex_init(&tech_pvt->rtp_lock, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		} else {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
@@ -1072,31 +1072,40 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			return SWITCH_STATUS_GENERR;
 		}
 
+		if (!strcasecmp(globals.ip, "guess")) {
+			eXosip_guess_localip(AF_INET, tech_pvt->local_sdp_audio_ip, sizeof(tech_pvt->local_sdp_audio_ip));
+		} else {
+			switch_copy_string(tech_pvt->local_sdp_audio_ip, globals.ip, sizeof(tech_pvt->local_sdp_audio_ip));
+		}
+		ip = tech_pvt->local_sdp_audio_ip;
+
 		tech_pvt->local_sdp_audio_port = switch_rtp_request_port();
 		sdp_port = tech_pvt->local_sdp_audio_port;
 
 
-		eXosip_guess_localip(AF_INET, tech_pvt->local_sdp_audio_ip, sizeof(tech_pvt->local_sdp_audio_ip));			
-		ip = tech_pvt->local_sdp_audio_ip;
-
-		if (!strncasecmp(globals.host, "stun:", 5)) {
-			if (switch_stun_lookup(&ip,
-								   &sdp_port,
-								   globals.host + 5,
-								   SWITCH_STUN_DEFAULT_PORT,
-								   &err,
-								   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", globals.port + 5, SWITCH_STUN_DEFAULT_PORT, err);
-				switch_channel_hangup(channel);
-				return SWITCH_STATUS_FALSE;
+		if (globals.extip) {
+			if (!strncasecmp(globals.extip, "stun:", 5)) {
+				char *stun_ip = globals.extip + 5;
+				if (!stun_ip) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! NO STUN SERVER\n");
+					switch_channel_hangup(channel);
+					return SWITCH_STATUS_FALSE;
+				}
+				if (switch_stun_lookup(&ip,
+									   &sdp_port,
+									   stun_ip,
+									   SWITCH_STUN_DEFAULT_PORT,
+									   &err,
+									   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
+					switch_channel_hangup(channel);
+					return SWITCH_STATUS_FALSE;
+				}
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success [%s]:[%d]\n", ip, sdp_port);
+			} else {
+				ip = globals.extip;
 			}
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success [%s]:[%d]\n", ip, sdp_port);
-			switch_copy_string(tech_pvt->local_sdp_audio_ip, ip, sizeof(tech_pvt->local_sdp_audio_ip));
-		} else if (strcasecmp(globals.host, "guess")){
-			ip = globals.host;
-			switch_copy_string(tech_pvt->local_sdp_audio_ip, ip, sizeof(tech_pvt->local_sdp_audio_ip));
 		}
-
 		osip_rfc3264_init(&tech_pvt->sdp_config);
 		/* Add in what codecs we support locally */
 
@@ -1217,16 +1226,22 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			}
 		}
 
-		activate_rtp(tech_pvt);
+		if (activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+			exosip_on_hangup(session);
+			switch_core_session_destroy(&session);
+            return SWITCH_STATUS_FALSE;
+		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_RTP)) {
 			switch_core_session_thread_launch(session);
 		} else {
+			exosip_on_hangup(session);
 			switch_core_session_destroy(&session);
 			return SWITCH_STATUS_FALSE;
 		}
 	} else {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot Create new Inbound Channel!\n");
+		return SWITCH_STATUS_FALSE;
 	}
 
 
@@ -1394,7 +1409,11 @@ static void handle_answer(eXosip_event_t * event)
 	free(dpayload);
 
 
-	activate_rtp(tech_pvt);
+	if (activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+		switch_channel_hangup(channel);
+		return;
+	}
+
 
 	if (switch_test_flag(tech_pvt, TFLAG_RTP)) {
 		channel = switch_core_session_get_channel(tech_pvt->session);
@@ -1545,8 +1564,10 @@ static int config_exosip(int reload)
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "port")) {
 				globals.port = atoi(val);
-			} else if (!strcmp(var, "host")) {
-				set_global_host(val);
+			} else if (!strcmp(var, "extip")) {
+				set_global_extip(val);
+			} else if (!strcmp(var, "ip")) {
+				set_global_ip(val);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
 			} else if (!strcmp(var, "codec_prefs")) {
@@ -1565,9 +1586,9 @@ static int config_exosip(int reload)
 		}
 	}
 
-	if (!globals.host) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Setting host to 'guess'\n");
-		set_global_host("guess");
+	if (!globals.ip) {
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Setting ip to 'guess'\n");
+		set_global_ip("guess");
 	}
 
 	if (!globals.codec_ms) {
@@ -1638,7 +1659,10 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 
 		switch (event->type) {
 		case EXOSIP_CALL_INVITE:
-			exosip_create_call(event);
+			if (exosip_create_call(event) != SWITCH_STATUS_SUCCESS) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invite failure\n");
+				destroy_call_by_event(event);
+			}
 			break;
 		case EXOSIP_CALL_REINVITE:
 			/* See what the reinvite is about - on hold or whatever */
