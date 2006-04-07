@@ -1,0 +1,1005 @@
+Index: src/mod/codecs/mod_l16/mod_l16.c
+===================================================================
+--- src/mod/codecs/mod_l16/mod_l16.c	(revision 1093)
++++ src/mod/codecs/mod_l16/mod_l16.c	(working copy)
+@@ -52,10 +52,10 @@
+ static switch_status switch_raw_encode(switch_codec *codec,
+ 									   switch_codec *other_codec,
+ 									   void *decoded_data,
+-									   size_t decoded_data_len,
+-									   int decoded_rate,
++									   uint32_t decoded_data_len,
++									   uint32_t decoded_rate,
+ 									   void *encoded_data,
+-									   size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
++									   uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
+ {
+ 
+ 	/* NOOP indicates that the audio in is already the same as the audio out, so no conversion was necessary. */
+@@ -70,10 +70,10 @@
+ static switch_status switch_raw_decode(switch_codec *codec,
+ 									   switch_codec *other_codec,
+ 									   void *encoded_data,
+-									   size_t encoded_data_len,
+-									   int encoded_rate,
++									   uint32_t encoded_data_len,
++									   uint32_t encoded_rate,
+ 									   void *decoded_data,
+-									   size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
++									   uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
+ {
+ 	if (codec && other_codec && codec->implementation->samples_per_second != other_codec->implementation->samples_per_second) {
+ 		memcpy(decoded_data, encoded_data, encoded_data_len);
+Index: src/mod/codecs/mod_speex/mod_speex.c
+===================================================================
+--- src/mod/codecs/mod_speex/mod_speex.c	(revision 1093)
++++ src/mod/codecs/mod_speex/mod_speex.c	(working copy)
+@@ -160,10 +160,10 @@
+ static switch_status switch_speex_encode(switch_codec *codec,
+ 										 switch_codec *other_codec,
+ 										 void *decoded_data,
+-										 size_t decoded_data_len,
+-										 int decoded_rate,
++										 uint32_t decoded_data_len,
++										 uint32_t decoded_rate,
+ 										 void *encoded_data,
+-										 size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
++										 uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
+ {
+ 	struct speex_context *context = codec->private_info;
+ 	short *buf;
+@@ -215,10 +215,10 @@
+ static switch_status switch_speex_decode(switch_codec *codec,
+ 										 switch_codec *other_codec,
+ 										 void *encoded_data,
+-										 size_t encoded_data_len,
+-										 int encoded_rate,
++										 uint32_t encoded_data_len,
++										 uint32_t encoded_rate,
+ 										 void *decoded_data,
+-										 size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
++										 uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
+ {
+ 	struct speex_context *context = codec->private_info;
+ 	short *buf;
+Index: src/mod/codecs/mod_gsm/mod_gsm.c
+===================================================================
+--- src/mod/codecs/mod_gsm/mod_gsm.c	(revision 1093)
++++ src/mod/codecs/mod_gsm/mod_gsm.c	(working copy)
+@@ -68,15 +68,15 @@
+ 	return SWITCH_STATUS_SUCCESS;
+ }
+ static switch_status switch_gsm_encode(switch_codec *codec, switch_codec *other_codec, void *decoded_data,
+-										  size_t decoded_data_len, int decoded_rate, void *encoded_data,
+-										  size_t *encoded_data_len, int *encoded_rate, unsigned int *flag) 
++										  uint32_t decoded_data_len, uint32_t decoded_rate, void *encoded_data,
++										  uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag) 
+ {
+ 	struct gsm_context *context = codec->private_info;
+ 	if (!context) {
+ 		return SWITCH_STATUS_FALSE;
+ 	}
+ 	if (decoded_data_len % 320 == 0) {
+-		unsigned int new_len = 0;
++		uint32_t new_len = 0;
+ 		gsm_signal * ddp = decoded_data;
+ 		gsm_byte * edp = encoded_data;
+ 		int x;
+@@ -97,8 +97,8 @@
+ 	return SWITCH_STATUS_SUCCESS;
+ }
+ static switch_status switch_gsm_decode(switch_codec *codec, switch_codec *other_codec, void *encoded_data,
+-										  size_t encoded_data_len, int encoded_rate, void *decoded_data,
+-										  size_t *decoded_data_len, int *decoded_rate, unsigned int *flag) 
++										  uint32_t encoded_data_len, uint32_t encoded_rate, void *decoded_data,
++										  uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag) 
+ {
+ 	struct gsm_context *context = codec->private_info;
+ 	if (!context) {
+@@ -110,7 +110,7 @@
+ 		gsm_byte * edp = encoded_data;
+ 		gsm_signal * ddp = decoded_data;
+ 		int x;
+-		unsigned int new_len = 0;
++		uint32_t new_len = 0;
+ 
+ 		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
+ 			gsm_decode(context->decoder, edp, ddp);
+Index: src/mod/codecs/mod_g729/mod_g729.c
+===================================================================
+--- src/mod/codecs/mod_g729/mod_g729.c	(revision 1093)
++++ src/mod/codecs/mod_g729/mod_g729.c	(working copy)
+@@ -84,12 +84,12 @@
+ 										switch_codec *other_codec, 
+ 										void *decoded_data,
+ 
+-										size_t decoded_data_len, 
+-										int decoded_rate, 
++										uint32_t decoded_data_len, 
++										uint32_t decoded_rate, 
+ 										void *encoded_data,
+ 
+-										size_t *encoded_data_len, 
+-										int *encoded_rate, 
++										uint32_t *encoded_data_len, 
++										uint32_t *encoded_rate, 
+ 										unsigned int *flag) 
+ {
+ 
+@@ -101,7 +101,7 @@
+ 	}
+ 
+ 	if (decoded_data_len % 160 == 0) {
+-		unsigned int new_len = 0;
++		uint32_t new_len = 0;
+ 		INT16 * ddp = decoded_data;
+ 		char *edp = encoded_data;
+ 		int x;
+@@ -131,12 +131,12 @@
+ 										switch_codec *other_codec, 
+ 										void *encoded_data,
+ 
+-										size_t encoded_data_len, 
+-										int encoded_rate, 
++										uint32_t encoded_data_len, 
++										uint32_t encoded_rate, 
+ 										void *decoded_data,
+ 
+-										size_t *decoded_data_len, 
+-										int *decoded_rate, 
++										uint32_t *decoded_data_len, 
++										uint32_t *decoded_rate, 
+ 										unsigned int *flag) 
+ {
+ 
+@@ -175,7 +175,7 @@
+ 
+ 			int x;
+ 
+-			unsigned int new_len = 0;
++			uint32_t new_len = 0;
+ 
+ 			test = (uint8_t *) encoded_data;
+ 			if (*test == 0 && *(test+1) == 0) {
+Index: src/mod/codecs/mod_g711/mod_g711.c
+===================================================================
+--- src/mod/codecs/mod_g711/mod_g711.c	(revision 1093)
++++ src/mod/codecs/mod_g711/mod_g711.c	(working copy)
+@@ -55,14 +55,14 @@
+ static switch_status switch_g711u_encode(switch_codec *codec,
+ 										 switch_codec *other_codec,
+ 										 void *decoded_data,
+-										 size_t decoded_data_len,
+-										 int decoded_rate,
++										 uint32_t decoded_data_len,
++										 uint32_t decoded_rate,
+ 										 void *encoded_data,
+-										 size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
++										 uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
+ {
+ 	short *dbuf;
+ 	unsigned char *ebuf;
+-	size_t i;
++	uint32_t i;
+ 
+ 	dbuf = decoded_data;
+ 	ebuf = encoded_data;
+@@ -79,14 +79,14 @@
+ static switch_status switch_g711u_decode(switch_codec *codec,
+ 										 switch_codec *other_codec,
+ 										 void *encoded_data,
+-										 size_t encoded_data_len,
+-										 int encoded_rate,
++										 uint32_t encoded_data_len,
++										 uint32_t encoded_rate,
+ 										 void *decoded_data,
+-										 size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
++										 uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
+ {
+ 	short *dbuf;
+ 	unsigned char *ebuf;
+-	size_t i;
++	uint32_t i;
+ 
+ 	dbuf = decoded_data;
+ 	ebuf = encoded_data;
+@@ -130,14 +130,14 @@
+ static switch_status switch_g711a_encode(switch_codec *codec,
+ 										 switch_codec *other_codec,
+ 										 void *decoded_data,
+-										 size_t decoded_data_len,
+-										 int decoded_rate,
++										 uint32_t decoded_data_len,
++										 uint32_t decoded_rate,
+ 										 void *encoded_data,
+-										 size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
++										 uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
+ {
+ 	short *dbuf;
+ 	unsigned char *ebuf;
+-	size_t i;
++	uint32_t i;
+ 
+ 	dbuf = decoded_data;
+ 	ebuf = encoded_data;
+@@ -154,14 +154,14 @@
+ static switch_status switch_g711a_decode(switch_codec *codec,
+ 										 switch_codec *other_codec,
+ 										 void *encoded_data,
+-										 size_t encoded_data_len,
+-										 int encoded_rate,
++										 uint32_t encoded_data_len,
++										 uint32_t encoded_rate,
+ 										 void *decoded_data,
+-										 size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
++										 uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
+ {
+ 	short *dbuf;
+ 	unsigned char *ebuf;
+-	size_t i;
++	uint32_t i;
+ 
+ 	dbuf = decoded_data;
+ 	ebuf = encoded_data;
+Index: src/mod/endpoints/mod_dingaling/mod_dingaling.c
+===================================================================
+--- src/mod/endpoints/mod_dingaling/mod_dingaling.c	(revision 1093)
++++ src/mod/endpoints/mod_dingaling/mod_dingaling.c	(working copy)
+@@ -117,7 +117,7 @@
+ 	int32_t timestamp_recv;
+ 	int32_t timestamp_dtmf;
+ 	char *codec_name;
+-	int codec_num;
++	uint8_t codec_num;
+ };
+ 
+ struct rfc2833_digit {
+@@ -545,7 +545,8 @@
+ 										switch_io_flag flags, int stream_id)
+ {
+ 	struct private_object *tech_pvt = NULL;
+-	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
++	uint32_t bytes = 0;
++	switch_size_t samples = 0, frames = 0, ms = 0;
+ 	switch_channel *channel = NULL;
+ 	int payload = 0;
+ 
+@@ -728,7 +729,7 @@
+ 	//printf("%s send %d bytes %d samples in %d frames ts=%d\n", switch_channel_get_name(channel), frame->datalen, samples, frames, tech_pvt->timestamp_send);
+ 
+ 
+-	switch_rtp_write(tech_pvt->rtp_session, frame->data, (int) frame->datalen, samples);
++	switch_rtp_write(tech_pvt->rtp_session, frame->data, frame->datalen, samples);
+ 	tech_pvt->timestamp_send += (int) samples;
+ 
+ 	switch_clear_flag(tech_pvt, TFLAG_WRITING);
+Index: src/mod/languages/mod_spidermonkey/mod_spidermonkey.c
+===================================================================
+--- src/mod/languages/mod_spidermonkey/mod_spidermonkey.c	(revision 1093)
++++ src/mod/languages/mod_spidermonkey/mod_spidermonkey.c	(working copy)
+@@ -1665,7 +1665,7 @@
+ 					break;
+ 				}
+ 			}
+-			if ((write_frame.datalen = switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
++			if ((write_frame.datalen = (uint32_t)switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+ 				if (loops > 0) { 
+ 					switch_buffer *tmp;
+ 
+@@ -1675,7 +1675,7 @@
+ 					tto->loop_buffer = tmp;
+ 					loops--;
+ 					/* try again */
+-					if ((write_frame.datalen = switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
++					if ((write_frame.datalen = (uint32_t)switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+ 						break;
+ 					}
+ 				} else {
+Index: src/mod/formats/mod_sndfile/mod_sndfile.c
+===================================================================
+--- src/mod/formats/mod_sndfile/mod_sndfile.c	(revision 1093)
++++ src/mod/formats/mod_sndfile/mod_sndfile.c	(working copy)
+@@ -134,7 +134,7 @@
+ 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Opening File [%s] %dhz\n", path, context->sfinfo.samplerate);
+ 	handle->samples = (unsigned int) context->sfinfo.frames;
+ 	handle->samplerate = context->sfinfo.samplerate;
+-	handle->channels = context->sfinfo.channels;
++	handle->channels = (uint8_t)context->sfinfo.channels;
+ 	handle->format = context->sfinfo.format;
+ 	handle->sections = context->sfinfo.sections;
+ 	handle->seekable = context->sfinfo.seekable;
+Index: src/include/switch_resample.h
+===================================================================
+--- src/include/switch_resample.h	(revision 1093)
++++ src/include/switch_resample.h	(working copy)
+@@ -67,9 +67,9 @@
+ 	/*! a pointer to store a float buffer for resampled data */
+ 	float *to;
+ 	/*! the size of the to buffer used */
+-	int to_len;
++	uint32_t to_len;
+ 	/*! the total size of the to buffer */
+-	switch_size_t to_size;
++	uint32_t to_size;
+ };
+ 
+ /*!
+@@ -86,7 +86,7 @@
+ 													 int from_rate,
+ 													 switch_size_t from_size,
+ 													 int to_rate,
+-													 switch_size_t to_size,
++													 uint32_t to_size,
+ 													 switch_memory_pool *pool);
+ 
+ /*!
+@@ -105,7 +105,7 @@
+   \param last parameter denoting the last sample is being resampled
+   \return the used size of dst
+  */
+-SWITCH_DECLARE(int) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst, int dstlen, int last);
++SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst, uint32_t dstlen, int last);
+ 
+ /*!
+   \brief Convert an array of floats to an array of shorts
+Index: src/include/switch_core.h
+===================================================================
+--- src/include/switch_core.h	(revision 1093)
++++ src/include/switch_core.h	(working copy)
+@@ -30,9 +30,9 @@
+  *
+  */
+ /*! \file switch_core.h
+-    \brief Core Library
++  \brief Core Library
+ 
+-	This module is the main core library and is the intended location of all fundamental operations.
++  This module is the main core library and is the intended location of all fundamental operations.
+ */
+ 
+ #ifndef SWITCH_CORE_H
+@@ -41,6 +41,9 @@
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
++#ifdef _FORMATBUG
++}
++#endif
+ 
+ #include <switch.h>
+ 
+@@ -306,7 +309,7 @@
+   \param session the session to add the stream to
+   \param private_info an optional pointer to private data for the new stream
+   \return the stream id of the new stream
+- */
++*/
+ SWITCH_DECLARE(int) switch_core_session_add_stream(switch_core_session *session, void *private_info);
+ 
+ /*!
+@@ -314,14 +317,14 @@
+   \param session the session to add the stream to
+   \param index the index to retrieve
+   \return the stream
+- */
++*/
+ SWITCH_DECLARE(void *) switch_core_session_get_stream(switch_core_session *session, int index);
+ 
+ /*!
+   \brief Determine the number of logical streams a session has
+   \param session the session to query
+   \return the total number of logical streams
+- */
++*/
+ SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session *session);
+ 
+ /*! 
+@@ -607,7 +610,7 @@
+ */
+ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, 
+ 													 char *codec_name, 
+-													 int rate, 
++													 uint32_t rate, 
+ 													 int ms, 
+ 													 int channels, 
+ 													 uint32_t flags,
+@@ -629,14 +632,14 @@
+   \note encoded_data_len will be rewritten to the in-use size of encoded_data
+ */
+ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
+-								 switch_codec *other_codec,
+-								 void *decoded_data,
+-								 switch_size_t decoded_data_len,
+-								 int decoded_rate,
+-								 void *encoded_data,
+-								 switch_size_t *encoded_data_len,
+-								 int *encoded_rate,
+-								 unsigned int *flag);
++													   switch_codec *other_codec,
++													   void *decoded_data,
++													   uint32_t decoded_data_len,
++													   uint32_t decoded_rate,
++													   void *encoded_data,
++													   uint32_t *encoded_data_len,
++													   uint32_t *encoded_rate,
++													   unsigned int *flag);
+ 
+ /*! 
+   \brief Decode data using a codec handle
+@@ -653,14 +656,14 @@
+   \note decoded_data_len will be rewritten to the in-use size of decoded_data
+ */
+ SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
+-								 switch_codec *other_codec,
+-								 void *encoded_data,
+-								 switch_size_t encoded_data_len,
+-								 int encoded_rate,
+-								 void *decoded_data,
+-								 switch_size_t *decoded_data_len,
+-								 int *decoded_rate,
+-								 unsigned int *flag);
++													   switch_codec *other_codec,
++													   void *encoded_data,
++													   uint32_t encoded_data_len,
++													   uint32_t encoded_rate,
++													   void *decoded_data,
++													   uint32_t *decoded_data_len,
++													   uint32_t *decoded_rate,
++													   unsigned int *flag);
+ 
+ /*! 
+   \brief Destroy an initalized codec handle
+@@ -827,10 +830,10 @@
+   \param flags flags in/out for fine tuning
+   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
+ */
+-	SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
++SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
+ 														  void *data,
+ 														  switch_size_t *datalen,
+-														  switch_size_t *rate,
++														  uint32_t *rate,
+ 														  switch_speech_flag *flags);
+ /*! 
+   \brief Close an open speech handle
+Index: src/include/switch_module_interfaces.h
+===================================================================
+--- src/include/switch_module_interfaces.h	(revision 1093)
++++ src/include/switch_module_interfaces.h	(working copy)
+@@ -262,9 +262,9 @@
+ 	/*! samples position of the handle */
+ 	unsigned int samples;
+ 	/*! the current samplerate */
+-	unsigned int samplerate;
++	uint32_t samplerate;
+ 	/*! the number of channels */
+-	unsigned int channels;
++	uint8_t channels;
+ 	/*! integer representation of the format */
+ 	unsigned int format;
+ 	/*! integer representation of the sections */
+@@ -305,7 +305,7 @@
+ 	switch_status (*speech_read_tts)(switch_speech_handle *sh,
+ 									 void *data,
+ 									 switch_size_t *datalen,
+-									 switch_size_t *rate,
++									 uint32_t *rate,
+ 									 switch_speech_flag *flags);
+ 
+ 	const struct switch_speech_interface *next;
+@@ -415,19 +415,19 @@
+ /*! \brief A table of settings and callbacks that define a paticular implementation of a codec */
+ struct switch_codec_implementation {
+ 	/*! samples transferred per second */
+-	int samples_per_second;
++	uint32_t samples_per_second;
+ 	/*! bits transferred per second */
+ 	int bits_per_second;
+ 	/*! number of microseconds that denote one frame */
+ 	int microseconds_per_frame;
+ 	/*! number of samples that denote one frame */
+-	int samples_per_frame;
++	uint32_t samples_per_frame;
+ 	/*! number of bytes that denote one frame decompressed */
+-	switch_size_t bytes_per_frame;
++	uint32_t bytes_per_frame;
+ 	/*! number of bytes that denote one frame compressed */
+-	int encoded_bytes_per_frame;
++	uint32_t encoded_bytes_per_frame;
+ 	/*! number of channels represented */
+-	int number_of_channels;
++	uint8_t number_of_channels;
+ 	/*! number of frames to send in one netowrk packet */
+ 	int pref_frames_per_packet;
+ 	/*! max number of frames to send in one network packet */
+@@ -438,21 +438,21 @@
+ 	switch_status (*encode)(switch_codec *codec,
+ 						 switch_codec *other_codec,
+ 						 void *decoded_data,
+-						 switch_size_t decoded_data_len,
+-						 int decoded_rate,
++						 uint32_t decoded_data_len,
++						 uint32_t decoded_rate,
+ 						 void *encoded_data,
+-						 switch_size_t *encoded_data_len,
+-						 int *encoded_rate,
++						 uint32_t *encoded_data_len,
++						 uint32_t *encoded_rate,
+ 						 unsigned int *flag);
+ 	/*! function to decode encoded data into raw data */
+ 	switch_status (*decode)(switch_codec *codec,
+ 						 switch_codec *other_codec,
+ 						 void *encoded_data,
+-						 switch_size_t encoded_data_len,
+-						 int encoded_rate,
++						 uint32_t encoded_data_len,
++						 uint32_t encoded_rate,
+ 						 void *decoded_data,
+-						 switch_size_t *decoded_data_len,
+-						 int *decoded_rate,
++						 uint32_t *decoded_data_len,
++						 uint32_t *decoded_rate,
+ 						 unsigned int *flag);
+ 	/*! deinitalize a codec handle using this implementation */
+ 	switch_status (*destroy)(switch_codec *);
+@@ -466,7 +466,7 @@
+ 	/*! enumeration defining the type of the codec */
+ 	const switch_codec_type codec_type;
+ 	/*! the IANA code number */
+-	unsigned int ianacode;
++	uint8_t ianacode;
+ 	/*! the IANA code name */
+ 	char *iananame;
+ 	/*! a list of codec implementations related to the codec */
+Index: src/include/switch_frame.h
+===================================================================
+--- src/include/switch_frame.h	(revision 1093)
++++ src/include/switch_frame.h	(working copy)
+@@ -49,13 +49,13 @@
+ 	/*! the frame data */
+ 	void *data;
+ 	/*! the size of the buffer that is in use */
+-	switch_size_t datalen;
++	uint32_t datalen;
+ 	/*! the entire size of the buffer */
+-	switch_size_t buflen;
++	uint32_t buflen;
+ 	/*! the number of audio samples present (audio only) */
+-	switch_size_t samples;
++	uint32_t samples;
+ 	/*! the rate of the frame */
+-	int rate;
++	uint32_t rate;
+ 	/*! frame flags */
+ 	switch_frame_flag flags;
+ };
+Index: src/include/switch_ivr.h
+===================================================================
+--- src/include/switch_ivr.h	(revision 1093)
++++ src/include/switch_ivr.h	(working copy)
+@@ -144,7 +144,7 @@
+ 													char *tts_name,
+ 													char *voice_name,
+ 													char *timer_name,
+-													switch_size_t rate,
++													uint32_t rate,
+ 													switch_dtmf_callback_function dtmf_callback,
+ 													char *text,
+ 													void *buf,
+Index: src/include/switch_types.h
+===================================================================
+--- src/include/switch_types.h	(revision 1093)
++++ src/include/switch_types.h	(working copy)
+@@ -460,7 +460,6 @@
+ 	SWITCH_EVENT_ALL
+ } switch_event_t;
+ 
+-
+ typedef struct switch_rtp switch_rtp;
+ typedef struct switch_core_session_message switch_core_session_message;
+ typedef struct switch_audio_resampler switch_audio_resampler;
+Index: src/include/switch_rtp.h
+===================================================================
+--- src/include/switch_rtp.h	(revision 1093)
++++ src/include/switch_rtp.h	(working copy)
+@@ -81,8 +81,8 @@
+   \return the new RTP session or NULL on failure
+ */
+ SWITCH_DECLARE(switch_status)switch_rtp_create(switch_rtp **new_rtp_session,
+-											   int payload,
+-											   switch_size_t packet_size,
++											   uint8_t payload,
++											   uint32_t packet_size,
+ 											   uint32_t ms_per_packet,
+ 											   switch_rtp_flag_t flags,
+ 											   const char **err,
+@@ -107,8 +107,8 @@
+ 										   switch_port_t rx_port,
+ 										   char *tx_host,
+ 										   switch_port_t tx_port,
+-										   int payload,
+-										   switch_size_t packet_size,
++										   uint8_t payload,
++										   uint32_t packet_size,
+ 										   uint32_t ms_per_packet,
+ 										   switch_rtp_flag_t flags,
+ 										   const char **err,
+@@ -164,7 +164,7 @@
+   \param rtp_session the RTP session to set the packet size on
+   \param packet_size the new default packet size 
+ */
+-SWITCH_DECLARE(void) switch_rtp_set_default_packet_size(switch_rtp *rtp_session, uint32_t packet_size);
++SWITCH_DECLARE(void) switch_rtp_set_default_packet_size(switch_rtp *rtp_session, uint16_t packet_size);
+ 
+ /*! 
+   \brief Get the default packet size for a given RTP session
+@@ -178,7 +178,7 @@
+   \param rtp_session the RTP session to set the payload number on
+   \param payload the new default payload number 
+ */
+-SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp *rtp_session, uint32_t payload);
++SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp *rtp_session, uint8_t payload);
+ 
+ /*! 
+   \brief Get the default payload number for a given RTP session
+@@ -225,7 +225,7 @@
+   \param ts then number of bytes to increment the timestamp by
+   \return the number of bytes written
+ */
+-SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int datalen, uint32_t ts);
++SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint32_t ts);
+ 
+ /*! 
+   \brief Write data with a specified payload and sequence number to a given RTP session
+@@ -237,7 +237,7 @@
+   \param mseq the specific sequence number to use
+   \return the number of bytes written
+ */
+-SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data, int datalen, uint8_t payload, uint32_t ts, uint16_t mseq);
++SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data, uint16_t datalen, uint8_t payload, uint32_t ts, uint16_t mseq);
+ 
+ /*! 
+   \brief Retrieve the SSRC from a given RTP session
+Index: src/switch_core.c
+===================================================================
+--- src/switch_core.c	(revision 1093)
++++ src/switch_core.c	(working copy)
+@@ -265,7 +265,7 @@
+ 	return session->write_codec;
+ }
+ 
+-SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, int rate, int ms,
++SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, uint32_t rate, int ms,
+ 													 int channels, uint32_t flags,
+ 													 const switch_codec_settings *codec_settings,
+ 													 switch_memory_pool *pool)
+@@ -321,10 +321,10 @@
+ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
+ 													   switch_codec *other_codec,
+ 													   void *decoded_data,
+-													   switch_size_t decoded_data_len,
+-													   int decoded_rate,
++													   uint32_t decoded_data_len,
++													   uint32_t decoded_rate,
+ 													   void *encoded_data,
+-													   switch_size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
++													   uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
+ {
+ 	assert(codec != NULL);
+ 	assert(encoded_data != NULL);
+@@ -352,10 +352,10 @@
+ SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
+ 													   switch_codec *other_codec,
+ 													   void *encoded_data,
+-													   switch_size_t encoded_data_len,
+-													   int encoded_rate,
++													   uint32_t encoded_data_len,
++													   uint32_t encoded_rate,
+ 													   void *decoded_data,
+-													   switch_size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
++													   uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
+ {
+ 
+ 	assert(codec != NULL);
+@@ -553,7 +553,7 @@
+ SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
+ 														  void *data,
+ 														  switch_size_t *datalen,
+-														  switch_size_t *rate,
++														  uint32_t *rate,
+ 														  switch_speech_flag *flags)
+ {
+ 	assert(sh != NULL);
+@@ -985,7 +985,9 @@
+ 											  read_frame->datalen,
+ 											  session->read_codec->implementation->samples_per_second,
+ 											  session->raw_read_frame.data,
+-											  &session->raw_read_frame.datalen, &session->raw_read_frame.rate, &flag);
++											  &session->raw_read_frame.datalen,
++											  &session->raw_read_frame.rate,
++											  &flag);
+ 
+ 			switch (status) {
+ 			case SWITCH_STATUS_RESAMPLE:
+@@ -1017,7 +1019,7 @@
+ 			session->read_resampler->to_len =
+ 				switch_resample_process(session->read_resampler, session->read_resampler->from,
+ 										session->read_resampler->from_len, session->read_resampler->to,
+-										(int) session->read_resampler->to_size, 0);
++										session->read_resampler->to_size, 0);
+ 			switch_float_to_short(session->read_resampler->to, data, read_frame->datalen);
+ 			read_frame->samples = session->read_resampler->to_len;
+ 			read_frame->datalen = session->read_resampler->to_len * 2;
+@@ -1045,7 +1047,7 @@
+ 					enc_frame = *frame;
+ 					session->raw_read_frame.rate = (*frame)->rate;
+ 				} else {
+-					session->raw_read_frame.datalen = switch_buffer_read(session->raw_read_buffer,
++					session->raw_read_frame.datalen = (uint32_t)switch_buffer_read(session->raw_read_buffer,
+ 																		 session->raw_read_frame.data,
+ 																		 session->read_codec->implementation->
+ 																		 bytes_per_frame);
+@@ -1187,10 +1189,10 @@
+ 
+ 			session->write_resampler->from_len =
+ 				switch_short_to_float(data, session->write_resampler->from, (int) write_frame->datalen / 2);
+-			session->write_resampler->to_len =
++			session->write_resampler->to_len = (uint32_t)
+ 				switch_resample_process(session->write_resampler, session->write_resampler->from,
+ 										session->write_resampler->from_len, session->write_resampler->to,
+-										(int) session->write_resampler->to_size, 0);
++										session->write_resampler->to_size, 0);
+ 			switch_float_to_short(session->write_resampler->to, data, write_frame->datalen * 2);
+ 			write_frame->samples = session->write_resampler->to_len;
+ 			write_frame->datalen = session->write_resampler->to_len * 2;
+@@ -1256,19 +1258,14 @@
+ 				return status;
+ 			} else {
+ 				switch_size_t used = switch_buffer_inuse(session->raw_write_buffer);
+-				switch_size_t bytes = session->write_codec->implementation->bytes_per_frame;
++				uint32_t bytes = session->write_codec->implementation->bytes_per_frame;
+ 				switch_size_t frames = (used / bytes);
+ 
+-
+-
+-
+-
+-
+-			status = SWITCH_STATUS_SUCCESS;
++				status = SWITCH_STATUS_SUCCESS;
+ 				if (frames) {
+ 					switch_size_t x;
+ 					for (x = 0; x < frames; x++) {
+-						if ((session->raw_write_frame.datalen =
++						if ((session->raw_write_frame.datalen = (uint32_t)
+ 							 switch_buffer_read(session->raw_write_buffer, session->raw_write_frame.data, bytes)) != 0) {
+ 
+ 							enc_frame = &session->raw_write_frame;
+@@ -1320,11 +1317,11 @@
+ 																						  session->read_resampler->from,
+ 																						  (int) write_frame->datalen /
+ 																						  2);
+-								session->read_resampler->to_len =
++								session->read_resampler->to_len = (uint32_t)
+ 									switch_resample_process(session->read_resampler, session->read_resampler->from,
+ 															session->read_resampler->from_len,
+ 															session->read_resampler->to,
+-															(int) session->read_resampler->to_size, 0);
++															session->read_resampler->to_size, 0);
+ 								switch_float_to_short(session->read_resampler->to, data, write_frame->datalen * 2);
+ 								write_frame->samples = session->read_resampler->to_len;
+ 								write_frame->datalen = session->read_resampler->to_len * 2;
+Index: src/switch_ivr.c
+===================================================================
+--- src/switch_ivr.c	(revision 1093)
++++ src/switch_ivr.c	(working copy)
+@@ -256,8 +256,9 @@
+ 	switch_channel *channel;
+ 	short abuf[960];
+ 	char dtmf[128];
+-	int interval = 0, samples = 0;
+-	switch_size_t len = 0, ilen = 0, olen = 0;
++	uint32_t interval = 0, samples = 0;
++	uint32_t len = 0, ilen = 0;
++	switch_size_t olen = 0;
+ 	switch_frame write_frame;
+ 	switch_timer timer;
+ 	switch_core_thread_session thread_session;
+@@ -292,7 +293,7 @@
+ 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s %uhz %u channels\n", file, fh->samplerate, fh->channels);
+ 
+ 	interval = 20;
+-	samples = (fh->samplerate / 50) * fh->channels;
++	samples = ((fh->samplerate / 50) * fh->channels);
+ 	len = samples * 2;
+ 
+ 	codec_name = "L16";
+@@ -362,7 +363,7 @@
+ 			memset(abuf, 0, ilen * 2);
+ 			olen = ilen;
+             do_speed = 0;
+-		} else if (fh->audio_buffer && (switch_buffer_inuse(fh->audio_buffer) > (ilen * 2))) {
++		} else if (fh->audio_buffer && (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t)(ilen * 2))) {
+ 			switch_buffer_read(fh->audio_buffer, abuf, ilen * 2);
+ 			olen = ilen;
+ 			do_speed = 0;
+@@ -425,8 +426,8 @@
+ 			continue;
+ 		} 
+ 
+-		write_frame.datalen = olen * 2;
+-		write_frame.samples = (int) olen;
++		write_frame.datalen = (uint32_t)(olen * 2);
++		write_frame.samples = (uint32_t)olen;
+ #if __BYTE_ORDER == __BIG_ENDIAN
+ 		switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
+ #endif
+@@ -474,7 +475,7 @@
+ 													char *tts_name,
+ 													char *voice_name,
+ 													char *timer_name,
+-													switch_size_t rate,
++													uint32_t rate,
+ 													switch_dtmf_callback_function dtmf_callback,
+ 													char *text,
+ 													void *buf,
+@@ -484,8 +485,8 @@
+ 	short abuf[960];
+ 	char dtmf[128];
+ 	int interval = 0;
+-	switch_size_t samples = 0;
+-	switch_size_t len = 0;
++	uint32_t samples = 0;
++	uint32_t len = 0;
+ 	switch_size_t ilen = 0;
+ 	switch_frame write_frame;
+ 	switch_timer timer;
+@@ -527,7 +528,7 @@
+ 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN TTS %s\n", tts_name);
+ 	
+ 	interval = 20;
+-	samples = (rate / 50);
++	samples = (uint32_t)(rate / 50);
+ 	len = samples * 2;
+ 
+ 	codec_name = "L16";
+@@ -562,7 +563,7 @@
+ 
+ 	flags = 0;
+ 	switch_core_speech_feed_tts(&sh, text, &flags);
+-	write_frame.rate = (int)rate;
++	write_frame.rate = rate;
+ 
+ 	memset(write_frame.data, 0, len);
+ 	write_frame.datalen = len;
+@@ -634,8 +635,8 @@
+ 			break;
+ 		}
+ 
+-		write_frame.datalen = ilen;
+-		write_frame.samples = (int) ilen / 2;
++		write_frame.datalen = (uint32_t)ilen;
++		write_frame.samples = (uint32_t)(ilen / 2);
+ 
+ 		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
+ 			if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
+Index: src/switch_rtp.c
+===================================================================
+--- src/switch_rtp.c	(revision 1093)
++++ src/switch_rtp.c	(working copy)
+@@ -67,7 +67,7 @@
+ 	srtp_ctx_t *recv_ctx;
+ 	
+ 	uint16_t seq;
+-	uint32_t payload;
++	uint8_t payload;
+ 	
+ 	switch_rtp_invalid_handler invalid_handler;
+ 	void *private_data;
+@@ -80,7 +80,7 @@
+ 	char *ice_user;
+ 	char *user_ice;
+ 	switch_time_t last_stun;
+-	switch_size_t packet_size;
++	uint32_t packet_size;
+ 	switch_time_t last_read;
+ 	switch_time_t next_read;
+ 	uint32_t ms_per_packet;
+@@ -240,8 +240,8 @@
+ }
+ 
+ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
+-												int payload,
+-												switch_size_t packet_size,
++												uint8_t payload,
++												uint32_t packet_size,
+ 												uint32_t ms_per_packet,
+ 												switch_rtp_flag_t flags, 
+ 												const char **err,
+@@ -327,8 +327,8 @@
+ 										   switch_port_t rx_port,
+ 										   char *tx_host,
+ 										   switch_port_t tx_port,
+-										   int payload,
+-										   switch_size_t packet_size,
++										   uint8_t payload,
++										   uint32_t packet_size,
+ 										   uint32_t ms_per_packet,
+ 										   switch_rtp_flag_t flags,
+ 										   const char **err,
+@@ -391,7 +391,7 @@
+ 	return rtp_session->sock;
+ }
+ 
+-SWITCH_DECLARE(void) switch_rtp_set_default_packet_size(switch_rtp *rtp_session, uint32_t packet_size)
++SWITCH_DECLARE(void) switch_rtp_set_default_packet_size(switch_rtp *rtp_session, uint16_t packet_size)
+ {
+ 	rtp_session->packet_size = packet_size;
+ }
+@@ -401,7 +401,7 @@
+ 	return rtp_session->packet_size;
+ }
+ 
+-SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp *rtp_session, uint32_t payload)
++SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp *rtp_session, uint8_t payload)
+ {
+ 	rtp_session->payload = payload;
+ }
+@@ -501,7 +501,7 @@
+ 	return bytes;
+ }
+ 
+-static int rtp_common_write(switch_rtp *rtp_session, void *data, int datalen, int payload)
++static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint8_t payload)
+ {
+ 	switch_size_t bytes;
+ 	
+@@ -536,7 +536,7 @@
+ 
+ }
+ 
+-SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int datalen, uint32_t ts)
++SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint32_t ts)
+ {
+ 
+ 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
+@@ -548,13 +548,13 @@
+ 	rtp_session->seq = htons(rtp_session->seq);
+ 	rtp_session->send_msg.header.seq = rtp_session->seq;
+ 	rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
+-	rtp_session->payload = htonl(rtp_session->payload);
++	rtp_session->payload = (uint8_t)htonl(rtp_session->payload);
+ 
+ 	return rtp_common_write(rtp_session, data, datalen, rtp_session->payload);
+ 
+ }
+ 
+-SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data, int datalen, uint8_t payload, uint32_t ts, uint16_t mseq)
++SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data, uint16_t datalen, uint8_t payload, uint32_t ts, uint16_t mseq)
+ {
+ 
+ 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
+Index: src/switch_resample.c
+===================================================================
+--- src/switch_resample.c	(revision 1093)
++++ src/switch_resample.c	(working copy)
+@@ -49,7 +49,7 @@
+ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **new_resampler,
+ 													 int from_rate,
+ 													 switch_size_t from_size,
+-													 int to_rate, switch_size_t to_size, switch_memory_pool *pool)
++													 int to_rate, uint32_t to_size, switch_memory_pool *pool)
+ {
+ 	switch_audio_resampler *resampler;
+ 	double lto_rate, lfrom_rate;
+@@ -77,8 +77,8 @@
+ }
+ 
+ 
+-SWITCH_DECLARE(int) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst,
+-											int dstlen, int last)
++SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst,
++											uint32_t dstlen, int last)
+ {
+ 	int o = 0, srcused = 0, srcpos = 0, out = 0;
+ 
