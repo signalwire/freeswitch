@@ -275,10 +275,9 @@ static switch_status exosip_on_init(switch_core_session *session)
 		/* Initialize SDP */
 		sdp_message_init(&tech_pvt->local_sdp);
 		sdp_message_v_version_set(tech_pvt->local_sdp, "0");
-		sdp_message_o_origin_set(tech_pvt->local_sdp, "FreeSWITCH", "0", "0", "IN", "IP4",
-								 tech_pvt->local_sdp_audio_ip);
+		sdp_message_o_origin_set(tech_pvt->local_sdp, "FreeSWITCH", "0", "0", "IN", "IP4", ip);
 		sdp_message_s_name_set(tech_pvt->local_sdp, "SIP Call");
-		sdp_message_c_connection_add(tech_pvt->local_sdp, -1, "IN", "IP4", tech_pvt->local_sdp_audio_ip, NULL, NULL);
+		sdp_message_c_connection_add(tech_pvt->local_sdp, -1, "IN", "IP4", ip, NULL, NULL);
 		sdp_message_t_time_descr_add(tech_pvt->local_sdp, "0", "0");
 		snprintf(port, sizeof(port), "%i", sdp_port);
 		sdp_message_m_media_add(tech_pvt->local_sdp, "audio", port, NULL, "RTP/AVP");
@@ -1154,8 +1153,8 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			mline++;
 		}
 		free(remote_sdp_str);
-		sdp_message_o_origin_set(tech_pvt->local_sdp, "FreeSWITCH", "0", "0", "IN", "IP4",
-								 tech_pvt->local_sdp_audio_ip);
+		sdp_message_o_origin_set(tech_pvt->local_sdp, "FreeSWITCH", "0", "0", "IN", "IP4", ip);
+								 
 		sdp_message_s_name_set(tech_pvt->local_sdp, "SIP Call");
 		sdp_message_c_connection_add(tech_pvt->local_sdp, -1, "IN", "IP4", ip, NULL, NULL);
 		snprintf(port, sizeof(port), "%i", sdp_port);
