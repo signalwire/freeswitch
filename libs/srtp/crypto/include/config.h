@@ -113,7 +113,7 @@
 /* #undef HAVE_WINSOCK2_H */
 
 /* Define to use X86 inlined assembly code */
-/* #undef HAVE_X86 */
+#define HAVE_X86 1
 
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT ""
@@ -131,7 +131,7 @@
 #define PACKAGE_VERSION ""
 
 /* The size of a `unsigned long', as computed by sizeof. */
-#define SIZEOF_UNSIGNED_LONG 8
+#define SIZEOF_UNSIGNED_LONG 4
 
 /* The size of a `unsigned long long', as computed by sizeof. */
 #define SIZEOF_UNSIGNED_LONG_LONG 8
