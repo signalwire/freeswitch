@@ -73,16 +73,20 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void);
   \brief create a new RTP session handle
   \param new_rtp_session a poiter to aim at the new session
   \param payload the IANA payload number
+  \param packet_size the default packet_size
+  \param ms_per_packet time in microseconds per packet
   \param flags flags to control behaviour
   \param err a pointer to resolve error messages
   \param pool a memory pool to use for the session
   \return the new RTP session or NULL on failure
 */
 SWITCH_DECLARE(switch_status)switch_rtp_create(switch_rtp **new_rtp_session,
-											int payload,
-											switch_rtp_flag_t flags,
-											const char **err,
-											switch_memory_pool *pool);
+											   int payload,
+											   switch_size_t packet_size,
+											   uint32_t ms_per_packet,
+											   switch_rtp_flag_t flags,
+											   const char **err,
+											   switch_memory_pool *pool);
 
 
 /*!
@@ -92,6 +96,8 @@ SWITCH_DECLARE(switch_status)switch_rtp_create(switch_rtp **new_rtp_session,
   \param tx_host the remote address
   \param tx_port the remote port
   \param payload the IANA payload number
+  \param packet_size the default packet_size
+  \param ms_per_packet time in microseconds per packet
   \param flags flags to control behaviour
   \param err a pointer to resolve error messages
   \param pool a memory pool to use for the session
@@ -102,6 +108,8 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_host,
 										   char *tx_host,
 										   switch_port_t tx_port,
 										   int payload,
+										   switch_size_t packet_size,
+										   uint32_t ms_per_packet,
 										   switch_rtp_flag_t flags,
 										   const char **err,
 										   switch_memory_pool *pool);
@@ -150,6 +158,20 @@ SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp *rtp_session, c
   \return the socket from the RTP session
 */
 SWITCH_DECLARE(switch_socket_t *)switch_rtp_get_rtp_socket(switch_rtp *rtp_session);
+
+/*! 
+  \brief Set the default packet size for a given RTP session
+  \param rtp_session the RTP session to set the packet size on
+  \param packet_size the new default packet size 
+*/
+SWITCH_DECLARE(void) switch_rtp_set_default_packet_size(switch_rtp *rtp_session, uint32_t packet_size);
+
+/*! 
+  \brief Get the default packet size for a given RTP session
+  \param rtp_session the RTP session to get the packet size from
+  \return the default packet_size of the RTP session
+*/
+SWITCH_DECLARE(uint32_t) switch_rtp_get_default_packet_size(switch_rtp *rtp_session);
 
 /*! 
   \brief Set the default payload number for a given RTP session

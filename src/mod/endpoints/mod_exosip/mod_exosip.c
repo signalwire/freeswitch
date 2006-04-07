@@ -479,6 +479,8 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 										   tech_pvt->remote_sdp_audio_ip,
 										   tech_pvt->remote_sdp_audio_port,
 										   tech_pvt->read_codec.codec_interface->ianacode,
+										   tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
+										   ms,
 										   0,
 										   &err, switch_core_session_get_pool(tech_pvt->session));
 

@@ -98,13 +98,15 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
   \enum switch_rtp_flag_t
   \brief RTP Related Flags
 <pre>
-    SWITCH_RTP_NOBLOCK      - Do not block
-    SWITCH_RTP_FLAG_IO      - IO is ready
+    SWITCH_RTP_FLAG_NOBLOCK      - Do not block
+    SWITCH_RTP_FLAG_IO           - IO is ready
+	SWITCH_RTP_FLAG_USE_TIMER    - Timeout Reads and replace with a CNG Frame
 </pre>
  */
 typedef enum {
-	SWITCH_RTP_NOBLOCK = ( 1 << 0),
-	SWITCH_RTP_FLAG_IO = (1 << 1)
+	SWITCH_RTP_FLAG_NOBLOCK = ( 1 << 0),
+	SWITCH_RTP_FLAG_IO = (1 << 1),
+	SWITCH_RTP_FLAG_USE_TIMER = (1 << 2)
 } switch_rtp_flag_t;
 
 /*!
