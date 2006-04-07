@@ -262,7 +262,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 				return SWITCH_STATUS_FALSE;
 			}
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success [%s]:[%d]\n", ip, sdp_port);
-		} else {
+		} else if (!strcasecmp(globals.host, "guess")){
 			ip = globals.host;
 		}
 
@@ -270,7 +270,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 
 		/* Setup codec negotiation stuffs */
 		osip_rfc3264_init(&tech_pvt->sdp_config);
-		strncpy(tech_pvt->local_sdp_audio_ip, ip, sizeof(tech_pvt->local_sdp_audio_ip));
+		strncpy(tech_pvt->local_sdp_audio_ip, localip, sizeof(tech_pvt->local_sdp_audio_ip));
 
 		/* Initialize SDP */
 		sdp_message_init(&tech_pvt->local_sdp);
@@ -1093,7 +1093,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			}
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success [%s]:[%d]\n", ip, sdp_port);
 			switch_copy_string(tech_pvt->local_sdp_audio_ip, ip, sizeof(tech_pvt->local_sdp_audio_ip));
-		} else {
+		} else if (!strcasecmp(globals.host, "guess")){
 			ip = globals.host;
 			switch_copy_string(tech_pvt->local_sdp_audio_ip, ip, sizeof(tech_pvt->local_sdp_audio_ip));
 		}
