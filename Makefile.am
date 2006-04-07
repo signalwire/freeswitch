@@ -189,7 +189,7 @@ installall: install install_mod
 wayclean: clean modclean
 
 modwipe:
-	rm -f $(PREFIX)/mod/*.so
+	rm -f $(PREFIX)/mod/*.${DYNAMIC_LIB_EXTEN}
 
 install_mod: modules
 	@echo Installing $(NAME)
