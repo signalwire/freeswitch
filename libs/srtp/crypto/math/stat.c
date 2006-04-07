@@ -352,7 +352,7 @@ stat_test_rand_source(rand_source_func_t get_rand_bytes) {
 
 err_status_t
 stat_test_rand_source_with_repetition(rand_source_func_t source, unsigned num_trials) {
-  int i;
+  unsigned int i;
   err_status_t err = err_status_algo_fail;
 
   for (i=0; i < num_trials; i++) {

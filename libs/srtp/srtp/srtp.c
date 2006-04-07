@@ -662,7 +662,7 @@ srtp_stream_init(srtp_stream_ctx_t *srtp,
        srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t *)enc_start;
        enc_start += (ntohs(xtn_hdr->length) + 1);
      }
-     enc_octet_len = *pkt_octet_len - ((enc_start - (uint32_t *)hdr) << 2);
+     enc_octet_len = (unsigned int)(*pkt_octet_len - ((enc_start - (uint32_t *)hdr) << 2));
    } else {
      enc_start = NULL;
    }
@@ -843,7 +843,7 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
       delta = low32(est);
 #else
       est = (xtd_seq_num_t) ntohs(hdr->seq);
-      delta = est;
+      delta = (int)est;
 #endif
     } else {
       
@@ -927,8 +927,7 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
       srtp_hdr_xtnd_t *xtn_hdr = (srtp_hdr_xtnd_t *)enc_start;
       enc_start += (ntohs(xtn_hdr->length) + 1);
     }  
-    enc_octet_len = *pkt_octet_len - tag_len
-      - ((enc_start - (uint32_t *)hdr) << 2);
+    enc_octet_len = (uint32_t)(*pkt_octet_len - tag_len - ((enc_start - (uint32_t *)hdr) << 2));
   } else {
     enc_start = NULL;
   }

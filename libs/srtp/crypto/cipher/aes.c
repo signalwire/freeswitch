@@ -1358,7 +1358,7 @@ static uint32_t U4[256] = {
 
 extern debug_module_t mod_aes_icm;
 
-inline void
+void
 aes_expand_encryption_key(const v128_t *key, 
 			  aes_expanded_key_t expanded_key) {
   int i;
@@ -1411,7 +1411,7 @@ aes_expand_encryption_key(const v128_t *key,
   }
 }
 
-inline void
+void
 aes_expand_decryption_key(const v128_t *key, 
 			  aes_expanded_key_t expanded_key) {
   int i;

@@ -50,6 +50,10 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#pragma pack(4)
+#endif
+
 #include "crypto_kernel.h"
 #include "rdbx.h"
 #include "rdb.h"
@@ -893,12 +897,12 @@ srtp_install_event_handler(srtp_event_handler_func_t func);
 #ifndef WORDS_BIGENDIAN
 
 typedef struct {
-  unsigned cc:4;	/* CSRC count             */
-  unsigned x:1;		/* header extension flag  */
-  unsigned p:1;		/* padding flag           */
-  unsigned version:2;	/* protocol version       */
-  unsigned pt:7;	/* payload type           */
-  unsigned m:1;		/* marker bit             */
+  uint8_t cc:4;	/* CSRC count             */
+  uint8_t x:1;		/* header extension flag  */
+  uint8_t p:1;		/* padding flag           */
+  uint8_t version:2;	/* protocol version       */
+  uint8_t pt:7;	/* payload type           */
+  uint8_t m:1;		/* marker bit             */
   uint16_t seq;		/* sequence number        */
   uint32_t ts;		/* timestamp              */
   uint32_t ssrc;	/* synchronization source */
@@ -985,6 +989,10 @@ typedef struct {
 /* for byte-access */
 #define SRTCP_E_BYTE_BIT 0x80
 #define SRTCP_INDEX_MASK 0x7fffffff
+
+#ifdef _MSC_VER
+#pragma pack()
+#endif
 
 #ifdef __cplusplus
 }

@@ -55,11 +55,11 @@
 
 typedef v128_t aes_expanded_key_t[11];
 
-inline void
+void
 aes_expand_encryption_key(const v128_t *key,
 			  aes_expanded_key_t expanded_key);
 
-inline void
+void
 aes_expand_decryption_key(const v128_t *key,
 			  aes_expanded_key_t expanded_key);
 

@@ -414,7 +414,7 @@ static inline uint64_t be64_to_cpu(uint64_t v) {
    v = make64(htonl(low32(v)),htonl(high32(v)));
 # else
    /* use the native 64-bit math */
-   v= (be32_to_cpu(v >> 32)) | (((uint64_t)be32_to_cpu((uint32_t)v)) << 32);
+   v= (be32_to_cpu((uint32_t)(v >> 32))) | (((uint64_t)be32_to_cpu((uint32_t)v)) << 32);
 # endif
    return v;
 }

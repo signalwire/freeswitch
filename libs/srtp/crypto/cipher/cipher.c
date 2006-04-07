@@ -283,7 +283,7 @@ cipher_type_self_test(const cipher_type_t *ct) {
 		octet_string_hex_string(buffer, length));
 
     /* copy plaintext into second buffer */
-    for (i=0; i < length; i++)
+    for (i=0; (unsigned int)i < length; i++)
       buffer2[i] = buffer[i];
     
     /* choose a key at random */
