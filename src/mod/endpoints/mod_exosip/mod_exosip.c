@@ -245,6 +245,11 @@ static switch_status exosip_on_init(switch_core_session *session)
 		sdp_port = tech_pvt->local_sdp_audio_port;
 		/* Generate callerid URI */
 
+
+		eXosip_guess_localip(AF_INET, localip, 128);
+		ip = localip;
+
+
 		if (!strncasecmp(globals.host, "stun:", 5)) {
 			if (switch_stun_lookup(&ip,
 								   &sdp_port,
@@ -252,14 +257,11 @@ static switch_status exosip_on_init(switch_core_session *session)
 								   SWITCH_STUN_DEFAULT_PORT,
 								   &err,
 								   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", globals.port + 5, SWITCH_STUN_DEFAULT_PORT, err);
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Failed! %s:%d [%s]\n", globals.host + 5, SWITCH_STUN_DEFAULT_PORT, err);
 				switch_channel_hangup(channel);
 				return SWITCH_STATUS_FALSE;
 			}
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success [%s]:[%d]\n", ip, sdp_port);
-		} else if (!strcasecmp(globals.host, "guess")) {
-			eXosip_guess_localip(AF_INET, localip, 128);			
-			ip = localip;
 		} else {
 			ip = globals.host;
 		}
@@ -1074,6 +1076,10 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		tech_pvt->local_sdp_audio_port = switch_rtp_request_port();
 		sdp_port = tech_pvt->local_sdp_audio_port;
 
+
+		eXosip_guess_localip(AF_INET, tech_pvt->local_sdp_audio_ip, sizeof(tech_pvt->local_sdp_audio_ip));			
+		ip = tech_pvt->local_sdp_audio_ip;
+
 		if (!strncasecmp(globals.host, "stun:", 5)) {
 			if (switch_stun_lookup(&ip,
 								   &sdp_port,
@@ -1087,9 +1093,6 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			}
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Stun Success [%s]:[%d]\n", ip, sdp_port);
 			switch_copy_string(tech_pvt->local_sdp_audio_ip, ip, sizeof(tech_pvt->local_sdp_audio_ip));
-		} else if (!strcasecmp(globals.host, "guess")) {
-			eXosip_guess_localip(AF_INET, tech_pvt->local_sdp_audio_ip, sizeof(tech_pvt->local_sdp_audio_ip));			
-			ip = tech_pvt->local_sdp_audio_ip;
 		} else {
 			ip = globals.host;
 			switch_copy_string(tech_pvt->local_sdp_audio_ip, ip, sizeof(tech_pvt->local_sdp_audio_ip));
