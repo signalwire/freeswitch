@@ -264,19 +264,19 @@
 		D32C90D609C10C3300FCE413 = {
 			isa = PBXGroup;
 			children = (
-				D32C90E709C10C4600FCE413 /* apr-1.2.2 */,
+				D32C90E709C10C4600FCE413 /* apr-1.2.6 */,
 				D32C90E809C10C4600FCE413 /* apr-Info.plist */,
 				D32C90E609C10C4600FCE413 /* apr.framework */,
 			);
 			sourceTree = "<group>";
 		};
-		D32C90E709C10C4600FCE413 /* apr-1.2.2 */ = {
+		D32C90E709C10C4600FCE413 /* apr-1.2.6 */ = {
 			isa = PBXGroup;
 			children = (
 				D32C90EE09C10C8C00FCE413 /* include */,
 				D32C927E09C10F3100FCE413 /* src */,
 			);
-			name = "apr-1.2.2";
+			name = "apr-1.2.6";
 			sourceTree = "<group>";
 		};
 		D32C90EE09C10C8C00FCE413 /* include */ = {
@@ -837,7 +837,7 @@
 			);
 			hasScannedForEncodings = 0;
 			mainGroup = D32C90D609C10C3300FCE413;
-			productRefGroup = D32C90E709C10C4600FCE413 /* apr-1.2.2 */;
+			productRefGroup = D32C90E709C10C4600FCE413 /* apr-1.2.6 */;
 			projectDirPath = "";
 			targets = (
 				D32C90E509C10C4600FCE413 /* apr.framework */,
@@ -858,7 +858,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "if [ -e ../../../libs/apr-1.2.2/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl http://svn.freeswitch.org/downloads/libs/apr-1.2.2.tar.gz -o ../../../libs/apr-1.2.2.tar.gz\ncd ../../../libs\ntar zxfv apr-1.2.2.tar.gz\ncd apr-1.2.2\n./configure --enable-layout=\"Mac OS X Server\"\nmake apr.exp\ntouch .complete";
+			shellScript = "if [ -e ../../../libs/apr-1.2.6/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl http://svn.freeswitch.org/downloads/libs/apr-1.2.6.tar.gz -o ../../../libs/apr-1.2.6.tar.gz\ncd ../../../libs\ntar zxfv apr-1.2.6.tar.gz\ncd apr-1.2.6\n./configure --enable-layout=\"Mac OS X Server\"\nmake apr.exp\ntouch .complete";
 		};
 /* End PBXShellScriptBuildPhase section */
 

@@ -25,8 +25,8 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  *
- *
- * mod_commands.c -- Raw Audio File Streaming Application Module
+ * 
+ * mod_commands.c -- Misc. Command Module
  *
  */
 #include <switch.h>
