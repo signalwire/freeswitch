@@ -68,15 +68,15 @@ static switch_status switch_gsm_destroy(switch_codec *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 static switch_status switch_gsm_encode(switch_codec *codec, switch_codec *other_codec, void *decoded_data,
-										  size_t decoded_data_len, int decoded_rate, void *encoded_data,
-										  size_t *encoded_data_len, int *encoded_rate, unsigned int *flag) 
+										  uint32_t decoded_data_len, uint32_t decoded_rate, void *encoded_data,
+										  uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag) 
 {
 	struct gsm_context *context = codec->private_info;
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
 	if (decoded_data_len % 320 == 0) {
-		unsigned int new_len = 0;
+		uint32_t new_len = 0;
 		gsm_signal * ddp = decoded_data;
 		gsm_byte * edp = encoded_data;
 		int x;
@@ -97,8 +97,8 @@ static switch_status switch_gsm_encode(switch_codec *codec, switch_codec *other_
 	return SWITCH_STATUS_SUCCESS;
 }
 static switch_status switch_gsm_decode(switch_codec *codec, switch_codec *other_codec, void *encoded_data,
-										  size_t encoded_data_len, int encoded_rate, void *decoded_data,
-										  size_t *decoded_data_len, int *decoded_rate, unsigned int *flag) 
+										  uint32_t encoded_data_len, uint32_t encoded_rate, void *decoded_data,
+										  uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag) 
 {
 	struct gsm_context *context = codec->private_info;
 	if (!context) {
@@ -110,7 +110,7 @@ static switch_status switch_gsm_decode(switch_codec *codec, switch_codec *other_
 		gsm_byte * edp = encoded_data;
 		gsm_signal * ddp = decoded_data;
 		int x;
-		unsigned int new_len = 0;
+		uint32_t new_len = 0;
 
 		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
 			gsm_decode(context->decoder, edp, ddp);

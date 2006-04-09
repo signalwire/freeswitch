@@ -30,9 +30,9 @@
  *
  */
 /*! \file switch_core.h
-    \brief Core Library
+  \brief Core Library
 
-	This module is the main core library and is the intended location of all fundamental operations.
+  This module is the main core library and is the intended location of all fundamental operations.
 */
 
 #ifndef SWITCH_CORE_H
@@ -40,6 +40,9 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+#ifdef _FORMATBUG
+}
 #endif
 
 #include <switch.h>
@@ -306,7 +309,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_set_private(switch_core_sessio
   \param session the session to add the stream to
   \param private_info an optional pointer to private data for the new stream
   \return the stream id of the new stream
- */
+*/
 SWITCH_DECLARE(int) switch_core_session_add_stream(switch_core_session *session, void *private_info);
 
 /*!
@@ -314,14 +317,14 @@ SWITCH_DECLARE(int) switch_core_session_add_stream(switch_core_session *session,
   \param session the session to add the stream to
   \param index the index to retrieve
   \return the stream
- */
+*/
 SWITCH_DECLARE(void *) switch_core_session_get_stream(switch_core_session *session, int index);
 
 /*!
   \brief Determine the number of logical streams a session has
   \param session the session to query
   \return the total number of logical streams
- */
+*/
 SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session *session);
 
 /*! 
@@ -607,7 +610,7 @@ SWITCH_DECLARE(switch_status) switch_core_timer_destroy(switch_timer *timer);
 */
 SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, 
 													 char *codec_name, 
-													 int rate, 
+													 uint32_t rate, 
 													 int ms, 
 													 int channels, 
 													 uint32_t flags,
@@ -629,14 +632,14 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec,
   \note encoded_data_len will be rewritten to the in-use size of encoded_data
 */
 SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
-								 switch_codec *other_codec,
-								 void *decoded_data,
-								 switch_size_t decoded_data_len,
-								 int decoded_rate,
-								 void *encoded_data,
-								 switch_size_t *encoded_data_len,
-								 int *encoded_rate,
-								 unsigned int *flag);
+													   switch_codec *other_codec,
+													   void *decoded_data,
+													   uint32_t decoded_data_len,
+													   uint32_t decoded_rate,
+													   void *encoded_data,
+													   uint32_t *encoded_data_len,
+													   uint32_t *encoded_rate,
+													   unsigned int *flag);
 
 /*! 
   \brief Decode data using a codec handle
@@ -653,14 +656,14 @@ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
   \note decoded_data_len will be rewritten to the in-use size of decoded_data
 */
 SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
-								 switch_codec *other_codec,
-								 void *encoded_data,
-								 switch_size_t encoded_data_len,
-								 int encoded_rate,
-								 void *decoded_data,
-								 switch_size_t *decoded_data_len,
-								 int *decoded_rate,
-								 unsigned int *flag);
+													   switch_codec *other_codec,
+													   void *encoded_data,
+													   uint32_t encoded_data_len,
+													   uint32_t encoded_rate,
+													   void *decoded_data,
+													   uint32_t *decoded_data_len,
+													   uint32_t *decoded_rate,
+													   unsigned int *flag);
 
 /*! 
   \brief Destroy an initalized codec handle
@@ -827,10 +830,10 @@ SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *
   \param flags flags in/out for fine tuning
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
 */
-	SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
+SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
 														  void *data,
 														  switch_size_t *datalen,
-														  switch_size_t *rate,
+														  uint32_t *rate,
 														  switch_speech_flag *flags);
 /*! 
   \brief Close an open speech handle

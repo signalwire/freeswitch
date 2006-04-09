@@ -55,14 +55,14 @@ static switch_status switch_g711u_init(switch_codec *codec, switch_codec_flag fl
 static switch_status switch_g711u_encode(switch_codec *codec,
 										 switch_codec *other_codec,
 										 void *decoded_data,
-										 size_t decoded_data_len,
-										 int decoded_rate,
+										 uint32_t decoded_data_len,
+										 uint32_t decoded_rate,
 										 void *encoded_data,
-										 size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
+										 uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
-	size_t i;
+	uint32_t i;
 
 	dbuf = decoded_data;
 	ebuf = encoded_data;
@@ -79,14 +79,14 @@ static switch_status switch_g711u_encode(switch_codec *codec,
 static switch_status switch_g711u_decode(switch_codec *codec,
 										 switch_codec *other_codec,
 										 void *encoded_data,
-										 size_t encoded_data_len,
-										 int encoded_rate,
+										 uint32_t encoded_data_len,
+										 uint32_t encoded_rate,
 										 void *decoded_data,
-										 size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
+										 uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
-	size_t i;
+	uint32_t i;
 
 	dbuf = decoded_data;
 	ebuf = encoded_data;
@@ -130,14 +130,14 @@ static switch_status switch_g711a_init(switch_codec *codec, switch_codec_flag fl
 static switch_status switch_g711a_encode(switch_codec *codec,
 										 switch_codec *other_codec,
 										 void *decoded_data,
-										 size_t decoded_data_len,
-										 int decoded_rate,
+										 uint32_t decoded_data_len,
+										 uint32_t decoded_rate,
 										 void *encoded_data,
-										 size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
+										 uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
-	size_t i;
+	uint32_t i;
 
 	dbuf = decoded_data;
 	ebuf = encoded_data;
@@ -154,14 +154,14 @@ static switch_status switch_g711a_encode(switch_codec *codec,
 static switch_status switch_g711a_decode(switch_codec *codec,
 										 switch_codec *other_codec,
 										 void *encoded_data,
-										 size_t encoded_data_len,
-										 int encoded_rate,
+										 uint32_t encoded_data_len,
+										 uint32_t encoded_rate,
 										 void *decoded_data,
-										 size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
+										 uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
 {
 	short *dbuf;
 	unsigned char *ebuf;
-	size_t i;
+	uint32_t i;
 
 	dbuf = decoded_data;
 	ebuf = encoded_data;

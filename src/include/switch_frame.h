@@ -49,13 +49,13 @@ struct switch_frame {
 	/*! the frame data */
 	void *data;
 	/*! the size of the buffer that is in use */
-	switch_size_t datalen;
+	uint32_t datalen;
 	/*! the entire size of the buffer */
-	switch_size_t buflen;
+	uint32_t buflen;
 	/*! the number of audio samples present (audio only) */
-	switch_size_t samples;
+	uint32_t samples;
 	/*! the rate of the frame */
-	int rate;
+	uint32_t rate;
 	/*! frame flags */
 	switch_frame_flag flags;
 };

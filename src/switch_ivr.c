@@ -256,8 +256,9 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	switch_channel *channel;
 	short abuf[960];
 	char dtmf[128];
-	int interval = 0, samples = 0;
-	switch_size_t len = 0, ilen = 0, olen = 0;
+	uint32_t interval = 0, samples = 0;
+	uint32_t len = 0, ilen = 0;
+	switch_size_t olen = 0;
 	switch_frame write_frame;
 	switch_timer timer;
 	switch_core_thread_session thread_session;
@@ -292,7 +293,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN FILE %s %uhz %u channels\n", file, fh->samplerate, fh->channels);
 
 	interval = 20;
-	samples = (fh->samplerate / 50) * fh->channels;
+	samples = ((fh->samplerate / 50) * fh->channels);
 	len = samples * 2;
 
 	codec_name = "L16";
@@ -362,7 +363,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 			memset(abuf, 0, ilen * 2);
 			olen = ilen;
             do_speed = 0;
-		} else if (fh->audio_buffer && (switch_buffer_inuse(fh->audio_buffer) > (ilen * 2))) {
+		} else if (fh->audio_buffer && (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t)(ilen * 2))) {
 			switch_buffer_read(fh->audio_buffer, abuf, ilen * 2);
 			olen = ilen;
 			do_speed = 0;
@@ -425,8 +426,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 			continue;
 		} 
 
-		write_frame.datalen = olen * 2;
-		write_frame.samples = (int) olen;
+		write_frame.datalen = (uint32_t)(olen * 2);
+		write_frame.samples = (uint32_t)olen;
 #if __BYTE_ORDER == __BIG_ENDIAN
 		switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
 #endif
@@ -474,7 +475,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 													char *tts_name,
 													char *voice_name,
 													char *timer_name,
-													switch_size_t rate,
+													uint32_t rate,
 													switch_dtmf_callback_function dtmf_callback,
 													char *text,
 													void *buf,
@@ -484,8 +485,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	short abuf[960];
 	char dtmf[128];
 	int interval = 0;
-	switch_size_t samples = 0;
-	switch_size_t len = 0;
+	uint32_t samples = 0;
+	uint32_t len = 0;
 	switch_size_t ilen = 0;
 	switch_frame write_frame;
 	switch_timer timer;
@@ -527,7 +528,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OPEN TTS %s\n", tts_name);
 	
 	interval = 20;
-	samples = (rate / 50);
+	samples = (uint32_t)(rate / 50);
 	len = samples * 2;
 
 	codec_name = "L16";
@@ -562,7 +563,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 
 	flags = 0;
 	switch_core_speech_feed_tts(&sh, text, &flags);
-	write_frame.rate = (int)rate;
+	write_frame.rate = rate;
 
 	memset(write_frame.data, 0, len);
 	write_frame.datalen = len;
@@ -634,8 +635,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 			break;
 		}
 
-		write_frame.datalen = ilen;
-		write_frame.samples = (int) ilen / 2;
+		write_frame.datalen = (uint32_t)ilen;
+		write_frame.samples = (uint32_t)(ilen / 2);
 
 		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
 			if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {

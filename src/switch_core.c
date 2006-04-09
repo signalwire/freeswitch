@@ -265,7 +265,7 @@ SWITCH_DECLARE(switch_codec *) switch_core_session_get_write_codec(switch_core_s
 	return session->write_codec;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, int rate, int ms,
+SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, uint32_t rate, int ms,
 													 int channels, uint32_t flags,
 													 const switch_codec_settings *codec_settings,
 													 switch_memory_pool *pool)
@@ -321,10 +321,10 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 													   switch_codec *other_codec,
 													   void *decoded_data,
-													   switch_size_t decoded_data_len,
-													   int decoded_rate,
+													   uint32_t decoded_data_len,
+													   uint32_t decoded_rate,
 													   void *encoded_data,
-													   switch_size_t *encoded_data_len, int *encoded_rate, unsigned int *flag)
+													   uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
 {
 	assert(codec != NULL);
 	assert(encoded_data != NULL);
@@ -352,10 +352,10 @@ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 													   switch_codec *other_codec,
 													   void *encoded_data,
-													   switch_size_t encoded_data_len,
-													   int encoded_rate,
+													   uint32_t encoded_data_len,
+													   uint32_t encoded_rate,
 													   void *decoded_data,
-													   switch_size_t *decoded_data_len, int *decoded_rate, unsigned int *flag)
+													   uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
 {
 
 	assert(codec != NULL);
@@ -553,7 +553,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *
 SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
 														  void *data,
 														  switch_size_t *datalen,
-														  switch_size_t *rate,
+														  uint32_t *rate,
 														  switch_speech_flag *flags)
 {
 	assert(sh != NULL);
@@ -985,7 +985,9 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 											  read_frame->datalen,
 											  session->read_codec->implementation->samples_per_second,
 											  session->raw_read_frame.data,
-											  &session->raw_read_frame.datalen, &session->raw_read_frame.rate, &flag);
+											  &session->raw_read_frame.datalen,
+											  &session->raw_read_frame.rate,
+											  &flag);
 
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
@@ -1017,7 +1019,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 			session->read_resampler->to_len =
 				switch_resample_process(session->read_resampler, session->read_resampler->from,
 										session->read_resampler->from_len, session->read_resampler->to,
-										(int) session->read_resampler->to_size, 0);
+										session->read_resampler->to_size, 0);
 			switch_float_to_short(session->read_resampler->to, data, read_frame->datalen);
 			read_frame->samples = session->read_resampler->to_len;
 			read_frame->datalen = session->read_resampler->to_len * 2;
@@ -1045,7 +1047,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 					enc_frame = *frame;
 					session->raw_read_frame.rate = (*frame)->rate;
 				} else {
-					session->raw_read_frame.datalen = switch_buffer_read(session->raw_read_buffer,
+					session->raw_read_frame.datalen = (uint32_t)switch_buffer_read(session->raw_read_buffer,
 																		 session->raw_read_frame.data,
 																		 session->read_codec->implementation->
 																		 bytes_per_frame);
@@ -1187,10 +1189,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 
 			session->write_resampler->from_len =
 				switch_short_to_float(data, session->write_resampler->from, (int) write_frame->datalen / 2);
-			session->write_resampler->to_len =
+			session->write_resampler->to_len = (uint32_t)
 				switch_resample_process(session->write_resampler, session->write_resampler->from,
 										session->write_resampler->from_len, session->write_resampler->to,
-										(int) session->write_resampler->to_size, 0);
+										session->write_resampler->to_size, 0);
 			switch_float_to_short(session->write_resampler->to, data, write_frame->datalen * 2);
 			write_frame->samples = session->write_resampler->to_len;
 			write_frame->datalen = session->write_resampler->to_len * 2;
@@ -1256,19 +1258,14 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				return status;
 			} else {
 				switch_size_t used = switch_buffer_inuse(session->raw_write_buffer);
-				switch_size_t bytes = session->write_codec->implementation->bytes_per_frame;
+				uint32_t bytes = session->write_codec->implementation->bytes_per_frame;
 				switch_size_t frames = (used / bytes);
 
-
-
-
-
-
-			status = SWITCH_STATUS_SUCCESS;
+				status = SWITCH_STATUS_SUCCESS;
 				if (frames) {
 					switch_size_t x;
 					for (x = 0; x < frames; x++) {
-						if ((session->raw_write_frame.datalen =
+						if ((session->raw_write_frame.datalen = (uint32_t)
 							 switch_buffer_read(session->raw_write_buffer, session->raw_write_frame.data, bytes)) != 0) {
 
 							enc_frame = &session->raw_write_frame;
@@ -1320,11 +1317,11 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 																						  session->read_resampler->from,
 																						  (int) write_frame->datalen /
 																						  2);
-								session->read_resampler->to_len =
+								session->read_resampler->to_len = (uint32_t)
 									switch_resample_process(session->read_resampler, session->read_resampler->from,
 															session->read_resampler->from_len,
 															session->read_resampler->to,
-															(int) session->read_resampler->to_size, 0);
+															session->read_resampler->to_size, 0);
 								switch_float_to_short(session->read_resampler->to, data, write_frame->datalen * 2);
 								write_frame->samples = session->read_resampler->to_len;
 								write_frame->datalen = session->read_resampler->to_len * 2;

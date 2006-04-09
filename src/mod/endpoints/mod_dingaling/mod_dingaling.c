@@ -117,7 +117,7 @@ struct private_object {
 	int32_t timestamp_recv;
 	int32_t timestamp_dtmf;
 	char *codec_name;
-	int codec_num;
+	uint8_t codec_num;
 };
 
 struct rfc2833_digit {
@@ -545,7 +545,8 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 										switch_io_flag flags, int stream_id)
 {
 	struct private_object *tech_pvt = NULL;
-	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
+	uint32_t bytes = 0;
+	switch_size_t samples = 0, frames = 0, ms = 0;
 	switch_channel *channel = NULL;
 	int payload = 0;
 
@@ -728,7 +729,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 	//printf("%s send %d bytes %d samples in %d frames ts=%d\n", switch_channel_get_name(channel), frame->datalen, samples, frames, tech_pvt->timestamp_send);
 
 
-	switch_rtp_write(tech_pvt->rtp_session, frame->data, (int) frame->datalen, samples);
+	switch_rtp_write(tech_pvt->rtp_session, frame->data, frame->datalen, samples);
 	tech_pvt->timestamp_send += (int) samples;
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);

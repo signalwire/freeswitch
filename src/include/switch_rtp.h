@@ -81,8 +81,8 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void);
   \return the new RTP session or NULL on failure
 */
 SWITCH_DECLARE(switch_status)switch_rtp_create(switch_rtp **new_rtp_session,
-											   int payload,
-											   switch_size_t packet_size,
+											   uint8_t payload,
+											   uint32_t packet_size,
 											   uint32_t ms_per_packet,
 											   switch_rtp_flag_t flags,
 											   const char **err,
@@ -107,8 +107,8 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_host,
 										   switch_port_t rx_port,
 										   char *tx_host,
 										   switch_port_t tx_port,
-										   int payload,
-										   switch_size_t packet_size,
+										   uint8_t payload,
+										   uint32_t packet_size,
 										   uint32_t ms_per_packet,
 										   switch_rtp_flag_t flags,
 										   const char **err,
@@ -164,7 +164,7 @@ SWITCH_DECLARE(switch_socket_t *)switch_rtp_get_rtp_socket(switch_rtp *rtp_sessi
   \param rtp_session the RTP session to set the packet size on
   \param packet_size the new default packet size 
 */
-SWITCH_DECLARE(void) switch_rtp_set_default_packet_size(switch_rtp *rtp_session, uint32_t packet_size);
+SWITCH_DECLARE(void) switch_rtp_set_default_packet_size(switch_rtp *rtp_session, uint16_t packet_size);
 
 /*! 
   \brief Get the default packet size for a given RTP session
@@ -178,7 +178,7 @@ SWITCH_DECLARE(uint32_t) switch_rtp_get_default_packet_size(switch_rtp *rtp_sess
   \param rtp_session the RTP session to set the payload number on
   \param payload the new default payload number 
 */
-SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp *rtp_session, uint32_t payload);
+SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp *rtp_session, uint8_t payload);
 
 /*! 
   \brief Get the default payload number for a given RTP session
@@ -225,7 +225,7 @@ SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **dat
   \param ts then number of bytes to increment the timestamp by
   \return the number of bytes written
 */
-SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int datalen, uint32_t ts);
+SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint32_t ts);
 
 /*! 
   \brief Write data with a specified payload and sequence number to a given RTP session
@@ -237,7 +237,7 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, int da
   \param mseq the specific sequence number to use
   \return the number of bytes written
 */
-SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data, int datalen, uint8_t payload, uint32_t ts, uint16_t mseq);
+SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data, uint16_t datalen, uint8_t payload, uint32_t ts, uint16_t mseq);
 
 /*! 
   \brief Retrieve the SSRC from a given RTP session

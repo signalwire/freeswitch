@@ -49,7 +49,7 @@
 SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **new_resampler,
 													 int from_rate,
 													 switch_size_t from_size,
-													 int to_rate, switch_size_t to_size, switch_memory_pool *pool)
+													 int to_rate, uint32_t to_size, switch_memory_pool *pool)
 {
 	switch_audio_resampler *resampler;
 	double lto_rate, lfrom_rate;
@@ -77,8 +77,8 @@ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **ne
 }
 
 
-SWITCH_DECLARE(int) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst,
-											int dstlen, int last)
+SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst,
+											uint32_t dstlen, int last)
 {
 	int o = 0, srcused = 0, srcpos = 0, out = 0;
 

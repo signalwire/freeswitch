@@ -134,7 +134,7 @@ static switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Opening File [%s] %dhz\n", path, context->sfinfo.samplerate);
 	handle->samples = (unsigned int) context->sfinfo.frames;
 	handle->samplerate = context->sfinfo.samplerate;
-	handle->channels = context->sfinfo.channels;
+	handle->channels = (uint8_t)context->sfinfo.channels;
 	handle->format = context->sfinfo.format;
 	handle->sections = context->sfinfo.sections;
 	handle->seekable = context->sfinfo.seekable;

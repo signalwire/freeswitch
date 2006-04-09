@@ -67,9 +67,9 @@ struct switch_audio_resampler {
 	/*! a pointer to store a float buffer for resampled data */
 	float *to;
 	/*! the size of the to buffer used */
-	int to_len;
+	uint32_t to_len;
 	/*! the total size of the to buffer */
-	switch_size_t to_size;
+	uint32_t to_size;
 };
 
 /*!
@@ -86,7 +86,7 @@ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **ne
 													 int from_rate,
 													 switch_size_t from_size,
 													 int to_rate,
-													 switch_size_t to_size,
+													 uint32_t to_size,
 													 switch_memory_pool *pool);
 
 /*!
@@ -105,7 +105,7 @@ SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler *resampler);
   \param last parameter denoting the last sample is being resampled
   \return the used size of dst
  */
-SWITCH_DECLARE(int) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst, int dstlen, int last);
+SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst, uint32_t dstlen, int last);
 
 /*!
   \brief Convert an array of floats to an array of shorts

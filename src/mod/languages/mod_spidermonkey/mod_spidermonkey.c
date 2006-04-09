@@ -1665,7 +1665,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 					break;
 				}
 			}
-			if ((write_frame.datalen = switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+			if ((write_frame.datalen = (uint32_t)switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
 				if (loops > 0) { 
 					switch_buffer *tmp;
 
@@ -1675,7 +1675,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 					tto->loop_buffer = tmp;
 					loops--;
 					/* try again */
-					if ((write_frame.datalen = switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+					if ((write_frame.datalen = (uint32_t)switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
 						break;
 					}
 				} else {

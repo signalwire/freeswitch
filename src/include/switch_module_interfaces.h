@@ -262,9 +262,9 @@ struct switch_file_handle {
 	/*! samples position of the handle */
 	unsigned int samples;
 	/*! the current samplerate */
-	unsigned int samplerate;
+	uint32_t samplerate;
 	/*! the number of channels */
-	unsigned int channels;
+	uint8_t channels;
 	/*! integer representation of the format */
 	unsigned int format;
 	/*! integer representation of the sections */
@@ -305,7 +305,7 @@ struct switch_speech_interface {
 	switch_status (*speech_read_tts)(switch_speech_handle *sh,
 									 void *data,
 									 switch_size_t *datalen,
-									 switch_size_t *rate,
+									 uint32_t *rate,
 									 switch_speech_flag *flags);
 
 	const struct switch_speech_interface *next;
@@ -415,19 +415,19 @@ struct switch_codec {
 /*! \brief A table of settings and callbacks that define a paticular implementation of a codec */
 struct switch_codec_implementation {
 	/*! samples transferred per second */
-	int samples_per_second;
+	uint32_t samples_per_second;
 	/*! bits transferred per second */
 	int bits_per_second;
 	/*! number of microseconds that denote one frame */
 	int microseconds_per_frame;
 	/*! number of samples that denote one frame */
-	int samples_per_frame;
+	uint32_t samples_per_frame;
 	/*! number of bytes that denote one frame decompressed */
-	switch_size_t bytes_per_frame;
+	uint32_t bytes_per_frame;
 	/*! number of bytes that denote one frame compressed */
-	int encoded_bytes_per_frame;
+	uint32_t encoded_bytes_per_frame;
 	/*! number of channels represented */
-	int number_of_channels;
+	uint8_t number_of_channels;
 	/*! number of frames to send in one netowrk packet */
 	int pref_frames_per_packet;
 	/*! max number of frames to send in one network packet */
@@ -438,21 +438,21 @@ struct switch_codec_implementation {
 	switch_status (*encode)(switch_codec *codec,
 						 switch_codec *other_codec,
 						 void *decoded_data,
-						 switch_size_t decoded_data_len,
-						 int decoded_rate,
+						 uint32_t decoded_data_len,
+						 uint32_t decoded_rate,
 						 void *encoded_data,
-						 switch_size_t *encoded_data_len,
-						 int *encoded_rate,
+						 uint32_t *encoded_data_len,
+						 uint32_t *encoded_rate,
 						 unsigned int *flag);
 	/*! function to decode encoded data into raw data */
 	switch_status (*decode)(switch_codec *codec,
 						 switch_codec *other_codec,
 						 void *encoded_data,
-						 switch_size_t encoded_data_len,
-						 int encoded_rate,
+						 uint32_t encoded_data_len,
+						 uint32_t encoded_rate,
 						 void *decoded_data,
-						 switch_size_t *decoded_data_len,
-						 int *decoded_rate,
+						 uint32_t *decoded_data_len,
+						 uint32_t *decoded_rate,
 						 unsigned int *flag);
 	/*! deinitalize a codec handle using this implementation */
 	switch_status (*destroy)(switch_codec *);
@@ -466,7 +466,7 @@ struct switch_codec_interface {
 	/*! enumeration defining the type of the codec */
 	const switch_codec_type codec_type;
 	/*! the IANA code number */
-	unsigned int ianacode;
+	uint8_t ianacode;
 	/*! the IANA code name */
 	char *iananame;
 	/*! a list of codec implementations related to the codec */
