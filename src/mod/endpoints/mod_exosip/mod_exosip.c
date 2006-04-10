@@ -585,7 +585,10 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			now = switch_time_now();
 			tech_pvt->read_frame.flags = 0;
 			tech_pvt->read_frame.datalen = switch_rtp_zerocopy_read(tech_pvt->rtp_session, &tech_pvt->read_frame.data, &payload, &tech_pvt->read_frame.flags);
-			
+
+			if (tech_pvt->read_frame.datalen < 0) {
+				return SWITCH_STATUS_FALSE;
+			}
 
 			if (timeout > -1) {
 				elapsed = (unsigned int)((switch_time_now() - started) / 1000);

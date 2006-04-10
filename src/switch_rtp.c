@@ -465,9 +465,22 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
 
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE) && bytes > 0) {
+		if (bytes < 0) {
+			return bytes;
+		}	
+
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
 			int sbytes = (int)bytes;
-			srtp_unprotect(rtp_session->recv_ctx, &rtp_session->send_msg, &sbytes);
+			err_status_t stat;
+
+			stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg, &sbytes);
+			if (stat) {
+				switch_console_printf(SWITCH_CHANNEL_CONSOLE,
+						"error: srtp unprotection failed with code %d%s\n", stat,
+						stat == err_status_replay_fail ? " (replay check failed)" :
+						stat == err_status_auth_fail ? " (auth check failed)" : "");
+				return -1;
+			}
 			bytes = sbytes;
 		}
 
@@ -495,11 +508,6 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
 			return 0;
 		}
-
-		if (bytes < 0) {
-			return bytes;
-		}	
-
 
 		if (rtp_session->recv_msg.header.version != 2) {
 			if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
@@ -542,11 +550,12 @@ SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **dat
 {
 
 	int bytes = rtp_common_read(rtp_session, data, payload_type, flags);
-	*data = NULL;
+	*data = rtp_session->recv_msg.body;
+
 	if (bytes <= 0) {
 		return bytes;
 	}
-	*data = rtp_session->recv_msg.body;
+
 	return bytes;
 }
 
