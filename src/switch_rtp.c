@@ -284,7 +284,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 		policy.key  = (uint8_t *) key;
 		policy.next = NULL;
 		policy.rtp.sec_serv = sec_serv_conf_and_auth;
-		policy.rtcp.sec_serv = sec_serv_none;  /* we don't do RTCP anyway */
+		policy.rtcp.sec_serv = sec_serv_conf_and_auth;
 
 		/*
 		 * read key from hexadecimal on command line into an octet string
@@ -464,7 +464,8 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 	for(;;) {
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
+
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE) && bytes > 0) {
 			int sbytes = (int)bytes;
 			srtp_unprotect(rtp_session->recv_ctx, &rtp_session->send_msg, &sbytes);
 			bytes = sbytes;
@@ -491,8 +492,12 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 			}
 		}		
 
-		if (bytes <= 0) {
+		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
 			return 0;
+		}
+
+		if (bytes < 0) {
+			return bytes;
 		}	
 
 
