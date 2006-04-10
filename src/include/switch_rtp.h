@@ -202,22 +202,23 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp *rtp_session, swit
   \brief Read data from a given RTP session
   \param rtp_session the RTP session to read from
   \param data the data to read
-  \param datalen the length of the data
+  \param datalen a pointer to the datalen
   \param payload_type the IANA payload of the packet
   \param flags flags
   \return the number of bytes read
 */
-SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type, switch_frame_flag *flags);
+SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t *datalen, int *payload_type, switch_frame_flag *flags);
 
 /*! 
   \brief Read data from a given RTP session without copying
   \param rtp_session the RTP session to read from
   \param data a pointer to point directly to the RTP read buffer
+  \param datalen a pointer to the datalen
   \param payload_type the IANA payload of the packet
   \param flags flags
   \return the number of bytes read
 */
-SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type, switch_frame_flag *flags);
+SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, uint32_t *datalen, int *payload_type, switch_frame_flag *flags);
 
 /*! 
   \brief Write data to a given RTP session

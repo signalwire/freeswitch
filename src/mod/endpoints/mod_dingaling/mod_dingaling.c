@@ -573,8 +573,15 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 		payload = -1;
 		tech_pvt->read_frame.flags = 0;
-		tech_pvt->read_frame.datalen = switch_rtp_zerocopy_read(tech_pvt->rtp_session, &tech_pvt->read_frame.data, &payload, &tech_pvt->read_frame.flags);
-		
+
+		if (switch_rtp_zerocopy_read(tech_pvt->rtp_session,
+									 &tech_pvt->read_frame.data,
+									 &tech_pvt->read_frame.datalen,
+									 &payload,
+									 &tech_pvt->read_frame.flags) != SWITCH_STATUS_SUCCESS) {
+			
+			return SWITCH_STATUS_FALSE;
+		}		
 
 		/* RFC2833 ... TBD try harder to honor the duration etc.*/
 		if (payload == 101) {

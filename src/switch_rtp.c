@@ -534,29 +534,36 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 	return (int)(bytes - rtp_header_len);
 }
 
-SWITCH_DECLARE(int) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t datalen, int *payload_type, switch_frame_flag *flags)
+SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t *datalen, int *payload_type, switch_frame_flag *flags)
 {
 
 	int bytes = rtp_common_read(rtp_session, data, payload_type, flags);
 	
 	if (bytes <= 0) {
-		return bytes;
+		*datalen = 0;
+		return SWITCH_STATUS_GENERR;
 	}
+
+	*datalen = bytes;
+
 	memcpy(data, rtp_session->recv_msg.body, bytes);
-	return bytes;
+
+	return SWITCH_STATUS_SUCCESS;	
 }
 
-SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, int *payload_type, switch_frame_flag *flags)
+SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, uint32_t *datalen, int *payload_type, switch_frame_flag *flags)
 {
 
 	int bytes = rtp_common_read(rtp_session, data, payload_type, flags);
 	*data = rtp_session->recv_msg.body;
 
 	if (bytes <= 0) {
-		return bytes;
+		*datalen = 0;
+		return SWITCH_STATUS_GENERR;
 	}
 
-	return bytes;
+	*datalen = bytes;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint8_t payload)
