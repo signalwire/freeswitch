@@ -276,6 +276,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 	if (crypto_key) {
 		int len;
 
+		switch_set_flag(rtp_session, SWITCH_RTP_FLAG_SECURE);
 		crypto_policy_set_rtp_default(&policy.rtp);
 		crypto_policy_set_rtcp_default(&policy.rtcp);
 		policy.ssrc.type  = ssrc_specific;
@@ -463,6 +464,11 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 	for(;;) {
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
+			int sbytes = (int)bytes;
+			srtp_unprotect(rtp_session->recv_ctx, &rtp_session->send_msg, &sbytes);
+			bytes = sbytes;
+		}
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
@@ -562,6 +568,12 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 	}
 	
 	bytes = datalen + rtp_header_len;
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
+		int sbytes = (int)bytes;
+		srtp_protect(rtp_session->send_ctx, &rtp_session->send_msg, &sbytes);
+		bytes = sbytes;
+	}
+
 	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&rtp_session->send_msg, &bytes);
 
 	if (rtp_session->ice_user) {
