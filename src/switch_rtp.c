@@ -476,7 +476,7 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 		}
 
 		if (bytes < 0) {
-			return bytes;
+			return (int)bytes;
 		} else if (bytes > 0 && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
 			int sbytes = (int)bytes;
 			err_status_t stat;
