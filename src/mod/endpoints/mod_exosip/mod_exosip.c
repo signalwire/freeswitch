@@ -354,6 +354,10 @@ static switch_status exosip_on_init(switch_core_session *session)
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OUTBOUND SDP:\n%s\n", buf);
 		free(buf);
 		/* Send the INVITE */
+
+		if (tech_pvt->realm) {
+			osip_message_set_header(invite, "SrtpRealm", tech_pvt->realm);
+		}
 		tech_pvt->cid = eXosip_call_send_initial_invite(invite);
 		snprintf(tech_pvt->call_id, sizeof(tech_pvt->call_id), "%d", tech_pvt->cid);
 		switch_core_hash_insert(globals.call_hash, tech_pvt->call_id, tech_pvt);
@@ -1081,6 +1085,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		osip_uri_t *uri;
 		osip_from_t *from;
 		char *displayname, *username;
+		osip_header_t *tedious;
 
 		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
@@ -1096,6 +1101,11 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 
 		snprintf(name, sizeof(name), "Exosip/%s-%04x", event->request->from->url->username, rand() & 0xffff);
 		switch_channel_set_name(channel, name);
+
+		if (osip_message_header_get_byname (event->request, "SrtpRealm", 0, &tedious)) {
+			tech_pvt->realm = switch_core_session_strdup(session, osip_header_get_value(tedious));
+		}
+
 
 
 		if (!(from = osip_message_get_from(event->request))) {
@@ -1476,6 +1486,7 @@ static void handle_answer(eXosip_event_t * event)
 
 
 	if (activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+		exosip_on_hangup(tech_pvt->session);
 		switch_channel_hangup(channel);
 		return;
 	}
@@ -1638,7 +1649,10 @@ static int config_exosip(int reload)
 				set_global_dialplan(val);
 			} else if (!strncasecmp(var, "srtp:", 5)) {
 				char *name = var + 5;
-				switch_core_hash_insert_dup(globals.srtp_hash, name, val);
+				if (name) {
+					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Add Realm [%s][%s]\n", name, val);
+					switch_core_hash_insert(globals.srtp_hash, switch_core_strdup(module_pool, name), switch_core_strdup(module_pool, val));
+				}
 			} else if (!strcmp(var, "codec_prefs")) {
 				set_global_codec_string(val);
 				globals.codec_order_last = switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);

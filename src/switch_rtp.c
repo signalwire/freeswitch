@@ -297,6 +297,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 								  "error: too few digits in key/salt "
 								  "(should be %d hexadecimal digits, found %d)\n",
 								  MASTER_KEY_LEN*2, len);
+			*err = "Crypt Error";
 			return SWITCH_STATUS_FALSE;
 		} 
 		if (strlen(crypto_key) > MASTER_KEY_LEN*2) {
@@ -304,11 +305,13 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 								  "error: too many digits in key/salt "
 								  "(should be %d hexadecimal digits, found %u)\n",
 								  MASTER_KEY_LEN*2, (unsigned)strlen(crypto_key));
+			*err = "Crypt Error";
 			return SWITCH_STATUS_FALSE;
 		}
     
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "set master key/salt to %s/", octet_string_hex_string(key, 16));
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "%s\n", octet_string_hex_string(key+16, 14));
+		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "set master key/salt to %s/", octet_string_hex_string(key, 16));
+		//switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "%s\n", octet_string_hex_string(key+16, 14));
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activating Secure RTP!\n");
 	}
 
 	rtp_session->send_msg.header.ssrc    = htonl(ssrc);
@@ -342,12 +345,12 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 
 		if ((stat = srtp_create(&rtp_session->recv_ctx, &policy))) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error allocating srtp [%d]\n", stat);
-			*err = "Error";
+			*err = "Crypt Error";
 			return SWITCH_STATUS_FALSE;
 		}
 		if ((stat = srtp_create(&rtp_session->send_ctx, &policy))) {
 			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error allocating srtp [%d]\n", stat);
-			*err = "Error";
+			*err = "Crypt Error";
 			return SWITCH_STATUS_FALSE;
 		}
 	}
