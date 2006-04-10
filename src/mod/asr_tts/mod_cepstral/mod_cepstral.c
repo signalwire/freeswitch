@@ -179,7 +179,7 @@ static switch_status cepstral_speech_feed_tts(switch_speech_handle *sh, char *te
 static switch_status cepstral_speech_read_tts(switch_speech_handle *sh,
 											  void *data,
 											  size_t *datalen,
-											  size_t *rate,
+											  uint32_t *rate,
 											  switch_speech_flag *flags) 
 {
 	cepstral_t *cepstral;
