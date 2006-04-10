@@ -308,7 +308,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 		}
     
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "set master key/salt to %s/", octet_string_hex_string(key, 16));
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s\n", octet_string_hex_string(key+16, 14));
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "%s\n", octet_string_hex_string(key+16, 14));
 	} else {
 		policy.key                 = (uint8_t *)key;
 		policy.ssrc.type           = ssrc_specific;
