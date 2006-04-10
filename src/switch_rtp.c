@@ -284,7 +284,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 		policy.key  = (uint8_t *) key;
 		policy.next = NULL;
 		policy.rtp.sec_serv = sec_serv_conf_and_auth;
-		policy.rtcp.sec_serv = sec_serv_conf_and_auth;
+		policy.rtcp.sec_serv = sec_serv_none;
 
 		/*
 		 * read key from hexadecimal on command line into an octet string
@@ -309,24 +309,8 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
     
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "set master key/salt to %s/", octet_string_hex_string(key, 16));
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "%s\n", octet_string_hex_string(key+16, 14));
-	} else {
-		policy.key                 = (uint8_t *)key;
-		policy.ssrc.type           = ssrc_specific;
-		policy.ssrc.value          = ssrc;
-		policy.rtp.cipher_type     = NULL_CIPHER;
-		policy.rtp.cipher_key_len  = 0; 
-		policy.rtp.auth_type       = NULL_AUTH;
-		policy.rtp.auth_key_len    = 0;
-		policy.rtp.auth_tag_len    = 0;
-		policy.rtp.sec_serv        = sec_serv_none;   
-		policy.rtcp.cipher_type    = NULL_CIPHER;
-		policy.rtcp.cipher_key_len = 0; 
-		policy.rtcp.auth_type      = NULL_AUTH;
-		policy.rtcp.auth_key_len   = 0;
-		policy.rtcp.auth_tag_len   = 0;
-		policy.rtcp.sec_serv       = sec_serv_none;   
-		policy.next                = NULL;
 	}
+
 	rtp_session->send_msg.header.ssrc    = htonl(ssrc);
 	rtp_session->send_msg.header.ts      = 0;
 	rtp_session->send_msg.header.seq     = (uint16_t) rand();
@@ -352,8 +336,11 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 	rtp_session->ms_per_packet = ms_per_packet;
 	rtp_session->packet_size = packet_size;
 	rtp_session->next_read = switch_time_now() + rtp_session->ms_per_packet;
-	srtp_create(&rtp_session->recv_ctx, &policy);
-	srtp_create(&rtp_session->send_ctx, &policy);
+
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
+		srtp_create(&rtp_session->recv_ctx, &policy);
+		srtp_create(&rtp_session->send_ctx, &policy);
+	}
 
 	*new_rtp_session = rtp_session;
 
@@ -420,6 +407,12 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp **rtp_session)
 {
 	switch_rtp_kill_socket(*rtp_session);
 	switch_socket_close((*rtp_session)->sock);
+
+	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE)) {
+		srtp_dealloc((*rtp_session)->recv_ctx);
+		srtp_dealloc((*rtp_session)->send_ctx);
+	}
+
 	*rtp_session = NULL;
 	return;
 }

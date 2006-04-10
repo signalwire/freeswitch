@@ -281,7 +281,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 				ip = globals.extip;
 			}
 		}
-		snprintf(from_uri, sizeof(from_uri), "<sip:%s@%s>", tech_pvt->caller_profile->caller_id_number, ip);
+		snprintf(from_uri, sizeof(from_uri), "%s <sip:%s@%s>", tech_pvt->caller_profile->caller_id_name, tech_pvt->caller_profile->caller_id_number, ip);
 
 		/* Setup codec negotiation stuffs */
 		osip_rfc3264_init(&tech_pvt->sdp_config);
@@ -1044,6 +1044,9 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		int num_codecs = 0;
 		switch_port_t sdp_port;
 		char *ip, *err;
+		osip_uri_t *uri;
+		osip_from_t *from;
+		char *displayname, *username;
 
 		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
@@ -1060,10 +1063,28 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		snprintf(name, sizeof(name), "Exosip/%s-%04x", event->request->from->url->username, rand() & 0xffff);
 		switch_channel_set_name(channel, name);
 
+
+		if (!(from = osip_message_get_from(event->request))) {
+			switch_core_session_destroy(&session);
+            return SWITCH_STATUS_MEMERR;
+		}
+		if (!(displayname = osip_from_get_displayname(from))) {
+			displayname = event->request->from->url->username;
+			if (!displayname) {
+				displayname = "n/a";
+			}
+		}
+
+		if (!(uri = osip_from_get_url(from))) {
+			username = displayname;
+		} else {
+			username = osip_uri_get_username(uri);
+		}
+
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																  globals.dialplan,
-																  event->request->from->displayname,
-																  event->request->from->url->username,
+																  displayname,
+																  username,
 																  event->request->from->url->host,
 																  NULL, NULL, event->request->req_uri->username)) != 0) {
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
