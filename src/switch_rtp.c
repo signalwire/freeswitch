@@ -279,7 +279,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 		switch_set_flag(rtp_session, SWITCH_RTP_FLAG_SECURE);
 		crypto_policy_set_rtp_default(&policy.rtp);
 		crypto_policy_set_rtcp_default(&policy.rtcp);
-		policy.ssrc.type  = ssrc_specific;
+		policy.ssrc.type  = ssrc_any_inbound;
 		policy.ssrc.value = ssrc;
 		policy.key  = (uint8_t *) key;
 		policy.next = NULL;
@@ -338,8 +338,18 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 	rtp_session->next_read = switch_time_now() + rtp_session->ms_per_packet;
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
-		srtp_create(&rtp_session->recv_ctx, &policy);
-		srtp_create(&rtp_session->send_ctx, &policy);
+		err_status_t stat;
+
+		if ((stat = srtp_create(&rtp_session->recv_ctx, &policy))) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error allocating srtp [%d]\n", stat);
+			*err = "Error";
+			return SWITCH_STATUS_FALSE;
+		}
+		if ((stat = srtp_create(&rtp_session->send_ctx, &policy))) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error allocating srtp [%d]\n", stat);
+			*err = "Error";
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
 	*new_rtp_session = rtp_session;
@@ -458,30 +468,30 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
 
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
+			return -1;
+		}
+
 		if (bytes < 0) {
 			return bytes;
-		}	
-
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
+		} else if (bytes > 0 && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
 			int sbytes = (int)bytes;
 			err_status_t stat;
 
-			stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg, &sbytes);
+			stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg.header, &sbytes);
 			if (stat) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE,
 						"error: srtp unprotection failed with code %d%s\n", stat,
 						stat == err_status_replay_fail ? " (replay check failed)" :
 						stat == err_status_auth_fail ? " (auth check failed)" : "");
-				return -1;
+				switch_yield(1000);
+				continue;
 			}
 			bytes = sbytes;
 		}
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
-				return -1;
-			}
-
+			
 			if ((switch_time_now() - rtp_session->next_read) > 1000) {
 				/* We're late! We're Late!*/
 				memset(&rtp_session->recv_msg, 0, 13);
@@ -584,7 +594,13 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 	bytes = datalen + rtp_header_len;
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
 		int sbytes = (int)bytes;
-		srtp_protect(rtp_session->send_ctx, &rtp_session->send_msg, &sbytes);
+		err_status_t stat;
+
+		stat = srtp_protect(rtp_session->send_ctx, &rtp_session->send_msg.header, &sbytes);
+		if (stat) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "error: srtp unprotection failed with code %d\n", stat);
+		}
+
 		bytes = sbytes;
 	}
 

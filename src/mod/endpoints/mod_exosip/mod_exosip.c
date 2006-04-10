@@ -66,7 +66,8 @@ typedef enum {
 	TFLAG_RTP = (1 << 7),
 	TFLAG_BYE = (1 << 8),
 	TFLAG_ANS = (1 << 9),
-	TFLAG_EARLY_MEDIA = (1 << 10)
+	TFLAG_EARLY_MEDIA = (1 << 10),
+	TFLAG_SECURE = (1 << 11)
 	
 } TFLAGS;
 
@@ -85,11 +86,11 @@ static struct {
 	char *codec_order[SWITCH_MAX_CODECS];
 	int codec_order_last;
 	switch_hash *call_hash;
+	switch_hash *srtp_hash;
 	int running;
 	int codec_ms;
 	int dtmf_duration;
 	unsigned int flags;
-	char *crypto_key;
 } globals;
 
 struct private_object {
@@ -126,6 +127,7 @@ struct private_object {
 	unsigned int out_digit_sofar;
 	unsigned int out_digit_dur;
 	uint16_t out_digit_seq;
+	char *realm;
 };
 
 
@@ -138,7 +140,6 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_extip, globals.extip)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_crypto_key, globals.crypto_key)
 
 static switch_status exosip_on_init(switch_core_session *session);
 static switch_status exosip_on_hangup(switch_core_session *session);
@@ -281,7 +282,10 @@ static switch_status exosip_on_init(switch_core_session *session)
 				ip = globals.extip;
 			}
 		}
-		snprintf(from_uri, sizeof(from_uri), "%s <sip:%s@%s>", tech_pvt->caller_profile->caller_id_name, tech_pvt->caller_profile->caller_id_number, ip);
+		snprintf(from_uri, sizeof(from_uri), "%s <sip:%s@%s>", 
+				 tech_pvt->caller_profile->caller_id_name,
+				 tech_pvt->caller_profile->caller_id_number, 
+				 ip);
 
 		/* Setup codec negotiation stuffs */
 		osip_rfc3264_init(&tech_pvt->sdp_config);
@@ -450,6 +454,7 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 	int bw, ms;
 	switch_channel *channel;
 	const char *err;
+	char *key = NULL;
 
 	assert(tech_pvt != NULL);
 
@@ -475,7 +480,18 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 						  tech_pvt->remote_sdp_audio_port, tech_pvt->read_codec.codec_interface->ianacode, ms);
 
 
-	
+	if (tech_pvt->realm) {
+		if (!(key = (char *) switch_core_hash_find(globals.srtp_hash, tech_pvt->realm))) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "undefined Realm %s\n", tech_pvt->realm);
+			switch_channel_hangup(channel);
+			switch_set_flag(tech_pvt, TFLAG_BYE);
+			switch_clear_flag(tech_pvt, TFLAG_IO);
+			return SWITCH_STATUS_FALSE;
+		} else {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "using Realm %s\n", tech_pvt->realm);
+		}
+	}
+
 	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
 										   tech_pvt->local_sdp_audio_port,
 										   tech_pvt->remote_sdp_audio_ip,
@@ -484,7 +500,7 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 										   tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 										   ms,
 										   0,
-										   globals.crypto_key,
+										   key,
 										   &err, switch_core_session_get_pool(tech_pvt->session));
 
 	if (tech_pvt->rtp_session) {
@@ -952,6 +968,23 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 			char name[128];
 			switch_caller_profile *caller_profile = NULL;
 
+
+			if (*outbound_profile->destination_number == '!') {
+				char *p;
+				
+				outbound_profile->destination_number++;
+
+				if ((p=strchr(outbound_profile->destination_number, '!'))) {
+					*p = '\0';
+					p++;
+					tech_pvt->realm = switch_core_session_strdup(*new_session, outbound_profile->destination_number);
+					outbound_profile->destination_number = p;
+					if ((p = strchr(tech_pvt->realm, '!'))) {
+						*p = '\0';
+					}
+				}
+
+			}
 			snprintf(name, sizeof(name), "Exosip/%s-%04x", outbound_profile->destination_number, rand() & 0xffff);
 			switch_channel_set_name(channel, name);
 
@@ -997,6 +1030,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	}
 
 	switch_core_hash_init(&globals.call_hash, module_pool);
+	switch_core_hash_init(&globals.srtp_hash, module_pool);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &exosip_module_interface;
@@ -1602,8 +1636,9 @@ static int config_exosip(int reload)
 				set_global_ip(val);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
-			} else if (!strcmp(var, "crypto_key")) {
-				set_global_crypto_key(val);
+			} else if (!strncasecmp(var, "srtp:", 5)) {
+				char *name = var + 5;
+				switch_core_hash_insert_dup(globals.srtp_hash, name, val);
 			} else if (!strcmp(var, "codec_prefs")) {
 				set_global_codec_string(val);
 				globals.codec_order_last = switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
