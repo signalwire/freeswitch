@@ -458,7 +458,8 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 {
 	switch_size_t bytes;
 	switch_status status;
-	
+
+
 	for(;;) {
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
@@ -541,7 +542,7 @@ SWITCH_DECLARE(int) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **dat
 static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint8_t payload)
 {
 	switch_size_t bytes;
-	
+
 	if (rtp_session->packet_size > datalen && (payload == rtp_session->payload)) {
 		if (!rtp_session->packet_buffer) {
 			if (switch_buffer_create(rtp_session->pool, &rtp_session->packet_buffer, rtp_session->packet_size * 2) != SWITCH_STATUS_SUCCESS) {

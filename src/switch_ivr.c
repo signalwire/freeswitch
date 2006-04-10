@@ -259,7 +259,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	uint32_t interval = 0, samples = 0;
 	uint32_t len = 0, ilen = 0;
 	switch_size_t olen = 0;
-	switch_frame write_frame;
+	switch_frame write_frame = {0};
 	switch_timer timer;
 	switch_core_thread_session thread_session;
 	switch_codec codec;
@@ -433,6 +433,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 #endif
 		
 		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
+
 			if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bad Write\n");
 				done = 1;
@@ -456,7 +457,6 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 
 	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "done playing file\n");
 	switch_core_file_close(fh);
-
 	switch_core_codec_destroy(&codec);
 
 	if (timer_name) {
@@ -488,7 +488,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	uint32_t samples = 0;
 	uint32_t len = 0;
 	switch_size_t ilen = 0;
-	switch_frame write_frame;
+	switch_frame write_frame = {0};
 	switch_timer timer;
 	switch_core_thread_session thread_session;
 	switch_codec codec;
@@ -761,6 +761,8 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 
 		/* read audio from 1 channel and write it to the other */
 		if (switch_core_session_read_frame(session_a, &read_frame, -1, stream_id) == SWITCH_STATUS_SUCCESS && read_frame->datalen) {
+
+
 			if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
 				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "write: %s Bad Frame....[%u] Bubye!\n", switch_channel_get_name(chan_b), read_frame->datalen);
 				data->running = -1;
