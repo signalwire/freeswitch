@@ -487,8 +487,7 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 						"error: srtp unprotection failed with code %d%s\n", stat,
 						stat == err_status_replay_fail ? " (replay check failed)" :
 						stat == err_status_auth_fail ? " (auth check failed)" : "");
-				switch_yield(1000);
-				continue;
+				return -1;
 			}
 			bytes = sbytes;
 		}
