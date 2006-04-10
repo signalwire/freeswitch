@@ -44,6 +44,8 @@
 #define RTP_START_PORT 16384
 #define RTP_END_PORT 32768
 #define SWITCH_RTP_CNG_PAYLOAD 13
+#define MAX_KEY_LEN      64
+#define MASTER_KEY_LEN   30
 
 static switch_port_t NEXT_PORT = RTP_START_PORT;
 static switch_mutex_t *port_lock = NULL;
@@ -244,6 +246,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 												uint32_t packet_size,
 												uint32_t ms_per_packet,
 												switch_rtp_flag_t flags, 
+												char *crypto_key,
 												const char **err,
 												switch_memory_pool *pool)
 {
@@ -269,27 +272,60 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 	/* for from address on recvfrom calls */
 	switch_sockaddr_info_get(&rtp_session->from_addr, NULL, SWITCH_UNSPEC, 0, 0, rtp_session->pool);
 	
+	memset(&policy, 0, sizeof(policy));
+	if (crypto_key) {
+		int len;
 
+		crypto_policy_set_rtp_default(&policy.rtp);
+		crypto_policy_set_rtcp_default(&policy.rtcp);
+		policy.ssrc.type  = ssrc_specific;
+		policy.ssrc.value = ssrc;
+		policy.key  = (uint8_t *) key;
+		policy.next = NULL;
+		policy.rtp.sec_serv = sec_serv_conf_and_auth;
+		policy.rtcp.sec_serv = sec_serv_none;  /* we don't do RTCP anyway */
 
-
-
-    policy.key                 = (uint8_t *)key;
-    policy.ssrc.type           = ssrc_specific;
-    policy.ssrc.value          = ssrc;
-    policy.rtp.cipher_type     = NULL_CIPHER;
-    policy.rtp.cipher_key_len  = 0; 
-    policy.rtp.auth_type       = NULL_AUTH;
-    policy.rtp.auth_key_len    = 0;
-    policy.rtp.auth_tag_len    = 0;
-    policy.rtp.sec_serv        = sec_serv_none;   
-    policy.rtcp.cipher_type    = NULL_CIPHER;
-    policy.rtcp.cipher_key_len = 0; 
-    policy.rtcp.auth_type      = NULL_AUTH;
-    policy.rtcp.auth_key_len   = 0;
-    policy.rtcp.auth_tag_len   = 0;
-    policy.rtcp.sec_serv       = sec_serv_none;   
-    policy.next                = NULL;
-
+		/*
+		 * read key from hexadecimal on command line into an octet string
+		 */
+		len = hex_string_to_octet_string(key, crypto_key, MASTER_KEY_LEN*2);
+    
+		/* check that hex string is the right length */
+		if (len < MASTER_KEY_LEN*2) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, 
+								  "error: too few digits in key/salt "
+								  "(should be %d hexadecimal digits, found %d)\n",
+								  MASTER_KEY_LEN*2, len);
+			return SWITCH_STATUS_FALSE;
+		} 
+		if (strlen(crypto_key) > MASTER_KEY_LEN*2) {
+			switch_console_printf(SWITCH_CHANNEL_CONSOLE, 
+								  "error: too many digits in key/salt "
+								  "(should be %d hexadecimal digits, found %u)\n",
+								  MASTER_KEY_LEN*2, (unsigned)strlen(crypto_key));
+			return SWITCH_STATUS_FALSE;
+		}
+    
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "set master key/salt to %s/", octet_string_hex_string(key, 16));
+		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s\n", octet_string_hex_string(key+16, 14));
+	} else {
+		policy.key                 = (uint8_t *)key;
+		policy.ssrc.type           = ssrc_specific;
+		policy.ssrc.value          = ssrc;
+		policy.rtp.cipher_type     = NULL_CIPHER;
+		policy.rtp.cipher_key_len  = 0; 
+		policy.rtp.auth_type       = NULL_AUTH;
+		policy.rtp.auth_key_len    = 0;
+		policy.rtp.auth_tag_len    = 0;
+		policy.rtp.sec_serv        = sec_serv_none;   
+		policy.rtcp.cipher_type    = NULL_CIPHER;
+		policy.rtcp.cipher_key_len = 0; 
+		policy.rtcp.auth_type      = NULL_AUTH;
+		policy.rtcp.auth_key_len   = 0;
+		policy.rtcp.auth_tag_len   = 0;
+		policy.rtcp.sec_serv       = sec_serv_none;   
+		policy.next                = NULL;
+	}
 	rtp_session->send_msg.header.ssrc    = htonl(ssrc);
 	rtp_session->send_msg.header.ts      = 0;
 	rtp_session->send_msg.header.seq     = (uint16_t) rand();
@@ -331,12 +367,13 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_host,
 										   uint32_t packet_size,
 										   uint32_t ms_per_packet,
 										   switch_rtp_flag_t flags,
+										   char *crypto_key,
 										   const char **err,
 										   switch_memory_pool *pool) 
 {
 	switch_rtp *rtp_session;
 
-	if (switch_rtp_create(&rtp_session, payload, packet_size, ms_per_packet, flags, err, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_rtp_create(&rtp_session, payload, packet_size, ms_per_packet, flags, crypto_key, err, pool) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
 

@@ -1290,6 +1290,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 																		 tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 																		 tech_pvt->read_codec.implementation->microseconds_per_frame,
 																		 0,
+																		 NULL,
 																		 &err, switch_core_session_get_pool(tech_pvt->session)))) {
 								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "RTP ERROR %s\n", err);
 								switch_channel_hangup(channel);

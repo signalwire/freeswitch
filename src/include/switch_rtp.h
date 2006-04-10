@@ -85,6 +85,7 @@ SWITCH_DECLARE(switch_status)switch_rtp_create(switch_rtp **new_rtp_session,
 											   uint32_t packet_size,
 											   uint32_t ms_per_packet,
 											   switch_rtp_flag_t flags,
+											   char *crypto_key,
 											   const char **err,
 											   switch_memory_pool *pool);
 
@@ -111,6 +112,7 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_host,
 										   uint32_t packet_size,
 										   uint32_t ms_per_packet,
 										   switch_rtp_flag_t flags,
+										   char *crypto_key,
 										   const char **err,
 										   switch_memory_pool *pool);
 

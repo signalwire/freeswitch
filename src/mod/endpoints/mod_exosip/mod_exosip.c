@@ -89,6 +89,7 @@ static struct {
 	int codec_ms;
 	int dtmf_duration;
 	unsigned int flags;
+	char *crypto_key;
 } globals;
 
 struct private_object {
@@ -137,6 +138,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_extip, globals.extip)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_crypto_key, globals.crypto_key)
 
 static switch_status exosip_on_init(switch_core_session *session);
 static switch_status exosip_on_hangup(switch_core_session *session);
@@ -482,6 +484,7 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 										   tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 										   ms,
 										   0,
+										   globals.crypto_key,
 										   &err, switch_core_session_get_pool(tech_pvt->session));
 
 	if (tech_pvt->rtp_session) {
@@ -1572,6 +1575,8 @@ static int config_exosip(int reload)
 				set_global_ip(val);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
+			} else if (!strcmp(var, "crypto_key")) {
+				set_global_crypto_key(val);
 			} else if (!strcmp(var, "codec_prefs")) {
 				set_global_codec_string(val);
 				globals.codec_order_last = switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
