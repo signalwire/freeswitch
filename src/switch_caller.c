@@ -108,6 +108,14 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile 
 		snprintf(header_name, sizeof(header_name), "%s-Destination-Number", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->destination_number);
 	}
+	if (caller_profile->uuid) {
+		snprintf(header_name, sizeof(header_name), "%s-Unique-ID", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->uuid);
+	}
+	if (caller_profile->chan_name) {
+		snprintf(header_name, sizeof(header_name), "%s-Channel-Name", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->chan_name);
+	}
 
 }
 

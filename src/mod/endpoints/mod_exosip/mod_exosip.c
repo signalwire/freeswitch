@@ -1086,6 +1086,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		osip_from_t *from;
 		char *displayname, *username;
 		osip_header_t *tedious;
+		char *val;
 
 		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
@@ -1112,10 +1113,21 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			switch_core_session_destroy(&session);
             return SWITCH_STATUS_MEMERR;
 		}
-		if (!(displayname = osip_from_get_displayname(from))) {
-			displayname = event->request->from->url->username;
-			if (!displayname) {
-				displayname = "n/a";
+		if (!(val = osip_from_get_displayname(from))) {
+			val = event->request->from->url->username;
+			if (!val) {
+				val = "n/a";
+			}
+		}
+		
+		displayname = switch_core_session_strdup(session, val);
+
+		if (*displayname == '"') {
+			char *p;
+
+			displayname++;
+			if ((p = strchr(displayname, '"'))) {
+				*p = '\0';
 			}
 		}
 

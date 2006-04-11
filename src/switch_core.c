@@ -1705,7 +1705,7 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 			return;
 		}
 		
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXEC) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", extension->current_application->application_name);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", extension->current_application->application_data);
@@ -2279,7 +2279,7 @@ static void core_event_handler(switch_event *event)
 
 	switch (event->event_id) {
 	case SWITCH_EVENT_CHANNEL_CREATE:
-		snprintf(buf, sizeof(buf), "insert into calls (uuid,created,name,state) values('%s','%s','%s','%s')",
+		snprintf(buf, sizeof(buf), "insert into channels (uuid,created,name,state) values('%s','%s','%s','%s')",
 				 switch_event_get_header(event, "unique-id"),
 				 switch_event_get_header(event, "event-date-local"),
 				 switch_event_get_header(event, "channel-name"),
@@ -2287,8 +2287,8 @@ static void core_event_handler(switch_event *event)
 				 );
 		sql = buf;
 		break;
-	case SWITCH_EVENT_CHANNEL_EXEC:
-		snprintf(buf, sizeof(buf), "update calls set application='%s',application_data='%s' where uuid='%s'",
+	case SWITCH_EVENT_CHANNEL_EXECUTE:
+		snprintf(buf, sizeof(buf), "update channels set application='%s',application_data='%s' where uuid='%s'",
 				 switch_event_get_header(event, "application"),
 				 switch_event_get_header(event, "application-data"),
 				 switch_event_get_header(event, "unique-id")
@@ -2302,11 +2302,11 @@ static void core_event_handler(switch_event *event)
 
 			switch(state_i) {
 			case CS_HANGUP:
-				snprintf(buf, sizeof(buf), "delete from calls where uuid='%s'", switch_event_get_header(event, "unique-id"));
+				snprintf(buf, sizeof(buf), "delete from channels where uuid='%s'", switch_event_get_header(event, "unique-id"));
 				sql = buf;
 				break;
 			case CS_RING:
-				snprintf(buf, sizeof(buf), "update calls set state='%s',cid_name='%s',cid_num='%s',ip_addr='%s',dest='%s'"
+				snprintf(buf, sizeof(buf), "update channels set state='%s',cid_name='%s',cid_num='%s',ip_addr='%s',dest='%s'"
 						 "where uuid='%s'",
 						 switch_event_get_header(event, "channel-state"),
 						 switch_event_get_header(event, "caller-caller-id-name"),
@@ -2318,7 +2318,7 @@ static void core_event_handler(switch_event *event)
 				sql = buf;
 				break;
 			default:
-				snprintf(buf, sizeof(buf), "update calls set state='%s' where uuid='%s'", 
+				snprintf(buf, sizeof(buf), "update channels set state='%s' where uuid='%s'", 
 						 switch_event_get_header(event, "channel-state"),
 						 switch_event_get_header(event, "unique-id")
 						 );
@@ -2328,8 +2328,28 @@ static void core_event_handler(switch_event *event)
 		
 		}
 		break;
+	case SWITCH_EVENT_CHANNEL_BRIDGE:
+		snprintf(buf, sizeof(buf), "insert into calls values ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
+				 switch_event_get_header(event, "event-calling-function"),
+				 switch_event_get_header(event, "caller-caller-id-name"),
+				 switch_event_get_header(event, "caller-caller-id-number"),
+				 switch_event_get_header(event, "caller-destination-number"),
+				 switch_event_get_header(event, "caller-channel-name"),
+				 switch_event_get_header(event, "caller-unique-id"),
+				 switch_event_get_header(event, "originatee-caller-id-name"),
+				 switch_event_get_header(event, "originatee-caller-id-number"),
+				 switch_event_get_header(event, "originatee-destination-number"),
+				 switch_event_get_header(event, "originatee-channel-name"),
+				 switch_event_get_header(event, "originatee-unique-id")
+				 );
+		sql = buf;
+		break;
+	case SWITCH_EVENT_CHANNEL_UNBRIDGE:
+		snprintf(buf, sizeof(buf), "delete from calls where caller_uuid='%s'", switch_event_get_header(event, "caller-unique-id"));
+		sql = buf;
+		break;
 	case SWITCH_EVENT_SHUTDOWN:
-		snprintf(buf, sizeof(buf), "delete from calls");
+		snprintf(buf, sizeof(buf), "delete from channels");
 		sql = buf;
 		break;
 	case SWITCH_EVENT_LOG:
@@ -2430,8 +2450,8 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 	if ((runtime.db = switch_core_db_handle()) == 0 ) {
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error Opening DB!\n");
 	} else {
-		char create_calls_sql[] =
-			"CREATE TABLE calls (\n"
+		char create_channels_sql[] =
+			"CREATE TABLE channels (\n"
 			"   uuid  VARCHAR(255),\n"
 			"   created  VARCHAR(255),\n"
 			"   name  VARCHAR(255),\n"
@@ -2443,9 +2463,25 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 			"   application  VARCHAR(255),\n"
 			"   application_data  VARCHAR(255)\n"
 			");\n";
+		char create_calls_sql[] =
+			"CREATE TABLE calls (\n"
+			"   function  VARCHAR(255),\n"
+			"   caller_cid_name  VARCHAR(255),\n"
+			"   caller_cid_num   VARCHAR(255),\n"
+			"   caller_dest_num  VARCHAR(255),\n"
+			"   caller_chan_name VARCHAR(255),\n"
+			"   caller_uuid      VARCHAR(255),\n"
+			"   callee_cid_name  VARCHAR(255),\n"
+			"   callee_cid_num   VARCHAR(255),\n"
+			"   callee_dest_num  VARCHAR(255),\n"
+			"   callee_chan_name VARCHAR(255),\n"
+			"   callee_uuid      VARCHAR(255)\n"
+			");\n";
 
 		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Opening DB\n");
+		switch_core_db_exec(runtime.db, "drop table channels", NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, "drop table calls", NULL, NULL, NULL);
+		switch_core_db_exec(runtime.db, create_channels_sql, NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, create_calls_sql, NULL, NULL, NULL);
 		
 		if (switch_event_bind("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL) !=

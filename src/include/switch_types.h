@@ -431,7 +431,9 @@ typedef enum {
     SWITCH_EVENT_CHANNEL_STATE		- A channel has changed state
     SWITCH_EVENT_CHANNEL_ANSWER		- A channel has been answered
     SWITCH_EVENT_CHANNEL_HANGUP		- A channel has been hungup
-    SWITCH_EVENT_CHANNEL_EXEC		- A channel has executed a module's application
+    SWITCH_EVENT_CHANNEL_EXECUTE	- A channel has executed a module's application
+	SWITCH_EVENT_CHANNEL_BRIDGE     - A channel has bridged to another channel
+	SWITCH_EVENT_CHANNEL_UNBRIDGE   - A channel has unbridged from another channel
     SWITCH_EVENT_API				- An API call has been executed
     SWITCH_EVENT_LOG				- A LOG event has been triggered
     SWITCH_EVENT_INBOUND_CHAN		- A new inbound channel has been created
@@ -450,7 +452,9 @@ typedef enum {
 	SWITCH_EVENT_CHANNEL_STATE,
 	SWITCH_EVENT_CHANNEL_ANSWER,
 	SWITCH_EVENT_CHANNEL_HANGUP,
-	SWITCH_EVENT_CHANNEL_EXEC,
+	SWITCH_EVENT_CHANNEL_EXECUTE,
+	SWITCH_EVENT_CHANNEL_BRIDGE,
+	SWITCH_EVENT_CHANNEL_UNBRIDGE,
 	SWITCH_EVENT_API,
 	SWITCH_EVENT_LOG,
 	SWITCH_EVENT_INBOUND_CHAN,

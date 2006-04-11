@@ -33,8 +33,6 @@
 #include <switch_ivr.h>
 
 
-/* TBD (Lots! there are not very many functions in here lol) */
-
 SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_session *session,
 																 switch_dtmf_callback_function dtmf_callback,
 																 void *buf,
@@ -927,12 +925,21 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 		switch_channel_answer(caller_channel);
 	}
 
-	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || 
-		switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
+	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
+		switch_event *event;
+		
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(caller_channel, event);
+			switch_event_fire(&event);
+		}
 
 		switch_core_session_launch_thread(session, audio_bridge_thread, (void *) &other_audio_thread);
 		audio_bridge_thread(NULL, (void *) &this_audio_thread);
 
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(caller_channel, event);
+			switch_event_fire(&event);
+		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
