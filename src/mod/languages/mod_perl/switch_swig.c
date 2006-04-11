@@ -56,12 +56,12 @@ int fs_console_loop(void)
 
 void fs_console_log(char *msg)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, msg);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, msg);
 }
 
 void fs_console_clean(char *msg)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, msg);
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, msg);
 }
 
 struct switch_core_session *fs_core_session_locate(char *uuid)

@@ -39,15 +39,15 @@ static int switch_console_process(char *cmd, char *retbuf, int retlen)
 
 
 	if (!strcmp(cmd, "shutdown") || !strcmp(cmd, "...")) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bye!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bye!\n");
 		return 0;
 	}
 	if (!strcmp(cmd, "version")) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "FreeSwitch Version %s\n", SWITCH_VERSION_FULL);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "FreeSwitch Version %s\n", SWITCH_VERSION_FULL);
 		return 1;
 	}
 	if (!strcmp(cmd, "help")) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
 							  "\n"
 							  "Valid Commands:\n\n"
 							  "version\n" "help - umm yeah..\n" "shutdown - stop the program\n\n");
@@ -62,9 +62,9 @@ static int switch_console_process(char *cmd, char *retbuf, int retlen)
 		*arg++ = '\0';
 	}
 	if (switch_api_execute(cmd, arg, retbuf, retlen) == SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unknown Command: %s\n", cmd);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Unknown Command: %s\n", cmd);
 	}
 	return 1;
 }
@@ -94,7 +94,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *fi
 	} else {
 		char date[80] = "";
 
-		if (channel == SWITCH_CHANNEL_ID_CONSOLE_CLEAN) {
+		if (channel == SWITCH_CHANNEL_ID_LOG_CLEAN) {
 			fprintf(handle, "%s", data);
 		} else {
 			switch_size_t retsize;
@@ -103,7 +103,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *fi
 			switch_time_exp_lt(&tm, switch_time_now());
 			switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 
-			if (channel == SWITCH_CHANNEL_ID_CONSOLE) {
+			if (channel == SWITCH_CHANNEL_ID_LOG) {
 				fprintf(handle, "[%d] %s %s:%d %s() %s", (int) getpid(), date, filep, line, func, data);
 			}
 
@@ -139,7 +139,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 
 	while (running) {
 		if (activity) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "\nfreeswitch@%s> ", hostname);
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\nfreeswitch@%s> ", hostname);
 		}
 		//activity = switch_socket_waitfor(fileno(stdin), 100, POLLIN | POLLERR);
 

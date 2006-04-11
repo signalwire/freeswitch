@@ -37,13 +37,13 @@ static int RUNNING = 0;
 static int handle_SIGPIPE(int sig)
 {
 	if(sig);
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Sig Pipe!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig Pipe!\n");
 	return 0;
 }
 #ifdef TRAP_BUS
 static int handle_SIGBUS(int sig)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Sig BUS!\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig BUS!\n");
 	return 0;
 }
 #endif
@@ -158,15 +158,15 @@ int main(int argc, char *argv[])
 
 	
 	if (!err) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bringing up environment.\n");
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Loading Modules.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
 		if (switch_loadable_module_init() != SWITCH_STATUS_SUCCESS) {
 			err = "Cannot load modules";
 		}
 	}
 
 	if (err) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error: %s", err);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s", err);
 		exit(-1);
 	}
 
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 		switch_event_fire(&event);
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_VERSION_FULL);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_VERSION_FULL);
 	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 
 	if (bg) {
@@ -204,10 +204,10 @@ int main(int argc, char *argv[])
 		switch_event_fire(&event);
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Clean up modules.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
 	switch_loadable_module_shutdown();
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Tearing down environment.\n");
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Exiting Now.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Tearing down environment.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Exiting Now.\n");
 	switch_core_destroy();
 	return 0;
 }

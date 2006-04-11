@@ -57,44 +57,44 @@ static sw_result HOWL_API my_browser(sw_discovery discovery,
 	switch (status) {
 		case SW_DISCOVERY_BROWSE_INVALID:
 		{
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "browse reply: Invalid\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "browse reply: Invalid\n");
 		}
 		break;
 
 		case SW_DISCOVERY_BROWSE_RELEASE:
 		{
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "browse reply: Release\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "browse reply: Release\n");
 		}
 		break;
 
 		case SW_DISCOVERY_BROWSE_ADD_DOMAIN:
 		{
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "browse reply: Add Domain\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "browse reply: Add Domain\n");
 		}
 		break;
 
 		case SW_DISCOVERY_BROWSE_ADD_DEFAULT_DOMAIN:
 		{
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "browse reply: Add Default Domain\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "browse reply: Add Default Domain\n");
 		}
 		break;
 
 		case SW_DISCOVERY_BROWSE_REMOVE_DOMAIN:
 		{
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "browse reply: Remove Domain\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "browse reply: Remove Domain\n");
 		}
 		break;
 
 		case SW_DISCOVERY_BROWSE_REMOVE_SERVICE:
 		{
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "browse reply: Remove Service\n");
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "remove service: 0x%x %s %s %s\n", interface_index, name, type, domain);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "browse reply: Remove Service\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "remove service: 0x%x %s %s %s\n", interface_index, name, type, domain);
 		}
 		break;
 
 		case SW_DISCOVERY_BROWSE_RESOLVED:
 		{
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "browse reply: Resolved\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "browse reply: Resolved\n");
 		}
 		break;
 		case SW_DISCOVERY_BROWSE_ADD_SERVICE:
@@ -116,7 +116,7 @@ static sw_result HOWL_API my_service_reply(sw_discovery	discovery,
 		"Invalid"
 	};
 	
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "publish reply: %s\n", status_text[status]);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "publish reply: %s\n", status_text[status]);
 	return SW_OKAY;
 }
 
@@ -129,7 +129,7 @@ static void event_handler(switch_event *event)
 	switch (event->event_id) {
 	case SWITCH_EVENT_PUBLISH:
 		if (sw_text_record_init(&text_record) != SW_OKAY) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "sw_text_record_init() failed\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sw_text_record_init() failed\n");
 			return;
 		} else {
 			switch_event_header *hp;
@@ -146,7 +146,7 @@ static void event_handler(switch_event *event)
 
 				snprintf(data, len, "%s=%s", hp->name, hp->value);
 				if (sw_text_record_add_string(text_record, data) != SW_OKAY) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "unable to add service text: %s\n", data);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unable to add service text: %s\n", data);
 					free(data);
 					return;
 				}
@@ -172,7 +172,7 @@ static void event_handler(switch_event *event)
 											   my_service_reply,
 											   NULL,
 											   &globals.disc_id)) != SW_OKAY) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "publish failed: %u\n", result);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "publish failed: %u\n", result);
 				sw_text_record_fina(text_record);
 				switch_mutex_unlock(globals.zc_lock);
 				return;
@@ -201,7 +201,7 @@ static switch_status load_config(void)
 	sw_discovery_oid *oid;
 
 	if (!switch_config_open_file(&cfg, cf)) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -209,7 +209,7 @@ static switch_status load_config(void)
 		if (!strcasecmp(cfg.category, "settings")) {
 			if (!strcmp(var, "browse")) {
 				if ((oid = switch_core_alloc(module_pool, sizeof(*oid))) != 0) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Bind browser to to %s\n", val);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bind browser to to %s\n", val);
 					switch_mutex_lock(globals.zc_lock);	
 					sw_discovery_browse(globals.discovery, 0, val, NULL, my_browser, NULL, oid);
 					switch_mutex_unlock(globals.zc_lock);
@@ -220,13 +220,13 @@ static switch_status load_config(void)
 			} else if (!strcasecmp(var, "publish") && !strcasecmp(val, "yes")) {
 				if (switch_event_bind((char *) modname, SWITCH_EVENT_PUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
 					SWITCH_STATUS_SUCCESS) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't bind!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't bind!\n");
 					return SWITCH_STATUS_GENERR;
 				}
 				
 				if (switch_event_bind((char *) modname, SWITCH_EVENT_UNPUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
 					SWITCH_STATUS_SUCCESS) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't bind!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't bind!\n");
 					return SWITCH_STATUS_GENERR;
 				}
 			}
@@ -270,14 +270,14 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	memset(&globals, 0, sizeof(globals));
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
 
 	switch_mutex_init(&globals.zc_lock, SWITCH_MUTEX_NESTED, module_pool);
 
 	if (sw_discovery_init(&globals.discovery) != SW_OKAY) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "sw_discovery_init() failed\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sw_discovery_init() failed\n");
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -286,12 +286,12 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	}
 	
 	if (switch_event_reserve_subclass(MY_EVENT_PUBLISH) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't register subclass!");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (switch_event_reserve_subclass(MY_EVENT_UNPUBLISH) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't register subclass!");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}
 

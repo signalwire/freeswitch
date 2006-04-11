@@ -92,7 +92,7 @@ static switch_status cepstral_speech_open(switch_speech_handle *sh, char *voice_
 		}
 
 		if (switch_buffer_create(sh->memory_pool, &cepstral->audio_buffer, SWITCH_RECCOMMENDED_BUFFER_SIZE) != SWITCH_STATUS_SUCCESS) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Buffer Failed!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Buffer Failed!\n");
 			return SWITCH_STATUS_MEMERR;
 		}
 
@@ -108,26 +108,26 @@ static switch_status cepstral_speech_open(switch_speech_handle *sh, char *voice_
 
 		/* Open a Swift Port through which to make TTS calls */
 		if (SWIFT_FAILED(cepstral->port = swift_port_open(engine, cepstral->params))) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Failed to open Swift Port.");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failed to open Swift Port.");
 			goto all_done;
 		}
 
 		
 		if (voice_name && SWIFT_FAILED(swift_port_set_voice_by_name(cepstral->port, voice_name))) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid voice %s!\n", voice_name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid voice %s!\n", voice_name);
 			voice_name = NULL;
 		}
 
 		if (!voice_name) {
 			/* Find the first voice on the system */
 			if ((cepstral->voice = swift_port_find_first_voice(cepstral->port, NULL, NULL)) == NULL) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Failed to find any voices!\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failed to find any voices!\n");
 				goto all_done;
 			}
 
 			/* Set the voice found by find_first_voice() as the port's current voice */
 			if ( SWIFT_FAILED(swift_port_set_voice(cepstral->port, cepstral->voice)) ) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Failed to set voice.\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failed to set voice.\n");
 				goto all_done;
 			}
 		}
@@ -274,7 +274,7 @@ switch_status switch_module_load(const switch_loadable_module_interface **interf
 
 	/* Open the Swift TTS Engine */
 	if ( SWIFT_FAILED(engine = swift_engine_open(NULL)) ) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Failed to open Swift Engine.");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failed to open Swift Engine.");
 		return SWITCH_STATUS_GENERR;
 	}
 	

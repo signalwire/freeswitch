@@ -1,3 +1,4 @@
+loggers/mod_console
 applications/mod_bridgecall
 applications/mod_echo
 #applications/mod_ivrtest
@@ -29,3 +30,4 @@ formats/mod_sndfile
 #languages/mod_perl
 #languages/mod_spidermonkey
 timers/mod_softtimer
+

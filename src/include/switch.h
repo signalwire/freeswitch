@@ -67,6 +67,8 @@ extern "C" {
 #include <switch_ivr.h>
 #include <switch_rtp.h>
 #include <switch_stun.h>
+#include <switch_stun.h>
+#include <switch_log.h>
 #ifdef __cplusplus
 }
 #endif

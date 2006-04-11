@@ -502,7 +502,7 @@ static int on_stream(ldl_handle_t *handle, int type, iks * node)
 		} else if (strcmp("failure", iks_name(node)) == 0) {
 			fprintf(globals.log_stream, "sasl authentication failed\n");
 		} else if (strcmp("success", iks_name(node)) == 0) {
-			fprintf(globals.log_stream, "server connected\n");
+			fprintf(globals.log_stream, "XMPP server connected\n");
 			iks_send_header(handle->parser, handle->acc->server);
 			ldl_set_flag(handle, LDL_FLAG_AUTHORIZED);
 		} else {

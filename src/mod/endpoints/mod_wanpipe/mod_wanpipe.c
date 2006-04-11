@@ -242,15 +242,15 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 	err = sangoma_tdm_set_codec(tech_pvt->socket, &tdm_api, WP_SLINEAR);
 	
 	mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->socket, &tdm_api);	
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE INIT MTU is %d\n", mtu_mru);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WANPIPE INIT MTU is %d\n", mtu_mru);
 
 	if (mtu_mru != globals.mtu) {
 		sangoma_tdm_set_usr_period(tech_pvt->socket, &tdm_api, 40);
 		err = sangoma_tdm_set_usr_period(tech_pvt->socket, &tdm_api, new_mtu);
 		mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->socket, &tdm_api);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ADJUSTED MTU AFTER SETTING IT TO %d is %d %d [%s]\n", new_mtu, mtu_mru, err, strerror(err));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ADJUSTED MTU AFTER SETTING IT TO %d is %d %d [%s]\n", new_mtu, mtu_mru, err, strerror(err));
 		if (mtu_mru != globals.mtu) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Failure to adjust MTU\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failure to adjust MTU\n");
 			switch_channel_hangup(channel);
 			return SWITCH_STATUS_FALSE;
 		}
@@ -259,7 +259,7 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 	if (switch_core_codec_init
 		(&tech_pvt->read_codec, "L16", rate, 20, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s Cannot set read codec\n", switch_channel_get_name(channel));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Cannot set read codec\n", switch_channel_get_name(channel));
 		switch_channel_hangup(channel);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -267,7 +267,7 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 	if (switch_core_codec_init
 		(&tech_pvt->write_codec, "L16", rate, 20, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s Cannot set read codec\n", switch_channel_get_name(channel));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Cannot set read codec\n", switch_channel_get_name(channel));
 		switch_channel_hangup(channel);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -317,7 +317,7 @@ static switch_status wanpipe_on_ring(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE RING\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WANPIPE RING\n");
 
 	
 
@@ -349,7 +349,7 @@ static switch_status wanpipe_on_hangup(switch_core_session *session)
 	switch_core_codec_destroy(&tech_pvt->write_codec);
 
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE HANGUP\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WANPIPE HANGUP\n");
 
 	if (!switch_test_flag(tech_pvt, TFLAG_NOSIG)) {
 		pri_hangup(tech_pvt->spri->pri, tech_pvt->call, tech_pvt->cause);
@@ -374,7 +374,7 @@ static switch_status wanpipe_on_hangup(switch_core_session *session)
 
 static switch_status wanpipe_on_loopback(switch_core_session *session)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE LOOPBACK\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WANPIPE LOOPBACK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -391,7 +391,7 @@ static switch_status wanpipe_on_transmit(switch_core_session *session)
 
 
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "WANPIPE TRANSMIT\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WANPIPE TRANSMIT\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -477,7 +477,7 @@ static switch_status wanpipe_read_frame(switch_core_session *session, switch_fra
 	if(digit_str[0]) {
 		switch_channel_queue_dtmf(channel, digit_str);
 		if (globals.debug) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DTMF DETECTED: [%s]\n", digit_str);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
 		}
 		if (globals.supress_dtmf_tone) {
 			memset(tech_pvt->read_frame.data, 0, tech_pvt->read_frame.datalen);
@@ -537,13 +537,13 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 		result = sangoma_sendmsg_socket(tech_pvt->socket,
 									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), dtmf, bread, 0);
 		if (result < 0) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE,
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								  "Bad Write %d bytes returned %d (%s)!\n", bread,
 								  result, strerror(errno));
 			if (errno == EBUSY) {
 				continue;
 			}
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Failed!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Failed!\n");
 			status = SWITCH_STATUS_GENERR;
 			break;
 		} else {
@@ -579,13 +579,13 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 		result = sangoma_sendmsg_socket(tech_pvt->socket,
 									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), bp, towrite, 0);
 		if (result < 0) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE,
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								  "Bad Write frame len %u write %d bytes returned %d (%s)!\n", frame->datalen,
 								  globals.mtu, result, strerror(errno));
 			if (errno == EBUSY) {
 				continue;
 			}
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Failed!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Failed!\n");
 			status = SWITCH_STATUS_GENERR;
 			break;
 		} else {
@@ -614,12 +614,12 @@ static switch_status wanpipe_send_dtmf(switch_core_session *session, char *digit
 	assert(tech_pvt != NULL);
 
 	if (!tech_pvt->dtmf_buffer) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate DTMF Buffer....");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocate DTMF Buffer....");
 		if (switch_buffer_create(switch_core_session_get_pool(session), &tech_pvt->dtmf_buffer, 3192) != SWITCH_STATUS_SUCCESS) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "FAILURE!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "FAILURE!\n");
 			return SWITCH_STATUS_FALSE;
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "SUCCESS!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "SUCCESS!\n");
 		}
 	}
 	for (cur = digits; *cur; cur++) {
@@ -716,7 +716,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 		}
 		outbound_profile->destination_number++;
 	} else if (!globals.configured_spans) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error No Spans Configured.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error No Spans Configured.\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -732,7 +732,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_STATUS_GENERR;
 		}
@@ -755,7 +755,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 						if (num && *num > 47 && *num < 58) {
 							span = atoi(num);
 						} else {
-							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invlid Syntax\n");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invlid Syntax\n");
 							switch_core_session_destroy(new_session);
 							return SWITCH_STATUS_GENERR;
 						}
@@ -773,13 +773,13 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 						} else if (num && *num > 47 && *num < 58) {
 							channo = atoi(num);
 						} else {
-							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invlid Syntax\n");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invlid Syntax\n");
                             switch_core_session_destroy(new_session);
                             return SWITCH_STATUS_GENERR;
 						}
 						caller_profile->destination_number = p;
 					} else {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invlid Syntax\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invlid Syntax\n");
 						switch_core_session_destroy(new_session);
 						return SWITCH_STATUS_GENERR;
 					}
@@ -795,7 +795,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 				sangoma_span_chan_fromif(bchan, &span, &chan);
 				if (sangoma_span_chan_fromif(bchan, &span, &chan)) {
 					if ((tech_pvt->socket = sangoma_open_tdmapi_span_chan(span, chan)) < 0) {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open fd!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't open fd!\n");
 						switch_core_session_destroy(new_session);
 						return SWITCH_STATUS_GENERR;
 					}
@@ -804,7 +804,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 					switch_channel_set_name(channel, name);			
 
 				} else {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid address\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid address\n");
 					switch_core_session_destroy(new_session);
 					return SWITCH_STATUS_GENERR;
 				}
@@ -819,21 +819,21 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 							if (autochan > 0) {
 								for(channo = 1; channo < SANGOMA_MAX_CHAN_PER_SPAN; channo++) {
 									if ((SPANS[span]->bchans & (1 << channo)) && !chanmap->map[channo]) {
-										switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Choosing channel %d\n", channo);
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing channel %d\n", channo);
 										break;
 									}
 								}
 							} else if (autochan < 0) {
 								for(channo = SANGOMA_MAX_CHAN_PER_SPAN; channo > 0; channo--) {
 									if ((SPANS[span]->bchans & (1 << channo)) && !chanmap->map[channo]) {
-										switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Choosing channel %d\n", channo);
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing channel %d\n", channo);
 										break;
 									}
 								}
 							}
 
 							if (channo <= 0 || channo == (SANGOMA_MAX_CHAN_PER_SPAN)) {
-								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Free Channels!\n");
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Free Channels!\n");
 								channo = 0;
 							}
 						}
@@ -844,7 +844,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 				} while(autospan && span < MAX_SPANS && !spri && !channo);
 
 				if (!spri || channo == 0 || channo == (SANGOMA_MAX_CHAN_PER_SPAN)) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Free Channels!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Free Channels!\n");
 					switch_core_session_destroy(new_session);
 					return SWITCH_STATUS_GENERR;
 				}
@@ -876,7 +876,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 					}
 
 					if ((tech_pvt->socket = sangoma_open_tdmapi_span_chan(spri->span, channo)) < 0) {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open fd!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't open fd!\n");
 						switch_core_session_destroy(new_session);
 						pri_sr_free(sr);
 						return SWITCH_STATUS_GENERR;
@@ -887,7 +887,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 				}
 			}
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_STATUS_GENERR;
 		}
@@ -906,7 +906,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 static void s_pri_error(struct pri *pri, char *s)
 {
 	if (globals.debug) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, s);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, s);
 	}
 }
 
@@ -925,7 +925,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	pri_set_message(s_pri_message);
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -949,9 +949,9 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 
 static int on_info(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "number is: %s\n", event->ring.callednum);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "number is: %s\n", event->ring.callednum);
 	if (strlen(event->ring.callednum) > 3) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "final number is: %s\n", event->ring.callednum);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "final number is: %s\n", event->ring.callednum);
 		pri_answer(spri->pri, event->ring.call, 0, 1);
 	}
 	return 0;
@@ -983,7 +983,7 @@ static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 		chanmap->map[event->hangup.channel] = NULL;
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Hanging up channel s%dc%d\n", spri->span, event->hangup.channel);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "-- Hanging up channel s%dc%d\n", spri->span, event->hangup.channel);
 	return 0;
 }
 
@@ -997,12 +997,12 @@ static int on_answer(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 	chanmap = spri->private_info;
 
 	if ((session = chanmap->map[event->answer.channel])) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Answer on channel s%dc%d\n", spri->span, event->answer.channel);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "-- Answer on channel s%dc%d\n", spri->span, event->answer.channel);
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 		switch_channel_answer(channel);
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Answer on channel s%dc%d but it's not in use?\n", spri->span, event->answer.channel);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "-- Answer on channel s%dc%d but it's not in use?\n", spri->span, event->answer.channel);
 	}
 	
 	return 0;
@@ -1020,14 +1020,14 @@ static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	if ((session = chanmap->map[event->proceeding.channel])) {
 		switch_caller_profile *originator;
 
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Proceeding on channel s%dc%d\n", spri->span, event->proceeding.channel);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "-- Proceeding on channel s%dc%d\n", spri->span, event->proceeding.channel);
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 		
 		if ((originator = switch_channel_get_originator_caller_profile(channel))) {
 			switch_core_session_message msg;
 
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Passing progress to Originator %s\n", originator->chan_name);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "-- Passing progress to Originator %s\n", originator->chan_name);
 
 			msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
 			msg.from = switch_channel_get_name(channel);
@@ -1039,7 +1039,7 @@ static int on_proceed(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 
 		//switch_channel_answer(channel);
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Proceeding on channel s%dc%d but it's not in use?\n", spri->span, event->proceeding.channel);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "-- Proceeding on channel s%dc%d but it's not in use?\n", spri->span, event->proceeding.channel);
 	}
 
 	return 0;
@@ -1056,7 +1056,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	chanmap = spri->private_info;
 
 	if ((session = chanmap->map[event->ringing.channel])) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Ringing on channel s%dc%d\n", spri->span, event->ringing.channel);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "-- Ringing on channel s%dc%d\n", spri->span, event->ringing.channel);
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
 
@@ -1070,7 +1070,7 @@ static int on_ringing(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 		tech_pvt->callno = event->ring.channel;
 		tech_pvt->span = spri->span;
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Ringing on channel s%dc%d but it's not in use?\n", spri->span, event->ringing.channel);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "-- Ringing on channel s%dc%d but it's not in use?\n", spri->span, event->ringing.channel);
 	}
 
 	return 0;
@@ -1088,12 +1088,12 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 
 	chanmap = spri->private_info;
 	if (chanmap->map[event->ring.channel]) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "--Duplicate Ring on channel s%dc%d (ignored)\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "--Duplicate Ring on channel s%dc%d (ignored)\n",
 							  spri->span, event->ring.channel);
 		return 0;
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Ring on channel s%dc%d (from %s to %s)\n", spri->span, event->ring.channel,
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "-- Ring on channel s%dc%d (from %s to %s)\n", spri->span, event->ring.channel,
 						  event->ring.callingnum, event->ring.callednum);
 
 
@@ -1115,7 +1115,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 			switch_channel_set_name(channel, name);
 
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
 			return 0;
 		}
@@ -1147,7 +1147,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 		tech_pvt->span = spri->span;
 
 		if ((fd = sangoma_open_tdmapi_span_chan(spri->span, event->ring.channel)) < 0) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open fd!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't open fd!\n");
 		}
 		//sangoma_tdm_set_hw_period(fd, &tdm_api, 480);
 
@@ -1157,7 +1157,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 		switch_channel_set_state(channel, CS_INIT);
 		switch_core_session_thread_launch(session);
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot Create new Inbound Channel!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Create new Inbound Channel!\n");
 	}
 
 
@@ -1177,7 +1177,7 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	struct channel_map *chanmap;
 
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "-- Restarting s%dc%d\n", spri->span, event->restart.channel);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "-- Restarting s%dc%d\n", spri->span, event->restart.channel);
 
 	if (event->restart.channel < 1) {
 		return 0;
@@ -1189,12 +1189,12 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 	if ((session = chanmap->map[event->restart.channel])) {
 		switch_channel *channel;
 		channel = switch_core_session_get_channel(session);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hanging Up channel %s\n", switch_channel_get_name(channel));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hanging Up channel %s\n", switch_channel_get_name(channel));
 		switch_channel_hangup(channel);
 	}
 	
 	if ((fd = sangoma_open_tdmapi_span_chan(spri->span, event->restart.channel)) < 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open fd [%s]!\n", strerror(errno));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't open fd [%s]!\n", strerror(errno));
 	} else {
 		close(fd);
 	}
@@ -1205,7 +1205,7 @@ static int on_dchan_up(struct sangoma_pri *spri, sangoma_pri_event_t event_type,
 {
 
 	if (!switch_test_flag(spri, SANGOMA_PRI_READY)) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Span %d D-Chan UP!\n", spri->span);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Span %d D-Chan UP!\n", spri->span);
 		switch_set_flag(spri, SANGOMA_PRI_READY);
 	}
 
@@ -1216,7 +1216,7 @@ static int on_dchan_down(struct sangoma_pri *spri, sangoma_pri_event_t event_typ
 {
 
 	if (switch_test_flag(spri, SANGOMA_PRI_READY)) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Span %d D-Chan DOWN!\n", spri->span);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Span %d D-Chan DOWN!\n", spri->span);
 		switch_clear_flag(spri, SANGOMA_PRI_READY);
 	}
 	
@@ -1226,7 +1226,7 @@ static int on_dchan_down(struct sangoma_pri *spri, sangoma_pri_event_t event_typ
 static int on_anything(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event)
 {
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Caught Event span %d %u (%s)\n", spri->span, event_type,
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Caught Event span %d %u (%s)\n", spri->span, event_type,
 						  sangoma_pri_event_str(event_type));
 	return 0;
 }
@@ -1289,7 +1289,7 @@ static switch_status config_wanpipe(int reload)
 
 
 	if (!switch_config_open_file(&cfg, cf)) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -1310,13 +1310,13 @@ static switch_status config_wanpipe(int reload)
 			if (!strcmp(var, "span")) {
 				current_span = atoi(val);
 				if (current_span <= 0 || current_span > MAX_SPANS) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid SPAN!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid SPAN!\n");
 					current_span = 0;
 					continue;
 				}
 				if (!SPANS[current_span]) {
 					if (!(SPANS[current_span] = switch_core_alloc(module_pool, sizeof(*SPANS[current_span])))) {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "MEMORY ERROR\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MEMORY ERROR\n");
 						break;;
 					}
 					SPANS[current_span]->span = current_span;
@@ -1324,7 +1324,7 @@ static switch_status config_wanpipe(int reload)
 				
 			} else {
 				if (!current_span) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid option %s when no span defined.\n", var);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid option %s when no span defined.\n", var);
 					continue;
 				}
 				
@@ -1344,14 +1344,14 @@ static switch_status config_wanpipe(int reload)
 								SPANS[current_span]->bchans |= (1 << x);
 							}
 						} else {
-							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid bchan range!\n");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid bchan range!\n");
 						}
 					} else {
 						int i = atoi(val);
 						if (i > 0 && i < 31) {
 							SPANS[current_span]->bchans |= (1 << i);
 						} else {
-							switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid bchan!\n");
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid bchan!\n");
 						}
 					}
 				} else if (!strcmp(var, "node")) {
@@ -1370,7 +1370,7 @@ static switch_status config_wanpipe(int reload)
 					if (mtu >= 10 && mtu < 960) {
 						SPANS[current_span]->mtu = mtu;
 					} else {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid MTU (%s)!\n", val);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid MTU (%s)!\n", val);
 					}
 				}
 			}
@@ -1396,10 +1396,10 @@ static switch_status config_wanpipe(int reload)
 								 SPANS[current_span]->pswitch,
 								 SPANS[current_span]->node,
 								 globals.debug)) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Cannot launch span %d\n", current_span);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot launch span %d\n", current_span);
 				continue;
 			}
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Launch span %d\n", current_span);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Launch span %d\n", current_span);
 			pri_thread_launch(&SPANS[current_span]->spri);
 			globals.configured_spans++;
 		}

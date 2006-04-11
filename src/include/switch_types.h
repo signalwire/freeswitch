@@ -205,24 +205,55 @@ typedef enum {
 	SWITCH_STATUS_SOCKERR
 } switch_status;
 
+
+
+/*!
+\enum switch_log_level
+\brief Log Level Enumeration
+<pre>
+    SWITCH_LOG_CONSOLE          - Console
+	SWITCH_LOG_DEBUG            - Debug
+	SWITCH_LOG_INFO             - Info
+	SWITCH_LOG_NOTICE           - Notice
+	SWITCH_LOG_WARNING          - Warning
+	SWITCH_LOG_ERR              - Error
+	SWITCH_LOG_CRIT             - Critical
+	SWITCH_LOG_ALERT            - Alert
+	SWITCH_LOG_EMERG            - Emergency
+</pre>
+ */
+typedef enum {
+	SWITCH_LOG_CONSOLE = 8,
+	SWITCH_LOG_DEBUG = 7,
+	SWITCH_LOG_INFO  = 6,
+	SWITCH_LOG_NOTICE = 5,
+	SWITCH_LOG_WARNING = 4,
+	SWITCH_LOG_ERR = 3,
+	SWITCH_LOG_CRIT = 2,
+	SWITCH_LOG_ALERT = 1,
+	SWITCH_LOG_EMERG = 0
+} switch_log_level;
+typedef switch_status (*switch_log_function)(const char *data, switch_log_level level);
+
+
 /*!
 \enum switch_text_channel
 \brief A target to write log/debug info to
 <pre>
-SWITCH_CHANNEL_ID_CONSOLE			- Write to the currently defined console
-SWITCH_CHANNEL_ID_CONSOLE_CLEAN		- Write to the currently defined console with no extra file/line/date information
-SWITCH_CHANNEL_ID_EVENT				- Write to the event engine as a LOG event
+SWITCH_CHANNEL_ID_LOG			- Write to the currently defined log
+SWITCH_CHANNEL_ID_LOG_CLEAN		- Write to the currently defined log with no extra file/line/date information
+SWITCH_CHANNEL_ID_EVENT			- Write to the event engine as a LOG event
 </pre>
  */
 typedef enum {
-	SWITCH_CHANNEL_ID_CONSOLE,
-	SWITCH_CHANNEL_ID_CONSOLE_CLEAN,
+	SWITCH_CHANNEL_ID_LOG,
+	SWITCH_CHANNEL_ID_LOG_CLEAN,
 	SWITCH_CHANNEL_ID_EVENT
 } switch_text_channel;
 
 #define SWITCH_UUID_FORMATTED_LENGTH APR_UUID_FORMATTED_LENGTH 	
-#define SWITCH_CHANNEL_CONSOLE SWITCH_CHANNEL_ID_CONSOLE, __FILE__, __FUNCTION__, __LINE__
-#define SWITCH_CHANNEL_CONSOLE_CLEAN SWITCH_CHANNEL_ID_CONSOLE_CLEAN, __FILE__, __FUNCTION__, __LINE__
+#define SWITCH_CHANNEL_LOG SWITCH_CHANNEL_ID_LOG, __FILE__, __FUNCTION__, __LINE__
+#define SWITCH_CHANNEL_LOG_CLEAN SWITCH_CHANNEL_ID_LOG_CLEAN, __FILE__, __FUNCTION__, __LINE__
 #define SWITCH_CHANNEL_EVENT SWITCH_CHANNEL_ID_EVENT, __FILE__, __FUNCTION__, __LINE__
 
 /*!

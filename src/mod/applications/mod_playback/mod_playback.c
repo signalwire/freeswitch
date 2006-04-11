@@ -39,7 +39,7 @@ static const char modname[] = "mod_playback";
 */
 static switch_status on_dtmf(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Digits %s\n", dtmf);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
 
 	if (*dtmf == '*') {
 		return SWITCH_STATUS_FALSE;

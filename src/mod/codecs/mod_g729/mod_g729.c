@@ -117,7 +117,7 @@ static switch_status switch_g729_encode(switch_codec *codec,
 		if (new_len <= *encoded_data_len) {
 			*encoded_data_len = new_len;
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -198,13 +198,13 @@ static switch_status switch_g729_decode(switch_codec *codec,
 
 			} else {
 
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "buffer overflow!!!\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "buffer overflow!!!\n");
 				return SWITCH_STATUS_FALSE;
 
 			}
 		} 
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "yo this frame is an odd size [%d]\n", encoded_data_len);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "yo this frame is an odd size [%d]\n", encoded_data_len);
 		return SWITCH_STATUS_FALSE;
 	}
 

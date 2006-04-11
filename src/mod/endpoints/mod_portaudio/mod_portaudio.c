@@ -159,7 +159,7 @@ static switch_status channel_on_ring(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL RING\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL RING\n", switch_channel_get_name(channel));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -176,7 +176,7 @@ static switch_status channel_on_execute(switch_core_session *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
 
 
 	return SWITCH_STATUS_SUCCESS;
@@ -215,7 +215,7 @@ static switch_status channel_on_hangup(switch_core_session *session)
 
 	deactivate_audio_device(tech_pvt);
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -235,7 +235,7 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 	deactivate_audio_device(tech_pvt);
 	switch_channel_hangup(channel);
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
 
 	return SWITCH_STATUS_SUCCESS;
@@ -243,7 +243,7 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 
 static switch_status channel_on_loopback(switch_core_session *session)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "CHANNEL LOOPBACK\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL LOOPBACK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -277,7 +277,7 @@ static switch_status channel_on_transmit(switch_core_session *session)
 				switch_event_fire(&event);
 			}
 
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "%s\n", buf);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", buf);
 			last = switch_time_now();
 		}
 		switch_yield(50000);
@@ -285,7 +285,7 @@ static switch_status channel_on_transmit(switch_core_session *session)
 
 
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "CHANNEL TRANSMIT\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL TRANSMIT\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -319,7 +319,7 @@ static switch_status channel_send_dtmf(switch_core_session *session, char *dtmf)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "DTMF ON CALL %s [%s]\n", tech_pvt->call_id, dtmf);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF ON CALL %s [%s]\n", tech_pvt->call_id, dtmf);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -491,7 +491,7 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_STATUS_GENERR;
 		}
@@ -507,7 +507,7 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Doh! no caller profile\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_STATUS_GENERR;
 		}
@@ -527,7 +527,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 {
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "OH OH no pool\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -540,7 +540,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	dump_info();
 
 	if (switch_event_reserve_subclass(MY_EVENT_RINGING) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't register subclass!");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -561,7 +561,7 @@ static switch_status load_config(void)
 	memset(&globals, 0, sizeof(globals));
 
 	if (!switch_config_open_file(&cfg, cf)) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -632,7 +632,7 @@ static int get_dev_by_name(char *name, int in)
 	numDevices = Pa_CountDevices();
 
 	if (numDevices < 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
 		return -2;
 	}
 
@@ -658,55 +658,55 @@ static int dump_info(void)
 	PaError err;
 	numDevices = Pa_CountDevices();
 	if (numDevices < 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "ERROR: Pa_CountDevices returned 0x%x\n", numDevices);
 		err = numDevices;
 		goto error;
 	}
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Number of devices = %d\n", numDevices);
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "Number of devices = %d\n", numDevices);
 	for (i = 0; i < numDevices; i++) {
 		pdi = Pa_GetDeviceInfo(i);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "---------------------------------------------- #%d", i);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "---------------------------------------------- #%d", i);
 		if (i == Pa_GetDefaultInputDeviceID())
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, " DefaultInput");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, " DefaultInput");
 		if (i == Pa_GetDefaultOutputDeviceID())
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, " DefaultOutput");
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "\nName         = %s\n", pdi->name);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Max Inputs   = %d", pdi->maxInputChannels);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, ", Max Outputs = %d\n", pdi->maxOutputChannels);
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, " DefaultOutput");
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "\nName         = %s\n", pdi->name);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "Max Inputs   = %d", pdi->maxInputChannels);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, ", Max Outputs = %d\n", pdi->maxOutputChannels);
 		if (pdi->numSampleRates == -1) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Sample Rate Range = %f to %f\n", pdi->sampleRates[0],
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "Sample Rate Range = %f to %f\n", pdi->sampleRates[0],
 								  pdi->sampleRates[1]);
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Sample Rates =");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "Sample Rates =");
 			for (j = 0; j < pdi->numSampleRates; j++) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, " %8.2f,", pdi->sampleRates[j]);
+				switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, " %8.2f,", pdi->sampleRates[j]);
 			}
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "\n");
 		}
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Native Sample Formats = ");
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "Native Sample Formats = ");
 		if (pdi->nativeSampleFormats & paInt8)
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paInt8, ");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "paInt8, ");
 		if (pdi->nativeSampleFormats & paUInt8)
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paUInt8, ");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "paUInt8, ");
 		if (pdi->nativeSampleFormats & paInt16)
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paInt16, ");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "paInt16, ");
 		if (pdi->nativeSampleFormats & paInt32)
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paInt32, ");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "paInt32, ");
 		if (pdi->nativeSampleFormats & paFloat32)
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paFloat32, ");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "paFloat32, ");
 		if (pdi->nativeSampleFormats & paInt24)
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paInt24, ");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "paInt24, ");
 		if (pdi->nativeSampleFormats & paPackedInt24)
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "paPackedInt24, ");
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "paPackedInt24, ");
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "\n");
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "----------------------------------------------\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "----------------------------------------------\n");
 	return 0;
   error:
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "An error occured while using the portaudio stream\n");
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Error number: %d\n", err);
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "Error message: %s\n", Pa_GetErrorText(err));
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "An error occured while using the portaudio stream\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "Error number: %d\n", err);
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "Error message: %s\n", Pa_GetErrorText(err));
 	return err;
 }
 
@@ -726,7 +726,7 @@ static switch_status engage_device(struct private_object *tech_pvt)
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (switch_core_codec_init(&tech_pvt->write_codec,
@@ -736,12 +736,12 @@ static switch_status engage_device(struct private_object *tech_pvt)
 								   1,
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't load codec?\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
 			switch_core_codec_destroy(&tech_pvt->read_codec);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Loaded codec L16 %dhz %dms on %s\n", sample_rate, codec_ms,
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loaded codec L16 %dhz %dms on %s\n", sample_rate, codec_ms,
 						  switch_channel_get_name(channel));
 	tech_pvt->read_frame.rate = sample_rate;
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
@@ -758,12 +758,12 @@ static switch_status engage_device(struct private_object *tech_pvt)
 		if ((tech_pvt->err =
 			 OpenAudioStream(&tech_pvt->audio_out, sample_rate, SAMPLE_TYPE, PABLIO_WRITE | PABLIO_MONO, -1,
 							 tech_pvt->outdev)) != paNoError) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio out [%d]!\n", tech_pvt->outdev);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't open audio out [%d]!\n", tech_pvt->outdev);
 			CloseAudioStream(tech_pvt->audio_in);
 			tech_pvt->audio_in = NULL;
 		}
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't open audio in [%d]!\n", tech_pvt->indev);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't open audio in [%d]!\n", tech_pvt->indev);
 	}
 	switch_mutex_unlock(globals.device_lock);
 
@@ -803,7 +803,7 @@ static switch_status place_call(char *dest, char *out, size_t outlen)
 			switch_core_session_set_private(session, tech_pvt);
 			tech_pvt->session = session;
 		} else {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Hey where is my memory pool?\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
 			return SWITCH_STATUS_FALSE;
 		}

@@ -45,7 +45,7 @@ static void event_handler(switch_event *event)
 		return;
 	default:
 		switch_event_serialize(event, buf, sizeof(buf), NULL);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "\nEVENT\n--------------------------------\n%s\n", buf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT\n--------------------------------\n%s\n", buf);
 		break;
 	}
 }
@@ -93,7 +93,7 @@ static void *torture_thread(switch_thread *thread, void *obj)
 		switch_core_destroy_memory_pool(&pool);
 	}
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Thread Ended\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Thread Ended\n");
 }
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
@@ -111,13 +111,13 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	*interface = &event_test_module_interface;
 
 	if (switch_event_reserve_subclass(MY_EVENT_COOL) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't register subclass!");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
 		SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't bind!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 

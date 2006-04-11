@@ -61,11 +61,11 @@ static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 	channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(channel);
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Processing %s->%s!\n", caller_profile->caller_id_name,
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing %s->%s!\n", caller_profile->caller_id_name,
 						  caller_profile->destination_number);
 
 	if (!switch_config_open_file(&cfg, cf)) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
 		switch_channel_hangup(channel);
 		return NULL;
 	}
@@ -100,7 +100,7 @@ static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 							  &erroffset,	/* for error offset */
 							  NULL);	/* use default character tables */
 			if (error) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "COMPILE ERROR: %d [%s]\n", erroffset, error);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "COMPILE ERROR: %d [%s]\n", erroffset, error);
 				cleanre();
 				switch_channel_hangup(channel);
 				return NULL;
@@ -116,7 +116,7 @@ static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 									sizeof(ovector) / sizeof(ovector[0]));	/* number of elements (NOT size in bytes) */
 		} else if (match_count > 0 && !strcasecmp(var, "match")) {
 			if (!re) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "ERROR: match without regex in %s line %d\n", cfg.path,
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ERROR: match without regex in %s line %d\n", cfg.path,
 									  cfg.lineno);
 				continue;
 			} else {
@@ -164,7 +164,7 @@ static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 				if (!extension) {
 					if ((extension =
 						 switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "memory error!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memory error!\n");
 						break;
 					}
 				}

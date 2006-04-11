@@ -26,14 +26,14 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_skel.c -- Framework Demo Module
+ * mod_console.c -- Console Logger
  *
  */
 #include <switch.h>
 
-static const char modname[] = "mod_skel";
+static const char modname[] = "mod_console";
 
-static switch_loadable_module_interface skel_module_interface = {
+static switch_loadable_module_interface console_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -46,29 +46,26 @@ static switch_loadable_module_interface skel_module_interface = {
 	/*.directory_interface */ NULL
 };
 
+static switch_status switch_console_logger(const char *data, switch_log_level level)
+{
+	FILE *handle;
+
+	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
+		fprintf(handle, data);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-	*interface = &skel_module_interface;
+	*interface = &console_module_interface;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hello World!\n");
-
+	/* setup my logger function */
+	switch_log_bind_logger(switch_console_logger, SWITCH_LOG_DEBUG);
+	
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*
-  Called when the system shuts down
-  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
-  {
-  return SWITCH_STATUS_SUCCESS;
-  }
-*/
-
-/*
-  If it exists, this is called in it's own thread when the module-load completes
-  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
-  {
-  return SWITCH_STATUS_SUCCESS;
-  }
-*/

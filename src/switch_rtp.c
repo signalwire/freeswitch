@@ -108,7 +108,7 @@ static switch_status ice_out(switch_rtp *rtp_session)
 			elapsed = (unsigned int)((switch_time_now() - rtp_session->last_stun) / 1000);
 
 			if (elapsed > 10000) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No stun for a long time (PUNT!)\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No stun for a long time (PUNT!)\n");
 				return SWITCH_STATUS_FALSE;
 			}
 		}
@@ -293,7 +293,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
     
 		/* check that hex string is the right length */
 		if (len < MASTER_KEY_LEN*2) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
 								  "error: too few digits in key/salt "
 								  "(should be %d hexadecimal digits, found %d)\n",
 								  MASTER_KEY_LEN*2, len);
@@ -301,7 +301,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 			return SWITCH_STATUS_FALSE;
 		} 
 		if (strlen(crypto_key) > MASTER_KEY_LEN*2) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, 
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
 								  "error: too many digits in key/salt "
 								  "(should be %d hexadecimal digits, found %u)\n",
 								  MASTER_KEY_LEN*2, (unsigned)strlen(crypto_key));
@@ -309,9 +309,9 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 			return SWITCH_STATUS_FALSE;
 		}
     
-		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "set master key/salt to %s/", octet_string_hex_string(key, 16));
-		//switch_console_printf(SWITCH_CHANNEL_CONSOLE_CLEAN, "%s\n", octet_string_hex_string(key+16, 14));
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Activating Secure RTP!\n");
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "set master key/salt to %s/", octet_string_hex_string(key, 16));
+		//switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "%s\n", octet_string_hex_string(key+16, 14));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activating Secure RTP!\n");
 	}
 
 	rtp_session->send_msg.header.ssrc    = htonl(ssrc);
@@ -344,12 +344,12 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 		err_status_t stat;
 
 		if ((stat = srtp_create(&rtp_session->recv_ctx, &policy))) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error allocating srtp [%d]\n", stat);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error allocating srtp [%d]\n", stat);
 			*err = "Crypt Error";
 			return SWITCH_STATUS_FALSE;
 		}
 		if ((stat = srtp_create(&rtp_session->send_ctx, &policy))) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error allocating srtp [%d]\n", stat);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error allocating srtp [%d]\n", stat);
 			*err = "Crypt Error";
 			return SWITCH_STATUS_FALSE;
 		}
@@ -483,7 +483,7 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 
 			stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg.header, &sbytes);
 			if (stat) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE,
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 						"error: srtp unprotection failed with code %d%s\n", stat,
 						stat == err_status_replay_fail ? " (replay check failed)" :
 						stat == err_status_auth_fail ? " (auth check failed)" : "");
@@ -578,7 +578,7 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 	if (rtp_session->packet_size > datalen && (payload == rtp_session->payload)) {
 		if (!rtp_session->packet_buffer) {
 			if (switch_buffer_create(rtp_session->pool, &rtp_session->packet_buffer, rtp_session->packet_size * 2) != SWITCH_STATUS_SUCCESS) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Buffer memory error\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Buffer memory error\n");
 				return -1;
 			}
 		}
@@ -600,7 +600,7 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 
 		stat = srtp_protect(rtp_session->send_ctx, &rtp_session->send_msg.header, &sbytes);
 		if (stat) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "error: srtp unprotection failed with code %d\n", stat);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "error: srtp unprotection failed with code %d\n", stat);
 		}
 
 		bytes = sbytes;

@@ -41,7 +41,7 @@ static const char modname[] = "mod_ivrtest";
 */
 static switch_status on_dtmf(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Digits %s\n", dtmf);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
 	
 	switch_copy_string((char *)buf, dtmf, buflen);
 	return SWITCH_STATUS_BREAK;
@@ -64,7 +64,7 @@ static void dirtest_function(switch_core_session *session, char *data)
 								   "cn=Manager,dc=freeswitch,dc=org",
 								   "test",
 								   NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't connect\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't connect\n");
 		return;
 	}
 
@@ -72,7 +72,7 @@ static void dirtest_function(switch_core_session *session, char *data)
 	switch_core_directory_query(&dh, "ou=dialplan,dc=freeswitch,dc=org", "(objectClass=*)");
 	while (switch_core_directory_next(&dh) == SWITCH_STATUS_SUCCESS) {
 		while (switch_core_directory_next_pair(&dh, &var, &val) == SWITCH_STATUS_SUCCESS) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "VALUE [%s]=[%s]\n", var, val);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "VALUE [%s]=[%s]\n", var, val);
 		}
 	}
 
@@ -83,7 +83,7 @@ static void dirtest_function(switch_core_session *session, char *data)
 
 static switch_status show_dtmf(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Digits %s\n", dtmf);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
 	
 	switch_copy_string((char *)buf, dtmf, buflen);
 	return SWITCH_STATUS_SUCCESS;
@@ -122,7 +122,7 @@ static void tts_function(switch_core_session *session, char *data)
 	codec = switch_core_session_get_read_codec(session);
 
 	switch_ivr_speak_text(session, tts_name, voice_name, NULL, codec->implementation->samples_per_second, show_dtmf, text, buf, sizeof(buf));
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Done\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Done\n");
 }
 
 static void ivrtest_function(switch_core_session *session, char *data)
@@ -143,7 +143,7 @@ static void ivrtest_function(switch_core_session *session, char *data)
 
 	while (switch_channel_get_state(channel) == CS_EXECUTE) {
 		memset(buf, 0, sizeof(buf));
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Enter up to 10 digits, press # to terminate, * to hangup\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Enter up to 10 digits, press # to terminate, * to hangup\n");
 
 		if (data) {
 			/* you could have passed NULL instead of on_dtmf to get this exact behaviour (copy the digits to buf and stop playing)
@@ -166,7 +166,7 @@ static void ivrtest_function(switch_core_session *session, char *data)
 			break;
 		}
 		snprintf(say, sizeof(say), "You Dialed [%s]\n", buf);
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, say);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, say);
 		switch_ivr_speak_text(session, "cepstral", "david", NULL, codec->implementation->samples_per_second, NULL, say, NULL, 0);
 	}
 	
@@ -180,7 +180,7 @@ static switch_status my_on_hangup(switch_core_session *session)
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "I globally hooked to [%s] on the hangup event\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "I globally hooked to [%s] on the hangup event\n", switch_channel_get_name(channel));
 	return SWITCH_STATUS_SUCCESS;
 
 }

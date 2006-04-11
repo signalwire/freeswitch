@@ -115,7 +115,7 @@ SWITCH_DECLARE(switch_core_db *) switch_core_db_open_file(char *filename)
 
 	db_pick_path(filename, path, sizeof(path));
 	if (switch_core_db_open(path, &db)) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SQL ERR [%s]\n", switch_core_db_errmsg(db));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n", switch_core_db_errmsg(db));
 		switch_core_db_close(db);
 		db = NULL;
 	}
@@ -137,7 +137,7 @@ static void check_table_exists(switch_core_db *db, char *test_sql, char *create_
                          );
 
             if (errmsg) {
-                switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SQL ERR [%s]\n[%s]\nAuto Generating Table!\n", errmsg, test_sql);
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\nAuto Generating Table!\n", errmsg, test_sql);
                 switch_core_db_free(errmsg);
                 errmsg = NULL;
                 switch_core_db_exec(
@@ -148,7 +148,7 @@ static void check_table_exists(switch_core_db *db, char *test_sql, char *create_
                              &errmsg
                              );
                 if (errmsg) {
-                    switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SQL ERR [%s]\n[%s]\n", errmsg, create_sql);
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, create_sql);
                     switch_core_db_free(errmsg);
                     errmsg = NULL;
                 }
@@ -180,8 +180,8 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel)
 	FILE *handle = stdout;
 
 	switch (channel) {
-	case SWITCH_CHANNEL_ID_CONSOLE:
-	case SWITCH_CHANNEL_ID_CONSOLE_CLEAN:
+	case SWITCH_CHANNEL_ID_LOG:
+	case SWITCH_CHANNEL_ID_LOG_CLEAN:
 		handle = runtime.console;
 		break;
 	default:
@@ -279,7 +279,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 	memset(codec, 0, sizeof(*codec));
 
 	if ((codec_interface = switch_loadable_module_get_codec_interface(codec_name)) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid codec %s!\n", codec_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "invalid codec %s!\n", codec_name);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -310,7 +310,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *
 
 		return SWITCH_STATUS_SUCCESS;
 	} else {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s Exists but not then desired implementation.\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec %s Exists but not then desired implementation.\n",
 							  codec_name);
 	}
 
@@ -331,12 +331,12 @@ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec *codec,
 	assert(decoded_data != NULL);
 
 	if (!codec->implementation) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec is not initilized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_ENCODE)) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec's encoder is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec's encoder is not initilized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -365,12 +365,12 @@ SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 
 
 	if (!codec->implementation) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec is not initilized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_DECODE)) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec's decoder is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec's decoder is not initilized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -388,7 +388,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec *codec)
 	assert(codec != NULL);
 
 	if (!codec->implementation) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec is not initilized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -408,13 +408,13 @@ SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char
 	switch_status status;
 
 	if ((ext = strrchr(file_path, '.')) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Format\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid Format\n");
 		return SWITCH_STATUS_FALSE;
 	}
 	ext++;
 
 	if ((fh->file_interface = switch_loadable_module_get_file_interface(ext)) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid file format [%s]!\n", ext);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "invalid file format [%s]!\n", ext);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -466,7 +466,7 @@ SWITCH_DECLARE(switch_status) switch_core_directory_open(switch_directory_handle
 	switch_status status;
 
 	if ((dh->directory_interface = switch_loadable_module_get_directory_interface(module_name)) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid directory module [%s]!\n", module_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "invalid directory module [%s]!\n", module_name);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -512,7 +512,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh,
 	switch_status status;
 
 	if ((sh->speech_interface = switch_loadable_module_get_speech_interface(module_name)) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid speech module [%s]!\n", module_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "invalid speech module [%s]!\n", module_name);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -574,7 +574,7 @@ SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *
 	switch_status status;
 	memset(timer, 0, sizeof(*timer));
 	if ((timer_interface = switch_loadable_module_get_timer_interface(timer_name)) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "invalid timer %s!\n", timer_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "invalid timer %s!\n", timer_name);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -600,7 +600,7 @@ SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *
 SWITCH_DECLARE(int) switch_core_timer_next(switch_timer *timer)
 {
 	if (!timer->timer_interface) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Timer is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timer is not initilized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -616,7 +616,7 @@ SWITCH_DECLARE(int) switch_core_timer_next(switch_timer *timer)
 SWITCH_DECLARE(switch_status) switch_core_timer_destroy(switch_timer *timer)
 {
 	if (!timer->timer_interface) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Timer is not initilized!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timer is not initilized!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -696,7 +696,7 @@ SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session *session, s
 	assert(session->pool != NULL);
 
 #ifdef DEBUG_ALLOC
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate %d\n", memory);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocate %d\n", memory);
 #endif
 
 
@@ -715,7 +715,7 @@ SWITCH_DECLARE(void *) switch_core_permenant_alloc(switch_size_t memory)
 	assert(runtime.memory_pool != NULL);
 
 #ifdef DEBUG_ALLOC
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Perm Allocate %d\n", memory);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Perm Allocate %d\n", memory);
 #endif
 
 	if ((ptr = apr_palloc(runtime.memory_pool, memory)) != 0) {
@@ -737,7 +737,7 @@ SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup)
 	len = strlen(todup) + 1;
 
 #ifdef DEBUG_ALLOC
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Perm Allocate %d\n", len);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Perm Allocate %d\n", len);
 #endif
 
 	if (todup && (duped = apr_palloc(runtime.memory_pool, len)) != 0) {
@@ -760,7 +760,7 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, 
 	len = strlen(todup) + 1;
 
 #ifdef DEBUG_ALLOC
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate %d\n", len);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocate %d\n", len);
 #endif
 
 	if (todup && (duped = apr_palloc(session->pool, len)) != 0) {
@@ -783,7 +783,7 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
 	len = strlen(todup) + 1;
 
 #ifdef DEBUG_ALLOC
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate %d\n", len);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocate %d\n", len);
 #endif
 
 	if (todup && (duped = apr_palloc(pool, len)) != 0) {
@@ -834,7 +834,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 	const switch_endpoint_interface *endpoint_interface;
 
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not locate channel type %s\n", endpoint_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not locate channel type %s\n", endpoint_name);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1005,7 +1005,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 				status = SWITCH_STATUS_SUCCESS;
 				break;
 			default:
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s decoder error!\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec %s decoder error!\n",
 
 									  session->read_codec->codec_interface->interface_name);
 				return status;
@@ -1032,7 +1032,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 			} else {
 				if (!session->raw_read_buffer) {
 					switch_size_t bytes = session->read_codec->implementation->bytes_per_frame * 10;
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Engaging Read Buffer at %u bytes\n", bytes);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Engaging Read Buffer at %u bytes\n", bytes);
 					switch_buffer_create(session->pool, &session->raw_read_buffer, bytes);
 				}
 				if (!switch_buffer_write(session->raw_read_buffer, read_frame->data, read_frame->datalen)) {
@@ -1068,7 +1068,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 
 				switch (status) {
 				case SWITCH_STATUS_RESAMPLE:
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "fixme 1\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fixme 1\n");
 				case SWITCH_STATUS_SUCCESS:
 					*frame = &session->enc_read_frame;
 					break;
@@ -1077,7 +1077,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 					status = SWITCH_STATUS_SUCCESS;
 					break;
 				default:
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s encoder error!\n",
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec %s encoder error!\n",
 										  session->read_codec->codec_interface->interface_name);
 					*frame = NULL;
 					status = SWITCH_STATUS_GENERR;
@@ -1179,7 +1179,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 				status = SWITCH_STATUS_SUCCESS;
 				break;
 			default:
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s decoder error!\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec %s decoder error!\n",
 									  frame->codec->codec_interface->interface_name);
 				return status;
 			}
@@ -1206,19 +1206,19 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 			} else {
 				if (!session->raw_write_buffer) {
 					switch_size_t bytes = session->write_codec->implementation->bytes_per_frame * 10;
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE,
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 										  "Engaging Write Buffer at %u bytes to accomodate %u->%u\n",
 										  bytes,
 										  write_frame->datalen, session->write_codec->implementation->bytes_per_frame);
 					if ((status =
 						 switch_buffer_create(session->pool, &session->raw_write_buffer,
 											  bytes)) != SWITCH_STATUS_SUCCESS) {
-						switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Buffer Failed!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Buffer Failed!\n");
 						return status;
 					}
 				}
 				if (!(switch_buffer_write(session->raw_write_buffer, write_frame->data, write_frame->datalen))) {
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Write Buffer Failed!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Buffer Failed!\n");
 					return SWITCH_STATUS_MEMERR;
 				}
 			}
@@ -1239,7 +1239,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 
 				switch (status) {
 				case SWITCH_STATUS_RESAMPLE:
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "fixme 2\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fixme 2\n");
 				case SWITCH_STATUS_SUCCESS:
 					write_frame = &session->enc_write_frame;
 					break;
@@ -1248,7 +1248,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 					status = SWITCH_STATUS_SUCCESS;
 					break;
 				default:
-					switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s encoder error!\n",
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec %s encoder error!\n",
 										  session->read_codec->codec_interface->interface_name);
 					write_frame = NULL;
 					return status;
@@ -1304,7 +1304,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 								status = SWITCH_STATUS_SUCCESS;
 								break;
 							default:
-								switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Codec %s encoder error!\n",
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec %s encoder error!\n",
 													  session->read_codec->codec_interface->interface_name);
 								write_frame = NULL;
 								return status;
@@ -1631,13 +1631,13 @@ SWITCH_DECLARE(switch_channel *) switch_core_session_get_channel(switch_core_ses
 
 static void switch_core_standard_on_init(switch_core_session *session)
 {
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard INIT %s\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard INIT %s\n", switch_channel_get_name(session->channel));
 }
 
 static void switch_core_standard_on_hangup(switch_core_session *session)
 {
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard HANGUP %s\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HANGUP %s\n", switch_channel_get_name(session->channel));
 
 }
 
@@ -1647,10 +1647,10 @@ static void switch_core_standard_on_ring(switch_core_session *session)
 	switch_caller_profile *caller_profile;
 	switch_caller_extension *extension;
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard RING %s\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard RING %s\n", switch_channel_get_name(session->channel));
 
 	if ((caller_profile = switch_channel_get_caller_profile(session->channel)) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Can't get profile!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't get profile!\n");
 		switch_channel_set_state(session->channel, CS_HANGUP);
 	} else {
 		if (!switch_strlen_zero(caller_profile->dialplan)) {
@@ -1659,7 +1659,7 @@ static void switch_core_standard_on_ring(switch_core_session *session)
 
 		if (!dialplan_interface) {
 			if (switch_channel_test_flag(session->channel, CF_OUTBOUND)) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Dialplan, changing state to TRANSMIT\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Dialplan, changing state to TRANSMIT\n");
 				switch_channel_set_state(session->channel, CS_TRANSMIT);
 				return;
 			}
@@ -1678,28 +1678,28 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 	const switch_application_interface *application_interface;
 
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard EXECUTE\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard EXECUTE\n");
 	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Extension!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Extension!\n");
 		switch_channel_set_state(session->channel, CS_HANGUP);
 		return;
 	}
 
 	while (switch_channel_get_state(session->channel) == CS_EXECUTE && extension->current_application) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Execute %s(%s)\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s)\n",
 							  extension->current_application->application_name,
 							  extension->current_application->application_data);
 		if (
 			(application_interface =
 			 switch_loadable_module_get_application_interface(extension->current_application->application_name)) == 0) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Invalid Application %s\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid Application %s\n",
 								  extension->current_application->application_name);
 			switch_channel_set_state(session->channel, CS_HANGUP);
 			return;
 		}
 
 		if (!application_interface->application_function) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "No Function for %s\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Function for %s\n",
 								  extension->current_application->application_name);
 			switch_channel_set_state(session->channel, CS_HANGUP);
 			return;
@@ -1725,7 +1725,7 @@ static void switch_core_standard_on_loopback(switch_core_session *session)
 	switch_frame *frame;
 	int stream_id;
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard LOOPBACK\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard LOOPBACK\n");
 
 	while (switch_channel_get_state(session->channel) == CS_LOOPBACK) {
 		for (stream_id = 0; stream_id < session->stream_count; stream_id++) {
@@ -1739,7 +1739,7 @@ static void switch_core_standard_on_loopback(switch_core_session *session)
 static void switch_core_standard_on_transmit(switch_core_session *session)
 {
 	assert(session != NULL);
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Standard TRANSMIT\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard TRANSMIT\n");
 }
 
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session *session)
@@ -1800,12 +1800,12 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "(%s) State NEW\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State NEW\n", switch_channel_get_name(session->channel));
 				break;
 			case CS_DONE:
 				continue;
 			case CS_HANGUP:	/* Deactivate and end the thread */
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "(%s) State HANGUP\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HANGUP\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_hangup ||
 					(driver_state_handler->on_hangup &&
 					 driver_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS &&
@@ -1844,7 +1844,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				midstate = switch_channel_get_state(session->channel);
 				break;
 			case CS_INIT:		/* Basic setup tasks */
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "(%s) State INIT\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State INIT\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_init ||
 					(driver_state_handler->on_init &&
 					 driver_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS &&
@@ -1880,7 +1880,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				}
 				break;
 			case CS_RING:		/* Look for a dialplan and find something to do */
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "(%s) State RING\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State RING\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_ring ||
 					(driver_state_handler->on_ring &&
 					 driver_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS &&
@@ -1916,7 +1916,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				}
 				break;
 			case CS_EXECUTE:	/* Execute an Operation */
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "(%s) State EXECUTE\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State EXECUTE\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_execute ||
 					(driver_state_handler->on_execute &&
 					 driver_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS &&
@@ -1952,7 +1952,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				}
 				break;
 			case CS_LOOPBACK:	/* loop all data back to source */
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "(%s) State LOOPBACK\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State LOOPBACK\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_loopback ||
 					(driver_state_handler->on_loopback &&
 					 driver_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS &&
@@ -1988,7 +1988,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				}
 				break;
 			case CS_TRANSMIT:	/* send/recieve data to/from another channel */
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "(%s) State TRANSMIT\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State TRANSMIT\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_transmit ||
 					(driver_state_handler->on_transmit &&
 					 driver_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS &&
@@ -2116,7 +2116,7 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 	mypool = pool ? 0 : 1;
 
 	if (!pool && switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory pool\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate memory pool\n");
 		return;
 	}
 
@@ -2124,7 +2124,7 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 	switch_threadattr_detach_set(thd_attr, 1);
 
 	if ((ts = switch_core_alloc(pool, sizeof(*ts))) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate memory\n");
 	} else {
 		if (mypool) {
 			ts->pool = pool;
@@ -2147,7 +2147,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *thread
 	switch_core_hash_insert(runtime.session_table, session->uuid_str, session);
 	switch_core_session_run(session);
 	switch_core_hash_delete(runtime.session_table, session->uuid_str);
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Session %u (%s) Ended\n", session->id, switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %u (%s) Ended\n", session->id, switch_channel_get_name(session->channel));
 	switch_core_session_destroy(&session);
 	return NULL;
 }
@@ -2188,7 +2188,7 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, switch_size_t
 	assert(pool != NULL);
 
 #ifdef DEBUG_ALLOC
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocate %d\n", memory);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocate %d\n", memory);
 	//assert(memory < 600000);
 #endif
 
@@ -2210,18 +2210,18 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_e
 	if (pool) {
 		usepool = pool;
 	} else if (switch_core_new_memory_pool(&usepool) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory pool\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate memory pool\n");
 		return NULL;
 	}
 
 	if ((session = switch_core_alloc(usepool, sizeof(switch_core_session))) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate session\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate session\n");
 		apr_pool_destroy(usepool);
 		return NULL;
 	}
 
 	if (switch_channel_alloc(&session->channel, usepool) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate channel structure\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate channel structure\n");
 		apr_pool_destroy(usepool);
 		return NULL;
 	}
@@ -2259,7 +2259,7 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request_by_name(char *
 	const switch_endpoint_interface *endpoint_interface;
 
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not locate channel type %s\n", endpoint_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not locate channel type %s\n", endpoint_name);
 		return NULL;
 	}
 
@@ -2357,7 +2357,7 @@ static void core_event_handler(switch_event *event)
 	default:
 		//buf[0] = '\0';
 		//switch_event_serialize(event, buf, sizeof(buf), NULL);
-		//switch_console_printf(SWITCH_CHANNEL_CONSOLE, "\nCORE EVENT\n--------------------------------\n%s\n", buf);
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nCORE EVENT\n--------------------------------\n%s\n", buf);
 		break;
 	}
 
@@ -2374,7 +2374,7 @@ static void core_event_handler(switch_event *event)
 								&errmsg
 								);		
 			if (errmsg) {
-				switch_console_printf(SWITCH_CHANNEL_CONSOLE, "SQL ERR [%s]\n", errmsg);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n", errmsg);
 				switch_core_db_free(errmsg);
 				switch_yield(100000);
 				max--;
@@ -2417,6 +2417,21 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 	
 	switch_core_set_globals();
 
+	/* INIT APR and Create the pool context */
+	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
+		apr_terminate();
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	
+	if (apr_pool_create(&runtime.memory_pool, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate memory pool\n");
+		switch_core_destroy();
+		return SWITCH_STATUS_MEMERR;
+	}
+	assert(runtime.memory_pool != NULL);
+	switch_log_init(runtime.memory_pool);
+
 	if(console) {
 		if (*console != '/') {
 			char path[265];
@@ -2428,27 +2443,17 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 		runtime.console = stdout;
 	}
 
-	/* INIT APR and Create the pool context */
-	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
-		apr_terminate();
-		return SWITCH_STATUS_MEMERR;
-	}
-
-	if (apr_pool_create(&runtime.memory_pool, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Could not allocate memory pool\n");
-		switch_core_destroy();
-		return SWITCH_STATUS_MEMERR;
-	}
 
 
-	assert(runtime.memory_pool != NULL);
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Allocated memory pool. Sessions are %u bytes\n", sizeof(struct switch_core_session));
+
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocated memory pool. Sessions are %u bytes\n", sizeof(struct switch_core_session));
 	switch_event_init(runtime.memory_pool);
 	switch_rtp_init(runtime.memory_pool);
 
 	/* Activate SQL database */
 	if ((runtime.db = switch_core_db_handle()) == 0 ) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Error Opening DB!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Opening DB!\n");
 	} else {
 		char create_channels_sql[] =
 			"CREATE TABLE channels (\n"
@@ -2478,7 +2483,7 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 			"   callee_uuid      VARCHAR(255)\n"
 			");\n";
 
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Opening DB\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening DB\n");
 		switch_core_db_exec(runtime.db, "drop table channels", NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, "drop table calls", NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, create_channels_sql, NULL, NULL, NULL);
@@ -2486,7 +2491,7 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 		
 		if (switch_event_bind("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL) !=
 			SWITCH_STATUS_SUCCESS) {
-			switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Couldn't bind event handler!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't bind event handler!\n");
 		}
 	}
 
@@ -2502,14 +2507,14 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 SWITCH_DECLARE(switch_status) switch_core_destroy(void)
 {
 
-	switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Closing Event Engine.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");
 	switch_event_shutdown();
-
+	switch_log_shutdown();
 
 	switch_core_db_close(runtime.db);
 
 	if (runtime.memory_pool) {
-		switch_console_printf(SWITCH_CHANNEL_CONSOLE, "Unallocating memory pool.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Unallocating memory pool.\n");
 		apr_pool_destroy(runtime.memory_pool);
 		apr_terminate();
 	}

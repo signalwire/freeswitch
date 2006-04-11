@@ -1,0 +1,236 @@
+/* 
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthmct@yahoo.com>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * 
+ * Anthony Minessale II <anthmct@yahoo.com>
+ *
+ *
+ * switch_log.c -- Logging
+ *
+ */
+#include <switch.h>
+
+
+static const char *LEVELS[] = {
+	"EMERG"  , 
+	"ALERT"  , 
+	"CRIT"   , 
+	"ERR"    , 
+	"WARNING", 
+	"NOTICE" , 
+	"INFO"   , 
+	"DEBUG"  , 
+	"CONSOLE" 
+};
+
+struct switch_log_binding {
+	switch_log_function function;
+	switch_log_level level;
+	struct switch_log_binding *next;
+};
+typedef struct switch_log_binding switch_log_binding;
+
+typedef struct {
+	char *data;
+	switch_log_level level;
+} switch_log_node;
+
+static switch_memory_pool *LOG_POOL = NULL;
+static switch_log_binding *BINDINGS = NULL;
+static switch_mutex_t *BINDLOCK = NULL;
+static switch_queue_t *LOG_QUEUE = NULL;
+static int8_t THREAD_RUNNING = 0;
+static uint8_t MAX_LEVEL = 0;
+
+SWITCH_DECLARE(switch_status) switch_log_bind_logger(switch_log_function function, switch_log_level level)
+{
+	switch_log_binding *binding = NULL, *ptr = NULL;
+	assert(function != NULL);
+
+	if (!(binding = switch_core_alloc(LOG_POOL, sizeof(*binding)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	if ((uint8_t)level > MAX_LEVEL) {
+		MAX_LEVEL = level;
+	}
+
+	binding->function = function;
+	binding->level = level;
+
+	switch_mutex_lock(BINDLOCK);
+	for (ptr = BINDINGS; ptr && ptr->next; ptr = ptr->next);
+
+	if (ptr) {
+		ptr->next = binding;
+	} else {
+		BINDINGS = binding;
+	}
+	switch_mutex_unlock(BINDLOCK);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static void *SWITCH_THREAD_FUNC log_thread(switch_thread *thread, void *obj)
+{
+
+	/* To Be or Not To Be */
+	assert(obj == NULL || obj != NULL);
+	THREAD_RUNNING = 1;
+
+	for(;;) {
+		void *pop = NULL;
+		switch_log_node *node = NULL;
+		
+		if (switch_queue_pop(LOG_QUEUE, &pop) != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
+		
+		if (!pop) {
+			break;
+		}
+		
+		node = (switch_log_node *) pop;
+		
+		switch_log_binding *binding;
+		switch_mutex_lock(BINDLOCK);
+		for(binding = BINDINGS; binding; binding = binding->next) {
+			if (binding->level >= node->level) {
+				binding->function(node->data, node->level);
+			}
+		}
+		switch_mutex_unlock(BINDLOCK);
+		if (node) {
+			if (node->data) {
+				free(node->data);
+			}
+			free(node);
+		}
+
+	}
+	THREAD_RUNNING = 0;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Logger Ended.\n");
+	return NULL;
+}
+
+SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, const char *func, int line, switch_log_level level, char *fmt, ...)
+{
+	char *data = NULL;
+	char *new_fmt = NULL;
+	int ret = 0;
+	va_list ap;
+	FILE *handle;
+	char *filep = switch_cut_path(file);
+
+	uint32_t len;
+	const char *extra_fmt = "%s [%s] %s:%d %s() %s";
+	va_start(ap, fmt);
+
+	handle = switch_core_data_channel(channel);
+
+	if (channel != SWITCH_CHANNEL_ID_LOG_CLEAN) {
+		char date[80] = "";
+		switch_size_t retsize;
+		switch_time_exp_t tm;
+
+		switch_time_exp_lt(&tm, switch_time_now());
+		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+		
+		len = strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(func) + strlen(fmt);
+		new_fmt = malloc(len+1);
+		snprintf(new_fmt, len, extra_fmt, date, LEVELS[level], filep, line, func, fmt);
+		fmt = new_fmt;
+	}
+
+#ifdef HAVE_VASPRINTF
+	ret = vasprintf(&data, fmt, ap);
+#else
+	data = (char *) malloc(2048);
+	vsnprintf(data, 2048, fmt, ap);
+#endif
+	va_end(ap);
+	if (ret == -1) {
+		fprintf(stderr, "Memory Error\n");
+	} else {
+		if (channel == SWITCH_CHANNEL_ID_EVENT) {
+				switch_event *event;
+				if (switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", func);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Level", "%d", (int)level);
+					switch_event_fire(&event);
+				}
+		} else {
+			if (level == SWITCH_LOG_CONSOLE || !THREAD_RUNNING) {
+				fprintf(handle, data);
+			} 
+			if (level >= MAX_LEVEL) {
+				switch_log_node *node = malloc(sizeof(*node));
+				node->data = data;
+				node->level = level;
+				switch_queue_push(LOG_QUEUE, node);
+			} else {
+				free(data);
+			}
+		}
+	}
+
+	if (new_fmt) {
+		free(new_fmt);
+	}
+
+	fflush(handle);
+}
+
+
+SWITCH_DECLARE(switch_status) switch_log_init(switch_memory_pool *pool)
+{
+	assert(pool != NULL);
+
+	LOG_POOL = pool;
+
+	switch_thread *thread;
+	switch_threadattr_t *thd_attr;;
+	switch_threadattr_create(&thd_attr, LOG_POOL);
+	switch_threadattr_detach_set(thd_attr, 1);
+
+
+	switch_queue_create(&LOG_QUEUE, 2000, LOG_POOL);
+	switch_mutex_init(&BINDLOCK, SWITCH_MUTEX_NESTED, LOG_POOL);
+	switch_thread_create(&thread, thd_attr, log_thread, NULL, LOG_POOL);
+
+	while (!THREAD_RUNNING) {
+		switch_yield(1000);
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status) switch_log_shutdown(void)
+{
+	switch_queue_push(LOG_QUEUE, NULL);
+	return SWITCH_STATUS_SUCCESS;
+}
+
