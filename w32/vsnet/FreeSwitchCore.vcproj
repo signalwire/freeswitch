@@ -232,6 +232,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_log.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_resample.c"
 				>
 			</File>
@@ -299,6 +303,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_loadable_module.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_log.h"
 				>
 			</File>
 			<File

@@ -102,6 +102,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread *thread, void *obj)
 	for(;;) {
 		void *pop = NULL;
 		switch_log_node *node = NULL;
+		switch_log_binding *binding;
 		
 		if (switch_queue_pop(LOG_QUEUE, &pop) != SWITCH_STATUS_SUCCESS) {
 			break;
@@ -113,7 +114,6 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread *thread, void *obj)
 		
 		node = (switch_log_node *) pop;
 		
-		switch_log_binding *binding;
 		switch_mutex_lock(BINDLOCK);
 		for(binding = BINDINGS; binding; binding = binding->next) {
 			if (binding->level >= node->level) {
@@ -157,7 +157,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 		switch_time_exp_lt(&tm, switch_time_now());
 		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 		
-		len = strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(func) + strlen(fmt);
+		len = (uint32_t)(strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(func) + strlen(fmt));
 		new_fmt = malloc(len+1);
 		snprintf(new_fmt, len, extra_fmt, date, LEVELS[level], filep, line, func, fmt);
 		fmt = new_fmt;
@@ -208,12 +208,13 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 
 SWITCH_DECLARE(switch_status) switch_log_init(switch_memory_pool *pool)
 {
+	switch_thread *thread;
+	switch_threadattr_t *thd_attr;;
+
 	assert(pool != NULL);
 
 	LOG_POOL = pool;
 
-	switch_thread *thread;
-	switch_threadattr_t *thd_attr;;
 	switch_threadattr_create(&thd_attr, LOG_POOL);
 	switch_threadattr_detach_set(thd_attr, 1);
 
