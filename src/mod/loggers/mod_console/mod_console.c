@@ -89,7 +89,7 @@ static switch_status switch_console_logger(const switch_log_node *node, switch_l
 
 				if (!lookup && all_level == -1) {
 					if ((lookup = switch_core_hash_find(log_hash, "all"))) {
-						all_level = (int) switch_log_str2level(lookup);
+						all_level = (int8_t) switch_log_str2level(lookup);
 					} else {
 						all_level = -2;
 					}

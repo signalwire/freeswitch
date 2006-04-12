@@ -205,7 +205,9 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 		if (channel == SWITCH_CHANNEL_ID_LOG_CLEAN) {
 			content = data;
 		} else {
-			content = strchr(data, 128);
+			if ((content = strchr(data, 128))) {
+				*content = ' ';
+			}
 		}
 
 		if (channel == SWITCH_CHANNEL_ID_EVENT) {
