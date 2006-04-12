@@ -418,6 +418,7 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event **event)
 		hp = hp->next;
 		FREE(this->name);
 		FREE(this->value);
+		FREE(this);
 	}
 	FREE(ep->body);
 	FREE(ep);
