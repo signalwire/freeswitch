@@ -46,12 +46,65 @@ static switch_loadable_module_interface console_module_interface = {
 	/*.directory_interface */ NULL
 };
 
+static switch_memory_pool *module_pool = NULL;
+static switch_hash *log_hash = NULL;
+static int8_t all_level = -1;
+
+static switch_status config_logger(void)
+{
+	switch_config cfg;
+	char *var, *val;
+	char *cf = "console.conf";
+
+	if (!switch_config_open_file(&cfg, cf)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_core_hash_init(&log_hash, module_pool);
+
+	while (switch_config_next_pair(&cfg, &var, &val)) {
+		if (!strcasecmp(cfg.category, "mappings")) {
+			switch_core_hash_insert(log_hash, switch_core_strdup(module_pool, var), switch_core_strdup(module_pool, val));
+		}
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status switch_console_logger(const switch_log_node *node, switch_log_level level)
 {
 	FILE *handle;
 
 	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
-		fprintf(handle, node->data);
+		char *lookup = NULL;
+		switch_log_level level = SWITCH_LOG_DEBUG;
+		
+		if (all_level > -1) {
+			level = (switch_log_level) all_level;
+		} else if (log_hash) {
+			lookup = switch_core_hash_find(log_hash, node->file);
+			if (!lookup) {
+				lookup = switch_core_hash_find(log_hash, node->func);
+
+				if (!lookup && all_level == -1) {
+					if ((lookup = switch_core_hash_find(log_hash, "all"))) {
+						all_level = (int) switch_log_str2level(lookup);
+					} else {
+						all_level = -2;
+					}
+				}
+
+			}
+		}
+
+		if (lookup) {
+			level = switch_log_str2level(lookup);
+		}
+		
+		if (!log_hash || (((all_level > - 1) || lookup) && level >= node->level)) {
+			fprintf(handle, node->data);
+		}
 	}
 	
 	return SWITCH_STATUS_SUCCESS;
@@ -59,12 +112,20 @@ static switch_status switch_console_logger(const switch_log_node *node, switch_l
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
 {
+	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no pool\n");
+		return SWITCH_STATUS_TERM;
+	}
+
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &console_module_interface;
 
 	/* setup my logger function */
 	switch_log_bind_logger(switch_console_logger, SWITCH_LOG_DEBUG);
 	
+	config_logger();
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

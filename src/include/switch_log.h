@@ -114,6 +114,13 @@ SWITCH_DECLARE(switch_status) switch_log_bind_logger(switch_log_function functio
 */
 SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level level);
 
+/*! 
+  \brief Return the level number of the specified log level name
+  \param str the name of the level
+  \return the log level
+*/
+SWITCH_DECLARE(switch_log_level) switch_log_str2level(const char *str);
+
 ///\}
 #ifdef __cplusplus
 }

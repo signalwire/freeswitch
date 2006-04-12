@@ -41,7 +41,8 @@ static const char *LEVELS[] = {
 	"NOTICE" , 
 	"INFO"   , 
 	"DEBUG"  , 
-	"CONSOLE" 
+	"CONSOLE",
+	NULL
 };
 
 struct switch_log_binding {
@@ -58,6 +59,28 @@ static switch_mutex_t *BINDLOCK = NULL;
 static switch_queue_t *LOG_QUEUE = NULL;
 static int8_t THREAD_RUNNING = 0;
 static uint8_t MAX_LEVEL = 0;
+
+SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level level)
+{
+	return LEVELS[level];
+}
+
+SWITCH_DECLARE(switch_log_level) switch_log_str2level(const char *str)
+{
+	int x = 0;
+	switch_log_level level = SWITCH_LOG_DEBUG;
+	for(x = 0;;x++) {
+		if (!LEVELS[x]) {
+			break;
+		}
+		if (!strcasecmp(LEVELS[x], str)) {
+			level = (switch_log_level) x;
+			break;
+		}
+	}
+
+	return level;
+}
 
 SWITCH_DECLARE(switch_status) switch_log_bind_logger(switch_log_function function, switch_log_level level)
 {
