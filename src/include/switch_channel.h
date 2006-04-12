@@ -52,7 +52,7 @@ typedef struct {
 
 /**
  * @defgroup switch_channel Channel Functions
- * @ingroup FREESWITCH
+ * @ingroup core1
  *	The switch_channel object is a private entity that belongs to a session that contains the call
  *	specific information such as the call state, variables, caller profiles and DTMF queue
  * @{

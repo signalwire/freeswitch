@@ -46,7 +46,7 @@ extern "C" {
 
 /**
  * @defgroup switch_ivr IVR Library
- * @ingroup FREESWITCH
+ * @ingroup core1
  *	A group of core functions to do IVR related functions designed to be 
  *	building blocks for a higher level IVR interface.
  * @{

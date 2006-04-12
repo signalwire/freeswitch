@@ -31,7 +31,7 @@
  */
 /*!
   \defgroup stun1 STUN code
-  \ingroup FREESWITCH
+  \ingroup core1
   \{
 */
 #ifndef _SWITCH_STUN_PARSER_H

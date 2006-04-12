@@ -43,7 +43,7 @@ extern "C" {
 
 /**
  * @defgroup switch_sqlite_top Brought To You By SQLite
- * @ingroup FREESWITCH 
+ * @ingroup FREESWITCH
  * @{
  */
 

@@ -51,7 +51,7 @@
 
 /*!
   \defgroup events Eventing Engine
-  \ingroup FREESWITCH
+  \ingroup core1
   \{ 
 */
 

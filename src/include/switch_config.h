@@ -37,7 +37,7 @@
 
 /**
  * @defgroup config Config File Parser
- * @ingroup FREESWITCH 
+ * @ingroup core1
  * This module implements a basic interface and file format parser it may be depricated in favor of database entries
  * or expanded to tie to external handlers in the future as necessary.
  * <pre>

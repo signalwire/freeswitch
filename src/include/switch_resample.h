@@ -48,6 +48,12 @@ extern "C" {
 #include <stdlib.h>
 #include <switch.h>
 
+/*!
+  \defgroup resamp Audio Resample Functions
+  \ingroup core1
+  \{ 
+*/
+
 /*! \brief An audio resampling handle */
 struct switch_audio_resampler {
 	/*! a pointer to store the resampler object */
@@ -149,6 +155,8 @@ SWITCH_DECLARE(int) switch_short_to_float(short *s, float *f, int len);
   \param len the size of the array
  */
 SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len);
+
+///\}
 
 #ifdef __cplusplus
 }

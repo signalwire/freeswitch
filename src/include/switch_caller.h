@@ -36,7 +36,7 @@
  */
 /**
  * @defgroup caller Caller Identity / Dialplan
- * @ingroup FREESWITCH 
+ * @ingroup core1
  *
  *	This module implements a caller profile which is a group of information about a connected endpoint
  *	such as common caller id and other useful information such as ip address and destination number.

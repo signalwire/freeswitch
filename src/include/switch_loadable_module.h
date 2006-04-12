@@ -49,7 +49,7 @@ extern "C" {
 
 /*!
   \defgroup mods Loadable Module Functions
-  \ingroup FREESWITCH
+  \ingroup core1
   \{ 
 */
 

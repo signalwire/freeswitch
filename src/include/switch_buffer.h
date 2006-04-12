@@ -46,7 +46,7 @@ extern "C" {
 
 /**
  * @defgroup switch_buffer Buffer Routines
- * @ingroup FREESWITCH 
+ * @ingroup core1
  * The purpose of this module is to make a plain buffering interface that can be used for read/write buffers
  * throughout the application.  The first implementation was done to provide the functionality and the interface
  * and I think it can be optimized under the hood as we go using bucket brigades and/or ring buffering techniques.
