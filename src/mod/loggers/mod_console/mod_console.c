@@ -32,6 +32,7 @@
 #include <switch.h>
 
 static const char modname[] = "mod_console";
+static const uint8_t STATIC_LEVELS[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
 static switch_loadable_module_interface console_module_interface = {
 	/*.module_name */ modname,
@@ -48,7 +49,27 @@ static switch_loadable_module_interface console_module_interface = {
 
 static switch_memory_pool *module_pool = NULL;
 static switch_hash *log_hash = NULL;
+static switch_hash *name_hash = NULL;
 static int8_t all_level = -1;
+
+static void del_mapping(char *var) {
+	if (!strcasecmp(var, "all")) {
+		all_level = -1;
+	}
+	switch_core_hash_insert(log_hash, var, NULL);
+}
+
+static void add_mapping(char *var, char *val)
+{
+	char *name;
+
+	if (!(name = switch_core_hash_find(name_hash, var))) {
+		name = switch_core_strdup(module_pool, var);
+		switch_core_hash_insert(name_hash, name, name);
+	}
+	del_mapping(name);
+	switch_core_hash_insert(log_hash, name, (void *) &STATIC_LEVELS[(uint8_t)switch_log_str2level(val)]);
+}
 
 static switch_status config_logger(void)
 {
@@ -62,10 +83,11 @@ static switch_status config_logger(void)
 	}
 
 	switch_core_hash_init(&log_hash, module_pool);
+	switch_core_hash_init(&name_hash, module_pool);
 
 	while (switch_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, "mappings")) {
-			switch_core_hash_insert(log_hash, switch_core_strdup(module_pool, var), switch_core_strdup(module_pool, val));
+			add_mapping(var, val);
 		}
 	}
 	
@@ -77,19 +99,20 @@ static switch_status switch_console_logger(const switch_log_node *node, switch_l
 	FILE *handle;
 
 	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
-		char *lookup = NULL;
+		uint8_t *lookup = NULL;
 		switch_log_level level = SWITCH_LOG_DEBUG;
 		
 		if (all_level > -1) {
 			level = (switch_log_level) all_level;
 		} else if (log_hash) {
 			lookup = switch_core_hash_find(log_hash, node->file);
+			
 			if (!lookup) {
 				lookup = switch_core_hash_find(log_hash, node->func);
-
+				
 				if (!lookup && all_level == -1) {
 					if ((lookup = switch_core_hash_find(log_hash, "all"))) {
-						all_level = (int8_t) switch_log_str2level(lookup);
+						all_level = *lookup;
 					} else {
 						all_level = -2;
 					}
@@ -99,7 +122,7 @@ static switch_status switch_console_logger(const switch_log_node *node, switch_l
 		}
 
 		if (lookup) {
-			level = switch_log_str2level(lookup);
+			level = (switch_log_level) *lookup;
 		}
 		
 		if (!log_hash || (((all_level > - 1) || lookup) && level >= node->level)) {
