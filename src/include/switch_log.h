@@ -47,25 +47,32 @@ extern "C" {
 
 #include <switch.h>
 
+///\defgroup log Logger Routines
+///\ingroup core1
+///\{
+
+
+/*! \brief Log Data
+ */
 typedef struct {
+	/*! The complete log message */
 	char *data;
+	/*! The file where the message originated */	
 	char *file;
-	char *func;
-	char *content;
+	/*! The line number where the message originated */	
 	uint32_t line;
+	/*! The function where the message originated */	
+	char *func;
+	/*! The log level of the message */	
 	switch_log_level level;
+	/*! The time when the log line was sent */
 	switch_time_t timestamp;
+	/*! A pointer to where the actual content of the message starts (skipping past the preformatted portion) */	
+	char *content;
 } switch_log_node;
 
 typedef switch_status (*switch_log_function)(const switch_log_node *node, switch_log_level level);
 
-/*!
-  \brief A method akin to printf that allows you to redirect output to a specific log
-*/
-
-///\defgroup log Logger Routines
-///\ingroup core1
-///\{
 
 /*! 
   \brief Initilize the logging engine
@@ -99,6 +106,13 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
   \note to be called at application termination by the core
 */
 SWITCH_DECLARE(switch_status) switch_log_bind_logger(switch_log_function function, switch_log_level level);
+
+/*! 
+  \brief Return the name of the specified log level
+  \param level the level
+  \return the name of the log level
+*/
+SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level level);
 
 ///\}
 #ifdef __cplusplus
