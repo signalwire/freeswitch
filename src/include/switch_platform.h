@@ -42,6 +42,8 @@ extern "C" {
 #pragma warning (disable:810 869 981 279 1469 188)
 #endif
 
+#include <stdio.h>
+
 #ifdef _MSC_VER
 
 #ifndef FREESWITCHCORE_EXPORTS
@@ -104,7 +106,6 @@ typedef unsigned long	in_addr_t;
 #define PACKED __attribute__ ((__packed__))
 #endif
 #include <sys/types.h>
-#include <stdio.h>
 #include <inttypes.h>
 #ifndef getpid
 #include <unistd.h>

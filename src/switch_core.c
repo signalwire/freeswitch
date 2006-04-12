@@ -29,6 +29,8 @@
  * switch_core.c -- Main Core Library
  *
  */
+
+#include <stdio.h>
 #include <switch.h>
 //#define DEBUG_ALLOC
 

@@ -164,7 +164,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 		
 		len = (uint32_t)(strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(func) + strlen(fmt));
 		new_fmt = malloc(len+1);
-		snprintf(new_fmt, len, extra_fmt, date, LEVELS[level], filep, line, func, (char) 128, fmt);
+		snprintf(new_fmt, len, extra_fmt, date, LEVELS[level], filep, line, func, 128, fmt);
 		fmt = new_fmt;
 	}
 
@@ -182,7 +182,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 		if (channel == SWITCH_CHANNEL_ID_LOG_CLEAN) {
 			content = data;
 		} else {
-			content = strchr(data, (char)128);
+			content = strchr(data, 128);
 		}
 
 		if (channel == SWITCH_CHANNEL_ID_EVENT) {
