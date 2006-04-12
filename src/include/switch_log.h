@@ -47,6 +47,18 @@ extern "C" {
 
 #include <switch.h>
 
+typedef struct {
+	char *data;
+	char *file;
+	char *func;
+	char *content;
+	uint32_t line;
+	switch_log_level level;
+	switch_time_t timestamp;
+} switch_log_node;
+
+typedef switch_status (*switch_log_function)(const switch_log_node *node, switch_log_level level);
+
 /*!
   \brief A method akin to printf that allows you to redirect output to a specific log
 */

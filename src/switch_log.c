@@ -49,12 +49,8 @@ struct switch_log_binding {
 	switch_log_level level;
 	struct switch_log_binding *next;
 };
-typedef struct switch_log_binding switch_log_binding;
 
-typedef struct {
-	char *data;
-	switch_log_level level;
-} switch_log_node;
+typedef struct switch_log_binding switch_log_binding;
 
 static switch_memory_pool *LOG_POOL = NULL;
 static switch_log_binding *BINDINGS = NULL;
@@ -117,7 +113,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread *thread, void *obj)
 		switch_mutex_lock(BINDLOCK);
 		for(binding = BINDINGS; binding; binding = binding->next) {
 			if (binding->level >= node->level) {
-				binding->function(node->data, node->level);
+				binding->function(node, node->level);
 			}
 		}
 		switch_mutex_unlock(BINDLOCK);
@@ -125,9 +121,17 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread *thread, void *obj)
 			if (node->data) {
 				free(node->data);
 			}
+
+			if (node->file) {
+				free(node->file);
+			}
+
+			if (node->func) {
+				free(node->func);
+			}
+
 			free(node);
 		}
-
 	}
 	THREAD_RUNNING = 0;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Logger Ended.\n");
@@ -142,9 +146,10 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 	va_list ap;
 	FILE *handle;
 	char *filep = switch_cut_path(file);
-
+	char *content = NULL;
+	switch_time_t now = switch_time_now();
 	uint32_t len;
-	const char *extra_fmt = "%s [%s] %s:%d %s() %s";
+	const char *extra_fmt = "%s [%s] %s:%d %s()%c%s";
 	va_start(ap, fmt);
 
 	handle = switch_core_data_channel(channel);
@@ -154,12 +159,12 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 		switch_size_t retsize;
 		switch_time_exp_t tm;
 
-		switch_time_exp_lt(&tm, switch_time_now());
+		switch_time_exp_lt(&tm, now);
 		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 		
 		len = (uint32_t)(strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(func) + strlen(fmt));
 		new_fmt = malloc(len+1);
-		snprintf(new_fmt, len, extra_fmt, date, LEVELS[level], filep, line, func, fmt);
+		snprintf(new_fmt, len, extra_fmt, date, LEVELS[level], filep, line, func, (char) 128, fmt);
 		fmt = new_fmt;
 	}
 
@@ -173,6 +178,13 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 	if (ret == -1) {
 		fprintf(stderr, "Memory Error\n");
 	} else {
+
+		if (channel == SWITCH_CHANNEL_ID_LOG_CLEAN) {
+			content = data;
+		} else {
+			content = strchr(data, (char)128);
+		}
+
 		if (channel == SWITCH_CHANNEL_ID_EVENT) {
 				switch_event *event;
 				if (switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
@@ -190,7 +202,12 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 			if (level >= MAX_LEVEL) {
 				switch_log_node *node = malloc(sizeof(*node));
 				node->data = data;
+				node->file = strdup(filep);
+				node->func = strdup(func);
+				node->line = line;
 				node->level = level;
+				node->content = content;
+				node->timestamp = now;
 				switch_queue_push(LOG_QUEUE, node);
 			} else {
 				free(data);

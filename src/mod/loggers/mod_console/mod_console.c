@@ -46,12 +46,12 @@ static switch_loadable_module_interface console_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-static switch_status switch_console_logger(const char *data, switch_log_level level)
+static switch_status switch_console_logger(const switch_log_node *node, switch_log_level level)
 {
 	FILE *handle;
 
 	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
-		fprintf(handle, data);
+		fprintf(handle, node->data);
 	}
 	
 	return SWITCH_STATUS_SUCCESS;

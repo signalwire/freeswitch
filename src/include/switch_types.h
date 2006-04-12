@@ -233,7 +233,6 @@ typedef enum {
 	SWITCH_LOG_ALERT = 1,
 	SWITCH_LOG_EMERG = 0
 } switch_log_level;
-typedef switch_status (*switch_log_function)(const char *data, switch_log_level level);
 
 
 /*!
