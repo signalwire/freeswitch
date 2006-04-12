@@ -55,6 +55,7 @@ static int8_t all_level = -1;
 static void del_mapping(char *var) {
 	if (!strcasecmp(var, "all")) {
 		all_level = -1;
+		return;
 	}
 	switch_core_hash_insert(log_hash, var, NULL);
 }
@@ -62,6 +63,11 @@ static void del_mapping(char *var) {
 static void add_mapping(char *var, char *val)
 {
 	char *name;
+
+	if (!strcasecmp(var, "all")) {
+		all_level = (int8_t) switch_log_str2level(val);
+		return;
+	}
 
 	if (!(name = switch_core_hash_find(name_hash, var))) {
 		name = switch_core_strdup(module_pool, var);
@@ -109,15 +115,6 @@ static switch_status switch_console_logger(const switch_log_node *node, switch_l
 			
 			if (!lookup) {
 				lookup = switch_core_hash_find(log_hash, node->func);
-				
-				if (!lookup && all_level == -1) {
-					if ((lookup = switch_core_hash_find(log_hash, "all"))) {
-						all_level = *lookup;
-					} else {
-						all_level = -2;
-					}
-				}
-
 			}
 		}
 
