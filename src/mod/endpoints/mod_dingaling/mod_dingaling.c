@@ -349,6 +349,28 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
 
+	if (!tech_pvt->rtp_session) {
+		const char *err;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SETUP RTP %s:%d -> %s:%d\n", tech_pvt->profile->ip, tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
+
+		if (!(tech_pvt->rtp_session = switch_rtp_new(tech_pvt->profile->ip,
+													 tech_pvt->local_port,
+													 tech_pvt->remote_ip,
+													 tech_pvt->remote_port,
+													 tech_pvt->codec_num,
+													 tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
+													 tech_pvt->read_codec.implementation->microseconds_per_frame,
+													 0,
+													 NULL,
+													 &err, switch_core_session_get_pool(tech_pvt->session)))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
+			switch_channel_hangup(channel);
+			return NULL;
+		}
+		switch_rtp_activate_ice(tech_pvt->rtp_session, tech_pvt->remote_user, tech_pvt->local_user);
+	}
+
+
 	//printf("WAIT %s %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_OUTBOUND));
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
@@ -1283,30 +1305,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						
 						tech_pvt->cand_id = ldl_session_candidates(dlsession, cand, 1);
 						tech_pvt->desc_id = ldl_session_describe(dlsession, payloads, 1, LDL_DESCRIPTION_ACCEPT);
-
-
-						if (!tech_pvt->rtp_session) {
-							const char *err;
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SETUP RTP %s:%d -> %s:%d\n", profile->ip, tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
-
-							if (!(tech_pvt->rtp_session = switch_rtp_new(profile->ip,
-																		 tech_pvt->local_port,
-																		 tech_pvt->remote_ip,
-																		 tech_pvt->remote_port,
-																		 tech_pvt->codec_num,
-																		 tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
-																		 tech_pvt->read_codec.implementation->microseconds_per_frame,
-																		 0,
-																		 NULL,
-																		 &err, switch_core_session_get_pool(tech_pvt->session)))) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
-								switch_channel_hangup(channel);
-								return LDL_STATUS_FALSE;
-							}
-							switch_set_flag(tech_pvt, TFLAG_RTP_READY);
-							switch_rtp_activate_ice(tech_pvt->rtp_session, tech_pvt->remote_user, tech_pvt->local_user);
-						}
-						
+						switch_set_flag(tech_pvt, TFLAG_RTP_READY);
 						return LDL_STATUS_SUCCESS;
 					}
 				}

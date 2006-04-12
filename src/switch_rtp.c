@@ -544,7 +544,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp *rtp_session, void *dat
 
 	int bytes = rtp_common_read(rtp_session, data, payload_type, flags);
 	
-	if (bytes <= 0) {
+	if (bytes < 0) {
 		*datalen = 0;
 		return SWITCH_STATUS_GENERR;
 	}
@@ -562,7 +562,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp *rtp_session, 
 	int bytes = rtp_common_read(rtp_session, data, payload_type, flags);
 	*data = rtp_session->recv_msg.body;
 
-	if (bytes <= 0) {
+	if (bytes < 0) {
 		*datalen = 0;
 		return SWITCH_STATUS_GENERR;
 	}
