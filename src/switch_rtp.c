@@ -606,7 +606,7 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 
 		bytes = sbytes;
 	}
-
+	rtp_session->send_msg.header.pt = rtp_session->payload;
 	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&rtp_session->send_msg, &bytes);
 
 	if (rtp_session->ice_user) {
@@ -631,7 +631,6 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32
 	rtp_session->seq = htons(rtp_session->seq);
 	rtp_session->send_msg.header.seq = rtp_session->seq;
 	rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
-	rtp_session->payload = (uint8_t)htonl(rtp_session->payload);
 
 	return rtp_common_write(rtp_session, data, datalen, rtp_session->payload);
 
@@ -643,10 +642,10 @@ SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
 		return -1;
 	}
+
 	rtp_session->ts += ts;
 	rtp_session->send_msg.header.seq = htons(mseq);
 	rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
-	rtp_session->send_msg.header.pt = (uint8_t)htonl(payload);
 
 	return rtp_common_write(rtp_session, data, datalen, payload);
 }

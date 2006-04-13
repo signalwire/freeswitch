@@ -786,8 +786,6 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 				}
 			}
 
-
-			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 
 			if (bchan) {
@@ -802,7 +800,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 					switch_set_flag(tech_pvt, TFLAG_NOSIG);
 					snprintf(name, sizeof(name), "WanPipe/%s/nosig-%04x", bchan, rand() & 0xffff);
 					switch_channel_set_name(channel, name);			
-
+					switch_channel_set_caller_profile(channel, caller_profile);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid address\n");
 					switch_core_session_destroy(new_session);
@@ -854,6 +852,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 					
 					snprintf(name, sizeof(name), "WanPipe/s%dc%d/%s-%04x", spri->span, channo, caller_profile->destination_number, rand() & 0xffff);
 					switch_channel_set_name(channel, name);			
+					switch_channel_set_caller_profile(channel, caller_profile);
 					sr = pri_sr_new();
 					pri_sr_set_channel(sr, channo, 0, 0);
 					pri_sr_set_bearer(sr, 0, SPANS[span]->l1);
