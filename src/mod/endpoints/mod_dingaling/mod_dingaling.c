@@ -579,7 +579,9 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	assert(tech_pvt != NULL);
 
 
-	assert(tech_pvt->rtp_session != NULL);
+	if (!tech_pvt->rtp_session) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	tech_pvt->read_frame.datalen = 0;
 	switch_set_flag(tech_pvt, TFLAG_READING);
@@ -587,8 +589,6 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 	samples = tech_pvt->read_codec.implementation->samples_per_frame;
 	ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
-
-	assert(tech_pvt->rtp_session != NULL);
 	tech_pvt->read_frame.datalen = 0;
 
 	
@@ -675,8 +675,9 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	assert(tech_pvt->rtp_session != NULL);
-
+	if (!tech_pvt->rtp_session) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_RTP_READY)) {
 		return SWITCH_STATUS_SUCCESS;
