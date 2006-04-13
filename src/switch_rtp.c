@@ -268,6 +268,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 	}
 
 	rtp_session->pool = pool;
+	rtp_session->flags = flags;
 
 	/* for from address on recvfrom calls */
 	switch_sockaddr_info_get(&rtp_session->from_addr, NULL, SWITCH_UNSPEC, 0, 0, rtp_session->pool);
@@ -493,15 +494,15 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 		}
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-			
 			if ((switch_time_now() - rtp_session->next_read) > 1000) {
 				/* We're late! We're Late!*/
-				memset(&rtp_session->recv_msg, 0, 13);
+				memset(&rtp_session->recv_msg, 0, SWITCH_RTP_CNG_PAYLOAD);
 				rtp_session->recv_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
 				*flags |= SFF_CNG;
-				/* RE-Sync the clock and return a CNG frame */
-				rtp_session->next_read = switch_time_now() + rtp_session->ms_per_packet;
-				return 13;
+				/* Set the next waypoint and return a CNG frame */
+				rtp_session->next_read += rtp_session->ms_per_packet;
+				*payload_type = SWITCH_RTP_CNG_PAYLOAD;
+				return SWITCH_RTP_CNG_PAYLOAD;
 			}
 		
 			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {

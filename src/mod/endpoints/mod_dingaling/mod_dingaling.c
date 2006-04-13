@@ -116,6 +116,7 @@ struct private_object {
 	int32_t timestamp_send;
 	int32_t timestamp_recv;
 	int32_t timestamp_dtmf;
+	uint32_t last_read;
 	char *codec_name;
 	uint8_t codec_num;
 };
@@ -360,7 +361,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 													 tech_pvt->codec_num,
 													 tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 													 tech_pvt->read_codec.implementation->microseconds_per_frame,
-													 0,
+													 SWITCH_RTP_FLAG_USE_TIMER,
 													 NULL,
 													 &err, switch_core_session_get_pool(tech_pvt->session)))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
@@ -632,7 +633,10 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 			} 
 		}
 
-
+		if (switch_test_flag(&tech_pvt->read_frame, SFF_CNG)) {
+			tech_pvt->read_frame.datalen = tech_pvt->last_read;
+		}
+		
 		if (tech_pvt->read_frame.datalen > 0) {
 			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 			frames = (tech_pvt->read_frame.datalen / bytes);
@@ -640,7 +644,7 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 			ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
 			tech_pvt->timestamp_recv += (int32_t) samples;
 			tech_pvt->read_frame.samples = (int) samples;
-
+			tech_pvt->last_read = tech_pvt->read_frame.datalen;
 			//printf("READ bytes=%d payload=%d frames=%d samples=%d ms=%d ts=%d sampcount=%d\n", (int)tech_pvt->read_frame.datalen, (int)payload, (int)frames, (int)samples, (int)ms, (int)tech_pvt->timestamp_recv, (int)tech_pvt->read_frame.samples);
 			break;
 		}
