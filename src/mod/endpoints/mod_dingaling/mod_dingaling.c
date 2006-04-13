@@ -32,6 +32,8 @@
 #include <switch.h>
 #include <libdingaling.h>
 
+#define DL_CAND_WAIT 10000000
+
 static const char modname[] = "mod_dingaling";
 
 static switch_memory_pool *module_pool = NULL;
@@ -227,7 +229,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 		tech_pvt->last_cand = switch_time_now();
 		next_cand = tech_pvt->last_cand;
 	} else {
-		next_cand = tech_pvt->last_cand + 6000000;
+		next_cand = tech_pvt->last_cand + DL_CAND_WAIT;
 	}
 
 	while(! (switch_test_flag(tech_pvt, TFLAG_CODEC_READY) && switch_test_flag(tech_pvt, TFLAG_RTP_READY))) {
@@ -242,7 +244,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 		if (now >= next_cand) {
 			ldl_payload_t payloads[5];
 			
-			next_cand += 10000000;
+			next_cand += DL_CAND_WAIT;
 			memset(payloads, 0, sizeof(payloads));
 
 			if (!switch_test_flag(tech_pvt, TFLAG_CODEC_READY)) {
@@ -649,9 +651,9 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 		}
 
 		if (switch_test_flag(&tech_pvt->read_frame, SFF_CNG)) {
-			tech_pvt->read_frame.datalen = tech_pvt->last_read;
+			tech_pvt->read_frame.datalen = tech_pvt->last_read ? tech_pvt->last_read : tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 		}
-		
+
 		if (tech_pvt->read_frame.datalen > 0) {
 			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 			frames = (tech_pvt->read_frame.datalen / bytes);
@@ -1145,6 +1147,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				tech_pvt->codec_index = -1;
 				tech_pvt->profile = profile;
 				tech_pvt->local_port = switch_rtp_request_port();
+				tech_pvt->last_cand = switch_time_now() + DL_CAND_WAIT;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
 				switch_core_session_destroy(&session);
@@ -1247,7 +1250,19 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidates %s:%d\n", candidates[x].address, candidates[x].port);
 					if (!strcasecmp(candidates[x].protocol, "udp") && 
 						((profile->lanaddr && !strncasecmp(candidates[x].address, profile->lanaddr, strlen(profile->lanaddr))) ||
-						 (strncasecmp(candidates[x].address, "10.", 3) && strncasecmp(candidates[x].address, "192.168.", 8)))) {
+						 (strncasecmp(candidates[x].address, "10.", 3) && 
+						  strncasecmp(candidates[x].address, "192.168.", 8) &&
+						  strncasecmp(candidates[x].address, "127.", 4) &&
+						  strncasecmp(candidates[x].address, "1.", 2) &&
+						  strncasecmp(candidates[x].address, "2.", 2) &&
+						  strncasecmp(candidates[x].address, "172.16.", 7) &&
+						  strncasecmp(candidates[x].address, "172.17.", 7) &&
+						  strncasecmp(candidates[x].address, "172.18.", 7) &&
+						  strncasecmp(candidates[x].address, "172.19.", 7) &&
+						  strncasecmp(candidates[x].address, "172.2", 5) &&
+						  strncasecmp(candidates[x].address, "172.30.", 7) &&
+						  strncasecmp(candidates[x].address, "172.31.", 7)
+						  ))) {
 						ldl_payload_t payloads[5];
 						ldl_candidate_t cand[1];
 
