@@ -64,6 +64,7 @@ typedef enum {
 
 static struct {
 	int debug;
+	char *ip;
 	int port;
 	char *dialplan;
 	char *codec_string;
@@ -92,8 +93,9 @@ struct private_object {
 };
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
-	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip)
 
 
 	 static char *IAXNAMES[] =
@@ -830,6 +832,8 @@ static switch_status load_config(void)
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "port")) {
 				globals.port = atoi(val);
+			} else if (!strcmp(var, "ip")) {
+				set_global_ip(val);
 			} else if (!strcmp(var, "codec_master")) {
 				if (!strcasecmp(val, "us")) {
 					switch_set_flag(&globals, GFLAG_MY_CODEC_PREFS);
@@ -873,7 +877,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	if (globals.debug) {
 		iax_enable_debug();
 	}
-	if (iax_init(globals.port) < 0) {
+	if (iax_init(globals.ip, globals.port) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Binding Port!\n");
 		return SWITCH_STATUS_TERM;
 	}

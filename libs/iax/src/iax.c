@@ -917,7 +917,7 @@ int iax_shutdown(void)
 	return do_shutdown++;
 }
 
-int iax_init(int preferredportno)
+int iax_init(char *ip, int preferredportno)
 {
 	int portno = preferredportno;
 	struct sockaddr_in sin;
@@ -944,7 +944,12 @@ int iax_init(int preferredportno)
 		    
 	    if (preferredportno > 0) {
 		    sin.sin_family = AF_INET;
-		    sin.sin_addr.s_addr = 0;
+			if (ip) {
+				inet_aton(ip, &sin.sin_addr);
+			} else {
+				sin.sin_addr.s_addr = 0;
+			}
+
 		    sin.sin_port = htons((short)preferredportno);
 		    if (bind(netfd, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
 			    DEBU(G "Unable to bind to preferred port.  Using random one instead.");

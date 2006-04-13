@@ -125,7 +125,7 @@ extern "C"
 /* Called to initialize IAX structures and sockets.  Returns actual
    portnumber (which it will try preferred portno first, but if not
    take what it can get */
-extern int iax_init(int preferredportno);
+extern int iax_init(char *ip, int preferredportno);
 
 extern int iax_shutdown(void);
 
