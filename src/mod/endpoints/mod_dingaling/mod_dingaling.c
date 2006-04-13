@@ -119,6 +119,9 @@ struct private_object {
 	uint32_t last_read;
 	char *codec_name;
 	uint8_t codec_num;
+	switch_time_t last_cand;
+	char *stun_ip;
+	uint32_t stun_port;
 };
 
 struct rfc2833_digit {
@@ -220,7 +223,12 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 
 	started = switch_time_now();
 
-	next_cand = switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? switch_time_now() + 5000000 : switch_time_now() + 20000000;
+	if (!tech_pvt->last_cand) {
+		tech_pvt->last_cand = switch_time_now();
+		next_cand = tech_pvt->last_cand;
+	} else {
+		next_cand = tech_pvt->last_cand + 6000000;
+	}
 
 	while(! (switch_test_flag(tech_pvt, TFLAG_CODEC_READY) && switch_test_flag(tech_pvt, TFLAG_RTP_READY))) {
 		now = switch_time_now();
@@ -271,26 +279,33 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 				
 				if (!strncasecmp(advip, "stun:", 5)) {
 					char *stun_ip = advip + 5;
+					
+					if (tech_pvt->stun_ip) {
+						cand[0].address = tech_pvt->stun_ip;
+						cand[0].port = tech_pvt->stun_port;
+					} else {
+						if (!stun_ip) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! NO STUN SERVER!\n");
+							switch_channel_hangup(channel);
+							break;
+						}
 
-					if (!stun_ip) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! NO STUN SERVER!\n");
-						switch_channel_hangup(channel);
-						break;
+						cand[0].address = tech_pvt->profile->ip;
+						if (switch_stun_lookup(&cand[0].address,
+											   &cand[0].port,
+											   stun_ip,
+											   SWITCH_STUN_DEFAULT_PORT,
+											   &err,
+											   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
+							switch_channel_hangup(channel);
+							break;
+						}
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success %s:%d\n", cand[0].address, cand[0].port);
 					}
-
-					cand[0].address = tech_pvt->profile->ip;
-					if (switch_stun_lookup(&cand[0].address,
-										   &cand[0].port,
-										   stun_ip,
-										   SWITCH_STUN_DEFAULT_PORT,
-										   &err,
-										   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
-						switch_channel_hangup(channel);
-						break;
-					}
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success %s:%d\n", cand[0].address, cand[0].port);
 					cand[0].type = "stun";
+					tech_pvt->stun_ip = switch_core_session_strdup(tech_pvt->session, cand[0].address);
+					tech_pvt->stun_port = cand[0].port;
 				} else {
 					cand[0].type = "local";
 				}
@@ -1217,7 +1232,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			unsigned int len = 0;
 			char *err;
 
-
+			tech_pvt->last_cand = switch_time_now();
 			if (ldl_session_get_candidates(dlsession, &candidates, &len) == LDL_STATUS_SUCCESS) {
 				unsigned int x;
 
@@ -1279,24 +1294,29 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						if (!strncasecmp(advip, "stun:", 5)) {
 							char *stun_ip = advip + 5;
 
-							if (!stun_ip) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! NO STUN SERVER!\n");
-								switch_channel_hangup(channel);
-								break;
-							}
+							if (tech_pvt->stun_ip) {
+								cand[0].address = tech_pvt->stun_ip;
+								cand[0].port = tech_pvt->stun_port;
+							} else {							
+								if (!stun_ip) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! NO STUN SERVER!\n");
+									switch_channel_hangup(channel);
+									break;
+								}
 
-							cand[0].address = profile->ip;
-							if (switch_stun_lookup(&cand[0].address,
-												   &cand[0].port,
-												   stun_ip,
-												   SWITCH_STUN_DEFAULT_PORT,
-												   &err,
-												   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
-								switch_channel_hangup(channel);
-								return LDL_STATUS_FALSE;
+								cand[0].address = profile->ip;
+								if (switch_stun_lookup(&cand[0].address,
+													   &cand[0].port,
+													   stun_ip,
+													   SWITCH_STUN_DEFAULT_PORT,
+													   &err,
+													   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
+									switch_channel_hangup(channel);
+									return LDL_STATUS_FALSE;
+								}
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success %s:%d\n", cand[0].address, cand[0].port);
 							}
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success %s:%d\n", cand[0].address, cand[0].port);
 							cand[0].type = "stun";
 						} else {
 							cand[0].type = "local";
