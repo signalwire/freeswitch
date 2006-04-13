@@ -36,7 +36,7 @@
 #endif
 
 void gettimeofday(struct timeval *tv, void /*struct timezone*/ *tz);
-
+#include "winpoop.h"
 
 #else
 
