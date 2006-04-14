@@ -30,6 +30,9 @@
  *
  */
 #include <switch.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
 {
@@ -141,6 +144,52 @@ SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll,
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(switch_status) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len)
+{
+	size_t i;
+
+	for (i = 0; (i < search_len) && (i < string_len); i++) {
+		if (string[i] != search[i]) {
+			return SWITCH_STATUS_FALSE;
+		}
+	}	
+	
+	if (i == search_len) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *search, const char *replace)
+{
+	size_t string_len = strlen(string);
+	size_t search_len = strlen(search);
+	size_t replace_len = strlen(replace);
+	size_t i, n;
+	size_t dest_len = 0;
+	char *dest;
+  
+	dest = (char *)malloc(sizeof(char));
+
+	for (i = 0; i < string_len; i++) {
+		if (switch_string_match(string + i, string_len - i, search, search_len) == SWITCH_STATUS_SUCCESS) {
+			for (n = 0; n < replace_len; n++) {
+				dest[dest_len] = replace[n];
+				dest_len++;
+				dest = (char *)realloc(dest, sizeof(char)*(dest_len+1));
+			}
+			i += search_len-1;
+		} else {
+			dest[dest_len] = string[i];
+			dest_len++;
+			dest = (char *)realloc(dest, sizeof(char)*(dest_len+1));
+		}
+	}
+
+	dest[dest_len] = 0;
+	return dest;
+}
 
 SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 {
