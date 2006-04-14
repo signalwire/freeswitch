@@ -148,9 +148,20 @@ static char *cut_path(char *in)
 static void default_logger(char *file, const char *func, int line, int level, char *fmt, ...)
 {
 	char *fp;
+	char data[1024];
 
+	va_list ap;
+	
 	fp = cut_path(file);
-	fprintf(globals.log_stream, "%s:%d %s() %s", file, line, func, fmt);
+
+	va_start(ap, fmt);
+
+	vsnprintf(data, sizeof(data), fmt, ap);
+
+	fprintf(globals.log_stream, "%s:%d %s() %s", file, line, func, data);
+
+	va_end(ap);
+
 }
 
 static unsigned int next_id(void)

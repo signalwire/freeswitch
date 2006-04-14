@@ -155,7 +155,12 @@ static switch_status load_config(void);
 
 static void dl_logger(char *file, const char *func, int line, int level, char *fmt, ...)
 {
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_DEBUG, fmt);
+	va_list ap;
+	va_start(ap, fmt);
+
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_DEBUG, ap);
+
+	va_end(ap);
 }
 
 static void get_codecs(struct private_object *tech_pvt)
