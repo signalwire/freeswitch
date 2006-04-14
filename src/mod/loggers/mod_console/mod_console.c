@@ -73,6 +73,7 @@ static void add_mapping(char *var, char *val)
 		name = switch_core_strdup(module_pool, var);
 		switch_core_hash_insert(name_hash, name, name);
 	}
+
 	del_mapping(name);
 	switch_core_hash_insert(log_hash, name, (void *) &STATIC_LEVELS[(uint8_t)switch_log_str2level(val)]);
 }
@@ -108,9 +109,7 @@ static switch_status switch_console_logger(const switch_log_node *node, switch_l
 		uint8_t *lookup = NULL;
 		switch_log_level level = SWITCH_LOG_DEBUG;
 		
-		if (all_level > -1) {
-			level = (switch_log_level) all_level;
-		} else if (log_hash) {
+		if (log_hash) {
 			lookup = switch_core_hash_find(log_hash, node->file);
 			
 			if (!lookup) {
@@ -120,8 +119,10 @@ static switch_status switch_console_logger(const switch_log_node *node, switch_l
 
 		if (lookup) {
 			level = (switch_log_level) *lookup;
-		}
-		
+		} else if (all_level > -1) {
+			level = (switch_log_level) all_level;
+		} 
+
 		if (!log_hash || (((all_level > - 1) || lookup) && level >= node->level)) {
 			fprintf(handle, node->data);
 		}
