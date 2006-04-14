@@ -123,7 +123,7 @@ struct private_object {
 	uint8_t codec_num;
 	switch_time_t last_cand;
 	char *stun_ip;
-	uint32_t stun_port;
+	uint16_t stun_port;
 };
 
 struct rfc2833_digit {

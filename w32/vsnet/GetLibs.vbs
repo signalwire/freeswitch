@@ -178,6 +178,7 @@ End If
 
 If BuildModDingaling Then
 	BuildLibs_iksemel BuildDebug, BuildRelease
+	BuildLibs_libdingaling BuildDebug, BuildRelease
 End If
 
 If BuildModIaxChan Then
