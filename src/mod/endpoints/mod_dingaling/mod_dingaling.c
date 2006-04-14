@@ -153,7 +153,10 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
 static switch_status load_config(void);
 
-
+static void dl_logger(char *file, const char *func, int line, int level, char *fmt, ...)
+{
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_DEBUG, fmt);
+}
 
 static void get_codecs(struct private_object *tech_pvt)
 {
@@ -1050,6 +1053,7 @@ static switch_status load_config(void)
 		} else if (!strcasecmp(cfg.category, "interface")) {
 			if (!globals.init) {
 				ldl_global_init(globals.debug);
+				ldl_global_set_logger(dl_logger);
 				globals.init = 1;
 			}
 

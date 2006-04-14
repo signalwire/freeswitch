@@ -127,9 +127,20 @@ typedef enum {
 	LDL_DESCRIPTION_ACCEPT
 } ldl_description_t;
 
+#define DL_PRE __FILE__, __FUNCTION__, __LINE__
+#define DL_LOG_DEBUG DL_PRE, 7
+#define DL_LOG_INFO DL_PRE, 6
+#define DL_LOG_NOTICE DL_PRE, 5
+#define DL_LOG_WARNING DL_PRE, 4
+#define DL_LOG_ERR DL_PRE, 3
+#define DL_LOG_CRIT DL_PRE, 2
+#define DL_LOG_ALERT DL_PRE, 1
+#define DL_LOG_EMERG DL_PRE, 0
+
 typedef ldl_status (*ldl_loop_callback_t)(ldl_handle_t *);
 typedef ldl_status (*ldl_session_callback_t)(ldl_handle_t *, ldl_session_t *, ldl_signal_t, char *);
 typedef ldl_status (*ldl_response_callback_t)(ldl_handle_t *, char *);
+typedef void (*ldl_logger_t)(char *file, const char *func, int line, int level, char *fmt, ...);
 
 #define ldl_yield(ms) apr_sleep(ms * 10); apr_thread_yield();
 
@@ -230,6 +241,12 @@ void ldl_session_set_private(ldl_session_t *session, void *private_data);
   \return the data
 */
 void *ldl_session_get_private(ldl_session_t *session);
+
+/*!
+  \brief Set a custom logger
+  \param logger the logger function
+*/
+void ldl_global_set_logger(ldl_logger_t logger);
 
 /*!
   \brief Perform a probe on a given id to resolve the proper Jingle Resource

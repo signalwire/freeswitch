@@ -72,6 +72,7 @@ static struct {
 	int debug;
 	apr_pool_t *memory_pool;
 	unsigned int id;
+	ldl_logger_t logger;
 } globals;
 
 struct packet_node {
@@ -128,6 +129,30 @@ struct ldl_session {
 	void *private_data;
 };
 
+
+static char *cut_path(char *in)
+{
+	char *p, *ret = in;
+	char delims[] = "/\\";
+	char *i;
+
+	for (i = delims; *i; i++) {
+		p = in;
+		while ((p = strchr(p, *i)) != 0) {
+			ret = ++p;
+		}
+	}
+	return ret;
+}
+
+static void default_logger(char *file, const char *func, int line, int level, char *fmt, ...)
+{
+	char *fp;
+
+	fp = cut_path(file);
+	fprintf(globals.log_stream, "%s:%d %s() %s", file, line, func, fmt);
+}
+
 static unsigned int next_id(void)
 {
 	return globals.id++;
@@ -147,7 +172,7 @@ ldl_status ldl_session_destroy(ldl_session_t **session_p)
 		apr_pool_t *pool = session->pool;
 
 		if (globals.debug) {
-			fprintf(globals.log_stream, "Destroyed Session %s\n", session->id);
+			globals.logger(DL_LOG_DEBUG, "Destroyed Session %s\n", session->id);
 		}
 		if (session->id) {
 			apr_hash_set(session->handle->sessions, session->id, APR_HASH_KEY_STRING, NULL);
@@ -170,7 +195,7 @@ ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, c
 	ldl_session_t *session = NULL;
 	
 	if (!(session = apr_palloc(handle->pool, sizeof(ldl_session_t)))) {
-		fprintf(globals.log_stream, "Memory ERROR!\n");
+		globals.logger(DL_LOG_DEBUG, "Memory ERROR!\n");
 		*session_p = NULL;
 		return LDL_STATUS_MEMERR;
 	}
@@ -190,7 +215,7 @@ ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, c
 	*session_p = session;
 	
 	if (globals.debug) {
-		fprintf(globals.log_stream, "Created Session %s\n", id);
+		globals.logger(DL_LOG_DEBUG, "Created Session %s\n", id);
 	}
 
 	return LDL_STATUS_SUCCESS;
@@ -211,13 +236,13 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 
 	if (!session) {
 		if (globals.debug) {
-			fprintf(globals.log_stream, "Non-Existent Session %s!\n", id);
+			globals.logger(DL_LOG_DEBUG, "Non-Existent Session %s!\n", id);
 		}
 		return LDL_STATUS_MEMERR;
 	}
 	
 	if (globals.debug) {
-		fprintf(globals.log_stream, "Message for Session %s\n", id);
+		globals.logger(DL_LOG_DEBUG, "Message for Session %s\n", id);
 	}
 
 	while(xml) {
@@ -251,7 +276,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 									session->payload_len++;
 								
 									if (globals.debug) {
-										fprintf(globals.log_stream, "Add Payload [%s] id='%s'\n", name, id);
+										globals.logger(DL_LOG_DEBUG, "Add Payload [%s] id='%s'\n", name, id);
 									}
 								}
 							}
@@ -276,7 +301,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 							for (x = 0; x < session->candidate_len; x++) {
 								if (session->candidates[x].pref == pref) {
 									if (globals.debug) {
-										fprintf(globals.log_stream, "Duplicate Pref!\n");
+										globals.logger(DL_LOG_DEBUG, "Duplicate Pref!\n");
 									}
 									index = x;
 									break;
@@ -311,7 +336,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 							session->candidates[index].port = atoi(key);
 						}
 						if (globals.debug) {
-							fprintf(globals.log_stream, 
+							globals.logger(DL_LOG_DEBUG, 
 									"New Candidate %d\n"
 									"name=%s\n"
 									"type=%s\n"
@@ -394,7 +419,7 @@ static void cancel_retry(ldl_handle_t *handle, char *id)
 	apr_thread_mutex_lock(handle->lock);
 	if ((packet_node = apr_hash_get(handle->retry_hash, id, APR_HASH_KEY_STRING))) {
 		if (globals.debug) {
-			fprintf(globals.log_stream, "Cancel packet %s\n", packet_node->id);
+			globals.logger(DL_LOG_DEBUG, "Cancel packet %s\n", packet_node->id);
 		}
 		packet_node->retries = 0;
 	}
@@ -500,9 +525,9 @@ static int on_stream(ldl_handle_t *handle, int type, iks * node)
 				}
 			}
 		} else if (strcmp("failure", iks_name(node)) == 0) {
-			fprintf(globals.log_stream, "sasl authentication failed\n");
+			globals.logger(DL_LOG_DEBUG, "sasl authentication failed\n");
 		} else if (strcmp("success", iks_name(node)) == 0) {
-			fprintf(globals.log_stream, "XMPP server connected\n");
+			globals.logger(DL_LOG_DEBUG, "XMPP server connected\n");
 			iks_send_header(handle->parser, handle->acc->server);
 			ldl_set_flag(handle, LDL_FLAG_AUTHORIZED);
 		} else {
@@ -516,11 +541,11 @@ static int on_stream(ldl_handle_t *handle, int type, iks * node)
 		break;
 #if 0
 	case IKS_NODE_STOP:
-		fprintf(globals.log_stream, "server disconnected\n");
+		globals.logger(DL_LOG_DEBUG, "server disconnected\n");
 		break;
 
 	case IKS_NODE_ERROR:
-		fprintf(globals.log_stream, "stream error\n");
+		globals.logger(DL_LOG_DEBUG, "stream error\n");
 		break;
 #endif
 
@@ -553,7 +578,7 @@ static int on_msg(void *user_data, ikspak *pak)
 
 static int on_error(void *user_data, ikspak * pak)
 {
-	fprintf(globals.log_stream, "authorization failed\n");
+	globals.logger(DL_LOG_DEBUG, "authorization failed\n");
 	return IKS_FILTER_EAT;
 }
 
@@ -633,7 +658,7 @@ static void ldl_flush_queue(ldl_handle_t *handle)
 	len = apr_queue_size(handle->retry_queue); 
 
 	if (globals.debug && len) {
-		fprintf(globals.log_stream, "Processing %u packets in retry queue\n", len);
+		globals.logger(DL_LOG_DEBUG, "Processing %u packets in retry queue\n", len);
 	}
 	apr_thread_mutex_lock(handle->lock);		
 	while(x < len && apr_queue_trypop(handle->retry_queue, &pop) == APR_SUCCESS) {
@@ -646,7 +671,7 @@ static void ldl_flush_queue(ldl_handle_t *handle)
 			if (packet_node->retries > 0) {
 				packet_node->retries--;
 				if (globals.debug) {
-					fprintf(globals.log_stream, "Sending packet %s (%d left)\n", packet_node->id, packet_node->retries);
+					globals.logger(DL_LOG_DEBUG, "Sending packet %s (%d left)\n", packet_node->id, packet_node->retries);
 				}
 				iks_send(handle->parser, packet_node->xml);
 				packet_node->next = now + 5000000;
@@ -654,7 +679,7 @@ static void ldl_flush_queue(ldl_handle_t *handle)
 		}
 		if (packet_node->retries == 0) {
 			if (globals.debug) {
-				fprintf(globals.log_stream, "Discarding packet %s\n", packet_node->id);
+				globals.logger(DL_LOG_DEBUG, "Discarding packet %s\n", packet_node->id);
 			}
 			apr_hash_set(handle->retry_hash, packet_node->id, APR_HASH_KEY_STRING, NULL);
 			iks_delete(packet_node->xml);
@@ -691,11 +716,11 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		case IKS_OK:
 			break;
 		case IKS_NET_NODNS:
-			fprintf(globals.log_stream, "hostname lookup failed\n");
+			globals.logger(DL_LOG_DEBUG, "hostname lookup failed\n");
 		case IKS_NET_NOCONN:
-			fprintf(globals.log_stream, "connection failed\n");
+			globals.logger(DL_LOG_DEBUG, "connection failed\n");
 		default:
-			fprintf(globals.log_stream, "io error %d\n", e);
+			globals.logger(DL_LOG_DEBUG, "io error %d\n", e);
 			microsleep(500);
 			continue;
 		}
@@ -719,7 +744,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 			}
 
 			if (IKS_OK != e) {
-				fprintf(globals.log_stream, "io error %d\n", e);
+				globals.logger(DL_LOG_DEBUG, "io error %d\n", e);
 				microsleep(500);
 				break;
 			}
@@ -730,13 +755,13 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 
 			if (!ldl_test_flag(handle, LDL_FLAG_AUTHORIZED)) {
 				if (IKS_NET_TLSFAIL == e) {
-					fprintf(globals.log_stream, "tls handshake failed\n");
+					globals.logger(DL_LOG_DEBUG, "tls handshake failed\n");
 					microsleep(500);
 					break;
 				}
 
 				if (handle->counter == 0) {
-					fprintf(globals.log_stream, "network timeout\n");
+					globals.logger(DL_LOG_DEBUG, "network timeout\n");
 					microsleep(500);
 					break;
 				}
@@ -826,6 +851,11 @@ void *ldl_session_get_private(ldl_session_t *session)
 void *ldl_handle_get_private(ldl_handle_t *handle)
 {
 	return handle->private_info;
+}
+
+void ldl_global_set_logger(ldl_logger_t logger)
+{
+	globals.logger = logger;
 }
 
 unsigned int ldl_session_terminate(ldl_session_t *session)
@@ -1012,15 +1042,16 @@ ldl_status ldl_global_init(int debug)
 
 	memset(&globals, 0, sizeof(globals));
 	if (apr_pool_create(&globals.memory_pool, NULL) != LDL_STATUS_SUCCESS) {
-		fprintf(globals.log_stream, "Could not allocate memory pool\n");
+		globals.logger(DL_LOG_DEBUG, "Could not allocate memory pool\n");
 		return LDL_STATUS_MEMERR;
 	}
 
 	globals.log_stream = stdout;
 	globals.debug = debug;
 	globals.id = 300;
+	globals.logger = default_logger;
 	ldl_set_flag(&globals, LDL_FLAG_INIT);
-
+	
 	return LDL_STATUS_SUCCESS;
 }
 
