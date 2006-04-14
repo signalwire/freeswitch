@@ -156,9 +156,12 @@ static switch_status load_config(void);
 static void dl_logger(char *file, const char *func, int line, int level, char *fmt, ...)
 {
 	va_list ap;
-	va_start(ap, fmt);
+	char data[1024];
 
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_DEBUG, ap);
+	va_start(ap, fmt);
+	
+	vsnprintf(data, sizeof(data), fmt, ap);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, SWITCH_LOG_DEBUG, data);
 
 	va_end(ap);
 }
