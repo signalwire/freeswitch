@@ -83,6 +83,13 @@ struct switch_io_event_hook_receive_message {
 	struct switch_io_event_hook_receive_message *next;
 };
 
+/*! \brief Node in which to store custom receive message callback hooks */
+struct switch_io_event_hook_queue_event {
+	/*! the answer channel callback hook*/
+	switch_queue_event_hook queue_event;
+	struct switch_io_event_hook_queue_event *next;
+};
+
 /*! \brief Node in which to store custom read frame channel callback hooks */
 struct switch_io_event_hook_read_frame {
 	/*! the read frame channel callback hook*/
@@ -133,6 +140,8 @@ struct switch_io_event_hooks {
 	struct switch_io_event_hook_answer_channel *answer_channel;
 	/*! a list of receive message hooks */
 	struct switch_io_event_hook_receive_message *receive_message;
+	/*! a list of queue message hooks */
+	struct switch_io_event_hook_queue_event *queue_event;
 	/*! a list of read frame hooks */
 	struct switch_io_event_hook_read_frame *read_frame;
 	/*! a list of write frame hooks */
@@ -167,6 +176,8 @@ struct switch_io_routines {
 	switch_status (*send_dtmf)(switch_core_session *, char *);
 	/*! receive a message from another session*/
 	switch_status (*receive_message)(switch_core_session *, switch_core_session_message *);
+	/*! queue a message for another session*/
+	switch_status (*queue_event)(switch_core_session *, switch_event *);
 };
 
 /*! \brief Abstraction of an module endpoint interface

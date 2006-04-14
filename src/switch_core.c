@@ -34,6 +34,8 @@
 #include <switch.h>
 //#define DEBUG_ALLOC
 
+#define SWITCH_EVENT_QUEUE_LEN 256
+
 struct switch_core_session {
 	uint32_t id;
 	char name[80];
@@ -70,6 +72,7 @@ struct switch_core_session {
 
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	void *private_info;
+	switch_queue_t *event_queue;
 };
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs;
@@ -230,6 +233,19 @@ SWITCH_DECLARE(switch_status) switch_core_session_message_send(char *uuid_str, s
 	if ((session = switch_core_hash_find(runtime.session_table, uuid_str)) != 0) {
 		if (switch_channel_get_state(session->channel) < CS_HANGUP) {
 			return switch_core_session_receive_message(session, message);
+		}
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status) switch_core_session_event_send(char *uuid_str, switch_event *event)
+{
+	switch_core_session *session = NULL;
+
+	if ((session = switch_core_hash_find(runtime.session_table, uuid_str)) != 0) {
+		if (switch_channel_get_state(session->channel) < CS_HANGUP) {
+			return switch_core_session_queue_event(session, event);
 		}
 	}
 
@@ -922,6 +938,35 @@ SWITCH_DECLARE(switch_status) switch_core_session_receive_message(switch_core_se
 			}
 		}
 	} 
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status) switch_core_session_queue_event(switch_core_session *session, switch_event *event)
+	 
+{
+	struct switch_io_event_hook_queue_event *ptr;
+	switch_status status = SWITCH_STATUS_FALSE, istatus = SWITCH_STATUS_FALSE;;
+
+	assert(session != NULL);
+	if (session->endpoint_interface->io_routines->queue_event) {
+		status = session->endpoint_interface->io_routines->queue_event(session, event);
+
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+			for (ptr = session->event_hooks.queue_event; ptr; ptr = ptr->next) {
+				if ((istatus = ptr->queue_event(session, event)) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+			}
+		}
+		
+		if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {
+			if (!session->event_queue) {
+				switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
+			}
+			switch_queue_push(session->event_queue, event);
+		}
+	}
 
 	return status;
 }

@@ -78,7 +78,6 @@ struct switch_core_session_message {
 	void *pointer_reply;
 	/*! optional arbitrary pointer reply's size */
 	switch_size_t pointer_reply_size;
-
 };
 
 /*! \brief A generic object to pass as a thread's session object to allow mutiple arguements and a pool */
@@ -290,6 +289,14 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_locate(char *uuid_str)
 SWITCH_DECLARE (switch_status) switch_core_session_message_send(char *uuid_str, switch_core_session_message *message);
 
 /*! 
+  \brief Queue an event on another session using its uuid
+  \param uuid_str the unique id of the session you want to send a message to
+  \param event the event to send
+  \return the status returned by the message handler
+*/
+SWITCH_DECLARE(switch_status) switch_core_session_event_send(char *uuid_str, switch_event *event);
+
+/*! 
   \brief Retrieve private user data from a session
   \param session the session to retrieve from
   \return a pointer to the private data
@@ -378,6 +385,14 @@ SWITCH_DECLARE(switch_status) switch_core_session_answer_channel(switch_core_ses
   \return the status returned by the message handler
 */
 SWITCH_DECLARE(switch_status) switch_core_session_receive_message(switch_core_session *session, switch_core_session_message *message);
+
+/*! 
+  \brief Queue an event on a given session
+  \param session the session to queue the message on
+  \param event the event to queue
+  \return the status returned by the message handler
+*/
+SWITCH_DECLARE(switch_status) switch_core_session_queue_event(switch_core_session *session, switch_event *event);
 
 /*! 
   \brief Read a frame from a session
