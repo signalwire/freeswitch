@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-
+#include <ctype.h>
 #include <iksemel.h>
 #include <apr.h>
 #include <apr_network_io.h>
@@ -394,15 +394,22 @@ static int on_presence(void *user_data, ikspak *pak)
 	ldl_handle_t *handle = user_data;
 	char *from = iks_find_attrib(pak->x, "from");
 	char id[1024];
-	char *p;
+	char *resource;
 	struct ldl_buffer *buffer;
+	size_t x;
 
 	apr_cpystrn(id, from, sizeof(id));
-	if ((p = strchr(id, '/'))) {
-		*p = '\0';
+	if ((resource = strchr(id, '/'))) {
+		*resource++ = '\0';
 	}
-	
- 	if ((buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
+
+	if (resource) {
+		for (x = 0; x < strlen(resource); x++) {
+			resource[x] = tolower(resource[x]);
+		}
+	}
+
+ 	if (resource && strstr(resource, "talk") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
 		apr_cpystrn(buffer->buf, from, buffer->len);
 		buffer->hit = 1;
 	}
