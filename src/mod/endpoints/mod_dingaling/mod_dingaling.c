@@ -343,10 +343,10 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 			return NULL;
 		}
 		switch_yield(1000);
-		//printf("WAIT %s %d %d %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_OUTBOUND), switch_test_flag(tech_pvt, TFLAG_CODEC_READY), switch_test_flag(tech_pvt, TFLAG_RTP_READY));
+		//printf("WAIT %s %d %d %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_INIT), switch_test_flag(tech_pvt, TFLAG_CODEC_READY), switch_test_flag(tech_pvt, TFLAG_RTP_READY));
 	}
 
-
+	
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   tech_pvt->codec_name,
@@ -1161,7 +1161,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				tech_pvt->codec_index = -1;
 				tech_pvt->profile = profile;
 				tech_pvt->local_port = switch_rtp_request_port();
-				tech_pvt->last_cand = switch_time_now() + DL_CAND_WAIT;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
 				switch_core_session_destroy(&session);
@@ -1212,7 +1211,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			ldl_payload_t *payloads;
 			unsigned int len = 0;
 
-			switch_set_flag(tech_pvt, TFLAG_INIT);
+
 			if (tech_pvt->codec_index > -1) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Already decided on a codec\n");
 				break;
@@ -1361,6 +1360,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						tech_pvt->cand_id = ldl_session_candidates(dlsession, cand, 1);
 						tech_pvt->desc_id = ldl_session_describe(dlsession, payloads, 1, LDL_DESCRIPTION_ACCEPT);
 						switch_set_flag(tech_pvt, TFLAG_RTP_READY);
+						switch_set_flag(tech_pvt, TFLAG_INIT);
 						return LDL_STATUS_SUCCESS;
 					}
 				}
