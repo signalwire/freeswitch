@@ -239,7 +239,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 
 	if (!tech_pvt->last_cand) {
 		tech_pvt->last_cand = switch_time_now();
-		next_cand = tech_pvt->last_cand + DL_CAND_WAIT;
+		next_cand = tech_pvt->last_cand;
 	} else {
 		next_cand = tech_pvt->last_cand + DL_CAND_WAIT;
 	}
