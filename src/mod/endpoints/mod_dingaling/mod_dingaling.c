@@ -345,7 +345,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 			return NULL;
 		}
 		switch_yield(1000);
-		printf("WAIT %s %d %d %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_INIT), switch_test_flag(tech_pvt, TFLAG_CODEC_READY), switch_test_flag(tech_pvt, TFLAG_RTP_READY));
+		//printf("WAIT %s %d %d %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_INIT), switch_test_flag(tech_pvt, TFLAG_CODEC_READY), switch_test_flag(tech_pvt, TFLAG_RTP_READY));
 	}
 
 	
@@ -795,7 +795,9 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 	//printf("%s send %d bytes %d samples in %d frames ts=%d\n", switch_channel_get_name(channel), frame->datalen, samples, frames, tech_pvt->timestamp_send);
 
 
-	switch_rtp_write(tech_pvt->rtp_session, frame->data, frame->datalen, samples);
+	if (switch_rtp_write(tech_pvt->rtp_session, frame->data, frame->datalen, samples) < 0) {
+		return SWITCH_STATUS_FALSE;
+	}
 	tech_pvt->timestamp_send += (int) samples;
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);
