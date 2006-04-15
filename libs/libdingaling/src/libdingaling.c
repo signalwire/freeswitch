@@ -237,6 +237,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 	ldl_session_t *session = NULL;
 	ldl_signal_t signal = LDL_SIGNAL_NONE;
 	char *initiator = iks_find_attrib(xml, "initiator");
+	char *msg = NULL;
 
 	if (!(session = apr_hash_get(handle->sessions, id, APR_HASH_KEY_STRING))) {
 		ldl_session_create(&session, handle, id, from, initiator);
@@ -261,10 +262,13 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 		iks *tag;
 
 		if (type) {
+			
 			if (!strcasecmp(type, "initiate") || !strcasecmp(type, "accept")) {
 
 				signal = LDL_SIGNAL_INITIATE;
-
+				if (!strcasecmp(type, "accept")) {
+					msg = "accept";
+				}
 				if (!session->initiator && initiator) {
 					session->initiator = apr_pstrdup(session->pool, initiator);
 				}
@@ -382,7 +386,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 	}
 
 	if (handle->session_callback && signal) {
-		handle->session_callback(handle, session, signal, NULL); 
+		handle->session_callback(handle, session, signal, msg); 
 	}
 
 	return LDL_STATUS_SUCCESS;
