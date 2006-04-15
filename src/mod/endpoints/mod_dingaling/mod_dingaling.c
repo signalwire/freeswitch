@@ -48,6 +48,7 @@ typedef enum {
 	TFLAG_VOICE = (1 << 6),
 	TFLAG_RTP_READY = (1 << 7),
 	TFLAG_CODEC_READY = (1 << 8),
+	TFLAG_INIT = (1 << 9),
 } TFLAGS;
 
 typedef enum {
@@ -238,12 +239,12 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 
 	if (!tech_pvt->last_cand) {
 		tech_pvt->last_cand = switch_time_now();
-		next_cand = tech_pvt->last_cand;
+		next_cand = tech_pvt->last_cand + DL_CAND_WAIT;
 	} else {
 		next_cand = tech_pvt->last_cand + DL_CAND_WAIT;
 	}
 
-	while(! (switch_test_flag(tech_pvt, TFLAG_CODEC_READY) && switch_test_flag(tech_pvt, TFLAG_RTP_READY))) {
+	while(! (switch_test_flag(tech_pvt, TFLAG_CODEC_READY) && switch_test_flag(tech_pvt, TFLAG_RTP_READY) && switch_test_flag(tech_pvt, TFLAG_INIT))) {
 		now = switch_time_now();
 		elapsed = (unsigned int)((now - started) / 1000);
 
@@ -329,6 +330,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 				cand[0].pref = 1;
 				cand[0].protocol = "udp";
 				tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, 1);
+				switch_set_flag(tech_pvt, TFLAG_RTP_READY);
 			}
 		}
 		if (elapsed > 60000) {
@@ -341,7 +343,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 			return NULL;
 		}
 		switch_yield(1000);
-		//printf("WAIT %s %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_OUTBOUND));
+		//printf("WAIT %s %d %d %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_OUTBOUND), switch_test_flag(tech_pvt, TFLAG_CODEC_READY), switch_test_flag(tech_pvt, TFLAG_RTP_READY));
 	}
 
 
@@ -1210,6 +1212,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			ldl_payload_t *payloads;
 			unsigned int len = 0;
 
+			switch_set_flag(tech_pvt, TFLAG_INIT);
 			if (tech_pvt->codec_index > -1) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Already decided on a codec\n");
 				break;
@@ -1260,7 +1263,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%u candidates\n", len);
 				for(x = 0; x < len; x++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidates %s:%d\n", candidates[x].address, candidates[x].port);
-					if (!strcasecmp(candidates[x].protocol, "udp") && 
+					if (!strcasecmp(candidates[x].protocol, "udp") && (!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun")) && 
 						((profile->lanaddr && !strncasecmp(candidates[x].address, profile->lanaddr, strlen(profile->lanaddr))) ||
 						 (strncasecmp(candidates[x].address, "10.", 3) && 
 						  strncasecmp(candidates[x].address, "192.168.", 8) &&

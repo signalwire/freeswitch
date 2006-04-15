@@ -409,8 +409,9 @@ static int on_presence(void *user_data, ikspak *pak)
 		}
 	}
 
- 	if (resource && strstr(resource, "talk") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
+	if (resource && strstr(resource, "talk") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
 		apr_cpystrn(buffer->buf, from, buffer->len);
+		fflush(stderr);
 		buffer->hit = 1;
 	}
 
