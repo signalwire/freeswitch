@@ -135,6 +135,7 @@ static void handle_ice(switch_rtp *rtp_session, void *data, switch_size_t len)
 	packet = switch_stun_packet_parse(buf, sizeof(buf));
 	rtp_session->last_stun = switch_time_now();
 	
+
 	switch_stun_packet_first_attribute(packet, attr);
 
 	do {
@@ -155,7 +156,7 @@ static void handle_ice(switch_rtp *rtp_session, void *data, switch_size_t len)
 	} while (switch_stun_packet_next_attribute(attr));
 
 
-	if (packet->header.type == SWITCH_STUN_BINDING_REQUEST && !strcmp(rtp_session->user_ice, username)) {
+	if (packet->header.type == SWITCH_STUN_BINDING_REQUEST) {// && !strcmp(rtp_session->user_ice, username)) {
 		uint8_t buf[512];
 		switch_stun_packet_t *rpacket;
 		char *remote_ip;

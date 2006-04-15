@@ -33,6 +33,7 @@
 #include <libdingaling.h>
 
 #define DL_CAND_WAIT 10000000
+#define DL_CAND_INITIAL_WAIT 2000000
 
 static const char modname[] = "mod_dingaling";
 
@@ -237,9 +238,10 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 
 	started = switch_time_now();
 
-	if (!tech_pvt->last_cand) {
+
+	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		tech_pvt->last_cand = switch_time_now();
-		next_cand = tech_pvt->last_cand;
+		next_cand = tech_pvt->last_cand + DL_CAND_INITIAL_WAIT;
 	} else {
 		next_cand = tech_pvt->last_cand + DL_CAND_WAIT;
 	}
@@ -343,7 +345,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 			return NULL;
 		}
 		switch_yield(1000);
-		//printf("WAIT %s %d %d %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_INIT), switch_test_flag(tech_pvt, TFLAG_CODEC_READY), switch_test_flag(tech_pvt, TFLAG_RTP_READY));
+		printf("WAIT %s %d %d %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_INIT), switch_test_flag(tech_pvt, TFLAG_CODEC_READY), switch_test_flag(tech_pvt, TFLAG_RTP_READY));
 	}
 
 	
