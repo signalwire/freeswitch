@@ -65,7 +65,7 @@ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **ne
 	resampler->factor = (lto_rate / lfrom_rate);
 
 	resampler->resampler = resample_open(QUALITY, resampler->factor, resampler->factor);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activate Resampler %d->%d %f\n", resampler->from_rate,
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Activate Resampler %d->%d %f\n", resampler->from_rate,
 						  resampler->to_rate, resampler->factor);
 	resampler->from_size = from_size;
 	resampler->from = (float *) switch_core_alloc(pool, resampler->from_size);

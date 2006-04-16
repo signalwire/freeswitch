@@ -105,7 +105,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 		perl_destruct(globals.my_perl);
 		perl_free(globals.my_perl);
 		globals.my_perl = NULL;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unallocated perl interpreter.\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Unallocated perl interpreter.\n");
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -117,11 +117,11 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	char code[1024];
 	
 	if (!(my_perl = perl_alloc())) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not allocate perl intrepreter\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate perl intrepreter\n");
 		switch_core_destroy();
 		return SWITCH_STATUS_MEMERR;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocated perl intrepreter.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocated perl intrepreter.\n");
 
 	PERL_SET_CONTEXT(my_perl);
 	perl_construct(my_perl);

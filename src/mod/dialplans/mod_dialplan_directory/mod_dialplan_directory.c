@@ -58,7 +58,7 @@ static void load_config(void)
 	char *var, *val;
 
 	if (!switch_config_open_file(&cfg, cf)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return;
 	}
 
@@ -98,7 +98,7 @@ static switch_caller_extension *directory_dialplan_hunt(switch_core_session *ses
 
 	caller_profile = switch_channel_get_caller_profile(channel);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name,
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name,
 						  caller_profile->destination_number);
 	
 	
@@ -112,7 +112,7 @@ static switch_caller_extension *directory_dialplan_hunt(switch_core_session *ses
 								   globals.dn,
 								   globals.pass,
 								   NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't connect\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't connect\n");
 		return NULL;
 	}
 
@@ -126,7 +126,7 @@ static switch_caller_extension *directory_dialplan_hunt(switch_core_session *ses
 				if (!extension) {
 					if ((extension = switch_caller_extension_new(session, caller_profile->destination_number,
 																  caller_profile->destination_number)) == 0) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memory error!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 						goto out;
 					}
 				}

@@ -64,7 +64,7 @@ static void dirtest_function(switch_core_session *session, char *data)
 								   "cn=Manager,dc=freeswitch,dc=org",
 								   "test",
 								   NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't connect\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't connect\n");
 		return;
 	}
 
@@ -143,7 +143,7 @@ static void ivrtest_function(switch_core_session *session, char *data)
 
 	while (switch_channel_get_state(channel) == CS_EXECUTE) {
 		memset(buf, 0, sizeof(buf));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Enter up to 10 digits, press # to terminate, * to hangup\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enter up to 10 digits, press # to terminate, * to hangup\n");
 
 		if (data) {
 			/* you could have passed NULL instead of on_dtmf to get this exact behaviour (copy the digits to buf and stop playing)
@@ -166,7 +166,7 @@ static void ivrtest_function(switch_core_session *session, char *data)
 			break;
 		}
 		snprintf(say, sizeof(say), "You Dialed [%s]\n", buf);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, say);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, say);
 		switch_ivr_speak_text(session, "cepstral", "david", NULL, codec->implementation->samples_per_second, NULL, say, NULL, 0);
 	}
 	

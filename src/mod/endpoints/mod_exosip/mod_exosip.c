@@ -263,7 +263,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 				char *stun_ip = globals.extip + 5;
 
 				if (!stun_ip) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! NO STUN SERVER\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
 					switch_channel_hangup(channel);
 					return SWITCH_STATUS_FALSE;
 				}
@@ -273,11 +273,11 @@ static switch_status exosip_on_init(switch_core_session *session)
 									   SWITCH_STUN_DEFAULT_PORT,
 									   &err,
 									   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
 					switch_channel_hangup(channel);
 					return SWITCH_STATUS_FALSE;
 				}
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success [%s]:[%d]\n", ip, sdp_port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success [%s]:[%d]\n", ip, sdp_port);
 			} else {
 				ip = globals.extip;
 			}
@@ -341,7 +341,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 		eXosip_lock();
 		if ((dest_uri =
 			 (char *) switch_core_session_alloc(session, strlen(tech_pvt->caller_profile->destination_number) + 10)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "AIEEEE!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "AIEEEE!\n");
 			assert(dest_uri != NULL);
 		}
 		sprintf(dest_uri, "sip:%s", tech_pvt->caller_profile->destination_number);
@@ -477,7 +477,7 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 		bw *= 8;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activating RTP %s:%d->%s:%d codec: %u ms: %d\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activating RTP %s:%d->%s:%d codec: %u ms: %d\n",
 						  tech_pvt->local_sdp_audio_ip,
 						  tech_pvt->local_sdp_audio_port,
 						  tech_pvt->remote_sdp_audio_ip,
@@ -486,13 +486,13 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 
 	if (tech_pvt->realm) {
 		if (!(key = (char *) switch_core_hash_find(globals.srtp_hash, tech_pvt->realm))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "undefined Realm %s\n", tech_pvt->realm);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "undefined Realm %s\n", tech_pvt->realm);
 			switch_channel_hangup(channel);
 			switch_set_flag(tech_pvt, TFLAG_BYE);
 			switch_clear_flag(tech_pvt, TFLAG_IO);
 			return SWITCH_STATUS_FALSE;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "using Realm %s\n", tech_pvt->realm);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "using Realm %s\n", tech_pvt->realm);
 		}
 	}
 
@@ -512,7 +512,7 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 		switch_set_flag(tech_pvt, TFLAG_RTP);
 	} else {
 		switch_channel *channel = switch_core_session_get_channel(tech_pvt->session);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP REPORTS ERROR: [%s]\n", err);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
 		switch_channel_hangup(channel);
 		switch_set_flag(tech_pvt, TFLAG_BYE);
 		switch_clear_flag(tech_pvt, TFLAG_IO);
@@ -884,7 +884,7 @@ static switch_status exosip_receive_message(switch_core_session *session, switch
 				char *buf = NULL;
 				osip_message_t *progress = NULL;
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Asked to send early media by %s\n", msg->from);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
 
 				/* Transmit 183 Progress with SDP */
 				eXosip_lock();
@@ -963,7 +963,7 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_STATUS_GENERR;
 		}
@@ -1029,7 +1029,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no pool\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -1095,7 +1095,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			switch_core_session_set_private(session, tech_pvt);
 			tech_pvt->session = session;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
 			return SWITCH_STATUS_MEMERR;
 		}
@@ -1154,7 +1154,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		
 
 		if ((remote_sdp = eXosip_get_sdp_info(event->request)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Find Remote SDP!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Find Remote SDP!\n");
 			exosip_on_hangup(session);
 			switch_core_session_destroy(&session);
 			return SWITCH_STATUS_GENERR;
@@ -1175,7 +1175,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			if (!strncasecmp(globals.extip, "stun:", 5)) {
 				char *stun_ip = globals.extip + 5;
 				if (!stun_ip) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! NO STUN SERVER\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
 					switch_channel_hangup(channel);
 					return SWITCH_STATUS_FALSE;
 				}
@@ -1185,11 +1185,11 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 									   SWITCH_STUN_DEFAULT_PORT,
 									   &err,
 									   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
 					switch_channel_hangup(channel);
 					return SWITCH_STATUS_FALSE;
 				}
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Success [%s]:[%d]\n", ip, sdp_port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success [%s]:[%d]\n", ip, sdp_port);
 			} else {
 				ip = globals.extip;
 			}
@@ -1236,7 +1236,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		while (0 == osip_rfc3264_match(tech_pvt->sdp_config, remote_sdp, audio_tab, video_tab, t38_tab, app_tab, mline)) {
 			if (audio_tab[0] == NULL && video_tab[0] == NULL && t38_tab[0] == NULL && app_tab[0] == NULL) {
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got no compatible codecs!\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Got no compatible codecs!\n");
 				break;
 			}
 			for (pos = 0; audio_tab[pos] != NULL; pos++) {
@@ -1287,7 +1287,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 									   1,
 									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 									   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 				switch_channel_hangup(channel);
 				return SWITCH_STATUS_FALSE;
 			} else {
@@ -1298,7 +1298,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 										   1,
 										   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 										   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 					switch_channel_hangup(channel);
 					return SWITCH_STATUS_FALSE;
 				} else {
@@ -1306,7 +1306,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 					tech_pvt->read_frame.rate = rate;
 					switch_set_flag(tech_pvt, TFLAG_USING_CODEC);
 					ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activate Inbound Codec %s/%d %d ms\n", dname, rate, ms);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Inbound Codec %s/%d %d ms\n", dname, rate, ms);
 					tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 					switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 					switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
@@ -1328,7 +1328,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			return SWITCH_STATUS_FALSE;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Create new Inbound Channel!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create new Inbound Channel!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1343,7 +1343,7 @@ static void destroy_call_by_event(eXosip_event_t * event)
 	switch_channel *channel = NULL;
 
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Um in case you are interested, Can't find the pvt [%d]!\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Um in case you are interested, Can't find the pvt [%d]!\n",
 							  event->cid);
 		return;
 	}
@@ -1386,7 +1386,7 @@ static switch_status parse_sdp_media(sdp_media_t * media, char **dname, char **d
 				*dname = strdup("L16");
 				*drate = strdup("8000");
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found negotiated codec Payload: %s Name: %s Rate: %s\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Found negotiated codec Payload: %s Name: %s Rate: %s\n",
 								  *dpayload, *dname, *drate);
 			break;
 		}
@@ -1409,7 +1409,7 @@ static void handle_answer(eXosip_event_t * event)
 
 
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Um in case you are interested, Can't find the pvt!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Um in case you are interested, Can't find the pvt!\n");
 		return;
 	}
 
@@ -1417,14 +1417,14 @@ static void handle_answer(eXosip_event_t * event)
 	assert(channel != NULL);
 
 	if (!event->response) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Someone answered... with no SDP information - WTF?!?\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Someone answered... with no SDP information - WTF?!?\n");
 		switch_channel_hangup(channel);
 		return;
 	}
 
 	/* Get all of the remote SDP elements... stuff */
 	if ((remote_sdp = eXosip_get_sdp_info(event->response)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cant Find SDP?\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant Find SDP?\n");
 		switch_channel_hangup(channel);
 		return;
 	}
@@ -1458,7 +1458,7 @@ static void handle_answer(eXosip_event_t * event)
 								   1,
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 			switch_channel_hangup(channel);
 			return;
 		} else {
@@ -1470,7 +1470,7 @@ static void handle_answer(eXosip_event_t * event)
 									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 									   NULL,
 									   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 				switch_channel_hangup(channel);
 				return;
 			} else {
@@ -1478,7 +1478,7 @@ static void handle_answer(eXosip_event_t * event)
 				tech_pvt->read_frame.rate = rate;
 				switch_set_flag(tech_pvt, TFLAG_USING_CODEC);
 				ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activate Outbound Codec %s/%d %d ms\n", dname, rate, ms);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Outbound Codec %s/%d %d ms\n", dname, rate, ms);
 				tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 				switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 				switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
@@ -1641,7 +1641,7 @@ static int config_exosip(int reload)
 
 
 	if (!switch_config_open_file(&cfg, cf)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -1724,12 +1724,12 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 	}
 
 	if (eXosip_init()) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "eXosip_init initialization failed!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "eXosip_init initialization failed!\n");
 		return SWITCH_STATUS_TERM;
 	}
 
 	if (eXosip_listen_addr(IPPROTO_UDP, NULL, globals.port, AF_INET, 0)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "eXosip_listen_addr failed!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "eXosip_listen_addr failed!\n");
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -1755,14 +1755,14 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 		switch (event->type) {
 		case EXOSIP_CALL_INVITE:
 			if (exosip_create_call(event) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "invite failure\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invite failure\n");
 				destroy_call_by_event(event);
 			}
 			break;
 		case EXOSIP_CALL_REINVITE:
 			/* See what the reinvite is about - on hold or whatever */
 			//handle_reinvite(event);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a reinvite.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Got a reinvite.\n");
 			break;
 		case EXOSIP_CALL_MESSAGE_NEW:
 			if (event->request != NULL && MSG_IS_REFER(event->request)) {
@@ -1773,7 +1773,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 			/* If audio is not flowing and this has SDP - fire it up! */
 			break;
 		case EXOSIP_CALL_ANSWERED:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "The call was answered.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "The call was answered.\n");
 			handle_answer(event);
 			break;
 		case EXOSIP_CALL_PROCEEDING:
@@ -1783,7 +1783,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 			//handle_ringing(event);
 			break;
 		case EXOSIP_CALL_REDIRECTED:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call was redirect\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Call was redirect\n");
 			break;
 		case EXOSIP_CALL_CLOSED:
 			destroy_call_by_event(event);
@@ -1792,24 +1792,24 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_NOANSWER:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "The call was not answered.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "The call was not answered.\n");
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_REQUESTFAILURE:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Request failure\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Request failure\n");
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_SERVERFAILURE:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Server failure\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Server failure\n");
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_GLOBALFAILURE:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Global failure\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Global failure\n");
 			destroy_call_by_event(event);
 			break;
 			/* Registration related stuff */
 		case EXOSIP_REGISTRATION_NEW:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received registration attempt\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Received registration attempt\n");
 			break;
 		default:
 			/* Unknown event... casually absorb it for now */

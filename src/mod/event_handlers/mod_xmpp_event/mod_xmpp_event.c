@@ -71,7 +71,7 @@ static void event_handler(switch_event *event)
 	while (!globals.session.authorized) {
 		switch_yield(100000);
 		if (loops++ > 5) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Nothing to do with this Event!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Nothing to do with this Event!\n");
 			return;
 		}
 	}
@@ -106,7 +106,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_jid, globals.jid)
 	memset(&globals, 0, sizeof(globals));
 
 	if (!switch_config_open_file(&cfg, cf)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -133,7 +133,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_jid, globals.jid)
 		/* TBD use config to pick what events to bind to */
 		if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
 			SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't bind!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 			return SWITCH_STATUS_GENERR;
 		}
 
@@ -185,9 +185,9 @@ static int on_stream(struct session *sess, int type, iks * node)
 					iks_start_sasl(sess->parser, IKS_SASL_PLAIN, sess->acc->user, sess->pass);
 			}
 		} else if (strcmp("failure", iks_name(node)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sasl authentication failed\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "sasl authentication failed\n");
 		} else if (strcmp("success", iks_name(node)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "server connected\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "server connected\n");
 			sess->authorized = 1;
 			iks_send_header(sess->parser, sess->acc->server);
 		} else {
@@ -240,7 +240,7 @@ static int on_msg(void *user_data, ikspak * pak)
 
 static int on_error(void *user_data, ikspak * pak)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "authorization failed\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "authorization failed\n");
 	return IKS_FILTER_EAT;
 }
 
@@ -296,11 +296,11 @@ static void xmpp_connect(char *jabber_id, char *pass)
 		case IKS_OK:
 			break;
 		case IKS_NET_NODNS:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hostname lookup failed\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "hostname lookup failed\n");
 		case IKS_NET_NOCONN:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "connection failed\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "connection failed\n");
 		default:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "io error %d\n", e);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "io error %d\n", e);
 			switch_sleep(5000000);
 			continue;
 		}
@@ -318,20 +318,20 @@ static void xmpp_connect(char *jabber_id, char *pass)
 			}
 
 			if (IKS_OK != e) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "io error %d\n", e);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "io error %d\n", e);
 				switch_sleep(5000000);
 				break;
 			}
 
 			if (!globals.session.authorized) {
 				if (IKS_NET_TLSFAIL == e) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "tls handshake failed\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "tls handshake failed\n");
 					switch_sleep(5000000);
 					break;
 				}
 
 				if (globals.session.counter == 0) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "network timeout\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "network timeout\n");
 					switch_sleep(5000000);
 					break;
 				}

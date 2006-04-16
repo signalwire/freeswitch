@@ -237,7 +237,7 @@ static void process_module_file(char *dir, char *fname)
 		if (new_module->interface->endpoint_interface) {
 			const switch_endpoint_interface *ptr;
 			for (ptr = new_module->interface->endpoint_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding Endpoint '%s'\n", ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Endpoint '%s'\n", ptr->interface_name);
 				switch_core_hash_insert(loadable_modules.endpoint_hash, (char *) ptr->interface_name, (void *) ptr);
 			}
 		}
@@ -248,7 +248,7 @@ static void process_module_file(char *dir, char *fname)
 
 			for (ptr = new_module->interface->codec_interface; ptr; ptr = ptr->next) {
 				for (impl = ptr->implementations; impl; impl = impl->next) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 										  "Adding Codec '%s' (%s) %dkhz %dms\n",
 										  ptr->iananame,
 										  ptr->interface_name,
@@ -263,7 +263,7 @@ static void process_module_file(char *dir, char *fname)
 			const switch_dialplan_interface *ptr;
 
 			for (ptr = new_module->interface->dialplan_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding Dialplan '%s'\n", ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Dialplan '%s'\n", ptr->interface_name);
 				switch_core_hash_insert(loadable_modules.dialplan_hash, (char *) ptr->interface_name, (void *) ptr);
 			}
 		}
@@ -272,7 +272,7 @@ static void process_module_file(char *dir, char *fname)
 			const switch_timer_interface *ptr;
 
 			for (ptr = new_module->interface->timer_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding Timer '%s'\n", ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Timer '%s'\n", ptr->interface_name);
 				switch_core_hash_insert(loadable_modules.timer_hash, (char *) ptr->interface_name, (void *) ptr);
 			}
 		}
@@ -281,7 +281,7 @@ static void process_module_file(char *dir, char *fname)
 			const switch_application_interface *ptr;
 
 			for (ptr = new_module->interface->application_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding Application '%s'\n", ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Application '%s'\n", ptr->interface_name);
 				switch_core_hash_insert(loadable_modules.application_hash,
 										(char *) ptr->interface_name, (void *) ptr);
 			}
@@ -291,7 +291,7 @@ static void process_module_file(char *dir, char *fname)
 			const switch_api_interface *ptr;
 
 			for (ptr = new_module->interface->api_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding API Function '%s'\n", ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding API Function '%s'\n", ptr->interface_name);
 				switch_core_hash_insert(loadable_modules.api_hash, (char *) ptr->interface_name, (void *) ptr);
 			}
 		}
@@ -302,7 +302,7 @@ static void process_module_file(char *dir, char *fname)
 			for (ptr = new_module->interface->file_interface; ptr; ptr = ptr->next) {
 				int i;
 				for (i = 0; ptr->extens[i]; i++) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding File Format '%s'\n", ptr->extens[i]);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding File Format '%s'\n", ptr->extens[i]);
 					switch_core_hash_insert(loadable_modules.file_hash, (char *) ptr->extens[i], (void *) ptr);
 				}
 			}
@@ -312,7 +312,7 @@ static void process_module_file(char *dir, char *fname)
 			const switch_speech_interface *ptr;
 
 			for (ptr = new_module->interface->speech_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding Speech interface '%s'\n", ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Speech interface '%s'\n", ptr->interface_name);
 				switch_core_hash_insert(loadable_modules.speech_hash, (char *) ptr->interface_name, (void *) ptr);
 			}
 		}
@@ -321,7 +321,7 @@ static void process_module_file(char *dir, char *fname)
 			const switch_directory_interface *ptr;
 
 			for (ptr = new_module->interface->directory_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding Directory interface '%s'\n", ptr->interface_name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Directory interface '%s'\n", ptr->interface_name);
 				switch_core_hash_insert(loadable_modules.directory_hash, (char *) ptr->interface_name, (void *) ptr);
 			}
 		}

@@ -216,7 +216,7 @@ typedef enum {
 	SWITCH_LOG_INFO             - Info
 	SWITCH_LOG_NOTICE           - Notice
 	SWITCH_LOG_WARNING          - Warning
-	SWITCH_LOG_ERR              - Error
+	SWITCH_LOG_ERROR            - Error
 	SWITCH_LOG_CRIT             - Critical
 	SWITCH_LOG_ALERT            - Alert
 	SWITCH_LOG_EMERG            - Emergency
@@ -228,7 +228,7 @@ typedef enum {
 	SWITCH_LOG_INFO  = 6,
 	SWITCH_LOG_NOTICE = 5,
 	SWITCH_LOG_WARNING = 4,
-	SWITCH_LOG_ERR = 3,
+	SWITCH_LOG_ERROR = 3,
 	SWITCH_LOG_CRIT = 2,
 	SWITCH_LOG_ALERT = 1,
 	SWITCH_LOG_EMERG = 0

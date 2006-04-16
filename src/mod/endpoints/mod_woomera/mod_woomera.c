@@ -212,7 +212,7 @@ static switch_status woomerachan_on_init(switch_core_session *session)
 	if (switch_core_codec_init
 		(&tech_pvt->read_codec, "L16", rate, 30, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Cannot set read codec\n", switch_channel_get_name(channel));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Cannot set read codec\n", switch_channel_get_name(channel));
 		switch_channel_hangup(channel);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -220,7 +220,7 @@ static switch_status woomerachan_on_init(switch_core_session *session)
 	if (switch_core_codec_init
 		(&tech_pvt->write_codec, "L16", rate, 30, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Cannot set read codec\n", switch_channel_get_name(channel));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Cannot set read codec\n", switch_channel_get_name(channel));
 		switch_channel_hangup(channel);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -483,7 +483,7 @@ static switch_status woomerachan_outgoing_channel(switch_core_session *session, 
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_STATUS_GENERR;
 		}
@@ -499,7 +499,7 @@ static switch_status woomerachan_outgoing_channel(switch_core_session *session, 
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doh! no caller profile\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Doh! no caller profile\n");
 			switch_core_session_destroy(new_session);
 			return SWITCH_STATUS_GENERR;
 		}
@@ -527,7 +527,7 @@ static void tech_destroy(private_object * tech_pvt)
 				   WOOMERA_RECORD_SEPERATOR);
 	if (woomera_message_parse
 		(tech_pvt->command_channel, &wmsg, WOOMERA_HARD_TIMEOUT, tech_pvt->profile, &tech_pvt->event_queue) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "{%s} Already Disconnected\n", tech_pvt->profile->name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "{%s} Already Disconnected\n", tech_pvt->profile->name);
 	}
 
 	woomera_printf(tech_pvt->profile, tech_pvt->command_channel, "bye%s", WOOMERA_RECORD_SEPERATOR);
@@ -551,7 +551,7 @@ static void woomera_printf(woomera_profile * profile, switch_socket_t *socket, c
 #endif
 	va_end(ap);
 	if (res == -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Out of memory\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Out of memory\n");
 	} else {
 		if (profile && globals.debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send Message: {%s} [%s/%d]\n%s\n%s", profile->name,
@@ -596,7 +596,7 @@ static int woomera_enqueue_event(woomera_event_queue * event_queue, woomera_mess
 		}
 		return 1;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Memory Allocation Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Allocation Error!\n");
 	}
 
 	return 0;
@@ -704,14 +704,14 @@ static int woomera_message_parse(switch_socket_t *fd, woomera_message * wmsg, in
 					cur++;
 					wmsg->mval = atoi(buf);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Malformed Message!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Malformed Message!\n");
 					break;
 				}
 			}
 			if (cur) {
 				strncpy(wmsg->command, cur, WOOMERA_STRLEN);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Malformed Message!\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Malformed Message!\n");
 				break;
 			}
 		} else {
@@ -820,7 +820,7 @@ static int woomera_locate_socket(woomera_profile * profile, switch_socket_t **wo
 			if (!woomera_profile_thread_running(profile, 0, 0)) {
 				break;
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "{%s} Cannot Reconnect to Woomera! retry in 5 seconds\n",
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "{%s} Cannot Reconnect to Woomera! retry in 5 seconds\n",
 								  profile->name);
 			switch_sleep(WOOMERA_RECONNECT_TIME);
 		}
@@ -830,7 +830,7 @@ static int woomera_locate_socket(woomera_profile * profile, switch_socket_t **wo
 				woomera_printf(profile, *woomera_socket, "LISTEN%s", WOOMERA_RECORD_SEPERATOR);
 				if (woomera_message_parse(*woomera_socket,
 										  &wmsg, WOOMERA_HARD_TIMEOUT, profile, &profile->event_queue) < 0) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "{%s} HELP! Woomera is broken!\n", profile->name);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "{%s} HELP! Woomera is broken!\n", profile->name);
 					globals.panic = 1;
 					woomera_profile_thread_running(&default_profile, 1, 0);
 					switch_sleep(WOOMERA_RECONNECT_TIME);
@@ -881,7 +881,7 @@ static int tech_activate(private_object * tech_pvt)
 		if ((connect_woomera(&tech_pvt->command_channel, tech_pvt->profile, 0))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "connected to woomera!\n");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't connect to woomera!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't connect to woomera!\n");
 			switch_sleep(WOOMERA_RECONNECT_TIME);
 			return -1;
 		}
@@ -906,14 +906,14 @@ static int tech_activate(private_object * tech_pvt)
 			woomera_printf(tech_pvt->profile, tech_pvt->command_channel, "LISTEN%s", WOOMERA_RECORD_SEPERATOR);
 			if (woomera_message_parse(tech_pvt->command_channel,
 									  &wmsg, WOOMERA_HARD_TIMEOUT, tech_pvt->profile, &tech_pvt->event_queue) < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "{%s} HELP! Woomera is broken!\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "{%s} HELP! Woomera is broken!\n",
 									  tech_pvt->profile->name);
 				switch_set_flag(tech_pvt, TFLAG_ABORT);
 				globals.panic = 1;
 			}
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Where's my tech_pvt?\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Where's my tech_pvt?\n");
 	}
 
 	return 0;
@@ -968,7 +968,7 @@ static void *woomera_channel_thread_run(switch_thread *thread, void *obj)
 			if (woomera_message_parse
 				(tech_pvt->command_channel, &wmsg, WOOMERA_HARD_TIMEOUT, tech_pvt->profile,
 				 &tech_pvt->event_queue) < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "{%s} HELP! Woomera is broken!\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "{%s} HELP! Woomera is broken!\n",
 									  tech_pvt->profile->name);
 				switch_set_flag(tech_pvt, TFLAG_ABORT);
 				globals.panic = 1;
@@ -984,7 +984,7 @@ static void *woomera_channel_thread_run(switch_thread *thread, void *obj)
 			if (woomera_message_parse
 				(tech_pvt->command_channel, &wmsg, WOOMERA_HARD_TIMEOUT, tech_pvt->profile,
 				 &tech_pvt->event_queue) < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "{%s} HELP! Woomera is broken!\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "{%s} HELP! Woomera is broken!\n",
 									  tech_pvt->profile->name);
 				switch_set_flag(tech_pvt, TFLAG_ABORT);
 				globals.panic = 1;
@@ -1082,7 +1082,7 @@ static void *woomera_channel_thread_run(switch_thread *thread, void *obj)
 
 				if (woomera_message_parse(tech_pvt->command_channel,
 										  &wmsg, WOOMERA_HARD_TIMEOUT, tech_pvt->profile, &tech_pvt->event_queue) < 0) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "{%s} HELP! Woomera is broken!\n",
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "{%s} HELP! Woomera is broken!\n",
 										  tech_pvt->profile->name);
 					switch_set_flag(tech_pvt, TFLAG_ABORT);
 					globals.panic = 1;
@@ -1117,7 +1117,7 @@ static void *woomera_channel_thread_run(switch_thread *thread, void *obj)
 												 switch_core_session_get_pool(tech_pvt->session)) !=
 						SWITCH_STATUS_SUCCESS) {
 						if (globals.debug) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 												  WOOMERA_DEBUG_PREFIX "{%s} Cannot resolve %s\n",
 												  tech_pvt->profile->name, ip);
 						}
@@ -1159,7 +1159,7 @@ static void *woomera_thread_run(void *obj)
 	while (woomera_profile_thread_running(profile, 0, 0)) {
 		/* listen on socket and handle events */
 		if (globals.panic == 2) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Woomera is disabled!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Woomera is disabled!\n");
 			switch_sleep(WOOMERA_RECONNECT_TIME);
 			continue;
 		}
@@ -1178,7 +1178,7 @@ static void *woomera_thread_run(void *obj)
 
 		if (globals.panic) {
 			if (globals.panic != 2) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Help I'm in a state of panic!\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "Help I'm in a state of panic!\n");
 				globals.panic = 0;	//fix
 			}
 			woomera_socket_close(&profile->woomera_socket);
@@ -1192,7 +1192,7 @@ static void *woomera_thread_run(void *obj)
 										  /* if we are not stingy with threads we can block forever */
 										  0, profile, NULL))) != 0)) {
 			if (res < 0) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "{%s} HELP! I lost my connection to woomera!\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "{%s} HELP! I lost my connection to woomera!\n",
 									  profile->name);
 				woomera_socket_close(&profile->woomera_socket);
 
@@ -1228,7 +1228,7 @@ static void *woomera_thread_run(void *obj)
 					name = woomera_message_header(&wmsg, "Channel-Name");
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "New Inbound Channel %s!\n", name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Inbound Channel %s!\n", name);
 				if ((session = switch_core_session_request(&woomerachan_endpoint_interface, NULL)) != 0) {
 					struct private_object *tech_pvt;
 					switch_channel *channel;
@@ -1243,7 +1243,7 @@ static void *woomera_thread_run(void *obj)
 						switch_core_session_set_private(session, tech_pvt);
 						tech_pvt->session = session;
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 						switch_core_session_destroy(&session);
 						break;
 					}
@@ -1305,7 +1305,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	globals.next_woomera_port = WOOMERA_MIN_PORT;
 
 	if (!switch_config_open_file(&cfg, cf)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -1362,7 +1362,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 
 
 	if (switch_mutex_init(&default_profile.iolock, SWITCH_MUTEX_NESTED, module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no lock\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no lock\n");
 		return SWITCH_STATUS_TERM;
 	}
 

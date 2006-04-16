@@ -129,7 +129,7 @@ static void event_handler(switch_event *event)
 	switch (event->event_id) {
 	case SWITCH_EVENT_PUBLISH:
 		if (sw_text_record_init(&text_record) != SW_OKAY) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sw_text_record_init() failed\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sw_text_record_init() failed\n");
 			return;
 		} else {
 			switch_event_header *hp;
@@ -146,7 +146,7 @@ static void event_handler(switch_event *event)
 
 				snprintf(data, len, "%s=%s", hp->name, hp->value);
 				if (sw_text_record_add_string(text_record, data) != SW_OKAY) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unable to add service text: %s\n", data);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to add service text: %s\n", data);
 					free(data);
 					return;
 				}
@@ -172,7 +172,7 @@ static void event_handler(switch_event *event)
 											   my_service_reply,
 											   NULL,
 											   &globals.disc_id)) != SW_OKAY) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "publish failed: %u\n", result);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "publish failed: %u\n", result);
 				sw_text_record_fina(text_record);
 				switch_mutex_unlock(globals.zc_lock);
 				return;
@@ -201,7 +201,7 @@ static switch_status load_config(void)
 	sw_discovery_oid *oid;
 
 	if (!switch_config_open_file(&cfg, cf)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -220,13 +220,13 @@ static switch_status load_config(void)
 			} else if (!strcasecmp(var, "publish") && !strcasecmp(val, "yes")) {
 				if (switch_event_bind((char *) modname, SWITCH_EVENT_PUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
 					SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't bind!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 					return SWITCH_STATUS_GENERR;
 				}
 				
 				if (switch_event_bind((char *) modname, SWITCH_EVENT_UNPUBLISH, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
 					SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't bind!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 					return SWITCH_STATUS_GENERR;
 				}
 			}
@@ -270,14 +270,14 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	memset(&globals, 0, sizeof(globals));
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no pool\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
 
 	switch_mutex_init(&globals.zc_lock, SWITCH_MUTEX_NESTED, module_pool);
 
 	if (sw_discovery_init(&globals.discovery) != SW_OKAY) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "sw_discovery_init() failed\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sw_discovery_init() failed\n");
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -286,12 +286,12 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	}
 	
 	if (switch_event_reserve_subclass(MY_EVENT_PUBLISH) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't register subclass!");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}
 
 	if (switch_event_reserve_subclass(MY_EVENT_UNPUBLISH) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Couldn't register subclass!");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass!");
 		return SWITCH_STATUS_GENERR;
 	}
 

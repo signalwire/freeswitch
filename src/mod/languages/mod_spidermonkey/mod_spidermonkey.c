@@ -152,7 +152,7 @@ struct db_obj {
 static void js_error(JSContext *cx, const char *message, JSErrorReport *report)
 {
 	if (message) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", message);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", message);
 	}
 	
 }
@@ -765,7 +765,7 @@ static JSBool js_fetchurl_hash(JSContext *cx, JSObject *obj, uintN argc, jsval *
 		curl_easy_perform(curl_handle);
 		curl_easy_cleanup(curl_handle);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
 		return JS_FALSE;
 	}
 
@@ -803,10 +803,10 @@ static JSBool js_fetchurl_file(JSContext *cx, JSObject *obj, uintN argc, jsval *
 			curl_easy_cleanup(curl_handle);
 			close(config_data.fd);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
 	}
 
 	return JS_TRUE;
@@ -1012,7 +1012,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		}
 		
 		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no pool\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 			return JS_FALSE;
 		}
 
@@ -1028,10 +1028,10 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			switch_set_flag(jss, S_HUP);
 			return JS_TRUE;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Create Channel\n");			
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Channel\n");			
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Missing Args\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing Args\n");
 	}
 
 	return JS_TRUE;
@@ -1091,7 +1091,7 @@ static JSBool fileio_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *
 		}
 		switch_core_new_memory_pool(&pool);
 		if (switch_file_open(&fd, path, flags, SWITCH_FPROT_UREAD|SWITCH_FPROT_UWRITE, pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Open File!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Open File!\n");
 			switch_core_destroy_memory_pool(&pool);
 			return JS_FALSE;
 		}
@@ -1240,7 +1240,7 @@ static JSBool db_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 		char *dbname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		switch_core_new_memory_pool(&pool);
 		if (! (db = switch_core_db_open_file(dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Open DB!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Open DB!\n");
 			switch_core_destroy_memory_pool(&pool);
 			return JS_FALSE;
 		}
@@ -1318,7 +1318,7 @@ static JSBool db_exec(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 
 		switch_core_db_exec(dbo->db, sql, cb_func, arg, &err);
 		if (err) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error %s\n", err);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", err);
 			switch_core_db_free(err);
 			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 		}
@@ -1396,7 +1396,7 @@ static JSBool db_prepare(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		char *sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 
 		if(switch_core_db_prepare(dbo->db, sql, 0, &dbo->stmt, 0)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error %s\n", switch_core_db_errmsg(dbo->db));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", switch_core_db_errmsg(dbo->db));
 		} else {
 			*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
 		}
@@ -1469,15 +1469,15 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 	if (argc > 0) {
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
 			if (!(jss = JS_GetPrivate(cx, session_obj))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Find Session [1]\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Find Session [1]\n");
 				return JS_FALSE;
 			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Find Session [2]\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Find Session [2]\n");
 			return JS_FALSE;
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Missing Session Arg\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Session Arg\n");
 		return JS_FALSE;
 	}
 	if (argc > 1) {
@@ -1486,14 +1486,14 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 
 	if (argc > 2) {
 		if (!JS_ValueToInt32(cx, argv[2], &memory)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Convert to INT\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Convert to INT\n");
 			return JS_FALSE;
 		}
 	} 
 	switch_core_new_memory_pool(&pool);
 
 	if (!(tto = switch_core_alloc(pool, sizeof(*tto)))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Memory Error\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error\n");
 		return JS_FALSE;
 	}
 
@@ -1602,7 +1602,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 
 		if (argc > 1) {
 			if (!JS_ValueToInt32(cx, argv[1], &loops)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Convert to INT\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Convert to INT\n");
 				return JS_FALSE;
 			}
 			loops--;
@@ -1686,7 +1686,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			write_frame.samples = write_frame.datalen / 2;
 			for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
 				if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad Write\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad Write\n");
 					break;
 				}
 			}
@@ -1758,7 +1758,7 @@ static JSBool js_include(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		eval_some_js(code, cx, obj, rval);
 		return JS_TRUE;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid Arguements\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Arguements\n");
 	return JS_FALSE;
 }
 
@@ -1801,13 +1801,13 @@ static JSBool js_bridge(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	if (argc > 1) {
 		if (JS_ValueToObject(cx, argv[0], &session_obj_a)) {
 			if (!(jss_a = JS_GetPrivate(cx, session_obj_a))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Find Session [1]\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Find Session [1]\n");
 				return JS_FALSE;
 			}
 		} 
 		if (JS_ValueToObject(cx, argv[1], &session_obj_b)) {
 			if (!(jss_b = JS_GetPrivate(cx, session_obj_b))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Find Session [1]\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Find Session [1]\n");
 				return JS_FALSE;
 			}
 		} 
@@ -1815,12 +1815,12 @@ static JSBool js_bridge(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	
 	if (argc > 3) {
 		if (!JS_ValueToInt32(cx, argv[3], &timelimit)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Convert to INT\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Convert to INT\n");
 			return JS_FALSE;
 		}
 	}
 	if (!(jss_a && jss_b)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failure! %s %s\n", jss_a ? "y" : "n", jss_b ? "y" : "n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure! %s %s\n", jss_a ? "y" : "n", jss_b ? "y" : "n");
 		return JS_FALSE;
 	}
 
@@ -1938,9 +1938,9 @@ static JSBool js_email(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 
 
 		if (file) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed file [%s] to [%s]\n", filename, to);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Emailed file [%s] to [%s]\n", filename, to);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Emailed data to [%s]\n", to);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Emailed data to [%s]\n", to);
 		}
 		return JS_TRUE;
 	}
@@ -2072,7 +2072,7 @@ static void js_parse_and_execute(switch_core_session *session, char *input_code)
 			JS_SetPrivate(cx, javascript_global_object, session);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocation Error!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Allocation Error!\n");
 		return;
 	}
 
@@ -2128,7 +2128,7 @@ static void js_thread_launch(char *text)
 
 	if (!module_pool) {
 		if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OH OH no pool\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 			return;
 		}
 	}

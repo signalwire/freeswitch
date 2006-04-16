@@ -65,7 +65,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 
 	if (switch_core_session_outgoing_channel(session, chan_type, caller_profile, &peer_session, NULL) !=
 		SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot Create Outgoing Channel!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
 		switch_channel_hangup(caller_channel);
 		return;
 	} else {

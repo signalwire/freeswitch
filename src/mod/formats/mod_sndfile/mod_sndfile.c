@@ -49,7 +49,7 @@ static switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 	int ready = 1;
 	
 	if ((ext = strrchr(path, '.')) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid Format\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
 		return SWITCH_STATUS_GENERR;
 	}
 	ext++;
@@ -64,7 +64,7 @@ static switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 	}
 
 	if (!mode) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid Mode!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Mode!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -120,18 +120,18 @@ static switch_status sndfile_file_open(switch_file_handle *handle, char *path)
 
 
 	if ((mode & SFM_WRITE) && sf_format_check (&context->sfinfo) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error : file format is invalid (0x%08X).\n", context->sfinfo.format);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error : file format is invalid (0x%08X).\n", context->sfinfo.format);
 		return SWITCH_STATUS_GENERR;
 	};
 
 
 	if ((context->handle = sf_open(path, mode, &context->sfinfo)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Opening File [%s] [%s]\n", path,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening File [%s] [%s]\n", path,
 							  sf_strerror(context->handle));
 		return SWITCH_STATUS_GENERR;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opening File [%s] %dhz\n", path, context->sfinfo.samplerate);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, context->sfinfo.samplerate);
 	handle->samples = (unsigned int) context->sfinfo.frames;
 	handle->samplerate = context->sfinfo.samplerate;
 	handle->channels = (uint8_t)context->sfinfo.channels;
@@ -158,7 +158,7 @@ static switch_status sndfile_file_seek(switch_file_handle *handle, unsigned int 
 	sndfile_context *context = handle->private_info;
 
 	if (!handle->seekable) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "File is not seekable\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File is not seekable\n");
 		return SWITCH_STATUS_NOTIMPL;
 	}
 
@@ -252,13 +252,13 @@ static switch_status setup_formats(void)
 	
 	sf_command(NULL, SFC_GET_LIB_VERSION, buffer, sizeof(buffer));
 	if (strlen(buffer) < 1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "Line %d: could not retrieve lib version.\n", __LINE__);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Line %d: could not retrieve lib version.\n", __LINE__);
 		return SWITCH_STATUS_FALSE;
 	}
 
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nLibSndFile Version : %s Supported Formats\n", buffer);
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG,
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "\nLibSndFile Version : %s Supported Formats\n", buffer);
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO,
 						  "================================================================================\n");
 	sf_command(NULL, SFC_GET_FORMAT_MAJOR_COUNT, &major_count, sizeof(int));
 	sf_command(NULL, SFC_GET_FORMAT_SUBTYPE_COUNT, &subtype_count, sizeof(int));
@@ -272,7 +272,7 @@ static switch_status setup_formats(void)
 		skip = 0;
 		info.format = m;
 		sf_command(NULL, SFC_GET_FORMAT_MAJOR, &info, sizeof(info));
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "%s  (extension \"%s\")\n", info.name, info.extension);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "%s  (extension \"%s\")\n", info.name, info.extension);
 		for (x = 0; x < len; x++) {
 			if (supported_formats[x] == info.extension) {
 				skip++;
@@ -303,7 +303,7 @@ static switch_status setup_formats(void)
 
 
 
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG,
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_NOTICE,
 						  "================================================================================\n");
 	
 	return SWITCH_STATUS_SUCCESS;

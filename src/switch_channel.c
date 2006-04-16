@@ -402,7 +402,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 			switch_core_session_signal_state_change(channel->session);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Invalid State Change %s -> %s\n", channel->name,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Invalid State Change %s -> %s\n", channel->name,
 							  state_names[last_state], state_names[state]);
 
 		//we won't tolerate an invalid state change so we can make sure we are as robust as a nice cup of dark coffee!
@@ -601,7 +601,7 @@ SWITCH_DECLARE(switch_status) switch_channel_pre_answer(switch_channel *channel)
 	status = switch_core_session_message_send(uuid, &msg);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pre-Answer %s!\n", channel->name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Pre-Answer %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
 	}
 
@@ -621,7 +621,7 @@ SWITCH_DECLARE(switch_status) switch_channel_answer(switch_channel *channel)
 
 		channel->times.answered = switch_time_now();
 		switch_channel_set_flag(channel, CF_ANSWERED);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Answer %s!\n", channel->name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Answer %s!\n", channel->name);
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
