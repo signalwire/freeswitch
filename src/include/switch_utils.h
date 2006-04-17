@@ -65,6 +65,9 @@ extern "C" {
 !strcasecmp(expr, "true") ||\
 atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
 
+
+SWITCH_DECLARE(switch_status) switch_socket_recvfrom(switch_sockaddr_t *from, switch_socket_t *sock, int32_t flags, char *buf, switch_size_t *len);
+
 /*!
   \brief Return a printable name of a switch_priority_t
   \param priority the priority to get the name of

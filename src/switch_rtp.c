@@ -86,6 +86,7 @@ struct switch_rtp {
 	switch_time_t last_read;
 	switch_time_t next_read;
 	uint32_t ms_per_packet;
+	uint32_t remote_port;
 	uint8_t stuncount;
 	switch_buffer *packet_buffer;
 };
@@ -168,6 +169,7 @@ static void handle_ice(switch_rtp *rtp_session, void *data, switch_size_t len)
 		switch_sockaddr_ip_get(&remote_ip, rtp_session->from_addr);
 		switch_stun_packet_attribute_add_binded_address(rpacket, remote_ip, rtp_session->from_addr->port);
 		bytes = switch_stun_packet_length(rpacket);
+
 		switch_socket_sendto(rtp_session->sock, rtp_session->from_addr, 0, (void*)rpacket, &bytes);
 	}
 }
@@ -238,6 +240,8 @@ SWITCH_DECLARE(switch_status) switch_rtp_set_remote_address(switch_rtp *rtp_sess
 		*err = "Remote Address Error!";
 		return SWITCH_STATUS_FALSE;
 	}
+
+	rtp_session->remote_port = port;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -462,16 +466,40 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp *rtp_session, swit
 	rtp_session->invalid_handler = on_invalid;
 }
 
+SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp *rtp_session, switch_rtp_flag_t flags) 
+{
+	
+	switch_set_flag(rtp_session, flags);
+
+}
+
+SWITCH_DECLARE(uint8_t) switch_rtp_test_flag(switch_rtp *rtp_session, switch_rtp_flag_t flags) 
+{
+	
+	return (uint8_t) switch_test_flag(rtp_session, flags);
+	
+}
+
+SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp *rtp_session, switch_rtp_flag_t flags) 
+{
+	
+	switch_clear_flag(rtp_session, flags);
+
+}
 
 static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_type, switch_frame_flag *flags)
 {
 	switch_size_t bytes;
 	switch_status status;
 
-
 	for(;;) {
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
+
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && rtp_session->from_addr->port != rtp_session->remote_port) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Auto Changing port to %u\n", rtp_session->from_addr->port);
+			rtp_session->remote_addr->port = rtp_session->from_addr->port;
+		}
 
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 			return -1;
@@ -497,6 +525,7 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			if ((switch_time_now() - rtp_session->next_read) > 1000) {
 				/* We're late! We're Late!*/
+				printf("late\n");
 				memset(&rtp_session->recv_msg, 0, SWITCH_RTP_CNG_PAYLOAD);
 				rtp_session->recv_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
 				*flags |= SFF_CNG;

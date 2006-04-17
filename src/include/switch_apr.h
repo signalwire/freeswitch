@@ -651,7 +651,7 @@ DoxyDefine(apr_status_t switch_socket_recvfrom(switch_sockaddr_t *from,
 									apr_int32_t flags, 
 									char *buf, 
 									apr_size_t *len);)
-#define switch_socket_recvfrom apr_socket_recvfrom
+//#define switch_socket_recvfrom apr_socket_recvfrom
 
 /**
  * Send a file from an open file descriptor to a socket, along with 

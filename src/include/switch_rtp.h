@@ -156,6 +156,28 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp **rtp_session);
 */
 SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp *rtp_session, char *login, char *rlogin);
 
+/*!
+  \brief Set an RTP Flag
+  \param rtp_session the RTP session
+  \param flags the flags to set
+*/
+SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp *rtp_session, switch_rtp_flag_t flags);
+
+/*!
+  \brief Test an RTP Flag
+  \param rtp_session the RTP session
+  \param flags the flags to test
+  \return TRUE or FALSE
+*/
+SWITCH_DECLARE(uint8_t) switch_rtp_test_flag(switch_rtp *rtp_session, switch_rtp_flag_t flags);
+
+/*!
+  \brief Clear an RTP Flag
+  \param rtp_session the RTP session
+  \param flags the flags to clear
+*/
+SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp *rtp_session, switch_rtp_flag_t flags);
+
 /*! 
   \brief Retrieve the socket from an existing RTP session
   \param rtp_session the RTP session to retrieve the socket from

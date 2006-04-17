@@ -102,13 +102,15 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
     SWITCH_RTP_FLAG_IO           - IO is ready
 	SWITCH_RTP_FLAG_USE_TIMER    - Timeout Reads and replace with a CNG Frame
 	SWITCH_RTP_FLAG_SECURE       - Secure RTP
+	SWITCH_RTP_FLAG_AUTOADJ      - Auto-Adjust the dest based on the source
 </pre>
  */
 typedef enum {
 	SWITCH_RTP_FLAG_NOBLOCK = ( 1 << 0),
 	SWITCH_RTP_FLAG_IO = (1 << 1),
 	SWITCH_RTP_FLAG_USE_TIMER = (1 << 2),
-	SWITCH_RTP_FLAG_SECURE = (1 << 3)
+	SWITCH_RTP_FLAG_SECURE = (1 << 3),
+	SWITCH_RTP_FLAG_AUTOADJ = (1 << 4)
 } switch_rtp_flag_t;
 
 /*!
@@ -148,12 +150,16 @@ typedef enum {
 	SWITCH_MESSAGE_REDIRECT_AUDIO     - Indication to redirect audio to another location if possible
 	SWITCH_MESSAGE_TRANSMIT_TEXT      - A text message
 	SWITCH_MESSAGE_INDICATE_PROGRESS  - indicate progress 
+	SWITCH_MESSAGE_INDICATE_BRIDGE    - indicate a bridge starting
+	SWITCH_MESSAGE_INDICATE_UNBRIDGE    - indicate a bridge ending
 </pre>
  */
 typedef enum {
 	SWITCH_MESSAGE_REDIRECT_AUDIO,
 	SWITCH_MESSAGE_TRANSMIT_TEXT,
-	SWITCH_MESSAGE_INDICATE_PROGRESS
+	SWITCH_MESSAGE_INDICATE_PROGRESS,
+	SWITCH_MESSAGE_INDICATE_BRIDGE,
+	SWITCH_MESSAGE_INDICATE_UNBRIDGE
 } switch_core_session_message_t;
 
 

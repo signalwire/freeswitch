@@ -271,7 +271,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 												 tech_pvt->codec_num,
 												 tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 												 tech_pvt->read_codec.implementation->microseconds_per_frame,
-												 SWITCH_RTP_FLAG_USE_TIMER,
+												 SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ,
 												 NULL,
 												 &err, switch_core_session_get_pool(tech_pvt->session)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
@@ -887,6 +887,37 @@ static switch_status channel_answer_channel(switch_core_session *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static switch_status channel_receive_message(switch_core_session *session, switch_core_session_message *msg)
+{
+	switch_channel *channel;
+	struct private_object *tech_pvt;
+			
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+			
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
+	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+			if (tech_pvt->rtp_session) {
+				switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
+			}
+			break;
+	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+			if (tech_pvt->rtp_session) {
+				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
+			}
+			break;
+	default:
+		break;
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 static const switch_state_handler_table channel_event_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
@@ -904,7 +935,8 @@ static const switch_io_routines channel_io_routines = {
 	/*.kill_channel */ channel_kill_channel,
 	/*.waitfor_read */ channel_waitfor_read,
 	/*.waitfor_write */ channel_waitfor_write,
-	/*.send_dtmf */ channel_send_dtmf
+	/*.send_dtmf */ channel_send_dtmf,
+	/*.receive_message*/ channel_receive_message
 };
 
 static const switch_endpoint_interface channel_endpoint_interface = {

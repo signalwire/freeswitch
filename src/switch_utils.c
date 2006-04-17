@@ -34,6 +34,16 @@
 #include <string.h>
 #include <stdlib.h>
 
+SWITCH_DECLARE(switch_status) switch_socket_recvfrom(switch_sockaddr_t *from, switch_socket_t *sock, int32_t flags, char *buf, switch_size_t *len)
+{
+	switch_status status;
+
+	if ((status = apr_socket_recvfrom(from, sock, flags, buf, len)) == SWITCH_STATUS_SUCCESS) {
+		from->port = ntohs(from->sa.sin.sin_port);
+	}
+	return status;
+}
+
 SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
 {
 	switch(priority) { /*lol*/

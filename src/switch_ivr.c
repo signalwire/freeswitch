@@ -927,15 +927,28 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 		switch_event *event;
-		
+		switch_core_session_message msg = {0};
+
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(caller_channel, event);
 			switch_event_fire(&event);
 		}
-
-		switch_core_session_launch_thread(session, audio_bridge_thread, (void *) &other_audio_thread);
+		
+		msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
+		msg.from = __FILE__;
+		msg.pointer_arg = session;
+		switch_core_session_receive_message(peer_session, &msg);
+		msg.pointer_arg = peer_session;
+		switch_core_session_receive_message(session, &msg);
+		
+		switch_core_session_launch_thread(peer_session, audio_bridge_thread, (void *) &other_audio_thread);
 		audio_bridge_thread(NULL, (void *) &this_audio_thread);
 
+		msg.pointer_arg = NULL;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
+		switch_core_session_receive_message(peer_session, &msg);
+		switch_core_session_receive_message(session, &msg);
+		
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(caller_channel, event);
 			switch_event_fire(&event);
