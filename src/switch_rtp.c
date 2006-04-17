@@ -525,7 +525,6 @@ static int rtp_common_read(switch_rtp *rtp_session, void *data, int *payload_typ
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			if ((switch_time_now() - rtp_session->next_read) > 1000) {
 				/* We're late! We're Late!*/
-				printf("late\n");
 				memset(&rtp_session->recv_msg, 0, SWITCH_RTP_CNG_PAYLOAD);
 				rtp_session->recv_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
 				*flags |= SFF_CNG;
