@@ -1,0 +1,14 @@
+LIBRARY	"jitterbuffer"
+EXPORTS
+jb_new
+jb_reset
+jb_reset_all
+jb_destroy
+jb_set_settings
+jb_get_info
+jb_get_settings
+jb_guess_mos
+jb_has_frames
+jb_put
+jb_get
+jb_setoutput
