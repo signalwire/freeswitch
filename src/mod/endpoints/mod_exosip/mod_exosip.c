@@ -604,14 +604,11 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			   && tech_pvt->read_frame.datalen == 0) {
 			now = switch_time_now();
 			tech_pvt->read_frame.flags = 0;
-			if (switch_rtp_zerocopy_read(tech_pvt->rtp_session,
-										 &tech_pvt->read_frame.data,
-										 &tech_pvt->read_frame.datalen,
-										 &payload,
-										 &tech_pvt->read_frame.flags) != SWITCH_STATUS_SUCCESS) {
-				
+			if (switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame) != SWITCH_STATUS_SUCCESS) {
 				return SWITCH_STATUS_FALSE;
 			}
+
+			payload = tech_pvt->read_frame.payload;
 
 			if (timeout > -1) {
 				elapsed = (unsigned int)((switch_time_now() - started) / 1000);
@@ -735,7 +732,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 		
 
 		for (x = 0; x < loops; x++) {
-			switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+			switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
 			printf("Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", 
 				   loops == 1 ? "middle" : "end",
 				   tech_pvt->out_digit,
@@ -762,7 +759,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 			ts = tech_pvt->timestamp_dtmf += samples;
 			tech_pvt->out_digit_seq++;
 			for (x = 0; x < 3; x++) {
-				switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+				switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
 				printf("Send start packet for [%c] ts=%d sofar=%u dur=%d\n", tech_pvt->out_digit, ts, 
 					   tech_pvt->out_digit_sofar, 0);
 			}
@@ -776,7 +773,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	//printf("%s %s->%s send %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->remote_sdp_audio_ip, frame->datalen, samples, frames, ms, tech_pvt->timestamp_send);
 
 
-	switch_rtp_write(tech_pvt->rtp_session, frame->data, (int) frame->datalen, samples);
+	switch_rtp_write(tech_pvt->rtp_session, frame->data, (int) frame->datalen, samples, &frame->flags);
 	tech_pvt->timestamp_send += (int) samples;
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);

@@ -103,6 +103,7 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 	SWITCH_RTP_FLAG_USE_TIMER    - Timeout Reads and replace with a CNG Frame
 	SWITCH_RTP_FLAG_SECURE       - Secure RTP
 	SWITCH_RTP_FLAG_AUTOADJ      - Auto-Adjust the dest based on the source
+	SWITCH_RTP_FLAG_RAW_WRITE    - Try to forward packets unscathed
 </pre>
  */
 typedef enum {
@@ -110,7 +111,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_IO = (1 << 1),
 	SWITCH_RTP_FLAG_USE_TIMER = (1 << 2),
 	SWITCH_RTP_FLAG_SECURE = (1 << 3),
-	SWITCH_RTP_FLAG_AUTOADJ = (1 << 4)
+	SWITCH_RTP_FLAG_AUTOADJ = (1 << 4),
+	SWITCH_RTP_FLAG_RAW_WRITE = (1 << 5)
 } switch_rtp_flag_t;
 
 /*!
@@ -316,11 +318,13 @@ typedef enum {
   \brief Frame Flags
 
 <pre>
-CF_CNG   = (1 <<  0) - Frame represents comfort noise
+SFF_CNG       = (1 <<  0) - Frame represents comfort noise
+SFF_RAW_RTP   = (1 <<  1) - Frame has raw rtp accessible
 </pre>
  */
 typedef enum {
-	SFF_CNG = (1 << 0)
+	SFF_CNG = (1 << 0),
+	SFF_RAW_RTP = (1 << 1)
 } switch_frame_flag;
 
 

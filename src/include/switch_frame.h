@@ -46,6 +46,12 @@ extern "C" {
 struct switch_frame {
 	/*! a pointer to the codec information */
 	switch_codec *codec;
+	/*! the originating source of the frame */
+	const char *source;
+	/*! the raw packet */
+	void *packet;
+	/*! the size of the raw packet when applicable*/
+	uint32_t packetlen;
 	/*! the frame data */
 	void *data;
 	/*! the size of the buffer that is in use */
@@ -56,6 +62,10 @@ struct switch_frame {
 	uint32_t samples;
 	/*! the rate of the frame */
 	uint32_t rate;
+	/*! the payload of the frame */
+	uint32_t payload;
+	/*! the timestamp of the frame */
+	uint32_t timestamp;
 	/*! frame flags */
 	switch_frame_flag flags;
 };

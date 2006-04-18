@@ -245,14 +245,23 @@ SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp *rtp_session, void *dat
 SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, uint32_t *datalen, int *payload_type, switch_frame_flag *flags);
 
 /*! 
+  \brief Read data from a given RTP session without copying
+  \param rtp_session the RTP session to read from
+  \param frame a frame to populate with information
+  \return the number of bytes read
+*/
+SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp *rtp_session, switch_frame *frame);
+
+/*! 
   \brief Write data to a given RTP session
   \param rtp_session the RTP session to write to
   \param data data to write
   \param datalen the size of the data
   \param ts then number of bytes to increment the timestamp by
+  \param flags frame flags
   \return the number of bytes written
 */
-SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint32_t ts);
+SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint32_t ts, switch_frame_flag *flags);
 
 /*! 
   \brief Write data with a specified payload and sequence number to a given RTP session
@@ -262,9 +271,10 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32
   \param payload the IANA payload number
   \param ts then number of bytes to increment the timestamp by
   \param mseq the specific sequence number to use
+  \param flags frame flags
   \return the number of bytes written
 */
-SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data, uint16_t datalen, uint8_t payload, uint32_t ts, uint16_t mseq);
+SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data, uint16_t datalen, uint8_t payload, uint32_t ts, uint16_t mseq, switch_frame_flag *flags);
 
 /*! 
   \brief Retrieve the SSRC from a given RTP session

@@ -815,7 +815,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 		
 
 		for (x = 0; x < loops; x++) {
-			switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+			switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
 			/*
 			printf("Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", loops == 1 ? "middle" : "end", tech_pvt->out_digit, ts, 
 				   tech_pvt->out_digit_sofar, duration);
@@ -840,7 +840,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 			ts = tech_pvt->timestamp_dtmf += samples;
 			tech_pvt->out_digit_seq++;
 			for (x = 0; x < 3; x++) {
-				switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq);
+				switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
 				/*
 				printf("Send start packet for [%c] ts=%d sofar=%u dur=%d\n", tech_pvt->out_digit, ts, 
 					   tech_pvt->out_digit_sofar, 0);
@@ -858,7 +858,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 	//printf("%s send %d bytes %d samples in %d frames ts=%d\n", switch_channel_get_name(channel), frame->datalen, samples, frames, tech_pvt->timestamp_send);
 
 
-	if (switch_rtp_write(tech_pvt->rtp_session, frame->data, frame->datalen, samples) < 0) {
+	if (switch_rtp_write(tech_pvt->rtp_session, frame->data, frame->datalen, samples, &frame->flags) < 0) {
 		return SWITCH_STATUS_FALSE;
 	}
 	tech_pvt->timestamp_send += (int) samples;

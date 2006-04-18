@@ -118,7 +118,7 @@ CLEANFILES = src/include/switch_version.h
 lib_LTLIBRARIES		= libfreeswitch.la
 libfreeswitch_la_CFLAGS	= $(AM_CFLAGS) -Wall -Werror -Wstrict-prototypes -Wmissing-prototypes -g  
 libfreeswitch_la_LDFLAGS	= -version-info 1:0:0
-libfreeswitch_la_LIBADD  = -lteletone -lresample -lsrtp -lsqlite3
+libfreeswitch_la_LIBADD  = -lteletone -lresample -lsrtp -lsqlite3 -ljitterbuffer
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
 bin_PROGRAMS =	freeswitch
@@ -156,6 +156,7 @@ depends:
 	./build/buildlib.sh . libresample-0.1.3.tgz --prefix=$(PREFIX)
 	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
 	./build/buildlib.sh . install srtp --prefix=$(PREFIX)
+	./build/buildlib.sh . install jitterbuffer --prefix=$(PREFIX)
 	rm build/freeswitch.env
 
 
