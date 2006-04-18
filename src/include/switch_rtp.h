@@ -264,6 +264,15 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp *rtp_ses
 SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint32_t ts, switch_frame_flag *flags);
 
 /*! 
+  \brief Write data to a given RTP session
+  \param rtp_session the RTP session to write to
+  \param frame the frame to write
+  \param ts then number of bytes to increment the timestamp by
+  \return the number of bytes written
+*/
+SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp *rtp_session, switch_frame *frame, uint32_t ts);
+
+/*! 
   \brief Write data with a specified payload and sequence number to a given RTP session
   \param rtp_session the RTP session to write to
   \param data data to write

@@ -759,8 +759,6 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 
 		/* read audio from 1 channel and write it to the other */
 		if (switch_core_session_read_frame(session_a, &read_frame, -1, stream_id) == SWITCH_STATUS_SUCCESS && read_frame->datalen) {
-
-
 			if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "write: %s Bad Frame....[%u] Bubye!\n", switch_channel_get_name(chan_b), read_frame->datalen);
 				data->running = -1;
@@ -903,14 +901,14 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 		   !switch_channel_test_flag(peer_channel, CF_ANSWERED) &&
 		   !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) &&
 		   ((time(NULL) - start) < timelimit)) {
-
+		
 		/* read from the channel while we wait if the audio is up on it */
 		if (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
 			if (switch_core_session_read_frame(session, &read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
 			if (read_frame) {
-				memset(read_frame->data, 0, read_frame->datalen);
+				//memset(read_frame->data, 0, read_frame->datalen);
 				if (switch_core_session_write_frame(session, read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
@@ -919,6 +917,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 		} else {
 			switch_yield(1000);
 		}
+
 	}
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
@@ -940,6 +939,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 		switch_core_session_receive_message(peer_session, &msg);
 		msg.pointer_arg = peer_session;
 		switch_core_session_receive_message(session, &msg);
+		
 		
 		switch_core_session_launch_thread(peer_session, audio_bridge_thread, (void *) &other_audio_thread);
 		audio_bridge_thread(NULL, (void *) &this_audio_thread);

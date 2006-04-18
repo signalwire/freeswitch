@@ -55,7 +55,8 @@ typedef enum {
 	TFLAG_DTMF = (1 << 3),
 	TFLAG_VOICE = (1 << 4),
 	TFLAG_HANGUP = (1 << 5),
-	TFLAG_LINEAR = (1 << 6)
+	TFLAG_LINEAR = (1 << 6),
+	TFLAG_CODEC = (1 << 7)
 } TFLAGS;
 
 typedef enum {
@@ -375,6 +376,7 @@ static switch_status iax_set_codec(struct private_object *tech_pvt, struct iax_s
 			tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 			switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 			switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
+			switch_set_flag(tech_pvt, TFLAG_CODEC);
 		}
 		tech_pvt->codec = chosen;
 		tech_pvt->codecs = local_cap;
@@ -409,7 +411,7 @@ static void iax_err_cb(const char *s)
 
 static void iax_out_cb(const char *s)
 {
-	if (globals.debug) {
+	if (globals.debug > 1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "IAX INFO: %s", s);
 	}
 }
@@ -874,7 +876,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 		return SWITCH_STATUS_TERM;
 	}
 
-	if (globals.debug) {
+	if (globals.debug > 1) {
 		iax_enable_debug();
 	}
 	if (iax_init(globals.ip, globals.port) < 0) {
@@ -909,8 +911,9 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 
 			if (globals.debug && iaxevent->etype != IAX_EVENT_VOICE) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Event %d [%s]!\n",
-									  iaxevent->etype, IAXNAMES[iaxevent->etype]);
+								  iaxevent->etype, IAXNAMES[iaxevent->etype]);
 			}
+
 			switch (iaxevent->etype) {
 			case IAX_EVENT_REGACK:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Registration completed successfully.\n");
@@ -926,7 +929,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 				if (tech_pvt) {
 					unsigned int cap = iax_session_get_capability(iaxevent->session);
 					unsigned int format = iaxevent->ies.format;
-
+					
 					if (iax_set_codec(tech_pvt, iaxevent->session, &format, &cap, &iaxevent->ies.samprate, IAX_SET) !=
 						SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF? %u %u\n", iaxevent->ies.format,
@@ -950,7 +953,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 					if ((channel = switch_core_session_get_channel(tech_pvt->session)) != 0) {
 						if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "WTF Mutiple Answer %s?\n",
-												  switch_channel_get_name(channel));
+											  switch_channel_get_name(channel));
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Answer %s\n",
 												  switch_channel_get_name(channel));
@@ -1054,8 +1057,17 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 					switch_channel *channel;
 					if (((channel = switch_core_session_get_channel(tech_pvt->session)) != 0)
 						&& switch_channel_get_state(channel) <= CS_HANGUP) {
-						int bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-						int frames = (int) (tech_pvt->read_frame.datalen / bytes);
+						int bytes, frames;
+						
+						if (!switch_test_flag(tech_pvt, TFLAG_CODEC)) {
+							//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "audio with no codec yet!\n");
+							break;
+						}
+
+						bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+						frames = (int) (tech_pvt->read_frame.datalen / bytes);
+
+
 						tech_pvt->read_frame.samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 						memcpy(tech_pvt->read_frame.data, iaxevent->data, iaxevent->datalen);
 						/* wake up the i/o thread */

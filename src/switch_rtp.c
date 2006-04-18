@@ -495,7 +495,7 @@ static int rtp_common_read(switch_rtp *rtp_session, int *payload_type, switch_fr
 	for(;;) {
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
-
+		
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && rtp_session->from_addr->port != rtp_session->remote_port) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Auto Changing port to %u\n", rtp_session->from_addr->port);
 			rtp_session->remote_addr->port = rtp_session->from_addr->port;
@@ -601,6 +601,9 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp *rtp_ses
 	if (bytes < 0) {
 		frame->datalen = 0;
 		return SWITCH_STATUS_GENERR;
+	} else if (bytes == 0) {
+		frame->datalen = 0;
+		return SWITCH_STATUS_BREAK;
 	} else {
 		bytes -= rtp_header_len;
 	}
@@ -630,6 +633,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp *rtp_session, 
 static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint8_t payload, switch_frame_flag *flags)
 {
 	switch_size_t bytes;
+	uint8_t packetize = (rtp_session->packet_size > datalen && (payload == rtp_session->payload)) ? 1 : 0;
 	uint8_t fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && (*flags & SFF_RAW_RTP)) ? 1 : 0;
 	rtp_msg_t *send_msg;
 
@@ -639,7 +643,7 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 	} else {
 		send_msg = &rtp_session->send_msg;
 		send_msg->header.pt = rtp_session->payload;
-		if (rtp_session->packet_size > datalen && (payload == rtp_session->payload)) {
+		if (packetize) {
 			if (!rtp_session->packet_buffer) {
 				if (switch_buffer_create(rtp_session->pool, &rtp_session->packet_buffer, rtp_session->packet_size * 2) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Buffer memory error\n");
@@ -697,6 +701,34 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32
 	rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
 
 	return rtp_common_write(rtp_session, data, datalen, rtp_session->payload, flags);
+
+}
+
+SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp *rtp_session, switch_frame *frame, uint32_t ts)
+{
+	uint8_t fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && switch_test_flag(frame, SFF_RAW_RTP)) ? 1 : 0;
+	uint8_t packetize = (rtp_session->packet_size > frame->datalen && (frame->payload == rtp_session->payload)) ? 1 : 0;
+	void *data;
+	uint32_t len;
+
+	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
+		return -1;
+	}
+	
+	if (fwd && !packetize) {
+		data = frame->packet;
+		len = frame->packetlen;
+	} else {
+		data = frame->data;
+		len = frame->datalen;
+		rtp_session->ts += ts;
+		rtp_session->seq = ntohs(rtp_session->seq) + 1;
+		rtp_session->seq = htons(rtp_session->seq);
+		rtp_session->send_msg.header.seq = rtp_session->seq;
+		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
+	}
+
+	return rtp_common_write(rtp_session, data, len, rtp_session->payload, &frame->flags);
 
 }
 

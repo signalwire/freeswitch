@@ -503,7 +503,7 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 										   tech_pvt->read_codec.codec_interface->ianacode,
 										   tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 										   ms,
-										   0,
+										   SWITCH_RTP_FLAG_NOBLOCK | SWITCH_RTP_FLAG_RAW_WRITE,
 										   key,
 										   &err, switch_core_session_get_pool(tech_pvt->session));
 
@@ -589,8 +589,9 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			return SWITCH_STATUS_TIMEOUT;
 		}
 	}
-	
+
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
+		switch_status status;
 
 		if (!switch_test_flag(tech_pvt, TFLAG_RTP)) {
 			return SWITCH_STATUS_GENERR;
@@ -600,15 +601,17 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 		tech_pvt->read_frame.datalen = 0;
 
 
-		while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO)
-			   && tech_pvt->read_frame.datalen == 0) {
+		while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 			now = switch_time_now();
 			tech_pvt->read_frame.flags = 0;
-			if (switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame) != SWITCH_STATUS_SUCCESS) {
+
+			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
+			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				return SWITCH_STATUS_FALSE;
 			}
-
+			
 			payload = tech_pvt->read_frame.payload;
+
 
 			if (timeout > -1) {
 				elapsed = (unsigned int)((switch_time_now() - started) / 1000);
@@ -732,6 +735,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 		
 
 		for (x = 0; x < loops; x++) {
+			frame->flags = 0;
 			switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
 			printf("Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", 
 				   loops == 1 ? "middle" : "end",
@@ -759,6 +763,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 			ts = tech_pvt->timestamp_dtmf += samples;
 			tech_pvt->out_digit_seq++;
 			for (x = 0; x < 3; x++) {
+				frame->flags = 0;
 				switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
 				printf("Send start packet for [%c] ts=%d sofar=%u dur=%d\n", tech_pvt->out_digit, ts, 
 					   tech_pvt->out_digit_sofar, 0);
@@ -770,10 +775,10 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 
 
 
-	//printf("%s %s->%s send %d bytes %d samples in %d frames taking up %d ms ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->remote_sdp_audio_ip, frame->datalen, samples, frames, ms, tech_pvt->timestamp_send);
+	//printf("%s %s->%s send %d bytes %d samples in %d frames ts=%d\n", switch_channel_get_name(channel), tech_pvt->local_sdp_audio_ip, tech_pvt->remote_sdp_audio_ip, frame->datalen, samples, frames, tech_pvt->timestamp_send);
 
-
-	switch_rtp_write(tech_pvt->rtp_session, frame->data, (int) frame->datalen, samples, &frame->flags);
+	switch_rtp_write_frame(tech_pvt->rtp_session, frame, samples);
+	
 	tech_pvt->timestamp_send += (int) samples;
 
 	switch_clear_flag(tech_pvt, TFLAG_WRITING);
