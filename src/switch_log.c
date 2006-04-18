@@ -132,7 +132,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread *thread, void *obj)
 		}
 		
 		node = (switch_log_node *) pop;
-		
+
 		switch_mutex_lock(BINDLOCK);
 		for(binding = BINDINGS; binding; binding = binding->next) {
 			if (binding->level >= node->level) {
@@ -224,7 +224,8 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 			if (level == SWITCH_LOG_CONSOLE || !THREAD_RUNNING) {
 				fprintf(handle, data);
 			} 
-			if (level >= MAX_LEVEL) {
+
+			if (level <= MAX_LEVEL) {
 				switch_log_node *node = malloc(sizeof(*node));
 				node->data = data;
 				node->file = strdup(filep);
