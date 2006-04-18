@@ -496,11 +496,7 @@ static int rtp_common_read(switch_rtp *rtp_session, int *payload_type, switch_fr
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
 		
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && rtp_session->from_addr->port != rtp_session->remote_port) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Auto Changing port to %u\n", rtp_session->from_addr->port);
-			rtp_session->remote_addr->port = rtp_session->from_addr->port;
-		}
-
+		
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 			return -1;
 		}
@@ -544,7 +540,14 @@ static int rtp_common_read(switch_rtp *rtp_session, int *payload_type, switch_fr
 			return 0;
 		}
 
-		if (rtp_session->recv_msg.header.version != 2) {
+		if (rtp_session->recv_msg.header.version == 2) {
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && rtp_session->from_addr->port && 
+				(rtp_session->from_addr->port != rtp_session->remote_port)) {
+				uint32_t old = rtp_session->remote_port;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Auto Changing port from %u to %u\n", old, rtp_session->from_addr->port);
+				rtp_session->remote_port = rtp_session->from_addr->port;
+			}
+		} else {
 			if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
 				handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
 			}	

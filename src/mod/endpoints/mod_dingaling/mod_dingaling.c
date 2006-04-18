@@ -667,6 +667,7 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	switch_size_t samples = 0, frames = 0, ms = 0;
 	switch_channel *channel = NULL;
 	int payload = 0;
+	switch_status status;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -691,15 +692,12 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 		payload = -1;
 		tech_pvt->read_frame.flags = 0;
+		status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
 
-		if (switch_rtp_zerocopy_read(tech_pvt->rtp_session,
-									 &tech_pvt->read_frame.data,
-									 &tech_pvt->read_frame.datalen,
-									 &payload,
-									 &tech_pvt->read_frame.flags) != SWITCH_STATUS_SUCCESS) {
-			
+		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 			return SWITCH_STATUS_FALSE;
-		}		
+		}
+		payload = tech_pvt->read_frame.payload;
 
 		/* RFC2833 ... TBD try harder to honor the duration etc.*/
 		if (payload == 101) {
@@ -857,8 +855,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 
 	//printf("%s send %d bytes %d samples in %d frames ts=%d\n", switch_channel_get_name(channel), frame->datalen, samples, frames, tech_pvt->timestamp_send);
 
-
-	if (switch_rtp_write(tech_pvt->rtp_session, frame->data, frame->datalen, samples, &frame->flags) < 0) {
+	if (switch_rtp_write_frame(tech_pvt->rtp_session, frame, samples) < 0) {
 		return SWITCH_STATUS_FALSE;
 	}
 	tech_pvt->timestamp_send += (int) samples;
