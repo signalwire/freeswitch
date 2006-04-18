@@ -477,7 +477,7 @@ struct switch_codec_interface {
 	/*! enumeration defining the type of the codec */
 	const switch_codec_type codec_type;
 	/*! the IANA code number */
-	uint8_t ianacode;
+	switch_payload_t ianacode;
 	/*! the IANA code name */
 	char *iananame;
 	/*! a list of codec implementations related to the codec */

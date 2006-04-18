@@ -63,7 +63,7 @@ struct switch_frame {
 	/*! the rate of the frame */
 	uint32_t rate;
 	/*! the payload of the frame */
-	uint32_t payload;
+	switch_payload_t payload;
 	/*! the timestamp of the frame */
 	uint32_t timestamp;
 	/*! frame flags */

@@ -506,6 +506,7 @@ typedef enum {
 	SWITCH_EVENT_ALL
 } switch_event_t;
 
+typedef uint8_t switch_payload_t;
 typedef struct switch_rtp switch_rtp;
 typedef struct switch_core_session_message switch_core_session_message;
 typedef struct switch_audio_resampler switch_audio_resampler;

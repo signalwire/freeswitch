@@ -69,7 +69,7 @@ struct switch_rtp {
 	srtp_ctx_t *recv_ctx;
 	
 	uint16_t seq;
-	uint8_t payload;
+	switch_payload_t payload;
 	
 	switch_rtp_invalid_handler invalid_handler;
 	void *private_data;
@@ -247,7 +247,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_set_remote_address(switch_rtp *rtp_sess
 }
 
 SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
-												uint8_t payload,
+												switch_payload_t payload,
 												uint32_t packet_size,
 												uint32_t ms_per_packet,
 												switch_rtp_flag_t flags, 
@@ -324,7 +324,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 	rtp_session->send_msg.header.ts      = 0;
 	rtp_session->send_msg.header.seq     = (uint16_t) rand();
 	rtp_session->send_msg.header.m       = 0;
-	rtp_session->send_msg.header.pt      = (uint8_t)htonl(payload);
+	rtp_session->send_msg.header.pt      = (switch_payload_t)htonl(payload);
 	rtp_session->send_msg.header.version = 2;
 	rtp_session->send_msg.header.p       = 0;
 	rtp_session->send_msg.header.x       = 0;
@@ -334,7 +334,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 	rtp_session->recv_msg.header.ts      = 0;
 	rtp_session->recv_msg.header.seq     = 0;
 	rtp_session->recv_msg.header.m       = 0;
-	rtp_session->recv_msg.header.pt      = (uint8_t)htonl(payload);
+	rtp_session->recv_msg.header.pt      = (switch_payload_t)htonl(payload);
 	rtp_session->recv_msg.header.version = 2;
 	rtp_session->recv_msg.header.p       = 0;
 	rtp_session->recv_msg.header.x       = 0;
@@ -370,7 +370,7 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_host,
 										   switch_port_t rx_port,
 										   char *tx_host,
 										   switch_port_t tx_port,
-										   uint8_t payload,
+										   switch_payload_t payload,
 										   uint32_t packet_size,
 										   uint32_t ms_per_packet,
 										   switch_rtp_flag_t flags,
@@ -451,7 +451,7 @@ SWITCH_DECLARE(uint32_t) switch_rtp_get_default_packet_size(switch_rtp *rtp_sess
 	return rtp_session->packet_size;
 }
 
-SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp *rtp_session, uint8_t payload)
+SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp *rtp_session, switch_payload_t payload)
 {
 	rtp_session->payload = payload;
 }
@@ -487,7 +487,7 @@ SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp *rtp_session, switch_rtp_f
 
 }
 
-static int rtp_common_read(switch_rtp *rtp_session, int *payload_type, switch_frame_flag *flags)
+static int rtp_common_read(switch_rtp *rtp_session, switch_payload_t *payload_type, switch_frame_flag *flags)
 {
 	switch_size_t bytes;
 	switch_status status;
@@ -572,7 +572,7 @@ static int rtp_common_read(switch_rtp *rtp_session, int *payload_type, switch_fr
 	return (int) bytes;
 }
 
-SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t *datalen, int *payload_type, switch_frame_flag *flags)
+SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag *flags)
 {
 
 	int bytes = rtp_common_read(rtp_session, payload_type, flags);
@@ -616,7 +616,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp *rtp_ses
 }
 
 
-SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, uint32_t *datalen, int *payload_type, switch_frame_flag *flags)
+SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag *flags)
 {
 
 	int bytes = rtp_common_read(rtp_session, payload_type, flags);
@@ -633,7 +633,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp *rtp_session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint8_t payload, switch_frame_flag *flags)
+static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datalen, switch_payload_t payload, switch_frame_flag *flags)
 {
 	switch_size_t bytes;
 	uint8_t packetize = (rtp_session->packet_size > datalen && (payload == rtp_session->payload)) ? 1 : 0;

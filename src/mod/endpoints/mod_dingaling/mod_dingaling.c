@@ -124,7 +124,7 @@ struct private_object {
 	int32_t timestamp_dtmf;
 	uint32_t last_read;
 	char *codec_name;
-	uint8_t codec_num;
+	switch_payload_t codec_num;
 	switch_time_t next_desc;
 	switch_time_t next_cand;
 	char *stun_ip;
@@ -666,7 +666,7 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	uint32_t bytes = 0;
 	switch_size_t samples = 0, frames = 0, ms = 0;
 	switch_channel *channel = NULL;
-	int payload = 0;
+	switch_payload_t payload = 0;
 	switch_status status;
 
 	channel = switch_core_session_get_channel(session);
@@ -690,7 +690,6 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 
 	
 	while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
-		payload = -1;
 		tech_pvt->read_frame.flags = 0;
 		status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
 
