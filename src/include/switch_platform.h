@@ -63,8 +63,9 @@ extern "C" {
  * C4706: assignment within conditional expression
  * C4055: type cast from data pointer to function pointer (apr carries function pointers as data pointers)
  * C4214: nonstandard extension used : bit field types other than int
+ * C4819: The file contains a character that cannot be represented in the current code page
  */
-#pragma warning(disable:4152 4054 4100 4142 4200 4204 4706 4055 4214)
+#pragma warning(disable:4152 4054 4100 4142 4200 4204 4706 4055 4214 4819)
 
 #if (_MSC_VER >= 1400) // VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE
