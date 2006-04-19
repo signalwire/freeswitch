@@ -1345,7 +1345,15 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				for(x = 0; x < len; x++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Available Payload %s %u\n", payloads[x].name, payloads[x].id);
 					for(y = 0; y < tech_pvt->num_codecs; y++) {
-						if (payloads[x].id == tech_pvt->codecs[y]->ianacode) {
+						int match = 0;
+						
+						if (tech_pvt->codecs[y]->ianacode > 96) {
+							match = strcasecmp(tech_pvt->codecs[y]->iananame, payloads[x].name) ? 0 : 1;
+						} else {
+							match = (payloads[x].id == tech_pvt->codecs[y]->ianacode) ? 1 : 0;
+						}
+						
+						if (match) {
 							tech_pvt->codec_index = y;
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing Payload index %u %s %u\n", y, payloads[x].name, payloads[x].id);
 							tech_pvt->codec_name = tech_pvt->codecs[y]->iananame;
