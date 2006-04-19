@@ -8,6 +8,7 @@ applications/mod_playback
 #applications/mod_skel
 #asr_tts/mod_cepstral
 codecs/mod_g711
+codecs/mod_ilbc
 #codecs/mod_g729
 codecs/mod_gsm
 #codecs/mod_ilbc
