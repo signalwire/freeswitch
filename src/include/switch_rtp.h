@@ -283,7 +283,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp *rtp_session, switch_frame
   \param flags frame flags
   \return the number of bytes written
 */
-SWITCH_DECLARE(int) switch_rtp_write_payload(switch_rtp *rtp_session, void *data, uint16_t datalen, switch_payload_t payload, uint32_t ts, uint16_t mseq, switch_frame_flag *flags);
+SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp *rtp_session, void *data, uint16_t datalen, uint8_t m, switch_payload_t payload, uint32_t ts, uint16_t mseq, switch_frame_flag *flags);
 
 /*! 
   \brief Retrieve the SSRC from a given RTP session

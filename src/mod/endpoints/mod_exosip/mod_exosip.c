@@ -736,7 +736,9 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 
 		for (x = 0; x < loops; x++) {
 			frame->flags = 0;
-			switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
+			switch_rtp_write_manual(tech_pvt->rtp_session, 
+									tech_pvt->out_digit_packet, 4, 0, 101, ts,
+									loops == 1 ? tech_pvt->out_digit_seq++ : tech_pvt->out_digit_seq, &frame->flags);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", 
 							  loops == 1 ? "middle" : "end",
 							  tech_pvt->out_digit,
@@ -764,7 +766,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 			tech_pvt->out_digit_seq++;
 			for (x = 0; x < 3; x++) {
 				frame->flags = 0;
-				switch_rtp_write_payload(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
+				switch_rtp_write_manual(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 1, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send start packet for [%c] ts=%d sofar=%u dur=%d\n", tech_pvt->out_digit, ts, 
 								  tech_pvt->out_digit_sofar, 0);
 			}
