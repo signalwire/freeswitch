@@ -104,6 +104,7 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 	SWITCH_RTP_FLAG_SECURE       - Secure RTP
 	SWITCH_RTP_FLAG_AUTOADJ      - Auto-Adjust the dest based on the source
 	SWITCH_RTP_FLAG_RAW_WRITE    - Try to forward packets unscathed
+	SWITCH_RTP_FLAG_GOOGLEHACK   - Convert payload from 102 to 97
 </pre>
  */
 typedef enum {
@@ -112,7 +113,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_USE_TIMER = (1 << 2),
 	SWITCH_RTP_FLAG_SECURE = (1 << 3),
 	SWITCH_RTP_FLAG_AUTOADJ = (1 << 4),
-	SWITCH_RTP_FLAG_RAW_WRITE = (1 << 5)
+	SWITCH_RTP_FLAG_RAW_WRITE = (1 << 5),
+	SWITCH_RTP_FLAG_GOOGLEHACK = (1 << 6)
 } switch_rtp_flag_t;
 
 /*!

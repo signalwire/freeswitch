@@ -541,6 +541,9 @@ static int rtp_common_read(switch_rtp *rtp_session, switch_payload_t *payload_ty
 		}
 
 		if (rtp_session->recv_msg.header.version == 2) {
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->recv_msg.header.pt == 102) {
+				rtp_session->recv_msg.header.pt = 97;
+			}
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && rtp_session->from_addr->port && 
 				(rtp_session->from_addr->port != rtp_session->remote_port)) {
 				uint32_t old = rtp_session->remote_port;
@@ -679,6 +682,9 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 		bytes = sbytes;
 	}
 
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->send_msg.header.pt == 97) {
+		rtp_session->recv_msg.header.pt = 102;
+	}
 	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)send_msg, &bytes);
 	
 	if (rtp_session->ice_user) {

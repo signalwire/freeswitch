@@ -161,7 +161,7 @@ static switch_status switch_ilbc_decode(switch_codec *codec,
 		unsigned int new_len = 0;
 		float buf[240];
 
-
+		printf("WTF %d\n", encoded_data_len);
 		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
 			iLBC_decode(buf, edp, &context->decoder, 1);
 			for(y = 0; y < context->dbytes / sizeof(short) ; y++) {

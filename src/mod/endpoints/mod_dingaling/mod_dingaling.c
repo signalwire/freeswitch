@@ -230,7 +230,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 		return 0;
 	}
 
-	if (!strcasecmp(tech_pvt->codec_name, "ilbc")) {
+	if (!strncasecmp(tech_pvt->codec_name, "ilbc", 4)) {
 		ms = 30;
 	}
 
@@ -276,7 +276,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 												 tech_pvt->codec_num,
 												 tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 												 tech_pvt->read_codec.implementation->microseconds_per_frame,
-												 SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ,
+												 SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_GOOGLEHACK,
 												 NULL,
 												 &err, switch_core_session_get_pool(tech_pvt->session)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
@@ -357,6 +357,15 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 	return 0;
 }
 
+static char *lame(char *in)
+{
+	if (!strncasecmp(in, "ilbc", 4)) {
+		return "iLBC";
+	} else {
+		return in;
+	}
+}
+
 static int do_describe(struct private_object *tech_pvt, int force)
 {
 	ldl_payload_t payloads[5];
@@ -380,15 +389,15 @@ static int do_describe(struct private_object *tech_pvt, int force)
 	if (force || !switch_test_flag(tech_pvt, TFLAG_CODEC_READY)) {
 		if (tech_pvt->codec_index < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Don't have my codec yet here's one\n");
-			tech_pvt->codec_name = tech_pvt->codecs[0]->iananame;
+			tech_pvt->codec_name = lame(tech_pvt->codecs[0]->iananame);
 			tech_pvt->codec_num = tech_pvt->codecs[0]->ianacode;
 			tech_pvt->codec_index = 0;
 					
-			payloads[0].name = tech_pvt->codecs[0]->iananame;
+			payloads[0].name = lame(tech_pvt->codecs[0]->iananame);
 			payloads[0].id = tech_pvt->codecs[0]->ianacode;
-					
+			
 		} else {
-			payloads[0].name = tech_pvt->codecs[tech_pvt->codec_index]->iananame;
+			payloads[0].name = lame(tech_pvt->codecs[tech_pvt->codec_index]->iananame);
 			payloads[0].id = tech_pvt->codecs[tech_pvt->codec_index]->ianacode;
 		}
 
@@ -695,7 +704,7 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 		tech_pvt->read_frame.flags = 0;
 		status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
-
+		
 		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 			return SWITCH_STATUS_FALSE;
 		}
