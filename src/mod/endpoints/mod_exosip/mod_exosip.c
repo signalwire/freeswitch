@@ -1283,11 +1283,15 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 
 		{
 			int rate = atoi(drate);
-
+			int ms = globals.codec_ms;
+			if (!strcasecmp(dname, "ilbc")) {
+				ms = 30;
+			}
+			
 			if (switch_core_codec_init(&tech_pvt->read_codec,
 									   dname,
 									   rate,
-									   globals.codec_ms,
+									   ms,
 									   1,
 									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 									   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -1298,7 +1302,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 				if (switch_core_codec_init(&tech_pvt->write_codec,
 										   dname,
 										   rate,
-										   globals.codec_ms,
+										   ms,
 										   1,
 										   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 										   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
@@ -1453,12 +1457,15 @@ static void handle_answer(eXosip_event_t * event)
 
 	{
 		int rate = atoi(drate);
-
+		int ms = globals.codec_ms;
+		if (!strcasecmp(dname, "ilbc")) {
+			ms = 30;
+		}
 
 		if (switch_core_codec_init(&tech_pvt->read_codec,
 								   dname,
 								   rate,
-								   globals.codec_ms,
+								   ms,
 								   1,
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
@@ -1469,7 +1476,7 @@ static void handle_answer(eXosip_event_t * event)
 			if (switch_core_codec_init(&tech_pvt->write_codec,
 									   dname,
 									   rate,
-									   globals.codec_ms,
+									   ms,
 									   1,
 									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 									   NULL,

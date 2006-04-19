@@ -31,10 +31,13 @@
  */
 #include <switch_buffer.h>
 
+static uint32_t buffer_id = 0;
+
 struct switch_buffer {
 	unsigned char *data;
 	switch_size_t used;
 	switch_size_t datalen;
+	uint32_t id;
 };
 
 SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool *pool, switch_buffer **buffer, switch_size_t max_len)
@@ -44,6 +47,7 @@ SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool *pool, swi
 	if ((new_buffer = switch_core_alloc(pool, sizeof(switch_buffer))) != 0
 		&& (new_buffer->data = switch_core_alloc(pool, max_len)) != 0) {
 		new_buffer->datalen = max_len;
+		new_buffer->id = buffer_id++;
 		*buffer = new_buffer;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -115,7 +119,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer *buffer, void *da
 	memcpy(data, buffer->data, reading);
 	memmove(buffer->data, buffer->data + reading, buffer->datalen - reading);
 	buffer->used -= reading;
-	//printf("o %d = %d\n", reading, buffer->used);
+	//if (buffer->id == 3) printf("%u o %d = %d\n", buffer->id, (uint32_t)reading, (uint32_t)buffer->used);
 	return reading;
 }
 
@@ -126,16 +130,16 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer *buffer, void *d
 	assert(buffer != NULL);
 	assert(data != NULL);
 	assert(buffer->data != NULL);
-
+	
 	freespace = buffer->datalen - buffer->used;
-
 	if (freespace < datalen) {
 		return 0;
 	} else {
 		memcpy(buffer->data + buffer->used, data, datalen);
 		buffer->used += datalen;
 	}
-	//printf("i %d = %d\n", datalen, buffer->used);
+	//if (buffer->id == 3) printf("%u i %d = %d\n", buffer->id, (uint32_t)datalen, (uint32_t)buffer->used);
+
 	return buffer->used;
 }
 

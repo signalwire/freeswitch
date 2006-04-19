@@ -266,6 +266,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	int stream_id;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	switch_file_handle lfh;
+	switch_codec *read_codec = switch_core_session_get_read_codec(session);
 
 	if (!fh) {
 		fh = &lfh;
@@ -290,10 +291,9 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OPEN FILE %s %uhz %u channels\n", file, fh->samplerate, fh->channels);
 
-	interval = 20;
-	samples = ((fh->samplerate / 50) * fh->channels);
+	interval = read_codec->implementation->microseconds_per_frame / 1000;
+	samples = read_codec->implementation->bytes_per_frame / 2;
 	len = samples * 2;
-
 	codec_name = "L16";
 
 	if (switch_core_codec_init(&codec,

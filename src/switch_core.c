@@ -1265,7 +1265,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 					}
 				}
 				if (!(switch_buffer_write(session->raw_write_buffer, write_frame->data, write_frame->datalen))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Buffer Failed!\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Buffer %u bytes Failed!\n", write_frame->datalen);
 					return SWITCH_STATUS_MEMERR;
 				}
 			}
@@ -1374,9 +1374,12 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 								write_frame->datalen = session->read_resampler->to_len * 2;
 								write_frame->rate = session->read_resampler->to_rate;
 							}
-							return perform_write(session, write_frame, timeout, io_flag, stream_id);
+							if ((status = perform_write(session, write_frame, timeout, io_flag, stream_id)) != SWITCH_STATUS_SUCCESS) {
+								break;
+							}
 						}
 					}
+					return status;
 				}
 			}
 		}

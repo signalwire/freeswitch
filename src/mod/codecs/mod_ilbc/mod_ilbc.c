@@ -32,12 +32,16 @@
 #include "switch.h"
 #include "iLBC_encode.h"
 #include "iLBC_decode.h"
+#include "iLBC_define.h"
 
 static const char modname[] = "mod_ilbc";
 
 struct ilbc_context {
 	iLBC_Enc_Inst_t encoder;
 	iLBC_Dec_Inst_t decoder;
+	uint8_t ms;
+	uint16_t bytes;
+	uint16_t dbytes;
 };
 
 static switch_status switch_ilbc_init(switch_codec *codec, switch_codec_flag flags,
@@ -45,6 +49,13 @@ static switch_status switch_ilbc_init(switch_codec *codec, switch_codec_flag fla
 {
 	struct ilbc_context *context;
 	int encoding, decoding;
+	uint8_t ms = codec->implementation->microseconds_per_frame / 1000;
+
+
+	if (ms != 20 && ms != 30) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid speed! (I should never happen)\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -53,10 +64,21 @@ static switch_status switch_ilbc_init(switch_codec *codec, switch_codec_flag fla
 		return SWITCH_STATUS_FALSE;
 	} else {
 		context = switch_core_alloc(codec->memory_pool, sizeof(*context));
-		if (encoding)
-			initEncode(&context->encoder, 30);
-		if (decoding)
-			initDecode(&context->decoder, 30, 0);
+		context->ms = ms;
+		if (context->ms == 20) {
+			context->bytes = NO_OF_BYTES_20MS;
+			context->dbytes = 320;
+		} else {
+			context->bytes = NO_OF_BYTES_30MS;
+			context->dbytes = 480;
+		}
+
+		if (encoding) {
+			initEncode(&context->encoder, context->ms);
+		}
+		if (decoding) {
+			initDecode(&context->decoder, context->ms, 1);
+		}
 	}
 
 	codec->private_info = context;
@@ -70,35 +92,38 @@ static switch_status switch_ilbc_destroy(switch_codec *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_ilbc_encode(switch_codec *codec, 
-										switch_codec *other_codec, 
-										void *decoded_data,
 
-										size_t decoded_data_len, 
-										int decoded_rate, 
-										void *encoded_data,
-
-										size_t *encoded_data_len, 
-										int *encoded_rate, 
-										unsigned int *flag) 
+static switch_status switch_ilbc_encode(switch_codec *codec,
+										 switch_codec *other_codec,
+										 void *decoded_data,
+										 uint32_t decoded_data_len,
+										 uint32_t decoded_rate,
+										 void *encoded_data,
+										 uint32_t *encoded_data_len, 
+										 uint32_t *encoded_rate,
+										 unsigned int *flag)
 {
 	struct ilbc_context *context = codec->private_info;
-	int cbret = 0;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
-	if (decoded_data_len % 320 == 0) {
+	if (decoded_data_len % context->dbytes == 0) {
 		unsigned int new_len = 0;
-		ilbc_signal * ddp = decoded_data;
-		ilbc_byte * edp = encoded_data;
-		int x;
-		int loops = (int) decoded_data_len / 320;
+		unsigned char *edp = encoded_data;
+		short *ddp = decoded_data;
+		int x, y;
+		int loops = (int) decoded_data_len / context->dbytes;
+		float buf[240];
+
 		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
-			iLBC_encode(context->encoder, ddp, edp);
-			edp += 33;
-			ddp += 160;
-			new_len += 33;
+			for(y = 0; y < context->dbytes / sizeof(short) ; y++) {
+				buf[y] = ddp[y];
+			}
+			iLBC_encode(edp, buf, &context->encoder);
+			edp += context->bytes;
+			ddp += context->dbytes;
+			new_len += context->bytes;
 		}
 		if (new_len <= *encoded_data_len) {
 			*encoded_data_len = new_len;
@@ -110,17 +135,15 @@ static switch_status switch_ilbc_encode(switch_codec *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_ilbc_decode(switch_codec *codec, 
-										switch_codec *other_codec, 
+static switch_status switch_ilbc_decode(switch_codec *codec,
+										switch_codec *other_codec,
 										void *encoded_data,
-
-										size_t encoded_data_len, 
-										int encoded_rate, 
+										uint32_t encoded_data_len,
+										uint32_t encoded_rate,
 										void *decoded_data,
-
-										size_t *decoded_data_len, 
-										int *decoded_rate, 
-										unsigned int *flag) 
+										uint32_t *decoded_data_len, 
+										uint32_t *decoded_rate, 
+										unsigned int *flag)
 {
 	struct ilbc_context *context = codec->private_info;
 
@@ -128,18 +151,23 @@ static switch_status switch_ilbc_decode(switch_codec *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (encoded_data_len % 33 == 0) {
-		int loops = (int) encoded_data_len / 33;
-		ilbc_byte * edp = encoded_data;
-		ilbc_signal * ddp = decoded_data;
-		int x;
+	if (encoded_data_len % context->bytes == 0) {
+		int loops = (int) encoded_data_len / context->bytes;
+		unsigned char *edp = encoded_data;
+		short *ddp = decoded_data;
+		int x,y;
 		unsigned int new_len = 0;
+		float buf[240];
+
 
 		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
-			iLBC_decode(context->decoder, edp, ddp);
-			ddp += 160;
-			edp += 33;
-			new_len += 320;
+			iLBC_decode(buf, edp, &context->decoder, 1);
+			for(y = 0; y < context->dbytes / sizeof(short) ; y++) {
+				ddp[y] = buf[y];
+			}
+			ddp += context->dbytes / sizeof(short);
+			edp += context->bytes;
+			new_len += context->dbytes;
 		}
 		if (new_len <= *decoded_data_len) {
 			*decoded_data_len = new_len;
@@ -156,29 +184,46 @@ static switch_status switch_ilbc_decode(switch_codec *codec,
 
 /* Registration */ 
 
-static const switch_codec_implementation ilbc_8k_implementation = { 
+static const switch_codec_implementation ilbc_8k_30ms_implementation = { 
 		/*.samples_per_second */ 8000, 
-		/*.bits_per_second */ 13200, 
-		/*.microseconds_per_frame */ 20000, 
-		/*.samples_per_frame */ 160, 
-		/*.bytes_per_frame */ 320, 
-		/*.encoded_bytes_per_frame */ 33, 
-		/*.number_of_channels */ 1, 
-		/*.pref_frames_per_packet */ 1, 
-		/*.max_frames_per_packet */ 1, 
-		/*.init */ switch_ilbc_init, 
-		/*.encode */ switch_ilbc_encode, 
-		/*.decode */ switch_ilbc_decode, 
-		/*.destroy */ switch_ilbc_destroy, 
+		/*.bits_per_second */ NO_OF_BYTES_30MS*8*8000/BLOCKL_30MS,
+		/*.microseconds_per_frame */ 30000,
+		/*.samples_per_frame */ 240,
+		/*.bytes_per_frame */ 480,
+		/*.encoded_bytes_per_frame */ NO_OF_BYTES_30MS,
+		/*.number_of_channels */ 1,
+		/*.pref_frames_per_packet */ 1,
+		/*.max_frames_per_packet */ 1,
+		/*.init */ switch_ilbc_init,
+		/*.encode */ switch_ilbc_encode,
+		/*.decode */ switch_ilbc_decode,
+		/*.destroy */ switch_ilbc_destroy
+};
+
+static const switch_codec_implementation ilbc_8k_20ms_implementation = { 
+		/*.samples_per_second */ 8000, 
+		/*.bits_per_second */ NO_OF_BYTES_20MS*8*8000/BLOCKL_20MS, 
+		/*.microseconds_per_frame */ 20000,
+		/*.samples_per_frame */ 160,
+		/*.bytes_per_frame */ 320,
+		/*.encoded_bytes_per_frame */ NO_OF_BYTES_20MS, 
+		/*.number_of_channels */ 1,
+		/*.pref_frames_per_packet */ 1,
+		/*.max_frames_per_packet */ 1,
+		/*.init */ switch_ilbc_init,
+		/*.encode */ switch_ilbc_encode,
+		/*.decode */ switch_ilbc_decode,
+		/*.destroy */ switch_ilbc_destroy,
+		/*.next */ &ilbc_8k_30ms_implementation
 };
 
 
 static const switch_codec_interface ilbc_codec_interface = { 
 		/*.interface_name */ "ilbc", 
 		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-		/*.ianacode */ 3, 
-		/*.iananame */ "ilbc", 
-		/*.implementations */ &ilbc_8k_implementation, 
+		/*.ianacode */ 97, 
+		/*.iananame */ "iLBC", 
+		/*.implementations */ &ilbc_8k_20ms_implementation, 
 };
 
 
