@@ -218,12 +218,47 @@ static const switch_codec_implementation ilbc_8k_20ms_implementation = {
 };
 
 
+static const switch_codec_implementation ilbc_8k_20ms_nonext_implementation = { 
+		/*.samples_per_second */ 8000, 
+		/*.bits_per_second */ NO_OF_BYTES_20MS*8*8000/BLOCKL_20MS, 
+		/*.microseconds_per_frame */ 20000,
+		/*.samples_per_frame */ 160,
+		/*.bytes_per_frame */ 320,
+		/*.encoded_bytes_per_frame */ NO_OF_BYTES_20MS, 
+		/*.number_of_channels */ 1,
+		/*.pref_frames_per_packet */ 1,
+		/*.max_frames_per_packet */ 1,
+		/*.init */ switch_ilbc_init,
+		/*.encode */ switch_ilbc_encode,
+		/*.decode */ switch_ilbc_decode,
+		/*.destroy */ switch_ilbc_destroy
+};
+
+
+static const switch_codec_interface ilbc_20ms_codec_interface = { 
+		/*.interface_name */ "ilbc", 
+		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
+		/*.ianacode */ 97, 
+		/*.iananame */ "iLBC20ms",
+		/*.implementations */ &ilbc_8k_20ms_nonext_implementation
+};
+
+static const switch_codec_interface ilbc_102_codec_interface = { 
+		/*.interface_name */ "ilbc", 
+		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
+		/*.ianacode */ 102, 
+		/*.iananame */ "iLBC102", 
+		/*.implementations */ &ilbc_8k_20ms_implementation, 
+		/*.next*/ &ilbc_20ms_codec_interface
+};
+
 static const switch_codec_interface ilbc_codec_interface = { 
 		/*.interface_name */ "ilbc", 
 		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 97, 
 		/*.iananame */ "iLBC", 
 		/*.implementations */ &ilbc_8k_20ms_implementation, 
+		/*.next*/ &ilbc_102_codec_interface
 };
 
 

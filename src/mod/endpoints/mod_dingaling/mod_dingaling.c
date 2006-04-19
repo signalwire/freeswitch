@@ -224,15 +224,20 @@ static int activate_rtp(struct private_object *tech_pvt)
 {
 	switch_channel *channel = switch_core_session_get_channel(tech_pvt->session);
 	const char *err;
+	int ms = 20;
 
 	if (tech_pvt->rtp_session) {
 		return 0;
 	}
 
+	if (!strcasecmp(tech_pvt->codec_name, "ilbc")) {
+		ms = 30;
+	}
+
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   tech_pvt->codec_name,
 							   8000,
-							   20,
+							   ms,
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
@@ -248,7 +253,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	if (switch_core_codec_init(&tech_pvt->write_codec,
 							   tech_pvt->codec_name,
 							   8000,
-							   20,
+							   ms,
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
@@ -388,8 +393,6 @@ static int do_describe(struct private_object *tech_pvt, int force)
 		}
 
 				
-		payloads[0].name = tech_pvt->codecs[0]->iananame;
-		payloads[0].id = tech_pvt->codecs[0]->ianacode;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send Describe [%s]\n", payloads[0].name);
 		tech_pvt->desc_id = ldl_session_describe(tech_pvt->dlsession, payloads, 1,
 												 switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? LDL_DESCRIPTION_INITIATE : LDL_DESCRIPTION_ACCEPT);
