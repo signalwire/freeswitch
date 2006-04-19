@@ -21,6 +21,7 @@ BuildModPortAudio=False
 BuildModSpeexCodec=False
 BuildModCodecG729=False
 BuildModCodecGSM=False
+BuildModilbc=False
 BuildModXMPPEvent=False
 BuildModsndfile=False
 BuildModpcre=False
@@ -82,6 +83,8 @@ If objArgs.Count >=1 Then
 			BuildModCodecG729=True
 		Case "Mod_CodecGSM"
 			BuildModCodecGSM=True
+		Case "Mod_ilbc"
+			BuildModilbc=True
 		Case "Mod_XMPPEvent"
 			BuildModXMPPEvent=True
 		Case "Mod_sndfile"
@@ -111,6 +114,7 @@ If objArgs.Count >=1 Then
 			BuildModzeroconf=True
 			BuildModSpiderMonkey=True
 			BuildModDingaling=True
+			BuildModilbc=True
 	End Select
 Else
 	BuildCore=True
@@ -127,6 +131,7 @@ Else
 	BuildModzeroconf=True
 	BuildModSpiderMonkey=True
 	BuildModDingaling=True
+	BuildModilbc=True
 End If
 
 ' ******************
@@ -199,6 +204,10 @@ End If
 
 If BuildModCodecGSM Then
 	BuildLibs_libgsm BuildDebug, BuildRelease
+End If
+
+If BuildModilbc Then
+	BuildLibs_libilbc BuildDebug, BuildRelease
 End If
 
 If BuildModXMPPEvent Then
@@ -564,6 +573,24 @@ Sub BuildLibs_libgsm(BuildDebug, BuildRelease)
 		End If
 	Else
 		Wscript.echo "Unable to download libgsm"
+	End If 
+End Sub
+
+
+Sub BuildLibs_libilbc(BuildDebug, BuildRelease)
+	If FSO.FolderExists(LibDestDir & "codec\ilbc") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "codec\ilbc\Debug\libilbc.lib") Then 
+				BuildViaVCBuild LibDestDir & "codec\ilbc\libilbc.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "codec\ilbc\Release\libilbc.lib") Then 
+				BuildViaVCBuild LibDestDir & "codec\ilbc\libilbc.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download libilbc"
 	End If 
 End Sub
 

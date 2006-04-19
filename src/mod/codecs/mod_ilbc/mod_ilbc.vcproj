@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_Codecilbc Debug"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_ilbc Debug"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -108,7 +108,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_Codecilbc Release"
+				CommandLine="cscript /nologo $(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs Mod_ilbc Release"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
