@@ -1194,8 +1194,6 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 	if (need_codec) {
 		if (frame->codec) {
 			session->raw_write_frame.datalen = session->raw_write_frame.buflen;
-			printf("ASS %u\n", frame->datalen);
-
 			status = switch_core_codec_decode(frame->codec,
 											  session->write_codec,
 											  frame->data,
