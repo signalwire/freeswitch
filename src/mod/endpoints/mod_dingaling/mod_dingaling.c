@@ -1346,9 +1346,13 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Available Payload %s %u\n", payloads[x].name, payloads[x].id);
 					for(y = 0; y < tech_pvt->num_codecs; y++) {
 						int match = 0;
-						
+						char *name = tech_pvt->codecs[y]->iananame;
+
+						if (!strncasecmp(name, "ilbc", 4)) {
+							name = "ilbc";
+						}
 						if (tech_pvt->codecs[y]->ianacode > 96) {
-							match = strcasecmp(tech_pvt->codecs[y]->iananame, payloads[x].name) ? 0 : 1;
+							match = strcasecmp(name, payloads[x].name) ? 0 : 1;
 						} else {
 							match = (payloads[x].id == tech_pvt->codecs[y]->ianacode) ? 1 : 0;
 						}
