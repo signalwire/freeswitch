@@ -440,14 +440,14 @@ static switch_status wanpipe_read_frame(switch_core_session *session, switch_fra
 	*frame = NULL;
 	memset(tech_pvt->databuf, 0, sizeof(tech_pvt->databuf));
 	while (bytes < globals.mtu) {
+
 		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
 			return SWITCH_STATUS_GENERR;
 		}
-		if ((res = sangoma_socket_waitfor(tech_pvt->socket, timeout, POLLIN | POLLERR)) < 0) {
+
+
+		if (sangoma_socket_waitfor(tech_pvt->socket, 1000, POLLIN | POLLERR | POLLHUP) <= 0) {
 			return SWITCH_STATUS_GENERR;
-		} else if (res == 0) {
-			tech_pvt->read_frame.datalen = 0;
-			return SWITCH_STATUS_SUCCESS;
 		}
 
 		if ((res = sangoma_readmsg_socket(tech_pvt->socket,
@@ -464,7 +464,7 @@ static switch_status wanpipe_read_frame(switch_core_session *session, switch_fra
 		bp += bytes;
 	}
 
-	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+	if (!bytes || switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -527,9 +527,9 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 			}
 		}
 
-
-		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
-
+		if (sangoma_socket_waitfor(tech_pvt->socket, 1000, POLLOUT | POLLERR | POLLHUP) <= 0) {
+			return SWITCH_STATUS_GENERR;
+		}
 
 #ifdef DOTRACE	
 		write(tech_pvt->fd, dtmf, (int) bread);
@@ -565,12 +565,13 @@ static switch_status wanpipe_write_frame(switch_core_session *session, switch_fr
 
 	while (bytes > 0) {
 		unsigned int towrite;
-		
-		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+
+#if 0
+		if (sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP) <= 0) {
 			return SWITCH_STATUS_GENERR;
 		}
+#endif
 
-		sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP);
 #ifdef DOTRACE	
 		write(tech_pvt->fd, bp, (int) globals.mtu);
 #endif
@@ -649,8 +650,10 @@ static switch_status wanpipe_kill_channel(switch_core_session *session, int sig)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+
 	switch_set_flag(tech_pvt, TFLAG_BYE);
 	switch_clear_flag(tech_pvt, TFLAG_MEDIA);
+	sangoma_socket_close(&tech_pvt->socket);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -793,7 +796,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 				
 				if (sangoma_span_chan_fromif(bchan, &span, &chan)) {
 					if ((tech_pvt->socket = sangoma_open_tdmapi_span_chan(span, chan)) < 0) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", span, chan, strerror(errno));
 						switch_core_session_destroy(new_session);
 						return SWITCH_STATUS_GENERR;
 					}
