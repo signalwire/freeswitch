@@ -79,8 +79,9 @@ static struct {
 	int debug;
 	int bytes_per_frame;
 	char *dialplan;
-	char *extip;
-	char *ip;
+	char *extrtpip;
+	char *rtpip;
+	char *sipip;
 	int port;
 	char *codec_string;
 	char *codec_order[SWITCH_MAX_CODECS];
@@ -137,9 +138,10 @@ struct rfc2833_digit {
 };
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_extip, globals.extip)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_ip, globals.ip)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_extrtpip, globals.extrtpip)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_rtpip, globals.rtpip)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_sipip, globals.sipip)
 
 static switch_status exosip_on_init(switch_core_session *session);
 static switch_status exosip_on_hangup(switch_core_session *session);
@@ -250,17 +252,17 @@ static switch_status exosip_on_init(switch_core_session *session)
 		/* Generate callerid URI */
 
 
-		if (!strcasecmp(globals.ip, "guess")) {
+		if (!strcasecmp(globals.rtpip, "guess")) {
 			eXosip_guess_localip(AF_INET, tech_pvt->local_sdp_audio_ip, sizeof(tech_pvt->local_sdp_audio_ip));
 		} else {
-			switch_copy_string(tech_pvt->local_sdp_audio_ip, globals.ip, sizeof(tech_pvt->local_sdp_audio_ip));
+			switch_copy_string(tech_pvt->local_sdp_audio_ip, globals.rtpip, sizeof(tech_pvt->local_sdp_audio_ip));
 		}
 
 		ip = tech_pvt->local_sdp_audio_ip;
 
-		if (globals.extip) {
-			if (!strncasecmp(globals.extip, "stun:", 5)) {
-				char *stun_ip = globals.extip + 5;
+		if (globals.extrtpip) {
+			if (!strncasecmp(globals.extrtpip, "stun:", 5)) {
+				char *stun_ip = globals.extrtpip + 5;
 
 				if (!stun_ip) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
@@ -279,7 +281,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success [%s]:[%d]\n", ip, sdp_port);
 			} else {
-				ip = globals.extip;
+				ip = globals.extrtpip;
 			}
 		}
 		snprintf(from_uri, sizeof(from_uri), "%s <sip:%s@%s>", 
@@ -1164,10 +1166,10 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 			return SWITCH_STATUS_GENERR;
 		}
 
-		if (!strcasecmp(globals.ip, "guess")) {
+		if (!strcasecmp(globals.rtpip, "guess")) {
 			eXosip_guess_localip(AF_INET, tech_pvt->local_sdp_audio_ip, sizeof(tech_pvt->local_sdp_audio_ip));
 		} else {
-			switch_copy_string(tech_pvt->local_sdp_audio_ip, globals.ip, sizeof(tech_pvt->local_sdp_audio_ip));
+			switch_copy_string(tech_pvt->local_sdp_audio_ip, globals.rtpip, sizeof(tech_pvt->local_sdp_audio_ip));
 		}
 		ip = tech_pvt->local_sdp_audio_ip;
 
@@ -1175,9 +1177,9 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		sdp_port = tech_pvt->local_sdp_audio_port;
 
 
-		if (globals.extip) {
-			if (!strncasecmp(globals.extip, "stun:", 5)) {
-				char *stun_ip = globals.extip + 5;
+		if (globals.extrtpip) {
+			if (!strncasecmp(globals.extrtpip, "stun:", 5)) {
+				char *stun_ip = globals.extrtpip + 5;
 				if (!stun_ip) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
 					switch_channel_hangup(channel);
@@ -1195,7 +1197,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success [%s]:[%d]\n", ip, sdp_port);
 			} else {
-				ip = globals.extip;
+				ip = globals.extrtpip;
 			}
 		}
 		osip_rfc3264_init(&tech_pvt->sdp_config);
@@ -1664,10 +1666,12 @@ static int config_exosip(int reload)
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "port")) {
 				globals.port = atoi(val);
-			} else if (!strcmp(var, "extip")) {
-				set_global_extip(val);
-			} else if (!strcmp(var, "ip")) {
-				set_global_ip(val);
+			} else if (!strcmp(var, "ext-rtp-ip")) {
+				set_global_extrtpip(val);
+			} else if (!strcmp(var, "rtp-ip")) {
+				set_global_rtpip(val);
+			} else if (!strcmp(var, "sip-ip")) {
+				set_global_sipip(val);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
 			} else if (!strncasecmp(var, "srtp:", 5)) {
@@ -1692,9 +1696,9 @@ static int config_exosip(int reload)
 		}
 	}
 
-	if (!globals.ip) {
+	if (!globals.rtpip) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting ip to 'guess'\n");
-		set_global_ip("guess");
+		set_global_rtpip("guess");
 	}
 
 	if (!globals.codec_ms) {
@@ -1739,7 +1743,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 		return SWITCH_STATUS_TERM;
 	}
 
-	if (eXosip_listen_addr(IPPROTO_UDP, NULL, globals.port, AF_INET, 0)) {
+	if (eXosip_listen_addr(IPPROTO_UDP, globals.sipip, globals.port, AF_INET, 0)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "eXosip_listen_addr failed!\n");
 		return SWITCH_STATUS_TERM;
 	}
