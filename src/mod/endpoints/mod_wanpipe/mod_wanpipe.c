@@ -790,7 +790,7 @@ static switch_status wanpipe_outgoing_channel(switch_core_session *session, swit
 
 			if (bchan) {
 				int chan, span;
-				sangoma_span_chan_fromif(bchan, &span, &chan);
+				
 				if (sangoma_span_chan_fromif(bchan, &span, &chan)) {
 					if ((tech_pvt->socket = sangoma_open_tdmapi_span_chan(span, chan)) < 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
