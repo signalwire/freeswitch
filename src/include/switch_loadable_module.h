@@ -187,6 +187,15 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_codec_interf
 */
 SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *retbuf, switch_size_t len);
 
+
+/*!
+  \brief Load a module
+  \param dir the directory where the module resides
+  \param fname the file name of the module
+  \return the status
+*/
+SWITCH_DECLARE(switch_status) switch_loadable_module_load_module(char *dir, char *fname);
+
 /* Prototypes of module interface functions */
 
 /*!
@@ -201,6 +210,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_pause(void);
 SWITCH_MOD_DECLARE(switch_status) switch_module_resume(void);
 SWITCH_MOD_DECLARE(switch_status) switch_module_status(void);
 SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void);
+
 
 /*!
   \brief Shutdown a module

@@ -34,6 +34,13 @@
 static const char modname[] = "mod_commands";
 
 
+static switch_status load_function(char *mod, char *out, size_t outlen)
+{
+	switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod);
+	snprintf(out, outlen, "OK\n");
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status kill_function(char *dest, char *out, size_t outlen)
 {
 	switch_core_session *session = NULL;
@@ -51,11 +58,19 @@ static switch_status kill_function(char *dest, char *out, size_t outlen)
 }
 
 
+static struct switch_api_interface load_api_interface = {
+	/*.interface_name */ "load",
+	/*.desc */ "Load Modile",
+	/*.function */ load_function,
+	/*.next */ NULL
+};
+
+
 static struct switch_api_interface commands_api_interface = {
 	/*.interface_name */ "killchan",
 	/*.desc */ "Kill Channel",
 	/*.function */ kill_function,
-	/*.next */ NULL
+	/*.next */ &load_api_interface
 };
 
 

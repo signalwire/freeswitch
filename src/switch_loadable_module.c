@@ -99,8 +99,7 @@ static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 
 typedef switch_status (*switch_load_fp_t)(switch_loadable_module_interface **, char *);
 
-static switch_status switch_loadable_module_load_file(char *filename, switch_memory_pool *pool,
-													  switch_loadable_module **new_module)
+static switch_status switch_loadable_module_load_file(char *filename, switch_loadable_module **new_module)
 {
 	switch_loadable_module *module = NULL;
 	apr_dso_handle_t *dso = NULL;
@@ -116,7 +115,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 	assert(filename != NULL);
 
 	*new_module = NULL;
-	status = apr_dso_load(&dso, filename, pool);
+	status = apr_dso_load(&dso, filename, loadable_modules.pool);
 
 	while (loading) {
 		if (status != APR_SUCCESS) {
@@ -193,7 +192,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_mem
 
 }
 
-static void process_module_file(char *dir, char *fname)
+SWITCH_DECLARE(switch_status) switch_loadable_module_load_module(char *dir, char *fname)
 {
 	switch_size_t len = 0;
 	char *path;
@@ -210,7 +209,7 @@ static void process_module_file(char *dir, char *fname)
 
 
 	if ((file = switch_core_strdup(loadable_modules.pool, fname)) == 0) {
-		return;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (*file == '/') {
@@ -231,7 +230,7 @@ static void process_module_file(char *dir, char *fname)
 		}
 	}
 
-	if (switch_loadable_module_load_file(path, loadable_modules.pool, &new_module) == SWITCH_STATUS_SUCCESS) {
+	if (switch_loadable_module_load_file(path, &new_module) == SWITCH_STATUS_SUCCESS) {
 		switch_core_hash_insert(loadable_modules.module_hash, (char *) file, new_module);
 
 		if (new_module->interface->endpoint_interface) {
@@ -326,6 +325,8 @@ static void process_module_file(char *dir, char *fname)
 			}
 		}
 	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 #ifdef WIN32
@@ -408,7 +409,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 							continue;
 						}
-						process_module_file((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val);
+						switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val);
 					}
 				}
 			}
@@ -450,7 +451,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 				continue;
 			}
 
-			process_module_file((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) fname);
+			switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) fname);
 		}
 		apr_dir_close(module_dir_handle);
 	}
