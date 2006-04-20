@@ -1196,9 +1196,9 @@ static switch_status load_config(void)
 				profile->name = switch_core_strdup(module_pool, val);
 			} else if (!strcmp(var, "message")) {
 				profile->message = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "ip")) {
+			} else if (!strcmp(var, "rtp-ip")) {
 				profile->ip = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "extip")) {
+			} else if (!strcmp(var, "ext-rtp-ip")) {
 				profile->extip = switch_core_strdup(module_pool, val);
 			} else if (!strcmp(var, "lanaddr")) {
 				profile->lanaddr = switch_core_strdup(module_pool, val);
