@@ -1,4 +1,4 @@
-'On Error Resume Next
+On Error Resume Next
 ' **************
 ' Initialization
 ' **************
