@@ -36,7 +36,11 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_
 																  char *caller_id_name,
 																  char *caller_id_number,
 																  char *network_addr,
-																  char *ani, char *ani2, char *destination_number)
+																  char *ani,
+																  char *ani2, 
+																  char *rdnis,
+																  char *source,
+																  char *destination_number)
 {
 
 
@@ -49,6 +53,8 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_
 		profile->network_addr = switch_core_strdup(pool, network_addr);
 		profile->ani = switch_core_strdup(pool, ani);
 		profile->ani2 = switch_core_strdup(pool, ani2);
+		profile->rdnis = switch_core_strdup(pool, rdnis);
+		profile->source = switch_core_strdup(pool, source);
 		profile->destination_number = switch_core_strdup(pool, destination_number);
 	}
 
@@ -56,8 +62,8 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_
 }
 
 
-SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_session *session,
-																	switch_caller_profile *tocopy)
+SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_session *session, switch_caller_profile *tocopy)
+																	
 {
 	switch_caller_profile *profile = NULL;
 	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile))) != 0) {
@@ -67,8 +73,10 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
 		profile->ani2 = switch_core_session_strdup(session, tocopy->ani2);
 		profile->caller_id_number = switch_core_session_strdup(session, tocopy->caller_id_number);
 		profile->network_addr = switch_core_session_strdup(session, tocopy->network_addr);
+		profile->rdnis = switch_core_session_strdup(session, tocopy->rdnis);
 		profile->destination_number = switch_core_session_strdup(session, tocopy->destination_number);
 		profile->uuid = switch_core_session_strdup(session, tocopy->uuid);
+		profile->source = switch_core_session_strdup(session, tocopy->source);
 		profile->chan_name = switch_core_session_strdup(session, tocopy->chan_name);
 	}
 
@@ -111,6 +119,14 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile 
 	if (caller_profile->uuid) {
 		snprintf(header_name, sizeof(header_name), "%s-Unique-ID", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->uuid);
+	}
+	if (caller_profile->source) {
+		snprintf(header_name, sizeof(header_name), "%s-RDNIS", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->source);
+	}
+	if (caller_profile->rdnis) {
+		snprintf(header_name, sizeof(header_name), "%s-RDNIS", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->rdnis);
 	}
 	if (caller_profile->chan_name) {
 		snprintf(header_name, sizeof(header_name), "%s-Channel-Name", prefix);

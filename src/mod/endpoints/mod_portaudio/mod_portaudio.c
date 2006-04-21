@@ -811,7 +811,7 @@ static switch_status place_call(char *dest, char *out, size_t outlen)
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																  globals.dialplan,
 																  globals.cid_name,
-																  globals.cid_num, NULL, NULL, NULL, dest)) != 0) {
+																  globals.cid_num, NULL, NULL, NULL, NULL, (char *)modname, dest)) != 0) {
 			char name[128];
 			snprintf(name, sizeof(name), "PortAudio/%s-%04x",
 					 tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->

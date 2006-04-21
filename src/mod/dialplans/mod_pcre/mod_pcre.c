@@ -82,6 +82,11 @@ static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 				skip = 1;
 			} else if (!strcasecmp(exten_name, "inbound") && switch_channel_test_flag(channel, CF_OUTBOUND)) {
 				skip = 1;
+			} else if (*exten_name == 's' && *(exten_name+1) == ':') {
+				exten_name += 2;
+				if (strcasecmp(exten_name, caller_profile->source)) {
+					skip = 1;
+				}
 			}
 		}
 

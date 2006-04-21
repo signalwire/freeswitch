@@ -95,26 +95,46 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 #define SWITCH_FALSE 0
 
 /*!
+  \enum switch_vad_flags
+  \brief RTP Related Flags
+<pre>
+    SWITCH_VAD_FLAG_TALKING         - Currently Talking
+    SWITCH_VAD_FLAG_EVENTS_TALK     - Fire events when talking is detected
+	SWITCH_VAD_FLAG_EVENTS_NOTALK   - Fire events when not talking is detected
+</pre>
+ */
+typedef enum {
+	SWITCH_VAD_FLAG_TALKING = ( 1 << 0 ),
+	SWITCH_VAD_FLAG_EVENTS_TALK = ( 1 << 1 ),
+	SWITCH_VAD_FLAG_EVENTS_NOTALK = ( 1 << 2 ),
+} switch_vad_flag_t;
+
+
+/*!
   \enum switch_rtp_flag_t
   \brief RTP Related Flags
 <pre>
-    SWITCH_RTP_FLAG_NOBLOCK      - Do not block
-    SWITCH_RTP_FLAG_IO           - IO is ready
-	SWITCH_RTP_FLAG_USE_TIMER    - Timeout Reads and replace with a CNG Frame
-	SWITCH_RTP_FLAG_SECURE       - Secure RTP
-	SWITCH_RTP_FLAG_AUTOADJ      - Auto-Adjust the dest based on the source
-	SWITCH_RTP_FLAG_RAW_WRITE    - Try to forward packets unscathed
-	SWITCH_RTP_FLAG_GOOGLEHACK   - Convert payload from 102 to 97
+    SWITCH_RTP_FLAG_NOBLOCK       - Do not block
+    SWITCH_RTP_FLAG_IO            - IO is ready
+	SWITCH_RTP_FLAG_USE_TIMER     - Timeout Reads and replace with a CNG Frame
+	SWITCH_RTP_FLAG_TIMER_RECLOCK - Resync the timer to the current clock on slips
+	SWITCH_RTP_FLAG_SECURE        - Secure RTP
+	SWITCH_RTP_FLAG_AUTOADJ       - Auto-Adjust the dest based on the source
+	SWITCH_RTP_FLAG_RAW_WRITE     - Try to forward packets unscathed
+	SWITCH_RTP_FLAG_GOOGLEHACK    - Convert payload from 102 to 97
+	SWITCH_RTP_FLAG_VAD           - Enable VAD
 </pre>
  */
 typedef enum {
 	SWITCH_RTP_FLAG_NOBLOCK = ( 1 << 0),
 	SWITCH_RTP_FLAG_IO = (1 << 1),
 	SWITCH_RTP_FLAG_USE_TIMER = (1 << 2),
-	SWITCH_RTP_FLAG_SECURE = (1 << 3),
-	SWITCH_RTP_FLAG_AUTOADJ = (1 << 4),
-	SWITCH_RTP_FLAG_RAW_WRITE = (1 << 5),
-	SWITCH_RTP_FLAG_GOOGLEHACK = (1 << 6)
+	SWITCH_RTP_FLAG_TIMER_RECLOCK = (1 << 3),
+	SWITCH_RTP_FLAG_SECURE = (1 << 4),
+	SWITCH_RTP_FLAG_AUTOADJ = (1 << 5),
+	SWITCH_RTP_FLAG_RAW_WRITE = (1 << 6),
+	SWITCH_RTP_FLAG_GOOGLEHACK = (1 << 7),
+	SWITCH_RTP_FLAG_VAD = (1 << 8)
 } switch_rtp_flag_t;
 
 /*!
@@ -484,6 +504,8 @@ typedef enum {
     SWITCH_EVENT_SHUTDOWN			- The system has been shutdown
 	SWITCH_EVENT_PUBLISH			- Publish
 	SWITCH_EVENT_UNPUBLISH			- UnPublish
+	SWITCH_EVENT_TALK				- Talking Detected
+	SWITCH_EVENT_NOTALK				- Not Talking Detected
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -505,6 +527,8 @@ typedef enum {
 	SWITCH_EVENT_SHUTDOWN,
 	SWITCH_EVENT_PUBLISH,
 	SWITCH_EVENT_UNPUBLISH,
+	SWITCH_EVENT_TALK,
+	SWITCH_EVENT_NOTALK,
 	SWITCH_EVENT_ALL
 } switch_event_t;
 

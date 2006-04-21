@@ -1133,6 +1133,8 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 																  event->ring.callingani,
 																  switch_strlen_zero(ani2str) ? NULL : ani2str,
 																  NULL,
+																  NULL,
+																  (char *)modname,
 																  event->ring.callednum))) {
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}

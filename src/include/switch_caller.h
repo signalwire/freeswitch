@@ -77,8 +77,12 @@ struct switch_caller_profile {
 	char *ani;
 	/*! ANI II (when applicable) */
 	char *ani2;
+	/*! RDNIS */
+	char *rdnis;
 	/*! Destination Number */
 	char *destination_number;
+	/*! channel type */
+	char *source;
 	/*! channel name */
 	char *chan_name;
 	/*! unique id */
@@ -154,6 +158,8 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_
 																  char *network_addr,
 																  char *ani,
 																  char *ani2,
+																  char *rdnis,
+																  char *source,
 																  char *destination_number);
 
 /*!

@@ -57,6 +57,29 @@ typedef struct {
 	char body[SWITCH_RTP_MAX_BUF_LEN];  
 } rtp_msg_t;
 
+
+struct switch_rtp_vad_data {
+	switch_core_session *session;
+	switch_codec vad_codec;
+	switch_codec *read_codec;
+	uint32_t bg_level;
+	uint32_t bg_count;
+	uint32_t bg_len;
+	uint32_t diff_level;
+	uint8_t hangunder;
+	uint8_t hangunder_hits;
+	uint8_t hangover;
+	uint8_t hangover_hits;
+	uint8_t cng_freq;
+	uint8_t cng_count;
+	switch_vad_flag_t flags;
+	uint32_t ts;
+	uint8_t start;
+	uint8_t start_count;
+	uint8_t scan_freq;
+	time_t next_scan;
+};
+
 struct switch_rtp {
 	switch_socket_t *sock;
 
@@ -89,6 +112,7 @@ struct switch_rtp {
 	uint32_t remote_port;
 	uint8_t stuncount;
 	switch_buffer *packet_buffer;
+	struct switch_rtp_vad_data vad_data;
 };
 
 static int global_init = 0;
@@ -427,6 +451,9 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp **rtp_session)
 	switch_rtp_kill_socket(*rtp_session);
 	switch_socket_close((*rtp_session)->sock);
 
+	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_VAD)) {
+		switch_rtp_disable_vad(*rtp_session);
+	}
 	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE)) {
 		srtp_dealloc((*rtp_session)->recv_ctx);
 		srtp_dealloc((*rtp_session)->send_ctx);
@@ -525,7 +552,11 @@ static int rtp_common_read(switch_rtp *rtp_session, switch_payload_t *payload_ty
 				rtp_session->recv_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
 				*flags |= SFF_CNG;
 				/* Set the next waypoint and return a CNG frame */
-				rtp_session->next_read += rtp_session->ms_per_packet;
+				if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK)) {
+					rtp_session->next_read = switch_time_now() + rtp_session->ms_per_packet;
+				} else {
+					rtp_session->next_read += rtp_session->ms_per_packet;
+				}
 				*payload_type = SWITCH_RTP_CNG_PAYLOAD;
 				return SWITCH_RTP_CNG_PAYLOAD;
 			}
@@ -642,6 +673,7 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 	uint8_t packetize = (rtp_session->packet_size > datalen && (payload == rtp_session->payload)) ? 1 : 0;
 	uint8_t fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && (*flags & SFF_RAW_RTP)) ? 1 : 0;
 	rtp_msg_t *send_msg;
+	uint8_t send = 1;
 
 	if (fwd) {
 		bytes = datalen;
@@ -649,7 +681,7 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 	} else {
 		send_msg = &rtp_session->send_msg;
 		send_msg->header.pt = payload;
-		send_msg->header.m = m;
+		send_msg->header.m = m ? 1 : 0;
 		if (packetize) {
 			if (!rtp_session->packet_buffer) {
 				if (switch_buffer_create(rtp_session->pool, &rtp_session->packet_buffer, rtp_session->packet_size * 2) != SWITCH_STATUS_SUCCESS) {
@@ -685,8 +717,120 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->send_msg.header.pt == 97) {
 		rtp_session->recv_msg.header.pt = 102;
 	}
-	switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)send_msg, &bytes);
 	
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD)) {
+		int16_t decoded[SWITCH_RECCOMMENDED_BUFFER_SIZE/sizeof(int16_t)];
+		uint32_t rate;
+		uint32_t flags;
+		uint32_t len = sizeof(decoded);
+		send = 0;
+		time_t now = time(NULL);
+
+		if (rtp_session->vad_data.scan_freq && rtp_session->vad_data.next_scan <= now) {
+			rtp_session->vad_data.bg_count = rtp_session->vad_data.bg_level = 0;
+			rtp_session->vad_data.next_scan = now + rtp_session->vad_data.scan_freq;
+			//printf("RESCAN\n");
+		}
+
+		if (switch_core_codec_decode(&rtp_session->vad_data.vad_codec,
+									 rtp_session->vad_data.read_codec,
+									 data,
+									 datalen,
+									 rtp_session->vad_data.read_codec->implementation->samples_per_second,
+									 decoded,
+									 &len,
+									 &rate,
+									 &flags) == SWITCH_STATUS_SUCCESS) {
+
+			double energy = 0;
+			uint32_t x, y = 0, z = len / sizeof(int16_t);
+			uint32_t score = 0;
+			
+			if (z) {
+				for (x = 0; x < z; x++) {
+					energy += abs(decoded[y] * 1.0);
+					y += rtp_session->vad_data.read_codec->implementation->number_of_channels;
+				}
+				
+				if (++rtp_session->vad_data.start_count < rtp_session->vad_data.start) {
+					send = 1;
+				} else {
+					score = energy / z;
+					if (score && (rtp_session->vad_data.bg_count < rtp_session->vad_data.bg_len)) {
+						rtp_session->vad_data.bg_level += score;
+						if (++rtp_session->vad_data.bg_count == rtp_session->vad_data.bg_len) {
+							rtp_session->vad_data.bg_level /= rtp_session->vad_data.bg_len;
+							rtp_session->vad_data.bg_level += (rtp_session->vad_data.bg_level / 3);
+							//printf("AVG %u\n", rtp_session->vad_data.bg_level);
+						}
+						send = 1;
+					} else {
+						if (score > rtp_session->vad_data.bg_level) {
+							uint32_t diff = score - rtp_session->vad_data.bg_level;
+
+							if (rtp_session->vad_data.hangover_hits) {
+								rtp_session->vad_data.hangover_hits--;
+							}
+
+							if (diff >= rtp_session->vad_data.diff_level || ++rtp_session->vad_data.hangunder_hits >= rtp_session->vad_data.hangunder) {
+								switch_set_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING);
+								send_msg->header.m = 1;
+								rtp_session->vad_data.hangover_hits = rtp_session->vad_data.hangunder_hits = rtp_session->vad_data.cng_count = 0;
+								if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_TALK)) {
+									switch_event *event;
+									if (switch_event_create(&event, SWITCH_EVENT_TALK) == SWITCH_STATUS_SUCCESS) {
+										switch_channel *channel = switch_core_session_get_channel(rtp_session->vad_data.session);
+										switch_channel_event_set_data(channel, event);
+										switch_event_fire(&event);
+									}
+								}
+							} 
+						} else {
+							if (rtp_session->vad_data.hangunder_hits) {
+								rtp_session->vad_data.hangunder_hits--;
+							}
+							if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING)) {
+								if (++rtp_session->vad_data.hangover_hits >= rtp_session->vad_data.hangover) {
+									switch_clear_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING);
+									rtp_session->vad_data.hangover_hits = rtp_session->vad_data.hangunder_hits = rtp_session->vad_data.cng_count = 0;
+									if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_NOTALK)) {
+										switch_event *event;
+										if (switch_event_create(&event, SWITCH_EVENT_NOTALK) == SWITCH_STATUS_SUCCESS) {
+											switch_channel *channel = switch_core_session_get_channel(rtp_session->vad_data.session);
+											switch_channel_event_set_data(channel, event);
+											switch_event_fire(&event);
+										}					
+									}
+								}
+							}
+						}
+					}
+				}
+				
+				if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING)) {
+					send = 1;
+				} else {
+					if (++rtp_session->vad_data.cng_count >= rtp_session->vad_data.cng_freq) {
+						rtp_session->send_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
+						memset(rtp_session->send_msg.body, 255, SWITCH_RTP_CNG_PAYLOAD);
+						rtp_session->send_msg.header.ts = htonl(rtp_session->vad_data.ts);
+						rtp_session->vad_data.ts++;
+						bytes = SWITCH_RTP_CNG_PAYLOAD;
+						send = 1;
+						rtp_session->vad_data.cng_count = 0;
+					}
+				}
+					   
+			}
+		} else {
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+
+	if (send) {
+		switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)send_msg, &bytes);
+	}
+
 	if (rtp_session->ice_user) {
 		if (ice_out(rtp_session) != SWITCH_STATUS_SUCCESS) {
 			return -1;
@@ -695,6 +839,53 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 
 	return (int)bytes;
 
+}
+
+
+SWITCH_DECLARE(switch_status) switch_rtp_disable_vad(switch_rtp *rtp_session)
+{
+	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD)) {
+		return SWITCH_STATUS_GENERR;
+	}
+	switch_core_codec_destroy(&rtp_session->vad_data.vad_codec);
+	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_VAD);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp *rtp_session, switch_core_session *session, switch_codec *codec, switch_vad_flag_t flags)
+{
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD)) {
+		return SWITCH_STATUS_GENERR;
+	}
+	memset(&rtp_session->vad_data, 0, sizeof(rtp_session->vad_data));
+	
+	if (switch_core_codec_init(&rtp_session->vad_data.vad_codec,
+							   codec->codec_interface->iananame,
+							   codec->implementation->samples_per_second,
+							   codec->implementation->microseconds_per_frame / 1000,
+							   codec->implementation->number_of_channels,
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   NULL, 
+							   rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	rtp_session->vad_data.diff_level = 400;
+	rtp_session->vad_data.hangunder = 15;
+	rtp_session->vad_data.hangover = 40;
+	rtp_session->vad_data.bg_len = 20;
+	rtp_session->vad_data.read_codec = codec;
+	rtp_session->vad_data.session = session;
+	rtp_session->vad_data.flags = flags;
+	rtp_session->vad_data.cng_freq = 50;
+	rtp_session->vad_data.ts = 1;
+	rtp_session->vad_data.start = 5;
+	rtp_session->vad_data.next_scan = time(NULL);
+	rtp_session->vad_data.scan_freq = 0;
+	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_VAD);
+	
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint32_t ts, switch_frame_flag *flags)

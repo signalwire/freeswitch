@@ -99,6 +99,8 @@ static char *EVENT_NAMES[] = {
 	"SHUTDOWN",
 	"PUBLISH",
 	"UNPUBLISH",
+	"TALK",
+	"NOTALK",
 	"ALL"
 };
 

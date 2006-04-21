@@ -375,6 +375,7 @@ static switch_status woomerachan_read_frame(switch_core_session *session, switch
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
 	switch_frame *pframe;
+	switch_size_t len;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -393,8 +394,9 @@ static switch_status woomerachan_read_frame(switch_core_session *session, switch
 	pframe = &tech_pvt->frame;
 	*frame = pframe;
 
-	pframe->datalen = sizeof(tech_pvt->databuf);
-	if (switch_socket_recvfrom(tech_pvt->udpread, tech_pvt->udp_socket, 0, tech_pvt->databuf, &pframe->datalen) == SWITCH_STATUS_SUCCESS) {
+	len = sizeof(tech_pvt->databuf);
+	if (switch_socket_recvfrom(tech_pvt->udpread, tech_pvt->udp_socket, 0, tech_pvt->databuf, &len) == SWITCH_STATUS_SUCCESS) {
+		pframe->datalen = len;
 		pframe->samples = (int) pframe->datalen / 2;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -407,8 +409,9 @@ static switch_status woomerachan_write_frame(switch_core_session *session, switc
 {
 	switch_channel *channel = NULL;
 	struct private_object *tech_pvt = NULL;
+	switch_size_t len;
 	//switch_frame *pframe;
-
+	
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -420,7 +423,9 @@ static switch_status woomerachan_write_frame(switch_core_session *session, switc
 	}
 
 	//pframe = &tech_pvt->frame;
-	if (switch_socket_sendto(tech_pvt->udp_socket, tech_pvt->udpwrite, 0, frame->data, &frame->datalen) == SWITCH_STATUS_SUCCESS) {
+	len = frame->datalen;
+	if (switch_socket_sendto(tech_pvt->udp_socket, tech_pvt->udpwrite, 0, frame->data, &len) == SWITCH_STATUS_SUCCESS) {
+		frame->datalen = len;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1063,7 +1068,7 @@ static void *woomera_channel_thread_run(switch_thread *thread, void *obj)
 
 				if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																		  tech_pvt->profile->dialplan,
-																		  cid_name, cid_num, ip, NULL, NULL, exten)) != 0) {
+																		  cid_name, cid_num, ip, NULL, NULL, NULL, (char *)modname, exten)) != 0) {
 					char name[128];
 					snprintf(name, sizeof(name), "Woomera/%s-%04x", tech_pvt->caller_profile->destination_number,
 							 rand() & 0xffff);

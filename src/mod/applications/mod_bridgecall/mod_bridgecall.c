@@ -59,7 +59,12 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 											   caller_caller_profile->dialplan,
 											   caller_caller_profile->caller_id_name,
 											   caller_caller_profile->caller_id_number,
-											   caller_caller_profile->network_addr, NULL, NULL, chan_data);
+											   caller_caller_profile->network_addr, 
+											   NULL, 
+											   NULL, 
+											   caller_caller_profile->rdnis,
+											   caller_caller_profile->source,
+											   chan_data);
 
 
 

@@ -51,6 +51,9 @@ typedef enum {
 	TFLAG_CODEC_READY = (1 << 8),
 	TFLAG_TRANSPORT = (1 << 9),
 	TFLAG_ANSWER = (1 << 10),
+	TFLAG_VAD_IN = ( 1 << 11),
+	TFLAG_VAD_OUT = ( 1 << 12),
+	TFLAG_VAD = ( 1 << 13)
 } TFLAGS;
 
 typedef enum {
@@ -83,8 +86,8 @@ struct mdl_profile {
 	char *extip;
 	char *lanaddr;
 	char *exten;
-	unsigned int flags;
 	ldl_handle_t *handle;
+	unsigned int flags;
 };
 
 struct private_object {
@@ -282,9 +285,16 @@ static int activate_rtp(struct private_object *tech_pvt)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
 		switch_channel_hangup(channel);
 		return -1;
+	} else {
+		uint8_t vad_in = switch_test_flag(tech_pvt, TFLAG_VAD_IN) ? 1 : 0;
+		uint8_t vad_out = switch_test_flag(tech_pvt, TFLAG_VAD_OUT) ? 1 : 0;
+		uint8_t inb = switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? 0 : 1;
+		switch_rtp_activate_ice(tech_pvt->rtp_session, tech_pvt->remote_user, tech_pvt->local_user);
+		if ((vad_in && inb) || (vad_out && !inb)) {
+			switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING);
+			switch_set_flag(tech_pvt, TFLAG_VAD);
+		}
 	}
-	switch_rtp_activate_ice(tech_pvt->rtp_session, tech_pvt->remote_user, tech_pvt->local_user);
-	
 
 	return 0;
 }
@@ -1017,6 +1027,8 @@ static switch_status channel_outgoing_channel(switch_core_session *session, swit
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			tech_pvt->flags |= globals.flags;
+			tech_pvt->flags |= mdl_profile->flags;
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
@@ -1167,6 +1179,7 @@ static switch_status load_config(void)
 				globals.codec_rates_last =
 					switch_separate_string(globals.codec_rates_string, ',', globals.codec_rates, SWITCH_MAX_CODECS);
 			}
+
 		} else if (!strcasecmp(cfg.category, "interface")) {
 			if (!globals.init) {
 				ldl_global_init(globals.debug);
@@ -1204,6 +1217,17 @@ static switch_status load_config(void)
 				profile->lanaddr = switch_core_strdup(module_pool, val);
 			} else if (!strcmp(var, "exten")) {
 				profile->exten = switch_core_strdup(module_pool, val);
+			} else if (!strcmp(var, "vad")) {
+				if (!strcasecmp(val, "in")) {
+					switch_set_flag(profile, TFLAG_VAD_IN);
+				} else if (!strcasecmp(val, "out")) {
+					switch_set_flag(profile, TFLAG_VAD_OUT);
+				} else if (!strcasecmp(val, "both")) {
+					switch_set_flag(profile, TFLAG_VAD_IN);
+					switch_set_flag(profile, TFLAG_VAD_OUT);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
+				}
 			}
 		}
 	}
@@ -1262,6 +1286,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			switch_core_session_add_stream(session, NULL);
 			if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 				memset(tech_pvt, 0, sizeof(*tech_pvt));
+				tech_pvt->flags |= globals.flags;
+				tech_pvt->flags |= profile->flags;
 				channel = switch_core_session_get_channel(session);
 				switch_core_session_set_private(session, tech_pvt);
 				tech_pvt->session = session;
@@ -1269,6 +1295,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				tech_pvt->profile = profile;
 				tech_pvt->local_port = switch_rtp_request_port();
 				switch_set_flag(tech_pvt, TFLAG_ANSWER);
+				
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
 				switch_core_session_destroy(&session);
@@ -1284,6 +1311,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 																	  ldl_session_get_ip(dlsession),
 																	  NULL,
 																	  NULL,
+																	  NULL,
+																	  (char *)modname,
 																	  profile->exten)) != 0) {
 				char name[128];
 				snprintf(name, sizeof(name), "DingaLing/%s-%04x", tech_pvt->caller_profile->destination_number,

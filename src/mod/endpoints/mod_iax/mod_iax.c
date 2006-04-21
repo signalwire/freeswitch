@@ -1001,7 +1001,10 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 																				  iaxevent->ies.calling_number,
 																				  iax_get_peer_ip(iaxevent->session),
 																				  iaxevent->ies.calling_ani,
-																				  NULL, iaxevent->ies.called_number)) != 0) {
+																				  NULL, 
+																				  NULL,
+																				  (char *)modname,
+																				  iaxevent->ies.called_number)) != 0) {
 							char name[128];
 							snprintf(name, sizeof(name), "IAX/%s-%04x", tech_pvt->caller_profile->destination_number,
 									 rand() & 0xffff);

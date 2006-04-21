@@ -67,8 +67,10 @@ typedef enum {
 	TFLAG_BYE = (1 << 8),
 	TFLAG_ANS = (1 << 9),
 	TFLAG_EARLY_MEDIA = (1 << 10),
-	TFLAG_SECURE = (1 << 11)
-	
+	TFLAG_SECURE = (1 << 11),
+	TFLAG_VAD_IN = ( 1 << 12),
+	TFLAG_VAD_OUT = ( 1 << 13),
+	TFLAG_VAD = ( 1 << 14)
 } TFLAGS;
 
 
@@ -505,13 +507,22 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 										   tech_pvt->read_codec.codec_interface->ianacode,
 										   tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 										   ms,
-										   SWITCH_RTP_FLAG_NOBLOCK | SWITCH_RTP_FLAG_RAW_WRITE,
+										   SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_TIMER_RECLOCK | SWITCH_RTP_FLAG_RAW_WRITE,
 										   key,
 										   &err, switch_core_session_get_pool(tech_pvt->session));
 
 	if (tech_pvt->rtp_session) {
+		uint8_t vad_in = switch_test_flag(tech_pvt, TFLAG_VAD_IN) ? 1 : 0;
+		uint8_t vad_out = switch_test_flag(tech_pvt, TFLAG_VAD_OUT) ? 1 : 0;
+		uint8_t inb = switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? 0 : 1;
+
 		tech_pvt->ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
 		switch_set_flag(tech_pvt, TFLAG_RTP);
+		
+		if ((vad_in && inb) || (vad_out && !inb)) {
+			switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING);
+			switch_set_flag(tech_pvt, TFLAG_VAD);
+		}
 	} else {
 		switch_channel *channel = switch_core_session_get_channel(tech_pvt->session);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
@@ -965,6 +976,7 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 		if ((tech_pvt =
 			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			tech_pvt->flags = globals.flags;
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
@@ -1097,6 +1109,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			tech_pvt->flags = globals.flags;
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
 			tech_pvt->session = session;
@@ -1112,8 +1125,6 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 		if (osip_message_header_get_byname (event->request, "SrtpRealm", 0, &tedious)) {
 			tech_pvt->realm = switch_core_session_strdup(session, osip_header_get_value(tedious));
 		}
-
-
 
 		if (!(from = osip_message_get_from(event->request))) {
 			switch_core_session_destroy(&session);
@@ -1148,7 +1159,11 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 																  displayname,
 																  username,
 																  event->request->from->url->host,
-																  NULL, NULL, event->request->req_uri->username)) != 0) {
+																  NULL,
+																  NULL,
+																  NULL,
+																  (char *)modname,
+																  event->request->req_uri->username)) != 0) {
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}
 
@@ -1666,6 +1681,17 @@ static int config_exosip(int reload)
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "port")) {
 				globals.port = atoi(val);
+			} else if (!strcmp(var, "vad")) {
+				if (!strcasecmp(val, "in")) {
+					switch_set_flag(&globals, TFLAG_VAD_IN);
+				} else if (!strcasecmp(val, "out")) {
+					switch_set_flag(&globals, TFLAG_VAD_OUT);
+				} else if (!strcasecmp(val, "both")) {
+					switch_set_flag(&globals, TFLAG_VAD_IN);
+					switch_set_flag(&globals, TFLAG_VAD_OUT);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
+				}
 			} else if (!strcmp(var, "ext-rtp-ip")) {
 				set_global_extrtpip(val);
 			} else if (!strcmp(var, "rtp-ip")) {

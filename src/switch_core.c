@@ -373,7 +373,9 @@ SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec *codec,
 													   uint32_t encoded_data_len,
 													   uint32_t encoded_rate,
 													   void *decoded_data,
-													   uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
+													   uint32_t *decoded_data_len, 
+													   uint32_t *decoded_rate, 
+													   unsigned int *flag)
 {
 
 	assert(codec != NULL);

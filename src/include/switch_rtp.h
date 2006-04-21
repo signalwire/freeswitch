@@ -263,6 +263,23 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp *rtp_ses
 */
 SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint32_t ts, switch_frame_flag *flags);
 
+/*!
+  \brief Enable VAD on an RTP Session
+  \param rtp_session the RTP session
+  \param session the core session associated with the RTP session
+  \param codec the codec the channel is currenty using
+  \param flags flags for control
+  \return SWITCH_STAUTS_SUCCESS on success
+*/
+SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp *rtp_session, switch_core_session *session, switch_codec *codec, switch_vad_flag_t flags);
+
+/*!
+  \brief Disable VAD on an RTP Session
+  \param rtp_session the RTP session
+  \return SWITCH_STAUTS_SUCCESS on success
+*/
+SWITCH_DECLARE(switch_status) switch_rtp_disable_vad(switch_rtp *rtp_session);
+
 /*! 
   \brief Write data to a given RTP session
   \param rtp_session the RTP session to write to
