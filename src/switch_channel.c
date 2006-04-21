@@ -47,6 +47,7 @@ struct switch_channel {
 	switch_hash *variables;
 	switch_channel_timetable_t times;
 	void *private_info;
+	switch_call_cause_t hangup_cause;
 	int freq;
 	int bits;
 	int channels;
