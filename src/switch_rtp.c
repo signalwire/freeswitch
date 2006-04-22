@@ -132,12 +132,12 @@ static switch_status ice_out(switch_rtp *rtp_session)
 		if (rtp_session->last_stun) {
 			elapsed = (unsigned int)((switch_time_now() - rtp_session->last_stun) / 1000);
 
-			if (elapsed > 10000) {
+			if (elapsed > 30000) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No stun for a long time (PUNT!)\n");
 				return SWITCH_STATUS_FALSE;
 			}
 		}
-		
+
 		packet = switch_stun_packet_build_header(SWITCH_STUN_BINDING_REQUEST, NULL, buf);
 		switch_stun_packet_attribute_add_username(packet, rtp_session->ice_user, 32);
 		bytes = switch_stun_packet_length(packet);
@@ -813,8 +813,8 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 					if (++rtp_session->vad_data.cng_count >= rtp_session->vad_data.cng_freq) {
 						rtp_session->send_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
 						memset(rtp_session->send_msg.body, 255, SWITCH_RTP_CNG_PAYLOAD);
-						rtp_session->send_msg.header.ts = htonl(rtp_session->vad_data.ts);
-						rtp_session->vad_data.ts++;
+						//rtp_session->send_msg.header.ts = htonl(rtp_session->vad_data.ts);
+						//rtp_session->vad_data.ts++;
 						bytes = SWITCH_RTP_CNG_PAYLOAD;
 						send = 1;
 						rtp_session->vad_data.cng_count = 0;
