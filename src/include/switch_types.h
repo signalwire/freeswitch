@@ -101,12 +101,14 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
     SWITCH_VAD_FLAG_TALKING         - Currently Talking
     SWITCH_VAD_FLAG_EVENTS_TALK     - Fire events when talking is detected
 	SWITCH_VAD_FLAG_EVENTS_NOTALK   - Fire events when not talking is detected
+	SWITCH_VAD_FLAG_CNG				- Send CNG
 </pre>
  */
 typedef enum {
 	SWITCH_VAD_FLAG_TALKING = ( 1 << 0 ),
 	SWITCH_VAD_FLAG_EVENTS_TALK = ( 1 << 1 ),
 	SWITCH_VAD_FLAG_EVENTS_NOTALK = ( 1 << 2 ),
+	SWITCH_VAD_FLAG_CNG = ( 1 << 3)
 } switch_vad_flag_t;
 
 

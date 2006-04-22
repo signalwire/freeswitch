@@ -810,7 +810,7 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 				if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING)) {
 					send = 1;
 				} else {
-					if (++rtp_session->vad_data.cng_count >= rtp_session->vad_data.cng_freq) {
+					if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_CNG) && ++rtp_session->vad_data.cng_count >= rtp_session->vad_data.cng_freq) {
 						rtp_session->send_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
 						memset(rtp_session->send_msg.body, 255, SWITCH_RTP_CNG_PAYLOAD);
 						//rtp_session->send_msg.header.ts = htonl(rtp_session->vad_data.ts);
