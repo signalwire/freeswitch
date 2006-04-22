@@ -307,6 +307,9 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 	assert(channel != NULL);
 
 	tech_pvt->next_cand += DL_CAND_WAIT;
+	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
+		return -1;
+	}
 
 	if (force || !switch_test_flag(tech_pvt, TFLAG_RTP_READY)) {
 				ldl_candidate_t cand[1];
@@ -383,6 +386,10 @@ static int do_describe(struct private_object *tech_pvt, int force)
 	assert(channel != NULL);
 
 	tech_pvt->next_desc += DL_CAND_WAIT;
+
+	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
+		return -1;
+	}
 
 	memset(payloads, 0, sizeof(payloads));
 
