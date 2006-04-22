@@ -884,7 +884,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp *rtp_session, swi
 	rtp_session->vad_data.next_scan = time(NULL);
 	rtp_session->vad_data.scan_freq = 0;
 	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_VAD);
-	
+	switch_set_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_CNG);
 	return SWITCH_STATUS_SUCCESS;
 }
 
