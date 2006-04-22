@@ -1352,8 +1352,8 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 								status = SWITCH_STATUS_SUCCESS;
 								break;
 							default:
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error!\n",
-													  session->read_codec->codec_interface->interface_name);
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error %d!\n",
+													  session->read_codec->codec_interface->interface_name, status);
 								write_frame = NULL;
 								return status;
 							}

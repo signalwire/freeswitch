@@ -53,7 +53,9 @@ typedef enum {
 	TFLAG_ANSWER = (1 << 10),
 	TFLAG_VAD_IN = ( 1 << 11),
 	TFLAG_VAD_OUT = ( 1 << 12),
-	TFLAG_VAD = ( 1 << 13)
+	TFLAG_VAD = ( 1 << 13),
+	TFLAG_DO_CAND = ( 1 << 14),
+	TFLAG_DO_DESC = (1 << 15)
 } TFLAGS;
 
 typedef enum {
@@ -306,10 +308,17 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 	switch_channel *channel = switch_core_session_get_channel(tech_pvt->session);
 	assert(channel != NULL);
 
+	if (switch_test_flag(tech_pvt, TFLAG_DO_CAND)) {
+		return 0;
+	}
+
+
+
 	tech_pvt->next_cand += DL_CAND_WAIT;
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
 		return -1;
 	}
+	switch_set_flag(tech_pvt, TFLAG_DO_CAND);
 
 	if (force || !switch_test_flag(tech_pvt, TFLAG_RTP_READY)) {
 				ldl_candidate_t cand[1];
@@ -367,6 +376,7 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 				tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, 1);
 				switch_set_flag(tech_pvt, TFLAG_RTP_READY);
 			}
+	switch_clear_flag(tech_pvt, TFLAG_DO_CAND);
 	return 0;
 }
 
@@ -385,6 +395,10 @@ static int do_describe(struct private_object *tech_pvt, int force)
 	switch_channel *channel = switch_core_session_get_channel(tech_pvt->session);
 	assert(channel != NULL);
 
+	if (switch_test_flag(tech_pvt, TFLAG_DO_DESC)) {
+		return 0;
+	}
+
 	tech_pvt->next_desc += DL_CAND_WAIT;
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
@@ -392,7 +406,7 @@ static int do_describe(struct private_object *tech_pvt, int force)
 	}
 
 	memset(payloads, 0, sizeof(payloads));
-
+	switch_set_flag(tech_pvt, TFLAG_DO_CAND);
 	if (!tech_pvt->num_codecs) {
 		get_codecs(tech_pvt);
 		if (!tech_pvt->num_codecs) {
@@ -424,7 +438,7 @@ static int do_describe(struct private_object *tech_pvt, int force)
 												 switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? LDL_DESCRIPTION_INITIATE : LDL_DESCRIPTION_ACCEPT);
 		switch_set_flag(tech_pvt, TFLAG_CODEC_READY);
 	} 
-
+	switch_clear_flag(tech_pvt, TFLAG_DO_CAND);
 	return 0;
 }
 
