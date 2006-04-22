@@ -532,7 +532,7 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 	switch_clear_flag(tech_pvt, TFLAG_VOICE);
-	switch_channel_hangup(channel);
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	//switch_thread_cond_signal(tech_pvt->cond);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
@@ -1042,7 +1042,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 					if ((channel = switch_core_session_get_channel(tech_pvt->session)) != 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hangup %s\n", switch_channel_get_name(channel));
 						switch_set_flag(tech_pvt, TFLAG_HANGUP);
-						switch_channel_hangup(channel);
+						switch_channel_hangup(channel, iaxevent->etype == IAX_EVENT_HANGUP ? SWITCH_CAUSE_NORMAL_CLEARING : SWITCH_CAUSE_FACILITY_REJECTED);
 						//switch_thread_cond_signal(tech_pvt->cond);
 						iaxevent->session = NULL;
 					} else {

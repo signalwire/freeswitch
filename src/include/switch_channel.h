@@ -273,9 +273,11 @@ SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel *channel);
 /*!
   \brief Hangup a channel flagging it's state machine to end
   \param channel channel to hangup
+  \param hangup_cause the appropriate hangup cause
   \return the resulting channel state.
 */
-SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *channel);
+SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *channel, switch_call_cause_t hangup_cause);
+
 
 /*!
   \brief Test for presence of DTMF on a given channel

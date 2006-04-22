@@ -268,7 +268,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 
 				if (!stun_ip) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
-					switch_channel_hangup(channel);
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					return SWITCH_STATUS_FALSE;
 				}
 				if (switch_stun_lookup(&ip,
@@ -278,7 +278,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 									   &err,
 									   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
-					switch_channel_hangup(channel);
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					return SWITCH_STATUS_FALSE;
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success [%s]:[%d]\n", ip, sdp_port);
@@ -491,7 +491,7 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 	if (tech_pvt->realm) {
 		if (!(key = (char *) switch_core_hash_find(globals.srtp_hash, tech_pvt->realm))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "undefined Realm %s\n", tech_pvt->realm);
-			switch_channel_hangup(channel);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			switch_set_flag(tech_pvt, TFLAG_BYE);
 			switch_clear_flag(tech_pvt, TFLAG_IO);
 			return SWITCH_STATUS_FALSE;
@@ -526,7 +526,7 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 	} else {
 		switch_channel *channel = switch_core_session_get_channel(tech_pvt->session);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_set_flag(tech_pvt, TFLAG_BYE);
 		switch_clear_flag(tech_pvt, TFLAG_IO);
 		return SWITCH_STATUS_FALSE;
@@ -680,7 +680,7 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	switch_clear_flag(tech_pvt, TFLAG_READING);
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -713,7 +713,7 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1197,7 +1197,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 				char *stun_ip = globals.extrtpip + 5;
 				if (!stun_ip) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
-					switch_channel_hangup(channel);
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					return SWITCH_STATUS_FALSE;
 				}
 				if (switch_stun_lookup(&ip,
@@ -1207,7 +1207,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 									   &err,
 									   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
-					switch_channel_hangup(channel);
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					return SWITCH_STATUS_FALSE;
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success [%s]:[%d]\n", ip, sdp_port);
@@ -1313,7 +1313,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 									   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
-				switch_channel_hangup(channel);
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return SWITCH_STATUS_FALSE;
 			} else {
 				if (switch_core_codec_init(&tech_pvt->write_codec,
@@ -1324,7 +1324,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 										   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 										   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
-					switch_channel_hangup(channel);
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 					return SWITCH_STATUS_FALSE;
 				} else {
 					int ms;
@@ -1378,7 +1378,7 @@ static void destroy_call_by_event(eXosip_event_t * event)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "destroy %s\n", switch_channel_get_name(channel));
 	exosip_kill_channel(tech_pvt->session, SWITCH_SIG_KILL);
-	switch_channel_hangup(channel);
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 
 }
 
@@ -1443,14 +1443,14 @@ static void handle_answer(eXosip_event_t * event)
 
 	if (!event->response) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Someone answered... with no SDP information - WTF?!?\n");
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return;
 	}
 
 	/* Get all of the remote SDP elements... stuff */
 	if ((remote_sdp = eXosip_get_sdp_info(event->response)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant Find SDP?\n");
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return;
 	}
 
@@ -1487,7 +1487,7 @@ static void handle_answer(eXosip_event_t * event)
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
-			switch_channel_hangup(channel);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return;
 		} else {
 			if (switch_core_codec_init(&tech_pvt->write_codec,
@@ -1499,7 +1499,7 @@ static void handle_answer(eXosip_event_t * event)
 									   NULL,
 									   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
-				switch_channel_hangup(channel);
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return;
 			} else {
 				int ms;
@@ -1527,7 +1527,7 @@ static void handle_answer(eXosip_event_t * event)
 
 	if (activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 		exosip_on_hangup(tech_pvt->session);
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		return;
 	}
 

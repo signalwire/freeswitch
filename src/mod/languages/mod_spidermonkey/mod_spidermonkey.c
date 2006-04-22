@@ -665,7 +665,7 @@ static JSBool session_hangup(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	switch_channel_hangup(channel);
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	switch_core_session_kill_channel(jss->session, SWITCH_SIG_KILL);
 	return JS_TRUE;
 }
@@ -1052,7 +1052,7 @@ static void session_destroy(JSContext *cx, JSObject *obj)
 
 				if (jss->session) {
 					channel = switch_core_session_get_channel(jss->session);
-					switch_channel_hangup(channel);
+					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				}
 			}
 		}

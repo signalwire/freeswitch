@@ -84,7 +84,7 @@ void fs_channel_pre_answer(struct switch_core_session *session)
 void fs_channel_hangup(struct switch_core_session *session)
 {
 	switch_channel *channel = switch_core_session_get_channel(session);
-	switch_channel_hangup(channel);
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 }
 
 void fs_channel_set_variable(struct switch_core_session *session, char *var, char *val)

@@ -77,7 +77,7 @@ static void dirtest_function(switch_core_session *session, char *data)
 	}
 
 	switch_core_directory_close(&dh);
-	switch_channel_hangup(channel);
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 
 }
 
@@ -152,13 +152,13 @@ static void ivrtest_function(switch_core_session *session, char *data)
 			status = switch_ivr_play_file(session, NULL, data, NULL, on_dtmf, buf, sizeof(buf));
 			
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-				switch_channel_hangup(channel);
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 				break;
 			}
 		}
 
 		if (switch_ivr_collect_digits_count(session, buf, sizeof(buf), 10, "#*", &term, 10000, 1) != SWITCH_STATUS_SUCCESS) {
-			switch_channel_hangup(channel);
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			break;
 		}
 

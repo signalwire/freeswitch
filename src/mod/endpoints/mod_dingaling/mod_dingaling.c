@@ -247,8 +247,8 @@ static int activate_rtp(struct private_object *tech_pvt)
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
-		switch_channel_hangup(channel);
-		return 1;
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		return -1;
 	}
 	tech_pvt->read_frame.rate = tech_pvt->read_codec.implementation->samples_per_second;
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
@@ -263,7 +263,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return -1;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Write Codec to %s\n",  tech_pvt->codec_name);
@@ -285,7 +285,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 												 NULL,
 												 &err, switch_core_session_get_pool(tech_pvt->session)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return -1;
 	} else {
 		uint8_t vad_in = switch_test_flag(tech_pvt, TFLAG_VAD_IN) ? 1 : 0;
@@ -342,7 +342,7 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 					} else {
 						if (!stun_ip) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER!\n");
-							switch_channel_hangup(channel);
+							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 							return -1;
 						}
 
@@ -355,7 +355,7 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 											   &err,
 											   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
-							switch_channel_hangup(channel);
+							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 							return -1;
 						}
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success %s:%d\n", cand[0].address, cand[0].port);
@@ -410,7 +410,7 @@ static int do_describe(struct private_object *tech_pvt, int force)
 	if (!tech_pvt->num_codecs) {
 		get_codecs(tech_pvt);
 		if (!tech_pvt->num_codecs) {
-			switch_channel_hangup(channel);
+			switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 			switch_set_flag(tech_pvt, TFLAG_BYE);
 			switch_clear_flag(tech_pvt, TFLAG_IO);
 			return -1;
@@ -493,7 +493,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 			}
 		}
 		if (elapsed > 60000) {
-			switch_channel_hangup(channel);
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			switch_set_flag(tech_pvt, TFLAG_BYE);
 			switch_clear_flag(tech_pvt, TFLAG_IO);
 			return NULL;
@@ -643,7 +643,7 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 			switch_clear_flag(tech_pvt, TFLAG_IO);
 			switch_clear_flag(tech_pvt, TFLAG_VOICE);
 			switch_set_flag(tech_pvt, TFLAG_BYE);
-			switch_channel_hangup(channel);
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			if (tech_pvt->dlsession) {
 				ldl_session_terminate(tech_pvt->dlsession);
 			}
@@ -791,7 +791,7 @@ static switch_status channel_read_frame(switch_core_session *session, switch_fra
 	switch_clear_flag(tech_pvt, TFLAG_READING);
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -824,7 +824,7 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1491,7 +1491,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hungup %s %u %d\n", switch_channel_get_name(channel), state, CS_INIT);
 			switch_set_flag(tech_pvt, TFLAG_BYE);
 			switch_clear_flag(tech_pvt, TFLAG_IO);
-			switch_channel_hangup(channel);
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 
 			if (state <= CS_INIT && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy unused Session\n");

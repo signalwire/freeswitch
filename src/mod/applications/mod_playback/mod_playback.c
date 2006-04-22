@@ -67,7 +67,7 @@ static void playback_function(switch_core_session *session, char *data)
 	switch_channel_answer(channel);
 
 	if (switch_ivr_play_file(session, NULL, file_name, timer_name, on_dtmf, NULL, 0) != SWITCH_STATUS_SUCCESS) {
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
 	
 }
@@ -80,7 +80,7 @@ static void record_function(switch_core_session *session, char *data)
     assert(channel != NULL);
 
 	if (switch_ivr_record_file(session, NULL, data, on_dtmf, NULL, 0) != SWITCH_STATUS_SUCCESS) {
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
 	
 }

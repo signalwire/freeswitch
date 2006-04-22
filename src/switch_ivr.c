@@ -180,7 +180,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 							  file,
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
 							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -280,7 +280,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 							  file,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -782,12 +782,12 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	if (his_thread->running > 0 && switch_channel_test_flag(chan_a, CF_ORIGINATOR)) {
 		if (!switch_channel_test_flag(chan_b, CF_TRANSFER)) {
 			switch_core_session_kill_channel(session_b, SWITCH_SIG_KILL);
-			switch_channel_hangup(chan_b);
+			switch_channel_hangup(chan_b, SWITCH_CAUSE_NORMAL_CLEARING);
 		}
 		switch_channel_clear_flag(chan_a, CF_ORIGINATOR);
 	} else if (!switch_channel_test_flag(chan_a, CF_ORIGINATOR) && !switch_channel_test_flag(chan_a, CF_TRANSFER)) {
 		switch_core_session_kill_channel(session_a, SWITCH_SIG_KILL);
-		switch_channel_hangup(chan_a);
+		switch_channel_hangup(chan_a, SWITCH_CAUSE_NORMAL_CLEARING);
 	}
 	
 	while (his_thread->running > 0) {

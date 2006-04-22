@@ -146,7 +146,7 @@ static switch_caller_extension *directory_dialplan_hunt(switch_core_session *ses
 	if (extension) {
 		switch_channel_set_state(channel, CS_EXECUTE);
 	} else {
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_MESSAGE_TYPE_NONEXIST);
 	}
 
 	return extension;

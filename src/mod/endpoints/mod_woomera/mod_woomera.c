@@ -213,7 +213,7 @@ static switch_status woomerachan_on_init(switch_core_session *session)
 		(&tech_pvt->read_codec, "L16", rate, 30, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Cannot set read codec\n", switch_channel_get_name(channel));
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -221,7 +221,7 @@ static switch_status woomerachan_on_init(switch_core_session *session)
 		(&tech_pvt->write_codec, "L16", rate, 30, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Cannot set read codec\n", switch_channel_get_name(channel));
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
 	}
 	tech_pvt->frame.rate = rate;
@@ -328,7 +328,7 @@ static switch_status woomerachan_kill_channel(switch_core_session *session, int 
 
 	udp_socket_close(tech_pvt);
 
-	switch_channel_hangup(channel);
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERACHAN KILL\n", switch_channel_get_name(channel));
 						  
 
@@ -1126,7 +1126,7 @@ static void *woomera_channel_thread_run(switch_thread *thread, void *obj)
 												  WOOMERA_DEBUG_PREFIX "{%s} Cannot resolve %s\n",
 												  tech_pvt->profile->name, ip);
 						}
-						switch_channel_hangup(channel);
+						switch_channel_hangup(channel, SWITCH_CAUSE_NETWORK_OUT_OF_ORDER);
 					}
 				}
 			}

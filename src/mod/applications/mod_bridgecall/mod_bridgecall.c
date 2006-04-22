@@ -71,7 +71,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 	if (switch_core_session_outgoing_channel(session, chan_type, caller_profile, &peer_session, NULL) !=
 		SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
-		switch_channel_hangup(caller_channel);
+		switch_channel_hangup(caller_channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
 		return;
 	} else {
 		switch_ivr_multi_threaded_bridge(session, peer_session, timelimit, NULL, NULL, NULL);

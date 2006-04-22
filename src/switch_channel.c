@@ -569,7 +569,7 @@ SWITCH_DECLARE(switch_caller_extension *) switch_channel_get_caller_extension(sw
 }
 
 
-SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *channel)
+SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *channel, switch_call_cause_t hangup_cause)
 {
 	assert(channel != NULL);
 
@@ -579,6 +579,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *chann
 
 	if (channel->state < CS_HANGUP) {
 		channel->state = CS_HANGUP;
+		channel->hangup_cause = hangup_cause;
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
 		switch_core_session_signal_state_change(channel->session);
 	}

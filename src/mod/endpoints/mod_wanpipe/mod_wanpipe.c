@@ -251,7 +251,7 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ADJUSTED MTU AFTER SETTING IT TO %d is %d %d [%s]\n", new_mtu, mtu_mru, err, strerror(err));
 		if (mtu_mru != globals.mtu) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure to adjust MTU\n");
-			switch_channel_hangup(channel);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -260,7 +260,7 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 		(&tech_pvt->read_codec, "L16", rate, 20, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Cannot set read codec\n", switch_channel_get_name(channel));
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -268,7 +268,7 @@ static switch_status wanpipe_on_init(switch_core_session *session)
 		(&tech_pvt->write_codec, "L16", rate, 20, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Cannot set read codec\n", switch_channel_get_name(channel));
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return SWITCH_STATUS_FALSE;
 	}
 	tech_pvt->read_frame.rate = rate;
@@ -1194,7 +1194,7 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 		switch_channel *channel;
 		channel = switch_core_session_get_channel(session);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hanging Up channel %s\n", switch_channel_get_name(channel));
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	}
 	
 	if ((fd = sangoma_open_tdmapi_span_chan(spri->span, event->restart.channel)) < 0) {

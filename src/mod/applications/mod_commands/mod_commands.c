@@ -48,7 +48,7 @@ static switch_status kill_function(char *dest, char *out, size_t outlen)
 	if ((session = switch_core_session_locate(dest))) {
 		switch_channel *channel = switch_core_session_get_channel(session);
 		switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		snprintf(out, outlen, "OK\n");
 	} else {
 		snprintf(out, outlen, "No Such Channel!\n");

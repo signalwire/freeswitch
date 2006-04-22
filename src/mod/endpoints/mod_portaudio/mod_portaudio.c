@@ -233,7 +233,7 @@ static switch_status channel_kill_channel(switch_core_session *session, int sig)
 
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 	deactivate_audio_device(tech_pvt);
-	switch_channel_hangup(channel);
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
@@ -851,7 +851,7 @@ static switch_status hup_call(char *callid, char *out, size_t outlen)
 			tech_pvt = val;
 			channel = switch_core_session_get_channel(tech_pvt->session);
 			assert(channel != NULL);
-			switch_channel_hangup(channel);
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			i++;
 		}
 
@@ -865,7 +865,7 @@ static switch_status hup_call(char *callid, char *out, size_t outlen)
 		channel = switch_core_session_get_channel(tech_pvt->session);
 		assert(channel != NULL);
 
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		strncpy(out, "OK", outlen - 1);
 	} else {
 		strncpy(out, "NO SUCH CALL", outlen - 1);

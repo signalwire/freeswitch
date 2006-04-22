@@ -66,7 +66,7 @@ static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return NULL;
 	}
 
@@ -107,7 +107,7 @@ static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 			if (error) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "COMPILE ERROR: %d [%s]\n", erroffset, error);
 				cleanre();
-				switch_channel_hangup(channel);
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return NULL;
 			}
 
@@ -184,7 +184,7 @@ static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 	if (extension) {
 		switch_channel_set_state(channel, CS_EXECUTE);
 	} else {
-		switch_channel_hangup(channel);
+		switch_channel_hangup(channel, SWITCH_CAUSE_MESSAGE_TYPE_NONEXIST);
 	}
 
 	cleanre();
