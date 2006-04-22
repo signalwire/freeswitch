@@ -760,7 +760,7 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 						rtp_session->vad_data.bg_level += score;
 						if (++rtp_session->vad_data.bg_count == rtp_session->vad_data.bg_len) {
 							rtp_session->vad_data.bg_level /= rtp_session->vad_data.bg_len;
-							rtp_session->vad_data.bg_level += (rtp_session->vad_data.bg_level / 3);
+							//rtp_session->vad_data.bg_level += (rtp_session->vad_data.bg_level / 3);
 							//printf("AVG %u\n", rtp_session->vad_data.bg_level);
 						}
 						send = 1;
@@ -874,13 +874,15 @@ SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp *rtp_session, swi
 	rtp_session->vad_data.diff_level = 400;
 	rtp_session->vad_data.hangunder = 15;
 	rtp_session->vad_data.hangover = 40;
-	rtp_session->vad_data.bg_len = 20;
+	rtp_session->vad_data.bg_len = 5;
+	rtp_session->vad_data.bg_count = 5;
+	rtp_session->vad_data.bg_level = 300;
 	rtp_session->vad_data.read_codec = codec;
 	rtp_session->vad_data.session = session;
 	rtp_session->vad_data.flags = flags;
 	rtp_session->vad_data.cng_freq = 50;
 	rtp_session->vad_data.ts = 1;
-	rtp_session->vad_data.start = 5;
+	rtp_session->vad_data.start = 0;
 	rtp_session->vad_data.next_scan = time(NULL);
 	rtp_session->vad_data.scan_freq = 0;
 	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_VAD);
