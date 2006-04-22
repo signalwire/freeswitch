@@ -31,6 +31,59 @@
  */
 #include <switch_channel.h>
 
+struct switch_cause_table {
+	const char *name;
+	switch_call_cause_t cause;
+};
+
+static struct switch_cause_table CAUSE_CHART[] = {
+	{ "UNALLOCATED", SWITCH_CAUSE_UNALLOCATED },
+	{ "NO_ROUTE_TRANSIT_NET", SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET },
+	{ "NO_ROUTE_DESTINATION", SWITCH_CAUSE_NO_ROUTE_DESTINATION },
+	{ "CHANNEL_UNACCEPTABLE", SWITCH_CAUSE_CHANNEL_UNACCEPTABLE },
+	{ "CALL_AWARDED_DELIVERED", SWITCH_CAUSE_CALL_AWARDED_DELIVERED },
+	{ "NORMAL_CLEARING", SWITCH_CAUSE_NORMAL_CLEARING },
+	{ "USER_BUSY", SWITCH_CAUSE_USER_BUSY },
+	{ "NO_USER_RESPONSE", SWITCH_CAUSE_NO_USER_RESPONSE },
+	{ "NO_ANSWER", SWITCH_CAUSE_NO_ANSWER },
+	{ "CALL_REJECTED", SWITCH_CAUSE_CALL_REJECTED },
+	{ "NUMBER_CHANGED", SWITCH_CAUSE_NUMBER_CHANGED },
+	{ "DESTINATION_OUT_OF_ORDER", SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER },
+	{ "INVALID_NUMBER_FORMAT", SWITCH_CAUSE_INVALID_NUMBER_FORMAT },
+	{ "FACILITY_REJECTED", SWITCH_CAUSE_FACILITY_REJECTED },
+	{ "RESPONSE_TO_STATUS_ENQUIRY", SWITCH_CAUSE_RESPONSE_TO_STATUS_ENQUIRY },
+	{ "NORMAL_UNSPECIFIED", SWITCH_CAUSE_NORMAL_UNSPECIFIED },
+	{ "NORMAL_CIRCUIT_CONGESTION", SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION },
+	{ "NETWORK_OUT_OF_ORDER", SWITCH_CAUSE_NETWORK_OUT_OF_ORDER },
+	{ "NORMAL_TEMPORARY_FAILURE", SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE },
+	{ "SWITCH_CONGESTION", SWITCH_CAUSE_SWITCH_CONGESTION },
+	{ "ACCESS_INFO_DISCARDED", SWITCH_CAUSE_ACCESS_INFO_DISCARDED },
+	{ "REQUESTED_CHAN_UNAVAIL", SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL },
+	{ "PRE_EMPTED", SWITCH_CAUSE_PRE_EMPTED },
+	{ "FACILITY_NOT_SUBSCRIBED", SWITCH_CAUSE_FACILITY_NOT_SUBSCRIBED },
+	{ "OUTGOING_CALL_BARRED", SWITCH_CAUSE_OUTGOING_CALL_BARRED },
+	{ "INCOMING_CALL_BARRED", SWITCH_CAUSE_INCOMING_CALL_BARRED },
+	{ "BEARERCAPABILITY_NOTAUTH", SWITCH_CAUSE_BEARERCAPABILITY_NOTAUTH },
+	{ "BEARERCAPABILITY_NOTAVAIL", SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL },
+	{ "BEARERCAPABILITY_NOTIMPL", SWITCH_CAUSE_BEARERCAPABILITY_NOTIMPL },
+	{ "CHAN_NOT_IMPLEMENTED", SWITCH_CAUSE_CHAN_NOT_IMPLEMENTED },
+	{ "FACILITY_NOT_IMPLEMENTED", SWITCH_CAUSE_FACILITY_NOT_IMPLEMENTED },
+	{ "INVALID_CALL_REFERENCE", SWITCH_CAUSE_INVALID_CALL_REFERENCE },
+	{ "INCOMPATIBLE_DESTINATION", SWITCH_CAUSE_INCOMPATIBLE_DESTINATION },
+	{ "INVALID_MSG_UNSPECIFIED", SWITCH_CAUSE_INVALID_MSG_UNSPECIFIED },
+	{ "MANDATORY_IE_MISSING", SWITCH_CAUSE_MANDATORY_IE_MISSING },
+	{ "MESSAGE_TYPE_NONEXIST", SWITCH_CAUSE_MESSAGE_TYPE_NONEXIST },
+	{ "WRONG_MESSAGE", SWITCH_CAUSE_WRONG_MESSAGE },
+	{ "IE_NONEXIST", SWITCH_CAUSE_IE_NONEXIST },
+	{ "INVALID_IE_CONTENTS", SWITCH_CAUSE_INVALID_IE_CONTENTS },
+	{ "WRONG_CALL_STATE", SWITCH_CAUSE_WRONG_CALL_STATE },
+	{ "RECOVERY_ON_TIMER_EXPIRE", SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE },
+	{ "MANDATORY_IE_LENGTH_ERROR", SWITCH_CAUSE_MANDATORY_IE_LENGTH_ERROR },
+	{ "PROTOCOL_ERROR", SWITCH_CAUSE_PROTOCOL_ERROR },
+	{ "INTERWORKING", SWITCH_CAUSE_INTERWORKING },
+	{ NULL, 0 }
+};
+
 struct switch_channel {
 	char *name;
 	switch_buffer *dtmf_buffer;
@@ -55,6 +108,39 @@ struct switch_channel {
 	int kbps;
 };
 
+
+SWITCH_DECLARE(char *) switch_channel_str2cause(switch_call_cause_t cause)
+{
+	uint8_t x;
+	char *str = "UNALLOCATED";
+
+	for(x = 0; CAUSE_CHART[x].name; x++) {
+		if (CAUSE_CHART[x].cause == cause) {
+			str = (char *) CAUSE_CHART[x].name;
+		}
+	}
+
+	return str;
+}
+
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_cause2str(char *str)
+{
+	uint8_t x;
+	switch_call_cause_t cause = SWITCH_CAUSE_UNALLOCATED;
+
+	for(x = 0; CAUSE_CHART[x].name; x++) {
+		if (!strcasecmp(CAUSE_CHART[x].name, str)) {
+			cause = CAUSE_CHART[x].cause;
+		}
+	}
+	return cause;
+}
+
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel *channel)
+{
+	return channel->hangup_cause;
+}
+
 SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch_channel *channel)
 {
 	return &channel->times;
@@ -72,6 +158,7 @@ SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, swi
 	switch_buffer_create(pool, &(*channel)->dtmf_buffer, 128);
 	switch_mutex_init(&(*channel)->dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
 	(*channel)->times.created = switch_time_now();
+	(*channel)->hangup_cause = SWITCH_CAUSE_UNALLOCATED;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -399,6 +486,11 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n", channel->name,
 							  state_names[last_state], state_names[state]);
 		channel->state = state;
+
+		if (state == CS_HANGUP && channel->hangup_cause == SWITCH_CAUSE_UNALLOCATED) {
+			channel->hangup_cause = SWITCH_CAUSE_NORMAL_CLEARING;
+		}
+
 		if (state < CS_DONE) {
 			switch_core_session_signal_state_change(channel->session);
 		}

@@ -81,9 +81,30 @@ SWITCH_DECLARE(unsigned int) switch_channel_ready(switch_channel *channel);
 SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *channel, switch_channel_state state);
 
 /*!
+  \brief return a cause code for a given string
+  \param str the string to check
+  \return the code
+*/
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_cause2str(char *str);
+
+/*!
+  \brief return the cause code for a given channel
+  \param channel the channel
+  \return the code
+*/
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel *channel);
+
+/*!
+  \brief return a cause string for a given cause
+  \param the code to check
+  \return the string
+*/
+SWITCH_DECLARE(char *) switch_channel_str2cause(switch_call_cause_t cause);
+
+/*!
   \brief View the timetable of a channel
   \param channel channel to retrieve timetable from
-  \returns a pointer to the channel's timetable (created, answered, etc..)
+  \return a pointer to the channel's timetable (created, answered, etc..)
 */
 SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch_channel *channel);
 
@@ -91,7 +112,7 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
   \brief Allocate a new channel
   \param channel NULL pointer to allocate channel to
   \param pool memory_pool to use for allocation
-  \returns SWITCH_STATUS_SUCCESS if successful
+  \return SWITCH_STATUS_SUCCESS if successful
 */
 SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, switch_memory_pool *pool);
 
