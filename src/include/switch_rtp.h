@@ -294,6 +294,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp *rtp_session, switch_frame
   \param rtp_session the RTP session to write to
   \param data data to write
   \param datalen the size of the data
+  \param m set mark bit or not
   \param payload the IANA payload number
   \param ts then number of bytes to increment the timestamp by
   \param mseq the specific sequence number to use

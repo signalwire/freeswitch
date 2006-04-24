@@ -96,7 +96,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel *cha
 
 /*!
   \brief return a cause string for a given cause
-  \param the code to check
+  \param cause the code to check
   \return the string
 */
 SWITCH_DECLARE(char *) switch_channel_str2cause(switch_call_cause_t cause);

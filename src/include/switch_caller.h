@@ -148,6 +148,8 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
   \param network_addr network address
   \param ani ANI information
   \param ani2 ANI II information
+  \param rdnis RDNIS
+  \param source the source 
   \param destination_number destination number
   \return a new profile object allocated from the session's memory pool
 */
