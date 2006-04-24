@@ -229,6 +229,7 @@ End If
 If BuildModSpiderMonkey Then
 	BuildLibs_SpiderMonkey BuildDebug, BuildRelease
 	BuildLibs_curl BuildDebug, BuildRelease
+	BuildLibs_libetpan BuildDebug, BuildRelease
 End If
 
 WScript.Echo "Complete"
@@ -641,6 +642,29 @@ Sub BuildLibs_libsndfile(BuildDebug, BuildRelease)
 		Wscript.echo "Unable to download libsndfile"
 	End If 
 End Sub
+
+Sub BuildLibs_libetpan(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "libetpan") Then 
+		WgetUnCompress LibsBase & "libetpan-0.45.tar.gz", LibDestDir
+		RenameFolder LibDestDir & "libetpan-0.45", "libetpan"
+		FSO.CopyFile Utilsdir & "libetpan.vcproj", LibDestDir & "libetpan\build-windows\libetpan\", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "libetpan") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "libetpan\build-windows\libetpan\Debug\libetpan.lib") Then 
+				BuildViaVCBuild LibDestDir & "libetpan\build-windows\libetpan\libetpan.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "libetpan\build-windows\libetpan\Release\libetpan.lib") Then 
+				BuildViaVCBuild LibDestDir & "libetpan\build-windows\libetpan\libsndfile.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download libetpan"
+	End If 
+End Sub
+
 
 Sub BuildLibs_howl(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "howl") Then 
