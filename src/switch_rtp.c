@@ -723,8 +723,8 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 		uint32_t rate;
 		uint32_t flags;
 		uint32_t len = sizeof(decoded);
-		send = 0;
 		time_t now = time(NULL);
+		send = 0;
 
 		if (rtp_session->vad_data.scan_freq && rtp_session->vad_data.next_scan <= now) {
 			rtp_session->vad_data.bg_count = rtp_session->vad_data.bg_level = 0;
@@ -742,13 +742,13 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 									 &rate,
 									 &flags) == SWITCH_STATUS_SUCCESS) {
 
-			double energy = 0;
+			uint32_t energy = 0;
 			uint32_t x, y = 0, z = len / sizeof(int16_t);
 			uint32_t score = 0;
 			
 			if (z) {
 				for (x = 0; x < z; x++) {
-					energy += abs(decoded[y] * 1.0);
+					energy += abs(decoded[y]);
 					y += rtp_session->vad_data.read_codec->implementation->number_of_channels;
 				}
 				

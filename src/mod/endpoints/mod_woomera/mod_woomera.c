@@ -396,7 +396,7 @@ static switch_status woomerachan_read_frame(switch_core_session *session, switch
 
 	len = sizeof(tech_pvt->databuf);
 	if (switch_socket_recvfrom(tech_pvt->udpread, tech_pvt->udp_socket, 0, tech_pvt->databuf, &len) == SWITCH_STATUS_SUCCESS) {
-		pframe->datalen = len;
+		pframe->datalen = (uint32_t)len;
 		pframe->samples = (int) pframe->datalen / 2;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -425,7 +425,7 @@ static switch_status woomerachan_write_frame(switch_core_session *session, switc
 	//pframe = &tech_pvt->frame;
 	len = frame->datalen;
 	if (switch_socket_sendto(tech_pvt->udp_socket, tech_pvt->udpwrite, 0, frame->data, &len) == SWITCH_STATUS_SUCCESS) {
-		frame->datalen = len;
+		frame->datalen = (uint32_t)len;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
