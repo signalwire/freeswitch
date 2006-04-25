@@ -657,7 +657,7 @@ Sub BuildLibs_libetpan(BuildDebug, BuildRelease)
 		End If
 		If BuildRelease Then
 			If Not FSO.FileExists(LibDestDir & "libetpan\build-windows\libetpan\Release\libetpan.lib") Then 
-				BuildViaVCBuild LibDestDir & "libetpan\build-windows\libetpan\libsndfile.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "libetpan\build-windows\libetpan\libetpan.vcproj", "Release"
 			End If
 		End If
 	Else
