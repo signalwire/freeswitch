@@ -254,6 +254,13 @@ SWITCH_DECLARE(switch_status) switch_channel_pre_answer(switch_channel *channel)
 SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel *channel, const switch_state_handler_table *state_handler);
 
 /*!
+  \brief clear a state handler table from a given channel
+  \param channel channel from which to clear the state handler table
+  \param state_handler table of state handler functions
+*/
+SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel *channel, const switch_state_handler_table *state_handler);
+
+/*!
   \brief Retrieve an state handler tablefrom a given channel at given index level
   \param channel channel from which to retrieve the state handler table
   \param index the index of the state handler table (start from 0)

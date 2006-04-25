@@ -323,7 +323,8 @@ CF_OUTBOUND     = (1 <<  1) - Channel is an outbound channel
 CF_EARLY_MEDIA  = (1 <<  2) - Channel is ready for audio before answer 
 CF_ORIGINATOR	= (1 <<  3) - Channel is an originator
 CF_TRANSFER		= (1 <<  4) - Channel is being transfered
-CF_ACCEPT_CNG     = (1 <<  5) - Channel will accept CNG frames
+CF_ACCEPT_CNG	= (1 <<  5) - Channel will accept CNG frames
+CF_LOCK_THREAD	= (1 <<  6) - Prevent the channel thread from exiting while this flag is set
 </pre>
  */
 
@@ -333,7 +334,8 @@ typedef enum {
 	CF_EARLY_MEDIA	= (1 <<  2),
 	CF_ORIGINATOR	= (1 <<  3),
 	CF_TRANSFER		= (1 <<  4),
-	CF_ACCEPT_CNG     = (1 <<  5)
+	CF_ACCEPT_CNG	= (1 <<  5),
+	CF_LOCK_THREAD	= (1 <<  6)
 } switch_channel_flag;
 
 
@@ -357,11 +359,14 @@ typedef enum {
   \brief Signals to send to channels
 <pre>
 SWITCH_SIG_KILL - Kill the channel
+SWITCH_SIG_XFER - Stop the current io but leave it viable
 </pre>
  */
 
 typedef enum {
-	SWITCH_SIG_KILL
+	SWITCH_SIG_NONE,
+	SWITCH_SIG_KILL,
+	SWITCH_SIG_XFER
 } switch_signal;
 
 /*!

@@ -32,6 +32,8 @@
 #include <switch.h>
 #include <switch_ivr.h>
 
+static const switch_state_handler_table audio_bridge_peer_state_handlers;
+
 
 SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_session *session,
 																 switch_dtmf_callback_function dtmf_callback,
@@ -779,16 +781,19 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 
 	data->running = 0;
 
-	if (his_thread->running > 0 && switch_channel_test_flag(chan_a, CF_ORIGINATOR)) {
-		if (!switch_channel_test_flag(chan_b, CF_TRANSFER)) {
+	if (switch_channel_test_flag(chan_a, CF_ORIGINATOR)) {
+		if (switch_channel_test_flag(chan_b, CF_TRANSFER)) {
+			if (switch_channel_get_state(chan_b) < CS_HANGUP) {
+				switch_channel_set_state(chan_b, CS_RING);
+				/* TBD we need to teach all the endpoints to honor this still */
+				switch_core_session_kill_channel(session_b, SWITCH_SIG_XFER);
+			}
+		} else {
 			switch_core_session_kill_channel(session_b, SWITCH_SIG_KILL);
 			switch_channel_hangup(chan_b, SWITCH_CAUSE_NORMAL_CLEARING);
 		}
 		switch_channel_clear_flag(chan_a, CF_ORIGINATOR);
-	} else if (!switch_channel_test_flag(chan_a, CF_ORIGINATOR) && !switch_channel_test_flag(chan_a, CF_TRANSFER)) {
-		switch_core_session_kill_channel(session_a, SWITCH_SIG_KILL);
-		switch_channel_hangup(chan_a, SWITCH_CAUSE_NORMAL_CLEARING);
-	}
+	} 
 	
 	while (his_thread->running > 0) {
 		his_thread->running = -1;
@@ -799,9 +804,25 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	}
 
 	data->running = 0;		
-	switch_sleep(1000000);
 	return NULL;
 }
+
+static switch_status audio_bridge_on_transmit(switch_core_session *session)
+{
+	switch_channel *channel = NULL;
+	void *arg;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	arg = switch_channel_get_private(channel);	
+	audio_bridge_thread(NULL, (void *) arg);
+	switch_channel_set_private(channel, NULL);	
+	switch_channel_clear_state_handler(channel, &audio_bridge_peer_state_handlers);
+
+	return SWITCH_STATUS_FALSE;
+}
+
 
 static switch_status audio_bridge_on_ring(switch_core_session *session)
 {
@@ -814,7 +835,7 @@ static switch_status audio_bridge_on_ring(switch_core_session *session)
 
 	/* put the channel in a passive state so we can loop audio to it */
 	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-		switch_channel_set_state(channel, CS_TRANSMIT);
+		//switch_channel_set_state(channel, CS_TRANSMIT);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -828,7 +849,7 @@ static const switch_state_handler_table audio_bridge_peer_state_handlers = {
 	/*.on_execute */ NULL,
 	/*.on_hangup */ NULL,
 	/*.on_loopback */ NULL,
-	/*.on_transmit */ NULL
+	/*.on_transmit */ audio_bridge_on_transmit,
 };
 
 
@@ -876,12 +897,10 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	this_audio_thread.objs[5] = &other_audio_thread;
 	this_audio_thread.running = 2;
 
-
-	switch_channel_set_private(caller_channel, peer_session);
-	switch_channel_set_private(peer_channel, session);
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
+
 	if (switch_core_session_runing(peer_session)) {
-		switch_channel_set_state(peer_channel, CS_TRANSMIT);
+		switch_channel_set_state(peer_channel, CS_RING);
 	} else {
 		switch_core_session_thread_launch(peer_session);
 	}
@@ -890,7 +909,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 
 	for (;;) {
 		int state = switch_channel_get_state(peer_channel);
-		if (state > CS_RING) {
+		if (state >= CS_RING) {
 			break;
 		}
 		
@@ -951,15 +970,17 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 		switch_core_session_receive_message(peer_session, &msg);
 		msg.pointer_arg = peer_session;
 		switch_core_session_receive_message(session, &msg);
-		
-		
-		switch_core_session_launch_thread(peer_session, audio_bridge_thread, (void *) &other_audio_thread);
+
+		switch_channel_set_flag(peer_channel, CF_LOCK_THREAD);
+		switch_channel_set_private(peer_channel, &other_audio_thread);	
+		switch_channel_set_state(peer_channel, CS_TRANSMIT);
 		audio_bridge_thread(NULL, (void *) &this_audio_thread);
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(caller_channel, event);
 			switch_event_fire(&event);
 		}
+		switch_channel_clear_flag(peer_channel, CF_LOCK_THREAD);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }

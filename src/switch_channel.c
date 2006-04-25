@@ -645,6 +645,26 @@ SWITCH_DECLARE(const switch_state_handler_table *) switch_channel_get_state_hand
 	return channel->state_handlers[index];
 }
 
+SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel *channel, const switch_state_handler_table *state_handler)
+{
+	int index, i = 0;
+	const switch_state_handler_table *new_handlers[SWITCH_MAX_STATE_HANDLERS] = {0};
+
+	assert(channel != NULL);
+
+
+	for (index = 0; index < channel->state_handler_index; index++) {
+		if (channel->state_handlers[index] != state_handler) {
+			new_handlers[i++] = channel->state_handlers[index];
+		}
+	}
+	memset(channel->state_handlers, 0, sizeof(channel->state_handlers));
+	for (index = 0; index < i; index++) {
+		channel->state_handlers[index] = new_handlers[i];
+	}
+
+}
+
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel *channel,
 														 switch_caller_extension *caller_extension)
 {

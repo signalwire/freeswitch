@@ -2197,6 +2197,13 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *thread
 
 	switch_core_hash_insert(runtime.session_table, session->uuid_str, session);
 	switch_core_session_run(session);
+
+	if (switch_channel_test_flag(session->channel, CF_LOCK_THREAD)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %u (%s) Locked\n", session->id, switch_channel_get_name(session->channel));
+		while(switch_channel_test_flag(session->channel, CF_LOCK_THREAD)) {
+			switch_yield(10000);
+		}
+	}
 	switch_core_hash_delete(runtime.session_table, session->uuid_str);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Session %u (%s) Ended\n", session->id, switch_channel_get_name(session->channel));
 	switch_core_session_destroy(&session);
