@@ -110,6 +110,27 @@ SWITCH_DECLARE(switch_codec_interface *) switch_loadable_module_get_codec_interf
 SWITCH_DECLARE(switch_dialplan_interface *) switch_loadable_module_get_dialplan_interface(char *name);
 
 /*!
+  \brief build a dynamic module object and register it (for use in double embeded modules)
+  \param filename the name of the modules source file
+  \param switch_module_load the function to call when the module is loaded
+  \param switch_module_runtime a function requested to be started in it's own thread once loaded
+  \param switch_module_shutdown the function to call when the system is shutdown
+  \return the resulting status
+  \note only use this function if you are making a module that in turn gateways module loading to another technology
+ */
+SWITCH_DECLARE(switch_status) switch_loadable_module_build_dynamic(char *filename,
+																   switch_module_load_t switch_module_load,
+																   switch_module_runtime_t switch_module_runtime,
+																   switch_module_shutdown_t switch_module_shutdown);
+
+/*!
+  \brief Retrieve the dialplan interface by it's registered name
+  \param name the name of the dialplan
+  \return the desired dialplan interface
+ */
+SWITCH_DECLARE(switch_status) switch_loadable_module_load_dynamic(switch_loadable_module *new_module);
+
+/*!
   \brief Retrieve the timer interface by it's registered name
   \param name the name of the timer
   \return the desired timer interface

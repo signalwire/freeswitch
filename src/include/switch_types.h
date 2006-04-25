@@ -649,6 +649,14 @@ typedef switch_status (*switch_send_dtmf_hook)(switch_core_session *, char *);
 typedef switch_status (*switch_api_function)(char *in, char *out, switch_size_t outlen);
 typedef switch_status (*switch_dtmf_callback_function)(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen);
 typedef int (*switch_core_db_callback_func)(void *pArg, int argc, char **argv, char **columnNames);
+typedef switch_status (*switch_module_load_t) (switch_loadable_module_interface **, char *);
+typedef switch_status (*switch_module_reload_t) (void);
+typedef switch_status (*switch_module_pause_t) (void);
+typedef switch_status (*switch_module_resume_t) (void);
+typedef switch_status (*switch_module_status_t) (void);
+typedef switch_status (*switch_module_runtime_t) (void);
+typedef switch_status (*switch_module_shutdown_t) (void);
+
 
 /* things we don't deserve to know about */
 

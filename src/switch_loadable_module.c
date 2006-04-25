@@ -32,24 +32,11 @@
 #include <switch.h>
 
 
-typedef switch_status (*switch_module_load_t) (switch_loadable_module_interface **, char *);
-typedef switch_status (*switch_module_reload_t) (void);
-typedef switch_status (*switch_module_pause_t) (void);
-typedef switch_status (*switch_module_resume_t) (void);
-typedef switch_status (*switch_module_status_t) (void);
-typedef switch_status (*switch_module_runtime_t) (void);
-typedef switch_status (*switch_module_shutdown_t) (void);
-
-
 struct switch_loadable_module {
 	char *filename;
 	const switch_loadable_module_interface *interface;
 	void *lib;
 	switch_module_load_t switch_module_load;
-	switch_module_reload_t switch_module_reload;
-	switch_module_pause_t switch_module_pause;
-	switch_module_resume_t switch_module_resume;
-	switch_module_status_t switch_module_status;
 	switch_module_runtime_t switch_module_runtime;
 	switch_module_shutdown_t switch_module_shutdown;
 };
@@ -97,7 +84,111 @@ static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 }
 
 
-typedef switch_status (*switch_load_fp_t)(switch_loadable_module_interface **, char *);
+
+
+
+static switch_status switch_loadable_module_process(char *key, switch_loadable_module *new_module)
+{
+
+
+	switch_core_hash_insert(loadable_modules.module_hash, key, new_module);
+
+	if (new_module->interface->endpoint_interface) {
+		const switch_endpoint_interface *ptr;
+		for (ptr = new_module->interface->endpoint_interface; ptr; ptr = ptr->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Endpoint '%s'\n", ptr->interface_name);
+			switch_core_hash_insert(loadable_modules.endpoint_hash, (char *) ptr->interface_name, (void *) ptr);
+		}
+	}
+
+	if (new_module->interface->codec_interface) {
+		const switch_codec_implementation *impl;
+		const switch_codec_interface *ptr;
+
+		for (ptr = new_module->interface->codec_interface; ptr; ptr = ptr->next) {
+			for (impl = ptr->implementations; impl; impl = impl->next) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
+								  "Adding Codec '%s' (%s) %dkhz %dms\n",
+								  ptr->iananame,
+								  ptr->interface_name,
+								  impl->samples_per_second, impl->microseconds_per_frame / 1000);
+			}
+
+			switch_core_hash_insert(loadable_modules.codec_hash, (char *) ptr->iananame, (void *) ptr);
+		}
+	}
+
+	if (new_module->interface->dialplan_interface) {
+		const switch_dialplan_interface *ptr;
+
+		for (ptr = new_module->interface->dialplan_interface; ptr; ptr = ptr->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Dialplan '%s'\n", ptr->interface_name);
+			switch_core_hash_insert(loadable_modules.dialplan_hash, (char *) ptr->interface_name, (void *) ptr);
+		}
+	}
+
+	if (new_module->interface->timer_interface) {
+		const switch_timer_interface *ptr;
+
+		for (ptr = new_module->interface->timer_interface; ptr; ptr = ptr->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Timer '%s'\n", ptr->interface_name);
+			switch_core_hash_insert(loadable_modules.timer_hash, (char *) ptr->interface_name, (void *) ptr);
+		}
+	}
+
+	if (new_module->interface->application_interface) {
+		const switch_application_interface *ptr;
+
+		for (ptr = new_module->interface->application_interface; ptr; ptr = ptr->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Application '%s'\n", ptr->interface_name);
+			switch_core_hash_insert(loadable_modules.application_hash,
+									(char *) ptr->interface_name, (void *) ptr);
+		}
+	}
+
+	if (new_module->interface->api_interface) {
+		const switch_api_interface *ptr;
+
+		for (ptr = new_module->interface->api_interface; ptr; ptr = ptr->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding API Function '%s'\n", ptr->interface_name);
+			switch_core_hash_insert(loadable_modules.api_hash, (char *) ptr->interface_name, (void *) ptr);
+		}
+	}
+
+	if (new_module->interface->file_interface) {
+		const switch_file_interface *ptr;
+
+		for (ptr = new_module->interface->file_interface; ptr; ptr = ptr->next) {
+			int i;
+			for (i = 0; ptr->extens[i]; i++) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding File Format '%s'\n", ptr->extens[i]);
+				switch_core_hash_insert(loadable_modules.file_hash, (char *) ptr->extens[i], (void *) ptr);
+			}
+		}
+	}
+
+	if (new_module->interface->speech_interface) {
+		const switch_speech_interface *ptr;
+
+		for (ptr = new_module->interface->speech_interface; ptr; ptr = ptr->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Speech interface '%s'\n", ptr->interface_name);
+			switch_core_hash_insert(loadable_modules.speech_hash, (char *) ptr->interface_name, (void *) ptr);
+		}
+	}
+
+	if (new_module->interface->directory_interface) {
+		const switch_directory_interface *ptr;
+
+		for (ptr = new_module->interface->directory_interface; ptr; ptr = ptr->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Directory interface '%s'\n", ptr->interface_name);
+			switch_core_hash_insert(loadable_modules.directory_hash, (char *) ptr->interface_name, (void *) ptr);
+		}
+	}
+	
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
 
 static switch_status switch_loadable_module_load_file(char *filename, switch_loadable_module **new_module)
 {
@@ -105,8 +196,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_loa
 	apr_dso_handle_t *dso = NULL;
 	apr_status_t status = SWITCH_STATUS_SUCCESS;
 	apr_dso_handle_sym_t function_handle = NULL;
-	//switch_status (*load_func_ptr) (switch_loadable_module_interface **, char *) = NULL;
-	switch_load_fp_t load_func_ptr = NULL;
+	switch_module_load_t load_func_ptr = NULL;
 	int loading = 1;
 	const char *err = NULL;
 	switch_loadable_module_interface *interface = NULL;
@@ -125,7 +215,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_loa
 		}
 
 		status = apr_dso_sym(&function_handle, dso, "switch_module_load");
-		load_func_ptr = (switch_load_fp_t) function_handle;
+		load_func_ptr = (switch_module_load_t) function_handle;
 
 		if (load_func_ptr == NULL) {
 			err = "Cannot Load";
@@ -155,22 +245,6 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_loa
 	module->interface = interface;
 	module->switch_module_load = load_func_ptr;
 
-	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_reload")) == APR_SUCCESS) {
-		module->switch_module_reload = (switch_module_reload_t) function_handle;
-	}
-
-	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_pause")) == APR_SUCCESS) {
-		module->switch_module_pause = (switch_module_pause_t) function_handle;
-	}
-
-	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_resume")) == APR_SUCCESS) {
-		module->switch_module_resume = (switch_module_resume_t) function_handle;
-	}
-
-	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_status")) == APR_SUCCESS) {
-		module->switch_module_status = (switch_module_status_t) function_handle;
-	}
-
 	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_shutdown")) == APR_SUCCESS) {
 		module->switch_module_shutdown = (switch_module_shutdown_t) function_handle;
 	}
@@ -198,6 +272,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_load_module(char *dir, char
 	char *path;
 	char *file;
 	switch_loadable_module *new_module = NULL;
+	switch_status status;
 
 #ifdef WIN32
 	const char *ext = ".dll";
@@ -229,105 +304,73 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_load_module(char *dir, char
 			snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
 		}
 	}
-
-	if (switch_loadable_module_load_file(path, &new_module) == SWITCH_STATUS_SUCCESS) {
-		switch_core_hash_insert(loadable_modules.module_hash, (char *) file, new_module);
-
-		if (new_module->interface->endpoint_interface) {
-			const switch_endpoint_interface *ptr;
-			for (ptr = new_module->interface->endpoint_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Endpoint '%s'\n", ptr->interface_name);
-				switch_core_hash_insert(loadable_modules.endpoint_hash, (char *) ptr->interface_name, (void *) ptr);
-			}
-		}
-
-		if (new_module->interface->codec_interface) {
-			const switch_codec_implementation *impl;
-			const switch_codec_interface *ptr;
-
-			for (ptr = new_module->interface->codec_interface; ptr; ptr = ptr->next) {
-				for (impl = ptr->implementations; impl; impl = impl->next) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-										  "Adding Codec '%s' (%s) %dkhz %dms\n",
-										  ptr->iananame,
-										  ptr->interface_name,
-										  impl->samples_per_second, impl->microseconds_per_frame / 1000);
-				}
-
-				switch_core_hash_insert(loadable_modules.codec_hash, (char *) ptr->iananame, (void *) ptr);
-			}
-		}
-
-		if (new_module->interface->dialplan_interface) {
-			const switch_dialplan_interface *ptr;
-
-			for (ptr = new_module->interface->dialplan_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Dialplan '%s'\n", ptr->interface_name);
-				switch_core_hash_insert(loadable_modules.dialplan_hash, (char *) ptr->interface_name, (void *) ptr);
-			}
-		}
-
-		if (new_module->interface->timer_interface) {
-			const switch_timer_interface *ptr;
-
-			for (ptr = new_module->interface->timer_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Timer '%s'\n", ptr->interface_name);
-				switch_core_hash_insert(loadable_modules.timer_hash, (char *) ptr->interface_name, (void *) ptr);
-			}
-		}
-
-		if (new_module->interface->application_interface) {
-			const switch_application_interface *ptr;
-
-			for (ptr = new_module->interface->application_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Application '%s'\n", ptr->interface_name);
-				switch_core_hash_insert(loadable_modules.application_hash,
-										(char *) ptr->interface_name, (void *) ptr);
-			}
-		}
-
-		if (new_module->interface->api_interface) {
-			const switch_api_interface *ptr;
-
-			for (ptr = new_module->interface->api_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding API Function '%s'\n", ptr->interface_name);
-				switch_core_hash_insert(loadable_modules.api_hash, (char *) ptr->interface_name, (void *) ptr);
-			}
-		}
-
-		if (new_module->interface->file_interface) {
-			const switch_file_interface *ptr;
-
-			for (ptr = new_module->interface->file_interface; ptr; ptr = ptr->next) {
-				int i;
-				for (i = 0; ptr->extens[i]; i++) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding File Format '%s'\n", ptr->extens[i]);
-					switch_core_hash_insert(loadable_modules.file_hash, (char *) ptr->extens[i], (void *) ptr);
-				}
-			}
-		}
-
-		if (new_module->interface->speech_interface) {
-			const switch_speech_interface *ptr;
-
-			for (ptr = new_module->interface->speech_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Speech interface '%s'\n", ptr->interface_name);
-				switch_core_hash_insert(loadable_modules.speech_hash, (char *) ptr->interface_name, (void *) ptr);
-			}
-		}
-
-		if (new_module->interface->directory_interface) {
-			const switch_directory_interface *ptr;
-
-			for (ptr = new_module->interface->directory_interface; ptr; ptr = ptr->next) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Directory interface '%s'\n", ptr->interface_name);
-				switch_core_hash_insert(loadable_modules.directory_hash, (char *) ptr->interface_name, (void *) ptr);
-			}
-		}
+	
+	if ((status = switch_loadable_module_load_file(path, &new_module) == SWITCH_STATUS_SUCCESS)) {
+		return switch_loadable_module_process((char *) file, new_module);
+	} else {
+		return status;
 	}
-
-	return SWITCH_STATUS_SUCCESS;
 }
+
+SWITCH_DECLARE(switch_status) switch_loadable_module_build_dynamic(char *filename,
+																   switch_module_load_t switch_module_load,
+																   switch_module_runtime_t switch_module_runtime,
+																   switch_module_shutdown_t switch_module_shutdown)
+{ 
+	switch_loadable_module *module = NULL; 
+
+	if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module))) == 0) { 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Couldn't allocate memory\n"); 
+		return SWITCH_STATUS_GENERR; 
+	} 
+	switch_module_load_t load_func_ptr = NULL; 
+	int loading = 1; 
+	const char *err = NULL; 
+	switch_loadable_module_interface *interface = NULL; 
+
+	while (loading) { 
+  		load_func_ptr = (switch_module_load_t) switch_module_load; 
+  
+		if (load_func_ptr == NULL) { 
+			err = "Cannot Load"; 
+			break; 
+		} 
+  
+		if (load_func_ptr(&interface, filename) != SWITCH_STATUS_SUCCESS) { 
+			err = "Module load routine returned an error"; 
+			interface = NULL; 
+			break; 
+		} 
+  
+		if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module))) == 0) { 
+			err = "Could not allocate memory\n"; 
+			break; 
+		} 
+  
+		loading = 0; 
+	}
+  
+	if (err) { 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error Loading module %s\n**%s**\n", filename, err); 
+		return SWITCH_STATUS_GENERR; 
+	} 
+  
+	module->filename = switch_core_permenant_strdup(filename); 
+	module->interface = interface; 
+	module->switch_module_load = load_func_ptr; 
+  
+	if (switch_module_shutdown) { 
+		module->switch_module_shutdown = switch_module_shutdown; 
+	} 
+	if (switch_module_runtime) { 
+		module->switch_module_runtime = switch_module_runtime; 
+	} 
+	if (module->switch_module_runtime) { 
+		switch_core_launch_thread(switch_loadable_module_exec, module, loadable_modules.pool); 
+	} 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", interface->module_name); 
+	return switch_loadable_module_process((char *) module->filename, module);
+} 
 
 #ifdef WIN32
 static void switch_loadable_module_path_init()
