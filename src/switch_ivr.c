@@ -880,7 +880,12 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	switch_channel_set_private(caller_channel, peer_session);
 	switch_channel_set_private(peer_channel, session);
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
-	switch_core_session_thread_launch(peer_session);
+	if (switch_core_session_runing(peer_session)) {
+		switch_channel_set_state(peer_channel, CS_TRANSMIT);
+	} else {
+		switch_core_session_thread_launch(peer_session);
+	}
+
 	time(&start);
 
 	for (;;) {
