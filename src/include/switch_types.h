@@ -496,7 +496,8 @@ typedef enum {
 
 <pre>
     SWITCH_EVENT_CUSTOM				- A custom event
-    SWITCH_EVENT_CHANNEL_CREATE		- A channel has changed state
+    SWITCH_EVENT_CHANNEL_CREATE		- A channel has been created
+    SWITCH_EVENT_CHANNEL_DESTROY	- A channel has been destroyed
     SWITCH_EVENT_CHANNEL_STATE		- A channel has changed state
     SWITCH_EVENT_CHANNEL_ANSWER		- A channel has been answered
     SWITCH_EVENT_CHANNEL_HANGUP		- A channel has been hungup
@@ -520,6 +521,7 @@ typedef enum {
 typedef enum {
 	SWITCH_EVENT_CUSTOM,
 	SWITCH_EVENT_CHANNEL_CREATE,
+	SWITCH_EVENT_CHANNEL_DESTROY,
 	SWITCH_EVENT_CHANNEL_STATE,
 	SWITCH_EVENT_CHANNEL_ANSWER,
 	SWITCH_EVENT_CHANNEL_HANGUP,

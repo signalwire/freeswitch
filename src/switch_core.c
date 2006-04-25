@@ -1837,17 +1837,11 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 	switch_mutex_lock(session->mutex);
 
 	while ((state = switch_channel_get_state(session->channel)) != CS_DONE) {
-		switch_event *event;
-
 		if (state != laststate) {
 			int index = 0;
 			int proceed = 1;
 			midstate = state;
 
-			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
-				switch_channel_event_set_data(session->channel, event);
-				switch_event_fire(&event);
-			}
 
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */
@@ -2095,6 +2089,12 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session **session)
 {
 	switch_memory_pool *pool;
+	switch_event *event;
+
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DESTROY) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(session->channel, event);
+		switch_event_fire(&event);
+	}
 
 	pool = (*session)->pool;
 	*session = NULL;
@@ -2336,6 +2336,11 @@ static void core_event_handler(switch_event *event)
 	}
 
 	switch (event->event_id) {
+
+	case SWITCH_EVENT_CHANNEL_DESTROY:
+		snprintf(buf, sizeof(buf), "delete from channels where uuid='%s'", switch_event_get_header(event, "unique-id"));
+		sql = buf;
+		break;
 	case SWITCH_EVENT_CHANNEL_CREATE:
 		snprintf(buf, sizeof(buf), "insert into channels (uuid,created,name,state) values('%s','%s','%s','%s')",
 				 switch_event_get_header(event, "unique-id"),
@@ -2360,8 +2365,7 @@ static void core_event_handler(switch_event *event)
 
 			switch(state_i) {
 			case CS_HANGUP:
-				snprintf(buf, sizeof(buf), "delete from channels where uuid='%s'", switch_event_get_header(event, "unique-id"));
-				sql = buf;
+			case CS_DONE:
 				break;
 			case CS_RING:
 				snprintf(buf, sizeof(buf), "update channels set state='%s',cid_name='%s',cid_num='%s',ip_addr='%s',dest='%s'"
@@ -2440,6 +2444,7 @@ static void core_event_handler(switch_event *event)
 				break;
 			}
 		}
+		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL [%s]\n", sql);
 	}
 }
 

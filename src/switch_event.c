@@ -85,6 +85,7 @@ also never put any new ones before EVENT_ALL
 static char *EVENT_NAMES[] = {
 	"CUSTOM",
 	"CHANNEL_CREATE",
+	"CHANNEL_DESTROY",
 	"CHANNEL_STATE",
 	"CHANNEL_ANSWER",
 	"CHANNEL_HANGUP",

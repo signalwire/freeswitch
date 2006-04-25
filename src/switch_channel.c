@@ -483,6 +483,8 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 
 
 	if (ok) {
+		switch_event *event;
+		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n", channel->name,
 							  state_names[last_state], state_names[state]);
 		channel->state = state;
@@ -491,6 +493,11 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 			channel->hangup_cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		}
 
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
+		}
+		
 		if (state < CS_DONE) {
 			switch_core_session_signal_state_change(channel->session);
 		}
@@ -690,8 +697,15 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *chann
 	}
 
 	if (channel->state < CS_HANGUP) {
+		switch_event *event;
+
 		channel->state = CS_HANGUP;
 		channel->hangup_cause = hangup_cause;
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
+		}
+
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
 		switch_core_session_signal_state_change(channel->session);
 	}
