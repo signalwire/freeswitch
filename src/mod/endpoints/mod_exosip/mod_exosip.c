@@ -1368,7 +1368,7 @@ static void destroy_call_by_event(eXosip_event_t * event)
 	switch_channel *channel = NULL;
 
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Um in case you are interested, Can't find the pvt [%d]!\n",
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Um in case you are interested, Can't find the pvt [%d]!\n",
 							  event->cid);
 		return;
 	}
@@ -1434,7 +1434,7 @@ static void handle_answer(eXosip_event_t * event)
 
 
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Um in case you are interested, Can't find the pvt!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Um in case you are interested, Can't find the pvt!\n");
 		return;
 	}
 
