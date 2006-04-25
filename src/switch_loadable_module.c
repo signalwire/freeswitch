@@ -318,15 +318,15 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_build_dynamic(char *filenam
 																   switch_module_shutdown_t switch_module_shutdown)
 { 
 	switch_loadable_module *module = NULL; 
+	switch_module_load_t load_func_ptr = NULL; 
+	int loading = 1; 
+	const char *err = NULL; 
+	switch_loadable_module_interface *interface = NULL; 
 
 	if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module))) == 0) { 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Couldn't allocate memory\n"); 
 		return SWITCH_STATUS_GENERR; 
 	} 
-	switch_module_load_t load_func_ptr = NULL; 
-	int loading = 1; 
-	const char *err = NULL; 
-	switch_loadable_module_interface *interface = NULL; 
 
 	while (loading) { 
   		load_func_ptr = (switch_module_load_t) switch_module_load; 
