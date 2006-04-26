@@ -794,10 +794,10 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 			switch_channel_hangup(chan_b, SWITCH_CAUSE_NORMAL_CLEARING);
 		}
 		switch_channel_clear_flag(chan_a, CF_ORIGINATOR);
-	
+		his_thread->running = 0;
 	}
 
-	his_thread->running = 0;	
+
 	data->running = 0;
 	return NULL;
 }
@@ -810,10 +810,11 @@ static switch_status audio_bridge_on_loopback(switch_core_session *session)
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	arg = switch_channel_get_private(channel);	
-	audio_bridge_thread(NULL, (void *) arg);
-	switch_channel_set_private(channel, NULL);	
-	switch_channel_clear_state_handler(channel, &audio_bridge_peer_state_handlers);
+	if ((arg = switch_channel_get_private(channel))) {
+		switch_channel_set_private(channel, NULL);
+		audio_bridge_thread(NULL, (void *) arg);
+		switch_channel_clear_state_handler(channel, &audio_bridge_peer_state_handlers);
+	}
 
 	return SWITCH_STATUS_FALSE;
 }
