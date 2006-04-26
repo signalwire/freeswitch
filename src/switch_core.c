@@ -2359,13 +2359,14 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread *thread, vo
 	uint32_t itterations = 0;
 	uint8_t trans = 0;
 	switch_time_t last_commit = switch_time_now();
-	uint32_t work = 0, freq = 1000, target = 500, diff = 0;
+	uint32_t freq = 1000, target = 500, diff = 0;
 	
-
 	runtime.event_db = switch_core_db_handle();
 	switch_queue_create(&runtime.sql_queue, SWITCH_SQL_QUEUE_LEN, runtime.memory_pool);
 	
 	for(;;) {
+		uint32_t work = 0;
+
 		if (switch_queue_trypop(runtime.sql_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			char *sql = (char *) pop;
 

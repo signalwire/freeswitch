@@ -172,10 +172,10 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void 
 		any = len[1] + len[2] + len[0];
 
 		if (!any) {
-			switch_yield(1000);
 			if (THREAD_RUNNING != 1) {
 				break;
 			}
+			switch_yield(1000);
 			continue;
 		}
 
@@ -197,6 +197,8 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void 
 			THREAD_RUNNING--;
 		}
 	}
+
+
 	THREAD_RUNNING = 0;
 	return NULL;
 }
