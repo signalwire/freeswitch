@@ -107,8 +107,8 @@ static switch_status switch_console_logger(const switch_log_node *node, switch_l
 
 	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
 		uint8_t *lookup = NULL;
-		switch_log_level level = SWITCH_LOG_DEBUG;
-		
+		switch_log_level level = SWITCH_LOG_DEBUG;		
+
 		if (log_hash) {
 			lookup = switch_core_hash_find(log_hash, node->file);
 			
@@ -126,6 +126,9 @@ static switch_status switch_console_logger(const switch_log_node *node, switch_l
 		if (!log_hash || (((all_level > - 1) || lookup) && level >= node->level)) {
 			fprintf(handle, node->data);
 		}
+	} else {
+		fprintf(stderr, "HELP I HAVE NO CONSOLE TO LOG TO!\n");
+		fflush(stderr);
 	}
 	
 	return SWITCH_STATUS_SUCCESS;
