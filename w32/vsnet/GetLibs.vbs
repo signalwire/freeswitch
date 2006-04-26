@@ -1,4 +1,4 @@
-On Error Resume Next
+'On Error Resume Next
 ' **************
 ' Initialization
 ' **************
@@ -412,12 +412,12 @@ End Sub
 
 Sub BuildLibs_sqlite(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "sqlite") Then 
-		WgetUnCompress "http://www.sqlite.org/sqlite-source-3_2_7.zip", LibDestDir 
-		If Not FSO.FolderExists(LibDestDir & "sqlite-source-3_2_7") Then
+		WgetUnCompress "http://www.sqlite.org/sqlite-source-3_3_5.zip", LibDestDir 
+		If Not FSO.FolderExists(LibDestDir & "sqlite-source-3_3_5") Then
 			Wscript.echo "Unable to get SQLite from default download location, Trying backup location:"
-			WgetUnCompress LibsBase & "sqlite-source-3_2_7.zip", LibDestDir
+			WgetUnCompress LibsBase & "sqlite-source-3_3_5.zip", LibDestDir
 		End If
-		RenameFolder LibDestDir & "sqlite-source-3_2_7", "sqlite"
+		RenameFolder LibDestDir & "sqlite-source-3_3_5", "sqlite"
 		FSO.CopyFile Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\", True
 		FindReplaceInFile LibDestDir & "sqlite\sqlite.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
 	End If
