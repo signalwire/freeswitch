@@ -297,6 +297,7 @@ SWITCH_DECLARE(switch_status) switch_channel_set_name(switch_channel *channel, c
 	channel->name = NULL;
 	if (name) {
 		channel->name = switch_core_session_strdup(channel->session, name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Channel %s\n", name);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -700,7 +701,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *chann
 
 		channel->state = CS_HANGUP;
 		channel->hangup_cause = hangup_cause;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Hangup %s [%s] [%s]\n", channel->name,
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n", channel->name,
 						  state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);

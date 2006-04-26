@@ -802,7 +802,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	return NULL;
 }
 
-static switch_status audio_bridge_on_transmit(switch_core_session *session)
+static switch_status audio_bridge_on_loopback(switch_core_session *session)
 {
 	switch_channel *channel = NULL;
 	void *arg;
@@ -829,13 +829,21 @@ static switch_status audio_bridge_on_ring(switch_core_session *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CUSTOM RING\n");
 
 	/* put the channel in a passive state so we can loop audio to it */
-	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-		//switch_channel_set_state(channel, CS_TRANSMIT);
-		return SWITCH_STATUS_FALSE;
-	}
+	switch_channel_set_state(channel, CS_TRANSMIT);
+	return SWITCH_STATUS_FALSE;
+}
 
+static switch_status audio_bridge_on_transmit(switch_core_session *session)
+{
+	switch_channel *channel = NULL;
 
-	return SWITCH_STATUS_SUCCESS;
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CUSTOM TRANSMIT\n");
+
+	/* put the channel in a passive state so we can loop audio to it */
+	return SWITCH_STATUS_FALSE;
 }
 
 static const switch_state_handler_table audio_bridge_peer_state_handlers = {
@@ -843,8 +851,8 @@ static const switch_state_handler_table audio_bridge_peer_state_handlers = {
 	/*.on_ring */ audio_bridge_on_ring,
 	/*.on_execute */ NULL,
 	/*.on_hangup */ NULL,
-	/*.on_loopback */ NULL,
-	/*.on_transmit */ audio_bridge_on_transmit
+	/*.on_loopback */ audio_bridge_on_loopback,
+	/*.on_transmit */ audio_bridge_on_transmit,
 };
 
 
@@ -953,6 +961,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 		switch_event *event;
 		switch_core_session_message msg = {0};
 
+		switch_channel_set_state(peer_channel, CS_TRANSMIT);
+
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_BRIDGE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(caller_channel, event);
 			switch_event_fire(&event);
@@ -968,7 +978,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 
 		switch_channel_set_flag(peer_channel, CF_LOCK_THREAD);
 		switch_channel_set_private(peer_channel, &other_audio_thread);	
-		switch_channel_set_state(peer_channel, CS_TRANSMIT);
+		switch_channel_set_state(peer_channel, CS_LOOPBACK);
 		audio_bridge_thread(NULL, (void *) &this_audio_thread);
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
@@ -976,6 +986,12 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 			switch_event_fire(&event);
 		}
 		switch_channel_clear_flag(peer_channel, CF_LOCK_THREAD);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bridge Failed %s->%s\n", 
+						  switch_channel_get_name(caller_channel),
+						  switch_channel_get_name(peer_channel)
+						  );
+		return SWITCH_STATUS_FALSE;
 	}
 	return SWITCH_STATUS_SUCCESS;
 }

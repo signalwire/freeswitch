@@ -1385,10 +1385,11 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 
 }
 
-static void destroy_call_by_event(eXosip_event_t * event)
+static void destroy_call_by_event(eXosip_event_t *event)
 {
 	struct private_object *tech_pvt;
 	switch_channel *channel = NULL;
+	switch_call_cause_t cause;
 
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cannot destroy nonexistant call [%d]!\n", event->cid);
@@ -1400,7 +1401,28 @@ static void destroy_call_by_event(eXosip_event_t * event)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "destroy %s\n", switch_channel_get_name(channel));
 	exosip_kill_channel(tech_pvt->session, SWITCH_SIG_KILL);
-	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+
+	switch (event->type) {
+	case EXOSIP_CALL_RELEASED:
+	case EXOSIP_CALL_CLOSED:
+		cause = SWITCH_CAUSE_NORMAL_CLEARING;
+		break;
+	case EXOSIP_CALL_NOANSWER:
+		cause = SWITCH_CAUSE_NO_ANSWER;
+		break;
+	case EXOSIP_CALL_REQUESTFAILURE:
+		cause = SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
+		break;
+	case EXOSIP_CALL_SERVERFAILURE:
+	case EXOSIP_CALL_GLOBALFAILURE:
+		cause = SWITCH_CAUSE_CALL_REJECTED;
+		break;
+	default:
+		cause = SWITCH_CAUSE_SWITCH_CONGESTION;
+		break;
+	}
+
+	switch_channel_hangup(channel, cause);
 
 }
 
@@ -1825,7 +1847,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 		case EXOSIP_CALL_REINVITE:
 			/* See what the reinvite is about - on hold or whatever */
 			//handle_reinvite(event);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Got a reinvite.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a reinvite.\n");
 			break;
 		case EXOSIP_CALL_MESSAGE_NEW:
 			if (event->request != NULL && MSG_IS_REFER(event->request)) {
@@ -1836,7 +1858,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 			/* If audio is not flowing and this has SDP - fire it up! */
 			break;
 		case EXOSIP_CALL_ANSWERED:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "The call was answered.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "The call was answered.\n");
 			handle_answer(event);
 			break;
 		case EXOSIP_CALL_PROCEEDING:
@@ -1846,7 +1868,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 			//handle_ringing(event);
 			break;
 		case EXOSIP_CALL_REDIRECTED:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Call was redirect\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call was redirect\n");
 			break;
 		case EXOSIP_CALL_CLOSED:
 			destroy_call_by_event(event);
@@ -1855,24 +1877,24 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_NOANSWER:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "The call was not answered.\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "The call was not answered.\n");
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_REQUESTFAILURE:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Request failure\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Request failure\n");
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_SERVERFAILURE:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Server failure\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Server failure\n");
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_GLOBALFAILURE:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Global failure\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Global failure\n");
 			destroy_call_by_event(event);
 			break;
 			/* Registration related stuff */
 		case EXOSIP_REGISTRATION_NEW:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Received registration attempt\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received registration attempt\n");
 			break;
 		default:
 			/* Unknown event... casually absorb it for now */

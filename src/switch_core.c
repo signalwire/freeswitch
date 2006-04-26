@@ -1847,12 +1847,12 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "(%s) State NEW\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State NEW\n", switch_channel_get_name(session->channel));
 				break;
 			case CS_DONE:
 				continue;
 			case CS_HANGUP:	/* Deactivate and end the thread */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "(%s) State HANGUP\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HANGUP\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_hangup ||
 					(driver_state_handler->on_hangup &&
 					 driver_state_handler->on_hangup(session) == SWITCH_STATUS_SUCCESS &&
@@ -1891,7 +1891,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				midstate = switch_channel_get_state(session->channel);
 				break;
 			case CS_INIT:		/* Basic setup tasks */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "(%s) State INIT\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State INIT\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_init ||
 					(driver_state_handler->on_init &&
 					 driver_state_handler->on_init(session) == SWITCH_STATUS_SUCCESS &&
@@ -1927,7 +1927,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				}
 				break;
 			case CS_RING:		/* Look for a dialplan and find something to do */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "(%s) State RING\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State RING\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_ring ||
 					(driver_state_handler->on_ring &&
 					 driver_state_handler->on_ring(session) == SWITCH_STATUS_SUCCESS &&
@@ -1963,7 +1963,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				}
 				break;
 			case CS_EXECUTE:	/* Execute an Operation */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "(%s) State EXECUTE\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State EXECUTE\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_execute ||
 					(driver_state_handler->on_execute &&
 					 driver_state_handler->on_execute(session) == SWITCH_STATUS_SUCCESS &&
@@ -1999,7 +1999,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				}
 				break;
 			case CS_LOOPBACK:	/* loop all data back to source */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "(%s) State LOOPBACK\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State LOOPBACK\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_loopback ||
 					(driver_state_handler->on_loopback &&
 					 driver_state_handler->on_loopback(session) == SWITCH_STATUS_SUCCESS &&
@@ -2035,7 +2035,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 				}
 				break;
 			case CS_TRANSMIT:	/* send/recieve data to/from another channel */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "(%s) State TRANSMIT\n", switch_channel_get_name(session->channel));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State TRANSMIT\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_transmit ||
 					(driver_state_handler->on_transmit &&
 					 driver_state_handler->on_transmit(session) == SWITCH_STATUS_SUCCESS &&
@@ -2092,6 +2092,8 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session **session)
 {
 	switch_memory_pool *pool;
 	switch_event *event;
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Close Channel %s\n", switch_channel_get_name((*session)->channel));
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DESTROY) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data((*session)->channel, event);
