@@ -323,18 +323,24 @@ static switch_status exosip_on_init(switch_core_session *session)
 			static const switch_codec_implementation *imp;
 			for (i = 0; i < num_codecs; i++) {
 				int x = 0;
+				uint32_t sps;
 
 				snprintf(tmp, sizeof(tmp), "%u", codecs[i]->ianacode);
 				sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(tmp));
-				for (imp = codecs[i]->implementations; imp; imp = imp->next) {
-					/* Add to SDP config */
-					sdp_add_codec(tech_pvt->sdp_config, codecs[i]->codec_type, codecs[i]->ianacode, codecs[i]->iananame,
-								  imp->samples_per_second, x++);
-					/* Add to SDP message */
+				imp = codecs[i]->implementations;
+				sps = imp->samples_per_second;
 
-					snprintf(tmp, sizeof(tmp), "%u %s/%d", codecs[i]->ianacode, codecs[i]->iananame, imp->samples_per_second);
+				while(NULL != imp) {
+					/* Add to SDP config */
+					sdp_add_codec(tech_pvt->sdp_config, codecs[i]->codec_type, codecs[i]->ianacode, codecs[i]->iananame, sps, x++);
+								  
+					/* Add to SDP message */
+					snprintf(tmp, sizeof(tmp), "%u %s/%d", codecs[i]->ianacode, codecs[i]->iananame, sps);
 					sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(tmp));
 					memset(tmp, 0, sizeof(tmp));
+					if (imp) {
+						imp = imp->next;
+					}
 				} 
 			}
 		}
