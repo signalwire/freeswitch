@@ -797,8 +797,8 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	
 	}
 
-	
-	data->running = 0;		
+	his_thread->running = 0;	
+	data->running = 0;
 	return NULL;
 }
 
