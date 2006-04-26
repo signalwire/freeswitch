@@ -2393,7 +2393,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread *thread, vo
 		}
 		
 		if (diff < freq) {
-			diff = (switch_time_now() - last_commit) / 1000;
+			diff = (uint32_t)((switch_time_now() - last_commit) / 1000);
 		} 
 
 		if (trans && (itterations == target || diff >= freq)) {

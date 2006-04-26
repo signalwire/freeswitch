@@ -665,7 +665,9 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel *channel,
 			new_handlers[i++] = channel->state_handlers[index];
 		}
 	}
-	memset(channel->state_handlers, 0, sizeof(channel->state_handlers));
+	for (index = 0; index < SWITCH_MAX_STATE_HANDLERS; index++) {
+		channel->state_handlers[index] = NULL;
+	}
 	for (index = 0; index < i; index++) {
 		channel->state_handlers[index] = new_handlers[i];
 	}
