@@ -1704,7 +1704,7 @@ static void switch_core_standard_on_ring(switch_core_session *session)
 
 	if ((caller_profile = switch_channel_get_caller_profile(session->channel)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't get profile!\n");
-		switch_channel_set_state(session->channel, CS_HANGUP);
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	} else {
 		if (!switch_strlen_zero(caller_profile->dialplan)) {
 			dialplan_interface = switch_loadable_module_get_dialplan_interface(caller_profile->dialplan);
@@ -1734,7 +1734,7 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard EXECUTE\n");
 	if ((extension = switch_channel_get_caller_extension(session->channel)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Extension!\n");
-		switch_channel_set_state(session->channel, CS_HANGUP);
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return;
 	}
 
@@ -1747,14 +1747,14 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 			 switch_loadable_module_get_application_interface(extension->current_application->application_name)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n",
 								  extension->current_application->application_name);
-			switch_channel_set_state(session->channel, CS_HANGUP);
+			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return;
 		}
 
 		if (!application_interface->application_function) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Function for %s\n",
 								  extension->current_application->application_name);
-			switch_channel_set_state(session->channel, CS_HANGUP);
+			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return;
 		}
 		
@@ -1767,9 +1767,9 @@ static void switch_core_standard_on_execute(switch_core_session *session)
 		application_interface->application_function(session, extension->current_application->application_data);
 		extension->current_application = extension->current_application->next;
 	}
-
+	
 	if (switch_channel_get_state(session->channel) == CS_EXECUTE) {
-		switch_channel_set_state(session->channel, CS_HANGUP);
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	}
 }
 

@@ -109,7 +109,7 @@ struct switch_channel {
 };
 
 
-SWITCH_DECLARE(char *) switch_channel_str2cause(switch_call_cause_t cause)
+SWITCH_DECLARE(char *) switch_channel_cause2str(switch_call_cause_t cause)
 {
 	uint8_t x;
 	char *str = "UNALLOCATED";
@@ -123,7 +123,7 @@ SWITCH_DECLARE(char *) switch_channel_str2cause(switch_call_cause_t cause)
 	return str;
 }
 
-SWITCH_DECLARE(switch_call_cause_t) switch_channel_cause2str(char *str)
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(char *str)
 {
 	uint8_t x;
 	switch_call_cause_t cause = SWITCH_CAUSE_UNALLOCATED;
@@ -412,7 +412,6 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 		case CS_TRANSMIT:
 		case CS_RING:
 		case CS_EXECUTE:
-		case CS_HANGUP:
 			ok++;
 		default:
 			break;
@@ -424,7 +423,6 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 		case CS_TRANSMIT:
 		case CS_RING:
 		case CS_EXECUTE:
-		case CS_HANGUP:
 			ok++;
 		default:
 			break;
@@ -436,7 +434,6 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 		case CS_LOOPBACK:
 		case CS_RING:
 		case CS_EXECUTE:
-		case CS_HANGUP:
 			ok++;
 		default:
 			break;
@@ -447,7 +444,6 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 		switch (state) {
 		case CS_LOOPBACK:
 		case CS_EXECUTE:
-		case CS_HANGUP:
 		case CS_TRANSMIT:
 			ok++;
 		default:
@@ -460,7 +456,6 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 		case CS_LOOPBACK:
 		case CS_TRANSMIT:
 		case CS_RING:
-		case CS_HANGUP:
 			ok++;
 		default:
 			break;
@@ -483,7 +478,6 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 
 
 	if (ok) {
-		switch_event *event;
 		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n", channel->name,
 							  state_names[last_state], state_names[state]);
@@ -492,10 +486,12 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 		if (state == CS_HANGUP && channel->hangup_cause == SWITCH_CAUSE_UNALLOCATED) {
 			channel->hangup_cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		}
-
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(channel, event);
-			switch_event_fire(&event);
+		if (state < CS_HANGUP) {
+			switch_event *event;
+			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_event_set_data(channel, event);
+				switch_event_fire(&event);
+			}
 		}
 		
 		if (state < CS_DONE) {
@@ -700,9 +696,12 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *chann
 
 	if (channel->state < CS_HANGUP) {
 		switch_event *event;
+		switch_channel_state last_state = channel->state;
 
 		channel->state = CS_HANGUP;
 		channel->hangup_cause = hangup_cause;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Hangup %s [%s] [%s]\n", channel->name,
+						  state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);

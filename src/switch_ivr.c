@@ -780,6 +780,7 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 	switch_core_session_receive_message(session_a, &msg);
 
 	data->running = 0;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
 
 	if (switch_channel_test_flag(chan_a, CF_ORIGINATOR)) {
 		if (switch_channel_test_flag(chan_b, CF_TRANSFER)) {
@@ -793,16 +794,10 @@ static void *audio_bridge_thread(switch_thread *thread, void *obj)
 			switch_channel_hangup(chan_b, SWITCH_CAUSE_NORMAL_CLEARING);
 		}
 		switch_channel_clear_flag(chan_a, CF_ORIGINATOR);
-	} 
 	
-	while (his_thread->running > 0) {
-		his_thread->running = -1;
-		/* wait for the other audio thread */
-		while (his_thread->running == -1) {
-			switch_yield(1000);
-		}
 	}
 
+	
 	data->running = 0;		
 	return NULL;
 }

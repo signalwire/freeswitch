@@ -85,7 +85,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
   \param str the string to check
   \return the code
 */
-SWITCH_DECLARE(switch_call_cause_t) switch_channel_cause2str(char *str);
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(char *str);
 
 /*!
   \brief return the cause code for a given channel
@@ -99,7 +99,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel *cha
   \param cause the code to check
   \return the string
 */
-SWITCH_DECLARE(char *) switch_channel_str2cause(switch_call_cause_t cause);
+SWITCH_DECLARE(char *) switch_channel_cause2str(switch_call_cause_t cause);
 
 /*!
   \brief View the timetable of a channel
