@@ -884,8 +884,29 @@ static switch_status exosip_send_dtmf(switch_core_session *session, char *digits
 
 static switch_status exosip_receive_message(switch_core_session *session, switch_core_session_message *msg)
 {
+	switch_channel *channel;
+	struct private_object *tech_pvt;
+			
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+			
+	tech_pvt = switch_core_session_get_private(session);
+	assert(tech_pvt != NULL);
+
 
 	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+		if (tech_pvt->rtp_session) {
+			switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
+		}
+			break;
+	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+		if (tech_pvt->rtp_session) {
+			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
+		}
+			break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		if (msg) {
 			struct private_object *tech_pvt;

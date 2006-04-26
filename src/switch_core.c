@@ -2359,7 +2359,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread *thread, vo
 	uint32_t itterations = 0;
 	uint8_t trans = 0;
 	switch_time_t last_commit = switch_time_now();
-	uint32_t work = 0, freq = 500, target = 500, diff = 0;
+	uint32_t work = 0, freq = 1000, target = 500, diff = 0;
 	
 	if (!runtime.event_db) {
 		runtime.event_db = switch_core_db_handle();
