@@ -392,21 +392,12 @@ octet_string_set_to_zero(uint8_t *s, int len);
 # define be64_to_cpu(x)	bswap_64((x))
 #else
 
-# ifdef HAVE_X86
-/* Fall back. */
-static inline uint32_t be32_to_cpu(uint32_t v) {
-   /* optimized for x86. */
-   asm("bswap %0" : "=r" (v) : "0" (v));
-   return v;
-}
-# else /* HAVE_X86 */
 #  ifdef HAVE_NETINET_IN_H
 #   include <netinet/in.h>
 #  elif defined HAVE_WINSOCK2_H
 #   include <winsock2.h>
 #  endif
 #  define be32_to_cpu(x)	ntohl((x))
-# endif /* HAVE_X86 */
 
 static inline uint64_t be64_to_cpu(uint64_t v) {
 # ifdef NO_64BIT_MATH
