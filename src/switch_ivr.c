@@ -844,7 +844,7 @@ static const switch_state_handler_table audio_bridge_peer_state_handlers = {
 	/*.on_execute */ NULL,
 	/*.on_hangup */ NULL,
 	/*.on_loopback */ NULL,
-	/*.on_transmit */ audio_bridge_on_transmit,
+	/*.on_transmit */ audio_bridge_on_transmit
 };
 
 

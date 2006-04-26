@@ -412,12 +412,10 @@ static switch_status exosip_on_hangup(switch_core_session *session)
 	assert(tech_pvt != NULL);
 
 	deactivate_rtp(tech_pvt);
-
 	eXosip_lock();
 	switch_core_hash_delete(globals.call_hash, tech_pvt->call_id);
 	switch_set_flag(tech_pvt, TFLAG_BYE);
 	switch_clear_flag(tech_pvt, TFLAG_IO);
-
 	i = eXosip_call_terminate(tech_pvt->cid, tech_pvt->did);
 	eXosip_unlock();
 
@@ -426,8 +424,7 @@ static switch_status exosip_on_hangup(switch_core_session *session)
 		switch_core_codec_destroy(&tech_pvt->write_codec);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EXOSIP HANGUP %s %d/%d=%d\n", switch_channel_get_name(channel),
-						  tech_pvt->cid, tech_pvt->did, i);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EXOSIP HANGUP %s %d/%d=%d\n", switch_channel_get_name(channel), tech_pvt->cid, tech_pvt->did, i);
 	return SWITCH_STATUS_SUCCESS;
 }
 
