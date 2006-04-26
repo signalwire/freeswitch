@@ -150,7 +150,7 @@ depends:
 	@rm -f build/freeswitch.env
 	@./build/addenv.sh build/freeswitch.env PREFIX $(PREFIX)
 	@./build/addenv.sh build/freeswitch.env MAKE $(MAKE)
-	./build/buildlib.sh . install sqlite-3.2.8.tar.gz --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
+	./build/buildlib.sh . install sqlite-3.3.5.tar.gz --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
 	./build/buildlib.sh . install apr-1.2.6.tar.gz --prefix=$(PREFIX)
 	./build/buildlib.sh . install apr-util-1.2.6.tar.gz --with-apr=../apr-1.2.6 --prefix=$(PREFIX)
 	./build/buildlib.sh . libresample-0.1.3.tgz --prefix=$(PREFIX)

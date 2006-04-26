@@ -220,6 +220,7 @@ static void handle_thread_launch(ldl_handle_t *handle)
 	
 	switch_threadattr_create(&thd_attr, module_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, handle_thread_run, handle, module_pool);
 
 }

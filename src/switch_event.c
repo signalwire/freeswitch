@@ -164,20 +164,31 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void 
 	queues[2] = EVENT_QUEUE[SWITCH_PRIORITY_LOW];
 	
 	for(;;) {
+		int any;
+
 		len[1] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_NORMAL]);
 		len[2] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_LOW]);
 		len[0] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_HIGH]);
+		any = len[1] + len[2] + len[0];
 
-		if (THREAD_RUNNING != 1 && !len[0] && !len[1] && !len[2]) {
-			break;
+		if (!any) {
+			switch_yield(1000);
+			if (THREAD_RUNNING != 1) {
+				break;
+			}
+			continue;
 		}
 
 		for(i = 0; i < 3; i++) {
 			if (len[i]) {
 				queue = queues[i];
-				while (queue && switch_queue_trypop(queue, &pop) == SWITCH_STATUS_SUCCESS) {
-					out_event = pop;
-					switch_event_deliver(&out_event);
+				while(queue) {
+					if (switch_queue_trypop(queue, &pop) == SWITCH_STATUS_SUCCESS) {
+						out_event = pop;
+						switch_event_deliver(&out_event);
+					} else {
+						break;
+					}
 				}
 			}
 		}
@@ -185,7 +196,6 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void 
 		if (THREAD_RUNNING < 0) {
 			THREAD_RUNNING--;
 		}
-		switch_yield(1000);
 	}
 	THREAD_RUNNING = 0;
 	return NULL;
@@ -299,6 +309,7 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool)
 	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 	switch_mutex_init(&POOL_LOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 	switch_core_hash_init(&CUSTOM_HASH, RUNTIME_POOL);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, switch_event_thread, NULL, RUNTIME_POOL);
 
 	while (!THREAD_RUNNING) {

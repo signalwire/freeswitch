@@ -1276,6 +1276,7 @@ static void pri_thread_launch(struct sangoma_pri *spri)
 	
 	switch_threadattr_create(&thd_attr, module_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, pri_thread_run, spri, module_pool);
 
 }
