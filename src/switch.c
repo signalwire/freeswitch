@@ -107,6 +107,19 @@ int main(int argc, char *argv[])
 	if (bg) {
 		//snprintf(path, sizeof(path), "%s%c%s", SWITCH_GLOBAL_dirs.log_dir, sep, lfile);
 		ppath = lfile;
+
+		signal(SIGHUP, (void *) handle_SIGHUP);
+		signal(SIGTERM, (void *) handle_SIGHUP);
+
+#ifdef WIN32
+		FreeConsole();
+#else
+		if ((pid = fork())) {
+			fprintf(stderr, "%d Backgrounding.\n", (int)pid);
+			exit(0);
+		}
+#endif
+	
 	}
 
 
@@ -132,19 +145,7 @@ int main(int argc, char *argv[])
 
 
 
-	if (bg) {
-		signal(SIGHUP, (void *) handle_SIGHUP);
-		signal(SIGTERM, (void *) handle_SIGHUP);
 
-#ifdef WIN32
-		FreeConsole();
-#else
-		if ((pid = fork())) {
-			fprintf(stderr, "%d Backgrounding.\n", (int)pid);
-			exit(0);
-		}
-#endif
-	}
 
 	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 	if ((f = fopen(path, "w")) == 0) {

@@ -156,6 +156,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread *thread, void *obj)
 			free(node);
 		}
 	}
+
 	THREAD_RUNNING = 0;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Logger Ended.\n");
 	return NULL;

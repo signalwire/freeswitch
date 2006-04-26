@@ -2361,10 +2361,10 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread *thread, vo
 	switch_time_t last_commit = switch_time_now();
 	uint32_t work = 0, freq = 1000, target = 500, diff = 0;
 	
-	if (!runtime.event_db) {
-		runtime.event_db = switch_core_db_handle();
-	}
 
+	runtime.event_db = switch_core_db_handle();
+	switch_queue_create(&runtime.sql_queue, SWITCH_SQL_QUEUE_LEN, runtime.memory_pool);
+	
 	for(;;) {
 		if (switch_queue_trypop(runtime.sql_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			char *sql = (char *) pop;
@@ -2565,18 +2565,15 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
+		fprintf(stderr, "FATAL ERROR! Could not initilize APR\n");
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	
 	if (apr_pool_create(&runtime.memory_pool, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate memory pool\n");
+		fprintf(stderr, "FATAL ERROR! Could not allocate memory pool\n");
 		switch_core_destroy();
 		return SWITCH_STATUS_MEMERR;
 	}
-	assert(runtime.memory_pool != NULL);
-	switch_log_init(runtime.memory_pool);
-	switch_core_sql_thread_launch();
 
 	if(console) {
 		if (*console != '/') {
@@ -2589,9 +2586,9 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 		runtime.console = stdout;
 	}
 
-
-	switch_queue_create(&runtime.sql_queue, SWITCH_SQL_QUEUE_LEN, runtime.memory_pool);
-
+	assert(runtime.memory_pool != NULL);
+	switch_log_init(runtime.memory_pool);
+	switch_core_sql_thread_launch();
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocated memory pool. Sessions are %u bytes\n", sizeof(struct switch_core_session));
 	switch_event_init(runtime.memory_pool);
