@@ -48,6 +48,13 @@ static switch_status on_dtmf(switch_core_session *session, char *dtmf, void *buf
 
 }
 
+
+static void disast_function(switch_core_session *session, char *data)
+{
+	printf("%s WOOHOO\n", (char *) 42);
+}
+
+
 static void dirtest_function(switch_core_session *session, char *data)
 {
 	char *var, *val;
@@ -194,11 +201,19 @@ static const switch_state_handler_table state_handlers = {
 	/*.on_transmit */ NULL
 };
 
+
+static const switch_application_interface disast_application_interface = {
+	/*.interface_name */ "disast",
+	/*.application_function */ disast_function,
+	NULL, NULL, NULL,
+	/*.next*/ NULL
+};
+
 static const switch_application_interface tts_application_interface = {
 	/*.interface_name */ "tts",
 	/*.application_function */ tts_function,
 	NULL, NULL, NULL,
-	/*.next*/ NULL
+	/*.next*/ &disast_application_interface
 };
 
 static const switch_application_interface dirtest_application_interface = {

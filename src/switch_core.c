@@ -36,6 +36,7 @@
 
 #define SWITCH_EVENT_QUEUE_LEN 256
 #define SWITCH_SQL_QUEUE_LEN 2000
+#define SWITCH_THREAD_JMP_KEY "JMP_KEY"
 
 struct switch_core_session {
 	uint32_t id;
@@ -83,6 +84,7 @@ struct switch_core_runtime {
 	uint32_t session_id;
 	apr_pool_t *memory_pool;
 	switch_hash *session_table;
+	switch_hash *stack_table;
 	switch_core_db *db;
 	switch_core_db *event_db;
 	const struct switch_state_handler_table *state_handlers[SWITCH_MAX_STATE_HANDLERS];
@@ -1811,12 +1813,50 @@ SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session *ses
 	return session->thread_running;
 }
 
+static int handle_fatality(int sig)
+{
+	switch_thread_id thread_id;
+	jmp_buf *env;
+
+	if (sig && (thread_id = switch_thread_self()) && (env = (jmp_buf *) apr_hash_get(runtime.stack_table, &thread_id, sizeof(thread_id)))) {
+		longjmp(*env, sig);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Caught SEGV for unmapped thread!");
+		abort();
+	}
+
+	return 0;
+}
+
+
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 {
 	switch_channel_state state = CS_NEW, laststate = CS_HANGUP, midstate = CS_DONE;
 	const switch_endpoint_interface *endpoint_interface;
 	const switch_state_handler_table *driver_state_handler = NULL;
 	const switch_state_handler_table *application_state_handler = NULL;
+	switch_thread_id thread_id = switch_thread_self();
+	jmp_buf env;
+	int sig;
+
+	signal(SIGSEGV, (void *) handle_fatality);
+	signal(SIGFPE, (void *) handle_fatality);
+#ifndef WIN32
+	signal(SIGBUS, (void *) handle_fatality);
+#endif
+
+	if ((sig = setjmp(env)) != 0) {
+		switch_event *event;
+
+		if (switch_event_create(&event, SWITCH_EVENT_SESSION_CRASH) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(session->channel, event);
+			switch_event_fire(&event);
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread has crashed for channel %s\n", switch_channel_get_name(session->channel));
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_CRASH);
+	} else {
+		apr_hash_set(runtime.stack_table, &thread_id, sizeof(thread_id), &env);
+	}
 
 	/*
 	   Life of the channel. you have channel and pool in your session
@@ -1849,7 +1889,6 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 			int index = 0;
 			int proceed = 1;
 			midstate = state;
-
 
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */
@@ -2090,6 +2129,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 			switch_thread_cond_wait(session->cond, session->mutex);
 		} 
 	}
+
+	apr_hash_set(runtime.stack_table, &thread_id, sizeof(thread_id), NULL);
 
 	session->thread_running = 0;
 }
@@ -2650,6 +2691,7 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 	runtime.session_id = 1;
 
 	switch_core_hash_init(&runtime.session_table, runtime.memory_pool);
+	switch_core_hash_init(&runtime.stack_table, runtime.memory_pool);
 
 	time(&runtime.initiated);
 	return SWITCH_STATUS_SUCCESS;

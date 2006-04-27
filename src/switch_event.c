@@ -102,6 +102,7 @@ static char *EVENT_NAMES[] = {
 	"UNPUBLISH",
 	"TALK",
 	"NOTALK",
+	"SESSION_CRASH",
 	"ALL"
 };
 

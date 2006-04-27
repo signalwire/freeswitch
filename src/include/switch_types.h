@@ -514,6 +514,7 @@ typedef enum {
 	SWITCH_EVENT_UNPUBLISH			- UnPublish
 	SWITCH_EVENT_TALK				- Talking Detected
 	SWITCH_EVENT_NOTALK				- Not Talking Detected
+	SWITCH_EVENT_SESSION_CRASH		- Session Crashed
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -538,6 +539,7 @@ typedef enum {
 	SWITCH_EVENT_UNPUBLISH,
 	SWITCH_EVENT_TALK,
 	SWITCH_EVENT_NOTALK,
+	SWITCH_EVENT_SESSION_CRASH,
 	SWITCH_EVENT_ALL
 } switch_event_t;
 

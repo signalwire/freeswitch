@@ -41,6 +41,9 @@
 
 #ifdef __cplusplus
 extern "C" {
+#ifdef __FORMATBUG
+}
+#endif
 #endif
 
 #include <apr.h>
@@ -48,6 +51,7 @@ extern "C" {
 #include <apr_errno.h>
 #include <apr_general.h>
 #include <apr_thread_proc.h>
+#include <apr_portable.h>
 #include <apr_thread_mutex.h>
 #include <apr_thread_cond.h>
 #include <apr_thread_rwlock.h>
@@ -256,6 +260,12 @@ typedef apr_thread_cond_t switch_thread_cond_t;
  */
 DoxyDefine(apr_status_t switch_thread_cond_create(switch_thread_cond_t **cond, switch_pool_t *pool);)
 #define switch_thread_cond_create apr_thread_cond_create
+
+typedef apr_os_thread_t switch_thread_id;
+
+#define switch_thread_data_set apr_thread_data_set
+#define switch_thread_data_get apr_thread_data_get
+#define switch_thread_self apr_os_thread_current
 
 /**
  * Put the active calling thread to sleep until signaled to wake up. Each
