@@ -420,7 +420,18 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
   \param sig signal to send
   \return status returned by the session's signal handler
 */
-SWITCH_DECLARE(switch_status) switch_core_session_kill_channel(switch_core_session *session, switch_signal sig);
+SWITCH_DECLARE(switch_status) switch_core_session_perform_kill_channel(switch_core_session *session, 
+																	   const char *file, 
+																	   const char *func, 
+																	   int line, 
+																	   switch_signal sig);
+/*! 
+  \brief Send a signal to a channel
+  \param session session to send signal to
+  \param sig signal to send
+  \return status returned by the session's signal handler
+*/
+#define switch_core_session_kill_channel(session, sig) switch_core_session_perform_kill_channel(session, __FILE__, __FUNCTION__, __LINE__, sig)
 
 /*! 
   \brief Wait for a session to be ready for input

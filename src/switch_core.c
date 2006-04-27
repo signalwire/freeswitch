@@ -1393,10 +1393,16 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_kill_channel(switch_core_session *session, switch_signal sig)
+SWITCH_DECLARE(switch_status) switch_core_session_perform_kill_channel(switch_core_session *session, 
+																	   const char *file, 
+																	   const char *func, 
+																	   int line, 
+																	   switch_signal sig)
 {
 	struct switch_io_event_hook_kill_channel *ptr;
 	switch_status status = SWITCH_STATUS_FALSE;
+	
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Kill %s [%d]\n", switch_channel_get_name(session->channel), sig);
 
 	if (session->endpoint_interface->io_routines->kill_channel) {
 		if ((status = session->endpoint_interface->io_routines->kill_channel(session, sig)) == SWITCH_STATUS_SUCCESS) {
@@ -1811,6 +1817,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 	const switch_endpoint_interface *endpoint_interface;
 	const switch_state_handler_table *driver_state_handler = NULL;
 	const switch_state_handler_table *application_state_handler = NULL;
+
 
 	/*
 	   Life of the channel. you have channel and pool in your session

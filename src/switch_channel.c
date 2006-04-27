@@ -81,6 +81,7 @@ static struct switch_cause_table CAUSE_CHART[] = {
 	{ "MANDATORY_IE_LENGTH_ERROR", SWITCH_CAUSE_MANDATORY_IE_LENGTH_ERROR },
 	{ "PROTOCOL_ERROR", SWITCH_CAUSE_PROTOCOL_ERROR },
 	{ "INTERWORKING", SWITCH_CAUSE_INTERWORKING },
+	{ "CRASH", SWITCH_CAUSE_CRASH },
 	{ NULL, 0 }
 };
 
@@ -362,7 +363,11 @@ SWITCH_DECLARE(const char *) switch_channel_state_name(switch_channel_state stat
 	return state_names[state];
 }
 
-SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *channel, switch_channel_state state)
+SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_channel *channel,
+																	  const char *file,
+																	  const char *func,
+																	  int line,
+																	  switch_channel_state state)
 {
 	switch_channel_state last_state;
 	int ok = 0;
@@ -480,8 +485,10 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 
 	if (ok) {
 		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n", channel->name,
-							  state_names[last_state], state_names[state]);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n", 
+						  channel->name,
+						  state_names[last_state], 
+						  state_names[state]);
 		channel->state = state;
 
 		if (state == CS_HANGUP && channel->hangup_cause == SWITCH_CAUSE_UNALLOCATED) {
@@ -499,8 +506,10 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *ch
 			switch_core_session_signal_state_change(channel->session);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Invalid State Change %s -> %s\n", channel->name,
-							  state_names[last_state], state_names[state]);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_WARNING, "%s Invalid State Change %s -> %s\n", 
+						  channel->name,
+						  state_names[last_state],
+						  state_names[state]);
 
 		//we won't tolerate an invalid state change so we can make sure we are as robust as a nice cup of dark coffee!
 		if (channel->state < CS_HANGUP) {
@@ -687,7 +696,11 @@ SWITCH_DECLARE(switch_caller_extension *) switch_channel_get_caller_extension(sw
 }
 
 
-SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *channel, switch_call_cause_t hangup_cause)
+SWITCH_DECLARE(switch_channel_state) switch_channel_perform_hangup(switch_channel *channel, 
+																   const char *file,
+																   const char *func,
+																   int line,
+																   switch_call_cause_t hangup_cause)
 {
 	assert(channel != NULL);
 
@@ -701,7 +714,8 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *chann
 
 		channel->state = CS_HANGUP;
 		channel->hangup_cause = hangup_cause;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n", channel->name,
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n", 
+						  channel->name,
 						  state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
@@ -714,7 +728,10 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *chann
 	return channel->state;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_pre_answer(switch_channel *channel)
+SWITCH_DECLARE(switch_status) switch_channel_perform_pre_answer(switch_channel *channel,
+																const char *file,
+																const char *func,
+																int line)
 {
 	switch_core_session_message msg;
 	char *uuid = switch_core_session_get_uuid(channel->session);
@@ -731,14 +748,17 @@ SWITCH_DECLARE(switch_status) switch_channel_pre_answer(switch_channel *channel)
 	status = switch_core_session_message_send(uuid, &msg);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Pre-Answer %s!\n", channel->name);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
 	}
 
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_answer(switch_channel *channel)
+SWITCH_DECLARE(switch_status) switch_channel_perform_answer(switch_channel *channel,
+																const char *file,
+																const char *func,
+																int line)
 {
 	assert(channel != NULL);
 
@@ -751,7 +771,7 @@ SWITCH_DECLARE(switch_status) switch_channel_answer(switch_channel *channel)
 
 		channel->times.answered = switch_time_now();
 		switch_channel_set_flag(channel, CF_ANSWERED);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Answer %s!\n", channel->name);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Answer %s!\n", channel->name);
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);

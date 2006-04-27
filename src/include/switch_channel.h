@@ -72,13 +72,20 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_get_state(switch_channel *ch
 */
 SWITCH_DECLARE(unsigned int) switch_channel_ready(switch_channel *channel);
 
+
+SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_channel *channel,
+																	  const char *file,
+																	  const char *func,
+																	  int line,
+																	  switch_channel_state state);
+
 /*!
   \brief Set the current state of a channel
   \param channel channel to set state of
   \param state new state
   \return current state of channel after application of new state
 */	
-SWITCH_DECLARE(switch_channel_state) switch_channel_set_state(switch_channel *channel, switch_channel_state state);
+#define switch_channel_set_state(channel, state) switch_channel_perform_set_state(channel, __FILE__, __FUNCTION__, __LINE__, state)
 
 /*!
   \brief return a cause code for a given string
@@ -231,19 +238,29 @@ SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel *channel, switch_cha
 */
 SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel *channel, switch_channel_flag flags);
 
+SWITCH_DECLARE(switch_status) switch_channel_perform_answer(switch_channel *channel,
+																const char *file,
+																const char *func,
+																int line);
 /*!
   \brief Answer a channel (initiate/acknowledge a successful connection)
   \param channel channel to answer
   \return SWITCH_STATUS_SUCCESS if channel was answered successfully
 */
-SWITCH_DECLARE(switch_status) switch_channel_answer(switch_channel *channel);
+#define switch_channel_answer(channel) switch_channel_perform_answer(channel, __FILE__, __FUNCTION__, __LINE__)
 
+
+
+SWITCH_DECLARE(switch_status) switch_channel_perform_pre_answer(switch_channel *channel,
+																const char *file,
+																const char *func,
+																int line);
 /*!
   \brief Indicate progress on a channel to attempt early media
   \param channel channel to pre-answer
   \return SWITCH_STATUS_SUCCESS
-*/
-SWITCH_DECLARE(switch_status) switch_channel_pre_answer(switch_channel *channel);
+*/								
+#define switch_channel_pre_answer(channel) switch_channel_perform_pre_answer(channel, __FILE__, __FUNCTION__, __LINE__)
 
 /*!
   \brief add a state handler table to a given channel
@@ -298,14 +315,20 @@ SWITCH_DECLARE(switch_status) switch_channel_set_name(switch_channel *channel, c
 */
 SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel *channel);
 
+
+SWITCH_DECLARE(switch_channel_state) switch_channel_perform_hangup(switch_channel *channel, 
+																   const char *file,
+																   const char *func,
+																   int line,
+																   switch_call_cause_t hangup_cause);
+
 /*!
   \brief Hangup a channel flagging it's state machine to end
   \param channel channel to hangup
   \param hangup_cause the appropriate hangup cause
   \return the resulting channel state.
 */
-SWITCH_DECLARE(switch_channel_state) switch_channel_hangup(switch_channel *channel, switch_call_cause_t hangup_cause);
-
+#define switch_channel_hangup(channel, hangup_cause) switch_channel_perform_hangup(channel, __FILE__, __FUNCTION__, __LINE__, hangup_cause)
 
 /*!
   \brief Test for presence of DTMF on a given channel

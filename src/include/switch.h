@@ -47,7 +47,7 @@ extern "C" {
 #endif
 
 #include <assert.h>
-
+#include <setjmp.h>
 #include <switch_version.h>
 #include <switch_apr.h>
 #include <switch_sqlite.h>
