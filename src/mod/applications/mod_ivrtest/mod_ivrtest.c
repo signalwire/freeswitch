@@ -51,7 +51,9 @@ static switch_status on_dtmf(switch_core_session *session, char *dtmf, void *buf
 
 static void disast_function(switch_core_session *session, char *data)
 {
-	printf("%s WOOHOO\n", (char *) 42);
+	void *x = NULL;
+	memset((void *) x, 0, 1000);
+	//printf("%s WOOHOO\n", (char *) 42);
 }
 
 

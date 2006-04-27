@@ -1813,12 +1813,46 @@ SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session *ses
 	return session->thread_running;
 }
 
+#ifdef __GNUC__
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+#define STACK_LEN 10
+
+/* Obtain a backtrace and print it to stdout. */
+static void print_trace (void)
+{
+	void *array[STACK_LEN];
+	size_t size;
+	char **strings;
+	size_t i;
+
+	size = backtrace (array, STACK_LEN);
+	strings = backtrace_symbols (array, size);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Obtained %zd stack frames.\n", size);
+	
+	for (i = 0; i < size; i++) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CRIT, "%s\n", strings[i]);
+	}
+
+	free (strings);
+}
+#else
+static void print_trace (void)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Trace not avaliable =(\n");
+}
+#endif
+
+
 static int handle_fatality(int sig)
 {
 	switch_thread_id thread_id;
 	jmp_buf *env;
 
 	if (sig && (thread_id = switch_thread_self()) && (env = (jmp_buf *) apr_hash_get(runtime.stack_table, &thread_id, sizeof(thread_id)))) {
+		print_trace();
 		longjmp(*env, sig);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Caught SEGV for unmapped thread!");
