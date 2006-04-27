@@ -55,7 +55,8 @@ typedef enum {
 	TFLAG_VAD_OUT = ( 1 << 12),
 	TFLAG_VAD = ( 1 << 13),
 	TFLAG_DO_CAND = ( 1 << 14),
-	TFLAG_DO_DESC = (1 << 15)
+	TFLAG_DO_DESC = (1 << 15),
+	TFLAG_LANADDR = (1 << 16)
 } TFLAGS;
 
 typedef enum {
@@ -143,27 +144,27 @@ struct rfc2833_digit {
 
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string)
+	 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
+	 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string)
 
 
-static switch_status channel_on_init(switch_core_session *session);
-static switch_status channel_on_hangup(switch_core_session *session);
-static switch_status channel_on_ring(switch_core_session *session);
-static switch_status channel_on_loopback(switch_core_session *session);
-static switch_status channel_on_transmit(switch_core_session *session);
-static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											  switch_core_session **new_session, switch_memory_pool *pool);
-static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
-										switch_io_flag flags, int stream_id);
-static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
-										 switch_io_flag flags, int stream_id);
-static switch_status channel_kill_channel(switch_core_session *session, int sig);
-static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *msg);
-static ldl_status handle_response(ldl_handle_t *handle, char *id);
-static switch_status load_config(void);
+	 static switch_status channel_on_init(switch_core_session *session);
+	 static switch_status channel_on_hangup(switch_core_session *session);
+	 static switch_status channel_on_ring(switch_core_session *session);
+	 static switch_status channel_on_loopback(switch_core_session *session);
+	 static switch_status channel_on_transmit(switch_core_session *session);
+	 static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
+												   switch_core_session **new_session, switch_memory_pool *pool);
+	 static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
+											 switch_io_flag flags, int stream_id);
+	 static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
+											  switch_io_flag flags, int stream_id);
+	 static switch_status channel_kill_channel(switch_core_session *session, int sig);
+	 static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *msg);
+	 static ldl_status handle_response(ldl_handle_t *handle, char *id);
+	 static switch_status load_config(void);
 
-static void dl_logger(char *file, const char *func, int line, int level, char *fmt, ...)
+	 static void dl_logger(char *file, const char *func, int line, int level, char *fmt, ...)
 {
 	va_list ap;
 	char data[1024];
@@ -322,61 +323,65 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 	switch_set_flag(tech_pvt, TFLAG_DO_CAND);
 
 	if (force || !switch_test_flag(tech_pvt, TFLAG_RTP_READY)) {
-				ldl_candidate_t cand[1];
-				char *advip = tech_pvt->profile->extip ? tech_pvt->profile->extip : tech_pvt->profile->ip;
-				char *err;
+		ldl_candidate_t cand[1];
+		char *advip = tech_pvt->profile->extip ? tech_pvt->profile->extip : tech_pvt->profile->ip;
+		char *err;
 
-				memset(cand, 0, sizeof(cand));
-				switch_stun_random_string(tech_pvt->local_user, 16, NULL);
-				switch_stun_random_string(tech_pvt->local_pass, 16, NULL);
+		memset(cand, 0, sizeof(cand));
+		switch_stun_random_string(tech_pvt->local_user, 16, NULL);
+		switch_stun_random_string(tech_pvt->local_pass, 16, NULL);
+
+		if (switch_test_flag(tech_pvt, TFLAG_LANADDR)) {
+			advip = tech_pvt->profile->ip;
+		}
 
 
-				cand[0].port = tech_pvt->local_port;
-				cand[0].address = advip;
+		cand[0].port = tech_pvt->local_port;
+		cand[0].address = advip;
 				
-				if (!strncasecmp(advip, "stun:", 5)) {
-					char *stun_ip = advip + 5;
+		if (!strncasecmp(advip, "stun:", 5)) {
+			char *stun_ip = advip + 5;
 					
-					if (tech_pvt->stun_ip) {
-						cand[0].address = tech_pvt->stun_ip;
-						cand[0].port = tech_pvt->stun_port;
-					} else {
-						if (!stun_ip) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER!\n");
-							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-							return -1;
-						}
-
-						cand[0].address = tech_pvt->profile->ip;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Lookup Local %s:%d\n", cand[0].address, cand[0].port);
-						if (switch_stun_lookup(&cand[0].address,
-											   &cand[0].port,
-											   stun_ip,
-											   SWITCH_STUN_DEFAULT_PORT,
-											   &err,
-											   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
-							switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-							return -1;
-						}
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success %s:%d\n", cand[0].address, cand[0].port);
-					}
-					cand[0].type = "stun";
-					tech_pvt->stun_ip = switch_core_session_strdup(tech_pvt->session, cand[0].address);
-					tech_pvt->stun_port = cand[0].port;
-				} else {
-					cand[0].type = "local";
+			if (tech_pvt->stun_ip) {
+				cand[0].address = tech_pvt->stun_ip;
+				cand[0].port = tech_pvt->stun_port;
+			} else {
+				if (!stun_ip) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER!\n");
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					return -1;
 				}
 
-				cand[0].name = "rtp";
-				cand[0].username = tech_pvt->local_user;
-				cand[0].password = tech_pvt->local_pass;
-				cand[0].pref = 1;
-				cand[0].protocol = "udp";
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send Candidate %s:%d [%s]\n", cand[0].address, cand[0].port, cand[0].username);
-				tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, 1);
-				switch_set_flag(tech_pvt, TFLAG_RTP_READY);
+				cand[0].address = tech_pvt->profile->ip;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stun Lookup Local %s:%d\n", cand[0].address, cand[0].port);
+				if (switch_stun_lookup(&cand[0].address,
+									   &cand[0].port,
+									   stun_ip,
+									   SWITCH_STUN_DEFAULT_PORT,
+									   &err,
+									   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
+					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					return -1;
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success %s:%d\n", cand[0].address, cand[0].port);
 			}
+			cand[0].type = "stun";
+			tech_pvt->stun_ip = switch_core_session_strdup(tech_pvt->session, cand[0].address);
+			tech_pvt->stun_port = cand[0].port;
+		} else {
+			cand[0].type = "local";
+		}
+
+		cand[0].name = "rtp";
+		cand[0].username = tech_pvt->local_user;
+		cand[0].password = tech_pvt->local_pass;
+		cand[0].pref = 1;
+		cand[0].protocol = "udp";
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send Candidate %s:%d [%s]\n", cand[0].address, cand[0].port, cand[0].username);
+		tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, 1);
+		switch_set_flag(tech_pvt, TFLAG_RTP_READY);
+	}
 	switch_clear_flag(tech_pvt, TFLAG_DO_CAND);
 	return 0;
 }
@@ -538,9 +543,9 @@ static void negotiate_thread_launch(switch_core_session *session)
 
 
 /* 
-State methods they get called when the state changes to the specific state 
-returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
-so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
+   State methods they get called when the state changes to the specific state 
+   returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
+   so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
 static switch_status channel_on_init(switch_core_session *session)
 {
@@ -858,8 +863,8 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 		for (x = 0; x < loops; x++) {
 			switch_rtp_write_manual(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 0, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
 			/*
-			printf("Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", loops == 1 ? "middle" : "end", tech_pvt->out_digit, ts, 
-				   tech_pvt->out_digit_sofar, duration);
+			  printf("Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", loops == 1 ? "middle" : "end", tech_pvt->out_digit, ts, 
+			  tech_pvt->out_digit_sofar, duration);
 			*/
 		}
 	}
@@ -883,8 +888,8 @@ static switch_status channel_write_frame(switch_core_session *session, switch_fr
 			for (x = 0; x < 3; x++) {
 				switch_rtp_write_manual(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 1, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
 				/*
-				printf("Send start packet for [%c] ts=%d sofar=%u dur=%d\n", tech_pvt->out_digit, ts, 
-					   tech_pvt->out_digit_sofar, 0);
+				  printf("Send start packet for [%c] ts=%d sofar=%u dur=%d\n", tech_pvt->out_digit, ts, 
+				  tech_pvt->out_digit_sofar, 0);
 				*/
 			}
 
@@ -941,19 +946,19 @@ static switch_status channel_receive_message(switch_core_session *session, switc
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-			if (tech_pvt->rtp_session) {
-				switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
-				//switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
-			}
-			break;
+		if (tech_pvt->rtp_session) {
+			switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
+			//switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-			if (tech_pvt->rtp_session) {
-				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
-				//switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
-			}
-			break;
+		if (tech_pvt->rtp_session) {
+			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
+			//switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
+		}
+		break;
 	default:
 		break;
 	}
@@ -1000,7 +1005,7 @@ static const switch_loadable_module_interface channel_module_interface = {
 
 
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
-that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
+   that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
 static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
 											  switch_core_session **new_session, switch_memory_pool *pool)
@@ -1277,7 +1282,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 	switch_core_session *session = NULL;
 	switch_channel *channel = NULL;
     struct private_object *tech_pvt = NULL;
-	char *advip;
 
 	assert(dlsession != NULL);
 	assert(handle != NULL);
@@ -1352,8 +1356,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		}
 	}
 	
-	advip = profile->extip ? profile->extip : profile->ip;
-
 	switch(signal) {
 	case LDL_SIGNAL_NONE:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR\n");
@@ -1443,9 +1445,11 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%u candidates\n", len);
 				for(x = 0; x < len; x++) {
+					uint8_t lanaddr = strncasecmp(candidates[x].address, profile->lanaddr, strlen(profile->lanaddr)) ? 0 : 1;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidates %s:%d\n", candidates[x].address, candidates[x].port);
+					
 					if (!strcasecmp(candidates[x].protocol, "udp") && (!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun")) && 
-						((profile->lanaddr && !strncasecmp(candidates[x].address, profile->lanaddr, strlen(profile->lanaddr))) ||
+						((profile->lanaddr && lanaddr) ||
 						 (strncasecmp(candidates[x].address, "10.", 3) && 
 						  strncasecmp(candidates[x].address, "192.168.", 8) &&
 						  strncasecmp(candidates[x].address, "127.", 4) &&
@@ -1464,7 +1468,10 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						memset(payloads, 0, sizeof(payloads));
 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Acceptable Candidate %s:%d\n", candidates[x].address, candidates[x].port);
-						
+						if (lanaddr) {
+							switch_set_flag(tech_pvt, TFLAG_LANADDR);
+						}
+
 						if (!tech_pvt->num_codecs) {
 							get_codecs(tech_pvt);
 							if (!tech_pvt->num_codecs) {

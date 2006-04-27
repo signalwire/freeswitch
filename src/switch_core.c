@@ -1818,7 +1818,6 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 	const switch_state_handler_table *driver_state_handler = NULL;
 	const switch_state_handler_table *application_state_handler = NULL;
 
-
 	/*
 	   Life of the channel. you have channel and pool in your session
 	   everywhere you go you use the session to malloc with
