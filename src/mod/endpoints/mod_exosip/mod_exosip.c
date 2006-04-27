@@ -578,8 +578,9 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
 	switch_channel *channel = NULL;
 	int payload = 0;
-	switch_time_t now, started = switch_time_now();
+	switch_time_t now, started = switch_time_now(), last_act = switch_time_now();
 	unsigned int elapsed;
+	uint32_t hard_timeout = 60000 * 3;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -626,13 +627,19 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 			}
 			
 			payload = tech_pvt->read_frame.payload;
+			
 
+			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
 
 			if (timeout > -1) {
-				elapsed = (unsigned int)((switch_time_now() - started) / 1000);
 				if (elapsed >= (unsigned int)timeout) {
-					return SWITCH_STATUS_SUCCESS;
+					return SWITCH_STATUS_BREAK;
 				}
+			}
+			
+			elapsed = (unsigned int)((switch_time_now() - last_act) / 1000);
+			if (elapsed >= hard_timeout) {
+				return SWITCH_STATUS_BREAK;
 			}
 
 			/* RFC2833 ... TBD try harder to honor the duration etc.*/

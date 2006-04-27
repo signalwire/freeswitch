@@ -813,9 +813,11 @@ static switch_status audio_bridge_on_loopback(switch_core_session *session)
 	if ((arg = switch_channel_get_private(channel))) {
 		switch_channel_set_private(channel, NULL);
 		audio_bridge_thread(NULL, (void *) arg);
-		switch_channel_clear_state_handler(channel, &audio_bridge_peer_state_handlers);
+	} else {
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
-
+	switch_channel_clear_state_handler(channel, &audio_bridge_peer_state_handlers);
+		
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -867,7 +869,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 
 															   
 {
-	struct switch_core_thread_session this_audio_thread, other_audio_thread;
+	struct switch_core_thread_session *this_audio_thread, *other_audio_thread;
 	switch_channel *caller_channel, *peer_channel;
 	time_t start;
 	int stream_id = 0;
@@ -883,23 +885,24 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	peer_channel = switch_core_session_get_channel(peer_session);
 	assert(peer_channel != NULL);
 
-	memset(&other_audio_thread, 0, sizeof(other_audio_thread));
-	memset(&this_audio_thread, 0, sizeof(this_audio_thread));
-	other_audio_thread.objs[0] = session;
-	other_audio_thread.objs[1] = peer_session;
-	other_audio_thread.objs[2] = &stream_id;
-	other_audio_thread.objs[3] = (void *) dtmf_callback;
-	other_audio_thread.objs[4] = session_data;
-	other_audio_thread.objs[5] = &this_audio_thread;
-	other_audio_thread.running = 5;
+	other_audio_thread = switch_core_session_alloc(peer_session, sizeof(switch_core_thread_session));
+	this_audio_thread = switch_core_session_alloc(peer_session, sizeof(switch_core_thread_session));
 
-	this_audio_thread.objs[0] = peer_session;
-	this_audio_thread.objs[1] = session;
-	this_audio_thread.objs[2] = &stream_id;
-	this_audio_thread.objs[3] = (void *) dtmf_callback;
-	this_audio_thread.objs[4] = peer_session_data;
-	this_audio_thread.objs[5] = &other_audio_thread;
-	this_audio_thread.running = 2;
+	other_audio_thread->objs[0] = session;
+	other_audio_thread->objs[1] = peer_session;
+	other_audio_thread->objs[2] = &stream_id;
+	other_audio_thread->objs[3] = (void *) dtmf_callback;
+	other_audio_thread->objs[4] = session_data;
+	other_audio_thread->objs[5] = this_audio_thread;
+	other_audio_thread->running = 5;
+
+	this_audio_thread->objs[0] = peer_session;
+	this_audio_thread->objs[1] = session;
+	this_audio_thread->objs[2] = &stream_id;
+	this_audio_thread->objs[3] = (void *) dtmf_callback;
+	this_audio_thread->objs[4] = peer_session_data;
+	this_audio_thread->objs[5] = other_audio_thread;
+	this_audio_thread->running = 2;
 
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
 
@@ -978,14 +981,23 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 		switch_core_session_receive_message(session, &msg);
 
 		switch_channel_set_flag(peer_channel, CF_LOCK_THREAD);
-		switch_channel_set_private(peer_channel, &other_audio_thread);	
+		switch_channel_set_private(peer_channel, other_audio_thread);
 		switch_channel_set_state(peer_channel, CS_LOOPBACK);
-		audio_bridge_thread(NULL, (void *) &this_audio_thread);
+		audio_bridge_thread(NULL, (void *) this_audio_thread);
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(caller_channel, event);
 			switch_event_fire(&event);
 		}
+		
+		this_audio_thread->objs[0] = NULL;
+		this_audio_thread->objs[1] = NULL;
+		this_audio_thread->objs[2] = NULL;
+		this_audio_thread->objs[3] = NULL;
+		this_audio_thread->objs[4] = NULL;
+		this_audio_thread->objs[5] = NULL;
+		this_audio_thread->running = 2;
+
 		switch_channel_clear_flag(peer_channel, CF_LOCK_THREAD);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bridge Failed %s->%s\n", 
