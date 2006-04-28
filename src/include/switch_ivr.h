@@ -38,11 +38,9 @@
 #ifndef SWITCH_IVR_H
 #define SWITCH_IVR_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 /**
  * @defgroup switch_ivr IVR Library
@@ -179,9 +177,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_session_transfer(switch_core_session *s
 
 /** @} */
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif
 

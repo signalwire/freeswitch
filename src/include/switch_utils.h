@@ -38,13 +38,9 @@
 #ifndef SWITCH_UTILS_H
 #define SWITCH_UTILS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <switch.h>
 
-
+BEGIN_EXTERN_C
 
 #ifndef snprintf
 #define snprintf apr_snprintf
@@ -182,8 +178,6 @@ SWITCH_DECLARE(switch_status) switch_string_match(const char *string, size_t str
 
 #define SWITCH_READ_ACCEPTABLE(status) status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

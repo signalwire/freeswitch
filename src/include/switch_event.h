@@ -58,11 +58,9 @@
 #ifndef SWITCH_EVENT_H
 #define SWITCH_EVENT_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 /*! \brief An event Header */
 struct switch_event_header {
@@ -288,8 +286,6 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event **event);
 #define switch_event_fire_data(event, data) switch_event_fire_detailed(__FILE__, (char * )__FUNCTION__, __LINE__, event, data)
 ///\}
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

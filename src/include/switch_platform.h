@@ -34,9 +34,7 @@
 #ifndef SWITCH_PLATFORM_H
 #define SWITCH_PLATFORM_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+BEGIN_EXTERN_C
 
 #ifdef __ICC
 #pragma warning (disable:810 869 981 279 1469 188)
@@ -153,8 +151,6 @@ typedef unsigned long	in_addr_t;
 #define DoxyDefine(x)
 #endif
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

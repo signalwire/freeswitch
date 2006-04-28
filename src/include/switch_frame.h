@@ -36,11 +36,9 @@
 #ifndef SWITCH_FRAME_H
 #define SWITCH_FRAME_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 /*! \brief An abstraction of a data frame */
 struct switch_frame {
@@ -70,8 +68,6 @@ struct switch_frame {
 	switch_frame_flag flags;
 };
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

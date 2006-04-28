@@ -34,15 +34,9 @@
 #ifndef SWITCH_TYPES_H
 #define SWITCH_TYPES_H
 
-#ifdef __cplusplus
-extern "C" {
-#ifdef _FORMATBUG
-}
-#endif
-#endif
-
 #include <switch.h>
-#include <switch_platform.h>
+
+BEGIN_EXTERN_C
 
 #ifdef WIN32
 #define SWITCH_PATH_SEPARATOR "\\"
@@ -681,9 +675,6 @@ struct switch_channel;
 /*! \brief A core session representing a call and all of it's resources */
 struct switch_core_session;
 
-
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

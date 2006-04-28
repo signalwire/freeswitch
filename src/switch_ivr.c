@@ -454,11 +454,11 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 			}
 		} else { /* time off the channel (if you must) */
 			switch_frame *read_frame;
-
+			switch_status status; 
 			while (switch_channel_test_flag(channel, CF_HOLD)) {
 				switch_yield(10000);
 			}
-			switch_status status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+			status = switch_core_session_read_frame(session, &read_frame, -1, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}

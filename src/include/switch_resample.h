@@ -42,11 +42,9 @@
 #ifndef SWITCH_RESAMPLE_H
 #define SWITCH_RESAMPLE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include <stdlib.h>
 #include <switch.h>
+BEGIN_EXTERN_C
+#include <stdlib.h>
 
 /*!
   \defgroup resamp Audio Resample Functions
@@ -158,10 +156,7 @@ SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len);
 
 ///\}
 
-#ifdef __cplusplus
-}
-#endif
-
+END_EXTERN_C
 
 #endif
 

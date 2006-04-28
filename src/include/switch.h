@@ -36,8 +36,14 @@
 #define SWITCH_H
 
 #ifdef __cplusplus
-extern "C" {
+#define BEGIN_EXTERN_C       extern "C" {
+#define END_EXTERN_C         }
+#else
+#define BEGIN_EXTERN_C
+#define END_EXTERN_C
 #endif
+
+BEGIN_EXTERN_C
 
 //Need to include this before any other includes (MSVC Bug)
 #include <switch_platform.h>
@@ -69,9 +75,8 @@ extern "C" {
 #include <switch_stun.h>
 #include <switch_stun.h>
 #include <switch_log.h>
-#ifdef __cplusplus
-}
-#endif
+
+END_EXTERN_C
 
 /** \mainpage FreeSWITCH
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application

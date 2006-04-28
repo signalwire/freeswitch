@@ -56,11 +56,9 @@
 #ifndef SWITCH_CONFIG_H
 #define SWITCH_CONFIG_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 /*! \brief A simple file handle representing an open configuration file **/
 struct switch_config {
@@ -106,9 +104,8 @@ SWITCH_DECLARE(void) switch_config_close_file(switch_config *cfg);
 */
 SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char **val);
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
+
 /** @} */
 
 #endif

@@ -39,11 +39,9 @@
 #ifndef SWITCH_CONSOLE_H
 #define SWITCH_CONSOLE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 /*!
   \brief A simple comand loop that reads input from the terminal
@@ -55,8 +53,6 @@ SWITCH_DECLARE(void) switch_console_loop(void);
 */
 SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *file, const char *func, int line, char *fmt, ...);
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

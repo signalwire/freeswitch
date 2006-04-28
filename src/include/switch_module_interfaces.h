@@ -39,11 +39,9 @@
 #ifndef SWITCH_MODULE_INTERFACES_H
 #define SWITCH_MODULE_INTERFACES_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 /*! \brief A table of functions to execute at various states 
 */
@@ -513,8 +511,6 @@ struct switch_api_interface {
 	const struct switch_api_interface *next;
 };
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

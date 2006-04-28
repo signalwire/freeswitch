@@ -36,6 +36,9 @@
 */
 #ifndef _SWITCH_STUN_PARSER_H
 #define _SWITCH_STUN_PARSER_H
+
+BEGIN_EXTERN_C
+
 #define SWITCH_STUN_DEFAULT_PORT 3478
 #define SWITCH_STUN_PACKET_MIN_LEN 20
 
@@ -236,4 +239,7 @@ SWITCH_DECLARE(switch_status) switch_stun_lookup (char **ip,
 */
 #define switch_stun_packet_length(packet) ntohs(packet->header.length) + sizeof(switch_stun_packet_header_t)
 ///\}
+
+END_EXTERN_C
+
 #endif

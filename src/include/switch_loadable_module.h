@@ -41,11 +41,9 @@
 #ifndef SWITCH_LOADABLE_MODULE_H
 #define SWITCH_LOADABLE_MODULE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 /*!
   \defgroup mods Loadable Module Functions
@@ -240,8 +238,6 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void);
 SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void);
 ///\}
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

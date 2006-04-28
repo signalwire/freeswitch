@@ -38,14 +38,9 @@
 #ifndef SWITCH_CHANNEL_H
 #define SWITCH_CHANNEL_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef __FORMATBUG
-}
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 struct switch_channel_timetable {
 	switch_time_t created;
@@ -380,8 +375,6 @@ SWITCH_DECLARE(switch_status) switch_channel_set_raw_mode (switch_channel *chann
 SWITCH_DECLARE(switch_status) switch_channel_get_raw_mode (switch_channel *channel, int *freq, int *bits, int *channels, int *ms, int *kbps);
 /** @} */
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

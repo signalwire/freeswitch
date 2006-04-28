@@ -39,12 +39,7 @@
 #ifndef SWITCH_APR_H
 #define SWITCH_APR_H
 
-#ifdef __cplusplus
-extern "C" {
-#ifdef __FORMATBUG
-}
-#endif
-#endif
+BEGIN_EXTERN_C
 
 #include <apr.h>
 #include <apr_network_io.h>
@@ -1435,8 +1430,6 @@ SWITCH_DECLARE(switch_status) switch_mutex_init(switch_mutex_t **lock,
 /** @} */
 /** @} */
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

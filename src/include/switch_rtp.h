@@ -38,12 +38,7 @@
 #ifndef SWITCH_RTP_H
 #define SWITCH_RTP_H
 
-#ifdef __cplusplus
-extern "C" {
-#ifdef _FORMATBUG
-}
-#endif
-#endif
+BEGIN_EXTERN_C
 
 #define SWITCH_RTP_MAX_BUF_LEN 16384
 
@@ -328,8 +323,6 @@ SWITCH_DECLARE(void *)switch_rtp_get_private(switch_rtp *rtp_session);
   \}
 */
 
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

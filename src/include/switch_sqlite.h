@@ -35,9 +35,7 @@
 #ifndef SWITCH_SQLITE_H
 #define SWITCH_SQLITE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+BEGIN_EXTERN_C
 
 #include <sqlite3.h>
 
@@ -1806,10 +1804,6 @@ DoxyDefine(void switch_core_db_free(char *z);)
 /** @} */
 /** @} */
 
-
-
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

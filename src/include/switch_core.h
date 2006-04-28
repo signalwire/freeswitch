@@ -38,14 +38,9 @@
 #ifndef SWITCH_CORE_H
 #define SWITCH_CORE_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef _FORMATBUG
-}
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 #define SWITCH_MAX_CORE_THREAD_SESSION_OBJS 128
 #define SWITCH_MAX_STREAMS 128
@@ -984,10 +979,6 @@ SWITCH_DECLARE(void) switch_core_set_globals(void);
   \}
 */
 
-
-#ifdef __cplusplus
-}
-#endif
-
+END_EXTERN_C
 
 #endif

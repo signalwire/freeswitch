@@ -38,14 +38,9 @@
 #ifndef SWITCH_LOG_H
 #define SWITCH_LOG_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef _FORMATBUG
-}
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 ///\defgroup log Logger Routines
 ///\ingroup core1
@@ -122,8 +117,6 @@ SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level level);
 SWITCH_DECLARE(switch_log_level) switch_log_str2level(const char *str);
 
 ///\}
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 #endif

@@ -53,14 +53,9 @@
 #ifndef SWITCH_CALLER_H
 #define SWITCH_CALLER_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-#ifdef _FORMATBUG
-}
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 /*! \brief Call Specific Data
  */
@@ -186,10 +181,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
 
 SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, char *prefix, switch_event *event);
 
-
-#ifdef __cplusplus
-}
-#endif
+END_EXTERN_C
 
 /** @} */
 

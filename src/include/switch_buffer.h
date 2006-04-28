@@ -38,11 +38,9 @@
 #ifndef SWITCH_BUFFER_H
 #define SWITCH_BUFFER_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <switch.h>
+
+BEGIN_EXTERN_C
 
 /**
  * @defgroup switch_buffer Buffer Routines
@@ -111,10 +109,6 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer *buffer, switch_s
 SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer *buffer);
 /** @} */
 
-
-#ifdef __cplusplus
-}
-#endif
-
+END_EXTERN_C
 
 #endif
