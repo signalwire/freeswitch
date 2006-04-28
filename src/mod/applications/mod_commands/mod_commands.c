@@ -49,6 +49,7 @@ static switch_status kill_function(char *dest, char *out, size_t outlen)
 		switch_channel *channel = switch_core_session_get_channel(session);
 		switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		switch_core_session_rwunlock(session);
 		snprintf(out, outlen, "OK\n");
 	} else {
 		snprintf(out, outlen, "No Such Channel!\n");
@@ -58,11 +59,96 @@ static switch_status kill_function(char *dest, char *out, size_t outlen)
 }
 
 
+static switch_status transfer_function(char *cmd, char *out, size_t outlen)
+{
+	switch_core_session *session = NULL;
+	char *argv[4] = {0};
+	int argc = 0;
+	
+	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 2 || argc > 4) {
+		snprintf(out, outlen, "Invalid Parameters\n");
+	} else {
+		char *uuid = argv[0];
+		char *dest = argv[1];
+		char *dp = argv[2];
+		char *context = argv[3];
+		
+		if ((session = switch_core_session_locate(uuid))) {
+
+			if (switch_ivr_session_transfer(session, dest, dp, context) == SWITCH_STATUS_SUCCESS) {
+				snprintf(out, outlen, "OK\n");
+			} else {
+				snprintf(out, outlen, "ERROR\n");
+			}
+
+			switch_core_session_rwunlock(session);
+
+		} else {
+			snprintf(out, outlen, "No Such Channel!\n");
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
+
+static switch_status pause_function(char *cmd, char *out, size_t outlen)
+{
+	switch_core_session *session = NULL;
+	char *argv[4] = {0};
+	int argc = 0;
+	
+	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 2) {
+		snprintf(out, outlen, "Invalid Parameters\n");
+	} else {
+		char *uuid = argv[0];
+		char *dest = argv[1];
+		
+		if ((session = switch_core_session_locate(uuid))) {
+			switch_channel *channel = switch_core_session_get_channel(session);
+
+			if (!strcasecmp(dest, "on")) {
+				switch_channel_set_flag(channel, CF_HOLD);
+			} else {
+				switch_channel_clear_flag(channel, CF_HOLD);
+			}
+
+			switch_core_session_rwunlock(session);
+
+		} else {
+			snprintf(out, outlen, "No Such Channel!\n");
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static struct switch_api_interface pause_api_interface = {
+	/*.interface_name */ "pause",
+	/*.desc */ "Pause",
+	/*.function */ pause_function,
+	/*.next */ NULL
+};
+
+static struct switch_api_interface transfer_api_interface = {
+	/*.interface_name */ "transfer",
+	/*.desc */ "Transfer",
+	/*.function */ transfer_function,
+	/*.next */ &pause_api_interface
+};
+
 static struct switch_api_interface load_api_interface = {
 	/*.interface_name */ "load",
 	/*.desc */ "Load Modile",
 	/*.function */ load_function,
-	/*.next */ NULL
+	/*.next */ &transfer_api_interface
 };
 
 

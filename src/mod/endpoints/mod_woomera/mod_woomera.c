@@ -1068,7 +1068,7 @@ static void *woomera_channel_thread_run(switch_thread *thread, void *obj)
 
 				if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																		  tech_pvt->profile->dialplan,
-																		  cid_name, cid_num, ip, NULL, NULL, NULL, (char *)modname, exten)) != 0) {
+																		  cid_name, cid_num, ip, NULL, NULL, NULL, (char *)modname, NULL, exten)) != 0) {
 					char name[128];
 					snprintf(name, sizeof(name), "Woomera/%s-%04x", tech_pvt->caller_profile->destination_number,
 							 rand() & 0xffff);

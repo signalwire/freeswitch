@@ -87,6 +87,12 @@ static switch_caller_extension *dialplan_hunt(switch_core_session *session)
 				if (strcasecmp(exten_name, caller_profile->source)) {
 					skip = 1;
 				}
+			} else if (*exten_name == 'c' && *(exten_name+1) == ':') {
+				exten_name += 2;
+				if (strcasecmp(exten_name, caller_profile->context)) {
+					skip = 1;
+				}
+
 			}
 		}
 

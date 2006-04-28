@@ -167,6 +167,16 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 															   void *session_data,
 															   void *peer_session_data);
 
+
+/*!
+  \brief Transfer an existing session to another location
+  \param session the session to transfer
+  \param extension the new extension
+  \param dialplan the new dialplan (OPTIONAL, may be NULL)
+  \param context the new context (OPTIONAL, may be NULL)
+*/
+SWITCH_DECLARE(switch_status) switch_ivr_session_transfer(switch_core_session *session, char *extension, char *dialplan, char *context);
+
 /** @} */
 
 #ifdef __cplusplus

@@ -40,6 +40,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_
 																  char *ani2, 
 																  char *rdnis,
 																  char *source,
+																  char *context,
 																  char *destination_number)
 {
 
@@ -47,6 +48,9 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_
 	switch_caller_profile *profile = NULL;
 
 	if ((profile = switch_core_alloc(pool, sizeof(switch_caller_profile))) != 0) {
+		if (!context) {
+			context = "default";
+		}
 		profile->dialplan = switch_core_strdup(pool, dialplan);
 		profile->caller_id_name = switch_core_strdup(pool, caller_id_name);
 		profile->caller_id_number = switch_core_strdup(pool, caller_id_number);
@@ -55,6 +59,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_
 		profile->ani2 = switch_core_strdup(pool, ani2);
 		profile->rdnis = switch_core_strdup(pool, rdnis);
 		profile->source = switch_core_strdup(pool, source);
+		profile->context = switch_core_strdup(pool, context);
 		profile->destination_number = switch_core_strdup(pool, destination_number);
 	}
 
@@ -77,6 +82,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
 		profile->destination_number = switch_core_session_strdup(session, tocopy->destination_number);
 		profile->uuid = switch_core_session_strdup(session, tocopy->uuid);
 		profile->source = switch_core_session_strdup(session, tocopy->source);
+		profile->context = switch_core_session_strdup(session, tocopy->context);
 		profile->chan_name = switch_core_session_strdup(session, tocopy->chan_name);
 	}
 
@@ -121,8 +127,12 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile 
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->uuid);
 	}
 	if (caller_profile->source) {
-		snprintf(header_name, sizeof(header_name), "%s-RDNIS", prefix);
+		snprintf(header_name, sizeof(header_name), "%s-Source", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->source);
+	}
+	if (caller_profile->context) {
+		snprintf(header_name, sizeof(header_name), "%s-Context", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->context);
 	}
 	if (caller_profile->rdnis) {
 		snprintf(header_name, sizeof(header_name), "%s-RDNIS", prefix);

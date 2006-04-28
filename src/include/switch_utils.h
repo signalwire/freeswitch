@@ -180,6 +180,8 @@ SWITCH_DECLARE(char *) switch_cut_path(char *in);
 SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *search, const char *replace);
 SWITCH_DECLARE(switch_status) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len);
 
+#define SWITCH_READ_ACCEPTABLE(status) status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK
+
 #ifdef __cplusplus
 }
 #endif

@@ -60,6 +60,8 @@ struct switch_state_handler_table {
 	switch_state_handler on_loopback;
 	/*! executed when the state changes to transmit*/
 	switch_state_handler on_transmit;
+	/*! executed when the state changes to hold*/
+	switch_state_handler on_hold;
 };
 
 /*! \brief Node in which to store custom outgoing channel callback hooks */

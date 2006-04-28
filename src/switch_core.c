@@ -69,6 +69,8 @@ struct switch_core_session {
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
 
+	switch_thread_rwlock_t *rwlock;
+
 	void *streams[SWITCH_MAX_STREAMS];
 	int stream_count;
 
@@ -101,6 +103,7 @@ static void switch_core_standard_on_ring(switch_core_session *session);
 static void switch_core_standard_on_execute(switch_core_session *session);
 static void switch_core_standard_on_loopback(switch_core_session *session);
 static void switch_core_standard_on_transmit(switch_core_session *session);
+static void switch_core_standard_on_hold(switch_core_session *session);
 
 
 /* The main runtime obj we keep this hidden for ourselves */
@@ -223,37 +226,70 @@ SWITCH_DECLARE(const switch_state_handler_table *) switch_core_get_state_handler
 	return runtime.state_handlers[index];
 }
 
+SWITCH_DECLARE(switch_status) switch_core_session_read_lock(switch_core_session *session)
+{
+	return (switch_status) switch_thread_rwlock_tryrdlock(session->rwlock);
+}
+
+SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session *session)
+{
+	switch_thread_rwlock_wrlock(session->rwlock);
+}
+
+SWITCH_DECLARE(void) switch_core_session_rwunlock(switch_core_session *session)
+{
+	switch_thread_rwlock_unlock(session->rwlock);
+}
+
 SWITCH_DECLARE(switch_core_session *) switch_core_session_locate(char *uuid_str)
 {
 	switch_core_session *session;
-	session = switch_core_hash_find(runtime.session_table, uuid_str);
+	if ((session = switch_core_hash_find(runtime.session_table, uuid_str))) {
+		/* Acquire a read lock on the session */
+		if (switch_thread_rwlock_tryrdlock(session->rwlock) != SWITCH_STATUS_SUCCESS) {
+			/* not available, forget it */
+			session = NULL;
+		}
+	}
+
+	/* if its not NULL, now it's up to you to rwunlock this */
 	return session;
 }
 
 SWITCH_DECLARE(switch_status) switch_core_session_message_send(char *uuid_str, switch_core_session_message *message)
 {
 	switch_core_session *session = NULL;
+	switch_status status = SWITCH_STATUS_FALSE;
 
 	if ((session = switch_core_hash_find(runtime.session_table, uuid_str)) != 0) {
-		if (switch_channel_get_state(session->channel) < CS_HANGUP) {
-			return switch_core_session_receive_message(session, message);
+		/* Acquire a read lock on the session or forget it the channel is dead */
+		if (switch_thread_rwlock_tryrdlock(session->rwlock) == SWITCH_STATUS_SUCCESS) {
+			if (switch_channel_get_state(session->channel) < CS_HANGUP) {
+				status = switch_core_session_receive_message(session, message);
+			}
+			switch_thread_rwlock_unlock(session->rwlock);
 		}
 	}
 
-	return SWITCH_STATUS_FALSE;
+	return status;
 }
 
 SWITCH_DECLARE(switch_status) switch_core_session_event_send(char *uuid_str, switch_event *event)
 {
 	switch_core_session *session = NULL;
+	switch_status status = SWITCH_STATUS_FALSE;
 
 	if ((session = switch_core_hash_find(runtime.session_table, uuid_str)) != 0) {
-		if (switch_channel_get_state(session->channel) < CS_HANGUP) {
-			return switch_core_session_queue_event(session, event);
+		/* Acquire a read lock on the session or forget it the channel is dead */
+		if (switch_thread_rwlock_tryrdlock(session->rwlock) == SWITCH_STATUS_SUCCESS) {
+			if (switch_channel_get_state(session->channel) < CS_HANGUP) {
+				status = switch_core_session_queue_event(session, event);
+			}
+			switch_thread_rwlock_unlock(session->rwlock);
 		}
 	}
 
-	return SWITCH_STATUS_FALSE;
+	return status;
 }
 
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session *session)
@@ -987,6 +1023,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 	assert(session != NULL);
 	*frame = NULL;
 
+	while (switch_channel_test_flag(session->channel, CF_HOLD)) {
+		return SWITCH_STATUS_BREAK;
+	}
+
 	if (session->endpoint_interface->io_routines->read_frame) {
 		if ((status = session->endpoint_interface->io_routines->read_frame(session,
 																		   frame,
@@ -1174,6 +1214,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 	assert(session != NULL);
 	assert(frame != NULL);
 	assert(frame->codec != NULL);
+
+	if (switch_channel_test_flag(session->channel, CF_HOLD)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (switch_test_flag(frame, SFF_CNG)) {
 
@@ -1803,6 +1847,12 @@ static void switch_core_standard_on_transmit(switch_core_session *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard TRANSMIT\n");
 }
 
+static void switch_core_standard_on_hold(switch_core_session *session)
+{
+	assert(session != NULL);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HOLD\n");
+}
+
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session *session)
 {
 	switch_thread_cond_signal(session->cond);
@@ -1855,7 +1905,7 @@ static int handle_fatality(int sig)
 		print_trace();
 		longjmp(*env, sig);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Caught SEGV for unmapped thread!");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Caught signal %d for unmapped thread!", sig);
 		abort();
 	}
 
@@ -2150,6 +2200,43 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 					}
 				}
 				break;
+			case CS_HOLD:	/* wait in limbo */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HOLD\n", switch_channel_get_name(session->channel));
+				if (!driver_state_handler->on_hold ||
+					(driver_state_handler->on_hold &&
+					 driver_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS &&
+					 midstate == switch_channel_get_state(session->channel))) {
+
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
+						if (!application_state_handler || !application_state_handler->on_hold ||
+							(application_state_handler->on_hold &&
+							 application_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					index = 0;
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
+						if (!application_state_handler || !application_state_handler->on_hold ||
+							(application_state_handler->on_hold &&
+							 application_state_handler->on_hold(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					if (proceed) {
+						switch_core_standard_on_hold(session);
+					}
+				}
+				break;
 			}
 
 			if (midstate == CS_DONE) {
@@ -2282,13 +2369,11 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *thread
 
 	switch_core_hash_insert(runtime.session_table, session->uuid_str, session);
 	switch_core_session_run(session);
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %u (%s) Locked, Waiting on external entities\n", session->id, switch_channel_get_name(session->channel));
+	switch_core_session_write_lock(session);
+	switch_core_session_rwunlock(session);
 
-	if (switch_channel_test_flag(session->channel, CF_LOCK_THREAD)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %u (%s) Locked\n", session->id, switch_channel_get_name(session->channel));
-		while(switch_channel_test_flag(session->channel, CF_LOCK_THREAD)) {
-			switch_yield(10000);
-		}
-	}
 	switch_core_hash_delete(runtime.session_table, session->uuid_str);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Session %u (%s) Ended\n", session->id, switch_channel_get_name(session->channel));
 	switch_core_session_destroy(&session);
@@ -2393,6 +2478,7 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_e
 
 	switch_mutex_init(&session->mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);
+	switch_thread_rwlock_create(&session->rwlock, session->pool);
 
 	return session;
 }

@@ -41,14 +41,20 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#ifdef __FORMATBUG
+}
+#endif
 
 #include <switch.h>
 
-typedef struct {
+struct switch_channel_timetable {
 	switch_time_t created;
 	switch_time_t answered;
 	switch_time_t hungup;
-} switch_channel_timetable_t;
+	struct switch_channel_timetable *next;
+};
+
+typedef struct switch_channel_timetable switch_channel_timetable_t;
 
 /**
  * @defgroup switch_channel Channel Functions

@@ -89,6 +89,7 @@ struct switch_channel {
 	char *name;
 	switch_buffer *dtmf_buffer;
 	switch_mutex_t *dtmf_mutex;
+	switch_mutex_t *profile_mutex;
 	switch_core_session *session;
 	switch_channel_state state;
 	uint32_t flags;
@@ -99,7 +100,7 @@ struct switch_channel {
 	const struct switch_state_handler_table *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
 	switch_hash *variables;
-	switch_channel_timetable_t times;
+	switch_channel_timetable_t *times;
 	void *private_info;
 	switch_call_cause_t hangup_cause;
 	int freq;
@@ -144,7 +145,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel *cha
 
 SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch_channel *channel)
 {
-	return &channel->times;
+	return channel->times;
 }
 
 SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, switch_memory_pool *pool)
@@ -158,7 +159,7 @@ SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, swi
 	switch_core_hash_init(&(*channel)->variables, pool);
 	switch_buffer_create(pool, &(*channel)->dtmf_buffer, 128);
 	switch_mutex_init(&(*channel)->dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
-	(*channel)->times.created = switch_time_now();
+	switch_mutex_init(&(*channel)->profile_mutex, SWITCH_MUTEX_NESTED, pool);
 	(*channel)->hangup_cause = SWITCH_CAUSE_UNALLOCATED;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -297,8 +298,9 @@ SWITCH_DECLARE(switch_status) switch_channel_set_name(switch_channel *channel, c
 	assert(channel != NULL);
 	channel->name = NULL;
 	if (name) {
+		char *uuid = switch_core_session_get_uuid(channel->session);
 		channel->name = switch_core_session_strdup(channel->session, name);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Channel %s\n", name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Chan %s [%s]\n", name, uuid);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -354,6 +356,7 @@ static const char *state_names[] = {
 	"CS_TRANSMIT",
 	"CS_EXECUTE",
 	"CS_LOOPBACK",
+	"CS_HOLD",
 	"CS_HANGUP",
 	"CS_DONE"
 };
@@ -418,6 +421,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_cha
 		case CS_TRANSMIT:
 		case CS_RING:
 		case CS_EXECUTE:
+		case CS_HOLD:
 			ok++;
 		default:
 			break;
@@ -429,6 +433,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_cha
 		case CS_TRANSMIT:
 		case CS_RING:
 		case CS_EXECUTE:
+		case CS_HOLD:
 			ok++;
 		default:
 			break;
@@ -440,6 +445,19 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_cha
 		case CS_LOOPBACK:
 		case CS_RING:
 		case CS_EXECUTE:
+		case CS_HOLD:
+			ok++;
+		default:
+			break;
+		}
+		break;
+
+	case CS_HOLD:
+		switch (state) {
+		case CS_LOOPBACK:
+		case CS_RING:
+		case CS_EXECUTE:
+		case CS_TRANSMIT:
 			ok++;
 		default:
 			break;
@@ -447,10 +465,12 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_cha
 		break;
 
 	case CS_RING:
+		switch_clear_flag(channel, CF_TRANSFER);
 		switch (state) {
 		case CS_LOOPBACK:
 		case CS_EXECUTE:
 		case CS_TRANSMIT:
+		case CS_HOLD:
 			ok++;
 		default:
 			break;
@@ -462,6 +482,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_cha
 		case CS_LOOPBACK:
 		case CS_TRANSMIT:
 		case CS_RING:
+		case CS_HOLD:
 			ok++;
 		default:
 			break;
@@ -569,8 +590,11 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, swit
 
 SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel *channel, switch_caller_profile *caller_profile)
 {
+	switch_channel_timetable_t *times;
+
 	assert(channel != NULL);
 	assert(channel->session != NULL);
+	switch_mutex_lock(channel->profile_mutex);
 
 	if (!caller_profile->uuid) {
 		caller_profile->uuid = switch_core_session_strdup(channel->session, switch_core_session_get_uuid(channel->session));
@@ -587,35 +611,62 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel *channel, 
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}
+	} 
+	
+	if ((times = (switch_channel_timetable_t *) switch_core_session_alloc(channel->session, sizeof(*times)))) {
+		times->next = channel->times;
+		channel->times = times;
 	}
+	channel->times->created = switch_time_now();
 
+	caller_profile->next = channel->caller_profile;
 	channel->caller_profile = caller_profile;
+
+	switch_mutex_unlock(channel->profile_mutex);
 }
 
 SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_caller_profile(switch_channel *channel)
 {
+	switch_caller_profile *profile;
 	assert(channel != NULL);
-	return channel->caller_profile;
+
+	switch_mutex_lock(channel->profile_mutex);
+	profile = channel->caller_profile;
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return profile;
 }
 
 SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel *channel,
 																  switch_caller_profile *caller_profile)
 {
 	assert(channel != NULL);
+	switch_mutex_lock(channel->profile_mutex);
+	caller_profile->next = channel->originator_caller_profile;
 	channel->originator_caller_profile = caller_profile;
+	switch_mutex_unlock(channel->profile_mutex);
 }
 
 SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel *channel,
 																  switch_caller_profile *caller_profile)
 {
 	assert(channel != NULL);
+	switch_mutex_lock(channel->profile_mutex);
+	caller_profile->next = channel->originatee_caller_profile;
 	channel->originatee_caller_profile = caller_profile;
+	switch_mutex_unlock(channel->profile_mutex);
 }
 
 SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originator_caller_profile(switch_channel *channel)
 {
+	switch_caller_profile *profile;
 	assert(channel != NULL);
-	return channel->originator_caller_profile;
+
+	switch_mutex_lock(channel->profile_mutex);
+	profile = channel->originator_caller_profile;
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return profile;
 }
 
 SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel *channel)
@@ -627,8 +678,14 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel *channel)
 
 SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originatee_caller_profile(switch_channel *channel)
 {
+	switch_caller_profile *profile;
 	assert(channel != NULL);
-	return channel->originatee_caller_profile;
+
+	switch_mutex_lock(channel->profile_mutex);
+	profile = channel->originatee_caller_profile;
+	switch_mutex_unlock(channel->profile_mutex);
+
+	return profile;
 }
 
 SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel *channel,
@@ -704,8 +761,8 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_hangup(switch_channe
 {
 	assert(channel != NULL);
 
-	if (!channel->times.hungup) {
-		channel->times.hungup = switch_time_now();
+	if (!channel->times->hungup) {
+		channel->times->hungup = switch_time_now();
 	}
 
 	if (channel->state < CS_HANGUP) {
@@ -769,7 +826,7 @@ SWITCH_DECLARE(switch_status) switch_channel_perform_answer(switch_channel *chan
 	if (switch_core_session_answer_channel(channel->session) == SWITCH_STATUS_SUCCESS) {
 		switch_event *event;
 
-		channel->times.answered = switch_time_now();
+		channel->times->answered = switch_time_now();
 		switch_channel_set_flag(channel, CF_ANSWERED);
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Answer %s!\n", channel->name);
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {

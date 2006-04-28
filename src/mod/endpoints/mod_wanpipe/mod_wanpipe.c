@@ -1135,6 +1135,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 																  NULL,
 																  NULL,
 																  (char *)modname,
+																  NULL,
 																  event->ring.callednum))) {
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}

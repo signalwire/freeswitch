@@ -118,6 +118,28 @@ SWITCH_DECLARE(switch_status) switch_core_destroy(void);
 ///\}
 
 
+///\defgroup sh Read/Write Locking
+///\ingroup core1
+///\{
+/*! 
+  \brief Acquire a read lock on the session
+  \param session the session to acquire from
+  \return success if it is safe to read from the session
+*/
+SWITCH_DECLARE(switch_status) switch_core_session_read_lock(switch_core_session *session);
+
+/*! 
+  \brief Acquire a write lock on the session
+  \param session the session to acquire from
+*/
+SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session *session);
+
+/*! 
+  \brief Unlock a read or write lock on as given session
+  \param session the session
+*/
+SWITCH_DECLARE(void) switch_core_session_rwunlock(switch_core_session *session);
+///\}
 
 ///\defgroup sh State Handlers
 ///\ingroup core1
@@ -277,6 +299,7 @@ SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session *session
   \brief Locate a session based on it's uuiid
   \param uuid_str the unique id of the session you want to find
   \return the session or NULL
+  \note if the session was located it will have a read lock obtained which will need to be released with switch_core_session_rwunlock()
 */
 SWITCH_DECLARE(switch_core_session *) switch_core_session_locate(char *uuid_str);
 

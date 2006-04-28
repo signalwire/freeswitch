@@ -87,6 +87,9 @@ struct switch_caller_profile {
 	char *chan_name;
 	/*! unique id */
 	char *uuid;
+	/*! context */
+	char *context;
+	struct switch_caller_profile *next;
 };
 
 /*! \brief An Abstract Representation of a dialplan Application */
@@ -162,6 +165,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_
 																  char *ani2,
 																  char *rdnis,
 																  char *source,
+																  char *context,
 																  char *destination_number);
 
 /*!

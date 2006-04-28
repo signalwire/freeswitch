@@ -1352,6 +1352,18 @@ DoxyDefine(apr_status_t switch_queue_trypop(switch_queue_t *queue, void **data);
 DoxyDefine(apr_status_t switch_queue_trypush(switch_queue_t *queue, void *data);)
 #define switch_queue_trypush apr_queue_trypush
 
+
+typedef apr_thread_rwlock_t switch_thread_rwlock_t;
+
+#define switch_thread_rwlock_create apr_thread_rwlock_create
+#define switch_thread_rwlock_destroy apr_thread_rwlock_destroy
+#define switch_thread_rwlock_pool_get apr_thread_rwlock_pool_get
+#define switch_thread_rwlock_rdlock apr_thread_rwlock_rdlock
+#define switch_thread_rwlock_tryrdlock apr_thread_rwlock_tryrdlock
+#define switch_thread_rwlock_trywrlock apr_thread_rwlock_trywrlock
+#define switch_thread_rwlock_unlock apr_thread_rwlock_unlock
+#define switch_thread_rwlock_wrlock apr_thread_rwlock_wrlock
+
 /**
  * @defgroup switch_thread_mutex Thread Mutex Routines
  * @ingroup switch_apr

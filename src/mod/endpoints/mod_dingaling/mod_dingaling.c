@@ -89,6 +89,7 @@ struct mdl_profile {
 	char *extip;
 	char *lanaddr;
 	char *exten;
+	char *context;
 	ldl_handle_t *handle;
 	unsigned int flags;
 };
@@ -1246,6 +1247,8 @@ static switch_status load_config(void)
 				profile->lanaddr = switch_core_strdup(module_pool, val);
 			} else if (!strcmp(var, "exten")) {
 				profile->exten = switch_core_strdup(module_pool, val);
+			} else if (!strcmp(var, "context")) {
+				profile->context = switch_core_strdup(module_pool, val);
 			} else if (!strcmp(var, "vad")) {
 				if (!strcasecmp(val, "in")) {
 					switch_set_flag(profile, TFLAG_VAD_IN);
@@ -1341,6 +1344,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 																	  NULL,
 																	  NULL,
 																	  (char *)modname,
+																	  profile->context,
 																	  profile->exten)) != 0) {
 				char name[128];
 				snprintf(name, sizeof(name), "DingaLing/%s-%04x", tech_pvt->caller_profile->destination_number,

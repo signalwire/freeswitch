@@ -297,6 +297,7 @@ CS_RING      - Channel is looking for a dialplan
 CS_TRANSMIT  - Channel is in a passive transmit state
 CS_EXECUTE   - Channel is executing it's dialplan 
 CS_LOOPBACK  - Channel is in loopback
+CS_HOLD		 - Channel is on hold
 CS_HANGUP    - Channel is flagged for hangup and ready to end
 CS_DONE      - Channel is ready to be destroyed and out of the state machine
 </pre>
@@ -308,6 +309,7 @@ typedef enum {
 	CS_TRANSMIT,
 	CS_EXECUTE,
 	CS_LOOPBACK,
+	CS_HOLD,
 	CS_HANGUP,
 	CS_DONE 
 } switch_channel_state;
@@ -325,6 +327,8 @@ CF_ORIGINATOR	= (1 <<  3) - Channel is an originator
 CF_TRANSFER		= (1 <<  4) - Channel is being transfered
 CF_ACCEPT_CNG	= (1 <<  5) - Channel will accept CNG frames
 CF_LOCK_THREAD	= (1 <<  6) - Prevent the channel thread from exiting while this flag is set
+CF_BRIDGED		= (1 <<  7) - Channel in a bridge
+CF_HOLD			= (1 <<  8) - Channel is on hold
 </pre>
  */
 
@@ -335,7 +339,9 @@ typedef enum {
 	CF_ORIGINATOR	= (1 <<  3),
 	CF_TRANSFER		= (1 <<  4),
 	CF_ACCEPT_CNG	= (1 <<  5),
-	CF_LOCK_THREAD	= (1 <<  6)
+	CF_LOCK_THREAD	= (1 <<  6),
+	CF_BRIDGED		= (1 <<  7),
+	CF_HOLD			= (1 <<  8)
 } switch_channel_flag;
 
 

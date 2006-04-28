@@ -64,6 +64,7 @@ static void audio_bridge_function(switch_core_session *session, char *data)
 											   NULL, 
 											   caller_caller_profile->rdnis,
 											   caller_caller_profile->source,
+											   caller_caller_profile->context,
 											   chan_data);
 
 

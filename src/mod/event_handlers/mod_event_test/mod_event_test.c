@@ -45,7 +45,7 @@ static void event_handler(switch_event *event)
 		return;
 	default:
 		switch_event_serialize(event, buf, sizeof(buf), NULL);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT\n--------------------------------\n%s\n", buf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nEVENT\n--------------------------------\n%s\n", buf);
 		break;
 	}
 }
