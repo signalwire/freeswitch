@@ -47,7 +47,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="1"
+				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="switch.h"
 				PrecompiledHeaderFile="$(IntDir)\$(TargetName).pch"
 				BrowseInformation="0"
@@ -137,7 +137,7 @@
 				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS"
 				RuntimeLibrary="2"
-				UsePrecompiledHeader="1"
+				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="switch.h"
 				PrecompiledHeaderFile="$(IntDir)\$(TargetName).pch"
 				BrowseInformation="0"
@@ -207,6 +207,22 @@
 			<File
 				RelativePath="..\..\src\switch_buffer.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\src\switch_caller.c"
