@@ -47,9 +47,9 @@ static switch_loadable_module_interface console_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-static switch_memory_pool *module_pool = NULL;
-static switch_hash *log_hash = NULL;
-static switch_hash *name_hash = NULL;
+static switch_memory_pool_t *module_pool = NULL;
+static switch_hash_t *log_hash = NULL;
+static switch_hash_t *name_hash = NULL;
 static int8_t all_level = -1;
 
 static void del_mapping(char *var) {

@@ -53,7 +53,7 @@ BEGIN_EXTERN_C
 */
 
 /*! \brief An audio resampling handle */
-struct switch_audio_resampler {
+typedef struct {
 	/*! a pointer to store the resampler object */
 	void *resampler;
 	/*! the rate to resample from in hz */
@@ -74,7 +74,7 @@ struct switch_audio_resampler {
 	uint32_t to_len;
 	/*! the total size of the to buffer */
 	uint32_t to_size;
-};
+} switch_audio_resampler_t;
 
 /*!
   \brief Prepare a new resampler handle
@@ -86,18 +86,18 @@ struct switch_audio_resampler {
   \param pool the memory pool to use for buffer allocation
   \return SWITCH_STATUS_SUCCESS if the handle was created
  */
-SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **new_resampler,
+SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler_t **new_resampler,
 													 int from_rate,
 													 switch_size_t from_size,
 													 int to_rate,
 													 uint32_t to_size,
-													 switch_memory_pool *pool);
+													 switch_memory_pool_t *pool);
 
 /*!
   \brief Destroy an existing resampler handle
   \param resampler the resampler handle to destroy
  */
-SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler *resampler);
+SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler_t *resampler);
 
 /*!
   \brief Resample one float buffer into another using specifications of a given handle
@@ -109,7 +109,7 @@ SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler *resampler);
   \param last parameter denoting the last sample is being resampled
   \return the used size of dst
  */
-SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst, uint32_t dstlen, int last);
+SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, float *src, int srclen, float *dst, uint32_t dstlen, int last);
 
 /*!
   \brief Convert an array of floats to an array of shorts

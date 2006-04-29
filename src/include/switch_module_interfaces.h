@@ -159,7 +159,7 @@ struct switch_io_event_hooks {
 /*! \brief A table of i/o routines that an endpoint interface can implement */
 struct switch_io_routines {
 	/*! creates an outgoing session from given session, caller profile */
-	switch_status (*outgoing_channel)(switch_core_session *, switch_caller_profile *, switch_core_session **, switch_memory_pool *);
+	switch_status (*outgoing_channel)(switch_core_session *, switch_caller_profile *, switch_core_session **, switch_memory_pool_t *);
 	/*! answers the given session's channel */
 	switch_status (*answer_channel)(switch_core_session *);
 	/*! read a frame from a session */
@@ -177,7 +177,7 @@ struct switch_io_routines {
 	/*! receive a message from another session*/
 	switch_status (*receive_message)(switch_core_session *, switch_core_session_message *);
 	/*! queue a message for another session*/
-	switch_status (*queue_event)(switch_core_session *, switch_event *);
+	switch_status (*queue_event)(switch_core_session *, switch_event_t *);
 };
 
 /*! \brief Abstraction of an module endpoint interface
@@ -216,7 +216,7 @@ struct switch_timer {
 	/*! the timer interface provided from a loadable module */
 	struct switch_timer_interface *timer_interface;
 	/*! the timer's memory pool */
-	switch_memory_pool *memory_pool;
+	switch_memory_pool_t *memory_pool;
 	/*! private data for loadable modules to store information */
 	void *private_info;
 };
@@ -287,7 +287,7 @@ struct switch_file_handle {
 	/*! the speed of the file playback*/
 	int speed;
 	/*! the handle's memory pool */
-	switch_memory_pool *memory_pool;
+	switch_memory_pool_t *memory_pool;
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
 	int64_t pos;
@@ -331,7 +331,7 @@ struct switch_speech_handle {
 	uint32_t flags;
 
 	/*! the handle's memory pool */
-	switch_memory_pool *memory_pool;
+	switch_memory_pool_t *memory_pool;
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
 };
@@ -364,7 +364,7 @@ struct switch_directory_handle {
 	uint32_t flags;
 
 	/*! the handle's memory pool */
-	switch_memory_pool *memory_pool;
+	switch_memory_pool_t *memory_pool;
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
 };
@@ -418,7 +418,7 @@ struct switch_codec {
 	/*! flags to modify behaviour */
 	uint32_t flags;
 	/*! the handle's memory pool*/
-	switch_memory_pool *memory_pool;
+	switch_memory_pool_t *memory_pool;
 	/*! private data for the codec module to store handle specific info */
 	void *private_info;
 };

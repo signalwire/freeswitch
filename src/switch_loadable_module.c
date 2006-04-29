@@ -42,22 +42,22 @@ struct switch_loadable_module {
 };
 
 struct switch_loadable_module_container {
-	switch_hash *module_hash;
-	switch_hash *endpoint_hash;
-	switch_hash *codec_hash;
-	switch_hash *dialplan_hash;
-	switch_hash *timer_hash;
-	switch_hash *application_hash;
-	switch_hash *api_hash;
-	switch_hash *file_hash;
-	switch_hash *speech_hash;
-	switch_hash *directory_hash;
-	switch_memory_pool *pool;
+	switch_hash_t *module_hash;
+	switch_hash_t *endpoint_hash;
+	switch_hash_t *codec_hash;
+	switch_hash_t *dialplan_hash;
+	switch_hash_t *timer_hash;
+	switch_hash_t *application_hash;
+	switch_hash_t *api_hash;
+	switch_hash_t *file_hash;
+	switch_hash_t *speech_hash;
+	switch_hash_t *directory_hash;
+	switch_memory_pool_t *pool;
 };
 
 static struct switch_loadable_module_container loadable_modules;
 
-static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
+static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 {
 
 
@@ -75,7 +75,7 @@ static void *switch_loadable_module_exec(switch_thread *thread, void *obj)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Thread ended for %s\n", module->interface->module_name);
 
 	if (ts->pool) {
-		switch_memory_pool *pool = ts->pool;
+		switch_memory_pool_t *pool = ts->pool;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Pool for %s\n", module->interface->module_name);
 		switch_core_destroy_memory_pool(&pool);
 	}
@@ -567,7 +567,7 @@ SWITCH_DECLARE(switch_directory_interface *) switch_loadable_module_get_director
 	return switch_core_hash_find(loadable_modules.directory_hash, name);
 }
 
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool, switch_codec_interface **array,
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, switch_codec_interface **array,
 													  int arraylen)
 {
 	switch_hash_index_t *hi;
@@ -608,7 +608,7 @@ SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *ret
 {
 	switch_api_interface *api;
 	switch_status status;
-	switch_event *event;
+	switch_event_t *event;
 
 	if ((api = switch_loadable_module_get_api_interface(cmd)) != 0) {
 		status = api->function(arg, retbuf, len);

@@ -157,7 +157,7 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
   \param pool the memory pool to use
   \return SWITCH_STATUS_SUCCESS when successful
 */
-SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock, switch_int16_t flags, switch_memory_pool *pool);
+SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock, switch_int16_t flags, switch_memory_pool_t *pool);
 
 /*!
   \brief Wait for a socket

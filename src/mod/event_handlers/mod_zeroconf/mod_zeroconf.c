@@ -34,7 +34,7 @@
 
 static const char modname[] = "mod_zeroconf";
 
-static switch_memory_pool *module_pool = NULL;
+static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
 	sw_discovery discovery;
@@ -121,7 +121,7 @@ static sw_result HOWL_API my_service_reply(sw_discovery	discovery,
 }
 
 
-static void event_handler(switch_event *event)
+static void event_handler(switch_event_t *event)
 {
 	sw_text_record text_record;	
 	sw_result result;
@@ -132,7 +132,7 @@ static void event_handler(switch_event *event)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sw_text_record_init() failed\n");
 			return;
 		} else {
-			switch_event_header *hp;
+			switch_event_header_t *hp;
 			char *service = switch_event_get_header(event, "service");
 			char *port = switch_event_get_header(event, "port");
 			sw_port porti = 0;

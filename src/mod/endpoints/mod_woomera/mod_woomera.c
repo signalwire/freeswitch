@@ -50,7 +50,7 @@
 
 static const char modname[] = "mod_woomera";
 
-static switch_memory_pool *module_pool = NULL;
+static switch_memory_pool_t *module_pool = NULL;
 
 #define STRLEN 15
 #define FRAME_LEN 480
@@ -169,7 +169,7 @@ static switch_status woomerachan_on_ring(switch_core_session *session);
 static switch_status woomerachan_on_loopback(switch_core_session *session);
 static switch_status woomerachan_on_transmit(switch_core_session *session);
 static switch_status woomerachan_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-												  switch_core_session **new_session, switch_memory_pool *pool);
+												  switch_core_session **new_session, switch_memory_pool_t *pool);
 static switch_status woomerachan_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
 											switch_io_flag flags, int stream_id);
 static switch_status woomerachan_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
@@ -186,7 +186,7 @@ static int connect_woomera(switch_socket_t **new_sock, woomera_profile * profile
 static int woomera_profile_thread_running(woomera_profile * profile, int set, int new);
 static int woomera_locate_socket(woomera_profile * profile, switch_socket_t **woomera_socket);
 static int tech_create_read_socket(private_object * tech_pvt);
-static void *woomera_channel_thread_run(switch_thread *thread, void *obj);
+static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj);
 static void *woomera_thread_run(void *obj);
 static int tech_activate(private_object * tech_pvt);
 
@@ -473,7 +473,7 @@ static const switch_loadable_module_interface woomerachan_module_interface = {
    that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
 static switch_status woomerachan_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-												  switch_core_session **new_session, switch_memory_pool *pool)
+												  switch_core_session **new_session, switch_memory_pool_t *pool)
 {
 	if ((*new_session = switch_core_session_request(&woomerachan_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
@@ -858,7 +858,7 @@ static int woomera_locate_socket(woomera_profile * profile, switch_socket_t **wo
 
 static int tech_create_read_socket(private_object * tech_pvt)
 {
-	switch_memory_pool *pool = switch_core_session_get_pool(tech_pvt->session);
+	switch_memory_pool_t *pool = switch_core_session_get_pool(tech_pvt->session);
 
 	if ((tech_pvt->port = globals.next_woomera_port++) >= WOOMERA_MAX_PORT) {
 		tech_pvt->port = globals.next_woomera_port = WOOMERA_MIN_PORT;
@@ -926,7 +926,7 @@ static int tech_activate(private_object * tech_pvt)
 
 
 
-static void *woomera_channel_thread_run(switch_thread *thread, void *obj)
+static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 {
 	switch_core_session *session = obj;
 	switch_channel *channel = NULL;

@@ -30,6 +30,7 @@
  *
  */
 #include <switch_channel.h>
+#include <switch.h>
 
 struct switch_cause_table {
 	const char *name;
@@ -99,7 +100,7 @@ struct switch_channel {
 	switch_caller_extension *caller_extension;
 	const struct switch_state_handler_table *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
-	switch_hash *variables;
+	switch_hash_t *variables;
 	switch_channel_timetable_t *times;
 	void *private_info;
 	switch_call_cause_t hangup_cause;
@@ -148,7 +149,7 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
 	return channel->times;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, switch_memory_pool *pool)
+SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, switch_memory_pool_t *pool)
 {
 	assert(pool != NULL);
 
@@ -243,7 +244,7 @@ SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel *channel,
 SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, switch_size_t len)
 {
 	switch_size_t bytes;
-	switch_event *event;
+	switch_event_t *event;
 
 	assert(channel != NULL);
 
@@ -516,7 +517,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_cha
 			channel->hangup_cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		}
 		if (state < CS_HANGUP) {
-			switch_event *event;
+			switch_event_t *event;
 			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
 				switch_channel_event_set_data(channel, event);
 				switch_event_fire(&event);
@@ -541,7 +542,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_cha
 	return channel->state;
 }
 
-SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, switch_event *event)
+SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, switch_event_t *event)
 {
 	switch_caller_profile *caller_profile, *originator_caller_profile, *originatee_caller_profile;
 	switch_hash_index_t *hi;
@@ -605,7 +606,7 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel *channel, 
 	}
 
 	if (!channel->caller_profile) {
-		switch_event *event;
+		switch_event_t *event;
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_CREATE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
@@ -766,7 +767,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_hangup(switch_channe
 	}
 
 	if (channel->state < CS_HANGUP) {
-		switch_event *event;
+		switch_event_t *event;
 		switch_channel_state last_state = channel->state;
 
 		channel->state = CS_HANGUP;
@@ -824,7 +825,7 @@ SWITCH_DECLARE(switch_status) switch_channel_perform_answer(switch_channel *chan
 	}
 
 	if (switch_core_session_answer_channel(channel->session) == SWITCH_STATUS_SUCCESS) {
-		switch_event *event;
+		switch_event_t *event;
 
 		channel->times->answered = switch_time_now();
 		switch_channel_set_flag(channel, CF_ANSWERED);

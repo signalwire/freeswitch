@@ -30,6 +30,7 @@
  *
  */
 #include <switch_buffer.h>
+#include <switch.h>
 
 static uint32_t buffer_id = 0;
 
@@ -40,7 +41,7 @@ struct switch_buffer {
 	uint32_t id;
 };
 
-SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool *pool, switch_buffer **buffer, switch_size_t max_len)
+SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer **buffer, switch_size_t max_len)
 {
 	switch_buffer *new_buffer;
 

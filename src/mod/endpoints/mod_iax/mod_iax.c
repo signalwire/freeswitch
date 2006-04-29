@@ -44,7 +44,7 @@
 
 static const char modname[] = "mod_iax";
 
-static switch_memory_pool *module_pool = NULL;
+static switch_memory_pool_t *module_pool = NULL;
 static int running = 1;
 
 
@@ -396,7 +396,7 @@ static switch_status channel_on_ring(switch_core_session *session);
 static switch_status channel_on_loopback(switch_core_session *session);
 static switch_status channel_on_transmit(switch_core_session *session);
 static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											  switch_core_session **new_session, switch_memory_pool *pool);
+											  switch_core_session **new_session, switch_memory_pool_t *pool);
 static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
 										switch_io_flag flags, int stream_id);
 static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
@@ -724,7 +724,7 @@ static const switch_loadable_module_interface channel_module_interface = {
 that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
 static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											  switch_core_session **new_session, switch_memory_pool *pool)
+											  switch_core_session **new_session, switch_memory_pool_t *pool)
 {
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
@@ -871,7 +871,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 {
 	//int refresh;
 	struct iax_event *iaxevent = NULL;
-	switch_event *s_event;
+	switch_event_t *s_event;
 	if (load_config() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
 	}

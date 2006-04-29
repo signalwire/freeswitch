@@ -30,8 +30,9 @@
  *
  */
 #include <switch_caller.h>
+#include <switch.h>
 
-SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_pool *pool,
+SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_pool_t *pool,
 																  char *dialplan,
 																  char *caller_id_name,
 																  char *caller_id_number,
@@ -90,7 +91,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
 }
 
 SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, char *prefix,
-														  switch_event *event)
+														  switch_event_t *event)
 {
 	char header_name[1024];
 

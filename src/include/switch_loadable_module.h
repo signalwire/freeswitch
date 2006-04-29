@@ -178,7 +178,7 @@ SWITCH_DECLARE(switch_directory_interface *) switch_loadable_module_get_director
   \param arraylen the max size in elements of the array
   \return the number of elements added to the array
  */
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool *pool, 
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, 
 													  switch_codec_interface **array, 
 													  int arraylen);
 

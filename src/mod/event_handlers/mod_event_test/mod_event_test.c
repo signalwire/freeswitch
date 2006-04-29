@@ -36,7 +36,7 @@ static const char modname[] = "mod_event_test";
 //#define TORTURE_ME
 
 
-static void event_handler(switch_event *event)
+static void event_handler(switch_event_t *event)
 {
 	char buf[1024];
 
@@ -68,12 +68,12 @@ static switch_loadable_module_interface event_test_module_interface = {
 #define TTHREADS 500
 static int THREADS = 0;
 
-static void *torture_thread(switch_thread *thread, void *obj)
+static void *torture_thread(switch_thread_t *thread, void *obj)
 {
 	int y = 0;
 	int z = 0;
 	switch_core_thread_session *ts = obj;
-	switch_event *event;
+	switch_event_t *event;
 
 	z = THREADS++;
 
@@ -89,7 +89,7 @@ static void *torture_thread(switch_thread *thread, void *obj)
 	}
 
 	if (ts->pool) {
-		switch_memory_pool *pool = ts->pool;
+		switch_memory_pool_t *pool = ts->pool;
 		switch_core_destroy_memory_pool(&pool);
 	}
 

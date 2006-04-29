@@ -120,7 +120,7 @@ struct teletone_obj {
 	switch_codec codec;
 	switch_buffer *audio_buffer;
 	switch_buffer *loop_buffer;
-	switch_memory_pool *pool;
+	switch_memory_pool_t *pool;
 	switch_timer *timer;
 	switch_timer timer_base;
 	char code_buffer[1024];
@@ -132,14 +132,14 @@ struct fileio_obj {
 	char *path;
 	unsigned int flags;
 	switch_file_t *fd;
-	switch_memory_pool *pool;
+	switch_memory_pool_t *pool;
 	char *buf;
 	switch_size_t buflen;
 	int32 bufsize;
 };
 
 struct db_obj {
-	switch_memory_pool *pool;
+	switch_memory_pool_t *pool;
 	switch_core_db *db;
 	switch_core_db_stmt *stmt;
 	char *dbname;
@@ -965,7 +965,7 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 /*********************************************************************************/
 static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	switch_memory_pool *pool = NULL;
+	switch_memory_pool_t *pool = NULL;
 	if (argc > 2) {
 		struct js_session *jss = NULL;
 		JSObject *session_obj;
@@ -1070,7 +1070,7 @@ static void session_destroy(JSContext *cx, JSObject *obj)
 /*********************************************************************************/
 static JSBool fileio_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	switch_memory_pool *pool;
+	switch_memory_pool_t *pool;
 	switch_file_t *fd;
 	char *path, *flags_str;
 	unsigned int flags = 0;
@@ -1120,7 +1120,7 @@ static void fileio_destroy(JSContext *cx, JSObject *obj)
 	struct fileio_obj *fio = JS_GetPrivate(cx, obj);
 
 	if (fio) {
-		switch_memory_pool *pool = fio->pool;
+		switch_memory_pool_t *pool = fio->pool;
 		switch_core_destroy_memory_pool(&pool);
 		pool = NULL;
 	}
@@ -1241,7 +1241,7 @@ JSClass fileio_class = {
 /*********************************************************************************/
 static JSBool db_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	switch_memory_pool *pool;
+	switch_memory_pool_t *pool;
 	switch_core_db *db;
 	struct db_obj *dbo;
 
@@ -1271,7 +1271,7 @@ static void db_destroy(JSContext *cx, JSObject *obj)
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 	
 	if (dbo) {
-		switch_memory_pool *pool = dbo->pool;
+		switch_memory_pool_t *pool = dbo->pool;
 		if (dbo->stmt) {
 			switch_core_db_finalize(dbo->stmt);
 			dbo->stmt = NULL;
@@ -1472,7 +1472,7 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 	struct teletone_obj *tto = NULL;
 	struct js_session *jss = NULL;
 	switch_codec *read_codec;
-	switch_memory_pool *pool;
+	switch_memory_pool_t *pool;
 	char *timer_name = NULL;
 
 	if (argc > 0) {
@@ -1549,7 +1549,7 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 static void teletone_destroy(JSContext *cx, JSObject *obj)
 {
 	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
-	switch_memory_pool *pool;
+	switch_memory_pool_t *pool;
 	if (tto) {
 		if (tto->timer) {
 			switch_core_timer_destroy(tto->timer);
@@ -2114,7 +2114,7 @@ static void js_parse_and_execute(switch_core_session *session, char *input_code)
 
 
 
-static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread *thread, void *obj)
+static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread_t *thread, void *obj)
 {
 	char *input_code = obj;
 
@@ -2128,11 +2128,11 @@ static void *SWITCH_THREAD_FUNC js_thread_run(switch_thread *thread, void *obj)
 }
 
 
-static switch_memory_pool *module_pool = NULL;
+static switch_memory_pool_t *module_pool = NULL;
 
 static void js_thread_launch(char *text)
 {
-	switch_thread *thread;
+	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 
 	if (!module_pool) {

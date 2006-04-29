@@ -41,7 +41,7 @@
 static const char modname[] = "mod_exosip";
 #define STRLEN 15
 
-static switch_memory_pool *module_pool = NULL;
+static switch_memory_pool_t *module_pool = NULL;
 
 
 
@@ -88,8 +88,8 @@ static struct {
 	char *codec_string;
 	char *codec_order[SWITCH_MAX_CODECS];
 	int codec_order_last;
-	switch_hash *call_hash;
-	switch_hash *srtp_hash;
+	switch_hash_t *call_hash;
+	switch_hash_t *srtp_hash;
 	int running;
 	int codec_ms;
 	int dtmf_duration;
@@ -110,7 +110,7 @@ struct private_object {
 	int32_t timestamp_recv;
 	int32_t timestamp_dtmf;
 	int payload_num;
-	struct switch_rtp *rtp_session;
+	switch_rtp_t *rtp_session;
 	struct osip_rfc3264 *sdp_config;
 	sdp_message_t *remote_sdp;
 	sdp_message_t *local_sdp;
@@ -150,7 +150,7 @@ static switch_status exosip_on_hangup(switch_core_session *session);
 static switch_status exosip_on_loopback(switch_core_session *session);
 static switch_status exosip_on_transmit(switch_core_session *session);
 static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											 switch_core_session **new_session, switch_memory_pool *pool);
+											 switch_core_session **new_session, switch_memory_pool_t *pool);
 static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
 									   switch_io_flag flags, int stream_id);
 static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
@@ -996,7 +996,7 @@ static const switch_loadable_module_interface exosip_module_interface = {
 };
 
 static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											 switch_core_session **new_session, switch_memory_pool *pool)
+											 switch_core_session **new_session, switch_memory_pool_t *pool)
 {
 	if ((*new_session = switch_core_session_request(&exosip_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
@@ -1808,7 +1808,7 @@ static int config_exosip(int reload)
 SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 {
 	eXosip_event_t *event = NULL;
-	switch_event *s_event;
+	switch_event_t *s_event;
 
 	config_exosip(0);
 

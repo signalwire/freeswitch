@@ -82,7 +82,7 @@ struct switch_core_thread_session {
 	/*! array of void pointers to pass mutiple data objects */
 	void *objs[SWITCH_MAX_CORE_THREAD_SESSION_OBJS];
 	/*! a pointer to a memory pool if the thread has it's own pool */
-	switch_memory_pool *pool;
+	switch_memory_pool_t *pool;
 };
 
 struct switch_core_session;
@@ -162,13 +162,13 @@ SWITCH_DECLARE(const switch_state_handler_table *) switch_core_get_state_handler
   \brief Create a new sub memory pool from the core's master pool
   \return SWITCH_STATUS_SUCCESS on success
 */
-SWITCH_DECLARE(switch_status) switch_core_new_memory_pool(switch_memory_pool **pool);
+SWITCH_DECLARE(switch_status) switch_core_new_memory_pool(switch_memory_pool_t **pool);
 
 /*! 
   \brief Returns a subpool back to the main pool
   \return SWITCH_STATUS_SUCCESS on success
 */
-SWITCH_DECLARE(switch_status) switch_core_destroy_memory_pool(switch_memory_pool **pool);
+SWITCH_DECLARE(switch_status) switch_core_destroy_memory_pool(switch_memory_pool_t **pool);
 
 /*! 
   \brief Start the session's state machine
@@ -196,7 +196,7 @@ SWITCH_DECLARE(void *) switch_core_permenant_alloc(switch_size_t memory);
   \param memory the number of bytes to allocate
   \return a void pointer to the allocated memory
 */
-SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, switch_size_t memory);
+SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size_t memory);
 
 /*! 
   \brief Allocate memory from a session's pool
@@ -228,7 +228,7 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, 
   \param todup the string to duplicate
   \return a pointer to the newly duplicated string
 */
-SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup);
+SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, char *todup);
 
 /*! 
   \brief Retrieve the memory pool from a session
@@ -236,7 +236,7 @@ SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
   \return the session's pool
   \note to be used sparingly
 */
-SWITCH_DECLARE(switch_memory_pool *) switch_core_session_get_pool(switch_core_session *session);
+SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(switch_core_session *session);
 ///\}
 
 ///\defgroup sessm Session Creation / Management
@@ -248,7 +248,7 @@ SWITCH_DECLARE(switch_memory_pool *) switch_core_session_get_pool(switch_core_se
   \param pool the pool to use for the allocation (a new one will be used if NULL)
   \return the newly created session
 */
-SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_endpoint_interface *endpoint_interface, switch_memory_pool *pool);
+SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_endpoint_interface *endpoint_interface, switch_memory_pool_t *pool);
 
 /*! 
   \brief Destroy a session and return the memory pool to the core
@@ -263,7 +263,7 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session **session);
   \param pool the pool to use
   \return the newly created session
 */
-SWITCH_DECLARE(switch_core_session *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool *pool);
+SWITCH_DECLARE(switch_core_session *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool_t *pool);
 
 /*! 
   \brief Launch the session thread (state machine) on a given session
@@ -312,7 +312,7 @@ SWITCH_DECLARE (switch_status) switch_core_session_message_send(char *uuid_str, 
   \param event the event to send
   \return the status returned by the message handler
 */
-SWITCH_DECLARE(switch_status) switch_core_session_event_send(char *uuid_str, switch_event *event);
+SWITCH_DECLARE(switch_status) switch_core_session_event_send(char *uuid_str, switch_event_t *event);
 
 /*! 
   \brief Retrieve private user data from a session
@@ -358,7 +358,7 @@ SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session *se
   \param func a function to execute in the thread
   \param obj an arguement
 */
-SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *session, void *(*func)(switch_thread *, void *), void *obj);
+SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *session, void *(*func)(switch_thread_t *, void *), void *obj);
 
 /*! 
   \brief Signal a thread using a thread session to terminate
@@ -387,7 +387,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 																   char *endpoint_name,
 																   switch_caller_profile *caller_profile,
 																   switch_core_session **new_session,
-																   switch_memory_pool *pool);
+																   switch_memory_pool_t *pool);
 
 /*! 
   \brief Answer the channel of a given session
@@ -410,7 +410,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_receive_message(switch_core_se
   \param event the event to queue
   \return the status returned by the message handler
 */
-SWITCH_DECLARE(switch_status) switch_core_session_queue_event(switch_core_session *session, switch_event *event);
+SWITCH_DECLARE(switch_status) switch_core_session_queue_event(switch_core_session *session, switch_event_t *event);
 
 /*! 
   \brief Read a frame from a session
@@ -563,14 +563,14 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_send_dtmf(switc
   \param pool the pool to use for the new hash
   \return SWITCH_STATUS_SUCCESS if the hash is created
 */
-SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash **hash, switch_memory_pool *pool);
+SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash_t **hash, switch_memory_pool_t *pool);
 
 /*! 
   \brief Destroy an existing hash table
   \param hash the hash to destroy
   \return SWITCH_STATUS_SUCCESS if the hash is destroyed
 */
-SWITCH_DECLARE(switch_status) switch_core_hash_destroy(switch_hash *hash);
+SWITCH_DECLARE(switch_status) switch_core_hash_destroy(switch_hash_t *hash);
 
 /*! 
   \brief Insert data into a hash
@@ -580,7 +580,7 @@ SWITCH_DECLARE(switch_status) switch_core_hash_destroy(switch_hash *hash);
   \return SWITCH_STATUS_SUCCESS if the data is added
   \note the string key must be a constant or a dynamic string
 */
-SWITCH_DECLARE(switch_status) switch_core_hash_insert(switch_hash *hash, char *key, void *data);
+SWITCH_DECLARE(switch_status) switch_core_hash_insert(switch_hash_t *hash, char *key, void *data);
 
 /*! 
   \brief Insert data into a hash with dynamicly allocated key name
@@ -589,7 +589,7 @@ SWITCH_DECLARE(switch_status) switch_core_hash_insert(switch_hash *hash, char *k
   \param data the data to add
   \return SWITCH_STATUS_SUCCESS if the data is added
 */
-SWITCH_DECLARE(switch_status) switch_core_hash_insert_dup(switch_hash *hash, char *key, void *data);
+SWITCH_DECLARE(switch_status) switch_core_hash_insert_dup(switch_hash_t *hash, char *key, void *data);
 
 /*! 
   \brief Delete data from a hash based on desired key
@@ -597,7 +597,7 @@ SWITCH_DECLARE(switch_status) switch_core_hash_insert_dup(switch_hash *hash, cha
   \param key the key from which to delete the data
   \return SWITCH_STATUS_SUCCESS if the data is deleted
 */
-SWITCH_DECLARE(switch_status) switch_core_hash_delete(switch_hash *hash, char *key);
+SWITCH_DECLARE(switch_status) switch_core_hash_delete(switch_hash_t *hash, char *key);
 
 /*! 
   \brief Retrieve data from a given hash
@@ -605,7 +605,7 @@ SWITCH_DECLARE(switch_status) switch_core_hash_delete(switch_hash *hash, char *k
   \param key the key to retrieve
   \return a pointer to the data held in the key
 */
-SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash *hash, char *key);
+SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t *hash, char *key);
 ///\}
 
 ///\defgroup timer Timer Functions
@@ -620,7 +620,7 @@ SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash *hash, char *key);
   \param pool the memory pool to use for allocation
   \return
 */
-SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *timer_name, int interval, int samples, switch_memory_pool *pool);
+SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *timer_name, int interval, int samples, switch_memory_pool_t *pool);
 
 /*! 
   \brief Wait for one cycle on an existing timer
@@ -659,7 +659,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec,
 													 int channels, 
 													 uint32_t flags,
 													 const switch_codec_settings *codec_settings, 
-													 switch_memory_pool *pool);
+													 switch_memory_pool_t *pool);
 
 /*! 
   \brief Encode data using a codec handle
@@ -777,7 +777,7 @@ SWITCH_DECLARE(switch_core_db *) switch_core_db_open_file(char *filename);
   \return SWITCH_STATUS_SUCCESS if the file is opened
   \note the loadable module used is chosen based on the file extension
 */
-SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char *file_path, unsigned int flags, switch_memory_pool *pool);
+SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char *file_path, unsigned int flags, switch_memory_pool_t *pool);
 
 /*! 
   \brief Read media from a file handle
@@ -833,7 +833,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh,
 													  char *voice_name,
 													  unsigned int rate,
 													  switch_speech_flag *flags,
-													  switch_memory_pool *pool);
+													  switch_memory_pool_t *pool);
 
 /*!
   \brief Feed data to the ASR module
@@ -907,7 +907,7 @@ SWITCH_DECLARE(switch_status) switch_core_directory_open(switch_directory_handle
 														 char *source,
 														 char *dsn,
 														 char *passwd,
-														 switch_memory_pool *pool);
+														 switch_memory_pool_t *pool);
 
 /*! 
   \brief Query a directory handle
@@ -967,7 +967,7 @@ SWITCH_DECLARE(FILE *) switch_core_get_console(void);
 /*! 
   \brief Launch a thread
 */
-SWITCH_DECLARE(void) switch_core_launch_thread(void *(*func)(switch_thread *, void*), void *obj, switch_memory_pool *pool);
+SWITCH_DECLARE(void) switch_core_launch_thread(void *(*func)(switch_thread_t *, void*), void *obj, switch_memory_pool_t *pool);
 
 /*!
   \brief Initiate Globals

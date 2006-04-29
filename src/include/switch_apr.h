@@ -256,7 +256,7 @@ typedef apr_thread_cond_t switch_thread_cond_t;
 DoxyDefine(apr_status_t switch_thread_cond_create(switch_thread_cond_t **cond, switch_pool_t *pool);)
 #define switch_thread_cond_create apr_thread_cond_create
 
-typedef apr_os_thread_t switch_thread_id;
+typedef apr_os_thread_t switch_thread_id_t;
 
 #define switch_thread_data_set apr_thread_data_set
 #define switch_thread_data_get apr_thread_data_get
@@ -331,7 +331,7 @@ DoxyDefine(apr_status_t switch_thread_cond_destroy(switch_thread_cond_t *cond);)
  */
 
 /** Opaque Thread structure. */
-typedef apr_thread_t switch_thread;
+typedef apr_thread_t switch_thread_t;
 
 /** Opaque Thread attributes structure. */
 typedef apr_threadattr_t switch_threadattr_t;
@@ -947,7 +947,7 @@ DoxyDefine(apr_status_t switch_mcast_interface(switch_socket_t *sock,
  * @{
  */
 /** The fundamental pool type */
-typedef apr_pool_t switch_memory_pool;
+typedef apr_pool_t switch_memory_pool_t;
 
 
 /**
@@ -958,7 +958,7 @@ typedef apr_pool_t switch_memory_pool;
  *         to re-use this memory for the next allocation.
  * @see apr_pool_destroy()
  */
-DoxyDefine(void switch_pool_clear(switch_memory_pool *p);)
+DoxyDefine(void switch_pool_clear(switch_memory_pool_t *p);)
 #define switch_pool_clear apr_pool_clear
 /** @} */
 
@@ -1135,7 +1135,7 @@ DoxyDefine(void switch_sleep(apr_interval_time_t t);)
  */
 
 /** Abstract type for hash tables. */
-typedef apr_hash_t switch_hash;
+typedef apr_hash_t switch_hash_t;
 
 /** Abstract type for scanning hash tables. */
 typedef apr_hash_index_t switch_hash_index_t;
@@ -1392,7 +1392,7 @@ typedef apr_thread_mutex_t switch_mutex_t;
  *
 SWITCH_DECLARE(switch_status) switch_mutex_init(switch_mutex_t **lock,
 												switch_lock_flag flags,
-												switch_memory_pool *pool);
+												switch_memory_pool_t *pool);
 */
 #define switch_mutex_init apr_thread_mutex_create
 /**

@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 	char path[256] = "";
 	char *ppath = NULL;
 	char *err = NULL;
-	switch_event *event;
+	switch_event_t *event;
 	int bg = 0;
 	FILE *f;
 #ifdef WIN32

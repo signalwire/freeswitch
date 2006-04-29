@@ -53,7 +53,7 @@ struct switch_log_binding {
 
 typedef struct switch_log_binding switch_log_binding;
 
-static switch_memory_pool *LOG_POOL = NULL;
+static switch_memory_pool_t *LOG_POOL = NULL;
 static switch_log_binding *BINDINGS = NULL;
 static switch_mutex_t *BINDLOCK = NULL;
 static switch_queue_t *LOG_QUEUE = NULL;
@@ -111,7 +111,7 @@ SWITCH_DECLARE(switch_status) switch_log_bind_logger(switch_log_function functio
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void *SWITCH_THREAD_FUNC log_thread(switch_thread *thread, void *obj)
+static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 {
 
 	/* To Be or Not To Be */
@@ -212,7 +212,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 		}
 
 		if (channel == SWITCH_CHANNEL_ID_EVENT) {
-				switch_event *event;
+				switch_event_t *event;
 				if (switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
@@ -250,9 +250,9 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 }
 
 
-SWITCH_DECLARE(switch_status) switch_log_init(switch_memory_pool *pool)
+SWITCH_DECLARE(switch_status) switch_log_init(switch_memory_pool_t *pool)
 {
-	switch_thread *thread;
+	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
 
 	assert(pool != NULL);

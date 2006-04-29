@@ -37,7 +37,7 @@
 
 static const char modname[] = "mod_dingaling";
 
-static switch_memory_pool *module_pool = NULL;
+static switch_memory_pool_t *module_pool = NULL;
 
 typedef enum {
 	TFLAG_IO = (1 << 0),
@@ -74,7 +74,7 @@ static struct {
 	int codec_rates_last;
 	unsigned int flags;
 	unsigned int init;
-	switch_hash *profile_hash;
+	switch_hash_t *profile_hash;
 	int running;
 	int handles;
 } globals;
@@ -107,7 +107,7 @@ struct private_object {
 	switch_codec_interface *codecs[SWITCH_MAX_CODECS];
 	unsigned int num_codecs;
 	int codec_index;
-	struct switch_rtp *rtp_session;
+	switch_rtp_t *rtp_session;
 	ldl_session_t *dlsession;
 	char *remote_ip;
 	switch_port_t local_port;
@@ -155,7 +155,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	 static switch_status channel_on_loopback(switch_core_session *session);
 	 static switch_status channel_on_transmit(switch_core_session *session);
 	 static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-												   switch_core_session **new_session, switch_memory_pool *pool);
+												   switch_core_session **new_session, switch_memory_pool_t *pool);
 	 static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
 											 switch_io_flag flags, int stream_id);
 	 static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
@@ -200,7 +200,7 @@ static void get_codecs(struct private_object *tech_pvt)
 
 
 
-static void *SWITCH_THREAD_FUNC handle_thread_run(switch_thread *thread, void *obj)
+static void *SWITCH_THREAD_FUNC handle_thread_run(switch_thread_t *thread, void *obj)
 {
 	ldl_handle_t *handle = obj;
 	struct mdl_profile *profile = NULL;
@@ -217,7 +217,7 @@ static void *SWITCH_THREAD_FUNC handle_thread_run(switch_thread *thread, void *o
 
 static void handle_thread_launch(ldl_handle_t *handle)
 {
-	switch_thread *thread;
+	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	
 	switch_threadattr_create(&thd_attr, module_pool);
@@ -449,7 +449,7 @@ static int do_describe(struct private_object *tech_pvt, int force)
 	return 0;
 }
 
-static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void *obj)
+static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, void *obj)
 {
 	switch_core_session *session = obj;
 
@@ -532,7 +532,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread *thread, void
 
 static void negotiate_thread_launch(switch_core_session *session)
 {
-	switch_thread *thread;
+	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	
 	switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
@@ -1009,7 +1009,7 @@ static const switch_loadable_module_interface channel_module_interface = {
    that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
 static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											  switch_core_session **new_session, switch_memory_pool *pool)
+											  switch_core_session **new_session, switch_memory_pool_t *pool)
 {
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;

@@ -273,7 +273,7 @@ SWITCH_DECLARE(switch_status) switch_stun_lookup (char **ip,
 												  char *stunip,
 												  switch_port_t stunport,
 												  char **err,
-												  switch_memory_pool *pool)
+												  switch_memory_pool_t *pool)
 	 
 {
 	switch_sockaddr_t *local_addr = NULL, *remote_addr = NULL, *from_addr = NULL;

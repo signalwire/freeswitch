@@ -268,7 +268,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 	switch_timer timer;
 	switch_core_thread_session thread_session;
 	switch_codec codec;
-	switch_memory_pool *pool = switch_core_session_get_pool(session);
+	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	char *codec_name;
 	int stream_id;
 	switch_status status = SWITCH_STATUS_SUCCESS;
@@ -502,7 +502,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 	switch_timer timer;
 	switch_core_thread_session thread_session;
 	switch_codec codec;
-	switch_memory_pool *pool = switch_core_session_get_pool(session);
+	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	char *codec_name;
 	int x;
 	int stream_id;
@@ -700,7 +700,7 @@ struct audio_bridge_data {
 	int running;
 };
 
-static void *audio_bridge_thread(switch_thread *thread, void *obj)
+static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 {
 	struct switch_core_thread_session *his_thread, *data = obj;
 	int *stream_id_p;
@@ -988,7 +988,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	}
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
-		switch_event *event;
+		switch_event_t *event;
 		switch_core_session_message msg = {0};
 		
 		switch_channel_set_state(peer_channel, CS_HOLD);

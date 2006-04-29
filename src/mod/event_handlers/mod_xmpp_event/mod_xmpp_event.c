@@ -58,7 +58,7 @@ static struct {
 	struct session session;
 } globals;
 
-static void event_handler(switch_event *event)
+static void event_handler(switch_event_t *event)
 {
 	char buf[1024];
 	iks *msg;

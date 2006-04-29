@@ -99,7 +99,7 @@ struct switch_rtp {
 
 	uint32_t ts;
 	uint32_t flags;
-	switch_memory_pool *pool;
+	switch_memory_pool_t *pool;
 	switch_sockaddr_t *from_addr;
 
 	char *ice_user;
@@ -117,7 +117,7 @@ struct switch_rtp {
 
 static int global_init = 0;
 
-static switch_status ice_out(switch_rtp *rtp_session)
+static switch_status ice_out(switch_rtp_t *rtp_session)
 {
 
 	assert(rtp_session != NULL);
@@ -149,7 +149,7 @@ static switch_status ice_out(switch_rtp *rtp_session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void handle_ice(switch_rtp *rtp_session, void *data, switch_size_t len)
+static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 {
 	switch_stun_packet_t *packet;
 	switch_stun_packet_attribute_t *attr;
@@ -199,7 +199,7 @@ static void handle_ice(switch_rtp *rtp_session, void *data, switch_size_t len)
 }
 
 
-SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool *pool)
+SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 {
 	if (global_init) {
 		return;
@@ -225,7 +225,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void)
 }
 
 
-SWITCH_DECLARE(switch_status) switch_rtp_set_local_address(switch_rtp *rtp_session, char *host, switch_port_t port, const char **err)
+SWITCH_DECLARE(switch_status) switch_rtp_set_local_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err)
 {
 	*err = "Success";
 
@@ -256,7 +256,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_set_local_address(switch_rtp *rtp_sessi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_rtp_set_remote_address(switch_rtp *rtp_session, char *host, switch_port_t port, const char **err)
+SWITCH_DECLARE(switch_status) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err)
 {
 	*err = "Success";
 
@@ -270,16 +270,16 @@ SWITCH_DECLARE(switch_status) switch_rtp_set_remote_address(switch_rtp *rtp_sess
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
+SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp_t **new_rtp_session,
 												switch_payload_t payload,
 												uint32_t packet_size,
 												uint32_t ms_per_packet,
 												switch_rtp_flag_t flags, 
 												char *crypto_key,
 												const char **err,
-												switch_memory_pool *pool)
+												switch_memory_pool_t *pool)
 {
-	switch_rtp *rtp_session = NULL;
+	switch_rtp_t *rtp_session = NULL;
 	srtp_policy_t policy;
 	char key[MAX_KEY_LEN];
 	uint32_t ssrc = rand() & 0xffff;
@@ -390,7 +390,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_create(switch_rtp **new_rtp_session,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_host,
+SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
 										   switch_port_t rx_port,
 										   char *tx_host,
 										   switch_port_t tx_port,
@@ -400,9 +400,9 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_host,
 										   switch_rtp_flag_t flags,
 										   char *crypto_key,
 										   const char **err,
-										   switch_memory_pool *pool) 
+										   switch_memory_pool_t *pool) 
 {
-	switch_rtp *rtp_session;
+	switch_rtp_t *rtp_session;
 
 	if (switch_rtp_create(&rtp_session, payload, packet_size, ms_per_packet, flags, crypto_key, err, pool) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
@@ -420,7 +420,7 @@ SWITCH_DECLARE(switch_rtp *)switch_rtp_new(char *rx_host,
 }
 
 
-SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp *rtp_session, char *login, char *rlogin)
+SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin)
 {
 	char ice_user[80];
 	char user_ice[80];
@@ -439,14 +439,14 @@ SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp *rtp_session, c
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp *rtp_session)
+SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 {
 	apr_socket_shutdown(rtp_session->sock, APR_SHUTDOWN_READWRITE);
 	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
 }
 
 
-SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp **rtp_session)
+SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 {
 	switch_rtp_kill_socket(*rtp_session);
 	switch_socket_close((*rtp_session)->sock);
@@ -463,58 +463,58 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp **rtp_session)
 	return;
 }
 
-SWITCH_DECLARE(switch_socket_t *)switch_rtp_get_rtp_socket(switch_rtp *rtp_session)
+SWITCH_DECLARE(switch_socket_t *)switch_rtp_get_rtp_socket(switch_rtp_t *rtp_session)
 {
 	return rtp_session->sock;
 }
 
-SWITCH_DECLARE(void) switch_rtp_set_default_packet_size(switch_rtp *rtp_session, uint16_t packet_size)
+SWITCH_DECLARE(void) switch_rtp_set_default_packet_size(switch_rtp_t *rtp_session, uint16_t packet_size)
 {
 	rtp_session->packet_size = packet_size;
 }
 
-SWITCH_DECLARE(uint32_t) switch_rtp_get_default_packet_size(switch_rtp *rtp_session)
+SWITCH_DECLARE(uint32_t) switch_rtp_get_default_packet_size(switch_rtp_t *rtp_session)
 {
 	return rtp_session->packet_size;
 }
 
-SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp *rtp_session, switch_payload_t payload)
+SWITCH_DECLARE(void) switch_rtp_set_default_payload(switch_rtp_t *rtp_session, switch_payload_t payload)
 {
 	rtp_session->payload = payload;
 }
 
-SWITCH_DECLARE(uint32_t) switch_rtp_get_default_payload(switch_rtp *rtp_session)
+SWITCH_DECLARE(uint32_t) switch_rtp_get_default_payload(switch_rtp_t *rtp_session)
 {
 	return rtp_session->payload;
 }
 
-SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp *rtp_session, switch_rtp_invalid_handler on_invalid)
+SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp_t *rtp_session, switch_rtp_invalid_handler on_invalid)
 {
 	rtp_session->invalid_handler = on_invalid;
 }
 
-SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp *rtp_session, switch_rtp_flag_t flags) 
+SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flags) 
 {
 	
 	switch_set_flag(rtp_session, flags);
 
 }
 
-SWITCH_DECLARE(uint8_t) switch_rtp_test_flag(switch_rtp *rtp_session, switch_rtp_flag_t flags) 
+SWITCH_DECLARE(uint8_t) switch_rtp_test_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flags) 
 {
 	
 	return (uint8_t) switch_test_flag(rtp_session, flags);
 	
 }
 
-SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp *rtp_session, switch_rtp_flag_t flags) 
+SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flags) 
 {
 	
 	switch_clear_flag(rtp_session, flags);
 
 }
 
-static int rtp_common_read(switch_rtp *rtp_session, switch_payload_t *payload_type, switch_frame_flag *flags)
+static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type, switch_frame_flag *flags)
 {
 	switch_size_t bytes;
 	switch_status status;
@@ -606,7 +606,7 @@ static int rtp_common_read(switch_rtp *rtp_session, switch_payload_t *payload_ty
 	return (int) bytes;
 }
 
-SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp *rtp_session, void *data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag *flags)
+SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp_t *rtp_session, void *data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag *flags)
 {
 
 	int bytes = rtp_common_read(rtp_session, payload_type, flags);
@@ -625,7 +625,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp *rtp_session, void *dat
 	return SWITCH_STATUS_SUCCESS;	
 }
 
-SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp *rtp_session, switch_frame *frame)
+SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame *frame)
 {
 	int bytes = rtp_common_read(rtp_session, &frame->payload, &frame->flags);
 
@@ -650,7 +650,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp *rtp_ses
 }
 
 
-SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp *rtp_session, void **data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag *flags)
+SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session, void **data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag *flags)
 {
 
 	int bytes = rtp_common_read(rtp_session, payload_type, flags);
@@ -667,7 +667,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp *rtp_session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint8_t m, switch_payload_t payload, switch_frame_flag *flags)
+static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint8_t m, switch_payload_t payload, switch_frame_flag *flags)
 {
 	switch_size_t bytes;
 	uint8_t packetize = (rtp_session->packet_size > datalen && (payload == rtp_session->payload)) ? 1 : 0;
@@ -777,7 +777,7 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 								send_msg->header.m = 1;
 								rtp_session->vad_data.hangover_hits = rtp_session->vad_data.hangunder_hits = rtp_session->vad_data.cng_count = 0;
 								if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_TALK)) {
-									switch_event *event;
+									switch_event_t *event;
 									if (switch_event_create(&event, SWITCH_EVENT_TALK) == SWITCH_STATUS_SUCCESS) {
 										switch_channel *channel = switch_core_session_get_channel(rtp_session->vad_data.session);
 										switch_channel_event_set_data(channel, event);
@@ -794,7 +794,7 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 									switch_clear_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_TALKING);
 									rtp_session->vad_data.hangover_hits = rtp_session->vad_data.hangunder_hits = rtp_session->vad_data.cng_count = 0;
 									if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_NOTALK)) {
-										switch_event *event;
+										switch_event_t *event;
 										if (switch_event_create(&event, SWITCH_EVENT_NOTALK) == SWITCH_STATUS_SUCCESS) {
 											switch_channel *channel = switch_core_session_get_channel(rtp_session->vad_data.session);
 											switch_channel_event_set_data(channel, event);
@@ -842,7 +842,7 @@ static int rtp_common_write(switch_rtp *rtp_session, void *data, uint32_t datale
 }
 
 
-SWITCH_DECLARE(switch_status) switch_rtp_disable_vad(switch_rtp *rtp_session)
+SWITCH_DECLARE(switch_status) switch_rtp_disable_vad(switch_rtp_t *rtp_session)
 {
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD)) {
 		return SWITCH_STATUS_GENERR;
@@ -852,7 +852,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_disable_vad(switch_rtp *rtp_session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp *rtp_session, switch_core_session *session, switch_codec *codec, switch_vad_flag_t flags)
+SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp_t *rtp_session, switch_core_session *session, switch_codec *codec, switch_vad_flag_t flags)
 {
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD)) {
 		return SWITCH_STATUS_GENERR;
@@ -890,7 +890,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp *rtp_session, swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32_t datalen, uint32_t ts, switch_frame_flag *flags)
+SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint32_t ts, switch_frame_flag *flags)
 {
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
@@ -907,7 +907,7 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp *rtp_session, void *data, uint32
 
 }
 
-SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp *rtp_session, switch_frame *frame, uint32_t ts)
+SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_frame *frame, uint32_t ts)
 {
 	uint8_t fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && switch_test_flag(frame, SFF_RAW_RTP)) ? 1 : 0;
 	uint8_t packetize = (rtp_session->packet_size > frame->datalen && (frame->payload == rtp_session->payload)) ? 1 : 0;
@@ -935,7 +935,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp *rtp_session, switch_frame
 
 }
 
-SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp *rtp_session, void *data, uint16_t datalen, uint8_t m, uint8_t payload, uint32_t ts, uint16_t mseq, switch_frame_flag *flags)
+SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session, void *data, uint16_t datalen, uint8_t m, uint8_t payload, uint32_t ts, uint16_t mseq, switch_frame_flag *flags)
 {
 
 	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) || !rtp_session->remote_addr) {
@@ -949,17 +949,17 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp *rtp_session, void *data,
 	return rtp_common_write(rtp_session, data, datalen, m, payload, flags);
 }
 
-SWITCH_DECLARE(uint32_t) switch_rtp_get_ssrc(switch_rtp *rtp_session)
+SWITCH_DECLARE(uint32_t) switch_rtp_get_ssrc(switch_rtp_t *rtp_session)
 {
 	return rtp_session->send_msg.header.ssrc;
 }
 
-SWITCH_DECLARE(void) switch_rtp_set_private(switch_rtp *rtp_session, void *private_data)
+SWITCH_DECLARE(void) switch_rtp_set_private(switch_rtp_t *rtp_session, void *private_data)
 {
 	rtp_session->private_data = private_data;
 }
 
-SWITCH_DECLARE(void *)switch_rtp_get_private(switch_rtp *rtp_session)
+SWITCH_DECLARE(void *)switch_rtp_get_private(switch_rtp_t *rtp_session)
 {
 	return rtp_session->private_data;
 }

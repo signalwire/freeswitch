@@ -151,7 +151,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
   \param destination_number destination number
   \return a new profile object allocated from the session's memory pool
 */
-SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_pool *pool,
+SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_pool_t *pool,
 																  char *dialplan,
 																  char *caller_id_name,
 																  char *caller_id_number,
@@ -179,7 +179,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
   \param event the event to add the information to
 */
 
-SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, char *prefix, switch_event *event);
+SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, char *prefix, switch_event_t *event);
 
 END_EXTERN_C
 

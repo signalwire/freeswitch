@@ -41,7 +41,7 @@
 
 static const char modname[] = "mod_portaudio";
 
-static switch_memory_pool *module_pool = NULL;
+static switch_memory_pool_t *module_pool = NULL;
 //static int running = 1;
 
 #define SAMPLE_TYPE  paInt16
@@ -73,7 +73,7 @@ static struct {
 	int indev;
 	int outdev;
 	int call_id;
-	switch_hash *call_hash;
+	switch_hash_t *call_hash;
 	switch_mutex_t *device_lock;
 	int sample_rate;
 } globals;
@@ -105,7 +105,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	 static switch_status channel_on_transmit(switch_core_session *session);
 	 static switch_status channel_outgoing_channel(switch_core_session *session,
 												   switch_caller_profile *outbound_profile,
-												   switch_core_session **new_session, switch_memory_pool *pool);
+												   switch_core_session **new_session, switch_memory_pool_t *pool);
 	 static switch_status channel_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
 											 switch_io_flag flags, int stream_id);
 	 static switch_status channel_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
@@ -268,7 +268,7 @@ static switch_status channel_on_transmit(switch_core_session *session)
 	while (switch_channel_get_state(channel) == CS_TRANSMIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 		if (switch_time_now() - last >= waitsec) {
 			char buf[512];
-			switch_event *event;
+			switch_event_t *event;
 
 			snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
 
@@ -476,7 +476,7 @@ static const switch_loadable_module_interface channel_module_interface = {
    that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
 static switch_status channel_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											  switch_core_session **new_session, switch_memory_pool *pool)
+											  switch_core_session **new_session, switch_memory_pool_t *pool)
 {
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;

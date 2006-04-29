@@ -33,7 +33,7 @@
 
 static const char modname[] = "mod_event_multicast";
 
-static switch_memory_pool *module_pool = NULL;
+static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
 	char *address;
@@ -81,7 +81,7 @@ static switch_status load_config(void)
 
 }
 
-static void event_handler(switch_event *event)
+static void event_handler(switch_event_t *event)
 {
 	char buf[1024];
 	size_t len;
@@ -189,7 +189,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 
 SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
 {
-	switch_event *local_event;
+	switch_event_t *local_event;
 	char buf[1024];
 	
 	globals.running = 1;

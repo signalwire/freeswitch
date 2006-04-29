@@ -74,7 +74,7 @@ typedef switch_status (*switch_log_function)(const switch_log_node *node, switch
   \param pool the memory pool to use
   \note to be called at application startup by the core
 */
-SWITCH_DECLARE(switch_status) switch_log_init(switch_memory_pool *pool);
+SWITCH_DECLARE(switch_status) switch_log_init(switch_memory_pool_t *pool);
 
 /*! 
   \brief Shut down the logging engine

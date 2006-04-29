@@ -122,7 +122,7 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
   \param pool memory_pool to use for allocation
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, switch_memory_pool *pool);
+SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, switch_memory_pool_t *pool);
 
 /*!
   \brief Connect a newly allocated channel to a session object and setup it's initial state
@@ -367,7 +367,7 @@ SWITCH_DECLARE(const char *) switch_channel_state_name(switch_channel_state stat
   \param channel channel to add information about
   \param event event to add information to
 */
-SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, switch_event *event);
+SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, switch_event_t *event);
 
 
 // These may go away

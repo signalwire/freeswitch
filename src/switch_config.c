@@ -30,6 +30,7 @@
  *
  */
 #include <switch_config.h>
+#include <switch.h>
 
 SWITCH_DECLARE(int) switch_config_open_file(switch_config *cfg, char *file_path)
 {

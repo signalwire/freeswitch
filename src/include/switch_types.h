@@ -491,7 +491,7 @@ typedef enum {
    also never put any new ones before EVENT_ALL
 */
 /*!
-  \enum switch_event_t
+  \enum switch_event_type_t
   \brief Built-in Events
 
 <pre>
@@ -541,7 +541,7 @@ typedef enum {
 	SWITCH_EVENT_NOTALK,
 	SWITCH_EVENT_SESSION_CRASH,
 	SWITCH_EVENT_ALL
-} switch_event_t;
+} switch_event_types_t;
 
 
 typedef enum {
@@ -594,11 +594,10 @@ typedef enum {
 
 
 typedef uint8_t switch_payload_t;
-typedef struct switch_rtp switch_rtp;
+typedef struct switch_rtp switch_rtp_t;
 typedef struct switch_core_session_message switch_core_session_message;
-typedef struct switch_audio_resampler switch_audio_resampler;
-typedef struct switch_event_header switch_event_header;
-typedef struct switch_event switch_event;
+typedef struct switch_event_header switch_event_header_t;
+typedef struct switch_event switch_event_t;
 typedef struct switch_event_subclass switch_event_subclass;
 typedef struct switch_event_node switch_event_node;
 typedef struct switch_loadable_module switch_loadable_module;
@@ -643,13 +642,13 @@ typedef struct switch_speech_interface switch_speech_interface;
 typedef struct switch_directory_handle switch_directory_handle;
 typedef struct switch_directory_interface switch_directory_interface;
 typedef void (*switch_application_function)(switch_core_session *, char *);
-typedef void (*switch_event_callback_t)(switch_event *);
+typedef void (*switch_event_callback_t)(switch_event_t *);
 typedef switch_caller_extension *(*switch_dialplan_hunt_function)(switch_core_session *);
 typedef switch_status (*switch_state_handler)(switch_core_session *);
 typedef switch_status (*switch_outgoing_channel_hook)(switch_core_session *, switch_caller_profile *, switch_core_session *);
 typedef switch_status (*switch_answer_channel_hook)(switch_core_session *);
 typedef switch_status (*switch_receive_message_hook)(switch_core_session *, switch_core_session_message *);
-typedef switch_status (*switch_queue_event_hook)(switch_core_session *, switch_event *);
+typedef switch_status (*switch_queue_event_hook)(switch_core_session *, switch_event_t *);
 typedef switch_status (*switch_read_frame_hook)(switch_core_session *, switch_frame **, int, switch_io_flag, int);
 typedef switch_status (*switch_write_frame_hook)(switch_core_session *, switch_frame *, int, switch_io_flag, int);
 typedef switch_status (*switch_kill_channel_hook)(switch_core_session *, int);

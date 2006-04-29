@@ -30,6 +30,7 @@
  *
  */
 #include <switch_resample.h>
+#include <switch.h>
 #include <libresample.h>
 #define NORMFACT (float)0x8000
 #define MAXSAMPLE (float)0x7FFF
@@ -46,12 +47,12 @@
 
 
 
-SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **new_resampler,
+SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler_t **new_resampler,
 													 int from_rate,
 													 switch_size_t from_size,
-													 int to_rate, uint32_t to_size, switch_memory_pool *pool)
+													 int to_rate, uint32_t to_size, switch_memory_pool_t *pool)
 {
-	switch_audio_resampler *resampler;
+	switch_audio_resampler_t *resampler;
 	double lto_rate, lfrom_rate;
 
 	if ((resampler = switch_core_alloc(pool, sizeof(*resampler))) == 0) {
@@ -77,7 +78,7 @@ SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler **ne
 }
 
 
-SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler *resampler, float *src, int srclen, float *dst,
+SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, float *src, int srclen, float *dst,
 											uint32_t dstlen, int last)
 {
 	int o = 0, srcused = 0, srcpos = 0, out = 0;
@@ -100,7 +101,7 @@ SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler *resampl
 	return out;
 }
 
-SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler *resampler)
+SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler_t *resampler)
 {
 	resample_close(resampler->resampler);
 }

@@ -42,9 +42,9 @@ struct switch_core_session {
 	uint32_t id;
 	char name[80];
 	int thread_running;
-	switch_memory_pool *pool;
+	switch_memory_pool_t *pool;
 	switch_channel *channel;
-	switch_thread *thread;
+	switch_thread_t *thread;
 	const switch_endpoint_interface *endpoint_interface;
 	struct switch_io_event_hooks event_hooks;
 	switch_codec *read_codec;
@@ -63,8 +63,8 @@ struct switch_core_session {
 	uint8_t enc_read_buf[SWITCH_RECCOMMENDED_BUFFER_SIZE];
 
 
-	switch_audio_resampler *read_resampler;
-	switch_audio_resampler *write_resampler;
+	switch_audio_resampler_t *read_resampler;
+	switch_audio_resampler_t *write_resampler;
 
 	switch_mutex_t *mutex;
 	switch_thread_cond_t *cond;
@@ -85,8 +85,8 @@ struct switch_core_runtime {
 	time_t initiated;
 	uint32_t session_id;
 	apr_pool_t *memory_pool;
-	switch_hash *session_table;
-	switch_hash *stack_table;
+	switch_hash_t *session_table;
+	switch_hash_t *stack_table;
 	switch_core_db *db;
 	switch_core_db *event_db;
 	const struct switch_state_handler_table *state_handlers[SWITCH_MAX_STATE_HANDLERS];
@@ -96,7 +96,7 @@ struct switch_core_runtime {
 };
 
 /* Prototypes */
-static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *thread, void *obj);
+static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thread, void *obj);
 static void switch_core_standard_on_init(switch_core_session *session);
 static void switch_core_standard_on_hangup(switch_core_session *session);
 static void switch_core_standard_on_ring(switch_core_session *session);
@@ -274,7 +274,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_message_send(char *uuid_str, s
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_event_send(char *uuid_str, switch_event *event)
+SWITCH_DECLARE(switch_status) switch_core_session_event_send(char *uuid_str, switch_event_t *event)
 {
 	switch_core_session *session = NULL;
 	switch_status status = SWITCH_STATUS_FALSE;
@@ -326,7 +326,7 @@ SWITCH_DECLARE(switch_codec *) switch_core_session_get_write_codec(switch_core_s
 SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec *codec, char *codec_name, uint32_t rate, int ms,
 													 int channels, uint32_t flags,
 													 const switch_codec_settings *codec_settings,
-													 switch_memory_pool *pool)
+													 switch_memory_pool_t *pool)
 {
 	const switch_codec_interface *codec_interface;
 	const switch_codec_implementation *iptr, *implementation = NULL;
@@ -462,7 +462,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec *codec)
 }
 
 SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle *fh, char *file_path, unsigned int flags,
-													switch_memory_pool *pool)
+													switch_memory_pool_t *pool)
 {
 	char *ext;
 	switch_status status;
@@ -521,7 +521,7 @@ SWITCH_DECLARE(switch_status) switch_core_directory_open(switch_directory_handle
 														 char *source,
 														 char *dsn,
 														 char *passwd,
-														 switch_memory_pool *pool)
+														 switch_memory_pool_t *pool)
 {
 	switch_status status;
 
@@ -567,7 +567,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh,
 													  char *voice_name,
 													  unsigned int rate,
 													  switch_speech_flag *flags,
-													  switch_memory_pool *pool)
+													  switch_memory_pool_t *pool)
 {
 	switch_status status;
 
@@ -628,7 +628,7 @@ SWITCH_DECLARE(switch_status) switch_core_speech_close(switch_speech_handle *sh,
 }
 
 SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer *timer, char *timer_name, int interval, int samples,
-													 switch_memory_pool *pool)
+													 switch_memory_pool_t *pool)
 {
 	switch_timer_interface *timer_interface;
 	switch_status status;
@@ -689,7 +689,7 @@ SWITCH_DECLARE(switch_status) switch_core_timer_destroy(switch_timer *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void *switch_core_service_thread(switch_thread *thread, void *obj)
+static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
 {
 	switch_core_thread_session *data = obj;
 	switch_core_session *session = data->objs[0];
@@ -742,7 +742,7 @@ SWITCH_DECLARE(void) switch_core_service_session(switch_core_session *session,
 	switch_core_session_launch_thread(session, switch_core_service_thread, thread_session);
 }
 
-SWITCH_DECLARE(switch_memory_pool *) switch_core_session_get_pool(switch_core_session *session)
+SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(switch_core_session *session)
 {
 	return session->pool;
 }
@@ -830,7 +830,7 @@ SWITCH_DECLARE(char *) switch_core_session_strdup(switch_core_session *session, 
 }
 
 
-SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool *pool, char *todup)
+SWITCH_DECLARE(char *) switch_core_strdup(switch_memory_pool_t *pool, char *todup)
 {
 	char *duped = NULL;
 	switch_size_t len;
@@ -887,7 +887,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 																   char *endpoint_name,
 																   switch_caller_profile *caller_profile,
 																   switch_core_session **new_session,
-																   switch_memory_pool *pool)
+																   switch_memory_pool_t *pool)
 {
 	struct switch_io_event_hook_outgoing_channel *ptr;
 	switch_status status = SWITCH_STATUS_FALSE;
@@ -984,7 +984,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_receive_message(switch_core_se
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_queue_event(switch_core_session *session, switch_event *event)
+SWITCH_DECLARE(switch_status) switch_core_session_queue_event(switch_core_session *session, switch_event_t *event)
 	 
 {
 	struct switch_io_event_hook_queue_event *ptr;
@@ -1711,7 +1711,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_send_dtmf(switc
 }
 
 
-SWITCH_DECLARE(switch_status) switch_core_new_memory_pool(switch_memory_pool **pool)
+SWITCH_DECLARE(switch_status) switch_core_new_memory_pool(switch_memory_pool_t **pool)
 {
 
 	assert(runtime.memory_pool != NULL);
@@ -1723,7 +1723,7 @@ SWITCH_DECLARE(switch_status) switch_core_new_memory_pool(switch_memory_pool **p
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_destroy_memory_pool(switch_memory_pool **pool)
+SWITCH_DECLARE(switch_status) switch_core_destroy_memory_pool(switch_memory_pool_t **pool)
 {
 	apr_pool_destroy(*pool);
 	return SWITCH_STATUS_SUCCESS;
@@ -1779,7 +1779,7 @@ static void switch_core_standard_on_ring(switch_core_session *session)
 static void switch_core_standard_on_execute(switch_core_session *session)
 {
 	switch_caller_extension *extension;
-	switch_event *event;
+	switch_event_t *event;
 	const switch_application_interface *application_interface;
 
 
@@ -1898,7 +1898,7 @@ static void print_trace (void)
 
 static int handle_fatality(int sig)
 {
-	switch_thread_id thread_id;
+	switch_thread_id_t thread_id;
 	jmp_buf *env;
 
 	if (sig && (thread_id = switch_thread_self()) && (env = (jmp_buf *) apr_hash_get(runtime.stack_table, &thread_id, sizeof(thread_id)))) {
@@ -1919,7 +1919,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 	const switch_endpoint_interface *endpoint_interface;
 	const switch_state_handler_table *driver_state_handler = NULL;
 	const switch_state_handler_table *application_state_handler = NULL;
-	switch_thread_id thread_id = switch_thread_self();
+	switch_thread_id_t thread_id = switch_thread_self();
 	jmp_buf env;
 	int sig;
 
@@ -1930,7 +1930,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 #endif
 
 	if ((sig = setjmp(env)) != 0) {
-		switch_event *event;
+		switch_event_t *event;
 
 		if (switch_event_create(&event, SWITCH_EVENT_SESSION_CRASH) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
@@ -2258,8 +2258,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session *session)
 
 SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session **session)
 {
-	switch_memory_pool *pool;
-	switch_event *event;
+	switch_memory_pool_t *pool;
+	switch_event_t *event;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Close Channel %s\n", switch_channel_get_name((*session)->channel));
 
@@ -2275,7 +2275,7 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session **session)
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash **hash, switch_memory_pool *pool)
+SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash_t **hash, switch_memory_pool_t *pool)
 {
 	assert(pool != NULL);
 
@@ -2286,31 +2286,31 @@ SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash **hash, switch_m
 	return SWITCH_STATUS_GENERR;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_hash_destroy(switch_hash *hash)
+SWITCH_DECLARE(switch_status) switch_core_hash_destroy(switch_hash_t *hash)
 {
 	assert(hash != NULL);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_hash_insert_dup(switch_hash *hash, char *key, void *data)
+SWITCH_DECLARE(switch_status) switch_core_hash_insert_dup(switch_hash_t *hash, char *key, void *data)
 {
 	apr_hash_set(hash, switch_core_strdup(apr_hash_pool_get(hash), key), APR_HASH_KEY_STRING, data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_hash_insert(switch_hash *hash, char *key, void *data)
+SWITCH_DECLARE(switch_status) switch_core_hash_insert(switch_hash_t *hash, char *key, void *data)
 {
 	apr_hash_set(hash, key, APR_HASH_KEY_STRING, data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_hash_delete(switch_hash *hash, char *key)
+SWITCH_DECLARE(switch_status) switch_core_hash_delete(switch_hash_t *hash, char *key)
 {
 	apr_hash_set(hash, key, APR_HASH_KEY_STRING, NULL);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash *hash, char *key)
+SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash_t *hash, char *key)
 {
 	return apr_hash_get(hash, key, APR_HASH_KEY_STRING);
 }
@@ -2329,9 +2329,9 @@ SWITCH_DECLARE(void *) switch_core_hash_find(switch_hash *hash, char *key)
 
 */
 
-SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void *obj, switch_memory_pool *pool)
+SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void *obj, switch_memory_pool_t *pool)
 {
-	switch_thread *thread;
+	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_core_thread_session *ts;
 	int mypool;
@@ -2359,7 +2359,7 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 
 }
 
-static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *thread, void *obj)
+static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thread, void *obj)
 {
 	switch_core_session *session = obj;
 	session->thread = thread;
@@ -2383,7 +2383,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread *thread
 
 SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session *session)
 {
-	switch_thread *thread;
+	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
 	switch_threadattr_create(&thd_attr, session->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
@@ -2399,7 +2399,7 @@ SWITCH_DECLARE(void) switch_core_session_thread_launch(switch_core_session *sess
 SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *session, switch_thread_start_t func,
 													   void *obj)
 {
-	switch_thread *thread;
+	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_threadattr_create(&thd_attr, session->pool);
 	switch_threadattr_detach_set(thd_attr, 1);
@@ -2410,7 +2410,7 @@ SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session *sess
 }
 
 
-SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, switch_size_t memory)
+SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size_t memory)
 {
 	void *ptr = NULL;
 	assert(pool != NULL);
@@ -2427,9 +2427,9 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool *pool, switch_size_t
 }
 
 SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_endpoint_interface *endpoint_interface,
-																  switch_memory_pool *pool)
+																  switch_memory_pool_t *pool)
 {
-	switch_memory_pool *usepool;
+	switch_memory_pool_t *usepool;
 	switch_core_session *session;
 	switch_uuid_t uuid;
 
@@ -2483,7 +2483,7 @@ SWITCH_DECLARE(switch_core_session *) switch_core_session_request(const switch_e
 	return session;
 }
 
-SWITCH_DECLARE(switch_core_session *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool *pool)
+SWITCH_DECLARE(switch_core_session *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool_t *pool)
 {
 	const switch_endpoint_interface *endpoint_interface;
 
@@ -2522,7 +2522,7 @@ static switch_status switch_core_sql_persistant_execute(switch_core_db *db, char
 	return status;
 }
 
-static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread *thread, void *obj)
+static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, void *obj)
 {
 	void *pop;
 	uint32_t itterations = 0;
@@ -2587,7 +2587,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread *thread, vo
 
 static void switch_core_sql_thread_launch(void)
 {
-	switch_thread *thread;
+	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
 	
 	assert(runtime.memory_pool != NULL);
@@ -2600,7 +2600,7 @@ static void switch_core_sql_thread_launch(void)
 }
 
 
-static void core_event_handler(switch_event *event)
+static void core_event_handler(switch_event_t *event)
 {
 	char buf[1024];
 	char *sql = NULL;

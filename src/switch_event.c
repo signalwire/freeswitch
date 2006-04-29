@@ -30,18 +30,19 @@
  *
  */
 #include <switch_event.h>
+#include <switch.h>
 
 static switch_event_node *EVENT_NODES[SWITCH_EVENT_ALL + 1] = { NULL };
 static switch_mutex_t *BLOCK = NULL;
 static switch_mutex_t *POOL_LOCK = NULL;
-static switch_memory_pool *RUNTIME_POOL = NULL;
-//static switch_memory_pool *APOOL = NULL;
-//static switch_memory_pool *BPOOL = NULL;
-static switch_memory_pool *THRUNTIME_POOL = NULL;
+static switch_memory_pool_t *RUNTIME_POOL = NULL;
+//static switch_memory_pool_t *APOOL = NULL;
+//static switch_memory_pool_t *BPOOL = NULL;
+static switch_memory_pool_t *THRUNTIME_POOL = NULL;
 static switch_queue_t *EVENT_QUEUE[3] = {0,0,0};
 static int POOL_COUNT_MAX = 2000;
 
-static switch_hash *CUSTOM_HASH = NULL;
+static switch_hash_t *CUSTOM_HASH = NULL;
 static int THREAD_RUNNING = 0;
 
 #if 0
@@ -75,11 +76,17 @@ static void *locked_dup(char *str)
 #define DUP(str) locked_dup(str)
 #endif
 
+#ifndef ALLOC
 #define ALLOC(size) malloc(size)
+#endif
+#ifndef DUP
 #define DUP(str) strdup(str)
+#endif
+#ifndef FREE
 #define FREE(ptr) if (ptr) free(ptr)
+#endif
 
-/* make sure this is synced with the switch_event_t enum in switch_types.h
+/* make sure this is synced with the switch_event_types_t enum in switch_types.h
 also never put any new ones before EVENT_ALL
 */
 static char *EVENT_NAMES[] = {
@@ -107,7 +114,7 @@ static char *EVENT_NAMES[] = {
 };
 
 
-static int switch_events_match(switch_event *event, switch_event_node *node)
+static int switch_events_match(switch_event_t *event, switch_event_node *node)
 {
 	int match = 0;
 
@@ -146,9 +153,9 @@ static int switch_events_match(switch_event *event, switch_event_node *node)
 	return match;
 }
 
-static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void *obj)
+static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, void *obj)
 {
-	switch_event *out_event = NULL;
+	switch_event_t *out_event = NULL;
 	switch_queue_t *queue = NULL;
 	switch_queue_t *queues[3] = {0,0,0};
 	void *pop;
@@ -204,9 +211,9 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread *thread, void 
 	return NULL;
 }
 
-SWITCH_DECLARE(void) switch_event_deliver(switch_event **event)
+SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event)
 {
-	switch_event_t e;
+	switch_event_types_t e;
 	switch_event_node *node;
 
 	for (e = (*event)->event_id;; e = SWITCH_EVENT_ALL) {
@@ -231,7 +238,7 @@ SWITCH_DECLARE(switch_status) switch_event_running(void)
 	return THREAD_RUNNING ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(char *) switch_event_name(switch_event_t event)
+SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event)
 {
 	assert(BLOCK != NULL);
 	assert(RUNTIME_POOL != NULL);
@@ -282,9 +289,9 @@ SWITCH_DECLARE(switch_status) switch_event_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool)
+SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool_t *pool)
 {
-	switch_thread *thread;
+	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
 	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
@@ -322,8 +329,8 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool *pool)
 
 }
 
-SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event **event,
-														   switch_event_t event_id,
+SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event_t **event,
+														   switch_event_types_t event_id,
 														   char *subclass_name)
 {
 
@@ -331,10 +338,10 @@ SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event **event,
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if ((*event = ALLOC(sizeof(switch_event))) == 0) {
+	if ((*event = ALLOC(sizeof(switch_event_t))) == 0) {
 		return SWITCH_STATUS_MEMERR;
 	}
-	memset(*event, 0, sizeof(switch_event));
+	memset(*event, 0, sizeof(switch_event_t));
 
 	(*event)->event_id = event_id;
 
@@ -345,16 +352,16 @@ SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event **event,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_set_priority(switch_event *event, switch_priority_t priority)
+SWITCH_DECLARE(switch_status) switch_event_set_priority(switch_event_t *event, switch_priority_t priority)
 {
 	event->priority = priority;
 	switch_event_add_header(event, SWITCH_STACK_TOP, "priority", switch_priority_name(priority));
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(char *) switch_event_get_header(switch_event *event, char *header_name)
+SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *header_name)
 {
-	switch_event_header *hp;
+	switch_event_header_t *hp;
 	if (header_name) {
 		for (hp = event->headers; hp; hp = hp->next) {
 			if (!strcasecmp(hp->name, header_name)) {
@@ -365,7 +372,7 @@ SWITCH_DECLARE(char *) switch_event_get_header(switch_event *event, char *header
 	return NULL;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, switch_stack_t stack, char *header_name,
+SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event_t *event, switch_stack_t stack, char *header_name,
 													  char *fmt, ...)
 {
 	int ret = 0;
@@ -379,7 +386,7 @@ SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, switc
 	if (ret == -1) {
 		return SWITCH_STATUS_MEMERR;
 	} else {
-		switch_event_header *header, *hp;
+		switch_event_header_t *header, *hp;
 
 		if ((header = ALLOC(sizeof(*header))) == 0) {
 			return SWITCH_STATUS_MEMERR;
@@ -407,7 +414,7 @@ SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event *event, switc
 }
 
 
-SWITCH_DECLARE(switch_status) switch_event_add_body(switch_event *event, char *fmt, ...)
+SWITCH_DECLARE(switch_status) switch_event_add_body(switch_event_t *event, char *fmt, ...)
 {
 	int ret = 0;
 	char data[2048];
@@ -425,10 +432,10 @@ SWITCH_DECLARE(switch_status) switch_event_add_body(switch_event *event, char *f
 	}
 }
 
-SWITCH_DECLARE(void) switch_event_destroy(switch_event **event)
+SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 {
-	switch_event *ep = *event;
-	switch_event_header *hp, *this;
+	switch_event_t *ep = *event;
+	switch_event_header_t *hp, *this;
 
 	for (hp = ep->headers; hp;) {
 		this = hp;
@@ -442,9 +449,9 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event **event)
 	*event = NULL;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_event *todup)
+SWITCH_DECLARE(switch_status) switch_event_dup(switch_event_t **event, switch_event_t *todup)
 {
-	switch_event_header *header, *hp, *hp2;
+	switch_event_header_t *header, *hp, *hp2;
 
 	if (switch_event_create_subclass(event, todup->event_id, todup->subclass->name) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
@@ -476,10 +483,10 @@ SWITCH_DECLARE(switch_status) switch_event_dup(switch_event **event, switch_even
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *buf, switch_size_t buflen, char *fmt, ...)
+SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event_t *event, char *buf, switch_size_t buflen, char *fmt, ...)
 {
 	switch_size_t len = 0;
-	switch_event_header *hp;
+	switch_event_header_t *hp;
 	char *data = NULL, *body = NULL;
 	int ret = 0;
 	va_list ap;
@@ -529,7 +536,7 @@ SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event *event, char *
 }
 
 
-SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event **event,
+SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event,
 														 void *user_data)
 {
 
@@ -572,7 +579,7 @@ SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_t event, char *subclass_name,
+SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name,
 												switch_event_callback_t callback, void *user_data)
 {
 	switch_event_node *event_node;

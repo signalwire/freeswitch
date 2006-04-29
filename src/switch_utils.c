@@ -134,7 +134,7 @@ SWITCH_DECLARE(char *) switch_cut_path(char *in)
 }
 
 SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock,
-														  switch_int16_t flags, switch_memory_pool *pool)
+														  switch_int16_t flags, switch_memory_pool_t *pool)
 {
 	switch_pollset_t *pollset;
 
