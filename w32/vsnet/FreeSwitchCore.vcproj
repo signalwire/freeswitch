@@ -43,15 +43,19 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
+				UsePrecompiledHeader="1"
+				PrecompiledHeaderThrough="switch.h"
+				PrecompiledHeaderFile="$(IntDir)\$(TargetName).pch"
+				BrowseInformation="0"
 				WarningLevel="4"
 				WarnAsError="true"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
+				ForcedIncludeFiles=""
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -64,6 +68,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
 				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresampled.lib srtp.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="2"
@@ -130,9 +135,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS"
 				RuntimeLibrary="2"
-				UsePrecompiledHeader="0"
+				UsePrecompiledHeader="1"
+				PrecompiledHeaderThrough="switch.h"
+				PrecompiledHeaderFile="$(IntDir)\$(TargetName).pch"
+				BrowseInformation="0"
 				WarningLevel="4"
 				WarnAsError="true"
 				Detect64BitPortabilityProblems="true"
@@ -149,6 +157,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
 				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresample.lib srtp.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="1"
