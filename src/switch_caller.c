@@ -29,10 +29,10 @@
  * switch_caller.c -- Caller Identification
  *
  */
-#include <switch_caller.h>
 #include <switch.h>
+#include <switch_caller.h>
 
-SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_pool_t *pool,
+SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memory_pool_t *pool,
 																  char *dialplan,
 																  char *caller_id_name,
 																  char *caller_id_number,
@@ -46,9 +46,9 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_
 {
 
 
-	switch_caller_profile *profile = NULL;
+	switch_caller_profile_t *profile = NULL;
 
-	if ((profile = switch_core_alloc(pool, sizeof(switch_caller_profile))) != 0) {
+	if ((profile = switch_core_alloc(pool, sizeof(switch_caller_profile_t))) != 0) {
 		if (!context) {
 			context = "default";
 		}
@@ -68,11 +68,11 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_
 }
 
 
-SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_session *session, switch_caller_profile *tocopy)
+SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_core_session_t *session, switch_caller_profile_t *tocopy)
 																	
 {
-	switch_caller_profile *profile = NULL;
-	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile))) != 0) {
+	switch_caller_profile_t *profile = NULL;
+	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile_t))) != 0) {
 		profile->dialplan = switch_core_session_strdup(session, tocopy->dialplan);
 		profile->caller_id_name = switch_core_session_strdup(session, tocopy->caller_id_name);
 		profile->ani = switch_core_session_strdup(session, tocopy->ani);
@@ -90,7 +90,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
 	return profile;
 }
 
-SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, char *prefix,
+SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_t *caller_profile, char *prefix,
 														  switch_event_t *event)
 {
 	char header_name[1024];
@@ -146,12 +146,12 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile 
 
 }
 
-SWITCH_DECLARE(switch_caller_extension *) switch_caller_extension_new(switch_core_session *session,
+SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session,
 																	  char *extension_name, char *extension_number)
 {
-	switch_caller_extension *caller_extension = NULL;
+	switch_caller_extension_t *caller_extension = NULL;
 
-	if ((caller_extension = switch_core_session_alloc(session, sizeof(switch_caller_extension))) != 0) {
+	if ((caller_extension = switch_core_session_alloc(session, sizeof(switch_caller_extension_t))) != 0) {
 		caller_extension->extension_name = switch_core_session_strdup(session, extension_name);
 		caller_extension->extension_number = switch_core_session_strdup(session, extension_number);
 		caller_extension->current_application = caller_extension->last_application = caller_extension->applications;
@@ -161,15 +161,15 @@ SWITCH_DECLARE(switch_caller_extension *) switch_caller_extension_new(switch_cor
 }
 
 
-SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session *session,
-															 switch_caller_extension *caller_extension,
+SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session_t *session,
+															 switch_caller_extension_t *caller_extension,
 															 char *application_name, char *application_data)
 {
-	switch_caller_application *caller_application = NULL;
+	switch_caller_application_t *caller_application = NULL;
 
 	assert(session != NULL);
 
-	if ((caller_application = switch_core_session_alloc(session, sizeof(switch_caller_application))) != 0) {
+	if ((caller_application = switch_core_session_alloc(session, sizeof(switch_caller_application_t))) != 0) {
 		caller_application->application_name = switch_core_session_strdup(session, application_name);
 		caller_application->application_data = switch_core_session_strdup(session, application_data);
 		if (!caller_extension->applications) {

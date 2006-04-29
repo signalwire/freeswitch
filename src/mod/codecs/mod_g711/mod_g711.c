@@ -36,8 +36,8 @@
 static const char modname[] = "mod_g711codec";
 
 
-static switch_status switch_g711u_init(switch_codec *codec, switch_codec_flag flags,
-									   const struct switch_codec_settings *codec_settings)
+static switch_status switch_g711u_init(switch_codec_t *codec, switch_codec_flag flags,
+									   const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
 
@@ -52,8 +52,8 @@ static switch_status switch_g711u_init(switch_codec *codec, switch_codec_flag fl
 }
 
 
-static switch_status switch_g711u_encode(switch_codec *codec,
-										 switch_codec *other_codec,
+static switch_status switch_g711u_encode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
 										 uint32_t decoded_rate,
@@ -76,8 +76,8 @@ static switch_status switch_g711u_encode(switch_codec *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_g711u_decode(switch_codec *codec,
-										 switch_codec *other_codec,
+static switch_status switch_g711u_decode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
 										 uint32_t encoded_rate,
@@ -105,14 +105,14 @@ static switch_status switch_g711u_decode(switch_codec *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_g711u_destroy(switch_codec *codec)
+static switch_status switch_g711u_destroy(switch_codec_t *codec)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static switch_status switch_g711a_init(switch_codec *codec, switch_codec_flag flags,
-									   const struct switch_codec_settings *codec_settings)
+static switch_status switch_g711a_init(switch_codec_t *codec, switch_codec_flag flags,
+									   const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
 
@@ -127,8 +127,8 @@ static switch_status switch_g711a_init(switch_codec *codec, switch_codec_flag fl
 }
 
 
-static switch_status switch_g711a_encode(switch_codec *codec,
-										 switch_codec *other_codec,
+static switch_status switch_g711a_encode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
 										 uint32_t decoded_rate,
@@ -151,8 +151,8 @@ static switch_status switch_g711a_encode(switch_codec *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_g711a_decode(switch_codec *codec,
-										 switch_codec *other_codec,
+static switch_status switch_g711a_decode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
 										 uint32_t encoded_rate,
@@ -180,7 +180,7 @@ static switch_status switch_g711a_decode(switch_codec *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_g711a_destroy(switch_codec *codec)
+static switch_status switch_g711a_destroy(switch_codec_t *codec)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -189,7 +189,7 @@ static switch_status switch_g711a_destroy(switch_codec *codec)
 
 #if 0
 
-static const switch_codec_implementation g711u_8k_60ms_implementation = {
+static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 19200,
 	/*.microseconds_per_frame */ 60000,
@@ -206,7 +206,7 @@ static const switch_codec_implementation g711u_8k_60ms_implementation = {
 };
 
 
-static const switch_codec_implementation g711u_8k_30ms_implementation = {
+static const switch_codec_implementation_t g711u_8k_30ms_implementation = {
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 96000,
 	/*.microseconds_per_frame */ 30000,
@@ -224,7 +224,7 @@ static const switch_codec_implementation g711u_8k_30ms_implementation = {
 };
 #endif
 
-static const switch_codec_implementation g711u_16k_implementation = {
+static const switch_codec_implementation_t g711u_16k_implementation = {
 	/*.samples_per_second */ 16000,
 	/*.bits_per_second */ 128000,
 	/*.microseconds_per_frame */ 20000,
@@ -240,7 +240,7 @@ static const switch_codec_implementation g711u_16k_implementation = {
 	/*.destroy */ switch_g711u_destroy,
 };
 
-static const switch_codec_implementation g711u_8k_implementation = {
+static const switch_codec_implementation_t g711u_8k_implementation = {
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 64000,
 	/*.microseconds_per_frame */ 20000,
@@ -258,7 +258,7 @@ static const switch_codec_implementation g711u_8k_implementation = {
 };
 
 
-static const switch_codec_implementation g711a_8k_implementation = {
+static const switch_codec_implementation_t g711a_8k_implementation = {
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 64000,
 	/*.microseconds_per_frame */ 20000,

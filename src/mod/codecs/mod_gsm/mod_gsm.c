@@ -36,8 +36,8 @@ struct gsm_context {
 	gsm encoder;
 	gsm decoder;
 };
-static switch_status switch_gsm_init(switch_codec *codec, switch_codec_flag flags,
-									   const struct switch_codec_settings *codec_settings) 
+static switch_status switch_gsm_init(switch_codec_t *codec, switch_codec_flag flags,
+									   const switch_codec_settings_t *codec_settings) 
 {
 	struct gsm_context *context;
 	int encoding, decoding;
@@ -55,7 +55,7 @@ static switch_status switch_gsm_init(switch_codec *codec, switch_codec_flag flag
 	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;
 }
-static switch_status switch_gsm_destroy(switch_codec *codec) 
+static switch_status switch_gsm_destroy(switch_codec_t *codec) 
 {
 	struct gsm_context *context = codec->private_info;
 	int encoding = (codec->flags & SWITCH_CODEC_FLAG_ENCODE);
@@ -67,7 +67,7 @@ static switch_status switch_gsm_destroy(switch_codec *codec)
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
-static switch_status switch_gsm_encode(switch_codec *codec, switch_codec *other_codec, void *decoded_data,
+static switch_status switch_gsm_encode(switch_codec_t *codec, switch_codec_t *other_codec, void *decoded_data,
 										  uint32_t decoded_data_len, uint32_t decoded_rate, void *encoded_data,
 										  uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag) 
 {
@@ -96,7 +96,7 @@ static switch_status switch_gsm_encode(switch_codec *codec, switch_codec *other_
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
-static switch_status switch_gsm_decode(switch_codec *codec, switch_codec *other_codec, void *encoded_data,
+static switch_status switch_gsm_decode(switch_codec_t *codec, switch_codec_t *other_codec, void *encoded_data,
 										  uint32_t encoded_data_len, uint32_t encoded_rate, void *decoded_data,
 										  uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag) 
 {
@@ -132,7 +132,7 @@ static switch_status switch_gsm_decode(switch_codec *codec, switch_codec *other_
 
 
 /* Registration */ 
-static const switch_codec_implementation gsm_8k_implementation = { 
+static const switch_codec_implementation_t gsm_8k_implementation = { 
 		/*.samples_per_second */ 8000, 
 		/*.bits_per_second */ 13200, 
 		/*.microseconds_per_frame */ 20000, 

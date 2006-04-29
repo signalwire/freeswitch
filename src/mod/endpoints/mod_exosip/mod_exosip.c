@@ -98,11 +98,11 @@ static struct {
 
 struct private_object {
 	unsigned int flags;
-	switch_core_session *session;
-	switch_frame read_frame;
-	switch_codec read_codec;
-	switch_codec write_codec;
-	switch_caller_profile *caller_profile;
+	switch_core_session_t *session;
+	switch_frame_t read_frame;
+	switch_codec_t read_codec;
+	switch_codec_t write_codec;
+	switch_caller_profile_t *caller_profile;
 	int cid;
 	int did;
 	int tid;
@@ -145,19 +145,19 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_rtpip, globals.rtpip)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_sipip, globals.sipip)
 
-static switch_status exosip_on_init(switch_core_session *session);
-static switch_status exosip_on_hangup(switch_core_session *session);
-static switch_status exosip_on_loopback(switch_core_session *session);
-static switch_status exosip_on_transmit(switch_core_session *session);
-static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											 switch_core_session **new_session, switch_memory_pool_t *pool);
-static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
+static switch_status exosip_on_init(switch_core_session_t *session);
+static switch_status exosip_on_hangup(switch_core_session_t *session);
+static switch_status exosip_on_loopback(switch_core_session_t *session);
+static switch_status exosip_on_transmit(switch_core_session_t *session);
+static switch_status exosip_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+											 switch_core_session_t **new_session, switch_memory_pool_t *pool);
+static switch_status exosip_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
 									   switch_io_flag flags, int stream_id);
-static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
+static switch_status exosip_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
 										switch_io_flag flags, int stream_id);
 static int config_exosip(int reload);
 static switch_status parse_sdp_media(sdp_media_t * media, char **dname, char **drate, char **dpayload);
-static switch_status exosip_kill_channel(switch_core_session *session, int sig);
+static switch_status exosip_kill_channel(switch_core_session_t *session, int sig);
 static switch_status activate_rtp(struct private_object *tech_pvt);
 static void deactivate_rtp(struct private_object *tech_pvt);
 static void sdp_add_rfc2833(struct osip_rfc3264 *cnf, int rate);
@@ -173,7 +173,7 @@ static struct private_object *get_pvt_by_call_id(int id)
 	return tech_pvt;
 }
 
-static switch_status exosip_on_execute(switch_core_session *session)
+static switch_status exosip_on_execute(switch_core_session_t *session)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -223,10 +223,10 @@ State methods they get called when the state changes to the specific state
 returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
 so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
-static switch_status exosip_on_init(switch_core_session *session)
+static switch_status exosip_on_init(switch_core_session_t *session)
 {
 	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 	char from_uri[512] = "", port[7] = "", *buf = NULL, tmp[512] = "";
 	osip_message_t *invite = NULL;
 
@@ -320,7 +320,7 @@ static switch_status exosip_on_init(switch_core_session *session)
 
 		if (num_codecs > 0) {
 			int i;
-			static const switch_codec_implementation *imp;
+			static const switch_codec_implementation_t *imp;
 			for (i = 0; i < num_codecs; i++) {
 				int x = 0;
 
@@ -382,9 +382,9 @@ static switch_status exosip_on_init(switch_core_session *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status exosip_on_ring(switch_core_session *session)
+static switch_status exosip_on_ring(switch_core_session_t *session)
 {
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 	struct private_object *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
@@ -398,10 +398,10 @@ static switch_status exosip_on_ring(switch_core_session *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status exosip_on_hangup(switch_core_session *session)
+static switch_status exosip_on_hangup(switch_core_session_t *session)
 {
 	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 	int i;
 
 	channel = switch_core_session_get_channel(session);
@@ -427,13 +427,13 @@ static switch_status exosip_on_hangup(switch_core_session *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status exosip_on_loopback(switch_core_session *session)
+static switch_status exosip_on_loopback(switch_core_session_t *session)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EXOSIP LOOPBACK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status exosip_on_transmit(switch_core_session *session)
+static switch_status exosip_on_transmit(switch_core_session_t *session)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EXOSIP TRANSMIT\n");
 	return SWITCH_STATUS_SUCCESS;
@@ -462,7 +462,7 @@ static void deactivate_rtp(struct private_object *tech_pvt)
 static switch_status activate_rtp(struct private_object *tech_pvt)
 {
 	int bw, ms;
-	switch_channel *channel;
+	switch_channel_t *channel;
 	const char *err;
 	char *key = NULL;
 
@@ -526,7 +526,7 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 			switch_set_flag(tech_pvt, TFLAG_VAD);
 		}
 	} else {
-		switch_channel *channel = switch_core_session_get_channel(tech_pvt->session);
+		switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_set_flag(tech_pvt, TFLAG_BYE);
@@ -537,10 +537,10 @@ static switch_status activate_rtp(struct private_object *tech_pvt)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status exosip_answer_channel(switch_core_session *session)
+static switch_status exosip_answer_channel(switch_core_session_t *session)
 {
 	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 
 	assert(session != NULL);
 
@@ -571,12 +571,12 @@ static switch_status exosip_answer_channel(switch_core_session *session)
 }
 
 
-static switch_status exosip_read_frame(switch_core_session *session, switch_frame **frame, int timeout,
+static switch_status exosip_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
 									   switch_io_flag flags, int stream_id)
 {
 	struct private_object *tech_pvt = NULL;
 	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 	int payload = 0;
 	switch_time_t now, started = switch_time_now(), last_act = switch_time_now();
 	unsigned int elapsed;
@@ -699,11 +699,11 @@ static switch_status exosip_read_frame(switch_core_session *session, switch_fram
 }
 
 
-static switch_status exosip_write_frame(switch_core_session *session, switch_frame *frame, int timeout,
+static switch_status exosip_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
 										switch_io_flag flags, int stream_id)
 {
 	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	int bytes = 0, samples = 0, frames = 0;
 
@@ -811,10 +811,10 @@ static switch_status exosip_write_frame(switch_core_session *session, switch_fra
 
 
 
-static switch_status exosip_kill_channel(switch_core_session *session, int sig)
+static switch_status exosip_kill_channel(switch_core_session_t *session, int sig)
 {
 	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -833,10 +833,10 @@ static switch_status exosip_kill_channel(switch_core_session *session, int sig)
 
 }
 
-static switch_status exosip_waitfor_read(switch_core_session *session, int ms, int stream_id)
+static switch_status exosip_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
 {
 	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -848,10 +848,10 @@ static switch_status exosip_waitfor_read(switch_core_session *session, int ms, i
 }
 
 
-static switch_status exosip_waitfor_write(switch_core_session *session, int ms, int stream_id)
+static switch_status exosip_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
 {
 	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -863,7 +863,7 @@ static switch_status exosip_waitfor_write(switch_core_session *session, int ms, 
 
 }
 
-static switch_status exosip_send_dtmf(switch_core_session *session, char *digits)
+static switch_status exosip_send_dtmf(switch_core_session_t *session, char *digits)
 {
 	struct private_object *tech_pvt;
 	char *c;
@@ -891,9 +891,9 @@ static switch_status exosip_send_dtmf(switch_core_session *session, char *digits
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status exosip_receive_message(switch_core_session *session, switch_core_session_message *msg)
+static switch_status exosip_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
-	switch_channel *channel;
+	switch_channel_t *channel;
 	struct private_object *tech_pvt;
 			
 	channel = switch_core_session_get_channel(session);
@@ -919,7 +919,7 @@ static switch_status exosip_receive_message(switch_core_session *session, switch
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		if (msg) {
 			struct private_object *tech_pvt;
-			switch_channel *channel = NULL;
+			switch_channel_t *channel = NULL;
 			
 			channel = switch_core_session_get_channel(session);
 			assert(channel != NULL);
@@ -969,7 +969,7 @@ static const switch_io_routines exosip_io_routines = {
 	/*.receive_message*/ exosip_receive_message
 };
 
-static const switch_state_handler_table exosip_event_handlers = {
+static const switch_state_handler_table_t exosip_event_handlers = {
 	/*.on_init */ exosip_on_init,
 	/*.on_ring */ exosip_on_ring,
 	/*.on_execute */ exosip_on_execute,
@@ -995,12 +995,12 @@ static const switch_loadable_module_interface exosip_module_interface = {
 	/*.application_interface */ NULL
 };
 
-static switch_status exosip_outgoing_channel(switch_core_session *session, switch_caller_profile *outbound_profile,
-											 switch_core_session **new_session, switch_memory_pool_t *pool)
+static switch_status exosip_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+											 switch_core_session_t **new_session, switch_memory_pool_t *pool)
 {
 	if ((*new_session = switch_core_session_request(&exosip_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
-		switch_channel *channel;
+		switch_channel_t *channel;
 
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt =
@@ -1018,7 +1018,7 @@ static switch_status exosip_outgoing_channel(switch_core_session *session, switc
 
 		if (outbound_profile) {
 			char name[128];
-			switch_caller_profile *caller_profile = NULL;
+			switch_caller_profile_t *caller_profile = NULL;
 
 
 			if (*outbound_profile->destination_number == '!') {
@@ -1113,13 +1113,13 @@ static void sdp_add_rfc2833(struct osip_rfc3264 *cnf, int rate)
 
 static switch_status exosip_create_call(eXosip_event_t * event)
 {
-	switch_core_session *session;
+	switch_core_session_t *session;
 	sdp_message_t *remote_sdp = NULL;
 	sdp_connection_t *conn = NULL;
 	sdp_media_t *remote_med = NULL, *audio_tab[10], *video_tab[10], *t38_tab[10], *app_tab[10];
 	char local_sdp_str[8192] = "", port[8] = "";
 	int mline = 0, pos = 0;
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 	char name[128];
 	char *dpayload, *dname = NULL, *drate = NULL;
 	char *remote_sdp_str = NULL;
@@ -1262,7 +1262,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 
 		if (num_codecs > 0) {
 			int i;
-			static const switch_codec_implementation *imp;
+			static const switch_codec_implementation_t *imp;
 
 
 
@@ -1396,7 +1396,7 @@ static switch_status exosip_create_call(eXosip_event_t * event)
 static void destroy_call_by_event(eXosip_event_t *event)
 {
 	struct private_object *tech_pvt;
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 	switch_call_cause_t cause;
 
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
@@ -1482,7 +1482,7 @@ static void handle_answer(eXosip_event_t * event)
 	sdp_media_t *remote_med = NULL;
 	struct private_object *tech_pvt;
 	char *dpayload = NULL, *dname = NULL, *drate = NULL;
-	switch_channel *channel;
+	switch_channel_t *channel;
 
 
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
@@ -1713,7 +1713,7 @@ static void log_event(eXosip_event_t * je)
 
 static int config_exosip(int reload)
 {
-	switch_config cfg;
+	switch_config_t cfg;
 	char *var, *val;
 	char *cf = "exosip.conf";
 

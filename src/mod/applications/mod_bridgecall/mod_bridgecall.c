@@ -36,11 +36,11 @@
 
 static const char modname[] = "mod_bridgecall";
 
-static void audio_bridge_function(switch_core_session *session, char *data)
+static void audio_bridge_function(switch_core_session_t *session, char *data)
 {
-	switch_channel *caller_channel;
-	switch_core_session *peer_session;
-	switch_caller_profile *caller_profile, *caller_caller_profile;
+	switch_channel_t *caller_channel;
+	switch_core_session_t *peer_session;
+	switch_caller_profile_t *caller_profile, *caller_caller_profile;
 	char chan_type[128] = { '\0' }, *chan_data;
 	unsigned int timelimit = 60;			/* probably a useful option to pass in when there's time */
 	caller_channel = switch_core_session_get_channel(session);

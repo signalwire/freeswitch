@@ -63,7 +63,7 @@ static PerlInterpreter *clone_perl(void)
 }
 
 
-static void perl_function(switch_core_session *session, char *data)
+static void perl_function(switch_core_session_t *session, char *data)
 {
 	char *uuid = switch_core_session_get_uuid(session);
 	char code[1024];

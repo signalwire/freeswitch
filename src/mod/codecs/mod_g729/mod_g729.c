@@ -42,8 +42,8 @@ struct g729_context {
 };
 
 
-static switch_status switch_g729_init(switch_codec *codec, switch_codec_flag flags,
-									  const struct switch_codec_settings *codec_settings) 
+static switch_status switch_g729_init(switch_codec_t *codec, switch_codec_flag flags,
+									  const switch_codec_settings_t *codec_settings) 
 {
 
 	struct g729_context *context = NULL;
@@ -72,7 +72,7 @@ static switch_status switch_g729_init(switch_codec *codec, switch_codec_flag fla
 }
 
 
-static switch_status switch_g729_destroy(switch_codec *codec) 
+static switch_status switch_g729_destroy(switch_codec_t *codec) 
 {
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
@@ -80,8 +80,8 @@ static switch_status switch_g729_destroy(switch_codec *codec)
 
 
 
-static switch_status switch_g729_encode(switch_codec *codec, 
-										switch_codec *other_codec, 
+static switch_status switch_g729_encode(switch_codec_t *codec, 
+										switch_codec_t *other_codec, 
 										void *decoded_data,
 
 										uint32_t decoded_data_len, 
@@ -127,8 +127,8 @@ static switch_status switch_g729_encode(switch_codec *codec,
 
 
 
-static switch_status switch_g729_decode(switch_codec *codec, 
-										switch_codec *other_codec, 
+static switch_status switch_g729_decode(switch_codec_t *codec, 
+										switch_codec_t *other_codec, 
 										void *encoded_data,
 
 										uint32_t encoded_data_len, 
@@ -218,7 +218,7 @@ static switch_status switch_g729_decode(switch_codec *codec,
 
 /* Registration */ 
 
-static const switch_codec_implementation g729_10ms_8k_implementation = { 
+static const switch_codec_implementation_t g729_10ms_8k_implementation = { 
 	/*.samples_per_second */ 8000, 
 	/*.bits_per_second */ 32000, 
 	/*.microseconds_per_frame */ 10000, 
@@ -234,7 +234,7 @@ static const switch_codec_implementation g729_10ms_8k_implementation = {
 	/*.destroy */ switch_g729_destroy, 
 };
 
-static const switch_codec_implementation g729_8k_implementation = { 
+static const switch_codec_implementation_t g729_8k_implementation = { 
 	/*.samples_per_second */ 8000, 
 	/*.bits_per_second */ 64000, 
 	/*.microseconds_per_frame */ 20000, 

@@ -80,7 +80,7 @@ static void add_mapping(char *var, char *val)
 
 static switch_status config_logger(void)
 {
-	switch_config cfg;
+	switch_config_t cfg;
 	char *var, *val;
 	char *cf = "console.conf";
 

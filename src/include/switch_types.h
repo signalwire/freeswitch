@@ -164,7 +164,7 @@ typedef enum {
 } switch_ivr_option_t;
 	
 /*!
-  \enum switch_core_session_message_t
+  \enum switch_core_session_message_types_t
   \brief Possible types of messages for inter-session communication
 <pre>
 	SWITCH_MESSAGE_REDIRECT_AUDIO     - Indication to redirect audio to another location if possible
@@ -180,7 +180,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_PROGRESS,
 	SWITCH_MESSAGE_INDICATE_BRIDGE,
 	SWITCH_MESSAGE_INDICATE_UNBRIDGE
-} switch_core_session_message_t;
+} switch_core_session_message_types_t;
 
 
 /*!
@@ -595,33 +595,28 @@ typedef enum {
 
 typedef uint8_t switch_payload_t;
 typedef struct switch_rtp switch_rtp_t;
-typedef struct switch_core_session_message switch_core_session_message;
+typedef struct switch_core_session_message switch_core_session_message_t;
 typedef struct switch_event_header switch_event_header_t;
 typedef struct switch_event switch_event_t;
-typedef struct switch_event_subclass switch_event_subclass;
-typedef struct switch_event_node switch_event_node;
-typedef struct switch_loadable_module switch_loadable_module;
-typedef struct switch_frame switch_frame;
-typedef struct switch_channel switch_channel;
-typedef struct switch_endpoint_interface switch_endpoint_interface;
-typedef struct switch_timer_interface switch_timer_interface;
-typedef struct switch_dialplan_interface switch_dialplan_interface;
-typedef struct switch_codec_interface switch_codec_interface;
-typedef struct switch_application_interface switch_application_interface;
-typedef struct switch_api_interface switch_api_interface;
-typedef struct switch_file_interface switch_file_interface;
-typedef struct switch_file_handle switch_file_handle;
-typedef struct switch_core_session switch_core_session;
-typedef struct switch_loadable_module_interface switch_loadable_module_interface;
-typedef struct switch_caller_profile switch_caller_profile;
-typedef struct switch_caller_step switch_caller_step;
-typedef struct switch_caller_extension switch_caller_extension;
-typedef struct switch_caller_application switch_caller_application;
-typedef struct switch_state_handler_table switch_state_handler_table;
-typedef struct switch_timer switch_timer;
-typedef struct switch_codec switch_codec;
-typedef struct switch_core_thread_session switch_core_thread_session;
-typedef struct switch_codec_implementation switch_codec_implementation;
+typedef struct switch_event_subclass switch_event_subclass_t;
+typedef struct switch_event_node switch_event_node_t;
+typedef struct switch_loadable_module switch_loadable_module_t;
+typedef struct switch_frame switch_frame_t;
+typedef struct switch_channel switch_channel_t;
+typedef struct switch_file_handle switch_file_handle_t;
+typedef struct switch_core_session switch_core_session_t;
+typedef struct switch_caller_profile switch_caller_profile_t;
+typedef struct switch_caller_extension switch_caller_extension_t;
+typedef struct switch_caller_application switch_caller_application_t;
+typedef struct switch_state_handler_table switch_state_handler_table_t;
+typedef struct switch_timer switch_timer_t;
+typedef struct switch_codec switch_codec_t;
+typedef struct switch_core_thread_session switch_core_thread_session_t;
+typedef struct switch_codec_implementation switch_codec_implementation_t;
+typedef struct switch_buffer switch_buffer_t;
+typedef struct switch_codec_settings switch_codec_settings_t;
+typedef struct switch_config switch_config_t;
+
 typedef struct switch_io_event_hook_outgoing_channel switch_io_event_hook_outgoing_channel;
 typedef struct switch_io_event_hook_answer_channel switch_io_event_hook_answer_channel;
 typedef struct switch_io_event_hook_receive_message switch_io_event_hook_receive_message;
@@ -634,29 +629,37 @@ typedef struct switch_io_event_hook_waitfor_write switch_io_event_hook_waitfor_w
 typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf;
 typedef struct switch_io_routines switch_io_routines;
 typedef struct switch_io_event_hooks switch_io_event_hooks;
-typedef struct switch_buffer switch_buffer;
-typedef struct switch_codec_settings switch_codec_settings;
-typedef struct switch_config switch_config;
+
 typedef struct switch_speech_handle switch_speech_handle;
-typedef struct switch_speech_interface switch_speech_interface;
 typedef struct switch_directory_handle switch_directory_handle;
+
+typedef struct switch_loadable_module_interface switch_loadable_module_interface;
+typedef struct switch_endpoint_interface switch_endpoint_interface;
+typedef struct switch_timer_interface switch_timer_interface;
+typedef struct switch_dialplan_interface switch_dialplan_interface;
+typedef struct switch_codec_interface switch_codec_interface;
+typedef struct switch_application_interface switch_application_interface;
+typedef struct switch_api_interface switch_api_interface;
+typedef struct switch_file_interface switch_file_interface;
+typedef struct switch_speech_interface switch_speech_interface;
 typedef struct switch_directory_interface switch_directory_interface;
-typedef void (*switch_application_function)(switch_core_session *, char *);
+
+typedef void (*switch_application_function)(switch_core_session_t *, char *);
 typedef void (*switch_event_callback_t)(switch_event_t *);
-typedef switch_caller_extension *(*switch_dialplan_hunt_function)(switch_core_session *);
-typedef switch_status (*switch_state_handler)(switch_core_session *);
-typedef switch_status (*switch_outgoing_channel_hook)(switch_core_session *, switch_caller_profile *, switch_core_session *);
-typedef switch_status (*switch_answer_channel_hook)(switch_core_session *);
-typedef switch_status (*switch_receive_message_hook)(switch_core_session *, switch_core_session_message *);
-typedef switch_status (*switch_queue_event_hook)(switch_core_session *, switch_event_t *);
-typedef switch_status (*switch_read_frame_hook)(switch_core_session *, switch_frame **, int, switch_io_flag, int);
-typedef switch_status (*switch_write_frame_hook)(switch_core_session *, switch_frame *, int, switch_io_flag, int);
-typedef switch_status (*switch_kill_channel_hook)(switch_core_session *, int);
-typedef switch_status (*switch_waitfor_read_hook)(switch_core_session *, int, int);
-typedef switch_status (*switch_waitfor_write_hook)(switch_core_session *, int, int);
-typedef switch_status (*switch_send_dtmf_hook)(switch_core_session *, char *);
+typedef switch_caller_extension_t *(*switch_dialplan_hunt_function)(switch_core_session_t *);
+typedef switch_status (*switch_state_handler)(switch_core_session_t *);
+typedef switch_status (*switch_outgoing_channel_hook)(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *);
+typedef switch_status (*switch_answer_channel_hook)(switch_core_session_t *);
+typedef switch_status (*switch_receive_message_hook)(switch_core_session_t *, switch_core_session_message_t *);
+typedef switch_status (*switch_queue_event_hook)(switch_core_session_t *, switch_event_t *);
+typedef switch_status (*switch_read_frame_hook)(switch_core_session_t *, switch_frame_t **, int, switch_io_flag, int);
+typedef switch_status (*switch_write_frame_hook)(switch_core_session_t *, switch_frame_t *, int, switch_io_flag, int);
+typedef switch_status (*switch_kill_channel_hook)(switch_core_session_t *, int);
+typedef switch_status (*switch_waitfor_read_hook)(switch_core_session_t *, int, int);
+typedef switch_status (*switch_waitfor_write_hook)(switch_core_session_t *, int, int);
+typedef switch_status (*switch_send_dtmf_hook)(switch_core_session_t *, char *);
 typedef switch_status (*switch_api_function)(char *in, char *out, switch_size_t outlen);
-typedef switch_status (*switch_dtmf_callback_function)(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen);
+typedef switch_status (*switch_dtmf_callback_function)(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen);
 typedef int (*switch_core_db_callback_func)(void *pArg, int argc, char **argv, char **columnNames);
 typedef switch_status (*switch_module_load_t) (switch_loadable_module_interface **, char *);
 typedef switch_status (*switch_module_reload_t) (void);

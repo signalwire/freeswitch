@@ -245,7 +245,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session
   \param frame a frame to populate with information
   \return the number of bytes read
 */
-SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame *frame);
+SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame);
 
 /*! 
   \brief Write data to a given RTP session
@@ -266,7 +266,7 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint
   \param flags flags for control
   \return SWITCH_STAUTS_SUCCESS on success
 */
-SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp_t *rtp_session, switch_core_session *session, switch_codec *codec, switch_vad_flag_t flags);
+SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp_t *rtp_session, switch_core_session_t *session, switch_codec_t *codec, switch_vad_flag_t flags);
 
 /*!
   \brief Disable VAD on an RTP Session
@@ -282,7 +282,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_disable_vad(switch_rtp_t *rtp_session);
   \param ts then number of bytes to increment the timestamp by
   \return the number of bytes written
 */
-SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_frame *frame, uint32_t ts);
+SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_frame_t *frame, uint32_t ts);
 
 /*! 
   \brief Write data with a specified payload and sequence number to a given RTP session

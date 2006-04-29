@@ -42,13 +42,13 @@ static const char modname[] = "mod_pcre";
 				re = NULL;\
 			}
 
-static switch_caller_extension *dialplan_hunt(switch_core_session *session)
+static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 {
-	switch_caller_profile *caller_profile;
-	switch_caller_extension *extension = NULL;
-	switch_channel *channel;
+	switch_caller_profile_t *caller_profile;
+	switch_caller_extension_t *extension = NULL;
+	switch_channel_t *channel;
 	char *cf = "regextensions.conf";
-	switch_config cfg;
+	switch_config_t cfg;
 	char *var, *val;
 	char app[1024] = "";
 	int catno = -1;

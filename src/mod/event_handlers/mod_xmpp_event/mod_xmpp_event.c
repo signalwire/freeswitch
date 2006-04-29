@@ -97,7 +97,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_jid, globals.jid)
 
 	 static switch_status load_config(void)
 {
-	switch_config cfg;
+	switch_config_t cfg;
 	switch_status status = SWITCH_STATUS_FALSE;
 	char *var, *val;
 	char *cf = "xmpp_event.conf";

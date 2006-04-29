@@ -29,10 +29,10 @@
  * switch_config.c -- Configuration File Parser
  *
  */
-#include <switch_config.h>
 #include <switch.h>
+#include <switch_config.h>
 
-SWITCH_DECLARE(int) switch_config_open_file(switch_config *cfg, char *file_path)
+SWITCH_DECLARE(int) switch_config_open_file(switch_config_t *cfg, char *file_path)
 {
 	FILE *f;
 	char *path = NULL;
@@ -88,7 +88,7 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config *cfg, char *file_path)
 }
 
 
-SWITCH_DECLARE(void) switch_config_close_file(switch_config *cfg)
+SWITCH_DECLARE(void) switch_config_close_file(switch_config_t *cfg)
 {
 
 	if (cfg->file) {
@@ -100,7 +100,7 @@ SWITCH_DECLARE(void) switch_config_close_file(switch_config *cfg)
 
 
 
-SWITCH_DECLARE(int) switch_config_next_pair(switch_config *cfg, char **var, char **val)
+SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t *cfg, char **var, char **val)
 {
 	int ret = 0;
 	char *p, *end;

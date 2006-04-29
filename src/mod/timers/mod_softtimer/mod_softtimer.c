@@ -48,7 +48,7 @@ struct timer_private {
 #endif
 };
 
-static switch_status soft_timer_init(switch_timer *timer)
+static switch_status soft_timer_init(switch_timer_t *timer)
 {
 	struct timer_private *private;
 
@@ -65,7 +65,7 @@ static switch_status soft_timer_init(switch_timer *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status soft_timer_next(switch_timer *timer)
+static switch_status soft_timer_next(switch_timer_t *timer)
 {
 	struct timer_private *private = timer->private_info;
 
@@ -91,7 +91,7 @@ static switch_status soft_timer_next(switch_timer *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status soft_timer_destroy(switch_timer *timer)
+static switch_status soft_timer_destroy(switch_timer_t *timer)
 {
 	timer->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;

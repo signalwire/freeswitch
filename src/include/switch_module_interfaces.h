@@ -159,25 +159,25 @@ struct switch_io_event_hooks {
 /*! \brief A table of i/o routines that an endpoint interface can implement */
 struct switch_io_routines {
 	/*! creates an outgoing session from given session, caller profile */
-	switch_status (*outgoing_channel)(switch_core_session *, switch_caller_profile *, switch_core_session **, switch_memory_pool_t *);
+	switch_status (*outgoing_channel)(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t *);
 	/*! answers the given session's channel */
-	switch_status (*answer_channel)(switch_core_session *);
+	switch_status (*answer_channel)(switch_core_session_t *);
 	/*! read a frame from a session */
-	switch_status (*read_frame)(switch_core_session *, switch_frame **, int, switch_io_flag, int);
+	switch_status (*read_frame)(switch_core_session_t *, switch_frame_t **, int, switch_io_flag, int);
 	/*! write a frame to a session */
-	switch_status (*write_frame)(switch_core_session *, switch_frame *, int, switch_io_flag, int);
+	switch_status (*write_frame)(switch_core_session_t *, switch_frame_t *, int, switch_io_flag, int);
 	/*! send a kill signal to the session's channel */
-	switch_status (*kill_channel)(switch_core_session *, int);
+	switch_status (*kill_channel)(switch_core_session_t *, int);
 	/*! wait for the session's channel to be ready to read audio */
-	switch_status (*waitfor_read)(switch_core_session *, int, int);
+	switch_status (*waitfor_read)(switch_core_session_t *, int, int);
 	/*! wait for the session's channel to be ready to write audio */
-	switch_status (*waitfor_write)(switch_core_session *, int, int);
+	switch_status (*waitfor_write)(switch_core_session_t *, int, int);
 	/*! send a string of DTMF digits to a session's channel */
-	switch_status (*send_dtmf)(switch_core_session *, char *);
+	switch_status (*send_dtmf)(switch_core_session_t *, char *);
 	/*! receive a message from another session*/
-	switch_status (*receive_message)(switch_core_session *, switch_core_session_message *);
+	switch_status (*receive_message)(switch_core_session_t *, switch_core_session_message_t *);
 	/*! queue a message for another session*/
-	switch_status (*queue_event)(switch_core_session *, switch_event_t *);
+	switch_status (*queue_event)(switch_core_session_t *, switch_event_t *);
 };
 
 /*! \brief Abstraction of an module endpoint interface
@@ -194,7 +194,7 @@ struct switch_endpoint_interface {
 	const switch_io_routines *io_routines;
 
 	/*! state machine methods */
-	const switch_state_handler_table *state_handler;
+	const switch_state_handler_table_t *state_handler;
 
 	/*! private information */
 	void *private_info;
@@ -226,11 +226,11 @@ struct switch_timer_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to allocate the timer */
-	switch_status (*timer_init)(switch_timer *);
+	switch_status (*timer_init)(switch_timer_t *);
 	/*! function to wait for one cycle to pass */
-	switch_status (*timer_next)(switch_timer *);
+	switch_status (*timer_next)(switch_timer_t *);
 	/*! function to deallocate the timer */
-	switch_status (*timer_destroy)(switch_timer *);
+	switch_status (*timer_destroy)(switch_timer_t *);
 	const struct switch_timer_interface *next;
 };
 
@@ -248,15 +248,15 @@ struct switch_file_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the file */
-	switch_status (*file_open)(switch_file_handle *, char *file_path);
+	switch_status (*file_open)(switch_file_handle_t *, char *file_path);
 	/*! function to close the file */
-	switch_status (*file_close)(switch_file_handle *);
+	switch_status (*file_close)(switch_file_handle_t *);
 	/*! function to read from the file */
-	switch_status (*file_read)(switch_file_handle *, void *data, switch_size_t *len);
+	switch_status (*file_read)(switch_file_handle_t *, void *data, switch_size_t *len);
 	/*! function to write from the file */
-	switch_status (*file_write)(switch_file_handle *, void *data, switch_size_t *len);
+	switch_status (*file_write)(switch_file_handle_t *, void *data, switch_size_t *len);
 	/*! function to seek to a certian position in the file */
-	switch_status (*file_seek)(switch_file_handle *, unsigned int *cur_pos, int64_t samples, int whence);
+	switch_status (*file_seek)(switch_file_handle_t *, unsigned int *cur_pos, int64_t samples, int whence);
 	/*! list of supported file extensions */
 	char **extens;
 	const struct switch_file_interface *next;
@@ -291,7 +291,7 @@ struct switch_file_handle {
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
 	int64_t pos;
-	switch_buffer *audio_buffer;
+	switch_buffer_t *audio_buffer;
 };
 
 
@@ -412,9 +412,9 @@ struct switch_codec {
 	/*! the codec interface table this handle uses */
 	const struct switch_codec_interface *codec_interface;
 	/*! the specific implementation of the above codec */
-	const struct switch_codec_implementation *implementation;
+	const switch_codec_implementation_t *implementation;
 	/*! codec settings for this handle */
-	struct switch_codec_settings codec_settings;
+	switch_codec_settings_t codec_settings;
 	/*! flags to modify behaviour */
 	uint32_t flags;
 	/*! the handle's memory pool*/
@@ -444,10 +444,10 @@ struct switch_codec_implementation {
 	/*! max number of frames to send in one network packet */
 	int max_frames_per_packet;
 	/*! function to initialize a codec handle using this implementation */
-	switch_status (*init)(switch_codec *, switch_codec_flag, const switch_codec_settings *codec_settings);
+	switch_status (*init)(switch_codec_t *, switch_codec_flag, const switch_codec_settings_t *codec_settings);
 	/*! function to encode raw data into encoded data */
-	switch_status (*encode)(switch_codec *codec,
-						 switch_codec *other_codec,
+	switch_status (*encode)(switch_codec_t *codec,
+						 switch_codec_t *other_codec,
 						 void *decoded_data,
 						 uint32_t decoded_data_len,
 						 uint32_t decoded_rate,
@@ -456,8 +456,8 @@ struct switch_codec_implementation {
 						 uint32_t *encoded_rate,
 						 unsigned int *flag);
 	/*! function to decode encoded data into raw data */
-	switch_status (*decode)(switch_codec *codec,
-						 switch_codec *other_codec,
+	switch_status (*decode)(switch_codec_t *codec,
+						 switch_codec_t *other_codec,
 						 void *encoded_data,
 						 uint32_t encoded_data_len,
 						 uint32_t encoded_rate,
@@ -466,7 +466,7 @@ struct switch_codec_implementation {
 						 uint32_t *decoded_rate,
 						 unsigned int *flag);
 	/*! deinitalize a codec handle using this implementation */
-	switch_status (*destroy)(switch_codec *);
+	switch_status (*destroy)(switch_codec_t *);
 	const struct switch_codec_implementation *next;
 };
 
@@ -481,7 +481,7 @@ struct switch_codec_interface {
 	/*! the IANA code name */
 	char *iananame;
 	/*! a list of codec implementations related to the codec */
-	const switch_codec_implementation *implementations;
+	const switch_codec_implementation_t *implementations;
 	const struct switch_codec_interface *next;
 };
 

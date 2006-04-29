@@ -58,7 +58,7 @@ BEGIN_EXTERN_C
   \param buflen the size of buf
   \return SWITCH_STATUS_SUCCESS to keep the collection moving.
 */
-SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_session *session,
+SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_session_t *session,
 																 switch_dtmf_callback_function dtmf_callback,
 																 void *buf,
 																 unsigned int buflen);
@@ -75,7 +75,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_ses
   \param poll_channel flag to specify if you want the function to poll the channel while running
   \return SWITCH_STATUS_SUCCESS to keep the collection moving.
 */
-SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_session *session,
+SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_session_t *session,
 															  char *buf,
 															  unsigned int buflen,
 															  unsigned int maxdigits,
@@ -96,8 +96,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
   \return SWITCH_STATUS_SUCCESS if all is well
   \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop playback.
 */
-SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
-												   switch_file_handle *fh,
+SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session_t *session,
+												   switch_file_handle_t *fh,
 												   char *file,
 												   char *timer_name,
 												   switch_dtmf_callback_function dtmf_callback,
@@ -117,8 +117,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
   \return SWITCH_STATUS_SUCCESS if all is well
   \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop recording.
 */
-SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *session,
-													 switch_file_handle *fh,
+SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session_t *session,
+													 switch_file_handle_t *fh,
 													 char *file,
 													 switch_dtmf_callback_function dtmf_callback,
 													 void *buf,
@@ -138,7 +138,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
   \param buflen the len of buf
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session, 
+SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session_t *session, 
 													char *tts_name,
 													char *voice_name,
 													char *timer_name,
@@ -158,8 +158,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
   \param peer_session_data data to pass to the DTMF callback for peer_session
   \return SWITCH_STATUS_SUCCESS if all is well
 */
-SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_session *session, 
-															   switch_core_session *peer_session,
+SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_session_t *session, 
+															   switch_core_session_t *peer_session,
 															   unsigned int timelimit,
 															   switch_dtmf_callback_function dtmf_callback,
 															   void *session_data,
@@ -173,7 +173,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
   \param dialplan the new dialplan (OPTIONAL, may be NULL)
   \param context the new context (OPTIONAL, may be NULL)
 */
-SWITCH_DECLARE(switch_status) switch_ivr_session_transfer(switch_core_session *session, char *extension, char *dialplan, char *context);
+SWITCH_DECLARE(switch_status) switch_ivr_session_transfer(switch_core_session_t *session, char *extension, char *dialplan, char *context);
 
 /** @} */
 

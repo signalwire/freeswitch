@@ -37,7 +37,7 @@ static const char modname[] = "mod_playback";
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
    if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
-static switch_status on_dtmf(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status on_dtmf(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
 
@@ -49,9 +49,9 @@ static switch_status on_dtmf(switch_core_session *session, char *dtmf, void *buf
 }
 
 
-static void playback_function(switch_core_session *session, char *data)
+static void playback_function(switch_core_session_t *session, char *data)
 {
-	switch_channel *channel;
+	switch_channel_t *channel;
 	char *timer_name = NULL;
 	char *file_name = NULL;
 
@@ -73,9 +73,9 @@ static void playback_function(switch_core_session *session, char *data)
 }
 
 
-static void record_function(switch_core_session *session, char *data)
+static void record_function(switch_core_session_t *session, char *data)
 {
-	switch_channel *channel;
+	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 

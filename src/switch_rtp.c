@@ -59,9 +59,9 @@ typedef struct {
 
 
 struct switch_rtp_vad_data {
-	switch_core_session *session;
-	switch_codec vad_codec;
-	switch_codec *read_codec;
+	switch_core_session_t *session;
+	switch_codec_t vad_codec;
+	switch_codec_t *read_codec;
 	uint32_t bg_level;
 	uint32_t bg_count;
 	uint32_t bg_len;
@@ -111,7 +111,7 @@ struct switch_rtp {
 	uint32_t ms_per_packet;
 	uint32_t remote_port;
 	uint8_t stuncount;
-	switch_buffer *packet_buffer;
+	switch_buffer_t *packet_buffer;
 	struct switch_rtp_vad_data vad_data;
 };
 
@@ -625,7 +625,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp_t *rtp_session, void *d
 	return SWITCH_STATUS_SUCCESS;	
 }
 
-SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame *frame)
+SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame)
 {
 	int bytes = rtp_common_read(rtp_session, &frame->payload, &frame->flags);
 
@@ -779,7 +779,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 								if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_TALK)) {
 									switch_event_t *event;
 									if (switch_event_create(&event, SWITCH_EVENT_TALK) == SWITCH_STATUS_SUCCESS) {
-										switch_channel *channel = switch_core_session_get_channel(rtp_session->vad_data.session);
+										switch_channel_t *channel = switch_core_session_get_channel(rtp_session->vad_data.session);
 										switch_channel_event_set_data(channel, event);
 										switch_event_fire(&event);
 									}
@@ -796,7 +796,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 									if (switch_test_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_EVENTS_NOTALK)) {
 										switch_event_t *event;
 										if (switch_event_create(&event, SWITCH_EVENT_NOTALK) == SWITCH_STATUS_SUCCESS) {
-											switch_channel *channel = switch_core_session_get_channel(rtp_session->vad_data.session);
+											switch_channel_t *channel = switch_core_session_get_channel(rtp_session->vad_data.session);
 											switch_channel_event_set_data(channel, event);
 											switch_event_fire(&event);
 										}					
@@ -852,7 +852,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_disable_vad(switch_rtp_t *rtp_session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp_t *rtp_session, switch_core_session *session, switch_codec *codec, switch_vad_flag_t flags)
+SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp_t *rtp_session, switch_core_session_t *session, switch_codec_t *codec, switch_vad_flag_t flags)
 {
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD)) {
 		return SWITCH_STATUS_GENERR;
@@ -907,7 +907,7 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint
 
 }
 
-SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_frame *frame, uint32_t ts)
+SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_frame_t *frame, uint32_t ts)
 {
 	uint8_t fwd = (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_RAW_WRITE) && switch_test_flag(frame, SFF_RAW_RTP)) ? 1 : 0;
 	uint8_t packetize = (rtp_session->packet_size > frame->datalen && (frame->payload == rtp_session->payload)) ? 1 : 0;

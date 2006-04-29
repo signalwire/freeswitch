@@ -64,44 +64,44 @@ void fs_console_clean(char *msg)
 	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, msg);
 }
 
-struct switch_core_session *fs_core_session_locate(char *uuid)
+switch_core_session_t *fs_core_session_locate(char *uuid)
 {
 	return switch_core_session_locate(uuid);
 }
 
-void fs_channel_answer(struct switch_core_session *session)
+void fs_channel_answer(switch_core_session_t *session)
 {
-	switch_channel *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_answer(channel);
 }
 
-void fs_channel_pre_answer(struct switch_core_session *session)
+void fs_channel_pre_answer(switch_core_session_t *session)
 {
-	switch_channel *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_pre_answer(channel);
 }
 
-void fs_channel_hangup(struct switch_core_session *session)
+void fs_channel_hangup(switch_core_session_t *session)
 {
-	switch_channel *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 }
 
-void fs_channel_set_variable(struct switch_core_session *session, char *var, char *val)
+void fs_channel_set_variable(switch_core_session_t *session, char *var, char *val)
 {
-	switch_channel *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_set_variable(channel, var, val);
 }
 
-void fs_channel_get_variable(struct switch_core_session *session, char *var)
+void fs_channel_get_variable(switch_core_session_t *session, char *var)
 {
-	switch_channel *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_get_variable(channel, var);
 }
 
-void fs_channel_set_state(struct switch_core_session *session, char *state)
+void fs_channel_set_state(switch_core_session_t *session, char *state)
 {
-	switch_channel *channel = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state fs_state = switch_channel_get_state(channel);
 
 	if (!strcmp(state, "EXECUTE")) {
@@ -113,7 +113,7 @@ void fs_channel_set_state(struct switch_core_session *session, char *state)
 	switch_channel_set_state(channel, fs_state);
 }
 
-int fs_ivr_play_file(struct switch_core_session *session, char *file, char *timer_name) 
+int fs_ivr_play_file(switch_core_session_t *session, char *file, char *timer_name) 
 {
 	switch_status status;
 	if (switch_strlen_zero(timer_name)) {

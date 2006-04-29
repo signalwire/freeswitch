@@ -33,9 +33,9 @@
 
 static const char modname[] = "mod_echo";
 
-static void echo_function(switch_core_session *session, char *data)
+static void echo_function(switch_core_session_t *session, char *data)
 {
-	switch_channel *channel;
+	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);	

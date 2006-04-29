@@ -50,7 +50,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address)
 
 static switch_status load_config(void)
 {
-	switch_config cfg;
+	switch_config_t cfg;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	char *var, *val;
 	char *cf = "event_multicast.conf";

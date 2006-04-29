@@ -62,8 +62,8 @@ static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 
 
 	switch_status status = SWITCH_STATUS_SUCCESS;
-	switch_core_thread_session *ts = obj;
-	switch_loadable_module *module = ts->objs[0];
+	switch_core_thread_session_t *ts = obj;
+	switch_loadable_module_t *module = ts->objs[0];
 	int restarts;
 
 	assert(thread != NULL);
@@ -87,7 +87,7 @@ static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 
 
 
-static switch_status switch_loadable_module_process(char *key, switch_loadable_module *new_module)
+static switch_status switch_loadable_module_process(char *key, switch_loadable_module_t *new_module)
 {
 
 
@@ -102,7 +102,7 @@ static switch_status switch_loadable_module_process(char *key, switch_loadable_m
 	}
 
 	if (new_module->interface->codec_interface) {
-		const switch_codec_implementation *impl;
+		const switch_codec_implementation_t *impl;
 		const switch_codec_interface *ptr;
 
 		for (ptr = new_module->interface->codec_interface; ptr; ptr = ptr->next) {
@@ -190,9 +190,9 @@ static switch_status switch_loadable_module_process(char *key, switch_loadable_m
 
 }
 
-static switch_status switch_loadable_module_load_file(char *filename, switch_loadable_module **new_module)
+static switch_status switch_loadable_module_load_file(char *filename, switch_loadable_module_t **new_module)
 {
-	switch_loadable_module *module = NULL;
+	switch_loadable_module_t *module = NULL;
 	apr_dso_handle_t *dso = NULL;
 	apr_status_t status = SWITCH_STATUS_SUCCESS;
 	apr_dso_handle_sym_t function_handle = NULL;
@@ -228,7 +228,7 @@ static switch_status switch_loadable_module_load_file(char *filename, switch_loa
 			break;
 		}
 
-		if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module))) == 0) {
+		if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module_t))) == 0) {
 			err = "Could not allocate memory\n";
 			break;
 		}
@@ -271,7 +271,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_load_module(char *dir, char
 	switch_size_t len = 0;
 	char *path;
 	char *file;
-	switch_loadable_module *new_module = NULL;
+	switch_loadable_module_t *new_module = NULL;
 	switch_status status;
 
 #ifdef WIN32
@@ -317,13 +317,13 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_build_dynamic(char *filenam
 																   switch_module_runtime_t switch_module_runtime,
 																   switch_module_shutdown_t switch_module_shutdown)
 { 
-	switch_loadable_module *module = NULL; 
+	switch_loadable_module_t *module = NULL; 
 	switch_module_load_t load_func_ptr = NULL; 
 	int loading = 1; 
 	const char *err = NULL; 
 	switch_loadable_module_interface *interface = NULL; 
 
-	if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module))) == 0) { 
+	if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module_t))) == 0) { 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Couldn't allocate memory\n"); 
 		return SWITCH_STATUS_GENERR; 
 	} 
@@ -342,7 +342,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_build_dynamic(char *filenam
 			break; 
 		} 
   
-		if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module))) == 0) { 
+		if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module_t))) == 0) { 
 			err = "Could not allocate memory\n"; 
 			break; 
 		} 
@@ -398,7 +398,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_init()
 	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
 	char *cf = "modules.conf";
 	char *var, *val;
-	switch_config cfg;
+	switch_config_t cfg;
 	unsigned char all = 0;
 	unsigned int count = 0;
 
@@ -506,11 +506,11 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 {
 	switch_hash_index_t *hi;
 	void *val;
-	switch_loadable_module *module;
+	switch_loadable_module_t *module;
 
 	for (hi = switch_hash_first(loadable_modules.pool, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
-		module = (switch_loadable_module *) val;
+		module = (switch_loadable_module_t *) val;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Checking %s\t", module->interface->module_name);
 		if (module->switch_module_shutdown) {
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "(yes)\n");

@@ -32,15 +32,15 @@
 #include <switch.h>
 #include <switch_ivr.h>
 
-static const switch_state_handler_table audio_bridge_peer_state_handlers;
+static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 
 
-SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_session *session,
+SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_session_t *session,
 																 switch_dtmf_callback_function dtmf_callback,
 																 void *buf,
 																 unsigned int buflen)
 {
-	switch_channel *channel;
+	switch_channel_t *channel;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	
 	channel = switch_core_session_get_channel(session);
@@ -51,7 +51,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_ses
 	}
 
 	while(switch_channel_ready(channel)) {
-		switch_frame *read_frame;
+		switch_frame_t *read_frame;
 		char dtmf[128];
 
 		if (switch_channel_has_dtmf(channel)) {
@@ -74,7 +74,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_callback(switch_core_ses
 }
 
 
-SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_session *session,
+SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_session_t *session,
 															  char *buf,
 															  unsigned int buflen,
 															  unsigned int maxdigits,
@@ -85,7 +85,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
 															  )
 {
 	unsigned int i = 0, x =  (unsigned int) strlen(buf);
-	switch_channel *channel;
+	switch_channel_t *channel;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	switch_time_t started = 0;
 	unsigned int elapsed;
@@ -109,7 +109,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
 	}
 
 	while(switch_channel_ready(channel)) {
-		switch_frame *read_frame;
+		switch_frame_t *read_frame;
 
 		if (timeout) {
 			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
@@ -152,18 +152,18 @@ SWITCH_DECLARE(switch_status) switch_ivr_collect_digits_count(switch_core_sessio
 
 
 
-SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *session, 
-													 switch_file_handle *fh,
+SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session_t *session, 
+													 switch_file_handle_t *fh,
 													 char *file,
 													 switch_dtmf_callback_function dtmf_callback,
 													 void *buf,
 													 unsigned int buflen)
 {
-	switch_channel *channel;
+	switch_channel_t *channel;
     char dtmf[128];
-	switch_file_handle lfh;
-	switch_frame *read_frame;
-	switch_codec codec, *read_codec;
+	switch_file_handle_t lfh;
+	switch_frame_t *read_frame;
+	switch_codec_t codec, *read_codec;
 	char *codec_name;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 
@@ -250,30 +250,30 @@ SWITCH_DECLARE(switch_status) switch_ivr_record_file(switch_core_session *sessio
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session, 
-												   switch_file_handle *fh,
+SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session_t *session, 
+												   switch_file_handle_t *fh,
 												   char *file,
 												   char *timer_name,
 												   switch_dtmf_callback_function dtmf_callback,
 												   void *buf,
 												   unsigned int buflen)
 {
-	switch_channel *channel;
+	switch_channel_t *channel;
 	short abuf[960];
 	char dtmf[128];
 	uint32_t interval = 0, samples = 0;
 	uint32_t len = 0, ilen = 0;
 	switch_size_t olen = 0;
-	switch_frame write_frame = {0};
-	switch_timer timer;
-	switch_core_thread_session thread_session;
-	switch_codec codec;
+	switch_frame_t write_frame = {0};
+	switch_timer_t timer;
+	switch_core_thread_session_t thread_session;
+	switch_codec_t codec;
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	char *codec_name;
 	int stream_id;
 	switch_status status = SWITCH_STATUS_SUCCESS;
-	switch_file_handle lfh;
-	switch_codec *read_codec = switch_core_session_get_read_codec(session);
+	switch_file_handle_t lfh;
+	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 
 	if (!fh) {
 		fh = &lfh;
@@ -453,7 +453,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 				break;
 			}
 		} else { /* time off the channel (if you must) */
-			switch_frame *read_frame;
+			switch_frame_t *read_frame;
 			switch_status status; 
 			while (switch_channel_test_flag(channel, CF_HOLD)) {
 				switch_yield(10000);
@@ -481,7 +481,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_play_file(switch_core_session *session,
 
 
 
-SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session, 
+SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session_t *session, 
 													char *tts_name,
 													char *voice_name,
 													char *timer_name,
@@ -491,17 +491,17 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 													void *buf,
 													unsigned int buflen)
 {
-	switch_channel *channel;
+	switch_channel_t *channel;
 	short abuf[960];
 	char dtmf[128];
 	int interval = 0;
 	uint32_t samples = 0;
 	uint32_t len = 0;
 	switch_size_t ilen = 0;
-	switch_frame write_frame = {0};
-	switch_timer timer;
-	switch_core_thread_session thread_session;
-	switch_codec codec;
+	switch_frame_t write_frame = {0};
+	switch_timer_t timer;
+	switch_core_thread_session_t thread_session;
+	switch_codec_t codec;
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	char *codec_name;
 	int x;
@@ -664,7 +664,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 				break;
 			}
 		} else { /* time off the channel (if you must) */
-			switch_frame *read_frame;
+			switch_frame_t *read_frame;
 			switch_status status = switch_core_session_read_frame(session, &read_frame, -1, 0);
 
 			while (switch_channel_test_flag(channel, CF_HOLD)) {
@@ -695,23 +695,23 @@ SWITCH_DECLARE(switch_status) switch_ivr_speak_text(switch_core_session *session
 /* Bridge Related Stuff*/
 /*********************************************************************************/
 struct audio_bridge_data {
-	switch_core_session *session_a;
-	switch_core_session *session_b;
+	switch_core_session_t *session_a;
+	switch_core_session_t *session_b;
 	int running;
 };
 
 static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 {
-	struct switch_core_thread_session *his_thread, *data = obj;
+	switch_core_thread_session_t *his_thread, *data = obj;
 	int *stream_id_p;
 	int stream_id = 0, ans_a = 0, ans_b = 0;
 	switch_dtmf_callback_function dtmf_callback;
-	switch_core_session_message msg = {0};
+	switch_core_session_message_t msg = {0};
 	void *user_data;
 
-	switch_channel *chan_a, *chan_b;
-	switch_frame *read_frame;
-	switch_core_session *session_a, *session_b;
+	switch_channel_t *chan_a, *chan_b;
+	switch_frame_t *read_frame;
+	switch_core_session_t *session_a, *session_b;
 
 	assert(!thread || thread);
 
@@ -825,9 +825,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	return NULL;
 }
 
-static switch_status audio_bridge_on_loopback(switch_core_session *session)
+static switch_status audio_bridge_on_loopback(switch_core_session_t *session)
 {
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 	void *arg;
 
 	channel = switch_core_session_get_channel(session);
@@ -845,9 +845,9 @@ static switch_status audio_bridge_on_loopback(switch_core_session *session)
 }
 
 
-static switch_status audio_bridge_on_ring(switch_core_session *session)
+static switch_status audio_bridge_on_ring(switch_core_session_t *session)
 {
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -859,9 +859,9 @@ static switch_status audio_bridge_on_ring(switch_core_session *session)
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status audio_bridge_on_hold(switch_core_session *session)
+static switch_status audio_bridge_on_hold(switch_core_session_t *session)
 {
-	switch_channel *channel = NULL;
+	switch_channel_t *channel = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -872,7 +872,7 @@ static switch_status audio_bridge_on_hold(switch_core_session *session)
 	return SWITCH_STATUS_FALSE;
 }
 
-static const switch_state_handler_table audio_bridge_peer_state_handlers = {
+static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_ring */ audio_bridge_on_ring,
 	/*.on_execute */ NULL,
@@ -883,8 +883,8 @@ static const switch_state_handler_table audio_bridge_peer_state_handlers = {
 };
 
 
-SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_session *session, 
-															   switch_core_session *peer_session,
+SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_session_t *session, 
+															   switch_core_session_t *peer_session,
 															   unsigned int timelimit,
 															   switch_dtmf_callback_function dtmf_callback,
 															   void *session_data,
@@ -893,11 +893,11 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 
 															   
 {
-	struct switch_core_thread_session *this_audio_thread, *other_audio_thread;
-	switch_channel *caller_channel, *peer_channel;
+	switch_core_thread_session_t *this_audio_thread, *other_audio_thread;
+	switch_channel_t *caller_channel, *peer_channel;
 	time_t start;
 	int stream_id = 0;
-	switch_frame *read_frame = NULL;
+	switch_frame_t *read_frame = NULL;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	
 
@@ -909,8 +909,8 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 	peer_channel = switch_core_session_get_channel(peer_session);
 	assert(peer_channel != NULL);
 
-	other_audio_thread = switch_core_session_alloc(peer_session, sizeof(switch_core_thread_session));
-	this_audio_thread = switch_core_session_alloc(peer_session, sizeof(switch_core_thread_session));
+	other_audio_thread = switch_core_session_alloc(peer_session, sizeof(switch_core_thread_session_t));
+	this_audio_thread = switch_core_session_alloc(peer_session, sizeof(switch_core_thread_session_t));
 
 	other_audio_thread->objs[0] = session;
 	other_audio_thread->objs[1] = peer_session;
@@ -989,7 +989,7 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 		switch_event_t *event;
-		switch_core_session_message msg = {0};
+		switch_core_session_message_t msg = {0};
 		
 		switch_channel_set_state(peer_channel, CS_HOLD);
 
@@ -1043,10 +1043,10 @@ SWITCH_DECLARE(switch_status) switch_ivr_multi_threaded_bridge(switch_core_sessi
 
 
 
-SWITCH_DECLARE(switch_status) switch_ivr_session_transfer(switch_core_session *session, char *extension, char *dialplan, char *context)
+SWITCH_DECLARE(switch_status) switch_ivr_session_transfer(switch_core_session_t *session, char *extension, char *dialplan, char *context)
 {
-	switch_channel *channel;
-	switch_caller_profile *profile, *new_profile;
+	switch_channel_t *channel;
+	switch_caller_profile_t *profile, *new_profile;
 
 	assert(session != NULL);
 	assert(extension != NULL);

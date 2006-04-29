@@ -47,7 +47,7 @@ typedef struct {
 	swift_params *params;
 	swift_voice *voice;
 	switch_mutex_t *audio_lock;
-	switch_buffer *audio_buffer;
+	switch_buffer_t *audio_buffer;
 	int done;
 	int done_gen;
 } cepstral_t;

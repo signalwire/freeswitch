@@ -54,7 +54,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_base, globals.base)
 static void load_config(void)
 {
 	char *cf = "dialplan_directory.conf";
-	switch_config cfg;
+	switch_config_t cfg;
 	char *var, *val;
 
 	if (!switch_config_open_file(&cfg, cf)) {
@@ -82,11 +82,11 @@ static void load_config(void)
 	switch_config_close_file(&cfg);	
 }
 
-static switch_caller_extension *directory_dialplan_hunt(switch_core_session *session)
+static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t *session)
 {
-	switch_caller_profile *caller_profile;
-	switch_caller_extension *extension = NULL;
-	switch_channel *channel;
+	switch_caller_profile_t *caller_profile;
+	switch_caller_extension_t *extension = NULL;
+	switch_channel_t *channel;
 	char *var, *val;
 	char filter[256];
 	switch_directory_handle dh;

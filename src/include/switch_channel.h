@@ -64,17 +64,17 @@ typedef struct switch_channel_timetable switch_channel_timetable_t;
   \param channel channel to retrieve state from
   \return current state of channel
 */
-SWITCH_DECLARE(switch_channel_state) switch_channel_get_state(switch_channel *channel);
+SWITCH_DECLARE(switch_channel_state) switch_channel_get_state(switch_channel_t *channel);
 
 /*!
   \brief Determine if a channel is ready for io
   \param channel channel to test
   \return true if the channel is ready
 */
-SWITCH_DECLARE(unsigned int) switch_channel_ready(switch_channel *channel);
+SWITCH_DECLARE(unsigned int) switch_channel_ready(switch_channel_t *channel);
 
 
-SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_channel *channel,
+SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_channel_t *channel,
 																	  const char *file,
 																	  const char *func,
 																	  int line,
@@ -100,7 +100,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(char *str);
   \param channel the channel
   \return the code
 */
-SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel *channel);
+SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *channel);
 
 /*!
   \brief return a cause string for a given cause
@@ -114,7 +114,7 @@ SWITCH_DECLARE(char *) switch_channel_cause2str(switch_call_cause_t cause);
   \param channel channel to retrieve timetable from
   \return a pointer to the channel's timetable (created, answered, etc..)
 */
-SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch_channel *channel);
+SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch_channel_t *channel);
 
 /*!
   \brief Allocate a new channel
@@ -122,7 +122,7 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
   \param pool memory_pool to use for allocation
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t *pool);
 
 /*!
   \brief Connect a newly allocated channel to a session object and setup it's initial state
@@ -131,8 +131,8 @@ SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel **channel, swi
   \param state the initial state of the channel
   \param flags the initial channel flags
 */
-SWITCH_DECLARE(switch_status) switch_channel_init(switch_channel *channel,
-								switch_core_session *session,
+SWITCH_DECLARE(switch_status) switch_channel_init(switch_channel_t *channel,
+								switch_core_session_t *session,
 								switch_channel_state state,
 								uint32_t flags);
 
@@ -141,42 +141,42 @@ SWITCH_DECLARE(switch_status) switch_channel_init(switch_channel *channel,
   \param channel channel to assign the profile to
   \param caller_profile the profile to assign
 */
-SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel *channel, switch_caller_profile *caller_profile);
+SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
 
 /*!
   \brief Retrive the given channel's caller profile
   \param channel channel to retrive the profile from
   \return the requested profile
 */
-SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_caller_profile(switch_channel *channel);
+SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_caller_profile(switch_channel_t *channel);
 
 /*!
   \brief Set the given channel's originator caller profile
   \param channel channel to assign the profile to
   \param caller_profile the profile to assign
 */
-SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel *channel, switch_caller_profile *caller_profile);
+SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
 
 /*!
   \brief Retrive the given channel's originator caller profile
   \param channel channel to retrive the profile from
   \return the requested profile
 */
-SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originator_caller_profile(switch_channel *channel);
+SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originator_caller_profile(switch_channel_t *channel);
 
 /*!
   \brief Set the given channel's originatee caller profile
   \param channel channel to assign the profile to
   \param caller_profile the profile to assign
 */
-SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel *channel, switch_caller_profile *caller_profile);
+SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile);
 
 /*!
   \brief Retrive the given channel's originatee caller profile
   \param channel channel to retrive the profile from
   \return the requested profile
 */
-SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originatee_caller_profile(switch_channel *channel);
+SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originatee_caller_profile(switch_channel_t *channel);
 
 
 /*!
@@ -184,7 +184,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_channel_get_originatee_caller_pro
   \param channel channel to retrive the unique id from
   \return the unique id
 */
-SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel *channel);
+SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
 
 /*!
   \brief Set a variable on a given channel
@@ -193,7 +193,7 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel *channel);
   \param value the vaule of the variable
   \returns SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status) switch_channel_set_variable(switch_channel *channel, char *varname, char *value);
+SWITCH_DECLARE(switch_status) switch_channel_set_variable(switch_channel_t *channel, char *varname, char *value);
 
 /*!
   \brief Retrieve a variable from a given channel
@@ -201,21 +201,21 @@ SWITCH_DECLARE(switch_status) switch_channel_set_variable(switch_channel *channe
   \param varname the name of the variable
   \return the value of the requested variable
 */
-SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel *channel, char *varname);
+SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, char *varname);
 
 /*!
   \brief Assign a caller extension to a given channel
   \param channel channel to assign extension to
   \param caller_extension extension to assign
 */
-SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel *channel, switch_caller_extension *caller_extension);
+SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension);
 
 /*!
   \brief Retrieve caller extension from a given channel
   \param channel channel to retrieve extension from
   \return the requested extension
 */
-SWITCH_DECLARE(switch_caller_extension *) switch_channel_get_caller_extension(switch_channel *channel);
+SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_caller_extension(switch_channel_t *channel);
 
 /*!
   \brief Test for presence of given flag(s) on a given channel
@@ -223,23 +223,23 @@ SWITCH_DECLARE(switch_caller_extension *) switch_channel_get_caller_extension(sw
   \param flags or'd list of channel flags to test
   \return TRUE if flags were present
 */
-SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel *channel, switch_channel_flag flags);
+SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag flags);
 
 /*!
   \brief Set given flag(s) on a given channel
   \param channel channel on which to set flag(s)
   \param flags or'd list of flags to set
 */
-SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel *channel, switch_channel_flag flags);
+SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag flags);
 
 /*!
   \brief Clear given flag(s) from a channel
   \param channel channel to clear flags from
   \param flags or'd list of flags to clear
 */
-SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel *channel, switch_channel_flag flags);
+SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag flags);
 
-SWITCH_DECLARE(switch_status) switch_channel_perform_answer(switch_channel *channel,
+SWITCH_DECLARE(switch_status) switch_channel_perform_answer(switch_channel_t *channel,
 																const char *file,
 																const char *func,
 																int line);
@@ -252,7 +252,7 @@ SWITCH_DECLARE(switch_status) switch_channel_perform_answer(switch_channel *chan
 
 
 
-SWITCH_DECLARE(switch_status) switch_channel_perform_pre_answer(switch_channel *channel,
+SWITCH_DECLARE(switch_status) switch_channel_perform_pre_answer(switch_channel_t *channel,
 																const char *file,
 																const char *func,
 																int line);
@@ -269,14 +269,14 @@ SWITCH_DECLARE(switch_status) switch_channel_perform_pre_answer(switch_channel *
   \param state_handler table of state handler functions
   \return the index number/priority of the table negative value indicates failure
 */
-SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel *channel, const switch_state_handler_table *state_handler);
+SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel_t *channel, const switch_state_handler_table_t *state_handler);
 
 /*!
   \brief clear a state handler table from a given channel
   \param channel channel from which to clear the state handler table
   \param state_handler table of state handler functions
 */
-SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel *channel, const switch_state_handler_table *state_handler);
+SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channel, const switch_state_handler_table_t *state_handler);
 
 /*!
   \brief Retrieve an state handler tablefrom a given channel at given index level
@@ -284,7 +284,7 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel *channel,
   \param index the index of the state handler table (start from 0)
   \return given channel's state handler table at given index or NULL if requested index does not exist.
 */
-SWITCH_DECLARE(const switch_state_handler_table *) switch_channel_get_state_handler(switch_channel *channel, int index);
+SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_handler(switch_channel_t *channel, int index);
 
 /*!
   \brief Set private data on channel
@@ -292,14 +292,14 @@ SWITCH_DECLARE(const switch_state_handler_table *) switch_channel_get_state_hand
   \param private_info void pointer to private data
   \return SWITCH_STATUS_SUCCESS if data was set
 */
-SWITCH_DECLARE(switch_status) switch_channel_set_private(switch_channel *channel, void *private_info);
+SWITCH_DECLARE(switch_status) switch_channel_set_private(switch_channel_t *channel, void *private_info);
 
 /*!
   \brief Retrieve private from a given channel
   \param channel channel to retrieve data from
   \return void pointer to channel's private data
 */
-SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel *channel);
+SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel);
 
 /*!
   \brief Assign a name to a given channel
@@ -307,17 +307,17 @@ SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel *channel);
   \param name name to assign
   \return SWITCH_STATUS_SUCCESS if name was assigned
 */
-SWITCH_DECLARE(switch_status) switch_channel_set_name(switch_channel *channel, char *name);
+SWITCH_DECLARE(switch_status) switch_channel_set_name(switch_channel_t *channel, char *name);
 
 /*!
   \brief Retrieve the name of a given channel
   \param channel channel to get name of
   \return the channel's name
 */
-SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel *channel);
+SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel);
 
 
-SWITCH_DECLARE(switch_channel_state) switch_channel_perform_hangup(switch_channel *channel, 
+SWITCH_DECLARE(switch_channel_state) switch_channel_perform_hangup(switch_channel_t *channel, 
 																   const char *file,
 																   const char *func,
 																   int line,
@@ -336,7 +336,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_hangup(switch_channe
   \param channel channel to test
   \return number of digits in the queue
 */
-SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel *channel);
+SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel);
 
 /*!
   \brief Queue DTMF on a given channel
@@ -344,7 +344,7 @@ SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel *channel);
   \param dtmf string of digits to queue
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel *channel, char *dtmf);
+SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel_t *channel, char *dtmf);
 
 /*!
   \brief Retrieve DTMF digits from a given channel
@@ -353,7 +353,7 @@ SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel *channel,
   \param len max size in bytes of the buffer
   \return number of bytes read into the buffer
 */
-SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel *channel, char *dtmf, switch_size_t len);
+SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel_t *channel, char *dtmf, switch_size_t len);
 
 /*!
   \brief Render the name of the provided state enum
@@ -367,12 +367,12 @@ SWITCH_DECLARE(const char *) switch_channel_state_name(switch_channel_state stat
   \param channel channel to add information about
   \param event event to add information to
 */
-SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel *channel, switch_event_t *event);
+SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, switch_event_t *event);
 
 
 // These may go away
-SWITCH_DECLARE(switch_status) switch_channel_set_raw_mode (switch_channel *channel, int freq, int bits, int channels, int ms, int kbps);
-SWITCH_DECLARE(switch_status) switch_channel_get_raw_mode (switch_channel *channel, int *freq, int *bits, int *channels, int *ms, int *kbps);
+SWITCH_DECLARE(switch_status) switch_channel_set_raw_mode (switch_channel_t *channel, int freq, int bits, int channels, int ms, int kbps);
+SWITCH_DECLARE(switch_status) switch_channel_get_raw_mode (switch_channel_t *channel, int *freq, int *bits, int *channels, int *ms, int *kbps);
 /** @} */
 
 END_EXTERN_C

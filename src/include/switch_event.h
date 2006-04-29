@@ -88,7 +88,7 @@ struct switch_event {
 	/*! the owner of the event */
 	char *owner;
 	/*! the subclass of the event */
-	switch_event_subclass *subclass;
+	switch_event_subclass_t *subclass;
 	/*! the event headers */
 	switch_event_header_t *headers;
 	/*! the body of the event */
@@ -107,7 +107,7 @@ struct switch_event_node {
 	/*! the event id enumeration to bind to */
 	switch_event_types_t event_id;
 	/*! the event subclass to bind to for custom events */
-	switch_event_subclass *subclass;
+	switch_event_subclass_t *subclass;
 	/*! a callback function to execute when the event is triggered */
 	switch_event_callback_t callback;
 	/*! private data */

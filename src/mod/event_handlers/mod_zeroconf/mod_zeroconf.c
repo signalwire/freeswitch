@@ -193,7 +193,7 @@ static void event_handler(switch_event_t *event)
 
 static switch_status load_config(void)
 {
-	switch_config cfg;
+	switch_config_t cfg;
 	switch_status status = SWITCH_STATUS_SUCCESS;
 	char *var, *val;
 	char *cf = "zeroconf.conf";

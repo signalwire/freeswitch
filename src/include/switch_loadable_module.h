@@ -126,7 +126,7 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_build_dynamic(char *filenam
   \param name the name of the dialplan
   \return the desired dialplan interface
  */
-SWITCH_DECLARE(switch_status) switch_loadable_module_load_dynamic(switch_loadable_module *new_module);
+SWITCH_DECLARE(switch_status) switch_loadable_module_load_dynamic(switch_loadable_module_t *new_module);
 
 /*!
   \brief Retrieve the timer interface by it's registered name

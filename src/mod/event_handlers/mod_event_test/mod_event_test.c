@@ -72,7 +72,7 @@ static void *torture_thread(switch_thread_t *thread, void *obj)
 {
 	int y = 0;
 	int z = 0;
-	switch_core_thread_session *ts = obj;
+	switch_core_thread_session_t *ts = obj;
 	switch_event_t *event;
 
 	z = THREADS++;

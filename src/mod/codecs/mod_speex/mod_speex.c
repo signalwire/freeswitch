@@ -35,7 +35,7 @@
 
 static const char modname[] = "mod_speexcodec";
 
-static const struct switch_codec_settings default_codec_settings = {
+static const switch_codec_settings_t default_codec_settings = {
 	/*.quality */ 5,
 	/*.complexity */ 5,
 	/*.enhancement */ 1,
@@ -55,7 +55,7 @@ static const struct switch_codec_settings default_codec_settings = {
 };
 
 struct speex_context {
-	switch_codec *codec;
+	switch_codec_t *codec;
 	unsigned int flags;
 
 	/* Encoder */
@@ -72,8 +72,8 @@ struct speex_context {
 	int decoder_mode;
 };
 
-static switch_status switch_speex_init(switch_codec *codec, switch_codec_flag flags,
-									   const struct switch_codec_settings *codec_settings)
+static switch_status switch_speex_init(switch_codec_t *codec, switch_codec_flag flags,
+									   const switch_codec_settings_t *codec_settings)
 {
 	struct speex_context *context = NULL;
 	int encoding, decoding;
@@ -157,8 +157,8 @@ static switch_status switch_speex_init(switch_codec *codec, switch_codec_flag fl
 	}
 }
 
-static switch_status switch_speex_encode(switch_codec *codec,
-										 switch_codec *other_codec,
+static switch_status switch_speex_encode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
 										 uint32_t decoded_rate,
@@ -212,8 +212,8 @@ static switch_status switch_speex_encode(switch_codec *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_speex_decode(switch_codec *codec,
-										 switch_codec *other_codec,
+static switch_status switch_speex_decode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
 										 uint32_t encoded_rate,
@@ -239,7 +239,7 @@ static switch_status switch_speex_decode(switch_codec *codec,
 }
 
 
-static switch_status switch_speex_destroy(switch_codec *codec)
+static switch_status switch_speex_destroy(switch_codec_t *codec)
 {
 	int encoding, decoding;
 	struct speex_context *context = codec->private_info;
@@ -267,7 +267,7 @@ static switch_status switch_speex_destroy(switch_codec *codec)
 }
 
 /* Registration */
-static const switch_codec_implementation speex_32k_implementation = {
+static const switch_codec_implementation_t speex_32k_implementation = {
 	/*.samples_per_second */ 32000,
 	/*.bits_per_second */ 512000,
 	/*.nanoseconds_per_frame */ 20000,
@@ -283,7 +283,7 @@ static const switch_codec_implementation speex_32k_implementation = {
 	/*.destroy */ switch_speex_destroy
 };
 
-static const switch_codec_implementation speex_16k_implementation = {
+static const switch_codec_implementation_t speex_16k_implementation = {
 	/*.samples_per_second */ 16000,
 	/*.bits_per_second */ 256000,
 	/*.nanoseconds_per_frame */ 20000,
@@ -300,7 +300,7 @@ static const switch_codec_implementation speex_16k_implementation = {
 	/*.next */ &speex_32k_implementation
 };
 
-static const switch_codec_implementation speex_8k_implementation = {
+static const switch_codec_implementation_t speex_8k_implementation = {
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 128000,
 	/*.nanoseconds_per_frame */ 20000,

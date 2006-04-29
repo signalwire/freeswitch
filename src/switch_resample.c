@@ -29,8 +29,8 @@
  * switch_caller.c -- Caller Identification
  *
  */
-#include <switch_resample.h>
 #include <switch.h>
+#include <switch_resample.h>
 #include <libresample.h>
 #define NORMFACT (float)0x8000
 #define MAXSAMPLE (float)0x7FFF

@@ -39,7 +39,7 @@ static const char modname[] = "mod_ivrtest";
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
    if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
-static switch_status on_dtmf(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status on_dtmf(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
 	
@@ -49,7 +49,7 @@ static switch_status on_dtmf(switch_core_session *session, char *dtmf, void *buf
 }
 
 
-static void disast_function(switch_core_session *session, char *data)
+static void disast_function(switch_core_session_t *session, char *data)
 {
 	void *x = NULL;
 	memset((void *) x, 0, 1000);
@@ -57,10 +57,10 @@ static void disast_function(switch_core_session *session, char *data)
 }
 
 
-static void dirtest_function(switch_core_session *session, char *data)
+static void dirtest_function(switch_core_session_t *session, char *data)
 {
 	char *var, *val;
-	switch_channel *channel;
+	switch_channel_t *channel;
 	switch_directory_handle dh;
 
 	channel = switch_core_session_get_channel(session);
@@ -90,7 +90,7 @@ static void dirtest_function(switch_core_session *session, char *data)
 
 }
 
-static switch_status show_dtmf(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status show_dtmf(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
 	
@@ -99,10 +99,10 @@ static switch_status show_dtmf(switch_core_session *session, char *dtmf, void *b
 
 }
 
-static void tts_function(switch_core_session *session, char *data)
+static void tts_function(switch_core_session_t *session, char *data)
 {
-	switch_channel *channel;
-	switch_codec *codec;
+	switch_channel_t *channel;
+	switch_codec_t *codec;
 	char *mydata, *text = NULL, *voice_name = NULL, *tts_name = NULL;
 	char buf[10] = "";
 	char *argv[3];
@@ -134,11 +134,11 @@ static void tts_function(switch_core_session *session, char *data)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Done\n");
 }
 
-static void ivrtest_function(switch_core_session *session, char *data)
+static void ivrtest_function(switch_core_session_t *session, char *data)
 {
-	switch_channel *channel;
+	switch_channel_t *channel;
 	switch_status status = SWITCH_STATUS_SUCCESS;
-	switch_codec *codec;
+	switch_codec_t *codec;
 	char buf[10] = "";
 	char term;
 	char say[128] = "";
@@ -182,9 +182,9 @@ static void ivrtest_function(switch_core_session *session, char *data)
 }
 
 
-static switch_status my_on_hangup(switch_core_session *session)
+static switch_status my_on_hangup(switch_core_session_t *session)
 {
-	switch_channel *channel;
+	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -194,7 +194,7 @@ static switch_status my_on_hangup(switch_core_session *session)
 
 }
 
-static const switch_state_handler_table state_handlers = {
+static const switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_ring */ NULL,
 	/*.on_execute */ NULL,

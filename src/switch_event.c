@@ -29,10 +29,10 @@
  * switch_event.c -- Event System
  *
  */
-#include <switch_event.h>
 #include <switch.h>
+#include <switch_event.h>
 
-static switch_event_node *EVENT_NODES[SWITCH_EVENT_ALL + 1] = { NULL };
+static switch_event_node_t *EVENT_NODES[SWITCH_EVENT_ALL + 1] = { NULL };
 static switch_mutex_t *BLOCK = NULL;
 static switch_mutex_t *POOL_LOCK = NULL;
 static switch_memory_pool_t *RUNTIME_POOL = NULL;
@@ -114,7 +114,7 @@ static char *EVENT_NAMES[] = {
 };
 
 
-static int switch_events_match(switch_event_t *event, switch_event_node *node)
+static int switch_events_match(switch_event_t *event, switch_event_node_t *node)
 {
 	int match = 0;
 
@@ -214,7 +214,7 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event)
 {
 	switch_event_types_t e;
-	switch_event_node *node;
+	switch_event_node_t *node;
 
 	for (e = (*event)->event_id;; e = SWITCH_EVENT_ALL) {
 		for (node = EVENT_NODES[e]; node; node = node->next) {
@@ -249,7 +249,7 @@ SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event)
 SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name)
 {
 
-	switch_event_subclass *subclass;
+	switch_event_subclass_t *subclass;
 
 	assert(RUNTIME_POOL != NULL);
 	assert(CUSTOM_HASH != NULL);
@@ -582,8 +582,8 @@ SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func,
 SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name,
 												switch_event_callback_t callback, void *user_data)
 {
-	switch_event_node *event_node;
-	switch_event_subclass *subclass = NULL;
+	switch_event_node_t *event_node;
+	switch_event_subclass_t *subclass = NULL;
 
 	assert(BLOCK != NULL);
 	assert(RUNTIME_POOL != NULL);
@@ -599,7 +599,7 @@ SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_types_t e
 		}
 	}
 
-	if (event <= SWITCH_EVENT_ALL && (event_node = switch_core_alloc(RUNTIME_POOL, sizeof(switch_event_node))) != 0) {
+	if (event <= SWITCH_EVENT_ALL && (event_node = switch_core_alloc(RUNTIME_POOL, sizeof(switch_event_node_t))) != 0) {
 		switch_mutex_lock(BLOCK);
 		/* <LOCKED> ----------------------------------------------- */
 		event_node->id = switch_core_strdup(RUNTIME_POOL, id);

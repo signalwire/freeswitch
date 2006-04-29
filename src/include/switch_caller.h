@@ -105,11 +105,11 @@ struct switch_caller_extension {
 	/*! The number of the extension */
 	char *extension_number;
 	/*! Pointer to the current application for this extension */
-	struct switch_caller_application *current_application;
+	switch_caller_application_t *current_application;
 	/*! Pointer to the last application for this extension */
-	struct switch_caller_application *last_application;
+	switch_caller_application_t *last_application;
 	/*! Pointer to the entire stack of applications for this extension */
-	struct switch_caller_application *applications;
+	switch_caller_application_t *applications;
 };
 
 /*!
@@ -119,7 +119,7 @@ struct switch_caller_extension {
   \param extension_number extension number
   \return a new extension object allocated from the session's memory pool
 */
-SWITCH_DECLARE(switch_caller_extension *) switch_caller_extension_new(switch_core_session *session,
+SWITCH_DECLARE(switch_caller_extension_t *) switch_caller_extension_new(switch_core_session_t *session,
 																	  char *extension_name,
 																	  char *extension_number
 																	  );
@@ -131,8 +131,8 @@ SWITCH_DECLARE(switch_caller_extension *) switch_caller_extension_new(switch_cor
   \param application_name the name of the application
   \param extra_data optional argument to the application
 */
-SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session *session,
-															 switch_caller_extension *caller_extension,
+SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session_t *session,
+															 switch_caller_extension_t *caller_extension,
 															 char *application_name,
 															 char *extra_data);
 
@@ -151,7 +151,7 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
   \param destination_number destination number
   \return a new profile object allocated from the session's memory pool
 */
-SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_pool_t *pool,
+SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memory_pool_t *pool,
 																  char *dialplan,
 																  char *caller_id_name,
 																  char *caller_id_number,
@@ -169,8 +169,8 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_new(switch_memory_
   \param tocopy the existing profile
 */
 	
-SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_session *session,
-																	switch_caller_profile *tocopy);
+SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_core_session_t *session,
+																	switch_caller_profile_t *tocopy);
 
 /*!
   \brief Add headers to an existing event in regards to a specific profile
@@ -179,7 +179,7 @@ SWITCH_DECLARE(switch_caller_profile *) switch_caller_profile_clone(switch_core_
   \param event the event to add the information to
 */
 
-SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile *caller_profile, char *prefix, switch_event_t *event);
+SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_t *caller_profile, char *prefix, switch_event_t *event);
 
 END_EXTERN_C
 

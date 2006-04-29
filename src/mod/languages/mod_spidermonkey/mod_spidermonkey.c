@@ -106,7 +106,7 @@ struct dtmf_callback_state {
 };
 
 struct js_session {
-	switch_core_session *session;
+	switch_core_session_t *session;
 	JSContext *cx;
 	JSObject *obj;
 	unsigned int flags;
@@ -116,13 +116,13 @@ struct teletone_obj {
 	teletone_generation_session_t ts;
 	JSContext *cx;
 	JSObject *obj;
-	switch_core_session *session;
-	switch_codec codec;
-	switch_buffer *audio_buffer;
-	switch_buffer *loop_buffer;
+	switch_core_session_t *session;
+	switch_codec_t codec;
+	switch_buffer_t *audio_buffer;
+	switch_buffer_t *loop_buffer;
 	switch_memory_pool_t *pool;
-	switch_timer *timer;
-	switch_timer timer_base;
+	switch_timer_t *timer;
+	switch_timer_t timer_base;
 	char code_buffer[1024];
 	char ret_val[1024];
 	unsigned int flags;
@@ -175,12 +175,12 @@ static switch_status init_js(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status js_stream_dtmf_callback(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status js_stream_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	char code[2048];
 	struct dtmf_callback_state *cb_state = buf;
 	struct js_session *jss = cb_state->session_state;
-	switch_file_handle *fh = cb_state->extra;
+	switch_file_handle_t *fh = cb_state->extra;
 	jsval rval;
 	char *ret;
 	
@@ -241,7 +241,7 @@ static switch_status js_stream_dtmf_callback(switch_core_session *session, char 
 			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
 			return SWITCH_STATUS_SUCCESS;
 		} else if (!strncasecmp(ret, "seek", 4)) {
-			switch_codec *codec;
+			switch_codec_t *codec;
 			unsigned int samps = 0;
 			unsigned int pos = 0;
 			char *p;
@@ -283,12 +283,12 @@ static switch_status js_stream_dtmf_callback(switch_core_session *session, char 
 }
 
 
-static switch_status js_record_dtmf_callback(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status js_record_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	char code[2048];
 	struct dtmf_callback_state *cb_state = buf;
 	struct js_session *jss = cb_state->session_state;
-	switch_file_handle *fh = cb_state->extra;
+	switch_file_handle_t *fh = cb_state->extra;
 	jsval rval;
 	char *ret;
 	
@@ -344,7 +344,7 @@ static switch_status js_record_dtmf_callback(switch_core_session *session, char 
 }
 
 
-static switch_status js_speak_dtmf_callback(switch_core_session *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status js_speak_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	char code[2048];
 	struct dtmf_callback_state *cb_state = buf;
@@ -392,14 +392,14 @@ static switch_status js_speak_dtmf_callback(switch_core_session *session, char *
 static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_channel *channel;
+	switch_channel_t *channel;
 	char *file_name = NULL;
 	char *dtmf_callback = NULL;
 	void *bp = NULL;
 	int len = 0;
 	switch_dtmf_callback_function dtmf_func = NULL;
 	struct dtmf_callback_state cb_state = {0};
-	switch_file_handle fh;
+	switch_file_handle_t fh;
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -437,7 +437,7 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_channel *channel;
+	switch_channel_t *channel;
 	char *file_name = NULL;
 	char *timer_name = NULL;
 	char *dtmf_callback = NULL;
@@ -445,7 +445,7 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	int len = 0;
 	switch_dtmf_callback_function dtmf_func = NULL;
 	struct dtmf_callback_state cb_state = {0};
-	switch_file_handle fh;
+	switch_file_handle_t fh;
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -489,13 +489,13 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_channel *channel;
+	switch_channel_t *channel;
 	char *tts_name = NULL;
 	char *voice_name = NULL;
 	char *text = NULL;
 	char *dtmf_callback = NULL;
 	char *timer_name = NULL;
-	switch_codec *codec;
+	switch_codec_t *codec;
 	void *bp = NULL;
 	int len = 0;
 	struct dtmf_callback_state cb_state = {0};
@@ -586,7 +586,7 @@ static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval
 static JSBool session_answer(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_channel *channel;
+	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -598,7 +598,7 @@ static JSBool session_answer(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 static JSBool session_ready(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_channel *channel;
+	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -610,7 +610,7 @@ static JSBool session_ready(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 static JSBool session_wait_for_answer(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_channel *channel;
+	switch_channel_t *channel;
 	switch_time_t started;
 	unsigned int elapsed;
 	int32 timeout = 60;
@@ -660,7 +660,7 @@ static JSBool session_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 static JSBool session_hangup(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_channel *channel;
+	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -852,8 +852,8 @@ static JSBool session_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval 
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	int param = 0;
 	JSBool res = JS_TRUE;
-	switch_channel *channel;
-	switch_caller_profile *caller_profile;
+	switch_channel_t *channel;
+	switch_caller_profile_t *caller_profile;
 	char *name;
 
 	channel = switch_core_session_get_channel(jss->session);
@@ -928,7 +928,7 @@ JSClass session_class = {
 };
 
 
-static JSObject *new_js_session(JSContext *cx, JSObject *obj, switch_core_session *session, struct js_session *jss, char *name, int flags) 
+static JSObject *new_js_session(JSContext *cx, JSObject *obj, switch_core_session_t *session, struct js_session *jss, char *name, int flags) 
 {
 	JSObject *session_obj;
 	if ((session_obj = JS_DefineObject(cx, obj, name, &session_class, NULL, 0))) {
@@ -969,8 +969,8 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 	if (argc > 2) {
 		struct js_session *jss = NULL;
 		JSObject *session_obj;
-		switch_core_session *session = NULL, *peer_session = NULL;
-		switch_caller_profile *caller_profile = NULL;
+		switch_core_session_t *session = NULL, *peer_session = NULL;
+		switch_caller_profile_t *caller_profile = NULL;
 		char *channel_type = NULL;
 		char *dest = NULL;
 		char *dialplan = NULL;
@@ -1053,7 +1053,7 @@ static void session_destroy(JSContext *cx, JSObject *obj)
 	if (cx && obj) {
 		if ((jss = JS_GetPrivate(cx, obj))) {
 			if (switch_test_flag(jss, S_HUP)) {
-				switch_channel *channel;
+				switch_channel_t *channel;
 
 				if (jss->session) {
 					channel = switch_core_session_get_channel(jss->session);
@@ -1471,7 +1471,7 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 	JSObject *session_obj;
 	struct teletone_obj *tto = NULL;
 	struct js_session *jss = NULL;
-	switch_codec *read_codec;
+	switch_codec_t *read_codec;
 	switch_memory_pool_t *pool;
 	char *timer_name = NULL;
 
@@ -1601,13 +1601,13 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 
 	if (argc > 0) {
 		char *script;
-		switch_core_session *session;
-		switch_frame write_frame = {0};
+		switch_core_session_t *session;
+		switch_frame_t write_frame = {0};
 		unsigned char *fdata[1024];
-		switch_frame *read_frame;
+		switch_frame_t *read_frame;
 		int stream_id;
-		switch_core_thread_session thread_session;
-		switch_channel *channel;
+		switch_core_thread_session_t thread_session;
+		switch_channel_t *channel;
 
 		if (argc > 1) {
 			if (!JS_ValueToInt32(cx, argv[1], &loops)) {
@@ -1676,7 +1676,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			}
 			if ((write_frame.datalen = (uint32_t)switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
 				if (loops > 0) { 
-					switch_buffer *tmp;
+					switch_buffer_t *tmp;
 
 					/* Switcharoo*/
 					tmp = tto->audio_buffer;
@@ -2059,7 +2059,7 @@ static int env_init(JSContext *cx, JSObject *javascript_object)
 	return 1;
 }
 
-static void js_parse_and_execute(switch_core_session *session, char *input_code)
+static void js_parse_and_execute(switch_core_session_t *session, char *input_code)
 {
 	JSObject *javascript_global_object = NULL;
 	char buf[1024], *script, *arg, *argv[512];

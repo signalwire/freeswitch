@@ -43,10 +43,10 @@ static switch_status load_function(char *mod, char *out, size_t outlen)
 
 static switch_status kill_function(char *dest, char *out, size_t outlen)
 {
-	switch_core_session *session = NULL;
+	switch_core_session_t *session = NULL;
 
 	if ((session = switch_core_session_locate(dest))) {
-		switch_channel *channel = switch_core_session_get_channel(session);
+		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		switch_core_session_rwunlock(session);
@@ -61,7 +61,7 @@ static switch_status kill_function(char *dest, char *out, size_t outlen)
 
 static switch_status transfer_function(char *cmd, char *out, size_t outlen)
 {
-	switch_core_session *session = NULL;
+	switch_core_session_t *session = NULL;
 	char *argv[4] = {0};
 	int argc = 0;
 	
@@ -98,7 +98,7 @@ static switch_status transfer_function(char *cmd, char *out, size_t outlen)
 
 static switch_status pause_function(char *cmd, char *out, size_t outlen)
 {
-	switch_core_session *session = NULL;
+	switch_core_session_t *session = NULL;
 	char *argv[4] = {0};
 	int argc = 0;
 	
@@ -111,7 +111,7 @@ static switch_status pause_function(char *cmd, char *out, size_t outlen)
 		char *dest = argv[1];
 		
 		if ((session = switch_core_session_locate(uuid))) {
-			switch_channel *channel = switch_core_session_get_channel(session);
+			switch_channel_t *channel = switch_core_session_get_channel(session);
 
 			if (!strcasecmp(dest, "on")) {
 				switch_channel_set_flag(channel, CF_HOLD);

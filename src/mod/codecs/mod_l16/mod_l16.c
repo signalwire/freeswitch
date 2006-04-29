@@ -34,8 +34,8 @@
 static const char modname[] = "mod_rawaudio";
 
 
-static switch_status switch_raw_init(switch_codec *codec, switch_codec_flag flags,
-									 const struct switch_codec_settings *codec_settings)
+static switch_status switch_raw_init(switch_codec_t *codec, switch_codec_flag flags,
+									 const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
 
@@ -49,8 +49,8 @@ static switch_status switch_raw_init(switch_codec *codec, switch_codec_flag flag
 	}
 }
 
-static switch_status switch_raw_encode(switch_codec *codec,
-									   switch_codec *other_codec,
+static switch_status switch_raw_encode(switch_codec_t *codec,
+									   switch_codec_t *other_codec,
 									   void *decoded_data,
 									   uint32_t decoded_data_len,
 									   uint32_t decoded_rate,
@@ -67,8 +67,8 @@ static switch_status switch_raw_encode(switch_codec *codec,
 	return SWITCH_STATUS_NOOP;
 }
 
-static switch_status switch_raw_decode(switch_codec *codec,
-									   switch_codec *other_codec,
+static switch_status switch_raw_decode(switch_codec_t *codec,
+									   switch_codec_t *other_codec,
 									   void *encoded_data,
 									   uint32_t encoded_data_len,
 									   uint32_t encoded_rate,
@@ -84,13 +84,13 @@ static switch_status switch_raw_decode(switch_codec *codec,
 }
 
 
-static switch_status switch_raw_destroy(switch_codec *codec)
+static switch_status switch_raw_destroy(switch_codec_t *codec)
 {
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_codec_implementation raw_32k_implementation = {
+static const switch_codec_implementation_t raw_32k_implementation = {
 	/*.samples_per_second = */ 32000,
 	/*.bits_per_second = */ 512000,
 	/*.microseconds_per_frame = */ 20000,
@@ -106,7 +106,7 @@ static const switch_codec_implementation raw_32k_implementation = {
 	/*.destroy = */ switch_raw_destroy
 };
 
-static const switch_codec_implementation raw_22k_implementation = {
+static const switch_codec_implementation_t raw_22k_implementation = {
 	/*.samples_per_second = */ 22050,
 	/*.bits_per_second = */ 352800,
 	/*.microseconds_per_frame = */ 20000,
@@ -123,7 +123,7 @@ static const switch_codec_implementation raw_22k_implementation = {
 	/*.next = */ &raw_32k_implementation
 };
 
-static const switch_codec_implementation raw_16k_implementation = {
+static const switch_codec_implementation_t raw_16k_implementation = {
 	/*.samples_per_second = */ 16000,
 	/*.bits_per_second = */ 256000,
 	/*.microseconds_per_frame = */ 20000,
@@ -140,7 +140,7 @@ static const switch_codec_implementation raw_16k_implementation = {
 	/*.next = */ &raw_22k_implementation
 };
 
-static const switch_codec_implementation raw_8k_implementation = {
+static const switch_codec_implementation_t raw_8k_implementation = {
 	/*.samples_per_second = */ 8000,
 	/*.bits_per_second = */ 128000,
 	/*.microseconds_per_frame = */ 20000,
@@ -158,7 +158,7 @@ static const switch_codec_implementation raw_8k_implementation = {
 };
 
 
-static const switch_codec_implementation raw_8k_30ms_implementation = {
+static const switch_codec_implementation_t raw_8k_30ms_implementation = {
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 128000,
 	/*.microseconds_per_frame */ 30000,

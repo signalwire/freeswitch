@@ -44,8 +44,8 @@ struct ilbc_context {
 	uint16_t dbytes;
 };
 
-static switch_status switch_ilbc_init(switch_codec *codec, switch_codec_flag flags,
-									  const struct switch_codec_settings *codec_settings) 
+static switch_status switch_ilbc_init(switch_codec_t *codec, switch_codec_flag flags,
+									  const switch_codec_settings_t *codec_settings) 
 {
 	struct ilbc_context *context;
 	int encoding, decoding;
@@ -86,15 +86,15 @@ static switch_status switch_ilbc_init(switch_codec *codec, switch_codec_flag fla
 }
 
 
-static switch_status switch_ilbc_destroy(switch_codec *codec) 
+static switch_status switch_ilbc_destroy(switch_codec_t *codec) 
 {
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static switch_status switch_ilbc_encode(switch_codec *codec,
-										 switch_codec *other_codec,
+static switch_status switch_ilbc_encode(switch_codec_t *codec,
+										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
 										 uint32_t decoded_rate,
@@ -136,8 +136,8 @@ static switch_status switch_ilbc_encode(switch_codec *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_ilbc_decode(switch_codec *codec,
-										switch_codec *other_codec,
+static switch_status switch_ilbc_decode(switch_codec_t *codec,
+										switch_codec_t *other_codec,
 										void *encoded_data,
 										uint32_t encoded_data_len,
 										uint32_t encoded_rate,
@@ -185,7 +185,7 @@ static switch_status switch_ilbc_decode(switch_codec *codec,
 
 /* Registration */ 
 
-static const switch_codec_implementation ilbc_8k_30ms_implementation = { 
+static const switch_codec_implementation_t ilbc_8k_30ms_implementation = { 
 		/*.samples_per_second */ 8000, 
 		/*.bits_per_second */ NO_OF_BYTES_30MS*8*8000/BLOCKL_30MS,
 		/*.microseconds_per_frame */ 30000,
@@ -201,7 +201,7 @@ static const switch_codec_implementation ilbc_8k_30ms_implementation = {
 		/*.destroy */ switch_ilbc_destroy
 };
 
-static const switch_codec_implementation ilbc_8k_20ms_implementation = { 
+static const switch_codec_implementation_t ilbc_8k_20ms_implementation = { 
 		/*.samples_per_second */ 8000, 
 		/*.bits_per_second */ NO_OF_BYTES_20MS*8*8000/BLOCKL_20MS, 
 		/*.microseconds_per_frame */ 20000,
@@ -219,7 +219,7 @@ static const switch_codec_implementation ilbc_8k_20ms_implementation = {
 };
 
 
-static const switch_codec_implementation ilbc_8k_20ms_nonext_implementation = { 
+static const switch_codec_implementation_t ilbc_8k_20ms_nonext_implementation = { 
 		/*.samples_per_second */ 8000, 
 		/*.bits_per_second */ NO_OF_BYTES_20MS*8*8000/BLOCKL_20MS, 
 		/*.microseconds_per_frame */ 20000,

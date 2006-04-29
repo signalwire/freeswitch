@@ -29,8 +29,8 @@
  * switch_console.c -- Simple Console
  *
  */
-#include <switch_console.h>
 #include <switch.h>
+#include <switch_console.h>
 #define CMD_BUFLEN 1024 * 1000
 
 static int switch_console_process(char *cmd, char *retbuf, int retlen)

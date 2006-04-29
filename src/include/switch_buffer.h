@@ -60,53 +60,53 @@ struct switch_buffer;
  * \param max_len length required by the buffer
  * \return status
  */
-SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer **buffer, switch_size_t max_len);
+SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len);
 
-/*! \brief Get the length of a switch_buffer 
- * \param buffer any buffer of type switch_buffer
+/*! \brief Get the length of a switch_buffer_t 
+ * \param buffer any buffer of type switch_buffer_t
  * \return int size of the buffer.
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_len(switch_buffer *buffer);
+SWITCH_DECLARE(switch_size_t) switch_buffer_len(switch_buffer_t *buffer);
 
-/*! \brief Get the freespace of a switch_buffer 
- * \param buffer any buffer of type switch_buffer
+/*! \brief Get the freespace of a switch_buffer_t 
+ * \param buffer any buffer of type switch_buffer_t
  * \return int freespace in the buffer.
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_freespace(switch_buffer *buffer);
+SWITCH_DECLARE(switch_size_t) switch_buffer_freespace(switch_buffer_t *buffer);
 
-/*! \brief Get the in use amount of a switch_buffer 
- * \param buffer any buffer of type switch_buffer
+/*! \brief Get the in use amount of a switch_buffer_t 
+ * \param buffer any buffer of type switch_buffer_t
  * \return int ammount of buffer curently in use
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_inuse(switch_buffer *buffer);
+SWITCH_DECLARE(switch_size_t) switch_buffer_inuse(switch_buffer_t *buffer);
 
-/*! \brief Read data from a switch_buffer up to the ammount of datalen if it is available.  Remove read data from buffer. 
- * \param buffer any buffer of type switch_buffer
+/*! \brief Read data from a switch_buffer_t up to the ammount of datalen if it is available.  Remove read data from buffer. 
+ * \param buffer any buffer of type switch_buffer_t
  * \param data pointer to the read data to be returned
  * \param datalen amount of data to be returned
  * \return int ammount of data actually read
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer *buffer, void *data, switch_size_t datalen);
+SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *data, switch_size_t datalen);
 
-/*! \brief Write data into a switch_buffer up to the length of datalen
- * \param buffer any buffer of type switch_buffer
+/*! \brief Write data into a switch_buffer_t up to the length of datalen
+ * \param buffer any buffer of type switch_buffer_t
  * \param data pointer to the data to be written
  * \param datalen amount of data to be written
  * \return int amount of buffer used after the write, or 0 if no space available
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer *buffer, void *data, switch_size_t datalen);
+SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void *data, switch_size_t datalen);
 
 /*! \brief Remove data from the buffer
- * \param buffer any buffer of type switch_buffer
+ * \param buffer any buffer of type switch_buffer_t
  * \param datalen amount of data to be removed
  * \return int size of buffer, or 0 if unable to toss that much data
  */
-SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer *buffer, switch_size_t datalen);
+SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer_t *buffer, switch_size_t datalen);
 
 /*! \brief Remove all data from the buffer
- * \param buffer any buffer of type switch_buffer
+ * \param buffer any buffer of type switch_buffer_t
  */
-SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer *buffer);
+SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer);
 /** @} */
 
 END_EXTERN_C
