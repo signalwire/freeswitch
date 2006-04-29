@@ -44,7 +44,7 @@ struct ilbc_context {
 	uint16_t dbytes;
 };
 
-static switch_status switch_ilbc_init(switch_codec_t *codec, switch_codec_flag flags,
+static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									  const switch_codec_settings_t *codec_settings) 
 {
 	struct ilbc_context *context;
@@ -86,14 +86,14 @@ static switch_status switch_ilbc_init(switch_codec_t *codec, switch_codec_flag f
 }
 
 
-static switch_status switch_ilbc_destroy(switch_codec_t *codec) 
+static switch_status_t switch_ilbc_destroy(switch_codec_t *codec) 
 {
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static switch_status switch_ilbc_encode(switch_codec_t *codec,
+static switch_status_t switch_ilbc_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
@@ -136,7 +136,7 @@ static switch_status switch_ilbc_encode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_ilbc_decode(switch_codec_t *codec,
+static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
 										switch_codec_t *other_codec,
 										void *encoded_data,
 										uint32_t encoded_data_len,
@@ -236,7 +236,7 @@ static const switch_codec_implementation_t ilbc_8k_20ms_nonext_implementation = 
 };
 
 
-static const switch_codec_interface ilbc_20ms_codec_interface = { 
+static const switch_codec_interface_t ilbc_20ms_codec_interface = { 
 		/*.interface_name */ "ilbc", 
 		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 97, 
@@ -244,7 +244,7 @@ static const switch_codec_interface ilbc_20ms_codec_interface = {
 		/*.implementations */ &ilbc_8k_20ms_nonext_implementation
 };
 
-static const switch_codec_interface ilbc_102_codec_interface = { 
+static const switch_codec_interface_t ilbc_102_codec_interface = { 
 		/*.interface_name */ "ilbc", 
 		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 102, 
@@ -253,7 +253,7 @@ static const switch_codec_interface ilbc_102_codec_interface = {
 		/*.next*/ &ilbc_20ms_codec_interface
 };
 
-static const switch_codec_interface ilbc_codec_interface = { 
+static const switch_codec_interface_t ilbc_codec_interface = { 
 		/*.interface_name */ "ilbc", 
 		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 97, 
@@ -263,7 +263,7 @@ static const switch_codec_interface ilbc_codec_interface = {
 };
 
 
-static switch_loadable_module_interface ilbc_module_interface = { 
+static switch_loadable_module_interface_t ilbc_module_interface = { 
 		/*.module_name */ modname, 
 		/*.endpoint_interface */ NULL, 
 		/*.timer_interface */ NULL, 
@@ -274,7 +274,7 @@ static switch_loadable_module_interface ilbc_module_interface = {
 
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface,
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface,
 														char *filename)
 {
 	

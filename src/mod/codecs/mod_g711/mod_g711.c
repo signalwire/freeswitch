@@ -36,7 +36,7 @@
 static const char modname[] = "mod_g711codec";
 
 
-static switch_status switch_g711u_init(switch_codec_t *codec, switch_codec_flag flags,
+static switch_status_t switch_g711u_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									   const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
@@ -52,7 +52,7 @@ static switch_status switch_g711u_init(switch_codec_t *codec, switch_codec_flag 
 }
 
 
-static switch_status switch_g711u_encode(switch_codec_t *codec,
+static switch_status_t switch_g711u_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
@@ -76,7 +76,7 @@ static switch_status switch_g711u_encode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_g711u_decode(switch_codec_t *codec,
+static switch_status_t switch_g711u_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
@@ -105,13 +105,13 @@ static switch_status switch_g711u_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_g711u_destroy(switch_codec_t *codec)
+static switch_status_t switch_g711u_destroy(switch_codec_t *codec)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static switch_status switch_g711a_init(switch_codec_t *codec, switch_codec_flag flags,
+static switch_status_t switch_g711a_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									   const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
@@ -127,7 +127,7 @@ static switch_status switch_g711a_init(switch_codec_t *codec, switch_codec_flag 
 }
 
 
-static switch_status switch_g711a_encode(switch_codec_t *codec,
+static switch_status_t switch_g711a_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
@@ -151,7 +151,7 @@ static switch_status switch_g711a_encode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_g711a_decode(switch_codec_t *codec,
+static switch_status_t switch_g711a_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
@@ -180,7 +180,7 @@ static switch_status switch_g711a_decode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_g711a_destroy(switch_codec_t *codec)
+static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -275,7 +275,7 @@ static const switch_codec_implementation_t g711a_8k_implementation = {
 };
 
 
-static const switch_codec_interface g711a_codec_interface = {
+static const switch_codec_interface_t g711a_codec_interface = {
 	/*.interface_name */ "g711 alaw",
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 8,
@@ -283,7 +283,7 @@ static const switch_codec_interface g711a_codec_interface = {
 	/*.implementations */ &g711a_8k_implementation
 };
 
-static const switch_codec_interface g711u_codec_interface = {
+static const switch_codec_interface_t g711u_codec_interface = {
 	/*.interface_name */ "g711 ulaw",
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
@@ -292,7 +292,7 @@ static const switch_codec_interface g711u_codec_interface = {
 	/*.next */ &g711a_codec_interface
 };
 
-static switch_loadable_module_interface g711_module_interface = {
+static switch_loadable_module_interface_t g711_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -302,7 +302,7 @@ static switch_loadable_module_interface g711_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &g711_module_interface;

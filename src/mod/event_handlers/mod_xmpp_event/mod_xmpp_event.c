@@ -95,10 +95,10 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_jid, globals.jid)
 	SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_passwd, globals.passwd)
 
 
-	 static switch_status load_config(void)
+	 static switch_status_t load_config(void)
 {
 	switch_config_t cfg;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *var, *val;
 	char *cf = "xmpp_event.conf";
 	int count = 0;
@@ -346,7 +346,7 @@ static void xmpp_connect(char *jabber_id, char *pass)
 
 }
 
-static switch_loadable_module_interface xmpp_event_module_interface = {
+static switch_loadable_module_interface_t xmpp_event_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -355,7 +355,7 @@ static switch_loadable_module_interface xmpp_event_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &xmpp_event_module_interface;
@@ -369,7 +369,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 }
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
 
 	if (RUNNING) {
@@ -382,7 +382,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 {
 	RUNNING = 1;
 	xmpp_connect(globals.jid, globals.passwd);

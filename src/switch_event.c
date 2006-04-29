@@ -233,7 +233,7 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event)
 }
 
 
-SWITCH_DECLARE(switch_status) switch_event_running(void)
+SWITCH_DECLARE(switch_status_t) switch_event_running(void)
 {
 	return THREAD_RUNNING ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
@@ -246,7 +246,7 @@ SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event)
 	return EVENT_NAMES[event];
 }
 
-SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name)
+SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name)
 {
 
 	switch_event_subclass_t *subclass;
@@ -271,7 +271,7 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
 
 }
 
-SWITCH_DECLARE(switch_status) switch_event_shutdown(void)
+SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 {
 	int x = 0, last = 0;
 
@@ -289,7 +289,7 @@ SWITCH_DECLARE(switch_status) switch_event_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
@@ -329,7 +329,7 @@ SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool_t *pool)
 
 }
 
-SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event_t **event,
+SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **event,
 														   switch_event_types_t event_id,
 														   char *subclass_name)
 {
@@ -352,7 +352,7 @@ SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event_t **even
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_set_priority(switch_event_t *event, switch_priority_t priority)
+SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event, switch_priority_t priority)
 {
 	event->priority = priority;
 	switch_event_add_header(event, SWITCH_STACK_TOP, "priority", switch_priority_name(priority));
@@ -372,7 +372,7 @@ SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *head
 	return NULL;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event_t *event, switch_stack_t stack, char *header_name,
+SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack, char *header_name,
 													  char *fmt, ...)
 {
 	int ret = 0;
@@ -414,7 +414,7 @@ SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event_t *event, swi
 }
 
 
-SWITCH_DECLARE(switch_status) switch_event_add_body(switch_event_t *event, char *fmt, ...)
+SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, char *fmt, ...)
 {
 	int ret = 0;
 	char data[2048];
@@ -449,7 +449,7 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 	*event = NULL;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_dup(switch_event_t **event, switch_event_t *todup)
+SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_event_t *todup)
 {
 	switch_event_header_t *header, *hp, *hp2;
 
@@ -483,7 +483,7 @@ SWITCH_DECLARE(switch_status) switch_event_dup(switch_event_t **event, switch_ev
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event_t *event, char *buf, switch_size_t buflen, char *fmt, ...)
+SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char *buf, switch_size_t buflen, char *fmt, ...)
 {
 	switch_size_t len = 0;
 	switch_event_header_t *hp;
@@ -536,7 +536,7 @@ SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event_t *event, char
 }
 
 
-SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event,
+SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event,
 														 void *user_data)
 {
 
@@ -579,7 +579,7 @@ SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name,
+SWITCH_DECLARE(switch_status_t) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name,
 												switch_event_callback_t callback, void *user_data)
 {
 	switch_event_node_t *event_node;

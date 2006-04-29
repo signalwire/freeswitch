@@ -39,7 +39,7 @@ static const char modname[] = "mod_ivrtest";
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
    if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
-static switch_status on_dtmf(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status_t on_dtmf(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
 	
@@ -61,7 +61,7 @@ static void dirtest_function(switch_core_session_t *session, char *data)
 {
 	char *var, *val;
 	switch_channel_t *channel;
-	switch_directory_handle dh;
+	switch_directory_handle_t dh;
 
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -90,7 +90,7 @@ static void dirtest_function(switch_core_session_t *session, char *data)
 
 }
 
-static switch_status show_dtmf(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status_t show_dtmf(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
 	
@@ -137,7 +137,7 @@ static void tts_function(switch_core_session_t *session, char *data)
 static void ivrtest_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
-	switch_status status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_codec_t *codec;
 	char buf[10] = "";
 	char term;
@@ -182,7 +182,7 @@ static void ivrtest_function(switch_core_session_t *session, char *data)
 }
 
 
-static switch_status my_on_hangup(switch_core_session_t *session)
+static switch_status_t my_on_hangup(switch_core_session_t *session)
 {
 	switch_channel_t *channel;
 
@@ -204,35 +204,35 @@ static const switch_state_handler_table_t state_handlers = {
 };
 
 
-static const switch_application_interface disast_application_interface = {
+static const switch_application_interface_t disast_application_interface = {
 	/*.interface_name */ "disast",
 	/*.application_function */ disast_function,
 	NULL, NULL, NULL,
 	/*.next*/ NULL
 };
 
-static const switch_application_interface tts_application_interface = {
+static const switch_application_interface_t tts_application_interface = {
 	/*.interface_name */ "tts",
 	/*.application_function */ tts_function,
 	NULL, NULL, NULL,
 	/*.next*/ &disast_application_interface
 };
 
-static const switch_application_interface dirtest_application_interface = {
+static const switch_application_interface_t dirtest_application_interface = {
 	/*.interface_name */ "dirtest",
 	/*.application_function */ dirtest_function,
 	NULL, NULL, NULL,
 	/*.next*/ &tts_application_interface
 };
 
-static const switch_application_interface ivrtest_application_interface = {
+static const switch_application_interface_t ivrtest_application_interface = {
 	/*.interface_name */ "ivrtest",
 	/*.application_function */ ivrtest_function,
 	NULL, NULL, NULL,
 	/*.next*/ &dirtest_application_interface
 };
 
-static const switch_loadable_module_interface mod_ivrtest_module_interface = {
+static const switch_loadable_module_interface_t mod_ivrtest_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
@@ -241,7 +241,7 @@ static const switch_loadable_module_interface mod_ivrtest_module_interface = {
 	/*.application_interface */ &ivrtest_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */
@@ -259,4 +259,4 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 */
 
 
-//switch_status switch_module_runtime(void)
+//switch_status_t switch_module_runtime(void)

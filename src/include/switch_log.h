@@ -59,14 +59,14 @@ typedef struct {
 	/*! The function where the message originated */	
 	char *func;
 	/*! The log level of the message */	
-	switch_log_level level;
+	switch_log_level_t level;
 	/*! The time when the log line was sent */
 	switch_time_t timestamp;
 	/*! A pointer to where the actual content of the message starts (skipping past the preformatted portion) */	
 	char *content;
-} switch_log_node;
+} switch_log_node_t;
 
-typedef switch_status (*switch_log_function)(const switch_log_node *node, switch_log_level level);
+typedef switch_status_t (*switch_log_function_t)(const switch_log_node_t *node, switch_log_level_t level);
 
 
 /*! 
@@ -74,13 +74,13 @@ typedef switch_status (*switch_log_function)(const switch_log_node *node, switch
   \param pool the memory pool to use
   \note to be called at application startup by the core
 */
-SWITCH_DECLARE(switch_status) switch_log_init(switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool);
 
 /*! 
   \brief Shut down the logging engine
   \note to be called at application termination by the core
 */
-SWITCH_DECLARE(switch_status) switch_log_shutdown(void);
+SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void);
 
 
 /*! 
@@ -94,27 +94,27 @@ SWITCH_DECLARE(switch_status) switch_log_shutdown(void);
   \param ... variable args
   \note there are channel macros to supply the first 4 parameters
 */
-SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, const char *func, int line, switch_log_level level, char *fmt, ...);
+SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, char *file, const char *func, int line, switch_log_level_t level, char *fmt, ...);
 
 /*! 
   \brief Shut down  the logging engine
   \note to be called at application termination by the core
 */
-SWITCH_DECLARE(switch_status) switch_log_bind_logger(switch_log_function function, switch_log_level level);
+SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t function, switch_log_level_t level);
 
 /*! 
   \brief Return the name of the specified log level
   \param level the level
   \return the name of the log level
 */
-SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level level);
+SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level);
 
 /*! 
   \brief Return the level number of the specified log level name
   \param str the name of the level
   \return the log level
 */
-SWITCH_DECLARE(switch_log_level) switch_log_str2level(const char *str);
+SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str);
 
 ///\}
 END_EXTERN_C

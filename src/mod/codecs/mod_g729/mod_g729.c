@@ -42,7 +42,7 @@ struct g729_context {
 };
 
 
-static switch_status switch_g729_init(switch_codec_t *codec, switch_codec_flag flags,
+static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									  const switch_codec_settings_t *codec_settings) 
 {
 
@@ -72,7 +72,7 @@ static switch_status switch_g729_init(switch_codec_t *codec, switch_codec_flag f
 }
 
 
-static switch_status switch_g729_destroy(switch_codec_t *codec) 
+static switch_status_t switch_g729_destroy(switch_codec_t *codec) 
 {
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
@@ -80,7 +80,7 @@ static switch_status switch_g729_destroy(switch_codec_t *codec)
 
 
 
-static switch_status switch_g729_encode(switch_codec_t *codec, 
+static switch_status_t switch_g729_encode(switch_codec_t *codec, 
 										switch_codec_t *other_codec, 
 										void *decoded_data,
 
@@ -127,7 +127,7 @@ static switch_status switch_g729_encode(switch_codec_t *codec,
 
 
 
-static switch_status switch_g729_decode(switch_codec_t *codec, 
+static switch_status_t switch_g729_decode(switch_codec_t *codec, 
 										switch_codec_t *other_codec, 
 										void *encoded_data,
 
@@ -252,7 +252,7 @@ static const switch_codec_implementation_t g729_8k_implementation = {
 };
 
 
-static const switch_codec_interface g729_codec_interface = { 
+static const switch_codec_interface_t g729_codec_interface = { 
 	/*.interface_name */ "g729", 
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 	/*.ianacode */ 18, 
@@ -261,7 +261,7 @@ static const switch_codec_interface g729_codec_interface = {
 };
 
 
-static switch_loadable_module_interface g729_module_interface = { 
+static switch_loadable_module_interface_t g729_module_interface = { 
 	/*.module_name */ modname, 
 	/*.endpoint_interface */ NULL, 
 	/*.timer_interface */ NULL, 
@@ -272,7 +272,7 @@ static switch_loadable_module_interface g729_module_interface = {
 
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface,
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface,
 													 char *filename)
 {
 

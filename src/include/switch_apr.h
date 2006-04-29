@@ -1390,7 +1390,7 @@ typedef apr_thread_mutex_t switch_mutex_t;
  * most optimial mutex based on a given platform's performance charateristics,
  * it will behave as either a nested or an unnested lock.
  *
-SWITCH_DECLARE(switch_status) switch_mutex_init(switch_mutex_t **lock,
+SWITCH_DECLARE(switch_status_t) switch_mutex_init(switch_mutex_t **lock,
 												switch_lock_flag flags,
 												switch_memory_pool_t *pool);
 */
@@ -1399,7 +1399,7 @@ SWITCH_DECLARE(switch_status) switch_mutex_init(switch_mutex_t **lock,
  * Destroy the mutex and free the memory associated with the lock.
  * @param lock the mutex to destroy.
  */
-//SWITCH_DECLARE(switch_status) switch_mutex_destroy(switch_mutex_t *lock);
+//SWITCH_DECLARE(switch_status_t) switch_mutex_destroy(switch_mutex_t *lock);
 #define switch_mutex_destroy apr_thread_mutex_destroy
 
 /**
@@ -1407,14 +1407,14 @@ SWITCH_DECLARE(switch_status) switch_mutex_init(switch_mutex_t **lock,
  * the current thread will be put to sleep until the lock becomes available.
  * @param lock the mutex on which to acquire the lock.
  */
-//SWITCH_DECLARE(switch_status) switch_mutex_lock(switch_mutex_t *lock);
+//SWITCH_DECLARE(switch_status_t) switch_mutex_lock(switch_mutex_t *lock);
 #define switch_mutex_lock apr_thread_mutex_lock
 
 /**
  * Release the lock for the given mutex.
  * @param lock the mutex from which to release the lock.
  */
-//SWITCH_DECLARE(switch_status) switch_mutex_unlock(switch_mutex_t *lock);
+//SWITCH_DECLARE(switch_status_t) switch_mutex_unlock(switch_mutex_t *lock);
 #define switch_mutex_unlock apr_thread_mutex_unlock
 
 /**
@@ -1424,7 +1424,7 @@ SWITCH_DECLARE(switch_status) switch_mutex_init(switch_mutex_t **lock,
  * if the return value was APR_EBUSY, for portability reasons.
  * @param lock the mutex on which to attempt the lock acquiring.
  */
-//SWITCH_DECLARE(switch_status) switch_mutex_trylock(switch_mutex_t *lock);
+//SWITCH_DECLARE(switch_status_t) switch_mutex_trylock(switch_mutex_t *lock);
 #define switch_mutex_trylock apr_thread_mutex_trylock
 
 /** @} */

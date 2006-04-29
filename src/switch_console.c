@@ -69,7 +69,7 @@ static int switch_console_process(char *cmd, char *retbuf, int retlen)
 	return 1;
 }
 
-SWITCH_DECLARE(void) switch_console_printf(switch_text_channel channel, char *file, const char *func, int line,
+SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, char *file, const char *func, int line,
 										   char *fmt, ...)
 {
 	char *data = NULL;

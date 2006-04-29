@@ -45,7 +45,7 @@ BEGIN_EXTERN_C
 ///\defgroup rtp RTP (RealTime Transport Protocol)
 ///\ingroup core1
 ///\{
-typedef void (*switch_rtp_invalid_handler)(switch_rtp_t *rtp_session,
+typedef void (*switch_rtp_invalid_handler_t)(switch_rtp_t *rtp_session,
 										   switch_socket_t *sock,
 										   void *data,
 										   switch_size_t datalen,
@@ -76,7 +76,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void);
   \param pool a memory pool to use for the session
   \return the new RTP session or NULL on failure
 */
-SWITCH_DECLARE(switch_status)switch_rtp_create(switch_rtp_t **new_rtp_session,
+SWITCH_DECLARE(switch_status_t)switch_rtp_create(switch_rtp_t **new_rtp_session,
 											   switch_payload_t payload,
 											   uint32_t packet_size,
 											   uint32_t ms_per_packet,
@@ -121,7 +121,7 @@ SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
   \param port the remote port
   \param err pointer for error messages
 */
-SWITCH_DECLARE(switch_status) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err);
 
 /*! 
   \brief Assign a local address to the RTP session
@@ -131,7 +131,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_set_remote_address(switch_rtp_t *rtp_se
   \param err pointer for error messages
   \note this call also binds the RTP session's socket to the new address
 */
-SWITCH_DECLARE(switch_status) switch_rtp_set_local_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, char *host, switch_port_t port, const char **err);
 
 /*! 
   \brief Kill the socket on an existing RTP session
@@ -149,7 +149,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session);
   \brief Acvite ICE on an RTP session
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin);
+SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin);
 
 /*!
   \brief Set an RTP Flag
@@ -215,7 +215,7 @@ SWITCH_DECLARE(uint32_t) switch_rtp_get_default_payload(switch_rtp_t *rtp_sessio
   \param on_invalid the function to set
   \return 
 */
-SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp_t *rtp_session, switch_rtp_invalid_handler on_invalid);
+SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp_t *rtp_session, switch_rtp_invalid_handler_t on_invalid);
 
 /*! 
   \brief Read data from a given RTP session
@@ -226,7 +226,7 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp_t *rtp_session, sw
   \param flags flags
   \return the number of bytes read
 */
-SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp_t *rtp_session, void *data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag *flags);
+SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void *data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags);
 
 /*! 
   \brief Read data from a given RTP session without copying
@@ -237,7 +237,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_read(switch_rtp_t *rtp_session, void *d
   \param flags flags
   \return the number of bytes read
 */
-SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session, void **data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag *flags);
+SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session, void **data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags);
 
 /*! 
   \brief Read data from a given RTP session without copying
@@ -245,7 +245,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session
   \param frame a frame to populate with information
   \return the number of bytes read
 */
-SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame);
+SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame);
 
 /*! 
   \brief Write data to a given RTP session
@@ -256,7 +256,7 @@ SWITCH_DECLARE(switch_status) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_s
   \param flags frame flags
   \return the number of bytes written
 */
-SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint32_t ts, switch_frame_flag *flags);
+SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint32_t datalen, uint32_t ts, switch_frame_flag_t *flags);
 
 /*!
   \brief Enable VAD on an RTP Session
@@ -266,14 +266,14 @@ SWITCH_DECLARE(int) switch_rtp_write(switch_rtp_t *rtp_session, void *data, uint
   \param flags flags for control
   \return SWITCH_STAUTS_SUCCESS on success
 */
-SWITCH_DECLARE(switch_status) switch_rtp_enable_vad(switch_rtp_t *rtp_session, switch_core_session_t *session, switch_codec_t *codec, switch_vad_flag_t flags);
+SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session, switch_core_session_t *session, switch_codec_t *codec, switch_vad_flag_t flags);
 
 /*!
   \brief Disable VAD on an RTP Session
   \param rtp_session the RTP session
   \return SWITCH_STAUTS_SUCCESS on success
 */
-SWITCH_DECLARE(switch_status) switch_rtp_disable_vad(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(switch_status_t) switch_rtp_disable_vad(switch_rtp_t *rtp_session);
 
 /*! 
   \brief Write data to a given RTP session
@@ -296,7 +296,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
   \param flags frame flags
   \return the number of bytes written
 */
-SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session, void *data, uint16_t datalen, uint8_t m, switch_payload_t payload, uint32_t ts, uint16_t mseq, switch_frame_flag *flags);
+SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session, void *data, uint16_t datalen, uint8_t m, switch_payload_t payload, uint32_t ts, uint16_t mseq, switch_frame_flag_t *flags);
 
 /*! 
   \brief Retrieve the SSRC from a given RTP session

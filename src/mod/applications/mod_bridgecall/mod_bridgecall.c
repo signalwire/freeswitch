@@ -80,13 +80,13 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 }
 
 
-static const switch_application_interface bridge_application_interface = {
+static const switch_application_interface_t bridge_application_interface = {
 	/*.interface_name */ "bridge",
 	/*.application_function */ audio_bridge_function
 };
 
 
-static const switch_loadable_module_interface mod_bridgecall_module_interface = {
+static const switch_loadable_module_interface_t mod_bridgecall_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
@@ -95,7 +95,7 @@ static const switch_loadable_module_interface mod_bridgecall_module_interface = 
 	/*.application_interface */ &bridge_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

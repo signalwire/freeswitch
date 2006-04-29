@@ -34,7 +34,7 @@
 static const char modname[] = "mod_console";
 static const uint8_t STATIC_LEVELS[] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
-static switch_loadable_module_interface console_module_interface = {
+static switch_loadable_module_interface_t console_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -78,7 +78,7 @@ static void add_mapping(char *var, char *val)
 	switch_core_hash_insert(log_hash, name, (void *) &STATIC_LEVELS[(uint8_t)switch_log_str2level(val)]);
 }
 
-static switch_status config_logger(void)
+static switch_status_t config_logger(void)
 {
 	switch_config_t cfg;
 	char *var, *val;
@@ -101,13 +101,13 @@ static switch_status config_logger(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_console_logger(const switch_log_node *node, switch_log_level level)
+static switch_status_t switch_console_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	FILE *handle;
 
 	if ((handle = switch_core_data_channel(SWITCH_CHANNEL_ID_LOG))) {
 		uint8_t *lookup = NULL;
-		switch_log_level level = SWITCH_LOG_DEBUG;		
+		switch_log_level_t level = SWITCH_LOG_DEBUG;		
 
 		if (log_hash) {
 			lookup = switch_core_hash_find(log_hash, node->file);
@@ -118,9 +118,9 @@ static switch_status switch_console_logger(const switch_log_node *node, switch_l
 		}
 
 		if (lookup) {
-			level = (switch_log_level) *lookup;
+			level = (switch_log_level_t) *lookup;
 		} else if (all_level > -1) {
-			level = (switch_log_level) all_level;
+			level = (switch_log_level_t) all_level;
 		} 
 
 		if (!log_hash || (((all_level > - 1) || lookup) && level >= node->level)) {
@@ -134,7 +134,7 @@ static switch_status switch_console_logger(const switch_log_node *node, switch_l
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");

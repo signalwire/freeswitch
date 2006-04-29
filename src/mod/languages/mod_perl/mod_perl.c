@@ -80,12 +80,12 @@ static void perl_function(switch_core_session_t *session, char *data)
 	destroy_perl(&my_perl);
 }
 
-static const switch_application_interface perl_application_interface = {
+static const switch_application_interface_t perl_application_interface = {
 	/*.interface_name */ "perl",
 	/*.application_function */ perl_function
 };
 
-static switch_loadable_module_interface perl_module_interface = {
+static switch_loadable_module_interface_t perl_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -99,7 +99,7 @@ static switch_loadable_module_interface perl_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void) 
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void) 
 {
 	if (globals.my_perl) {
 		perl_destruct(globals.my_perl);
@@ -110,7 +110,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 
 	PerlInterpreter *my_perl;

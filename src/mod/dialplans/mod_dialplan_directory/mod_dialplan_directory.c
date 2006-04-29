@@ -89,7 +89,7 @@ static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t 
 	switch_channel_t *channel;
 	char *var, *val;
 	char filter[256];
-	switch_directory_handle dh;
+	switch_directory_handle_t dh;
 	char app[512];
 	char *data;
 
@@ -153,13 +153,13 @@ static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t 
 }
 
 
-static const switch_dialplan_interface directory_dialplan_interface = {
+static const switch_dialplan_interface_t directory_dialplan_interface = {
 	/*.interface_name = */ "directory",
 	/*.hunt_function = */ directory_dialplan_hunt
 	/*.next = NULL */
 };
 
-static const switch_loadable_module_interface directory_dialplan_module_interface = {
+static const switch_loadable_module_interface_t directory_dialplan_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
@@ -168,7 +168,7 @@ static const switch_loadable_module_interface directory_dialplan_module_interfac
 	/*.application_interface = */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 
 	load_config();

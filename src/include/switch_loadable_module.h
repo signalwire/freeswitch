@@ -56,30 +56,30 @@ struct switch_loadable_module_interface {
 	/*! the name of the module */
 	const char *module_name;
 	/*! the table of endpoints the module has implmented */
-	const switch_endpoint_interface *endpoint_interface;
+	const switch_endpoint_interface_t *endpoint_interface;
 	/*! the table of timers the module has implmented */
-	const switch_timer_interface *timer_interface;
+	const switch_timer_interface_t *timer_interface;
 	/*! the table of dialplans the module has implmented */
-	const switch_dialplan_interface *dialplan_interface;
+	const switch_dialplan_interface_t *dialplan_interface;
 	/*! the table of codecs the module has implmented */
-	const switch_codec_interface *codec_interface;
+	const switch_codec_interface_t *codec_interface;
 	/*! the table of applications the module has implmented */
-	const switch_application_interface *application_interface;
+	const switch_application_interface_t *application_interface;
 	/*! the table of api functions the module has implmented */
-	const switch_api_interface *api_interface;
+	const switch_api_interface_t *api_interface;
 	/*! the table of file formats the module has implmented */
-	const switch_file_interface *file_interface;
+	const switch_file_interface_t *file_interface;
 	/*! the table of speech interfaces the module has implmented */
-	const switch_speech_interface *speech_interface;
+	const switch_speech_interface_t *speech_interface;
 	/*! the table of directory interfaces the module has implmented */
-	const switch_directory_interface *directory_interface;
+	const switch_directory_interface_t *directory_interface;
 };
 
 /*!
   \brief Initilize the module backend and load all the modules
   \return SWITCH_STATUS_SUCCESS when complete
  */
-SWITCH_DECLARE(switch_status) switch_loadable_module_init(void);
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_init(void);
 
 /*!
   \brief Shutdown the module backend and call the shutdown routine in all loaded modules
@@ -91,21 +91,21 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void);
   \param name the name of the endpoint
   \return the desired endpoint interface
  */
-SWITCH_DECLARE(switch_endpoint_interface *) switch_loadable_module_get_endpoint_interface(char *name);
+SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoint_interface(char *name);
 
 /*!
   \brief Retrieve the codec interface by it's registered name
   \param name the name of the codec
   \return the desired codec interface
  */
-SWITCH_DECLARE(switch_codec_interface *) switch_loadable_module_get_codec_interface(char *name);
+SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(char *name);
 
 /*!
   \brief Retrieve the dialplan interface by it's registered name
   \param name the name of the dialplan
   \return the desired dialplan interface
  */
-SWITCH_DECLARE(switch_dialplan_interface *) switch_loadable_module_get_dialplan_interface(char *name);
+SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialplan_interface(char *name);
 
 /*!
   \brief build a dynamic module object and register it (for use in double embeded modules)
@@ -116,7 +116,7 @@ SWITCH_DECLARE(switch_dialplan_interface *) switch_loadable_module_get_dialplan_
   \return the resulting status
   \note only use this function if you are making a module that in turn gateways module loading to another technology
  */
-SWITCH_DECLARE(switch_status) switch_loadable_module_build_dynamic(char *filename,
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filename,
 																   switch_module_load_t switch_module_load,
 																   switch_module_runtime_t switch_module_runtime,
 																   switch_module_shutdown_t switch_module_shutdown);
@@ -126,42 +126,42 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_build_dynamic(char *filenam
   \param name the name of the timer
   \return the desired timer interface
  */
-SWITCH_DECLARE(switch_timer_interface *) switch_loadable_module_get_timer_interface(char *name);
+SWITCH_DECLARE(switch_timer_interface_t *) switch_loadable_module_get_timer_interface(char *name);
 
 /*!
   \brief Retrieve the application interface by it's registered name
   \param name the name of the application
   \return the desired application interface
  */
-SWITCH_DECLARE(switch_application_interface *) switch_loadable_module_get_application_interface(char *name);
+SWITCH_DECLARE(switch_application_interface_t *) switch_loadable_module_get_application_interface(char *name);
 
 /*!
   \brief Retrieve the API interface by it's registered name
   \param name the name of the API
   \return the desired API interface
  */
-SWITCH_DECLARE(switch_api_interface *) switch_loadable_module_get_api_interface(char *name);
+SWITCH_DECLARE(switch_api_interface_t *) switch_loadable_module_get_api_interface(char *name);
 
 /*!
   \brief Retrieve the file format interface by it's registered name
   \param name the name of the file format
   \return the desired file format interface
  */
-SWITCH_DECLARE(switch_file_interface *) switch_loadable_module_get_file_interface(char *name);
+SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interface(char *name);
 
 /*!
   \brief Retrieve the speech interface by it's registered name
   \param name the name of the speech interface
   \return the desired speech interface
  */
-SWITCH_DECLARE(switch_speech_interface *) switch_loadable_module_get_speech_interface(char *name);
+SWITCH_DECLARE(switch_speech_interface_t *) switch_loadable_module_get_speech_interface(char *name);
 
 /*!
   \brief Retrieve the directory interface by it's registered name
   \param name the name of the directory interface
   \return the desired directory interface
  */
-SWITCH_DECLARE(switch_directory_interface *) switch_loadable_module_get_directory_interface(char *name);
+SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_directory_interface(char *name);
 
 
 /*!
@@ -172,7 +172,7 @@ SWITCH_DECLARE(switch_directory_interface *) switch_loadable_module_get_director
   \return the number of elements added to the array
  */
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, 
-													  switch_codec_interface **array, 
+													  switch_codec_interface_t **array, 
 													  int arraylen);
 
 /*!
@@ -184,7 +184,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool
   \return the number of elements added to the array
   \note this function only considers codecs that are listed in the "prefs" array and ignores the rest.
 */
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_codec_interface **array,
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_codec_interface_t **array,
 															 int arraylen, 
 															 char **prefs, 
 															 int preflen);
@@ -197,7 +197,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_codec_interf
   \param len the length in bytes of retbuf
   \return the status returned by the API call
 */
-SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *retbuf, switch_size_t len);
+SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, char *retbuf, switch_size_t len);
 
 
 /*!
@@ -206,7 +206,7 @@ SWITCH_DECLARE(switch_status) switch_api_execute(char *cmd, char *arg, char *ret
   \param fname the file name of the module
   \return the status
 */
-SWITCH_DECLARE(switch_status) switch_loadable_module_load_module(char *dir, char *fname);
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname);
 
 /* Prototypes of module interface functions */
 
@@ -216,19 +216,19 @@ SWITCH_DECLARE(switch_status) switch_loadable_module_load_module(char *dir, char
   \param filename the path to the module's dll or so file
   \return SWITCH_STATUS_SUCCESS on a successful load
 */
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename);
-SWITCH_MOD_DECLARE(switch_status) switch_module_reload(void);
-SWITCH_MOD_DECLARE(switch_status) switch_module_pause(void);
-SWITCH_MOD_DECLARE(switch_status) switch_module_resume(void);
-SWITCH_MOD_DECLARE(switch_status) switch_module_status(void);
-SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_reload(void);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_pause(void);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_resume(void);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_status(void);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void);
 
 
 /*!
   \brief Shutdown a module
   \return SWITCH_STATUS_SUCCESS on a successful shutdown
 */
-SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void);
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 ///\}
 
 END_EXTERN_C

@@ -34,7 +34,7 @@
 static const char modname[] = "mod_rawaudio";
 
 
-static switch_status switch_raw_init(switch_codec_t *codec, switch_codec_flag flags,
+static switch_status_t switch_raw_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									 const switch_codec_settings_t *codec_settings)
 {
 	int encoding, decoding;
@@ -49,7 +49,7 @@ static switch_status switch_raw_init(switch_codec_t *codec, switch_codec_flag fl
 	}
 }
 
-static switch_status switch_raw_encode(switch_codec_t *codec,
+static switch_status_t switch_raw_encode(switch_codec_t *codec,
 									   switch_codec_t *other_codec,
 									   void *decoded_data,
 									   uint32_t decoded_data_len,
@@ -67,7 +67,7 @@ static switch_status switch_raw_encode(switch_codec_t *codec,
 	return SWITCH_STATUS_NOOP;
 }
 
-static switch_status switch_raw_decode(switch_codec_t *codec,
+static switch_status_t switch_raw_decode(switch_codec_t *codec,
 									   switch_codec_t *other_codec,
 									   void *encoded_data,
 									   uint32_t encoded_data_len,
@@ -84,7 +84,7 @@ static switch_status switch_raw_decode(switch_codec_t *codec,
 }
 
 
-static switch_status switch_raw_destroy(switch_codec_t *codec)
+static switch_status_t switch_raw_destroy(switch_codec_t *codec)
 {
 
 	return SWITCH_STATUS_SUCCESS;
@@ -176,7 +176,7 @@ static const switch_codec_implementation_t raw_8k_30ms_implementation = {
 };
 
 
-static const switch_codec_interface raw_codec_interface = {
+static const switch_codec_interface_t raw_codec_interface = {
 	/*.interface_name */ "raw signed linear (16 bit)",
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 10,
@@ -184,7 +184,7 @@ static const switch_codec_interface raw_codec_interface = {
 	/*.implementations */ &raw_8k_30ms_implementation
 };
 
-static switch_loadable_module_interface raw_module_interface = {
+static switch_loadable_module_interface_t raw_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -196,7 +196,7 @@ static switch_loadable_module_interface raw_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &raw_module_interface;

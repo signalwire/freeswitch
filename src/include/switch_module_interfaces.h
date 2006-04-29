@@ -47,137 +47,137 @@ BEGIN_EXTERN_C
 */
 struct switch_state_handler_table {
 	/*! executed when the state changes to init */
-	switch_state_handler on_init;
+	switch_state_handler_t on_init;
 	/*! executed when the state changes to ring */
-	switch_state_handler on_ring;
+	switch_state_handler_t on_ring;
 	/*! executed when the state changes to execute */
-	switch_state_handler on_execute;
+	switch_state_handler_t on_execute;
 	/*! executed when the state changes to hangup */
-	switch_state_handler on_hangup;
+	switch_state_handler_t on_hangup;
 	/*! executed when the state changes to loopback*/
-	switch_state_handler on_loopback;
+	switch_state_handler_t on_loopback;
 	/*! executed when the state changes to transmit*/
-	switch_state_handler on_transmit;
+	switch_state_handler_t on_transmit;
 	/*! executed when the state changes to hold*/
-	switch_state_handler on_hold;
+	switch_state_handler_t on_hold;
 };
 
 /*! \brief Node in which to store custom outgoing channel callback hooks */
 struct switch_io_event_hook_outgoing_channel {
 	/*! the outgoing channel callback hook*/
-	switch_outgoing_channel_hook outgoing_channel;
+	switch_outgoing_channel_hook_t outgoing_channel;
 	struct switch_io_event_hook_outgoing_channel *next;
 };
 
 /*! \brief Node in which to store custom answer channel callback hooks */
 struct switch_io_event_hook_answer_channel {
 	/*! the answer channel callback hook*/
-	switch_answer_channel_hook answer_channel;
+	switch_answer_channel_hook_t answer_channel;
 	struct switch_io_event_hook_answer_channel *next;
 };
 
 /*! \brief Node in which to store custom receive message callback hooks */
 struct switch_io_event_hook_receive_message {
 	/*! the answer channel callback hook*/
-	switch_receive_message_hook receive_message;
+	switch_receive_message_hook_t receive_message;
 	struct switch_io_event_hook_receive_message *next;
 };
 
 /*! \brief Node in which to store custom receive message callback hooks */
 struct switch_io_event_hook_queue_event {
 	/*! the answer channel callback hook*/
-	switch_queue_event_hook queue_event;
+	switch_queue_event_hook_t queue_event;
 	struct switch_io_event_hook_queue_event *next;
 };
 
 /*! \brief Node in which to store custom read frame channel callback hooks */
 struct switch_io_event_hook_read_frame {
 	/*! the read frame channel callback hook*/
-	switch_read_frame_hook read_frame;
+	switch_read_frame_hook_t read_frame;
 	struct switch_io_event_hook_read_frame *next;
 };
 
 /*! \brief Node in which to store custom write_frame channel callback hooks */
 struct switch_io_event_hook_write_frame {
 	/*! the write_frame channel callback hook*/
-	switch_write_frame_hook write_frame;
+	switch_write_frame_hook_t write_frame;
 	struct switch_io_event_hook_write_frame *next;
 };
 
 /*! \brief Node in which to store custom kill channel callback hooks */
 struct switch_io_event_hook_kill_channel {
 	/*! the kill channel callback hook*/
-	switch_kill_channel_hook kill_channel;
+	switch_kill_channel_hook_t kill_channel;
 	struct switch_io_event_hook_kill_channel *next;
 };
 
 /*! \brief Node in which to store custom waitfor read channel callback hooks */
 struct switch_io_event_hook_waitfor_read {
 	/*! the waitfor read channel callback hook*/
-	switch_waitfor_read_hook waitfor_read;
+	switch_waitfor_read_hook_t waitfor_read;
 	struct switch_io_event_hook_waitfor_read *next;
 };
 
 /*! \brief Node in which to store custom waitfor write channel callback hooks */
 struct switch_io_event_hook_waitfor_write {
 	/*! the waitfor write channel callback hook*/
-	switch_waitfor_write_hook waitfor_write;
+	switch_waitfor_write_hook_t waitfor_write;
 	struct switch_io_event_hook_waitfor_write *next;
 };
 
 /*! \brief Node in which to store custom send dtmf channel callback hooks */
 struct switch_io_event_hook_send_dtmf {
 	/*! the send dtmf channel callback hook*/
-	switch_send_dtmf_hook send_dtmf;
+	switch_send_dtmf_hook_t send_dtmf;
 	struct switch_io_event_hook_send_dtmf *next;
 };
 
 /*! \brief A table of lists of io_event_hooks to store the event hooks associated with a session */
 struct switch_io_event_hooks {
 	/*! a list of outgoing channel hooks */
-	struct switch_io_event_hook_outgoing_channel *outgoing_channel;
+	switch_io_event_hook_outgoing_channel_t *outgoing_channel;
 	/*! a list of answer channel hooks */
-	struct switch_io_event_hook_answer_channel *answer_channel;
+	switch_io_event_hook_answer_channel_t *answer_channel;
 	/*! a list of receive message hooks */
-	struct switch_io_event_hook_receive_message *receive_message;
+	switch_io_event_hook_receive_message_t *receive_message;
 	/*! a list of queue message hooks */
-	struct switch_io_event_hook_queue_event *queue_event;
+	switch_io_event_hook_queue_event_t *queue_event;
 	/*! a list of read frame hooks */
-	struct switch_io_event_hook_read_frame *read_frame;
+	switch_io_event_hook_read_frame_t *read_frame;
 	/*! a list of write frame hooks */
-	struct switch_io_event_hook_write_frame *write_frame;
+	switch_io_event_hook_write_frame_t *write_frame;
 	/*! a list of kill channel hooks */
-	struct switch_io_event_hook_kill_channel *kill_channel;
+	switch_io_event_hook_kill_channel_t *kill_channel;
 	/*! a list of wait for read hooks */
-	struct switch_io_event_hook_waitfor_read *waitfor_read;
+	switch_io_event_hook_waitfor_read_t *waitfor_read;
 	/*! a list of wait for write hooks */
-	struct switch_io_event_hook_waitfor_write *waitfor_write;
+	switch_io_event_hook_waitfor_write_t *waitfor_write;
 	/*! a list of send dtmf hooks */
-	struct switch_io_event_hook_send_dtmf *send_dtmf;
+	switch_io_event_hook_send_dtmf_t *send_dtmf;
 };
 
 /*! \brief A table of i/o routines that an endpoint interface can implement */
 struct switch_io_routines {
 	/*! creates an outgoing session from given session, caller profile */
-	switch_status (*outgoing_channel)(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t *);
+	switch_status_t (*outgoing_channel)(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t *);
 	/*! answers the given session's channel */
-	switch_status (*answer_channel)(switch_core_session_t *);
+	switch_status_t (*answer_channel)(switch_core_session_t *);
 	/*! read a frame from a session */
-	switch_status (*read_frame)(switch_core_session_t *, switch_frame_t **, int, switch_io_flag, int);
+	switch_status_t (*read_frame)(switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
 	/*! write a frame to a session */
-	switch_status (*write_frame)(switch_core_session_t *, switch_frame_t *, int, switch_io_flag, int);
+	switch_status_t (*write_frame)(switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
 	/*! send a kill signal to the session's channel */
-	switch_status (*kill_channel)(switch_core_session_t *, int);
+	switch_status_t (*kill_channel)(switch_core_session_t *, int);
 	/*! wait for the session's channel to be ready to read audio */
-	switch_status (*waitfor_read)(switch_core_session_t *, int, int);
+	switch_status_t (*waitfor_read)(switch_core_session_t *, int, int);
 	/*! wait for the session's channel to be ready to write audio */
-	switch_status (*waitfor_write)(switch_core_session_t *, int, int);
+	switch_status_t (*waitfor_write)(switch_core_session_t *, int, int);
 	/*! send a string of DTMF digits to a session's channel */
-	switch_status (*send_dtmf)(switch_core_session_t *, char *);
+	switch_status_t (*send_dtmf)(switch_core_session_t *, char *);
 	/*! receive a message from another session*/
-	switch_status (*receive_message)(switch_core_session_t *, switch_core_session_message_t *);
+	switch_status_t (*receive_message)(switch_core_session_t *, switch_core_session_message_t *);
 	/*! queue a message for another session*/
-	switch_status (*queue_event)(switch_core_session_t *, switch_event_t *);
+	switch_status_t (*queue_event)(switch_core_session_t *, switch_event_t *);
 };
 
 /*! \brief Abstraction of an module endpoint interface
@@ -191,7 +191,7 @@ struct switch_endpoint_interface {
 	const char *interface_name;
 
 	/*! channel abstraction methods */
-	const switch_io_routines *io_routines;
+	const switch_io_routines_t *io_routines;
 
 	/*! state machine methods */
 	const switch_state_handler_table_t *state_handler;
@@ -214,7 +214,7 @@ struct switch_timer {
 	/*! current sample count based on samples parameter */
 	unsigned int samplecount;
 	/*! the timer interface provided from a loadable module */
-	struct switch_timer_interface *timer_interface;
+	switch_timer_interface_t *timer_interface;
 	/*! the timer's memory pool */
 	switch_memory_pool_t *memory_pool;
 	/*! private data for loadable modules to store information */
@@ -226,11 +226,11 @@ struct switch_timer_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to allocate the timer */
-	switch_status (*timer_init)(switch_timer_t *);
+	switch_status_t (*timer_init)(switch_timer_t *);
 	/*! function to wait for one cycle to pass */
-	switch_status (*timer_next)(switch_timer_t *);
+	switch_status_t (*timer_next)(switch_timer_t *);
 	/*! function to deallocate the timer */
-	switch_status (*timer_destroy)(switch_timer_t *);
+	switch_status_t (*timer_destroy)(switch_timer_t *);
 	const struct switch_timer_interface *next;
 };
 
@@ -239,7 +239,7 @@ struct switch_dialplan_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! the function to read an extension and set a channels dialpan */
-	switch_dialplan_hunt_function hunt_function;
+	switch_dialplan_hunt_function_t hunt_function;
 	const struct switch_dialplan_interface *next;
 };
 
@@ -248,15 +248,15 @@ struct switch_file_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the file */
-	switch_status (*file_open)(switch_file_handle_t *, char *file_path);
+	switch_status_t (*file_open)(switch_file_handle_t *, char *file_path);
 	/*! function to close the file */
-	switch_status (*file_close)(switch_file_handle_t *);
+	switch_status_t (*file_close)(switch_file_handle_t *);
 	/*! function to read from the file */
-	switch_status (*file_read)(switch_file_handle_t *, void *data, switch_size_t *len);
+	switch_status_t (*file_read)(switch_file_handle_t *, void *data, switch_size_t *len);
 	/*! function to write from the file */
-	switch_status (*file_write)(switch_file_handle_t *, void *data, switch_size_t *len);
+	switch_status_t (*file_write)(switch_file_handle_t *, void *data, switch_size_t *len);
 	/*! function to seek to a certian position in the file */
-	switch_status (*file_seek)(switch_file_handle_t *, unsigned int *cur_pos, int64_t samples, int whence);
+	switch_status_t (*file_seek)(switch_file_handle_t *, unsigned int *cur_pos, int64_t samples, int whence);
 	/*! list of supported file extensions */
 	char **extens;
 	const struct switch_file_interface *next;
@@ -265,7 +265,7 @@ struct switch_file_interface {
 /*! an abstract representation of a file handle (some parameters based on compat with libsndfile) */
 struct switch_file_handle {
 	/*! the interface of the module that implemented the current file type */
-	const struct switch_file_interface *file_interface;
+	const switch_file_interface_t *file_interface;
 	/*! flags to control behaviour */
 	uint32_t flags;
 	/*! a file descriptor if neceessary */
@@ -300,24 +300,24 @@ struct switch_speech_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the speech interface */
-	switch_status (*speech_open)(switch_speech_handle *sh,
+	switch_status_t (*speech_open)(switch_speech_handle_t *sh,
 								 char *voice_name, 
 								 int rate,
-								 switch_speech_flag *flags);
+								 switch_speech_flag_t *flags);
 	/*! function to close the speech interface */
-	switch_status (*speech_close)(switch_speech_handle *, switch_speech_flag *flags);
+	switch_status_t (*speech_close)(switch_speech_handle_t *, switch_speech_flag_t *flags);
 	/*! function to feed audio to the ASR*/
-	switch_status (*speech_feed_asr)(switch_speech_handle *sh, void *data, unsigned int *len, int rate, switch_speech_flag *flags);
+	switch_status_t (*speech_feed_asr)(switch_speech_handle_t *sh, void *data, unsigned int *len, int rate, switch_speech_flag_t *flags);
 	/*! function to read text from the ASR*/
-	switch_status (*speech_interpret_asr)(switch_speech_handle *sh, char *buf, unsigned int buflen, switch_speech_flag *flags);
+	switch_status_t (*speech_interpret_asr)(switch_speech_handle_t *sh, char *buf, unsigned int buflen, switch_speech_flag_t *flags);
 	/*! function to feed text to the TTS*/
-	switch_status (*speech_feed_tts)(switch_speech_handle *sh, char *text, switch_speech_flag *flags);
+	switch_status_t (*speech_feed_tts)(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags);
 	/*! function to read audio from the TTS*/
-	switch_status (*speech_read_tts)(switch_speech_handle *sh,
+	switch_status_t (*speech_read_tts)(switch_speech_handle_t *sh,
 									 void *data,
 									 switch_size_t *datalen,
 									 uint32_t *rate,
-									 switch_speech_flag *flags);
+									 switch_speech_flag_t *flags);
 
 	const struct switch_speech_interface *next;
 };
@@ -326,7 +326,7 @@ struct switch_speech_interface {
 /*! an abstract representation of a asr/tts speech interface. */
 struct switch_speech_handle {
 	/*! the interface of the module that implemented the current speech interface */
-	const struct switch_speech_interface *speech_interface;
+	const switch_speech_interface_t *speech_interface;
 	/*! flags to control behaviour */
 	uint32_t flags;
 
@@ -343,15 +343,15 @@ struct switch_directory_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to open the directory interface */
-	switch_status (*directory_open)(switch_directory_handle *dh, char *source, char *dsn, char *passwd);
+	switch_status_t (*directory_open)(switch_directory_handle_t *dh, char *source, char *dsn, char *passwd);
 	/*! function to close the directory interface */
-	switch_status (*directory_close)(switch_directory_handle *dh);
+	switch_status_t (*directory_close)(switch_directory_handle_t *dh);
 	/*! function to query the directory interface */
-	switch_status (*directory_query)(switch_directory_handle *dh, char *base, char *query);
+	switch_status_t (*directory_query)(switch_directory_handle_t *dh, char *base, char *query);
 	/*! function to advance to the next record */
-	switch_status (*directory_next)(switch_directory_handle *dh);
+	switch_status_t (*directory_next)(switch_directory_handle_t *dh);
 	/*! function to advance to the next name/value pair in the current record */
-	switch_status (*directory_next_pair)(switch_directory_handle *dh, char **var, char **val);
+	switch_status_t (*directory_next_pair)(switch_directory_handle_t *dh, char **var, char **val);
 	
 	const struct switch_directory_interface *next;
 };
@@ -359,7 +359,7 @@ struct switch_directory_interface {
 /*! an abstract representation of a directory interface. */
 struct switch_directory_handle {
 	/*! the interface of the module that implemented the current directory interface */
-	const struct switch_directory_interface *directory_interface;
+	const switch_directory_interface_t *directory_interface;
 	/*! flags to control behaviour */
 	uint32_t flags;
 
@@ -410,7 +410,7 @@ struct switch_codec_settings {
 /*! an abstract handle to a codec module */
 struct switch_codec {
 	/*! the codec interface table this handle uses */
-	const struct switch_codec_interface *codec_interface;
+	const switch_codec_interface_t *codec_interface;
 	/*! the specific implementation of the above codec */
 	const switch_codec_implementation_t *implementation;
 	/*! codec settings for this handle */
@@ -444,9 +444,9 @@ struct switch_codec_implementation {
 	/*! max number of frames to send in one network packet */
 	int max_frames_per_packet;
 	/*! function to initialize a codec handle using this implementation */
-	switch_status (*init)(switch_codec_t *, switch_codec_flag, const switch_codec_settings_t *codec_settings);
+	switch_status_t (*init)(switch_codec_t *, switch_codec_flag_t, const switch_codec_settings_t *codec_settings);
 	/*! function to encode raw data into encoded data */
-	switch_status (*encode)(switch_codec_t *codec,
+	switch_status_t (*encode)(switch_codec_t *codec,
 						 switch_codec_t *other_codec,
 						 void *decoded_data,
 						 uint32_t decoded_data_len,
@@ -456,7 +456,7 @@ struct switch_codec_implementation {
 						 uint32_t *encoded_rate,
 						 unsigned int *flag);
 	/*! function to decode encoded data into raw data */
-	switch_status (*decode)(switch_codec_t *codec,
+	switch_status_t (*decode)(switch_codec_t *codec,
 						 switch_codec_t *other_codec,
 						 void *encoded_data,
 						 uint32_t encoded_data_len,
@@ -466,7 +466,7 @@ struct switch_codec_implementation {
 						 uint32_t *decoded_rate,
 						 unsigned int *flag);
 	/*! deinitalize a codec handle using this implementation */
-	switch_status (*destroy)(switch_codec_t *);
+	switch_status_t (*destroy)(switch_codec_t *);
 	const struct switch_codec_implementation *next;
 };
 
@@ -475,7 +475,7 @@ struct switch_codec_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! enumeration defining the type of the codec */
-	const switch_codec_type codec_type;
+	const switch_codec_type_t codec_type;
 	/*! the IANA code number */
 	switch_payload_t ianacode;
 	/*! the IANA code name */
@@ -490,7 +490,7 @@ struct switch_application_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function the application implements */
-	switch_application_function application_function;
+	switch_application_function_t application_function;
 	/*! the long winded description of the application */
 	const char *long_desc;
 	/*! the short and sweet description of the application */
@@ -507,7 +507,7 @@ struct switch_api_interface {
 	/*! a description of the api function */
 	const char *desc;
 	/*! function the api call uses */
-	switch_api_function function;
+	switch_api_function_t function;
 	const struct switch_api_interface *next;
 };
 

@@ -46,8 +46,8 @@ static const char *LEVELS[] = {
 };
 
 struct switch_log_binding {
-	switch_log_function function;
-	switch_log_level level;
+	switch_log_function_t function;
+	switch_log_level_t level;
 	struct switch_log_binding *next;
 };
 
@@ -60,21 +60,21 @@ static switch_queue_t *LOG_QUEUE = NULL;
 static int8_t THREAD_RUNNING = 0;
 static uint8_t MAX_LEVEL = 0;
 
-SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level level)
+SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level)
 {
 	return LEVELS[level];
 }
 
-SWITCH_DECLARE(switch_log_level) switch_log_str2level(const char *str)
+SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 {
 	int x = 0;
-	switch_log_level level = SWITCH_LOG_DEBUG;
+	switch_log_level_t level = SWITCH_LOG_DEBUG;
 	for(x = 0;;x++) {
 		if (!LEVELS[x]) {
 			break;
 		}
 		if (!strcasecmp(LEVELS[x], str)) {
-			level = (switch_log_level) x;
+			level = (switch_log_level_t) x;
 			break;
 		}
 	}
@@ -82,7 +82,7 @@ SWITCH_DECLARE(switch_log_level) switch_log_str2level(const char *str)
 	return level;
 }
 
-SWITCH_DECLARE(switch_status) switch_log_bind_logger(switch_log_function function, switch_log_level level)
+SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t function, switch_log_level_t level)
 {
 	switch_log_binding *binding = NULL, *ptr = NULL;
 	assert(function != NULL);
@@ -120,7 +120,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 
 	for(;;) {
 		void *pop = NULL;
-		switch_log_node *node = NULL;
+		switch_log_node_t *node = NULL;
 		switch_log_binding *binding;
 		
 		if (switch_queue_pop(LOG_QUEUE, &pop) != SWITCH_STATUS_SUCCESS) {
@@ -131,7 +131,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 			break;
 		}
 		
-		node = (switch_log_node *) pop;
+		node = (switch_log_node_t *) pop;
 
 		switch_mutex_lock(BINDLOCK);
 		for(binding = BINDINGS; binding; binding = binding->next) {
@@ -162,7 +162,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 	return NULL;
 }
 
-SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, const char *func, int line, switch_log_level level, char *fmt, ...)
+SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, char *file, const char *func, int line, switch_log_level_t level, char *fmt, ...)
 {
 	char *data = NULL;
 	char *new_fmt = NULL;
@@ -227,7 +227,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 			} 
 
 			if (level <= MAX_LEVEL) {
-				switch_log_node *node = malloc(sizeof(*node));
+				switch_log_node_t *node = malloc(sizeof(*node));
 				node->data = data;
 				node->file = strdup(filep);
 				node->func = strdup(func);
@@ -250,7 +250,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel channel, char *file, 
 }
 
 
-SWITCH_DECLARE(switch_status) switch_log_init(switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
@@ -274,7 +274,7 @@ SWITCH_DECLARE(switch_status) switch_log_init(switch_memory_pool_t *pool)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_log_shutdown(void)
+SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 {
 	switch_queue_push(LOG_QUEUE, NULL);
 	return SWITCH_STATUS_SUCCESS;

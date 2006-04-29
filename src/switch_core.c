@@ -45,8 +45,8 @@ struct switch_core_session {
 	switch_memory_pool_t *pool;
 	switch_channel_t *channel;
 	switch_thread_t *thread;
-	const switch_endpoint_interface *endpoint_interface;
-	struct switch_io_event_hooks event_hooks;
+	const switch_endpoint_interface_t *endpoint_interface;
+	switch_io_event_hooks_t event_hooks;
 	switch_codec_t *read_codec;
 	switch_codec_t *write_codec;
 
@@ -172,7 +172,7 @@ static void check_table_exists(switch_core_db *db, char *test_sql, char *create_
 #endif
 
 
-SWITCH_DECLARE(switch_status) switch_core_set_console(char *console)
+SWITCH_DECLARE(switch_status_t) switch_core_set_console(char *console)
 {
 	if ((runtime.console = fopen(console, "a")) == 0) {
 		fprintf(stderr, "Cannot open output file %s.\n", console);
@@ -187,7 +187,7 @@ SWITCH_DECLARE(FILE *) switch_core_get_console(void)
 	return runtime.console;
 }
 
-SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel channel)
+SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel)
 {
 	FILE *handle = stdout;
 
@@ -226,9 +226,9 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 	return runtime.state_handlers[index];
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_read_lock(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_session_t *session)
 {
-	return (switch_status) switch_thread_rwlock_tryrdlock(session->rwlock);
+	return (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
 }
 
 SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session_t *session)
@@ -256,10 +256,10 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_st
 	return session;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_message_send(char *uuid_str, switch_core_session_message_t *message)
+SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str, switch_core_session_message_t *message)
 {
 	switch_core_session_t *session = NULL;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if ((session = switch_core_hash_find(runtime.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
@@ -274,10 +274,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_message_send(char *uuid_str, s
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_event_send(char *uuid_str, switch_event_t *event)
+SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, switch_event_t *event)
 {
 	switch_core_session_t *session = NULL;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if ((session = switch_core_hash_find(runtime.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
@@ -297,7 +297,7 @@ SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *sessi
 	return session->uuid_str;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_set_read_codec(switch_core_session_t *session, switch_codec_t *codec)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
 	assert(session != NULL);
 
@@ -310,7 +310,7 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(switch_core_
 	return session->read_codec;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_set_write_codec(switch_core_session_t *session, switch_codec_t *codec)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
 	assert(session != NULL);
 
@@ -323,12 +323,12 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_write_codec(switch_core
 	return session->write_codec;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec_t *codec, char *codec_name, uint32_t rate, int ms,
+SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, char *codec_name, uint32_t rate, int ms,
 													 int channels, uint32_t flags,
 													 const switch_codec_settings_t *codec_settings,
 													 switch_memory_pool_t *pool)
 {
-	const switch_codec_interface *codec_interface;
+	const switch_codec_interface_t *codec_interface;
 	const switch_codec_implementation_t *iptr, *implementation = NULL;
 
 	assert(codec != NULL);
@@ -351,7 +351,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec_t *codec, char
 	}
 
 	if (implementation) {
-		switch_status status;
+		switch_status_t status;
 		codec->codec_interface = codec_interface;
 		codec->implementation = implementation;
 		codec->flags = flags;
@@ -376,7 +376,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_init(switch_codec_t *codec, char
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec_t *codec,
+SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 													   switch_codec_t *other_codec,
 													   void *decoded_data,
 													   uint32_t decoded_data_len,
@@ -407,7 +407,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_encode(switch_codec_t *codec,
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec_t *codec,
+SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 													   switch_codec_t *other_codec,
 													   void *encoded_data,
 													   uint32_t encoded_data_len,
@@ -443,7 +443,7 @@ SWITCH_DECLARE(switch_status) switch_core_codec_decode(switch_codec_t *codec,
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec_t *codec)
+SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 {
 	assert(codec != NULL);
 
@@ -461,11 +461,11 @@ SWITCH_DECLARE(switch_status) switch_core_codec_destroy(switch_codec_t *codec)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle_t *fh, char *file_path, unsigned int flags,
+SWITCH_DECLARE(switch_status_t) switch_core_file_open(switch_file_handle_t *fh, char *file_path, unsigned int flags,
 													switch_memory_pool_t *pool)
 {
 	char *ext;
-	switch_status status;
+	switch_status_t status;
 
 	if ((ext = strrchr(file_path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
@@ -491,39 +491,39 @@ SWITCH_DECLARE(switch_status) switch_core_file_open(switch_file_handle_t *fh, ch
 	return fh->file_interface->file_open(fh, file_path);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_file_read(switch_file_handle_t *fh, void *data, switch_size_t *len)
+SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, void *data, switch_size_t *len)
 {
 	assert(fh != NULL);
 
 	return fh->file_interface->file_read(fh, data, len);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_file_write(switch_file_handle_t *fh, void *data, switch_size_t *len)
+SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh, void *data, switch_size_t *len)
 {
 	assert(fh != NULL);
 
 	return fh->file_interface->file_write(fh, data, len);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples,
+SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples,
 													int whence)
 {
 	return fh->file_interface->file_seek(fh, cur_pos, samples, whence);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_file_close(switch_file_handle_t *fh)
+SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 {
 	return fh->file_interface->file_close(fh);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_directory_open(switch_directory_handle *dh, 
+SWITCH_DECLARE(switch_status_t) switch_core_directory_open(switch_directory_handle_t *dh, 
 														 char *module_name, 
 														 char *source,
 														 char *dsn,
 														 char *passwd,
 														 switch_memory_pool_t *pool)
 {
-	switch_status status;
+	switch_status_t status;
 
 	if ((dh->directory_interface = switch_loadable_module_get_directory_interface(module_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid directory module [%s]!\n", module_name);
@@ -542,34 +542,34 @@ SWITCH_DECLARE(switch_status) switch_core_directory_open(switch_directory_handle
 	return dh->directory_interface->directory_open(dh, source, dsn, passwd);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_directory_query(switch_directory_handle *dh, char *base, char *query)
+SWITCH_DECLARE(switch_status_t) switch_core_directory_query(switch_directory_handle_t *dh, char *base, char *query)
 {
 	return dh->directory_interface->directory_query(dh, base, query);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_directory_next(switch_directory_handle *dh)
+SWITCH_DECLARE(switch_status_t) switch_core_directory_next(switch_directory_handle_t *dh)
 {
 	return dh->directory_interface->directory_next(dh);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_directory_next_pair(switch_directory_handle *dh, char **var, char **val)
+SWITCH_DECLARE(switch_status_t) switch_core_directory_next_pair(switch_directory_handle_t *dh, char **var, char **val)
 {
 	return dh->directory_interface->directory_next_pair(dh, var, val);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_directory_close(switch_directory_handle *dh)
+SWITCH_DECLARE(switch_status_t) switch_core_directory_close(switch_directory_handle_t *dh)
 {
 	return dh->directory_interface->directory_close(dh);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh, 
+SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *sh, 
 													  char *module_name, 
 													  char *voice_name,
 													  unsigned int rate,
-													  switch_speech_flag *flags,
+													  switch_speech_flag_t *flags,
 													  switch_memory_pool_t *pool)
 {
-	switch_status status;
+	switch_status_t status;
 
 	if ((sh->speech_interface = switch_loadable_module_get_speech_interface(module_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid speech module [%s]!\n", module_name);
@@ -589,32 +589,32 @@ SWITCH_DECLARE(switch_status) switch_core_speech_open(switch_speech_handle *sh,
 	return sh->speech_interface->speech_open(sh, voice_name, rate, flags);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_speech_feed_asr(switch_speech_handle *sh, void *data, unsigned int *len, int rate, switch_speech_flag *flags)
+SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_asr(switch_speech_handle_t *sh, void *data, unsigned int *len, int rate, switch_speech_flag_t *flags)
 {
 	assert(sh != NULL);
 	
 	return sh->speech_interface->speech_feed_asr(sh, data, len, rate, flags);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_speech_interpret_asr(switch_speech_handle *sh, char *buf, unsigned int buflen, switch_speech_flag *flags)
+SWITCH_DECLARE(switch_status_t) switch_core_speech_interpret_asr(switch_speech_handle_t *sh, char *buf, unsigned int buflen, switch_speech_flag_t *flags)
 {
 	assert(sh != NULL);
 	
 	return sh->speech_interface->speech_interpret_asr(sh, buf, buflen, flags);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_speech_feed_tts(switch_speech_handle *sh, char *text, switch_speech_flag *flags)
+SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
 	assert(sh != NULL);
 
 	return sh->speech_interface->speech_feed_tts(sh, text, flags);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *sh, 
+SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle_t *sh, 
 														  void *data,
 														  switch_size_t *datalen,
 														  uint32_t *rate,
-														  switch_speech_flag *flags)
+														  switch_speech_flag_t *flags)
 {
 	assert(sh != NULL);
 
@@ -622,16 +622,16 @@ SWITCH_DECLARE(switch_status) switch_core_speech_read_tts(switch_speech_handle *
 }
 
 
-SWITCH_DECLARE(switch_status) switch_core_speech_close(switch_speech_handle *sh, switch_speech_flag *flags)
+SWITCH_DECLARE(switch_status_t) switch_core_speech_close(switch_speech_handle_t *sh, switch_speech_flag_t *flags)
 {
 	return sh->speech_interface->speech_close(sh, flags);
 }
 
-SWITCH_DECLARE(switch_status) switch_core_timer_init(switch_timer_t *timer, char *timer_name, int interval, int samples,
+SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, char *timer_name, int interval, int samples,
 													 switch_memory_pool_t *pool)
 {
-	switch_timer_interface *timer_interface;
-	switch_status status;
+	switch_timer_interface_t *timer_interface;
+	switch_status_t status;
 	memset(timer, 0, sizeof(*timer));
 	if ((timer_interface = switch_loadable_module_get_timer_interface(timer_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid timer %s!\n", timer_name);
@@ -673,7 +673,7 @@ SWITCH_DECLARE(int) switch_core_timer_next(switch_timer_t *timer)
 }
 
 
-SWITCH_DECLARE(switch_status) switch_core_timer_destroy(switch_timer_t *timer)
+SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
 {
 	if (!timer->timer_interface) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not initilized!\n");
@@ -859,7 +859,7 @@ SWITCH_DECLARE(void *) switch_core_session_get_private(switch_core_session_t *se
 }
 
 
-SWITCH_DECLARE(switch_status) switch_core_session_set_private(switch_core_session_t *session, void *private_info)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_private(switch_core_session_t *session, void *private_info)
 {
 	assert(session != NULL);
 	session->private_info = private_info;
@@ -883,15 +883,15 @@ SWITCH_DECLARE(int) switch_core_session_get_stream_count(switch_core_session_t *
 	return session->stream_count;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_session_t *session,
+SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core_session_t *session,
 																   char *endpoint_name,
 																   switch_caller_profile_t *caller_profile,
 																   switch_core_session_t **new_session,
 																   switch_memory_pool_t *pool)
 {
-	struct switch_io_event_hook_outgoing_channel *ptr;
-	switch_status status = SWITCH_STATUS_FALSE;
-	const switch_endpoint_interface *endpoint_interface;
+	switch_io_event_hook_outgoing_channel_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	const switch_endpoint_interface_t *endpoint_interface;
 
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
@@ -942,10 +942,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_outgoing_channel(switch_core_s
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_answer_channel(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_core_session_answer_channel(switch_core_session_t *session)
 {
-	struct switch_io_event_hook_answer_channel *ptr;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_io_event_hook_answer_channel_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	assert(session != NULL);
 	if (session->endpoint_interface->io_routines->answer_channel) {
@@ -963,11 +963,11 @@ SWITCH_DECLARE(switch_status) switch_core_session_answer_channel(switch_core_ses
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_receive_message(switch_core_session_t *session,
+SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_session_t *session,
 																  switch_core_session_message_t *message)
 {
-	struct switch_io_event_hook_receive_message *ptr;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_io_event_hook_receive_message_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	assert(session != NULL);
 	if (session->endpoint_interface->io_routines->receive_message) {
@@ -984,11 +984,11 @@ SWITCH_DECLARE(switch_status) switch_core_session_receive_message(switch_core_se
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_queue_event(switch_core_session_t *session, switch_event_t *event)
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_session_t *session, switch_event_t *event)
 	 
 {
-	struct switch_io_event_hook_queue_event *ptr;
-	switch_status status = SWITCH_STATUS_FALSE, istatus = SWITCH_STATUS_FALSE;;
+	switch_io_event_hook_queue_event_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE, istatus = SWITCH_STATUS_FALSE;;
 
 	assert(session != NULL);
 	if (session->endpoint_interface->io_routines->queue_event) {
@@ -1013,11 +1013,11 @@ SWITCH_DECLARE(switch_status) switch_core_session_queue_event(switch_core_sessio
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session_t *session, switch_frame_t **frame,
+SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_session_t *session, switch_frame_t **frame,
 															 int timeout, int stream_id)
 {
-	struct switch_io_event_hook_read_frame *ptr;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_io_event_hook_read_frame_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	int need_codec = 0, perfect = 0;
 
 	assert(session != NULL);
@@ -1183,10 +1183,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 	return status;
 }
 
-static switch_status perform_write(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag flags, int stream_id)
+static switch_status_t perform_write(switch_core_session_t *session, switch_frame_t *frame, int timeout, switch_io_flag_t flags, int stream_id)
 {
-	struct switch_io_event_hook_write_frame *ptr;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_io_event_hook_write_frame_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->endpoint_interface->io_routines->write_frame) {
 		if ((status =
@@ -1202,14 +1202,14 @@ static switch_status perform_write(switch_core_session_t *session, switch_frame_
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame,
+SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame,
 															  int timeout, int stream_id)
 {
 
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_frame_t *enc_frame = NULL, *write_frame = frame;
 	unsigned int flag = 0, need_codec = 0, perfect = 0;
-	switch_io_flag io_flag = SWITCH_IO_FLAG_NOOP;
+	switch_io_flag_t io_flag = SWITCH_IO_FLAG_NOOP;
 
 	assert(session != NULL);
 	assert(frame != NULL);
@@ -1439,14 +1439,14 @@ SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_sessio
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_perform_kill_channel(switch_core_session_t *session, 
+SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_core_session_t *session, 
 																	   const char *file, 
 																	   const char *func, 
 																	   int line, 
-																	   switch_signal sig)
+																	   switch_signal_t sig)
 {
-	struct switch_io_event_hook_kill_channel *ptr;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_io_event_hook_kill_channel_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Kill %s [%d]\n", switch_channel_get_name(session->channel), sig);
 
@@ -1464,10 +1464,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_perform_kill_channel(switch_co
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_waitfor_read(switch_core_session_t *session, int timeout, int stream_id)
+SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_read(switch_core_session_t *session, int timeout, int stream_id)
 {
-	struct switch_io_event_hook_waitfor_read *ptr;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_io_event_hook_waitfor_read_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->endpoint_interface->io_routines->waitfor_read) {
 		if ((status =
@@ -1485,11 +1485,11 @@ SWITCH_DECLARE(switch_status) switch_core_session_waitfor_read(switch_core_sessi
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_waitfor_write(switch_core_session_t *session, int timeout,
+SWITCH_DECLARE(switch_status_t) switch_core_session_waitfor_write(switch_core_session_t *session, int timeout,
 																int stream_id)
 {
-	struct switch_io_event_hook_waitfor_write *ptr;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_io_event_hook_waitfor_write_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->endpoint_interface->io_routines->waitfor_write) {
 		if ((status =
@@ -1507,10 +1507,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_waitfor_write(switch_core_sess
 }
 
 
-SWITCH_DECLARE(switch_status) switch_core_session_send_dtmf(switch_core_session_t *session, char *dtmf)
+SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_session_t *session, char *dtmf)
 {
-	struct switch_io_event_hook_send_dtmf *ptr;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_io_event_hook_send_dtmf_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->endpoint_interface->io_routines->send_dtmf) {
 		if ((status = session->endpoint_interface->io_routines->send_dtmf(session, dtmf)) == SWITCH_STATUS_SUCCESS) {
@@ -1525,10 +1525,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_send_dtmf(switch_core_session_
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_outgoing(switch_core_session_t *session,
-																		  switch_outgoing_channel_hook outgoing_channel)
+SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_outgoing(switch_core_session_t *session,
+																		  switch_outgoing_channel_hook_t outgoing_channel)
 {
-	switch_io_event_hook_outgoing_channel *hook, *ptr;
+	switch_io_event_hook_outgoing_channel_t *hook, *ptr;
 
 	assert(outgoing_channel != NULL);
 	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
@@ -1547,11 +1547,11 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_outgoing(switch
 	return SWITCH_STATUS_MEMERR;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_answer_channel(switch_core_session_t *session,
-																				switch_answer_channel_hook
+SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_answer_channel(switch_core_session_t *session,
+																				switch_answer_channel_hook_t
 																				answer_channel)
 {
-	switch_io_event_hook_answer_channel *hook, *ptr;
+	switch_io_event_hook_answer_channel_t *hook, *ptr;
 
 	assert(answer_channel != NULL);
 	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
@@ -1571,10 +1571,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_answer_channel(
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_read_frame(switch_core_session_t *session,
-																			switch_read_frame_hook read_frame)
+SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_read_frame(switch_core_session_t *session,
+																			switch_read_frame_hook_t read_frame)
 {
-	switch_io_event_hook_read_frame *hook, *ptr;
+	switch_io_event_hook_read_frame_t *hook, *ptr;
 
 	assert(read_frame != NULL);
 	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
@@ -1594,10 +1594,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_read_frame(swit
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_write_frame(switch_core_session_t *session,
-																			 switch_write_frame_hook write_frame)
+SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_write_frame(switch_core_session_t *session,
+																			 switch_write_frame_hook_t write_frame)
 {
-	switch_io_event_hook_write_frame *hook, *ptr;
+	switch_io_event_hook_write_frame_t *hook, *ptr;
 
 	assert(write_frame != NULL);
 	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
@@ -1617,10 +1617,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_write_frame(swi
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_kill_channel(switch_core_session_t *session,
-																			  switch_kill_channel_hook kill_channel)
+SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_kill_channel(switch_core_session_t *session,
+																			  switch_kill_channel_hook_t kill_channel)
 {
-	switch_io_event_hook_kill_channel *hook, *ptr;
+	switch_io_event_hook_kill_channel_t *hook, *ptr;
 
 	assert(kill_channel != NULL);
 	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
@@ -1640,10 +1640,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_kill_channel(sw
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_waitfor_read(switch_core_session_t *session,
-																			  switch_waitfor_read_hook waitfor_read)
+SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_waitfor_read(switch_core_session_t *session,
+																			  switch_waitfor_read_hook_t waitfor_read)
 {
-	switch_io_event_hook_waitfor_read *hook, *ptr;
+	switch_io_event_hook_waitfor_read_t *hook, *ptr;
 
 	assert(waitfor_read != NULL);
 	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
@@ -1663,10 +1663,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_waitfor_read(sw
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_waitfor_write(switch_core_session_t *session,
-																			   switch_waitfor_write_hook waitfor_write)
+SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_waitfor_write(switch_core_session_t *session,
+																			   switch_waitfor_write_hook_t waitfor_write)
 {
-	switch_io_event_hook_waitfor_write *hook, *ptr;
+	switch_io_event_hook_waitfor_write_t *hook, *ptr;
 
 	assert(waitfor_write != NULL);
 	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
@@ -1687,10 +1687,10 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_waitfor_write(s
 }
 
 
-SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_send_dtmf(switch_core_session_t *session,
-																		   switch_send_dtmf_hook send_dtmf)
+SWITCH_DECLARE(switch_status_t) switch_core_session_add_event_hook_send_dtmf(switch_core_session_t *session,
+																		   switch_send_dtmf_hook_t send_dtmf)
 {
-	switch_io_event_hook_send_dtmf *hook, *ptr;
+	switch_io_event_hook_send_dtmf_t *hook, *ptr;
 
 	assert(send_dtmf != NULL);
 	if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) {
@@ -1711,7 +1711,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_add_event_hook_send_dtmf(switc
 }
 
 
-SWITCH_DECLARE(switch_status) switch_core_new_memory_pool(switch_memory_pool_t **pool)
+SWITCH_DECLARE(switch_status_t) switch_core_new_memory_pool(switch_memory_pool_t **pool)
 {
 
 	assert(runtime.memory_pool != NULL);
@@ -1723,7 +1723,7 @@ SWITCH_DECLARE(switch_status) switch_core_new_memory_pool(switch_memory_pool_t *
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_destroy_memory_pool(switch_memory_pool_t **pool)
+SWITCH_DECLARE(switch_status_t) switch_core_destroy_memory_pool(switch_memory_pool_t **pool)
 {
 	apr_pool_destroy(*pool);
 	return SWITCH_STATUS_SUCCESS;
@@ -1748,7 +1748,7 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 
 static void switch_core_standard_on_ring(switch_core_session_t *session)
 {
-	switch_dialplan_interface *dialplan_interface = NULL;
+	switch_dialplan_interface_t *dialplan_interface = NULL;
 	switch_caller_profile_t *caller_profile;
 	switch_caller_extension_t *extension;
 
@@ -1780,7 +1780,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 {
 	switch_caller_extension_t *extension;
 	switch_event_t *event;
-	const switch_application_interface *application_interface;
+	const switch_application_interface_t *application_interface;
 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard EXECUTE\n");
@@ -1915,8 +1915,8 @@ static int handle_fatality(int sig)
 
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 {
-	switch_channel_state state = CS_NEW, laststate = CS_HANGUP, midstate = CS_DONE;
-	const switch_endpoint_interface *endpoint_interface;
+	switch_channel_state_t state = CS_NEW, laststate = CS_HANGUP, midstate = CS_DONE;
+	const switch_endpoint_interface_t *endpoint_interface;
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
 	switch_thread_id_t thread_id = switch_thread_self();
@@ -2275,7 +2275,7 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session
 
 }
 
-SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash_t **hash, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t **hash, switch_memory_pool_t *pool)
 {
 	assert(pool != NULL);
 
@@ -2286,25 +2286,25 @@ SWITCH_DECLARE(switch_status) switch_core_hash_init(switch_hash_t **hash, switch
 	return SWITCH_STATUS_GENERR;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_hash_destroy(switch_hash_t *hash)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_destroy(switch_hash_t *hash)
 {
 	assert(hash != NULL);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_hash_insert_dup(switch_hash_t *hash, char *key, void *data)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert_dup(switch_hash_t *hash, char *key, void *data)
 {
 	apr_hash_set(hash, switch_core_strdup(apr_hash_pool_get(hash), key), APR_HASH_KEY_STRING, data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_hash_insert(switch_hash_t *hash, char *key, void *data)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_insert(switch_hash_t *hash, char *key, void *data)
 {
 	apr_hash_set(hash, key, APR_HASH_KEY_STRING, data);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_core_hash_delete(switch_hash_t *hash, char *key)
+SWITCH_DECLARE(switch_status_t) switch_core_hash_delete(switch_hash_t *hash, char *key)
 {
 	apr_hash_set(hash, key, APR_HASH_KEY_STRING, NULL);
 	return SWITCH_STATUS_SUCCESS;
@@ -2426,7 +2426,7 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size
 	return ptr;
 }
 
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface *endpoint_interface,
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface_t *endpoint_interface,
 																  switch_memory_pool_t *pool)
 {
 	switch_memory_pool_t *usepool;
@@ -2485,7 +2485,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char *endpoint_name, switch_memory_pool_t *pool)
 {
-	const switch_endpoint_interface *endpoint_interface;
+	const switch_endpoint_interface_t *endpoint_interface;
 
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
@@ -2495,10 +2495,10 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char
 	return switch_core_session_request(endpoint_interface, pool);
 }
 
-static switch_status switch_core_sql_persistant_execute(switch_core_db *db, char *sql, uint32_t retries)
+static switch_status_t switch_core_sql_persistant_execute(switch_core_db *db, char *sql, uint32_t retries)
 {
 	char *errmsg;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	while(retries > 0) {
 		switch_core_db_exec(
@@ -2633,7 +2633,7 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_STATE:
 		if (event) {
 			char *state = switch_event_get_header(event, "channel-state-number");
-			switch_channel_state state_i = atoi(state);
+			switch_channel_state_t state_i = atoi(state);
 
 			switch(state_i) {
 			case CS_HANGUP:
@@ -2725,7 +2725,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 }
 
-SWITCH_DECLARE(switch_status) switch_core_init(char *console)
+SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
 {
 
 	memset(&runtime, 0, sizeof(runtime));
@@ -2818,7 +2818,7 @@ SWITCH_DECLARE(switch_status) switch_core_init(char *console)
 }
 
 
-SWITCH_DECLARE(switch_status) switch_core_destroy(void)
+SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 {
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");

@@ -57,7 +57,7 @@ struct ldap_context {
 };
 
 
-static switch_status mod_ldap_open(switch_directory_handle *dh, char *source, char *dsn, char *passwd)
+static switch_status_t mod_ldap_open(switch_directory_handle_t *dh, char *source, char *dsn, char *passwd)
 {
 	struct ldap_context *context;
 	int  auth_method = LDAP_AUTH_SIMPLE;
@@ -86,7 +86,7 @@ static switch_status mod_ldap_open(switch_directory_handle *dh, char *source, ch
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status mod_ldap_close(switch_directory_handle *dh)
+static switch_status_t mod_ldap_close(switch_directory_handle_t *dh)
 {
 	struct ldap_context *context;
 
@@ -98,7 +98,7 @@ static switch_status mod_ldap_close(switch_directory_handle *dh)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status mod_ldap_query(switch_directory_handle *dh, char *base, char *query)
+static switch_status_t mod_ldap_query(switch_directory_handle_t *dh, char *base, char *query)
 {
 	struct ldap_context *context;
 
@@ -116,7 +116,7 @@ static switch_status mod_ldap_query(switch_directory_handle *dh, char *base, cha
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status mod_ldap_next(switch_directory_handle *dh)
+static switch_status_t mod_ldap_next(switch_directory_handle_t *dh)
 {
 	struct ldap_context *context;
 
@@ -140,7 +140,7 @@ static switch_status mod_ldap_next(switch_directory_handle *dh)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status mod_ldap_next_pair(switch_directory_handle *dh, char **var, char **val)
+static switch_status_t mod_ldap_next_pair(switch_directory_handle_t *dh, char **var, char **val)
 {
 	struct ldap_context *context;
 
@@ -197,7 +197,7 @@ static switch_status mod_ldap_next_pair(switch_directory_handle *dh, char **var,
 }
 
 
-static const switch_directory_interface ldap_directory_interface = {
+static const switch_directory_interface_t ldap_directory_interface = {
     /*.interface_name */ "ldap",
 	/*.directory_open*/ mod_ldap_open,
 	/*.directory_close*/ mod_ldap_close,
@@ -207,7 +207,7 @@ static const switch_directory_interface ldap_directory_interface = {
 };
 
 
-static switch_loadable_module_interface skel_module_interface = {
+static switch_loadable_module_interface_t skel_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -220,7 +220,7 @@ static switch_loadable_module_interface skel_module_interface = {
 	/*.directory_interface */ &ldap_directory_interface
 };
 
-switch_status switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+switch_status_t switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &skel_module_interface;

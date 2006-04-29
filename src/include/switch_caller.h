@@ -94,7 +94,7 @@ struct switch_caller_application {
 	/*! An optional argument string to pass to the application */
 	char *application_data;
 	/*! A function pointer to the application */
-	switch_application_function application_function;
+	switch_application_function_t application_function;
 	struct switch_caller_application *next;
 };
 

@@ -48,7 +48,7 @@ struct timer_private {
 #endif
 };
 
-static switch_status soft_timer_init(switch_timer_t *timer)
+static switch_status_t soft_timer_init(switch_timer_t *timer)
 {
 	struct timer_private *private;
 
@@ -65,7 +65,7 @@ static switch_status soft_timer_init(switch_timer_t *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status soft_timer_next(switch_timer_t *timer)
+static switch_status_t soft_timer_next(switch_timer_t *timer)
 {
 	struct timer_private *private = timer->private_info;
 
@@ -91,20 +91,20 @@ static switch_status soft_timer_next(switch_timer_t *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status soft_timer_destroy(switch_timer_t *timer)
+static switch_status_t soft_timer_destroy(switch_timer_t *timer)
 {
 	timer->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_timer_interface soft_timer_interface = {
+static const switch_timer_interface_t soft_timer_interface = {
 	/*.interface_name */ "soft",
 	/*.timer_init */ soft_timer_init,
 	/*.timer_next */ soft_timer_next,
 	/*.timer_destroy */ soft_timer_destroy
 };
 
-static const switch_loadable_module_interface mod_timers_module_interface = {
+static const switch_loadable_module_interface_t mod_timers_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ &soft_timer_interface,
@@ -113,7 +113,7 @@ static const switch_loadable_module_interface mod_timers_module_interface = {
 	/*.switch_application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

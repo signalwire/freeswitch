@@ -48,10 +48,10 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address)
 #define MULTICAST_EVENT "multicast::event"
 
 
-static switch_status load_config(void)
+static switch_status_t load_config(void)
 {
 	switch_config_t cfg;
-	switch_status status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *var, *val;
 	char *cf = "event_multicast.conf";
 
@@ -105,7 +105,7 @@ static void event_handler(switch_event_t *event)
 }
 
 
-static switch_loadable_module_interface event_test_module_interface = {
+static switch_loadable_module_interface_t event_test_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -115,7 +115,7 @@ static switch_loadable_module_interface event_test_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	memset(&globals, 0, sizeof(globals));
 	
@@ -173,7 +173,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 }
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
 	int x = 0;
 
@@ -187,7 +187,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 }
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_runtime(void)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 {
 	switch_event_t *local_event;
 	char buf[1024];

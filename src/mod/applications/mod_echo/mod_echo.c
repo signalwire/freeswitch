@@ -45,13 +45,13 @@ static void echo_function(switch_core_session_t *session, char *data)
 	switch_channel_set_state(channel, CS_LOOPBACK);
 }
 
-static const switch_application_interface echo_application_interface = {
+static const switch_application_interface_t echo_application_interface = {
 	/*.interface_name */ "echo",
 	/*.application_function */ echo_function,
 	NULL,NULL,NULL,NULL
 };
 
-static switch_loadable_module_interface echo_module_interface = {
+static switch_loadable_module_interface_t echo_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -64,7 +64,7 @@ static switch_loadable_module_interface echo_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &echo_module_interface;

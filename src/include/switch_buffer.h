@@ -60,7 +60,7 @@ struct switch_buffer;
  * \param max_len length required by the buffer
  * \return status
  */
-SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len);
+SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len);
 
 /*! \brief Get the length of a switch_buffer_t 
  * \param buffer any buffer of type switch_buffer_t

@@ -34,14 +34,14 @@
 static const char modname[] = "mod_commands";
 
 
-static switch_status load_function(char *mod, char *out, size_t outlen)
+static switch_status_t load_function(char *mod, char *out, size_t outlen)
 {
 	switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod);
 	snprintf(out, outlen, "OK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status kill_function(char *dest, char *out, size_t outlen)
+static switch_status_t kill_function(char *dest, char *out, size_t outlen)
 {
 	switch_core_session_t *session = NULL;
 
@@ -59,7 +59,7 @@ static switch_status kill_function(char *dest, char *out, size_t outlen)
 }
 
 
-static switch_status transfer_function(char *cmd, char *out, size_t outlen)
+static switch_status_t transfer_function(char *cmd, char *out, size_t outlen)
 {
 	switch_core_session_t *session = NULL;
 	char *argv[4] = {0};
@@ -96,7 +96,7 @@ static switch_status transfer_function(char *cmd, char *out, size_t outlen)
 
 
 
-static switch_status pause_function(char *cmd, char *out, size_t outlen)
+static switch_status_t pause_function(char *cmd, char *out, size_t outlen)
 {
 	switch_core_session_t *session = NULL;
 	char *argv[4] = {0};
@@ -130,21 +130,21 @@ static switch_status pause_function(char *cmd, char *out, size_t outlen)
 }
 
 
-static struct switch_api_interface pause_api_interface = {
+static switch_api_interface_t pause_api_interface = {
 	/*.interface_name */ "pause",
 	/*.desc */ "Pause",
 	/*.function */ pause_function,
 	/*.next */ NULL
 };
 
-static struct switch_api_interface transfer_api_interface = {
+static switch_api_interface_t transfer_api_interface = {
 	/*.interface_name */ "transfer",
 	/*.desc */ "Transfer",
 	/*.function */ transfer_function,
 	/*.next */ &pause_api_interface
 };
 
-static struct switch_api_interface load_api_interface = {
+static switch_api_interface_t load_api_interface = {
 	/*.interface_name */ "load",
 	/*.desc */ "Load Modile",
 	/*.function */ load_function,
@@ -152,7 +152,7 @@ static struct switch_api_interface load_api_interface = {
 };
 
 
-static struct switch_api_interface commands_api_interface = {
+static switch_api_interface_t commands_api_interface = {
 	/*.interface_name */ "killchan",
 	/*.desc */ "Kill Channel",
 	/*.function */ kill_function,
@@ -160,7 +160,7 @@ static struct switch_api_interface commands_api_interface = {
 };
 
 
-static const switch_loadable_module_interface mod_commands_module_interface = {
+static const switch_loadable_module_interface_t mod_commands_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -171,7 +171,7 @@ static const switch_loadable_module_interface mod_commands_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */

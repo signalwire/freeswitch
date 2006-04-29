@@ -92,7 +92,7 @@ struct switch_channel {
 	switch_mutex_t *dtmf_mutex;
 	switch_mutex_t *profile_mutex;
 	switch_core_session_t *session;
-	switch_channel_state state;
+	switch_channel_state_t state;
 	uint32_t flags;
 	switch_caller_profile_t *caller_profile;
 	switch_caller_profile_t *originator_caller_profile;
@@ -149,7 +149,7 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
 	return channel->times;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t *pool)
 {
 	assert(pool != NULL);
 
@@ -166,7 +166,7 @@ SWITCH_DECLARE(switch_status) switch_channel_alloc(switch_channel_t **channel, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_set_raw_mode(switch_channel_t *channel, int freq, int bits, int channels,
+SWITCH_DECLARE(switch_status_t) switch_channel_set_raw_mode(switch_channel_t *channel, int freq, int bits, int channels,
 														  int ms, int kbps)
 {
 
@@ -182,7 +182,7 @@ SWITCH_DECLARE(switch_status) switch_channel_set_raw_mode(switch_channel_t *chan
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_get_raw_mode(switch_channel_t *channel, int *freq, int *bits, int *channels,
+SWITCH_DECLARE(switch_status_t) switch_channel_get_raw_mode(switch_channel_t *channel, int *freq, int *bits, int *channels,
 														  int *ms, int *kbps)
 {
 	if (freq) {
@@ -218,9 +218,9 @@ SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel)
 	return has;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_queue_dtmf(switch_channel_t *channel, char *dtmf)
+SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *channel, char *dtmf)
 {
-	switch_status status;
+	switch_status_t status;
 	register switch_size_t len, inuse;
 
 	assert(channel != NULL);
@@ -264,9 +264,9 @@ SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel_t *chan
 
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_init(switch_channel_t *channel,
+SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel,
 												  switch_core_session_t *session,
-												  switch_channel_state state, uint32_t flags)
+												  switch_channel_state_t state, uint32_t flags)
 {
 	assert(channel != NULL);
 	channel->state = state;
@@ -281,7 +281,7 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, ch
 	return switch_core_hash_find(channel->variables, varname);
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_set_private(switch_channel_t *channel, void *private_info)
+SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, void *private_info)
 {
 	assert(channel != NULL);
 	channel->private_info = private_info;
@@ -294,7 +294,7 @@ SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel)
 	return channel->private_info;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_set_name(switch_channel_t *channel, char *name)
+SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channel, char *name)
 {
 	assert(channel != NULL);
 	channel->name = NULL;
@@ -313,7 +313,7 @@ SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel)
 	return channel->name;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_set_variable(switch_channel_t *channel, char *varname, char *value)
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, char *varname, char *value)
 {
 	assert(channel != NULL);
 	switch_core_hash_delete(channel->variables, varname);
@@ -323,22 +323,22 @@ SWITCH_DECLARE(switch_status) switch_channel_set_variable(switch_channel_t *chan
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag flags)
+SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
 	return switch_test_flag(channel, flags) ? 1 : 0;
 }
 
-SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag flags)
+SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
 	switch_set_flag(channel, flags);
 }
 
-SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag flags)
+SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
 	switch_clear_flag(channel, flags);
 }
 
-SWITCH_DECLARE(switch_channel_state) switch_channel_get_state(switch_channel_t *channel)
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t *channel)
 {
 	assert(channel != NULL);
 	return channel->state;
@@ -362,18 +362,18 @@ static const char *state_names[] = {
 	"CS_DONE"
 };
 
-SWITCH_DECLARE(const char *) switch_channel_state_name(switch_channel_state state)
+SWITCH_DECLARE(const char *) switch_channel_state_name(switch_channel_state_t state)
 {
 	return state_names[state];
 }
 
-SWITCH_DECLARE(switch_channel_state) switch_channel_perform_set_state(switch_channel_t *channel,
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
 																	  const char *file,
 																	  const char *func,
 																	  int line,
-																	  switch_channel_state state)
+																	  switch_channel_state_t state)
 {
-	switch_channel_state last_state;
+	switch_channel_state_t last_state;
 	int ok = 0;
 
 
@@ -754,7 +754,7 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_caller_extension(
 }
 
 
-SWITCH_DECLARE(switch_channel_state) switch_channel_perform_hangup(switch_channel_t *channel, 
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_channel_t *channel, 
 																   const char *file,
 																   const char *func,
 																   int line,
@@ -768,7 +768,7 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_hangup(switch_channe
 
 	if (channel->state < CS_HANGUP) {
 		switch_event_t *event;
-		switch_channel_state last_state = channel->state;
+		switch_channel_state_t last_state = channel->state;
 
 		channel->state = CS_HANGUP;
 		channel->hangup_cause = hangup_cause;
@@ -786,14 +786,14 @@ SWITCH_DECLARE(switch_channel_state) switch_channel_perform_hangup(switch_channe
 	return channel->state;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_perform_pre_answer(switch_channel_t *channel,
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel_t *channel,
 																const char *file,
 																const char *func,
 																int line)
 {
 	switch_core_session_message_t msg;
 	char *uuid = switch_core_session_get_uuid(channel->session);
-	switch_status status;
+	switch_status_t status;
 
 	assert(channel != NULL);
 
@@ -813,7 +813,7 @@ SWITCH_DECLARE(switch_status) switch_channel_perform_pre_answer(switch_channel_t
 	return status;
 }
 
-SWITCH_DECLARE(switch_status) switch_channel_perform_answer(switch_channel_t *channel,
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel,
 																const char *file,
 																const char *func,
 																int line)

@@ -78,7 +78,7 @@ static swift_result_t write_audio(swift_event *event, swift_event_t type, void *
     return rv;
 }
 
-static switch_status cepstral_speech_open(switch_speech_handle *sh, char *voice_name, int rate, switch_speech_flag *flags)
+static switch_status_t cepstral_speech_open(switch_speech_handle_t *sh, char *voice_name, int rate, switch_speech_flag_t *flags)
 {
 	if (*flags & SWITCH_SPEECH_FLAG_ASR) {
 		return SWITCH_STATUS_FALSE;
@@ -142,7 +142,7 @@ static switch_status cepstral_speech_open(switch_speech_handle *sh, char *voice_
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status cepstral_speech_close(switch_speech_handle *sh, switch_speech_flag *flags)
+static switch_status_t cepstral_speech_close(switch_speech_handle_t *sh, switch_speech_flag_t *flags)
 {
 	cepstral_t *cepstral;
 
@@ -160,7 +160,7 @@ static switch_status cepstral_speech_close(switch_speech_handle *sh, switch_spee
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status cepstral_speech_feed_tts(switch_speech_handle *sh, char *text, switch_speech_flag *flags)
+static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
 	cepstral_t *cepstral;
 
@@ -176,15 +176,15 @@ static switch_status cepstral_speech_feed_tts(switch_speech_handle *sh, char *te
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status cepstral_speech_read_tts(switch_speech_handle *sh,
+static switch_status_t cepstral_speech_read_tts(switch_speech_handle_t *sh,
 											  void *data,
 											  size_t *datalen,
 											  uint32_t *rate,
-											  switch_speech_flag *flags) 
+											  switch_speech_flag_t *flags) 
 {
 	cepstral_t *cepstral;
 	size_t desired = *datalen;
-	switch_status status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	size_t used, padding = 0;
 
 	assert(sh != NULL);
@@ -245,7 +245,7 @@ static switch_status cepstral_speech_read_tts(switch_speech_handle *sh,
 	return status;
 }
 
-static const switch_speech_interface cepstral_speech_interface = {
+static const switch_speech_interface_t cepstral_speech_interface = {
 	/*.interface_name*/			"cepstral",
 	/*.speech_open*/			cepstral_speech_open,
 	/*.speech_close*/			cepstral_speech_close,
@@ -256,7 +256,7 @@ static const switch_speech_interface cepstral_speech_interface = {
 	
 };
 
-static const switch_loadable_module_interface cepstral_module_interface = {
+static const switch_loadable_module_interface_t cepstral_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -269,7 +269,7 @@ static const switch_loadable_module_interface cepstral_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-switch_status switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+switch_status_t switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 
 	/* Open the Swift TTS Engine */

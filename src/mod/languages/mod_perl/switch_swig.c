@@ -17,7 +17,7 @@ void fs_core_set_globals(void)
 
 int fs_core_init(char *path)
 {
-	switch_status status;
+	switch_status_t status;
 
 	if (switch_strlen_zero(path)) {
 		path = NULL;
@@ -30,7 +30,7 @@ int fs_core_init(char *path)
 
 int fs_core_destroy(void)
 {
-	switch_status status;
+	switch_status_t status;
 
 	status = switch_core_destroy();
 
@@ -102,7 +102,7 @@ void fs_channel_get_variable(switch_core_session_t *session, char *var)
 void fs_channel_set_state(switch_core_session_t *session, char *state)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_channel_state fs_state = switch_channel_get_state(channel);
+	switch_channel_state_t fs_state = switch_channel_get_state(channel);
 
 	if (!strcmp(state, "EXECUTE")) {
 		fs_state = CS_EXECUTE;
@@ -115,7 +115,7 @@ void fs_channel_set_state(switch_core_session_t *session, char *state)
 
 int fs_ivr_play_file(switch_core_session_t *session, char *file, char *timer_name) 
 {
-	switch_status status;
+	switch_status_t status;
 	if (switch_strlen_zero(timer_name)) {
 		timer_name = NULL;
 	}

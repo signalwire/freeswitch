@@ -36,7 +36,7 @@ struct gsm_context {
 	gsm encoder;
 	gsm decoder;
 };
-static switch_status switch_gsm_init(switch_codec_t *codec, switch_codec_flag flags,
+static switch_status_t switch_gsm_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									   const switch_codec_settings_t *codec_settings) 
 {
 	struct gsm_context *context;
@@ -55,7 +55,7 @@ static switch_status switch_gsm_init(switch_codec_t *codec, switch_codec_flag fl
 	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;
 }
-static switch_status switch_gsm_destroy(switch_codec_t *codec) 
+static switch_status_t switch_gsm_destroy(switch_codec_t *codec) 
 {
 	struct gsm_context *context = codec->private_info;
 	int encoding = (codec->flags & SWITCH_CODEC_FLAG_ENCODE);
@@ -67,7 +67,7 @@ static switch_status switch_gsm_destroy(switch_codec_t *codec)
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
-static switch_status switch_gsm_encode(switch_codec_t *codec, switch_codec_t *other_codec, void *decoded_data,
+static switch_status_t switch_gsm_encode(switch_codec_t *codec, switch_codec_t *other_codec, void *decoded_data,
 										  uint32_t decoded_data_len, uint32_t decoded_rate, void *encoded_data,
 										  uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag) 
 {
@@ -96,7 +96,7 @@ static switch_status switch_gsm_encode(switch_codec_t *codec, switch_codec_t *ot
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
-static switch_status switch_gsm_decode(switch_codec_t *codec, switch_codec_t *other_codec, void *encoded_data,
+static switch_status_t switch_gsm_decode(switch_codec_t *codec, switch_codec_t *other_codec, void *encoded_data,
 										  uint32_t encoded_data_len, uint32_t encoded_rate, void *decoded_data,
 										  uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag) 
 {
@@ -147,14 +147,14 @@ static const switch_codec_implementation_t gsm_8k_implementation = {
 		/*.decode */ switch_gsm_decode, 
 		/*.destroy */ switch_gsm_destroy, 
 };
-static const switch_codec_interface gsm_codec_interface = { 
+static const switch_codec_interface_t gsm_codec_interface = { 
 		/*.interface_name */ "gsm", 
 		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 3, 
 		/*.iananame */ "gsm", 
 		/*.implementations */ &gsm_8k_implementation, 
 };
-static switch_loadable_module_interface gsm_module_interface = { 
+static switch_loadable_module_interface_t gsm_module_interface = { 
 		/*.module_name */ modname, 
 		/*.endpoint_interface */ NULL, 
 		/*.timer_interface */ NULL, 
@@ -162,7 +162,7 @@ static switch_loadable_module_interface gsm_module_interface = {
 		/*.codec_interface */ &gsm_codec_interface, 
 		/*.application_interface */ NULL 
 };
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface,
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface,
 														char *filename)
 {
 	

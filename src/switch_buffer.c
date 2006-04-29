@@ -41,7 +41,7 @@ struct switch_buffer {
 	uint32_t id;
 };
 
-SWITCH_DECLARE(switch_status) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len)
+SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len)
 {
 	switch_buffer_t *new_buffer;
 

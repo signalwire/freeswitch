@@ -62,7 +62,7 @@ BEGIN_EXTERN_C
 atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
 
 
-SWITCH_DECLARE(switch_status) switch_socket_recvfrom(switch_sockaddr_t *from, switch_socket_t *sock, int32_t flags, char *buf, switch_size_t *len);
+SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t *from, switch_socket_t *sock, int32_t flags, char *buf, switch_size_t *len);
 
 /*!
   \brief Return a printable name of a switch_priority_t
@@ -157,7 +157,7 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
   \param pool the memory pool to use
   \return SWITCH_STATUS_SUCCESS when successful
 */
-SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock, switch_int16_t flags, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock, switch_int16_t flags, switch_memory_pool_t *pool);
 
 /*!
   \brief Wait for a socket
@@ -174,7 +174,7 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
 SWITCH_DECLARE(char *) switch_cut_path(char *in);
 
 SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *search, const char *replace);
-SWITCH_DECLARE(switch_status) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len);
+SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len);
 
 #define SWITCH_READ_ACCEPTABLE(status) status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK
 

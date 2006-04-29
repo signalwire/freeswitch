@@ -41,7 +41,7 @@ struct sndfile_context {
 
 typedef struct sndfile_context sndfile_context;
 
-static switch_status sndfile_file_open(switch_file_handle_t *handle, char *path)
+static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *path)
 {
 	sndfile_context *context;
 	int mode = 0;
@@ -144,7 +144,7 @@ static switch_status sndfile_file_open(switch_file_handle_t *handle, char *path)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status sndfile_file_close(switch_file_handle_t *handle)
+static switch_status_t sndfile_file_close(switch_file_handle_t *handle)
 {
 	sndfile_context *context = handle->private_info;
 
@@ -153,7 +153,7 @@ static switch_status sndfile_file_close(switch_file_handle_t *handle)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status sndfile_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
+static switch_status_t sndfile_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
 	sndfile_context *context = handle->private_info;
 
@@ -169,7 +169,7 @@ static switch_status sndfile_file_seek(switch_file_handle_t *handle, unsigned in
 
 }
 
-static switch_status sndfile_file_read(switch_file_handle_t *handle, void *data, size_t *len)
+static switch_status_t sndfile_file_read(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	size_t inlen = *len;
 	sndfile_context *context = handle->private_info;
@@ -191,7 +191,7 @@ static switch_status sndfile_file_read(switch_file_handle_t *handle, void *data,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status sndfile_file_write(switch_file_handle_t *handle, void *data, size_t *len)
+static switch_status_t sndfile_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	size_t inlen = *len;
 	sndfile_context *context = handle->private_info;
@@ -217,7 +217,7 @@ static switch_status sndfile_file_write(switch_file_handle_t *handle, void *data
 
 static char **supported_formats;
 
-static switch_file_interface sndfile_file_interface = {
+static switch_file_interface_t sndfile_file_interface = {
 	/*.interface_name */ modname,
 	/*.file_open */ sndfile_file_open,
 	/*.file_close */ sndfile_file_close,
@@ -228,7 +228,7 @@ static switch_file_interface sndfile_file_interface = {
 	/*.next */ NULL,
 };
 
-static switch_loadable_module_interface sndfile_module_interface = {
+static switch_loadable_module_interface_t sndfile_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -239,7 +239,7 @@ static switch_loadable_module_interface sndfile_module_interface = {
 	/*.file_interface */ &sndfile_file_interface
 };
 
-static switch_status setup_formats(void)
+static switch_status_t setup_formats(void)
 {
 	SF_FORMAT_INFO info;
 	SF_INFO sfinfo;
@@ -309,7 +309,7 @@ static switch_status setup_formats(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 
 

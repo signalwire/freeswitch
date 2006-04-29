@@ -72,7 +72,7 @@ struct speex_context {
 	int decoder_mode;
 };
 
-static switch_status switch_speex_init(switch_codec_t *codec, switch_codec_flag flags,
+static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									   const switch_codec_settings_t *codec_settings)
 {
 	struct speex_context *context = NULL;
@@ -157,7 +157,7 @@ static switch_status switch_speex_init(switch_codec_t *codec, switch_codec_flag 
 	}
 }
 
-static switch_status switch_speex_encode(switch_codec_t *codec,
+static switch_status_t switch_speex_encode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *decoded_data,
 										 uint32_t decoded_data_len,
@@ -212,7 +212,7 @@ static switch_status switch_speex_encode(switch_codec_t *codec,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status switch_speex_decode(switch_codec_t *codec,
+static switch_status_t switch_speex_decode(switch_codec_t *codec,
 										 switch_codec_t *other_codec,
 										 void *encoded_data,
 										 uint32_t encoded_data_len,
@@ -239,7 +239,7 @@ static switch_status switch_speex_decode(switch_codec_t *codec,
 }
 
 
-static switch_status switch_speex_destroy(switch_codec_t *codec)
+static switch_status_t switch_speex_destroy(switch_codec_t *codec)
 {
 	int encoding, decoding;
 	struct speex_context *context = codec->private_info;
@@ -317,7 +317,7 @@ static const switch_codec_implementation_t speex_8k_implementation = {
 	/*.next */ &speex_16k_implementation
 };
 
-static const switch_codec_interface speex_codec_interface = {
+static const switch_codec_interface_t speex_codec_interface = {
 	/*.interface_name */ "speex",
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 98,
@@ -325,7 +325,7 @@ static const switch_codec_interface speex_codec_interface = {
 	/*.implementations */ &speex_8k_implementation
 };
 
-static switch_loadable_module_interface speex_module_interface = {
+static switch_loadable_module_interface_t speex_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -334,7 +334,7 @@ static switch_loadable_module_interface speex_module_interface = {
 	/*.application_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &speex_module_interface;

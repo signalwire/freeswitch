@@ -197,7 +197,7 @@ typedef enum {
 } switch_stack_t;
 
 /*!
-  \enum switch_status
+  \enum switch_status_t
   \brief Common return values
 <pre>
     SWITCH_STATUS_SUCCESS	- General Success (common return value for most functions)
@@ -229,12 +229,12 @@ typedef enum {
 	SWITCH_STATUS_INUSE,
 	SWITCH_STATUS_BREAK,
 	SWITCH_STATUS_SOCKERR
-} switch_status;
+} switch_status_t;
 
 
 
 /*!
-\enum switch_log_level
+\enum switch_log_level_t
 \brief Log Level Enumeration
 <pre>
     SWITCH_LOG_CONSOLE          - Console
@@ -258,11 +258,11 @@ typedef enum {
 	SWITCH_LOG_CRIT = 2,
 	SWITCH_LOG_ALERT = 1,
 	SWITCH_LOG_EMERG = 0
-} switch_log_level;
+} switch_log_level_t;
 
 
 /*!
-\enum switch_text_channel
+\enum switch_text_channel_t
 \brief A target to write log/debug info to
 <pre>
 SWITCH_CHANNEL_ID_LOG			- Write to the currently defined log
@@ -274,7 +274,7 @@ typedef enum {
 	SWITCH_CHANNEL_ID_LOG,
 	SWITCH_CHANNEL_ID_LOG_CLEAN,
 	SWITCH_CHANNEL_ID_EVENT
-} switch_text_channel;
+} switch_text_channel_t;
 
 #define SWITCH_UUID_FORMATTED_LENGTH APR_UUID_FORMATTED_LENGTH 	
 #define SWITCH_CHANNEL_LOG SWITCH_CHANNEL_ID_LOG, __FILE__, __FUNCTION__, __LINE__
@@ -282,7 +282,7 @@ typedef enum {
 #define SWITCH_CHANNEL_EVENT SWITCH_CHANNEL_ID_EVENT, __FILE__, __FUNCTION__, __LINE__
 
 /*!
-  \enum switch_channel_state
+  \enum switch_channel_state_t
   \brief Channel States
 <pre>
 CS_NEW       - Channel is newly created 
@@ -306,11 +306,11 @@ typedef enum {
 	CS_HOLD,
 	CS_HANGUP,
 	CS_DONE 
-} switch_channel_state;
+} switch_channel_state_t;
 
 
 /*!
-  \enum switch_channel_flag
+  \enum switch_channel_flag_t
   \brief Channel Flags
 
 <pre>
@@ -336,11 +336,11 @@ typedef enum {
 	CF_LOCK_THREAD	= (1 <<  6),
 	CF_BRIDGED		= (1 <<  7),
 	CF_HOLD			= (1 <<  8)
-} switch_channel_flag;
+} switch_channel_flag_t;
 
 
 /*!
-  \enum switch_frame_flag
+  \enum switch_frame_flag_t
   \brief Frame Flags
 
 <pre>
@@ -351,11 +351,11 @@ SFF_RAW_RTP   = (1 <<  1) - Frame has raw rtp accessible
 typedef enum {
 	SFF_CNG = (1 << 0),
 	SFF_RAW_RTP = (1 << 1)
-} switch_frame_flag;
+} switch_frame_flag_t;
 
 
 /*!
-  \enum switch_signal
+  \enum switch_signal_t
   \brief Signals to send to channels
 <pre>
 SWITCH_SIG_KILL - Kill the channel
@@ -367,10 +367,10 @@ typedef enum {
 	SWITCH_SIG_NONE,
 	SWITCH_SIG_KILL,
 	SWITCH_SIG_XFER
-} switch_signal;
+} switch_signal_t;
 
 /*!
-  \enum switch_codec_flag
+  \enum switch_codec_flag_t
   \brief Codec related flags
 <pre>
 SWITCH_CODEC_FLAG_ENCODE =			(1 <<  0) - Codec can encode
@@ -389,11 +389,11 @@ typedef enum {
 	SWITCH_CODEC_FLAG_SILENCE =			(1 <<  4),
 	SWITCH_CODEC_FLAG_FREE_POOL =		(1 <<  5),
 
-} switch_codec_flag;
+} switch_codec_flag_t;
 
 
 /*!
-  \enum switch_speech_flag
+  \enum switch_speech_flag_t
   \brief Speech related flags
 <pre>
 SWITCH_SPEECH_FLAG_TTS =			(1 <<  0) - Interface can/should convert text to speech.
@@ -412,11 +412,11 @@ typedef enum {
 	SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  4),
 	SWITCH_SPEECH_FLAG_BLOCKING =		(1 <<  5),
 
-} switch_speech_flag;
+} switch_speech_flag_t;
 
 
 /*!
-  \enum switch_directory_flag
+  \enum switch_directory_flag_t
   \brief Directory Handle related flags
 <pre>
 SWITCH_DIRECTORY_FLAG_FREE_POOL =		(1 <<  0) - Free interface's pool on destruction.
@@ -425,10 +425,10 @@ SWITCH_DIRECTORY_FLAG_FREE_POOL =		(1 <<  0) - Free interface's pool on destruct
 typedef enum {
 	SWITCH_DIRECTORY_FLAG_FREE_POOL =		(1 <<  0),
 
-} switch_directory_flag;
+} switch_directory_flag_t;
 
 /*!
-  \enum switch_codec_type
+  \enum switch_codec_type_t
   \brief Codec types
 <pre>
 SWITCH_CODEC_TYPE_AUDIO - Audio Codec
@@ -442,11 +442,11 @@ typedef enum {
 	SWITCH_CODEC_TYPE_VIDEO,
 	SWITCH_CODEC_TYPE_T38,
 	SWITCH_CODEC_TYPE_APP
-} switch_codec_type;
+} switch_codec_type_t;
 
 
 /*!
-  \enum switch_timer_flag
+  \enum switch_timer_flag_t
   \brief Timer related flags
 <pre>
 SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0) - Free timer's pool on destruction
@@ -454,10 +454,10 @@ SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0) - Free timer's pool on destruction
 */
 typedef enum {
 		SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0),
-} switch_timer_flag;
+} switch_timer_flag_t;
 
 /*!
-  \enum switch_file_flag
+  \enum switch_file_flag_t
   \brief File flags
 <pre>
 SWITCH_FILE_FLAG_READ =         (1 <<  0) - Open for read
@@ -481,11 +481,11 @@ typedef enum {
 	SWITCH_FILE_DATA_DOUBLE =		(1 <<  6),
 	SWITCH_FILE_DATA_RAW =			(1 <<  7),
 	SWITCH_FILE_PAUSE =				(1 <<  8)
-} switch_file_flag;
+} switch_file_flag_t;
 
 typedef enum {
 	SWITCH_IO_FLAG_NOOP = 0,
-} switch_io_flag;
+} switch_io_flag_t;
 
 /* make sure this is synced with the EVENT_NAMES array in switch_event.c
    also never put any new ones before EVENT_ALL
@@ -617,57 +617,57 @@ typedef struct switch_buffer switch_buffer_t;
 typedef struct switch_codec_settings switch_codec_settings_t;
 typedef struct switch_config switch_config_t;
 
-typedef struct switch_io_event_hook_outgoing_channel switch_io_event_hook_outgoing_channel;
-typedef struct switch_io_event_hook_answer_channel switch_io_event_hook_answer_channel;
-typedef struct switch_io_event_hook_receive_message switch_io_event_hook_receive_message;
-typedef struct switch_io_event_hook_queue_event switch_io_event_hook_queue_event;
-typedef struct switch_io_event_hook_read_frame switch_io_event_hook_read_frame;
-typedef struct switch_io_event_hook_write_frame switch_io_event_hook_write_frame;
-typedef struct switch_io_event_hook_kill_channel switch_io_event_hook_kill_channel;
-typedef struct switch_io_event_hook_waitfor_read switch_io_event_hook_waitfor_read;
-typedef struct switch_io_event_hook_waitfor_write switch_io_event_hook_waitfor_write;
-typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf;
-typedef struct switch_io_routines switch_io_routines;
-typedef struct switch_io_event_hooks switch_io_event_hooks;
+typedef struct switch_io_event_hook_outgoing_channel switch_io_event_hook_outgoing_channel_t;
+typedef struct switch_io_event_hook_answer_channel switch_io_event_hook_answer_channel_t;
+typedef struct switch_io_event_hook_receive_message switch_io_event_hook_receive_message_t;
+typedef struct switch_io_event_hook_queue_event switch_io_event_hook_queue_event_t;
+typedef struct switch_io_event_hook_read_frame switch_io_event_hook_read_frame_t;
+typedef struct switch_io_event_hook_write_frame switch_io_event_hook_write_frame_t;
+typedef struct switch_io_event_hook_kill_channel switch_io_event_hook_kill_channel_t;
+typedef struct switch_io_event_hook_waitfor_read switch_io_event_hook_waitfor_read_t;
+typedef struct switch_io_event_hook_waitfor_write switch_io_event_hook_waitfor_write_t;
+typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf_t;
+typedef struct switch_io_routines switch_io_routines_t;
+typedef struct switch_io_event_hooks switch_io_event_hooks_t;
 
-typedef struct switch_speech_handle switch_speech_handle;
-typedef struct switch_directory_handle switch_directory_handle;
+typedef struct switch_speech_handle switch_speech_handle_t;
+typedef struct switch_directory_handle switch_directory_handle_t;
 
-typedef struct switch_loadable_module_interface switch_loadable_module_interface;
-typedef struct switch_endpoint_interface switch_endpoint_interface;
-typedef struct switch_timer_interface switch_timer_interface;
-typedef struct switch_dialplan_interface switch_dialplan_interface;
-typedef struct switch_codec_interface switch_codec_interface;
-typedef struct switch_application_interface switch_application_interface;
-typedef struct switch_api_interface switch_api_interface;
-typedef struct switch_file_interface switch_file_interface;
-typedef struct switch_speech_interface switch_speech_interface;
-typedef struct switch_directory_interface switch_directory_interface;
+typedef struct switch_loadable_module_interface switch_loadable_module_interface_t;
+typedef struct switch_endpoint_interface switch_endpoint_interface_t;
+typedef struct switch_timer_interface switch_timer_interface_t;
+typedef struct switch_dialplan_interface switch_dialplan_interface_t;
+typedef struct switch_codec_interface switch_codec_interface_t;
+typedef struct switch_application_interface switch_application_interface_t;
+typedef struct switch_api_interface switch_api_interface_t;
+typedef struct switch_file_interface switch_file_interface_t;
+typedef struct switch_speech_interface switch_speech_interface_t;
+typedef struct switch_directory_interface switch_directory_interface_t;
 
-typedef void (*switch_application_function)(switch_core_session_t *, char *);
+typedef void (*switch_application_function_t)(switch_core_session_t *, char *);
 typedef void (*switch_event_callback_t)(switch_event_t *);
-typedef switch_caller_extension_t *(*switch_dialplan_hunt_function)(switch_core_session_t *);
-typedef switch_status (*switch_state_handler)(switch_core_session_t *);
-typedef switch_status (*switch_outgoing_channel_hook)(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *);
-typedef switch_status (*switch_answer_channel_hook)(switch_core_session_t *);
-typedef switch_status (*switch_receive_message_hook)(switch_core_session_t *, switch_core_session_message_t *);
-typedef switch_status (*switch_queue_event_hook)(switch_core_session_t *, switch_event_t *);
-typedef switch_status (*switch_read_frame_hook)(switch_core_session_t *, switch_frame_t **, int, switch_io_flag, int);
-typedef switch_status (*switch_write_frame_hook)(switch_core_session_t *, switch_frame_t *, int, switch_io_flag, int);
-typedef switch_status (*switch_kill_channel_hook)(switch_core_session_t *, int);
-typedef switch_status (*switch_waitfor_read_hook)(switch_core_session_t *, int, int);
-typedef switch_status (*switch_waitfor_write_hook)(switch_core_session_t *, int, int);
-typedef switch_status (*switch_send_dtmf_hook)(switch_core_session_t *, char *);
-typedef switch_status (*switch_api_function)(char *in, char *out, switch_size_t outlen);
-typedef switch_status (*switch_dtmf_callback_function)(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen);
-typedef int (*switch_core_db_callback_func)(void *pArg, int argc, char **argv, char **columnNames);
-typedef switch_status (*switch_module_load_t) (switch_loadable_module_interface **, char *);
-typedef switch_status (*switch_module_reload_t) (void);
-typedef switch_status (*switch_module_pause_t) (void);
-typedef switch_status (*switch_module_resume_t) (void);
-typedef switch_status (*switch_module_status_t) (void);
-typedef switch_status (*switch_module_runtime_t) (void);
-typedef switch_status (*switch_module_shutdown_t) (void);
+typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t)(switch_core_session_t *);
+typedef switch_status_t (*switch_state_handler_t)(switch_core_session_t *);
+typedef switch_status_t (*switch_outgoing_channel_hook_t)(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *);
+typedef switch_status_t (*switch_answer_channel_hook_t)(switch_core_session_t *);
+typedef switch_status_t (*switch_receive_message_hook_t)(switch_core_session_t *, switch_core_session_message_t *);
+typedef switch_status_t (*switch_queue_event_hook_t)(switch_core_session_t *, switch_event_t *);
+typedef switch_status_t (*switch_read_frame_hook_t)(switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
+typedef switch_status_t (*switch_write_frame_hook_t)(switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
+typedef switch_status_t (*switch_kill_channel_hook_t)(switch_core_session_t *, int);
+typedef switch_status_t (*switch_waitfor_read_hook_t)(switch_core_session_t *, int, int);
+typedef switch_status_t (*switch_waitfor_write_hook_t)(switch_core_session_t *, int, int);
+typedef switch_status_t (*switch_send_dtmf_hook_t)(switch_core_session_t *, char *);
+typedef switch_status_t (*switch_api_function_t)(char *in, char *out, switch_size_t outlen);
+typedef switch_status_t (*switch_dtmf_callback_function_t)(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen);
+typedef int (*switch_core_db_callback_func_t)(void *pArg, int argc, char **argv, char **columnNames);
+typedef switch_status_t (*switch_module_load_t) (switch_loadable_module_interface_t **, char *);
+typedef switch_status_t (*switch_module_reload_t) (void);
+typedef switch_status_t (*switch_module_pause_t) (void);
+typedef switch_status_t (*switch_module_resume_t) (void);
+typedef switch_status_t (*switch_module_status_t) (void);
+typedef switch_status_t (*switch_module_runtime_t) (void);
+typedef switch_status_t (*switch_module_shutdown_t) (void);
 
 
 /* things we don't deserve to know about */

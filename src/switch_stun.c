@@ -268,7 +268,7 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_pa
 	return 1;
 }
 
-SWITCH_DECLARE(switch_status) switch_stun_lookup (char **ip, 
+SWITCH_DECLARE(switch_status_t) switch_stun_lookup (char **ip, 
 												  switch_port_t *port,
 												  char *stunip,
 												  switch_port_t stunport,

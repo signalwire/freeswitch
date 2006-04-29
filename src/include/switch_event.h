@@ -122,13 +122,13 @@ struct switch_event_node {
   \param pool the memory pool to use for the event system (creates a new one if NULL)
   \return SWITCH_STATUS_SUCCESS when complete
 */
-SWITCH_DECLARE(switch_status) switch_event_init(switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool);
 
 /*!
   \brief Stop the eventing system
   \return SWITCH_STATUS_SUCCESS when complete
 */
-SWITCH_DECLARE(switch_status) switch_event_shutdown(void);
+SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void);
 
 /*!
   \brief Create an event
@@ -137,7 +137,7 @@ SWITCH_DECLARE(switch_status) switch_event_shutdown(void);
   \param subclass_name the subclass name for custom event (only valid when event_id is SWITCH_EVENT_CUSTOM)
   \return SWITCH_STATUS_SUCCESS on success
 */
-SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event_t **event, switch_event_types_t event_id, char *subclass_name);
+SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **event, switch_event_types_t event_id, char *subclass_name);
 
 /*!
   \brief Set the priority of an event
@@ -145,7 +145,7 @@ SWITCH_DECLARE(switch_status) switch_event_create_subclass(switch_event_t **even
   \param priority the event priority
   \return SWITCH_STATUS_SUCCESS
 */
-SWITCH_DECLARE(switch_status) switch_event_set_priority(switch_event_t *event, switch_priority_t priority);
+SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event, switch_priority_t priority);
 
 /*!
   \brief Retrieve a header value from an event
@@ -163,7 +163,7 @@ SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *head
   \param fmt the value of the header (varargs see standard sprintf family)
   \return SWITCH_STATUS_SUCCESS if the header was added
 */
-SWITCH_DECLARE(switch_status) switch_event_add_header(switch_event_t *event, switch_stack_t stack, char *header_name, char *fmt, ...);
+SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack, char *header_name, char *fmt, ...);
 
 /*!
   \brief Destroy an event
@@ -177,7 +177,7 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event);
   \param todup an event to duplicate
   \return SWITCH_STATUS_SUCCESS if the event was duplicated
 */
-SWITCH_DECLARE(switch_status) switch_event_dup(switch_event_t **event, switch_event_t *todup);
+SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_event_t *todup);
 
 /*!
   \brief Fire an event with full arguement list
@@ -188,7 +188,7 @@ SWITCH_DECLARE(switch_status) switch_event_dup(switch_event_t **event, switch_ev
   \param user_data optional private data to pass to the event handlers
   \return
 */
-SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event, void *user_data);
+SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event, void *user_data);
 
 /*!
   \brief Bind an event callback to a specific event
@@ -199,7 +199,7 @@ SWITCH_DECLARE(switch_status) switch_event_fire_detailed(char *file, char *func,
   \param user_data optional user specific data to pass whenever the callback is invoked
   \return SWITCH_STATUS_SUCCESS if the event was binded
 */
-SWITCH_DECLARE(switch_status) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name, switch_event_callback_t callback, void *user_data);
+SWITCH_DECLARE(switch_status_t) switch_event_bind(char *id, switch_event_types_t event, char *subclass_name, switch_event_callback_t callback, void *user_data);
 
 /*!
   \brief Render the name of an event id enumeration
@@ -216,7 +216,7 @@ SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event);
   \note There is nothing to enforce this but I reccommend using module::event_name for the subclass names
 
 */
-SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name);
+SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name);
 
 /*!
   \brief Render a string representation of an event sutable for printing or network transport 
@@ -227,13 +227,13 @@ SWITCH_DECLARE(switch_status) switch_event_reserve_subclass_detailed(char *owner
   \return SWITCH_STATUS_SUCCESS if the operation was successful
   \note the body supplied by this function will supersede an existing body the event may have
 */
-SWITCH_DECLARE(switch_status) switch_event_serialize(switch_event_t *event, char *buf, switch_size_t buflen, char *fmt, ...);
+SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char *buf, switch_size_t buflen, char *fmt, ...);
 
 /*!
   \brief Determine if the event system has been initilized
   \return SWITCH_STATUS_SUCCESS if the system is running
 */
-SWITCH_DECLARE(switch_status) switch_event_running(void);
+SWITCH_DECLARE(switch_status_t) switch_event_running(void);
 
 /*!
   \brief Add a body to an event
@@ -242,7 +242,7 @@ SWITCH_DECLARE(switch_status) switch_event_running(void);
   \return SWITCH_STATUS_SUCCESS if the body was added to the event
   \note the body parameter can be shadowed by the switch_event_reserve_subclass_detailed function
 */
-SWITCH_DECLARE(switch_status) switch_event_add_body(switch_event_t *event, char *fmt, ...);
+SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, char *fmt, ...);
 
 
 /*!

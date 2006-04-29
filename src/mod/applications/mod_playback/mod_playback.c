@@ -37,7 +37,7 @@ static const char modname[] = "mod_playback";
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
    if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
-static switch_status on_dtmf(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status_t on_dtmf(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
 
@@ -85,19 +85,19 @@ static void record_function(switch_core_session_t *session, char *data)
 	
 }
 
-static const switch_application_interface record_application_interface = {
+static const switch_application_interface_t record_application_interface = {
 	/*.interface_name */ "record",
 	/*.application_function */ record_function
 };
 
-static const switch_application_interface playback_application_interface = {
+static const switch_application_interface_t playback_application_interface = {
 	/*.interface_name */ "playback",
 	/*.application_function */ playback_function,
 	NULL,NULL,NULL,
 	/*.next*/				  &record_application_interface
 };
 
-static const switch_loadable_module_interface mod_playback_module_interface = {
+static const switch_loadable_module_interface_t mod_playback_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
@@ -106,7 +106,7 @@ static const switch_loadable_module_interface mod_playback_module_interface = {
 	/*.application_interface */ &playback_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */
@@ -122,4 +122,4 @@ if it returns anything but SWITCH_STATUS_TERM it will be called again automaticl
 */
 
 
-//switch_status switch_module_runtime(void)
+//switch_status_t switch_module_runtime(void)

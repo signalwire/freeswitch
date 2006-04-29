@@ -52,7 +52,7 @@ static void event_handler(switch_event_t *event)
 
 
 
-static switch_loadable_module_interface event_test_module_interface = {
+static switch_loadable_module_interface_t event_test_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -96,7 +96,7 @@ static void *torture_thread(switch_thread_t *thread, void *obj)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Thread Ended\n");
 }
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
 	THREADS = -1;
 	switch_yield(100000);
@@ -105,7 +105,7 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
 #endif
 
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
 	*interface = &event_test_module_interface;

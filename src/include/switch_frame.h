@@ -65,7 +65,7 @@ struct switch_frame {
 	/*! the timestamp of the frame */
 	uint32_t timestamp;
 	/*! frame flags */
-	switch_frame_flag flags;
+	switch_frame_flag_t flags;
 };
 
 END_EXTERN_C

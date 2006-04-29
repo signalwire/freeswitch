@@ -34,9 +34,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-SWITCH_DECLARE(switch_status) switch_socket_recvfrom(switch_sockaddr_t *from, switch_socket_t *sock, int32_t flags, char *buf, switch_size_t *len)
+SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t *from, switch_socket_t *sock, int32_t flags, char *buf, switch_size_t *len)
 {
-	switch_status status;
+	switch_status_t status;
 
 	if ((status = apr_socket_recvfrom(from, sock, flags, buf, len)) == SWITCH_STATUS_SUCCESS) {
 		from->port = ntohs(from->sa.sin.sin_port);
@@ -133,7 +133,7 @@ SWITCH_DECLARE(char *) switch_cut_path(char *in)
 	return ret;
 }
 
-SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock,
+SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock,
 														  switch_int16_t flags, switch_memory_pool_t *pool)
 {
 	switch_pollset_t *pollset;
@@ -154,7 +154,7 @@ SWITCH_DECLARE(switch_status) switch_socket_create_pollfd(switch_pollfd_t *poll,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len)
+SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len)
 {
 	size_t i;
 

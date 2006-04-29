@@ -157,7 +157,7 @@ static void js_error(JSContext *cx, const char *message, JSErrorReport *report)
 	
 }
 
-static switch_status init_js(void)
+static switch_status_t init_js(void)
 {
 	memset(&globals, 0, sizeof(globals));
 	globals.gQuitting = JS_FALSE;
@@ -175,7 +175,7 @@ static switch_status init_js(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status js_stream_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status_t js_stream_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	char code[2048];
 	struct dtmf_callback_state *cb_state = buf;
@@ -283,7 +283,7 @@ static switch_status js_stream_dtmf_callback(switch_core_session_t *session, cha
 }
 
 
-static switch_status js_record_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status_t js_record_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	char code[2048];
 	struct dtmf_callback_state *cb_state = buf;
@@ -344,7 +344,7 @@ static switch_status js_record_dtmf_callback(switch_core_session_t *session, cha
 }
 
 
-static switch_status js_speak_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status_t js_speak_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
 	char code[2048];
 	struct dtmf_callback_state *cb_state = buf;
@@ -397,7 +397,7 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	char *dtmf_callback = NULL;
 	void *bp = NULL;
 	int len = 0;
-	switch_dtmf_callback_function dtmf_func = NULL;
+	switch_dtmf_callback_function_t dtmf_func = NULL;
 	struct dtmf_callback_state cb_state = {0};
 	switch_file_handle_t fh;
 
@@ -443,7 +443,7 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	char *dtmf_callback = NULL;
 	void *bp = NULL;
 	int len = 0;
-	switch_dtmf_callback_function dtmf_func = NULL;
+	switch_dtmf_callback_function_t dtmf_func = NULL;
 	struct dtmf_callback_state cb_state = {0};
 	switch_file_handle_t fh;
 
@@ -499,7 +499,7 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	void *bp = NULL;
 	int len = 0;
 	struct dtmf_callback_state cb_state = {0};
-	switch_dtmf_callback_function dtmf_func = NULL;
+	switch_dtmf_callback_function_t dtmf_func = NULL;
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -639,7 +639,7 @@ static JSBool session_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 {
 	JSBool retval = JS_FALSE;
 	if (argc > 1) {
-		const switch_application_interface *application_interface;
+		const switch_application_interface_t *application_interface;
 		char *app_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *app_arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -1315,7 +1315,7 @@ static JSBool db_exec(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 		char *sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *err = NULL;
 		void *arg = NULL;
-		switch_core_db_callback_func cb_func = NULL;
+		switch_core_db_callback_func_t cb_func = NULL;
 
 			
 		if (argc > 1) {
@@ -2149,7 +2149,7 @@ static void js_thread_launch(char *text)
 }
 
 
-static switch_status launch_async(char *text, char *out, size_t outlen)
+static switch_status_t launch_async(char *text, char *out, size_t outlen)
 {
 
 	if (switch_strlen_zero(text)) {
@@ -2163,21 +2163,21 @@ static switch_status launch_async(char *text, char *out, size_t outlen)
 }
 
 
-static const switch_application_interface ivrtest_application_interface = {
+static const switch_application_interface_t ivrtest_application_interface = {
 	/*.interface_name */ "javascript",
 	/*.application_function */ js_parse_and_execute,
 	NULL, NULL, NULL,
 	/*.next*/ NULL
 };
 
-static struct switch_api_interface js_run_interface = {
+static switch_api_interface_t js_run_interface = {
 	/*.interface_name */ "jsrun",
 	/*.desc */ "run a script",
 	/*.function */ launch_async,
 	/*.next */ NULL
 };
 
-static switch_loadable_module_interface spidermonkey_module_interface = {
+static switch_loadable_module_interface_t spidermonkey_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -2190,9 +2190,9 @@ static switch_loadable_module_interface spidermonkey_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
-	switch_status status;
+	switch_status_t status;
 
 	if ((status = init_js()) != SWITCH_STATUS_SUCCESS) {
 		return status;

@@ -47,7 +47,7 @@
 
 
 
-SWITCH_DECLARE(switch_status) switch_resample_create(switch_audio_resampler_t **new_resampler,
+SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t **new_resampler,
 													 int from_rate,
 													 switch_size_t from_size,
 													 int to_rate, uint32_t to_size, switch_memory_pool_t *pool)

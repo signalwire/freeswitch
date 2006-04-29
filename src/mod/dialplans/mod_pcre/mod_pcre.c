@@ -198,13 +198,13 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 }
 
 
-static const switch_dialplan_interface dialplan_interface = {
+static const switch_dialplan_interface_t dialplan_interface = {
 	/*.interface_name = */ "pcre",
 	/*.hunt_function = */ dialplan_hunt
 		/*.next = NULL */
 };
 
-static const switch_loadable_module_interface dialplan_module_interface = {
+static const switch_loadable_module_interface_t dialplan_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
@@ -213,7 +213,7 @@ static const switch_loadable_module_interface dialplan_module_interface = {
 	/*.application_interface = */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */
