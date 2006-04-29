@@ -432,12 +432,7 @@ SWITCH_DECLARE(switch_status) switch_core_session_read_frame(switch_core_session
 */
 SWITCH_DECLARE(switch_status) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout, int stream_id);
 
-/*! 
-  \brief Send a signal to a channel
-  \param session session to send signal to
-  \param sig signal to send
-  \return status returned by the session's signal handler
-*/
+
 SWITCH_DECLARE(switch_status) switch_core_session_perform_kill_channel(switch_core_session_t *session, 
 																	   const char *file, 
 																	   const char *func, 
