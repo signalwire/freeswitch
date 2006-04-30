@@ -272,12 +272,12 @@ static switch_loadable_module_interface_t g729_module_interface = {
 
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface,
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
 													 char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */ 
-	*interface = &g729_module_interface;
+	*module_interface = &g729_module_interface;
 
 
 	/* indicate that the module should continue to be loaded */ 

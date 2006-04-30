@@ -220,10 +220,10 @@ static switch_loadable_module_interface_t skel_module_interface = {
 	/*.directory_interface */ &ldap_directory_interface
 };
 
-switch_status_t switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
+switch_status_t switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-	*interface = &skel_module_interface;
+	*module_interface = &skel_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

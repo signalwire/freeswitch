@@ -115,7 +115,7 @@ static switch_loadable_module_interface_t event_test_module_interface = {
 };
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	memset(&globals, 0, sizeof(globals));
 	
@@ -159,7 +159,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*interface = &event_test_module_interface;
+	*module_interface = &event_test_module_interface;
 
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
 		SWITCH_STATUS_SUCCESS) {

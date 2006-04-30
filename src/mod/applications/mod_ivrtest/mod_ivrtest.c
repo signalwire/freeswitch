@@ -241,11 +241,11 @@ static const switch_loadable_module_interface_t mod_ivrtest_module_interface = {
 	/*.application_interface */ &ivrtest_application_interface
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*interface = &mod_ivrtest_module_interface;
+	*module_interface = &mod_ivrtest_module_interface;
 
 	/* test global state handlers */
 	switch_core_add_state_handler(&state_handlers);

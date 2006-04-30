@@ -274,12 +274,12 @@ static switch_loadable_module_interface_t ilbc_module_interface = {
 
 
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface,
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
 														char *filename)
 {
 	
 		/* connect my internal structure to the blank pointer passed to me */ 
-		*interface = &ilbc_module_interface;
+		*module_interface = &ilbc_module_interface;
 	
 
 		/* indicate that the module should continue to be loaded */ 

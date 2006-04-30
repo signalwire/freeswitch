@@ -2190,7 +2190,7 @@ static switch_loadable_module_interface_t spidermonkey_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	switch_status_t status;
 
@@ -2199,7 +2199,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*interface = &spidermonkey_module_interface;
+	*module_interface = &spidermonkey_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

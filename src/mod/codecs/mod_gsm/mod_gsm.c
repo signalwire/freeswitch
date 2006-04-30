@@ -162,12 +162,12 @@ static switch_loadable_module_interface_t gsm_module_interface = {
 		/*.codec_interface */ &gsm_codec_interface, 
 		/*.application_interface */ NULL 
 };
-SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface,
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
 														char *filename)
 {
 	
 		/* connect my internal structure to the blank pointer passed to me */ 
-		*interface = &gsm_module_interface;
+		*module_interface = &gsm_module_interface;
 	
 		/* indicate that the module should continue to be loaded */ 
 		return SWITCH_STATUS_SUCCESS;

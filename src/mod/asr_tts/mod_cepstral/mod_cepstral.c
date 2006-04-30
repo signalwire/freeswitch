@@ -269,7 +269,7 @@ static const switch_loadable_module_interface_t cepstral_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-switch_status_t switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
+switch_status_t switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
 	/* Open the Swift TTS Engine */
@@ -279,7 +279,7 @@ switch_status_t switch_module_load(const switch_loadable_module_interface_t **in
 	}
 	
 	/* connect my internal structure to the blank pointer passed to me */
-	*interface = &cepstral_module_interface;
+	*module_interface = &cepstral_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
