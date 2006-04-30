@@ -55,8 +55,8 @@ BEGIN_EXTERN_C
  * Each open sqlite database is represented by an instance of the
  * following opaque structure.
 */
-typedef sqlite3 switch_core_db;
-typedef sqlite3_stmt switch_core_db_stmt;
+typedef sqlite3 switch_core_db_t;
+typedef sqlite3_stmt switch_core_db_stmt_t;
 /**
  * Aggregate functions use the following routine to allocate
  * a structure for storing their state.  The first time this routine

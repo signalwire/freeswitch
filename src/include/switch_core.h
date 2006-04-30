@@ -750,7 +750,7 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_write_codec(switch_core
   \param filename the path to the db file to open
   \return
 */
-SWITCH_DECLARE(switch_core_db *) switch_core_db_open_file(char *filename);
+SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(char *filename);
 
 #define SWITCH_CORE_DB "core"
 /*!

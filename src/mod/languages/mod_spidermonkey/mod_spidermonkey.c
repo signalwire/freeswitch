@@ -140,8 +140,8 @@ struct fileio_obj {
 
 struct db_obj {
 	switch_memory_pool_t *pool;
-	switch_core_db *db;
-	switch_core_db_stmt *stmt;
+	switch_core_db_t *db;
+	switch_core_db_stmt_t *stmt;
 	char *dbname;
 	char code_buffer[2048];
 	JSContext *cx;
@@ -1242,7 +1242,7 @@ JSClass fileio_class = {
 static JSBool db_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	switch_memory_pool_t *pool;
-	switch_core_db *db;
+	switch_core_db_t *db;
 	struct db_obj *dbo;
 
 	if (argc > 0) {

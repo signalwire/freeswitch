@@ -87,8 +87,8 @@ struct switch_core_runtime {
 	apr_pool_t *memory_pool;
 	switch_hash_t *session_table;
 	switch_hash_t *stack_table;
-	switch_core_db *db;
-	switch_core_db *event_db;
+	switch_core_db_t *db;
+	switch_core_db_t *event_db;
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
     int state_handler_index;
 	FILE *console;
@@ -120,9 +120,9 @@ static void db_pick_path(char *dbname, char *buf, switch_size_t size)
 	}
 }
 
-SWITCH_DECLARE(switch_core_db *) switch_core_db_open_file(char *filename)
+SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(char *filename)
 {
-	switch_core_db *db;
+	switch_core_db_t *db;
 	char path[1024];
 
 	db_pick_path(filename, path, sizeof(path));
@@ -135,7 +135,7 @@ SWITCH_DECLARE(switch_core_db *) switch_core_db_open_file(char *filename)
 }
 
 #if 0
-static void check_table_exists(switch_core_db *db, char *test_sql, char *create_sql) {
+static void check_table_exists(switch_core_db_t *db, char *test_sql, char *create_sql) {
     char *errmsg;
 
     if(db) {
@@ -2495,7 +2495,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char
 	return switch_core_session_request(endpoint_interface, pool);
 }
 
-static switch_status_t switch_core_sql_persistant_execute(switch_core_db *db, char *sql, uint32_t retries)
+static switch_status_t switch_core_sql_persistant_execute(switch_core_db_t *db, char *sql, uint32_t retries)
 {
 	char *errmsg;
 	switch_status_t status = SWITCH_STATUS_FALSE;
