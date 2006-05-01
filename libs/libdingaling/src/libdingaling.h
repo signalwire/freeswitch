@@ -108,7 +108,9 @@ typedef enum {
 	LDL_SIGNAL_CANDIDATES,
 	LDL_SIGNAL_MSG,
 	LDL_SIGNAL_TERMINATE,
-	LDL_SIGNAL_ERROR
+	LDL_SIGNAL_ERROR,
+	LDL_SIGNAL_LOGIN_SUCCESS,
+	LDL_SIGNAL_LOGIN_FAILURE,
 } ldl_signal_t;
 
 typedef enum {
@@ -138,7 +140,7 @@ typedef enum {
 #define DL_LOG_EMERG DL_PRE, 0
 
 typedef ldl_status (*ldl_loop_callback_t)(ldl_handle_t *);
-typedef ldl_status (*ldl_session_callback_t)(ldl_handle_t *, ldl_session_t *, ldl_signal_t, char *);
+typedef ldl_status (*ldl_session_callback_t)(ldl_handle_t *, ldl_session_t *, ldl_signal_t, char *, char *, char *);
 typedef ldl_status (*ldl_response_callback_t)(ldl_handle_t *, char *);
 typedef void (*ldl_logger_t)(char *file, const char *func, int line, int level, char *fmt, ...);
 
@@ -271,6 +273,16 @@ unsigned int ldl_session_terminate(ldl_session_t *session);
   \return the requested data
 */
 void *ldl_handle_get_private(ldl_handle_t *handle);
+
+
+/*!
+  \brief Send a message
+  \param handle the conection handle
+  \param to the message recipiant
+  \param subject optional subject
+  \param body body of the message
+*/
+void ldl_handle_send_msg(ldl_handle_t *handle, char *to, char *subject, char *body);
 
 /*!
   \brief Offer candidates to a potential session

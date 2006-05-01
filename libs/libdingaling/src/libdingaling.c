@@ -386,7 +386,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 	}
 
 	if (handle->session_callback && signal) {
-		handle->session_callback(handle, session, signal, msg); 
+		handle->session_callback(handle, session, signal, from, id, msg); 
 	}
 
 	return LDL_STATUS_SUCCESS;
@@ -549,8 +549,14 @@ static int on_stream(ldl_handle_t *handle, int type, iks * node)
 			}
 		} else if (strcmp("failure", iks_name(node)) == 0) {
 			globals.logger(DL_LOG_DEBUG, "sasl authentication failed\n");
+			if (handle->session_callback) {
+				handle->session_callback(handle, NULL, LDL_SIGNAL_LOGIN_FAILURE, "core", "Login Failure", handle->login);
+			}
 		} else if (strcmp("success", iks_name(node)) == 0) {
 			globals.logger(DL_LOG_DEBUG, "XMPP server connected\n");
+			if (handle->session_callback) {
+				handle->session_callback(handle, NULL, LDL_SIGNAL_LOGIN_SUCCESS, "core", "Login Success", handle->login);
+			}
 			iks_send_header(handle->parser, handle->acc->server);
 			ldl_set_flag(handle, LDL_FLAG_AUTHORIZED);
 		} else {
@@ -583,19 +589,18 @@ static int on_msg(void *user_data, ikspak *pak)
 {
 	char *cmd = iks_find_cdata(pak->x, "body");
 	char *from = iks_find_attrib(pak->x, "from");
+	char *subject = iks_find_attrib(pak->x, "subject");
 	ldl_handle_t *handle = user_data;
 	ldl_session_t *session = NULL;
 	
-	if (from && (session = apr_hash_get(handle->sessions, from, APR_HASH_KEY_STRING))) {
-		if (handle->session_callback) {
-			handle->session_callback(handle, session, LDL_SIGNAL_MSG, cmd); 
-		}
+	if (from) {
+		session = apr_hash_get(handle->sessions, from, APR_HASH_KEY_STRING);
+	}
+
+	if (handle->session_callback) {
+		handle->session_callback(handle, session, LDL_SIGNAL_MSG, from, subject ? subject : "N/A", cmd); 
 	}
 	
-
-	//printf("%s %s\n", handle->login, cmd);
-	
-
 	return 0;
 }
 
@@ -870,10 +875,26 @@ void *ldl_session_get_private(ldl_session_t *session)
 	return session->private_data;
 }
 
-
 void *ldl_handle_get_private(ldl_handle_t *handle)
 {
 	return handle->private_info;
+}
+
+void ldl_handle_send_msg(ldl_handle_t *handle, char *to, char *subject, char *body)
+{
+	iks *msg;
+
+	assert(handle != NULL);
+	assert(body != NULL);
+
+	msg = iks_make_msg(IKS_TYPE_NONE, to, body);
+
+	if (subject) {
+		iks_insert_attrib(msg, "subject", subject);
+	}
+
+	apr_queue_push(handle->queue, msg);
+	
 }
 
 void ldl_global_set_logger(ldl_logger_t logger)
