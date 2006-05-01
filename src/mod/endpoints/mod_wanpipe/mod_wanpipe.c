@@ -196,16 +196,16 @@ static int str2dp(char *dp)
 static void set_global_dialplan(char *dialplan);
 static int str2node(char *node);
 static int str2switch(char *swtype);
-static switch_status wanpipe_on_init(switch_core_session_t *session);
-static switch_status wanpipe_on_hangup(switch_core_session_t *session);
-static switch_status wanpipe_on_loopback(switch_core_session_t *session);
-static switch_status wanpipe_on_transmit(switch_core_session_t *session);
-static switch_status wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+static switch_status_t wanpipe_on_init(switch_core_session_t *session);
+static switch_status_t wanpipe_on_hangup(switch_core_session_t *session);
+static switch_status_t wanpipe_on_loopback(switch_core_session_t *session);
+static switch_status_t wanpipe_on_transmit(switch_core_session_t *session);
+static switch_status_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
 											  switch_core_session_t **new_session, switch_memory_pool_t *pool);
-static switch_status wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
-										switch_io_flag flags, int stream_id);
-static switch_status wanpipe_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
-										 switch_io_flag flags, int stream_id);
+static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
+										switch_io_flag_t flags, int stream_id);
+static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
+										 switch_io_flag_t flags, int stream_id);
 static int on_info(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
 static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
 static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
@@ -213,7 +213,7 @@ static int check_flags(struct sangoma_pri *spri);
 static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
 static int on_anything(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event);
 static void *pri_thread_run(switch_thread_t *thread, void *obj);
-static switch_status config_wanpipe(int reload);
+static switch_status_t config_wanpipe(int reload);
 
 
 /* 
@@ -221,7 +221,7 @@ static switch_status config_wanpipe(int reload);
    returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
    so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
-static switch_status wanpipe_on_init(switch_core_session_t *session)
+static switch_status_t wanpipe_on_init(switch_core_session_t *session)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel = NULL;
@@ -306,7 +306,7 @@ static switch_status wanpipe_on_init(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanpipe_on_ring(switch_core_session_t *session)
+static switch_status_t wanpipe_on_ring(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	struct private_object *tech_pvt = NULL;
@@ -324,7 +324,7 @@ static switch_status wanpipe_on_ring(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanpipe_on_hangup(switch_core_session_t *session)
+static switch_status_t wanpipe_on_hangup(switch_core_session_t *session)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel = NULL;
@@ -372,13 +372,13 @@ static switch_status wanpipe_on_hangup(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanpipe_on_loopback(switch_core_session_t *session)
+static switch_status_t wanpipe_on_loopback(switch_core_session_t *session)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WANPIPE LOOPBACK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanpipe_on_transmit(switch_core_session_t *session)
+static switch_status_t wanpipe_on_transmit(switch_core_session_t *session)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel;
@@ -396,7 +396,7 @@ static switch_status wanpipe_on_transmit(switch_core_session_t *session)
 }
 
 
-static switch_status wanpipe_answer_channel(switch_core_session_t *session)
+static switch_status_t wanpipe_answer_channel(switch_core_session_t *session)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel = NULL;
@@ -415,8 +415,8 @@ static switch_status wanpipe_answer_channel(switch_core_session_t *session)
 
 
 
-static switch_status wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
-										switch_io_flag flags, int stream_id)
+static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
+										switch_io_flag_t flags, int stream_id)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel = NULL;
@@ -497,8 +497,8 @@ static switch_status wanpipe_read_frame(switch_core_session_t *session, switch_f
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status wanpipe_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
-										 switch_io_flag flags, int stream_id)
+static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
+										 switch_io_flag_t flags, int stream_id)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel = NULL;
@@ -507,7 +507,7 @@ static switch_status wanpipe_write_frame(switch_core_session_t *session, switch_
 	uint8_t *bp = frame->data;
 	unsigned char dtmf[1024];
 	int bread, bwrote = 0;
-	switch_status status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -600,11 +600,11 @@ static switch_status wanpipe_write_frame(switch_core_session_t *session, switch_
 	return status;
 }
 
-static switch_status wanpipe_send_dtmf(switch_core_session_t *session, char *digits)
+static switch_status_t wanpipe_send_dtmf(switch_core_session_t *session, char *digits)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel = NULL;
-	switch_status status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int wrote = 0;
 	char *cur = NULL;
 
@@ -634,12 +634,12 @@ static switch_status wanpipe_send_dtmf(switch_core_session_t *session, char *dig
 	return status;
 }
 
-static switch_status wanpipe_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
+static switch_status_t wanpipe_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status wanpipe_kill_channel(switch_core_session_t *session, int sig)
+static switch_status_t wanpipe_kill_channel(switch_core_session_t *session, int sig)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel = NULL;
@@ -660,7 +660,7 @@ static switch_status wanpipe_kill_channel(switch_core_session_t *session, int si
 }
 
 
-static const switch_io_routines wanpipe_io_routines = {
+static const switch_io_routines_t wanpipe_io_routines = {
 	/*.outgoing_channel */ wanpipe_outgoing_channel,
 	/*.answer_channel */ wanpipe_answer_channel,
 	/*.read_frame */ wanpipe_read_frame,
@@ -681,7 +681,7 @@ static const switch_state_handler_table_t wanpipe_state_handlers = {
 	/*.on_transmit */ wanpipe_on_transmit
 };
 
-static const switch_endpoint_interface wanpipe_endpoint_interface = {
+static const switch_endpoint_interface_t wanpipe_endpoint_interface = {
 	/*.interface_name */ "wanpipe",
 	/*.io_routines */ &wanpipe_io_routines,
 	/*.state_handlers */ &wanpipe_state_handlers,
@@ -689,7 +689,7 @@ static const switch_endpoint_interface wanpipe_endpoint_interface = {
 	/*.next */ NULL
 };
 
-static const switch_loadable_module_interface wanpipe_module_interface = {
+static const switch_loadable_module_interface_t wanpipe_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ &wanpipe_endpoint_interface,
 	/*.timer_interface */ NULL,
@@ -699,7 +699,7 @@ static const switch_loadable_module_interface wanpipe_module_interface = {
 };
 
 
-static switch_status wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+static switch_status_t wanpipe_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
 											  switch_core_session_t **new_session, switch_memory_pool_t *pool)
 {
 	char *bchan = NULL;
@@ -917,9 +917,9 @@ static void s_pri_message(struct pri *pri, char *s)
 	s_pri_error(pri, s);
 }
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
-	switch_status status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	memset(SPANS, 0, sizeof(SPANS));
 
@@ -1282,7 +1282,7 @@ static void pri_thread_launch(struct sangoma_pri *spri)
 
 }
 
-static switch_status config_wanpipe(int reload)
+static switch_status_t config_wanpipe(int reload)
 {
 	switch_config_t cfg;
 	char *var, *val;

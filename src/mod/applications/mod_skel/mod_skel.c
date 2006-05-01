@@ -33,7 +33,7 @@
 
 static const char modname[] = "mod_skel";
 
-static switch_loadable_module_interface skel_module_interface = {
+static switch_loadable_module_interface_t skel_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -46,10 +46,10 @@ static switch_loadable_module_interface skel_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	/* connect my internal structure to the blank pointer passed to me */
-	*interface = &skel_module_interface;
+	*module_interface = &skel_module_interface;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
 
