@@ -61,6 +61,7 @@ static int switch_console_process(char *cmd, char *retbuf, int retlen)
 	if ((arg = strchr(cmd, ' ')) != 0) {
 		*arg++ = '\0';
 	}
+
 	if (switch_api_execute(cmd, arg, retbuf, retlen) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
 	} else {
@@ -136,6 +137,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	assert(retbuf != NULL);
 	gethostname(hostname, sizeof(hostname));
 
+	memset(retbuf, 0, CMD_BUFLEN);
 
 	while (running) {
 		if (activity) {
@@ -157,7 +159,9 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 				break;
 			}
 		}
+	
 		if (cmd[0]) {
+			*retbuf = '\0';
 			running = switch_console_process(cmd, retbuf, CMD_BUFLEN);
 		}
 	}

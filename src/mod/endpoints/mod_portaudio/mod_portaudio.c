@@ -126,10 +126,13 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
    returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
    so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
-	 static switch_status_t channel_on_init(switch_core_session_t *session)
+
+static switch_status_t channel_on_init(switch_core_session_t *session)
 {
 	switch_channel_t *channel;
 	struct private_object *tech_pvt = NULL;
+	switch_time_t last;
+	int waitsec = 5 * 1000000;
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
@@ -140,10 +143,45 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 
-	switch_set_flag(tech_pvt, TFLAG_IO);
+	last = switch_time_now() - waitsec;
 
-	/* Move Channel's State Machine to RING */
-	switch_channel_set_state(channel, CS_RING);
+	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+		/* Turn on the device */
+		engage_device(tech_pvt);
+
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL INIT %d %d\n", switch_channel_get_name(channel),
+			switch_channel_get_state(channel), switch_test_flag(tech_pvt, TFLAG_ANSWER));
+
+		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
+			if (switch_time_now() - last >= waitsec) {
+				char buf[512];
+				switch_event_t *event;
+				 
+				snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
+
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RINGING) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_info", buf);
+					switch_channel_event_set_data(channel, event);
+					switch_event_fire(&event);
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", buf);
+				last = switch_time_now();
+			}
+			switch_yield(50000);
+		}
+	}
+
+
+	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_NO_ANSWER);
+	} else {
+		switch_set_flag(tech_pvt, TFLAG_IO);
+
+		/* Move Channel's State Machine to RING */
+		switch_channel_set_state(channel, CS_RING);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -251,8 +289,6 @@ static switch_status_t channel_on_loopback(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	struct private_object *tech_pvt = NULL;
-	switch_time_t last;
-	int waitsec = 5 * 1000000;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -260,32 +296,7 @@ static switch_status_t channel_on_loopback(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	last = switch_time_now() - waitsec;
-
-	/* Turn on the device */
-	engage_device(tech_pvt);
-
-	while (switch_channel_get_state(channel) == CS_LOOPBACK && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
-		if (switch_time_now() - last >= waitsec) {
-			char buf[512];
-			switch_event_t *event;
-
-			snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
-
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RINGING) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_info", buf);
-				switch_event_fire(&event);
-			}
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", buf);
-			last = switch_time_now();
-		}
-		switch_yield(50000);
-	}
-
-
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL TRANSMIT\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL LOOPBACK\n");
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -478,6 +489,7 @@ static const switch_loadable_module_interface_t channel_module_interface = {
 static switch_status_t channel_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
 											  switch_core_session_t **new_session, switch_memory_pool_t *pool)
 {
+
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
 		switch_channel_t *channel;
@@ -824,7 +836,7 @@ static switch_status_t place_call(char *dest, char *out, size_t outlen)
 		if ((status = engage_device(tech_pvt)) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_state(channel, CS_INIT);
 			switch_core_session_thread_launch(tech_pvt->session);
-			snprintf(out, outlen, "SUCCESS: %s", tech_pvt->call_id);
+			snprintf(out, outlen, "SUCCESS:%s:%s", tech_pvt->call_id, switch_core_session_get_uuid(tech_pvt->session));
 		}
 	}
 	return status;
@@ -841,7 +853,7 @@ static switch_status_t hup_call(char *callid, char *out, size_t outlen)
 		snprintf(tmp, sizeof(tmp), "%d", globals.call_id - 1);
 		callid = tmp;
 	}
-	if (!callid || !strcasecmp(callid, "all")) {
+	if (switch_strlen_zero(callid) || !strcasecmp(callid, "all")) {
 		switch_hash_index_t *hi;
 		void *val;
 		int i = 0;
@@ -942,7 +954,7 @@ static switch_status_t call_info(char *callid, char *out, size_t outlen)
 			tech_pvt = val;
 			print_info(tech_pvt, out + strlen(out), outlen - strlen(out));
 		}
-	} else if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
+	} else if (callid && (tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
 		print_info(tech_pvt, out, outlen);
 	} else {
 		strncpy(out, "NO SUCH CALL", outlen - 1);
