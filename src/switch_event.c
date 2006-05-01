@@ -110,6 +110,7 @@ static char *EVENT_NAMES[] = {
 	"TALK",
 	"NOTALK",
 	"SESSION_CRASH",
+	"MODULE_LOAD",
 	"ALL"
 };
 

@@ -2683,11 +2683,18 @@ static void core_event_handler(switch_event_t *event)
 		sql = buf;
 		break;
 	case SWITCH_EVENT_SHUTDOWN:
-		snprintf(buf, sizeof(buf), "delete from channels");
+		snprintf(buf, sizeof(buf), "delete from channels;delete from interfaces;delete from calls");
 		sql = buf;
 		break;
 	case SWITCH_EVENT_LOG:
 		return;
+	case SWITCH_EVENT_MODULE_LOAD:
+		snprintf(buf, sizeof(buf), "insert into interfaces (type,name) values('%s','%s')",
+				 switch_event_get_header(event, "type"),
+				 switch_event_get_header(event, "name")
+				 );
+		sql = buf;
+		break;
 	default:
 		//buf[0] = '\0';
 		//switch_event_serialize(event, buf, sizeof(buf), NULL);
@@ -2795,12 +2802,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
 			"   callee_chan_name VARCHAR(255),\n"
 			"   callee_uuid      VARCHAR(255)\n"
 			");\n";
+		char create_interfaces_sql[] =
+			"CREATE TABLE interfaces (\n"
+			"   type             VARCHAR(255),\n"
+			"   name             VARCHAR(255)\n"
+			");\n";
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening DB\n");
 		switch_core_db_exec(runtime.db, "drop table channels", NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, "drop table calls", NULL, NULL, NULL);
+		switch_core_db_exec(runtime.db, "drop table interfaces", NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, create_channels_sql, NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, create_calls_sql, NULL, NULL, NULL);
+		switch_core_db_exec(runtime.db, create_interfaces_sql, NULL, NULL, NULL);
 		
 		if (switch_event_bind("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL) !=
 			SWITCH_STATUS_SUCCESS) {
