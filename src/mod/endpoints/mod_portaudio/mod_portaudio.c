@@ -241,13 +241,13 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_on_loopback(switch_core_session_t *session)
+static switch_status_t channel_on_transmit(switch_core_session_t *session)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL LOOPBACK\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL TRANSMIT\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t channel_on_transmit(switch_core_session_t *session)
+static switch_status_t channel_on_loopback(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	struct private_object *tech_pvt = NULL;
@@ -265,7 +265,7 @@ static switch_status_t channel_on_transmit(switch_core_session_t *session)
 	/* Turn on the device */
 	engage_device(tech_pvt);
 
-	while (switch_channel_get_state(channel) == CS_TRANSMIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
+	while (switch_channel_get_state(channel) == CS_LOOPBACK && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 		if (switch_time_now() - last >= waitsec) {
 			char buf[512];
 			switch_event_t *event;
