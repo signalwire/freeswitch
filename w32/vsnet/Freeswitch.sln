@@ -36,7 +36,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_bridgecall", "..\..\src
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_dialplan_demo", "..\..\src\mod\dialplans\mod_dialplan_demo\mod_dialplan_demo.vcproj", "{2988EB83-785F-45D4-8731-8E1E4345177E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_dialplan_flatfile", "..\..\src\mod\dialplans\mod_dialplan_flatfile\mod_dialplan_flatfile.vcproj", "{2988EB83-785F-45D4-8731-8E1E4345177E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
