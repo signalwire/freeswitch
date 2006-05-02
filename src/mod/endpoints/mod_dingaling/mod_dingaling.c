@@ -61,7 +61,8 @@ typedef enum {
 	TFLAG_VAD = ( 1 << 13),
 	TFLAG_DO_CAND = ( 1 << 14),
 	TFLAG_DO_DESC = (1 << 15),
-	TFLAG_LANADDR = (1 << 16)
+	TFLAG_LANADDR = (1 << 16),
+	TFLAG_AUTO = (1 << 17)
 } TFLAGS;
 
 typedef enum {
@@ -85,18 +86,18 @@ static struct {
 } globals;
 
 struct mdl_profile {
-	char *name;
-	char *login;
-	char *password;
-	char *message;
-	char *dialplan;
-	char *ip;
-	char *extip;
-	char *lanaddr;
-	char *exten;
-	char *context;
-	ldl_handle_t *handle;
-	unsigned int flags;
+    char *name;
+    char *login;
+    char *password;
+    char *message;
+    char *dialplan;
+    char *ip;
+    char *extip;
+    char *lanaddr;
+    char *exten;
+    char *context;
+    ldl_handle_t *handle;
+    unsigned int flags;
 };
 
 struct private_object {
@@ -149,28 +150,29 @@ struct rfc2833_digit {
 };
 
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
-	 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string)
-	 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
 
+static switch_status_t dl_login(char *arg, char *out, size_t outlen);
+static switch_status_t dl_logout(char *profile_name, char *out, size_t outlen);
+static switch_status_t channel_on_init(switch_core_session_t *session);
+static switch_status_t channel_on_hangup(switch_core_session_t *session);
+static switch_status_t channel_on_ring(switch_core_session_t *session);
+static switch_status_t channel_on_loopback(switch_core_session_t *session);
+static switch_status_t channel_on_transmit(switch_core_session_t *session);
+static switch_status_t channel_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+												switch_core_session_t **new_session, switch_memory_pool_t *pool);
+static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
+										  switch_io_flag_t flags, int stream_id);
+static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
+										   switch_io_flag_t flags, int stream_id);
+static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
+static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *from, char *subject, char *msg);
+static ldl_status handle_response(ldl_handle_t *handle, char *id);
+static switch_status_t load_config(void);
 
-	 static switch_status_t channel_on_init(switch_core_session_t *session);
-	 static switch_status_t channel_on_hangup(switch_core_session_t *session);
-	 static switch_status_t channel_on_ring(switch_core_session_t *session);
-	 static switch_status_t channel_on_loopback(switch_core_session_t *session);
-	 static switch_status_t channel_on_transmit(switch_core_session_t *session);
-	 static switch_status_t channel_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
-												   switch_core_session_t **new_session, switch_memory_pool_t *pool);
-	 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
-											 switch_io_flag_t flags, int stream_id);
-	 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
-											  switch_io_flag_t flags, int stream_id);
-	 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
-	 static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *from, char *subject, char *msg);
-	 static ldl_status handle_response(ldl_handle_t *handle, char *id);
-	 static switch_status_t load_config(void);
-
-	 static void dl_logger(char *file, const char *func, int line, int level, char *fmt, ...)
+static void dl_logger(char *file, const char *func, int line, int level, char *fmt, ...)
 {
 	va_list ap;
 	char data[1024];
@@ -212,7 +214,9 @@ static void *SWITCH_THREAD_FUNC handle_thread_run(switch_thread_t *thread, void 
 
 	profile = ldl_handle_get_private(handle);
 	globals.handles++;
+	switch_set_flag(profile, TFLAG_IO);
 	ldl_handle_run(handle);
+	switch_clear_flag(profile, TFLAG_IO);
 	globals.handles--;
 	ldl_handle_destroy(&handle);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handle %s [%s] Destroyed\n", profile->name, profile->login);
@@ -715,7 +719,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *d
 }
 
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
-										switch_io_flag_t flags, int stream_id)
+										  switch_io_flag_t flags, int stream_id)
 {
 	struct private_object *tech_pvt = NULL;
 	uint32_t bytes = 0;
@@ -812,7 +816,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 }
 
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
-										 switch_io_flag_t flags, int stream_id)
+										   switch_io_flag_t flags, int stream_id)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel = NULL;
@@ -1000,13 +1004,32 @@ static const switch_endpoint_interface_t channel_endpoint_interface = {
 	/*.next */ NULL
 };
 
+
+
+static switch_api_interface_t logout_api_interface = {
+	/*.interface_name */ "dl_logout",
+	/*.desc */ "DingaLing Logout",
+	/*.function */ dl_logout,
+	/*.next */ NULL
+};
+
+static switch_api_interface_t login_api_interface = {
+	/*.interface_name */ "dl_login",
+	/*.desc */ "DingaLing Login",
+	/*.function */ dl_login,
+	/*.next */ &logout_api_interface
+};
+
+
+
 static const switch_loadable_module_interface_t channel_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ &channel_endpoint_interface,
 	/*.timer_interface */ NULL,
 	/*.dialplan_interface */ NULL,
 	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
+	/*.application_interface */ NULL,
+	/*.api_interface */ &login_api_interface
 };
 
 
@@ -1014,7 +1037,7 @@ static const switch_loadable_module_interface_t channel_module_interface = {
    that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
 static switch_status_t channel_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
-											  switch_core_session_t **new_session, switch_memory_pool_t *pool)
+												switch_core_session_t **new_session, switch_memory_pool_t *pool)
 {
 	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
@@ -1149,7 +1172,8 @@ static ldl_status handle_loop(ldl_handle_t *handle)
 	}
 	return LDL_STATUS_SUCCESS;
 }
-static void init_profile(struct mdl_profile *profile)
+
+static switch_status_t init_profile(struct mdl_profile *profile, uint8_t login)
 {
 	if (profile &&
 		profile->login &&
@@ -1161,23 +1185,46 @@ static void init_profile(struct mdl_profile *profile)
 		profile->exten) {
 		ldl_handle_t *handle;
 
-
-		if (ldl_handle_init(&handle,
-							profile->login,
-							profile->password,
-							profile->message,
-							handle_loop,
-							handle_signalling,
-							handle_response,
-							profile) == LDL_STATUS_SUCCESS) {
-			profile->handle = handle;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Started Thread for %s@%s\n", profile->login, profile->dialplan);
+		if (login) {
+			if (ldl_handle_init(&handle,
+								profile->login,
+								profile->password,
+								profile->message,
+								handle_loop,
+								handle_signalling,
+								handle_response,
+								profile) == LDL_STATUS_SUCCESS) {
+				profile->handle = handle;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Started Thread for %s@%s\n", profile->login, profile->dialplan);
+				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
+				handle_thread_launch(handle);
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created Profile for %s@%s\n", profile->login, profile->dialplan);
 			switch_core_hash_insert(globals.profile_hash, profile->name, profile);
-			handle_thread_launch(handle);
-		} 
+		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid Profile\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+						  "Invalid Profile\n"
+						  "login[%s]\n"
+						  "pass[%s]\n"
+						  "dialplan[%s]\n"
+						  "message[%s]\n"
+						  "rtp-ip[%s]\n"
+						  "name[%s]\n"
+						  "exten[%s]\n",
+						  profile->login,
+						  profile->password,
+						  profile->dialplan,
+						  profile->message,
+						  profile->ip,
+						  profile->name,
+						  profile->exten);
+
+		return SWITCH_STATUS_FALSE;
 	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -1199,6 +1246,111 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 }
 
 
+static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
+{
+	
+	if (!strcasecmp(var, "login")) {
+		profile->login = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "password")) {
+		profile->password = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "dialplan")) {
+		profile->dialplan = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "name")) {
+		profile->name = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "message")) {
+		profile->message = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "rtp-ip")) {
+		profile->ip = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "ext-rtp-ip")) {
+		profile->extip = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "lanaddr")) {
+		profile->lanaddr = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "exten")) {
+		profile->exten = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "context")) {
+		profile->context = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "auto-login")) {
+		if (switch_true(val)) {
+			switch_set_flag(profile, TFLAG_AUTO);
+		}
+	} else if (!strcasecmp(var, "vad")) {
+		if (!strcasecmp(val, "in")) {
+			switch_set_flag(profile, TFLAG_VAD_IN);
+		} else if (!strcasecmp(val, "out")) {
+			switch_set_flag(profile, TFLAG_VAD_OUT);
+		} else if (!strcasecmp(val, "both")) {
+			switch_set_flag(profile, TFLAG_VAD_IN);
+			switch_set_flag(profile, TFLAG_VAD_OUT);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
+		}
+	}
+}
+
+static switch_status_t dl_logout(char *profile_name, char *out, size_t outlen)
+{
+	struct mdl_profile *profile;
+	if ((profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
+		ldl_handle_stop(profile->handle);
+		snprintf(out, outlen, "OK\n");
+	} else {
+		snprintf(out, outlen, "NO SUCH PROFILE %s\n", profile_name);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t dl_login(char *arg, char *out, size_t outlen)
+{
+	char *argv[10] = {0};
+	int argc = 0;
+	char *var, *val, *myarg;
+	struct mdl_profile *profile = NULL;
+	int x;
+
+	if (switch_strlen_zero(arg)) {
+		snprintf(out, outlen, "FAIL\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	myarg = strdup(arg);
+
+	argc = switch_separate_string(myarg, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (!strncasecmp(argv[0], "profile=", 8)) {
+		char *profile_name = argv[0] + 8;
+		profile = switch_core_hash_find(globals.profile_hash, profile_name);
+
+		if (profile) {
+			if (switch_test_flag(profile, TFLAG_IO)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile already exists.");
+				snprintf(out, outlen, "Profile already exists\n");
+				return SWITCH_STATUS_SUCCESS;
+			}
+
+		}
+	} else {
+		profile = switch_core_alloc(module_pool, sizeof(*profile));
+
+		for(x = 0; x < argc; x++) {
+			var = argv[x];
+			if ((val = strchr(var, '='))) {
+				*val++ = '\0';
+				set_profile_val(profile, var, val);
+			}
+		}
+	}
+	
+	if (profile && init_profile(profile, 1) == SWITCH_STATUS_SUCCESS) {
+		snprintf(out, outlen, "OK\n");
+	} else {
+		snprintf(out, outlen, "FAIL\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 static switch_status_t load_config(void)
 {
 	switch_config_t cfg;
@@ -1210,6 +1362,7 @@ static switch_status_t load_config(void)
 	memset(&globals, 0, sizeof(globals));
 	globals.running = 1;
 
+
 	switch_core_hash_init(&globals.profile_hash, module_pool);	
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
@@ -1218,28 +1371,28 @@ static switch_status_t load_config(void)
 
 	while (switch_config_next_pair(&cfg, &var, &val)) {
 		if (!strcasecmp(cfg.category, "settings")) {
-			if (!strcmp(var, "debug")) {
+			if (!strcasecmp(var, "debug")) {
 				globals.debug = atoi(val);
-			} else if (!strcmp(var, "codec_prefs")) {
+			} else if (!strcasecmp(var, "codec_prefs")) {
 				set_global_codec_string(val);
 				globals.codec_order_last =
 					switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
-			} else if (!strcmp(var, "codec_rates")) {
+			} else if (!strcasecmp(var, "codec_rates")) {
 				set_global_codec_rates_string(val);
 				globals.codec_rates_last =
 					switch_separate_string(globals.codec_rates_string, ',', globals.codec_rates, SWITCH_MAX_CODECS);
 			}
 
 		} else if (!strcasecmp(cfg.category, "interface")) {
+
 			if (!globals.init) {
 				ldl_global_init(globals.debug);
 				ldl_global_set_logger(dl_logger);
 				globals.init = 1;
 			}
-
 			if (cfg.catno != lastcat) {
 				if (profile) {
-					init_profile(profile);
+					init_profile(profile, switch_test_flag(profile, TFLAG_AUTO) ? 1 : 0);
 					profile = NULL;
 				}
 				lastcat = cfg.catno;
@@ -1248,50 +1401,25 @@ static switch_status_t load_config(void)
 			if(!profile) {
 				profile = switch_core_alloc(module_pool, sizeof(*profile));
 			}
-
-			if (!strcmp(var, "login")) {
-				profile->login = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "password")) {
-				profile->password = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "dialplan")) {
-				profile->dialplan = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "name")) {
-				profile->name = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "message")) {
-				profile->message = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "rtp-ip")) {
-				profile->ip = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "ext-rtp-ip")) {
-				profile->extip = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "lanaddr")) {
-				profile->lanaddr = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "exten")) {
-				profile->exten = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "context")) {
-				profile->context = switch_core_strdup(module_pool, val);
-			} else if (!strcmp(var, "vad")) {
-				if (!strcasecmp(val, "in")) {
-					switch_set_flag(profile, TFLAG_VAD_IN);
-				} else if (!strcasecmp(val, "out")) {
-					switch_set_flag(profile, TFLAG_VAD_OUT);
-				} else if (!strcasecmp(val, "both")) {
-					switch_set_flag(profile, TFLAG_VAD_IN);
-					switch_set_flag(profile, TFLAG_VAD_OUT);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
-				}
-			}
+			set_profile_val(profile, var, val);
 		}
 	}
 
 	if (profile) {
-		init_profile(profile);
+		init_profile(profile, switch_test_flag(profile, TFLAG_AUTO) ? 1 : 0);
 		profile = NULL;
 	}
 
 	if (!globals.dialplan) {
 		set_global_dialplan("default");
 	}
+
+	if (!globals.init) {
+		ldl_global_init(globals.debug);
+		ldl_global_set_logger(dl_logger);
+		globals.init = 1;
+	}
+
 
 	switch_config_close_file(&cfg);
 	return SWITCH_STATUS_SUCCESS;

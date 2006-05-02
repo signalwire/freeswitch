@@ -1186,6 +1186,11 @@ void ldl_handle_run(ldl_handle_t *handle)
 	ldl_clear_flag(handle, LDL_FLAG_RUNNING);
 }
 
+void ldl_handle_stop(ldl_handle_t *handle)
+{
+	ldl_clear_flag(handle, LDL_FLAG_RUNNING);
+}
+
 ldl_status ldl_handle_destroy(ldl_handle_t **handle)
 {
 	apr_pool_t *pool = (*handle)->pool;

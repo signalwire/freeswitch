@@ -384,6 +384,13 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
 void ldl_handle_run(ldl_handle_t *handle);
 
 /*!
+  \brief Stop a libDingaLing handle
+  \param handle the Dingaling handle to stop
+*/
+void ldl_handle_stop(ldl_handle_t *handle);
+
+
+/*!
   \brief Destroy a libDingaLing handle
   \param handle the Dingaling handle to destroy
   \return success or failure
