@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_dialplan_demo.c -- Example Dialplan Module
+ * mod_dialplan_flatfile.c -- Example Dialplan Module
  *
  */
 #include <switch.h>
@@ -35,25 +35,31 @@
 #include <fcntl.h>
 
 
-static const char modname[] = "mod_dialplan_demo";
+static const char modname[] = "mod_dialplan_flatfile";
 
 
-static switch_caller_extension_t *demo_dialplan_hunt(switch_core_session_t *session)
+static switch_caller_extension_t *flatfile_dialplan_hunt(switch_core_session_t *session)
 {
-	switch_caller_profile_t *caller_profile;
+	switch_caller_profile_t *caller_profile = NULL;
 	switch_caller_extension_t *extension = NULL;
 	switch_channel_t *channel;
 	char *cf = "extensions.conf";
 	switch_config_t cfg;
 	char *var, *val;
 	char app[1024];
+	char *context = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	caller_profile = switch_channel_get_caller_profile(channel);
-	//switch_channel_set_variable(channel, "pleasework", "yay");
+
+	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
+		context = caller_profile->context ? caller_profile->context : "default";
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Obtaining Profile!\n");
+		return NULL;
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Hello %s You Dialed %s!\n", caller_profile->caller_id_name,
-						  caller_profile->destination_number);
+					  caller_profile->destination_number);
 
 	if (!switch_config_open_file(&cfg, cf)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -62,7 +68,7 @@ static switch_caller_extension_t *demo_dialplan_hunt(switch_core_session_t *sess
 	}
 
 	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "extensions")) {
+		if (!strcasecmp(cfg.category, context)) {
 			if (!strcmp(var, caller_profile->destination_number) && val) {
 				char *data;
 
@@ -95,6 +101,7 @@ static switch_caller_extension_t *demo_dialplan_hunt(switch_core_session_t *sess
 	if (extension) {
 		switch_channel_set_state(channel, CS_EXECUTE);
 	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Cannot locate extension %s in context %s\n", caller_profile->destination_number, context);
 		switch_channel_hangup(channel, SWITCH_CAUSE_MESSAGE_TYPE_NONEXIST);
 	}
 
@@ -102,17 +109,17 @@ static switch_caller_extension_t *demo_dialplan_hunt(switch_core_session_t *sess
 }
 
 
-static const switch_dialplan_interface_t demo_dialplan_interface = {
-	/*.interface_name = */ "demo",
-	/*.hunt_function = */ demo_dialplan_hunt
-		/*.next = NULL */
+static const switch_dialplan_interface_t flatfile_dialplan_interface = {
+	/*.interface_name = */ "flatfile",
+	/*.hunt_function = */ flatfile_dialplan_hunt
+	/*.next = NULL */
 };
 
-static const switch_loadable_module_interface_t demo_dialplan_module_interface = {
+static const switch_loadable_module_interface_t flatfile_dialplan_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
-	/*.dialplan_interface = */ &demo_dialplan_interface,
+	/*.dialplan_interface = */ &flatfile_dialplan_interface,
 	/*.codec_interface = */ NULL,
 	/*.application_interface = */ NULL
 };
@@ -121,7 +128,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 {
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &demo_dialplan_module_interface;
+	*module_interface = &flatfile_dialplan_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

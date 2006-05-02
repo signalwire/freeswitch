@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="mod_dialplan_demo"
+	Name="mod_dialplan_flatfile"
 	ProjectGUID="{2988EB83-785F-45D4-8731-8E1E4345177E}"
-	RootNamespace="mod_dialplan_demo"
+	RootNamespace="mod_dialplan_flatfile"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -63,13 +63,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_dialplan_demo.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_dialplan_flatfile.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_dialplan_demo.pdb"
+				ProgramDatabaseFile="$(OutDir)/mod_dialplan_flatfile.pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_dialplan_demo.lib"
+				ImportLibrary="$(OutDir)/mod_dialplan_flatfile.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -141,14 +141,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_dialplan_demo.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_dialplan_flatfile.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_dialplan_demo.lib"
+				ImportLibrary="$(OutDir)/mod_dialplan_flatfile.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -186,7 +186,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\mod_dialplan_demo.c"
+				RelativePath=".\mod_dialplan_flatfile.c"
 				>
 			</File>
 		</Filter>

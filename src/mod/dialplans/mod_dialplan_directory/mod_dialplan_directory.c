@@ -116,7 +116,11 @@ static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t 
 		return NULL;
 	}
 
-	sprintf(filter, "exten=%s", caller_profile->destination_number);
+	snprintf(filter, sizeof(filter), "exten=%s", caller_profile->destination_number);
+	if (caller_profile->context) {
+		snprintf(filter + strlen(filter), sizeof(filter) - strlen(filter), "context=%s", caller_profile->context);
+	}
+
 
 	switch_core_directory_query(&dh, globals.base, filter);
 	while (switch_core_directory_next(&dh) == SWITCH_STATUS_SUCCESS) {
