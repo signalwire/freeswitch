@@ -310,7 +310,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channe
 SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel)
 {
 	assert(channel != NULL);
-	return channel->name;
+	return channel->name ? channel->name : "N/A";
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, char *varname, char *value)
