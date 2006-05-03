@@ -505,6 +505,7 @@ static int on_result(void *user_data, ikspak *pak)
 	iks_insert_attrib(ctag, "node", "http://www.freeswitch.org/xmpp/client/caps");
 	iks_insert_attrib(ctag, "ver", "1.0.0.1");
 	iks_insert_attrib(ctag, "ext", "sidebar voice-v1");
+	iks_insert_attrib(ctag, "client", "libdingaling");
 	iks_insert_attrib(ctag, "xmlns", "http://jabber.org/protocol/caps");
 	
 	apr_queue_push(handle->queue, msg);
@@ -964,7 +965,7 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 
 char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *buf, unsigned int len)
 {
-	iks *pres, *msg, *disco, *q;
+	iks *pres, *msg;
 	char *lid = NULL;
 	struct ldl_buffer buffer;
 	apr_time_t started;
@@ -978,19 +979,8 @@ char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *buf, unsigned int l
 
 	pres = iks_new("presence");
 	iks_insert_attrib(pres, "type", "probe");
-	iks_insert_attrib(pres, "xtype", "ping");
 	iks_insert_attrib(pres, "to", id);
 
-	disco = iks_new("iq"); 
-	iks_insert_attrib(disco, "type", "get");
-	iks_insert_attrib(disco, "from", handle->login);
-	iks_insert_attrib(disco, "to", id);
-	iks_insert_attrib(disco, "id", "ping");
-	q = iks_insert(disco, "query");
-	iks_insert_attrib(q, "xmlns", "http://jabber.org/protocol/disco#info");
-	
-
-	
 
 	apr_hash_set(handle->probe_hash, id, APR_HASH_KEY_STRING, &buffer);
 	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
@@ -998,7 +988,6 @@ char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *buf, unsigned int l
 	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, notice); 
 	apr_queue_push(handle->queue, msg);
 	apr_queue_push(handle->queue, pres);
-
 
 	//schedule_packet(handle, next_id(), pres, LDL_RETRY);
 
