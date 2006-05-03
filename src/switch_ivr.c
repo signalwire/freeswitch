@@ -121,7 +121,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		if (switch_channel_has_dtmf(channel)) {
 			char dtmf[128];
 			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-
 			for(i =0 ; i < (unsigned int) strlen(dtmf); i++) {
 
 				if (strchr(terminators, dtmf[i])) {

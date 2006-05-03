@@ -141,6 +141,7 @@ struct private_object {
 	switch_time_t next_desc;
 	switch_time_t next_cand;
 	char *stun_ip;
+	char *recip;
 	uint16_t stun_port;
 };
 
@@ -709,11 +710,15 @@ static switch_status_t channel_waitfor_write(switch_core_session_t *session, int
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *dtmf)
 {
 	struct private_object *tech_pvt = NULL;
-	//char *digit;
+	char digits[80] = "";
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF [%s]\n", dtmf);
+	snprintf(digits, sizeof(digits), "+%s\n", dtmf);
+	ldl_handle_send_msg(tech_pvt->profile->handle, tech_pvt->recip, NULL, digits);
+	
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -757,6 +762,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 		payload = tech_pvt->read_frame.payload;
 
+
 		/* RFC2833 ... TBD try harder to honor the duration etc.*/
 		if (payload == 101) {
 			unsigned char *packet = tech_pvt->read_frame.data;
@@ -778,10 +784,13 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				if (++tech_pvt->dc >= 3) {
 					tech_pvt->last_digit = 0;
 					tech_pvt->dc = 0;
-				} else {
-					tech_pvt->last_digit = key;
 				}
-			} 
+
+				tech_pvt->last_digit = key;
+			} else {
+				tech_pvt->last_digit = 0;
+				tech_pvt->dc = 0;
+			}
 		}
 
 		if (switch_test_flag(&tech_pvt->read_frame, SFF_CNG)) {
@@ -1081,7 +1090,8 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			switch_core_session_destroy(new_session);
 			return SWITCH_STATUS_GENERR;
 		}
-
+		
+		
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
@@ -1092,6 +1102,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			tech_pvt->session = *new_session;
 			tech_pvt->codec_index = -1;
 			tech_pvt->local_port = switch_rtp_request_port();
+			tech_pvt->recip = switch_core_session_strdup(*new_session, full_id);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
@@ -1511,7 +1522,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				tech_pvt->profile = profile;
 				tech_pvt->local_port = switch_rtp_request_port();
 				switch_set_flag(tech_pvt, TFLAG_ANSWER);
-				
+				tech_pvt->recip = switch_core_session_strdup(session, from);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
 				switch_core_session_destroy(&session);

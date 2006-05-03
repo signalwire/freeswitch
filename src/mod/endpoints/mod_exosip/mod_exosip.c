@@ -627,7 +627,7 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 			}
 			
 			payload = tech_pvt->read_frame.payload;
-			
+
 
 			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
 
@@ -663,10 +663,13 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 					if (++tech_pvt->dc >= 3) {
 						tech_pvt->last_digit = 0;
 						tech_pvt->dc = 0;
-					} else {
-						tech_pvt->last_digit = key;
 					}
-				} 
+
+					tech_pvt->last_digit = key;
+				} else {
+					tech_pvt->last_digit = 0;
+					tech_pvt->dc = 0;
+				}
 			}
 
 
