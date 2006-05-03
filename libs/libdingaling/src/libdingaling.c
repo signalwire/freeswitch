@@ -888,7 +888,9 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *to, char *subject, char *bo
 	assert(handle != NULL);
 	assert(body != NULL);
 
+
 	msg = iks_make_msg(IKS_TYPE_NONE, to, body);
+	iks_insert_attrib(msg, "type", "chat");
 
 	if (subject) {
 		iks_insert_attrib(msg, "subject", subject);
