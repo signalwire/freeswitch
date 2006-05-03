@@ -401,10 +401,6 @@ static int on_presence(void *user_data, ikspak *pak)
 	char *resource;
 	struct ldl_buffer *buffer;
 	size_t x;
-	iks *msg;
-
-	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, "pong"); 
-	apr_queue_push(handle->queue, msg);
 
 	apr_cpystrn(id, from, sizeof(id));
 	if ((resource = strchr(id, '/'))) {
@@ -987,6 +983,7 @@ char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *buf, unsigned int l
 	apr_hash_set(handle->probe_hash, id, APR_HASH_KEY_STRING, &buffer);
 	
 	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
+	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, notice); 
 
 	apr_queue_push(handle->queue, msg);
 	apr_queue_push(handle->queue, pres);
