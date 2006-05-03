@@ -568,14 +568,22 @@ SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoin
 
 SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(char *name)
 {
-	char ucname[256] = "";
+	char altname[256] = "";
+	switch_codec_interface_t *codec;
 	int x;
 	
-	for(x = 0; x < strlen(name); x++) {
-		ucname[x] = toupper(name[x]);
+	if (!(codec = switch_core_hash_find(loadable_modules.codec_hash, name))) {
+		for(x = 0; x < strlen(name); x++) {
+			altname[x] = toupper(name[x]);
+		}
+		if (!(codec = switch_core_hash_find(loadable_modules.codec_hash, altname))) {
+			for(x = 0; x < strlen(name); x++) {
+				altname[x] = tolower(name[x]);
+			}
+			codec = switch_core_hash_find(loadable_modules.codec_hash, altname);
+		}
 	}
-
-	return switch_core_hash_find(loadable_modules.codec_hash, ucname);
+	return codec;
 }
 
 SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialplan_interface(char *name)
