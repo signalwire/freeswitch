@@ -30,7 +30,7 @@
  *
  */
 #include <switch.h>
-
+#include <ctype.h>
 
 struct switch_loadable_module {
 	char *filename;
@@ -568,7 +568,14 @@ SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoin
 
 SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_interface(char *name)
 {
-	return switch_core_hash_find(loadable_modules.codec_hash, name);
+	char ucname[256] = "";
+	int x;
+	
+	for(x = 0; x < strlen(name); x++) {
+		ucname[x] = toupper(name[x]);
+	}
+
+	return switch_core_hash_find(loadable_modules.codec_hash, ucname);
 }
 
 SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialplan_interface(char *name)

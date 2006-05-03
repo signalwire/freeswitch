@@ -40,7 +40,7 @@
 #define MAX_LENGTH       1024
 
 static const char modname[] = "mod_syslog";
-static switch_status load_config(void);
+static switch_status_t load_config(void);
 
 static struct {
 	char *ident;
@@ -54,7 +54,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_level, globals.level)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_format, globals.format)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_facility, globals.facility)
 
-static switch_loadable_module_interface console_module_interface = {
+static switch_loadable_module_interface_t console_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
@@ -67,7 +67,7 @@ static switch_loadable_module_interface console_module_interface = {
 	/*.directory_interface */ NULL
 };
 
-static switch_status mod_syslog_logger(const switch_log_node *node, switch_log_level level)
+static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	char *message = NULL;
 	char line_no[sizeof(int)*8+1];
@@ -103,7 +103,7 @@ static switch_status mod_syslog_logger(const switch_log_node *node, switch_log_l
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_module_interface **interface, char *filename)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	*interface = &console_module_interface;
 
@@ -116,16 +116,16 @@ SWITCH_MOD_DECLARE(switch_status) switch_module_load(const switch_loadable_modul
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MOD_DECLARE(switch_status) switch_module_unload(const switch_loadable_module_interface **interface)
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_unload(const switch_loadable_module_interface_t **interface)
 {
 	closelog();
 	
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status load_config(void)
+static switch_status_t load_config(void)
 {
-	switch_config cfg;
+	switch_config_t cfg;
 	char *var, *val;
 	char *cf = "syslog.conf";
 
