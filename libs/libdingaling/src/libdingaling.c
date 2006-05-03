@@ -964,7 +964,7 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 
 char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *buf, unsigned int len)
 {
-	iks *pres, *msg;
+	iks *pres, *msg, *disco, *q;
 	char *lid = NULL;
 	struct ldl_buffer buffer;
 	apr_time_t started;
@@ -978,13 +978,24 @@ char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *buf, unsigned int l
 
 	pres = iks_new("presence");
 	iks_insert_attrib(pres, "type", "probe");
+	iks_insert_attrib(pres, "xtype", "ping");
 	iks_insert_attrib(pres, "to", id);
 
-	apr_hash_set(handle->probe_hash, id, APR_HASH_KEY_STRING, &buffer);
+	disco = iks_new("iq"); 
+	iks_insert_attrib(disco, "type", "get");
+	iks_insert_attrib(disco, "from", handle->login);
+	iks_insert_attrib(disco, "to", id);
+	iks_insert_attrib(disco, "id", "ping");
+	q = iks_insert(disco, "query");
+	iks_insert_attrib(q, "xmlns", "http://jabber.org/protocol/disco#info");
 	
-	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
-	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, notice); 
 
+	
+
+	apr_hash_set(handle->probe_hash, id, APR_HASH_KEY_STRING, &buffer);
+	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
+	apr_queue_push(handle->queue, msg);
+	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, notice); 
 	apr_queue_push(handle->queue, msg);
 	apr_queue_push(handle->queue, pres);
 
