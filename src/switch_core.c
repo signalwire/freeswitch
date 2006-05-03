@@ -1863,7 +1863,7 @@ SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session_t *s
 	return session->thread_running;
 }
 
-#ifdef __GNUC__
+#if defined (__GNUC__) && defined (LINUX)
 #include <execinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
