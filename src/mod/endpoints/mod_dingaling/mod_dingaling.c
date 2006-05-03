@@ -1555,14 +1555,22 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			negotiate_thread_launch(session);
 		}
 	}
-	
+
 	switch(signal) {
 	case LDL_SIGNAL_MSG:
 		if (msg) { 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MSG [%s]\n", msg);
 			if (*msg == '+') {
+				char *p;
+				if ((p = strchr(msg, '\r'))) {
+					*p = '\0';
+				}
+				if ((p = strchr(msg, '\n'))) {
+					*p = '\0';
+				}
+				
 				switch_channel_queue_dtmf(channel, msg + 1);
 			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SESSION MSG [%s]\n", msg);
 		}
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
