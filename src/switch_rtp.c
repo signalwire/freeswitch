@@ -1134,7 +1134,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 			mini.header.ts = send_msg->header.ts;
 			mini.header.version = 1;
 			memcpy(mini.body, send_msg->body, bytes);
-			bytes += sizeof(rtp_mini_msg_t);
+			bytes += sizeof(srtp_mini_hdr_t);
 			switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&mini, &bytes);
 		} else {
 			switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)send_msg, &bytes);

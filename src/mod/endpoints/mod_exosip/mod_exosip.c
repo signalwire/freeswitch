@@ -496,7 +496,7 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 										   tech_pvt->read_codec.codec_interface->ianacode,
 										   tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 										   ms,
-										   SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_TIMER_RECLOCK | SWITCH_RTP_FLAG_RAW_WRITE,
+										   SWITCH_RTP_FLAG_MINI | SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_TIMER_RECLOCK | SWITCH_RTP_FLAG_RAW_WRITE,
 										   key,
 										   &err, switch_core_session_get_pool(tech_pvt->session));
 

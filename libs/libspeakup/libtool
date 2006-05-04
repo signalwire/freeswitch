@@ -44,7 +44,7 @@ available_tags=" CXX"
 
 # ### BEGIN LIBTOOL CONFIG
 
-# Libtool was configured on host drone1:
+# Libtool was configured on host agentbox3:
 
 # Shell to use when invoking shell scripts.
 SHELL="/bin/sh"
@@ -66,12 +66,12 @@ fast_install=yes
 
 # The host system.
 host_alias=
-host=x86_64-unknown-linux-gnu
+host=i686-pc-linux-gnu
 host_os=linux-gnu
 
 # The build system.
 build_alias=
-build=x86_64-unknown-linux-gnu
+build=i686-pc-linux-gnu
 build_os=linux-gnu
 
 # An echo program that does not interpret backslashes.
@@ -94,7 +94,7 @@ with_gcc=yes
 EGREP="grep -E"
 
 # The linker used to build libraries.
-LD="/usr/bin/ld -m elf_x86_64"
+LD="/usr/bin/ld"
 
 # Whether we need hard or soft links.
 LN_S="ln -s"
@@ -144,7 +144,7 @@ pic_flag=" -fPIC -DPIC"
 pic_mode=default
 
 # What is the maximum length of a command?
-max_cmd_len=64
+max_cmd_len=32768
 
 # Does compiler simultaneously support -c and -o options?
 compiler_c_o="yes"
@@ -322,10 +322,10 @@ variables_saved_for_relink="PATH  LD_RUN_PATH GCC_EXEC_PREFIX COMPILER_PATH LIBR
 link_all_deplibs=unknown
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=" /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/ /usr/lib/gcc/x86_64-unknown-linux-gnu/3.4.4/ /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../../../x86_64-unknown-linux-gnu/lib/x86_64-unknown-linux-gnu/3.4.4/ /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../../../x86_64-unknown-linux-gnu/lib/ /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../../x86_64-unknown-linux-gnu/3.4.4/ /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../../ /lib/x86_64-unknown-linux-gnu/3.4.4/ /lib/ /usr/lib/x86_64-unknown-linux-gnu/3.4.4/ /usr/lib/"
+sys_lib_search_path_spec=" /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/ /usr/lib/gcc/i686-pc-linux-gnu/3.3.4/ /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/../../../../i686-pc-linux-gnu/lib/i686-pc-linux-gnu/3.3.4/ /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/../../../../i686-pc-linux-gnu/lib/ /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/../../../i686-pc-linux-gnu/3.3.4/ /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/../../../ /lib/i686-pc-linux-gnu/3.3.4/ /lib/ /usr/lib/i686-pc-linux-gnu/3.3.4/ /usr/lib/"
 
 # Run-time system search path for libraries
-sys_lib_dlsearch_path_spec="/lib /usr/lib /lib /usr/lib /usr/local/lib /usr/local/freeswitch/lib /lib32 /usr/lib32 /usr/X11R6/lib64 /usr/X11R6/lib32 /usr/X11R6/lib /opt/swift/lib /usr/local/freeswitch/lib32 "
+sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/local/freeswitch/lib /root/pwlib/lib /root/opal/lib /usr/X11R6/lib /usr/local/lib /opt/swift/lib "
 
 # Fix the shell variable $srcfile for the compiler.
 fix_srcfile_path=""
@@ -6751,7 +6751,7 @@ build_old_libs=`case $build_libtool_libs in yes) $echo no;; *) $echo yes;; esac`
 # End:
 # ### BEGIN LIBTOOL TAG CONFIG: CXX
 
-# Libtool was configured on host drone1:
+# Libtool was configured on host agentbox3:
 
 # Shell to use when invoking shell scripts.
 SHELL="/bin/sh"
@@ -6773,12 +6773,12 @@ fast_install=yes
 
 # The host system.
 host_alias=
-host=x86_64-unknown-linux-gnu
+host=i686-pc-linux-gnu
 host_os=linux-gnu
 
 # The build system.
 build_alias=
-build=x86_64-unknown-linux-gnu
+build=i686-pc-linux-gnu
 build_os=linux-gnu
 
 # An echo program that does not interpret backslashes.
@@ -6801,7 +6801,7 @@ with_gcc=yes
 EGREP="grep -E"
 
 # The linker used to build libraries.
-LD="/usr/bin/ld -m elf_x86_64"
+LD="/usr/bin/ld"
 
 # Whether we need hard or soft links.
 LN_S="ln -s"
@@ -6851,7 +6851,7 @@ pic_flag=" -fPIC -DPIC"
 pic_mode=default
 
 # What is the maximum length of a command?
-max_cmd_len=64
+max_cmd_len=32768
 
 # Does compiler simultaneously support -c and -o options?
 compiler_c_o="yes"
@@ -6930,11 +6930,11 @@ striplib="strip --strip-unneeded"
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
-predep_objects="/usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../../../lib64/crti.o /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/crtbeginS.o"
+predep_objects="/usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/../../../crti.o /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/crtbeginS.o"
 
 # Dependencies to place after the objects being linked to create a
 # shared library.
-postdep_objects="/usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/crtendS.o /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../../../lib64/crtn.o"
+postdep_objects="/usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/crtendS.o /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/../../../crtn.o"
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
@@ -6946,7 +6946,7 @@ postdeps="-lstdc++ -lm -lgcc_s -lc -lgcc_s"
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path="-L/usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4 -L/usr/lib/gcc/x86_64-unknown-linux-gnu/3.4.4 -L/usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../../../lib64 -L/usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../.. -L/lib/../lib64 -L/usr/lib/../lib64"
+compiler_lib_search_path="-L/usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4 -L/usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/../../.."
 
 # Method to check whether dependent libraries are shared objects.
 deplibs_check_method="pass_all"
@@ -7026,10 +7026,10 @@ variables_saved_for_relink="PATH LD_LIBRARY_PATH LD_RUN_PATH GCC_EXEC_PREFIX COM
 link_all_deplibs=unknown
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=" /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/ /usr/lib/gcc/x86_64-unknown-linux-gnu/3.4.4/ /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../../../x86_64-unknown-linux-gnu/lib/x86_64-unknown-linux-gnu/3.4.4/ /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../../../x86_64-unknown-linux-gnu/lib/ /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../../x86_64-unknown-linux-gnu/3.4.4/ /usr/lib64/gcc/x86_64-unknown-linux-gnu/3.4.4/../../../ /lib/x86_64-unknown-linux-gnu/3.4.4/ /lib/ /usr/lib/x86_64-unknown-linux-gnu/3.4.4/ /usr/lib/"
+sys_lib_search_path_spec=" /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/ /usr/lib/gcc/i686-pc-linux-gnu/3.3.4/ /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/../../../../i686-pc-linux-gnu/lib/i686-pc-linux-gnu/3.3.4/ /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/../../../../i686-pc-linux-gnu/lib/ /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/../../../i686-pc-linux-gnu/3.3.4/ /usr/lib/gcc-lib/i686-pc-linux-gnu/3.3.4/../../../ /lib/i686-pc-linux-gnu/3.3.4/ /lib/ /usr/lib/i686-pc-linux-gnu/3.3.4/ /usr/lib/"
 
 # Run-time system search path for libraries
-sys_lib_dlsearch_path_spec="/lib /usr/lib /lib /usr/lib /usr/local/lib /usr/local/freeswitch/lib /lib32 /usr/lib32 /usr/X11R6/lib64 /usr/X11R6/lib32 /usr/X11R6/lib /opt/swift/lib /usr/local/freeswitch/lib32 "
+sys_lib_dlsearch_path_spec="/lib /usr/lib /usr/local/freeswitch/lib /root/pwlib/lib /root/opal/lib /usr/X11R6/lib /usr/local/lib /opt/swift/lib "
 
 # Fix the shell variable $srcfile for the compiler.
 fix_srcfile_path=""

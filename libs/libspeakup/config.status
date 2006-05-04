@@ -512,13 +512,13 @@ s,@AMDEPBACKSLASH@,\,;t t
 s,@CCDEPMODE@,depmode=gcc3,;t t
 s,@am__fastdepCC_TRUE@,,;t t
 s,@am__fastdepCC_FALSE@,#,;t t
-s,@build@,x86_64-unknown-linux-gnu,;t t
-s,@build_cpu@,x86_64,;t t
-s,@build_vendor@,unknown,;t t
+s,@build@,i686-pc-linux-gnu,;t t
+s,@build_cpu@,i686,;t t
+s,@build_vendor@,pc,;t t
 s,@build_os@,linux-gnu,;t t
-s,@host@,x86_64-unknown-linux-gnu,;t t
-s,@host_cpu@,x86_64,;t t
-s,@host_vendor@,unknown,;t t
+s,@host@,i686-pc-linux-gnu,;t t
+s,@host_cpu@,i686,;t t
+s,@host_vendor@,pc,;t t
 s,@host_os@,linux-gnu,;t t
 s,@EGREP@,grep -E,;t t
 s,@LN_S@,ln -s,;t t

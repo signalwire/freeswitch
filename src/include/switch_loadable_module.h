@@ -212,7 +212,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 
 /*!
   \brief Load a module
-  \param interface a pointer to a pointer to aim at your module's local interface
+  \param module_interface a pointer to a pointer to aim at your module's local interface
   \param filename the path to the module's dll or so file
   \return SWITCH_STATUS_SUCCESS on a successful load
 */
