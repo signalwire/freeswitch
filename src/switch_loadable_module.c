@@ -188,7 +188,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding File Format '%s'\n", ptr->extens[i]);
 			if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "file");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->extens[i]);
 				switch_event_fire(&event);
 			}
 				switch_core_hash_insert(loadable_modules.file_hash, (char *) ptr->extens[i], (void *) ptr);
@@ -570,15 +570,15 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 {
 	char altname[256] = "";
 	switch_codec_interface_t *codec;
-	int x;
+	switch_size_t x;
 	
 	if (!(codec = switch_core_hash_find(loadable_modules.codec_hash, name))) {
 		for(x = 0; x < strlen(name); x++) {
-			altname[x] = toupper(name[x]);
+			altname[x] = (char)toupper(name[x]);
 		}
 		if (!(codec = switch_core_hash_find(loadable_modules.codec_hash, altname))) {
 			for(x = 0; x < strlen(name); x++) {
-				altname[x] = tolower(name[x]);
+				altname[x] = (char)tolower(name[x]);
 			}
 			codec = switch_core_hash_find(loadable_modules.codec_hash, altname);
 		}
