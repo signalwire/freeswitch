@@ -119,6 +119,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_RAW_WRITE     - Try to forward packets unscathed
 	SWITCH_RTP_FLAG_GOOGLEHACK    - Convert payload from 102 to 97
 	SWITCH_RTP_FLAG_VAD           - Enable VAD
+	SWITCH_RTP_FLAG_BREAK		  - Stop what you are doing and return SWITCH_STATUS_BREAK
 </pre>
  */
 typedef enum {
@@ -130,7 +131,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_AUTOADJ = (1 << 5),
 	SWITCH_RTP_FLAG_RAW_WRITE = (1 << 6),
 	SWITCH_RTP_FLAG_GOOGLEHACK = (1 << 7),
-	SWITCH_RTP_FLAG_VAD = (1 << 8)
+	SWITCH_RTP_FLAG_VAD = (1 << 8),
+	SWITCH_RTP_FLAG_BREAK = ( 1 << 9)
 } switch_rtp_flag_t;
 
 /*!

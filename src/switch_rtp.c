@@ -523,7 +523,11 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
 		
-		
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
+			switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_BREAK);
+			return 0;
+		}
+
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 			return -1;
 		}
@@ -621,6 +625,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
 	if (bytes < 0) {
 		*datalen = 0;
 		return SWITCH_STATUS_GENERR;
+	} else if (bytes == 0) {
+		*datalen = 0;
+		return SWITCH_STATUS_BREAK;
 	} else {
 		bytes -= rtp_header_len;
 	}

@@ -1568,6 +1568,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			if (*msg == '+') {
 				switch_channel_queue_dtmf(channel, msg + 1);
 				switch_set_flag(tech_pvt, TFLAG_DTMF);
+				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SESSION MSG [%s]\n", msg);
 		}
