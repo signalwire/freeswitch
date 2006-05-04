@@ -423,13 +423,13 @@ Sub BuildLibs_sqlite(BuildDebug, BuildRelease)
 	End If
 	If FSO.FolderExists(LibDestDir & "sqlite") Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "sqlite\Debug\sqlite.lib") Then 
-				BuildViaVCBuild LibDestDir & "sqlite\sqlite.vcproj", "Debug"
+			If Not FSO.FileExists(LibDestDir & "sqlite\Debug DLL\sqlite.lib") Then 
+				BuildViaVCBuild LibDestDir & "sqlite\sqlite.vcproj", "Debug DLL"
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "sqlite\Release\sqlite.lib") Then 
-				BuildViaVCBuild LibDestDir & "sqlite\sqlite.vcproj", "Release"
+			If Not FSO.FileExists(LibDestDir & "sqlite\Release DLL\sqlite.lib") Then 
+				BuildViaVCBuild LibDestDir & "sqlite\sqlite.vcproj", "Release DLL"
 			End If
 		End If
 	Else

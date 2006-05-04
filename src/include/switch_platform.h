@@ -49,6 +49,7 @@ BEGIN_EXTERN_C
 #pragma comment(lib, "libapr-1.lib")
 #pragma comment(lib, "libaprutil-1.lib")
 #pragma comment(lib, "libapriconv-1.lib")
+#pragma comment(lib, "sqlite.lib")
 #endif
 
 /* disable the following warnings 

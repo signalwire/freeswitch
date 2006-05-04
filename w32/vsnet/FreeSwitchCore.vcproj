@@ -72,7 +72,7 @@
 				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresampled.lib srtp.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
 				AddModuleNamesToAssembly=""
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FreeSwitchCore.pdb"
@@ -105,7 +105,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log&#x0D;&#x0A;"
+				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.dll&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.lib&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log"
 			/>
 		</Configuration>
 		<Configuration
@@ -161,7 +161,7 @@
 				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresample.lib srtp.lib"
 				OutputFile="$(OutDir)/FreeSwitch.dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -192,7 +192,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log&#x0D;&#x0A;"
+				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.dll&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.lib&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log"
 			/>
 		</Configuration>
 	</Configurations>
