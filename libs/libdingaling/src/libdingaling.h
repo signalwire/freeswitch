@@ -192,6 +192,22 @@ typedef void (*ldl_logger_t)(char *file, const char *func, int line, int level, 
 ldl_status ldl_session_destroy(ldl_session_t **session_p);
 
 /*!
+  \brief Get a value from a session
+  \param session the session
+  \param key the key to look up
+  \return the value
+*/
+char *ldl_session_get_value(ldl_session_t *session, char *key);
+
+/*!
+  \brief Set a value on a session
+  \param session the session
+  \param key the key to set
+  \param val the value of the key
+*/
+void ldl_session_set_value(ldl_session_t *session, char *key, char *val);
+
+/*!
   \brief Create a Jingle Session
   \param session_p pointer to reference the session
   \param handle handle to associate the session with

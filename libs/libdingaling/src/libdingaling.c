@@ -125,6 +125,7 @@ struct ldl_session {
 	ldl_candidate_t candidates[LDL_MAX_CANDIDATES];
 	unsigned int candidate_len;
 	apr_pool_t *pool;
+	apr_hash_t *variables;
 	apr_time_t created;
 	void *private_data;
 };
@@ -169,6 +170,16 @@ static unsigned int next_id(void)
 	return globals.id++;
 }
 
+
+char *ldl_session_get_value(ldl_session_t *session, char *key)
+{
+	return apr_hash_get(session->variables, key, APR_HASH_KEY_STRING);
+}
+
+void ldl_session_set_value(ldl_session_t *session, char *key, char *val)
+{
+	apr_hash_set(session->variables, apr_pstrdup(session->pool, key), APR_HASH_KEY_STRING, apr_pstrdup(session->pool, val));
+}
 
 char *ldl_session_get_id(ldl_session_t *session)
 {
@@ -223,8 +234,10 @@ ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, c
 	session->handle = handle;
 	session->created = apr_time_now();
 	session->state = LDL_STATE_NEW;
+	session->variables = apr_hash_make(session->pool);
 	*session_p = session;
-	
+
+
 	if (globals.debug) {
 		globals.logger(DL_LOG_DEBUG, "Created Session %s\n", id);
 	}
@@ -305,7 +318,11 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 				tag = iks_child (xml);
 				
 				while(tag) {
-					if (!strcasecmp(iks_name(tag), "candidate") && session->candidate_len < LDL_MAX_CANDIDATES) {
+					if (!strcasecmp(type, "info_element")) {
+						char *name = iks_find_attrib(tag, "name");
+						char *value = iks_find_attrib(tag, "value");
+						ldl_session_set_value(session, name, value);
+					} else if (!strcasecmp(iks_name(tag), "candidate") && session->candidate_len < LDL_MAX_CANDIDATES) {
 						char *key;
 						double pref = 0.0;
 						int index = -1;
@@ -812,7 +829,8 @@ static ldl_status new_session_iq(ldl_session_t *session, iks **iqp, iks **sessp,
 	iks *iq, *sess;
 	unsigned int myid;
 	char idbuf[80];
-	
+	apr_hash_index_t *hi;
+
 	myid = next_id();
 	snprintf(idbuf, sizeof(idbuf), "%u", myid);
 	iq = iks_new("iq");
@@ -827,6 +845,19 @@ static ldl_status new_session_iq(ldl_session_t *session, iks **iqp, iks **sessp,
 	iks_insert_attrib(sess, "type", type);
 	iks_insert_attrib(sess, "id", session->id);
 	iks_insert_attrib(sess, "initiator", session->initiator ? session->initiator : session->them);	
+	for (hi = apr_hash_first(session->pool, session->variables); hi; hi = apr_hash_next(hi)) {
+		void *val = NULL;
+		const void *key = NULL;
+
+		apr_hash_this(hi, &key, NULL, &val);
+		if (val) {
+			iks *var = iks_insert(sess, "info_element");
+			iks_insert_attrib(var, "xmlns", "http://www.freeswitch.org/jie");
+			iks_insert_attrib(var, "name", (char *) key);
+			iks_insert_attrib(var, "value", (char *) val);
+		}
+	}
+
 	*sessp = sess;
 	*iqp = iq;
 	*id = myid;

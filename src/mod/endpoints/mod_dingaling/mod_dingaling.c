@@ -143,6 +143,7 @@ struct private_object {
 	switch_time_t next_cand;
 	char *stun_ip;
 	char *recip;
+	char *dnis;
 	uint16_t stun_port;
 };
 
@@ -1065,10 +1066,9 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		char idbuf[1024];
 		char *full_id;
 		char sess_id[11] = "";
-		char workspace[1024];
-
-
-
+		char *dnis = NULL;
+		char workspace[1024] = "";
+		
 		switch_copy_string(workspace, outbound_profile->destination_number, sizeof(workspace));
 		profile_name = workspace;
 		if ((callto = strchr(profile_name, '/'))) {
@@ -1079,6 +1079,9 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			return SWITCH_STATUS_GENERR;
 		}
 		
+		if ((dnis = strchr(profile_name, ':'))) {
+			*dnis++ = '\0';
+		}
 
 		if ((mdl_profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
 			if (!ldl_handle_ready(mdl_profile->handle)) {
@@ -1109,6 +1112,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			tech_pvt->codec_index = -1;
 			tech_pvt->local_port = switch_rtp_request_port();
 			tech_pvt->recip = switch_core_session_strdup(*new_session, full_id);
+			tech_pvt->dnis = switch_core_session_strdup(*new_session, dnis);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
@@ -1138,6 +1142,9 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, mdl_profile->login);
 		tech_pvt->profile = mdl_profile;
 		ldl_session_set_private(dlsession, *new_session);
+		ldl_session_set_value(dlsession, "dnis", dnis);
+		ldl_session_set_value(dlsession, "caller_id_name", outbound_profile->caller_id_name);
+		ldl_session_set_value(dlsession, "caller_id_number", outbound_profile->caller_id_number);
 		tech_pvt->dlsession = dlsession;
 		get_codecs(tech_pvt);
 		//tech_pvt->desc_id = ldl_session_describe(dlsession, NULL, 0, LDL_DESCRIPTION_INITIATE);
@@ -1516,6 +1523,11 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			return LDL_STATUS_FALSE;
 		}
 		if ((session = switch_core_session_request(&channel_endpoint_interface, NULL)) != 0) {
+			char *exten;
+			char *context;
+			char *cid_name;
+			char *cid_num;
+
 			switch_core_session_add_stream(session, NULL);
 			if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 				memset(tech_pvt, 0, sizeof(*tech_pvt));
@@ -1537,17 +1549,33 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating a session for %s\n", ldl_session_get_id(dlsession));
 		
+			if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {
+				exten = profile->exten;
+			}
+			
+			if (!(context = ldl_session_get_value(dlsession, "context"))) {
+				context = profile->context;
+			}
+
+			if (!(cid_name = ldl_session_get_value(dlsession, "caller_id_name"))) {
+				cid_name = tech_pvt->recip;
+			}
+
+			if (!(cid_num = ldl_session_get_value(dlsession, "caller_id_number"))) {
+				cid_num = tech_pvt->recip;
+			}
+			
 			if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																	  profile->dialplan,
-																	  ldl_session_get_caller(dlsession),
-																	  ldl_session_get_caller(dlsession),
+																	  cid_name,
+																	  cid_num,
 																	  ldl_session_get_ip(dlsession),
-																	  NULL,
-																	  NULL,
-																	  NULL,
+																	  ldl_session_get_value(dlsession, "ani"),
+																	  ldl_session_get_value(dlsession, "ani2"),
+																	  ldl_session_get_value(dlsession, "rdnis"),
 																	  (char *)modname,
-																	  profile->context,
-																	  profile->exten)) != 0) {
+																	  context,
+																	  exten)) != 0) {
 				char name[128];
 				snprintf(name, sizeof(name), "DingaLing/%s-%04x", tech_pvt->caller_profile->destination_number,
 						 rand() & 0xffff);
@@ -1697,11 +1725,12 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 								return LDL_STATUS_FALSE;
 							}
 						}
-
+						
 						tech_pvt->remote_ip = switch_core_session_strdup(session, candidates[x].address);
 						ldl_session_set_ip(dlsession, tech_pvt->remote_ip);
 						tech_pvt->remote_port = candidates[x].port;
 						tech_pvt->remote_user = switch_core_session_strdup(session, candidates[x].username);
+						
 						if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 							do_candidates(tech_pvt, 0);
 						}
