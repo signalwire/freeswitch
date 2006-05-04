@@ -659,6 +659,7 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 						char digit_str[] = {key, 0};
 						time(&tech_pvt->last_digit_time);
 						switch_channel_queue_dtmf(channel, digit_str);
+						return SWITCH_STATUS_BREAK;
 					}
 					if (++tech_pvt->dc >= 3) {
 						tech_pvt->last_digit = 0;
