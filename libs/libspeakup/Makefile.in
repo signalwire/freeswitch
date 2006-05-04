@@ -61,9 +61,9 @@ am__installdirs = "$(DESTDIR)$(libdir)" \
 	"$(DESTDIR)$(library_includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
-libjitterbuffer_la_LIBADD =
-am_libjitterbuffer_la_OBJECTS = libjitterbuffer_la-jitterbuffer.lo
-libjitterbuffer_la_OBJECTS = $(am_libjitterbuffer_la_OBJECTS)
+libspeakup_la_LIBADD =
+am_libspeakup_la_OBJECTS = libspeakup_la-jb_speakup.lo
+libspeakup_la_OBJECTS = $(am_libspeakup_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -75,8 +75,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libjitterbuffer_la_SOURCES)
-DIST_SOURCES = $(libjitterbuffer_la_SOURCES)
+SOURCES = $(libspeakup_la_SOURCES)
+DIST_SOURCES = $(libspeakup_la_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -199,17 +199,17 @@ EXTRA_DIST =
 SUBDIRS = 
 AUTOMAKE_OPTS = gnu
 MAKE = make
-NAME = jitterbuffer
+NAME = speakup
 PREFIX = $(prefix)
 AM_CC = gcc
 AM_CFLAGS = -Wall -Werror -I./src -I$(prefix)/include -I. -Isrc
 AM_CPPFLAGS = $(AM_CFLAGS)
-lib_LTLIBRARIES = libjitterbuffer.la
-libjitterbuffer_la_SOURCES = src/jitterbuffer.c
-libjitterbuffer_la_CFLAGS = $(AM_CFLAGS)
-libjitterbuffer_la_LDFLAGS = 
+lib_LTLIBRARIES = libspeakup.la
+libspeakup_la_SOURCES = src/jb_speakup.c
+libspeakup_la_CFLAGS = $(AM_CFLAGS)
+libspeakup_la_LDFLAGS = 
 library_includedir = $(prefix)/include
-library_include_HEADERS = src/jitterbuffer.h
+library_include_HEADERS = src/jb_speakup.h
 all: all-recursive
 
 .SUFFIXES:
@@ -274,8 +274,8 @@ clean-libLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-libjitterbuffer.la: $(libjitterbuffer_la_OBJECTS) $(libjitterbuffer_la_DEPENDENCIES) 
-	$(LINK) -rpath $(libdir) $(libjitterbuffer_la_LDFLAGS) $(libjitterbuffer_la_OBJECTS) $(libjitterbuffer_la_LIBADD) $(LIBS)
+libspeakup.la: $(libspeakup_la_OBJECTS) $(libspeakup_la_DEPENDENCIES) 
+	$(LINK) -rpath $(libdir) $(libspeakup_la_LDFLAGS) $(libspeakup_la_OBJECTS) $(libspeakup_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -283,7 +283,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libjitterbuffer_la-jitterbuffer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libspeakup_la-jb_speakup.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -306,12 +306,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
-libjitterbuffer_la-jitterbuffer.lo: src/jitterbuffer.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libjitterbuffer_la_CFLAGS) $(CFLAGS) -MT libjitterbuffer_la-jitterbuffer.lo -MD -MP -MF "$(DEPDIR)/libjitterbuffer_la-jitterbuffer.Tpo" -c -o libjitterbuffer_la-jitterbuffer.lo `test -f 'src/jitterbuffer.c' || echo '$(srcdir)/'`src/jitterbuffer.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libjitterbuffer_la-jitterbuffer.Tpo" "$(DEPDIR)/libjitterbuffer_la-jitterbuffer.Plo"; else rm -f "$(DEPDIR)/libjitterbuffer_la-jitterbuffer.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/jitterbuffer.c' object='libjitterbuffer_la-jitterbuffer.lo' libtool=yes @AMDEPBACKSLASH@
+libspeakup_la-jb_speakup.lo: src/jb_speakup.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libspeakup_la_CFLAGS) $(CFLAGS) -MT libspeakup_la-jb_speakup.lo -MD -MP -MF "$(DEPDIR)/libspeakup_la-jb_speakup.Tpo" -c -o libspeakup_la-jb_speakup.lo `test -f 'src/jb_speakup.c' || echo '$(srcdir)/'`src/jb_speakup.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libspeakup_la-jb_speakup.Tpo" "$(DEPDIR)/libspeakup_la-jb_speakup.Plo"; else rm -f "$(DEPDIR)/libspeakup_la-jb_speakup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/jb_speakup.c' object='libspeakup_la-jb_speakup.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libjitterbuffer_la_CFLAGS) $(CFLAGS) -c -o libjitterbuffer_la-jitterbuffer.lo `test -f 'src/jitterbuffer.c' || echo '$(srcdir)/'`src/jitterbuffer.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libspeakup_la_CFLAGS) $(CFLAGS) -c -o libspeakup_la-jb_speakup.lo `test -f 'src/jb_speakup.c' || echo '$(srcdir)/'`src/jb_speakup.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

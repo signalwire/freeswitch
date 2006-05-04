@@ -1815,7 +1815,7 @@ fi
 
 
 # Define the identity of the package.
- PACKAGE=libjitterbuffer
+ PACKAGE=libspeakup
  VERSION=0.1
 
 

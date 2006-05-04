@@ -1,5 +1,5 @@
 /*******************************************************
- * jitterbuffer: 
+ * jb_speakup: 
  * an application-independent jitterbuffer, which tries 
  * to achieve the maximum user perception during a call.
  * For more information look at:
@@ -15,10 +15,7 @@
  * Version: 1.1
  * 
  * Changelog:
-* 1.0 => 1.1 (2006-03-24) (thanks to Micheal Jerris, freeswitch.org)
- * - added MSVC 2005 project files
- * - added JB_NOJB as return value
- *
+ * See jb_speakup.c
  *
  * This program is free software, distributed under the terms of:
  * - the GNU Lesser (Library) General Public License
@@ -33,8 +30,8 @@
  * please look at the comments in the code file.
  */
 
-#ifndef _JITTERBUFFER_H_
-#define _JITTERBUFFER_H_
+#ifndef _JB_SPEAKUP_H_
+#define _JB_SPEAKUP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,7 +62,7 @@ extern "C" {
 #define JB_MAX_DIFF 6000 //in a RTP stream the max_diff may be 3000 packets (most packets are 20ms)
 
 //structs
-typedef struct jb_info {
+typedef struct jb_speakup_info {
 	long frames_received;       /* Number of frames received by the jitterbuffer */
   long frames_late;           /* Number of frames that were late */
   long frames_lost;           /* Number of frames that were lost */
@@ -82,24 +79,25 @@ typedef struct jb_info {
 	long last_voice_ms;	 /* the duration of the last voice frame */
   short silence;       /* If we are in silence 1-yes 0-no */
   long iqr;            /* Inter Quartile Range of current history, if the squareroot is taken it is a good estimate of jitter */
-} jb_info;
+} jb_speakup_info;
 
-typedef struct jb_frame {
+typedef struct jb_speakup_frame {
 	void *data;		                /* the frame data */
 	long ts;	                    /* the senders timestamp */
 	long ms;	                    /* length of this frame in ms */
 	int  type;	                  /* the type of frame */
 	int codec;                    /* codec of this frame, undefined if nonvoice */
-	struct jb_frame *next, *prev; /* pointers to the next and previous frames in the queue */ } jb_frame;
+	struct jb_speakup_frame *next, *prev; /* pointers to the next and previous frames in the queue */ 
+} jb_speakup_frame;
 
-typedef struct jb_hist_element {
+typedef struct jb_speakup_hist_element{
 	long delay; /* difference between time of arrival and senders timestamp */
 	long ts;    /* senders timestamp */
 	long ms;    /* length of this frame in ms */
 	int codec;  /* wich codec this frame has */
-} jb_hist_element;								
+} jb_speakup_hist_element;	//this is a private element							
 
-typedef struct jb_settings {
+typedef struct jb_speakup_settings {
   /* settings */
 	long min_jb;	              /* defines a hard clamp to use in setting the jitterbuffer delay */
   long max_jb;	              /* defines a hard clamp to use in setting the jitterbuffer delay */
@@ -108,10 +106,10 @@ typedef struct jb_settings {
   long wait_grow;             /* ms between growing */
   long wait_shrink;           /* ms between shrinking */
   long max_diff;              /* maximum number of milliseconds the jitterbuffer may be off */
-} jb_settings;
+} jb_speakup_settings;
 
-typedef struct jitterbuffer {
-	struct jb_hist_element hist[JB_HISTORY_SIZE]; /* the history of the last received frames */
+typedef struct jb_speakup {
+	struct jb_speakup_hist_element hist[JB_HISTORY_SIZE]; /* the history of the last received frames */
 	long hist_sorted_delay[JB_HISTORY_SIZE];      /* a sorted buffer of the delays (lowest first) */
 	long hist_sorted_timestamp[JB_HISTORY_SIZE];  /* a sorted buffer of the timestamps (lowest first) */
 	
@@ -125,11 +123,11 @@ typedef struct jitterbuffer {
 	long target; 		            /* the target jitterbuffer adjustment */
 	long last_delay;            /* the delay of the last packet, used for calc. jitter */
 	                            
-	jb_frame *voiceframes; 	 /* queued voiceframes */
-	jb_frame *controlframes; /* queued controlframes */
-	jb_settings settings;    /* the settings of the jitterbuffer */
-	jb_info info;            /* the statistics of the jitterbuffer */
-} jitterbuffer;
+	jb_speakup_frame *voiceframes; 	 /* queued voiceframes */
+	jb_speakup_frame *controlframes; /* queued controlframes */
+	jb_speakup_settings settings;    /* the settings of the jitterbuffer */
+	jb_speakup_info info;            /* the statistics of the jitterbuffer */
+} jb_speakup;
 
 //parameter definitions
 /* return codes */
@@ -145,76 +143,78 @@ typedef struct jitterbuffer {
 #define JB_TYPE_VOICE	2
 #define JB_TYPE_SILENCE	3
 
-/* the jitterbuffer behaives different for each codec. */
-/* Look in the code if a codec has his function defined */
-/* default is g711x behaiviour */
-#define JB_CODEC_SPEEX 10       //NOT defined
-#define JB_CODEC_ILBC 9         //NOT defined
-#define JB_CODEC_GSM_EFR 8
-#define JB_CODEC_GSM_FR 7       //NOT defined
-#define JB_CODEC_G723_1 6
-#define JB_CODEC_G729A 5
-#define JB_CODEC_G729 4
-#define JB_CODEC_G711x_PLC 3
-#define JB_CODEC_G711x 2
-#define JB_CODEC_OTHER 1        //NOT defined
+/* the jitterbuffer behaives different for each codec. 
+ * The codecs are defined like the iana codes specified in RFC3551
+ * The codecs that aren't specified in RFC3551 
+ * I took numbers in the range 1000 - 1100 
+ * default is g711x behaiviour */
+#define JB_CODEC_PCMU 0 //use this one if you have no PLC 
+#define JB_CODEC_PCMA 8 //use this one if you have no PLC 
+#define JB_CODEC_G723 4
+#define JB_CODEC_G729 18
+
+#define JB_CODEC_PCMU_PLC 1000 //use this one if you have PLC enabled
+#define JB_CODEC_PCMA_PLC 1008 //use this one if you have PLC enabled
+#define JB_CODEC_GSM_EFR 1003 //This is GSM-Enhanced Full Rate and not normal GSM
+
+#define JB_CODEC_OTHER 1100 //Unknown codec for us, we use the g711 alg.
 
 
 /*
  * Creates a new jitterbuffer and sets the default settings.
  * Always use this function for creating a new jitterbuffer. 
  */
-jitterbuffer *jb_new();
+jb_speakup *jb_speakup_new();
 
 /*
  * The control frames and possible personal settings are kept. 
  * History and voice/silence frames are destroyed. 
  */
-void jb_reset(jitterbuffer *jb);
+void jb_speakup_reset(jb_speakup *jb);
 
 /*
  * Resets the jitterbuffer totally, all the control/voice/silence frames are destroyed
  * default settings are put as well. 
  */
-void jb_reset_all(jitterbuffer *jb);
+void jb_speakup_reset_all(jb_speakup *jb);
 
 /*
  * Destroy the jitterbuffer and any frame within. 
  * Always use this function for destroying a jitterbuffer,
  * otherwise there is a chance of memory leaking.
  */
-void jb_destroy(jitterbuffer *jb);
+void jb_speakup_destroy(jb_speakup *jb);
 
 /*
  * Define your own settings for the jitterbuffer. Only settings !=0
  * are put in the jitterbuffer.
  */
-void jb_set_settings(jitterbuffer *jb, jb_settings *settings);
+void jb_speakup_set_settings(jb_speakup *jb, jb_speakup_settings *settings);
 
 /*
  * Get the statistics for the jitterbuffer. 
  * Copying the statistics directly for the jitterbuffer won't work because
  * The statistics are only calculated when calling this function.
  */
-void jb_get_info(jitterbuffer *jb, jb_info *stats);
+void jb_speakup_get_info(jb_speakup *jb, jb_speakup_info *stats);
 
 /*
  * Get the current settings of the jitterbuffer.
  */
-void jb_get_settings(jitterbuffer *jb, jb_settings *settings);
+void jb_speakup_get_settings(jb_speakup *jb, jb_speakup_settings *settings);
 
 /*
  * Gives an estimation of the MOS of a call given the
  * packetloss p, delay d, and wich codec is used.
  * The assumption is made that the echo cancelation is around 37dB.
  */
-float jb_guess_mos(float p, long d, int codec);
+float jb_speakup_guess_mos(float p, long d, int codec);
 
 /*
  * returns JB_OK if there are still frames left in the jitterbuffer
  * otherwise JB_EMPTY is returned.
  */
-int jb_has_frames(jitterbuffer *jb);
+int jb_speakup_has_frames(jb_speakup *jb);
 
 /*
  * put a packet(frame) into the jitterbuffer.
@@ -230,7 +230,7 @@ int jb_has_frames(jitterbuffer *jb);
  * if type==silence @REQUIRE: *data, type, ts, now
  * on return *data is undefined
  */
-void jb_put(jitterbuffer *jb, void *data, int type, long ms, long ts, long now, int codec);
+void jb_speakup_put(jb_speakup *jb, void *data, int type, long ms, long ts, long now, int codec);
 
 /*
  * Get a packet from the jitterbuffer if it's available.
@@ -245,30 +245,30 @@ void jb_put(jitterbuffer *jb, void *data, int type, long ms, long ts, long now, 
  * JB_NOFRAME, no frame scheduled
  * JB_EMPTY, the jitterbuffer is empty
  */
-int jb_get(jitterbuffer *jb, void **data, long now, long interpl);
+int jb_speakup_get(jb_speakup *jb, void **data, long now, long interpl);
 
 /* debug functions */
 typedef 		void (*jb_output_function_t)(const char *fmt, ...);
-void 			jb_setoutput(jb_output_function_t warn, jb_output_function_t err, jb_output_function_t dbg);
+void 			jb_speakup_setoutput(jb_output_function_t warn, jb_output_function_t err, jb_output_function_t dbg);
 
 
 /*******************************
  * The use of the jitterbuffer *
  *******************************
- * Always create a new jitterbuffer with jb_new().
- * Always destroy a jitterbuffer with jb_destroy().
+ * Always create a new jitterbuffer with jb_speakup_new().
+ * Always destroy a jitterbuffer with jb_speakup_destroy().
  *
  * There is no lock(mutex) mechanism, that your responsibility.
  * The reason for this is that different environments require
  * different ways of implementing a lock.
  *
  * The following functions require a lock on the jitterbuffer:
- * jb_reset(), jb_reset_all(), jb_destroy(), jb_set_settings(),
- * jb_get_info(), jb_get_settings(), jb_has_frames(), jb_put(),
- * jb_get()
+ * jb_speakup_reset(), jb_speakup_reset_all(), jb_speakup_destroy(), jb_speakup_set_settings(),
+ * jb_speakup_get_info(), jb_speakup_get_settings(), jb_speakup_has_frames(), jb_speakup_put(),
+ * jb_speakup_get()
  *
  * The following functions do NOT require a lock on the jitterbuffer:
- * jb_new(), jb_guess_mos()
+ * jb_speakup_new(), jb_speakup_guess_mos()
  *
  * Since control packets have a higher priority above any other packet
  * a call may already be ended while there is audio left to play. We
@@ -283,20 +283,20 @@ void 			jb_setoutput(jb_output_function_t warn, jb_output_function_t err, jb_out
 /****************************
  * debug messages explained *
  ****************************
- * N  - jb_new()
- * R  - jb_reset()
- * r  - jb_reset_all()
- * D  - jb_destroy()
- * S  - jb_set_settings()
- * H  - jb_has_frames()
- * I  - jb_get_info()
- * S  - jb_get_settings()
- * pC - jb_put() put Control packet
- * pT - jb_put() Timestamp was already in the queue
- * pV - jb_put() put Voice packet
- * pS - jb_put() put Silence packet
+ * N  - jb_speakup_new()
+ * R  - jb_speakup_reset()
+ * r  - jb_speakup_reset_all()
+ * D  - jb_speakup_destroy()
+ * S  - jb_speakup_set_settings()
+ * H  - jb_speakup_has_frames()
+ * I  - jb_speakup_get_info()
+ * S  - jb_speakup_get_settings()
+ * pC - jb_speakup_put() put Control packet
+ * pT - jb_speakup_put() Timestamp was already in the queue
+ * pV - jb_speakup_put() put Voice packet
+ * pS - jb_speakup_put() put Silence packet
  *
- * A  - jb_get()
+ * A  - jb_speakup_get()
  * // below are all the possible debug info when trying to get a packet
  * gC - get_control() - there is a control message
  * gs - get_voice() - there is a silence frame
