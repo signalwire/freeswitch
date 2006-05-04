@@ -124,18 +124,9 @@ struct private_object {
 	char *remote_user;
 	unsigned int cand_id;
 	unsigned int desc_id;
-	char last_digit;
 	unsigned int dc;
-	time_t last_digit_time;
-	switch_queue_t *dtmf_queue;
-	char out_digit;
-	unsigned char out_digit_packet[4];
-	unsigned int out_digit_sofar;
-	unsigned int out_digit_dur;
-	uint16_t out_digit_seq;
 	int32_t timestamp_send;
 	int32_t timestamp_recv;
-	int32_t timestamp_dtmf;
 	uint32_t last_read;
 	char *codec_name;
 	switch_payload_t codec_num;
@@ -718,11 +709,14 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *d
 	assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF [%s]\n", dtmf);
-	snprintf(digits, sizeof(digits), "+%s\n", dtmf);
-	ldl_handle_send_msg(tech_pvt->profile->handle, tech_pvt->recip, NULL, digits);
-	
+	//snprintf(digits, sizeof(digits), "+%s\n", dtmf);
+	//ldl_handle_send_msg(tech_pvt->profile->handle, tech_pvt->recip, NULL, digits);
 
-	return SWITCH_STATUS_SUCCESS;
+	return switch_rtp_queue_rfc2833(tech_pvt->rtp_session,
+									digits,
+									100 * (tech_pvt->read_codec.implementation->samples_per_second / 1000));
+
+	//return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
@@ -769,39 +763,14 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			return SWITCH_STATUS_BREAK;
 		}
 
-		/* RFC2833 ... TBD try harder to honor the duration etc.*/
-		if (payload == 101) {
-			unsigned char *packet = tech_pvt->read_frame.data;
-			int end = packet[1]&0x80;
-			int duration = (packet[2]<<8) + packet[3];
-			char key = switch_rfc2833_to_char(packet[0]);
-
-			/* SHEESH.... Curse you RFC2833 inventors!!!!*/
-			if ((time(NULL) - tech_pvt->last_digit_time) > 2) {
-				tech_pvt->last_digit = 0;
-				tech_pvt->dc = 0;
-			}
-			if (duration && end) {
-				if (key != tech_pvt->last_digit) {
-					char digit_str[] = {key, 0};
-					time(&tech_pvt->last_digit_time);
-					switch_channel_queue_dtmf(channel, digit_str);
-					switch_set_flag(tech_pvt, TFLAG_DTMF);
-				}
-				if (++tech_pvt->dc >= 3) {
-					tech_pvt->last_digit = 0;
-					tech_pvt->dc = 0;
-				}
-
-				tech_pvt->last_digit = key;
-			} else {
-				tech_pvt->last_digit = 0;
-				tech_pvt->dc = 0;
-			}
-		}
-
 		if (switch_test_flag(&tech_pvt->read_frame, SFF_CNG)) {
 			tech_pvt->read_frame.datalen = tech_pvt->last_read ? tech_pvt->last_read : tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+		}
+
+		if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
+			char dtmf[128];
+			switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, dtmf, sizeof(dtmf));
+			switch_channel_queue_dtmf(channel, dtmf);
 		}
 
 		if (tech_pvt->read_frame.datalen > 0) {
@@ -866,66 +835,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 	frames = ((int) frame->datalen / bytes);
 	samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
-
-	if (tech_pvt->out_digit_dur > 0) {
-		int x, ts, loops = 1, duration;
-
-		tech_pvt->out_digit_sofar += samples;
-
-		if (tech_pvt->out_digit_sofar >= tech_pvt->out_digit_dur) {
-			duration = tech_pvt->out_digit_dur;
-			tech_pvt->out_digit_packet[1] |= 0x80;
-			tech_pvt->out_digit_dur = 0;
-			loops = 3;
-		} else {
-			duration = tech_pvt->out_digit_sofar;
-		}
-
-		ts = tech_pvt->timestamp_dtmf += samples;
-		tech_pvt->out_digit_packet[2] = (unsigned char) (duration >> 8);
-		tech_pvt->out_digit_packet[3] = (unsigned char) duration;
-		
-
-		for (x = 0; x < loops; x++) {
-			switch_rtp_write_manual(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 0, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
-			/*
-			  printf("Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", loops == 1 ? "middle" : "end", tech_pvt->out_digit, ts, 
-			  tech_pvt->out_digit_sofar, duration);
-			*/
-		}
-	}
-
-	if (!tech_pvt->out_digit_dur && tech_pvt->dtmf_queue && switch_queue_size(tech_pvt->dtmf_queue)) {
-		void *pop;
-
-		if (switch_queue_trypop(tech_pvt->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-			int x, ts;
-			struct rfc2833_digit *rdigit = pop;
-			
-			memset(tech_pvt->out_digit_packet, 0, 4);
-			tech_pvt->out_digit_sofar = 0;
-			tech_pvt->out_digit_dur = rdigit->duration;
-			tech_pvt->out_digit = rdigit->digit;
-			tech_pvt->out_digit_packet[0] = (unsigned char)switch_char_to_rfc2833(rdigit->digit);
-			tech_pvt->out_digit_packet[1] = 7;
-
-			ts = tech_pvt->timestamp_dtmf += samples;
-			tech_pvt->out_digit_seq++;
-			for (x = 0; x < 3; x++) {
-				switch_rtp_write_manual(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 1, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
-				/*
-				  printf("Send start packet for [%c] ts=%d sofar=%u dur=%d\n", tech_pvt->out_digit, ts, 
-				  tech_pvt->out_digit_sofar, 0);
-				*/
-			}
-
-			free(rdigit);
-		}
-	}
-
-
-
-
 
 	//printf("%s send %d bytes %d samples in %d frames ts=%d\n", switch_channel_get_name(channel), frame->datalen, samples, frames, tech_pvt->timestamp_send);
 

@@ -58,6 +58,11 @@ typedef struct {
 } rtp_msg_t;
 
 
+struct rfc2833_digit {
+	char digit;
+	int duration;
+};
+
 struct switch_rtp_vad_data {
 	switch_core_session_t *session;
 	switch_codec_t vad_codec;
@@ -78,6 +83,22 @@ struct switch_rtp_vad_data {
 	uint8_t start_count;
 	uint8_t scan_freq;
 	time_t next_scan;
+};
+
+
+struct switch_rtp_rfc2833_data {
+	switch_queue_t *dtmf_queue;
+	char out_digit;
+	unsigned char out_digit_packet[4];
+	unsigned int out_digit_sofar;
+	unsigned int out_digit_dur;
+	uint16_t out_digit_seq;
+	int32_t timestamp_dtmf;
+	char last_digit;
+	unsigned int dc;
+	time_t last_digit_time;
+	switch_buffer_t *dtmf_buffer;
+	switch_mutex_t *dtmf_mutex;
 };
 
 struct switch_rtp {
@@ -113,6 +134,7 @@ struct switch_rtp {
 	uint8_t stuncount;
 	switch_buffer_t *packet_buffer;
 	struct switch_rtp_vad_data vad_data;
+	struct switch_rtp_rfc2833_data dtmf_data;
 };
 
 static int global_init = 0;
@@ -298,7 +320,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	rtp_session->pool = pool;
 	rtp_session->flags = flags;
-
+	switch_mutex_init(&rtp_session->dtmf_data.dtmf_mutex, SWITCH_MUTEX_NESTED, rtp_session->pool);
+	switch_buffer_create(rtp_session->pool, &rtp_session->dtmf_data.dtmf_buffer, 128);
 	/* for from address on recvfrom calls */
 	switch_sockaddr_info_get(&rtp_session->from_addr, NULL, SWITCH_UNSPEC, 0, 0, rtp_session->pool);
 	
@@ -514,6 +537,82 @@ SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp
 
 }
 
+
+static void do_2833(switch_rtp_t *rtp_session)
+{
+	switch_frame_flag_t flags = 0;
+	uint32_t samples = rtp_session->packet_size;
+
+	if (rtp_session->dtmf_data.out_digit_dur > 0) {
+		int x, ts, loops = 1, duration;
+		rtp_session->dtmf_data.out_digit_sofar += samples;
+
+		if (rtp_session->dtmf_data.out_digit_sofar >= rtp_session->dtmf_data.out_digit_dur) {
+			duration = rtp_session->dtmf_data.out_digit_dur;
+			rtp_session->dtmf_data.out_digit_packet[1] |= 0x80;
+			rtp_session->dtmf_data.out_digit_dur = 0;
+			loops = 3;
+		} else {
+			duration = rtp_session->dtmf_data.out_digit_sofar;
+		}
+
+		ts = rtp_session->dtmf_data.timestamp_dtmf += samples;
+		rtp_session->dtmf_data.out_digit_packet[2] = (unsigned char) (duration >> 8);
+		rtp_session->dtmf_data.out_digit_packet[3] = (unsigned char) duration;
+		
+
+		for (x = 0; x < loops; x++) {
+			switch_rtp_write_manual(rtp_session, 
+									rtp_session->dtmf_data.out_digit_packet, 4, 0, 101, ts,
+									loops == 1 ? rtp_session->dtmf_data.out_digit_seq++ : rtp_session->dtmf_data.out_digit_seq, &flags);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", 
+							  loops == 1 ? "middle" : "end",
+							  rtp_session->dtmf_data.out_digit,
+							  ts, 
+							  rtp_session->dtmf_data.out_digit_sofar,
+							  duration);
+		}
+	}
+
+	if (!rtp_session->dtmf_data.out_digit_dur && rtp_session->dtmf_data.dtmf_queue && switch_queue_size(rtp_session->dtmf_data.dtmf_queue)) {
+		void *pop;
+
+		if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			int x, ts;
+			struct rfc2833_digit *rdigit = pop;
+			
+			memset(rtp_session->dtmf_data.out_digit_packet, 0, 4);
+			rtp_session->dtmf_data.out_digit_sofar = 0;
+			rtp_session->dtmf_data.out_digit_dur = rdigit->duration;
+			rtp_session->dtmf_data.out_digit = rdigit->digit;
+			rtp_session->dtmf_data.out_digit_packet[0] = (unsigned char)switch_char_to_rfc2833(rdigit->digit);
+			rtp_session->dtmf_data.out_digit_packet[1] = 7;
+
+			ts = rtp_session->dtmf_data.timestamp_dtmf += samples;
+			rtp_session->dtmf_data.out_digit_seq++;
+			for (x = 0; x < 3; x++) {
+				switch_rtp_write_manual(rtp_session,
+										rtp_session->dtmf_data.out_digit_packet,
+										4,
+										1,
+										101,
+										ts,
+										rtp_session->dtmf_data.out_digit_seq,
+										&flags);
+				switch_log_printf(SWITCH_CHANNEL_LOG,
+								  SWITCH_LOG_DEBUG,
+								  "Send start packet for [%c] ts=%d sofar=%u dur=%d\n",
+								  rtp_session->dtmf_data.out_digit,
+								  ts,
+								  rtp_session->dtmf_data.out_digit_sofar,
+								  0);
+			}
+
+			free(rdigit);
+		}
+	}
+}
+
 static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type, switch_frame_flag_t *flags)
 {
 	switch_size_t bytes;
@@ -562,6 +661,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					rtp_session->next_read += rtp_session->ms_per_packet;
 				}
 				*payload_type = SWITCH_RTP_CNG_PAYLOAD;
+				do_2833(rtp_session);
 				return SWITCH_RTP_CNG_PAYLOAD;
 			}
 		
@@ -610,11 +710,136 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	rtp_session->next_read += rtp_session->ms_per_packet;
 	*payload_type = rtp_session->recv_msg.header.pt;
 
+
+	/* RFC2833 ... TBD try harder to honor the duration etc.*/
+	if (*payload_type == 101) {
+		unsigned char *packet = rtp_session->recv_msg.body;
+		int end = packet[1]&0x80;
+		int duration = (packet[2]<<8) + packet[3];
+		char key = switch_rfc2833_to_char(packet[0]);
+
+		/* SHEESH.... Curse you RFC2833 inventors!!!!*/
+		if ((time(NULL) - rtp_session->dtmf_data.last_digit_time) > 2) {
+			rtp_session->dtmf_data.last_digit = 0;
+			rtp_session->dtmf_data.dc = 0;
+		}
+		if (duration && end) {
+			if (key != rtp_session->dtmf_data.last_digit) {
+				char digit_str[] = {key, 0};
+				time(&rtp_session->dtmf_data.last_digit_time);
+				switch_rtp_queue_dtmf(rtp_session, digit_str);
+			}
+			if (++rtp_session->dtmf_data.dc >= 3) {
+				rtp_session->dtmf_data.last_digit = 0;
+				rtp_session->dtmf_data.dc = 0;
+			}
+
+			rtp_session->dtmf_data.last_digit = key;
+		} else {
+			rtp_session->dtmf_data.last_digit = 0;
+			rtp_session->dtmf_data.dc = 0;
+		}
+	}
+
+
+
 	if (*payload_type == SWITCH_RTP_CNG_PAYLOAD) {
 		*flags |= SFF_CNG;
 	}
-
+	
+	if (bytes > 0) {
+		do_2833(rtp_session);
+	}
 	return (int) bytes;
+}
+
+
+
+SWITCH_DECLARE(switch_size_t) switch_rtp_has_dtmf(switch_rtp_t *rtp_session)
+{
+	switch_size_t has;
+
+	assert(rtp_session != NULL);
+	switch_mutex_lock(rtp_session->dtmf_data.dtmf_mutex);
+	has = switch_buffer_inuse(rtp_session->dtmf_data.dtmf_buffer);
+	switch_mutex_unlock(rtp_session->dtmf_data.dtmf_mutex);
+
+	return has;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_queue_dtmf(switch_rtp_t *rtp_session, char *dtmf)
+{
+	switch_status_t status;
+	register switch_size_t len, inuse;
+	switch_size_t wr = 0;
+	char *p;
+
+	assert(rtp_session != NULL);
+
+	switch_mutex_lock(rtp_session->dtmf_data.dtmf_mutex);
+
+	inuse = switch_buffer_inuse(rtp_session->dtmf_data.dtmf_buffer);
+	len = strlen(dtmf);
+	
+	if (len + inuse > switch_buffer_len(rtp_session->dtmf_data.dtmf_buffer)) {
+		switch_buffer_toss(rtp_session->dtmf_data.dtmf_buffer, strlen(dtmf));
+	}
+
+	p = dtmf;
+	while(wr < len && p) {
+		if (is_dtmf(*p)) {
+			wr++;
+		} else {
+			break;
+		}
+		p++;
+	}
+	status = switch_buffer_write(rtp_session->dtmf_data.dtmf_buffer, dtmf, wr) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MEMERR;
+	switch_mutex_unlock(rtp_session->dtmf_data.dtmf_mutex);
+
+	return status;
+}
+
+
+SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session, char *dtmf, switch_size_t len)
+{
+	switch_size_t bytes;
+
+	assert(rtp_session != NULL);
+
+	switch_mutex_lock(rtp_session->dtmf_data.dtmf_mutex);
+	if ((bytes = switch_buffer_read(rtp_session->dtmf_data.dtmf_buffer, dtmf, len)) > 0) {
+		*(dtmf + bytes) = '\0';
+	}
+	switch_mutex_unlock(rtp_session->dtmf_data.dtmf_mutex);
+
+	return bytes;
+
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_session, char *digits, uint32_t duration)
+{
+	char *c;
+
+	if (!rtp_session->dtmf_data.dtmf_queue) {
+		switch_queue_create(&rtp_session->dtmf_data.dtmf_queue, 100, rtp_session->pool);
+	}
+
+	for(c = digits; *c; c++) {
+		struct rfc2833_digit *rdigit;
+
+		if ((rdigit = malloc(sizeof(*rdigit))) != 0) {
+			memset(rdigit, 0, sizeof(*rdigit));
+			rdigit->digit = *c;
+			rdigit->duration = duration;
+			switch_queue_push(rtp_session->dtmf_data.dtmf_queue, rdigit);
+		} else {
+			return SWITCH_STATUS_MEMERR;
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void *data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags)
@@ -664,7 +889,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session, void **data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags)
+SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session,
+														 void **data,
+														 uint32_t *datalen,
+														 switch_payload_t *payload_type,
+														 switch_frame_flag_t *flags)
 {
 
 	int bytes = rtp_common_read(rtp_session, payload_type, flags);

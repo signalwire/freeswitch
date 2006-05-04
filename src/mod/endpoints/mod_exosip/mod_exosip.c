@@ -108,7 +108,6 @@ struct private_object {
 	int tid;
 	int32_t timestamp_send;
 	int32_t timestamp_recv;
-	int32_t timestamp_dtmf;
 	int payload_num;
 	switch_rtp_t *rtp_session;
 	struct osip_rfc3264 *sdp_config;
@@ -120,24 +119,12 @@ struct private_object {
 	switch_port_t local_sdp_audio_port;
 	char call_id[50];
 	int ssrc;
-	char last_digit;
-	unsigned int dc;
-	time_t last_digit_time;
-	switch_queue_t *dtmf_queue;
-	char out_digit;
 	switch_time_t last_read;
-	unsigned char out_digit_packet[4];
-	unsigned int out_digit_sofar;
-	unsigned int out_digit_dur;
-	uint16_t out_digit_seq;
 	char *realm;
 };
 
 
-struct rfc2833_digit {
-	char digit;
-	int duration;
-};
+
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_extrtpip, globals.extrtpip)
@@ -642,34 +629,10 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 				return SWITCH_STATUS_BREAK;
 			}
 
-			/* RFC2833 ... TBD try harder to honor the duration etc.*/
-			if (payload == 101) {
-				unsigned char *packet = tech_pvt->read_frame.data;
-				int end = packet[1]&0x80;
-				int duration = (packet[2]<<8) + packet[3];
-				char key = switch_rfc2833_to_char(packet[0]);
-
-				/* SHEESH.... Curse you RFC2833 inventors!!!!*/
-				if ((time(NULL) - tech_pvt->last_digit_time) > 2) {
-					tech_pvt->last_digit = 0;
-					tech_pvt->dc = 0;
-				}
-				if (duration && end) {
-					if (key != tech_pvt->last_digit) {
-						char digit_str[] = {key, 0};
-						time(&tech_pvt->last_digit_time);
-						switch_channel_queue_dtmf(channel, digit_str);
-					}
-					if (++tech_pvt->dc >= 3) {
-						tech_pvt->last_digit = 0;
-						tech_pvt->dc = 0;
-					}
-
-					tech_pvt->last_digit = key;
-				} else {
-					tech_pvt->last_digit = 0;
-					tech_pvt->dc = 0;
-				}
+			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
+				char dtmf[128];
+				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, dtmf, sizeof(dtmf));
+				switch_channel_queue_dtmf(channel, dtmf);
 			}
 
 
@@ -737,67 +700,6 @@ static switch_status_t exosip_write_frame(switch_core_session_t *session, switch
 		samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 	} else {
 		assert(0);
-	}
-
-
-	if (tech_pvt->out_digit_dur > 0) {
-		int x, ts, loops = 1, duration;
-
-		tech_pvt->out_digit_sofar += samples;
-
-		if (tech_pvt->out_digit_sofar >= tech_pvt->out_digit_dur) {
-			duration = tech_pvt->out_digit_dur;
-			tech_pvt->out_digit_packet[1] |= 0x80;
-			tech_pvt->out_digit_dur = 0;
-			loops = 3;
-		} else {
-			duration = tech_pvt->out_digit_sofar;
-		}
-
-		ts = tech_pvt->timestamp_dtmf += samples;
-		tech_pvt->out_digit_packet[2] = (unsigned char) (duration >> 8);
-		tech_pvt->out_digit_packet[3] = (unsigned char) duration;
-		
-
-		for (x = 0; x < loops; x++) {
-			frame->flags = 0;
-			switch_rtp_write_manual(tech_pvt->rtp_session, 
-									tech_pvt->out_digit_packet, 4, 0, 101, ts,
-									loops == 1 ? tech_pvt->out_digit_seq++ : tech_pvt->out_digit_seq, &frame->flags);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", 
-							  loops == 1 ? "middle" : "end",
-							  tech_pvt->out_digit,
-							  ts, 
-							  tech_pvt->out_digit_sofar,
-							  duration);
-		}
-	}
-
-	if (!tech_pvt->out_digit_dur && tech_pvt->dtmf_queue && switch_queue_size(tech_pvt->dtmf_queue)) {
-		void *pop;
-
-		if (switch_queue_trypop(tech_pvt->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-			int x, ts;
-			struct rfc2833_digit *rdigit = pop;
-			
-			memset(tech_pvt->out_digit_packet, 0, 4);
-			tech_pvt->out_digit_sofar = 0;
-			tech_pvt->out_digit_dur = rdigit->duration;
-			tech_pvt->out_digit = rdigit->digit;
-			tech_pvt->out_digit_packet[0] = (unsigned char)switch_char_to_rfc2833(rdigit->digit);
-			tech_pvt->out_digit_packet[1] = 7;
-
-			ts = tech_pvt->timestamp_dtmf += samples;
-			tech_pvt->out_digit_seq++;
-			for (x = 0; x < 3; x++) {
-				frame->flags = 0;
-				switch_rtp_write_manual(tech_pvt->rtp_session, tech_pvt->out_digit_packet, 4, 1, 101, ts, tech_pvt->out_digit_seq, &frame->flags);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send start packet for [%c] ts=%d sofar=%u dur=%d\n", tech_pvt->out_digit, ts, 
-								  tech_pvt->out_digit_sofar, 0);
-			}
-
-			free(rdigit);
-		}
 	}
 
 
@@ -869,29 +771,14 @@ static switch_status_t exosip_waitfor_write(switch_core_session_t *session, int 
 static switch_status_t exosip_send_dtmf(switch_core_session_t *session, char *digits)
 {
 	struct private_object *tech_pvt;
-	char *c;
 
 	tech_pvt = switch_core_session_get_private(session);
     assert(tech_pvt != NULL);
 
-	if (!tech_pvt->dtmf_queue) {
-		switch_queue_create(&tech_pvt->dtmf_queue, 100, switch_core_session_get_pool(session));
-	}
-
-	for(c = digits; *c; c++) {
-		struct rfc2833_digit *rdigit;
-
-		if ((rdigit = malloc(sizeof(*rdigit))) != 0) {
-			memset(rdigit, 0, sizeof(*rdigit));
-			rdigit->digit = *c;
-			rdigit->duration = globals.dtmf_duration * (tech_pvt->read_codec.implementation->samples_per_second / 1000);
-			switch_queue_push(tech_pvt->dtmf_queue, rdigit);
-		} else {
-			return SWITCH_STATUS_MEMERR;
-		}
-	}
-
-	return SWITCH_STATUS_SUCCESS;
+	return switch_rtp_queue_rfc2833(tech_pvt->rtp_session,
+									digits,
+									globals.dtmf_duration * (tech_pvt->read_codec.implementation->samples_per_second / 1000));
+	
 }
 
 static switch_status_t exosip_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)

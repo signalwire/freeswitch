@@ -86,6 +86,13 @@ SWITCH_DECLARE(char) switch_rfc2833_to_char(int event);
 SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key);
 
 /*!
+  \brief determine if a character is a valid DTMF key
+  \param key the key to test
+  \return TRUE or FALSE
+ */
+#define is_dtmf(key)  ((key > 47 && key < 58) || (key > 64 && key < 69) || (key > 96 && key < 101) || key == 35 || key == 42)
+
+/*!
   \brief Duplicate a string 
 */
 #define switch_copy_string apr_cpystrn

@@ -517,6 +517,8 @@ typedef enum {
 	SWITCH_EVENT_TALK				- Talking Detected
 	SWITCH_EVENT_NOTALK				- Not Talking Detected
 	SWITCH_EVENT_SESSION_CRASH		- Session Crashed
+	SWITCH_EVENT_MODULE_LOAD		- Module was loaded
+	SWITCH_EVENT_DTMF				- DTMF was sent
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -543,6 +545,7 @@ typedef enum {
 	SWITCH_EVENT_NOTALK,
 	SWITCH_EVENT_SESSION_CRASH,
 	SWITCH_EVENT_MODULE_LOAD,
+	SWITCH_EVENT_DTMF,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 

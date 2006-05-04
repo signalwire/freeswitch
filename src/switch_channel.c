@@ -238,7 +238,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 
 	p = dtmf;
 	while(wr < len && p) {
-		if (*p > 47 && *p < 58) {
+		if (is_dtmf(*p)) {
 			wr++;
 		} else {
 			break;
@@ -265,7 +265,7 @@ SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel_t *chan
 	}
 	switch_mutex_unlock(channel->dtmf_mutex);
 
-	if (bytes && switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
+	if (bytes && switch_event_create(&event, SWITCH_EVENT_DTMF) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-String", dtmf);
 		switch_event_fire(&event);

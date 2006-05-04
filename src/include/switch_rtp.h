@@ -229,6 +229,38 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp_t *rtp_session, sw
 SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void *data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags);
 
 /*! 
+  \brief Queue RFC2833 DTMF data into an RTP Session
+  \param rtp_session the rtp session to use
+  \param digits the digit string to queue
+  \param duration the duration of the dtmf
+*/
+SWITCH_DECLARE(switch_status_t) switch_rtp_queue_rfc2833(switch_rtp_t *rtp_session, char *digits, uint32_t duration);
+
+/*!
+  \brief Test for presence of DTMF on a given RTP session
+  \param rtp_session session to test
+  \return number of digits in the queue
+*/
+SWITCH_DECLARE(switch_size_t) switch_rtp_has_dtmf(switch_rtp_t *rtp_session);
+
+/*!
+  \brief Queue DTMF on a given RTP session
+  \param rtp_session RTP session to queue DTMF to
+  \param dtmf string of digits to queue
+  \return SWITCH_STATUS_SUCCESS if successful
+*/
+SWITCH_DECLARE(switch_status_t) switch_rtp_queue_dtmf(switch_rtp_t *rtp_session, char *dtmf);
+
+/*!
+  \brief Retrieve DTMF digits from a given RTP session
+  \param rtp_session RTP session to retrieve digits from
+  \param dtmf buffer to write dtmf to
+  \param len max size in bytes of the buffer
+  \return number of bytes read into the buffer
+*/
+SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session, char *dtmf, switch_size_t len);
+
+/*! 
   \brief Read data from a given RTP session without copying
   \param rtp_session the RTP session to read from
   \param data a pointer to point directly to the RTP read buffer
@@ -237,7 +269,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_read(switch_rtp_t *rtp_session, void 
   \param flags flags
   \return the number of bytes read
 */
-SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session, void **data, uint32_t *datalen, switch_payload_t *payload_type, switch_frame_flag_t *flags);
+SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_session,
+														 void **data,
+														 uint32_t *datalen,
+														 switch_payload_t *payload_type,
+														 switch_frame_flag_t *flags);
 
 /*! 
   \brief Read data from a given RTP session without copying
