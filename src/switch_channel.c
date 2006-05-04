@@ -222,6 +222,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 {
 	switch_status_t status;
 	register switch_size_t len, inuse;
+	switch_size_t wr = 0;
+	char *p;
 
 	assert(channel != NULL);
 
@@ -234,7 +236,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		switch_buffer_toss(channel->dtmf_buffer, strlen(dtmf));
 	}
 
-	status = switch_buffer_write(channel->dtmf_buffer, dtmf, len) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MEMERR;
+	p = dtmf;
+	while(wr < len && p) {
+		if (*p > 47 && *p < 58) {
+			wr++;
+		} else {
+			break;
+		}
+	}
+
+	status = switch_buffer_write(channel->dtmf_buffer, dtmf, wr) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MEMERR;
 	switch_mutex_unlock(channel->dtmf_mutex);
 
 	return status;
