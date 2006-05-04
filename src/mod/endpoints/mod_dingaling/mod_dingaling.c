@@ -62,7 +62,8 @@ typedef enum {
 	TFLAG_DO_CAND = ( 1 << 14),
 	TFLAG_DO_DESC = (1 << 15),
 	TFLAG_LANADDR = (1 << 16),
-	TFLAG_AUTO = (1 << 17)
+	TFLAG_AUTO = (1 << 17),
+	TFLAG_DTMF = (1 << 18)
 } TFLAGS;
 
 typedef enum {
@@ -762,6 +763,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 		payload = tech_pvt->read_frame.payload;
 
+		if (switch_test_flag(tech_pvt, TFLAG_DTMF)) {
+			return SWITCH_STATUS_BREAK;
+		}
 
 		/* RFC2833 ... TBD try harder to honor the duration etc.*/
 		if (payload == 101) {
@@ -780,7 +784,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 					char digit_str[] = {key, 0};
 					time(&tech_pvt->last_digit_time);
 					switch_channel_queue_dtmf(channel, digit_str);
-					return SWITCH_STATUS_BREAK;
+					switch_set_flag(tech_pvt, TFLAG_DTMF);
 				}
 				if (++tech_pvt->dc >= 3) {
 					tech_pvt->last_digit = 0;
@@ -1562,6 +1566,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		if (msg) { 
 			if (*msg == '+') {
 				switch_channel_queue_dtmf(channel, msg + 1);
+				switch_set_flag(tech_pvt, TFLAG_DTMF);
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SESSION MSG [%s]\n", msg);
 		}
