@@ -318,10 +318,14 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 				tag = iks_child (xml);
 				
 				while(tag) {
-					if (!strcasecmp(type, "info_element")) {
+					if (!strcasecmp(iks_name(tag), "info_element")) {
 						char *name = iks_find_attrib(tag, "name");
 						char *value = iks_find_attrib(tag, "value");
+						if (globals.debug) {
+							globals.logger(DL_LOG_DEBUG, "Info Element [%s]=[%s]\n", name, value);
+						}
 						ldl_session_set_value(session, name, value);
+						
 					} else if (!strcasecmp(iks_name(tag), "candidate") && session->candidate_len < LDL_MAX_CANDIDATES) {
 						char *key;
 						double pref = 0.0;

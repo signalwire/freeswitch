@@ -1523,11 +1523,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			return LDL_STATUS_FALSE;
 		}
 		if ((session = switch_core_session_request(&channel_endpoint_interface, NULL)) != 0) {
-			char *exten;
-			char *context;
-			char *cid_name;
-			char *cid_num;
-
 			switch_core_session_add_stream(session, NULL);
 			if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 				memset(tech_pvt, 0, sizeof(*tech_pvt));
@@ -1547,43 +1542,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				return LDL_STATUS_FALSE;
 			}
 
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating a session for %s\n", ldl_session_get_id(dlsession));
-		
-			if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {
-				exten = profile->exten;
-			}
-			
-			if (!(context = ldl_session_get_value(dlsession, "context"))) {
-				context = profile->context;
-			}
-
-			if (!(cid_name = ldl_session_get_value(dlsession, "caller_id_name"))) {
-				cid_name = tech_pvt->recip;
-			}
-
-			if (!(cid_num = ldl_session_get_value(dlsession, "caller_id_number"))) {
-				cid_num = tech_pvt->recip;
-			}
-			
-			if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-																	  profile->dialplan,
-																	  cid_name,
-																	  cid_num,
-																	  ldl_session_get_ip(dlsession),
-																	  ldl_session_get_value(dlsession, "ani"),
-																	  ldl_session_get_value(dlsession, "ani2"),
-																	  ldl_session_get_value(dlsession, "rdnis"),
-																	  (char *)modname,
-																	  context,
-																	  exten)) != 0) {
-				char name[128];
-				snprintf(name, sizeof(name), "DingaLing/%s-%04x", tech_pvt->caller_profile->destination_number,
-						 rand() & 0xffff);
-				switch_channel_set_name(channel, name);
-				switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
-
-			}
-		
 			ldl_session_set_private(dlsession, session);
 			tech_pvt->dlsession = dlsession;
 			negotiate_thread_launch(session);
@@ -1711,10 +1671,55 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						  strncasecmp(candidates[x].address, "172.31.", 7)
 						  ))) {
 						ldl_payload_t payloads[5];
+						char *exten;
+						char *context;
+						char *cid_name;
+						char *cid_num;
 
 						memset(payloads, 0, sizeof(payloads));
 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Acceptable Candidate %s:%d\n", candidates[x].address, candidates[x].port);
+
+
+
+						if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {
+							exten = profile->exten;
+						}
+			
+						if (!(context = ldl_session_get_value(dlsession, "context"))) {
+							context = profile->context;
+						}
+
+						if (!(cid_name = ldl_session_get_value(dlsession, "caller_id_name"))) {
+							cid_name = tech_pvt->recip;
+						}
+
+						if (!(cid_num = ldl_session_get_value(dlsession, "caller_id_number"))) {
+							cid_num = tech_pvt->recip;
+						}
+			
+						if (!tech_pvt->caller_profile) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating an identity for %s %s <%s> %s\n", 
+											  ldl_session_get_id(dlsession), cid_name, cid_num, exten);
+			
+							if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+																					  profile->dialplan,
+																					  cid_name,
+																					  cid_num,
+																					  ldl_session_get_ip(dlsession),
+																					  ldl_session_get_value(dlsession, "ani"),
+																					  ldl_session_get_value(dlsession, "ani2"),
+																					  ldl_session_get_value(dlsession, "rdnis"),
+																					  (char *)modname,
+																					  context,
+																					  exten)) != 0) {
+								char name[128];
+								snprintf(name, sizeof(name), "DingaLing/%s-%04x", tech_pvt->caller_profile->destination_number, rand() & 0xffff);
+								switch_channel_set_name(channel, name);
+								switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
+							}
+						}
+
 						if (lanaddr) {
 							switch_set_flag(tech_pvt, TFLAG_LANADDR);
 						}
