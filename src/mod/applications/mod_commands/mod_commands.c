@@ -135,7 +135,7 @@ struct show_return {
 };
 
 static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
-	struct show_return *returnval = (struct api_return *) pArg;
+	struct show_return *returnval = (struct show_return *) pArg;
 	char temp[1024];
 	size_t len;
 

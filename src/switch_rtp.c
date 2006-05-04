@@ -52,10 +52,47 @@ static switch_mutex_t *port_lock = NULL;
 
 typedef srtp_hdr_t rtp_hdr_t;
 
+#ifdef _MSC_VER
+#pragma pack(1)
+#endif
+
+#if __BYTE_ORDER == __BIG_ENDIAN
+
+typedef struct {
+  unsigned version:2;	/* protocol version   */
+  unsigned p:1;		/* padding flag           */
+  unsigned x:1;		/* header extension flag  */
+  unsigned cc:4;	/* CSRC count             */
+  uint32_t ts;		/* timestamp              */
+} PACKED srtp_mini_hdr_t;
+
+#else 
+typedef struct {
+  uint8_t cc:4;	/* CSRC count             */
+  uint8_t x:1;		/* header extension flag  */
+  uint8_t p:1;		/* padding flag           */
+  uint8_t version:2;	/* protocol version       */
+  uint32_t ts;		/* timestamp              */
+} PACKED srtp_mini_hdr_t;
+
+#endif
+
+#ifdef _MSC_VER
+#pragma pack()
+#endif
+
+
+
 typedef struct {
 	srtp_hdr_t header;        
 	char body[SWITCH_RTP_MAX_BUF_LEN];  
 } rtp_msg_t;
+
+
+typedef struct {
+	srtp_hdr_t header;        
+	char body[SWITCH_RTP_MAX_BUF_LEN];  
+} rtp_mini_msg_t;
 
 
 struct rfc2833_digit {
@@ -113,7 +150,9 @@ struct switch_rtp {
 	srtp_ctx_t *recv_ctx;
 	
 	uint16_t seq;
+	uint16_t rseq;
 	switch_payload_t payload;
+	switch_payload_t rpayload;
 	
 	switch_rtp_invalid_handler_t invalid_handler;
 	void *private_data;
@@ -675,10 +714,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			return 0;
 		}
 
-		if (rtp_session->recv_msg.header.version == 2) {
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->recv_msg.header.pt == 102) {
-				rtp_session->recv_msg.header.pt = 97;
-			}
+
+		if (rtp_session->recv_msg.header.version) {
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && rtp_session->from_addr->port && 
 				(rtp_session->from_addr->port != rtp_session->remote_port)) {
 				const char *err;
@@ -689,9 +726,29 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				switch_sockaddr_ip_get(&tx_host, rtp_session->from_addr);
 				switch_sockaddr_ip_get(&old_host, rtp_session->remote_addr);
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Auto Changing port from %s:%u to %s:%u\n", old_host, old, tx_host, rtp_session->from_addr->port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Auto Changing port from %s:%u to %s:%u\n",
+								  old_host, old, tx_host, rtp_session->from_addr->port);
 				switch_rtp_set_remote_address(rtp_session, tx_host, rtp_session->from_addr->port, &err);
 			}
+		}
+
+		if (rtp_session->recv_msg.header.version == 2) {
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->recv_msg.header.pt == 102) {
+				rtp_session->recv_msg.header.pt = 97;
+			}
+			rtp_session->rseq = ntohs(rtp_session->recv_msg.header.seq);
+			rtp_session->rpayload = rtp_session->recv_msg.header.pt;
+
+		} else if (rtp_session->recv_msg.header.version == 1) {
+			uint32_t ts;
+			rtp_mini_msg_t *mini = (rtp_mini_msg_t *) &rtp_session->recv_msg;
+			
+			switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
+			ts = mini->header.ts;
+			memmove(rtp_session->recv_msg.body, mini->body, bytes - sizeof(srtp_mini_hdr_t));
+			rtp_session->recv_msg.header.ts = ts;
+			rtp_session->recv_msg.header.seq = htons(rtp_session->rseq++);
+			rtp_session->recv_msg.header.pt = rtp_session->rpayload;
 		} else {
 			if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
 				handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
@@ -1071,7 +1128,17 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	}
 
 	if (send) {
-		switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)send_msg, &bytes);
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
+			rtp_mini_msg_t mini = {{0}};
+			bytes -= rtp_header_len;
+			mini.header.ts = send_msg->header.ts;
+			mini.header.version = 1;
+			memcpy(mini.body, send_msg->body, bytes);
+			bytes += sizeof(rtp_mini_msg_t);
+			switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&mini, &bytes);
+		} else {
+			switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)send_msg, &bytes);
+		}
 	}
 
 	if (rtp_session->ice_user) {

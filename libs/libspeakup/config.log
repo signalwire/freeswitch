@@ -48,7 +48,7 @@ configure:1660: result: yes
 configure:1725: checking for gawk
 configure:1741: found /usr/bin/gawk
 configure:1751: result: gawk
-configure:1761: checking whether make sets $(MAKE)
+configure:1761: checking whether /usr/local/bin/gmake sets $(MAKE)
 configure:1781: result: yes
 configure:1999: checking for gcc
 configure:2015: found /usr/bin/gcc
@@ -122,11 +122,11 @@ configure: failed program was:
 | #ifndef __cplusplus
 |   choke me
 | #endif
-configure:2894: checking for style of include used by make
+configure:2894: checking for style of include used by /usr/local/bin/gmake
 configure:2922: result: GNU
 configure:2950: checking dependency style of gcc
 configure:3040: result: gcc3
-configure:3057: checking whether make sets $(MAKE)
+configure:3057: checking whether /usr/local/bin/gmake sets $(MAKE)
 configure:3077: result: yes
 configure:3164: checking build system type
 configure:3182: result: x86_64-unknown-linux-gnu
@@ -527,7 +527,7 @@ configure: failed program was:
 |       end
 configure:5390: result: no
 configure:5420: checking the maximum length of command line arguments
-configure:5512: result: 32768
+configure:5512: result: 64
 configure:5523: checking command to parse /usr/bin/nm -B output from gcc object
 configure:5619: gcc -c -g -O2  conftest.c >&5
 configure:5622: $? = 0
@@ -798,7 +798,7 @@ ac_cv_prog_cxx_g=yes
 ac_cv_prog_egrep='grep -E'
 ac_cv_prog_f77_g=no
 ac_cv_prog_gcc_traditional=no
-ac_cv_prog_make_make_set=yes
+ac_cv_prog_make__usr_local_bin_gmake_set=yes
 ac_cv_search_opendir='none required'
 ac_cv_struct_tm=time.h
 ac_cv_type_signal=void
@@ -822,7 +822,7 @@ lt_cv_prog_gnu_ldcxx=yes
 lt_cv_sys_global_symbol_pipe='sed -n -e '\''s/^.*[ 	]\([ABCDGIRSTW][ABCDGIRSTW]*\)[ 	][ 	]*\([_A-Za-z][_A-Za-z0-9]*\)$/\1 \2 \2/p'\'''
 lt_cv_sys_global_symbol_to_c_name_address='sed -n -e '\''s/^: \([^ ]*\) $/  {\"\1\", (lt_ptr) 0},/p'\'' -e '\''s/^[BCDEGRST] \([^ ]*\) \([^ ]*\)$/  {"\2", (lt_ptr) \&\2},/p'\'''
 lt_cv_sys_global_symbol_to_cdecl='sed -n -e '\''s/^. .* \(.*\)$/extern int \1;/p'\'''
-lt_cv_sys_max_cmd_len=32768
+lt_cv_sys_max_cmd_len=64
 lt_lt_cv_prog_compiler_c_o='"yes"'
 lt_lt_cv_prog_compiler_c_o_CXX='"yes"'
 lt_lt_cv_sys_global_symbol_pipe='"sed -n -e '\''s/^.*[ 	]\\([ABCDGIRSTW][ABCDGIRSTW]*\\)[ 	][ 	]*\\([_A-Za-z][_A-Za-z0-9]*\\)\$/\\1 \\2 \\2/p'\''"'
@@ -833,15 +833,15 @@ lt_lt_cv_sys_global_symbol_to_cdecl='"sed -n -e '\''s/^. .* \\(.*\\)\$/extern in
 ## Output variables. ##
 ## ----------------- ##
 
-ACLOCAL='${SHELL} /usr/src/freeswitch.trunk/libs/jitterbuffer/missing --run aclocal-1.9'
+ACLOCAL='${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run aclocal-1.9'
 AMDEPBACKSLASH='\'
 AMDEP_FALSE='#'
 AMDEP_TRUE=''
-AMTAR='${SHELL} /usr/src/freeswitch.trunk/libs/jitterbuffer/missing --run tar'
+AMTAR='${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run tar'
 AR='ar'
-AUTOCONF='${SHELL} /usr/src/freeswitch.trunk/libs/jitterbuffer/missing --run autoconf'
-AUTOHEADER='${SHELL} /usr/src/freeswitch.trunk/libs/jitterbuffer/missing --run autoheader'
-AUTOMAKE='${SHELL} /usr/src/freeswitch.trunk/libs/jitterbuffer/missing --run automake-1.9'
+AUTOCONF='${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run autoconf'
+AUTOHEADER='${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run autoheader'
+AUTOMAKE='${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run automake-1.9'
 AWK='gawk'
 CC='gcc'
 CCDEPMODE='depmode=gcc3'
@@ -873,7 +873,7 @@ LIBS=''
 LIBTOOL='$(SHELL) $(top_builddir)/libtool'
 LN_S='ln -s'
 LTLIBOBJS=''
-MAKEINFO='${SHELL} /usr/src/freeswitch.trunk/libs/jitterbuffer/missing --run makeinfo'
+MAKEINFO='${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run makeinfo'
 OBJEXT='o'
 PACKAGE='libspeakup'
 PACKAGE_BUGREPORT='BUG-REPORT-ADDRESS'
@@ -917,7 +917,7 @@ host_os='linux-gnu'
 host_vendor='unknown'
 includedir='${prefix}/include'
 infodir='${prefix}/info'
-install_sh='/usr/src/freeswitch.trunk/libs/jitterbuffer/install-sh'
+install_sh='/usr/src/freeswitch.trunk/libs/libspeakup/install-sh'
 libdir='${exec_prefix}/lib'
 libexecdir='${exec_prefix}/libexec'
 localstatedir='${prefix}/var'

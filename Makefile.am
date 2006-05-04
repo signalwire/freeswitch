@@ -156,7 +156,7 @@ depends:
 	./build/buildlib.sh . libresample-0.1.3.tgz --prefix=$(PREFIX)
 	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
 	./build/buildlib.sh . install srtp --prefix=$(PREFIX)
-	./build/buildlib.sh . install jitterbuffer --prefix=$(PREFIX)
+	./build/buildlib.sh . install libspeakup --prefix=$(PREFIX)
 	rm build/freeswitch.env
 
 

@@ -144,7 +144,7 @@ pic_flag=" -fPIC -DPIC"
 pic_mode=default
 
 # What is the maximum length of a command?
-max_cmd_len=32768
+max_cmd_len=64
 
 # Does compiler simultaneously support -c and -o options?
 compiler_c_o="yes"
@@ -6851,7 +6851,7 @@ pic_flag=" -fPIC -DPIC"
 pic_mode=default
 
 # What is the maximum length of a command?
-max_cmd_len=32768
+max_cmd_len=64
 
 # Does compiler simultaneously support -c and -o options?
 compiler_c_o="yes"
