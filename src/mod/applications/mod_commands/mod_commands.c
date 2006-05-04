@@ -129,12 +129,64 @@ static switch_status_t pause_function(char *cmd, char *out, size_t outlen)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+struct show_return {
+	char *out;
+	size_t remaining;
+};
 
+static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
+	struct show_return *returnval = (struct api_return *) pArg;
+	char temp[1024];
+	size_t len;
+
+	printf("%s\n", argv[1]);
+	
+	sprintf(temp, "%s\n", argv[1]);
+	len = strlen(temp);
+
+	if (len < returnval->remaining) {
+		strcpy(returnval->out, temp);
+		returnval->remaining -= len;
+		returnval->out += len;
+	}
+	return 0;
+}
+
+static switch_status_t show_function(char *cmd, char *out, size_t outlen)
+{
+	char sql[1024];
+	char *errmsg;
+	struct show_return returnval;
+	switch_core_db_t *db = switch_core_db_handle();
+
+	sprintf (sql, "select * from interfaces");
+	returnval.out = out;
+	returnval.remaining = outlen;
+
+	switch_core_db_exec(db, sql, show_callback, &returnval, &errmsg);
+
+	if (errmsg) {
+		snprintf(out, outlen, "SQL ERR [%s]\n",errmsg);
+		switch_core_db_free(errmsg);
+		errmsg = NULL;
+	}
+
+	switch_core_db_close(db);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_api_interface_t show_api_interface = {
+	/*.interface_name */ "show",
+	/*.desc */ "Show",
+	/*.function */ show_function,
+	/*.next */ NULL
+};
 static switch_api_interface_t pause_api_interface = {
 	/*.interface_name */ "pause",
 	/*.desc */ "Pause",
 	/*.function */ pause_function,
-	/*.next */ NULL
+	/*.next */ &show_api_interface
 };
 
 static switch_api_interface_t transfer_api_interface = {
