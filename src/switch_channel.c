@@ -243,8 +243,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		} else {
 			break;
 		}
+		p++;
 	}
-
 	status = switch_buffer_write(channel->dtmf_buffer, dtmf, wr) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_MEMERR;
 	switch_mutex_unlock(channel->dtmf_mutex);
 
