@@ -764,6 +764,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		payload = tech_pvt->read_frame.payload;
 
 		if (switch_test_flag(tech_pvt, TFLAG_DTMF)) {
+			switch_clear_flag(tech_pvt, TFLAG_DTMF);
 			return SWITCH_STATUS_BREAK;
 		}
 
