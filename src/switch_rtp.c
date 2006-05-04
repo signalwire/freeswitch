@@ -745,10 +745,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			
 			switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
 			ts = mini->header.ts;
-			memmove(rtp_session->recv_msg.body, mini->body, bytes - sizeof(srtp_mini_hdr_t));
+			bytes -= sizeof(srtp_mini_hdr_t);
+			memmove(rtp_session->recv_msg.body, mini->body, bytes);
 			rtp_session->recv_msg.header.ts = ts;
 			rtp_session->recv_msg.header.seq = htons(rtp_session->rseq++);
 			rtp_session->recv_msg.header.pt = rtp_session->rpayload;
+			bytes += rtp_header_len;
 		} else {
 			if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
 				handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
