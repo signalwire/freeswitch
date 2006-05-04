@@ -1079,7 +1079,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			return SWITCH_STATUS_GENERR;
 		}
 		
-		if ((dnis = strchr(profile_name, ':'))) {
+		if ((dnis = strchr(callto, ':'))) {
 			*dnis++ = '\0';
 		}
 
