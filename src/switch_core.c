@@ -36,7 +36,6 @@
 
 #define SWITCH_EVENT_QUEUE_LEN 256
 #define SWITCH_SQL_QUEUE_LEN 2000
-#define SWITCH_THREAD_JMP_KEY "JMP_KEY"
 
 struct switch_core_session {
 	uint32_t id;
@@ -86,7 +85,9 @@ struct switch_core_runtime {
 	uint32_t session_id;
 	apr_pool_t *memory_pool;
 	switch_hash_t *session_table;
+#ifdef CRASH_PROT
 	switch_hash_t *stack_table;
+#endif
 	switch_core_db_t *db;
 	switch_core_db_t *event_db;
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
@@ -1099,8 +1100,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				break;
 			default:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s decoder error!\n",
-
-									  session->read_codec->codec_interface->interface_name);
+								  session->read_codec->codec_interface->interface_name);
 				return status;
 			}
 		}
@@ -1862,7 +1862,7 @@ SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session_t *s
 {
 	return session->thread_running;
 }
-
+#ifdef CRASH_PROT
 #if defined (__GNUC__) && defined (LINUX)
 #include <execinfo.h>
 #include <stdio.h>
@@ -1911,7 +1911,7 @@ static int handle_fatality(int sig)
 
 	return 0;
 }
-
+#endif
 
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 {
@@ -1919,6 +1919,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	const switch_endpoint_interface_t *endpoint_interface;
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
+#ifdef CRASH_PROT
 	switch_thread_id_t thread_id = switch_thread_self();
 	jmp_buf env;
 	int sig;
@@ -1941,7 +1942,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	} else {
 		apr_hash_set(runtime.stack_table, &thread_id, sizeof(thread_id), &env);
 	}
-
+#endif
 	/*
 	   Life of the channel. you have channel and pool in your session
 	   everywhere you go you use the session to malloc with
@@ -2250,9 +2251,9 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			switch_thread_cond_wait(session->cond, session->mutex);
 		} 
 	}
-
+#ifdef CRASH_PROT
 	apr_hash_set(runtime.stack_table, &thread_id, sizeof(thread_id), NULL);
-
+#endif
 	session->thread_running = 0;
 }
 
@@ -2825,8 +2826,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
 	runtime.session_id = 1;
 
 	switch_core_hash_init(&runtime.session_table, runtime.memory_pool);
+#ifdef CRASH_PROT
 	switch_core_hash_init(&runtime.stack_table, runtime.memory_pool);
-
+#endif
 	time(&runtime.initiated);
 	return SWITCH_STATUS_SUCCESS;
 }

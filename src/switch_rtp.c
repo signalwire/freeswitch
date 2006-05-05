@@ -46,6 +46,7 @@
 #define SWITCH_RTP_CNG_PAYLOAD 13
 #define MAX_KEY_LEN      64
 #define MASTER_KEY_LEN   30
+#define RTP_MAGIC_NUMBER 42
 
 static switch_port_t NEXT_PORT = RTP_START_PORT;
 static switch_mutex_t *port_lock = NULL;
@@ -53,26 +54,18 @@ static switch_mutex_t *port_lock = NULL;
 typedef srtp_hdr_t rtp_hdr_t;
 
 #ifdef _MSC_VER
-#pragma pack(1)
+#pragma pack(4)
 #endif
 
 #if __BYTE_ORDER == __BIG_ENDIAN
 
 typedef struct {
-  unsigned version:2;	/* protocol version   */
-  unsigned p:1;		/* padding flag           */
-  unsigned x:1;		/* header extension flag  */
-  unsigned cc:4;	/* CSRC count             */
-  uint32_t ts;		/* timestamp              */
+  uint32_t ts;		/* timestamp */
 } PACKED srtp_mini_hdr_t;
 
 #else 
 typedef struct {
-  uint8_t cc:4;	/* CSRC count             */
-  uint8_t x:1;		/* header extension flag  */
-  uint8_t p:1;		/* padding flag           */
-  uint8_t version:2;	/* protocol version       */
-  uint32_t ts;		/* timestamp              */
+  uint32_t ts;		/* timestamp */
 } PACKED srtp_mini_hdr_t;
 
 #endif
@@ -166,6 +159,7 @@ struct switch_rtp {
 	char *user_ice;
 	switch_time_t last_stun;
 	uint32_t packet_size;
+	uint32_t rpacket_size;
 	switch_time_t last_read;
 	switch_time_t next_read;
 	uint32_t ms_per_packet;
@@ -181,18 +175,27 @@ static int global_init = 0;
 
 static void switch_rtp_miniframe_probe(switch_rtp_t *rtp_session)
 {
-	rtp_mini_msg_t mini = {{0}};
-	int x;
 	const char *str = "!";
+	rtp_msg_t msg = {{0}};
+	int x;
+	
+	msg.header.ssrc    = htonl(RTP_MAGIC_NUMBER);
+    msg.header.ts      = htonl(rtp_session->packet_size);
+    msg.header.seq     = htons(RTP_MAGIC_NUMBER);
+    msg.header.m       = 1;
+    msg.header.pt      = RTP_MAGIC_NUMBER;
+    msg.header.version = 2;
+    msg.header.p       = 0;
+    msg.header.x       = 0;
+    msg.header.cc      = 0;
 
-	mini.header.version = 1;
-	mini.header.ts = 42;
-	snprintf(mini.body, sizeof(mini.body), str);
+	snprintf(msg.body, sizeof(msg.body), str);
 	for(x = 0; x < 3 ; x++) {
-		switch_size_t bytes = strlen(str) + sizeof(mini.header);
-		switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&mini, &bytes);
+		switch_size_t bytes = strlen(str) + sizeof(msg.header);
+		switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&msg, &bytes);
 	}
 }
+
 
 static switch_status_t ice_out(switch_rtp_t *rtp_session)
 {
@@ -706,36 +709,41 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				return -1;
 			}
 			bytes = sbytes;
-		}
+		} 
 
-		if (bytes > 0 && rtp_session->recv_msg.header.version == 1) {
-			uint32_t ts;
-			rtp_mini_msg_t *mini = (rtp_mini_msg_t *) &rtp_session->recv_msg;
-			
-			if (mini->header.ts == 42) {
+		if (bytes > 0) {
+			int effective_size = bytes - sizeof(srtp_mini_hdr_t);
 
+			if (rtp_session->recv_msg.header.pt == RTP_MAGIC_NUMBER) {
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
 					switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "YAY MINI-RTP!\n");
+					rtp_session->rpacket_size = ntohl(rtp_session->recv_msg.header.ts);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "YAY MINI-RTP! %d\n", rtp_session->rpacket_size);
 					switch_rtp_miniframe_probe(rtp_session);
 				}
-
 				continue;
 			}
 
 
-			ts = mini->header.ts;
-			bytes -= sizeof(srtp_mini_hdr_t);
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI) && rtp_session->rpacket_size && effective_size > 0) {
+				uint32_t mfactor = (effective_size % rtp_session->rpacket_size);
 
-			memmove(rtp_session->recv_msg.body, mini->body, bytes);
+				if (!mfactor) {
+					uint32_t ts;	
+					rtp_mini_msg_t *mini = (rtp_mini_msg_t *) &rtp_session->recv_msg;
+					ts = mini->header.ts;
+					bytes -= sizeof(srtp_mini_hdr_t);
 
-			rtp_session->recv_msg.header.ts = ts;
-			rtp_session->recv_msg.header.seq = htons(rtp_session->rseq++);
-			rtp_session->recv_msg.header.pt = rtp_session->rpayload;
-			bytes += rtp_header_len;
-			rtp_session->recv_msg.header.version = 2;
+					memmove(rtp_session->recv_msg.body, mini->body, bytes);
+
+					rtp_session->recv_msg.header.ts = ts;
+					rtp_session->recv_msg.header.seq = htons(rtp_session->rseq++);
+					rtp_session->recv_msg.header.pt = rtp_session->rpayload;
+					bytes += rtp_header_len;
+					rtp_session->recv_msg.header.version = 2;
+				}
+			}
 		}
-
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			if ((switch_time_now() - rtp_session->next_read) > 1000) {
@@ -846,6 +854,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	if (bytes > 0) {
 		do_2833(rtp_session);
 	}
+
 	return (int) bytes;
 }
 
@@ -1171,7 +1180,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 			rtp_mini_msg_t mini = {{0}};
 			bytes -= rtp_header_len;
 			mini.header.ts = send_msg->header.ts;
-			mini.header.version = 1;
 			memcpy(mini.body, send_msg->body, bytes);
 			bytes += sizeof(srtp_mini_hdr_t);
 			switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&mini, &bytes);

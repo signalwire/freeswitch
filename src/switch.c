@@ -176,7 +176,13 @@ int main(int argc, char *argv[])
 		switch_event_fire(&event);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "freeswitch Version %s Started\n\n", SWITCH_VERSION_FULL);
+#ifdef CRASH_PROT
+#define __CP "ENABLED"
+#else
+#define __CP "DISABLED"
+#endif
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "freeswitch Version %s Started. Crash Protection [%s]\n\n", SWITCH_VERSION_FULL, __CP);
 	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 
 	if (bg) {

@@ -18,6 +18,10 @@ if ISLINUX
 AM_LDFLAGS += -Wl,-E
 endif
 
+if CRASHPROT
+AM_CFLAGS += -DCRASH_PROT
+endif
+
 if IS64BITLINUX
 AM_CFLAGS += -m64 -march=k8 -fPIC
 endif
