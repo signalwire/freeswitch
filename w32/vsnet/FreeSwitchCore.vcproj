@@ -105,7 +105,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.dll&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.lib&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log"
+				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.dll&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.lib&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -192,7 +192,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.dll&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.lib&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log"
+				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.dll&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.lib&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -274,6 +274,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\switch_utils.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\switch_xml.c"
 				>
 			</File>
 		</Filter>
@@ -364,6 +368,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_utils.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_xml.h"
 				>
 			</File>
 		</Filter>

@@ -24,6 +24,7 @@
 
 #include <switch.h>
 #include <ctype.h>
+#include <sys/stat.h>
 #ifdef HAVE_MMAP
 #include <sys/mman.h>
 #endif
@@ -171,12 +172,12 @@ static char *switch_xml_decode(char *s, char **ent, char t)
             else c = strtol(s + 2, &e, 10); // base 10
             if (! c || *e != ';') { s++; continue; } // not a character ref
 
-            if (c < 0x80) *(s++) = c; // US-ASCII subset
+            if (c < 0x80) *(s++) = (char)c; // US-ASCII subset
             else { // multi-byte UTF-8 sequence
                 for (b = 0, d = c; d; d /= 2) b++; // number of bits in c
                 b = (b - 2) / 5; // number of bytes in payload
-                *(s++) = (0xFF << (7 - b)) | (c >> (6 * b)); // head
-                while (b) *(s++) = 0x80 | ((c >> (6 * --b)) & 0x3F); // payload
+                *(s++) = (char)((0xFF << (7 - b)) | (c >> (6 * b))); // head
+                while (b) *(s++) = (char)(0x80 | ((c >> (6 * --b)) & 0x3F)); // payload
             }
 
             memmove(s, strchr(s, ';') + 1, strlen(strchr(s, ';')));
@@ -187,8 +188,8 @@ static char *switch_xml_decode(char *s, char **ent, char t)
                  b += 2); // find entity in entity list
 
             if (ent[b++]) { // found a match
-                if ((c = strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
-                    l = (d = (s - r)) + c + strlen(e); // new length
+                if ((c = (long)strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
+                    l = (d = (long)(s - r)) + c + (long)strlen(e); // new length
                     r = (r == m) ? strcpy(malloc(l), r) : realloc(r, l);
                     e = strchr((s = r + d), ';'); // fix up pointers
                 }
@@ -204,7 +205,7 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 
     if (t == '*') { // normalize spaces for non-cdata attributes
         for (s = r; *s; s++) {
-            if ((l = strspn(s, " "))) memmove(s, s + l, strlen(s + l) + 1);
+            if ((l = (long)strspn(s, " "))) memmove(s, s + l, strlen(s + l) + 1);
             while (*s && *s != ' ') s++;
         }
         if (--s >= r && *s == ' ') *s = '\0'; // trim any trailing space
@@ -434,12 +435,12 @@ static char *switch_xml_str2utf8(char **s, size_t *len)
         }
 
         while (l + 6 > max) u = realloc(u, max += SWITCH_XML_BUFSIZE);
-        if (c < 0x80) u[l++] = c; // US-ASCII subset
+        if (c < 0x80) u[l++] = (char)c; // US-ASCII subset
         else { // multi-byte UTF-8 sequence
             for (b = 0, d = c; d; d /= 2) b++; // bits in c
             b = (b - 2) / 5; // bytes in payload
-            u[l++] = (0xFF << (7 - b)) | (c >> (6 * b)); // head
-            while (b) u[l++] = 0x80 | ((c >> (6 * --b)) & 0x3F); // payload
+            u[l++] = (char)((0xFF << (7 - b)) | (c >> (6 * b))); // head
+            while (b) u[l++] = (char)(0x80 | ((c >> (6 * --b)) & 0x3F)); // payload
         }
     }
     return *s = realloc(u, *len = l);
@@ -916,7 +917,7 @@ void switch_xml_set_attr(switch_xml_t xml, const char *name, const char *value)
         xml->attr[l] = (char *)name; // set attribute name
         xml->attr[l + 2] = NULL; // null terminate attribute list
         xml->attr[l + 3] = realloc(xml->attr[l + 1],
-                                   (c = strlen(xml->attr[l + 1])) + 2);
+                                   (c = (int)strlen(xml->attr[l + 1])) + 2);
         strcpy(xml->attr[l + 3] + c, " "); // set name/value as not malloced
         if (xml->flags & SWITCH_XML_DUP) xml->attr[l + 3][c] = SWITCH_XML_NAMEM;
     }
