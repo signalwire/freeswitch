@@ -57,6 +57,23 @@ static void disast_function(switch_core_session_t *session, char *data)
 }
 
 
+static void xml_function(switch_core_session_t *session, char *data)
+{
+	switch_xml_t f1 = switch_xml_parse_file("/root/formula1.xml"), team, driver;
+	const char *teamname;
+
+	for (team = switch_xml_child(f1, "team"); team; team = team->next) {
+		teamname = switch_xml_attr(team, "name");
+		for (driver = switch_xml_child(team, "driver"); driver; driver = driver->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+							  "%s, %s: %s\n", switch_xml_child(driver, "name")->txt, teamname,
+							  switch_xml_child(driver, "points")->txt);
+		}
+	}
+	switch_xml_free(f1);
+}
+
+
 static void dirtest_function(switch_core_session_t *session, char *data)
 {
 	char *var, *val;
@@ -204,11 +221,18 @@ static const switch_state_handler_table_t state_handlers = {
 };
 
 
+static const switch_application_interface_t xml_application_interface = {
+	/*.interface_name */ "xml",
+	/*.application_function */ xml_function,
+	NULL, NULL, NULL,
+	/*.next*/ NULL
+};
+
 static const switch_application_interface_t disast_application_interface = {
 	/*.interface_name */ "disast",
 	/*.application_function */ disast_function,
 	NULL, NULL, NULL,
-	/*.next*/ NULL
+	/*.next*/ &xml_application_interface
 };
 
 static const switch_application_interface_t tts_application_interface = {

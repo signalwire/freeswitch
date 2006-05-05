@@ -79,9 +79,9 @@ static switch_caller_extension_t *flatfile_dialplan_hunt(switch_core_session_t *
 					*data = '\0';
 					data++;
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "invalid extension on line %d\n", cfg.lineno);
-					continue;
+					data = "";
 				}
+
 				if (!extension) {
 					if ((extension =
 						 switch_caller_extension_new(session, caller_profile->destination_number,

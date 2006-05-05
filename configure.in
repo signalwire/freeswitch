@@ -34,7 +34,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
-AC_CHECK_FUNCS([gethostname vasprintf])
+AC_CHECK_FUNCS([gethostname vasprintf mmap])
 
 AC_C_BIGENDIAN(AC_DEFINE([__BYTE_ORDER],__BIG_ENDIAN,[Big Endian]),AC_DEFINE([__BYTE_ORDER],__LITTLE_ENDIAN,[Little Endian]))
 AC_DEFINE([__LITTLE_ENDIAN],1234,[for the places where it is not defined])

@@ -70,6 +70,7 @@ src/include/switch_version.h\
 src/include/switch_rtp.h\
 src/include/switch_stun.h\
 src/include/switch_log.h\
+src/include/switch_xml.h\
 src/switch_rtp.c\
 src/switch_buffer.c \
 src/switch_caller.c \
@@ -83,7 +84,8 @@ src/switch_event.c \
 src/switch_resample.c \
 src/switch_ivr.c \
 src/switch_stun.c\
-src/switch_log.c
+src/switch_log.c\
+src/switch_xml.c
 
 
 
@@ -113,7 +115,8 @@ src/include/switch_utils.h\
 src/include/switch_rtp.h\
 src/include/switch_version.h\
 src/include/switch_stun.h\
-src/include/switch_log.h
+src/include/switch_log.h\
+src/include/switch_xml.h
 
 BUILT_SOURCES = version depends
 CLEANFILES = src/include/switch_version.h

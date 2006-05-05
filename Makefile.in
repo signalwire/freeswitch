@@ -85,7 +85,7 @@ am_libfreeswitch_la_OBJECTS = libfreeswitch_la-switch_rtp.lo \
 	libfreeswitch_la-switch_event.lo \
 	libfreeswitch_la-switch_resample.lo \
 	libfreeswitch_la-switch_ivr.lo libfreeswitch_la-switch_stun.lo \
-	libfreeswitch_la-switch_log.lo
+	libfreeswitch_la-switch_log.lo libfreeswitch_la-switch_xml.lo
 nodist_libfreeswitch_la_OBJECTS =
 libfreeswitch_la_OBJECTS = $(am_libfreeswitch_la_OBJECTS) \
 	$(nodist_libfreeswitch_la_OBJECTS)
@@ -288,6 +288,7 @@ src/include/switch_version.h\
 src/include/switch_rtp.h\
 src/include/switch_stun.h\
 src/include/switch_log.h\
+src/include/switch_xml.h\
 src/switch_rtp.c\
 src/switch_buffer.c \
 src/switch_caller.c \
@@ -301,7 +302,8 @@ src/switch_event.c \
 src/switch_resample.c \
 src/switch_ivr.c \
 src/switch_stun.c\
-src/switch_log.c
+src/switch_log.c\
+src/switch_xml.c
 
 
 #bindir = $(PREFIX)/bin
@@ -330,7 +332,8 @@ src/include/switch_utils.h\
 src/include/switch_rtp.h\
 src/include/switch_version.h\
 src/include/switch_stun.h\
-src/include/switch_log.h
+src/include/switch_log.h\
+src/include/switch_xml.h
 
 BUILT_SOURCES = version depends
 CLEANFILES = src/include/switch_version.h
@@ -483,6 +486,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_rtp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_stun.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_utils.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfreeswitch_la-switch_xml.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -602,6 +606,13 @@ libfreeswitch_la-switch_log.lo: src/switch_log.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/switch_log.c' object='libfreeswitch_la-switch_log.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfreeswitch_la_CFLAGS) $(CFLAGS) -c -o libfreeswitch_la-switch_log.lo `test -f 'src/switch_log.c' || echo '$(srcdir)/'`src/switch_log.c
+
+libfreeswitch_la-switch_xml.lo: src/switch_xml.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfreeswitch_la_CFLAGS) $(CFLAGS) -MT libfreeswitch_la-switch_xml.lo -MD -MP -MF "$(DEPDIR)/libfreeswitch_la-switch_xml.Tpo" -c -o libfreeswitch_la-switch_xml.lo `test -f 'src/switch_xml.c' || echo '$(srcdir)/'`src/switch_xml.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libfreeswitch_la-switch_xml.Tpo" "$(DEPDIR)/libfreeswitch_la-switch_xml.Plo"; else rm -f "$(DEPDIR)/libfreeswitch_la-switch_xml.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/switch_xml.c' object='libfreeswitch_la-switch_xml.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libfreeswitch_la_CFLAGS) $(CFLAGS) -c -o libfreeswitch_la-switch_xml.lo `test -f 'src/switch_xml.c' || echo '$(srcdir)/'`src/switch_xml.c
 
 freeswitch-switch.o: src/switch.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(freeswitch_CFLAGS) $(CFLAGS) -MT freeswitch-switch.o -MD -MP -MF "$(DEPDIR)/freeswitch-switch.Tpo" -c -o freeswitch-switch.o `test -f 'src/switch.c' || echo '$(srcdir)/'`src/switch.c; \

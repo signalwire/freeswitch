@@ -75,6 +75,7 @@ BEGIN_EXTERN_C
 #include <switch_stun.h>
 #include <switch_stun.h>
 #include <switch_log.h>
+#include <switch_xml.h>
 
 END_EXTERN_C
 
