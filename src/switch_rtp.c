@@ -705,7 +705,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (bytes > 0 && rtp_session->recv_msg.header.version == 1) {
 			uint32_t ts;
 			rtp_mini_msg_t *mini = (rtp_mini_msg_t *) &rtp_session->recv_msg;
-			switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
+
+			if (mini->header.ts == 42) {
+				switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "YAY MINI-RTP!\n");
+				continue;
+			}
+
 			ts = mini->header.ts;
 			bytes -= sizeof(srtp_mini_hdr_t);
 
