@@ -480,12 +480,12 @@ s,@INSTALL_DATA@,${INSTALL} -m 644,;t t
 s,@CYGPATH_W@,echo,;t t
 s,@PACKAGE@,libspeakup,;t t
 s,@VERSION@,0.1,;t t
-s,@ACLOCAL@,${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run aclocal-1.9,;t t
-s,@AUTOCONF@,${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run autoconf,;t t
-s,@AUTOMAKE@,${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run automake-1.9,;t t
-s,@AUTOHEADER@,${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run autoheader,;t t
-s,@MAKEINFO@,${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run makeinfo,;t t
-s,@install_sh@,/usr/src/freeswitch.trunk/libs/libspeakup/install-sh,;t t
+s,@ACLOCAL@,${SHELL} /usr/src/SVN/freeswitch/libs/libspeakup/missing --run aclocal-1.9,;t t
+s,@AUTOCONF@,${SHELL} /usr/src/SVN/freeswitch/libs/libspeakup/missing --run autoconf,;t t
+s,@AUTOMAKE@,${SHELL} /usr/src/SVN/freeswitch/libs/libspeakup/missing --run automake-1.9,;t t
+s,@AUTOHEADER@,${SHELL} /usr/src/SVN/freeswitch/libs/libspeakup/missing --run autoheader,;t t
+s,@MAKEINFO@,${SHELL} /usr/src/SVN/freeswitch/libs/libspeakup/missing --run makeinfo,;t t
+s,@install_sh@,/usr/src/SVN/freeswitch/libs/libspeakup/install-sh,;t t
 s,@STRIP@,strip,;t t
 s,@ac_ct_STRIP@,strip,;t t
 s,@INSTALL_STRIP_PROGRAM@,${SHELL} $(install_sh) -c -s,;t t
@@ -493,7 +493,7 @@ s,@mkdir_p@,mkdir -p --,;t t
 s,@AWK@,gawk,;t t
 s,@SET_MAKE@,,;t t
 s,@am__leading_dot@,.,;t t
-s,@AMTAR@,${SHELL} /usr/src/freeswitch.trunk/libs/libspeakup/missing --run tar,;t t
+s,@AMTAR@,${SHELL} /usr/src/SVN/freeswitch/libs/libspeakup/missing --run tar,;t t
 s,@am__tar@,${AMTAR} chof - "$$tardir",;t t
 s,@am__untar@,${AMTAR} xf -,;t t
 s,@CC@,gcc,;t t
@@ -535,9 +535,9 @@ s,@CXXDEPMODE@,depmode=gcc3,;t t
 s,@am__fastdepCXX_TRUE@,,;t t
 s,@am__fastdepCXX_FALSE@,#,;t t
 s,@CXXCPP@,g++ -E,;t t
-s,@F77@,,;t t
-s,@FFLAGS@,,;t t
-s,@ac_ct_F77@,,;t t
+s,@F77@,g77,;t t
+s,@FFLAGS@,-g -O2,;t t
+s,@ac_ct_F77@,g77,;t t
 s,@LIBTOOL@,$(SHELL) $(top_builddir)/libtool,;t t
 s,@LIBOBJS@,,;t t
 s,@LTLIBOBJS@,,;t t

@@ -758,6 +758,13 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 		payload = tech_pvt->read_frame.payload;
 
+		if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
+			char dtmf[128];
+			switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, dtmf, sizeof(dtmf));
+			switch_channel_queue_dtmf(channel, dtmf);
+			switch_set_flag(tech_pvt, TFLAG_DTMF);
+		}
+
 		if (switch_test_flag(tech_pvt, TFLAG_DTMF)) {
 			switch_clear_flag(tech_pvt, TFLAG_DTMF);
 			return SWITCH_STATUS_BREAK;
@@ -765,12 +772,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 		if (switch_test_flag(&tech_pvt->read_frame, SFF_CNG)) {
 			tech_pvt->read_frame.datalen = tech_pvt->last_read ? tech_pvt->last_read : tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-		}
-
-		if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
-			char dtmf[128];
-			switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, dtmf, sizeof(dtmf));
-			switch_channel_queue_dtmf(channel, dtmf);
 		}
 
 		if (tech_pvt->read_frame.datalen > 0) {

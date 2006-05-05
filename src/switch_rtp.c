@@ -710,10 +710,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 			bytes = sbytes;
 		} 
-
+		
 		if (bytes > 0) {
 			uint32_t effective_size = (uint32_t)(bytes - sizeof(srtp_mini_hdr_t));
-
 			if (rtp_session->recv_msg.header.pt == RTP_MAGIC_NUMBER) {
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
 					switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
@@ -724,7 +723,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				continue;
 			}
 
-
+			
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI) && rtp_session->rpacket_size && effective_size > 0) {
 				uint32_t mfactor = (effective_size % rtp_session->rpacket_size);
 
@@ -807,44 +806,44 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			return 0;
 		}
 
+		/* RFC2833 ... TBD try harder to honor the duration etc.*/
+		if (rtp_session->recv_msg.header.pt == 101) {
+			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
+			int end = packet[1]&0x80;
+			int duration = (packet[2]<<8) + packet[3];
+			char key = switch_rfc2833_to_char(packet[0]);
+
+			/* SHEESH.... Curse you RFC2833 inventors!!!!*/
+			if ((time(NULL) - rtp_session->dtmf_data.last_digit_time) > 2) {
+				rtp_session->dtmf_data.last_digit = 0;
+				rtp_session->dtmf_data.dc = 0;
+			}
+			if (duration && end) {
+				if (key != rtp_session->dtmf_data.last_digit) {
+					char digit_str[] = {key, 0};
+					time(&rtp_session->dtmf_data.last_digit_time);
+					switch_rtp_queue_dtmf(rtp_session, digit_str);
+				}
+				if (++rtp_session->dtmf_data.dc >= 3) {
+					rtp_session->dtmf_data.last_digit = 0;
+					rtp_session->dtmf_data.dc = 0;
+				}
+
+				rtp_session->dtmf_data.last_digit = key;
+			} else {
+				rtp_session->dtmf_data.last_digit = 0;
+				rtp_session->dtmf_data.dc = 0;
+			}
+
+			continue;
+		}
+
 		break;
 	}
 
 	rtp_session->last_read = switch_time_now();
 	rtp_session->next_read += rtp_session->ms_per_packet;
 	*payload_type = rtp_session->recv_msg.header.pt;
-
-
-	/* RFC2833 ... TBD try harder to honor the duration etc.*/
-	if (*payload_type == 101) {
-		unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
-		int end = packet[1]&0x80;
-		int duration = (packet[2]<<8) + packet[3];
-		char key = switch_rfc2833_to_char(packet[0]);
-
-		/* SHEESH.... Curse you RFC2833 inventors!!!!*/
-		if ((time(NULL) - rtp_session->dtmf_data.last_digit_time) > 2) {
-			rtp_session->dtmf_data.last_digit = 0;
-			rtp_session->dtmf_data.dc = 0;
-		}
-		if (duration && end) {
-			if (key != rtp_session->dtmf_data.last_digit) {
-				char digit_str[] = {key, 0};
-				time(&rtp_session->dtmf_data.last_digit_time);
-				switch_rtp_queue_dtmf(rtp_session, digit_str);
-			}
-			if (++rtp_session->dtmf_data.dc >= 3) {
-				rtp_session->dtmf_data.last_digit = 0;
-				rtp_session->dtmf_data.dc = 0;
-			}
-
-			rtp_session->dtmf_data.last_digit = key;
-		} else {
-			rtp_session->dtmf_data.last_digit = 0;
-			rtp_session->dtmf_data.dc = 0;
-		}
-	}
-
 
 
 	if (*payload_type == SWITCH_RTP_CNG_PAYLOAD) {
