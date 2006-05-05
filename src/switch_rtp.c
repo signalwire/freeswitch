@@ -179,6 +179,20 @@ struct switch_rtp {
 
 static int global_init = 0;
 
+static void switch_rtp_miniframe_probe(switch_rtp_t *rtp_session)
+{
+	rtp_mini_msg_t mini = {{0}};
+	int x;
+
+	mini.header.version = 1;
+	mini.header.ts = 42;
+	snprintf(mini.body, sizeof(mini.body), "!");
+	for(x = 0; x < 3 ; x++) {
+		switch_size_t bytes = 2;
+		switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&mini, &bytes);
+	}
+}
+
 static switch_status_t ice_out(switch_rtp_t *rtp_session)
 {
 
@@ -480,16 +494,7 @@ SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
 	}
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
-		rtp_mini_msg_t mini = {{0}};
-		int x;
-
-		mini.header.version = 1;
-		mini.header.ts = 42;
-		snprintf(mini.body, sizeof(mini.body), "!");
-		for(x = 0; x < 3 ; x++) {
-			switch_size_t bytes = 2;
-			switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&mini, &bytes);
-		}
+		switch_rtp_miniframe_probe(rtp_session);
 		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
 	}
 
@@ -707,8 +712,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			rtp_mini_msg_t *mini = (rtp_mini_msg_t *) &rtp_session->recv_msg;
 
 			if (mini->header.ts == 42) {
-				switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "YAY MINI-RTP!\n");
+
+				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
+					switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "YAY MINI-RTP!\n");
+					switch_rtp_miniframe_probe(rtp_session);
+				}
+
 				continue;
 			}
 
