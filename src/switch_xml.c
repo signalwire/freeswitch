@@ -37,7 +37,8 @@ struct switch_xml_root {       // additional data for the root tag
     struct switch_xml xml;     // is a super-struct built on top of switch_xml struct
     switch_xml_t cur;          // current xml tree insertion point
     char *m;              // original xml string
-    size_t len;           // length of allocated memory for mmap, -1 for malloc
+    switch_size_t len;    // length of allocated memory for mmap
+	uint8_t dynamic;
     char *u;              // UTF-8 conversion of string if original was UTF-16
     char *s;              // start of work area
     char *e;              // end of work area
@@ -610,7 +611,7 @@ switch_xml_t switch_xml_parse_fp(FILE *fp)
 
     if (! s) return NULL;
     root = (switch_xml_root_t)switch_xml_parse_str(s, len);
-    root->len = -1; // so we know to free s in switch_xml_free()
+    root->dynamic = 1; // so we know to free s in switch_xml_free()
     return &root->xml;
 }
 
@@ -639,7 +640,7 @@ switch_xml_t switch_xml_parse_fd(int fd)
 #endif // HAVE_MMAP
         l = read(fd, m = malloc(st.st_size), st.st_size);
         root = (switch_xml_root_t)switch_xml_parse_str(m, l);
-        root->len = -1; // so we know to free s in switch_xml_free()
+        root->dynamic = 1; // so we know to free s in switch_xml_free()
 #ifdef HAVE_MMAP
     }
 #endif // HAVE_MMAP
@@ -804,7 +805,7 @@ void switch_xml_free(switch_xml_t xml)
         }            
         if (root->pi[0]) free(root->pi); // free processing instructions
 
-        if (root->len == -1) free(root->m); // malloced xml data
+        if (root->dynamic == 1) free(root->m); // malloced xml data
 #ifdef HAVE_MMAP
         else if (root->len) munmap(root->m, root->len); // mem mapped xml data
 #endif // HAVE_MMAP

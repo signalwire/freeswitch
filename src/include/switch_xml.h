@@ -33,6 +33,7 @@
 BEGIN_EXTERN_C
 
 #define SWITCH_XML_BUFSIZE 1024 // size of internal memory buffers
+
 #define SWITCH_XML_NAMEM   0x80 // name is malloced
 #define SWITCH_XML_TXTM    0x40 // txt is malloced
 #define SWITCH_XML_DUP     0x20 // attribute name and value are strduped
