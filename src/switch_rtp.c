@@ -175,7 +175,7 @@ static int global_init = 0;
 
 static void switch_rtp_miniframe_probe(switch_rtp_t *rtp_session)
 {
-	const char *str = "!";
+	const char *str = "!!!!";
 	rtp_msg_t msg = {{0}};
 	int x;
 	
