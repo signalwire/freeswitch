@@ -183,12 +183,13 @@ static void switch_rtp_miniframe_probe(switch_rtp_t *rtp_session)
 {
 	rtp_mini_msg_t mini = {{0}};
 	int x;
+	const char *str = "!";
 
 	mini.header.version = 1;
 	mini.header.ts = 42;
-	snprintf(mini.body, sizeof(mini.body), "!");
+	snprintf(mini.body, sizeof(mini.body), str);
 	for(x = 0; x < 3 ; x++) {
-		switch_size_t bytes = 2;
+		switch_size_t bytes = strlen(str) + sizeof(mini.header);
 		switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&mini, &bytes);
 	}
 }
@@ -710,7 +711,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (bytes > 0 && rtp_session->recv_msg.header.version == 1) {
 			uint32_t ts;
 			rtp_mini_msg_t *mini = (rtp_mini_msg_t *) &rtp_session->recv_msg;
-
+			
 			if (mini->header.ts == 42) {
 
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
@@ -721,6 +722,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 				continue;
 			}
+
 
 			ts = mini->header.ts;
 			bytes -= sizeof(srtp_mini_hdr_t);
