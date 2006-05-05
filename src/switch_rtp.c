@@ -710,7 +710,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 			bytes = sbytes;
 		} 
-		
+
 		if (bytes > 0) {
 			uint32_t effective_size = (uint32_t)(bytes - sizeof(srtp_mini_hdr_t));
 			if (rtp_session->recv_msg.header.pt == RTP_MAGIC_NUMBER) {
