@@ -174,6 +174,7 @@ struct switch_rtp {
 	switch_buffer_t *packet_buffer;
 	struct switch_rtp_vad_data vad_data;
 	struct switch_rtp_rfc2833_data dtmf_data;
+	uint8_t mini;
 };
 
 static int global_init = 0;
@@ -683,7 +684,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 			return -1;
 		}
-
+		
 		if (bytes < 0) {
 			return (int)bytes;
 		} else if (bytes > 0 && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
@@ -700,6 +701,23 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 			bytes = sbytes;
 		}
+
+		if (bytes > 0 && rtp_session->recv_msg.header.version == 1) {
+			uint32_t ts;
+			rtp_mini_msg_t *mini = (rtp_mini_msg_t *) &rtp_session->recv_msg;
+			switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
+			ts = mini->header.ts;
+			bytes -= sizeof(srtp_mini_hdr_t);
+
+			memmove(rtp_session->recv_msg.body, mini->body, bytes);
+
+			rtp_session->recv_msg.header.ts = ts;
+			rtp_session->recv_msg.header.seq = htons(rtp_session->rseq++);
+			rtp_session->recv_msg.header.pt = rtp_session->rpayload;
+			bytes += rtp_header_len;
+			rtp_session->recv_msg.header.version = 2;
+		}
+
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 			if ((switch_time_now() - rtp_session->next_read) > 1000) {
@@ -752,24 +770,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 			rtp_session->rseq = ntohs(rtp_session->recv_msg.header.seq);
 			rtp_session->rpayload = rtp_session->recv_msg.header.pt;
-
-		} else if (rtp_session->recv_msg.header.version == 1) {
-			uint32_t ts;
-			rtp_mini_msg_t *mini = (rtp_mini_msg_t *) &rtp_session->recv_msg;
-			
-			if (mini->header.ts == 42) {
-				switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "YAY MINI RTP!\n");
-				continue;
-			}
-			
-			ts = mini->header.ts;
-			bytes -= sizeof(srtp_mini_hdr_t);
-			memmove(rtp_session->recv_msg.body, mini->body, bytes);
-			rtp_session->recv_msg.header.ts = ts;
-			rtp_session->recv_msg.header.seq = htons(rtp_session->rseq++);
-			rtp_session->recv_msg.header.pt = rtp_session->rpayload;
-			bytes += rtp_header_len;
 		} else {
 			if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
 				handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
@@ -1149,7 +1149,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	}
 
 	if (send) {
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
+		if (rtp_session->mini) {
 			rtp_mini_msg_t mini = {{0}};
 			bytes -= rtp_header_len;
 			mini.header.ts = send_msg->header.ts;
@@ -1160,6 +1160,13 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		} else {
 			switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)send_msg, &bytes);
 		}
+
+		if (!rtp_session->mini && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
+			rtp_session->mini++;
+			rtp_session->rpayload = send_msg->header.pt;
+			rtp_session->rseq = ntohs(send_msg->header.seq);
+		}
+
 	}
 
 	if (rtp_session->ice_user) {
