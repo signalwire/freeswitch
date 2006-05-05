@@ -226,11 +226,11 @@ static void switch_xml_open_tag(switch_xml_root_t root, char *name, char **attr)
 }
 
 // called when parser finds character content between open and closing tag
-static void switch_xml_char_content(switch_xml_root_t root, char *s, size_t len, char t)
+static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size_t len, char t)
 {
     switch_xml_t xml = root->cur;
     char *m = s;
-    size_t l;
+    switch_size_t l;
 
     if (! xml || ! xml->name || ! len) return; // sanity check
 
@@ -275,7 +275,7 @@ static int switch_xml_ent_ok(char *name, char *s, char **ent)
 }
 
 // called when the parser finds a processing instruction
-static void switch_xml_proc_inst(switch_xml_root_t root, char *s, size_t len)
+static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t len)
 {
     int i = 0, j = 1;
     char *target = s;
@@ -312,7 +312,7 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, size_t len)
 }
 
 // called when the parser finds an internal doctype subset
-static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, size_t len)
+static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_size_t len)
 {
     char q, *c, *t, *n = NULL, *v, **ent, **pe;
     int i, j;
@@ -415,10 +415,10 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, size_t len
 
 // Converts a UTF-16 string to UTF-8. Returns a new string that must be freed
 // or NULL if no conversion was needed.
-static char *switch_xml_str2utf8(char **s, size_t *len)
+static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 {
     char *u;
-    size_t l = 0, sl, max = *len;
+    switch_size_t l = 0, sl, max = *len;
     long c, d;
     int b, be = (**s == '\xFE') ? 1 : (**s == '\xFF') ? 0 : -1;
 
@@ -463,7 +463,7 @@ static void switch_xml_free_attr(char **attr) {
 }
 
 // parse the given xml string and return an switch_xml structure
-switch_xml_t switch_xml_parse_str(char *s, size_t len)
+switch_xml_t switch_xml_parse_str(char *s, switch_size_t len)
 {
     switch_xml_root_t root = (switch_xml_root_t)switch_xml_new(NULL);
     char q, e, *d, **attr, **a = NULL; // initialize a to avoid compile warning
@@ -601,7 +601,7 @@ switch_xml_t switch_xml_parse_str(char *s, size_t len)
 switch_xml_t switch_xml_parse_fp(FILE *fp)
 {
     switch_xml_root_t root;
-    size_t l, len = 0;
+    switch_size_t l, len = 0;
     char *s;
 
     if (! (s = malloc(SWITCH_XML_BUFSIZE))) return NULL;
@@ -623,7 +623,7 @@ switch_xml_t switch_xml_parse_fd(int fd)
 {
     switch_xml_root_t root;
     struct stat st;
-    size_t l;
+    switch_size_t l;
     void *m;
 
     if (fd < 0) return NULL;
@@ -660,12 +660,15 @@ switch_xml_t switch_xml_parse_file(const char *file)
 
 // Encodes ampersand sequences appending the results to *dst, reallocating *dst
 // if length excedes max. a is non-zero for attribute encoding. Returns *dst
-static char *switch_xml_ampencode(const char *s, size_t len, char **dst, size_t *dlen,
-                      size_t *max, short a)
+static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, switch_size_t *dlen, switch_size_t *max, short a)
 {
-    const char *e;
+    const char *e = NULL;
+
+	if (len) {
+		e = s + len;
+	}
     
-    for (e = s + len; s != e; s++) {
+    while (s != e) {
         while (*dlen + 10 > *max) *dst = realloc(*dst, *max += SWITCH_XML_BUFSIZE);
 
         switch (*s) {
@@ -679,6 +682,7 @@ static char *switch_xml_ampencode(const char *s, size_t len, char **dst, size_t 
         case '\r': *dlen += sprintf(*dst + *dlen, "&#xD;"); break;
         default: (*dst)[(*dlen)++] = *s;
         }
+		s++;
     }
     return *dst;
 }
@@ -686,12 +690,12 @@ static char *switch_xml_ampencode(const char *s, size_t len, char **dst, size_t 
 // Recursively converts each tag to xml appending it to *s. Reallocates *s if
 // its length excedes max. start is the location of the previous tag in the
 // parent tag's character content. Returns *s.
-static char *switch_xml_toxml_r(switch_xml_t xml, char **s, size_t *len, size_t *max,
-                    size_t start, char ***attr)
+static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max,
+                    switch_size_t start, char ***attr)
 {
     int i, j;
     char *txt = (xml->parent) ? xml->parent->txt : "";
-    size_t off = 0;
+    switch_size_t off = 0;
 
     // parent character content up to this tag
     *s = switch_xml_ampencode(txt + start, xml->off - start, s, len, max, 0);
@@ -706,7 +710,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, size_t *len, size_t 
             *s = realloc(*s, *max += SWITCH_XML_BUFSIZE);
 
         *len += sprintf(*s + *len, " %s=\"", xml->attr[i]);
-        switch_xml_ampencode(xml->attr[i + 1], -1, s, len, max, 1);
+        switch_xml_ampencode(xml->attr[i + 1], 0, s, len, max, 1);
         *len += sprintf(*s + *len, "\"");
     }
 
@@ -718,13 +722,13 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, size_t *len, size_t 
             *s = realloc(*s, *max += SWITCH_XML_BUFSIZE);
 
         *len += sprintf(*s + *len, " %s=\"", attr[i][j]);
-        switch_xml_ampencode(attr[i][j + 1], -1, s, len, max, 1);
+        switch_xml_ampencode(attr[i][j + 1], 0, s, len, max, 1);
         *len += sprintf(*s + *len, "\"");
     }
     *len += sprintf(*s + *len, ">");
 
     *s = (xml->child) ? switch_xml_toxml_r(xml->child, s, len, max, 0, attr) //child
-                      : switch_xml_ampencode(xml->txt, -1, s, len, max, 0);  //data
+                      : switch_xml_ampencode(xml->txt, 0, s, len, max, 0);  //data
     
     while (*len + strlen(xml->name) + 4 > *max) // reallocate s
         *s = realloc(*s, *max += SWITCH_XML_BUFSIZE);
@@ -733,7 +737,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, size_t *len, size_t 
 
     while (txt[off] && off < xml->off) off++; // make sure off is within bounds
     return (xml->ordered) ? switch_xml_toxml_r(xml->ordered, s, len, max, off, attr)
-                          : switch_xml_ampencode(txt + off, -1, s, len, max, 0);
+                          : switch_xml_ampencode(txt + off, 0, s, len, max, 0);
 }
 
 // converts an switch_xml structure back to xml, returning it as a string that must
@@ -742,7 +746,7 @@ char *switch_xml_toxml(switch_xml_t xml)
 {
     switch_xml_t p = (xml) ? xml->parent : NULL, o = (xml) ? xml->ordered : NULL;
     switch_xml_root_t root = (switch_xml_root_t)xml;
-    size_t len = 0, max = SWITCH_XML_BUFSIZE;
+    switch_size_t len = 0, max = SWITCH_XML_BUFSIZE;
     char *s = strcpy(malloc(max), ""), *t, *n;
     int i, j, k;
 
@@ -843,7 +847,7 @@ switch_xml_t switch_xml_new(const char *name)
 
 // Adds a child tag. off is the offset of the child tag relative to the start
 // of the parent tag's character content. returns the child tag
-switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, size_t off)
+switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off)
 {
     switch_xml_t cur, head, child;
 

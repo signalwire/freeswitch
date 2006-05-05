@@ -43,7 +43,7 @@ struct switch_xml {
     char *name;      // tag name
     char **attr;     // tag attributes { name, value, name, value, ... NULL }
     char *txt;       // tag character content, empty string if none
-    size_t off;      // tag offset from start of parent tag character content
+    switch_size_t off;      // tag offset from start of parent tag character content
     switch_xml_t next;    // next tag with same name in this section at this depth
     switch_xml_t sibling; // next tag with different name in same section and depth
     switch_xml_t ordered; // next tag, same section and depth, in original order
@@ -56,7 +56,7 @@ struct switch_xml {
 // structure. For efficiency, modifies the data by adding null terminators
 // and decoding ampersand sequences. If you don't want this, copy the data and
 // pass in the copy. Returns NULL on failure.
-switch_xml_t switch_xml_parse_str(char *s, size_t len);
+switch_xml_t switch_xml_parse_str(char *s, switch_size_t len);
 
 // A wrapper for switch_xml_parse_str() that accepts a file descriptor. First
 // attempts to mem map the file. Failing that, reads the file into memory.
@@ -122,7 +122,7 @@ switch_xml_t switch_xml_new(const char *name);
 
 // Adds a child tag. off is the offset of the child tag relative to the start
 // of the parent tag's character content. Returns the child tag.
-switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, size_t off);
+switch_xml_t switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off);
 
 // wrapper for switch_xml_add_child() that strdup()s name
 #define switch_xml_add_child_d(xml, name, off) \
