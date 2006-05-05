@@ -643,7 +643,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 		if (switch_queue_trypop(rtp_session->dtmf_data.dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			int x, ts;
 			struct rfc2833_digit *rdigit = pop;
-			
+
 			memset(rtp_session->dtmf_data.out_digit_packet, 0, 4);
 			rtp_session->dtmf_data.out_digit_sofar = 0;
 			rtp_session->dtmf_data.out_digit_dur = rdigit->duration;
@@ -744,29 +744,34 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 		}
 
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-			if ((switch_time_now() - rtp_session->next_read) > 1000) {
+		if ((switch_time_now() - rtp_session->next_read) > 1000) {
+			do_2833(rtp_session);
+
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 				/* We're late! We're Late!*/
 				memset(&rtp_session->recv_msg, 0, SWITCH_RTP_CNG_PAYLOAD);
 				rtp_session->recv_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
 				*flags |= SFF_CNG;
-				/* Set the next waypoint and return a CNG frame */
-				if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK)) {
-					rtp_session->next_read = switch_time_now() + rtp_session->ms_per_packet;
-				} else {
-					rtp_session->next_read += rtp_session->ms_per_packet;
-				}
+				/* Return a CNG frame */
 				*payload_type = SWITCH_RTP_CNG_PAYLOAD;
-				do_2833(rtp_session);
 				return SWITCH_RTP_CNG_PAYLOAD;
 			}
 		
-			if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {
-				switch_yield(1000);
-				continue;
+			/* Set the next waypoint */
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK)) {
+				rtp_session->next_read = switch_time_now() + rtp_session->ms_per_packet;
+			} else {
+				rtp_session->next_read += rtp_session->ms_per_packet;
+			}
+
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {
+					switch_yield(1000);
+					continue;
+				}
 			}
 		}		
-
+		
 		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
 			return 0;
 		}
@@ -1065,14 +1070,16 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		rtp_session->recv_msg.header.pt = 102;
 	}
 	
-	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD)) {
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD) && 
+		rtp_session->recv_msg.header.pt == rtp_session->vad_data.read_codec->codec_interface->ianacode &&
+		datalen == rtp_session->vad_data.read_codec->implementation->encoded_bytes_per_frame) {
 		int16_t decoded[SWITCH_RECCOMMENDED_BUFFER_SIZE/sizeof(int16_t)];
 		uint32_t rate;
 		uint32_t flags;
 		uint32_t len = sizeof(decoded);
 		time_t now = time(NULL);
 		send = 0;
-
+		
 		if (rtp_session->vad_data.scan_freq && rtp_session->vad_data.next_scan <= now) {
 			rtp_session->vad_data.bg_count = rtp_session->vad_data.bg_level = 0;
 			rtp_session->vad_data.next_scan = now + rtp_session->vad_data.scan_freq;

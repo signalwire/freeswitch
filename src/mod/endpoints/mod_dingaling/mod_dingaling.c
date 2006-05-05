@@ -703,7 +703,6 @@ static switch_status_t channel_waitfor_write(switch_core_session_t *session, int
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *dtmf)
 {
 	struct private_object *tech_pvt = NULL;
-	char digits[80] = "";
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
@@ -713,7 +712,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *d
 	//ldl_handle_send_msg(tech_pvt->profile->handle, tech_pvt->recip, NULL, digits);
 
 	return switch_rtp_queue_rfc2833(tech_pvt->rtp_session,
-									digits,
+									dtmf,
 									100 * (tech_pvt->read_codec.implementation->samples_per_second / 1000));
 
 	//return SWITCH_STATUS_SUCCESS;
