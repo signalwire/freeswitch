@@ -90,7 +90,7 @@ typedef struct {
 
 
 typedef struct {
-	srtp_hdr_t header;        
+	srtp_mini_hdr_t header;        
 	char body[SWITCH_RTP_MAX_BUF_LEN];  
 } rtp_mini_msg_t;
 
@@ -478,6 +478,20 @@ SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
 		return NULL;
 	}
 
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
+		rtp_mini_msg_t mini = {{0}};
+		int x;
+
+		mini.header.version = 1;
+		mini.header.ts = 42;
+		snprintf(mini.body, sizeof(mini.body), "!");
+		for(x = 0; x < 3 ; x++) {
+			switch_size_t bytes = 2;
+			switch_socket_sendto(rtp_session->sock, rtp_session->remote_addr, 0, (void*)&mini, &bytes);
+		}
+		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
+	}
+
 	return rtp_session;
 }
 
@@ -743,7 +757,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			uint32_t ts;
 			rtp_mini_msg_t *mini = (rtp_mini_msg_t *) &rtp_session->recv_msg;
 			
-			switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
+			if (mini->header.ts == 42) {
+				switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "YAY MINI RTP!\n");
+				continue;
+			}
+			
 			ts = mini->header.ts;
 			bytes -= sizeof(srtp_mini_hdr_t);
 			memmove(rtp_session->recv_msg.body, mini->body, bytes);
