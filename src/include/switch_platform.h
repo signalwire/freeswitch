@@ -106,13 +106,13 @@ typedef unsigned long	in_addr_t;
 #ifndef PACKED
 #define PACKED __attribute__ ((__packed__))
 #endif
+#include <limits.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include <inttypes.h>
-#ifndef getpid
 #include <unistd.h>
 #include <stdlib.h>
 #include <time.h>
-#endif
 #endif // _MSC_VER
 
 
