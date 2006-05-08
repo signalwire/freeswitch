@@ -1,9 +1,7 @@
 #!/bin/sh
 
-if [ ! -z $1 ] ; then
-    if [ $1 = force ] ; then
+if eval test x${1} = xforce ; then
 	rm -f .version
-    fi
 fi
 
 force=0
@@ -16,6 +14,3 @@ if [ $oldversion != $version ] || [ $force = 1 ] ; then
     echo $version > .version
     make modclean
 fi
-
-
-
