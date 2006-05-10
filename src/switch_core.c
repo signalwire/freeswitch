@@ -2849,16 +2849,16 @@ SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_cor
     switch_time_t temp = total_ms / 1000;
 	memset(duration, 0, sizeof(*duration));
 	duration->mms = (uint32_t)(total_ms % 1000);
-    duration->sec = (uint32_t)(temp / 1000);
 	duration->ms = (uint32_t)(temp % 1000);
-    duration->min = duration->sec / 60;
-    duration->sec = duration->sec % 60;
-    duration->hr = duration->min / 60;
-    duration->min = duration->min % 60;
-	duration->day = duration->hr / 24;
-	duration->hr = duration->hr % 24;
-	duration->yr = duration->day / 365;
-	duration->day = duration->day % 365;
+    temp = temp / 1000;
+    duration->sec = (uint32_t)(temp % 60);
+    temp = temp / 60;
+    duration->min = (uint32_t)(temp % 60);
+	temp = temp / 60;
+	duration->hr = (uint32_t)(temp % 24);
+	temp = temp / 24;
+	duration->day = (uint32_t)(temp % 365);
+	duration->yr = (uint32_t)(temp / 365);
 }
 
 SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
