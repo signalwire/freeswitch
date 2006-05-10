@@ -24,7 +24,7 @@ BuildModCodecGSM=False
 BuildModilbc=False
 BuildModXMPPEvent=False
 BuildModsndfile=False
-BuildModpcre=False
+BuildModdialplanxml=False
 BuildModldap=False
 BuildModzeroconf=False
 BuildModSpiderMonkey=False
@@ -89,8 +89,8 @@ If objArgs.Count >=1 Then
 			BuildModXMPPEvent=True
 		Case "Mod_sndfile"
 			BuildModsndfile=True
-		Case "Mod_pcre"
-			BuildModpcre=True
+		Case "Mod_dialplan_xml"
+			BuildModdialplanxml=True
 		Case "Mod_ldap"
 			BuildModldap=True
 		Case "Mod_zeroconf"
@@ -109,7 +109,7 @@ If objArgs.Count >=1 Then
 			BuildModXMPPEvent=True
 			BuildModsndfile=True
 			BuildVersion=True
-			BuildModpcre=True
+			BuildModdialplanxml=True
 			BuildModldap=True
 			BuildModzeroconf=True
 			BuildModSpiderMonkey=True
@@ -127,7 +127,7 @@ Else
 	BuildModsndfile=True
 	BuildVersion=True
 	BuildModldap=True
-	BuildModpcre=True
+	BuildModdialplanxml=True
 	BuildModzeroconf=True
 	BuildModSpiderMonkey=True
 	BuildModDingaling=True
@@ -218,7 +218,7 @@ If BuildModsndfile Then
 	BuildLibs_libsndfile BuildDebug, BuildRelease
 End If
 
-If BuildModpcre Then
+If BuildModdialplanxml Then
 	BuildLibs_pcre BuildDebug, BuildRelease
 End If
 
