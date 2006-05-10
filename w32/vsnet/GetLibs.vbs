@@ -29,6 +29,7 @@ BuildModldap=False
 BuildModzeroconf=False
 BuildModSpiderMonkey=False
 BuildModDingaling=False
+BuildModXMLRpc=False
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
 
@@ -99,6 +100,8 @@ If objArgs.Count >=1 Then
 			BuildModSpiderMonkey=True
 		Case "Mod_Dingaling"
 			BuildModDingaling=True
+		Case "Mod_XMLRpc"
+			BuildModXMLRpc=True
 		Case Else
 			BuildCore=True
 			BuildModExosip=True
@@ -115,6 +118,7 @@ If objArgs.Count >=1 Then
 			BuildModSpiderMonkey=True
 			BuildModDingaling=True
 			BuildModilbc=True
+			BuildModXMLRpc=True
 	End Select
 Else
 	BuildCore=True
@@ -132,6 +136,7 @@ Else
 	BuildModSpiderMonkey=True
 	BuildModDingaling=True
 	BuildModilbc=True
+	BuildModXMLRpc=True
 End If
 
 ' ******************
@@ -170,6 +175,11 @@ If BuildCore Then
 	BuildLibs_srtp BuildDebug, BuildRelease
 	FSO.CopyFile LibDestDir & "srtp\include\*.h", LibDestDir & "include"
 	FSO.CopyFile LibDestDir & "srtp\crypto\include\*.h", LibDestDir & "include"
+End If
+
+If BuildModXMLRpc Then
+	BuildLibs_curl BuildDebug, BuildRelease
+	BuildLibs_xmlrpc BuildDebug, BuildRelease	
 End If
 
 If BuildModzeroconf Then
@@ -643,6 +653,33 @@ Sub BuildLibs_libsndfile(BuildDebug, BuildRelease)
 	End If 
 End Sub
 
+
+Sub BuildLibs_xmlrpc(BuildDebug, BuildRelease)
+	If Not FSO.FolderExists(LibDestDir & "xmlrpc") Then 
+		WgetUnCompress LibsBase & "xmlrpc-c-1.03.14.tgz", LibDestDir
+		RenameFolder LibDestDir & "xmlrpc-c-1.03.14", "xmlrpc"
+		FSO.CopyFile Utilsdir & "xmlrpc\xmlrpc.vcproj", LibDestDir & "xmlrpc\Windows\", True
+		FSO.CopyFile LibDestDir & "xmlrpc\Windows\transport_config_win32.h", LibDestDir & "xmlrpc\transport_config.h", True
+		FSO.CopyFile LibDestDir & "xmlrpc\Windows\xmlrpc_win32_config.h", LibDestDir & "xmlrpc\config.h", True
+		FSO.CopyFile LibDestDir & "xmlrpc\Windows\xmlrpc_win32_config.h", LibDestDir & "xmlrpc\xmlrpc_config.h", True
+	End If 
+	If FSO.FolderExists(LibDestDir & "xmlrpc") Then 
+		If BuildDebug Then
+			If Not FSO.FileExists(LibDestDir & "xmlrpc\Debug\xmlrpc.lib") Then 
+				BuildViaVCBuild LibDestDir & "xmlrpc\Windows\xmlrpc.vcproj", "Debug"
+			End If
+		End If
+		If BuildRelease Then
+			If Not FSO.FileExists(LibDestDir & "xmlrpc\Release\xmlrpc.lib") Then 
+				BuildViaVCBuild LibDestDir & "xmlrpc\Windows\xmlrpc.vcproj", "Release"
+			End If
+		End If
+	Else
+		Wscript.echo "Unable to download xmlrpc"
+	End If 
+End Sub
+
+
 Sub BuildLibs_libetpan(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "libetpan") Then 
 		WgetUnCompress LibsBase & "libetpan-0.45.tar.gz", LibDestDir
@@ -756,13 +793,19 @@ Sub BuildLibs_curl(BuildDebug, BuildRelease)
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "curl\lib\Debug\curllib.lib") Then 
 				BuildViaVCBuild LibDestDir & "curl\lib\curllib.vcproj", "Debug"
+				FSO.CopyFile LibDestDir & "curl\lib\Debug\curllib.lib", ScriptDir & "Debug\", True
 			End If
 		End If
 		If BuildRelease Then
 			If Not FSO.FileExists(LibDestDir & "curl\lib\Release\curllib.lib") Then 
 				BuildViaVCBuild LibDestDir & "curl\lib\curllib.vcproj", "Release"
+				FSO.CopyFile LibDestDir & "curl\lib\Release\curllib.lib", ScriptDir & "Release\", True
 			End If
 		End If
+	    If Not FSO.FolderExists(LibDestDir & "include\curl") Then
+		    FSO.CreateFolder(LibDestDir & "include\curl")
+	    End If
+		FSO.CopyFile LibDestDir & "curl\include\curl\*.h", LibDestDir & "include\curl"
 	Else
 		Wscript.echo "Unable to download curl"
 	End If 
@@ -1011,7 +1054,7 @@ Sub UnCompress(Archive, DestFolder)
 	Do
 		WScript.Echo OExec.StdOut.ReadLine()
 	Loop While Not OExec.StdOut.atEndOfStream
-	If FSO.FileExists(Left(Archive, Len(Archive)-3)) Then  
+	If FSO.FileExists(Left(Archive, Len(Archive)-3))Then  
 		Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
 		MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & Left(Archive, Len(Archive)-3) & " -y -o" & DestFolder)
 		MyFile.Close
@@ -1022,6 +1065,18 @@ Sub UnCompress(Archive, DestFolder)
 		WScript.Sleep(500)
 		FSO.DeleteFile Left(Archive, Len(Archive)-3) ,true 
 	End If
+	If FSO.FileExists(Left(Archive, Len(Archive)-3) & "tar")Then  
+		Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
+		MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & Left(Archive, Len(Archive)-3) & "tar -y -o" & DestFolder)
+		MyFile.Close
+		Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
+		Do
+			WScript.Echo OExec.StdOut.ReadLine()
+		Loop While Not OExec.StdOut.atEndOfStream
+		WScript.Sleep(500)
+		FSO.DeleteFile Left(Archive, Len(Archive)-3) & "tar",true 
+	End If
+	
 	WScript.Sleep(500)
 End Sub
 
