@@ -37,8 +37,14 @@ static switch_status_t status_function(char *cmd, switch_stream_handle_t *stream
 {
 	switch_core_time_duration_t duration;
 	switch_core_measure_time(switch_core_uptime(), &duration);
+	uint8_t html = 0;
 
-	stream->write_function(stream, "<b>UP %u year%s, %u day%s, %u hour%s, %u minute%s, %u second%s, %u millisecond%s, %u microsecond%s</b>\n",
+	if (cmd && strstr(cmd, "html")) {
+		html = 1;
+		stream->write_function(stream, "<h1>FreeSWITCH Status</h1>\n<b>");
+	}
+
+	stream->write_function(stream, "UP %u year%s, %u day%s, %u hour%s, %u minute%s, %u second%s, %u millisecond%s, %u microsecond%s\n",
 						   duration.yr, duration.yr == 1 ? "" : "s",
 						   duration.day, duration.day == 1 ? "" : "s",
 						   duration.hr, duration.hr == 1 ? "" : "s",
@@ -47,6 +53,10 @@ static switch_status_t status_function(char *cmd, switch_stream_handle_t *stream
 						   duration.ms, duration.ms == 1 ? "" : "s",
 						   duration.mms, duration.mms == 1 ? "" : "s"
 						   );
+
+	if (html) {
+		stream->write_function(stream, "</b>\n");
+	}
 
 	if (cmd && strstr(cmd, "refresh=")) {
 		char *refresh = strchr(cmd, '=');
