@@ -1023,7 +1023,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml)
 }
 
 // free the memory allocated for the switch_xml structure
-void switch_xml_free(switch_xml_t xml)
+SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 {
     switch_xml_root_t root = (switch_xml_root_t)xml;
     int i, j;
