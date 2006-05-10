@@ -65,7 +65,7 @@ static switch_status_t status_function(char *cmd, switch_stream_handle_t *stream
 			refresh++;
 			r = atoi(refresh);
 			if (r > 0) { 
-				stream->write_function(stream, "<META HTTP-EQUIV=REFRESH CONTENT=\"%d; URL=/api/status?refresh=%d\">\n", r, r);
+				stream->write_function(stream, "<META HTTP-EQUIV=REFRESH CONTENT=\"%d; URL=/api/status?refresh=%d%s\">\n", r, r, html ? "html=1" : "");
 			}
 		}
 	}
