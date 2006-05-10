@@ -35,9 +35,9 @@ static const char modname[] = "mod_commands";
 
 static switch_status_t status_function(char *cmd, switch_stream_handle_t *stream)
 {
+	uint8_t html = 0;
 	switch_core_time_duration_t duration;
 	switch_core_measure_time(switch_core_uptime(), &duration);
-	uint8_t html = 0;
 
 	if (cmd && strstr(cmd, "html")) {
 		html = 1;
