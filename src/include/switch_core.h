@@ -123,7 +123,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void);
 ///\}
 
 
-///\defgroup sh Read/Write Locking
+///\defgroup rwl Read/Write Locking
 ///\ingroup core1
 ///\{
 /*! 

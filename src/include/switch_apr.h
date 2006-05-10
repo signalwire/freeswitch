@@ -1347,6 +1347,8 @@ DoxyDefine(apr_status_t switch_queue_trypop(switch_queue_t *queue, void **data);
 DoxyDefine(apr_status_t switch_queue_trypush(switch_queue_t *queue, void *data);)
 #define switch_queue_trypush apr_queue_trypush
 
+/** @} */
+
 
 typedef apr_thread_rwlock_t switch_thread_rwlock_t;
 
@@ -1427,6 +1429,7 @@ SWITCH_DECLARE(switch_status_t) switch_mutex_init(switch_mutex_t **lock,
 //SWITCH_DECLARE(switch_status_t) switch_mutex_trylock(switch_mutex_t *lock);
 #define switch_mutex_trylock apr_thread_mutex_trylock
 
+/** @} */
 /** @} */
 /** @} */
 

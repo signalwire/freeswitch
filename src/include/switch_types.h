@@ -94,7 +94,7 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 #define SWITCH_FALSE 0
 
 /*!
-  \enum switch_vad_flags
+  \enum switch_vad_flag_t
   \brief RTP Related Flags
 <pre>
     SWITCH_VAD_FLAG_TALKING         - Currently Talking
@@ -500,7 +500,7 @@ typedef enum {
    also never put any new ones before EVENT_ALL
 */
 /*!
-  \enum switch_event_type_t
+  \enum switch_event_types_t
   \brief Built-in Events
 
 <pre>
