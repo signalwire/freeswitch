@@ -222,7 +222,8 @@ static int on_msg(void *user_data, ikspak * pak)
 {
 	char *cmd = iks_find_cdata(pak->x, "body");
 	char *arg = NULL;
-	char retbuf[1024] = "";
+	switch_stream_handle_t stream = {0};
+	char retbuf[2048] = "";
 	char *p;
 
 	if ((p = strchr(cmd, '\r')) != 0) {
@@ -235,7 +236,10 @@ static int on_msg(void *user_data, ikspak * pak)
 		*arg++ = '\0';
 	}
 
-	switch_api_execute(cmd, arg, retbuf, sizeof(retbuf));
+	stream.data = retbuf;
+	stream.end = stream.data;
+	stream.data_size = sizeof(retbuf);
+	switch_api_execute(cmd, arg, &stream);
 
 	return 0;
 }

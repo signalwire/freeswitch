@@ -800,7 +800,7 @@ static switch_status_t place_call(char *dest, switch_stream_handle_t *stream)
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (!dest) {
-		strncpy(out, "Usage: pacall <exten>", outlen - 1);
+		stream->write_function(stream, "Usage: pacall <exten>");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -957,7 +957,7 @@ static switch_status_t call_info(char *callid, switch_stream_handle_t *stream)
 			print_info(tech_pvt, stream);
 		}
 	} else if (callid && (tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
-		print_info(tech_pvt, out, outlen);
+		print_info(tech_pvt, stream);
 	} else {
 		stream->write_function(stream, "NO SUCH CALL");
 	}
