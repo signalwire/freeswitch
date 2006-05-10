@@ -38,15 +38,28 @@ static switch_status_t status_function(char *cmd, switch_stream_handle_t *stream
 	switch_core_time_duration_t duration;
 	switch_core_measure_time(switch_core_uptime(), &duration);
 
-	stream->write_function(stream, "<b>UP %u year(s), %u day(s), %u hour(s), %u minute(s), %u second(s), %u millisecond(s), %u microsecond(s)</b>\n",
-						   duration.yr,
-						   duration.day,
-						   duration.hr,
-						   duration.min,
-						   duration.sec,
-						   duration.ms,
-						   duration.mms
+	stream->write_function(stream, "<b>UP %u year%s, %u day%s, %u hour%s, %u minute%s, %u second%s, %u millisecond%s, %u microsecond%s</b>\n",
+						   duration.yr, duration.yr == 1 ? "" : "s",
+						   duration.day, duration.day == 1 ? "" : "s",
+						   duration.hr, duration.hr == 1 ? "" : "s",
+						   duration.min, duration.min == 1 ? "" : "s",
+						   duration.sec, duration.sec == 1 ? "" : "s",
+						   duration.ms, duration.ms == 1 ? "" : "s",
+						   duration.mms, duration.mms == 1 ? "" : "s"
 						   );
+
+	if (cmd && strstr(cmd, "refresh=")) {
+		char *refresh = strchr(cmd, '=');
+		if (refresh) {
+			int r;
+			refresh++;
+			r = atoi(refresh);
+			if (r > 0) { 
+				stream->write_function(stream, "<META HTTP-EQUIV=REFRESH CONTENT=\"%d; URL=/api/status?refresh=%d\">\n", r, r);
+			}
+		}
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
