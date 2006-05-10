@@ -1173,7 +1173,9 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 				break;
 			}
 		}
-		ldl_global_destroy();
+		if (globals.init) {
+			ldl_global_destroy();
+		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1286,24 +1288,26 @@ static switch_status_t dl_login(char *arg, char *out, size_t outlen)
 
 static switch_status_t load_config(void)
 {
-	switch_config_t cfg;
-	char *var, *val;
 	char *cf = "dingaling.conf";
 	struct mdl_profile *profile = NULL;
-	int lastcat = -1;
+	switch_xml_t cfg, xml, settings, param, xmlint;
 
 	memset(&globals, 0, sizeof(globals));
 	globals.running = 1;
 
 
 	switch_core_hash_init(&globals.profile_hash, module_pool);	
-	if (!switch_config_open_file(&cfg, cf)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "open of %s failed\n", cf);
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
-	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "settings")) {
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr(param, "name");
+			char *val = (char *) switch_xml_attr(param, "value");
+
 			if (!strcasecmp(var, "debug")) {
 				globals.debug = atoi(val);
 			} else if (!strcasecmp(var, "codec_prefs")) {
@@ -1315,26 +1319,29 @@ static switch_status_t load_config(void)
 				globals.codec_rates_last =
 					switch_separate_string(globals.codec_rates_string, ',', globals.codec_rates, SWITCH_MAX_CODECS);
 			}
-
-		} else if (!strcasecmp(cfg.category, "interface")) {
+		}
+	}
+	
+	for (xmlint = switch_xml_child(cfg, "interface"); xmlint; xmlint = xmlint->next) {
+		for (param = switch_xml_child(xmlint, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr(param, "name");
+			char *val = (char *) switch_xml_attr(param, "value");
 
 			if (!globals.init) {
 				ldl_global_init(globals.debug);
 				ldl_global_set_logger(dl_logger);
 				globals.init = 1;
 			}
-			if (cfg.catno != lastcat) {
-				if (profile) {
-					init_profile(profile, switch_test_flag(profile, TFLAG_AUTO) ? 1 : 0);
-					profile = NULL;
-				}
-				lastcat = cfg.catno;
-			}
 
 			if(!profile) {
 				profile = switch_core_alloc(module_pool, sizeof(*profile));
 			}
 			set_profile_val(profile, var, val);
+		}
+
+		if (profile) {
+			init_profile(profile, switch_test_flag(profile, TFLAG_AUTO) ? 1 : 0);
+			profile = NULL;
 		}
 	}
 
@@ -1354,7 +1361,8 @@ static switch_status_t load_config(void)
 	}
 
 
-	switch_config_close_file(&cfg);
+	switch_xml_free(xml);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

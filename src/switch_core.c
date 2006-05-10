@@ -81,7 +81,7 @@ struct switch_core_session {
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs;
 
 struct switch_core_runtime {
-	time_t initiated;
+	switch_time_t initiated;
 	uint32_t session_id;
 	apr_pool_t *memory_pool;
 	switch_hash_t *session_table;
@@ -1764,9 +1764,12 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 
 		if (!dialplan_interface) {
 			if (switch_channel_test_flag(session->channel, CF_OUTBOUND)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Dialplan, changing state to TRANSMIT\n");
-				switch_channel_set_state(session->channel, CS_TRANSMIT);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Dialplan, changing state to HOLD\n");
+				switch_channel_set_state(session->channel, CS_HOLD);
 				return;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Dialplan, Aborting\n");
+				switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
 		} else {
 			if ((extension = dialplan_interface->hunt_function(session)) != 0) {
@@ -2721,6 +2724,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	SWITCH_GLOBAL_dirs.log_dir = SWITCH_LOG_DIR;
 	SWITCH_GLOBAL_dirs.db_dir = SWITCH_DB_DIR;
 	SWITCH_GLOBAL_dirs.script_dir = SWITCH_SCRIPT_DIR;
+	SWITCH_GLOBAL_dirs.htdocs_dir = SWITCH_HTDOCS_DIR;
 #ifdef SWITCH_TEMP_DIR
 	SWITCH_GLOBAL_dirs.temp_dir = SWITCH_TEMP_DIR;
 #else
@@ -2749,6 +2753,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
 
 	if (apr_pool_create(&runtime.memory_pool, NULL) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "FATAL ERROR! Could not allocate memory pool\n");
+		switch_core_destroy();
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	if (switch_xml_init(runtime.memory_pool) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "FATAL ERROR! Could not open XML Registry\n");
 		switch_core_destroy();
 		return SWITCH_STATUS_MEMERR;
 	}
@@ -2829,10 +2839,33 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
 #ifdef CRASH_PROT
 	switch_core_hash_init(&runtime.stack_table, runtime.memory_pool);
 #endif
-	time(&runtime.initiated);
+	runtime.initiated = switch_time_now();
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_core_time_duration_t *duration)
+{
+    memset(duration, 0, sizeof(*duration));
+    duration->mms = total_ms;
+    duration->ms = total_ms / 1000;
+	duration->mms = duration->mms % 1000;
+    duration->sec = duration->ms / 1000;
+	duration->ms = duration->ms % 1000;
+    duration->min = duration->sec / 60;
+    duration->sec = duration->sec % 60;
+    duration->hr = duration->min / 60;
+    duration->min = duration->min % 60;
+	duration->day = duration->hr / 24;
+	duration->hr = duration->hr % 24;
+	duration->yr = duration->day / 365;
+	duration->day = duration->day % 365;
+}
+
+SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
+{
+	return switch_time_now() - runtime.initiated;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 {
@@ -2847,6 +2880,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 		switch_yield(1000);
 	}
 	switch_core_db_close(runtime.db);
+	switch_xml_destroy();
 
 	if (runtime.memory_pool) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Unallocating memory pool.\n");

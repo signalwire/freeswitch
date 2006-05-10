@@ -139,8 +139,6 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
 	char temp[1024];
 	size_t len;
 
-	printf("%s\n", argv[1]);
-	
 	sprintf(temp, "%s\n", argv[1]);
 	len = strlen(temp);
 
@@ -150,6 +148,23 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
 		returnval->out += len;
 	}
 	return 0;
+}
+
+static switch_status_t status_function(char *cmd, char *out, size_t outlen)
+{
+	switch_core_time_duration_t duration;
+	switch_core_measure_time(switch_core_uptime(), &duration);
+
+	snprintf(out, outlen, "<b>UP %u year(s), %u day(s), %u hour(s), %u minute(s), %u second(s), %u millisecond(s), %u microsecond(s)</b>\n",
+			 duration.yr,
+			 duration.day,
+			 duration.hr,
+			 duration.min,
+			 duration.sec,
+			 duration.ms,
+			 duration.mms
+			 );
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t show_function(char *cmd, char *out, size_t outlen)
@@ -176,12 +191,20 @@ static switch_status_t show_function(char *cmd, char *out, size_t outlen)
 }
 
 
+static switch_api_interface_t status_api_interface = {
+	/*.interface_name */ "status",
+	/*.desc */ "status",
+	/*.function */ status_function,
+	/*.next */ NULL
+};
+
 static switch_api_interface_t show_api_interface = {
 	/*.interface_name */ "show",
 	/*.desc */ "Show",
 	/*.function */ show_function,
-	/*.next */ NULL
+	/*.next */ &status_api_interface
 };
+
 static switch_api_interface_t pause_api_interface = {
 	/*.interface_name */ "pause",
 	/*.desc */ "Pause",

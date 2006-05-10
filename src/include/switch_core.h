@@ -45,6 +45,16 @@ BEGIN_EXTERN_C
 #define SWITCH_MAX_CORE_THREAD_SESSION_OBJS 128
 #define SWITCH_MAX_STREAMS 128
 
+struct switch_core_time_duration {
+    uint32_t mms;
+    uint32_t ms;
+    uint32_t sec;
+    uint32_t min;
+    uint32_t hr;
+	uint32_t day;
+	uint32_t yr;
+};
+
 /*! \brief A message object designed to allow unlike technologies to exchange data */
 struct switch_core_session_message {
 	/*! uuid of the sender (for replies)*/
@@ -953,6 +963,19 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
   \param console the file path
 */
 SWITCH_DECLARE(switch_status_t) switch_core_set_console(char *console);
+
+/*!
+  \brief Breakdown a number of milliseconds into various time spec
+  \param total_ms a number of milliseconds
+  \param duration an object to store the results
+*/
+SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_core_time_duration_t *duration);
+
+/*!
+  \brief Number of microseconds the system has been up
+  \return a number of microseconds
+*/
+SWITCH_DECLARE(switch_time_t) switch_core_uptime(void);
 
 /*!
   \brief Get the output console

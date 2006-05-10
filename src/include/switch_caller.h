@@ -138,6 +138,14 @@ SWITCH_DECLARE(void) switch_caller_extension_add_application(switch_core_session
 
 
 /*!
+  \brief Get the value of a field in a caller profile based on it's name
+  \param caller_profile The caller profile
+  \param name the name
+  \note this function is meant for situations where the name paramater is the contents of the variable
+*/
+SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, char *name);
+
+/*!
   \brief Create a new caller profile object
   \param pool memory pool to use
   \param dialplan name of the dialplan module in use

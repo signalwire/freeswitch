@@ -80,24 +80,28 @@ static void add_mapping(char *var, char *val)
 
 static switch_status_t config_logger(void)
 {
-	switch_config_t cfg;
-	char *var, *val;
 	char *cf = "console.conf";
+	switch_xml_t cfg, xml, settings, param;
 
-	if (!switch_config_open_file(&cfg, cf)) {
+	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_TERM;
 	}
 
 	switch_core_hash_init(&log_hash, module_pool);
 	switch_core_hash_init(&name_hash, module_pool);
+	
+	if ((settings = switch_xml_child(cfg, "mappings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr(param, "name");
+			char *val = (char *) switch_xml_attr(param, "value");
 
-	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "mappings")) {
 			add_mapping(var, val);
 		}
 	}
-	
+
+	switch_xml_free(xml);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

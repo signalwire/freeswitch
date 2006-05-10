@@ -76,6 +76,7 @@ struct switch_directories {
 	char *db_dir;
 	char *script_dir;
 	char *temp_dir;
+	char *htdocs_dir;
 };
 
 typedef struct switch_directories switch_directories;
@@ -166,7 +167,7 @@ typedef enum {
 	SWITCH_IVR_OPTION_ASYNC = (1 << 0),
 	SWITCH_IVR_OPTION_FILE = (1 << 1)
 } switch_ivr_option_t;
-	
+
 /*!
   \enum switch_core_session_message_types_t
   \brief Possible types of messages for inter-session communication
@@ -676,7 +677,12 @@ typedef switch_status_t (*switch_module_resume_t) (void);
 typedef switch_status_t (*switch_module_status_t) (void);
 typedef switch_status_t (*switch_module_runtime_t) (void);
 typedef switch_status_t (*switch_module_shutdown_t) (void);
-
+typedef struct switch_xml *switch_xml_t;
+typedef struct switch_core_time_duration switch_core_time_duration_t;
+typedef switch_xml_t (*switch_xml_search_function_t)(char *section,
+													 char *tag_name,
+													 char *key_name,
+													 char *key_value);
 
 /* things we don't deserve to know about */
 

@@ -97,21 +97,23 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_jid, globals.jid)
 
 	 static switch_status_t load_config(void)
 {
-	switch_config_t cfg;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	char *var, *val;
 	char *cf = "xmpp_event.conf";
+	switch_xml_t cfg, xml, settings, param;
 	int count = 0;
 
 	memset(&globals, 0, sizeof(globals));
 
-	if (!switch_config_open_file(&cfg, cf)) {
+	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
-	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "settings")) {
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr(param, "name");
+			char *val = (char *) switch_xml_attr(param, "value");
+
 			if (!strcmp(var, "jid")) {
 				set_global_jid(val);
 				count++;
@@ -127,7 +129,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_jid, globals.jid)
 		}
 	}
 
-	switch_config_close_file(&cfg);
+	switch_xml_free(xml);
 
 	if (count == 3) {
 		/* TBD use config to pick what events to bind to */

@@ -1301,15 +1301,14 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
-	switch_config_t cfg;
-	char *var, *val;
 	struct woomera_profile *profile = &default_profile;
 	char *cf = "woomera.conf";
+	switch_xml_t cfg, xml, settings, param, xmlp;
 
 	memset(&globals, 0, sizeof(globals));
 	globals.next_woomera_port = WOOMERA_MIN_PORT;
 
-	if (!switch_config_open_file(&cfg, cf)) {
+	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
@@ -1318,15 +1317,24 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	profile->name = "main";
 	strncpy(profile->dialplan, "default", sizeof(profile->dialplan) - 1);
 
-	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "settings")) {
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr(param, "name");
+			char *val = (char *) switch_xml_attr(param, "value");
+
 			if (!strcmp(var, "noload") && atoi(val)) {
 				return SWITCH_STATUS_TERM;
 			}
 			if (!strcmp(var, "debug")) {
 				globals.debug = atoi(val);
 			}
-		} else if (!strcasecmp(cfg.category, "profile")) {
+		}
+	}
+
+	for (xmlp = switch_xml_child(cfg, "interface"); xmlp; xmlp = xmlp->next) {
+		for (param = switch_xml_child(xmlp, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr(param, "name");
+			char *val = (char *) switch_xml_attr(param, "value");
 			if (!strcmp(var, "audio_ip")) {
 				strncpy(profile->audio_ip, val, sizeof(profile->audio_ip) - 1);
 			} else if (!strcmp(var, "host")) {
@@ -1351,7 +1359,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		}
 	}
 
-	switch_config_close_file(&cfg);
+	switch_xml_free(xml);
 
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {

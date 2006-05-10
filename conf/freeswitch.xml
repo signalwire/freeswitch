@@ -1,0 +1,312 @@
+<?xml version="1.0"?>
+<document type="freeswitch/xml">
+  <section name="configuration">
+    <configuration name="modules.conf" description="Modules">
+      <modules>
+        <!-- Loggers (I'd load these first) -->
+        <load module="mod_console"/>
+        <!-- <load module="mod_syslog"/> -->
+
+	<!-- XML Interfaces -->
+        <!-- <load module="mod_xml_rpc"/> -->
+        
+        <!-- Event Handlers -->
+        <!-- <load module="mod_event_multicast"/> -->
+        <!-- <load module="mod_event_test"/> -->
+        <!-- <load module="mod_zeroconf"/> -->
+        <!-- <load module="mod_xmpp_event"/> -->
+        
+        <!-- Directory Interfaces -->
+        <!-- <load module="mod_ldap"/> -->
+        
+        <!-- Endpoints -->
+        <load module="mod_exosip"/>
+        <!--<load module="mod_iax"/>-->
+        <!-- <load module="mod_portaudio"/> -->
+        <!-- <load module="mod_woomera"/> -->
+        <!-- <load module="mod_wanpipe"/> -->
+        <!-- <load module="mod_dingaling"/> -->
+        
+        <!-- Applications -->
+        <load module="mod_bridgecall"/>
+        <load module="mod_echo"/>
+        <!-- <load module="mod_ivrtest"/> -->
+        <load module="mod_playback"/>
+        <load module="mod_commands"/>
+        <!-- <load module="mod_commands"/> -->
+        
+        <!-- Dialplan Interfaces -->
+        <load module="mod_dialplan_xml"/>
+        <!-- <load module="mod_dialplan_directory"/> -->
+
+        <!-- Codec Interfaces -->
+        <load module="mod_g711"/>
+        <load module="mod_gsm"/>
+        <load module="mod_l16"/>
+        <!-- <load module="mod_speex"/> -->
+        <!-- <load module="mod_ilbc"/> -->
+        
+        <!-- File Format Interfaces -->
+        <load module="mod_sndfile"/>
+        
+        <!-- Timers -->
+        <load module="mod_softtimer"/>
+        
+        <!-- Languages -->
+        <!-- <load module="mod_spidermonkey"/> -->
+        <!-- <load module="mod_perl"/> -->
+        
+        <!-- ASR /TTS -->
+        <!-- <load module="mod_cepstral"/> -->
+        </modules>
+    </configuration>
+  
+    <configuration name="iax.conf" description="IAX Configuration">
+      <settings>
+        <param name="debug" value="0"/>
+        <!-- <param name="ip" value="1.2.3.4"> -->
+        <param name="port" value="4569"/>
+        <param name="dialplan" value="flatfile"/>
+        <param name="codec_prefs" value="PCMU,PCMA,speex,L16"/>
+        <param name="codec_master" value="us"/>
+        <param name="codec_rates" value="8"/>
+      </settings>
+    </configuration>
+  
+    <configuration name="console.conf" description="Console Logger">
+      <!-- pick a file name, a function name or 'all' -->
+      <!-- map as many as you need for specific debugging -->
+      <mappings>
+      <!-- <param name="log_event" value="DEBUG"/> -->
+      <param name="all" value="DEBUG"/>
+      </mappings>
+    </configuration>
+  
+    <configuration name="syslog.conf" description="Syslog Logger">
+    <!-- SYSLOG -->
+    <!-- emerg   - system is unusable  -->
+    <!-- alert   - action must be taken immediately  -->
+    <!-- crit    - critical conditions  -->
+    <!-- err     - error conditions  -->
+    <!-- warning - warning conditions  -->
+    <!-- notice  - normal, but significant, condition  -->
+    <!-- info    - informational message  -->
+    <!-- debug   - debug-level message -->
+      <settings>
+        <param name="ident" value="freeswitch"/>
+        <param name="facility" value="user"/>
+        <param name="format" value="${time} - ${message}"/>
+        <param name="level" value="debug,info,warning-alert"/>
+      </settings>
+    </configuration>
+  
+    <configuration name="exosip.conf" description="Exosip Endpoint">
+      <settings>
+        <param name="port" value="5060"/>
+        <param name="dialplan" value="XML"/>
+        <param name="dtmf_duration" value="100"/>
+        <!-- pick one (default if not specified is 'guess'); -->
+        <param name="rtp-ip" value="guess"/>
+        <!-- <param name-"rtp-ip" value="10.0.0.1"/> -->
+        <!-- leave commented or 0.0.0.0 for all ip -->
+        <!-- <param name="sip-ip" value="127.0.0.1"/> -->
+  
+        <!-- optional ; -->
+        <!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/> -->
+        <!-- <param name="ext-rtp-ip" value="100.101.102.103"/> -->
+  
+        <!-- specify 'myrealm' with certian key -->
+        <!-- use !myrealm! at beginning of url to activate -->
+        <!-- exosip/!myrealm!1000@dest -->
+        <!-- srtp:<param name="myrealm" value="ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"/> -->
+  
+        <!-- VAD choose one (out is a good choice); -->
+        <!-- <param name="vad" value="in"/> -->
+        <!-- <param name="vad" value="out"/> -->
+        <!-- <param name="vad" value="both"/> -->
+      </settings>
+    </configuration>
+  
+    <configuration name="woomera.conf" description="Woomera Endpoint">
+      <settings>
+        <param name="debug" value="0"/>
+      </settings>
+    </configuration>
+  
+    <configuration name="wanpipe.conf" description="Sangoma Wanpipe Endpoint">
+      <settings>
+        <param name="debug" value="1"/>
+        <param name="dialplan" value="XML"/>
+        <param name="mtu" value="160"/>
+        <param name="dtmf_on" value="800"/>
+        <param name="dtmf_off" value="100"/>
+        <param name="supress_dtmf_tone" value="yes"/>
+      </settings>
+      <span>
+        <param name="span" value="1"/>
+        <param name="node" value="cpe"/>
+        <!-- <param name="switch" value="ni2"/> -->
+        <param name="switch" value="dms100"/>
+        <!-- <param name="switch" value="lucent5e"/> -->
+        <!-- <param name="switch" value="att4ess"/> -->
+        <!-- <param name="switch" value="euroisdn"/> -->
+        <!-- <param name="switch" value="gr303eoc"/> -->
+        <!-- <param name="switch" value="gr303tmc"/> -->
+        <param name="dp" value="national"/>
+        <!-- <param name="dp" value="international"/> -->
+        <!-- <param name="dp" value="local"/> -->
+        <!-- <param name="dp" value="private"/> -->
+        <!-- <param name="dp" value="unknown"/> -->
+        <param name="l1" value="ulaw"/>
+        <!-- <param name="l1" value="alaw"/> -->
+        <param name="bchan" value="1-23"/>
+        <param name="dchan" value="24"/>
+        <param name="dialplan" value="XML"/>
+      </span>
+    </configuration>
+  
+    <configuration name="portaudio.conf" description="Soundcard Endpoint">
+      <settings>
+        <param name="debug" value="2"/>
+        <param name="dialplan" value="flatfile"/>
+  
+        <!-- partial string match on something in the name or the device # -->
+        <param name="indev" value="USB"/>
+        <param name="outdev" value="USB"/>
+  
+        <param name="cid_name" value="FreeSwitch"/>
+        <param name="cid_num" value="5555551212"/>
+      </settings>
+    </configuration>
+  
+    <configuration name="zeroconf.conf" description="Zeroconf Event Handler">
+      <settings>
+        <param name="publish" value="yes"/>
+        <param name="browse" value="_sip._udp"/>
+      </settings>
+    </configuration>
+  
+    <configuration name="xmpp_event.conf" description="XMPP Event Handler">
+      <settings>
+        <param name="#debug" value="1"/>
+        <param name="jid" value="freeswitch@my.jabber.com/me"/>
+        <param name="passwd" value="mypass"/>
+        <param name="target_jid" value="freeswitch@reader.org/him"/>
+      </settings>
+    </configuration>
+  
+    <configuration name="dialplan_directory.conf" description="Dialplan Directory">
+      <settings>
+        <param name="directory_name" value="ldap"/>
+        <param name="host" value="ldap.freeswitch.org"/>
+        <param name="dn" value="cn=Manager,dc=freeswitch,dc=org"/>
+        <param name="pass" value="test"/>
+        <param name="base" value="dc=freeswitch,dc=org"/>
+      </settings>
+    </configuration>
+  
+    <configuration name="extensions.conf" description="Regex/XML Dialplan">
+      <!-- any extension starting with a '4' -->
+      <!-- strip the '4' and consider the rest a numeric filename -->
+      <!-- Valid fields in conditions:
+           "dialplan, caller_id_name, ani, ani2, caller_id_number,
+            network_addr, rdnis, destination_number, uuid, source,
+            context, chan_name" -->
+  
+      <context name="default">
+        <extension name="devconf">
+          <condition field="destination_number" expression="888">
+            <action application="bridge" data="exosip/888@66.250.68.194"/>
+  	</condition>
+        </extension>
+        <!-- extensions starting with 4, all the numbers after 4 form a numeric filename
+             continue=true means keep looking for more extensions to match
+             *NOTE* The entire dialplan is parsed ONCE when the call starts 
+  	   so any call info acquired after the various actions cannot
+  	   be taken into consideration. 
+  
+  	   The first match will play a beep and the second one plays
+  	   the desired file.  This is for demo purposes both actions
+  	   could have been under the same <extension> tag as well.
+  	   -->
+        <extension name="playsound1" continue="true">
+          <condition field="source" expression="mod_exosip"/>
+          <condition field="destination_number" expression="^4(\d+)">
+            <action application="playback" data="/var/sounds/beep.gsm"/>
+  	</condition>
+        </extension>
+        <extension name="playsound2">
+          <condition field="source" expression="mod_exosip"/>
+          <condition field="destination_number" expression="^4(\d+)">
+            <action application="playback" data="/root/$1.raw"/>
+  	</condition>
+        </extension>
+        <!-- send everything with a certian RDNIS to Wanpipe ISDN -->
+        <extension name="To PRI">
+          <condition field="rdnis" expression="8881231234"/>
+          <condition field="destination_number" expression="(.*)">
+  	  <action application="bridge" data="wanpipe/a/a/$1"/>
+          </condition>
+        </extension>
+        <!-- Call *MUST* originate from mod_iax and also be dialing ext 9999-->
+        <extension name="9999">
+         <condition field="source" expresion="mod_iax"/>
+         <condition field="destination_number" expression="9999">
+           <action application="playback" data="/var/sounds/beep.gsm"/>
+         </condition>
+        </extension>
+        <!-- Call the FreeSWITCH conference via SIP -->
+        <extension name="FreeSWITCH Conference SIP">
+         <condition field="destination_number" expression="888">
+           <action application="bridge" data="exosip/888@66.250.68.194"/>
+         </condition>
+        </extension>
+        <!-- Call the FreeSWITCH conference via IAX -->
+        <extension name="FreeSWITCH Conference IAX">
+         <condition field="destination_number" expression="8888">
+           <action application="bridge" data="iax/guest@66.250.68.194/888"/>
+         </condition>
+        </extension>
+      </context>
+    </configuration>
+  
+    <configuration name="dingaling.conf" description="XMPP Jingle Endpoint">
+      <settings>
+        <param name="debug" value="0"/>
+        <param name="codec_prefs" value="PCMU"/>
+      </settings>
+      <!-- *NOTE* your resource (after the /) MUST contain the string "talk" (upper or lower case is ok) -->
+      <!-- *NOTE* as of May 2 2006 you must set"auto-login" to"true" if you want to be able to auto-login on startup"/> -->
+      <interface>
+        <param name="name" value="jingle"/>
+        <param name="login" value="myjid@myserver.com/talk"/>
+        <param name="password" value="mypass"/>
+        <param name="dialplan" value="XML"/>
+        <param name="message" value="Jingle all the way"/>
+        <param name="rtp-ip" value="10.0.0.1"/>
+        <param name="auto-login" value="true"/>
+        <!-- or -->
+        <!-- rtp-<param name="ip" value="my_lan_ip"/> -->
+        <!-- ext-rtp-<param name="ip" value="stun:stun.server.com"/> -->
+        <!-- default extension (if one cannot be determined) -->
+        <param name="exten" value="888"/>
+        <!-- VAD choose one -->
+        <!-- <param name="vad" value="in"/> -->
+        <!-- <param name="vad" value="out"/> -->
+        <param name="vad" value="both"/>
+      </interface>
+    </configuration>
+    <configuration name="xml_rpc.conf" description="XML RPC">
+      <settings>
+	<!-- The port where you want to run the http service (default 8080) -->
+	<param name="http_port" value="8080">
+        <!-- The url to a gateway cgi that can generate xml similar to
+        what's in this file only on-the-fly (leave it commented if you dont
+        need it) -->
+        <!-- <param name="gateway_url" value="http://www.server.com/gateway.cgi"/> -->
+    </configuration>
+
+  </section>
+</document>
+        
+  

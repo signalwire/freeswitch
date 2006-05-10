@@ -703,9 +703,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			stat = srtp_unprotect(rtp_session->recv_ctx, &rtp_session->recv_msg.header, &sbytes);
 			if (stat) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-						"error: srtp unprotection failed with code %d%s\n", stat,
-						stat == err_status_replay_fail ? " (replay check failed)" :
-						stat == err_status_auth_fail ? " (auth check failed)" : "");
+								  "error: srtp unprotection failed with code %d%s\n", stat,
+								  stat == err_status_replay_fail ? " (replay check failed)" :
+								  stat == err_status_auth_fail ? " (auth check failed)" : "");
 				return -1;
 			}
 			bytes = sbytes;
@@ -747,16 +747,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if ((switch_time_now() - rtp_session->next_read) > 1000) {
 			do_2833(rtp_session);
 
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
-				/* We're late! We're Late!*/
-				memset(&rtp_session->recv_msg, 0, SWITCH_RTP_CNG_PAYLOAD);
-				rtp_session->recv_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
-				*flags |= SFF_CNG;
-				/* Return a CNG frame */
-				*payload_type = SWITCH_RTP_CNG_PAYLOAD;
-				return SWITCH_RTP_CNG_PAYLOAD;
-			}
-		
 			/* Set the next waypoint */
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK)) {
 				rtp_session->next_read = switch_time_now() + rtp_session->ms_per_packet;
@@ -765,10 +755,17 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
+				/* We're late! We're Late!*/
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {
 					switch_yield(1000);
 					continue;
 				}
+				memset(&rtp_session->recv_msg, 0, SWITCH_RTP_CNG_PAYLOAD);
+				rtp_session->recv_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
+				*flags |= SFF_CNG;
+				/* Return a CNG frame */
+				*payload_type = SWITCH_RTP_CNG_PAYLOAD;
+				return SWITCH_RTP_CNG_PAYLOAD;
 			}
 		}		
 		

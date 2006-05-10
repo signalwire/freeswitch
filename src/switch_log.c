@@ -51,10 +51,10 @@ struct switch_log_binding {
 	struct switch_log_binding *next;
 };
 
-typedef struct switch_log_binding switch_log_binding;
+typedef struct switch_log_binding switch_log_binding_t;
 
 static switch_memory_pool_t *LOG_POOL = NULL;
-static switch_log_binding *BINDINGS = NULL;
+static switch_log_binding_t *BINDINGS = NULL;
 static switch_mutex_t *BINDLOCK = NULL;
 static switch_queue_t *LOG_QUEUE = NULL;
 static int8_t THREAD_RUNNING = 0;
@@ -84,7 +84,7 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 
 SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t function, switch_log_level_t level)
 {
-	switch_log_binding *binding = NULL, *ptr = NULL;
+	switch_log_binding_t *binding = NULL, *ptr = NULL;
 	assert(function != NULL);
 
 	if (!(binding = switch_core_alloc(LOG_POOL, sizeof(*binding)))) {
@@ -121,7 +121,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 	for(;;) {
 		void *pop = NULL;
 		switch_log_node_t *node = NULL;
-		switch_log_binding *binding;
+		switch_log_binding_t *binding;
 		
 		if (switch_queue_pop(LOG_QUEUE, &pop) != SWITCH_STATUS_SUCCESS) {
 			break;

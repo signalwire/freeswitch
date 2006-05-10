@@ -652,6 +652,7 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 
 	}
 
+
 	switch_clear_flag(tech_pvt, TFLAG_READING);
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
@@ -1603,22 +1604,23 @@ static void log_event(eXosip_event_t * je)
 
 static int config_exosip(int reload)
 {
-	switch_config_t cfg;
-	char *var, *val;
 	char *cf = "exosip.conf";
+	switch_xml_t cfg, xml, settings, param;
 
 	globals.bytes_per_frame = DEFAULT_BYTES_PER_FRAME;
 
-
-	if (!switch_config_open_file(&cfg, cf)) {
+	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
 	globals.dtmf_duration = 100;
 
-	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "settings")) {
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr(param, "name");
+			char *val = (char *) switch_xml_attr(param, "value");
+
 			if (!strcmp(var, "debug")) {
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "port")) {
@@ -1663,6 +1665,7 @@ static int config_exosip(int reload)
 			}
 		}
 	}
+	
 
 	if (!globals.rtpip) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting ip to 'guess'\n");
@@ -1677,9 +1680,7 @@ static int config_exosip(int reload)
 		globals.port = 5060;
 	}
 	
-	
-
-	switch_config_close_file(&cfg);
+	switch_xml_free(xml);
 
 	if (!globals.dialplan) {
 		set_global_dialplan("default");

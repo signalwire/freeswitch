@@ -1,4 +1,35 @@
-/* switch_xml.c
+/* 
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthmct@yahoo.com>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * 
+ * Anthony Minessale II <anthmct@yahoo.com>
+ *
+ *
+ * switch_xml.c -- XML PARSER
+ *
+ * Derived from EZXML http://ezxml.sourceforge.net
+ * Original Copyright
  *
  * Copyright 2004, 2005 Aaron Voisine <aaron@voisine.org>
  *
@@ -29,7 +60,6 @@
 #include <sys/mman.h>
 #endif
 
-
 #define SWITCH_XML_WS   "\t\r\n "  // whitespace
 #define SWITCH_XML_ERRL 128        // maximum error string length
 
@@ -52,8 +82,59 @@ struct switch_xml_root {       // additional data for the root tag
 
 char *SWITCH_XML_NIL[] = { NULL }; // empty, null terminated array of strings
 
+struct switch_xml_binding {
+	switch_xml_search_function_t function;
+	struct switch_xml_binding *next;
+};
+
+typedef struct switch_xml_binding switch_xml_binding_t;
+static switch_xml_binding_t *BINDINGS = NULL;
+static switch_xml_t MAIN_XML_ROOT = NULL;
+static switch_memory_pool_t *XML_MEMORY_POOL;
+static switch_mutex_t *XML_LOCK;
+static switch_thread_rwlock_t *RWLOCK;
+
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function)
+{
+	switch_xml_binding_t *binding = NULL, *ptr = NULL;
+	assert(function != NULL);
+
+	if (!(binding = switch_core_alloc(XML_MEMORY_POOL, sizeof(*binding)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	binding->function = function;
+
+	switch_mutex_lock(XML_LOCK);
+	for (ptr = BINDINGS; ptr && ptr->next; ptr = ptr->next);
+
+	if (ptr) {
+		ptr->next = binding;
+	} else {
+		BINDINGS = binding;
+	}
+	switch_mutex_unlock(XML_LOCK);
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, char *childname, char *attrname, char *value)
+{
+	switch_xml_t p = NULL;
+
+	for (p = switch_xml_child(node, childname); p; p = p->next) {
+		const char *aname = switch_xml_attr(p, attrname);
+		if (!strcasecmp(aname, value)) {
+			break;
+		}
+	}
+
+	return p;
+}
+
 // returns the first child tag with the given name or NULL if not found
-switch_xml_t switch_xml_child(switch_xml_t xml, const char *name)
+SWITCH_DECLARE(switch_xml_t) switch_xml_child(switch_xml_t xml, const char *name)
 {
     xml = (xml) ? xml->child : NULL;
     while (xml && strcmp(name, xml->name)) xml = xml->sibling;
@@ -69,7 +150,7 @@ switch_xml_t switch_xml_idx(switch_xml_t xml, int idx)
 }
 
 // returns the value of the requested tag attribute or NULL if not found
-const char *switch_xml_attr(switch_xml_t xml, const char *attr)
+SWITCH_DECLARE(const char *) switch_xml_attr(switch_xml_t xml, const char *attr)
 {
     int i = 0, j = 1;
     switch_xml_root_t root = (switch_xml_root_t)xml;
@@ -104,7 +185,7 @@ static switch_xml_t switch_xml_vget(switch_xml_t xml, va_list ap)
 // title = switch_xml_get(library, "shelf", 0, "book", 2, "title", -1);
 // This retrieves the title of the 3rd book on the 1st shelf of library.
 // Returns NULL if not found.
-switch_xml_t switch_xml_get(switch_xml_t xml, ...)
+SWITCH_DECLARE(switch_xml_t) switch_xml_get(switch_xml_t xml, ...)
 {
     va_list ap;
     switch_xml_t r;
@@ -117,7 +198,7 @@ switch_xml_t switch_xml_get(switch_xml_t xml, ...)
 
 // returns a null terminated array of processing instructions for the given
 // target
-const char **switch_xml_pi(switch_xml_t xml, const char *target)
+SWITCH_DECLARE(const char **) switch_xml_pi(switch_xml_t xml, const char *target)
 {
     switch_xml_root_t root = (switch_xml_root_t)xml;
     int i = 0;
@@ -135,7 +216,7 @@ static switch_xml_t switch_xml_err(switch_xml_root_t root, char *s, const char *
     int line = 1;
     char *t, fmt[SWITCH_XML_ERRL];
     
-    for (t = root->s; t < s; t++) if (*t == '\n') line++;
+    for (t = root->s; t && t < s; t++) if (*t == '\n') line++;
     snprintf(fmt, SWITCH_XML_ERRL, "[error near line %d]: %s", line, err);
 
     va_start(ap, err);
@@ -463,7 +544,7 @@ static void switch_xml_free_attr(char **attr) {
 }
 
 // parse the given xml string and return an switch_xml structure
-switch_xml_t switch_xml_parse_str(char *s, switch_size_t len)
+SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 {
     switch_xml_root_t root = (switch_xml_root_t)switch_xml_new(NULL);
     char q, e, *d, **attr, **a = NULL; // initialize a to avoid compile warning
@@ -598,7 +679,7 @@ switch_xml_t switch_xml_parse_str(char *s, switch_size_t len)
 // Wrapper for switch_xml_parse_str() that accepts a file stream. Reads the entire
 // stream into memory and then parses it. For xml files, use switch_xml_parse_file()
 // or switch_xml_parse_fd()
-switch_xml_t switch_xml_parse_fp(FILE *fp)
+SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE *fp)
 {
     switch_xml_root_t root;
     switch_size_t l, len = 0;
@@ -619,7 +700,7 @@ switch_xml_t switch_xml_parse_fp(FILE *fp)
 // A wrapper for switch_xml_parse_str() that accepts a file descriptor. First
 // attempts to mem map the file. Failing that, reads the file into memory.
 // Returns NULL on failure.
-switch_xml_t switch_xml_parse_fd(int fd)
+SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 {
     switch_xml_root_t root;
     struct stat st;
@@ -649,7 +730,7 @@ switch_xml_t switch_xml_parse_fd(int fd)
 }
 
 // a wrapper for switch_xml_parse_fd that accepts a file name
-switch_xml_t switch_xml_parse_file(const char *file)
+SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 {
     int fd = open(file, O_RDONLY, 0);
     switch_xml_t xml = switch_xml_parse_fd(fd);
@@ -657,6 +738,162 @@ switch_xml_t switch_xml_parse_file(const char *file)
     if (fd >= 0) close(fd);
     return xml;
 }
+
+
+SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
+												  char *tag_name,
+												  char *key_name,
+												  char *key_value,
+												  switch_xml_t *root,
+												  switch_xml_t *node)
+{
+	switch_xml_t conf = NULL;
+	switch_xml_t tag = NULL;
+	switch_xml_t xml = NULL;
+	switch_xml_binding_t *binding;
+	
+	switch_mutex_lock(XML_LOCK);
+	for(binding = BINDINGS; binding; binding = binding->next) {
+		if ((xml = binding->function(section, tag_name, key_name, key_value))) {
+			const char *err = NULL;
+			
+			err = switch_xml_error(xml);
+			if (switch_strlen_zero(err)) {
+				if ((conf = switch_xml_find_child(xml, "section", "name", "result"))) {
+					switch_xml_t p;
+					const char *aname;
+
+					if ((p = switch_xml_child(conf, "result"))) {
+						aname = switch_xml_attr(p, "status");
+						if (aname && !strcasecmp(aname, "not found")) {
+							switch_xml_free(xml);
+							xml = NULL;
+							continue;
+						}
+					}
+				}
+				break;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error[%s]\n", err);
+				switch_xml_free(xml);
+				xml = NULL;
+			}
+		}
+	}
+	switch_mutex_unlock(XML_LOCK);
+
+	for(;;) {
+		if (!xml) {
+			if (!(xml = MAIN_XML_ROOT)) {
+				*node = NULL;
+				*root = NULL;
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+
+		if ((conf = switch_xml_find_child(xml, "section", "name", section)) && 
+			(tag = switch_xml_find_child(conf, tag_name, key_name, key_value))) {
+			*node = tag;
+			*root = xml;
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			switch_xml_free(xml);
+			xml = NULL;
+			*node = NULL;
+			*root = NULL;
+		}
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
+{
+	switch_thread_rwlock_rdlock(RWLOCK);
+	return MAIN_XML_ROOT;
+}
+
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload)
+{
+	char path_buf[1024];
+	uint8_t hasmain = 0;
+
+	switch_mutex_lock(XML_LOCK);
+
+	if (MAIN_XML_ROOT) {
+		switch_xml_t xml;
+		hasmain++;
+
+		if (!reload) {
+			switch_mutex_unlock(XML_LOCK);
+			return switch_xml_root();
+		}
+		xml = MAIN_XML_ROOT;
+		MAIN_XML_ROOT = NULL;
+		switch_thread_rwlock_wrlock(RWLOCK);
+		switch_xml_free(xml);
+	}
+
+	snprintf(path_buf, sizeof(path_buf), "%s/%s", SWITCH_GLOBAL_dirs.conf_dir, "freeswitch.xml");
+	if ((MAIN_XML_ROOT = switch_xml_parse_file(path_buf))) {
+		switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open XML Root!\n");
+	}
+
+	if (hasmain) {
+		switch_thread_rwlock_unlock(RWLOCK);
+	}
+	switch_mutex_unlock(XML_LOCK);
+	return switch_xml_root();
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool)
+{
+	switch_xml_t xml;
+	XML_MEMORY_POOL = pool;
+	switch_mutex_init(&XML_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
+	switch_thread_rwlock_create(&RWLOCK, XML_MEMORY_POOL);
+
+	assert(pool != NULL);
+
+	if((xml=switch_xml_open_root(FALSE))) {
+		switch_xml_free(xml);
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		return SWITCH_STATUS_FALSE;
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
+{
+	if (MAIN_XML_ROOT) {
+		switch_xml_t xml = MAIN_XML_ROOT;
+		MAIN_XML_ROOT = NULL;
+		switch_xml_free(xml);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(char *file_path, switch_xml_t *node)
+{
+	switch_xml_t xml = NULL, cfg = NULL;
+
+	*node = NULL;
+
+	assert(MAIN_XML_ROOT != NULL);
+
+	if (switch_xml_locate("configuration", "configuration", "name", file_path, &xml, &cfg) == SWITCH_STATUS_SUCCESS) {
+		*node = cfg;
+	}
+
+	return xml;	
+	
+}
+
 
 // Encodes ampersand sequences appending the results to *dst, reallocating *dst
 // if length excedes max. a is non-zero for attribute encoding. Returns *dst
@@ -690,7 +927,7 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 // Recursively converts each tag to xml appending it to *s. Reallocates *s if
 // its length excedes max. start is the location of the previous tag in the
 // parent tag's character content. Returns *s.
-static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max,
+SWITCH_DECLARE(static char *) switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max,
                     switch_size_t start, char ***attr)
 {
     int i, j;
@@ -787,7 +1024,17 @@ void switch_xml_free(switch_xml_t xml)
     int i, j;
     char **a, *s;
 
-    if (! xml) return;
+
+    if (! xml ) return;
+
+	if (switch_test_flag(xml, SWITCH_XML_ROOT)) {
+		switch_thread_rwlock_unlock(RWLOCK);
+	}
+
+	if (xml == MAIN_XML_ROOT) {
+		return;
+	} 
+
     switch_xml_free(xml->child);
     switch_xml_free(xml->ordered);
 
@@ -824,14 +1071,14 @@ void switch_xml_free(switch_xml_t xml)
 }
 
 // return parser error message or empty string if none
-const char *switch_xml_error(switch_xml_t xml)
+SWITCH_DECLARE(const char *) switch_xml_error(switch_xml_t xml)
 {
     while (xml && xml->parent) xml = xml->parent; // find root tag
     return (xml) ? ((switch_xml_root_t)xml)->err : "";
 }
 
 // returns a new empty switch_xml structure with the given root tag name
-switch_xml_t switch_xml_new(const char *name)
+SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 {
     static char *ent[] = { "lt;", "&#60;", "gt;", "&#62;", "quot;", "&#34;",
                            "apos;", "&#39;", "amp;", "&#38;", NULL };
@@ -904,7 +1151,7 @@ switch_xml_t switch_xml_set_txt(switch_xml_t xml, const char *txt)
 
 // Sets the given tag attribute or adds a new attribute if not found. A value
 // of NULL will remove the specified attribute.
-void switch_xml_set_attr(switch_xml_t xml, const char *name, const char *value)
+SWITCH_DECLARE(void) switch_xml_set_attr(switch_xml_t xml, const char *name, const char *value)
 {
     int l = 0, c;
 
@@ -944,14 +1191,14 @@ void switch_xml_set_attr(switch_xml_t xml, const char *name, const char *value)
 }
 
 // sets a flag for the given tag and returns the tag
-switch_xml_t switch_xml_set_flag(switch_xml_t xml, short flag)
+SWITCH_DECLARE(switch_xml_t) switch_xml_set_flag(switch_xml_t xml, switch_xml_flag_t flag)
 {
     if (xml) xml->flags |= flag;
     return xml;
 }
 
 // removes a tag along with all its subtags
-void switch_xml_remove(switch_xml_t xml)
+SWITCH_DECLARE(void) switch_xml_remove(switch_xml_t xml)
 {
     switch_xml_t cur;
 
@@ -984,20 +1231,4 @@ void switch_xml_remove(switch_xml_t xml)
     switch_xml_free(xml);
 }
 
-#ifdef SWITCH_XML_TEST // test harness
-int main(int argc, char **argv)
-{
-    switch_xml_t xml;
-    char *s;
-    int i;
 
-    if (argc != 2) return fprintf(stderr, "usage: %s xmlfile\n", argv[0]);
-
-    xml = switch_xml_parse_file(argv[1]);
-    printf("%s\n", (s = switch_xml_toxml(xml)));
-    free(s);
-    i = fprintf(stderr, "%s", switch_xml_error(xml));
-    switch_xml_free(xml);
-    return (i) ? 1 : 0;
-}
-#endif // SWITCH_XML_TEST

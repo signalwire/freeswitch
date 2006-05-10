@@ -616,6 +616,10 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 		caller_profile->chan_name = switch_core_session_strdup(channel->session, channel->name);
 	}
 
+	if (!caller_profile->context) {
+		caller_profile->chan_name = switch_core_session_strdup(channel->session, "default");
+	}
+
 	if (!channel->caller_profile) {
 		switch_event_t *event;
 
@@ -773,7 +777,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 {
 	assert(channel != NULL);
 
-	if (!channel->times->hungup) {
+	if (channel->times && !channel->times->hungup) {
 		channel->times->hungup = switch_time_now();
 	}
 

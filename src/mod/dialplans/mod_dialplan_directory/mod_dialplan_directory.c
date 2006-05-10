@@ -54,16 +54,19 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_base, globals.base)
 static void load_config(void)
 {
 	char *cf = "dialplan_directory.conf";
-	switch_config_t cfg;
-	char *var, *val;
+	switch_xml_t cfg, xml, settings, param;
 
-	if (!switch_config_open_file(&cfg, cf)) {
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return;
 	}
 
-	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "settings")) {
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr(param, "name");
+			char *val = (char *) switch_xml_attr(param, "value");
+
 			if (!strcmp(var, "directory_name") && val) {
 				set_global_directory_name(val);
 			} else if (!strcmp(var, "directory_name") && val) {
@@ -79,7 +82,7 @@ static void load_config(void)
 			}
 		}
 	}
-	switch_config_close_file(&cfg);	
+	switch_xml_free(xml);
 }
 
 static switch_caller_extension_t *directory_dialplan_hunt(switch_core_session_t *session)

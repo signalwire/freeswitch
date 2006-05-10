@@ -1284,23 +1284,26 @@ static void pri_thread_launch(struct sangoma_pri *spri)
 
 static switch_status_t config_wanpipe(int reload)
 {
-	switch_config_t cfg;
-	char *var, *val;
 	char *cf = "wanpipe.conf";
 	int current_span = 0;
+	switch_xml_t cfg, xml, settings, param, span;
 
 	globals.mtu = DEFAULT_MTU;
 	globals.dtmf_on = 150;
 	globals.dtmf_off = 50;
 
 
-	if (!switch_config_open_file(&cfg, cf)) {
+	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
 
-	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "settings")) {
+
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr(param, "name");
+			char *val = (char *) switch_xml_attr(param, "value");
+
 			if (!strcmp(var, "debug")) {
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "mtu")) {
@@ -1312,7 +1315,15 @@ static switch_status_t config_wanpipe(int reload)
 			} else if (!strcmp(var, "supress_dtmf_tone")) {
 				globals.supress_dtmf_tone = switch_true(val);
 			}
-		} else if (!strcasecmp(cfg.category, "span")) {
+		}
+	}
+
+	
+	for (span = switch_xml_child(cfg, "span"); span; span = span->next) {
+		for (param = switch_xml_child(span, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr(param, "name");
+			char *val = (char *) switch_xml_attr(param, "value");
+
 			if (!strcmp(var, "span")) {
 				current_span = atoi(val);
 				if (current_span <= 0 || current_span > MAX_SPANS) {
@@ -1382,7 +1393,7 @@ static switch_status_t config_wanpipe(int reload)
 			}
 		}
 	}
-	switch_config_close_file(&cfg);
+	switch_xml_free(xml);
 
 	if (!globals.dialplan) {
 		set_global_dialplan("default");

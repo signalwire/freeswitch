@@ -90,6 +90,47 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
 	return profile;
 }
 
+SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *caller_profile, char *name)
+{
+	if (!strcasecmp(name, "dialplan")) {
+		return caller_profile->dialplan;
+	}
+	if (!strcasecmp(name, "caller_id_name")) {
+		return caller_profile->caller_id_name;
+	}
+	if (!strcasecmp(name, "ani")) {
+		return caller_profile->ani;
+	}
+	if (!strcasecmp(name, "ani2")) {
+		return caller_profile->ani2;
+	}
+	if (!strcasecmp(name, "caller_id_number")) {
+		return caller_profile->caller_id_number;
+	}
+	if (!strcasecmp(name, "network_addr")) {
+		return caller_profile->network_addr;
+	}
+	if (!strcasecmp(name, "rdnis")) {
+		return caller_profile->rdnis;
+	}
+	if (!strcasecmp(name, "destination_number")) {
+		return caller_profile->destination_number;
+	}
+	if (!strcasecmp(name, "uuid")) {
+		return caller_profile->uuid;
+	}
+	if (!strcasecmp(name, "source")) {
+		return caller_profile->source;
+	}
+	if (!strcasecmp(name, "context")) {
+		return caller_profile->context;
+	}
+	if (!strcasecmp(name, "chan_name")) {
+		return caller_profile->chan_name;
+	}
+	return NULL;
+}
+
 SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_t *caller_profile, char *prefix,
 														  switch_event_t *event)
 {

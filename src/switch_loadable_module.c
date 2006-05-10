@@ -436,8 +436,8 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	apr_dir_t *module_dir_handle = NULL;
 	apr_int32_t finfo_flags = APR_FINFO_DIRENT | APR_FINFO_TYPE | APR_FINFO_NAME;
 	char *cf = "modules.conf";
-	char *var, *val;
-	switch_config_t cfg;
+	char *pcf = "post_load_modules.conf";
+	switch_xml_t cfg, xml;
 	unsigned char all = 0;
 	unsigned int count = 0;
 
@@ -471,49 +471,57 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_core_hash_init(&loadable_modules.directory_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
 
+	if ((xml = switch_xml_open_cfg(cf, &cfg))) {
+		switch_xml_t mods, ld;
 
-	if (switch_config_open_file(&cfg, cf)) {
-		while (switch_config_next_pair(&cfg, &var, &val)) {
-			count++;
-
-			if (!strcasecmp(cfg.category, "modules")) {
-				if (!strcasecmp(var, "load")) {
-					if (!strcasecmp(val, "all")) {
-						if (count == 1) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading all modules.\n");
-							all = 1;
-							break;
-						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "This option must be the first one to work.\n");
-						}
-					} else {
-						if (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
-							continue;
-						}
-						switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val);
-					}
+		if ((mods = switch_xml_child(cfg, "modules"))) {
+			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
+				const char *val = switch_xml_attr(ld, "module");
+				if (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
+					continue;
 				}
+				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val);
+				count++;
 			}
 		}
-		switch_config_close_file(&cfg);
+		switch_xml_free(xml);
+		
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "open of %s failed\n", cf);
-		all = 1;
 	}
 
-	if (!count && !all) {
-		all = 1;
+	if ((xml = switch_xml_open_cfg(pcf, &cfg))) {
+		switch_xml_t mods, ld;
+
+		if ((mods = switch_xml_child(cfg, "modules"))) {
+			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
+				const char *val = switch_xml_attr(ld, "module");
+				if (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
+					continue;
+				}
+				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val);
+				count++;
+			}
+		}
+		switch_xml_free(xml);
+		
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "open of %s failed\n", pcf);
 	}
 
+	if (!count) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "No modules loaded assuming 'load all'\n");
+		all = 1;
+	}
+	
 	if (all) {
 		if (apr_dir_open(&module_dir_handle, SWITCH_GLOBAL_dirs.mod_dir, loadable_modules.pool) != APR_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't open directory: %s\n", SWITCH_GLOBAL_dirs.mod_dir);
 			return SWITCH_STATUS_GENERR;
 		}
-	}
 
-	if (all) {
 		while (apr_dir_read(&finfo, finfo_flags, module_dir_handle) == APR_SUCCESS) {
 			const char *fname = finfo.fname;
 
@@ -537,6 +545,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 		}
 		apr_dir_close(module_dir_handle);
 	}
+
 
 	return SWITCH_STATUS_SUCCESS;
 }

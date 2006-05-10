@@ -14,9 +14,8 @@ codecs/mod_gsm
 #codecs/mod_ilbc
 codecs/mod_l16
 #codecs/mod_speex
-dialplans/mod_dialplan_flatfile
 #dialplans/mod_dialplan_directory
-dialplans/mod_pcre
+dialplans/mod_dialplan_xml
 #directories/mod_ldap
 endpoints/mod_exosip
 endpoints/mod_iax
@@ -33,5 +32,4 @@ formats/mod_sndfile
 languages/mod_perl
 #languages/mod_spidermonkey
 timers/mod_softtimer
-
-
+#xml_int/mod_xml_rpc
