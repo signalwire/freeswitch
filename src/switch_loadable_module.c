@@ -671,11 +671,23 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_
 {
 	switch_api_interface_t *api;
 	switch_status_t status;
-	switch_event_t *event;
 
 	assert(stream != NULL);
 	assert(stream->data != NULL);
 	assert(stream->write_function != NULL);
+
+	if (!stream->event) {
+		switch_event_create(&stream->event, SWITCH_EVENT_API);
+	}
+
+	if (stream->event) {
+		if (cmd) {
+			switch_event_add_header(stream->event, SWITCH_STACK_BOTTOM, "API-Command", cmd);
+		}
+		if (arg) {
+			switch_event_add_header(stream->event, SWITCH_STACK_BOTTOM, "API-Command-Arguement", arg);
+		}
+	}
 
 	if ((api = switch_loadable_module_get_api_interface(cmd)) != 0) {
 		status = api->function(arg, stream);
@@ -685,15 +697,8 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_
 		//snprintf(retbuf, len, "INVALID COMMAND [%s]", cmd);
 	}
 
-	if (switch_event_create(&event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
-		if (cmd) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "API-Command", cmd);
-		}
-		if (arg) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "API-Command-Arguement", arg);
-		}
-		//switch_event_add_body(event, retbuf);
-		switch_event_fire(&event);
+	if (stream->event) {
+		switch_event_fire(&stream->event);
 	}
 
 

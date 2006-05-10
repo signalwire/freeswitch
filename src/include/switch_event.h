@@ -230,6 +230,15 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *own
 SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char *buf, switch_size_t buflen, char *fmt, ...);
 
 /*!
+  \brief Render a XML representation of an event sutable for printing or network transport
+  \param event the event to render
+  \param fmt optional body of the event (varargs see standard sprintf family)
+  \return the xml object if the operation was successful
+  \note the body supplied by this function will supersede an existing body the event may have
+*/
+SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, char *fmt, ...);
+
+/*!
   \brief Determine if the event system has been initilized
   \return SWITCH_STATUS_SUCCESS if the system is running
 */

@@ -68,6 +68,7 @@ struct switch_stream_handle {
 	void *end;
 	switch_size_t data_size;
 	switch_size_t data_len;
+	switch_event_t *event;
 };
 
 /*! \brief Node in which to store custom outgoing channel callback hooks */

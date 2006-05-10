@@ -39,14 +39,32 @@ static const char modname[] = "mod_event_test";
 static void event_handler(switch_event_t *event)
 {
 	char buf[1024];
+	switch_xml_t xml;
+	char *xmlstr = "N/A";
+	uint8_t dofree = 0;
 
 	switch (event->event_id) {
 	case SWITCH_EVENT_LOG:
 		return;
 	default:
 		switch_event_serialize(event, buf, sizeof(buf), NULL);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nEVENT\n--------------------------------\n%s\n", buf);
+		if ((xml = switch_event_xmlize(event, NULL))) {
+			xmlstr = switch_xml_toxml(xml);
+			dofree++;
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nEVENT (text version)\n--------------------------------\n%s", buf);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nEVENT (xml version)\n--------------------------------\n%s\n", xmlstr);
 		break;
+	}
+
+	if (dofree) {
+		if (xml) {
+			switch_xml_free(xml);
+		}
+		if (xmlstr) {
+			free(xmlstr);
+		}
 	}
 }
 

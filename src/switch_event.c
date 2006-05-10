@@ -538,6 +538,78 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 }
 
 
+static switch_xml_t add_xml_header(switch_xml_t xml, char *name, char *value, int offset)
+{
+	switch_xml_t header = NULL;
+
+	if ((header = switch_xml_add_child_d(xml, "header", offset))) {
+		switch_xml_set_attr_d(header, "name", name);
+		switch_xml_set_attr_d(header, "value", value);	
+	}
+
+	return header;
+}
+
+SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, char *fmt, ...)
+{
+	switch_event_header_t *hp;
+	char *data = NULL, *body = NULL;
+	int ret = 0;
+	switch_xml_t xml = NULL;
+	uint32_t off = 0;
+	va_list ap;
+
+	if (!(xml = switch_xml_new("event"))) {
+		return xml;
+	}
+
+	if (fmt) {
+		va_start(ap, fmt);
+#ifdef HAVE_VASPRINTF
+		ret = vasprintf(&data, fmt, ap);
+#else
+		data = (char *) malloc(2048);
+		vsnprintf(data, 2048, fmt, ap);
+#endif
+		va_end(ap);
+		if (ret == -1) {
+			return NULL;
+		}
+	}
+
+	
+	for (hp = event->headers; hp; hp = hp->next) {
+		add_xml_header(xml, hp->name, hp->value, off++);
+	}
+
+	if (data) {
+		body = data;
+	} else if (event->body) {
+		body = event->body;
+	}
+
+	if (body) {
+		int blen = (int) strlen(body);
+		char blena[25];
+		snprintf(blena, sizeof(blena), "%d", blen);
+		if (blen) {
+			switch_xml_t xbody = NULL;
+
+			add_xml_header(xml, "Content-Length", blena, off++);
+			if ((xbody = switch_xml_add_child_d(xml, "body", 0))) {
+				switch_xml_set_txt_d(xbody, body);
+			}
+		}
+	}
+	
+	if (data) {
+		free(data);
+	}
+
+	return xml;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *func, int line, switch_event_t **event,
 														 void *user_data)
 {

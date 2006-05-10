@@ -208,8 +208,21 @@ abyss_bool HandleHook(TSession *r)
     char *m = "text/html";
 	switch_stream_handle_t stream = {0};
 	char *command;
+
 	if(strncmp(r->uri, "/api/", 5)) {
 		return FALSE;
+	}
+
+	if (switch_event_create(&stream.event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
+		if (r->uri) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-URI", r->uri);
+		if (r->query) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", r->query);
+		if (r->host) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-HOST", r->host);
+		if (r->from) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-FROM", r->from);
+		if (r->useragent) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-USER-AGENT", r->useragent);
+		if (r->referer) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-REFERER", r->referer);
+		if (r->requestline) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-REQUESTLINE", r->requestline);
+		if (r->user) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-USER", r->user);
+		if (r->port) switch_event_add_header(stream.event, SWITCH_STACK_BOTTOM, "HTTP-PORT", "%u", r->port);
 	}
 
 	command = r->uri + 5;
