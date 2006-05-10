@@ -745,7 +745,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
 												  char *key_name,
 												  char *key_value,
 												  switch_xml_t *root,
-												  switch_xml_t *node)
+												  switch_xml_t *node,
+												  char *params)
 {
 	switch_xml_t conf = NULL;
 	switch_xml_t tag = NULL;
@@ -756,7 +757,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
 	switch_mutex_lock(XML_LOCK);
 
 	for(binding = BINDINGS; binding; binding = binding->next) {
-		if ((xml = binding->function(section, tag_name, key_name, key_value))) {
+		if ((xml = binding->function(section, tag_name, key_name, key_value, params))) {
 			const char *err = NULL;
 			
 			err = switch_xml_error(xml);
@@ -883,7 +884,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(char *file_path, switch_xml_t *node)
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(char *file_path, switch_xml_t *node, char *params)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 
@@ -891,7 +892,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(char *file_path, switch_xml_t *
 
 	assert(MAIN_XML_ROOT != NULL);
 
-	if (switch_xml_locate("configuration", "configuration", "name", file_path, &xml, &cfg) == SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate("configuration", "configuration", "name", file_path, &xml, &cfg, params) == SWITCH_STATUS_SUCCESS) {
 		*node = cfg;
 	}
 

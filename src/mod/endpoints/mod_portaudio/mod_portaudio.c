@@ -115,11 +115,11 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	 static int dump_info(void);
 	 static switch_status_t load_config(void);
 	 static int get_dev_by_name(char *name, int in);
-	 static switch_status_t place_call(char *dest, char *out, size_t outlen);
-	 static switch_status_t hup_call(char *callid, char *out, size_t outlen);
-	 static switch_status_t call_info(char *callid, char *out, size_t outlen);
-	 static switch_status_t send_dtmf(char *callid, char *out, size_t outlen);
-	 static switch_status_t answer_call(char *callid, char *out, size_t outlen);
+	 static switch_status_t place_call(char *dest, switch_stream_handle_t *stream);
+	 static switch_status_t hup_call(char *callid, switch_stream_handle_t *stream);
+	 static switch_status_t call_info(char *callid, switch_stream_handle_t *stream);
+	 static switch_status_t send_dtmf(char *callid, switch_stream_handle_t *stream);
+	 static switch_status_t answer_call(char *callid, switch_stream_handle_t *stream);
 
 /* 
    State methods they get called when the state changes to the specific state 
@@ -571,7 +571,7 @@ static switch_status_t load_config(void)
 
 	memset(&globals, 0, sizeof(globals));
 
-	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
@@ -794,7 +794,7 @@ static switch_status_t engage_device(struct private_object *tech_pvt)
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t place_call(char *dest, char *out, size_t outlen)
+static switch_status_t place_call(char *dest, switch_stream_handle_t *stream)
 {
 	switch_core_session_t *session;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -804,8 +804,8 @@ static switch_status_t place_call(char *dest, char *out, size_t outlen)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	strncpy(out, "FAIL", outlen - 1);
-
+	stream->write_function(stream, "FAIL");
+	
 	if ((session = switch_core_session_request(&channel_endpoint_interface, NULL)) != 0) {
 		struct private_object *tech_pvt;
 		switch_channel_t *channel;
@@ -838,14 +838,14 @@ static switch_status_t place_call(char *dest, char *out, size_t outlen)
 		if ((status = engage_device(tech_pvt)) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_set_state(channel, CS_INIT);
 			switch_core_session_thread_launch(tech_pvt->session);
-			snprintf(out, outlen, "SUCCESS:%s:%s", tech_pvt->call_id, switch_core_session_get_uuid(tech_pvt->session));
+			stream->write_function(stream, "SUCCESS:%s:%s", tech_pvt->call_id, switch_core_session_get_uuid(tech_pvt->session));
 		}
 	}
 	return status;
 }
 
 
-static switch_status_t hup_call(char *callid, char *out, size_t outlen)
+static switch_status_t hup_call(char *callid, switch_stream_handle_t *stream)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel = NULL;
@@ -869,7 +869,7 @@ static switch_status_t hup_call(char *callid, char *out, size_t outlen)
 			i++;
 		}
 
-		snprintf(out, outlen, "HUNGUP: %d", i);
+		stream->write_function(stream, "HUNGUP: %d", i);
 
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -880,16 +880,16 @@ static switch_status_t hup_call(char *callid, char *out, size_t outlen)
 		assert(channel != NULL);
 
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-		strncpy(out, "OK", outlen - 1);
+		stream->write_function(stream, "OK");
 	} else {
-		strncpy(out, "NO SUCH CALL", outlen - 1);
+		stream->write_function(stream, "NO SUCH CALL");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static switch_status_t send_dtmf(char *callid, char *out, size_t outlen)
+static switch_status_t send_dtmf(char *callid, switch_stream_handle_t *stream)
 {
 	struct private_object *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
@@ -905,15 +905,15 @@ static switch_status_t send_dtmf(char *callid, char *out, size_t outlen)
 		channel = switch_core_session_get_channel(tech_pvt->session);
 		assert(channel != NULL);
 		switch_channel_queue_dtmf(channel, dtmf);
-		strncpy(out, "OK", outlen - 1);
+		stream->write_function(stream, "OK");
 	} else {
-		strncpy(out, "NO SUCH CALL", outlen - 1);
+		stream->write_function(stream, "NO SUCH CALL");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t answer_call(char *callid, char *out, size_t outlen)
+static switch_status_t answer_call(char *callid, switch_stream_handle_t *stream)
 {
 	struct private_object *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
@@ -924,20 +924,20 @@ static switch_status_t answer_call(char *callid, char *out, size_t outlen)
 		switch_set_flag(tech_pvt, TFLAG_ANSWER);
 		switch_channel_answer(channel);
 	} else {
-		strncpy(out, "NO SUCH CALL", outlen - 1);
+		stream->write_function(stream, "NO SUCH CALL");
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static void print_info(struct private_object *tech_pvt, char *out, size_t outlen)
+static void print_info(struct private_object *tech_pvt, switch_stream_handle_t *stream)
 {
 	switch_channel_t *channel = NULL;
 	channel = switch_core_session_get_channel(tech_pvt->session);
 	assert(channel != NULL);
 
-	snprintf(out, outlen, "CALL %s\t%s\t%s\t%s\t%s\n",
-			 tech_pvt->call_id,
+	stream->write_function(stream, "CALL %s\t%s\t%s\t%s\t%s\n",
+						   tech_pvt->call_id,
 			 tech_pvt->caller_profile->caller_id_name ? tech_pvt->caller_profile->caller_id_name : "n/a",
 			 tech_pvt->caller_profile->caller_id_number ? tech_pvt->caller_profile->caller_id_number : "n/a",
 			 tech_pvt->caller_profile->destination_number ? tech_pvt->caller_profile->destination_number : "n/a",
@@ -945,7 +945,7 @@ static void print_info(struct private_object *tech_pvt, char *out, size_t outlen
 
 }
 
-static switch_status_t call_info(char *callid, char *out, size_t outlen)
+static switch_status_t call_info(char *callid, switch_stream_handle_t *stream)
 {
 	struct private_object *tech_pvt;
 	switch_hash_index_t *hi;
@@ -954,12 +954,12 @@ static switch_status_t call_info(char *callid, char *out, size_t outlen)
 		for (hi = apr_hash_first(module_pool, globals.call_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			tech_pvt = val;
-			print_info(tech_pvt, out + strlen(out), outlen - strlen(out));
+			print_info(tech_pvt, stream);
 		}
 	} else if (callid && (tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
 		print_info(tech_pvt, out, outlen);
 	} else {
-		strncpy(out, "NO SUCH CALL", outlen - 1);
+		stream->write_function(stream, "NO SUCH CALL");
 	}
 
 	return SWITCH_STATUS_SUCCESS;

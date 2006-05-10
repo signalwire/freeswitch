@@ -41,6 +41,7 @@
 static const char modname[] = "mod_xml_rpc";
 
 
+
 static struct {
 	int port;
 	uint8_t running;
@@ -65,16 +66,18 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 
 
 static switch_xml_t xml_url_fetch(char *section,
-						   char *tag_name,
-						   char *key_name,
-						   char *key_value)
+								  char *tag_name,
+								  char *key_name,
+								  char *key_value,
+								  char *params)
 {
 	char url[1024] = "", filename[1024] = "";
 	CURL *curl_handle = NULL;
 	struct config_data config_data;
 	switch_xml_t xml;
-
-	snprintf(url, sizeof(url), "%s?section=%s&tag_name=%s&key_name=%s&key_value=%s\n", globals.url, section, tag_name, key_name, key_value);
+	
+	snprintf(url, sizeof(url), "%s?section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s\n", 
+			 globals.url, section, tag_name, key_name, key_value, params ? "&" : "", params ? params : "");
 	srand(time(NULL) + strlen(url));
 	snprintf(filename, sizeof(filename), "%s%04x.tmp", SWITCH_GLOBAL_dirs.temp_dir, (rand() & 0xffff));
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -126,7 +129,7 @@ static switch_status_t do_config(void)
 	char *cf = "xml_rpc.conf";
 	switch_xml_t cfg, xml, settings, param;
 	
-	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}
@@ -171,13 +174,37 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 }
 
 
-#define CMDLEN 10240
+static switch_status_t http_stream_write(switch_stream_handle_t *handle, char *fmt, ...)
+{
+	va_list ap;
+	TSession *r = handle->data;
+	int ret = 0;
+	char *data;
+
+	va_start(ap, fmt);
+#ifdef HAVE_VASPRINTF
+	ret = vasprintf(&data, fmt, ap);
+#else
+	if ((data = (char *) malloc(2048))) {
+		vsnprintf(data, 2048, fmt, ap);
+	}
+#endif
+	va_end(ap);
+	
+	if (data) {
+		ret = 0;
+		HTTPWrite(r, data, strlen(data));
+		free(data);
+	}
+	
+	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
+}
+
 abyss_bool HandleHook(TSession *r)
 {
     char *m = "text/html";
-	char *retbuf = malloc(CMDLEN);
 	char *command, *arg;
-	char *ret = NULL;
+	switch_stream_handle_t stream = {0};
 
 	if(strncmp(r->uri, "/api/", 5)) {
 		return FALSE;
@@ -191,33 +218,22 @@ abyss_bool HandleHook(TSession *r)
 	}
 	ResponseChunked(r);
 	ResponseStatus(r,200);
-	memset(retbuf, 0, CMDLEN);
-	switch_api_execute(command, arg, retbuf, CMDLEN);
-	if (!strncasecmp(retbuf, "content-type: ", 14)) {
-
-		m = retbuf + 14;
-		if ((ret = strchr(m, '\n'))) {
-			*ret++ = '\0';
-		}
-	}
-
-	if (!ret) {
-		ret = retbuf;
-	}
 	ResponseContentType(r, m);
     ResponseWrite(r);
-	HTTPWrite(r, ret , strlen(ret));
+	stream.data = r;
+	stream.write_function = http_stream_write;
+	switch_api_execute(command, arg, &stream);
 	HTTPWriteEnd(r);
 	free(command);
-	free(retbuf);
     return TRUE;
 }
 
-
+#define CMDLEN 1024 * 256
 static xmlrpc_value *freeswitch_api(xmlrpc_env *const envP, xmlrpc_value *const paramArrayP, void *const userData) 
 {
 	char *command, *arg;
 	char *retbuf = malloc(CMDLEN);
+	switch_stream_handle_t stream = {0};
 	xmlrpc_value *val;
 
     /* Parse our argument array. */
@@ -227,7 +243,11 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env *const envP, xmlrpc_value *const 
 	}
 
 	memset(retbuf, 0, CMDLEN);
-	switch_api_execute(command, arg, retbuf, CMDLEN);
+	stream.data = retbuf;
+	stream.end = stream.data;
+	stream.data_size = CMDLEN;
+	stream.write_function = switch_console_stream_write;
+	switch_api_execute(command, arg, &stream);
 
     /* Return our result. */
     val = xmlrpc_build_value(envP, "s", retbuf);

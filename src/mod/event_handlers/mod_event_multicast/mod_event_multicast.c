@@ -54,7 +54,7 @@ static switch_status_t load_config(void)
 	char *cf = "event_multicast.conf";
 	switch_xml_t cfg, xml, settings, param;
 
-	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}

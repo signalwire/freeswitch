@@ -33,10 +33,51 @@
 #include <switch_console.h>
 #define CMD_BUFLEN 1024 * 1000
 
+
+SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, char *fmt, ...)
+{
+	va_list ap;
+	char *buf = handle->data;
+	char *end = handle->end;
+	int ret = 0;
+	char *data;
+
+	if (handle->data_len >= handle->data_size) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	va_start(ap, fmt);
+#ifdef HAVE_VASPRINTF
+	ret = vasprintf(&data, fmt, ap);
+#else
+	if ((data = (char *) malloc(2048))) {
+		vsnprintf(data, 2048, fmt, ap);
+	}
+#endif
+	va_end(ap);
+	
+	if (data) {
+		uint32_t len = handle->data_size - handle->data_len;
+
+		if (len <= strlen(data)) {
+			ret = -1;
+		} else {
+			ret = 0;
+			snprintf(end, len, data);
+			handle->data_len = strlen(buf);
+			handle->end = handle->data + handle->data_len;
+		}
+		free(data);
+	}
+	
+	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
+}
+
+
 static int switch_console_process(char *cmd, char *retbuf, int retlen)
 {
 	char *arg = NULL;
-
+	switch_stream_handle_t stream = {0};
 
 	if (!strcmp(cmd, "shutdown") || !strcmp(cmd, "...")) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bye!\n");
@@ -62,7 +103,11 @@ static int switch_console_process(char *cmd, char *retbuf, int retlen)
 		*arg++ = '\0';
 	}
 
-	if (switch_api_execute(cmd, arg, retbuf, retlen) == SWITCH_STATUS_SUCCESS) {
+	stream.data = retbuf;
+	stream.end = stream.data;
+	stream.data_size = retlen;
+	stream.write_function = switch_console_stream_write;
+	if (switch_api_execute(cmd, arg, &stream) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Unknown Command: %s\n", cmd);

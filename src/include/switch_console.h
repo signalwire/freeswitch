@@ -53,6 +53,10 @@ SWITCH_DECLARE(void) switch_console_loop(void);
 */
 SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, char *file, const char *func, int line, char *fmt, ...);
 
+/*!
+  \brief A method akin to printf for dealing with api streams
+*/
+SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, char *fmt, ...);
 END_EXTERN_C
 
 #endif

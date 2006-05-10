@@ -1308,7 +1308,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	memset(&globals, 0, sizeof(globals));
 	globals.next_woomera_port = WOOMERA_MIN_PORT;
 
-	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}

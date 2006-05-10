@@ -131,7 +131,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 	char *exten_name = NULL;
 	switch_xml_t cfg, xml, xcontext, xexten, xaction, xcond;
 	char *context = NULL;
-
+	char params[1024];
 
 	channel = switch_core_session_get_channel(session);
 	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
@@ -142,10 +142,10 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing %s->%s!\n", caller_profile->caller_id_name,
-						  caller_profile->destination_number);
-
+					  caller_profile->destination_number);
 	
-	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
+	snprintf(params, sizeof(params), "dest=%s", caller_profile->destination_number);
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return NULL;		

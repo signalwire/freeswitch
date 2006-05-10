@@ -62,6 +62,14 @@ struct switch_state_handler_table {
 	switch_state_handler_t on_hold;
 };
 
+struct switch_stream_handle {
+	switch_stream_handle_write_function_t write_function;
+	void *data;
+	void *end;
+	switch_size_t data_size;
+	switch_size_t data_len;
+};
+
 /*! \brief Node in which to store custom outgoing channel callback hooks */
 struct switch_io_event_hook_outgoing_channel {
 	/*! the outgoing channel callback hook*/

@@ -1791,8 +1791,13 @@ static JSBool js_api_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	if (argc > 1) {
 		char *cmd = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		switch_stream_handle_t stream = {0};
 		char retbuf[2048] = "";
-		switch_api_execute(cmd, arg, retbuf, sizeof(retbuf));
+
+		stream.data = retbuf;
+		stream.end = stream.data;
+		stream.data_size = sizeof(retbuf);
+		switch_api_execute(cmd, arg, &stream);
 		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, retbuf));
 	} else {
 		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, ""));
@@ -2149,16 +2154,16 @@ static void js_thread_launch(char *text)
 }
 
 
-static switch_status_t launch_async(char *text, char *out, size_t outlen)
+static switch_status_t launch_async(char *text, switch_stream_handle_t *stream)
 {
 
 	if (switch_strlen_zero(text)) {
-		switch_copy_string(out, "INVALID", outlen);
+		stream->write_function(stream, "INVALID");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	js_thread_launch(text);
-	switch_copy_string(out, "OK", outlen);
+	stream->write_function(stream, "OK");
 	return SWITCH_STATUS_SUCCESS;
 }
 

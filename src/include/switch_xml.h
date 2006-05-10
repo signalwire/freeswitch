@@ -196,9 +196,10 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
 												  char *key_name,
 												  char *key_value,
 												  switch_xml_t *root,
-												  switch_xml_t *node);
+												  switch_xml_t *node,
+												  char *params);
 												 
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(char *file_path, switch_xml_t *node);
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(char *file_path, switch_xml_t *node, char *params);
 SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function);
 
 END_EXTERN_C

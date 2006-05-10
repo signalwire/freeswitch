@@ -148,8 +148,8 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
 
-static switch_status_t dl_login(char *arg, char *out, size_t outlen);
-static switch_status_t dl_logout(char *profile_name, char *out, size_t outlen);
+static switch_status_t dl_login(char *arg, switch_stream_handle_t *stream);
+static switch_status_t dl_logout(char *profile_name, switch_stream_handle_t *stream);
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
 static switch_status_t channel_on_ring(switch_core_session_t *session);
@@ -1222,20 +1222,20 @@ static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
 	}
 }
 
-static switch_status_t dl_logout(char *profile_name, char *out, size_t outlen)
+static switch_status_t dl_logout(char *profile_name, switch_stream_handle_t *stream)
 {
 	struct mdl_profile *profile;
 	if ((profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
 		ldl_handle_stop(profile->handle);
-		snprintf(out, outlen, "OK\n");
+		stream->write_function(stream, "OK\n");
 	} else {
-		snprintf(out, outlen, "NO SUCH PROFILE %s\n", profile_name);
+		stream->write_function(stream, "NO SUCH PROFILE %s\n", profile_name);
 	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t dl_login(char *arg, char *out, size_t outlen)
+static switch_status_t dl_login(char *arg, switch_stream_handle_t *stream)
 {
 	char *argv[10] = {0};
 	int argc = 0;
@@ -1244,7 +1244,7 @@ static switch_status_t dl_login(char *arg, char *out, size_t outlen)
 	int x;
 
 	if (switch_strlen_zero(arg)) {
-		snprintf(out, outlen, "FAIL\n");
+		stream->write_function(stream, "FAIL\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1259,7 +1259,7 @@ static switch_status_t dl_login(char *arg, char *out, size_t outlen)
 		if (profile) {
 			if (switch_test_flag(profile, TFLAG_IO)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile already exists.");
-				snprintf(out, outlen, "Profile already exists\n");
+				stream->write_function(stream, "Profile already exists\n");
 				return SWITCH_STATUS_SUCCESS;
 			}
 
@@ -1277,9 +1277,9 @@ static switch_status_t dl_login(char *arg, char *out, size_t outlen)
 	}
 	
 	if (profile && init_profile(profile, 1) == SWITCH_STATUS_SUCCESS) {
-		snprintf(out, outlen, "OK\n");
+		stream->write_function(stream, "OK\n");
 	} else {
-		snprintf(out, outlen, "FAIL\n");
+		stream->write_function(stream, "FAIL\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1298,7 +1298,7 @@ static switch_status_t load_config(void)
 
 	switch_core_hash_init(&globals.profile_hash, module_pool);	
 
-	if (!(xml = switch_xml_open_cfg(cf, &cfg))) {
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
 	}

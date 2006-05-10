@@ -212,6 +212,51 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 	return nsds;
 }
 
+
+SWITCH_DECLARE(int) switch_url_encode(char *url, char *buf, size_t len)
+{
+    char *p;
+    int x = 0;
+    const char urlunsafe[] = " \"#%&+:;<=>?@[\\]^`{|}";
+    const char hex[] = "0123456789ABCDEF";
+
+    memset(buf, 0, len);
+    for( p = url ; *p ; p++) {
+        if (*p < ' ' || *p > '~' || strchr(urlunsafe, *p)) {
+            if ((x + 3) > len) {
+                break;
+            }
+            buf[x++] = '%';
+            buf[x++] = hex[*p >> 4];
+            buf[x++] = hex[*p & 0x0f];
+        } else {
+            buf[x++] = *p;
+        }
+        if (x == len) {
+            break;
+        }
+    }
+    return x;
+}
+
+SWITCH_DECLARE(char *) switch_url_decode(char *s)
+{
+	char *o;
+	unsigned int tmp;
+
+	for (o = s; *s; s++, o++) {
+		if (*s == '%' && strlen(s) > 2 && sscanf(s + 1, "%2x", &tmp) == 1) {
+			*o = tmp;
+			s += 2;
+		} else {
+			*o = *s;
+		}
+	}
+	*o = '\0';
+	return s;
+}
+
+
 #ifdef WIN32
 //this forces certain symbols to not be optimized out of the dll
 void include_me(void)

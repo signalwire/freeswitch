@@ -471,7 +471,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_core_hash_init(&loadable_modules.directory_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
 
-	if ((xml = switch_xml_open_cfg(cf, &cfg))) {
+	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_xml_t mods, ld;
 
 		if ((mods = switch_xml_child(cfg, "modules"))) {
@@ -491,7 +491,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "open of %s failed\n", cf);
 	}
 
-	if ((xml = switch_xml_open_cfg(pcf, &cfg))) {
+	if ((xml = switch_xml_open_cfg(pcf, &cfg, NULL))) {
 		switch_xml_t mods, ld;
 
 		if ((mods = switch_xml_child(cfg, "modules"))) {
@@ -667,17 +667,22 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_codec_interf
 	return i;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, char *retbuf, switch_size_t len)
+SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_stream_handle_t *stream)
 {
 	switch_api_interface_t *api;
 	switch_status_t status;
 	switch_event_t *event;
 
+	assert(stream != NULL);
+	assert(stream->data != NULL);
+	assert(stream->write_function != NULL);
+
 	if ((api = switch_loadable_module_get_api_interface(cmd)) != 0) {
-		status = api->function(arg, retbuf, len);
+		status = api->function(arg, stream);
 	} else {
 		status = SWITCH_STATUS_FALSE;
-		snprintf(retbuf, len, "INVALID COMMAND [%s]", cmd);
+		stream->write_function(stream, "INVALID COMMAND [%s]", cmd);
+		//snprintf(retbuf, len, "INVALID COMMAND [%s]", cmd);
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_API) == SWITCH_STATUS_SUCCESS) {
@@ -687,7 +692,7 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, char *r
 		if (arg) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "API-Command-Arguement", arg);
 		}
-		switch_event_add_body(event, retbuf);
+		//switch_event_add_body(event, retbuf);
 		switch_event_fire(&event);
 	}
 

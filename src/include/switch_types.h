@@ -671,7 +671,9 @@ typedef switch_status_t (*switch_kill_channel_hook_t)(switch_core_session_t *, i
 typedef switch_status_t (*switch_waitfor_read_hook_t)(switch_core_session_t *, int, int);
 typedef switch_status_t (*switch_waitfor_write_hook_t)(switch_core_session_t *, int, int);
 typedef switch_status_t (*switch_send_dtmf_hook_t)(switch_core_session_t *, char *);
-typedef switch_status_t (*switch_api_function_t)(char *in, char *out, switch_size_t outlen);
+typedef struct switch_stream_handle switch_stream_handle_t;
+typedef switch_status_t (*switch_stream_handle_write_function_t)(switch_stream_handle_t *handle, char *fmt, ...);
+typedef switch_status_t (*switch_api_function_t)(char *in, switch_stream_handle_t *stream);
 typedef switch_status_t (*switch_dtmf_callback_function_t)(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen);
 typedef int (*switch_core_db_callback_func_t)(void *pArg, int argc, char **argv, char **columnNames);
 typedef switch_status_t (*switch_module_load_t) (switch_loadable_module_interface_t **, char *);
@@ -686,10 +688,11 @@ typedef struct switch_core_time_duration switch_core_time_duration_t;
 typedef switch_xml_t (*switch_xml_search_function_t)(char *section,
 													 char *tag_name,
 													 char *key_name,
-													 char *key_value);
+													 char *key_value,
+													 char *params);
+
 
 /* things we don't deserve to know about */
-
 /*! \brief A channel */
 struct switch_channel;
 /*! \brief A core session representing a call and all of it's resources */

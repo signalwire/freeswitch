@@ -193,11 +193,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_codec_interf
   \brief Execute a registered API command
   \param cmd the name of the API command to execute
   \param arg the optional arguement to the command
-  \param retbuf a buffer to write output to
-  \param len the length in bytes of retbuf
+  \param stream stream for output
   \return the status returned by the API call
 */
-SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, char *retbuf, switch_size_t len);
+SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_stream_handle_t *stream);
+
 
 
 /*!
