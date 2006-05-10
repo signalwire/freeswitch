@@ -20,9 +20,8 @@ dialplans/mod_dialplan_xml
 endpoints/mod_exosip
 endpoints/mod_iax
 endpoints/mod_dingaling
-endpoints/mod_opal
 endpoints/mod_portaudio
-endpoints/mod_wanpipe
+#endpoints/mod_wanpipe
 endpoints/mod_woomera
 #event_handlers/mod_event_multicast
 #event_handlers/mod_event_test
