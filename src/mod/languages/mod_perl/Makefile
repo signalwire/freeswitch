@@ -1,4 +1,4 @@
-PERL        =/usr/local/bin/perl
+PERL        = $(shell which perl)
 PERL_LIBDIR =-L$(shell perl -MConfig -e 'print $$Config{archlib}')/CORE
 PERL_LIBS   =$(shell perl -MConfig -e 'print $$Config{libs}')
 CFLAGS  +=  -DMULTIPLICITY $(shell $(PERL) -MExtUtils::Embed -e ccopts)
@@ -19,14 +19,14 @@ all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) fs_perl.$(DYNAMIC_LIB_EXTEN)
 depends:
 
 %.o:  %.c
-	$(CC) $(CFLAGS) -fPIC -c $< -o $@
+	$(CC) -fPIC $(CFLAGS) -c $< -o $@
 
 reswig: 
 	rm switch_swig_wrap.c
 	swig -DMULTIPLICITY -perl5 -module fs_perl switch_swig.c
 
 switch_swig_wrap.o: switch_swig_wrap.c
-	$(CC) -w $(CFLAGS) -fPIC -c $< -o $@
+	$(CC) -w $(CFLAGS) -c $< -o $@
 
 
 fs_perl.$(DYNAMIC_LIB_EXTEN): $(MODNAME).$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o switch_swig.o
@@ -34,7 +34,7 @@ fs_perl.$(DYNAMIC_LIB_EXTEN): $(MODNAME).$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o
 
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c $(MODNAME).o $(OBJS)
-	$(CC) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
+	$(CC) -fPIC $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
 
 clean:
 	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~ .perlok
