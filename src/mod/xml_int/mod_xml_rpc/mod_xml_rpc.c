@@ -203,28 +203,22 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, char *f
 abyss_bool HandleHook(TSession *r)
 {
     char *m = "text/html";
-	char *command, *arg;
 	switch_stream_handle_t stream = {0};
-
+	char *command;
 	if(strncmp(r->uri, "/api/", 5)) {
 		return FALSE;
 	}
 
-	command = strdup(r->uri + 5);
-	if((arg = strchr(command, '/'))) {
-		*arg++ = '\0';
-	} else if((arg = strchr(command, '?'))) {
-		*arg++ = '\0';
-	}
+	command = r->uri + 5;
+	
 	ResponseChunked(r);
 	ResponseStatus(r,200);
 	ResponseContentType(r, m);
     ResponseWrite(r);
 	stream.data = r;
 	stream.write_function = http_stream_write;
-	switch_api_execute(command, arg, &stream);
+	switch_api_execute(command, r->query, &stream);
 	HTTPWriteEnd(r);
-	free(command);
     return TRUE;
 }
 
