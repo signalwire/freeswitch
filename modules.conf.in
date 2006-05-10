@@ -28,7 +28,7 @@ endpoints/mod_woomera
 event_handlers/mod_xmpp_event
 #event_handlers/mod_zeroconf
 formats/mod_sndfile
-languages/mod_perl
+#languages/mod_perl
 #languages/mod_spidermonkey
 timers/mod_softtimer
 #xml_int/mod_xml_rpc
