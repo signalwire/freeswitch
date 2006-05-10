@@ -2847,9 +2847,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
 SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_core_time_duration_t *duration)
 {
     memset(duration, 0, sizeof(*duration));
-    duration->mms = total_ms;
     duration->ms = total_ms / 1000;
-	duration->mms = duration->mms % 1000;
+	duration->mms = total_ms % 1000;
     duration->sec = duration->ms / 1000;
 	duration->ms = duration->ms % 1000;
     duration->min = duration->sec / 60;
