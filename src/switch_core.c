@@ -2846,11 +2846,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
 
 SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_core_time_duration_t *duration)
 {
-    memset(duration, 0, sizeof(*duration));
-    duration->ms = total_ms / 1000;
-	duration->mms = total_ms % 1000;
-    duration->sec = duration->ms / 1000;
-	duration->ms = duration->ms % 1000;
+    switch_time_t temp = total_ms / 1000;
+	memset(duration, 0, sizeof(*duration));
+	duration->mms = (uint32_t)(total_ms % 1000);
+    duration->sec = (uint32_t)(temp / 1000);
+	duration->ms = (uint32_t)(temp % 1000);
     duration->min = duration->sec / 60;
     duration->sec = duration->sec % 60;
     duration->hr = duration->min / 60;
