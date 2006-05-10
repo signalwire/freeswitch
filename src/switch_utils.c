@@ -213,10 +213,10 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 }
 
 
-SWITCH_DECLARE(int) switch_url_encode(char *url, char *buf, size_t len)
+SWITCH_DECLARE(size_t) switch_url_encode(char *url, char *buf, size_t len)
 {
     char *p;
-    int x = 0;
+    size_t x = 0;
     const char urlunsafe[] = " \"#%&+:;<=>?@[\\]^`{|}";
     const char hex[] = "0123456789ABCDEF";
 
@@ -246,7 +246,7 @@ SWITCH_DECLARE(char *) switch_url_decode(char *s)
 
 	for (o = s; *s; s++, o++) {
 		if (*s == '%' && strlen(s) > 2 && sscanf(s + 1, "%2x", &tmp) == 1) {
-			*o = tmp;
+			*o = (char)tmp;
 			s += 2;
 		} else {
 			*o = *s;

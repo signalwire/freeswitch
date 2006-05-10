@@ -31,6 +31,9 @@
  */
 #include <switch.h>
 #include <xmlrpc-c/base.h>
+#ifdef ABYSS_WIN32
+#undef strcasecmp
+#endif
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
@@ -43,7 +46,7 @@ static const char modname[] = "mod_xml_rpc";
 
 
 static struct {
-	int port;
+	uint16_t port;
 	uint8_t running;
 	char *url;
 } globals;
@@ -78,7 +81,7 @@ static switch_xml_t xml_url_fetch(char *section,
 	
 	snprintf(url, sizeof(url), "%s?section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s\n", 
 			 globals.url, section, tag_name, key_name, key_value, params ? "&" : "", params ? params : "");
-	srand(time(NULL) + strlen(url));
+	srand((unsigned int)(time(NULL) + strlen(url)));
 	snprintf(filename, sizeof(filename), "%s%04x.tmp", SWITCH_GLOBAL_dirs.temp_dir, (rand() & 0xffff));
 	curl_global_init(CURL_GLOBAL_ALL);
 	curl_handle = curl_easy_init();
@@ -142,7 +145,7 @@ static switch_status_t do_config(void)
 			if (!strcasecmp(var, "gateway_url")) {
 				set_global_url(val);
 			} else if (!strcasecmp(var, "http_port")) {
-				globals.port = atoi(val);
+				globals.port = (uint16_t)atoi(val);
 			}
 		}
 	}
@@ -193,7 +196,7 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, char *f
 	
 	if (data) {
 		ret = 0;
-		HTTPWrite(r, data, strlen(data));
+		HTTPWrite(r, data, (uint32_t)strlen(data));
 		free(data);
 	}
 	

@@ -184,7 +184,7 @@ SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *sea
 SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len);
 
 #define SWITCH_READ_ACCEPTABLE(status) status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK
-SWITCH_DECLARE(int) switch_url_encode(char *url, char *buf, size_t len);
+SWITCH_DECLARE(size_t) switch_url_encode(char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
 END_EXTERN_C
 

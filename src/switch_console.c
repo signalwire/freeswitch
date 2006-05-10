@@ -57,7 +57,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 	va_end(ap);
 	
 	if (data) {
-		uint32_t len = handle->data_size - handle->data_len;
+		switch_size_t len = handle->data_size - handle->data_len;
 
 		if (len <= strlen(data)) {
 			ret = -1;
@@ -65,7 +65,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 			ret = 0;
 			snprintf(end, len, data);
 			handle->data_len = strlen(buf);
-			handle->end = handle->data + handle->data_len;
+			handle->end = (uint8_t *)(handle->data) + handle->data_len;
 		}
 		free(data);
 	}
