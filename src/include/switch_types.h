@@ -68,6 +68,10 @@ BEGIN_EXTERN_C
 #define SWITCH_SCRIPT_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "scripts"
 #endif
 
+#ifndef SWITCH_HTDOCS_DIR
+#define SWITCH_HTDOCS_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "htdocs"
+#endif
+
 struct switch_directories {
 	char *base_dir;
 	char *mod_dir;

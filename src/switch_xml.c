@@ -932,7 +932,7 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 // Recursively converts each tag to xml appending it to *s. Reallocates *s if
 // its length excedes max. start is the location of the previous tag in the
 // parent tag's character content. Returns *s.
-SWITCH_DECLARE(static char *) switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max,
+static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max,
                     switch_size_t start, char ***attr)
 {
     int i, j;
@@ -984,7 +984,7 @@ SWITCH_DECLARE(static char *) switch_xml_toxml_r(switch_xml_t xml, char **s, swi
 
 // converts an switch_xml structure back to xml, returning it as a string that must
 // be freed
-char *switch_xml_toxml(switch_xml_t xml)
+SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml)
 {
     switch_xml_t p = (xml) ? xml->parent : NULL, o = (xml) ? xml->ordered : NULL;
     switch_xml_root_t root = (switch_xml_root_t)xml;
