@@ -299,11 +299,12 @@
     <configuration name="xml_rpc.conf" description="XML RPC">
       <settings>
 	<!-- The port where you want to run the http service (default 8080) -->
-	<param name="http_port" value="8080">
+	<param name="http_port" value="8080"/>
         <!-- The url to a gateway cgi that can generate xml similar to
         what's in this file only on-the-fly (leave it commented if you dont
         need it) -->
         <!-- <param name="gateway_url" value="http://www.server.com/gateway.cgi"/> -->
+      </settings>
     </configuration>
 
   </section>
