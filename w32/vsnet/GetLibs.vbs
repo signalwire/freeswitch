@@ -659,19 +659,22 @@ Sub BuildLibs_xmlrpc(BuildDebug, BuildRelease)
 		WgetUnCompress LibsBase & "xmlrpc-c-1.03.14.tgz", LibDestDir
 		RenameFolder LibDestDir & "xmlrpc-c-1.03.14", "xmlrpc"
 		FSO.CopyFile Utilsdir & "xmlrpc\xmlrpc.vcproj", LibDestDir & "xmlrpc\Windows\", True
+		FSO.CopyFile Utilsdir & "xmlrpc\Abyss.vcproj", LibDestDir & "xmlrpc\lib\abyss\src\", True
 		FSO.CopyFile LibDestDir & "xmlrpc\Windows\transport_config_win32.h", LibDestDir & "xmlrpc\transport_config.h", True
 		FSO.CopyFile LibDestDir & "xmlrpc\Windows\xmlrpc_win32_config.h", LibDestDir & "xmlrpc\config.h", True
 		FSO.CopyFile LibDestDir & "xmlrpc\Windows\xmlrpc_win32_config.h", LibDestDir & "xmlrpc\xmlrpc_config.h", True
 	End If 
 	If FSO.FolderExists(LibDestDir & "xmlrpc") Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "xmlrpc\Debug\xmlrpc.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "xmlrpc\lib\xmlrpcD.lib") Then 
 				BuildViaVCBuild LibDestDir & "xmlrpc\Windows\xmlrpc.vcproj", "Debug"
+				BuildViaVCBuild LibDestDir & "xmlrpc\lib\abyss\src\Abyss.vcproj", "Debug"
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "xmlrpc\Release\xmlrpc.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "xmlrpc\lib\xmlrpc.lib") Then 
 				BuildViaVCBuild LibDestDir & "xmlrpc\Windows\xmlrpc.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "xmlrpc\lib\abyss\src\Abyss.vcproj", "Release"
 			End If
 		End If
 	Else
