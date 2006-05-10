@@ -751,8 +751,10 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
 	switch_xml_t tag = NULL;
 	switch_xml_t xml = NULL;
 	switch_xml_binding_t *binding;
-	
+	uint8_t loops = 0;
+
 	switch_mutex_lock(XML_LOCK);
+
 	for(binding = BINDINGS; binding; binding = binding->next) {
 		if ((xml = binding->function(section, tag_name, key_name, key_value))) {
 			const char *err = NULL;
@@ -801,6 +803,9 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
 			xml = NULL;
 			*node = NULL;
 			*root = NULL;
+			if (loops++ > 1) {
+				break;
+			}
 		}
 	}
 

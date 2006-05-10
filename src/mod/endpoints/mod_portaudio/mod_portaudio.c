@@ -567,6 +567,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 static switch_status_t load_config(void)
 {
 	char *cf = "portaudio.conf";
+	switch_xml_t cfg, xml, settings, param;
 
 	memset(&globals, 0, sizeof(globals));
 
