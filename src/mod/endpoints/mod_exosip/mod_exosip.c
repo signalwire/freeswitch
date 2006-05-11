@@ -1486,7 +1486,7 @@ static void handle_message_new(eXosip_event_t *je)
 		char *expires = NULL;
 		osip_message_t *tmp = NULL;
 		char sql[1024] = "";
-		int exptime;
+		time_t exptime;
 		switch_event_t *s_event;
 
 		for(;;) {
@@ -1513,11 +1513,11 @@ static void handle_message_new(eXosip_event_t *je)
 
 				
 				if (!find_reg_url(globals.db, je->request->from->url->username, sql, sizeof(sql))) {
-					snprintf(sql, sizeof(sql), "insert into sip_registrations values ('%s','%s',%d)", 
+					snprintf(sql, sizeof(sql), "insert into sip_registrations values ('%s','%s',%ld)", 
 							 je->request->from->url->username, 
 							 url, exptime);
 				} else {
-					snprintf(sql, sizeof(sql), "update sip_registrations set url='%s', expires=%d where key = '%s'",
+					snprintf(sql, sizeof(sql), "update sip_registrations set url='%s', expires=%ld where key = '%s'",
 							 url,
 							 exptime,
 							 je->request->from->url->username);
@@ -1527,7 +1527,7 @@ static void handle_message_new(eXosip_event_t *je)
 				if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "key", "%s", je->request->from->url->username);
 					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "url", "%s", url);
-					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%d", exptime);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", exptime);
 					switch_event_fire(&s_event);
 				}
 				switch_mutex_lock(globals.reg_mutex);
