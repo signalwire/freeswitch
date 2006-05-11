@@ -36,7 +36,7 @@
 #include <osip2/osip_mt.h>
 #include <osip_rfc3264.h>
 #include <osipparser2/osip_port.h>
-
+#define DBFILE "exosip.db"
 
 static const char modname[] = "mod_exosip";
 #define STRLEN 15
@@ -928,11 +928,12 @@ static char *find_reg_url(switch_core_db_t *db, char *key, char *val, switch_siz
 	if (db) {
 		udb = db;
 	} else {
-		udb = switch_core_db_handle();
+		udb = switch_core_db_open_file(DBFILE);
 	}
 
 	cbt.val = val;
 	cbt.len = len;
+	switch_mutex_lock(globals.reg_mutex);
 	snprintf(val, len, "select url from sip_registrations where key='%s'", key);	
 	switch_core_db_exec(udb, val, find_callback, &cbt, &errmsg);
 
@@ -945,6 +946,7 @@ static char *find_reg_url(switch_core_db_t *db, char *key, char *val, switch_siz
 	if (!db) {
 		switch_core_db_close(udb);
 	}
+	switch_mutex_unlock(globals.reg_mutex);
 	return cbt.matches ? val : NULL;
 }
 
@@ -996,12 +998,12 @@ static switch_status_t exosip_outgoing_channel(switch_core_session_t *session, s
 
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 
-			switch_mutex_lock(globals.reg_mutex);
+
 			if (!strchr(caller_profile->destination_number, '@') && (url = find_reg_url(NULL, caller_profile->destination_number, tmp, sizeof(tmp)))) {
 				caller_profile->rdnis = switch_core_session_strdup(*new_session, caller_profile->destination_number);
 				caller_profile->destination_number = switch_core_session_strdup(*new_session, url);
 			}
-			switch_mutex_unlock(globals.reg_mutex);
+
 
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
@@ -1040,7 +1042,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	/* NOTE:  **interface is **_interface because the common lib redefines interface to struct in some situations */
 
-	if ((globals.db = switch_core_db_handle())) {
+	if ((globals.db = switch_core_db_open_file(DBFILE))) {
 		switch_core_db_test_reactive(globals.db, "select * from sip_registrations", create_interfaces_sql);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
@@ -1505,7 +1507,6 @@ static void handle_message_new(eXosip_event_t *je)
 							 je->request->from->url->username);
 					
 				}
-				printf("TEST [%s]\n", sql);
 				switch_mutex_lock(globals.reg_mutex);
 				switch_core_db_persistant_execute(globals.db, sql, 25);
 				switch_mutex_unlock(globals.reg_mutex);
@@ -1936,7 +1937,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	eXosip_event_t *event = NULL;
 	switch_event_t *s_event;
 	time_t now = 0, next = 0;
-	int interval = 60;
+	int interval = 30;
 
 	config_exosip(0);
 
