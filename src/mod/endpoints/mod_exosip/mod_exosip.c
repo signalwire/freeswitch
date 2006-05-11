@@ -30,6 +30,9 @@
  *
  */
 
+#define MY_EVENT_REGISTER "exosip::register"
+#define MY_EVENT_EXPIRE "exosip::expire"
+
 #define HAVE_APR
 #include <switch.h>
 #include <eXosip2/eXosip.h>
@@ -918,6 +921,18 @@ static int find_callback(void *pArg, int argc, char **argv, char **columnNames){
 	return 0;
 }
 
+static int del_callback(void *pArg, int argc, char **argv, char **columnNames){
+	switch_event_t *s_event;
+
+	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_EXPIRE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "key", "%s", argv[0]);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "url", "%s", argv[1]);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%d", argv[2]);
+		switch_event_fire(&s_event);
+	}
+	return 0;
+}
+
 
 static char *find_reg_url(switch_core_db_t *db, char *key, char *val, switch_size_t len)
 {
@@ -1472,7 +1487,8 @@ static void handle_message_new(eXosip_event_t *je)
 		osip_message_t *tmp = NULL;
 		char sql[1024] = "";
 		int exptime;
-		
+		switch_event_t *s_event;
+
 		for(;;) {
 			if (osip_message_get_contact(je->request, x++, &contact) < 0) {
 				break;
@@ -1506,6 +1522,13 @@ static void handle_message_new(eXosip_event_t *je)
 							 exptime,
 							 je->request->from->url->username);
 					
+				}
+
+				if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "key", "%s", je->request->from->url->username);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "url", "%s", url);
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%d", exptime);
+					switch_event_fire(&s_event);
 				}
 				switch_mutex_lock(globals.reg_mutex);
 				switch_core_db_persistant_execute(globals.db, sql, 25);
@@ -1923,8 +1946,18 @@ static int config_exosip(int reload)
 static void check_expire(time_t now)
 {
 	char sql[1024];
+	char *errmsg;
 
 	switch_mutex_lock(globals.reg_mutex);
+	snprintf(sql, sizeof(sql), "select url from sip_registrations where expires > 0 and expires < %ld", now);	
+	switch_core_db_exec(globals.db, sql, del_callback, NULL, &errmsg);
+
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s][%s]\n", sql, errmsg);
+		switch_core_db_free(errmsg);
+		errmsg = NULL;
+	}
+	
 	snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires < %ld", now);
 	switch_core_db_persistant_execute(globals.db, sql, 1);
 	switch_mutex_unlock(globals.reg_mutex);
