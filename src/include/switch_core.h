@@ -758,9 +758,27 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_write_codec(switch_core
 /*! 
   \brief Open a core db (SQLite) file
   \param filename the path to the db file to open
-  \return
+  \return the db handle
 */
 SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(char *filename);
+
+/*! 
+  \brief Execute a sql stmt until it is accepted
+  \param db the db handle
+  \param sql the sql to execute
+  \param retries the number of retries to use
+  \return SWITCH_STATUS_SUCCESS if successful
+
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db_t *db, char *sql, uint32_t retries);
+
+/*! 
+  \brief perform a test query then perform a reactive query if the first one fails
+  \param db the db handle
+  \param test_sql the test sql
+  \param reactive_sql the reactive sql
+*/
+SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *test_sql, char *reactive_sql);
 
 #define SWITCH_CORE_DB "core"
 /*!

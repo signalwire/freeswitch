@@ -135,8 +135,9 @@ SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(char *filename)
 	return db;
 }
 
-#if 0
-static void check_table_exists(switch_core_db_t *db, char *test_sql, char *create_sql) {
+
+SWITCH_DECLARE(void) switch_core_db_test_reactive(switch_core_db_t *db, char *test_sql, char *reactive_sql) 
+{
     char *errmsg;
 
     if(db) {
@@ -155,13 +156,13 @@ static void check_table_exists(switch_core_db_t *db, char *test_sql, char *creat
                 errmsg = NULL;
                 switch_core_db_exec(
 									db,
-                             create_sql,
+                             reactive_sql,
                              NULL,
                              NULL,
                              &errmsg
                              );
                 if (errmsg) {
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, create_sql);
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n[%s]\n", errmsg, reactive_sql);
                     switch_core_db_free(errmsg);
                     errmsg = NULL;
                 }
@@ -170,7 +171,7 @@ static void check_table_exists(switch_core_db_t *db, char *test_sql, char *creat
     }
 
 }
-#endif
+
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_set_console(char *console)
@@ -2499,7 +2500,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(char
 	return switch_core_session_request(endpoint_interface, pool);
 }
 
-static switch_status_t switch_core_sql_persistant_execute(switch_core_db_t *db, char *sql, uint32_t retries)
+SWITCH_DECLARE(switch_status_t) switch_core_db_persistant_execute(switch_core_db_t *db, char *sql, uint32_t retries)
 {
 	char *errmsg;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -2513,7 +2514,7 @@ static switch_status_t switch_core_sql_persistant_execute(switch_core_db_t *db, 
 							&errmsg
 							);		
 		if (errmsg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s]\n", errmsg);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR\n[%s]\n[%s]\n", sql,errmsg);
 			switch_core_db_free(errmsg);
 			switch_yield(100000);
 			retries--;
@@ -2547,7 +2548,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 				work++;
 				if (itterations == 0) {
 					char *isql = "begin transaction CORE1;";
-					if (switch_core_sql_persistant_execute(runtime.event_db, isql, 25) != SWITCH_STATUS_SUCCESS) {
+					if (switch_core_db_persistant_execute(runtime.event_db, isql, 25) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL exec error! [%s]\n", isql);
 					} else {
 						trans = 1;
@@ -2556,7 +2557,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 
 				itterations++;
 
-				if (switch_core_sql_persistant_execute(runtime.event_db, sql, 25) != SWITCH_STATUS_SUCCESS) {
+				if (switch_core_db_persistant_execute(runtime.event_db, sql, 25) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL exec error! [%s]\n", sql);
 				}
 				free(sql);
@@ -2573,7 +2574,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 		if (trans && (itterations == target || diff >= freq)) {
 			char *sql = "end transaction CORE1";
 			work++;
-			if (switch_core_sql_persistant_execute(runtime.event_db, sql, 25) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_db_persistant_execute(runtime.event_db, sql, 25) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL exec error! [%s]\n", sql);
 			}
 			last_commit = switch_time_now();

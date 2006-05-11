@@ -77,6 +77,13 @@ typedef enum {
 #define PACKET_LEN 160
 #define DEFAULT_BYTES_PER_FRAME 160
 
+struct reg_element {
+	char *key;
+	char *url;
+	switch_time_t expires;
+	int tid;
+};
+
 static struct {
 	int debug;
 	int bytes_per_frame;
@@ -94,6 +101,8 @@ static struct {
 	int codec_ms;
 	int dtmf_duration;
 	unsigned int flags;
+	switch_mutex_t *reg_mutex;
+	switch_core_db_t *db;
 } globals;
 
 struct private_object {
@@ -123,6 +132,14 @@ struct private_object {
 	char *realm;
 };
 
+
+
+static char create_interfaces_sql[] =
+"CREATE TABLE sip_registrations (\n"
+"   key             VARCHAR(255),\n"
+"   url             VARCHAR(255),\n"
+"   expires         INTEGER(8)"
+");\n";
 
 
 
@@ -886,6 +903,51 @@ static const switch_loadable_module_interface_t exosip_module_interface = {
 	/*.application_interface */ NULL
 };
 
+
+struct callback_t {
+	char *val;
+	switch_size_t len;
+	int matches;
+};
+
+static int find_callback(void *pArg, int argc, char **argv, char **columnNames){
+	struct callback_t *cbt = (struct callback_t *) pArg;
+
+	switch_copy_string(cbt->val, argv[0], cbt->len);
+	cbt->matches++;
+	return 0;
+}
+
+
+static char *find_reg_url(switch_core_db_t *db, char *key, char *val, switch_size_t len)
+{
+	char *errmsg;
+	switch_core_db_t *udb = NULL;
+	struct callback_t cbt = {0};
+
+	if (db) {
+		udb = db;
+	} else {
+		udb = switch_core_db_handle();
+	}
+
+	cbt.val = val;
+	cbt.len = len;
+	snprintf(val, len, "select url from sip_registrations where key='%s'", key);	
+	switch_core_db_exec(udb, val, find_callback, &cbt, &errmsg);
+
+	if (errmsg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s][%s]\n", val, errmsg);
+		switch_core_db_free(errmsg);
+		errmsg = NULL;
+	}
+
+	if (!db) {
+		switch_core_db_close(udb);
+	}
+	return cbt.matches ? val : NULL;
+}
+
 static switch_status_t exosip_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
 											 switch_core_session_t **new_session, switch_memory_pool_t *pool)
 {
@@ -910,7 +972,8 @@ static switch_status_t exosip_outgoing_channel(switch_core_session_t *session, s
 		if (outbound_profile) {
 			char name[128];
 			switch_caller_profile_t *caller_profile = NULL;
-
+			char tmp[1024];
+			char *url;
 
 			if (*outbound_profile->destination_number == '!') {
 				char *p;
@@ -933,6 +996,13 @@ static switch_status_t exosip_outgoing_channel(switch_core_session_t *session, s
 
 			caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 
+			switch_mutex_lock(globals.reg_mutex);
+			if (!strchr(caller_profile->destination_number, '@') && (url = find_reg_url(NULL, caller_profile->destination_number, tmp, sizeof(tmp)))) {
+				caller_profile->rdnis = switch_core_session_strdup(*new_session, caller_profile->destination_number);
+				caller_profile->destination_number = switch_core_session_strdup(*new_session, url);
+			}
+			switch_mutex_unlock(globals.reg_mutex);
+
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 		} else {
@@ -953,20 +1023,31 @@ static switch_status_t exosip_outgoing_channel(switch_core_session_t *session, s
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
+
+
 	if (globals.running) {
 		globals.running = -1;
 		while (globals.running) {
 			switch_yield(100000);
 		}
 	}
+	switch_core_db_close(globals.db);
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
+
 	/* NOTE:  **interface is **_interface because the common lib redefines interface to struct in some situations */
 
+	if ((globals.db = switch_core_db_handle())) {
+		switch_core_db_test_reactive(globals.db, "select * from sip_registrations", create_interfaces_sql);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
+		return SWITCH_STATUS_TERM;
+	}
 
+	
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
@@ -974,6 +1055,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	switch_core_hash_init(&globals.call_hash, module_pool);
 	switch_core_hash_init(&globals.srtp_hash, module_pool);
+	switch_mutex_init(&globals.reg_mutex, SWITCH_MUTEX_NESTED, module_pool);
+
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &exosip_module_interface;
@@ -1365,6 +1448,86 @@ static switch_status_t parse_sdp_media(sdp_media_t * media, char **dname, char *
 	return status;
 }
 
+
+static char *get_header_value(eXosip_event_t *je, char *name)
+{
+	osip_header_t *hp = NULL;
+	osip_message_header_get_byname (je->request, name, 0, &hp);
+	
+	return hp ? hp->hvalue : NULL;
+}
+
+
+static void handle_message_new(eXosip_event_t *je)
+{
+	if (MSG_IS_REGISTER(je->request)) {
+		int x = 0;
+		osip_contact_t *contact;
+		osip_uri_t *contact_uri = NULL;
+		char *lame = NULL;
+		char *url;
+		char *expires = NULL;
+		osip_message_t *tmp = NULL;
+		char sql[1024] = "";
+		int exptime;
+		
+		for(;;) {
+			if (osip_message_get_contact(je->request, x++, &contact) < 0) {
+				break;
+			}
+			if (lame) {
+				free(lame);
+				lame = NULL;
+			}
+			osip_contact_to_str((const osip_contact_t *) contact, &lame);
+			contact_uri = osip_contact_get_url(contact);
+
+			if ((url = strchr(lame, ':'))) {
+				char *p;
+				url++;
+				if ((p = strchr(url, '>'))) {
+					*p = '\0';
+				}
+
+
+				expires = get_header_value(je, "expires");
+				exptime = time(NULL) + atoi(expires) + 20;
+
+				
+				if (!find_reg_url(globals.db, je->request->from->url->username, sql, sizeof(sql))) {
+					snprintf(sql, sizeof(sql), "insert into sip_registrations values ('%s','%s',%d)", 
+							 je->request->from->url->username, 
+							 url, exptime);
+				} else {
+					snprintf(sql, sizeof(sql), "update sip_registrations set url='%s', expires=%d where key = '%s'",
+							 url,
+							 exptime,
+							 je->request->from->url->username);
+					
+				}
+				printf("TEST [%s]\n", sql);
+				switch_mutex_lock(globals.reg_mutex);
+				switch_core_db_persistant_execute(globals.db, sql, 25);
+				switch_mutex_unlock(globals.reg_mutex);
+				eXosip_lock();
+				if (eXosip_message_build_answer(je->tid, 200, &tmp) < 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "build_answer failed\n");
+					eXosip_unlock();
+					continue;
+				}
+				eXosip_message_send_answer(je->tid, 200, tmp);
+				eXosip_unlock();
+			}
+				
+		}
+		
+	} else {
+		/* Unimplemented */
+    }
+
+}
+
+
 static void handle_answer(eXosip_event_t * event)
 {
 	osip_message_t *ack = NULL;
@@ -1482,9 +1645,69 @@ static void handle_answer(eXosip_event_t * event)
 	}
 }
 
+
+static const char *event_names[] = {
+      "EXOSIP_REGISTRATION_NEW",         
+      "EXOSIP_REGISTRATION_SUCCESS",     
+      "EXOSIP_REGISTRATION_FAILURE",     
+      "EXOSIP_REGISTRATION_REFRESHED",   
+      "EXOSIP_REGISTRATION_TERMINATED",  
+      "EXOSIP_CALL_INVITE",          
+      "EXOSIP_CALL_REINVITE",        
+      "EXOSIP_CALL_NOANSWER",        
+      "EXOSIP_CALL_PROCEEDING",      
+      "EXOSIP_CALL_RINGING",         
+      "EXOSIP_CALL_ANSWERED",        
+      "EXOSIP_CALL_REDIRECTED",      
+      "EXOSIP_CALL_REQUESTFAILURE",  
+      "EXOSIP_CALL_SERVERFAILURE",   
+      "EXOSIP_CALL_GLOBALFAILURE",   
+      "EXOSIP_CALL_ACK",             
+      "EXOSIP_CALL_CANCELLED",       
+      "EXOSIP_CALL_TIMEOUT",         
+      "EXOSIP_CALL_MESSAGE_NEW",            
+      "EXOSIP_CALL_MESSAGE_PROCEEDING",     
+      "EXOSIP_CALL_MESSAGE_ANSWERED",       
+      "EXOSIP_CALL_MESSAGE_REDIRECTED",     
+      "EXOSIP_CALL_MESSAGE_REQUESTFAILURE", 
+      "EXOSIP_CALL_MESSAGE_SERVERFAILURE",  
+      "EXOSIP_CALL_MESSAGE_GLOBALFAILURE",  
+      "EXOSIP_CALL_CLOSED",          
+      "EXOSIP_CALL_RELEASED",           
+      "EXOSIP_MESSAGE_NEW",            
+      "EXOSIP_MESSAGE_PROCEEDING",     
+      "EXOSIP_MESSAGE_ANSWERED",       
+      "EXOSIP_MESSAGE_REDIRECTED",     
+      "EXOSIP_MESSAGE_REQUESTFAILURE", 
+      "EXOSIP_MESSAGE_SERVERFAILURE",  
+      "EXOSIP_MESSAGE_GLOBALFAILURE",  
+      "EXOSIP_SUBSCRIPTION_UPDATE",       
+      "EXOSIP_SUBSCRIPTION_CLOSED",       
+      "EXOSIP_SUBSCRIPTION_NOANSWER",        
+      "EXOSIP_SUBSCRIPTION_PROCEEDING",      
+      "EXOSIP_SUBSCRIPTION_ANSWERED",        
+      "EXOSIP_SUBSCRIPTION_REDIRECTED",      
+      "EXOSIP_SUBSCRIPTION_REQUESTFAILURE",  
+      "EXOSIP_SUBSCRIPTION_SERVERFAILURE",   
+      "EXOSIP_SUBSCRIPTION_GLOBALFAILURE",   
+      "EXOSIP_SUBSCRIPTION_NOTIFY",          
+      "EXOSIP_SUBSCRIPTION_RELEASED",        
+      "EXOSIP_IN_SUBSCRIPTION_NEW",          
+      "EXOSIP_IN_SUBSCRIPTION_RELEASED",     
+      "EXOSIP_NOTIFICATION_NOANSWER",        
+      "EXOSIP_NOTIFICATION_PROCEEDING",      
+      "EXOSIP_NOTIFICATION_ANSWERED",        
+      "EXOSIP_NOTIFICATION_REDIRECTED",      
+      "EXOSIP_NOTIFICATION_REQUESTFAILURE",  
+      "EXOSIP_NOTIFICATION_SERVERFAILURE",   
+      "EXOSIP_NOTIFICATION_GLOBALFAILURE",   
+      "EXOSIP_EVENT_COUNT"                
+};
+
 static void log_event(eXosip_event_t * je)
 {
 	char buf[100];
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "EVENT [%s]\n", event_names[je->type]);
 
 	buf[0] = '\0';
 	if (je->type == EXOSIP_CALL_NOANSWER) {
@@ -1696,10 +1919,24 @@ static int config_exosip(int reload)
 }
 
 
+static void check_expire(time_t now)
+{
+	char sql[1024];
+
+	switch_mutex_lock(globals.reg_mutex);
+	snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires < %ld", now);
+	switch_core_db_persistant_execute(globals.db, sql, 1);
+	switch_mutex_unlock(globals.reg_mutex);
+}
+
+
+
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 {
 	eXosip_event_t *event = NULL;
 	switch_event_t *s_event;
+	time_t now = 0, next = 0;
+	int interval = 60;
 
 	config_exosip(0);
 
@@ -1722,10 +1959,15 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", globals.port);
 		switch_event_fire(&s_event);
 	}
-
+	
 	globals.running = 1;
 	while (globals.running > 0) {
 		if ((event = eXosip_event_wait(0, 100)) == 0) {
+			now = time(NULL);
+			if (now >= next) {
+				check_expire(now);
+				next = now + interval;
+			}
 			switch_yield(1000);
 			continue;
 		}
@@ -1737,16 +1979,19 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 		log_event(event);
 
 		switch (event->type) {
+		case EXOSIP_MESSAGE_NEW:
+			handle_message_new(event);
+			break;
 		case EXOSIP_CALL_INVITE:
 			if (exosip_create_call(event) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invite failure\n");
+
+
 				destroy_call_by_event(event);
 			}
 			break;
 		case EXOSIP_CALL_REINVITE:
 			/* See what the reinvite is about - on hold or whatever */
 			//handle_reinvite(event);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a reinvite.\n");
 			break;
 		case EXOSIP_CALL_MESSAGE_NEW:
 			if (event->request != NULL && MSG_IS_REFER(event->request)) {
@@ -1757,7 +2002,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			/* If audio is not flowing and this has SDP - fire it up! */
 			break;
 		case EXOSIP_CALL_ANSWERED:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "The call was answered.\n");
 			handle_answer(event);
 			break;
 		case EXOSIP_CALL_PROCEEDING:
@@ -1767,7 +2011,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			//handle_ringing(event);
 			break;
 		case EXOSIP_CALL_REDIRECTED:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call was redirect\n");
 			break;
 		case EXOSIP_CALL_CLOSED:
 			destroy_call_by_event(event);
@@ -1776,24 +2019,19 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_NOANSWER:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "The call was not answered.\n");
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_REQUESTFAILURE:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Request failure\n");
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_SERVERFAILURE:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Server failure\n");
 			destroy_call_by_event(event);
 			break;
 		case EXOSIP_CALL_GLOBALFAILURE:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Global failure\n");
 			destroy_call_by_event(event);
 			break;
 			/* Registration related stuff */
 		case EXOSIP_REGISTRATION_NEW:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received registration attempt\n");
 			break;
 		default:
 			/* Unknown event... casually absorb it for now */
