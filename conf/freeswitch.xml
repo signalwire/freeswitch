@@ -137,7 +137,7 @@
       <settings>
         <param name="debug" value="1"/>
         <param name="dialplan" value="XML"/>
-        <param name="mtu" value="160"/>
+        <param name="mtu" value="320"/>
         <param name="dtmf_on" value="800"/>
         <param name="dtmf_off" value="100"/>
         <param name="supress_dtmf_tone" value="yes"/>
@@ -286,8 +286,8 @@
         <param name="rtp-ip" value="10.0.0.1"/>
         <param name="auto-login" value="true"/>
         <!-- or -->
-        <!-- rtp-<param name="ip" value="my_lan_ip"/> -->
-        <!-- ext-rtp-<param name="ip" value="stun:stun.server.com"/> -->
+        <!-- <param name="rtp-ip" value="my_lan_ip"/> -->
+        <!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/> -->
         <!-- default extension (if one cannot be determined) -->
         <param name="exten" value="888"/>
         <!-- VAD choose one -->
