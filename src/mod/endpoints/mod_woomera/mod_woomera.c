@@ -953,7 +953,7 @@ static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_ABORT)) {
-			switch_channel_HANGUP(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			udp_socket_close(tech_pvt);
 			break;
 		}

@@ -981,7 +981,7 @@ static int on_hangup(struct sangoma_pri *spri, sangoma_pri_event_t event_type, p
 
 		tech_pvt->cause = event->hangup.cause;
 
-		switch_channel_HANGUP(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 
 		chanmap->map[event->hangup.channel] = NULL;
 	}
