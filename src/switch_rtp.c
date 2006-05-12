@@ -331,6 +331,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
 		switch_socket_opt_set(rtp_session->sock, APR_SO_NONBLOCK, TRUE);
+		switch_set_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
 	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_IO);
 	return SWITCH_STATUS_SUCCESS;
@@ -684,6 +685,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	for(;;) {
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
+
 		
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
 			switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_BREAK);

@@ -1492,6 +1492,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		if (signal) {
 			ldl_payload_t *payloads;
 			unsigned int len = 0;
+			int match = 0;
 
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 				if (!strcasecmp(msg, "accept")) {
@@ -1519,7 +1520,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				for(x = 0; x < len; x++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Available Payload %s %u\n", payloads[x].name, payloads[x].id);
 					for(y = 0; y < tech_pvt->num_codecs; y++) {
-						int match = 0;
 						char *name = tech_pvt->codecs[y]->iananame;
 
 						if (!strncasecmp(name, "ilbc", 4)) {
@@ -1542,6 +1542,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							return LDL_STATUS_SUCCESS;
 						}
 					}
+				}
+				if (!match && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+					do_describe(tech_pvt, 0);
 				}
 			}
 		}
