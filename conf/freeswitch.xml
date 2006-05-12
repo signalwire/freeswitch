@@ -288,7 +288,7 @@
       </extension>
       <!-- Call *MUST* originate from mod_iax and also be dialing ext 9999-->
       <extension name="9999">
-       <condition field="source" expresion="mod_iax"/>
+       <condition field="source" expression="mod_iax"/>
        <condition field="destination_number" expression="9999">
          <action application="playback" data="/var/sounds/beep.gsm"/>
        </condition>
