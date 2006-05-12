@@ -313,9 +313,15 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(char *file_path, switch_xml_t *
 
 ///\brief bind a search function to an external gateway
 ///\param function the search function to bind
+///\param sections a bitmask of sections you wil service
 ///\return SWITCH_STATUS_SUCCESS if successful
 ///\note gateway functions will be executed in the order they were binded until a success is found else the root registry will be used
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function);
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections);
+
+///\brief parse a string for a list of sections
+///\param string a | delimited list of section names
+///\return the section mask
+SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(char *str);
 
 END_EXTERN_C
 

@@ -84,6 +84,7 @@ char *SWITCH_XML_NIL[] = { NULL }; // empty, null terminated array of strings
 
 struct switch_xml_binding {
 	switch_xml_search_function_t function;
+	switch_xml_section_t sections;
 	struct switch_xml_binding *next;
 };
 
@@ -94,7 +95,43 @@ static switch_memory_pool_t *XML_MEMORY_POOL;
 static switch_mutex_t *XML_LOCK;
 static switch_thread_rwlock_t *RWLOCK;
 
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function)
+struct xml_section_t {
+	const char *name;
+	switch_xml_section_t section;
+};
+
+
+static struct xml_section_t SECTIONS[] = {
+	{ "result", SWITCH_XML_SECTION_RESULT},
+	{ "config", SWITCH_XML_SECTION_CONFIG},
+	{ "directory", SWITCH_XML_SECTION_DIRECTORY},
+	{ "dialplan", SWITCH_XML_SECTION_DIALPLAN},
+	{ NULL, 0}
+};
+
+SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(char *str)
+{
+	int x;
+	char buf[1024] = "";
+	switch_xml_section_t sections = SWITCH_XML_SECTION_RESULT;
+
+	if (str) {
+		for(x = 0; x < strlen(str); x++) {
+			buf[x] = tolower(str[x]);
+		}
+		for(x = 0;;x++) {
+			if (!SECTIONS[x].name) {
+				break;
+			}
+			if (strstr(buf, SECTIONS[x].name)) {
+				sections |= SECTIONS[x].section;
+			}
+		}
+	}
+	return sections;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections)
 {
 	switch_xml_binding_t *binding = NULL, *ptr = NULL;
 	assert(function != NULL);
@@ -104,6 +141,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_searc
 	}
 
 	binding->function = function;
+	binding->sections = sections;
 
 	switch_mutex_lock(XML_LOCK);
 	for (ptr = BINDINGS; ptr && ptr->next; ptr = ptr->next);
@@ -123,8 +161,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, char *chil
 {
 	switch_xml_t p = NULL;
 
+	if (!(childname && attrname && value)) {
+		return node;
+	}
+
 	for (p = switch_xml_child(node, childname); p; p = p->next) {
 		const char *aname = switch_xml_attr(p, attrname);
+
 		if (!strcasecmp(aname, value)) {
 			break;
 		}
@@ -757,6 +800,12 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
 	switch_mutex_lock(XML_LOCK);
 
 	for(binding = BINDINGS; binding; binding = binding->next) {
+		switch_xml_section_t sections = switch_xml_parse_section_string(section);
+
+		if (binding->sections && !(sections & binding->sections)) {
+			continue;
+		}
+
 		if ((xml = binding->function(section, tag_name, key_name, key_value, params))) {
 			const char *err = NULL;
 			

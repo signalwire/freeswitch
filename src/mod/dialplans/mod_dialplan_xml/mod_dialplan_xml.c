@@ -127,7 +127,6 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 	switch_caller_profile_t *caller_profile;
 	switch_caller_extension_t *extension = NULL;
 	switch_channel_t *channel;
-	char *cf = "extensions.conf";
 	char *exten_name = NULL;
 	switch_xml_t cfg, xml, xcontext, xexten, xaction, xcond;
 	char *context = NULL;
@@ -145,10 +144,11 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 					  caller_profile->destination_number);
 	
 	snprintf(params, sizeof(params), "dest=%s", caller_profile->destination_number);
-	if (!(xml = switch_xml_open_cfg(cf, &cfg, params))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+
+	if (switch_xml_locate("dialplan", NULL, NULL, NULL, &xml, &cfg, params) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return NULL;		
+		return NULL;
 	}
 	
 	if (!(xcontext = switch_xml_find_child(cfg, "context", "name", context))) {

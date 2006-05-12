@@ -93,6 +93,14 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 #define SWITCH_TRUE 1
 #define SWITCH_FALSE 0
 
+
+typedef enum {
+	SWITCH_XML_SECTION_RESULT = 0,
+	SWITCH_XML_SECTION_CONFIG = (1 << 0),
+	SWITCH_XML_SECTION_DIRECTORY = (1 << 1),
+	SWITCH_XML_SECTION_DIALPLAN = (1 << 2)
+} switch_xml_section_t;
+
 /*!
   \enum switch_vad_flag_t
   \brief RTP Related Flags

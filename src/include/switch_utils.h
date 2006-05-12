@@ -151,7 +151,8 @@ SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key);
   \param fname the function name to declare
   \param vname the name of the global pointer to modify with the new function
 */
-#define SWITCH_DECLARE_GLOBAL_STRING_FUNC(fname, vname) static void fname(char *string) { if (vname) {free(vname); vname = NULL;}vname = strdup(string);}
+#define SWITCH_DECLARE_GLOBAL_STRING_FUNC(fname, vname) static void fname(char *string) { if (!string) return;\
+if (vname) {free(vname); vname = NULL;}vname = strdup(string);}
 
 /*!
   \brief Separate a string into an array based on a character delimeter

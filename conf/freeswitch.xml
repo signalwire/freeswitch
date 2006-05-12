@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <document type="freeswitch/xml">
-  <section name="configuration">
+  <section name="configuration" description="Various Configuration">
     <configuration name="modules.conf" description="Modules">
       <modules>
         <!-- Loggers (I'd load these first) -->
@@ -205,14 +205,51 @@
       </settings>
     </configuration>
   
-    <configuration name="extensions.conf" description="Regex/XML Dialplan">
-      <!-- any extension starting with a '4' -->
-      <!-- strip the '4' and consider the rest a numeric filename -->
+    <configuration name="dingaling.conf" description="XMPP Jingle Endpoint">
+      <settings>
+        <param name="debug" value="0"/>
+        <param name="codec_prefs" value="PCMU"/>
+      </settings>
+      <!-- *NOTE* your resource (after the /) MUST contain the string "talk" (upper or lower case is ok) -->
+      <!-- *NOTE* as of May 2 2006 you must set"auto-login" to"true" if you want to be able to auto-login on startup"/> -->
+      <interface>
+        <param name="name" value="jingle"/>
+        <param name="login" value="myjid@myserver.com/talk"/>
+        <param name="password" value="mypass"/>
+        <param name="dialplan" value="XML"/>
+        <param name="message" value="Jingle all the way"/>
+        <param name="rtp-ip" value="10.0.0.1"/>
+        <param name="auto-login" value="true"/>
+        <!-- or -->
+        <!-- <param name="rtp-ip" value="my_lan_ip"/> -->
+        <!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/> -->
+        <!-- default extension (if one cannot be determined) -->
+        <param name="exten" value="888"/>
+        <!-- VAD choose one -->
+        <!-- <param name="vad" value="in"/> -->
+        <!-- <param name="vad" value="out"/> -->
+        <param name="vad" value="both"/>
+      </interface>
+    </configuration>
+    <configuration name="xml_rpc.conf" description="XML RPC">
+      <settings>
+	<!-- The port where you want to run the http service (default 8080) -->
+	<param name="http_port" value="8080"/>
+        <!-- The url to a gateway cgi that can generate xml similar to
+        what's in this file only on-the-fly (leave it commented if you dont
+        need it) -->
+        <!-- <param name="gateway_url" value="http://www.server.com/gateway.cgi"/> -->
+      </settings>
+    </configuration>
+  </section>
+
+  <section name="dialplan" description="Regex/XML Dialplan">
       <!-- Valid fields in conditions:
            "dialplan, caller_id_name, ani, ani2, caller_id_number,
             network_addr, rdnis, destination_number, uuid, source,
             context, chan_name" -->
   
+      <!-- *NOTE* The special context name 'any' will match any context -->
       <context name="default">
         <extension name="devconf">
           <condition field="destination_number" expression="^888$">
@@ -268,46 +305,9 @@
          </condition>
         </extension>
       </context>
-    </configuration>
-  
-    <configuration name="dingaling.conf" description="XMPP Jingle Endpoint">
-      <settings>
-        <param name="debug" value="0"/>
-        <param name="codec_prefs" value="PCMU"/>
-      </settings>
-      <!-- *NOTE* your resource (after the /) MUST contain the string "talk" (upper or lower case is ok) -->
-      <!-- *NOTE* as of May 2 2006 you must set"auto-login" to"true" if you want to be able to auto-login on startup"/> -->
-      <interface>
-        <param name="name" value="jingle"/>
-        <param name="login" value="myjid@myserver.com/talk"/>
-        <param name="password" value="mypass"/>
-        <param name="dialplan" value="XML"/>
-        <param name="message" value="Jingle all the way"/>
-        <param name="rtp-ip" value="10.0.0.1"/>
-        <param name="auto-login" value="true"/>
-        <!-- or -->
-        <!-- <param name="rtp-ip" value="my_lan_ip"/> -->
-        <!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/> -->
-        <!-- default extension (if one cannot be determined) -->
-        <param name="exten" value="888"/>
-        <!-- VAD choose one -->
-        <!-- <param name="vad" value="in"/> -->
-        <!-- <param name="vad" value="out"/> -->
-        <param name="vad" value="both"/>
-      </interface>
-    </configuration>
-    <configuration name="xml_rpc.conf" description="XML RPC">
-      <settings>
-	<!-- The port where you want to run the http service (default 8080) -->
-	<param name="http_port" value="8080"/>
-        <!-- The url to a gateway cgi that can generate xml similar to
-        what's in this file only on-the-fly (leave it commented if you dont
-        need it) -->
-        <!-- <param name="gateway_url" value="http://www.server.com/gateway.cgi"/> -->
-      </settings>
-    </configuration>
-
-  </section>
+    </section>
+    <section name="directory" description="User Directory">
+    </section>
 </document>
         
   

@@ -49,9 +49,11 @@ static struct {
 	uint16_t port;
 	uint8_t running;
 	char *url;
+	char *bindings;
 } globals;
 
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_url, globals.url)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_url, globals.url);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings);
 
 struct config_data {
 	char *name;
@@ -79,8 +81,14 @@ static switch_xml_t xml_url_fetch(char *section,
 	struct config_data config_data;
 	switch_xml_t xml = NULL;
 	
-	snprintf(url, sizeof(url), "%s?section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s\n", 
-			 globals.url, section, tag_name, key_name, key_value, params ? "&" : "", params ? params : "");
+	snprintf(url, sizeof(url), "%s?section=%s&tag_name=%s&key_name=%s&&key_value=%s%s%s\n", 
+			 globals.url,
+			 section,
+			 tag_name ? tag_name : "",
+			 key_name ? key_name : "",
+			 key_value ? key_value : "",
+			 params ? "&" : "", params ? params : "");
+
 	srand((unsigned int)(time(NULL) + strlen(url)));
 	snprintf(filename, sizeof(filename), "%s%04x.tmp", SWITCH_GLOBAL_dirs.temp_dir, (rand() & 0xffff));
 	curl_handle = curl_easy_init();
@@ -142,6 +150,8 @@ static switch_status_t do_config(void)
 			char *val = (char *) switch_xml_attr(param, "value");
 
 			if (!strcasecmp(var, "gateway_url")) {
+				char *bindings = (char *) switch_xml_attr(param, "bindings");
+				set_global_bindings(bindings);
 				set_global_url(val);
 			} else if (!strcasecmp(var, "http_port")) {
 				globals.port = (uint16_t)atoi(val);
@@ -167,8 +177,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	memset(&globals, 0, sizeof(globals));
 
 	if (do_config() == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding XML Fetch Function [%s]\n", globals.url);
-		switch_xml_bind_search_function(xml_url_fetch);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding XML Fetch Function [%s] [%s]\n", globals.url, globals.bindings ? globals.bindings : "all");
+		switch_xml_bind_search_function(xml_url_fetch, switch_xml_parse_section_string(globals.bindings));
 	}
 
 	curl_global_init(CURL_GLOBAL_ALL);
