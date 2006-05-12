@@ -238,7 +238,8 @@
         <!-- The url to a gateway cgi that can generate xml similar to
         what's in this file only on-the-fly (leave it commented if you dont
         need it) -->
-        <!-- <param name="gateway_url" value="http://www.server.com/gateway.cgi"/> -->
+	<!-- one or more |-delim of configuration|directory|dialplan -->
+        <!-- <param name="gateway_url" value="http://www.server.com/gateway.cgi" bindings="configuration"/> -->
       </settings>
     </configuration>
   </section>
