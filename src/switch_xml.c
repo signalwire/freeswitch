@@ -111,13 +111,13 @@ static struct xml_section_t SECTIONS[] = {
 
 SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(char *str)
 {
-	int x;
+	size_t x;
 	char buf[1024] = "";
 	switch_xml_section_t sections = SWITCH_XML_SECTION_RESULT;
 
 	if (str) {
 		for(x = 0; x < strlen(str); x++) {
-			buf[x] = tolower(str[x]);
+			buf[x] = (char)tolower(str[x]);
 		}
 		for(x = 0;;x++) {
 			if (!SECTIONS[x].name) {
