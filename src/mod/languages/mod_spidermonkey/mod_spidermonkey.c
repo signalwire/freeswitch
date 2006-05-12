@@ -661,11 +661,18 @@ static JSBool session_hangup(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_channel_t *channel;
+	char *cause_name = NULL;
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+
+	if (argc > 1) {
+		cause_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		cause = switch_channel_str2cause(cause_name);
+	}
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	switch_channel_hangup(channel, cause);
 	switch_core_session_kill_channel(jss->session, SWITCH_SIG_KILL);
 	return JS_TRUE;
 }
@@ -747,7 +754,7 @@ static JSBool js_fetchurl_hash(JSContext *cx, JSObject *obj, uintN argc, jsval *
 		url = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 
-		curl_global_init(CURL_GLOBAL_ALL);
+
 		curl_handle = curl_easy_init();
 		if (!strncasecmp(url, "https", 5)) {
 			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -2206,6 +2213,14 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &spidermonkey_module_interface;
 
+	curl_global_init(CURL_GLOBAL_ALL);
+
 	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+{
+	curl_global_cleanup();
 	return SWITCH_STATUS_SUCCESS;
 }

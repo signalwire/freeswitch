@@ -2535,7 +2535,9 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	switch_time_t last_commit = switch_time_now();
 	uint32_t freq = 1000, target = 500, diff = 0;
 	
-	runtime.event_db = switch_core_db_handle();
+	if (!runtime.event_db) {
+		runtime.event_db = switch_core_db_handle();
+	}
 	switch_queue_create(&runtime.sql_queue, SWITCH_SQL_QUEUE_LEN, runtime.memory_pool);
 	
 	for(;;) {
@@ -2880,6 +2882,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 		switch_yield(1000);
 	}
 	switch_core_db_close(runtime.db);
+	switch_core_db_close(runtime.event_db);
 	switch_xml_destroy();
 
 	if (runtime.memory_pool) {

@@ -30,6 +30,8 @@
  *
  */
 
+
+
 #define MY_EVENT_REGISTER "exosip::register"
 #define MY_EVENT_EXPIRE "exosip::expire"
 
@@ -1361,6 +1363,10 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 			}
 		}
 
+		switch_safe_free(dname);
+		switch_safe_free(drate);
+		switch_safe_free(dpayload);
+
 		if (activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
 			exosip_on_hangup(session);
 			switch_core_session_destroy(&session);
@@ -1493,10 +1499,8 @@ static void handle_message_new(eXosip_event_t *je)
 			if (osip_message_get_contact(je->request, x++, &contact) < 0) {
 				break;
 			}
-			if (lame) {
-				free(lame);
-				lame = NULL;
-			}
+
+			switch_safe_free(lame);
 			osip_contact_to_str((const osip_contact_t *) contact, &lame);
 			contact_uri = osip_contact_get_url(contact);
 
@@ -1544,11 +1548,8 @@ static void handle_message_new(eXosip_event_t *je)
 			}
 				
 		}
-		
-	} else {
-		/* Unimplemented */
-    }
-
+		switch_safe_free(lame);		
+	} 
 }
 
 
@@ -1650,9 +1651,9 @@ static void handle_answer(eXosip_event_t * event)
 	eXosip_call_send_ack(event->did, ack);
 	eXosip_unlock();
 
-	free(dname);
-	free(drate);
-	free(dpayload);
+	switch_safe_free(dname);
+	switch_safe_free(drate);
+	switch_safe_free(dpayload);
 
 
 	if (activate_rtp(tech_pvt) != SWITCH_STATUS_SUCCESS) {
@@ -2018,8 +2019,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			break;
 		case EXOSIP_CALL_INVITE:
 			if (exosip_create_call(event) != SWITCH_STATUS_SUCCESS) {
-
-
 				destroy_call_by_event(event);
 			}
 			break;

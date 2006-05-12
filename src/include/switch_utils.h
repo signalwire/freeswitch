@@ -127,6 +127,13 @@ SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key);
 */
 #define switch_copy_flags(dest, src, flags) (dest)->flags &= ~(flags);	(dest)->flags |= ((src)->flags & (flags))
 
+
+/*!
+  \brief Free a pointer and set it to NULL unles it already is NULL
+  \param it the pointer
+*/
+#define switch_safe_free(it) if (it) {free(it);it=NULL;}
+
 /*!
   \brief Test for NULL or zero length string
   \param s the string to test

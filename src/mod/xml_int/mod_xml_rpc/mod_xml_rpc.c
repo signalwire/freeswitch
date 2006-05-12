@@ -77,13 +77,12 @@ static switch_xml_t xml_url_fetch(char *section,
 	char url[1024] = "", filename[1024] = "";
 	CURL *curl_handle = NULL;
 	struct config_data config_data;
-	switch_xml_t xml;
+	switch_xml_t xml = NULL;
 	
 	snprintf(url, sizeof(url), "%s?section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s\n", 
 			 globals.url, section, tag_name, key_name, key_value, params ? "&" : "", params ? params : "");
 	srand((unsigned int)(time(NULL) + strlen(url)));
 	snprintf(filename, sizeof(filename), "%s%04x.tmp", SWITCH_GLOBAL_dirs.temp_dir, (rand() & 0xffff));
-	curl_global_init(CURL_GLOBAL_ALL);
 	curl_handle = curl_easy_init();
 	if (!strncasecmp(url, "https", 5)) {
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
@@ -171,6 +170,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding XML Fetch Function [%s]\n", globals.url);
 		switch_xml_bind_search_function(xml_url_fetch);
 	}
+
+	curl_global_init(CURL_GLOBAL_ALL);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -306,6 +307,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
 	globals.running = 0;
+	curl_global_cleanup();
 	return SWITCH_STATUS_SUCCESS;
 }
 
