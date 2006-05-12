@@ -319,7 +319,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(char *file_path, switch_xml_t *
 SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections);
 
 ///\brief parse a string for a list of sections
-///\param string a | delimited list of section names
+///\param str a | delimited list of section names
 ///\return the section mask
 SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(char *str);
 
