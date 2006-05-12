@@ -105,6 +105,7 @@
         <param name="port" value="5060"/>
         <param name="dialplan" value="XML"/>
         <param name="dtmf_duration" value="100"/>
+        <param name="codec_prefs" value="PCMU,PCMA"/>
         <!-- pick one (default if not specified is 'guess'); -->
         <param name="rtp-ip" value="guess"/>
         <!-- <param name-"rtp-ip" value="10.0.0.1"/> -->
