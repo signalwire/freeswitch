@@ -90,7 +90,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(TargetPath) $(ProjectDir)pcre_chartables.c"
+				CommandLine="&quot;$(TargetPath)&quot; &quot;$(ProjectDir)pcre_chartables.c&quot;"
 			/>
 		</Configuration>
 		<Configuration
@@ -168,7 +168,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(TargetPath) $(ProjectDir)pcre_chartables.c"
+				CommandLine="&quot;$(TargetPath)&quot; &quot;$(ProjectDir)pcre_chartables.c&quot;"
 			/>
 		</Configuration>
 	</Configurations>

@@ -895,7 +895,7 @@ Sub CreateSwitchVersion()
 	End If
 	VersionCmd="svnversion " & quote & FreeswitchDir & "." & quote &  " -n"
 	Set MyFile = fso.CreateTextFile(UtilsDir & "svnversion\tmpVersion.Bat", True)
-	MyFile.WriteLine("@" & "cd " & UtilsDir & "svnversion")
+	MyFile.WriteLine("@" & "cd " & quote & UtilsDir & "svnversion" & quote )
 	MyFile.WriteLine("@" & VersionCmd)
 	MyFile.Close
 	Set oExec = WshShell.Exec(UtilsDir & "svnversion\tmpVersion.Bat")
@@ -1051,7 +1051,7 @@ End Sub
 Sub UnCompress(Archive, DestFolder)
 	wscript.echo("Extracting: " & Archive)
 	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
-	MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & Archive & " -y -o" & DestFolder)
+	MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Archive & quote & " -y -o" & quote & DestFolder & quote )
 	MyFile.Close
 	Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
 	Do
@@ -1059,7 +1059,7 @@ Sub UnCompress(Archive, DestFolder)
 	Loop While Not OExec.StdOut.atEndOfStream
 	If FSO.FileExists(Left(Archive, Len(Archive)-3))Then  
 		Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
-		MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & Left(Archive, Len(Archive)-3) & " -y -o" & DestFolder)
+		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Left(Archive, Len(Archive)-3) & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
 		Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
 		Do
@@ -1070,7 +1070,7 @@ Sub UnCompress(Archive, DestFolder)
 	End If
 	If FSO.FileExists(Left(Archive, Len(Archive)-3) & "tar")Then  
 		Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
-		MyFile.WriteLine("@" & UtilsDir & "7za.exe x " & Left(Archive, Len(Archive)-3) & "tar -y -o" & DestFolder)
+		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Left(Archive, Len(Archive)-3) & "tar" & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
 		Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
 		Do
