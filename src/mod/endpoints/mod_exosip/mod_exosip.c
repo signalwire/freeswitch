@@ -41,7 +41,7 @@
 #include <osip2/osip_mt.h>
 #include <osip_rfc3264.h>
 #include <osipparser2/osip_port.h>
-#define DBFILE "exosip.db"
+#define DBFILE "exosip"
 
 static const char modname[] = "mod_exosip";
 #define STRLEN 15
@@ -142,6 +142,7 @@ struct private_object {
 static char create_interfaces_sql[] =
 "CREATE TABLE sip_registrations (\n"
 "   key             VARCHAR(255),\n"
+"   host            VARCHAR(255),\n"
 "   url             VARCHAR(255),\n"
 "   expires         INTEGER(8)"
 ");\n";
@@ -941,17 +942,29 @@ static char *find_reg_url(switch_core_db_t *db, char *key, char *val, switch_siz
 	char *errmsg;
 	switch_core_db_t *udb = NULL;
 	struct callback_t cbt = {0};
-
+	char buf[1024];
+	char *host = NULL;
+	
 	if (db) {
 		udb = db;
 	} else {
 		udb = switch_core_db_open_file(DBFILE);
 	}
 
+	switch_copy_string(buf, key, sizeof(buf));
+	key = buf;
+	if ((host = strchr(key, '%'))) {
+		*host++ = '\0';
+	}
+
 	cbt.val = val;
 	cbt.len = len;
 	switch_mutex_lock(globals.reg_mutex);
-	snprintf(val, len, "select url from sip_registrations where key='%s'", key);	
+	if (host) {
+		snprintf(val, len, "select url from sip_registrations where key='%s' and host='%s'", key, host);	
+	} else {
+		snprintf(val, len, "select url from sip_registrations where key='%s'", key);	
+	}
 	switch_core_db_exec(udb, val, find_callback, &cbt, &errmsg);
 
 	if (errmsg) {
@@ -1517,8 +1530,9 @@ static void handle_message_new(eXosip_event_t *je)
 
 				
 				if (!find_reg_url(globals.db, je->request->from->url->username, sql, sizeof(sql))) {
-					snprintf(sql, sizeof(sql), "insert into sip_registrations values ('%s','%s',%ld)", 
-							 je->request->from->url->username, 
+					snprintf(sql, sizeof(sql), "insert into sip_registrations values ('%s','%s','%s',%ld)", 
+							 je->request->from->url->username,
+							 je->request->from->url->host,
 							 url, exptime);
 				} else {
 					snprintf(sql, sizeof(sql), "update sip_registrations set url='%s', expires=%ld where key = '%s'",
