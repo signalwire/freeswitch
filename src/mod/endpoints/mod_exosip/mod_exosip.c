@@ -1169,7 +1169,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 		if (!(val = osip_from_get_displayname(from))) {
 			val = event->request->from->url->username;
 			if (!val) {
-				val = "n/a";
+				val = "FreeSWITCH";
 			}
 		}
 		
