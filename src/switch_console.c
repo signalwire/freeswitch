@@ -31,6 +31,7 @@
  */
 #include <switch.h>
 #include <switch_console.h>
+#include <switch_version.h>
 #define CMD_BUFLEN 1024 * 1000
 
 

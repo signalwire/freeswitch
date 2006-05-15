@@ -31,6 +31,7 @@
  */
 
 #include <switch.h>
+#include <switch_version.h>
 
 static int RUNNING = 0;
 

@@ -54,7 +54,6 @@ BEGIN_EXTERN_C
 
 #include <assert.h>
 #include <setjmp.h>
-#include <switch_version.h>
 #include <switch_apr.h>
 #include <switch_sqlite.h>
 #include <switch_types.h>
@@ -72,7 +71,6 @@ BEGIN_EXTERN_C
 #include <switch_resample.h>
 #include <switch_ivr.h>
 #include <switch_rtp.h>
-#include <switch_stun.h>
 #include <switch_stun.h>
 #include <switch_log.h>
 #include <switch_xml.h>
