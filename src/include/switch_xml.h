@@ -271,13 +271,15 @@ SWITCH_DECLARE(void) switch_xml_remove(switch_xml_t xml);
 
 ///\brief open the Core xml root
 ///\param reload if it's is already open close it and open it again as soon as permissable (blocking)
+///\param err a pointer to set error strings
 ///\return the xml root node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload);
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **err);
 
 ///\brief initilize the core XML backend
 ///\param pool a memory pool to use
+///\param err a pointer to set error strings
 ///\return SWITCH_STATUS_SUCCESS if successful
-SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, const char **err);
 
 
 SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void);

@@ -868,7 +868,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 	return MAIN_XML_ROOT;
 }
 
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload)
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **err)
 {
 	char path_buf[1024];
 	uint8_t hasmain = 0;
@@ -891,7 +891,14 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload)
 
 	snprintf(path_buf, sizeof(path_buf), "%s/%s", SWITCH_GLOBAL_dirs.conf_dir, "freeswitch.xml");
 	if ((MAIN_XML_ROOT = switch_xml_parse_file(path_buf))) {
-		switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
+		*err = switch_xml_error(MAIN_XML_ROOT);
+
+		if (!switch_strlen_zero(*err)) {
+			switch_xml_free(MAIN_XML_ROOT);
+			MAIN_XML_ROOT = NULL;
+		} else {
+			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
+		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open XML Root!\n");
 	}
@@ -904,16 +911,18 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload)
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, const char **err)
 {
 	switch_xml_t xml;
 	XML_MEMORY_POOL = pool;
+	*err = "Success";
+
 	switch_mutex_init(&XML_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_thread_rwlock_create(&RWLOCK, XML_MEMORY_POOL);
 
 	assert(pool != NULL);
 
-	if((xml=switch_xml_open_root(FALSE))) {
+	if((xml=switch_xml_open_root(FALSE, err))) {
 		switch_xml_free(xml);
 		return SWITCH_STATUS_SUCCESS;
 	} else {

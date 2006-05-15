@@ -366,6 +366,7 @@ SFF_RAW_RTP   = (1 <<  1) - Frame has raw rtp accessible
 </pre>
  */
 typedef enum {
+	SFF_NONE = 0,
 	SFF_CNG = (1 << 0),
 	SFF_RAW_RTP = (1 << 1)
 } switch_frame_flag_t;

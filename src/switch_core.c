@@ -2742,7 +2742,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 
 SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
 {
-
+	const char *err = NULL;
 	memset(&runtime, 0, sizeof(runtime));
 	
 	switch_core_set_globals();
@@ -2755,14 +2755,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
 	}
 
 	if (apr_pool_create(&runtime.memory_pool, NULL) != SWITCH_STATUS_SUCCESS) {
+		apr_terminate();
 		fprintf(stderr, "FATAL ERROR! Could not allocate memory pool\n");
-		switch_core_destroy();
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if (switch_xml_init(runtime.memory_pool) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "FATAL ERROR! Could not open XML Registry\n");
-		switch_core_destroy();
+	if (switch_xml_init(runtime.memory_pool, &err) != SWITCH_STATUS_SUCCESS) {
+		apr_terminate();
+		fprintf(stderr, "FATAL ERROR! Could not open XML Registry %s\n", err);
 		return SWITCH_STATUS_MEMERR;
 	}
 
