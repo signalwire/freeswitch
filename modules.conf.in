@@ -11,7 +11,6 @@ codecs/mod_g711
 codecs/mod_ilbc
 #codecs/mod_g729
 codecs/mod_gsm
-#codecs/mod_ilbc
 codecs/mod_l16
 #codecs/mod_speex
 #dialplans/mod_dialplan_directory
