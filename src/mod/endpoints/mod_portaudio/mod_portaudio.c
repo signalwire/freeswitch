@@ -583,13 +583,13 @@ static switch_status_t load_config(void)
 
 			if (!strcmp(var, "debug")) {
 				globals.debug = atoi(val);
-			} else if (!strcmp(var, "sample_rate")) {
+			} else if (!strcmp(var, "sample-rate")) {
 				globals.sample_rate = atoi(val);
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
-			} else if (!strcmp(var, "cid_name")) {
+			} else if (!strcmp(var, "cid-name")) {
 				set_global_cid_name(val);
-			} else if (!strcmp(var, "cid_num")) {
+			} else if (!strcmp(var, "cid-num")) {
 				set_global_cid_num(val);
 			} else if (!strcmp(var, "indev")) {
 				if (*val == '#') {

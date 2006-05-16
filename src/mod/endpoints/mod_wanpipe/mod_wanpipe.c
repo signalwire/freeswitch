@@ -1309,11 +1309,11 @@ static switch_status_t config_wanpipe(int reload)
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "mtu")) {
 				globals.mtu = atoi(val);
-			} else if (!strcmp(var, "dtmf_on")) {
+			} else if (!strcmp(var, "dtmf-on")) {
 				globals.dtmf_on = atoi(val);
-			} else if (!strcmp(var, "dtmf_off")) {
+			} else if (!strcmp(var, "dtmf-off")) {
 				globals.dtmf_off = atoi(val);
-			} else if (!strcmp(var, "supress_dtmf_tone")) {
+			} else if (!strcmp(var, "supress-dtmf-tone")) {
 				globals.supress_dtmf_tone = switch_true(val);
 			}
 		}

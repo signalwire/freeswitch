@@ -117,7 +117,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_jid, globals.jid)
 			if (!strcmp(var, "jid")) {
 				set_global_jid(val);
 				count++;
-			} else if (!strcmp(var, "target_jid")) {
+			} else if (!strcmp(var, "target-jid")) {
 				set_global_target_jid(val);
 				count++;
 			} else if (!strcmp(var, "passwd")) {

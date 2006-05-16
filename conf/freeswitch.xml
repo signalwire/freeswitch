@@ -67,9 +67,9 @@
         <!-- <param name="ip" value="1.2.3.4"> -->
         <param name="port" value="4569"/>
         <param name="dialplan" value="XML"/>
-        <param name="codec_prefs" value="PCMU,PCMA,speex,L16"/>
-        <param name="codec_master" value="us"/>
-        <param name="codec_rates" value="8"/>
+        <param name="codec-prefs" value="PCMU,PCMA,speex,L16"/>
+        <param name="codec-master" value="us"/>
+        <param name="codec-rates" value="8"/>
       </settings>
     </configuration>
   
@@ -104,8 +104,8 @@
       <settings>
         <param name="port" value="5060"/>
         <param name="dialplan" value="XML"/>
-        <param name="dtmf_duration" value="100"/>
-        <param name="codec_prefs" value="PCMU,PCMA"/>
+        <param name="dtmf-duration" value="100"/>
+        <param name="codec-prefs" value="PCMU,PCMA"/>
         <!-- pick one (default if not specified is 'guess'); -->
         <param name="rtp-ip" value="guess"/>
         <!-- <param name-"rtp-ip" value="10.0.0.1"/> -->
@@ -139,9 +139,9 @@
         <param name="debug" value="1"/>
         <param name="dialplan" value="XML"/>
         <param name="mtu" value="320"/>
-        <param name="dtmf_on" value="800"/>
-        <param name="dtmf_off" value="100"/>
-        <param name="supress_dtmf_tone" value="yes"/>
+        <param name="dtmf-on" value="800"/>
+        <param name="dtmf-off" value="100"/>
+        <param name="supress-dtmf-tone" value="yes"/>
       </settings>
       <span>
         <param name="span" value="1"/>
@@ -175,8 +175,8 @@
         <param name="indev" value="USB"/>
         <param name="outdev" value="USB"/>
   
-        <param name="cid_name" value="FreeSwitch"/>
-        <param name="cid_num" value="5555551212"/>
+        <param name="cid-name" value="FreeSwitch"/>
+        <param name="cid-num" value="5555551212"/>
       </settings>
     </configuration>
   
@@ -192,13 +192,13 @@
         <param name="#debug" value="1"/>
         <param name="jid" value="freeswitch@my.jabber.com/me"/>
         <param name="passwd" value="mypass"/>
-        <param name="target_jid" value="freeswitch@reader.org/him"/>
+        <param name="target-jid" value="freeswitch@reader.org/him"/>
       </settings>
     </configuration>
   
     <configuration name="dialplan_directory.conf" description="Dialplan Directory">
       <settings>
-        <param name="directory_name" value="ldap"/>
+        <param name="directory-name" value="ldap"/>
         <param name="host" value="ldap.freeswitch.org"/>
         <param name="dn" value="cn=Manager,dc=freeswitch,dc=org"/>
         <param name="pass" value="test"/>
@@ -209,7 +209,7 @@
     <configuration name="dingaling.conf" description="XMPP Jingle Endpoint">
       <settings>
         <param name="debug" value="0"/>
-        <param name="codec_prefs" value="PCMU"/>
+        <param name="codec-prefs" value="PCMU"/>
       </settings>
       <!-- *NOTE* your resource (after the /) MUST contain the string "talk" (upper or lower case is ok) -->
       <!-- *NOTE* as of May 2 2006 you must set"auto-login" to"true" if you want to be able to auto-login on startup"/> -->
@@ -235,12 +235,12 @@
     <configuration name="xml_rpc.conf" description="XML RPC">
       <settings>
 	<!-- The port where you want to run the http service (default 8080) -->
-	<param name="http_port" value="8080"/>
+	<param name="http-port" value="8080"/>
         <!-- The url to a gateway cgi that can generate xml similar to
         what's in this file only on-the-fly (leave it commented if you dont
         need it) -->
 	<!-- one or more |-delim of configuration|directory|dialplan -->
-        <!-- <param name="gateway_url" value="http://www.server.com/gateway.cgi" bindings="configuration"/> -->
+        <!-- <param name="gateway-url" value="http://www.server.com/gateway.cgi" bindings="configuration"/> -->
       </settings>
     </configuration>
   </section>

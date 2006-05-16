@@ -149,11 +149,11 @@ static switch_status_t do_config(void)
 			char *var = (char *) switch_xml_attr(param, "name");
 			char *val = (char *) switch_xml_attr(param, "value");
 
-			if (!strcasecmp(var, "gateway_url")) {
+			if (!strcasecmp(var, "gateway-url")) {
 				char *bindings = (char *) switch_xml_attr(param, "bindings");
 				set_global_bindings(bindings);
 				set_global_url(val);
-			} else if (!strcasecmp(var, "http_port")) {
+			} else if (!strcasecmp(var, "http-port")) {
 				globals.port = (uint16_t)atoi(val);
 			}
 		}

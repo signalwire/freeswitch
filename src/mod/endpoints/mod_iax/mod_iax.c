@@ -838,17 +838,17 @@ static switch_status_t load_config(void)
 				globals.port = atoi(val);
 			} else if (!strcmp(var, "ip")) {
 				set_global_ip(val);
-			} else if (!strcmp(var, "codec_master")) {
+			} else if (!strcmp(var, "codec-master")) {
 				if (!strcasecmp(val, "us")) {
 					switch_set_flag(&globals, GFLAG_MY_CODEC_PREFS);
 				}
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
-			} else if (!strcmp(var, "codec_prefs")) {
+			} else if (!strcmp(var, "codec-prefs")) {
 				set_global_codec_string(val);
 				globals.codec_order_last =
 					switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
-			} else if (!strcmp(var, "codec_rates")) {
+			} else if (!strcmp(var, "codec-rates")) {
 				set_global_codec_rates_string(val);
 				globals.codec_rates_last =
 					switch_separate_string(globals.codec_rates_string, ',', globals.codec_rates, SWITCH_MAX_CODECS);

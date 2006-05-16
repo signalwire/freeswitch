@@ -1912,12 +1912,12 @@ static int config_exosip(int reload)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Add Realm [%s][%s]\n", name, val);
 					switch_core_hash_insert(globals.srtp_hash, switch_core_strdup(module_pool, name), switch_core_strdup(module_pool, val));
 				}
-			} else if (!strcmp(var, "codec_prefs")) {
+			} else if (!strcmp(var, "codec-prefs")) {
 				set_global_codec_string(val);
 				globals.codec_order_last = switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
-			} else if (!strcmp(var, "codec_ms")) {
+			} else if (!strcmp(var, "codec-ms")) {
 				globals.codec_ms = atoi(val);
-			} else if (!strcmp(var, "dtmf_duration")) {
+			} else if (!strcmp(var, "dtmf-duration")) {
 				int dur = atoi(val);
 				if (dur > 10 && dur < 8000) {
 					globals.dtmf_duration = dur;

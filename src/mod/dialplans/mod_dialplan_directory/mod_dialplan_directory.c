@@ -67,9 +67,7 @@ static void load_config(void)
 			char *var = (char *) switch_xml_attr(param, "name");
 			char *val = (char *) switch_xml_attr(param, "value");
 
-			if (!strcmp(var, "directory_name") && val) {
-				set_global_directory_name(val);
-			} else if (!strcmp(var, "directory_name") && val) {
+			if (!strcmp(var, "directory-name") && val) {
 				set_global_directory_name(val);
 			} else if (!strcmp(var, "host") && val) {
 				set_global_host(val);

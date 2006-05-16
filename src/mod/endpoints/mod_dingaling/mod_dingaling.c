@@ -1310,11 +1310,11 @@ static switch_status_t load_config(void)
 
 			if (!strcasecmp(var, "debug")) {
 				globals.debug = atoi(val);
-			} else if (!strcasecmp(var, "codec_prefs")) {
+			} else if (!strcasecmp(var, "codec-prefs")) {
 				set_global_codec_string(val);
 				globals.codec_order_last =
 					switch_separate_string(globals.codec_string, ',', globals.codec_order, SWITCH_MAX_CODECS);
-			} else if (!strcasecmp(var, "codec_rates")) {
+			} else if (!strcasecmp(var, "codec-rates")) {
 				set_global_codec_rates_string(val);
 				globals.codec_rates_last =
 					switch_separate_string(globals.codec_rates_string, ',', globals.codec_rates, SWITCH_MAX_CODECS);
