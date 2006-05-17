@@ -1317,8 +1317,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr(param, "name");
-			char *val = (char *) switch_xml_attr(param, "value");
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (!strcmp(var, "noload") && atoi(val)) {
 				return SWITCH_STATUS_TERM;
@@ -1331,8 +1331,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	for (xmlp = switch_xml_child(cfg, "interface"); xmlp; xmlp = xmlp->next) {
 		for (param = switch_xml_child(xmlp, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr(param, "name");
-			char *val = (char *) switch_xml_attr(param, "value");
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcmp(var, "audio_ip")) {
 				strncpy(profile->audio_ip, val, sizeof(profile->audio_ip) - 1);
 			} else if (!strcmp(var, "host")) {

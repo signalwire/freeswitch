@@ -1305,8 +1305,8 @@ static switch_status_t load_config(void)
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr(param, "name");
-			char *val = (char *) switch_xml_attr(param, "value");
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (!strcasecmp(var, "debug")) {
 				globals.debug = atoi(val);
@@ -1324,8 +1324,8 @@ static switch_status_t load_config(void)
 	
 	for (xmlint = switch_xml_child(cfg, "interface"); xmlint; xmlint = xmlint->next) {
 		for (param = switch_xml_child(xmlint, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr(param, "name");
-			char *val = (char *) switch_xml_attr(param, "value");
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (!globals.init) {
 				ldl_global_init(globals.debug);

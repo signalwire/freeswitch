@@ -93,8 +93,8 @@ static switch_status_t config_logger(void)
 	
 	if ((settings = switch_xml_child(cfg, "mappings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr(param, "name");
-			char *val = (char *) switch_xml_attr(param, "value");
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			add_mapping(var, val);
 		}

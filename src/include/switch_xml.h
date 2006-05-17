@@ -172,6 +172,12 @@ switch_xml_t switch_xml_idx(switch_xml_t xml, int idx);
 ///\return the value
 SWITCH_DECLARE(const char *) switch_xml_attr(switch_xml_t xml, const char *attr);
 
+///\brief returns the value of the requested tag attribute, or "" if not found
+///\param xml the xml node
+///\param attr the attribute
+///\return the value
+SWITCH_DECLARE(const char *) switch_xml_attr_soft(switch_xml_t xml, const char *attr);
+
 ///\brief Traverses the switch_xml sturcture to retrieve a specific subtag. Takes a
 ///\ variable length list of tag names and indexes. The argument list must be
 ///\ terminated by either an index of -1 or an empty string tag name. Example: 

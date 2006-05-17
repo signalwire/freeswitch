@@ -161,11 +161,11 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 	
 	for (xexten = switch_xml_child(xcontext, "extension"); xexten; xexten = xexten->next) {
 		int proceed = 0;
-		char *cont = (char *) switch_xml_attr(xexten, "continue");
+		char *cont = (char *) switch_xml_attr_soft(xexten, "continue");
 
 		for (xcond = switch_xml_child(xexten, "condition"); xcond; xcond = xcond->next) {
-			char *field = (char *) switch_xml_attr(xcond, "field");
-			char *expression = (char *) switch_xml_attr(xcond, "expression");
+			char *field = (char *) switch_xml_attr_soft(xcond, "field");
+			char *expression = (char *) switch_xml_attr_soft(xcond, "expression");
 			char *field_data = switch_caller_get_field_by_name(caller_profile, field);
 			pcre *re = NULL;
 			int ovector[30];
@@ -179,8 +179,8 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 			assert(re != NULL);
 
 			for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {
-				char *application = (char*) switch_xml_attr(xaction, "application");
-				char *data = (char *) switch_xml_attr(xaction, "data");
+				char *application = (char*) switch_xml_attr_soft(xaction, "application");
+				char *data = (char *) switch_xml_attr_soft(xaction, "data");
 				char substituted[1024] = "";
 				char *app_data = NULL;
 				

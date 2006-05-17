@@ -192,6 +192,14 @@ switch_xml_t switch_xml_idx(switch_xml_t xml, int idx)
     return xml;
 }
 
+// returns the value of the requested tag attribute or "" if not found
+SWITCH_DECLARE(const char *) switch_xml_attr_soft(switch_xml_t xml, const char *attr)
+{
+	const char *ret = switch_xml_attr(xml, attr);
+
+	return ret ? ret : "";
+}
+
 // returns the value of the requested tag attribute or NULL if not found
 SWITCH_DECLARE(const char *) switch_xml_attr(switch_xml_t xml, const char *attr)
 {

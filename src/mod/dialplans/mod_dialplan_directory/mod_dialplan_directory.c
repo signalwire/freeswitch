@@ -64,8 +64,8 @@ static void load_config(void)
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr(param, "name");
-			char *val = (char *) switch_xml_attr(param, "value");
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (!strcmp(var, "directory-name") && val) {
 				set_global_directory_name(val);

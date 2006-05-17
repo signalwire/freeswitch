@@ -63,7 +63,7 @@ static void xml_function(switch_core_session_t *session, char *data)
 	const char *teamname;
 
 	for (team = switch_xml_child(f1, "team"); team; team = team->next) {
-		teamname = switch_xml_attr(team, "name");
+		teamname = switch_xml_attr_soft(team, "name");
 		for (driver = switch_xml_child(team, "driver"); driver; driver = driver->next) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
 							  "%s, %s: %s\n", switch_xml_child(driver, "name")->txt, teamname,
