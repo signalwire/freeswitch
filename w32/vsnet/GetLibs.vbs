@@ -767,18 +767,23 @@ Sub BuildLibs_pcre(BuildDebug, BuildRelease)
 		FSO.CopyFile Utilsdir & "pcre\pcre_chartables.c.vcproj", LibDestDir & "pcre\win32\", True
 		FSO.CopyFile Utilsdir & "pcre\pcre.h", LibDestDir & "pcre\win32\", True
 		FSO.CopyFile Utilsdir & "pcre\config.h", LibDestDir & "pcre\win32\", True
+		FSO.CopyFile Utilsdir & "pcre\pcre.h", LibDestDir & "include\", True
 	End If 
 	If FSO.FolderExists(LibDestDir & "pcre") Then 
 		If BuildDebug Then
-			If Not FSO.FileExists(LibDestDir & "pcre\win32\Debug\libpcre.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "pcre\win32\Debug DLL\libpcre.lib") Then 
 				BuildViaVCBuild LibDestDir & "pcre\win32\pcre_chartables.c.vcproj", "Debug"
-				BuildViaVCBuild LibDestDir & "pcre\win32\libpcre.vcproj", "Debug"
+				BuildViaVCBuild LibDestDir & "pcre\win32\libpcre.vcproj", "Debug DLL"
+				FSO.CopyFile LibDestDir & "pcre\win32\Debug DLL\libpcre.lib", ScriptDir & "Debug\", True
+				FSO.CopyFile LibDestDir & "pcre\win32\Debug DLL\libpcre.dll", ScriptDir & "Debug\", True
 			End If
 		End If
 		If BuildRelease Then
-			If Not FSO.FileExists(LibDestDir & "pcre\win32\Release\libpcre.lib") Then 
+			If Not FSO.FileExists(LibDestDir & "pcre\win32\Release DLL\libpcre.lib") Then 
 				BuildViaVCBuild LibDestDir & "pcre\win32\pcre_chartables.c.vcproj", "Release"
-				BuildViaVCBuild LibDestDir & "pcre\win32\libpcre.vcproj", "Release"
+				BuildViaVCBuild LibDestDir & "pcre\win32\libpcre.vcproj", "Release DLL"
+				FSO.CopyFile LibDestDir & "pcre\win32\Release DLL\libpcre.lib", ScriptDir & "Release\", True
+				FSO.CopyFile LibDestDir & "pcre\win32\Release DLL\libpcre.dll", ScriptDir & "Release\", True
 			End If
 		End If
 	Else
