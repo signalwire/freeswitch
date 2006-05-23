@@ -146,8 +146,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Languages", "Languages", "{
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_spidermonkey", "..\..\src\mod\languages\mod_spidermonkey\mod_spidermonkey.vcproj", "{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}"
 	ProjectSection(ProjectDependencies) = postProject
-		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 		{89385C74-5860-4174-9CAF-A39E7C48909C} = {89385C74-5860-4174-9CAF-A39E7C48909C}
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ASR-TTS", "ASR-TTS", "{4CF6A6AC-07DE-4B9E-ABE1-7F98B64E0BB0}"
@@ -197,6 +197,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "XML Interfaces", "XML Interfaces", "{F69A4A6B-9360-4EBB-A280-22AA3C455AC5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_xml_rpc", "..\..\src\mod\xml_int\mod_xml_rpc\mod_xml_rpc.vcproj", "{CBEC7225-0C21-4DA8-978E-1F158F8AD950}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{99D6D74B-32A8-4441-A417-551B0E0A4510}"
 	ProjectSection(SolutionItems) = preProject
