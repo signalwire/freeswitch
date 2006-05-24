@@ -40,8 +40,9 @@ build_triplet = @build@
 host_triplet = @host@
 @ISLINUX_TRUE@am__append_1 = -Wl,-E
 @CRASHPROT_TRUE@am__append_2 = -DCRASH_PROT
-@IS64BITLINUX_TRUE@am__append_3 = -m64 -march=k8 -fPIC
-@ISMAC_TRUE@am__append_4 = -DMACOSX
+@IS64BITLINUX_TRUE@am__append_3 = -m64 -march=k8 -fPIC -D_64BIT_MACHINE_
+@IS64BITLINUX_TRUE@am__append_4 = --enable-64bit
+@ISMAC_TRUE@am__append_5 = -DMACOSX
 bin_PROGRAMS = freeswitch$(EXEEXT)
 DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
@@ -246,7 +247,7 @@ APU_CONFIG = $(prefix)/bin/apu-1-config
 AM_CFLAGS = -I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags \
 	--cppflags --includes) -I${prefix}/include/srtp $(shell \
 	$(APU_CONFIG) --includes) $(am__append_2) $(am__append_3) \
-	$(am__append_4) -fPIC -Wall -I$(PWD)/src/sqlite -I$(PWD) \
+	$(am__append_5) -fPIC -Wall -I$(PWD)/src/sqlite -I$(PWD) \
 	-I$(PWD)/src/include -I$(PREFIX)/include \
 	-DSWITCH_MOD_DIR=\"$(PREFIX)/mod\" \
 	-DSWITCH_PREFIX_DIR=\"$(PREFIX)\" \
@@ -259,6 +260,7 @@ AM_LDFLAGS = -L$(PREFIX)/lib $(shell $(APR_CONFIG) --link-ld --libs ) \
 	$(shell $(APU_CONFIG) --link-ld --libs ) -lm \
 	-L/usr/local/lib/db42 -L/usr/local/lib $(am__append_1)
 OSARCH = $(shell uname -s)
+AM_CFGARGS = $(am__append_4)
 @ISMAC_FALSE@SOLINK = -shared -Xlinker -x
 
 #put elsif win here
@@ -1090,6 +1092,7 @@ modules: $(NAME)
 	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
 	@./build/addenv.sh build/freeswitch.env CFLAGS "-Werror $(AM_CFLAGS)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
+	@./build/addenv.sh build/freeswitch.env CFGARGS "$(AM_CFGARGS)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; $(PWD)/build/modmake.sh $(PWD) $$i || exit 1; done
 	@rm -f build/freeswitch.env
 

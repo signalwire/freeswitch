@@ -11,8 +11,8 @@ all:	depends $(OBJS) $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
 	#MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install jrtplib --prefix=$(PREFIX) --disable-gst
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libosip2-2.2.2.tar.gz --prefix=$(PREFIX)
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libeXosip2-2.2.3-pre1.tar.gz  --disable-josua --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libosip2-2.2.3.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libeXosip2-2.2.3.tar.gz  --disable-josua --prefix=$(PREFIX)
 
 
 %.o:  %.c

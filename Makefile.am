@@ -22,8 +22,10 @@ if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
 endif
 
+AM_CFGARGS =
 if IS64BITLINUX
-AM_CFLAGS += -m64 -march=k8 -fPIC
+AM_CFLAGS += -m64 -march=k8 -fPIC -D_64BIT_MACHINE_
+AM_CFGARGS += --enable-64bit
 endif
 
 #put elsif win here
@@ -183,6 +185,7 @@ modules: $(NAME)
 	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
 	@./build/addenv.sh build/freeswitch.env CFLAGS "-Werror $(AM_CFLAGS)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
+	@./build/addenv.sh build/freeswitch.env CFGARGS "$(AM_CFGARGS)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; $(PWD)/build/modmake.sh $(PWD) $$i || exit 1; done
 	@rm -f build/freeswitch.env
 
