@@ -106,6 +106,7 @@
         <param name="dialplan" value="XML"/>
         <param name="dtmf-duration" value="100"/>
         <param name="codec-prefs" value="PCMU,PCMA"/>
+	<!-- disable to trade async for more calls -->
 	<param name="use-rtp-timer" value="true">
         <!-- pick one (default if not specified is 'guess'); -->
         <param name="rtp-ip" value="guess"/>
@@ -222,6 +223,7 @@
         <param name="message" value="Jingle all the way"/>
         <param name="rtp-ip" value="10.0.0.1"/>
         <param name="auto-login" value="true"/>
+	<!-- disable to trade async for more calls -->
 	<param name="use-rtp-timer" value="true">
         <!-- or -->
         <!-- <param name="rtp-ip" value="my_lan_ip"/> -->
