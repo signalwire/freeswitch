@@ -75,7 +75,8 @@ typedef enum {
 	TFLAG_SECURE = (1 << 11),
 	TFLAG_VAD_IN = ( 1 << 12),
 	TFLAG_VAD_OUT = ( 1 << 13),
-	TFLAG_VAD = ( 1 << 14)
+	TFLAG_VAD = ( 1 << 14),
+	TFLAG_TIMER = ( 1 << 15)
 } TFLAGS;
 
 
@@ -475,6 +476,7 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 	switch_channel_t *channel;
 	const char *err;
 	char *key = NULL;
+	switch_rtp_flag_t flags;
 
 	assert(tech_pvt != NULL);
 
@@ -511,17 +513,21 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "using Realm %s\n", tech_pvt->realm);
 		}
 	}
+	flags = SWITCH_RTP_FLAG_MINI | SWITCH_RTP_FLAG_RAW_WRITE;
+	if (switch_test_flag(tech_pvt, TFLAG_TIMER)) {
+	  flags |= SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_TIMER_RECLOCK;
+	}
 
 	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
-										   tech_pvt->local_sdp_audio_port,
-										   tech_pvt->remote_sdp_audio_ip,
-										   tech_pvt->remote_sdp_audio_port,
-										   tech_pvt->read_codec.codec_interface->ianacode,
-										   tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
-										   ms,
-										   SWITCH_RTP_FLAG_MINI | SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_TIMER_RECLOCK | SWITCH_RTP_FLAG_RAW_WRITE,
-										   key,
-										   &err, switch_core_session_get_pool(tech_pvt->session));
+					       tech_pvt->local_sdp_audio_port,
+					       tech_pvt->remote_sdp_audio_ip,
+					       tech_pvt->remote_sdp_audio_port,
+					       tech_pvt->read_codec.codec_interface->ianacode,
+					       tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
+					       ms,
+					       flags,
+					       key,
+					       &err, switch_core_session_get_pool(tech_pvt->session));
 
 	if (tech_pvt->rtp_session) {
 		uint8_t vad_in = switch_test_flag(tech_pvt, TFLAG_VAD_IN) ? 1 : 0;
@@ -819,51 +825,51 @@ static switch_status_t exosip_receive_message(switch_core_session_t *session, sw
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-		if (tech_pvt->rtp_session) {
-			switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
-		}
-			break;
+	  if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_TIMER)) {
+	    switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
+	  }
+	  break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-		if (tech_pvt->rtp_session) {
-			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
-		}
-			break;
+	  if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_TIMER)) {
+	    switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
+	  }
+	  break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
-		if (msg) {
-			struct private_object *tech_pvt;
-			switch_channel_t *channel = NULL;
-			
-			channel = switch_core_session_get_channel(session);
-			assert(channel != NULL);
+	  if (msg) {
+	    struct private_object *tech_pvt;
+	    switch_channel_t *channel = NULL;
+		  
+	    channel = switch_core_session_get_channel(session);
+	    assert(channel != NULL);
 
-			tech_pvt = switch_core_session_get_private(session);
-			assert(tech_pvt != NULL);
+	    tech_pvt = switch_core_session_get_private(session);
+	    assert(tech_pvt != NULL);
 
-			if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
-				char *buf = NULL;
-				osip_message_t *progress = NULL;
+	    if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+	      char *buf = NULL;
+	      osip_message_t *progress = NULL;
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
+	      switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
 
-				/* Transmit 183 Progress with SDP */
-				eXosip_lock();
-				eXosip_call_build_answer(tech_pvt->tid, 183, &progress);
-				if (progress) {
-					sdp_message_to_str(tech_pvt->local_sdp, &buf);
-					osip_message_set_body(progress, buf, strlen(buf));
-					osip_message_set_content_type(progress, "application/sdp");
-					free(buf);
-					eXosip_call_send_answer(tech_pvt->tid, 183, progress);
-					switch_set_flag(tech_pvt, TFLAG_EARLY_MEDIA);
-					switch_channel_set_flag(channel, CF_EARLY_MEDIA);
-				}
-				eXosip_unlock();
-			}
-		}
+	      /* Transmit 183 Progress with SDP */
+	      eXosip_lock();
+	      eXosip_call_build_answer(tech_pvt->tid, 183, &progress);
+	      if (progress) {
+		sdp_message_to_str(tech_pvt->local_sdp, &buf);
+		osip_message_set_body(progress, buf, strlen(buf));
+		osip_message_set_content_type(progress, "application/sdp");
+		free(buf);
+		eXosip_call_send_answer(tech_pvt->tid, 183, progress);
+		switch_set_flag(tech_pvt, TFLAG_EARLY_MEDIA);
+		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+	      }
+	      eXosip_unlock();
+	    }
+	  }
 		
-		break;
+	  break;
 	default:
 		break;
 	}
@@ -1885,6 +1891,8 @@ static int config_exosip(int reload)
 
 			if (!strcmp(var, "debug")) {
 				globals.debug = atoi(val);
+			} else if (!strcmp(var, "use-rtp-timer") && switch_true(val)) {
+				  switch_set_flag(&globals, TFLAG_TIMER);
 			} else if (!strcmp(var, "port")) {
 				globals.port = atoi(val);
 			} else if (!strcmp(var, "vad")) {

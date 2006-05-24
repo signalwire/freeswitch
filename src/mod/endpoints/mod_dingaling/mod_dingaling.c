@@ -63,7 +63,8 @@ typedef enum {
 	TFLAG_DO_DESC = (1 << 15),
 	TFLAG_LANADDR = (1 << 16),
 	TFLAG_AUTO = (1 << 17),
-	TFLAG_DTMF = (1 << 18)
+	TFLAG_DTMF = (1 << 18),
+	TFLAG_TIMER = ( 1 << 19)
 } TFLAGS;
 
 typedef enum {
@@ -236,6 +237,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
 	const char *err;
 	int ms = 20;
+	switch_rtp_flag_t flags;
 
 	if (tech_pvt->rtp_session) {
 		return 0;
@@ -246,12 +248,12 @@ static int activate_rtp(struct private_object *tech_pvt)
 	}
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,
-							   tech_pvt->codec_name,
-							   8000,
-							   ms,
-							   1,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+				   tech_pvt->codec_name,
+				   8000,
+				   ms,
+				   1,
+				   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+				   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return -1;
@@ -260,14 +262,14 @@ static int activate_rtp(struct private_object *tech_pvt)
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Read Codec to %s\n", tech_pvt->codec_name);
-
+	
 	if (switch_core_codec_init(&tech_pvt->write_codec,
-							   tech_pvt->codec_name,
-							   8000,
-							   ms,
-							   1,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
+				   tech_pvt->codec_name,
+				   8000,
+				   ms,
+				   1,
+				   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+				   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return -1;
@@ -279,17 +281,23 @@ static int activate_rtp(struct private_object *tech_pvt)
 	
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SETUP RTP %s:%d -> %s:%d\n", tech_pvt->profile->ip, tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
+	
+	flags = SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ;
+
+	if (switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
+	  flags |= SWITCH_RTP_FLAG_USE_TIMER;
+	}
 
 	if (!(tech_pvt->rtp_session = switch_rtp_new(tech_pvt->profile->ip,
-												 tech_pvt->local_port,
-												 tech_pvt->remote_ip,
-												 tech_pvt->remote_port,
-												 tech_pvt->codec_num,
-												 tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
-												 tech_pvt->read_codec.implementation->microseconds_per_frame,
-												 SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_GOOGLEHACK,
-												 NULL,
-												 &err, switch_core_session_get_pool(tech_pvt->session)))) {
+						     tech_pvt->local_port,
+						     tech_pvt->remote_ip,
+						     tech_pvt->remote_port,
+						     tech_pvt->codec_num,
+						     tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
+						     tech_pvt->read_codec.implementation->microseconds_per_frame,
+						     flags,
+						     NULL,
+						     &err, switch_core_session_get_pool(tech_pvt->session)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return -1;
@@ -881,14 +889,14 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-		if (tech_pvt->rtp_session) {
+	  if (tech_pvt->rtp_session && switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
 			switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
 			//switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-		if (tech_pvt->rtp_session) {
+		if (tech_pvt->rtp_session && switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
 			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
 			//switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK);
@@ -1188,6 +1196,8 @@ static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
 		profile->login = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "password")) {
 		profile->password = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
+	  	switch_set_flag(profile, TFLAG_TIMER);
 	} else if (!strcasecmp(var, "dialplan")) {
 		profile->dialplan = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "name")) {

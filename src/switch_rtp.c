@@ -473,16 +473,16 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 }
 
 SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
-										   switch_port_t rx_port,
-										   char *tx_host,
-										   switch_port_t tx_port,
-										   switch_payload_t payload,
-										   uint32_t packet_size,
-										   uint32_t ms_per_packet,
-										   switch_rtp_flag_t flags,
-										   char *crypto_key,
-										   const char **err,
-										   switch_memory_pool_t *pool) 
+					     switch_port_t rx_port,
+					     char *tx_host,
+					     switch_port_t tx_port,
+					     switch_payload_t payload,
+					     uint32_t packet_size,
+					     uint32_t ms_per_packet,
+					     switch_rtp_flag_t flags,
+					     char *crypto_key,
+					     const char **err,
+					     switch_memory_pool_t *pool) 
 {
 	switch_rtp_t *rtp_session;
 
