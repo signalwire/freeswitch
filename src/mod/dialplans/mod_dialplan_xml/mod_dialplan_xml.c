@@ -122,13 +122,74 @@ static void perform_substitution(pcre *re, int match_count, char *data, char *fi
 	substituted[y++] = '\0';
 }
 
+static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, switch_caller_extension_t **extension)
+{
+	switch_xml_t xcond, xaction;
+	switch_caller_profile_t *caller_profile;
+	switch_channel_t *channel;
+	char *exten_name = (char *) switch_xml_attr_soft(xexten, "name");
+	int proceed = 0;
+
+	channel = switch_core_session_get_channel(session);
+	caller_profile = switch_channel_get_caller_profile(channel);
+
+	for (xcond = switch_xml_child(xexten, "condition"); xcond; xcond = xcond->next) {
+		char *field = NULL;
+		char *expression = NULL;
+		char *field_data = NULL;
+		pcre *re = NULL;
+		int ovector[30];
+
+		field = (char *) switch_xml_attr(xcond, "field");
+		expression = (char *) switch_xml_attr_soft(xcond, "expression");
+
+		if (field) {
+			field_data = switch_caller_get_field_by_name(caller_profile, field);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test conditions %s(%s) =~ /%s/\n", field, field_data, expression);
+			if (!(proceed = perform_regex(channel, field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Regex mismatch\n");
+				break;
+			}
+			assert(re != NULL);
+		}
+
+
+		for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {
+			char *application = (char*) switch_xml_attr_soft(xaction, "application");
+			char *data = (char *) switch_xml_attr_soft(xaction, "data");
+			char substituted[1024] = "";
+			char *app_data = NULL;
+
+			if (field && strchr(expression, '(')) {
+				perform_substitution(re, proceed, data, field_data, substituted, sizeof(substituted), ovector);
+				app_data = substituted;
+			} else {
+				app_data = data;
+			}
+
+			if (!*extension) {
+				if ((*extension =
+					 switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+					return 0;
+				}
+			}
+
+			switch_caller_extension_add_application(session, *extension, application, app_data);
+		}
+
+		cleanre(re);
+	}
+	return proceed;
+}
+
 static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 {
 	switch_caller_profile_t *caller_profile;
 	switch_caller_extension_t *extension = NULL;
 	switch_channel_t *channel;
-	char *exten_name = NULL;
-	switch_xml_t cfg, xml, xcontext, xexten, xaction, xcond;
+	switch_xml_t cfg, xml, xcontext, xexten;
 	char *context = NULL;
 	char params[1024];
 
@@ -143,7 +204,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing %s->%s!\n", caller_profile->caller_id_name,
 					  caller_profile->destination_number);
 	
-	snprintf(params, sizeof(params), "dest=%s", caller_profile->destination_number);
+	snprintf(params, sizeof(params), "context=%s&dest=%s", caller_profile->context, caller_profile->destination_number);
 
 	if (switch_xml_locate("dialplan", NULL, NULL, NULL, &xml, &cfg, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
@@ -159,55 +220,23 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 		}
 	}
 	
-	for (xexten = switch_xml_child(xcontext, "extension"); xexten; xexten = xexten->next) {
+	if (!(xexten = switch_xml_find_child(xcontext, "extension", "name", caller_profile->destination_number))) {
+		xexten = switch_xml_child(xcontext, "extension");
+	}
+	
+	while(xexten) {
 		int proceed = 0;
 		char *cont = (char *) switch_xml_attr_soft(xexten, "continue");
 
-		for (xcond = switch_xml_child(xexten, "condition"); xcond; xcond = xcond->next) {
-			char *field = (char *) switch_xml_attr_soft(xcond, "field");
-			char *expression = (char *) switch_xml_attr_soft(xcond, "expression");
-			char *field_data = switch_caller_get_field_by_name(caller_profile, field);
-			pcre *re = NULL;
-			int ovector[30];
-			
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test conditions %s(%s) =~ /%s/\n", field, field_data, expression);
-			if (!(proceed = perform_regex(channel, field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Regex mismatch\n");
-				break;
-			}
+		proceed = parse_exten(session, xexten, &extension);
 
-			assert(re != NULL);
+		//printf("ASS %s %d\n", (char *) switch_xml_attr_soft(xexten, "name"), proceed);
 
-			for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {
-				char *application = (char*) switch_xml_attr_soft(xaction, "application");
-				char *data = (char *) switch_xml_attr_soft(xaction, "data");
-				char substituted[1024] = "";
-				char *app_data = NULL;
-				
-				if (strchr(expression, '(')) {
-					perform_substitution(re, proceed, data, field_data, substituted, sizeof(substituted), ovector);
-					app_data = substituted;
-				} else {
-					app_data = data;
-				}
-
-				if (!extension) {
-					if ((extension =
-						 switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
-						return NULL;
-					}
-				}
-
-				switch_caller_extension_add_application(session, extension, application, app_data);
-			}
-
-			cleanre(re);
-		}
-		
 		if (proceed && !switch_true(cont)) {
 			break;
 		}
+
+		xexten = xexten->next;
 	}
 
 

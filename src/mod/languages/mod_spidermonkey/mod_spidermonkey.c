@@ -988,7 +988,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		char *ani2 = "";
 		char *rdnis = "";
 		char *context = "";
-
+		char *username = NULL;
 		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
@@ -1025,6 +1025,9 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		if (argc > 10) {
 			rdnis = JS_GetStringBytes(JS_ValueToString(cx, argv[10]));
 		}
+		if (argc > 11) {
+			username = JS_GetStringBytes(JS_ValueToString(cx, argv[11]));
+		}
 		
 		
 		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
@@ -1032,7 +1035,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			return JS_FALSE;
 		}
 
-		caller_profile = switch_caller_profile_new(pool, dialplan, cid_name, cid_num, network_addr, ani, ani2, rdnis, (char *)modname, context, dest);
+		caller_profile = switch_caller_profile_new(pool, username, dialplan, cid_name, cid_num, network_addr, ani, ani2, rdnis, (char *)modname, context, dest);
 		if (switch_core_session_outgoing_channel(session, channel_type, caller_profile, &peer_session, pool) == SWITCH_STATUS_SUCCESS) {
 			jss = switch_core_session_alloc(peer_session, sizeof(*jss));
 			jss->session = peer_session;

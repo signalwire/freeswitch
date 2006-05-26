@@ -1128,6 +1128,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 		}
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+																  NULL,
 																  globals.dialplan,
 																  "FreeSWITCH",
 																  event->ring.callingnum,

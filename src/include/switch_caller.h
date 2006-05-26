@@ -60,6 +60,8 @@ BEGIN_EXTERN_C
 /*! \brief Call Specific Data
  */
 struct switch_caller_profile {
+	/*! The Call's User Name */
+	char *username;
 	/*! The name of the dialplan */
 	char *dialplan;
 	/*! Caller ID Name */
@@ -161,16 +163,17 @@ SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *
   \return a new profile object allocated from the session's memory pool
 */
 SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memory_pool_t *pool,
-																  char *dialplan,
-																  char *caller_id_name,
-																  char *caller_id_number,
-																  char *network_addr,
-																  char *ani,
-																  char *ani2,
-																  char *rdnis,
-																  char *source,
-																  char *context,
-																  char *destination_number);
+																	char *username,
+																	char *dialplan,
+																	char *caller_id_name,
+																	char *caller_id_number,
+																	char *network_addr,
+																	char *ani,
+																	char *ani2,
+																	char *rdnis,
+																	char *source,
+																	char *context,
+																	char *destination_number);
 
 /*!
   \brief Clone an existing caller profile object

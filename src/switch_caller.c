@@ -33,16 +33,17 @@
 #include <switch_caller.h>
 
 SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memory_pool_t *pool,
-																  char *dialplan,
-																  char *caller_id_name,
-																  char *caller_id_number,
-																  char *network_addr,
-																  char *ani,
-																  char *ani2, 
-																  char *rdnis,
-																  char *source,
-																  char *context,
-																  char *destination_number)
+																	char *username,
+																	char *dialplan,
+																	char *caller_id_name,
+																	char *caller_id_number,
+																	char *network_addr,
+																	char *ani,
+																	char *ani2, 
+																	char *rdnis,
+																	char *source,
+																	char *context,
+																	char *destination_number)
 {
 
 
@@ -52,6 +53,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 		if (!context) {
 			context = "default";
 		}
+		profile->username = switch_core_strdup(pool, username);
 		profile->dialplan = switch_core_strdup(pool, dialplan);
 		profile->caller_id_name = switch_core_strdup(pool, caller_id_name);
 		profile->caller_id_number = switch_core_strdup(pool, caller_id_number);
@@ -73,6 +75,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
 {
 	switch_caller_profile_t *profile = NULL;
 	if ((profile = switch_core_session_alloc(session, sizeof(switch_caller_profile_t))) != 0) {
+		profile->username = switch_core_session_strdup(session, tocopy->username);
 		profile->dialplan = switch_core_session_strdup(session, tocopy->dialplan);
 		profile->caller_id_name = switch_core_session_strdup(session, tocopy->caller_id_name);
 		profile->ani = switch_core_session_strdup(session, tocopy->ani);
@@ -94,6 +97,9 @@ SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *
 {
 	if (!strcasecmp(name, "dialplan")) {
 		return caller_profile->dialplan;
+	}
+	if (!strcasecmp(name, "username")) {
+		return caller_profile->username;
 	}
 	if (!strcasecmp(name, "caller_id_name")) {
 		return caller_profile->caller_id_name;
@@ -136,6 +142,11 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 {
 	char header_name[1024];
 
+
+	if (caller_profile->username) {
+		snprintf(header_name, sizeof(header_name), "%s-Username", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->username);
+	}
 	if (caller_profile->dialplan) {
 		snprintf(header_name, sizeof(header_name), "%s-Dialplan", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, caller_profile->dialplan);

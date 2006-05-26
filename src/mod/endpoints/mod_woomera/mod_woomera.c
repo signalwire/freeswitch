@@ -1065,6 +1065,7 @@ static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 				ip = woomera_message_header(&wmsg, "Remote-Address");
 
 				if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+																		  NULL,
 																		  tech_pvt->profile->dialplan,
 																		  cid_name, cid_num, ip, NULL, NULL, NULL, (char *)modname, NULL, exten)) != 0) {
 					char name[128];
