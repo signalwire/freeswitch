@@ -136,6 +136,8 @@ struct private_object {
 	int ssrc;
 	switch_time_t last_read;
 	char *realm;
+	switch_codec_interface_t *codecs[SWITCH_MAX_CODECS];
+	int num_codecs;
 };
 
 
@@ -167,11 +169,29 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 static switch_status_t exosip_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
 										switch_io_flag_t flags, int stream_id);
 static int config_exosip(int reload);
-static switch_status_t parse_sdp_media(sdp_media_t * media, char **dname, char **drate, char **dpayload);
+static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_media_t * media, char **dname, char **drate, char **dpayload);
 static switch_status_t exosip_kill_channel(switch_core_session_t *session, int sig);
 static switch_status_t activate_rtp(struct private_object *tech_pvt);
 static void deactivate_rtp(struct private_object *tech_pvt);
-static void sdp_add_rfc2833(struct osip_rfc3264 *cnf, int rate);
+
+static void tech_set_codecs(struct private_object *tech_pvt)
+{
+	if (tech_pvt->num_codecs) {
+		return;
+	}
+
+	if (globals.codec_string) {
+		tech_pvt->num_codecs = switch_loadable_module_get_codecs_sorted(tech_pvt->codecs,
+																		SWITCH_MAX_CODECS,
+																		globals.codec_order,
+																		globals.codec_order_last);
+		
+	} else {
+		tech_pvt->num_codecs = switch_loadable_module_get_codecs(switch_core_session_get_pool(tech_pvt->session), tech_pvt->codecs,
+																 sizeof(tech_pvt->codecs) / sizeof(tech_pvt->codecs[0]));
+	}
+}
+
 
 static struct private_object *get_pvt_by_call_id(int id)
 {
@@ -255,8 +275,7 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 		char *dest_uri;
 		char *ip, *err;
 		switch_port_t sdp_port;
-		switch_codec_interface_t *codecs[SWITCH_MAX_CODECS];
-		int num_codecs = 0;
+
 		/* do SIP Goodies... */
 
 		/* Decide on local IP and rtp port */
@@ -316,36 +335,31 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 		snprintf(port, sizeof(port), "%i", sdp_port);
 		sdp_message_m_media_add(tech_pvt->local_sdp, "audio", port, NULL, "RTP/AVP");
 		/* Add in every codec we support on this outbound call */
-		if (globals.codec_string) {
-			num_codecs = switch_loadable_module_get_codecs_sorted(codecs,
-																  SWITCH_MAX_CODECS,
-																  globals.codec_order,
-																  globals.codec_order_last);
-			
-		} else {
-			num_codecs =
-				switch_loadable_module_get_codecs(switch_core_session_get_pool(session), codecs,
-												  sizeof(codecs) / sizeof(codecs[0]));
-		}
-		
+		tech_set_codecs(tech_pvt);
 
-		if (num_codecs > 0) {
+
+		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup("101"));
+		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, 101, "telephone-event", 8000, 0);
+		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup("101 telephone-event/8000"));
+		
+		
+		if (tech_pvt->num_codecs > 0) {
 			int i;
 			static const switch_codec_implementation_t *imp;
-			for (i = 0; i < num_codecs; i++) {
-				int x = 0;
+			for (i = 0; i < tech_pvt->num_codecs; i++) {
+				int x = 1;
 
-				snprintf(tmp, sizeof(tmp), "%u", codecs[i]->ianacode);
+				snprintf(tmp, sizeof(tmp), "%u", tech_pvt->codecs[i]->ianacode);
 				sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(tmp));
-				imp = codecs[i]->implementations;
+				imp = tech_pvt->codecs[i]->implementations;
 
 				while(NULL != imp) {
 					uint32_t sps = imp->samples_per_second;
 					/* Add to SDP config */
-					sdp_add_codec(tech_pvt->sdp_config, codecs[i]->codec_type, codecs[i]->ianacode, codecs[i]->iananame, sps, x++);
+					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, tech_pvt->codecs[i]->ianacode, tech_pvt->codecs[i]->iananame, sps, x++);
 
 					/* Add to SDP message */
-					snprintf(tmp, sizeof(tmp), "%u %s/%d", codecs[i]->ianacode, codecs[i]->iananame, sps);
+					snprintf(tmp, sizeof(tmp), "%u %s/%d", tech_pvt->codecs[i]->ianacode, tech_pvt->codecs[i]->iananame, sps);
 					sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(tmp));
 					memset(tmp, 0, sizeof(tmp));
 					if (imp) {
@@ -355,7 +369,7 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 			}
 		}
 
-		sdp_add_rfc2833(tech_pvt->sdp_config, 8000);
+
 
 		/* Setup our INVITE */
 		eXosip_lock();
@@ -368,9 +382,11 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 		eXosip_call_build_initial_invite(&invite, dest_uri, from_uri, NULL, NULL);
 		osip_message_set_supported(invite, "100rel, replaces");
 		/* Add SDP to the INVITE */
+
 		sdp_message_to_str(tech_pvt->local_sdp, &buf);
 		osip_message_set_body(invite, buf, strlen(buf));
 		osip_message_set_content_type(invite, "application/sdp");
+		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OUTBOUND SDP:\n%s\n", buf);
 		free(buf);
 		/* Send the INVITE */
@@ -1103,26 +1119,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void sdp_add_rfc2833(struct osip_rfc3264 *cnf, int rate)
-{
-	sdp_media_t *med = NULL;
-	sdp_attribute_t *attr = NULL;
-	char tmp[128];
-	
-	sdp_media_init(&med);
-	sdp_attribute_init(&attr);
-	attr->a_att_field = osip_strdup("rtpmap");
-	snprintf(tmp, sizeof(tmp), "101 telephony-event/%d", rate);
-	attr->a_att_value = osip_strdup(tmp);
-	osip_list_add(med->a_attributes, attr, -1);
-	
-
-	med->m_media = osip_strdup("telephony-event");
-	osip_rfc3264_add_audio_media(cnf, med, -1);
-
-}
-
-
 static switch_status_t exosip_create_call(eXosip_event_t * event)
 {
 	switch_core_session_t *session;
@@ -1138,8 +1134,6 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 
 	if ((session = switch_core_session_request(&exosip_endpoint_interface, NULL)) != 0) {
 		struct private_object *tech_pvt;
-		switch_codec_interface_t *codecs[SWITCH_MAX_CODECS];
-		int num_codecs = 0;
 		switch_port_t sdp_port;
 		char *ip, *err;
 		osip_uri_t *uri;
@@ -1261,37 +1255,33 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 		}
 		osip_rfc3264_init(&tech_pvt->sdp_config);
 		/* Add in what codecs we support locally */
+		tech_set_codecs(tech_pvt);
+		
+		sdp_message_init(&tech_pvt->local_sdp);
+		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup("101"));
+		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup("101 telephone-event/8000"));
+		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, 101, "telephone-event", 8000, 0);
 
-		if (globals.codec_string) {
-			num_codecs = switch_loadable_module_get_codecs_sorted(codecs,
-																  SWITCH_MAX_CODECS,
-																  globals.codec_order,
-																  globals.codec_order_last);
-			
-		} else {
-			num_codecs = switch_loadable_module_get_codecs(switch_core_session_get_pool(session), codecs,
-														   sizeof(codecs) / sizeof(codecs[0]));
-		}
 
-		if (num_codecs > 0) {
+		if (tech_pvt->num_codecs > 0) {
 			int i;
 			static const switch_codec_implementation_t *imp;
 
 
 
-			for (i = 0; i < num_codecs; i++) {
-				int x = 0;
+			for (i = 0; i < tech_pvt->num_codecs; i++) {
+				int x = 1;
 
-				for (imp = codecs[i]->implementations; imp; imp = imp->next) {
-					sdp_add_codec(tech_pvt->sdp_config, codecs[i]->codec_type, codecs[i]->ianacode, codecs[i]->iananame,
+				for (imp = tech_pvt->codecs[i]->implementations; imp; imp = imp->next) {
+					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, tech_pvt->codecs[i]->ianacode, tech_pvt->codecs[i]->iananame,
 								  imp->samples_per_second, x++);
 				}
 			}
 		}
-		sdp_add_rfc2833(tech_pvt->sdp_config, 8000);
+
 
 		osip_rfc3264_prepare_answer(tech_pvt->sdp_config, remote_sdp, local_sdp_str, 8192);
-		sdp_message_init(&tech_pvt->local_sdp);
+		
 		sdp_message_parse(tech_pvt->local_sdp, local_sdp_str);
 
 		sdp_message_to_str(remote_sdp, &remote_sdp_str);
@@ -1307,7 +1297,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 			for (pos = 0; audio_tab[pos] != NULL; pos++) {
 				osip_rfc3264_complete_answer(tech_pvt->sdp_config, remote_sdp, tech_pvt->local_sdp, audio_tab[pos],
 											 mline);
-				if (parse_sdp_media(audio_tab[pos], &dname, &drate, &dpayload) == SWITCH_STATUS_SUCCESS) {
+				if (parse_sdp_media(tech_pvt, audio_tab[pos], &dname, &drate, &dpayload) == SWITCH_STATUS_SUCCESS) {
 					tech_pvt->payload_num = atoi(dpayload);
 					break;
 				}
@@ -1451,39 +1441,66 @@ static void destroy_call_by_event(eXosip_event_t *event)
 
 }
 
-static switch_status_t parse_sdp_media(sdp_media_t * media, char **dname, char **drate, char **dpayload)
+static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_media_t * media, char **dname, char **drate, char **dpayload)
 {
 	int pos = 0;
 	sdp_attribute_t *attr = NULL;
-	char *name, *rate, *payload;
+	char *name, *payload, *rate;
 	switch_status_t status = SWITCH_STATUS_GENERR;
+	char workspace[512];
 
 	while (osip_list_eol(media->a_attributes, pos) == 0) {
 		attr = (sdp_attribute_t *) osip_list_get(media->a_attributes, pos);
 		if (attr != NULL && strcasecmp(attr->a_att_field, "rtpmap") == 0) {
-			payload = attr->a_att_value;
-			if ((name = strchr(payload, ' ')) != 0) {
-				*(name++) = '\0';
-				/* Name and payload are required */
-				*dpayload = strdup(payload);
-				status = SWITCH_STATUS_SUCCESS;
-				if ((rate = strchr(name, '/')) != 0) {
-					*(rate++) = '\0';
-					*drate = strdup(rate);
-					*dname = strdup(name);
-				} else {
-					*dname = strdup(name);
-					*drate = strdup("8000");
-				}
-			} else {
-				*dpayload = strdup("10");
-				*dname = strdup("L16");
-				*drate = strdup("8000");
+			switch_payload_t pt;
+			uint32_t r;
+			int32_t i;
+			uint8_t match = 0;
+			name = rate = payload = NULL;
+
+			switch_copy_string(workspace, attr->a_att_value, sizeof(workspace));
+			payload = workspace;
+			if ((name = strchr(workspace, ' ')) != 0) {
+                *(name++) = '\0';
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Found negotiated codec Payload: %s Name: %s Rate: %s\n",
-								  *dpayload, *dname, *drate);
-			break;
+			if ((rate = strchr(name, '/'))) {
+				*rate++ = '\0';
+			}
+			pt = atoi(payload);
+			r = atoi(rate);
+
+			for(i = 0; !match && i < tech_pvt->num_codecs; i++) {
+				const switch_codec_implementation_t *imp;
+
+				if (pt < 97) {
+					match = (pt == tech_pvt->codecs[i]->ianacode) ? 1 : 0;
+				} else {
+					match = strcasecmp(name, tech_pvt->codecs[i]->iananame) ? 0 : 1;
+				}
+
+				if (match) {
+					match = 0;
+					
+					for (imp = tech_pvt->codecs[i]->implementations; imp; imp = imp->next) {
+						if ((r == imp->samples_per_second)) {
+							match = 1;
+							break;
+						}
+					}
+				}
+			}
+
+			if (match) {
+				*dname = strdup(name);
+				*drate = strdup(rate);
+				*dpayload = strdup(payload);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Found negotiated codec Payload: %s Name: %s Rate: %s\n",
+								  *dpayload, *dname, *drate);	
+				break;
+			}
+
 		}
+
 		attr = NULL;
 		pos++;
 	}
@@ -1615,7 +1632,7 @@ static void handle_answer(eXosip_event_t * event)
 	snprintf(tech_pvt->remote_sdp_audio_ip, 50, conn->c_addr);
 
 	/* Grab codec elements */
-	if (parse_sdp_media(remote_med, &dname, &drate, &dpayload) == SWITCH_STATUS_SUCCESS) {
+	if (parse_sdp_media(tech_pvt, remote_med, &dname, &drate, &dpayload) == SWITCH_STATUS_SUCCESS) {
 		tech_pvt->payload_num = atoi(dpayload);
 	}
 
