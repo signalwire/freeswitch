@@ -80,6 +80,20 @@ static switch_status_t load_function(char *mod, switch_stream_handle_t *stream)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static switch_status_t reload_function(char *mod, switch_stream_handle_t *stream)
+{
+	const char *err;
+	switch_xml_t xml_root;
+
+	if ((xml_root = switch_xml_open_root(1, &err))) {
+		switch_xml_free(xml_root);
+	}
+	
+	stream->write_function(stream, "OK [%s]\n", err);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t kill_function(char *dest, switch_stream_handle_t *stream)
 {
 	switch_core_session_t *session = NULL;
@@ -231,12 +245,19 @@ static switch_api_interface_t load_api_interface = {
 	/*.next */ &transfer_api_interface
 };
 
+static switch_api_interface_t reload_api_interface = {
+	/*.interface_name */ "reloadxml",
+	/*.desc */ "Reload XML",
+	/*.function */ reload_function,
+	/*.next */ &load_api_interface,
+
+};
 
 static switch_api_interface_t commands_api_interface = {
 	/*.interface_name */ "killchan",
 	/*.desc */ "Kill Channel",
 	/*.function */ kill_function,
-	/*.next */ &load_api_interface
+	/*.next */ &reload_api_interface
 };
 
 static const switch_loadable_module_interface_t mod_commands_module_interface = {

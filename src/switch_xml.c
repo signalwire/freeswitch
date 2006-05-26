@@ -94,6 +94,7 @@ static switch_xml_t MAIN_XML_ROOT = NULL;
 static switch_memory_pool_t *XML_MEMORY_POOL;
 static switch_mutex_t *XML_LOCK;
 static switch_thread_rwlock_t *RWLOCK;
+static uint32_t lock_count = 0;
 
 struct xml_section_t {
 	const char *name;
@@ -844,7 +845,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
 
 	for(;;) {
 		if (!xml) {
-			if (!(xml = MAIN_XML_ROOT)) {
+			if (!(xml = switch_xml_root())) {
 				*node = NULL;
 				*root = NULL;
 				return SWITCH_STATUS_FALSE;
@@ -870,8 +871,10 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(char *section,
 	return SWITCH_STATUS_FALSE;
 }
 
+
 SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 {
+	lock_count++;
 	switch_thread_rwlock_rdlock(RWLOCK);
 	return MAIN_XML_ROOT;
 }
@@ -880,7 +883,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 {
 	char path_buf[1024];
 	uint8_t hasmain = 0;
-
+	
 	switch_mutex_lock(XML_LOCK);
 
 	if (MAIN_XML_ROOT) {
@@ -905,6 +908,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 			switch_xml_free(MAIN_XML_ROOT);
 			MAIN_XML_ROOT = NULL;
 		} else {
+			*err = "Success";
 			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
 		}
 	} else {
@@ -915,6 +919,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 		switch_thread_rwlock_unlock(RWLOCK);
 	}
 	switch_mutex_unlock(XML_LOCK);
+
 	return switch_xml_root();
 }
 
@@ -1100,7 +1105,10 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
     if (! xml ) return;
 
 	if (switch_test_flag(xml, SWITCH_XML_ROOT)) {
-		switch_thread_rwlock_unlock(RWLOCK);
+		if (lock_count > 0) {
+			switch_thread_rwlock_unlock(RWLOCK);
+			lock_count--;
+		}
 	}
 
 	if (xml == MAIN_XML_ROOT) {
