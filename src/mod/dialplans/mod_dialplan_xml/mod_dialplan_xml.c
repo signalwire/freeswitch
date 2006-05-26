@@ -142,10 +142,16 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 
 		field = (char *) switch_xml_attr(xcond, "field");
 		expression = (char *) switch_xml_attr_soft(xcond, "expression");
-
+		
 		if (field) {
-			field_data = switch_caller_get_field_by_name(caller_profile, field);
-
+			if (*field == '$') {
+				field_data = switch_channel_get_variable(channel, field + 1);
+			} else {
+				field_data = switch_caller_get_field_by_name(caller_profile, field);
+			}
+			if (!field_data) {
+				field_data = "";
+			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test conditions %s(%s) =~ /%s/\n", field, field_data, expression);
 			if (!(proceed = perform_regex(channel, field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Regex mismatch\n");
