@@ -1449,7 +1449,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_
 	switch_io_event_hook_kill_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Kill %s [%d]\n", switch_channel_get_name(session->channel), sig);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_INFO, "Kill %s [%d]\n", switch_channel_get_name(session->channel), sig);
 
 	if (session->endpoint_interface->io_routines->kill_channel) {
 		if ((status = session->endpoint_interface->io_routines->kill_channel(session, sig)) == SWITCH_STATUS_SUCCESS) {
@@ -1717,7 +1717,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_new_memory_pool(switch_memory_pool_t
 
 	assert(runtime.memory_pool != NULL);
 
-	if ((apr_pool_create(pool, runtime.memory_pool)) != SWITCH_STATUS_SUCCESS) {
+	if ((apr_pool_create(pool, NULL)) != SWITCH_STATUS_SUCCESS) {
 		*pool = NULL;
 		return SWITCH_STATUS_MEMERR;
 	}

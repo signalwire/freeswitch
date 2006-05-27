@@ -67,6 +67,7 @@ static swift_result_t write_audio(swift_event *event, swift_event_t type, void *
 	/* Only proceed when we have success */
     if (!SWIFT_FAILED((rv = swift_event_get_audio(event, &buf, &len)))) {
 		switch_mutex_lock(cepstral->audio_lock);
+
 		if (switch_buffer_write(cepstral->audio_buffer, buf, len) <= 0) {
 			rv = SWIFT_UNKNOWN_ERROR;
 		}
@@ -91,7 +92,7 @@ static switch_status_t cepstral_speech_open(switch_speech_handle_t *sh, char *vo
 			return SWITCH_STATUS_MEMERR;
 		}
 
-		if (switch_buffer_create(sh->memory_pool, &cepstral->audio_buffer, SWITCH_RECCOMMENDED_BUFFER_SIZE) != SWITCH_STATUS_SUCCESS) {
+		if (switch_buffer_create(sh->memory_pool, &cepstral->audio_buffer, 1024 * 256) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write Buffer Failed!\n");
 			return SWITCH_STATUS_MEMERR;
 		}
@@ -168,7 +169,6 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 	cepstral = sh->private_info;
 	assert(cepstral != NULL);
 
-
 	swift_port_speak_text(cepstral->port, text, 0, NULL, &cepstral->tts_stream, NULL); 
 	//swift_port_speak_text(cepstral->port, text, 0, NULL, NULL, NULL); 
 
@@ -201,8 +201,6 @@ static switch_status_t cepstral_speech_read_tts(switch_speech_handle_t *sh,
 
 		used = switch_buffer_inuse(cepstral->audio_buffer);
 
-
-		
 		if (!used && cepstral->done_gen) {
 			break;
 		}
