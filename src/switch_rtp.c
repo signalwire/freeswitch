@@ -169,6 +169,7 @@ struct switch_rtp {
 	struct switch_rtp_vad_data vad_data;
 	struct switch_rtp_rfc2833_data dtmf_data;
 	uint8_t mini;
+	switch_payload_t te;
 };
 
 static int global_init = 0;
@@ -379,6 +380,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	rtp_session->pool = pool;
 	rtp_session->flags = flags;
+	rtp_session->te = 101;
 	switch_mutex_init(&rtp_session->dtmf_data.dtmf_mutex, SWITCH_MUTEX_NESTED, rtp_session->pool);
 	switch_buffer_create(rtp_session->pool, &rtp_session->dtmf_data.dtmf_buffer, 128);
 	/* for from address on recvfrom calls */
@@ -506,6 +508,12 @@ SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
 	return rtp_session;
 }
 
+SWITCH_DECLARE(void) switch_rtp_set_telephony_event(switch_rtp_t *rtp_session, switch_payload_t te)
+{
+	if (te > 96) {
+		rtp_session->te = te;
+	}
+}
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_session, char *login, char *rlogin)
 {
@@ -627,7 +635,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 		for (x = 0; x < loops; x++) {
 			switch_rtp_write_manual(rtp_session, 
-									rtp_session->dtmf_data.out_digit_packet, 4, 0, 101, rtp_session->dtmf_data.timestamp_dtmf,
+									rtp_session->dtmf_data.out_digit_packet, 4, 0, rtp_session->te, rtp_session->dtmf_data.timestamp_dtmf,
 									rtp_session->dtmf_data.out_digit_seq++, &flags);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%d sofar=%u dur=%d\n", 
 							  loops == 1 ? "middle" : "end",
@@ -661,7 +669,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 										rtp_session->dtmf_data.out_digit_packet,
 										4,
 										1,
-										101,
+										rtp_session->te,
 										rtp_session->dtmf_data.timestamp_dtmf,
 										rtp_session->dtmf_data.out_digit_seq++,
 										&flags);
@@ -683,6 +691,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 {
 	switch_size_t bytes;
 	switch_status_t status;
+
 
 	for(;;) {
 		bytes = sizeof(rtp_msg_t);	
@@ -813,7 +822,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		/* RFC2833 ... TBD try harder to honor the duration etc.*/
-		if (rtp_session->recv_msg.header.pt == 101) {
+		if (rtp_session->recv_msg.header.pt == rtp_session->te) {
 			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
 			int end = packet[1]&0x80;
 			int duration = (packet[2]<<8) + packet[3];

@@ -109,6 +109,7 @@ static struct {
 	unsigned int flags;
 	switch_mutex_t *reg_mutex;
 	switch_core_db_t *db;
+	switch_payload_t te;
 } globals;
 
 struct private_object {
@@ -138,6 +139,7 @@ struct private_object {
 	char *realm;
 	switch_codec_interface_t *codecs[SWITCH_MAX_CODECS];
 	int num_codecs;
+	switch_payload_t te;
 };
 
 
@@ -275,6 +277,7 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 		char *dest_uri;
 		char *ip, *err;
 		switch_port_t sdp_port;
+		char dbuf[256];
 
 		/* do SIP Goodies... */
 
@@ -338,9 +341,11 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 		tech_set_codecs(tech_pvt);
 
 
-		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup("101"));
-		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, 101, "telephone-event", 8000, 0);
-		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup("101 telephone-event/8000"));
+		sprintf(dbuf, "%u", tech_pvt->te);
+		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(dbuf));
+		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, tech_pvt->te, "telephone-event", 8000, 0);
+		sprintf(dbuf, "%u telephone-event/8000", tech_pvt->te);
+		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(dbuf));
 		
 		
 		if (tech_pvt->num_codecs > 0) {
@@ -552,7 +557,11 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 
 		tech_pvt->ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
 		switch_set_flag(tech_pvt, TFLAG_RTP);
-		
+
+		if (tech_pvt->te > 96) {
+			switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
+		}
+
 		if ((vad_in && inb) || (vad_out && !inb)) {
 			switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING);
 			switch_set_flag(tech_pvt, TFLAG_VAD);
@@ -1017,6 +1026,7 @@ static switch_status_t exosip_outgoing_channel(switch_core_session_t *session, s
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
+			tech_pvt->te = globals.te;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
@@ -1131,6 +1141,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 	char name[128];
 	char *dpayload, *dname = NULL, *drate = NULL;
 	char *remote_sdp_str = NULL;
+	char dbuf[256];
 
 	if ((session = switch_core_session_request(&exosip_endpoint_interface, NULL)) != 0) {
 		struct private_object *tech_pvt;
@@ -1149,6 +1160,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
 			tech_pvt->session = session;
+			tech_pvt->te = globals.te;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
@@ -1258,11 +1270,13 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 		tech_set_codecs(tech_pvt);
 		
 		sdp_message_init(&tech_pvt->local_sdp);
-		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup("101"));
-		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup("101 telephone-event/8000"));
-		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, 101, "telephone-event", 8000, 0);
+		sprintf(dbuf, "%u", tech_pvt->te);
+		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(dbuf));
+		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, tech_pvt->te, "telephone-event", 8000, 0);
+		sprintf(dbuf, "%u telephone-event/8000", tech_pvt->te);
+		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(dbuf));
 
-
+		
 		if (tech_pvt->num_codecs > 0) {
 			int i;
 			static const switch_codec_implementation_t *imp;
@@ -1466,18 +1480,25 @@ static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_medi
 			if ((rate = strchr(name, '/'))) {
 				*rate++ = '\0';
 			}
-			pt = atoi(payload);
+			pt = (switch_payload_t)atoi(payload);
 			r = atoi(rate);
+			
+			if (!strcasecmp(name, "telephone-event")) {
+				tech_pvt->te = pt;
+				attr = NULL;
+				pos++;
+				continue;
+			}
 
 			for(i = 0; !match && i < tech_pvt->num_codecs; i++) {
 				const switch_codec_implementation_t *imp;
-
+				
 				if (pt < 97) {
 					match = (pt == tech_pvt->codecs[i]->ianacode) ? 1 : 0;
 				} else {
 					match = strcasecmp(name, tech_pvt->codecs[i]->iananame) ? 0 : 1;
 				}
-
+				
 				if (match) {
 					match = 0;
 					
@@ -1901,6 +1922,7 @@ static int config_exosip(int reload)
 	}
 
 	globals.dtmf_duration = 100;
+	globals.te = 101;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -1913,6 +1935,8 @@ static int config_exosip(int reload)
 				  switch_set_flag(&globals, TFLAG_TIMER);
 			} else if (!strcmp(var, "port")) {
 				globals.port = atoi(val);
+			} else if (!strcmp(var, "rfc2833-pt")) {
+				globals.te = (switch_payload_t) atoi(val);
 			} else if (!strcmp(var, "vad")) {
 				if (!strcasecmp(val, "in")) {
 					switch_set_flag(&globals, TFLAG_VAD_IN);
