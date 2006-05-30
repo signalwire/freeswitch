@@ -433,6 +433,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout, int stream_id);
 
 /*! 
+  \brief Reset the buffers and resampler on a session
+  \param session the session to reset
+*/
+SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session);
+
+/*! 
   \brief Write a frame to a session
   \param session the session to write to
   \param frame the frame to write

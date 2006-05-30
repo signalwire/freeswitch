@@ -1203,6 +1203,17 @@ static switch_status_t perform_write(switch_core_session_t *session, switch_fram
 	return status;
 }
 
+SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
+{
+	/* sweep theese under the rug, they wont be leaked they will be reclaimed
+	   when the session ends.
+	 */
+	session->raw_write_buffer = NULL;
+	session->raw_read_buffer = NULL;
+	session->read_resampler = NULL;
+	session->write_resampler = NULL;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame,
 															  int timeout, int stream_id)
 {
@@ -1284,15 +1295,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		if (session->write_resampler) {
 			short *data = write_frame->data;
 
-			session->write_resampler->from_len =
-				switch_short_to_float(data, session->write_resampler->from, (int) write_frame->datalen / 2);
+			session->write_resampler->from_len = write_frame->datalen / 2;
+			switch_short_to_float(data, session->write_resampler->from, session->write_resampler->from_len);
+
+
+
 			session->write_resampler->to_len = (uint32_t)
 				switch_resample_process(session->write_resampler, session->write_resampler->from,
 										session->write_resampler->from_len, session->write_resampler->to,
 										session->write_resampler->to_size, 0);
-			switch_float_to_short(session->write_resampler->to, data, write_frame->datalen * 2);
+			
+
+			switch_float_to_short(session->write_resampler->to, data, session->write_resampler->to_len);
+
 			write_frame->samples = session->write_resampler->to_len;
-			write_frame->datalen = session->write_resampler->to_len * 2;
+			write_frame->datalen = write_frame->samples * 2;
 			write_frame->rate = session->write_resampler->to_rate;
 		}
 
@@ -1308,20 +1325,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 										  bytes,
 										  write_frame->datalen, session->write_codec->implementation->bytes_per_frame);
 					if ((status =
-						 switch_buffer_create(session->pool, &session->raw_write_buffer,
-											  bytes)) != SWITCH_STATUS_SUCCESS) {
+						 switch_buffer_create(session->pool, &session->raw_write_buffer, bytes)) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Buffer Failed!\n");
 						return status;
 					}
 				}
+
 				if (!(switch_buffer_write(session->raw_write_buffer, write_frame->data, write_frame->datalen))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Buffer %u bytes Failed!\n", write_frame->datalen);
 					return SWITCH_STATUS_MEMERR;
 				}
 			}
 
+			
 			if (perfect) {
-
 				enc_frame = write_frame;
 				session->enc_write_frame.datalen = session->enc_write_frame.buflen;
 
@@ -1333,7 +1350,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 												  session->enc_write_frame.data,
 												  &session->enc_write_frame.datalen,
 												  &session->enc_write_frame.rate, &flag);
-
+				
 				switch (status) {
 				case SWITCH_STATUS_RESAMPLE:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "fixme 2\n");
@@ -1357,14 +1374,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				switch_size_t used = switch_buffer_inuse(session->raw_write_buffer);
 				uint32_t bytes = session->write_codec->implementation->bytes_per_frame;
 				switch_size_t frames = (used / bytes);
-
+				
 				status = SWITCH_STATUS_SUCCESS;
-				if (frames) {
+				if (!frames) {
+					return status;
+				} else {
 					switch_size_t x;
 					for (x = 0; x < frames; x++) {
 						if ((session->raw_write_frame.datalen = (uint32_t)
 							 switch_buffer_read(session->raw_write_buffer, session->raw_write_frame.data, bytes)) != 0) {
-
 							enc_frame = &session->raw_write_frame;
 							session->raw_write_frame.rate = session->write_codec->implementation->samples_per_second;
 							session->enc_write_frame.datalen = session->enc_write_frame.buflen;
