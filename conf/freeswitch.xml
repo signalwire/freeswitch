@@ -109,7 +109,7 @@
 	<!-- Payload number to bind DTMF to-->
         <param name="rfc2833-pt" value="101"/>
 	<!-- disable to trade async for more calls -->
-	<param name="use-rtp-timer" value="true">
+	<param name="use-rtp-timer" value="true"/>
         <!-- pick one (default if not specified is 'guess'); -->
         <param name="rtp-ip" value="guess"/>
         <!-- <param name-"rtp-ip" value="10.0.0.1"/> -->
@@ -226,7 +226,7 @@
         <param name="rtp-ip" value="10.0.0.1"/>
         <param name="auto-login" value="true"/>
 	<!-- disable to trade async for more calls -->
-	<param name="use-rtp-timer" value="true">
+	<param name="use-rtp-timer" value="true"/>
         <!-- or -->
         <!-- <param name="rtp-ip" value="my_lan_ip"/> -->
         <!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/> -->

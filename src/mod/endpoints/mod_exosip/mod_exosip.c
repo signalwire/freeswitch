@@ -536,7 +536,7 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 	}
 	flags = SWITCH_RTP_FLAG_MINI | SWITCH_RTP_FLAG_RAW_WRITE;
 	if (switch_test_flag(tech_pvt, TFLAG_TIMER)) {
-	  flags |= SWITCH_RTP_FLAG_USE_TIMER | SWITCH_RTP_FLAG_TIMER_RECLOCK;
+		flags |= SWITCH_RTP_FLAG_USE_TIMER;
 	}
 
 	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
