@@ -1139,7 +1139,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 	int mline = 0, pos = 0;
 	switch_channel_t *channel = NULL;
 	char name[128];
-	char *dpayload, *dname = NULL, *drate = NULL;
+	char *dpayload = NULL, *dname = NULL, *drate = NULL;
 	char *remote_sdp_str = NULL;
 	char dbuf[256];
 
