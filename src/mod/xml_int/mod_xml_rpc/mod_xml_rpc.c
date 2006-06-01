@@ -50,10 +50,16 @@ static struct {
 	uint8_t running;
 	char *url;
 	char *bindings;
+	char *realm;
+	char *user;
+	char *pass;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_url, globals.url);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass);
 
 struct config_data {
 	char *name;
@@ -138,7 +144,9 @@ static switch_status_t do_config(void)
 {
 	char *cf = "xml_rpc.conf";
 	switch_xml_t cfg, xml, settings, param;
-	
+	char *realm, *user, *pass;
+
+	realm = user = pass = NULL;
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
@@ -149,7 +157,13 @@ static switch_status_t do_config(void)
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
-			if (!strcasecmp(var, "gateway-url")) {
+			if (!strcasecmp(var, "auth-realm")) {
+				realm = val;
+			} else if (!strcasecmp(var, "auth-user")) {
+				user = val;
+			} else if (!strcasecmp(var, "auth-pass")) {
+				pass = val;
+			} else if (!strcasecmp(var, "gateway-url")) {
 				char *bindings = (char *) switch_xml_attr_soft(param, "bindings");
 				set_global_bindings(bindings);
 				set_global_url(val);
@@ -162,7 +176,11 @@ static switch_status_t do_config(void)
 	if (!globals.port) {
 		globals.port = 8080;
 	}
-
+	if (user && pass && realm) {
+		set_global_realm(realm);
+		set_global_user(user);
+		set_global_pass(pass);
+	}
 	switch_xml_free(xml);
 
 	return globals.url ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
@@ -214,11 +232,23 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, char *f
 	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
+
 abyss_bool HandleHook(TSession *r)
 {
     char *m = "text/html";
 	switch_stream_handle_t stream = {0};
 	char *command;
+
+	stream.data = r;
+	stream.write_function = http_stream_write;
+
+	if (globals.realm) {
+		if (!RequestAuth(r,globals.realm, globals.user, globals.pass)) {
+			return TRUE;
+		}
+	}
+
+
 
 	if(strncmp(r->uri, "/api/", 5)) {
 		return FALSE;
@@ -242,8 +272,6 @@ abyss_bool HandleHook(TSession *r)
 	ResponseStatus(r,200);
 	ResponseContentType(r, m);
     ResponseWrite(r);
-	stream.data = r;
-	stream.write_function = http_stream_write;
 	switch_api_execute(command, r->query, &stream);
 	HTTPWriteEnd(r);
     return TRUE;
