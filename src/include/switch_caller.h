@@ -151,6 +151,7 @@ SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *
 /*!
   \brief Create a new caller profile object
   \param pool memory pool to use
+  \param username tne username of the caller
   \param dialplan name of the dialplan module in use
   \param caller_id_name caller ID name
   \param caller_id_number caller ID number
