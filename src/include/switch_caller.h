@@ -112,6 +112,7 @@ struct switch_caller_extension {
 	switch_caller_application_t *last_application;
 	/*! Pointer to the entire stack of applications for this extension */
 	switch_caller_application_t *applications;
+	struct switch_caller_extension *next;
 };
 
 /*!

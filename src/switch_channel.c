@@ -757,7 +757,11 @@ SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *chann
 														 switch_caller_extension_t *caller_extension)
 {
 	assert(channel != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+	caller_extension->next = channel->caller_extension;
 	channel->caller_extension = caller_extension;
+	switch_mutex_unlock(channel->profile_mutex);
 }
 
 
