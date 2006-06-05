@@ -40,7 +40,7 @@ static switch_memory_pool_t *RUNTIME_POOL = NULL;
 //static switch_memory_pool_t *BPOOL = NULL;
 static switch_memory_pool_t *THRUNTIME_POOL = NULL;
 static switch_queue_t *EVENT_QUEUE[3] = {0,0,0};
-static int POOL_COUNT_MAX = 2000;
+static int POOL_COUNT_MAX = SWITCH_CORE_QUEUE_LEN;
 
 static switch_hash_t *CUSTOM_HASH = NULL;
 static int THREAD_RUNNING = 0;

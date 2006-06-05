@@ -263,7 +263,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
 	switch_threadattr_detach_set(thd_attr, 1);
 
 
-	switch_queue_create(&LOG_QUEUE, 2000, LOG_POOL);
+	switch_queue_create(&LOG_QUEUE, SWITCH_CORE_QUEUE_LEN, LOG_POOL);
 	switch_mutex_init(&BINDLOCK, SWITCH_MUTEX_NESTED, LOG_POOL);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, log_thread, NULL, LOG_POOL);
