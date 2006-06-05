@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 	char *pfile = "freeswitch.pid";
 	char path[256] = "";
 	char *ppath = NULL;
-	char *err = NULL;
+	const char *err = NULL;
 	switch_event_t *event;
 	int bg = 0;
 	FILE *f;
@@ -124,8 +124,8 @@ int main(int argc, char *argv[])
 	}
 
 
-	if (switch_core_init(ppath) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Cannot Initilize\n");
+	if (switch_core_init(ppath, &err) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Cannot Initilize [%s]\n", err);
 		return 255;
 	}
 
@@ -156,8 +156,6 @@ int main(int argc, char *argv[])
 
 	fprintf(f, "%d", getpid());
 	fclose(f);
-
-
 	
 	if (!err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");

@@ -2758,9 +2758,8 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
+SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err)
 {
-	const char *err = NULL;
 	memset(&runtime, 0, sizeof(runtime));
 	
 	switch_core_set_globals();
@@ -2768,21 +2767,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
 	/* INIT APR and Create the pool context */
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
-		fprintf(stderr, "FATAL ERROR! Could not initilize APR\n");
+		*err = "FATAL ERROR! Could not initilize APR\n";
 		return SWITCH_STATUS_MEMERR;
 	}
 
 	if (apr_pool_create(&runtime.memory_pool, NULL) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
-		fprintf(stderr, "FATAL ERROR! Could not allocate memory pool\n");
+		*err = "FATAL ERROR! Could not allocate memory pool\n";
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if (switch_xml_init(runtime.memory_pool, &err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
-		fprintf(stderr, "FATAL ERROR! Could not open XML Registry %s\n", err);
+		*err = "FATAL ERROR! Could not open XML Registry %s\n";
 		return SWITCH_STATUS_MEMERR;
 	}
+
+	*err = NULL;
 
 	if(console) {
 		if (*console != '/') {
@@ -2790,7 +2791,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console)
 			snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, console);
 			console = path;
 		}
-		switch_core_set_console(console);
+		if (switch_core_set_console(console) != SWITCH_STATUS_SUCCESS) {
+			*err = "FATAL ERROR! Could not open console\n";
+			apr_terminate();
+			return SWITCH_STATUS_GENERR;
+		}
 	} else {
 		runtime.console = stdout;
 	}

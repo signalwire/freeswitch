@@ -111,9 +111,10 @@ struct switch_core_runtime;
 /*! 
   \brief Initilize the core
   \param console optional FILE stream for output
+  \param a pointer to set any errors to
   \note to be called at application startup
 */
-SWITCH_DECLARE(switch_status_t) switch_core_init(char *console);
+SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err);
 
 /*! 
   \brief Destroy the core
