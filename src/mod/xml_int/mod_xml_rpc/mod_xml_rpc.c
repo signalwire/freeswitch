@@ -323,7 +323,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
     MIMETypeInit();
 	MIMETypeAdd("text/html", "html");
 
-	snprintf(logfile, sizeof(logfile), "%s/%s", SWITCH_GLOBAL_dirs.log_dir, "freeswitch_http.log");
+	snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");
     ServerCreate(&abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
     
     xmlrpc_server_abyss_set_handler(&env, &abyssServer, "/RPC2", registryP);

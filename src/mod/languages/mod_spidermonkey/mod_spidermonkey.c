@@ -2003,7 +2003,7 @@ static int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
 		if (code[0] == '/') {
 			script = JS_CompileFile(cx, obj, code);
 		} else {
-			snprintf(path, sizeof(path), "%s/%s", SWITCH_GLOBAL_dirs.script_dir, code);
+			snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR, code);
 			script = JS_CompileFile(cx, obj, path);
 		}
 	}

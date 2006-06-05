@@ -900,7 +900,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 		switch_xml_free(xml);
 	}
 
-	snprintf(path_buf, sizeof(path_buf), "%s/%s", SWITCH_GLOBAL_dirs.conf_dir, "freeswitch.xml");
+	snprintf(path_buf, sizeof(path_buf), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, "freeswitch.xml");
 	if ((MAIN_XML_ROOT = switch_xml_parse_file(path_buf))) {
 		*err = switch_xml_error(MAIN_XML_ROOT);
 

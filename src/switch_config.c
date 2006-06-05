@@ -41,7 +41,7 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config_t *cfg, char *file_pat
 	if (file_path[0] == '/') {
 		path = file_path;
 	} else {
-		snprintf(path_buf, sizeof(path_buf), "%s/%s", SWITCH_GLOBAL_dirs.conf_dir, file_path);
+		snprintf(path_buf, sizeof(path_buf), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, file_path);
 		path = path_buf;
 	}
 
@@ -57,7 +57,7 @@ SWITCH_DECLARE(int) switch_config_open_file(switch_config_t *cfg, char *file_pat
 			int last = -1;
 			char *var, *val;
 
-			snprintf(path_buf, sizeof(path_buf), "%s/freeswitch.conf", SWITCH_GLOBAL_dirs.conf_dir);
+			snprintf(path_buf, sizeof(path_buf), "%s%sfreeswitch.conf", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR);
 			path = path_buf;
 
 			if ((f = fopen(path, "r")) == 0) {
