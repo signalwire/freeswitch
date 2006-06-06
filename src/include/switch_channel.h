@@ -363,6 +363,13 @@ SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel_t *chan
 SWITCH_DECLARE(const char *) switch_channel_state_name(switch_channel_state_t state);
 
 /*!
+  \brief Render the enum of the provided state name
+  \param name the name of the state
+  \return the enum value (numeric)
+*/
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_name_state(char *name);
+
+/*!
   \brief Add information about a given channel to an event object
   \param channel channel to add information about
   \param event event to add information to

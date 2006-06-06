@@ -58,6 +58,7 @@
         
         <!-- ASR /TTS -->
         <!-- <load module="mod_cepstral"/> -->
+        <!-- <load module="mod_rss"/> -->
         </modules>
     </configuration>
   

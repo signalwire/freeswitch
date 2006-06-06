@@ -231,6 +231,7 @@ typedef enum {
 	SWITCH_STATUS_BREAK     - A non-fatal break of an operation
     SWITCH_STATUS_SOCKERR   - A socket error
 	SWITCH_STATUS_MORE_DATA - Need More Data
+	SWITCH_STATUS_NOTFOUND  - Not Found
 </pre>
  */
 typedef enum {
@@ -247,7 +248,8 @@ typedef enum {
 	SWITCH_STATUS_INUSE,
 	SWITCH_STATUS_BREAK,
 	SWITCH_STATUS_SOCKERR,
-	SWITCH_STATUS_MORE_DATA
+	SWITCH_STATUS_MORE_DATA,
+	SWITCH_STATUS_NOTFOUND
 } switch_status_t;
 
 

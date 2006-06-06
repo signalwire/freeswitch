@@ -288,9 +288,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 							  file,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_core_session_reset(session);
-		return SWITCH_STATUS_GENERR;
+		return SWITCH_STATUS_NOTFOUND;
 	}
 
 

@@ -370,12 +370,26 @@ static const char *state_names[] = {
 	"CS_LOOPBACK",
 	"CS_HOLD",
 	"CS_HANGUP",
-	"CS_DONE"
+	"CS_DONE",
+	NULL
 };
 
 SWITCH_DECLARE(const char *) switch_channel_state_name(switch_channel_state_t state)
 {
 	return state_names[state];
+}
+
+
+SWITCH_DECLARE(switch_channel_state_t) switch_channel_name_state(char *name)
+{
+	uint32_t x = 0;
+	for(x = 0; state_names[x]; x++) {
+		if (!strcasecmp(state_names[x], name)) {
+			return (switch_channel_state_t) x;
+		}
+	}
+
+	return CS_DONE;
 }
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,

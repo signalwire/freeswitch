@@ -82,10 +82,10 @@ void fs_channel_pre_answer(switch_core_session_t *session)
 	switch_channel_pre_answer(channel);
 }
 
-void fs_channel_hangup(switch_core_session_t *session)
+void fs_channel_hangup(switch_core_session_t *session, char *cause)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	switch_channel_hangup(channel, switch_channel_str2cause(cause));
 }
 
 void fs_channel_set_variable(switch_core_session_t *session, char *var, char *val)
@@ -105,16 +105,17 @@ void fs_channel_set_state(switch_core_session_t *session, char *state)
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state_t fs_state = switch_channel_get_state(channel);
 
-	if (!strcmp(state, "EXECUTE")) {
-		fs_state = CS_EXECUTE;
-	} else 	if (!strcmp(state, "TRANSMIT")) {
-		fs_state = CS_TRANSMIT;
+	if ((fs_state = switch_channel_name_state(state)) < CS_HANGUP) {
+		switch_channel_set_state(channel, fs_state);
 	}
-	
-	switch_channel_set_state(channel, fs_state);
 }
 
-int fs_ivr_play_file(switch_core_session_t *session, char *file, char *timer_name) 
+int fs_ivr_play_file(switch_core_session_t *session,
+					 char *file,
+					 char *timer_name,
+					 switch_dtmf_callback_function_t dtmf_callback,
+					 void *buf,
+					 unsigned int buflen)
 {
 	switch_status_t status;
 	if (switch_strlen_zero(timer_name)) {

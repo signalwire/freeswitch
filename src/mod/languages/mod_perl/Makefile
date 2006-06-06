@@ -23,7 +23,7 @@ depends:
 
 reswig: 
 	rm switch_swig_wrap.c
-	swig -DMULTIPLICITY -perl5 -module fs_perl switch_swig.c
+	swig -lswitch_swig.i -ignoremissing -DMULTIPLICITY -perl5 -module fs_perl switch_swig.c
 
 switch_swig_wrap.o: switch_swig_wrap.c
 	$(CC) -w $(CFLAGS) -c $< -o $@

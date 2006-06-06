@@ -6,6 +6,7 @@ applications/mod_echo
 applications/mod_ivrtest
 applications/mod_playback
 applications/mod_skel
+#applications/mod_rss
 #asr_tts/mod_cepstral
 codecs/mod_g711
 codecs/mod_ilbc

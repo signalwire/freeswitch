@@ -991,9 +991,10 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
-#define SWIGTYPE_p_switch_core_session swig_types[0]
-static swig_type_info *swig_types[2];
-static swig_module_info swig_module = {swig_types, 1, 0, 0, 0, 0};
+#define SWIGTYPE_p_switch_core_session_t swig_types[0]
+#define SWIGTYPE_p_switch_dtmf_callback_function_t swig_types[1]
+static swig_type_info *swig_types[3];
+static swig_module_info swig_module = {swig_types, 2, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1016,6 +1017,9 @@ SWIGEXPORT void SWIG_init (pTHXo_ CV* cv);
 #else
 SWIGEXPORT void SWIG_init (CV *cv, CPerlObj *);
 #endif
+
+
+#include <switch.h>
 
 #ifdef PERL_OBJECT
 #define MAGIC_CLASS _wrap_fs_perl_var::
@@ -1044,6 +1048,9 @@ XS(_wrap_fs_core_set_globals) {
         int argvi = 0;
         dXSARGS;
         
+        if ((items < 0) || (items > 0)) {
+            SWIG_croak("Usage: fs_core_set_globals();");
+        }
         fs_core_set_globals();
         
         
@@ -1085,6 +1092,9 @@ XS(_wrap_fs_core_destroy) {
         int argvi = 0;
         dXSARGS;
         
+        if ((items < 0) || (items > 0)) {
+            SWIG_croak("Usage: fs_core_destroy();");
+        }
         result = (int)fs_core_destroy();
         
         ST(argvi) = sv_newmortal();
@@ -1103,6 +1113,9 @@ XS(_wrap_fs_loadable_module_init) {
         int argvi = 0;
         dXSARGS;
         
+        if ((items < 0) || (items > 0)) {
+            SWIG_croak("Usage: fs_loadable_module_init();");
+        }
         result = (int)fs_loadable_module_init();
         
         ST(argvi) = sv_newmortal();
@@ -1121,6 +1134,9 @@ XS(_wrap_fs_loadable_module_shutdown) {
         int argvi = 0;
         dXSARGS;
         
+        if ((items < 0) || (items > 0)) {
+            SWIG_croak("Usage: fs_loadable_module_shutdown();");
+        }
         result = (int)fs_loadable_module_shutdown();
         
         ST(argvi) = sv_newmortal();
@@ -1139,7 +1155,9 @@ XS(_wrap_fs_console_loop) {
         int argvi = 0;
         dXSARGS;
         
-
+        if ((items < 0) || (items > 0)) {
+            SWIG_croak("Usage: fs_console_loop();");
+        }
         result = (int)fs_console_loop();
         
         ST(argvi) = sv_newmortal();
@@ -1199,7 +1217,7 @@ XS(_wrap_fs_console_clean) {
 XS(_wrap_fs_core_session_locate) {
     {
         char *arg1 = (char *) 0 ;
-        struct switch_core_session *result;
+        switch_core_session_t *result;
         int argvi = 0;
         dXSARGS;
         
@@ -1208,10 +1226,10 @@ XS(_wrap_fs_core_session_locate) {
         }
         if (!SvOK((SV*) ST(0))) arg1 = 0;
         else arg1 = (char *) SvPV(ST(0), PL_na);
-        result = (struct switch_core_session *)fs_core_session_locate(arg1);
+        result = (switch_core_session_t *)fs_core_session_locate(arg1);
         
         ST(argvi) = sv_newmortal();
-        SWIG_MakePtr(ST(argvi++), (void *) result, SWIGTYPE_p_switch_core_session, 0|0);
+        SWIG_MakePtr(ST(argvi++), (void *) result, SWIGTYPE_p_switch_core_session_t, 0|0);
         XSRETURN(argvi);
         fail:
         ;
@@ -1222,7 +1240,7 @@ XS(_wrap_fs_core_session_locate) {
 
 XS(_wrap_fs_channel_answer) {
     {
-        struct switch_core_session *arg1 = (struct switch_core_session *) 0 ;
+        switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
         int argvi = 0;
         dXSARGS;
         
@@ -1230,8 +1248,8 @@ XS(_wrap_fs_channel_answer) {
             SWIG_croak("Usage: fs_channel_answer(session);");
         }
         {
-            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session,0) < 0) {
-                SWIG_croak("Type error in argument 1 of fs_channel_answer. Expected _p_switch_core_session");
+            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t,0) < 0) {
+                SWIG_croak("Type error in argument 1 of fs_channel_answer. Expected _p_switch_core_session_t");
             }
         }
         fs_channel_answer(arg1);
@@ -1247,7 +1265,7 @@ XS(_wrap_fs_channel_answer) {
 
 XS(_wrap_fs_channel_pre_answer) {
     {
-        struct switch_core_session *arg1 = (struct switch_core_session *) 0 ;
+        switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
         int argvi = 0;
         dXSARGS;
         
@@ -1255,8 +1273,8 @@ XS(_wrap_fs_channel_pre_answer) {
             SWIG_croak("Usage: fs_channel_pre_answer(session);");
         }
         {
-            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session,0) < 0) {
-                SWIG_croak("Type error in argument 1 of fs_channel_pre_answer. Expected _p_switch_core_session");
+            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t,0) < 0) {
+                SWIG_croak("Type error in argument 1 of fs_channel_pre_answer. Expected _p_switch_core_session_t");
             }
         }
         fs_channel_pre_answer(arg1);
@@ -1272,19 +1290,22 @@ XS(_wrap_fs_channel_pre_answer) {
 
 XS(_wrap_fs_channel_hangup) {
     {
-        struct switch_core_session *arg1 = (struct switch_core_session *) 0 ;
+        switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+        char *arg2 = (char *) 0 ;
         int argvi = 0;
         dXSARGS;
         
-        if ((items < 1) || (items > 1)) {
-            SWIG_croak("Usage: fs_channel_hangup(session);");
+        if ((items < 2) || (items > 2)) {
+            SWIG_croak("Usage: fs_channel_hangup(session,cause);");
         }
         {
-            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session,0) < 0) {
-                SWIG_croak("Type error in argument 1 of fs_channel_hangup. Expected _p_switch_core_session");
+            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t,0) < 0) {
+                SWIG_croak("Type error in argument 1 of fs_channel_hangup. Expected _p_switch_core_session_t");
             }
         }
-        fs_channel_hangup(arg1);
+        if (!SvOK((SV*) ST(1))) arg2 = 0;
+        else arg2 = (char *) SvPV(ST(1), PL_na);
+        fs_channel_hangup(arg1,arg2);
         
         
         XSRETURN(argvi);
@@ -1297,7 +1318,7 @@ XS(_wrap_fs_channel_hangup) {
 
 XS(_wrap_fs_channel_set_variable) {
     {
-        struct switch_core_session *arg1 = (struct switch_core_session *) 0 ;
+        switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
         char *arg2 = (char *) 0 ;
         char *arg3 = (char *) 0 ;
         int argvi = 0;
@@ -1307,8 +1328,8 @@ XS(_wrap_fs_channel_set_variable) {
             SWIG_croak("Usage: fs_channel_set_variable(session,var,val);");
         }
         {
-            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session,0) < 0) {
-                SWIG_croak("Type error in argument 1 of fs_channel_set_variable. Expected _p_switch_core_session");
+            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t,0) < 0) {
+                SWIG_croak("Type error in argument 1 of fs_channel_set_variable. Expected _p_switch_core_session_t");
             }
         }
         if (!SvOK((SV*) ST(1))) arg2 = 0;
@@ -1328,7 +1349,7 @@ XS(_wrap_fs_channel_set_variable) {
 
 XS(_wrap_fs_channel_get_variable) {
     {
-        struct switch_core_session *arg1 = (struct switch_core_session *) 0 ;
+        switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
         char *arg2 = (char *) 0 ;
         int argvi = 0;
         dXSARGS;
@@ -1337,8 +1358,8 @@ XS(_wrap_fs_channel_get_variable) {
             SWIG_croak("Usage: fs_channel_get_variable(session,var);");
         }
         {
-            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session,0) < 0) {
-                SWIG_croak("Type error in argument 1 of fs_channel_get_variable. Expected _p_switch_core_session");
+            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t,0) < 0) {
+                SWIG_croak("Type error in argument 1 of fs_channel_get_variable. Expected _p_switch_core_session_t");
             }
         }
         if (!SvOK((SV*) ST(1))) arg2 = 0;
@@ -1356,7 +1377,7 @@ XS(_wrap_fs_channel_get_variable) {
 
 XS(_wrap_fs_channel_set_state) {
     {
-        struct switch_core_session *arg1 = (struct switch_core_session *) 0 ;
+        switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
         char *arg2 = (char *) 0 ;
         int argvi = 0;
         dXSARGS;
@@ -1365,8 +1386,8 @@ XS(_wrap_fs_channel_set_state) {
             SWIG_croak("Usage: fs_channel_set_state(session,state);");
         }
         {
-            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session,0) < 0) {
-                SWIG_croak("Type error in argument 1 of fs_channel_set_state. Expected _p_switch_core_session");
+            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t,0) < 0) {
+                SWIG_croak("Type error in argument 1 of fs_channel_set_state. Expected _p_switch_core_session_t");
             }
         }
         if (!SvOK((SV*) ST(1))) arg2 = 0;
@@ -1384,26 +1405,42 @@ XS(_wrap_fs_channel_set_state) {
 
 XS(_wrap_fs_ivr_play_file) {
     {
-        struct switch_core_session *arg1 = (struct switch_core_session *) 0 ;
+        switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
         char *arg2 = (char *) 0 ;
         char *arg3 = (char *) 0 ;
+        switch_dtmf_callback_function_t arg4 ;
+        void *arg5 = (void *) 0 ;
+        unsigned int arg6 ;
         int result;
         int argvi = 0;
         dXSARGS;
         
-        if ((items < 3) || (items > 3)) {
-            SWIG_croak("Usage: fs_ivr_play_file(session,file,timer_name_in);");
+        if ((items < 6) || (items > 6)) {
+            SWIG_croak("Usage: fs_ivr_play_file(session,file,timer_name,dtmf_callback,buf,buflen);");
         }
         {
-            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session,0) < 0) {
-                SWIG_croak("Type error in argument 1 of fs_ivr_play_file. Expected _p_switch_core_session");
+            if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t,0) < 0) {
+                SWIG_croak("Type error in argument 1 of fs_ivr_play_file. Expected _p_switch_core_session_t");
             }
         }
         if (!SvOK((SV*) ST(1))) arg2 = 0;
         else arg2 = (char *) SvPV(ST(1), PL_na);
         if (!SvOK((SV*) ST(2))) arg3 = 0;
         else arg3 = (char *) SvPV(ST(2), PL_na);
-        result = (int)fs_ivr_play_file(arg1,arg2,arg3);
+        {
+            switch_dtmf_callback_function_t * argp;
+            if (SWIG_ConvertPtr(ST(3),(void **) &argp, SWIGTYPE_p_switch_dtmf_callback_function_t,0) < 0) {
+                SWIG_croak("Type error in argument 4 of fs_ivr_play_file. Expected _p_switch_dtmf_callback_function_t");
+            }
+            arg4 = *argp;
+        }
+        {
+            if (SWIG_ConvertPtr(ST(4), (void **) &arg5, 0,0) < 0) {
+                SWIG_croak("Type error in argument 5 of fs_ivr_play_file. Expected _p_void");
+            }
+        }
+        arg6 = (unsigned int) SvUV(ST(5));
+        result = (int)fs_ivr_play_file(arg1,arg2,arg3,arg4,arg5,arg6);
         
         ST(argvi) = sv_newmortal();
         sv_setiv(ST(argvi++), (IV) result);
@@ -1418,16 +1455,20 @@ XS(_wrap_fs_ivr_play_file) {
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-static swig_type_info _swigt__p_switch_core_session = {"_p_switch_core_session", "struct switch_core_session *", 0, 0, 0};
+static swig_type_info _swigt__p_switch_core_session_t = {"_p_switch_core_session_t", "switch_core_session_t *", 0, 0, 0};
+static swig_type_info _swigt__p_switch_dtmf_callback_function_t = {"_p_switch_dtmf_callback_function_t", "switch_dtmf_callback_function_t *", 0, 0, 0};
 
 static swig_type_info *swig_type_initial[] = {
-  &_swigt__p_switch_core_session,
+  &_swigt__p_switch_core_session_t,
+  &_swigt__p_switch_dtmf_callback_function_t,
 };
 
-static swig_cast_info _swigc__p_switch_core_session[] = {  {&_swigt__p_switch_core_session, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_switch_core_session_t[] = {  {&_swigt__p_switch_core_session_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_switch_dtmf_callback_function_t[] = {  {&_swigt__p_switch_dtmf_callback_function_t, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
-  _swigc__p_switch_core_session,
+  _swigc__p_switch_core_session_t,
+  _swigc__p_switch_dtmf_callback_function_t,
 };
 
 
