@@ -857,6 +857,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (switch_core_session_answer_channel(channel->session) == SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
 

@@ -577,11 +577,17 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 #endif
 		towrite = bytes >= globals.mtu ? globals.mtu : bytes;
 
+		if (towrite < globals.mtu) {
+			int diff = globals.mtu - towrite;
+			memset(bp + towrite, 0, diff);
+			towrite = globals.mtu;
+		}
+
 		result = sangoma_sendmsg_socket(tech_pvt->socket,
 									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), bp, towrite, 0);
 		if (result < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-								  "Bad Write frame len %u write %d bytes returned %d (%s)!\n", frame->datalen,
+								  "Bad Write frame len %u write %d bytes returned %d (%s)!\n", towrite,
 								  globals.mtu, result, strerror(errno));
 			if (errno == EBUSY) {
 				continue;
