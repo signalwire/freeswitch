@@ -110,6 +110,8 @@
         <param name="rfc2833-pt" value="101"/>
 	<!-- disable to trade async for more calls -->
 	<param name="use-rtp-timer" value="true"/>
+	<!-- auto sense NAT issues and adjust accordingly -->
+	<param name="use-rtp-auto-adjust" value="true"/>
         <!-- pick one (default if not specified is 'guess'); -->
         <param name="rtp-ip" value="guess"/>
         <!-- <param name-"rtp-ip" value="10.0.0.1"/> -->

@@ -76,7 +76,8 @@ typedef enum {
 	TFLAG_VAD_IN = ( 1 << 12),
 	TFLAG_VAD_OUT = ( 1 << 13),
 	TFLAG_VAD = ( 1 << 14),
-	TFLAG_TIMER = ( 1 << 15)
+	TFLAG_TIMER = ( 1 << 15),
+	TFLAG_AA = (1 << 16)
 } TFLAGS;
 
 
@@ -537,6 +538,10 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 	flags = SWITCH_RTP_FLAG_MINI | SWITCH_RTP_FLAG_RAW_WRITE;
 	if (switch_test_flag(tech_pvt, TFLAG_TIMER)) {
 		flags |= SWITCH_RTP_FLAG_USE_TIMER;
+	}
+
+	if (switch_test_flag(tech_pvt, TFLAG_AA)) {
+		flags |= SWITCH_RTP_FLAG_AUTOADJ;
 	}
 
 	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
@@ -1933,6 +1938,8 @@ static int config_exosip(int reload)
 				globals.debug = atoi(val);
 			} else if (!strcmp(var, "use-rtp-timer") && switch_true(val)) {
 				  switch_set_flag(&globals, TFLAG_TIMER);
+			} else if (!strcmp(var, "use-rtp-auto-adjust") && switch_true(val)) {
+				  switch_set_flag(&globals, TFLAG_AA);
 			} else if (!strcmp(var, "port")) {
 				globals.port = atoi(val);
 			} else if (!strcmp(var, "rfc2833-pt")) {

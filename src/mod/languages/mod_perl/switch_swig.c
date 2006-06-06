@@ -18,12 +18,13 @@ void fs_core_set_globals(void)
 int fs_core_init(char *path)
 {
 	switch_status_t status;
+	const char *err = NULL;
 
 	if (switch_strlen_zero(path)) {
 		path = NULL;
 	}
 
-	status = switch_core_init(path);
+	status = switch_core_init(path, &err);
 
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
