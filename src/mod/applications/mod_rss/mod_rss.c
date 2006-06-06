@@ -72,7 +72,6 @@ static switch_status_t on_dtmf(switch_core_session_t *session, char *dtmf, void 
 
 	if (dtb->len == 2) {
 		if (*dtb->data == '*') {
-			printf("%s\n", dtb->data);
 			dtb->front = dtb->data;
 			dtb->len = 0;
 			*dtb->data = '\0';
@@ -195,24 +194,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &rss_module_interface;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
-
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/*
-  Called when the system shuts down
-  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
-  {
-  return SWITCH_STATUS_SUCCESS;
-  }
-*/
-
-/*
-  If it exists, this is called in it's own thread when the module-load completes
-  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
-  {
-  return SWITCH_STATUS_SUCCESS;
-  }
-*/
