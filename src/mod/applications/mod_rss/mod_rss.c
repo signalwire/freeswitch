@@ -79,10 +79,10 @@ static switch_status_t on_dtmf(switch_core_session_t *session, char *dtmf, void 
 			case '0':
 				dtb->fh.speed = 0;
 				break;
-			case '1':
+			case '2':
 				dtb->fh.speed++;
 				break;
-			case '2':
+			case '1':
 				dtb->fh.speed--;
 				break;
 			case '5':
