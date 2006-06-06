@@ -262,11 +262,17 @@
 
     <!-- *NOTE* The special context name 'any' will match any context -->
     <context name="default">
-      <extension name="devconf">
-        <condition field="destination_number" expression="^888$">
-          <action application="bridge" data="exosip/888@66.250.68.194"/>
-	</condition>
-      </extension>
+			<extension name="tollfree">
+      	<condition field="destination_number" expression="^(18[0{2}8{2}7{2}6{2}].*)$">
+					<action application="bridge" data="exosip/$1-freeswitch@voip.trxtel.com"/>
+				</condition>
+			</extension>
+
+			<extension name="devconf">
+				<condition field="destination_number" expression="^888$">
+					<action application="bridge" data="exosip/888@66.250.68.194"/>
+				</condition>
+			</extension>
 
       <!-- if the destination is an exact match on the extension name
       you do not need any regex in the condition -->
