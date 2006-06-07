@@ -1235,6 +1235,12 @@ static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
 static switch_status_t dl_logout(char *profile_name, switch_stream_handle_t *stream)
 {
 	struct mdl_profile *profile;
+
+	if (!profile_name) {
+		stream->write_function(stream, "NO PROFILE NAME SPECIFIED\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if ((profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
 		ldl_handle_stop(profile->handle);
 		stream->write_function(stream, "OK\n");
