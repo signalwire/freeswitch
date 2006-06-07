@@ -52,15 +52,15 @@ static switch_status_t on_dtmf(switch_core_session_t *session, char *dtmf, void 
 
 	struct dtmf_buffer *dtb;
 	uint32_t len, slen;
-	dtb = (struct dtmf_buffer *) buf;
 	uint32_t samps = 0, pos = 0;
+	dtb = (struct dtmf_buffer *) buf;
 
 	if (*dtmf == '#') {
 		return SWITCH_STATUS_FALSE;
 	}
 
 	len = dtb->size - dtb->len;
-	slen = strlen(dtmf);
+	slen = (uint32_t)strlen(dtmf);
 
 	if (slen > len) {
 		slen = len;
@@ -155,7 +155,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 			break;
 		}
 
-		index = atoi(buf);
+		index = (uint8_t)atoi(buf);
 
 		/* reset for next loop */
 		*buf = '\0';
