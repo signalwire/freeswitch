@@ -101,7 +101,6 @@ END_EXTERN_C
  *	Additionally, the experimental external modules make use of several external modules:
  *
  *	mod_Exosip:
- *		- JRTPlib (http://research.edm.luc.ac.be/jori/jrtplib/jrtplib.html)
  *		- eXoSIP (http://savannah.nongnu.org/projects/exosip/)
  *
  *	mod_iaxchan:

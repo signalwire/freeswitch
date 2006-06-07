@@ -1575,8 +1575,11 @@ static void handle_message_new(eXosip_event_t *je)
 				}
 
 
-				expires = get_header_value(je, "expires");
-				exptime = time(NULL) + atoi(expires) + 20;
+				if ((expires = get_header_value(je, "expires"))) {
+					exptime = time(NULL) + atoi(expires) + 20;
+				} else {
+					exptime = time(NULL) + 3600;
+				}
 
 				
 				if (!find_reg_url(globals.db, je->request->from->url->username, sql, sizeof(sql))) {
