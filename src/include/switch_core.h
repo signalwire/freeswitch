@@ -918,6 +918,14 @@ SWITCH_DECLARE(void) switch_core_speech_text_param_tts(switch_speech_handle_t *s
 SWITCH_DECLARE(void) switch_core_speech_numeric_param_tts(switch_speech_handle_t *sh, char *param, int val);
 
 /*! 
+  \brief Set a float parameter on a TTS handle
+  \param sh the speech handle
+  \param param the parameter
+  \param val the value
+*/
+SWITCH_DECLARE(void) switch_core_speech_float_param_tts(switch_speech_handle_t *sh, char *param, double val);
+
+/*! 
   \brief Read rendered audio from the TTS module
   \param sh the speech handle to read
   \param data the buffer to read to

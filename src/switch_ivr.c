@@ -554,6 +554,52 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 
 	ilen = len;
 	while(switch_channel_ready(channel)) {
+
+		if (dtmf_callback || buf) {
+			/*
+			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
+			*/
+			if (switch_channel_has_dtmf(channel)) {
+				if (buf && !strcasecmp(buf, "_break_")) {
+					status = SWITCH_STATUS_BREAK;
+				} else {
+					switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+					if (dtmf_callback) {
+						status = dtmf_callback(session, dtmf, buf, buflen);
+					} else {
+						switch_copy_string((char *)buf, dtmf, buflen);
+						status = SWITCH_STATUS_BREAK;
+					}
+				}
+			}
+			
+			if (status != SWITCH_STATUS_SUCCESS) {
+				done = 1;
+				break;
+			}
+		}
+		
+		if (switch_test_flag(sh, SWITCH_SPEECH_FLAG_PAUSE)) {
+			if (timer) {
+				if ((x = switch_core_timer_next(timer)) < 0) {
+					break;
+				}
+			} else {
+				switch_frame_t *read_frame;
+				switch_status_t status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+
+				while (switch_channel_test_flag(channel, CF_HOLD)) {
+					switch_yield(10000);
+				}
+			
+				if (!SWITCH_READ_ACCEPTABLE(status)) {
+					break;
+				}
+			}
+			continue;
+		}
+
 		flags = SWITCH_SPEECH_FLAG_BLOCKING;
 		status = switch_core_speech_read_tts(sh,
 											 abuf,
@@ -596,27 +642,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			}
 		}
 
-		if (dtmf_callback || buf) {
-			/*
-			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
-			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
-			*/
-			if (switch_channel_has_dtmf(channel)) {
-				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-				if (dtmf_callback) {
-					status = dtmf_callback(session, dtmf, buf, buflen);
-				} else {
-					switch_copy_string((char *)buf, dtmf, buflen);
-					status = SWITCH_STATUS_BREAK;
-				}
-			}
-			
-			if (status != SWITCH_STATUS_SUCCESS) {
-				done = 1;
-				break;
-			}
-		}
-		
 		if (timer) {
 			if ((x = switch_core_timer_next(timer)) < 0) {
 				break;

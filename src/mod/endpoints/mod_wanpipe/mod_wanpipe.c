@@ -566,8 +566,8 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 	while (bytes > 0) {
 		unsigned int towrite;
 
-#if 0
-		if (sangoma_socket_waitfor(tech_pvt->socket, -1, POLLOUT | POLLERR | POLLHUP) <= 0) {
+#if 1
+		if (sangoma_socket_waitfor(tech_pvt->socket, 1000, POLLOUT | POLLERR | POLLHUP) <= 0) {
 			return SWITCH_STATUS_GENERR;
 		}
 #endif

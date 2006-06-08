@@ -424,6 +424,7 @@ SWITCH_SPEECH_FLAG_HASTEXT =		(1 <<  2) - Interface is has text to read.
 SWITCH_SPEECH_FLAG_PEEK =			(1 <<  3) - Read data but do not erase it.
 SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  4) - Free interface's pool on destruction.
 SWITCH_SPEECH_FLAG_BLOCKING =       (1 <<  5) - Indicate that a blocking call is desired 
+SWITCH_SPEECH_FLAG_PAUSE = 			(1 <<  6) - Pause toggle for playback
 </pre>
 */
 typedef enum {
@@ -433,6 +434,7 @@ typedef enum {
 	SWITCH_SPEECH_FLAG_PEEK =			(1 <<  3),
 	SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  4),
 	SWITCH_SPEECH_FLAG_BLOCKING =		(1 <<  5),
+	SWITCH_SPEECH_FLAG_PAUSE =			(1 <<  6)
 
 } switch_speech_flag_t;
 

@@ -36,7 +36,7 @@
 #include <swift.h>
 #include <switch.h>
 
-#define MY_BUF_LEN 1024 * 512
+#define MY_BUF_LEN 1024 * 256
 
 static const char modname[] = "mod_cepstral";
 
@@ -152,7 +152,13 @@ static switch_status_t cepstral_speech_open(switch_speech_handle_t *sh, char *vo
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set voice.\n");
 				goto all_done;
 			}
+
+			voice_name = (char *) swift_voice_get_attribute(cepstral->voice, "name");
 		}
+
+		if (voice_name) {
+            switch_copy_string(sh->voice, voice_name, sizeof(sh->voice));
+        }
 
 		swift_port_set_callback(cepstral->port, &write_audio, SWIFT_EVENT_AUDIO, cepstral);
 
@@ -175,7 +181,6 @@ static switch_status_t cepstral_speech_close(switch_speech_handle_t *sh, switch_
 
 	cepstral->done = 1;
 	cepstral->done_gen = 1;
-	printf("CLOSE!!!\n");
 	swift_port_stop(cepstral->port, SWIFT_ASYNC_ANY, SWIFT_EVENT_NOW);
 	/* Close the Swift Port and Engine */
 	if (NULL != cepstral->port) swift_port_close(cepstral->port);
@@ -294,6 +299,83 @@ static switch_status_t cepstral_speech_read_tts(switch_speech_handle_t *sh,
 	return status;
 }
 
+static void cepstral_text_param_tts(switch_speech_handle_t *sh, char *param, char *val)
+{
+	cepstral_t *cepstral;
+
+	cepstral = sh->private_info;
+	assert(cepstral != NULL);
+
+	if (!strcasecmp(param, "voice")) {
+		char *voice_name = val;
+		if (!strcasecmp(voice_name, "next")) {
+			if ((cepstral->voice = swift_port_find_next_voice(cepstral->port))) {
+				if ( SWIFT_FAILED(swift_port_set_voice(cepstral->port, cepstral->voice)) ) {
+					cepstral->done = cepstral->done_gen = 1;
+					return;
+				}
+				voice_name = (char *) swift_voice_get_attribute(cepstral->voice, "name");
+			} else {
+				voice_name = NULL;
+			}
+		} else {
+			if (voice_name && SWIFT_FAILED(swift_port_set_voice_by_name(cepstral->port, voice_name))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid voice %s!\n", voice_name);
+				voice_name = NULL;
+			}
+		}
+
+		if (!voice_name) {
+            /* Find the first voice on the system */
+            if ((cepstral->voice = swift_port_find_first_voice(cepstral->port, NULL, NULL)) == NULL) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to find any voices!\n");
+				cepstral->done = cepstral->done_gen = 1;
+				return;
+            }
+
+            /* Set the voice found by find_first_voice() as the port's current voice */
+            if ( SWIFT_FAILED(swift_port_set_voice(cepstral->port, cepstral->voice)) ) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set voice.\n");
+				cepstral->done = cepstral->done_gen = 1;
+				return;
+            }
+
+			voice_name = (char *) swift_voice_get_attribute(cepstral->voice, "name");
+        } 
+
+		if (voice_name) {
+			switch_copy_string(sh->voice, voice_name, sizeof(sh->voice));
+		}
+
+		return;
+	}
+
+	swift_port_set_param_string(cepstral->port, param, val, NULL);
+}
+
+static void cepstral_numeric_param_tts(switch_speech_handle_t *sh, char *param, int val)
+{
+	cepstral_t *cepstral;
+
+	cepstral = sh->private_info;
+	assert(cepstral != NULL);
+
+	swift_port_set_param_int(cepstral->port, param, val, NULL);
+
+}
+
+
+static void cepstral_float_param_tts(switch_speech_handle_t *sh, char *param, double val)
+{
+	cepstral_t *cepstral;
+
+	cepstral = sh->private_info;
+	assert(cepstral != NULL);
+
+	swift_port_set_param_float(cepstral->port, param, val, NULL);
+
+}
+
 static const switch_speech_interface_t cepstral_speech_interface = {
 	/*.interface_name*/			"cepstral",
 	/*.speech_open*/			cepstral_speech_open,
@@ -302,7 +384,10 @@ static const switch_speech_interface_t cepstral_speech_interface = {
 	/*.speech_interpret_asr*/	NULL,
 	/*.speech_feed_tts*/		cepstral_speech_feed_tts,
 	/*.speech_read_tts*/		cepstral_speech_read_tts,
-	/*.speech_flush_tts*/		cepstral_speech_flush_tts
+	/*.speech_flush_tts*/		cepstral_speech_flush_tts,
+	/*.speech_text_param_tts*/  cepstral_text_param_tts,
+	/*.speech_numeric_param_tts*/  cepstral_numeric_param_tts,
+	/*.speech_numeric_param_tts*/  cepstral_float_param_tts
 };
 
 static const switch_loadable_module_interface_t cepstral_module_interface = {

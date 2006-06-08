@@ -578,6 +578,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 		return SWITCH_STATUS_GENERR;
 	}
 
+	switch_copy_string(sh->engine, module_name, sizeof(sh->engine));
 	sh->flags = *flags;
 	if (pool) {
 		sh->memory_pool = pool;
@@ -637,6 +638,15 @@ SWITCH_DECLARE(void) switch_core_speech_numeric_param_tts(switch_speech_handle_t
 
 	if (sh->speech_interface->speech_numeric_param_tts) {
 		sh->speech_interface->speech_numeric_param_tts(sh, param, val);
+	}
+}
+
+SWITCH_DECLARE(void) switch_core_speech_float_param_tts(switch_speech_handle_t *sh, char *param, double val)
+{
+	assert(sh != NULL);
+
+	if (sh->speech_interface->speech_float_param_tts) {
+		sh->speech_interface->speech_float_param_tts(sh, param, val);
 	}
 }
 
@@ -736,15 +746,13 @@ static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
 	while (data->running > 0) {
 		switch (switch_core_session_read_frame(session, &read_frame, -1, stream_id)) {
 		case SWITCH_STATUS_SUCCESS:
-			break;
 		case SWITCH_STATUS_TIMEOUT:
+		case SWITCH_STATUS_BREAK:
 			break;
 		default:
 			data->running = -1;
 			continue;
 		}
-
-		switch_yield(10000);
 	}
 
 	data->running = 0;
