@@ -430,6 +430,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	default:
 		break;
 	}
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -485,7 +486,8 @@ static const switch_io_routines_t channel_io_routines = {
 	/*.kill_channel */ channel_kill_channel,
 	/*.waitfor_read */ channel_waitfor_read,
 	/*.waitfor_write */ channel_waitfor_write,
-	/*.send_dtmf */ channel_send_dtmf
+	/*.send_dtmf */ channel_send_dtmf,
+	/*.receive_message*/ channel_receive_message
 };
 
 static const switch_endpoint_interface_t channel_endpoint_interface = {
