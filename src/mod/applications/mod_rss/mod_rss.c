@@ -135,7 +135,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 	const char *err = NULL;
 	struct dtmf_buffer dtb = {0};
 	switch_xml_t xml = NULL, item, xchannel = NULL;
-	struct shashdot_entry entries[TTS_MAX_ENTRIES] = {};
+	struct shashdot_entry entries[TTS_MAX_ENTRIES] = {0};
 	uint32_t i = 0;
 	char *title_txt = "", *description_txt = "", *rights_txt = "";
 	switch_codec_t speech_codec, *codec = switch_core_session_get_read_codec(session);
@@ -273,16 +273,16 @@ static void rss_function(switch_core_session_t *session, char *data)
 			switch_core_speech_flush_tts(&sh);
 			snprintf(buf + len, sizeof(buf) - len, 
 					 "Main Menu. <break time=\"600ms\"/> Choose one of the following Feeds or press pound to exit. <break time=\"600ms\"/>");
-			len = strlen(buf);
+			len = (int32_t)strlen(buf);
 
 			for (idx = 0; idx < feed_index; idx++) {
 				snprintf(buf + len, sizeof(buf) - len, "Feed Number %d %s. <break time=\"600ms\"/>", idx + 1, feed_names[idx]);
-				len = strlen(buf);
+				len = (int32_t)strlen(buf);
 			}
 
 
 			snprintf(buf + len, sizeof(buf) - len, "<break time=\"2000ms\"/>");
-			len = strlen(buf);
+			len = (int32_t)strlen(buf);
 
 			status = switch_ivr_speak_text_handle(session,
 												  &sh,
@@ -485,7 +485,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 								 sh.voice,
 								 dtb.speed
 								 );
-						len = strlen(buf);
+						len = (uint32_t)strlen(buf);
 					}
 
 					if (switch_test_flag(&dtb, SFLAG_INSTRUCT)) {
@@ -500,21 +500,21 @@ static void rss_function(switch_core_session_t *session, char *data)
 								 "To hear these options again, press zero or press pound to return to the main menu. ");
 					} else {
 						snprintf(buf + len, sizeof(buf) - len, "Story %d. ", dtb.index + 1);
-						len = strlen(buf);
+						len = (uint32_t)strlen(buf);
 
 						if (entries[dtb.index].subject_txt) {
 							snprintf(buf + len, sizeof(buf) - len, "Subject %s. ", entries[dtb.index].subject_txt);
-							len = strlen(buf);
+							len = (uint32_t)strlen(buf);
 						}
 				
 						if (entries[dtb.index].dept_txt) {
 							snprintf(buf + len, sizeof(buf) - len, "From the %s department. ", entries[dtb.index].dept_txt);
-							len = strlen(buf);
+							len = (uint32_t)strlen(buf);
 						}
 
 						if (entries[dtb.index].title_txt) {
 							snprintf(buf + len, sizeof(buf) - len, "%s", entries[dtb.index].title_txt);
-							len = strlen(buf);
+							len = (uint32_t)strlen(buf);
 						}
 					}
 					switch_core_speech_flush_tts(&sh);
