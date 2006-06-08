@@ -135,7 +135,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 	const char *err = NULL;
 	struct dtmf_buffer dtb = {0};
 	switch_xml_t xml = NULL, item, xchannel = NULL;
-	struct shashdot_entry entries[TTS_MAX_ENTRIES] = {0};
+	struct shashdot_entry entries[TTS_MAX_ENTRIES] = {{0}};
 	uint32_t i = 0;
 	char *title_txt = "", *description_txt = "", *rights_txt = "";
 	switch_codec_t speech_codec, *codec = switch_core_session_get_read_codec(session);
@@ -158,6 +158,10 @@ static void rss_function(switch_core_session_t *session, char *data)
 	char buf[1024];
 	int32_t jumpto = -1;
 
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+
 	if (!(cxml = switch_xml_open_cfg(cf, &cfg, NULL))) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
         return;
@@ -179,6 +183,17 @@ static void rss_function(switch_core_session_t *session, char *data)
 
 	switch_xml_free(cxml);
 	
+	switch_channel_answer(channel);
+
+
+	for (dtb.index = 0; dtb.index < 10; dtb.index++) {
+		if ((status = switch_core_session_read_frame(session, &read_frame, -1, 0)) != SWITCH_STATUS_SUCCESS) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			goto done;
+		}
+	}
+
+
 	if (!switch_strlen_zero(data)) {
 		if ((mydata = switch_core_session_strdup(session, data))) {
 			argc = switch_separate_string(mydata, ' ', argv, sizeof(argv)/sizeof(argv[0]));
@@ -206,13 +221,6 @@ static void rss_function(switch_core_session_t *session, char *data)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec Error!\n");
 		return;
 	}
-
-	channel = switch_core_session_get_channel(session);
-    assert(channel != NULL);
-
-
-	switch_channel_answer(channel);
-
 
 	memset(&sh, 0, sizeof(sh));
 	if (switch_core_speech_open(&sh,
@@ -403,13 +411,6 @@ static void rss_function(switch_core_session_t *session, char *data)
 			i++;
 		}
 
-		for (dtb.index = 0; dtb.index < 10; dtb.index++) {
-			if ((status = switch_core_session_read_frame(session, &read_frame, -1, 0)) != SWITCH_STATUS_SUCCESS) {
-				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				goto done;
-			}
-		}
-
 		if (switch_channel_ready(channel)) {
 			switch_time_exp_t tm;
 			char date[80] = "";
@@ -437,6 +438,9 @@ static void rss_function(switch_core_session_t *session, char *data)
 				switch (*cmd) {
 				case '0':
 					switch_set_flag(&dtb, SFLAG_INSTRUCT);
+					break;
+				case '#':
+					goto main_menu;
 					break;
 				}
 			}
