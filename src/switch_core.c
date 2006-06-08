@@ -565,11 +565,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_close(switch_directory_han
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *sh, 
-													  char *module_name, 
-													  char *voice_name,
-													  unsigned int rate,
-													  switch_speech_flag_t *flags,
-													  switch_memory_pool_t *pool)
+														char *module_name, 
+														char *voice_name,
+														unsigned int rate,
+														switch_speech_flag_t *flags,
+														switch_memory_pool_t *pool)
 {
 	switch_status_t status;
 
@@ -587,7 +587,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 		}
 		switch_set_flag(sh, SWITCH_SPEECH_FLAG_FREE_POOL);
 	}
-
+	sh->rate = rate;
+	sh->name = switch_core_strdup(pool, module_name);
 	return sh->speech_interface->speech_open(sh, voice_name, rate, flags);
 }
 
@@ -610,6 +611,33 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle
 	assert(sh != NULL);
 
 	return sh->speech_interface->speech_feed_tts(sh, text, flags);
+}
+
+SWITCH_DECLARE(void) switch_core_speech_flush_tts(switch_speech_handle_t *sh)
+{
+	assert(sh != NULL);
+
+	if (sh->speech_interface->speech_flush_tts) {
+		sh->speech_interface->speech_flush_tts(sh);
+	}
+}
+
+SWITCH_DECLARE(void) switch_core_speech_text_param_tts(switch_speech_handle_t *sh, char *param, char *val)
+{
+	assert(sh != NULL);
+
+	if (sh->speech_interface->speech_text_param_tts) {
+		sh->speech_interface->speech_text_param_tts(sh, param, val);
+	}
+}
+
+SWITCH_DECLARE(void) switch_core_speech_numeric_param_tts(switch_speech_handle_t *sh, char *param, int val)
+{
+	assert(sh != NULL);
+
+	if (sh->speech_interface->speech_numeric_param_tts) {
+		sh->speech_interface->speech_numeric_param_tts(sh, param, val);
+	}
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle_t *sh, 

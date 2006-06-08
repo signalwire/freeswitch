@@ -327,6 +327,9 @@ struct switch_speech_interface {
 									 switch_size_t *datalen,
 									 uint32_t *rate,
 									 switch_speech_flag_t *flags);
+	void (*speech_flush_tts)(switch_speech_handle_t *sh);
+	void (*speech_text_param_tts)(switch_speech_handle_t *sh, char *param, char *val);
+	void (*speech_numeric_param_tts)(switch_speech_handle_t *sh, char *param, int val);
 
 	const struct switch_speech_interface *next;
 };
@@ -338,7 +341,10 @@ struct switch_speech_handle {
 	const switch_speech_interface_t *speech_interface;
 	/*! flags to control behaviour */
 	uint32_t flags;
-
+	/*! The Name*/
+	char *name;
+	/*! The Rate*/
+	uint32_t rate;
 	/*! the handle's memory pool */
 	switch_memory_pool_t *memory_pool;
 	/*! private data for the format module to store handle specific info */

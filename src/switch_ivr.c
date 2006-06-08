@@ -495,44 +495,186 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session, 
-													char *tts_name,
-													char *voice_name,
-													char *timer_name,
-													uint32_t rate,
-													switch_dtmf_callback_function_t dtmf_callback,
-													char *text,
-													void *buf,
-													unsigned int buflen)
+SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session, 
+															 switch_speech_handle_t *sh,
+															 switch_codec_t *codec,
+															 switch_timer_t *timer,
+															 switch_dtmf_callback_function_t dtmf_callback,
+															 char *text,
+															 void *buf,
+															 unsigned int buflen)
 {
 	switch_channel_t *channel;
 	short abuf[960];
 	char dtmf[128];
+	uint32_t len = 0;
+	switch_size_t ilen = 0;
+	switch_frame_t write_frame = {0};
+	int x;
+	int stream_id;
+	int done = 0;
+	int lead_in_out = 10;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_TTS;
+	uint32_t rate = 0, samples = 0;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+	if (!sh) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	switch_channel_answer(channel);
+
+	write_frame.data = abuf;
+	write_frame.buflen = sizeof(abuf);
+
+    samples = (uint32_t)(sh->rate / 50);
+    len = samples * 2;
+
+	flags = 0;
+	switch_core_speech_feed_tts(sh, text, &flags);
+	write_frame.rate = sh->rate;
+
+	memset(write_frame.data, 0, len);
+	write_frame.datalen = len;
+	write_frame.samples = len / 2;
+	write_frame.codec = codec;
+
+	for( x = 0; !done && x < lead_in_out; x++) {
+		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
+			if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
+				done = 1;
+				break;
+			}
+		}
+	}
+
+	ilen = len;
+	while(switch_channel_ready(channel)) {
+		flags = SWITCH_SPEECH_FLAG_BLOCKING;
+		status = switch_core_speech_read_tts(sh,
+											 abuf,
+											 &ilen,
+											 &rate,
+											 &flags);
+
+		if (status != SWITCH_STATUS_SUCCESS) {
+			for( x = 0; !done && x < lead_in_out; x++) {
+				for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
+					if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
+						done = 1;
+						break;
+					}
+				}
+			}
+			if (status == SWITCH_STATUS_BREAK) {
+				status = SWITCH_STATUS_SUCCESS;
+			}
+			done = 1;
+		}
+		
+		if (done) {
+			break;
+		}
+
+		write_frame.datalen = (uint32_t)ilen;
+		write_frame.samples = (uint32_t)(ilen / 2);
+
+		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
+			if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
+				done = 1;
+				break;
+			}
+
+			if (done) {
+				break;
+			}
+		}
+
+		if (dtmf_callback || buf) {
+			/*
+			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
+			*/
+			if (switch_channel_has_dtmf(channel)) {
+				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
+				if (dtmf_callback) {
+					status = dtmf_callback(session, dtmf, buf, buflen);
+				} else {
+					switch_copy_string((char *)buf, dtmf, buflen);
+					status = SWITCH_STATUS_BREAK;
+				}
+			}
+			
+			if (status != SWITCH_STATUS_SUCCESS) {
+				done = 1;
+				break;
+			}
+		}
+		
+		if (timer) {
+			if ((x = switch_core_timer_next(timer)) < 0) {
+				break;
+			}
+		} else { /* time off the channel (if you must) */
+			switch_frame_t *read_frame;
+			switch_status_t status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+
+			while (switch_channel_test_flag(channel, CF_HOLD)) {
+				switch_yield(10000);
+			}
+			
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				break;
+			}
+		}
+
+	}
+	
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done speaking text\n");
+	flags = 0;	
+	switch_core_speech_flush_tts(sh);
+	return status;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session, 
+													  char *tts_name,
+													  char *voice_name,
+													  char *timer_name,
+													  uint32_t rate,
+													  switch_dtmf_callback_function_t dtmf_callback,
+													  char *text,
+													  void *buf,
+													  unsigned int buflen)
+{
+	switch_channel_t *channel;
 	int interval = 0;
 	uint32_t samples = 0;
 	uint32_t len = 0;
-	switch_size_t ilen = 0;
 	switch_frame_t write_frame = {0};
 	switch_timer_t timer;
 	switch_core_thread_session_t thread_session;
 	switch_codec_t codec;
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	char *codec_name;
-	int x;
 	int stream_id;
-	int done = 0;
-	int lead_in_out = 10;
-
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_handle_t sh;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_TTS;
 
 
-	memset(&sh, 0, sizeof(sh));
-
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
+
+	memset(&sh, 0, sizeof(sh));
 	if (switch_core_speech_open(&sh,
 								tts_name,
 								voice_name,
@@ -543,13 +685,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 		switch_core_session_reset(session);
 		return SWITCH_STATUS_FALSE;
 	}
-
+		
 	switch_channel_answer(channel);
-
-	write_frame.data = abuf;
-	write_frame.buflen = sizeof(abuf);
-
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OPEN TTS %s\n", tts_name);
 	
 	interval = 20;
@@ -582,119 +719,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 			switch_core_codec_destroy(&codec);
 			flags = 0;
 			switch_core_speech_close(&sh, &flags);
+
 			switch_core_session_reset(session);
 			return SWITCH_STATUS_GENERR;
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success %u bytes per %d ms!\n", len, interval);
-	}
 
-	flags = 0;
-	switch_core_speech_feed_tts(&sh, text, &flags);
-	write_frame.rate = rate;
-
-	memset(write_frame.data, 0, len);
-	write_frame.datalen = len;
-	write_frame.samples = len / 2;
-	
-	for( x = 0; !done && x < lead_in_out; x++) {
-		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
-			if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
-				done = 1;
-				break;
-			}
-		}
-	}
-
-	if (timer_name) {
 		/* start a thread to absorb incoming audio */
 		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
 			switch_core_service_session(session, &thread_session, stream_id);
 		}
 	}
 
-	ilen = len;
-	while(switch_channel_ready(channel)) {
-		if (dtmf_callback || buf) {
-
-
-			/*
-			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
-			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
-			*/
-			if (switch_channel_has_dtmf(channel)) {
-				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-				if (dtmf_callback) {
-					status = dtmf_callback(session, dtmf, buf, buflen);
-				} else {
-					switch_copy_string((char *)buf, dtmf, buflen);
-					status = SWITCH_STATUS_BREAK;
-				}
-			}
-			
-			if (status != SWITCH_STATUS_SUCCESS) {
-				done = 1;
-				break;
-			}
-		}
-
-		flags = SWITCH_SPEECH_FLAG_BLOCKING;
-		status = switch_core_speech_read_tts(&sh,
-											 abuf,
-											 &ilen,
-											 &rate,
-											 &flags);
-
-		if (status != SWITCH_STATUS_SUCCESS) {
-			for( x = 0; !done && x < lead_in_out; x++) {
-				for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
-					if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
-						done = 1;
-						break;
-					}
-				}
-			}
-			done = 1;
-		}
-		
-		if (done || ilen <= 0) {
-			break;
-		}
-
-		write_frame.datalen = (uint32_t)ilen;
-		write_frame.samples = (uint32_t)(ilen / 2);
-
-		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
-			if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Bad Write\n");
-				done = 1;
-				break;
-			}
-
-			if (done) {
-				break;
-			}
-		}
-		if (timer_name) {
-			if ((x = switch_core_timer_next(&timer)) < 0) {
-				break;
-			}
-		} else { /* time off the channel (if you must) */
-			switch_frame_t *read_frame;
-			switch_status_t status = switch_core_session_read_frame(session, &read_frame, -1, 0);
-
-			while (switch_channel_test_flag(channel, CF_HOLD)) {
-				switch_yield(10000);
-			}
-			
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				break;
-			}
-		}
-	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done speaking text\n");
+	switch_ivr_speak_text_handle(session, &sh, &codec, timer_name ? &timer : NULL, dtmf_callback, text, buf, buflen);
 	flags = 0;	
 	switch_core_speech_close(&sh, &flags);
 	switch_core_codec_destroy(&codec);

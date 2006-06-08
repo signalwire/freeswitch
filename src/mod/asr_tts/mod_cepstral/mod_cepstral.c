@@ -36,6 +36,8 @@
 #include <swift.h>
 #include <switch.h>
 
+#define MY_BUF_LEN 1024 * 512
+
 static const char modname[] = "mod_cepstral";
 
 static swift_engine *engine;
@@ -59,23 +61,42 @@ static swift_result_t write_audio(swift_event *event, swift_event_t type, void *
 	cepstral_t *cepstral;
     swift_event_t rv = SWIFT_SUCCESS;
     void *buf = NULL;
-    int len = 0;
+    int len = 0, i = 0;
 	
 	cepstral = udata;
 	assert(cepstral != NULL);
 	
+	if (!cepstral->port || cepstral->done || cepstral->done_gen) {
+		return  SWIFT_UNKNOWN_ERROR;
+	}
+
 	/* Only proceed when we have success */
     if (!SWIFT_FAILED((rv = swift_event_get_audio(event, &buf, &len)))) {
-		switch_mutex_lock(cepstral->audio_lock);
-
-		if (switch_buffer_write(cepstral->audio_buffer, buf, len) <= 0) {
-			rv = SWIFT_UNKNOWN_ERROR;
+		while(!cepstral->done) {
+			switch_mutex_lock(cepstral->audio_lock);
+			if (switch_buffer_write(cepstral->audio_buffer, buf, len) > 0) {
+				switch_mutex_unlock(cepstral->audio_lock);
+				break;
+			}
+			switch_mutex_unlock(cepstral->audio_lock);
+			if (!cepstral->done) {
+				for (i = 0; i < 10; i++) {
+					switch_yield(10000);
+					if (cepstral->done) {
+						break;
+					}
+				}
+			}
+			
 		}
-		switch_mutex_unlock(cepstral->audio_lock);
 	} else {
 		cepstral->done = 1;
 	}
 
+	if (cepstral->done) {
+		rv = SWIFT_UNKNOWN_ERROR;
+	}
+	
     return rv;
 }
 
@@ -92,7 +113,7 @@ static switch_status_t cepstral_speech_open(switch_speech_handle_t *sh, char *vo
 			return SWITCH_STATUS_MEMERR;
 		}
 
-		if (switch_buffer_create(sh->memory_pool, &cepstral->audio_buffer, 1024 * 256) != SWITCH_STATUS_SUCCESS) {
+		if (switch_buffer_create(sh->memory_pool, &cepstral->audio_buffer, MY_BUF_LEN) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write Buffer Failed!\n");
 			return SWITCH_STATUS_MEMERR;
 		}
@@ -151,6 +172,11 @@ static switch_status_t cepstral_speech_close(switch_speech_handle_t *sh, switch_
 	cepstral = sh->private_info;
 	assert(cepstral != NULL);
 	
+
+	cepstral->done = 1;
+	cepstral->done_gen = 1;
+	printf("CLOSE!!!\n");
+	swift_port_stop(cepstral->port, SWIFT_ASYNC_ANY, SWIFT_EVENT_NOW);
 	/* Close the Swift Port and Engine */
 	if (NULL != cepstral->port) swift_port_close(cepstral->port);
 	//if (NULL != cepstral->engine) swift_engine_close(cepstral->engine);
@@ -169,11 +195,31 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 	cepstral = sh->private_info;
 	assert(cepstral != NULL);
 
-	swift_port_speak_text(cepstral->port, text, 0, NULL, &cepstral->tts_stream, NULL); 
-	//swift_port_speak_text(cepstral->port, text, 0, NULL, NULL, NULL); 
+	cepstral->done_gen = 0;
+	cepstral->done = 0;
 
-	
+	cepstral->tts_stream = NULL;
+
+	swift_port_speak_text(cepstral->port, text, 0, NULL, &cepstral->tts_stream, NULL); 
+
 	return SWITCH_STATUS_FALSE;
+}
+
+static void cepstral_speech_flush_tts(switch_speech_handle_t *sh)
+{
+	cepstral_t *cepstral;
+
+	cepstral = sh->private_info;
+    assert(cepstral != NULL);
+
+	cepstral->done_gen = 1;
+    cepstral->done = 1;
+	if (cepstral->audio_buffer) {
+		switch_mutex_lock(cepstral->audio_lock);
+		switch_buffer_zero(cepstral->audio_buffer);
+		switch_mutex_unlock(cepstral->audio_lock);
+	}
+	swift_port_stop(cepstral->port, SWIFT_ASYNC_ANY, SWIFT_EVENT_NOW);
 }
 
 static switch_status_t cepstral_speech_read_tts(switch_speech_handle_t *sh,
@@ -193,18 +239,23 @@ static switch_status_t cepstral_speech_read_tts(switch_speech_handle_t *sh,
 
 	while(!cepstral->done) {
 		if (!cepstral->done_gen) {
-			int check = (SWIFT_STATUS_RUNNING == swift_port_status(cepstral->port, cepstral->tts_stream));
-			if (!check) {
+			int check = swift_port_status(cepstral->port, cepstral->tts_stream);
+
+			if (!check == SWIFT_STATUS_RUNNING) {
 				cepstral->done_gen = 1;
 			}
 		}
 
+		switch_mutex_lock(cepstral->audio_lock);
 		used = switch_buffer_inuse(cepstral->audio_buffer);
-
+		switch_mutex_unlock(cepstral->audio_lock);
+		
+		
 		if (!used && cepstral->done_gen) {
+
+			status = SWITCH_STATUS_BREAK;
 			break;
 		}
-		
 
 		/* wait for the right amount of data (unless there is no blocking flag) */
 		if (used < desired) {
@@ -250,8 +301,8 @@ static const switch_speech_interface_t cepstral_speech_interface = {
 	/*.speech_feed_asr*/		NULL,
 	/*.speech_interpret_asr*/	NULL,
 	/*.speech_feed_tts*/		cepstral_speech_feed_tts,
-	/*.speech_read_tts*/		cepstral_speech_read_tts
-	
+	/*.speech_read_tts*/		cepstral_speech_read_tts,
+	/*.speech_flush_tts*/		cepstral_speech_flush_tts
 };
 
 static const switch_loadable_module_interface_t cepstral_module_interface = {

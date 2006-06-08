@@ -125,6 +125,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 													 unsigned int buflen);
 
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
+                                                             switch_speech_handle_t *sh,
+                                                             switch_codec_t *codec,
+                                                             switch_timer_t *timer,
+                                                             switch_dtmf_callback_function_t dtmf_callback,
+                                                             char *text,
+                                                             void *buf,
+                                                             unsigned int buflen);
+
 /*!
   \brief Speak given text with given tts engine
   \param session the session to speak on
@@ -139,14 +148,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session, 
-													char *tts_name,
-													char *voice_name,
-													char *timer_name,
-													uint32_t rate,
-													switch_dtmf_callback_function_t dtmf_callback,
-													char *text,
-													void *buf,
-													unsigned int buflen);
+													  char *tts_name,
+													  char *voice_name,
+													  char *timer_name,
+													  uint32_t rate,
+													  switch_dtmf_callback_function_t dtmf_callback,
+													  char *text,
+													  void *buf,
+													  unsigned int buflen);
+
 
 /*!
   \brief Bridge Audio from one session to another

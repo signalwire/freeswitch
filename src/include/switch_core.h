@@ -896,6 +896,28 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_interpret_asr(switch_speech_h
 SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags);
 
 /*! 
+  \brief Flush TTS audio on a given handle
+  \param sh the speech handle
+*/
+SWITCH_DECLARE(void) switch_core_speech_flush_tts(switch_speech_handle_t *sh);
+
+/*! 
+  \brief Set a text parameter on a TTS handle
+  \param sh the speech handle
+  \param param the parameter
+  \param val the value
+*/
+SWITCH_DECLARE(void) switch_core_speech_text_param_tts(switch_speech_handle_t *sh, char *param, char *val);
+
+/*! 
+  \brief Set a numeric parameter on a TTS handle
+  \param sh the speech handle
+  \param param the parameter
+  \param val the value
+*/
+SWITCH_DECLARE(void) switch_core_speech_numeric_param_tts(switch_speech_handle_t *sh, char *param, int val);
+
+/*! 
   \brief Read rendered audio from the TTS module
   \param sh the speech handle to read
   \param data the buffer to read to
