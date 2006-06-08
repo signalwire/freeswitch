@@ -145,7 +145,8 @@ static void rss_function(switch_core_session_t *session, char *data)
 	switch_speech_handle_t sh;
     switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_TTS;
 	switch_core_thread_session_t thread_session;
-	uint32_t rate, interval = 20, stream_id = 0;
+	uint32_t rate, interval = 20;
+	int stream_id = 0;
 	switch_timer_t timer = {0}, *timerp = NULL;
 	uint32_t last;
 	char *mydata = NULL;
@@ -155,7 +156,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 	char *cf = "rss.conf";
     switch_xml_t cfg, cxml, feeds, feed;
 	char buf[1024];
-	uint32_t jumpto = -1;
+	int32_t jumpto = -1;
 
 	if (!(cxml = switch_xml_open_cfg(cf, &cfg, NULL))) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
