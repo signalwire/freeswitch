@@ -534,7 +534,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
     len = samples * 2;
 
 	flags = 0;
+	switch_sleep(200000);
 	switch_core_speech_feed_tts(sh, text, &flags);
+
 	write_frame.rate = sh->rate;
 
 	memset(write_frame.data, 0, len);

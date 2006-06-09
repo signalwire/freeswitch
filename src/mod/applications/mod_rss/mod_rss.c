@@ -131,7 +131,6 @@ static void rss_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
 	switch_status_t status;
-	switch_frame_t *read_frame;
 	const char *err = NULL;
 	struct dtmf_buffer dtb = {0};
 	switch_xml_t xml = NULL, item, xchannel = NULL;
@@ -185,13 +184,6 @@ static void rss_function(switch_core_session_t *session, char *data)
 	
 	switch_channel_answer(channel);
 
-
-	for (dtb.index = 0; dtb.index < 10; dtb.index++) {
-		if ((status = switch_core_session_read_frame(session, &read_frame, -1, 0)) != SWITCH_STATUS_SUCCESS) {
-			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			goto done;
-		}
-	}
 
 
 	if (!switch_strlen_zero(data)) {
@@ -312,9 +304,21 @@ static void rss_function(switch_core_session_t *session, char *data)
 			}
 
 			i = atoi(cmd) - 1;
-			
-			if (i >= 0 && i <= feed_index) {
+
+			if (i > -1 && i < feed_index) {
 				filename = feed_list[i];
+			} else {
+				status = switch_ivr_speak_text_handle(session,
+													  &sh,
+													  &speech_codec,
+													  timerp,
+													  NULL,
+													  "I'm sorry. That is an Invalid Selection. ",
+													  NULL,
+													  0);
+				if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+					goto finished;
+				}
 			}
 		}
 	
@@ -322,6 +326,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 			continue;
 		}
 		
+
 
 		if (!(xml = switch_xml_parse_file(filename))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", filename);
@@ -571,7 +576,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 		switch_core_timer_destroy(&timer);
 	}
 
- done:
+
 	switch_xml_free(xml);
 
 	switch_core_session_reset(session);
