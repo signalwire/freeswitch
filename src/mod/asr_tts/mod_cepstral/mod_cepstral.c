@@ -195,6 +195,8 @@ static switch_status_t cepstral_speech_close(switch_speech_handle_t *sh, switch_
 static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
 {
 	cepstral_t *cepstral;
+	const char *fp = "file:";
+	int len = strlen(fp);
 
 	assert(sh != NULL);
 	cepstral = sh->private_info;
@@ -204,8 +206,13 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 	cepstral->done = 0;
 
 	cepstral->tts_stream = NULL;
-
-	swift_port_speak_text(cepstral->port, text, 0, NULL, &cepstral->tts_stream, NULL); 
+	
+	if (!strncasecmp(text, fp, len)) {
+		text += len;
+		swift_port_speak_file(cepstral->port, text, NULL, &cepstral->tts_stream, NULL); 
+	} else {
+		swift_port_speak_text(cepstral->port, text, 0, NULL, &cepstral->tts_stream, NULL); 
+	}
 
 	return SWITCH_STATUS_FALSE;
 }

@@ -49,6 +49,43 @@ static switch_status_t on_dtmf(switch_core_session_t *session, char *dtmf, void 
 }
 
 
+static void speak_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	char buf[10];
+	char *argv[4] = {0};
+	int argc;
+	char *engine = NULL;
+	char *voice = NULL;
+	char *text = NULL;
+	char *timer_name = NULL;
+	char *mydata = NULL;
+	switch_codec_t *codec;
+
+	codec = switch_core_session_get_read_codec(session);
+	assert(codec != NULL);
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	mydata = switch_core_session_strdup(session, data);
+	argc = switch_separate_string(mydata, '|', argv, sizeof(argv)/sizeof(argv[0]));
+
+	engine = argv[0];
+	voice = argv[1];
+	text = argv[2];
+	timer_name = argv[3];
+	
+	if (!(engine && voice && text)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params!\n");
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+	}
+
+	switch_channel_answer(channel);
+	switch_ivr_speak_text(session, engine, voice, timer_name, codec->implementation->samples_per_second, on_dtmf, text, buf, sizeof(buf));
+	
+}
+
 static void playback_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
@@ -85,9 +122,17 @@ static void record_function(switch_core_session_t *session, char *data)
 	
 }
 
+
+static const switch_application_interface_t speak_application_interface = {
+	/*.interface_name */ "speak",
+	/*.application_function */ speak_function
+};
+
 static const switch_application_interface_t record_application_interface = {
 	/*.interface_name */ "record",
-	/*.application_function */ record_function
+	/*.application_function */ record_function,
+	NULL,NULL,NULL,
+	&speak_application_interface
 };
 
 static const switch_application_interface_t playback_application_interface = {

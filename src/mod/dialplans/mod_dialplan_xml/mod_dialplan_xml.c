@@ -236,8 +236,6 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 
 		proceed = parse_exten(session, xexten, &extension);
 
-		//printf("ASS %s %d\n", (char *) switch_xml_attr_soft(xexten, "name"), proceed);
-
 		if (proceed && !switch_true(cont)) {
 			break;
 		}
