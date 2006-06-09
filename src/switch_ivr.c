@@ -63,7 +63,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 			break;
 		}
 
-		status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+		if (switch_channel_test_flag(channel, CF_SERVICE)) {
+			switch_yield(1000);
+		} else {
+			status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+		}
 
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
@@ -75,14 +79,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
-															  char *buf,
-															  unsigned int buflen,
-															  unsigned int maxdigits,
-															  const char *terminators,
-															  char *terminator,
-															  unsigned int timeout,
-															  unsigned int poll_channel
-															  )
+																char *buf,
+																unsigned int buflen,
+																unsigned int maxdigits,
+																const char *terminators,
+																char *terminator,
+																unsigned int timeout)
 {
 	unsigned int i = 0, x =  (unsigned int) strlen(buf);
 	switch_channel_t *channel;
@@ -135,14 +137,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 				}
 			}
 		}
-		if (poll_channel) {
+
+		if (switch_channel_test_flag(channel, CF_SERVICE)) {
+			switch_yield(1000);
+		} else {
 			status = switch_core_session_read_frame(session, &read_frame, -1, 0);
-			
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
-		} else {
-			switch_yield(1000);
 		}
 	}
 

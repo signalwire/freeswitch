@@ -743,6 +743,7 @@ static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
+	switch_channel_set_flag(channel, CF_SERVICE);
 	while (data->running > 0) {
 		switch (switch_core_session_read_frame(session, &read_frame, -1, stream_id)) {
 		case SWITCH_STATUS_SUCCESS:
@@ -755,6 +756,7 @@ static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
 		}
 	}
 
+	switch_channel_clear_flag(channel, CF_SERVICE);
 	data->running = 0;
 	return NULL;
 }

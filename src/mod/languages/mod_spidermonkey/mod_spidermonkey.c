@@ -559,8 +559,6 @@ static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval
 	char *buf;
 	int digits;
 	int32 timeout = 5000;
-	int32 poll_chan = 1;
-	
 	
 	if (argc > 0) {
 		char term;
@@ -571,11 +569,9 @@ static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval
 		if (argc > 2) {
 			JS_ValueToInt32(cx, argv[2], &timeout);
 		}
-		if (argc > 3) {
-			JS_ValueToInt32(cx, argv[3], &poll_chan);
-		}
+
 		buf = switch_core_session_alloc(jss->session, digits);
-		switch_ivr_collect_digits_count(jss->session, buf, digits, digits, terminators, &term, timeout, poll_chan ? SWITCH_TRUE : SWITCH_FALSE);
+		switch_ivr_collect_digits_count(jss->session, buf, digits, digits, terminators, &term, timeout);
 		*rval = STRING_TO_JSVAL ( JS_NewStringCopyZ(cx, buf) );
 		return JS_TRUE;
 	}

@@ -72,17 +72,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
   \param terminators digits to end the collection
   \param terminator actual digit that caused the collection to end (if any)
   \param timeout timeout in ms
-  \param poll_channel flag to specify if you want the function to poll the channel while running
   \return SWITCH_STATUS_SUCCESS to keep the collection moving.
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
-															  char *buf,
-															  unsigned int buflen,
-															  unsigned int maxdigits,
-															  const char *terminators,
-															  char *terminator,
-															  unsigned int timeout,
-                                                              unsigned int poll_channel);
+																char *buf,
+																unsigned int buflen,
+																unsigned int maxdigits,
+																const char *terminators,
+																char *terminator,
+																unsigned int timeout);
 	
 /*!
   \brief play a file from the disk to the session

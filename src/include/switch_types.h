@@ -344,6 +344,7 @@ CF_ACCEPT_CNG	= (1 <<  5) - Channel will accept CNG frames
 CF_LOCK_THREAD	= (1 <<  6) - Prevent the channel thread from exiting while this flag is set
 CF_BRIDGED		= (1 <<  7) - Channel in a bridge
 CF_HOLD			= (1 <<  8) - Channel is on hold
+CF_SERVICE		= (1 <<  9) - Channel has a service thread
 </pre>
  */
 
@@ -356,7 +357,8 @@ typedef enum {
 	CF_ACCEPT_CNG	= (1 <<  5),
 	CF_LOCK_THREAD	= (1 <<  6),
 	CF_BRIDGED		= (1 <<  7),
-	CF_HOLD			= (1 <<  8)
+	CF_HOLD			= (1 <<  8),
+	CF_SERVICE		= (1 <<  9)
 } switch_channel_flag_t;
 
 
