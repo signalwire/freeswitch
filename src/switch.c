@@ -32,6 +32,9 @@
 
 #include <switch.h>
 #include <switch_version.h>
+#ifdef HAVE_MLOCKALL
+#include <sys/mman.h>
+#endif
 
 static int RUNNING = 0;
 
@@ -79,6 +82,10 @@ int main(int argc, char *argv[])
 #else
 	int pid;
 	//nice(-20);
+#endif
+
+#ifdef HAVE_MLOCKALL
+	mlockall(MCL_CURRENT|MCL_FUTURE);
 #endif
 
 #ifndef WIN32
