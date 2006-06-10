@@ -2817,7 +2817,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
-		*err = "FATAL ERROR! Could not open XML Registry %s\n";
 		return SWITCH_STATUS_MEMERR;
 	}
 
