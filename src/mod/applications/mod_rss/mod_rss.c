@@ -61,6 +61,25 @@ struct shashdot_entry {
 	char *dept_txt;
 };
 
+#ifdef MATCH_COUNT
+static uint32_t match_count(char *str, uint32_t max)
+{
+	char tstr[80] = "";
+	uint32_t matches = 0, x = 0;
+	uint32_t len = strlen(str);
+	printf("%s\n", str);
+	for (x = 0; x < max ; x++) {
+		snprintf(tstr, sizeof(tstr), "%u", x);
+		if (!strncasecmp(str, tstr, len)) {
+			printf("match %s=%s\n", str, tstr);
+			matches++;
+		}
+	}
+	return matches;
+}
+#endif
+
+
 /*
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
    if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
@@ -127,6 +146,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, char *dtmf, void 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
 static void rss_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
@@ -156,6 +176,7 @@ static void rss_function(switch_core_session_t *session, char *data)
     switch_xml_t cfg, cxml, feeds, feed;
 	char buf[1024];
 	int32_t jumpto = -1;
+	uint32_t matches = 0;
 
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -272,7 +293,9 @@ static void rss_function(switch_core_session_t *session, char *data)
 		} else {
 			switch_core_speech_flush_tts(&sh);
 			snprintf(buf + len, sizeof(buf) - len, 
-					 "Main Menu. <break time=\"600ms\"/> Choose one of the following Feeds or press pound to exit. <break time=\"600ms\"/>");
+					 "Main Menu. <break time=\"600ms\"/> "
+					 "Choose one of the following Feeds followed by the pound key or press 0 to exit. "
+					 "<break time=\"600ms\"/>");
 			len = (int32_t)strlen(buf);
 
 			for (idx = 0; idx < feed_index; idx++) {
@@ -298,15 +321,37 @@ static void rss_function(switch_core_session_t *session, char *data)
 		}
 		if (!switch_strlen_zero(cmd)) {
 			int32_t i;
+			char *p;
 
-			if (*cmd == '#') {
+			if (strchr(cmd, '0')) {
 				break;
 			}
 
+			if ((p=strchr(cmd, '#'))) {
+				*p = '\0';
+#ifdef MATCH_COUNT
+				/* Hmmm... I know there are no more matches so I don't *need* them to press pound but 
+				   I already told them to press it.  Will this confuse people or not?  Let's make em press 
+				   pound unless this define is enabled for now.
+				 */
+			} else if (match_count(cmd, feed_index) > 1) {
+#else
+			} else {
+#endif
+				char term;
+				char *cp;
+				int blen = sizeof(cmd) - strlen(cmd);
+
+				cp = cmd + blen;
+				switch_ivr_collect_digits_count(session, cp, blen, blen, "#", &term, 5000);
+			}
+			
 			i = atoi(cmd) - 1;
 
 			if (i > -1 && i < feed_index) {
 				filename = feed_list[i];
+			} else if (matches > 1) {
+				
 			} else {
 				status = switch_ivr_speak_text_handle(session,
 													  &sh,
