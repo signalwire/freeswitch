@@ -53,7 +53,7 @@ struct dtmf_buffer {
 #define TTS_DEFAULT_ENGINE "cepstral"
 #define TTS_DEFAULT_VOICE "david"
 
-struct shashdot_entry {
+struct rss_entry {
 	uint8_t inuse;
 	char *title_txt;
 	char *description_txt;
@@ -82,7 +82,7 @@ static uint32_t match_count(char *str, uint32_t max)
 
 /*
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
-   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
+  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
 static switch_status_t on_dtmf(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
 {
@@ -154,7 +154,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 	const char *err = NULL;
 	struct dtmf_buffer dtb = {0};
 	switch_xml_t xml = NULL, item, xchannel = NULL;
-	struct shashdot_entry entries[TTS_MAX_ENTRIES] = {{0}};
+	struct rss_entry entries[TTS_MAX_ENTRIES] = {{0}};
 	uint32_t i = 0;
 	char *title_txt = "", *description_txt = "", *rights_txt = "";
 	switch_codec_t speech_codec, *codec = switch_core_session_get_read_codec(session);
@@ -334,7 +334,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 				/* Hmmm... I know there are no more matches so I don't *need* them to press pound but 
 				   I already told them to press it.  Will this confuse people or not?  Let's make em press 
 				   pound unless this define is enabled for now.
-				 */
+				*/
 			} else if (match_count(cmd, feed_index) > 1) {
 #else
 			} else {
