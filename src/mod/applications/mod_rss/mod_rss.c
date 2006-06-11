@@ -287,6 +287,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 		filename = NULL;
 		len = idx = 0;
 		*cmd = '\0';
+		title_txt = description_txt = rights_txt = "";
 
 		if (jumpto > -1) {
 			snprintf(cmd, sizeof(cmd), "%d", jumpto);
@@ -407,6 +408,8 @@ static void rss_function(switch_core_session_t *session, char *data)
 				item = switch_xml_child(xchannel, "item");
 			}
 		}
+
+		memset(entries, 0, sizeof(entries));
 
 		for (i = 0; item; item = item->next) {
 			switch_xml_t title, description, subject, dept;
