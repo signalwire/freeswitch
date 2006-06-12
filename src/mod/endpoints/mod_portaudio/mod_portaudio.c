@@ -886,7 +886,7 @@ static switch_status_t hup_call(char *callid, switch_stream_handle_t *stream)
 		void *val;
 		int i = 0;
 
-		for (hi = apr_hash_first(module_pool, globals.call_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_hash_first(module_pool, globals.call_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			tech_pvt = val;
 			channel = switch_core_session_get_channel(tech_pvt->session);
@@ -977,7 +977,7 @@ static switch_status_t call_info(char *callid, switch_stream_handle_t *stream)
 	switch_hash_index_t *hi;
 	void *val;
 	if (!callid || !strcasecmp(callid, "all")) {
-		for (hi = apr_hash_first(module_pool, globals.call_hash); hi; hi = switch_hash_next(hi)) {
+		for (hi = switch_hash_first(module_pool, globals.call_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			tech_pvt = val;
 			print_info(tech_pvt, stream);
