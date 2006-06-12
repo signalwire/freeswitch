@@ -341,7 +341,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 #endif
 				char term;
 				char *cp;
-				int blen = sizeof(cmd) - strlen(cmd);
+				int blen = sizeof(cmd) - (int)strlen(cmd);
 
 				cp = cmd + blen;
 				switch_ivr_collect_digits_count(session, cp, blen, blen, "#", &term, 5000);
@@ -552,7 +552,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 								 "Press star to pause or resume speech. "
 								 "To go to the next item, press six. "
 								 "To go back, press 4. "
-								 "Press eight to go faster, two to slow down, or 7 to resume normal speed. "
+								 "Press two to go faster, eight to slow down, or 7 to resume normal speed. "
 								 "To change voices, press five. To restore the original voice press 9. "
 								 "To hear these options again, press zero or press pound to return to the main menu. ");
 					} else {
