@@ -118,8 +118,8 @@ static switch_status_t on_dtmf(switch_core_session_t *session, char *dtmf, void 
 		return SWITCH_STATUS_BREAK;
 		break;
 	case '2':
-		if (dtb->speed < 220) {
-			dtb->speed += 20;
+		if (dtb->speed < 260) {
+			dtb->speed += 30;
 			switch_core_speech_numeric_param_tts(dtb->sh, "speech/rate", dtb->speed);
 			switch_set_flag(dtb, SFLAG_INFO);
 			return SWITCH_STATUS_BREAK;
@@ -132,7 +132,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, char *dtmf, void 
 		return SWITCH_STATUS_BREAK;
 	case '8':
 		if (dtb->speed > 80) {
-			dtb->speed -= 20;
+			dtb->speed -= 30;
 			switch_core_speech_numeric_param_tts(dtb->sh, "speech/rate", dtb->speed);
 			switch_set_flag(dtb, SFLAG_INFO);
 			return SWITCH_STATUS_BREAK;
@@ -474,7 +474,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 			switch_strftime(date, &retsize, sizeof(date), "%A, %B %d, %Y. %I:%M %p", &tm);
 
 
-			snprintf(buf, sizeof(buf), "%s. %s. %s. local time: %s, Press 0 for options or pound to return to the main menu. ", 
+			snprintf(buf, sizeof(buf), "%s. %s. %s. local time: %s, Press 0 for options, 5 to change voice, or pound to return to the main menu. ", 
 					 title_txt, description_txt, rights_txt, date);
 			status = switch_ivr_speak_text_handle(session,
 												  &sh,
@@ -560,7 +560,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 						len = (uint32_t)strlen(buf);
 
 						if (entries[dtb.index].subject_txt) {
-							snprintf(buf + len, sizeof(buf) - len, "Subject %s. ", entries[dtb.index].subject_txt);
+							snprintf(buf + len, sizeof(buf) - len, "Subject: %s. ", entries[dtb.index].subject_txt);
 							len = (uint32_t)strlen(buf);
 						}
 				
