@@ -198,7 +198,7 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		}
 
 		memset(&cmd, 0, sizeof(cmd));
-		for (x = 0; x < sizeof(cmd); x++) {
+		for (x = 0; x < (sizeof(cmd)-1); x++) {
 			cmd[x] = (char) getchar();
 			if (cmd[x] == '\n') {
 				cmd[x] = '\0';
