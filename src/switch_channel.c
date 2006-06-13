@@ -141,11 +141,13 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_str2cause(char *str)
 
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *channel)
 {
+	assert(channel != NULL);
 	return channel->hangup_cause;
 }
 
 SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch_channel_t *channel)
 {
+	assert(channel != NULL);
 	return channel->times;
 }
 
@@ -289,11 +291,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel,
 
 SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, char *varname)
 {
+	assert(channel != NULL);
 	return switch_core_hash_find(channel->variables, varname);
 }
 
 SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t *pool)
 {
+	assert(channel != NULL);
 	return switch_hash_first(pool, channel->variables);
 }
 
@@ -341,16 +345,19 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 
 SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
+	assert(channel != NULL);
 	return switch_test_flag(channel, flags) ? 1 : 0;
 }
 
 SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
+	assert(channel != NULL);
 	switch_set_flag(channel, flags);
 }
 
 SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
+	assert(channel != NULL);
 	switch_clear_flag(channel, flags);
 }
 
