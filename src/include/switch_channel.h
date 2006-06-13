@@ -204,6 +204,15 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, char *varname);
 
 /*!
+ * Start iterating over the entries in the channel variable list.
+ * @param channel the channel to intterate the variales for
+ * @param pool The pool to allocate the switch_hash_index_t iterator. If this
+ *          pool is NULL, then an internal, non-thread-safe iterator is used.
+ * @remark  Use switch_hash_next and switch_hash_this with this function to iterate all the channel variables
+ */
+SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t *pool);
+
+/*!
   \brief Assign a caller extension to a given channel
   \param channel channel to assign extension to
   \param caller_extension extension to assign

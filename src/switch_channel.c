@@ -292,6 +292,11 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, ch
 	return switch_core_hash_find(channel->variables, varname);
 }
 
+SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t *pool)
+{
+	return switch_hash_first(pool, channel->variables);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, void *private_info)
 {
 	assert(channel != NULL);
