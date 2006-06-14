@@ -295,12 +295,12 @@ static void rss_function(switch_core_session_t *session, char *data)
 			switch_core_speech_flush_tts(&sh);
 			snprintf(buf + len, sizeof(buf) - len, 
 					 "Main Menu. <break time=\"600ms\"/> "
-					 "Choose one of the following Feeds followed by the pound key or press 0 to exit. "
+					 "Choose one of the following Feeds, followed by the pound key or press 0 to exit. "
 					 "<break time=\"600ms\"/>");
 			len = (int32_t)strlen(buf);
 
 			for (idx = 0; idx < feed_index; idx++) {
-				snprintf(buf + len, sizeof(buf) - len, "Feed Number %d %s. <break time=\"600ms\"/>", idx + 1, feed_names[idx]);
+				snprintf(buf + len, sizeof(buf) - len, "Feed Number %d: %s. <break time=\"600ms\"/>", idx + 1, feed_names[idx]);
 				len = (int32_t)strlen(buf);
 			}
 
