@@ -309,7 +309,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 			len = (int32_t)strlen(buf);
 
 			for (idx = 0; idx < feed_index; idx++) {
-				snprintf(buf + len, sizeof(buf) - len, "Feed Number %d: %s. <break time=\"600ms\"/>", idx + 1, feed_names[idx]);
+				snprintf(buf + len, sizeof(buf) - len, "%d: %s. <break time=\"600ms\"/>", idx + 1, feed_names[idx]);
 				len = (int32_t)strlen(buf);
 			}
 
