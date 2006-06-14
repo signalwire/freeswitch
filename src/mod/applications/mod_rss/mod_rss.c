@@ -471,7 +471,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 			char cmd[5] = "";
 
 			switch_time_exp_lt(&tm, switch_time_now());
-			switch_strftime(date, &retsize, sizeof(date), "%A, %B %d, %Y. %I:%M %p", &tm);
+			switch_strftime(date, &retsize, sizeof(date), "%I:%M %p", &tm);
 
 
 			snprintf(buf, sizeof(buf), "%s. %s. %s. local time: %s, Press 0 for options, 5 to change voice, or pound to return to the main menu. ", 
@@ -537,7 +537,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 					if (switch_test_flag(&dtb, SFLAG_INFO)) {
 						switch_clear_flag(&dtb, SFLAG_INFO);
 						snprintf(buf + len, sizeof(buf) - len,
-								 "Hello my name is %s %s. I am speaking at %u words per minute. ",
+								 "%s %s. I am speaking at %u words per minute. ",
 								 sh.engine,
 								 sh.voice,
 								 dtb.speed
