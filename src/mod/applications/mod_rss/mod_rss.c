@@ -53,6 +53,8 @@ struct dtmf_buffer {
 #define TTS_DEFAULT_ENGINE "cepstral"
 #define TTS_DEFAULT_VOICE "david"
 
+#define MATCH_COUNT
+
 struct rss_entry {
 	uint8_t inuse;
 	char *title_txt;
@@ -66,7 +68,7 @@ static uint32_t match_count(char *str, uint32_t max)
 {
 	char tstr[80] = "";
 	uint32_t matches = 0, x = 0;
-	uint32_t len = strlen(str);
+	uint32_t len = (uint32_t)strlen(str);
 	printf("%s\n", str);
 	for (x = 0; x < max ; x++) {
 		snprintf(tstr, sizeof(tstr), "%u", x);
@@ -293,10 +295,17 @@ static void rss_function(switch_core_session_t *session, char *data)
 			snprintf(cmd, sizeof(cmd), "%d", jumpto);
 		} else {
 			switch_core_speech_flush_tts(&sh);
+#ifdef MATCH_COUNT
+			snprintf(buf + len, sizeof(buf) - len, 
+					 "Main Menu. <break time=\"600ms\"/> "
+					 "Choose one of the following Feeds, or press 0 to exit. "
+					 "<break time=\"600ms\"/>");
+#else
 			snprintf(buf + len, sizeof(buf) - len, 
 					 "Main Menu. <break time=\"600ms\"/> "
 					 "Choose one of the following Feeds, followed by the pound key or press 0 to exit. "
 					 "<break time=\"600ms\"/>");
+#endif
 			len = (int32_t)strlen(buf);
 
 			for (idx = 0; idx < feed_index; idx++) {
