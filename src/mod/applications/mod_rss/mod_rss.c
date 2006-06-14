@@ -298,12 +298,12 @@ static void rss_function(switch_core_session_t *session, char *data)
 #ifdef MATCH_COUNT
 			snprintf(buf + len, sizeof(buf) - len, 
 					 "Main Menu. <break time=\"600ms\"/> "
-					 "Choose one of the following Feeds, or press 0 to exit. "
+					 "Select one of the following news sources, or press 0 to exit. "
 					 "<break time=\"600ms\"/>");
 #else
 			snprintf(buf + len, sizeof(buf) - len, 
 					 "Main Menu. <break time=\"600ms\"/> "
-					 "Choose one of the following Feeds, followed by the pound key or press 0 to exit. "
+					 "Select one of the following news sources, followed by the pound key or press 0 to exit. "
 					 "<break time=\"600ms\"/>");
 #endif
 			len = (int32_t)strlen(buf);
