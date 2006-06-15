@@ -538,6 +538,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	flags = 0;
 	switch_sleep(200000);
 	switch_core_speech_feed_tts(sh, text, &flags);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Speaking text: %s\n", text);
 
 	write_frame.rate = sh->rate;
 
