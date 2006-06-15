@@ -24,6 +24,8 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Michael Jerris <mike@jerris.com>
+ * Johny Kadarisman <jkr888@gmail.com>
  *
  * 
  * mod_commands.c -- Misc. Command Module
@@ -185,7 +187,7 @@ static switch_status_t pause_function(char *cmd, switch_stream_handle_t *stream)
 static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
 	switch_stream_handle_t *stream = (switch_stream_handle_t *) pArg;
 
-	stream->write_function(stream, "%s\n", argv[1]);
+	stream->write_function(stream, "%s|%s\n", argv[0], argv[1] ? argv[1] : "NULL");
 	return 0;
 }
 
@@ -196,7 +198,22 @@ static switch_status_t show_function(char *cmd, switch_stream_handle_t *stream)
 	char *errmsg;
 	switch_core_db_t *db = switch_core_db_handle();
 
-	sprintf (sql, "select * from interfaces");
+    if (!cmd) {
+        sprintf (sql, "select * from interfaces");
+    }
+    else if ( !strcmp(cmd,"codec") || !strcmp(cmd,"application") || 
+              !strcmp(cmd,"api") || !strcmp(cmd,"dialplan") || 
+              !strcmp(cmd,"file") || !strcmp(cmd,"timer") 
+            ) {
+        sprintf (sql, "select * from interfaces where type = '%s'", cmd);
+    }
+    else {
+        stream->write_function(stream, "Invalid interfaces type!\n");
+        stream->write_function(stream, "Example:\n");
+        stream->write_function(stream, "show <blank>|codec|application|api|dialplan|file|timer\n");
+        return SWITCH_STATUS_SUCCESS;
+    }
+    
 	switch_core_db_exec(db, sql, show_callback, stream, &errmsg);
 
 	if (errmsg) {
