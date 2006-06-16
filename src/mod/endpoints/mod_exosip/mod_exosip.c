@@ -353,7 +353,7 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 			int i;
 			static const switch_codec_implementation_t *imp;
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
-				int x = 1;
+				int x = 0;
 
 				snprintf(tmp, sizeof(tmp), "%u", tech_pvt->codecs[i]->ianacode);
 				sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(tmp));
@@ -1289,7 +1289,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 
 
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
-				int x = 1;
+				int x = 0;
 
 				for (imp = tech_pvt->codecs[i]->implementations; imp; imp = imp->next) {
 					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, tech_pvt->codecs[i]->ianacode, tech_pvt->codecs[i]->iananame,
