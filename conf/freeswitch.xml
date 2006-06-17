@@ -275,7 +275,7 @@
     <!-- *NOTE* The special context name 'any' will match any context -->
     <context name="default">
 			<extension name="tollfree">
-      	<condition field="destination_number" expression="^(18[0{2}8{2}7{2}6{2}].*)$">
+      	<condition field="destination_number" expression="^(18[0{2}8{2}7{2}6{2}]\d{7})">
 					<action application="bridge" data="exosip/$1-freeswitch@voip.trxtel.com"/>
 				</condition>
 			</extension>
