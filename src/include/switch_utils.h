@@ -113,7 +113,21 @@ SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key);
 #define switch_set_flag(obj, flag) (obj)->flags |= (flag)
 
 /*!
+  \brief Set a flag on an arbitrary object while locked
+  \param obj the object to set the flags on
+  \param flag the or'd list of flags to set
+*/
+#define switch_set_flag_locked(obj, flag) switch_mutex_lock(obj->flag_mutex); (obj)->flags |= (flag); switch_mutex_unlock(obj->flag_mutex);
+
+/*!
   \brief Clear a flag on an arbitrary object
+  \param obj the object to test
+  \param flag the or'd list of flags to clear
+*/
+#define switch_clear_flag_locked(obj, flag) switch_mutex_lock(obj->flag_mutex); (obj)->flags &= ~(flag); switch_mutex_unlock(obj->flag_mutex);
+
+/*!
+  \brief Clear a flag on an arbitrary object while locked
   \param obj the object to test
   \param flag the or'd list of flags to clear
 */
