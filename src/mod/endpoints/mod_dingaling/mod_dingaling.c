@@ -1399,11 +1399,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		return LDL_STATUS_FALSE;
 	}
 
-	
-	//#define DL_EVENT_LOGIN_SUCCESS "dingaling::login_success"
-	//#define DL_EVENT_LOGIN_FAILURE "dingaling::login_failure"
-	//#define DL_EVENT_MESSAGE "dingaling::message"
-
 	if (!dlsession) {
 		switch(signal) {
 		case LDL_SIGNAL_MSG:
