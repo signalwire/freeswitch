@@ -549,7 +549,7 @@ static int on_stream(ldl_handle_t *handle, int type, iks * node)
 			handle->features = iks_stream_features(node);
 			if (opt_use_tls && !iks_is_secure(handle->parser))
 				break;
-			if (ldl_test_flag(handle, LDL_FLAG_AUTHORIZED)) {
+			if (ldl_test_flag(handle, LDL_FLAG_CONNECTED)) {
 				iks *t;
 				if (handle->features & IKS_STREAM_BIND) {
 					t = iks_make_resource_bind(handle->acc);
@@ -576,13 +576,21 @@ static int on_stream(ldl_handle_t *handle, int type, iks * node)
 			}
 		} else if (strcmp("success", iks_name(node)) == 0) {
 			globals.logger(DL_LOG_DEBUG, "XMPP server connected\n");
-			if (handle->session_callback) {
-				handle->session_callback(handle, NULL, LDL_SIGNAL_LOGIN_SUCCESS, "core", "Login Success", handle->login);
-			}
 			iks_send_header(handle->parser, handle->acc->server);
-			ldl_set_flag(handle, LDL_FLAG_AUTHORIZED);
+			ldl_set_flag(handle, LDL_FLAG_CONNECTED);
+			if (handle->session_callback) {
+				handle->session_callback(handle, NULL, LDL_SIGNAL_CONNECTED, "core", "Server Connected", handle->login);
+			}
 		} else {
 			ikspak *pak;
+
+			if (!ldl_test_flag(handle, LDL_FLAG_AUTHORIZED)) {
+				if (handle->session_callback) {
+					handle->session_callback(handle, NULL, LDL_SIGNAL_LOGIN_SUCCESS, "core", "Login Success", handle->login);
+				}
+				globals.logger(DL_LOG_DEBUG, "XMPP authenticated\n");
+				ldl_set_flag(handle, LDL_FLAG_AUTHORIZED);
+			}
 
 			pak = iks_packet(node);
 			iks_filter_packet(handle->filter, pak);
@@ -803,7 +811,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 				ldl_flush_queue(handle);
 			}
 
-			if (!ldl_test_flag(handle, LDL_FLAG_AUTHORIZED)) {
+			if (!ldl_test_flag(handle, LDL_FLAG_CONNECTED)) {
 				if (IKS_NET_TLSFAIL == e) {
 					globals.logger(DL_LOG_DEBUG, "tls handshake failed\n");
 					microsleep(500);
@@ -820,6 +828,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 
 		iks_disconnect(handle->parser);
 		iks_parser_delete(handle->parser);
+		ldl_clear_flag(handle, LDL_FLAG_CONNECTED);
 		ldl_clear_flag(handle, LDL_FLAG_AUTHORIZED);
 	}
 

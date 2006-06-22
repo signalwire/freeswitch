@@ -99,7 +99,8 @@ typedef enum {
 	LDL_FLAG_INIT = (1 << 0),
 	LDL_FLAG_RUNNING = (1 << 1),
 	LDL_FLAG_AUTHORIZED = (1 << 2),
-	LDL_FLAG_READY = (1 << 3)
+	LDL_FLAG_READY = (1 << 3),
+	LDL_FLAG_CONNECTED = (1 << 4)
 } ldl_flag_t;
 
 typedef enum {
@@ -111,6 +112,7 @@ typedef enum {
 	LDL_SIGNAL_ERROR,
 	LDL_SIGNAL_LOGIN_SUCCESS,
 	LDL_SIGNAL_LOGIN_FAILURE,
+	LDL_SIGNAL_CONNECTED
 } ldl_signal_t;
 
 typedef enum {

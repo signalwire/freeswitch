@@ -39,6 +39,7 @@
 #define DL_EVENT_LOGIN_SUCCESS "dingaling::login_success"
 #define DL_EVENT_LOGIN_FAILURE "dingaling::login_failure"
 #define DL_EVENT_MESSAGE "dingaling::message"
+#define DL_EVENT_CONNECTED "dingaling::connected"
 
 static const char modname[] = "mod_dingaling";
 
@@ -1099,6 +1100,11 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (switch_event_reserve_subclass(DL_EVENT_CONNECTED) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!", DL_EVENT_CONNECTED);
+		return SWITCH_STATUS_GENERR;
+	}
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &channel_module_interface;
 
@@ -1418,6 +1424,12 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			break;
 		case LDL_SIGNAL_LOGIN_FAILURE:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_LOGIN_FAILURE) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+				switch_event_fire(&event);
+			}
+			break;
+		case LDL_SIGNAL_CONNECTED:
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_CONNECTED) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
 				switch_event_fire(&event);
 			}
