@@ -351,9 +351,11 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 		
 		if (tech_pvt->num_codecs > 0) {
 			int i;
+
 			static const switch_codec_implementation_t *imp;
+
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
-				int x = 0;
+
 
 				snprintf(tmp, sizeof(tmp), "%u", tech_pvt->codecs[i]->ianacode);
 				sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(tmp));
@@ -362,7 +364,7 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 				while(NULL != imp) {
 					uint32_t sps = imp->samples_per_second;
 					/* Add to SDP config */
-					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, tech_pvt->codecs[i]->ianacode, tech_pvt->codecs[i]->iananame, sps, x++);
+					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, tech_pvt->codecs[i]->ianacode, tech_pvt->codecs[i]->iananame, sps, 0);
 
 					/* Add to SDP message */
 					snprintf(tmp, sizeof(tmp), "%u %s/%d", tech_pvt->codecs[i]->ianacode, tech_pvt->codecs[i]->iananame, sps);
@@ -599,7 +601,8 @@ static switch_status_t exosip_answer_channel(switch_core_session_t *session)
 	if (!switch_test_flag(tech_pvt, TFLAG_ANS) && !switch_channel_test_flag(channel, CF_OUTBOUND) ) {
 		char *buf = NULL;
 		osip_message_t *answer = NULL;
-
+		char *sdp_str;
+		
 		/* Transmit 200 OK with SDP */
 		eXosip_lock();
 		eXosip_call_build_answer(tech_pvt->tid, 200, &answer);
@@ -610,6 +613,13 @@ static switch_status_t exosip_answer_channel(switch_core_session_t *session)
 		eXosip_call_send_answer(tech_pvt->tid, 200, answer);
 		eXosip_unlock();
 		switch_set_flag(tech_pvt, TFLAG_ANS);
+
+		sdp_message_to_str(tech_pvt->local_sdp, &sdp_str);
+		if (sdp_str) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Answer SDP:\n%s", sdp_str);
+			free(sdp_str);
+		}
+
 	}
 
 
@@ -887,13 +897,19 @@ static switch_status_t exosip_receive_message(switch_core_session_t *session, sw
 	      eXosip_lock();
 	      eXosip_call_build_answer(tech_pvt->tid, 183, &progress);
 	      if (progress) {
-		sdp_message_to_str(tech_pvt->local_sdp, &buf);
-		osip_message_set_body(progress, buf, strlen(buf));
-		osip_message_set_content_type(progress, "application/sdp");
-		free(buf);
-		eXosip_call_send_answer(tech_pvt->tid, 183, progress);
-		switch_set_flag(tech_pvt, TFLAG_EARLY_MEDIA);
-		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+			  char *sdp_str;
+			  sdp_message_to_str(tech_pvt->local_sdp, &buf);
+			  osip_message_set_body(progress, buf, strlen(buf));
+			  osip_message_set_content_type(progress, "application/sdp");
+			  free(buf);
+			  eXosip_call_send_answer(tech_pvt->tid, 183, progress);
+			  switch_set_flag(tech_pvt, TFLAG_EARLY_MEDIA);
+			  switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+			  sdp_message_to_str(tech_pvt->local_sdp, &sdp_str);
+			  if (sdp_str) {
+				  switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Progress SDP:\n%s", sdp_str);
+				  free(sdp_str);
+			  }
 	      }
 	      eXosip_unlock();
 	    }
@@ -1140,7 +1156,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 	sdp_message_t *remote_sdp = NULL;
 	sdp_connection_t *conn = NULL;
 	sdp_media_t *remote_med = NULL, *audio_tab[10], *video_tab[10], *t38_tab[10], *app_tab[10];
-	char local_sdp_str[8192] = "", port[8] = "";
+	char local_sdp_str[1024] = "", port[8] = "";
 	int mline = 0, pos = 0;
 	switch_channel_t *channel = NULL;
 	char name[128];
@@ -1271,40 +1287,43 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 			}
 		}
 		osip_rfc3264_init(&tech_pvt->sdp_config);
+
 		/* Add in what codecs we support locally */
 		tech_set_codecs(tech_pvt);
-		
+
 		sdp_message_init(&tech_pvt->local_sdp);
+
+
 		sprintf(dbuf, "%u", tech_pvt->te);
 		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(dbuf));
 		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, tech_pvt->te, "telephone-event", 8000, 0);
 		sprintf(dbuf, "%u telephone-event/8000", tech_pvt->te);
 		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(dbuf));
 
-		
+
+
 		if (tech_pvt->num_codecs > 0) {
 			int i;
 			static const switch_codec_implementation_t *imp;
 
-
-
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
-				int x = 0;
-
 				for (imp = tech_pvt->codecs[i]->implementations; imp; imp = imp->next) {
 					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, tech_pvt->codecs[i]->ianacode, tech_pvt->codecs[i]->iananame,
-								  imp->samples_per_second, x++);
+								  imp->samples_per_second, 0);
+
 				}
 			}
 		}
+		
 
+		
 
-		osip_rfc3264_prepare_answer(tech_pvt->sdp_config, remote_sdp, local_sdp_str, 8192);
+		osip_rfc3264_prepare_answer(tech_pvt->sdp_config, remote_sdp, local_sdp_str, sizeof(local_sdp_str));		
 		
 		sdp_message_parse(tech_pvt->local_sdp, local_sdp_str);
 
 		sdp_message_to_str(remote_sdp, &remote_sdp_str);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LOCAL SDP:\n%s\nREMOTE SDP:\n%s", local_sdp_str, remote_sdp_str);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "REMOTE SDP:\n%s", remote_sdp_str);
 
 		mline = 0;
 		while (0 == osip_rfc3264_match(tech_pvt->sdp_config, remote_sdp, audio_tab, video_tab, t38_tab, app_tab, mline)) {
