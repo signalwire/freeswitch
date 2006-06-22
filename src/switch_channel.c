@@ -90,6 +90,7 @@ struct switch_channel {
 	char *name;
 	switch_buffer_t *dtmf_buffer;
 	switch_mutex_t *dtmf_mutex;
+	switch_mutex_t *flag_mutex;
 	switch_mutex_t *profile_mutex;
 	switch_core_session_t *session;
 	switch_channel_state_t state;
@@ -162,6 +163,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	switch_core_hash_init(&(*channel)->variables, pool);
 	switch_buffer_create(pool, &(*channel)->dtmf_buffer, 128);
 	switch_mutex_init(&(*channel)->dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_init(&(*channel)->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->profile_mutex, SWITCH_MUTEX_NESTED, pool);
 	(*channel)->hangup_cause = SWITCH_CAUSE_UNALLOCATED;
 
@@ -352,13 +354,13 @@ SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_c
 SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
 	assert(channel != NULL);
-	switch_set_flag(channel, flags);
+	switch_set_flag_locked(channel, flags);
 }
 
 SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
 	assert(channel != NULL);
-	switch_clear_flag(channel, flags);
+	switch_clear_flag_locked(channel, flags);
 }
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t *channel)

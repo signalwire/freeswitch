@@ -141,6 +141,7 @@ struct private_object {
 	switch_codec_interface_t *codecs[SWITCH_MAX_CODECS];
 	int num_codecs;
 	switch_payload_t te;
+	switch_mutex_t *flag_mutex;
 };
 
 
@@ -410,7 +411,7 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 	}
 
 	/* Let Media Work */
-	switch_set_flag(tech_pvt, TFLAG_IO);
+	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
 	/* Move Channel's State Machine to RING */
 	switch_channel_set_state(channel, CS_RING);
@@ -448,8 +449,8 @@ static switch_status_t exosip_on_hangup(switch_core_session_t *session)
 	deactivate_rtp(tech_pvt);
 	eXosip_lock();
 	switch_core_hash_delete(globals.call_hash, tech_pvt->call_id);
-	switch_set_flag(tech_pvt, TFLAG_BYE);
-	switch_clear_flag(tech_pvt, TFLAG_IO);
+	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	i = eXosip_call_terminate(tech_pvt->cid, tech_pvt->did);
 	eXosip_unlock();
 
@@ -530,8 +531,8 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 		if (!(key = (char *) switch_core_hash_find(globals.srtp_hash, tech_pvt->realm))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "undefined Realm %s\n", tech_pvt->realm);
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			switch_set_flag(tech_pvt, TFLAG_BYE);
-			switch_clear_flag(tech_pvt, TFLAG_IO);
+			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+			switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 			return SWITCH_STATUS_FALSE;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "using Realm %s\n", tech_pvt->realm);
@@ -563,7 +564,7 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 		uint8_t inb = switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? 0 : 1;
 
 		tech_pvt->ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
-		switch_set_flag(tech_pvt, TFLAG_RTP);
+		switch_set_flag_locked(tech_pvt, TFLAG_RTP);
 
 		if (tech_pvt->te > 96) {
 			switch_rtp_set_telephony_event(tech_pvt->rtp_session, tech_pvt->te);
@@ -571,14 +572,14 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 
 		if ((vad_in && inb) || (vad_out && !inb)) {
 			switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING);
-			switch_set_flag(tech_pvt, TFLAG_VAD);
+			switch_set_flag_locked(tech_pvt, TFLAG_VAD);
 		}
 	} else {
 		switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		switch_set_flag(tech_pvt, TFLAG_BYE);
-		switch_clear_flag(tech_pvt, TFLAG_IO);
+		switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -612,7 +613,7 @@ static switch_status_t exosip_answer_channel(switch_core_session_t *session)
 		free(buf);
 		eXosip_call_send_answer(tech_pvt->tid, 200, answer);
 		eXosip_unlock();
-		switch_set_flag(tech_pvt, TFLAG_ANS);
+		switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 
 		sdp_message_to_str(tech_pvt->local_sdp, &sdp_str);
 		if (sdp_str) {
@@ -645,7 +646,7 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 	assert(tech_pvt != NULL);
 
 	tech_pvt->read_frame.datalen = 0;
-	switch_set_flag(tech_pvt, TFLAG_READING);
+	switch_set_flag_locked(tech_pvt, TFLAG_READING);
 
 	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
 		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
@@ -722,7 +723,7 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 	}
 
 
-	switch_clear_flag(tech_pvt, TFLAG_READING);
+	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
@@ -762,7 +763,7 @@ static switch_status_t exosip_write_frame(switch_core_session_t *session, switch
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_set_flag(tech_pvt, TFLAG_WRITING);
+	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
 	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
 		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
@@ -780,7 +781,7 @@ static switch_status_t exosip_write_frame(switch_core_session_t *session, switch
 	
 	tech_pvt->timestamp_send += (int) samples;
 
-	switch_clear_flag(tech_pvt, TFLAG_WRITING);
+	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
 	return status;
 }
 
@@ -797,8 +798,8 @@ static switch_status_t exosip_kill_channel(switch_core_session_t *session, int s
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_clear_flag(tech_pvt, TFLAG_IO);
-	switch_set_flag(tech_pvt, TFLAG_BYE);
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 
 	if (tech_pvt->rtp_session) {
 		switch_rtp_kill_socket(tech_pvt->rtp_session);
@@ -903,7 +904,7 @@ static switch_status_t exosip_receive_message(switch_core_session_t *session, sw
 			  osip_message_set_content_type(progress, "application/sdp");
 			  free(buf);
 			  eXosip_call_send_answer(tech_pvt->tid, 183, progress);
-			  switch_set_flag(tech_pvt, TFLAG_EARLY_MEDIA);
+			  switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 			  switch_channel_set_flag(channel, CF_EARLY_MEDIA);
 			  sdp_message_to_str(tech_pvt->local_sdp, &sdp_str);
 			  if (sdp_str) {
@@ -1048,6 +1049,7 @@ static switch_status_t exosip_outgoing_channel(switch_core_session_t *session, s
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
 			tech_pvt->te = globals.te;
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, module_pool);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
@@ -1097,7 +1099,7 @@ static switch_status_t exosip_outgoing_channel(switch_core_session_t *session, s
 		}
 
 		switch_channel_set_flag(channel, CF_OUTBOUND);
-		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
+		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1182,6 +1184,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 			switch_core_session_set_private(session, tech_pvt);
 			tech_pvt->session = session;
 			tech_pvt->te = globals.te;
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, module_pool);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
@@ -1238,7 +1241,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}
 
-		switch_set_flag(tech_pvt, TFLAG_INBOUND);
+		switch_set_flag_locked(tech_pvt, TFLAG_INBOUND);
 		tech_pvt->did = event->did;
 		tech_pvt->cid = event->cid;
 		tech_pvt->tid = event->tid;
@@ -1401,7 +1404,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 				} else {
 					int ms;
 					tech_pvt->read_frame.rate = rate;
-					switch_set_flag(tech_pvt, TFLAG_USING_CODEC);
+					switch_set_flag_locked(tech_pvt, TFLAG_USING_CODEC);
 					ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Inbound Codec %s/%d %d ms\n", dname, rate, ms);
 					tech_pvt->read_frame.codec = &tech_pvt->read_codec;
@@ -1721,7 +1724,7 @@ static void handle_answer(eXosip_event_t * event)
 			} else {
 				int ms;
 				tech_pvt->read_frame.rate = rate;
-				switch_set_flag(tech_pvt, TFLAG_USING_CODEC);
+				switch_set_flag_locked(tech_pvt, TFLAG_USING_CODEC);
 				ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Outbound Codec %s/%d %d ms\n", dname, rate, ms);
 				tech_pvt->read_frame.codec = &tech_pvt->read_codec;
