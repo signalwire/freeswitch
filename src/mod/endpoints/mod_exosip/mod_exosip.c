@@ -1049,7 +1049,7 @@ static switch_status_t exosip_outgoing_channel(switch_core_session_t *session, s
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
 			tech_pvt->te = globals.te;
-			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, module_pool);
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(new_session);
@@ -1184,7 +1184,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 			switch_core_session_set_private(session, tech_pvt);
 			tech_pvt->session = session;
 			tech_pvt->te = globals.te;
-			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, module_pool);
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 			switch_core_session_destroy(&session);
