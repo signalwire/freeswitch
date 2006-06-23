@@ -154,6 +154,7 @@ struct private_object {
 	char dtmfbuf[WOOMERA_STRLEN];
 	switch_caller_profile_t *caller_profile;
 	struct woomera_event_queue event_queue;
+	switch_mutex_t *flag_mutex;
 };
 
 typedef struct private_object private_object;
@@ -230,7 +231,7 @@ static switch_status_t woomerachan_on_init(switch_core_session_t *session)
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
 
 
-	switch_set_flag(tech_pvt, TFLAG_ACTIVATE);
+	switch_set_flag_locked(tech_pvt, TFLAG_ACTIVATE);
 
 	switch_core_session_launch_thread(session, woomera_channel_thread_run, session);
 
@@ -483,6 +484,7 @@ static switch_status_t woomerachan_outgoing_channel(switch_core_session_t *sessi
 		if ((tech_pvt =
 			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
 			tech_pvt->profile = &default_profile;
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
@@ -510,7 +512,7 @@ static switch_status_t woomerachan_outgoing_channel(switch_core_session_t *sessi
 		}
 
 		switch_channel_set_flag(channel, CF_OUTBOUND);
-		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
+		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -907,13 +909,13 @@ static int tech_activate(private_object * tech_pvt)
 			woomera_message_parse(tech_pvt->command_channel,
 								  &wmsg, WOOMERA_HARD_TIMEOUT, tech_pvt->profile, &tech_pvt->event_queue);
 		} else {
-			switch_set_flag(tech_pvt, TFLAG_PARSE_INCOMING);
+			switch_set_flag_locked(tech_pvt, TFLAG_PARSE_INCOMING);
 			woomera_printf(tech_pvt->profile, tech_pvt->command_channel, "LISTEN%s", WOOMERA_RECORD_SEPERATOR);
 			if (woomera_message_parse(tech_pvt->command_channel,
 									  &wmsg, WOOMERA_HARD_TIMEOUT, tech_pvt->profile, &tech_pvt->event_queue) < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "{%s} HELP! Woomera is broken!\n",
 									  tech_pvt->profile->name);
-				switch_set_flag(tech_pvt, TFLAG_ABORT);
+				switch_set_flag_locked(tech_pvt, TFLAG_ABORT);
 				globals.panic = 1;
 			}
 		}
@@ -949,7 +951,7 @@ static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 
 	for (;;) {
 		if (globals.panic) {
-			switch_set_flag(tech_pvt, TFLAG_ABORT);
+			switch_set_flag_locked(tech_pvt, TFLAG_ABORT);
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_ABORT)) {
@@ -959,12 +961,12 @@ static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_ACTIVATE)) {
-			switch_clear_flag(tech_pvt, TFLAG_ACTIVATE);
+			switch_clear_flag_locked(tech_pvt, TFLAG_ACTIVATE);
 			tech_activate(tech_pvt);
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
-			switch_clear_flag(tech_pvt, TFLAG_ANSWER);
+			switch_clear_flag_locked(tech_pvt, TFLAG_ANSWER);
 #ifdef USE_ANSWER
 			woomera_printf(tech_pvt->profile, tech_pvt->command_channel, "ANSWER %s%s", tech_pvt->call_info.callid,
 						   WOOMERA_RECORD_SEPERATOR);
@@ -973,7 +975,7 @@ static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 				 &tech_pvt->event_queue) < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "{%s} HELP! Woomera is broken!\n",
 									  tech_pvt->profile->name);
-				switch_set_flag(tech_pvt, TFLAG_ABORT);
+				switch_set_flag_locked(tech_pvt, TFLAG_ABORT);
 				globals.panic = 1;
 				continue;
 			}
@@ -989,11 +991,11 @@ static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 				 &tech_pvt->event_queue) < 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "{%s} HELP! Woomera is broken!\n",
 									  tech_pvt->profile->name);
-				switch_set_flag(tech_pvt, TFLAG_ABORT);
+				switch_set_flag_locked(tech_pvt, TFLAG_ABORT);
 				globals.panic = 1;
 				continue;
 			}
-			switch_clear_flag(tech_pvt, TFLAG_DTMF);
+			switch_clear_flag_locked(tech_pvt, TFLAG_DTMF);
 			memset(tech_pvt->dtmfbuf, 0, sizeof(tech_pvt->dtmfbuf));
 			switch_mutex_unlock(tech_pvt->iolock);
 		}
@@ -1007,7 +1009,7 @@ static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 				 ((tech_pvt->started.tv_sec * 1000) + tech_pvt->started.tv_usec / 1000));
 			if (elapsed > tech_pvt->timeout) {
 				/* call timed out! */
-				switch_set_flag(tech_pvt, TFLAG_ABORT);
+				switch_set_flag_locked(tech_pvt, TFLAG_ABORT);
 			}
 		}
 #endif
@@ -1020,7 +1022,7 @@ static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 			(res = woomera_message_parse(tech_pvt->command_channel, &wmsg, 100, tech_pvt->profile, NULL)) != 0) {
 
 			if (res < 0 || !strcasecmp(wmsg.command, "HANGUP")) {
-				switch_set_flag(tech_pvt, TFLAG_ABORT);
+				switch_set_flag_locked(tech_pvt, TFLAG_ABORT);
 				continue;
 			} else if (!strcasecmp(wmsg.command, "DTMF")) {
 				/*
@@ -1043,8 +1045,8 @@ static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 				char *cid_num;
 				char *ip;
 				char *p;
-				switch_clear_flag(tech_pvt, TFLAG_PARSE_INCOMING);
-				switch_set_flag(tech_pvt, TFLAG_INCOMING);
+				switch_clear_flag_locked(tech_pvt, TFLAG_PARSE_INCOMING);
+				switch_set_flag_locked(tech_pvt, TFLAG_INCOMING);
 				tech_pvt->call_info = wmsg;
 
 				exten = woomera_message_header(&wmsg, "Local-Number");
@@ -1088,7 +1090,7 @@ static void *woomera_channel_thread_run(switch_thread_t *thread, void *obj)
 										  &wmsg, WOOMERA_HARD_TIMEOUT, tech_pvt->profile, &tech_pvt->event_queue) < 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ALERT, "{%s} HELP! Woomera is broken!\n",
 										  tech_pvt->profile->name);
-					switch_set_flag(tech_pvt, TFLAG_ABORT);
+					switch_set_flag_locked(tech_pvt, TFLAG_ABORT);
 					globals.panic = 1;
 					continue;
 				}
@@ -1242,6 +1244,7 @@ static void *woomera_thread_run(void *obj)
 					if ((tech_pvt =
 						 (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 						memset(tech_pvt, 0, sizeof(*tech_pvt));
+						switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 						tech_pvt->profile = &default_profile;
 						channel = switch_core_session_get_channel(session);
 						switch_core_session_set_private(session, tech_pvt);

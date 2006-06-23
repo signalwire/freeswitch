@@ -92,6 +92,7 @@ struct private_object {
 	PABLIO_Stream *audio_out;
 	int indev;
 	int outdev;
+	switch_mutex_t *flag_mutex;
 };
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
@@ -177,7 +178,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_NO_ANSWER);
 	} else {
-		switch_set_flag(tech_pvt, TFLAG_IO);
+		switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
 		/* Move Channel's State Machine to RING */
 		switch_channel_set_state(channel, CS_RING);
@@ -245,7 +246,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_clear_flag(tech_pvt, TFLAG_IO);
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	switch_core_hash_delete(globals.call_hash, tech_pvt->call_id);
 
 	switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -269,7 +270,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_clear_flag(tech_pvt, TFLAG_IO);
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	deactivate_audio_device(tech_pvt);
 	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 
@@ -425,7 +426,7 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_PROGRESS: 
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Engage Early Media\n");
-			switch_set_flag(tech_pvt, TFLAG_IO);
+			switch_set_flag_locked(tech_pvt, TFLAG_IO);
 		}
 	default:
 		break;
@@ -524,6 +525,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		if ((tech_pvt =
 			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
@@ -550,7 +552,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		}
 
 		switch_channel_set_flag(channel, CF_OUTBOUND);
-		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
+		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -838,6 +840,7 @@ static switch_status_t place_call(char *dest, switch_stream_handle_t *stream)
 		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
 			tech_pvt->session = session;
@@ -947,7 +950,7 @@ static switch_status_t answer_call(char *callid, switch_stream_handle_t *stream)
 	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
 		channel = switch_core_session_get_channel(tech_pvt->session);
 		assert(channel != NULL);
-		switch_set_flag(tech_pvt, TFLAG_ANSWER);
+		switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 		switch_channel_answer(channel);
 	} else {
 		stream->write_function(stream, "NO SUCH CALL");

@@ -138,6 +138,7 @@ struct private_object {
 	char *recip;
 	char *dnis;
 	uint16_t stun_port;
+	switch_mutex_t *flag_mutex;
 };
 
 struct rfc2833_digit {
@@ -309,7 +310,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 		switch_rtp_activate_ice(tech_pvt->rtp_session, tech_pvt->remote_user, tech_pvt->local_user);
 		if ((vad_in && inb) || (vad_out && !inb)) {
 			switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING);
-			switch_set_flag(tech_pvt, TFLAG_VAD);
+			switch_set_flag_locked(tech_pvt, TFLAG_VAD);
 		}
 	}
 
@@ -333,7 +334,7 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
 		return -1;
 	}
-	switch_set_flag(tech_pvt, TFLAG_DO_CAND);
+	switch_set_flag_locked(tech_pvt, TFLAG_DO_CAND);
 
 	if (force || !switch_test_flag(tech_pvt, TFLAG_RTP_READY)) {
 		ldl_candidate_t cand[1];
@@ -393,9 +394,9 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 		cand[0].protocol = "udp";
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send Candidate %s:%d [%s]\n", cand[0].address, cand[0].port, cand[0].username);
 		tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, 1);
-		switch_set_flag(tech_pvt, TFLAG_RTP_READY);
+		switch_set_flag_locked(tech_pvt, TFLAG_RTP_READY);
 	}
-	switch_clear_flag(tech_pvt, TFLAG_DO_CAND);
+	switch_clear_flag_locked(tech_pvt, TFLAG_DO_CAND);
 	return 0;
 }
 
@@ -425,13 +426,13 @@ static int do_describe(struct private_object *tech_pvt, int force)
 	}
 
 	memset(payloads, 0, sizeof(payloads));
-	switch_set_flag(tech_pvt, TFLAG_DO_CAND);
+	switch_set_flag_locked(tech_pvt, TFLAG_DO_CAND);
 	if (!tech_pvt->num_codecs) {
 		get_codecs(tech_pvt);
 		if (!tech_pvt->num_codecs) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
-			switch_set_flag(tech_pvt, TFLAG_BYE);
-			switch_clear_flag(tech_pvt, TFLAG_IO);
+			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+			switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 			return -1;
 		}
 	}
@@ -455,9 +456,9 @@ static int do_describe(struct private_object *tech_pvt, int force)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send Describe [%s]\n", payloads[0].name);
 		tech_pvt->desc_id = ldl_session_describe(tech_pvt->dlsession, payloads, 1,
 												 switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? LDL_DESCRIPTION_INITIATE : LDL_DESCRIPTION_ACCEPT);
-		switch_set_flag(tech_pvt, TFLAG_CODEC_READY);
+		switch_set_flag_locked(tech_pvt, TFLAG_CODEC_READY);
 	} 
-	switch_clear_flag(tech_pvt, TFLAG_DO_CAND);
+	switch_clear_flag_locked(tech_pvt, TFLAG_DO_CAND);
 	return 0;
 }
 
@@ -477,7 +478,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, vo
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	switch_set_flag(tech_pvt, TFLAG_IO);
+	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
 	started = switch_time_now();
 
@@ -513,8 +514,8 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, vo
 		}
 		if (elapsed > 60000) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			switch_set_flag(tech_pvt, TFLAG_BYE);
-			switch_clear_flag(tech_pvt, TFLAG_IO);
+			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+			switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 			return NULL;
 		}
 		if (switch_test_flag(tech_pvt, TFLAG_BYE) || ! switch_test_flag(tech_pvt, TFLAG_IO)) {
@@ -624,9 +625,9 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_clear_flag(tech_pvt, TFLAG_IO);
-	switch_clear_flag(tech_pvt, TFLAG_VOICE);
-	switch_set_flag(tech_pvt, TFLAG_BYE);
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
+	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 	
 	if (tech_pvt->dlsession) {
 		ldl_session_terminate(tech_pvt->dlsession);
@@ -659,9 +660,9 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 
 	if ((channel = switch_core_session_get_channel(session))) {
 		if ((tech_pvt = switch_core_session_get_private(session))) {
-			switch_clear_flag(tech_pvt, TFLAG_IO);
-			switch_clear_flag(tech_pvt, TFLAG_VOICE);
-			switch_set_flag(tech_pvt, TFLAG_BYE);
+			switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+			switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
+			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			if (tech_pvt->dlsession) {
 				ldl_session_terminate(tech_pvt->dlsession);
@@ -749,7 +750,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	tech_pvt->read_frame.datalen = 0;
-	switch_set_flag(tech_pvt, TFLAG_READING);
+	switch_set_flag_locked(tech_pvt, TFLAG_READING);
 
 	bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
 	samples = tech_pvt->read_codec.implementation->samples_per_frame;
@@ -770,11 +771,11 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			char dtmf[128];
 			switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, dtmf, sizeof(dtmf));
 			switch_channel_queue_dtmf(channel, dtmf);
-			switch_set_flag(tech_pvt, TFLAG_DTMF);
+			switch_set_flag_locked(tech_pvt, TFLAG_DTMF);
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_DTMF)) {
-			switch_clear_flag(tech_pvt, TFLAG_DTMF);
+			switch_clear_flag_locked(tech_pvt, TFLAG_DTMF);
 			return SWITCH_STATUS_BREAK;
 		}
 
@@ -798,7 +799,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 
-	switch_clear_flag(tech_pvt, TFLAG_READING);
+	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
@@ -838,7 +839,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_set_flag(tech_pvt, TFLAG_WRITING);
+	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
 
 	bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
@@ -852,7 +853,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 	tech_pvt->timestamp_send += (int) samples;
 
-	switch_clear_flag(tech_pvt, TFLAG_WRITING);
+	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
 	//switch_mutex_unlock(tech_pvt->rtp_lock);
 	return status;
 }
@@ -1022,6 +1023,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
 			tech_pvt->flags |= globals.flags;
 			tech_pvt->flags |= mdl_profile->flags;
 			channel = switch_core_session_get_channel(*new_session);
@@ -1053,7 +1055,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		}
 
 		switch_channel_set_flag(channel, CF_OUTBOUND);
-		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
+		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 		
 		switch_stun_random_string(sess_id, 10, "0123456789");
 
@@ -1466,6 +1468,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			switch_core_session_add_stream(session, NULL);
 			if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 				memset(tech_pvt, 0, sizeof(*tech_pvt));
+				switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 				tech_pvt->flags |= globals.flags;
 				tech_pvt->flags |= profile->flags;
 				channel = switch_core_session_get_channel(session);
@@ -1474,7 +1477,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				tech_pvt->codec_index = -1;
 				tech_pvt->profile = profile;
 				tech_pvt->local_port = switch_rtp_request_port();
-				switch_set_flag(tech_pvt, TFLAG_ANSWER);
+				switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 				tech_pvt->recip = switch_core_session_strdup(session, from);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
@@ -1495,7 +1498,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		if (msg) { 
 			if (*msg == '+') {
 				switch_channel_queue_dtmf(channel, msg + 1);
-				switch_set_flag(tech_pvt, TFLAG_DTMF);
+				switch_set_flag_locked(tech_pvt, TFLAG_DTMF);
 				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SESSION MSG [%s]\n", msg);
@@ -1519,7 +1522,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 				if (!strcasecmp(msg, "accept")) {
-					switch_set_flag(tech_pvt, TFLAG_ANSWER);
+					switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 					do_candidates(tech_pvt, 0);
 				}
 			}
@@ -1665,7 +1668,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						}
 
 						if (lanaddr) {
-							switch_set_flag(tech_pvt, TFLAG_LANADDR);
+							switch_set_flag_locked(tech_pvt, TFLAG_LANADDR);
 						}
 
 						if (!tech_pvt->num_codecs) {
@@ -1683,7 +1686,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 							do_candidates(tech_pvt, 0);
 						}
-						switch_set_flag(tech_pvt, TFLAG_TRANSPORT);
+						switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT);
 						
 						return LDL_STATUS_SUCCESS;
 					}
@@ -1696,8 +1699,10 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		if (channel) {
 			switch_channel_state_t state = switch_channel_get_state(channel);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hungup %s %u %d\n", switch_channel_get_name(channel), state, CS_INIT);
+			switch_mutex_lock(tech_pvt->flag_mutex);
 			switch_set_flag(tech_pvt, TFLAG_BYE);
 			switch_clear_flag(tech_pvt, TFLAG_IO);
+			switch_mutex_unlock(tech_pvt->flag_mutex);
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 
 			if (state <= CS_INIT && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {

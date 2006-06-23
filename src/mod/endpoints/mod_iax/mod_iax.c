@@ -90,6 +90,7 @@ struct private_object {
 	unsigned int codecs;
 	unsigned short samprate;
 	switch_mutex_t *mutex;
+	switch_mutex_t *flag_mutex;
 	//switch_thread_cond_t *cond;
 };
 
@@ -344,7 +345,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 	}
 
 	if (!strcasecmp(dname, "l16")) {
-		switch_set_flag(tech_pvt, TFLAG_LINEAR);
+		switch_set_flag_locked(tech_pvt, TFLAG_LINEAR);
 	}
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   dname,
@@ -376,7 +377,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 			tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 			switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 			switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
-			switch_set_flag(tech_pvt, TFLAG_CODEC);
+			switch_set_flag_locked(tech_pvt, TFLAG_CODEC);
 		}
 		tech_pvt->codec = chosen;
 		tech_pvt->codecs = local_cap;
@@ -437,7 +438,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	iax_set_private(tech_pvt->iax_session, tech_pvt);
 
-	switch_set_flag(tech_pvt, TFLAG_IO);
+	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	//switch_thread_cond_create(&tech_pvt->cond, switch_core_session_get_pool(session));    
@@ -494,8 +495,8 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_clear_flag(tech_pvt, TFLAG_IO);
-	switch_clear_flag(tech_pvt, TFLAG_VOICE);
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
 	//switch_thread_cond_signal(tech_pvt->cond);
 
 	if (tech_pvt->read_codec.implementation) {
@@ -509,7 +510,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	if (tech_pvt->iax_session) {
 		if (!switch_test_flag(tech_pvt, TFLAG_HANGUP)) {
 			iax_hangup(tech_pvt->iax_session, "Hangup");
-			switch_set_flag(tech_pvt, TFLAG_HANGUP);
+			switch_set_flag_locked(tech_pvt, TFLAG_HANGUP);
 		}
 		iax_session_destroy(&tech_pvt->iax_session);
 	}
@@ -530,8 +531,8 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_clear_flag(tech_pvt, TFLAG_IO);
-	switch_clear_flag(tech_pvt, TFLAG_VOICE);
+	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
 	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	//switch_thread_cond_signal(tech_pvt->cond);
 
@@ -612,7 +613,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 
 		if (switch_test_flag(tech_pvt, TFLAG_IO) && switch_test_flag(tech_pvt, TFLAG_VOICE)) {
-			switch_clear_flag(tech_pvt, TFLAG_VOICE);
+			switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
 			if (!tech_pvt->read_frame.datalen) {
 				continue;
 			}
@@ -737,6 +738,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		if ((tech_pvt =
 			 (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object))) != 0) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
@@ -781,7 +783,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 				 caller_profile->caller_id_name, caller_profile->destination_number, NULL, 0, req, cap);
 
 		switch_channel_set_flag(channel, CF_OUTBOUND);
-		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
+		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -988,6 +990,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 							 (struct private_object *) switch_core_session_alloc(session,
 																				 sizeof(struct private_object))) != 0) {
 							memset(tech_pvt, 0, sizeof(*tech_pvt));
+							switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 							channel = switch_core_session_get_channel(session);
 							switch_core_session_set_private(session, tech_pvt);
 							tech_pvt->session = session;
@@ -1041,12 +1044,15 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			case IAX_EVENT_HANGUP:
 				if (tech_pvt) {
 					switch_channel_t *channel;
-
+					
+					switch_mutex_lock(tech_pvt->flag_mutex);
 					switch_clear_flag(tech_pvt, TFLAG_IO);
 					switch_clear_flag(tech_pvt, TFLAG_VOICE);
+					switch_mutex_unlock(tech_pvt->flag_mutex);
+
 					if ((channel = switch_core_session_get_channel(tech_pvt->session)) != 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hangup %s\n", switch_channel_get_name(channel));
-						switch_set_flag(tech_pvt, TFLAG_HANGUP);
+						switch_set_flag_locked(tech_pvt, TFLAG_HANGUP);
 						switch_channel_hangup(channel, iaxevent->etype == IAX_EVENT_HANGUP ? SWITCH_CAUSE_NORMAL_CLEARING : SWITCH_CAUSE_FACILITY_REJECTED);
 						//switch_thread_cond_signal(tech_pvt->cond);
 						iaxevent->session = NULL;
@@ -1079,7 +1085,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 						tech_pvt->read_frame.samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 						memcpy(tech_pvt->read_frame.data, iaxevent->data, iaxevent->datalen);
 						/* wake up the i/o thread */
-						switch_set_flag(tech_pvt, TFLAG_VOICE);
+						switch_set_flag_locked(tech_pvt, TFLAG_VOICE);
 						//switch_thread_cond_signal(tech_pvt->cond);
 					}
 				}

@@ -116,6 +116,7 @@ struct private_object {
 	switch_buffer_t *dtmf_buffer;
 	unsigned int skip_read_frames;
 	unsigned int skip_write_frames;
+	switch_mutex_t *flag_mutex;
 #ifdef DOTRACE
 	int fd;
 	int fd2;
@@ -337,7 +338,7 @@ static switch_status_t wanpipe_on_hangup(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_set_flag(tech_pvt, TFLAG_BYE);
+	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 
 	if (!switch_test_flag(tech_pvt, TFLAG_NOSIG)) {
 		chanmap = tech_pvt->spri->private_info;
@@ -656,9 +657,11 @@ static switch_status_t wanpipe_kill_channel(switch_core_session_t *session, int 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-
+	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_set_flag(tech_pvt, TFLAG_BYE);
 	switch_clear_flag(tech_pvt, TFLAG_MEDIA);
+	switch_mutex_unlock(tech_pvt->flag_mutex);
+
 	sangoma_socket_close(&tech_pvt->socket);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -737,6 +740,7 @@ static switch_status_t wanpipe_outgoing_channel(switch_core_session_t *session, 
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(*new_session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(*new_session));
 			channel = switch_core_session_get_channel(*new_session);
 			switch_core_session_set_private(*new_session, tech_pvt);
 			tech_pvt->session = *new_session;
@@ -806,7 +810,7 @@ static switch_status_t wanpipe_outgoing_channel(switch_core_session_t *session, 
 						switch_core_session_destroy(new_session);
 						return SWITCH_STATUS_GENERR;
 					}
-					switch_set_flag(tech_pvt, TFLAG_NOSIG);
+					switch_set_flag_locked(tech_pvt, TFLAG_NOSIG);
 					snprintf(name, sizeof(name), "WanPipe/%s/nosig-%04x", bchan, rand() & 0xffff);
 					switch_channel_set_name(channel, name);			
 					switch_channel_set_caller_profile(channel, caller_profile);
@@ -901,7 +905,7 @@ static switch_status_t wanpipe_outgoing_channel(switch_core_session_t *session, 
 		}
 
 		switch_channel_set_flag(channel, CF_OUTBOUND);
-		switch_set_flag(tech_pvt, TFLAG_OUTBOUND);
+		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 		switch_channel_set_state(channel, CS_INIT);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1118,6 +1122,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object)))) {
 			memset(tech_pvt, 0, sizeof(*tech_pvt));
+			switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 			channel = switch_core_session_get_channel(session);
 			switch_core_session_set_private(session, tech_pvt);
 			sprintf(name, "s%dc%d", spri->span, event->ring.channel);
@@ -1148,7 +1153,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 			switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 		}
 
-		switch_set_flag(tech_pvt, TFLAG_INBOUND);
+		switch_set_flag_locked(tech_pvt, TFLAG_INBOUND);
 		tech_pvt->spri = spri;
 		tech_pvt->cause = -1;
 
