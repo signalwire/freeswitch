@@ -69,11 +69,10 @@ static uint32_t match_count(char *str, uint32_t max)
 	char tstr[80] = "";
 	uint32_t matches = 0, x = 0;
 	uint32_t len = (uint32_t)strlen(str);
-	printf("%s\n", str);
+
 	for (x = 0; x < max ; x++) {
 		snprintf(tstr, sizeof(tstr), "%u", x);
 		if (!strncasecmp(str, tstr, len)) {
-			printf("match %s=%s\n", str, tstr);
 			matches++;
 		}
 	}
@@ -293,6 +292,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 
 		if (jumpto > -1) {
 			snprintf(cmd, sizeof(cmd), "%d", jumpto);
+			jumpto = -1;
 		} else {
 			switch_core_speech_flush_tts(&sh);
 #ifdef MATCH_COUNT

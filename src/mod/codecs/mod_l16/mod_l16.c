@@ -91,6 +91,8 @@ static switch_status_t switch_raw_destroy(switch_codec_t *codec)
 }
 
 static const switch_codec_implementation_t raw_32k_implementation = {
+	/*.ianacode */ 10,
+	/*.iananame */ "L16",
 	/*.samples_per_second = */ 32000,
 	/*.bits_per_second = */ 512000,
 	/*.microseconds_per_frame = */ 20000,
@@ -107,6 +109,8 @@ static const switch_codec_implementation_t raw_32k_implementation = {
 };
 
 static const switch_codec_implementation_t raw_22k_implementation = {
+	/*.ianacode */ 10,
+	/*.iananame */ "L16",
 	/*.samples_per_second = */ 22050,
 	/*.bits_per_second = */ 352800,
 	/*.microseconds_per_frame = */ 20000,
@@ -124,6 +128,8 @@ static const switch_codec_implementation_t raw_22k_implementation = {
 };
 
 static const switch_codec_implementation_t raw_16k_implementation = {
+	/*.ianacode */ 10,
+	/*.iananame */ "L16",
 	/*.samples_per_second = */ 16000,
 	/*.bits_per_second = */ 256000,
 	/*.microseconds_per_frame = */ 20000,
@@ -141,6 +147,8 @@ static const switch_codec_implementation_t raw_16k_implementation = {
 };
 
 static const switch_codec_implementation_t raw_8k_implementation = {
+	/*.ianacode */ 10,
+	/*.iananame */ "L16",
 	/*.samples_per_second = */ 8000,
 	/*.bits_per_second = */ 128000,
 	/*.microseconds_per_frame = */ 20000,
@@ -159,6 +167,8 @@ static const switch_codec_implementation_t raw_8k_implementation = {
 
 
 static const switch_codec_implementation_t raw_8k_30ms_implementation = {
+	/*.ianacode */ 10,
+	/*.iananame */ "L16",
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 128000,
 	/*.microseconds_per_frame */ 30000,
@@ -179,8 +189,6 @@ static const switch_codec_implementation_t raw_8k_30ms_implementation = {
 static const switch_codec_interface_t raw_codec_interface = {
 	/*.interface_name */ "raw signed linear (16 bit)",
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 10,
-	/*.iananame */ "L16",
 	/*.implementations */ &raw_8k_30ms_implementation
 };
 

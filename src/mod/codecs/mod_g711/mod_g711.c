@@ -190,6 +190,8 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 #if 0
 
 static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
+	/*.ianacode */ 0,
+	/*.iananame */ "PCMU",
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 19200,
 	/*.microseconds_per_frame */ 60000,
@@ -207,6 +209,8 @@ static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
 
 
 static const switch_codec_implementation_t g711u_8k_30ms_implementation = {
+	/*.ianacode */ 0,
+	/*.iananame */ "PCMU",
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 96000,
 	/*.microseconds_per_frame */ 30000,
@@ -225,6 +229,8 @@ static const switch_codec_implementation_t g711u_8k_30ms_implementation = {
 #endif
 
 static const switch_codec_implementation_t g711u_16k_implementation = {
+	/*.ianacode */ 0,
+	/*.iananame */ "PCMU",
 	/*.samples_per_second */ 16000,
 	/*.bits_per_second */ 128000,
 	/*.microseconds_per_frame */ 20000,
@@ -241,6 +247,8 @@ static const switch_codec_implementation_t g711u_16k_implementation = {
 };
 
 static const switch_codec_implementation_t g711u_8k_implementation = {
+	/*.ianacode */ 0,
+	/*.iananame */ "PCMU",
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 64000,
 	/*.microseconds_per_frame */ 20000,
@@ -259,6 +267,8 @@ static const switch_codec_implementation_t g711u_8k_implementation = {
 
 
 static const switch_codec_implementation_t g711a_8k_implementation = {
+	/*.ianacode */ 8,
+	/*.iananame */ "PCMA",
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 64000,
 	/*.microseconds_per_frame */ 20000,
@@ -278,16 +288,12 @@ static const switch_codec_implementation_t g711a_8k_implementation = {
 static const switch_codec_interface_t g711a_codec_interface = {
 	/*.interface_name */ "g711 alaw",
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 8,
-	/*.iananame */ "PCMA",
 	/*.implementations */ &g711a_8k_implementation
 };
 
 static const switch_codec_interface_t g711u_codec_interface = {
 	/*.interface_name */ "g711 ulaw",
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 0,
-	/*.iananame */ "PCMU",
 	/*.implementations */ &g711u_8k_implementation,
 	/*.next */ &g711a_codec_interface
 };

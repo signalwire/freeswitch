@@ -444,6 +444,10 @@ struct switch_codec {
 
 /*! \brief A table of settings and callbacks that define a paticular implementation of a codec */
 struct switch_codec_implementation {
+	/*! the IANA code number */
+	switch_payload_t ianacode;
+	/*! the IANA code name */
+	char *iananame;
 	/*! samples transferred per second */
 	uint32_t samples_per_second;
 	/*! bits transferred per second */
@@ -495,10 +499,6 @@ struct switch_codec_interface {
 	const char *interface_name;
 	/*! enumeration defining the type of the codec */
 	const switch_codec_type_t codec_type;
-	/*! the IANA code number */
-	switch_payload_t ianacode;
-	/*! the IANA code name */
-	char *iananame;
 	/*! a list of codec implementations related to the codec */
 	const switch_codec_implementation_t *implementations;
 	const struct switch_codec_interface *next;

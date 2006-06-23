@@ -1082,7 +1082,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	}
 	
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD) && 
-		rtp_session->recv_msg.header.pt == rtp_session->vad_data.read_codec->codec_interface->ianacode &&
+		rtp_session->recv_msg.header.pt == rtp_session->vad_data.read_codec->implementation->ianacode &&
 		datalen == rtp_session->vad_data.read_codec->implementation->encoded_bytes_per_frame) {
 		int16_t decoded[SWITCH_RECCOMMENDED_BUFFER_SIZE/sizeof(int16_t)];
 		uint32_t rate;
@@ -1241,7 +1241,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 	memset(&rtp_session->vad_data, 0, sizeof(rtp_session->vad_data));
 	
 	if (switch_core_codec_init(&rtp_session->vad_data.vad_codec,
-							   codec->codec_interface->iananame,
+							   codec->implementation->iananame,
 							   codec->implementation->samples_per_second,
 							   codec->implementation->microseconds_per_frame / 1000,
 							   codec->implementation->number_of_channels,

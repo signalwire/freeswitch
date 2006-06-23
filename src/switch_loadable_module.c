@@ -109,16 +109,19 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			for (impl = ptr->implementations; impl; impl = impl->next) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 								  "Adding Codec '%s' (%s) %dkhz %dms\n",
-								  ptr->iananame,
+								  impl->iananame,
 								  ptr->interface_name,
 								  impl->samples_per_second, impl->microseconds_per_frame / 1000);
+				if (!switch_core_hash_find(loadable_modules.codec_hash, (char *) impl->iananame)) {
+					switch_core_hash_insert(loadable_modules.codec_hash, (char *) impl->iananame, (void *) ptr);
+				}
 			}
 			if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "codec");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
 				switch_event_fire(&event);
 			}
-			switch_core_hash_insert(loadable_modules.codec_hash, (char *) ptr->iananame, (void *) ptr);
+			
 		}
 	}
 

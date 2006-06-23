@@ -351,24 +351,27 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 		
 		
 		if (tech_pvt->num_codecs > 0) {
-			int i;
+			int i, lastcode = -1;
 
 			static const switch_codec_implementation_t *imp;
 
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
-
-
-				snprintf(tmp, sizeof(tmp), "%u", tech_pvt->codecs[i]->ianacode);
-				sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(tmp));
 				imp = tech_pvt->codecs[i]->implementations;
 
 				while(NULL != imp) {
 					uint32_t sps = imp->samples_per_second;
+
+					if (lastcode != imp->ianacode) {
+						snprintf(tmp, sizeof(tmp), "%u", imp->ianacode);
+						sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(tmp));
+						lastcode = imp->ianacode;
+					}
+
 					/* Add to SDP config */
-					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, tech_pvt->codecs[i]->ianacode, tech_pvt->codecs[i]->iananame, sps, 0);
+					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, imp->ianacode, imp->iananame, sps, 0);
 
 					/* Add to SDP message */
-					snprintf(tmp, sizeof(tmp), "%u %s/%d", tech_pvt->codecs[i]->ianacode, tech_pvt->codecs[i]->iananame, sps);
+					snprintf(tmp, sizeof(tmp), "%u %s/%d", imp->ianacode, imp->iananame, sps);
 					sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(tmp));
 					memset(tmp, 0, sizeof(tmp));
 					if (imp) {
@@ -521,10 +524,10 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activating RTP %s:%d->%s:%d codec: %u ms: %d\n",
-						  tech_pvt->local_sdp_audio_ip,
-						  tech_pvt->local_sdp_audio_port,
-						  tech_pvt->remote_sdp_audio_ip,
-						  tech_pvt->remote_sdp_audio_port, tech_pvt->read_codec.codec_interface->ianacode, ms);
+					  tech_pvt->local_sdp_audio_ip,
+					  tech_pvt->local_sdp_audio_port,
+					  tech_pvt->remote_sdp_audio_ip,
+					  tech_pvt->remote_sdp_audio_port, tech_pvt->read_codec.implementation->ianacode, ms);
 
 
 	if (tech_pvt->realm) {
@@ -548,15 +551,15 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 	}
 
 	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
-					       tech_pvt->local_sdp_audio_port,
-					       tech_pvt->remote_sdp_audio_ip,
-					       tech_pvt->remote_sdp_audio_port,
-					       tech_pvt->read_codec.codec_interface->ianacode,
-					       tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
-					       ms,
-					       flags,
-					       key,
-					       &err, switch_core_session_get_pool(tech_pvt->session));
+										   tech_pvt->local_sdp_audio_port,
+										   tech_pvt->remote_sdp_audio_ip,
+										   tech_pvt->remote_sdp_audio_port,
+										   tech_pvt->read_codec.implementation->ianacode,
+										   tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
+										   ms,
+										   flags,
+										   key,
+										   &err, switch_core_session_get_pool(tech_pvt->session));
 
 	if (tech_pvt->rtp_session) {
 		uint8_t vad_in = switch_test_flag(tech_pvt, TFLAG_VAD_IN) ? 1 : 0;
@@ -1311,7 +1314,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
 				for (imp = tech_pvt->codecs[i]->implementations; imp; imp = imp->next) {
-					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, tech_pvt->codecs[i]->ianacode, tech_pvt->codecs[i]->iananame,
+					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, imp->ianacode, imp->iananame,
 								  imp->samples_per_second, 0);
 
 				}
@@ -1520,22 +1523,20 @@ static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_medi
 			for(i = 0; !match && i < tech_pvt->num_codecs; i++) {
 				const switch_codec_implementation_t *imp;
 				
-				if (pt < 97) {
-					match = (pt == tech_pvt->codecs[i]->ianacode) ? 1 : 0;
-				} else {
-					match = strcasecmp(name, tech_pvt->codecs[i]->iananame) ? 0 : 1;
-				}
 				
-				if (match) {
-					match = 0;
+				for (imp = tech_pvt->codecs[i]->implementations; imp; imp = imp->next) {
+
+					if (pt < 97) {
+						match = (pt == imp->ianacode) ? 1 : 0;
+					} else {
+						match = strcasecmp(name, imp->iananame) ? 0 : 1;
+					}
 					
-					for (imp = tech_pvt->codecs[i]->implementations; imp; imp = imp->next) {
-						if ((r == imp->samples_per_second)) {
-							match = 1;
-							break;
-						}
+					if (match && (r == imp->samples_per_second)) {
+						break;
 					}
 				}
+				
 			}
 
 			if (match) {

@@ -234,11 +234,15 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 	}
 
 	for (x = 0; x < num_codecs; x++) {
-		unsigned int codec = iana2ast(codecs[x]->ianacode);
-		if (io == IAX_QUERY) {
-			iax_pref_codec_add(iax_session, codec);
+		static const switch_codec_implementation_t *imp;
+		for (imp = codecs[x]->implementations; imp; imp = imp->next) {
+			unsigned int codec = iana2ast(imp->ianacode);
+		
+			if (io == IAX_QUERY) {
+				iax_pref_codec_add(iax_session, codec);
+			}
+			local_cap |= codec;
 		}
-		local_cap |= codec;
 	}
 
 	if (io == IAX_SET) {
@@ -247,7 +251,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 		mixed_cap = local_cap;
 	}
 
-	leading = iana2ast(codecs[0]->ianacode);
+	leading = iana2ast(codecs[0]->implementations->ianacode);
 	if (io == IAX_QUERY) {
 		chosen = leading;
 		*format = chosen;
@@ -259,7 +263,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 		return SWITCH_STATUS_SUCCESS;
 	} else if (switch_test_flag(&globals, GFLAG_MY_CODEC_PREFS) && (leading & mixed_cap)) {
 		chosen = leading;
-		dname = codecs[0]->iananame;
+		dname = codecs[0]->implementations->iananame;
 	} else {
 		unsigned int prefs[32];
 		int len = 0;
@@ -283,8 +287,12 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 					int z;
 					chosen = prefs[x];
 					for (z = 0; z < num_codecs; z++) {
-						if (prefs[x] == iana2ast(codecs[z]->ianacode)) {
-							dname = codecs[z]->iananame;
+						static const switch_codec_implementation_t *imp;
+						for (imp = codecs[z]->implementations; imp; imp = imp->next) {
+							if (prefs[x] == iana2ast(imp->ianacode)) {
+								dname = imp->iananame;
+								break;
+							}
 						}
 					}
 					break;
@@ -294,17 +302,25 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 			if (*format & mixed_cap) {	/* is the one we asked for here? */
 				chosen = *format;
 				for (x = 0; x < num_codecs; x++) {
-					unsigned int cap = iana2ast(codecs[x]->ianacode);
-					if (cap == chosen) {
-						dname = codecs[x]->iananame;
+					static const switch_codec_implementation_t *imp;
+					for (imp = codecs[x]->implementations; imp; imp = imp->next) {
+						unsigned int cap = iana2ast(imp->ianacode);
+						if (cap == chosen) {
+							dname = imp->iananame;
+							break;
+						}
 					}
 				}
 			} else {			/* c'mon there has to be SOMETHING... */
 				for (x = 0; x < num_codecs; x++) {
-					unsigned int cap = iana2ast(codecs[x]->ianacode);
-					if (cap & mixed_cap) {
-						chosen = cap;
-						dname = codecs[x]->iananame;
+					static const switch_codec_implementation_t *imp;
+					for (imp = codecs[x]->implementations; imp; imp = imp->next) {
+						unsigned int cap = iana2ast(imp->ianacode);
+						if (cap & mixed_cap) {
+							chosen = cap;
+							dname = imp->iananame;
+							break;
+						}
 					}
 				}
 			}

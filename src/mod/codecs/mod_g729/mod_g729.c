@@ -219,6 +219,8 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 /* Registration */ 
 
 static const switch_codec_implementation_t g729_10ms_8k_implementation = { 
+	/*.ianacode */ 18, 
+	/*.iananame */ "G729", 
 	/*.samples_per_second */ 8000, 
 	/*.bits_per_second */ 32000, 
 	/*.microseconds_per_frame */ 10000, 
@@ -235,6 +237,8 @@ static const switch_codec_implementation_t g729_10ms_8k_implementation = {
 };
 
 static const switch_codec_implementation_t g729_8k_implementation = { 
+	/*.ianacode */ 18, 
+	/*.iananame */ "G729", 
 	/*.samples_per_second */ 8000, 
 	/*.bits_per_second */ 64000, 
 	/*.microseconds_per_frame */ 20000, 
@@ -255,8 +259,6 @@ static const switch_codec_implementation_t g729_8k_implementation = {
 static const switch_codec_interface_t g729_codec_interface = { 
 	/*.interface_name */ "g729", 
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 18, 
-	/*.iananame */ "G729", 
 	/*.implementations */ &g729_8k_implementation, 
 };
 
