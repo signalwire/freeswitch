@@ -908,6 +908,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 			switch_xml_free(MAIN_XML_ROOT);
 			MAIN_XML_ROOT = NULL;
 		} else {
+			char *tmp = NULL;
+			tmp = switch_xml_toxml(MAIN_XML_ROOT);
+			printf(tmp);
 			*err = "Success";
 			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
 		}
@@ -1001,26 +1004,32 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
     return *dst;
 }
 
+#define XML_INDENT "  "
 // Recursively converts each tag to xml appending it to *s. Reallocates *s if
 // its length excedes max. start is the location of the previous tag in the
 // parent tag's character content. Returns *s.
 static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max,
-                    switch_size_t start, char ***attr)
+                    switch_size_t start, char ***attr, uint32_t *count)
 {
     int i, j;
     char *txt = (xml->parent) ? xml->parent->txt : "";
     switch_size_t off = 0;
+	uint32_t lcount = 0;
 
     // parent character content up to this tag
     *s = switch_xml_ampencode(txt + start, xml->off - start, s, len, max, 0);
 
-    while (*len + strlen(xml->name) + 4 > *max) // reallocate s
+    while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) > *max) // reallocate s
         *s = realloc(*s, *max += SWITCH_XML_BUFSIZE);
 
+	for (lcount = 0; lcount < *count; lcount++) {
+		*len += sprintf(*s + *len, "%s", XML_INDENT); // indent
+	}
+	
     *len += sprintf(*s + *len, "<%s", xml->name); // open tag
     for (i = 0; xml->attr[i]; i += 2) { // tag attributes
         if (switch_xml_attr(xml, xml->attr[i]) != xml->attr[i + 1]) continue;
-        while (*len + strlen(xml->attr[i]) + 7 > *max) // reallocate s
+        while (*len + strlen(xml->attr[i]) + 7 + (strlen(XML_INDENT) * (*count)) > *max) // reallocate s
             *s = realloc(*s, *max += SWITCH_XML_BUFSIZE);
 
         *len += sprintf(*s + *len, " %s=\"", xml->attr[i]);
@@ -1032,26 +1041,43 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
     for (j = 1; attr[i] && attr[i][j]; j += 3) { // default attributes
         if (! attr[i][j + 1] || switch_xml_attr(xml, attr[i][j]) != attr[i][j + 1])
             continue; // skip duplicates and non-values
-        while (*len + strlen(attr[i][j]) + 7 > *max) // reallocate s
+        while (*len + strlen(attr[i][j]) + 8 + (strlen(XML_INDENT) * (*count)) > *max) // reallocate s
             *s = realloc(*s, *max += SWITCH_XML_BUFSIZE);
 
         *len += sprintf(*s + *len, " %s=\"", attr[i][j]);
         switch_xml_ampencode(attr[i][j + 1], 0, s, len, max, 1);
         *len += sprintf(*s + *len, "\"");
     }
-    *len += sprintf(*s + *len, ">");
+    *len += sprintf(*s + *len, xml->child ? ">\n" : "/>\n");
 
-    *s = (xml->child) ? switch_xml_toxml_r(xml->child, s, len, max, 0, attr) //child
-                      : switch_xml_ampencode(xml->txt, 0, s, len, max, 0);  //data
-    
-    while (*len + strlen(xml->name) + 4 > *max) // reallocate s
+	if (xml->child) {
+		(*count)++;
+		*s = switch_xml_toxml_r(xml->child, s, len, max, 0, attr, count);
+	} else {
+		*s = switch_xml_ampencode(xml->txt, 0, s, len, max, 0);  //data
+	}
+	
+    while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) > *max) // reallocate s
         *s = realloc(*s, *max += SWITCH_XML_BUFSIZE);
 
-    *len += sprintf(*s + *len, "</%s>", xml->name); // close tag
+
+	if (xml->child) {
+		for (lcount = 0; lcount < *count; lcount++) {
+			*len += sprintf(*s + *len, "%s", XML_INDENT); // indent
+		}
+		*len += sprintf(*s + (*len), "</%s>\n", xml->name); // close tag
+	}
 
     while (txt[off] && off < xml->off) off++; // make sure off is within bounds
-    return (xml->ordered) ? switch_xml_toxml_r(xml->ordered, s, len, max, off, attr)
-                          : switch_xml_ampencode(txt + off, 0, s, len, max, 0);
+
+	if (xml->ordered) {
+		return switch_xml_toxml_r(xml->ordered, s, len, max, off, attr, count);
+
+	} else {
+		if (*count > 0)
+			(*count)--;
+		return switch_xml_ampencode(txt + off, 0, s, len, max, 0);
+	}
 }
 
 // converts an switch_xml structure back to xml, returning it as a string that must
@@ -1063,6 +1089,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml)
     switch_size_t len = 0, max = SWITCH_XML_BUFSIZE;
     char *s = strcpy(malloc(max), ""), *t, *n;
     int i, j, k;
+	uint32_t count = 0;
 
     if (! xml || ! xml->name) return realloc(s, len + 1);
     while (root->xml.parent) root = (switch_xml_root_t)root->xml.parent; // root tag
@@ -1073,12 +1100,12 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml)
             if (root->pi[i][k][j - 1] == '>') continue; // not pre-root
             while (len + strlen(t = root->pi[i][0]) + strlen(n) + 7 > max)
                 s = realloc(s, max += SWITCH_XML_BUFSIZE);
-            len += sprintf(s + len, "<?%s%s%s?>\n", t, *n ? " " : "", n);
+            len += sprintf(s + len, "<?%s%s%s?>", t, *n ? " " : "", n);
         }
     }
 
     xml->parent = xml->ordered = NULL;
-    s = switch_xml_toxml_r(xml, &s, &len, &max, 0, root->attr);
+    s = switch_xml_toxml_r(xml, &s, &len, &max, 0, root->attr, &count);
     xml->parent = p;
     xml->ordered = o;
 
