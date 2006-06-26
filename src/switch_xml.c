@@ -908,9 +908,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 			switch_xml_free(MAIN_XML_ROOT);
 			MAIN_XML_ROOT = NULL;
 		} else {
-			char *tmp = NULL;
-			tmp = switch_xml_toxml(MAIN_XML_ROOT);
-			printf(tmp);
 			*err = "Success";
 			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
 		}
