@@ -225,7 +225,7 @@ static const switch_codec_implementation_t ilbc_8k_20ms_implementation = {
 
 
 static const switch_codec_implementation_t ilbc_102_8k_30ms_implementation = { 
-		/*.ianacode */ 97, 
+		/*.ianacode */ 102, 
 		/*.iananame */ "iLBC", 
 		/*.samples_per_second */ 8000, 
 		/*.bits_per_second */ NO_OF_BYTES_30MS*8*8000/BLOCKL_30MS,
