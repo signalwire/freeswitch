@@ -1057,9 +1057,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 															 int timeout, int stream_id)
 {
 	switch_io_event_hook_read_frame_t *ptr;
-	switch_status_t status = SWITCH_STATUS_FALSE;
-	int need_codec = 0, perfect = 0;
-
+	switch_status_t status;
+	int need_codec, perfect;
+ top:
+	
+	status = SWITCH_STATUS_FALSE;
+	need_codec = perfect = 0;
+	
 	assert(session != NULL);
 	*frame = NULL;
 
@@ -1180,18 +1184,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					session->raw_read_frame.rate = (*frame)->rate;
 				} else {
 					session->raw_read_frame.datalen = (uint32_t)switch_buffer_read(session->raw_read_buffer,
-																		 session->raw_read_frame.data,
-																		 session->read_codec->implementation->
-																		 bytes_per_frame);
+																				   session->raw_read_frame.data,
+																				   session->read_codec->implementation->bytes_per_frame);
+					
 					session->raw_read_frame.rate = session->read_codec->implementation->samples_per_second;
 					enc_frame = &session->raw_read_frame;
 				}
 				session->enc_read_frame.datalen = session->enc_read_frame.buflen;
+				assert(session->read_codec != NULL);				
+				assert(enc_frame != NULL);
+				assert(enc_frame->data != NULL);
+				
 				status = switch_core_codec_encode(session->read_codec,
 												  enc_frame->codec,
 												  enc_frame->data,
 												  enc_frame->datalen,
-												  enc_frame->codec->implementation->samples_per_second,
+												  session->read_codec->implementation->samples_per_second,
 												  session->enc_read_frame.data,
 												  &session->enc_read_frame.datalen,
 												  &session->enc_read_frame.rate, 
@@ -1215,6 +1223,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					status = SWITCH_STATUS_GENERR;
 					break;
 				}
+			} else {
+				goto top;
 			}
 		}
 	}
