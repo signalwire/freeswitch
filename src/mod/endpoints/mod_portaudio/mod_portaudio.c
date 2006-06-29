@@ -163,6 +163,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RINGING) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_info", buf);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call_id", tech_pvt->call_id);
 					switch_channel_event_set_data(channel, event);
 					switch_event_fire(&event);
 				}
