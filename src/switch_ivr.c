@@ -1123,6 +1123,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 						  switch_channel_get_name(caller_channel),
 						  switch_channel_get_name(peer_channel)
 						  );
+		switch_channel_hangup(peer_channel, SWITCH_CAUSE_NO_ANSWER);
 	}
 
 	return status;

@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #else
 	int pid;
-	//nice(-20);
+	nice(-20);
 #endif
 
 #ifdef HAVE_MLOCKALL
