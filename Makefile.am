@@ -1,3 +1,5 @@
+
+
 EXTRA_DIST =
 SUBDIRS = 
 AUTOMAKE_OPTS = gnu foreign
@@ -122,7 +124,7 @@ src/include/switch_log.h\
 src/include/switch_xml.h
 
 BUILT_SOURCES = version depends
-CLEANFILES = src/include/switch_version.h
+CLEANFILES = src/include/switch_version.h fsxs
 
 
 lib_LTLIBRARIES		= libfreeswitch.la
@@ -132,6 +134,7 @@ libfreeswitch_la_LIBADD  = -lteletone -lresample -lsrtp -lsqlite3 -lspeakup
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
 bin_PROGRAMS =	freeswitch
+bin_SCRIPTS = fsxs
 freeswitch_SOURCES = 	src/switch.c\
 			src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
@@ -230,6 +233,27 @@ install_mod: modules
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
+
+fsxs: fsxs.in
+	@echo creating fsxs
+	@sed -e "s,@MODULES_DIR\@,$(PREFIX)/mod," \
+	    -e "s,@LIB_DIR\@,$(PREFIX)/lib," \
+	    -e "s,@BIN_DIR\@,$(PREFIX)/bin," \
+	    -e "s,@INC_DIR\@,$(PREFIX)/include," \
+	    -e "s,@CFG_DIR\@,$(PREFIX)/conf," \
+	    -e "s,@DB_DIR\@,$(PREFIX)/db," \
+	    -e "s,@PREFIX\@,$(PREFIX)," \
+	    -e "s,@CC\@,$(CC)," \
+	    -e "s,@LD\@,$(CC)," \
+	    -e "s,@INSTALL\@,$(INSTALL)," \
+	    -e "s,@MKINSTALLDIRS\@,$(mkdir_p)," \
+	    \
+	    -e "s|@CFLAGS\@|$(CFLAGS) -fPIC $(shell $(APR_CONFIG) --cflags --cppflags)|" \
+	    -e "s|@INCLUDES\@|-I$(PREFIX)/include $(shell $(APR_CONFIG) --includes) $(shell $(APU_CONFIG) --includes)|" \
+	    -e "s|@SOLINK\@|$(SOLINK)|" \
+	    -e "s|@LDFLAGS\@|-L$(PREFIX)/lib|" \
+	    -e "s|@LIBS\@|-lfreeswitch|" \
+	    fsxs.in > fsxs
 
 eclean: clean
 	rm -f `find . -type f -name \*~`
