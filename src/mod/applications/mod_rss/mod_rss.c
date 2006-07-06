@@ -602,15 +602,17 @@ static void rss_function(switch_core_session_t *session, char *data)
 						cont = 0;
 						continue;
 					}
-
-					status = switch_ivr_speak_text_handle(session,
-														  &sh,
-														  &speech_codec,
-														  timerp,
-														  on_dtmf,
-														  entries[dtb.index].description_txt,
-														  &dtb,
-														  sizeof(dtb));
+					
+					if (entries[dtb.index].description_txt) {
+						status = switch_ivr_speak_text_handle(session,
+															  &sh,
+															  &speech_codec,
+															  timerp,
+															  on_dtmf,
+															  entries[dtb.index].description_txt,
+															  &dtb,
+															  sizeof(dtb));
+					}
 					if (status == SWITCH_STATUS_BREAK) {
 						continue;
 					} else if (status != SWITCH_STATUS_SUCCESS) {
