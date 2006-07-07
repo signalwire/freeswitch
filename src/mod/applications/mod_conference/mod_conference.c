@@ -2145,7 +2145,7 @@ static void *SWITCH_THREAD_FUNC input_thread_run(switch_thread_t *thread, void *
 		}
 		
 		/* skip frames that are not actual media or when we are muted or silent */
-		if (talking && switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+		if ((talking || energy_level == 0) && switch_test_flag(member, MFLAG_CAN_SPEAK)) {
 			/* Write the audio into the input buffer */
 			switch_mutex_lock(member->audio_in_mutex);
 			switch_buffer_write(member->audio_buffer, read_frame->data, read_frame->datalen);
