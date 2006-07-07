@@ -2513,50 +2513,61 @@ static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch
 		return NULL;
 	}
 
-
 	for (param = switch_xml_child(profile, "param"); param; param = param->next) {
 		char *var = (char *) switch_xml_attr_soft(param, "name");
 		char *val = (char *) switch_xml_attr_soft(param, "value");
+		char buf[128] = "";
+		char *p;
 
+		if ((p = strchr(var, '_'))) {
+			switch_copy_string(buf, var, sizeof(buf));
+			for(p = buf; *p; p++) {
+				if (*p == '_') {
+					*p = '-';
+				}
+			}
+			var = buf;
+		}
+		
 		if (!strcasecmp(var, "rate")) {
 			rate_name = val;
 		} else if (!strcasecmp(var, "interval")) {
 			interval_name= val;
-		} else if (!strcasecmp(var, "timer_name")) {
+		} else if (!strcasecmp(var, "timer-name")) {
 			timer_name= val;
-		} else if (!strcasecmp(var, "tts_engine")) {
+		} else if (!strcasecmp(var, "tts-engine")) {
 			tts_engine= val;
-		} else if (!strcasecmp(var, "tts_voice")) {
+		} else if (!strcasecmp(var, "tts-voice")) {
 			tts_voice= val;
-		} else if (!strcasecmp(var, "enter_sound")) {
+		} else if (!strcasecmp(var, "enter-sound")) {
 			enter_sound = val;
-		} else if (!strcasecmp(var, "exit_sound")) {
+		} else if (!strcasecmp(var, "exit-sound")) {
 			exit_sound = val;
-		} else if (!strcasecmp(var, "alone_sound")) {
+		} else if (!strcasecmp(var, "alone-sound")) {
 			alone_sound = val;
-		} else if (!strcasecmp(var, "ack_sound")) {
+		} else if (!strcasecmp(var, "ack-sound")) {
 			ack_sound = val;
-		} else if (!strcasecmp(var, "nack_sound")) {
+		} else if (!strcasecmp(var, "nack-sound")) {
 			nack_sound = val;
-		} else if (!strcasecmp(var, "muted_sound")) {
+		} else if (!strcasecmp(var, "muted-sound")) {
 			muted_sound = val;
-		} else if (!strcasecmp(var, "unmuted_sound")) {
+		} else if (!strcasecmp(var, "unmuted-sound")) {
 			unmuted_sound = val;
-		} else if (!strcasecmp(var, "locked_sound")) {
+		} else if (!strcasecmp(var, "locked-sound")) {
 			locked_sound= val;
-		} else if (!strcasecmp(var, "kicked_sound")) {
+		} else if (!strcasecmp(var, "kicked-sound")) {
 			kicked_sound = val;
 		} else if (!strcasecmp(var, "pin")) {
 			pin = val;
-		} else if (!strcasecmp(var, "pin_sound")) {
+		} else if (!strcasecmp(var, "pin-sound")) {
 			pin_sound = val;
-		} else if (!strcasecmp(var, "bad_pin_sound")) {
+		} else if (!strcasecmp(var, "bad-pin-sound")) {
 			bad_pin_sound = val;
-		} else if (!strcasecmp(var, "energy_level")) {
+		} else if (!strcasecmp(var, "energy-level")) {
 			energy_level = val;
-		} else if (!strcasecmp(var, "caller_id_name")) {
+		} else if (!strcasecmp(var, "caller-id-name")) {
 			caller_id_name = val;
-		} else if (!strcasecmp(var, "caller_id_number")) {
+		} else if (!strcasecmp(var, "caller-id-number")) {
 			caller_id_number = val;
 		}
 	}
