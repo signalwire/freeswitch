@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <document type="freeswitch/xml">
   <section name="configuration" description="Various Configuration">
-    <configuration name="modules.conf" description="Modules">
+    <configuration name="switch.conf" description="Modules">
       <settings>
         <!--Most channels to allow at once -->
         <param name="max-sessions" value="1000"/>
