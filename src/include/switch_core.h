@@ -117,6 +117,13 @@ struct switch_core_runtime;
 SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err);
 
 /*! 
+  \brief Set/Get Session Limit
+  \param new new value (if > 0)
+  \return the current session limit
+*/
+SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new);
+
+/*! 
   \brief Destroy the core
   \note to be called at application shutdown
 */
@@ -308,6 +315,11 @@ SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *sessi
   \note if the session was located it will have a read lock obtained which will need to be released with switch_core_session_rwunlock()
 */
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_str);
+
+/*! 
+  \brief Hangup All Sessions
+*/
+SWITCH_DECLARE(void) switch_core_session_hupall(void);
 
 /*! 
   \brief Send a message to another session using it's uuid

@@ -2,6 +2,12 @@
 <document type="freeswitch/xml">
   <section name="configuration" description="Various Configuration">
     <configuration name="modules.conf" description="Modules">
+      <settings>
+        <!--Most channels to allow at once -->
+        <param name="max-sessions" value="1000"/>
+      </settings>
+    </configuration>
+    <configuration name="modules.conf" description="Modules">
       <modules>
         <!-- Loggers (I'd load these first) -->
         <load module="mod_console"/>

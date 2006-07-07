@@ -85,6 +85,7 @@ struct switch_core_runtime {
 	uint32_t session_id;
 	apr_pool_t *memory_pool;
 	switch_hash_t *session_table;
+	switch_mutex_t *session_table_mutex;
 #ifdef CRASH_PROT
 	switch_hash_t *stack_table;
 #endif
@@ -93,6 +94,8 @@ struct switch_core_runtime {
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
     int state_handler_index;
 	FILE *console;
+	uint32_t session_count;
+	uint32_t session_limit;
 	switch_queue_t *sql_queue;
 };
 
@@ -246,6 +249,8 @@ SWITCH_DECLARE(void) switch_core_session_rwunlock(switch_core_session_t *session
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_str)
 {
 	switch_core_session_t *session;
+
+	switch_mutex_lock(runtime.session_table_mutex);
 	if ((session = switch_core_hash_find(runtime.session_table, uuid_str))) {
 		/* Acquire a read lock on the session */
 		if (switch_thread_rwlock_tryrdlock(session->rwlock) != SWITCH_STATUS_SUCCESS) {
@@ -253,9 +258,33 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_st
 			session = NULL;
 		}
 	}
+	switch_mutex_unlock(runtime.session_table_mutex);
 
 	/* if its not NULL, now it's up to you to rwunlock this */
 	return session;
+}
+
+SWITCH_DECLARE(void) switch_core_session_hupall(void)
+{
+	switch_hash_index_t *hi;
+	void *val;
+	switch_core_session_t *session;
+	switch_channel_t *channel;
+
+	switch_mutex_lock(runtime.session_table_mutex);
+	for (hi = switch_hash_first(runtime.memory_pool, runtime.session_table); hi; hi = switch_hash_next(hi)) {
+        switch_hash_this(hi, NULL, NULL, &val);
+		if (val) {
+			session = (switch_core_session_t *) val;
+			channel = switch_core_session_get_channel(session);
+			switch_channel_hangup(channel, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
+		}
+	}
+	switch_mutex_unlock(runtime.session_table_mutex);
+
+	while(runtime.session_count) {
+		switch_yield(1000);
+	}
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str, switch_core_session_message_t *message)
@@ -263,6 +292,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str,
 	switch_core_session_t *session = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
+	switch_mutex_lock(runtime.session_table_mutex);
 	if ((session = switch_core_hash_find(runtime.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
 		if (switch_thread_rwlock_tryrdlock(session->rwlock) == SWITCH_STATUS_SUCCESS) {
@@ -272,6 +302,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str,
 			switch_thread_rwlock_unlock(session->rwlock);
 		}
 	}
+	switch_mutex_unlock(runtime.session_table_mutex);
 
 	return status;
 }
@@ -281,6 +312,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, s
 	switch_core_session_t *session = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
+	switch_mutex_lock(runtime.session_table_mutex);
 	if ((session = switch_core_hash_find(runtime.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
 		if (switch_thread_rwlock_tryrdlock(session->rwlock) == SWITCH_STATUS_SUCCESS) {
@@ -290,6 +322,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, s
 			switch_thread_rwlock_unlock(session->rwlock);
 		}
 	}
+	switch_mutex_unlock(runtime.session_table_mutex);
 
 	return status;
 }
@@ -2344,6 +2377,9 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session
 	apr_pool_destroy(pool);
 	pool = NULL;
 
+	switch_mutex_lock(runtime.session_table_mutex);
+	runtime.session_count--;
+	switch_mutex_unlock(runtime.session_table_mutex);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t **hash, switch_memory_pool_t *pool)
@@ -2434,18 +2470,21 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 {
 	switch_core_session_t *session = obj;
 	session->thread = thread;
-	session->id = runtime.session_id++;
-
 	snprintf(session->name, sizeof(session->name), "%u", session->id);
-
+	switch_mutex_lock(runtime.session_table_mutex);
+	session->id = runtime.session_id++;
 	switch_core_hash_insert(runtime.session_table, session->uuid_str, session);
+	switch_mutex_unlock(runtime.session_table_mutex);
+
 	switch_core_session_run(session);
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %u (%s) Locked, Waiting on external entities\n", session->id, switch_channel_get_name(session->channel));
 	switch_core_session_write_lock(session);
 	switch_core_session_rwunlock(session);
 
+	switch_mutex_lock(runtime.session_table_mutex);
 	switch_core_hash_delete(runtime.session_table, session->uuid_str);
+	switch_mutex_unlock(runtime.session_table_mutex);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Session %u (%s) Ended\n", session->id, switch_channel_get_name(session->channel));
 	switch_core_session_destroy(&session);
 	return NULL;
@@ -2503,8 +2542,18 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	switch_memory_pool_t *usepool;
 	switch_core_session_t *session;
 	switch_uuid_t uuid;
+	uint32_t count = 0;
 
 	assert(endpoint_interface != NULL);
+
+	switch_mutex_lock(runtime.session_table_mutex);
+	count = runtime.session_count;
+	switch_mutex_unlock(runtime.session_table_mutex);
+
+	if ((count + 1) > runtime.session_limit) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Limit!\n");
+		return NULL;
+	}
 
 	if (pool) {
 		usepool = pool;
@@ -2551,6 +2600,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	switch_thread_cond_create(&session->cond, session->pool);
 	switch_thread_rwlock_create(&session->rwlock, session->pool);
 
+	switch_mutex_lock(runtime.session_table_mutex);
+	runtime.session_count++;
+	switch_mutex_unlock(runtime.session_table_mutex);
 	return session;
 }
 
@@ -2806,10 +2858,22 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #endif
 }
 
+
+SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new)
+{
+	if (new) {
+		runtime.session_limit = new;
+	}
+	
+	return runtime.session_limit;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err)
 {
 	memset(&runtime, 0, sizeof(runtime));
-	
+	runtime.session_limit = 1000;
+	switch_xml_t xml = NULL, cfg = NULL;
+
 	switch_core_set_globals();
 
 	/* INIT APR and Create the pool context */
@@ -2828,6 +2892,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
 		return SWITCH_STATUS_MEMERR;
+	}
+
+
+	if ((xml = switch_xml_open_cfg("switch.conf", &cfg, NULL))) {
+		switch_xml_t settings, param;
+		
+		if ((settings = switch_xml_child(cfg, "settings"))) {
+			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+				
+				if (!strcasecmp(var, "max-sessions")) {
+					runtime.session_limit = atoi(val);
+				}
+			}
+		}
+		switch_xml_free(xml);
 	}
 
 	*err = NULL;
@@ -2909,6 +2990,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	runtime.session_id = 1;
 
 	switch_core_hash_init(&runtime.session_table, runtime.memory_pool);
+	switch_mutex_init(&runtime.session_table_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 #ifdef CRASH_PROT
 	switch_core_hash_init(&runtime.stack_table, runtime.memory_pool);
 #endif
