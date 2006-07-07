@@ -124,7 +124,7 @@ src/include/switch_log.h\
 src/include/switch_xml.h
 
 BUILT_SOURCES = version depends
-CLEANFILES = src/include/switch_version.h fsxs
+CLEANFILES = src/include/switch_version.h scripts/fsxs
 
 
 lib_LTLIBRARIES		= libfreeswitch.la
@@ -134,7 +134,7 @@ libfreeswitch_la_LIBADD  = -lteletone -lresample -lsrtp -lsqlite3 -lspeakup
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
 bin_PROGRAMS =	freeswitch
-bin_SCRIPTS = fsxs
+bin_SCRIPTS = scripts/fsxs
 freeswitch_SOURCES = 	src/switch.c\
 			src/include/switch_version.h
 freeswitch_CFLAGS = $(AM_CFLAGS)
@@ -234,7 +234,7 @@ install_mod: modules
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
 
-fsxs: fsxs.in
+scripts/fsxs: scripts/fsxs.in
 	@echo creating fsxs
 	@sed -e "s,@MODULES_DIR\@,$(PREFIX)/mod," \
 	    -e "s,@LIB_DIR\@,$(PREFIX)/lib," \
@@ -253,7 +253,7 @@ fsxs: fsxs.in
 	    -e "s|@SOLINK\@|$(SOLINK)|" \
 	    -e "s|@LDFLAGS\@|-L$(PREFIX)/lib|" \
 	    -e "s|@LIBS\@|-lfreeswitch|" \
-	    fsxs.in > fsxs
+	    scripts/fsxs.in > scripts/fsxs
 
 eclean: clean
 	rm -f `find . -type f -name \*~`

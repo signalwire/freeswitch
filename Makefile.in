@@ -16,6 +16,7 @@
 
 
 
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -70,7 +71,7 @@ am__vpath_adj = case $$p in \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
-	"$(DESTDIR)$(library_includedir)"
+	"$(DESTDIR)$(bindir)" "$(DESTDIR)$(library_includedir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libfreeswitch_la_DEPENDENCIES =
@@ -95,6 +96,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am_freeswitch_OBJECTS = freeswitch-switch.$(OBJEXT)
 freeswitch_OBJECTS = $(am_freeswitch_OBJECTS)
 freeswitch_DEPENDENCIES = ${top_builddir}/libfreeswitch.la
+binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
+SCRIPTS = $(bin_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src/include
 depcomp = $(SHELL) $(top_srcdir)/build/config/depcomp
 am__depfiles_maybe = depfiles
@@ -339,12 +342,13 @@ src/include/switch_log.h\
 src/include/switch_xml.h
 
 BUILT_SOURCES = version depends
-CLEANFILES = src/include/switch_version.h
+CLEANFILES = src/include/switch_version.h scripts/fsxs
 lib_LTLIBRARIES = libfreeswitch.la
 libfreeswitch_la_CFLAGS = $(AM_CFLAGS) -Wall -Werror -Wstrict-prototypes -Wmissing-prototypes -g -std=c99 
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0
 libfreeswitch_la_LIBADD = -lteletone -lresample -lsrtp -lsqlite3 -lspeakup
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
+bin_SCRIPTS = scripts/fsxs
 freeswitch_SOURCES = src/switch.c\
 			src/include/switch_version.h
 
@@ -467,6 +471,25 @@ clean-binPROGRAMS:
 freeswitch$(EXEEXT): $(freeswitch_OBJECTS) $(freeswitch_DEPENDENCIES) 
 	@rm -f freeswitch$(EXEEXT)
 	$(LINK) $(freeswitch_LDFLAGS) $(freeswitch_OBJECTS) $(freeswitch_LDADD) $(LIBS)
+install-binSCRIPTS: $(bin_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
+	@list='$(bin_SCRIPTS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f $$d$$p; then \
+	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	    echo " $(binSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(bindir)/$$f'"; \
+	    $(binSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(bindir)/$$f"; \
+	  else :; fi; \
+	done
+
+uninstall-binSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(bin_SCRIPTS)'; for p in $$list; do \
+	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	  echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(bindir)/$$f"; \
+	done
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -935,12 +958,12 @@ distcleancheck: distclean
 check-am: all-am
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-recursive
-all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(HEADERS)
+all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(SCRIPTS) $(HEADERS)
 install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(library_includedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(library_includedir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -994,7 +1017,8 @@ info-am:
 
 install-data-am: install-library_includeHEADERS
 
-install-exec-am: install-binPROGRAMS install-libLTLIBRARIES
+install-exec-am: install-binPROGRAMS install-binSCRIPTS \
+	install-libLTLIBRARIES
 
 install-info: install-info-recursive
 
@@ -1022,8 +1046,9 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS uninstall-info-am \
-	uninstall-libLTLIBRARIES uninstall-library_includeHEADERS
+uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
+	uninstall-info-am uninstall-libLTLIBRARIES \
+	uninstall-library_includeHEADERS
 
 uninstall-info: uninstall-info-recursive
 
@@ -1035,16 +1060,16 @@ uninstall-info: uninstall-info-recursive
 	distclean-generic distclean-hdr distclean-libtool \
 	distclean-recursive distclean-tags distcleancheck distdir \
 	distuninstallcheck dvi dvi-am html html-am info info-am \
-	install install-am install-binPROGRAMS install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-libLTLIBRARIES \
+	install install-am install-binPROGRAMS install-binSCRIPTS \
+	install-data install-data-am install-exec install-exec-am \
+	install-info install-info-am install-libLTLIBRARIES \
 	install-library_includeHEADERS install-man install-strip \
 	installcheck installcheck-am installdirs installdirs-am \
 	maintainer-clean maintainer-clean-generic \
 	maintainer-clean-recursive mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool mostlyclean-recursive \
 	pdf pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
-	uninstall-binPROGRAMS uninstall-info-am \
+	uninstall-binPROGRAMS uninstall-binSCRIPTS uninstall-info-am \
 	uninstall-libLTLIBRARIES uninstall-library_includeHEADERS
 
 
@@ -1137,6 +1162,27 @@ install_mod: modules
 
 dox:
 	cd docs && doxygen $(PWD)/docs/Doxygen.conf
+
+scripts/fsxs: scripts/fsxs.in
+	@echo creating fsxs
+	@sed -e "s,@MODULES_DIR\@,$(PREFIX)/mod," \
+	    -e "s,@LIB_DIR\@,$(PREFIX)/lib," \
+	    -e "s,@BIN_DIR\@,$(PREFIX)/bin," \
+	    -e "s,@INC_DIR\@,$(PREFIX)/include," \
+	    -e "s,@CFG_DIR\@,$(PREFIX)/conf," \
+	    -e "s,@DB_DIR\@,$(PREFIX)/db," \
+	    -e "s,@PREFIX\@,$(PREFIX)," \
+	    -e "s,@CC\@,$(CC)," \
+	    -e "s,@LD\@,$(CC)," \
+	    -e "s,@INSTALL\@,$(INSTALL)," \
+	    -e "s,@MKINSTALLDIRS\@,$(mkdir_p)," \
+	    \
+	    -e "s|@CFLAGS\@|$(CFLAGS) -fPIC $(shell $(APR_CONFIG) --cflags --cppflags)|" \
+	    -e "s|@INCLUDES\@|-I$(PREFIX)/include $(shell $(APR_CONFIG) --includes) $(shell $(APU_CONFIG) --includes)|" \
+	    -e "s|@SOLINK\@|$(SOLINK)|" \
+	    -e "s|@LDFLAGS\@|-L$(PREFIX)/lib|" \
+	    -e "s|@LIBS\@|-lfreeswitch|" \
+	    scripts/fsxs.in > scripts/fsxs
 
 eclean: clean
 	rm -f `find . -type f -name \*~`
