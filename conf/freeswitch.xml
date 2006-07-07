@@ -273,6 +273,7 @@
     you need to really set them up -->
     <configuration name="conference.conf" description="Audio Conference">
       <!-- Profiles are collections of settings you can reference by name. -->
+
       <profiles>
         <profile name="default">
           <!-- Sample Rate-->
@@ -281,6 +282,14 @@
           <param name="interval" value="20"/>
           <!-- Energy level required for audio to be sent to the other users -->
           <param name="energy_level" value="300"/>
+          <!-- TTS Engine to use -->
+          <!--<param name="tts_engine" value="cepstral"/>-->
+          <!-- TTS Voice to use -->
+          <!--<param name="tts_voice" value="david"/>-->
+
+          <!-- If TTS is enabled all audio-file params not beginning with '/'
+          will be considered text to say with TTS -->
+
           <!-- File to play to acknowledge succees -->
           <!--<param name="ack_sound" value="/soundfiles/beep.wav"/>-->
           <!-- File to play to acknowledge failure -->
@@ -305,6 +314,10 @@
           <!--<param name="bad_pin_sound" value="/soundfiles/invalid-pin.wav"/>-->
           <!-- Conference pin -->
           <!--<param name="pin" value="12345"/>-->
+          <!-- Default Caller ID Name for outbound calls -->
+          <param name="caller_id_name" value="FreeSWITCH"/>
+          <!-- Default Caller ID Number for outbound calls -->
+          <param name="caller_id_number" value="8777423583"/>
         </profile>
       </profiles>
       <rooms>
