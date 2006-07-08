@@ -213,6 +213,7 @@ static uint32_t next_member_id(void)
 
 #define SMAX 32767
 #define SMIN -32768
+#define normalize_to_16bit(n) if (n > SMAX) n = SMAX; else if (n < SMIN) n = SMIN;
 
 static void switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol)
 {
@@ -224,17 +225,14 @@ static void switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vo
 
 	if (v > 0) {
 		mult += (.2 * abs(v));
+		mult = 4;
 	} else {
 		mult -= 1;
 	}
 
 	for (x = 0; x < samples; x++) {
 		b = (int32_t)((double)p[x] * mult);
-		if (b > SMAX) {
-			b = SMAX;
-		} else if (b < SMIN) {
-			b = SMIN;
-		}
+		normalize_to_16bit(b);
 		p[x] = (int16_t) b;
 	}
 }
@@ -557,7 +555,9 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 						muxed = (int16_t *) omember->mux_frame;
 				
 						for (x = 0; x < imember->read / 2; x++) {
-							muxed[x] = muxed[x] + bptr[x];
+							int32_t z = muxed[x] + bptr[x];
+							normalize_to_16bit(z);
+							muxed[x] = z;
 						}
 						
 						ready++;
@@ -2424,7 +2424,7 @@ static void *SWITCH_THREAD_FUNC input_thread_run(switch_thread_t *thread, void *
 
 			/* Check for input volume adjustments */
 			if (member->volume_in_level) {
-				switch_change_sln_volume(read_frame->data, read_frame->samples, member->volume_in_level);
+				switch_change_sln_volume(read_frame->data, read_frame->datalen / 2, member->volume_in_level);
 			}
 
 			/* Write the audio into the input buffer */
