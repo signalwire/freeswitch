@@ -1,6 +1,7 @@
 loggers/mod_console
 loggers/mod_syslog
 applications/mod_commands
+applications/mod_conference
 applications/mod_bridgecall
 applications/mod_echo
 applications/mod_ivrtest
