@@ -217,6 +217,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 	int num_codecs = 0;
 	unsigned int local_cap = 0, mixed_cap = 0, chosen = 0, leading = 0;
 	int x, srate = 8000;
+	uint32_t interval = 0;
 
 	if (globals.codec_string) {
 		if ((num_codecs = switch_loadable_module_get_codecs_sorted(codecs,
@@ -291,6 +292,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 						for (imp = codecs[z]; imp; imp = imp->next) {
 							if (prefs[x] == iana2ast(imp->ianacode)) {
 								dname = imp->iananame;
+								interval = imp->microseconds_per_frame / 1000;
 								break;
 							}
 						}
@@ -307,6 +309,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 						unsigned int cap = iana2ast(imp->ianacode);
 						if (cap == chosen) {
 							dname = imp->iananame;
+							interval = imp->microseconds_per_frame / 1000;
 							break;
 						}
 					}
@@ -319,6 +322,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 						if (cap & mixed_cap) {
 							chosen = cap;
 							dname = imp->iananame;
+							interval = imp->microseconds_per_frame / 1000;
 							break;
 						}
 					}
@@ -366,7 +370,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   dname,
 							   srate,
-							   0,
+							   interval,
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
@@ -376,7 +380,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 		if (switch_core_codec_init(&tech_pvt->write_codec,
 								   dname,
 								   srate,
-								   0,
+								   interval,
 								   1,
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
