@@ -676,8 +676,6 @@ static void conference_loop(conference_member_t *member)
 		char *digit;
 		char msg[512];
 
-		switch_core_timer_next(&timer);
-
         if (switch_channel_has_dtmf(channel)) {
             switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
         }
@@ -863,28 +861,33 @@ static void conference_loop(conference_member_t *member)
 						switch_buffer_zero(member->mux_buffer);
 						switch_mutex_unlock(member->audio_out_mutex);
 					}
+					switch_core_timer_next(&timer);
 				}
 			}
 		} else {
-			/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
-			switch_mutex_lock(member->audio_out_mutex);
-			write_frame.data = data;
-			while ((write_frame.datalen = (uint32_t)switch_buffer_read(member->mux_buffer, write_frame.data, bytes))) {
-				if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
-					write_frame.samples = write_frame.datalen / 2;
+			if (switch_buffer_inuse(member->mux_buffer)) {
+				/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
+				switch_mutex_lock(member->audio_out_mutex);
+				write_frame.data = data;
+				while ((write_frame.datalen = (uint32_t)switch_buffer_read(member->mux_buffer, write_frame.data, bytes))) {
+					if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
+						write_frame.samples = write_frame.datalen / 2;
+						
+						/* Check for output volume adjustments */
+						if (member->volume_out_level) {
+							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
+						}
 
-					/* Check for output volume adjustments */
-					if (member->volume_out_level) {
-						switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
+						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 					}
-
-					switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 				}
+				switch_mutex_unlock(member->audio_out_mutex);
+			} else {
+				switch_core_timer_next(&timer);
 			}
-			switch_mutex_unlock(member->audio_out_mutex);
 		}
 	} /* Rinse ... Repeat */
-
+	
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 	switch_core_timer_destroy(&timer);
 
@@ -2076,10 +2079,13 @@ static void conference_function(switch_core_session_t *session, char *data)
 	char *mydata = switch_core_session_strdup(session, data);
 	char *conf_name = NULL;
 	char *bridge_prefix = "bridge:";
+	char *flags_prefix = "+flags{";
 	char *bridgeto = NULL;
 	char *profile_name = NULL;
 	switch_xml_t cxml = NULL, cfg = NULL, profile = NULL, profiles = NULL;
-
+	char *flags_str;
+	member_flag_t uflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
+	
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
@@ -2092,6 +2098,23 @@ static void conference_function(switch_core_session_t *session, char *data)
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
 		return;
+	}
+
+
+	if ((flags_str=strstr(mydata, flags_prefix))) {
+		char *p;
+
+		*flags_str = '\0';
+		flags_str += strlen(flags_prefix);
+		if ((p = strchr(flags_str, '}'))) {
+			*p = '\0';
+		}
+
+		if (strstr(flags_str, "mute")) {
+			uflags &= ~MFLAG_CAN_SPEAK;
+		} else if (strstr(flags_str, "deaf")) {
+			uflags &= ~MFLAG_CAN_HEAR;
+		}
 	}
 
 	if (!strncasecmp(mydata, bridge_prefix, strlen(bridge_prefix))) {
@@ -2269,7 +2292,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 	if (conference_add_member(conference, &member) != SWITCH_STATUS_SUCCESS) {
 		goto codec_done1;
 	}
-	switch_set_flag_locked((&member), MFLAG_RUNNING | MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR);
+	switch_set_flag_locked((&member), MFLAG_RUNNING | uflags);
 
 	/* Run the confernece loop */
 	conference_loop(&member);
