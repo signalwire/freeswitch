@@ -1545,7 +1545,7 @@ static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_medi
 				*dpayload = strdup(payload);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Found negotiated codec Payload: %s Name: %s Rate: %s\n",
 								  *dpayload, *dname, *drate);	
-				break;
+				goto done;
 			}
 
 		}
@@ -1553,6 +1553,7 @@ static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_medi
 		attr = NULL;
 		pos++;
 	}
+ done:
 
 	return status;
 }
