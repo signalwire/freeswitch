@@ -1336,18 +1336,20 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 			if (audio_tab[0] == NULL && video_tab[0] == NULL && t38_tab[0] == NULL && app_tab[0] == NULL) {
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Got no compatible codecs!\n");
-				break;
+				goto done;
 			}
 			for (pos = 0; audio_tab[pos] != NULL; pos++) {
 				osip_rfc3264_complete_answer(tech_pvt->sdp_config, remote_sdp, tech_pvt->local_sdp, audio_tab[pos],
 											 mline);
 				if (parse_sdp_media(tech_pvt, audio_tab[pos], &dname, &drate, &dpayload) == SWITCH_STATUS_SUCCESS) {
-					tech_pvt->payload_num = atoi(dpayload);
-					break;
+					tech_pvt->payload_num = atoi(dpayload);					
+					goto done;
 				}
 			}
 			mline++;
 		}
+	done:
+
 		free(remote_sdp_str);
 		sdp_message_o_origin_set(tech_pvt->local_sdp, "FreeSWITCH", "0", "0", "IN", "IP4", ip);
 								 
@@ -1545,7 +1547,7 @@ static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_medi
 				*dpayload = strdup(payload);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Found negotiated codec Payload: %s Name: %s Rate: %s\n",
 								  *dpayload, *dname, *drate);	
-				goto done;
+				return SWITCH_STATUS_SUCCESS;
 			}
 
 		}
@@ -1553,7 +1555,6 @@ static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_medi
 		attr = NULL;
 		pos++;
 	}
- done:
 
 	return status;
 }
