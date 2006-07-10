@@ -849,6 +849,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
 	msg.from = channel->name;
 	status = switch_core_session_message_send(uuid, &msg);
