@@ -213,7 +213,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 	//int rate = 8000;
 	//int codec_ms = 20;
 	switch_channel_t *channel;
-	switch_codec_interface_t *codecs[SWITCH_MAX_CODECS];
+	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 	int num_codecs = 0;
 	unsigned int local_cap = 0, mixed_cap = 0, chosen = 0, leading = 0;
 	int x, srate = 8000;
@@ -235,7 +235,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 
 	for (x = 0; x < num_codecs; x++) {
 		static const switch_codec_implementation_t *imp;
-		for (imp = codecs[x]->implementations; imp; imp = imp->next) {
+		for (imp = codecs[x]; imp; imp = imp->next) {
 			unsigned int codec = iana2ast(imp->ianacode);
 		
 			if (io == IAX_QUERY) {
@@ -251,7 +251,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 		mixed_cap = local_cap;
 	}
 
-	leading = iana2ast(codecs[0]->implementations->ianacode);
+	leading = iana2ast(codecs[0]->ianacode);
 	if (io == IAX_QUERY) {
 		chosen = leading;
 		*format = chosen;
@@ -263,7 +263,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 		return SWITCH_STATUS_SUCCESS;
 	} else if (switch_test_flag(&globals, GFLAG_MY_CODEC_PREFS) && (leading & mixed_cap)) {
 		chosen = leading;
-		dname = codecs[0]->implementations->iananame;
+		dname = codecs[0]->iananame;
 	} else {
 		unsigned int prefs[32];
 		int len = 0;
@@ -288,7 +288,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 					chosen = prefs[x];
 					for (z = 0; z < num_codecs; z++) {
 						static const switch_codec_implementation_t *imp;
-						for (imp = codecs[z]->implementations; imp; imp = imp->next) {
+						for (imp = codecs[z]; imp; imp = imp->next) {
 							if (prefs[x] == iana2ast(imp->ianacode)) {
 								dname = imp->iananame;
 								break;
@@ -303,7 +303,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 				chosen = *format;
 				for (x = 0; x < num_codecs; x++) {
 					static const switch_codec_implementation_t *imp;
-					for (imp = codecs[x]->implementations; imp; imp = imp->next) {
+					for (imp = codecs[x]; imp; imp = imp->next) {
 						unsigned int cap = iana2ast(imp->ianacode);
 						if (cap == chosen) {
 							dname = imp->iananame;
@@ -314,7 +314,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 			} else {			/* c'mon there has to be SOMETHING... */
 				for (x = 0; x < num_codecs; x++) {
 					static const switch_codec_implementation_t *imp;
-					for (imp = codecs[x]->implementations; imp; imp = imp->next) {
+					for (imp = codecs[x]; imp; imp = imp->next) {
 						unsigned int cap = iana2ast(imp->ianacode);
 						if (cap & mixed_cap) {
 							chosen = cap;

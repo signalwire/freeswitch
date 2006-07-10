@@ -190,6 +190,7 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 #if 0
 
 static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
 	/*.iananame */ "PCMU",
 	/*.samples_per_second */ 8000,
@@ -206,9 +207,10 @@ static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
 	/*.decode */ switch_g711u_decode,
 	/*.destroy */ switch_g711u_destroy
 };
-
+#endif
 
 static const switch_codec_implementation_t g711u_8k_30ms_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
 	/*.iananame */ "PCMU",
 	/*.samples_per_second */ 8000,
@@ -224,11 +226,11 @@ static const switch_codec_implementation_t g711u_8k_30ms_implementation = {
 	/*.encode */ switch_g711u_encode,
 	/*.decode */ switch_g711u_decode,
 	/*.destroy */ switch_g711u_destroy,
-	/*.next */ &g711u_8k_60ms_implementation
+	/*.next */ NULL
 };
-#endif
 
 static const switch_codec_implementation_t g711u_16k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
 	/*.iananame */ "PCMU",
 	/*.samples_per_second */ 16000,
@@ -244,9 +246,11 @@ static const switch_codec_implementation_t g711u_16k_implementation = {
 	/*.encode */ switch_g711u_encode,
 	/*.decode */ switch_g711u_decode,
 	/*.destroy */ switch_g711u_destroy,
+	/*.next */ &g711u_8k_30ms_implementation
 };
 
 static const switch_codec_implementation_t g711u_8k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
 	/*.iananame */ "PCMU",
 	/*.samples_per_second */ 8000,
@@ -267,6 +271,7 @@ static const switch_codec_implementation_t g711u_8k_implementation = {
 
 
 static const switch_codec_implementation_t g711a_8k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 8,
 	/*.iananame */ "PCMA",
 	/*.samples_per_second */ 8000,
@@ -287,13 +292,11 @@ static const switch_codec_implementation_t g711a_8k_implementation = {
 
 static const switch_codec_interface_t g711a_codec_interface = {
 	/*.interface_name */ "g711 alaw",
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.implementations */ &g711a_8k_implementation
 };
 
 static const switch_codec_interface_t g711u_codec_interface = {
 	/*.interface_name */ "g711 ulaw",
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.implementations */ &g711u_8k_implementation,
 	/*.next */ &g711a_codec_interface
 };

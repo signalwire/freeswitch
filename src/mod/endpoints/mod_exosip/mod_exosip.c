@@ -138,7 +138,7 @@ struct private_object {
 	int ssrc;
 	switch_time_t last_read;
 	char *realm;
-	switch_codec_interface_t *codecs[SWITCH_MAX_CODECS];
+	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 	int num_codecs;
 	switch_payload_t te;
 	switch_mutex_t *flag_mutex;
@@ -173,7 +173,13 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 static switch_status_t exosip_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
 										switch_io_flag_t flags, int stream_id);
 static int config_exosip(int reload);
-static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_media_t * media, char **dname, char **drate, char **dpayload);
+static switch_status_t parse_sdp_media(struct private_object *tech_pvt,
+									   sdp_media_t * media,
+									   char **dname,
+									   char **drate,
+									   char **dpayload,
+									   const switch_codec_implementation_t **impp);
+
 static switch_status_t exosip_kill_channel(switch_core_session_t *session, int sig);
 static switch_status_t activate_rtp(struct private_object *tech_pvt);
 static void deactivate_rtp(struct private_object *tech_pvt);
@@ -356,7 +362,7 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 			static const switch_codec_implementation_t *imp;
 
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
-				imp = tech_pvt->codecs[i]->implementations;
+				imp = tech_pvt->codecs[i];
 
 				while(NULL != imp) {
 					uint32_t sps = imp->samples_per_second;
@@ -1178,6 +1184,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 		char *displayname, *username;
 		osip_header_t *tedious;
 		char *val;
+		const switch_codec_implementation_t *imp = NULL;
 
 		switch_core_session_add_stream(session, NULL);
 		if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
@@ -1310,10 +1317,10 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 
 		if (tech_pvt->num_codecs > 0) {
 			int i;
-			static const switch_codec_implementation_t *imp;
+			static const switch_codec_implementation_t *imp = NULL;
 
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
-				for (imp = tech_pvt->codecs[i]->implementations; imp; imp = imp->next) {
+				for (imp = tech_pvt->codecs[i]; imp; imp = imp->next) {
 					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, imp->ianacode, imp->iananame,
 								  imp->samples_per_second, 0);
 
@@ -1341,7 +1348,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 			for (pos = 0; audio_tab[pos] != NULL; pos++) {
 				osip_rfc3264_complete_answer(tech_pvt->sdp_config, remote_sdp, tech_pvt->local_sdp, audio_tab[pos],
 											 mline);
-				if (parse_sdp_media(tech_pvt, audio_tab[pos], &dname, &drate, &dpayload) == SWITCH_STATUS_SUCCESS) {
+				if (parse_sdp_media(tech_pvt, audio_tab[pos], &dname, &drate, &dpayload, &imp) == SWITCH_STATUS_SUCCESS) {
 					tech_pvt->payload_num = atoi(dpayload);					
 					goto done;
 				}
@@ -1381,6 +1388,12 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 		{
 			int rate = atoi(drate);
 			int ms = globals.codec_ms;
+
+
+			if (imp) {
+				ms = imp->microseconds_per_frame / 1000;
+			}
+
 			if (!strcasecmp(dname, "ilbc")) {
 				ms = 30;
 			}
@@ -1487,13 +1500,19 @@ static void destroy_call_by_event(eXosip_event_t *event)
 
 }
 
-static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_media_t * media, char **dname, char **drate, char **dpayload)
+static switch_status_t parse_sdp_media(struct private_object *tech_pvt,
+									   sdp_media_t * media,
+									   char **dname,
+									   char **drate,
+									   char **dpayload,
+									   const switch_codec_implementation_t **impp)
 {
 	int pos = 0;
 	sdp_attribute_t *attr = NULL;
 	char *name, *payload, *rate;
 	switch_status_t status = SWITCH_STATUS_GENERR;
 	char workspace[512];
+	const switch_codec_implementation_t *imp = NULL;
 
 	while (osip_list_eol(media->a_attributes, pos) == 0) {
 		attr = (sdp_attribute_t *) osip_list_get(media->a_attributes, pos);
@@ -1523,10 +1542,8 @@ static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_medi
 			}
 
 			for(i = 0; !match && i < tech_pvt->num_codecs; i++) {
-				const switch_codec_implementation_t *imp;
-				
-				
-				for (imp = tech_pvt->codecs[i]->implementations; imp; imp = imp->next) {
+
+				for (imp = tech_pvt->codecs[i]; imp; imp = imp->next) {
 
 					if (pt < 97) {
 						match = (pt == imp->ianacode) ? 1 : 0;
@@ -1545,6 +1562,7 @@ static switch_status_t parse_sdp_media(struct private_object *tech_pvt, sdp_medi
 				*dname = strdup(name);
 				*drate = strdup(rate);
 				*dpayload = strdup(payload);
+				*impp = imp;
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Found negotiated codec Payload: %s Name: %s Rate: %s\n",
 								  *dpayload, *dname, *drate);	
 				return SWITCH_STATUS_SUCCESS;
@@ -1654,7 +1672,7 @@ static void handle_answer(eXosip_event_t * event)
 	struct private_object *tech_pvt;
 	char *dpayload = NULL, *dname = NULL, *drate = NULL;
 	switch_channel_t *channel;
-
+	const switch_codec_implementation_t *imp = NULL;
 
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cannot answer nonexistant call [%d]!\n", event->cid);
@@ -1686,20 +1704,23 @@ static void handle_answer(eXosip_event_t * event)
 	snprintf(tech_pvt->remote_sdp_audio_ip, 50, conn->c_addr);
 
 	/* Grab codec elements */
-	if (parse_sdp_media(tech_pvt, remote_med, &dname, &drate, &dpayload) == SWITCH_STATUS_SUCCESS) {
+	if (parse_sdp_media(tech_pvt, remote_med, &dname, &drate, &dpayload, &imp) == SWITCH_STATUS_SUCCESS) {
 		tech_pvt->payload_num = atoi(dpayload);
 	}
 
 	/* Assign them thar IDs */
 	tech_pvt->did = event->did;
 	tech_pvt->tid = event->tid;
-
-
 	{
 		int rate = atoi(drate);
 		int ms = globals.codec_ms;
+
 		if (!strcasecmp(dname, "ilbc")) {
 			ms = 30;
+		}
+
+		if (imp) {
+			ms = imp->microseconds_per_frame / 1000;
 		}
 
 		if (switch_core_codec_init(&tech_pvt->read_codec,

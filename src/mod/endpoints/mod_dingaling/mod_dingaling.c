@@ -113,7 +113,7 @@ struct private_object {
 	switch_caller_profile_t *caller_profile;
 	unsigned short samprate;
 	switch_mutex_t *mutex;
-	switch_codec_interface_t *codecs[SWITCH_MAX_CODECS];
+	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];
 	unsigned int num_codecs;
 	int codec_index;
 	switch_rtp_t *rtp_session;
@@ -440,16 +440,16 @@ static int do_describe(struct private_object *tech_pvt, int force)
 	if (force || !switch_test_flag(tech_pvt, TFLAG_CODEC_READY)) {
 		if (tech_pvt->codec_index < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Don't have my codec yet here's one\n");
-			tech_pvt->codec_name = lame(tech_pvt->codecs[0]->implementations->iananame);
-			tech_pvt->codec_num = tech_pvt->codecs[0]->implementations->ianacode;
+			tech_pvt->codec_name = lame(tech_pvt->codecs[0]->iananame);
+			tech_pvt->codec_num = tech_pvt->codecs[0]->ianacode;
 			tech_pvt->codec_index = 0;
 					
-			payloads[0].name = lame(tech_pvt->codecs[0]->implementations->iananame);
-			payloads[0].id = tech_pvt->codecs[0]->implementations->ianacode;
+			payloads[0].name = lame(tech_pvt->codecs[0]->iananame);
+			payloads[0].id = tech_pvt->codecs[0]->ianacode;
 			
 		} else {
-			payloads[0].name = lame(tech_pvt->codecs[tech_pvt->codec_index]->implementations->iananame);
-			payloads[0].id = tech_pvt->codecs[tech_pvt->codec_index]->implementations->ianacode;
+			payloads[0].name = lame(tech_pvt->codecs[tech_pvt->codec_index]->iananame);
+			payloads[0].id = tech_pvt->codecs[tech_pvt->codec_index]->ianacode;
 		}
 
 				
@@ -1546,22 +1546,22 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				for(x = 0; x < len; x++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Available Payload %s %u\n", payloads[x].name, payloads[x].id);
 					for(y = 0; y < tech_pvt->num_codecs; y++) {
-						char *name = tech_pvt->codecs[y]->implementations->iananame;
+						char *name = tech_pvt->codecs[y]->iananame;
 
 						if (!strncasecmp(name, "ilbc", 4)) {
 							name = "ilbc";
 						}
-						if (tech_pvt->codecs[y]->implementations->ianacode > 96) {
+						if (tech_pvt->codecs[y]->ianacode > 96) {
 							match = strcasecmp(name, payloads[x].name) ? 0 : 1;
 						} else {
-							match = (payloads[x].id == tech_pvt->codecs[y]->implementations->ianacode) ? 1 : 0;
+							match = (payloads[x].id == tech_pvt->codecs[y]->ianacode) ? 1 : 0;
 						}
 						
 						if (match) {
 							tech_pvt->codec_index = y;
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing Payload index %u %s %u\n", y, payloads[x].name, payloads[x].id);
-							tech_pvt->codec_name = tech_pvt->codecs[y]->implementations->iananame;
-							tech_pvt->codec_num = tech_pvt->codecs[y]->implementations->ianacode;
+							tech_pvt->codec_name = tech_pvt->codecs[y]->iananame;
+							tech_pvt->codec_num = tech_pvt->codecs[y]->ianacode;
 							if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 								do_describe(tech_pvt, 0);
 							}

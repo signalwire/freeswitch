@@ -171,9 +171,9 @@ SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_direct
   \param arraylen the max size in elements of the array
   \return the number of elements added to the array
  */
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, 
-													  switch_codec_interface_t **array, 
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, const switch_codec_implementation_t **array,
 													  int arraylen);
+
 
 /*!
   \brief Retrieve the list of loaded codecs into an array based on another array showing the sorted order
@@ -184,10 +184,8 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool
   \return the number of elements added to the array
   \note this function only considers codecs that are listed in the "prefs" array and ignores the rest.
 */
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_codec_interface_t **array,
-															 int arraylen, 
-															 char **prefs, 
-															 int preflen);
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array,
+															 int arraylen, char **prefs, int preflen);
 
 /*!
   \brief Execute a registered API command

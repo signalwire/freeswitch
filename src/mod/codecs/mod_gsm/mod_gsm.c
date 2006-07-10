@@ -133,6 +133,7 @@ static switch_status_t switch_gsm_decode(switch_codec_t *codec, switch_codec_t *
 
 /* Registration */ 
 static const switch_codec_implementation_t gsm_8k_implementation = { 
+		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 3, 
 		/*.iananame */ "gsm", 
 		/*.samples_per_second */ 8000, 
@@ -151,7 +152,6 @@ static const switch_codec_implementation_t gsm_8k_implementation = {
 };
 static const switch_codec_interface_t gsm_codec_interface = { 
 		/*.interface_name */ "gsm", 
-		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.implementations */ &gsm_8k_implementation, 
 };
 static switch_loadable_module_interface_t gsm_module_interface = { 

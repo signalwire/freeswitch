@@ -633,16 +633,18 @@ SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_direct
 	return switch_core_hash_find(loadable_modules.directory_hash, name);
 }
 
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, switch_codec_interface_t **array,
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, const switch_codec_implementation_t **array,
 													  int arraylen)
 {
 	switch_hash_index_t *hi;
 	void *val;
+	switch_codec_interface_t *codec_interface;
 	int i = 0;
 
 	for (hi = switch_hash_first(pool, loadable_modules.codec_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
-		array[i++] = val;
+		codec_interface = (switch_codec_interface_t *) val;
+		array[i++] = codec_interface->implementations;
 		if (i > arraylen) {
 			break;
 		}
@@ -652,20 +654,44 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool
 
 }
 
-SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(switch_codec_interface_t **array,
+SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_implementation_t **array,
 															 int arraylen, char **prefs, int preflen)
 {
 	int x, i = 0;
 	switch_codec_interface_t *codec_interface;
+	const switch_codec_implementation_t *imp;
 
-	for (x = 0; x < preflen; x++) {
-		if ((codec_interface = switch_loadable_module_get_codec_interface(prefs[x])) != 0 ) {
-			array[i++] = codec_interface;
-			if (i > arraylen) {
-				break;
+    for (x = 0; x < preflen; x++) {
+        char *name, *p, buf[128];
+        uint32_t interval = 0, len = 0;
+
+        name = prefs[x];
+        if ((p = strchr(name, '@'))) {
+            p++;
+            len = p-name;
+
+            if (len > sizeof(buf)) {
+                len = sizeof(buf);
+            }
+            switch_copy_string(buf, name, len);
+            *(buf + len) = '\0';
+            interval = atoi(p);
+            name = buf;
+        }
+
+        if ((codec_interface = switch_loadable_module_get_codec_interface(name)) != 0 ) {
+			for (imp = codec_interface->implementations; imp; imp = imp->next) {
+				if (!interval) {
+					array[i++] = imp;
+				} else if ((imp->microseconds_per_frame / 1000) == interval) {
+					array[i++] = imp;
+				}
 			}
-		}
-	}
+            if (i > arraylen) {
+                break;
+            }
+        }
+    }
 
 	return i;
 }

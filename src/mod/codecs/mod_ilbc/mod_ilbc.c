@@ -186,6 +186,7 @@ static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
 /* Registration */ 
 
 static const switch_codec_implementation_t ilbc_8k_30ms_implementation = { 
+		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 97, 
 		/*.iananame */ "iLBC", 
 		/*.samples_per_second */ 8000, 
@@ -204,6 +205,7 @@ static const switch_codec_implementation_t ilbc_8k_30ms_implementation = {
 };
 
 static const switch_codec_implementation_t ilbc_8k_20ms_implementation = { 
+		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 97, 
 		/*.iananame */ "iLBC", 
 		/*.samples_per_second */ 8000, 
@@ -225,6 +227,7 @@ static const switch_codec_implementation_t ilbc_8k_20ms_implementation = {
 
 
 static const switch_codec_implementation_t ilbc_102_8k_30ms_implementation = { 
+		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 102, 
 		/*.iananame */ "iLBC", 
 		/*.samples_per_second */ 8000, 
@@ -243,6 +246,7 @@ static const switch_codec_implementation_t ilbc_102_8k_30ms_implementation = {
 };
 
 static const switch_codec_implementation_t ilbc_102_8k_20ms_implementation = { 
+		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 102, 
 		/*.iananame */ "iLBC102", 
 		/*.samples_per_second */ 8000, 
@@ -263,6 +267,7 @@ static const switch_codec_implementation_t ilbc_102_8k_20ms_implementation = {
 
 
 static const switch_codec_implementation_t ilbc_8k_20ms_nonext_implementation = { 
+		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 97, 
 		/*.iananame */ "iLBC20ms",
 		/*.samples_per_second */ 8000, 
@@ -283,20 +288,17 @@ static const switch_codec_implementation_t ilbc_8k_20ms_nonext_implementation = 
 
 static const switch_codec_interface_t ilbc_20ms_codec_interface = { 
 		/*.interface_name */ "ilbc", 
-		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.implementations */ &ilbc_8k_20ms_nonext_implementation
 };
 
 static const switch_codec_interface_t ilbc_102_codec_interface = { 
 		/*.interface_name */ "ilbc", 
-		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.implementations */ &ilbc_102_8k_20ms_implementation, 
 		/*.next*/ &ilbc_20ms_codec_interface
 };
 
 static const switch_codec_interface_t ilbc_codec_interface = { 
 		/*.interface_name */ "ilbc", 
-		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.implementations */ &ilbc_8k_20ms_implementation, 
 		/*.next*/ &ilbc_102_codec_interface
 };
