@@ -557,7 +557,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 						for (x = 0; x < imember->read / 2; x++) {
 							int32_t z = muxed[x] + bptr[x];
 							normalize_to_16bit(z);
-							muxed[x] = z;
+							muxed[x] = (int16_t)z;
 						}
 						
 						ready++;

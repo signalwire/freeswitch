@@ -668,7 +668,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
         name = prefs[x];
         if ((p = strchr(name, '@'))) {
             p++;
-            len = p-name;
+            len = (uint32_t)(p-name);
 
             if (len > sizeof(buf)) {
                 len = sizeof(buf);
@@ -683,7 +683,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
 				if (!interval) {
 					array[i++] = imp;
-				} else if ((imp->microseconds_per_frame / 1000) == interval) {
+				} else if ((uint32_t)(imp->microseconds_per_frame / 1000) == interval) {
 					array[i++] = imp;
 				}
 			}

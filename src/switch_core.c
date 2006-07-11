@@ -2870,9 +2870,9 @@ SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new)
 
 SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err)
 {
+	switch_xml_t xml = NULL, cfg = NULL;
 	memset(&runtime, 0, sizeof(runtime));
 	runtime.session_limit = 1000;
-	switch_xml_t xml = NULL, cfg = NULL;
 
 	switch_core_set_globals();
 
