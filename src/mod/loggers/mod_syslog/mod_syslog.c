@@ -106,12 +106,15 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	*interface = &console_module_interface;
+	switch_status_t status;
 
-	switch_log_bind_logger(mod_syslog_logger, SWITCH_LOG_DEBUG);
-
-	load_config();
+	if ((status=load_config()) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
 
 	openlog(globals.ident, LOG_PID, LOG_USER);
+
+	switch_log_bind_logger(mod_syslog_logger, SWITCH_LOG_DEBUG);
 	
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -129,27 +132,28 @@ static switch_status_t load_config(void)
 	char *var, *val;
 	char *cf = "syslog.conf";
 
-	if (!switch_config_open_file(&cfg, cf)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
-		return SWITCH_STATUS_TERM;
-	}
+	memset(&globals, 0, sizeof(globals));
 
-	while (switch_config_next_pair(&cfg, &var, &val)) {
-		if (!strcasecmp(cfg.category, "settings")) {
-			if (!strcmp(var, "ident")) {
-				set_global_ident(val);
-			} else if (!strcmp(var, "facility")) {
-				set_global_facility(val);
-			} else if (!strcmp(var, "format")) {
-				set_global_format(val);
-			} else if (!strcmp(var, "level")) {
-				set_global_level(val);;
+	if (switch_config_open_file(&cfg, cf)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+
+		while (switch_config_next_pair(&cfg, &var, &val)) {
+			if (!strcasecmp(cfg.category, "settings")) {
+				if (!strcmp(var, "ident")) {
+					set_global_ident(val);
+				} else if (!strcmp(var, "facility")) {
+					set_global_facility(val);
+				} else if (!strcmp(var, "format")) {
+					set_global_format(val);
+				} else if (!strcmp(var, "level")) {
+					set_global_level(val);;
+				}
 			}
 		}
+
+		switch_config_close_file(&cfg);
 	}
 	
-	switch_config_close_file(&cfg);
-
 	if (switch_strlen_zero(globals.ident)) {
 		set_global_ident(DEFAULT_IDENT);
 	}
