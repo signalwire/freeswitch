@@ -335,7 +335,15 @@ SWITCH_DECLARE (switch_status_t) switch_core_session_message_send(char *uuid_str
   \param event the event to send
   \return the status returned by the message handler
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, switch_event_t *event);
+SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, switch_event_t **event);
+
+/*! 
+  \brief Send an event to a session translating it to it's native message format
+  \param session the session to receive the event
+  \param event the event to receive
+  \return the status returned by the handler
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_session_t *session, switch_event_t **event);
 
 /*! 
   \brief Retrieve private user data from a session
@@ -433,7 +441,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
   \param event the event to queue
   \return the status returned by the message handler
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_session_t *session, switch_event_t *event);
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_session_t *session, switch_event_t **event);
+
+/*! 
+  \brief DE-Queue an event on a given session
+  \param session the session to de-queue the message on
+  \param event the de-queued event
+  \return the  SWITCH_STATUS_SUCCESS if the event was de-queued
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_session_t *session, switch_event_t **event);
+
 
 /*! 
   \brief Read a frame from a session

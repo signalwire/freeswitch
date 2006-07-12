@@ -573,6 +573,10 @@ typedef enum {
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
+typedef enum {
+	SWITCH_INPUT_TYPE_DTMF,
+	SWITCH_INPUT_TYPE_EVENT
+} switch_input_type_t;
 
 typedef enum {
 	SWITCH_CAUSE_UNALLOCATED = 1,
@@ -651,7 +655,7 @@ typedef struct switch_config switch_config_t;
 typedef struct switch_io_event_hook_outgoing_channel switch_io_event_hook_outgoing_channel_t;
 typedef struct switch_io_event_hook_answer_channel switch_io_event_hook_answer_channel_t;
 typedef struct switch_io_event_hook_receive_message switch_io_event_hook_receive_message_t;
-typedef struct switch_io_event_hook_queue_event switch_io_event_hook_queue_event_t;
+typedef struct switch_io_event_hook_receive_event switch_io_event_hook_receive_event_t;
 typedef struct switch_io_event_hook_read_frame switch_io_event_hook_read_frame_t;
 typedef struct switch_io_event_hook_write_frame switch_io_event_hook_write_frame_t;
 typedef struct switch_io_event_hook_kill_channel switch_io_event_hook_kill_channel_t;
@@ -682,7 +686,7 @@ typedef switch_status_t (*switch_state_handler_t)(switch_core_session_t *);
 typedef switch_status_t (*switch_outgoing_channel_hook_t)(switch_core_session_t *, switch_caller_profile_t *, switch_core_session_t *);
 typedef switch_status_t (*switch_answer_channel_hook_t)(switch_core_session_t *);
 typedef switch_status_t (*switch_receive_message_hook_t)(switch_core_session_t *, switch_core_session_message_t *);
-typedef switch_status_t (*switch_queue_event_hook_t)(switch_core_session_t *, switch_event_t *);
+typedef switch_status_t (*switch_receive_event_hook_t)(switch_core_session_t *, switch_event_t *);
 typedef switch_status_t (*switch_read_frame_hook_t)(switch_core_session_t *, switch_frame_t **, int, switch_io_flag_t, int);
 typedef switch_status_t (*switch_write_frame_hook_t)(switch_core_session_t *, switch_frame_t *, int, switch_io_flag_t, int);
 typedef switch_status_t (*switch_kill_channel_hook_t)(switch_core_session_t *, int);
@@ -692,7 +696,11 @@ typedef switch_status_t (*switch_send_dtmf_hook_t)(switch_core_session_t *, char
 typedef struct switch_stream_handle switch_stream_handle_t;
 typedef switch_status_t (*switch_stream_handle_write_function_t)(switch_stream_handle_t *handle, char *fmt, ...);
 typedef switch_status_t (*switch_api_function_t)(char *in, switch_stream_handle_t *stream);
-typedef switch_status_t (*switch_dtmf_callback_function_t)(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen);
+typedef switch_status_t (*switch_input_callback_function_t)(switch_core_session_t *session,
+															void *input,
+															switch_input_type_t input_type,
+															void *buf,
+															unsigned int buflen);
 typedef int (*switch_core_db_callback_func_t)(void *pArg, int argc, char **argv, char **columnNames);
 typedef switch_status_t (*switch_module_load_t) (switch_loadable_module_interface_t **, char *);
 typedef switch_status_t (*switch_module_reload_t) (void);

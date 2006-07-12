@@ -36,7 +36,7 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session,
-																 switch_dtmf_callback_function_t dtmf_callback,
+																 switch_input_callback_function_t input_callback,
 																 void *buf,
 																 unsigned int buflen)
 {
@@ -46,17 +46,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
-	if (!dtmf_callback) {
+	if (!input_callback) {
 		return SWITCH_STATUS_GENERR;
 	}
 
 	while(switch_channel_ready(channel)) {
 		switch_frame_t *read_frame;
+		switch_event_t *event;
+
 		char dtmf[128];
 
 		if (switch_channel_has_dtmf(channel)) {
 			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-			status = dtmf_callback(session, dtmf, buf, buflen);
+			status = input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, buf, buflen);
+		}
+
+		if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+			status = input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, buf, buflen);			
+			switch_event_destroy(&event);
 		}
 
 		if (status != SWITCH_STATUS_SUCCESS) {
@@ -156,7 +163,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *session, 
 													 switch_file_handle_t *fh,
 													 char *file,
-													 switch_dtmf_callback_function_t dtmf_callback,
+													 switch_input_callback_function_t input_callback,
 													 void *buf,
 													 unsigned int buflen)
 {
@@ -216,21 +223,30 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	while(switch_channel_ready(channel)) {
 		switch_size_t len;
+		switch_event_t *event;
 
-		if (dtmf_callback || buf) {
+		if (input_callback || buf) {
 			/*
 			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			*/
 			if (switch_channel_has_dtmf(channel)) {
 				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-				if (dtmf_callback) {
-					status = dtmf_callback(session, dtmf, buf, buflen);
+				if (input_callback) {
+					status = input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, buf, buflen);
 				} else {
 					switch_copy_string((char *)buf, dtmf, buflen);
 					status = SWITCH_STATUS_BREAK;
 				}
 			}
+
+			if (input_callback) {
+				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+					status = input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, buf, buflen);			
+					switch_event_destroy(&event);
+				}
+			}
+
 
 			if (status != SWITCH_STATUS_SUCCESS) {
 				break;
@@ -257,7 +273,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 												   switch_file_handle_t *fh,
 												   char *file,
 												   char *timer_name,
-												   switch_dtmf_callback_function_t dtmf_callback,
+												   switch_input_callback_function_t input_callback,
 												   void *buf,
 												   unsigned int buflen)
 {
@@ -352,19 +368,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		int done = 0;
 		int do_speed = 1;
 		int last_speed = -1;
+		switch_event_t *event;
 
-		if (dtmf_callback || buf) {
+		if (input_callback || buf) {
 			/*
 			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			*/
 			if (switch_channel_has_dtmf(channel)) {
 				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-				if (dtmf_callback) {
-					status = dtmf_callback(session, dtmf, buf, buflen);
+				if (input_callback) {
+					status = input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, buf, buflen);
 				} else {
 					switch_copy_string((char *)buf, dtmf, buflen);
 					status = SWITCH_STATUS_BREAK;
+				}
+			}
+
+			if (input_callback) {
+				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+					status = input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, buf, buflen);			
+					switch_event_destroy(&event);
 				}
 			}
 			
@@ -501,7 +525,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 															 switch_speech_handle_t *sh,
 															 switch_codec_t *codec,
 															 switch_timer_t *timer,
-															 switch_dtmf_callback_function_t dtmf_callback,
+															 switch_input_callback_function_t input_callback,
 															 char *text,
 															 void *buf,
 															 unsigned int buflen)
@@ -559,8 +583,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 
 	ilen = len;
 	while(switch_channel_ready(channel)) {
+		switch_event_t *event;
 
-		if (dtmf_callback || buf) {
+		if (input_callback || buf) {
 			/*
 			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
@@ -570,15 +595,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 					status = SWITCH_STATUS_BREAK;
 				} else {
 					switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-					if (dtmf_callback) {
-						status = dtmf_callback(session, dtmf, buf, buflen);
+					if (input_callback) {
+						status = input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, buf, buflen);
 					} else {
 						switch_copy_string((char *)buf, dtmf, buflen);
 						status = SWITCH_STATUS_BREAK;
 					}
 				}
 			}
-			
+
+			if (input_callback) {
+				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+					status = input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, buf, buflen);			
+					switch_event_destroy(&event);
+				}
+			}
+
 			if (status != SWITCH_STATUS_SUCCESS) {
 				done = 1;
 				break;
@@ -679,7 +711,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 													  char *voice_name,
 													  char *timer_name,
 													  uint32_t rate,
-													  switch_dtmf_callback_function_t dtmf_callback,
+													  switch_input_callback_function_t input_callback,
 													  char *text,
 													  void *buf,
 													  unsigned int buflen)
@@ -761,7 +793,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 		}
 	}
 
-	switch_ivr_speak_text_handle(session, &sh, &codec, timer_name ? &timer : NULL, dtmf_callback, text, buf, buflen);
+	switch_ivr_speak_text_handle(session, &sh, &codec, timer_name ? &timer : NULL, input_callback, text, buf, buflen);
 	flags = 0;	
 	switch_core_speech_close(&sh, &flags);
 	switch_core_codec_destroy(&codec);
@@ -790,7 +822,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	switch_core_thread_session_t *his_thread, *data = obj;
 	int *stream_id_p;
 	int stream_id = 0, ans_a = 0, ans_b = 0;
-	switch_dtmf_callback_function_t dtmf_callback;
+	switch_input_callback_function_t input_callback;
 	switch_core_session_message_t msg = {0};
 	void *user_data;
 
@@ -804,7 +836,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	session_b = data->objs[1];
 
 	stream_id_p = data->objs[2];
-	dtmf_callback = (switch_dtmf_callback_function_t) data->objs[3];
+	input_callback = (switch_input_callback_function_t) data->objs[3];
 	user_data = data->objs[4];
 	his_thread = data->objs[5];
 
@@ -824,6 +856,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	while (data->running > 0 && his_thread->running > 0) {
 		switch_channel_state_t b_state = switch_channel_get_state(chan_b);
 		switch_status_t status;
+		switch_event_t *event;
 
 		switch (b_state) {
 		case CS_HANGUP:
@@ -862,14 +895,26 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				switch_channel_dequeue_dtmf(chan_a, dtmf, sizeof(dtmf));
 				switch_core_session_send_dtmf(session_b, dtmf);
 
-				if (dtmf_callback) {
-					if (dtmf_callback(session_a, dtmf, user_data, 0) != SWITCH_STATUS_SUCCESS) {
+				if (input_callback) {
+					if (input_callback(session_a, dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
 						data->running = -1;
 						break;
 					}
 				}
-			} 
+			}
+
+			if (switch_core_session_dequeue_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
+				if (input_callback) {
+					status = input_callback(session_a, event, SWITCH_INPUT_TYPE_EVENT, user_data, 0);
+				}
+
+				if (switch_core_session_receive_event(session_b, &event) != SWITCH_STATUS_SUCCESS) {
+					switch_event_destroy(&event);
+				}
+
+			}
+ 
 		}
 
 		/* read audio from 1 channel and write it to the other */
@@ -973,7 +1018,7 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_session_t *session, 
 															   switch_core_session_t *peer_session,
 															   unsigned int timelimit,
-															   switch_dtmf_callback_function_t dtmf_callback,
+															   switch_input_callback_function_t input_callback,
 															   void *session_data,
 															   void *peer_session_data)
 															   
@@ -1002,7 +1047,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	other_audio_thread->objs[0] = session;
 	other_audio_thread->objs[1] = peer_session;
 	other_audio_thread->objs[2] = &stream_id;
-	other_audio_thread->objs[3] = (void *) dtmf_callback;
+	other_audio_thread->objs[3] = (void *) input_callback;
 	other_audio_thread->objs[4] = session_data;
 	other_audio_thread->objs[5] = this_audio_thread;
 	other_audio_thread->running = 5;
@@ -1010,7 +1055,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	this_audio_thread->objs[0] = peer_session;
 	this_audio_thread->objs[1] = session;
 	this_audio_thread->objs[2] = &stream_id;
-	this_audio_thread->objs[3] = (void *) dtmf_callback;
+	this_audio_thread->objs[3] = (void *) input_callback;
 	this_audio_thread->objs[4] = peer_session_data;
 	this_audio_thread->objs[5] = other_audio_thread;
 	this_audio_thread->running = 2;

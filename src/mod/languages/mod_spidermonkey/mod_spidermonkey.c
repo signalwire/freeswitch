@@ -175,218 +175,247 @@ static switch_status_t init_js(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t js_stream_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status_t js_stream_dtmf_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
-	char code[2048];
-	struct dtmf_callback_state *cb_state = buf;
-	struct js_session *jss = cb_state->session_state;
-	switch_file_handle_t *fh = cb_state->extra;
-	jsval rval;
-	char *ret;
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_DTMF: {
+		char *dtmf = (char *) input;
+		char code[2048];
+		struct dtmf_callback_state *cb_state = buf;
+		struct js_session *jss = cb_state->session_state;
+		switch_file_handle_t *fh = cb_state->extra;
+		jsval rval;
+		char *ret;
 	
-	if (!jss) {
-		return SWITCH_STATUS_FALSE;
-	}
-	
-	if (cb_state->digit_count || (cb_state->code_buffer[0] > 47 && cb_state->code_buffer[0] < 58)) {
-		char *d;
-		if (!cb_state->digit_count) {
-			cb_state->digit_count = atoi(cb_state->code_buffer);
+		if (!jss) {
+			return SWITCH_STATUS_FALSE;
 		}
-
-		for(d = dtmf; *d; d++) {
-			cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
-			if ((cb_state->ret_buffer_len > cb_state->digit_count)||
-				(cb_state->ret_buffer_len > sizeof(cb_state->ret_buffer))||
-				(cb_state->ret_buffer_len >= cb_state->digit_count)
-				) {
-				return SWITCH_STATUS_FALSE;
+	
+		if (cb_state->digit_count || (cb_state->code_buffer[0] > 47 && cb_state->code_buffer[0] < 58)) {
+			char *d;
+			if (!cb_state->digit_count) {
+				cb_state->digit_count = atoi(cb_state->code_buffer);
 			}
-		}
-		return SWITCH_STATUS_SUCCESS;
-	} else {
-		snprintf(code, sizeof(code), "~%s(\"%s\")", cb_state->code_buffer, dtmf);
-		eval_some_js(code, jss->cx, jss->obj, &rval);
-		ret = JS_GetStringBytes(JS_ValueToString(jss->cx, rval));
 
-		if (!strncasecmp(ret, "speed", 4)) {
-			char *p;
+			for(d = dtmf; *d; d++) {
+				cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
+				if ((cb_state->ret_buffer_len > cb_state->digit_count)||
+					(cb_state->ret_buffer_len > sizeof(cb_state->ret_buffer))||
+					(cb_state->ret_buffer_len >= cb_state->digit_count)
+					) {
+					return SWITCH_STATUS_FALSE;
+				}
+			}
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			snprintf(code, sizeof(code), "~%s(\"%s\")", cb_state->code_buffer, dtmf);
+			eval_some_js(code, jss->cx, jss->obj, &rval);
+			ret = JS_GetStringBytes(JS_ValueToString(jss->cx, rval));
+
+			if (!strncasecmp(ret, "speed", 4)) {
+				char *p;
 			
-			if ((p = strchr(ret, ':'))) {
-				p++;
-				if (*p == '+' || *p == '-') {
-					int step;
-					if (!(step = atoi(p))) {
-						step = 1;
+				if ((p = strchr(ret, ':'))) {
+					p++;
+					if (*p == '+' || *p == '-') {
+						int step;
+						if (!(step = atoi(p))) {
+							step = 1;
+						}
+						fh->speed += step;
+					} else {
+						int speed = atoi(p);
+						fh->speed = speed;
 					}
-					fh->speed += step;
+					return SWITCH_STATUS_SUCCESS;
+				}
+			
+				return SWITCH_STATUS_FALSE;
+			} else if (!strcasecmp(ret, "pause")) {
+				if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+					switch_clear_flag(fh, SWITCH_FILE_PAUSE);
 				} else {
-					int speed = atoi(p);
-					fh->speed = speed;
+					switch_set_flag(fh, SWITCH_FILE_PAUSE);
 				}
 				return SWITCH_STATUS_SUCCESS;
-			}
-			
-			return SWITCH_STATUS_FALSE;
-		} else if (!strcasecmp(ret, "pause")) {
-			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-				switch_clear_flag(fh, SWITCH_FILE_PAUSE);
-			} else {
-				switch_set_flag(fh, SWITCH_FILE_PAUSE);
-			}
-			return SWITCH_STATUS_SUCCESS;
-		} else if (!strcasecmp(ret, "restart")) {
-			unsigned int pos = 0;
-			fh->speed = 0;
-			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
-			return SWITCH_STATUS_SUCCESS;
-		} else if (!strncasecmp(ret, "seek", 4)) {
-			switch_codec_t *codec;
-			unsigned int samps = 0;
-			unsigned int pos = 0;
-			char *p;
-			codec = switch_core_session_get_read_codec(jss->session);
+			} else if (!strcasecmp(ret, "restart")) {
+				unsigned int pos = 0;
+				fh->speed = 0;
+				switch_core_file_seek(fh, &pos, 0, SEEK_SET);
+				return SWITCH_STATUS_SUCCESS;
+			} else if (!strncasecmp(ret, "seek", 4)) {
+				switch_codec_t *codec;
+				unsigned int samps = 0;
+				unsigned int pos = 0;
+				char *p;
+				codec = switch_core_session_get_read_codec(jss->session);
 
-			if ((p = strchr(ret, ':'))) {
-				p++;
-				if (*p == '+' || *p == '-') {
-					int step;
-					if (!(step = atoi(p))) {
-						step = 1000;
-					}
-					if (step > 0) {
-						samps = step * (codec->implementation->samples_per_second / 1000);
-						switch_core_file_seek(fh, &pos, samps, SEEK_CUR);		
+				if ((p = strchr(ret, ':'))) {
+					p++;
+					if (*p == '+' || *p == '-') {
+						int step;
+						if (!(step = atoi(p))) {
+							step = 1000;
+						}
+						if (step > 0) {
+							samps = step * (codec->implementation->samples_per_second / 1000);
+							switch_core_file_seek(fh, &pos, samps, SEEK_CUR);		
+						} else {
+							samps = step * (codec->implementation->samples_per_second / 1000);
+							switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
+						}
 					} else {
-						samps = step * (codec->implementation->samples_per_second / 1000);
-						switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
+						samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
+						switch_core_file_seek(fh, &pos, samps, SEEK_SET);
 					}
-				} else {
-					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
-					switch_core_file_seek(fh, &pos, samps, SEEK_SET);
+				}
+
+				return SWITCH_STATUS_SUCCESS;
+			}
+
+			if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
+				return SWITCH_STATUS_SUCCESS;
+			}
+	
+			if (ret) {
+				switch_copy_string(cb_state->ret_buffer, ret, sizeof(cb_state->ret_buffer));
+			}
+		}
+
+		return SWITCH_STATUS_FALSE;
+	}
+		break;
+	default:
+		break;
+	}
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+static switch_status_t js_record_dtmf_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_DTMF: {
+		char *dtmf = (char *) input;
+		char code[2048];
+		struct dtmf_callback_state *cb_state = buf;
+		struct js_session *jss = cb_state->session_state;
+		switch_file_handle_t *fh = cb_state->extra;
+		jsval rval;
+		char *ret;
+	
+		if (!jss) {
+			return SWITCH_STATUS_FALSE;
+		}
+	
+		if (cb_state->digit_count || (cb_state->code_buffer[0] > 47 && cb_state->code_buffer[0] < 58)) {
+			char *d;
+			if (!cb_state->digit_count) {
+				cb_state->digit_count = atoi(cb_state->code_buffer);
+			}
+
+			for(d = dtmf; *d; d++) {
+				cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
+				if ((cb_state->ret_buffer_len > cb_state->digit_count)||
+					(cb_state->ret_buffer_len > sizeof(cb_state->ret_buffer))||
+					(cb_state->ret_buffer_len >= cb_state->digit_count)
+					) {
+					return SWITCH_STATUS_FALSE;
 				}
 			}
-
 			return SWITCH_STATUS_SUCCESS;
-		}
+		} else {
+			snprintf(code, sizeof(code), "~%s(\"%s\")", cb_state->code_buffer, dtmf);
+			eval_some_js(code, jss->cx, jss->obj, &rval);
+			ret = JS_GetStringBytes(JS_ValueToString(jss->cx, rval));
 
-		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
-			return SWITCH_STATUS_SUCCESS;
-		}
+			if (!strcasecmp(ret, "pause")) {
+				if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+					switch_clear_flag(fh, SWITCH_FILE_PAUSE);
+				} else {
+					switch_set_flag(fh, SWITCH_FILE_PAUSE);
+				}
+				return SWITCH_STATUS_SUCCESS;
+			} else if (!strcasecmp(ret, "restart")) {
+				unsigned int pos = 0;
+				fh->speed = 0;
+				switch_core_file_seek(fh, &pos, 0, SEEK_SET);
+				return SWITCH_STATUS_SUCCESS;
+			}
+
+			if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
+				return SWITCH_STATUS_SUCCESS;
+			}
 	
-		if (ret) {
-			switch_copy_string(cb_state->ret_buffer, ret, sizeof(cb_state->ret_buffer));
+			if (ret) {
+				switch_copy_string(cb_state->ret_buffer, ret, sizeof(cb_state->ret_buffer));
+			}
 		}
+		return SWITCH_STATUS_FALSE;
+	}
+		break;
+	default:
+		break;
 	}
 
-	return SWITCH_STATUS_FALSE;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static switch_status_t js_record_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status_t js_speak_dtmf_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
-	char code[2048];
-	struct dtmf_callback_state *cb_state = buf;
-	struct js_session *jss = cb_state->session_state;
-	switch_file_handle_t *fh = cb_state->extra;
-	jsval rval;
-	char *ret;
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_DTMF: {
+		char *dtmf = (char *) input;
+		char code[2048];
+		struct dtmf_callback_state *cb_state = buf;
+		struct js_session *jss = cb_state->session_state;
+		jsval rval;
+		char *ret;
 	
-	if (!jss) {
+		if (!jss) {
+			return SWITCH_STATUS_FALSE;
+		}
+	
+		if (cb_state->digit_count || (cb_state->code_buffer[0] > 47 && cb_state->code_buffer[0] < 58)) {
+			char *d;
+			if (!cb_state->digit_count) {
+				cb_state->digit_count = atoi(cb_state->code_buffer);
+			}
+
+			for(d = dtmf; *d; d++) {
+				cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
+				if ((cb_state->ret_buffer_len > cb_state->digit_count)||
+					(cb_state->ret_buffer_len > sizeof(cb_state->ret_buffer))||
+					(cb_state->ret_buffer_len >= cb_state->digit_count)
+					) {
+					return SWITCH_STATUS_FALSE;
+				}
+			}
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			snprintf(code, sizeof(code), "~%s(\"%s\")", cb_state->code_buffer, dtmf);
+			eval_some_js(code, jss->cx, jss->obj, &rval);
+			ret = JS_GetStringBytes(JS_ValueToString(jss->cx, rval));
+
+			if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
+				return SWITCH_STATUS_SUCCESS;
+			}
+	
+			if (ret) {
+				switch_copy_string(cb_state->ret_buffer, ret, sizeof(cb_state->ret_buffer));
+			}
+		}
+
 		return SWITCH_STATUS_FALSE;
 	}
-	
-	if (cb_state->digit_count || (cb_state->code_buffer[0] > 47 && cb_state->code_buffer[0] < 58)) {
-		char *d;
-		if (!cb_state->digit_count) {
-			cb_state->digit_count = atoi(cb_state->code_buffer);
-		}
-
-		for(d = dtmf; *d; d++) {
-			cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
-			if ((cb_state->ret_buffer_len > cb_state->digit_count)||
-				(cb_state->ret_buffer_len > sizeof(cb_state->ret_buffer))||
-				(cb_state->ret_buffer_len >= cb_state->digit_count)
-				) {
-				return SWITCH_STATUS_FALSE;
-			}
-		}
-		return SWITCH_STATUS_SUCCESS;
-	} else {
-		snprintf(code, sizeof(code), "~%s(\"%s\")", cb_state->code_buffer, dtmf);
-		eval_some_js(code, jss->cx, jss->obj, &rval);
-		ret = JS_GetStringBytes(JS_ValueToString(jss->cx, rval));
-
-		if (!strcasecmp(ret, "pause")) {
-			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-				switch_clear_flag(fh, SWITCH_FILE_PAUSE);
-			} else {
-				switch_set_flag(fh, SWITCH_FILE_PAUSE);
-			}
-			return SWITCH_STATUS_SUCCESS;
-		} else if (!strcasecmp(ret, "restart")) {
-			unsigned int pos = 0;
-			fh->speed = 0;
-			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
-			return SWITCH_STATUS_SUCCESS;
-		}
-
-		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
-			return SWITCH_STATUS_SUCCESS;
-		}
-	
-		if (ret) {
-			switch_copy_string(cb_state->ret_buffer, ret, sizeof(cb_state->ret_buffer));
-		}
+		break;
+	default:
+		break;
 	}
 
-	return SWITCH_STATUS_FALSE;
-}
-
-
-static switch_status_t js_speak_dtmf_callback(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
-{
-	char code[2048];
-	struct dtmf_callback_state *cb_state = buf;
-	struct js_session *jss = cb_state->session_state;
-	jsval rval;
-	char *ret;
+	return SWITCH_STATUS_SUCCESS;
 	
-	if (!jss) {
-		return SWITCH_STATUS_FALSE;
-	}
-	
-	if (cb_state->digit_count || (cb_state->code_buffer[0] > 47 && cb_state->code_buffer[0] < 58)) {
-		char *d;
-		if (!cb_state->digit_count) {
-			cb_state->digit_count = atoi(cb_state->code_buffer);
-		}
-
-		for(d = dtmf; *d; d++) {
-			cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
-			if ((cb_state->ret_buffer_len > cb_state->digit_count)||
-				(cb_state->ret_buffer_len > sizeof(cb_state->ret_buffer))||
-				(cb_state->ret_buffer_len >= cb_state->digit_count)
-				) {
-				return SWITCH_STATUS_FALSE;
-			}
-		}
-		return SWITCH_STATUS_SUCCESS;
-	} else {
-		snprintf(code, sizeof(code), "~%s(\"%s\")", cb_state->code_buffer, dtmf);
-		eval_some_js(code, jss->cx, jss->obj, &rval);
-		ret = JS_GetStringBytes(JS_ValueToString(jss->cx, rval));
-
-		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
-			return SWITCH_STATUS_SUCCESS;
-		}
-	
-		if (ret) {
-			switch_copy_string(cb_state->ret_buffer, ret, sizeof(cb_state->ret_buffer));
-		}
-	}
-
-	return SWITCH_STATUS_FALSE;
 }
 
 static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -397,7 +426,7 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	char *dtmf_callback = NULL;
 	void *bp = NULL;
 	int len = 0;
-	switch_dtmf_callback_function_t dtmf_func = NULL;
+	switch_input_callback_function_t dtmf_func = NULL;
 	struct dtmf_callback_state cb_state = {0};
 	switch_file_handle_t fh;
 
@@ -443,7 +472,7 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	char *dtmf_callback = NULL;
 	void *bp = NULL;
 	int len = 0;
-	switch_dtmf_callback_function_t dtmf_func = NULL;
+	switch_input_callback_function_t dtmf_func = NULL;
 	struct dtmf_callback_state cb_state = {0};
 	switch_file_handle_t fh;
 
@@ -499,7 +528,7 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	void *bp = NULL;
 	int len = 0;
 	struct dtmf_callback_state cb_state = {0};
-	switch_dtmf_callback_function_t dtmf_func = NULL;
+	switch_input_callback_function_t dtmf_func = NULL;
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -1804,6 +1833,8 @@ static JSBool js_api_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 		stream.end = stream.data;
 		stream.data_size = sizeof(retbuf);
 		switch_api_execute(cmd, arg, &stream);
+		stream.write_function = switch_console_stream_write;
+
 		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, retbuf));
 	} else {
 		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, ""));

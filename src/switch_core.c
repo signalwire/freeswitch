@@ -307,7 +307,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str,
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, switch_event_t *event)
+SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, switch_event_t **event)
 {
 	switch_core_session_t *session = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -1057,29 +1057,73 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_session_t *session, switch_event_t *event)
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_session_t *session, switch_event_t **event)
 	 
 {
-	switch_io_event_hook_queue_event_t *ptr;
-	switch_status_t status = SWITCH_STATUS_FALSE, istatus = SWITCH_STATUS_FALSE;;
+	switch_io_event_hook_receive_event_t *ptr;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	assert(session != NULL);
-	if (session->endpoint_interface->io_routines->queue_event) {
-		status = session->endpoint_interface->io_routines->queue_event(session, event);
 
-		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-			for (ptr = session->event_hooks.queue_event; ptr; ptr = ptr->next) {
-				if ((istatus = ptr->queue_event(session, event)) != SWITCH_STATUS_SUCCESS) {
-					break;
+	/* Acquire a read lock on the session or forget it the channel is dead */
+	if (switch_thread_rwlock_tryrdlock(session->rwlock) == SWITCH_STATUS_SUCCESS) {
+		if (switch_channel_get_state(session->channel) < CS_HANGUP) {
+			if (session->endpoint_interface->io_routines->receive_event) {
+				status = session->endpoint_interface->io_routines->receive_event(session, *event);
+			} 
+	
+			if (status == SWITCH_STATUS_SUCCESS) {
+				for (ptr = session->event_hooks.receive_event; ptr; ptr = ptr->next) {
+					if ((status = ptr->receive_event(session, *event)) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
 				}
 			}
-		}
-		
-		if (status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) {
-			if (!session->event_queue) {
-				switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
+
+			if (status == SWITCH_STATUS_BREAK) {
+				status = SWITCH_STATUS_SUCCESS;
 			}
-			switch_queue_push(session->event_queue, event);
+
+			if (status == SWITCH_STATUS_SUCCESS) {
+				switch_event_destroy(event);
+			}
+		}
+		switch_thread_rwlock_unlock(session->rwlock);
+	}
+	
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_session_t *session, switch_event_t **event)
+	 
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	assert(session != NULL);
+
+	if (!session->event_queue) {
+		switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
+	}
+
+	if ((status = (switch_status_t) switch_queue_push(session->event_queue, *event) == SWITCH_STATUS_SUCCESS)) {
+		*event = NULL;
+	}	
+	
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_session_t *session, switch_event_t **event)
+	 
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	void *pop;
+
+	assert(session != NULL);
+	
+	if (session->event_queue) {
+		if ((status = (switch_status_t) switch_queue_trypop(session->event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+			*event = (switch_event_t *) pop;
 		}
 	}
 

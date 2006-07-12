@@ -59,7 +59,7 @@ BEGIN_EXTERN_C
   \return SWITCH_STATUS_SUCCESS to keep the collection moving.
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session,
-																 switch_dtmf_callback_function_t dtmf_callback,
+																 switch_input_callback_function_t dtmf_callback,
 																 void *buf,
 																 unsigned int buflen);
 
@@ -98,7 +98,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 												   switch_file_handle_t *fh,
 												   char *file,
 												   char *timer_name,
-												   switch_dtmf_callback_function_t dtmf_callback,
+												   switch_input_callback_function_t dtmf_callback,
 												   void *buf,
 												   unsigned int buflen);
 
@@ -118,7 +118,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *session,
 													 switch_file_handle_t *fh,
 													 char *file,
-													 switch_dtmf_callback_function_t dtmf_callback,
+													 switch_input_callback_function_t dtmf_callback,
 													 void *buf,
 													 unsigned int buflen);
 
@@ -127,7 +127,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
                                                              switch_speech_handle_t *sh,
                                                              switch_codec_t *codec,
                                                              switch_timer_t *timer,
-                                                             switch_dtmf_callback_function_t dtmf_callback,
+                                                             switch_input_callback_function_t dtmf_callback,
                                                              char *text,
                                                              void *buf,
                                                              unsigned int buflen);
@@ -150,7 +150,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 													  char *voice_name,
 													  char *timer_name,
 													  uint32_t rate,
-													  switch_dtmf_callback_function_t dtmf_callback,
+													  switch_input_callback_function_t dtmf_callback,
 													  char *text,
 													  void *buf,
 													  unsigned int buflen);
@@ -169,7 +169,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_session_t *session, 
 															   switch_core_session_t *peer_session,
 															   unsigned int timelimit,
-															   switch_dtmf_callback_function_t dtmf_callback,
+															   switch_input_callback_function_t dtmf_callback,
 															   void *session_data,
 															   void *peer_session_data);
 

@@ -85,68 +85,74 @@ static uint32_t match_count(char *str, uint32_t max)
   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 */
-static switch_status_t on_dtmf(switch_core_session_t *session, char *dtmf, void *buf, unsigned int buflen)
+static switch_status_t on_dtmf(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+
 {
-
-	struct dtmf_buffer *dtb;
-	dtb = (struct dtmf_buffer *) buf;
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_DTMF: {
+		char *dtmf = (char *) input;
+		struct dtmf_buffer *dtb;
+		dtb = (struct dtmf_buffer *) buf;
 	
-	switch(*dtmf) {
-	case '#':
-		switch_set_flag(dtb, SFLAG_MAIN);
-		return SWITCH_STATUS_BREAK;
-	case '6':
-		dtb->index++;
-		return SWITCH_STATUS_BREAK;
-	case '4':
-		dtb->index--;
-		return SWITCH_STATUS_BREAK;
-	case '*':
-		if (switch_test_flag(dtb->sh, SWITCH_SPEECH_FLAG_PAUSE)) {
-			switch_clear_flag(dtb->sh, SWITCH_SPEECH_FLAG_PAUSE);
-		} else {
-			switch_set_flag(dtb->sh, SWITCH_SPEECH_FLAG_PAUSE);
-		}
-		break;
-	case '5':
-		switch_core_speech_text_param_tts(dtb->sh, "voice", "next");
-		switch_set_flag(dtb, SFLAG_INFO);
-		return SWITCH_STATUS_BREAK;
-		break;
-	case '9':
-		switch_core_speech_text_param_tts(dtb->sh, "voice", dtb->voice);
-		switch_set_flag(dtb, SFLAG_INFO);
-		return SWITCH_STATUS_BREAK;
-		break;
-	case '2':
-		if (dtb->speed < 260) {
-			dtb->speed += 30;
+		switch(*dtmf) {
+		case '#':
+			switch_set_flag(dtb, SFLAG_MAIN);
+			return SWITCH_STATUS_BREAK;
+		case '6':
+			dtb->index++;
+			return SWITCH_STATUS_BREAK;
+		case '4':
+			dtb->index--;
+			return SWITCH_STATUS_BREAK;
+		case '*':
+			if (switch_test_flag(dtb->sh, SWITCH_SPEECH_FLAG_PAUSE)) {
+				switch_clear_flag(dtb->sh, SWITCH_SPEECH_FLAG_PAUSE);
+			} else {
+				switch_set_flag(dtb->sh, SWITCH_SPEECH_FLAG_PAUSE);
+			}
+			break;
+		case '5':
+			switch_core_speech_text_param_tts(dtb->sh, "voice", "next");
+			switch_set_flag(dtb, SFLAG_INFO);
+			return SWITCH_STATUS_BREAK;
+			break;
+		case '9':
+			switch_core_speech_text_param_tts(dtb->sh, "voice", dtb->voice);
+			switch_set_flag(dtb, SFLAG_INFO);
+			return SWITCH_STATUS_BREAK;
+			break;
+		case '2':
+			if (dtb->speed < 260) {
+				dtb->speed += 30;
+				switch_core_speech_numeric_param_tts(dtb->sh, "speech/rate", dtb->speed);
+				switch_set_flag(dtb, SFLAG_INFO);
+				return SWITCH_STATUS_BREAK;
+			}
+			break;
+		case '7':
+			dtb->speed = TTS_MEAN_SPEED;
 			switch_core_speech_numeric_param_tts(dtb->sh, "speech/rate", dtb->speed);
 			switch_set_flag(dtb, SFLAG_INFO);
 			return SWITCH_STATUS_BREAK;
-		}
-		break;
-	case '7':
-		dtb->speed = TTS_MEAN_SPEED;
-		switch_core_speech_numeric_param_tts(dtb->sh, "speech/rate", dtb->speed);
-		switch_set_flag(dtb, SFLAG_INFO);
-		return SWITCH_STATUS_BREAK;
-	case '8':
-		if (dtb->speed > 80) {
-			dtb->speed -= 30;
-			switch_core_speech_numeric_param_tts(dtb->sh, "speech/rate", dtb->speed);
-			switch_set_flag(dtb, SFLAG_INFO);
+		case '8':
+			if (dtb->speed > 80) {
+				dtb->speed -= 30;
+				switch_core_speech_numeric_param_tts(dtb->sh, "speech/rate", dtb->speed);
+				switch_set_flag(dtb, SFLAG_INFO);
+				return SWITCH_STATUS_BREAK;
+			}
+			break;
+		case '0':
+			switch_set_flag(dtb, SFLAG_INSTRUCT);
 			return SWITCH_STATUS_BREAK;
 		}
-		break;
-	case '0':
-		switch_set_flag(dtb, SFLAG_INSTRUCT);
-		return SWITCH_STATUS_BREAK;
 	}
-
+		break;
+	default:
+		break;
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 static void rss_function(switch_core_session_t *session, char *data)
 {

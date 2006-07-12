@@ -239,6 +239,7 @@ static int on_msg(void *user_data, ikspak * pak)
 	stream.data = retbuf;
 	stream.end = stream.data;
 	stream.data_size = sizeof(retbuf);
+	stream.write_function = switch_console_stream_write;
 	switch_api_execute(cmd, arg, &stream);
 
 	return 0;
