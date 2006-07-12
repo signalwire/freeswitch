@@ -113,7 +113,7 @@ void fs_channel_set_state(switch_core_session_t *session, char *state)
 int fs_ivr_play_file(switch_core_session_t *session,
 					 char *file,
 					 char *timer_name,
-					 switch_dtmf_callback_function_t dtmf_callback,
+					 switch_input_callback_function_t dtmf_callback,
 					 void *buf,
 					 unsigned int buflen)
 {
