@@ -1785,12 +1785,24 @@ JSClass teletone_class = {
 /*********************************************************************************/
 static JSBool js_log(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	char *msg;
+	char *level_str, *msg;
+	switch_log_level_t level = SWITCH_LOG_DEBUG;
+	
+	if (argc > 1) {
+		if ((level_str = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
+			level = switch_log_str2level(level_str);
+		}
 
-	if ((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "JS_LOG: %s", msg);
-		return JS_TRUE;
-	} 
+		if ((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[1])))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, level, "JS_LOG: %s", msg);
+			return JS_TRUE;
+		} 
+	} else if (argc > 0) {
+		if ((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, level, "JS_LOG: %s", msg);
+			return JS_TRUE;
+		}
+	}
 
 	return JS_FALSE;
 }
