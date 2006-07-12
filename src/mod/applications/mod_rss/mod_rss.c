@@ -303,14 +303,14 @@ static void rss_function(switch_core_session_t *session, char *data)
 			switch_core_speech_flush_tts(&sh);
 #ifdef MATCH_COUNT
 			snprintf(buf + len, sizeof(buf) - len, 
-					 "Main Menu. <break time=\"600ms\"/> "
+					 ",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
 					 "Select one of the following news sources, or press 0 to exit. "
-					 "<break time=\"600ms\"/>");
+					 ",<break time=\"600ms\"/>");
 #else
 			snprintf(buf + len, sizeof(buf) - len, 
-					 "Main Menu. <break time=\"600ms\"/> "
+					 ",<break time=\"500ms\"/>Main Menu. <break time=\"600ms\"/> "
 					 "Select one of the following news sources, followed by the pound key or press 0 to exit. "
-					 "<break time=\"600ms\"/>");
+					 ",<break time=\"600ms\"/>");
 #endif
 			len = (int32_t)strlen(buf);
 
@@ -489,7 +489,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 			switch_strftime(date, &retsize, sizeof(date), "%I:%M %p", &tm);
 
 
-			snprintf(buf, sizeof(buf), "%s. %s. %s. local time: %s, Press 0 for options, 5 to change voice, or pound to return to the main menu. ", 
+			snprintf(buf, sizeof(buf), ",<break time=\"500ms\"/>%s. %s. %s. local time: %s, Press 0 for options, 5 to change voice, or pound to return to the main menu. ", 
 					 title_txt, description_txt, rights_txt, date);
 			status = switch_ivr_speak_text_handle(session,
 												  &sh,
