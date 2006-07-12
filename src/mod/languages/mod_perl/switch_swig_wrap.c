@@ -992,7 +992,7 @@ SWIG_Perl_SetModule(swig_module_info *module) {
 /* -------- TYPES TABLE (BEGIN) -------- */
 
 #define SWIGTYPE_p_switch_core_session_t swig_types[0]
-#define SWIGTYPE_p_switch_dtmf_callback_function_t swig_types[1]
+#define SWIGTYPE_p_switch_input_callback_function_t swig_types[1]
 static swig_type_info *swig_types[3];
 static swig_module_info swig_module = {swig_types, 2, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
@@ -1408,7 +1408,7 @@ XS(_wrap_fs_ivr_play_file) {
         switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
         char *arg2 = (char *) 0 ;
         char *arg3 = (char *) 0 ;
-        switch_dtmf_callback_function_t arg4 ;
+        switch_input_callback_function_t arg4 ;
         void *arg5 = (void *) 0 ;
         unsigned int arg6 ;
         int result;
@@ -1428,9 +1428,9 @@ XS(_wrap_fs_ivr_play_file) {
         if (!SvOK((SV*) ST(2))) arg3 = 0;
         else arg3 = (char *) SvPV(ST(2), PL_na);
         {
-            switch_dtmf_callback_function_t * argp;
-            if (SWIG_ConvertPtr(ST(3),(void **) &argp, SWIGTYPE_p_switch_dtmf_callback_function_t,0) < 0) {
-                SWIG_croak("Type error in argument 4 of fs_ivr_play_file. Expected _p_switch_dtmf_callback_function_t");
+            switch_input_callback_function_t * argp;
+            if (SWIG_ConvertPtr(ST(3),(void **) &argp, SWIGTYPE_p_switch_input_callback_function_t,0) < 0) {
+                SWIG_croak("Type error in argument 4 of fs_ivr_play_file. Expected _p_switch_input_callback_function_t");
             }
             arg4 = *argp;
         }
@@ -1456,19 +1456,19 @@ XS(_wrap_fs_ivr_play_file) {
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
 static swig_type_info _swigt__p_switch_core_session_t = {"_p_switch_core_session_t", "switch_core_session_t *", 0, 0, 0};
-static swig_type_info _swigt__p_switch_dtmf_callback_function_t = {"_p_switch_dtmf_callback_function_t", "switch_dtmf_callback_function_t *", 0, 0, 0};
+static swig_type_info _swigt__p_switch_input_callback_function_t = {"_p_switch_input_callback_function_t", "switch_input_callback_function_t *", 0, 0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_switch_core_session_t,
-  &_swigt__p_switch_dtmf_callback_function_t,
+  &_swigt__p_switch_input_callback_function_t,
 };
 
 static swig_cast_info _swigc__p_switch_core_session_t[] = {  {&_swigt__p_switch_core_session_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_switch_dtmf_callback_function_t[] = {  {&_swigt__p_switch_dtmf_callback_function_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_switch_input_callback_function_t[] = {  {&_swigt__p_switch_input_callback_function_t, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_switch_core_session_t,
-  _swigc__p_switch_dtmf_callback_function_t,
+  _swigc__p_switch_input_callback_function_t,
 };
 
 
