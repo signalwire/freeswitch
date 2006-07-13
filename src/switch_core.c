@@ -965,6 +965,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 	switch_io_event_hook_outgoing_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const switch_endpoint_interface_t *endpoint_interface;
+	switch_channel_t *channel = NULL;
+	switch_caller_profile_t *outgoing_profile = caller_profile;
 
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
@@ -972,9 +974,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 	}
 
 	if (endpoint_interface->io_routines->outgoing_channel) {
-		if ((status =
-			 endpoint_interface->io_routines->outgoing_channel(session, caller_profile,
-															   new_session, pool)) == SWITCH_STATUS_SUCCESS) {
+		if (session) {
+			char *ecaller_id_name = NULL, *ecaller_id_number = NULL;
+			channel = switch_core_session_get_channel(session);
+			
+			ecaller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name");
+			ecaller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number");
+			
+			if (ecaller_id_name || ecaller_id_number) {
+				if (caller_profile) {
+					outgoing_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+																 caller_profile->username,
+																 caller_profile->dialplan,
+																 ecaller_id_name ? ecaller_id_name : caller_profile->caller_id_name,
+																 ecaller_id_number ? ecaller_id_number : caller_profile->caller_id_number,
+																 caller_profile->network_addr,
+																 caller_profile->ani,
+																 caller_profile->ani2, 
+																 caller_profile->rdnis,
+																 caller_profile->source,
+																 caller_profile->context,
+																 caller_profile->destination_number);
+					
+				}
+			}
+		}
+		
+		if ((status = endpoint_interface->io_routines->outgoing_channel(session,
+																		outgoing_profile,
+																		new_session,
+																		pool)) == SWITCH_STATUS_SUCCESS) {
 			if (session) {
 				for (ptr = session->event_hooks.outgoing_channel; ptr; ptr = ptr->next) {
 					if ((status = ptr->outgoing_channel(session, caller_profile, *new_session)) != SWITCH_STATUS_SUCCESS) {
@@ -985,13 +1014,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 		} else {
 			return status;
 		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate outgoing channel interface for %s\n", endpoint_name);
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (*new_session) {
 		switch_caller_profile_t *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
-		switch_channel_t *channel = NULL, *peer_channel = NULL;
+		switch_channel_t *peer_channel = NULL;
 
-		if (session && (channel = switch_core_session_get_channel(session)) != 0) {
+		if (session && channel) {
 			profile = switch_channel_get_caller_profile(channel);
 		}
 		if ((peer_channel = switch_core_session_get_channel(*new_session)) != 0) {
