@@ -269,7 +269,7 @@ static switch_status_t switch_speex_destroy(switch_codec_t *codec)
 /* Registration */
 static const switch_codec_implementation_t speex_32k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 98,
+	/*.ianacode */ 102,
 	/*.iananame */ "speex",
 	/*.samples_per_second */ 32000,
 	/*.bits_per_second */ 512000,
@@ -288,7 +288,7 @@ static const switch_codec_implementation_t speex_32k_implementation = {
 
 static const switch_codec_implementation_t speex_16k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 98,
+	/*.ianacode */ 100,
 	/*.iananame */ "speex",
 	/*.samples_per_second */ 16000,
 	/*.bits_per_second */ 256000,
