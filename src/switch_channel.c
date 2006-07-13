@@ -339,11 +339,18 @@ SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel)
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, char *varname, char *value)
 {
 	assert(channel != NULL);
-	switch_core_hash_delete(channel->variables, varname);
 
-	switch_core_hash_insert_dup(channel->variables, varname, switch_core_session_strdup(channel->session, value));
+	if (varname) {
+		switch_core_hash_delete(channel->variables, varname);
+		if (value) {
+			switch_core_hash_insert_dup(channel->variables, varname, switch_core_session_strdup(channel->session, value));
+		} else {
+			switch_core_hash_delete(channel->variables, varname);
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
 
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flags)

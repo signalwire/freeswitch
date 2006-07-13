@@ -50,6 +50,15 @@ BEGIN_EXTERN_C
  * @{
  */
 
+
+/*!
+  \brief Wait for time to pass for a specified number of milliseconds
+  \param session the session to wait for.
+  \param ms the number of milliseconds
+  \return SWITCH_STATUS_SUCCESS if the channel is still up
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms);
+
 /*!
   \brief Wait for DTMF digits calling a pluggable callback function when digits are collected.
   \param session the session to read.

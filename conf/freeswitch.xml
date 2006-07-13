@@ -36,6 +36,7 @@
         <!-- Applications -->
         <load module="mod_bridgecall"/>
         <load module="mod_echo"/>
+        <load module="mod_dptools"/>
         <!-- <load module="mod_ivrtest"/> -->
         <load module="mod_playback"/>
         <load module="mod_commands"/>

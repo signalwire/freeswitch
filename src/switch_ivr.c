@@ -34,6 +34,46 @@
 
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms)
+{
+	switch_channel_t *channel;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_time_t start, now, done = switch_time_now() + (ms * 1000);
+	switch_frame_t *read_frame;
+	int32_t left, elapsed;
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	start = switch_time_now();
+
+	for(;;) {
+		now = switch_time_now();
+		elapsed = (int32_t)((now - start) / 1000);
+		left = ms - elapsed;
+
+		if (!switch_channel_ready(channel)) {
+			status = SWITCH_STATUS_FALSE;
+			break;
+		}
+
+		if (now > done || left <= 0) {
+			break;
+		}
+
+		if (switch_channel_test_flag(channel, CF_SERVICE)) {
+			switch_yield(1000);
+		} else {
+			status = switch_core_session_read_frame(session, &read_frame, left, 0);
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				break;
+			}
+		}
+	}
+	
+
+	return status;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session,
 																 switch_input_callback_function_t input_callback,
