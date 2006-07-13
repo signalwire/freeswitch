@@ -2724,7 +2724,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 				if (switch_core_db_persistant_execute(runtime.event_db, sql, 25) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL exec error! [%s]\n", sql);
 				}
-				free(sql);
+				switch_core_db_free(sql);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "SQL thread ending\n");
 				break;
@@ -2771,33 +2771,26 @@ static void switch_core_sql_thread_launch(void)
 
 static void core_event_handler(switch_event_t *event)
 {
-	char buf[1024];
 	char *sql = NULL;
 
-
-
 	switch (event->event_id) {
-
 	case SWITCH_EVENT_CHANNEL_DESTROY:
-		snprintf(buf, sizeof(buf), "delete from channels where uuid='%s'", switch_event_get_header(event, "unique-id"));
-		sql = buf;
+		switch_core_db_mprintf("delete from channels where uuid='%s'", switch_event_get_header(event, "unique-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_CREATE:
-		snprintf(buf, sizeof(buf), "insert into channels (uuid,created,name,state) values('%s','%s','%s','%s')",
-				 switch_event_get_header(event, "unique-id"),
-				 switch_event_get_header(event, "event-date-local"),
-				 switch_event_get_header(event, "channel-name"),
-				 switch_event_get_header(event, "channel-state")
-				 );
-		sql = buf;
+		sql = switch_core_db_mprintf("insert into channels (uuid,created,name,state) values('%q','%q','%q','%q')",
+									 switch_event_get_header(event, "unique-id"),
+									 switch_event_get_header(event, "event-date-local"),
+									 switch_event_get_header(event, "channel-name"),
+									 switch_event_get_header(event, "channel-state")
+									 );
 		break;
 	case SWITCH_EVENT_CHANNEL_EXECUTE:
-		snprintf(buf, sizeof(buf), "update channels set application='%s',application_data='%s' where uuid='%s'",
-				 switch_event_get_header(event, "application"),
-				 switch_event_get_header(event, "application-data"),
-				 switch_event_get_header(event, "unique-id")
-				 );
-		sql = buf;
+		sql = switch_core_db_mprintf("update channels set application='%q',application_data='%q' where uuid='%q'",
+									 switch_event_get_header(event, "application"),
+									 switch_event_get_header(event, "application-data"),
+									 switch_event_get_header(event, "unique-id")
+									 );
 		break;
 	case SWITCH_EVENT_CHANNEL_STATE:
 		if (event) {
@@ -2809,60 +2802,54 @@ static void core_event_handler(switch_event_t *event)
 			case CS_DONE:
 				break;
 			case CS_RING:
-				snprintf(buf, sizeof(buf), "update channels set state='%s',cid_name='%s',cid_num='%s',ip_addr='%s',dest='%s'"
-						 "where uuid='%s'",
-						 switch_event_get_header(event, "channel-state"),
-						 switch_event_get_header(event, "caller-caller-id-name"),
-						 switch_event_get_header(event, "caller-caller-id-number"),
-						 switch_event_get_header(event, "caller-network-addr"),
-						 switch_event_get_header(event, "caller-destination-number"),
-						 switch_event_get_header(event, "unique-id")
-						 );
-				sql = buf;
+				sql = switch_core_db_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',ip_addr='%s',dest='%q'"
+											 "where uuid='%s'",
+											 switch_event_get_header(event, "channel-state"),
+											 switch_event_get_header(event, "caller-caller-id-name"),
+											 switch_event_get_header(event, "caller-caller-id-number"),
+											 switch_event_get_header(event, "caller-network-addr"),
+											 switch_event_get_header(event, "caller-destination-number"),
+											 switch_event_get_header(event, "unique-id")
+											 );
 				break;
 			default:
-				snprintf(buf, sizeof(buf), "update channels set state='%s' where uuid='%s'", 
-						 switch_event_get_header(event, "channel-state"),
-						 switch_event_get_header(event, "unique-id")
-						 );
-				sql = buf;
+				sql = switch_core_db_mprintf("update channels set state='%s' where uuid='%s'", 
+											 switch_event_get_header(event, "channel-state"),
+											 switch_event_get_header(event, "unique-id")
+											 );
 				break;
 			}
 		
 		}
 		break;
 	case SWITCH_EVENT_CHANNEL_BRIDGE:
-		snprintf(buf, sizeof(buf), "insert into calls values ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')",
-				 switch_event_get_header(event, "event-calling-function"),
-				 switch_event_get_header(event, "caller-caller-id-name"),
-				 switch_event_get_header(event, "caller-caller-id-number"),
-				 switch_event_get_header(event, "caller-destination-number"),
-				 switch_event_get_header(event, "caller-channel-name"),
-				 switch_event_get_header(event, "caller-unique-id"),
-				 switch_event_get_header(event, "originatee-caller-id-name"),
-				 switch_event_get_header(event, "originatee-caller-id-number"),
-				 switch_event_get_header(event, "originatee-destination-number"),
-				 switch_event_get_header(event, "originatee-channel-name"),
-				 switch_event_get_header(event, "originatee-unique-id")
-				 );
-		sql = buf;
+		sql = switch_core_db_mprintf("insert into calls values ('%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s')",
+									 switch_event_get_header(event, "event-calling-function"),
+									 switch_event_get_header(event, "caller-caller-id-name"),
+									 switch_event_get_header(event, "caller-caller-id-number"),
+									 switch_event_get_header(event, "caller-destination-number"),
+									 switch_event_get_header(event, "caller-channel-name"),
+									 switch_event_get_header(event, "caller-unique-id"),
+									 switch_event_get_header(event, "originatee-caller-id-name"),
+									 switch_event_get_header(event, "originatee-caller-id-number"),
+									 switch_event_get_header(event, "originatee-destination-number"),
+									 switch_event_get_header(event, "originatee-channel-name"),
+									 switch_event_get_header(event, "originatee-unique-id")
+									 );
 		break;
 	case SWITCH_EVENT_CHANNEL_UNBRIDGE:
-		snprintf(buf, sizeof(buf), "delete from calls where caller_uuid='%s'", switch_event_get_header(event, "caller-unique-id"));
-		sql = buf;
+		sql = switch_core_db_mprintf("delete from calls where caller_uuid='%s'", switch_event_get_header(event, "caller-unique-id"));
 		break;
 	case SWITCH_EVENT_SHUTDOWN:
-		snprintf(buf, sizeof(buf), "delete from channels;delete from interfaces;delete from calls");
-		sql = buf;
+		sql = switch_core_db_mprintf("delete from channels;delete from interfaces;delete from calls");
 		break;
 	case SWITCH_EVENT_LOG:
 		return;
 	case SWITCH_EVENT_MODULE_LOAD:
-		snprintf(buf, sizeof(buf), "insert into interfaces (type,name) values('%s','%s')",
-				 switch_event_get_header(event, "type"),
-				 switch_event_get_header(event, "name")
-				 );
-		sql = buf;
+		sql = switch_core_db_mprintf("insert into interfaces (type,name) values('%q','%q')",
+									 switch_event_get_header(event, "type"),
+									 switch_event_get_header(event, "name")
+									 );
 		break;
 	default:
 		//buf[0] = '\0';
@@ -2872,7 +2859,8 @@ static void core_event_handler(switch_event_t *event)
 	}
 
 	if (sql) {
-		switch_queue_push(runtime.sql_queue, strdup(sql));
+		switch_queue_push(runtime.sql_queue, sql);
+		sql = NULL;
 	}
 }
 
