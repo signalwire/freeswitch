@@ -1423,14 +1423,29 @@ static switch_status_t conf_function(char *buf, switch_stream_handle_t *stream)
 					}
 				} else if (!strcasecmp(argv[1], "saymember")) {
 					char *tbuf = NULL, *text, *name;
-					uint32_t id = atoi(argv[3]);
+					uint32_t id;
 					conference_member_t *member;
+
+					if (argc > 3) {
+						id = atoi(argv[3]);
+					} else {
+						stream->write_function(stream, "(saymember) Syntax Error!");
+						goto done;
+					}
 
 					if ((tbuf = strdup(buf))) {
 						if ((name = strstr(tbuf, "saymember "))) {
 							name += 10;
-							text = strchr(name, ' ');
-							id = atoi(name);
+							
+							if (*name) {
+								text = strchr(name, ' ');
+								id = atoi(name);
+							} else {
+								stream->write_function(stream, "(saymember) Syntax Error!");
+								goto done;
+							}
+
+
 							
 							if ((member = conference_member_get(conference, id))) {
 								if (text && conference_member_say(conference, member, text, 0) == SWITCH_STATUS_SUCCESS) {
