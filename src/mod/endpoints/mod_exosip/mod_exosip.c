@@ -352,8 +352,10 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 		sprintf(dbuf, "%u", tech_pvt->te);
 		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(dbuf));
 		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, tech_pvt->te, "telephone-event", 8000, 0);
-		sprintf(dbuf, "%u telephone-event/8000\na=fmtp %u 0-15", tech_pvt->te, tech_pvt->te);
+		sprintf(dbuf, "%u telephone-event/8000", tech_pvt->te);
 		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(dbuf));
+		sprintf(dbuf, "%u 0-15", tech_pvt->te);
+		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "fmtp", osip_strdup(dbuf));
 		
 		if (tech_pvt->num_codecs > 0) {
 			int i, lastcode = -1;
@@ -1306,11 +1308,6 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 		sdp_message_init(&tech_pvt->local_sdp);
 
 
-		sprintf(dbuf, "%u", tech_pvt->te);
-		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(dbuf));
-		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, tech_pvt->te, "telephone-event", 8000, 0);
-		sprintf(dbuf, "%u telephone-event/8000\na=fmtp %u 0-15", tech_pvt->te, tech_pvt->te);
-		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(dbuf));
 
 		if (tech_pvt->num_codecs > 0) {
 			int i;
@@ -1318,8 +1315,12 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
 				for (imp = tech_pvt->codecs[i]; imp; imp = imp->next) {
-					sdp_add_codec(tech_pvt->sdp_config, tech_pvt->codecs[i]->codec_type, imp->ianacode, imp->iananame,
-								  imp->samples_per_second, 0);
+					sdp_add_codec(tech_pvt->sdp_config,
+								  tech_pvt->codecs[i]->codec_type,
+								  imp->ianacode,
+								  imp->iananame,
+								  imp->samples_per_second,
+								  0);
 
 				}
 			}
@@ -1334,6 +1335,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 
 		sdp_message_to_str(remote_sdp, &remote_sdp_str);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "REMOTE SDP:\n%s", remote_sdp_str);
+
 
 		mline = 0;
 		while (0 == osip_rfc3264_match(tech_pvt->sdp_config, remote_sdp, audio_tab, video_tab, t38_tab, app_tab, mline)) {
@@ -1355,6 +1357,18 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 	done:
 
 		free(remote_sdp_str);
+
+
+		sprintf(dbuf, "%u", tech_pvt->te);
+		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(dbuf));
+		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, tech_pvt->te, "telephone-event", 8000, 0);
+
+		sprintf(dbuf, "%u telephone-event/8000", tech_pvt->te);
+		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(dbuf));
+		sprintf(dbuf, "%u 0-15", tech_pvt->te);
+		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "fmtp", osip_strdup(dbuf));
+
+
 		sdp_message_o_origin_set(tech_pvt->local_sdp, "FreeSWITCH", "0", "0", "IN", "IP4", ip);
 								 
 		sdp_message_s_name_set(tech_pvt->local_sdp, "SIP Call");
