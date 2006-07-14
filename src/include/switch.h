@@ -100,19 +100,19 @@ END_EXTERN_C
  *
  *	Additionally, the experimental external modules make use of several external modules:
  *
- *	mod_Exosip:
+ *	mod_exosip:
  *		- eXoSIP (http://savannah.nongnu.org/projects/exosip/)
  *
- *	mod_iaxchan:
+ *	mod_iax:
  *		- libiax2 (forked from http://iaxclient.sourceforge.net/)
  *
- *	mod_speexcodec
+ *	mod_speex
  *		- libspeex (http://www.speex.org/)
  *
  *	mod_portaudio
  *		- portaudio (http://www.portaudio.com/)
  *
- *	mod_woomerachan
+ *	mod_woomera
  *		- openh323/woomera (http://www.voxgratia.org/)
  *
  *	mod_xmpp_event
