@@ -208,7 +208,6 @@ static switch_status_t switch_speex_encode(switch_codec_t *codec,
 	*encoded_data_len = speex_bits_write(&context->encoder_bits, (char *) encoded_data, context->encoder_frame_size);
 	speex_bits_reset(&context->encoder_bits);
 
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -231,9 +230,10 @@ static switch_status_t switch_speex_decode(switch_codec_t *codec,
 	if (*flag & SWITCH_CODEC_FLAG_SILENCE) {
 		speex_decode_int(context->decoder_state, NULL, buf);
 	} else {
-		speex_bits_read_from(&context->decoder_bits, (char *) encoded_data, (int) *decoded_data_len);
+		speex_bits_read_from(&context->decoder_bits, (char *) encoded_data, (int) encoded_data_len);
 		speex_decode_int(context->decoder_state, &context->decoder_bits, buf);
 	}
+	*decoded_data_len = codec->implementation->bytes_per_frame;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -276,7 +276,7 @@ static const switch_codec_implementation_t speex_32k_implementation = {
 	/*.nanoseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 640,
 	/*.bytes_per_frame */ 1280,
-	/*.encoded_bytes_per_frame */ 1280,
+	/*.encoded_bytes_per_frame */ 43,
 	/*.number_of_channels */ 1,
 	/*.pref_frames_per_packet */ 1,
 	/*.max_frames_per_packet */ 1,
@@ -295,7 +295,7 @@ static const switch_codec_implementation_t speex_16k_implementation = {
 	/*.nanoseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 320,
 	/*.bytes_per_frame */ 640,
-	/*.encoded_bytes_per_frame */ 640,
+	/*.encoded_bytes_per_frame */ 43,
 	/*.number_of_channels */ 1,
 	/*.pref_frames_per_packet */ 1,
 	/*.max_frames_per_packet */ 1,
@@ -308,14 +308,14 @@ static const switch_codec_implementation_t speex_16k_implementation = {
 
 static const switch_codec_implementation_t speex_8k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 98,
+	/*.ianacode */ 97,
 	/*.iananame */ "speex",
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 128000,
 	/*.nanoseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
 	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ 29,
 	/*.number_of_channels */ 1,
 	/*.pref_frames_per_packet */ 1,
 	/*.max_frames_per_packet */ 1,

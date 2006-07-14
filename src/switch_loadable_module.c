@@ -662,28 +662,43 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	const switch_codec_implementation_t *imp;
 
     for (x = 0; x < preflen; x++) {
-        char *name, *p, buf[128];
-        uint32_t interval = 0, len = 0;
+		char *cur, *last = NULL, *next = NULL, *name, *p, buf[256];
+		uint32_t interval = 0, rate = 0;
 
-        name = prefs[x];
-        if ((p = strchr(name, '@'))) {
-            p++;
-            len = (uint32_t)(p-name);
+		switch_copy_string(buf, prefs[x], sizeof(buf));
+		last = name = next = cur = buf;
 
-            if (len > sizeof(buf)) {
-                len = sizeof(buf);
-            }
-            switch_copy_string(buf, name, len);
-            *(buf + len) = '\0';
-            interval = atoi(p);
-            name = buf;
-        }
+		for (;;) {
+			if (!next) {
+				break;
+			}
+			if ((p = strchr(next, '@'))) {
+				*p++ = '\0';
+			}
+			next = p;
+			if (cur != name) {
+				if (strchr(cur, 'i')) {
+					interval = atoi(cur);
+				} else if (strchr(cur, 'k')) {
+					rate = atoi(cur);
+				}
+			}
+			cur = next;
+		}
 
         if ((codec_interface = switch_loadable_module_get_codec_interface(name)) != 0 ) {
 			for (imp = codec_interface->implementations; imp; imp = imp->next) {
-				if (!interval) {
-					array[i++] = imp;
-				} else if ((uint32_t)(imp->microseconds_per_frame / 1000) == interval) {
+				uint8_t match = 1;
+
+				if (interval && (uint32_t)(imp->microseconds_per_frame / 1000) != interval) {
+					match = 0;
+				}
+
+				if (match && rate && (uint32_t)imp->samples_per_second != rate) {
+					match = 0;
+				}
+
+				if (match) {
 					array[i++] = imp;
 				}
 			}

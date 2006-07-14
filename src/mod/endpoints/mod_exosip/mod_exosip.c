@@ -1007,7 +1007,7 @@ static char *find_reg_url(switch_core_db_t *db, char *key, char *val, switch_siz
 	struct callback_t cbt = {0};
 	char buf[1024];
 	char *host = NULL;
-	
+
 	if (db) {
 		udb = db;
 	} else {
@@ -1028,6 +1028,7 @@ static char *find_reg_url(switch_core_db_t *db, char *key, char *val, switch_siz
 	} else {
 		snprintf(val, len, "select url from sip_registrations where key='%s'", key);	
 	}
+
 	switch_core_db_exec(udb, val, find_callback, &cbt, &errmsg);
 
 	if (errmsg) {
