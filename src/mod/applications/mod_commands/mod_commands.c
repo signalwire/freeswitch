@@ -208,10 +208,10 @@ static switch_status_t show_function(char *cmd, switch_stream_handle_t *stream)
         sprintf (sql, "select * from interfaces where type = '%s'", cmd);
     }
     else if ( !strcmp(cmd,"calls")) {
-        sprintf (sql, "select * from calls", cmd);
+        sprintf (sql, "select * from calls");
     }
     else if ( !strcmp(cmd,"channels")) {
-        sprintf (sql, "select * from channels", cmd);
+        sprintf (sql, "select * from channels");
     }
     else {
         stream->write_function(stream, "Invalid interfaces type!\n");
