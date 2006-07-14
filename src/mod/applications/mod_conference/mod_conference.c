@@ -475,7 +475,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			switch_mutex_lock(imember->audio_in_mutex);
 			/* if there is audio in the resample buffer it takes precedence over the other data */
 			if (imember->mux_resampler && switch_buffer_inuse(imember->resample_buffer) >= bytes) {
-				imember->read = switch_buffer_read(imember->resample_buffer, imember->frame, bytes);
+				imember->read = (uint32_t)switch_buffer_read(imember->resample_buffer, imember->frame, bytes);
 				ready++;
 			} else if ((imember->read = (uint32_t)switch_buffer_read(imember->audio_buffer, imember->frame, imember->buflen))) {
 				/* If the caller is not at the right sample rate resample him to suit and buffer accordingly */
@@ -492,7 +492,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 					len = imember->mux_resampler->to_len * 2;
 					switch_buffer_write(imember->resample_buffer, out, len);
 					if (switch_buffer_inuse(imember->resample_buffer) >= bytes) {
-						imember->read = switch_buffer_read(imember->resample_buffer, imember->frame, bytes);
+						imember->read = (uint32_t)switch_buffer_read(imember->resample_buffer, imember->frame, bytes);
 						ready++;
 					}
 				} else {
@@ -895,7 +895,7 @@ static void conference_loop(conference_member_t *member)
 			}
 		} else {
 			switch_buffer_t *use_buffer = NULL;
-			uint32_t mux_used = switch_buffer_inuse(member->mux_buffer);
+			uint32_t mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer);
 			//uint32_t res_used = member->mux_resampler ? switch_buffer_inuse(member->resample_buffer) : 0;
 			
 			if (mux_used) {

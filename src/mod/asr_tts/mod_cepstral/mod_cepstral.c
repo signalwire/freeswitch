@@ -196,7 +196,7 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 {
 	cepstral_t *cepstral;
 	const char *fp = "file:";
-	int len = strlen(fp);
+	int len = (int)strlen(fp);
 
 	assert(sh != NULL);
 	cepstral = sh->private_info;

@@ -207,10 +207,16 @@ static switch_status_t show_function(char *cmd, switch_stream_handle_t *stream)
             ) {
         sprintf (sql, "select * from interfaces where type = '%s'", cmd);
     }
+    else if ( !strcmp(cmd,"calls")) {
+        sprintf (sql, "select * from calls", cmd);
+    }
+    else if ( !strcmp(cmd,"channels")) {
+        sprintf (sql, "select * from channels", cmd);
+    }
     else {
         stream->write_function(stream, "Invalid interfaces type!\n");
         stream->write_function(stream, "Example:\n");
-        stream->write_function(stream, "show <blank>|codec|application|api|dialplan|file|timer\n");
+        stream->write_function(stream, "show <blank>|codec|application|api|dialplan|file|timer|calls|channels\n");
         return SWITCH_STATUS_SUCCESS;
     }
     

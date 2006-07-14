@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="mod_dptools"
-	ProjectGUID="{78100236-7CEA-4948-96CC-E8ED3160329C}"
+	ProjectGUID="{B5881A85-FE70-4F64-8607-2CAAE52669C6}"
 	RootNamespace="mod_dptools"
 	Keyword="Win32Proj"
 	>
