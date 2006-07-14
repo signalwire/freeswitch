@@ -352,9 +352,8 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 		sprintf(dbuf, "%u", tech_pvt->te);
 		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(dbuf));
 		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, tech_pvt->te, "telephone-event", 8000, 0);
-		sprintf(dbuf, "%u telephone-event/8000", tech_pvt->te);
+		sprintf(dbuf, "%u telephone-event/8000\na=fmtp %u 0-15", tech_pvt->te, tech_pvt->te);
 		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(dbuf));
-		
 		
 		if (tech_pvt->num_codecs > 0) {
 			int i, lastcode = -1;
@@ -1310,10 +1309,8 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 		sprintf(dbuf, "%u", tech_pvt->te);
 		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(dbuf));
 		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, tech_pvt->te, "telephone-event", 8000, 0);
-		sprintf(dbuf, "%u telephone-event/8000", tech_pvt->te);
+		sprintf(dbuf, "%u telephone-event/8000\na=fmtp %u 0-15", tech_pvt->te, tech_pvt->te);
 		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(dbuf));
-
-
 
 		if (tech_pvt->num_codecs > 0) {
 			int i;
@@ -1597,7 +1594,8 @@ static void handle_message_new(eXosip_event_t *je)
 		char *url;
 		char *expires = NULL;
 		osip_message_t *tmp = NULL;
-		char sql[1024] = "";
+		char buf[1024];
+		char *sql = NULL;
 		time_t exptime;
 		switch_event_t *s_event;
 
@@ -1625,16 +1623,16 @@ static void handle_message_new(eXosip_event_t *je)
 				}
 
 				
-				if (!find_reg_url(globals.db, je->request->from->url->username, sql, sizeof(sql))) {
-					snprintf(sql, sizeof(sql), "insert into sip_registrations values ('%s','%s','%s',%ld)", 
-							 je->request->from->url->username,
-							 je->request->from->url->host,
-							 url, exptime);
+				if (!find_reg_url(globals.db, je->request->from->url->username, buf, sizeof(buf))) {
+					sql = switch_core_db_mprintf("insert into sip_registrations values ('%s','%s','%s',%ld)", 
+												 je->request->from->url->username,
+												 je->request->from->url->host,
+												 url, exptime);
 				} else {
-					snprintf(sql, sizeof(sql), "update sip_registrations set url='%s', expires=%ld where key = '%s'",
-							 url,
-							 exptime,
-							 je->request->from->url->username);
+					sql = switch_core_db_mprintf("update sip_registrations set url='%s', expires=%ld where key = '%s'",
+												 url,
+												 exptime,
+												 je->request->from->url->username);
 					
 				}
 
@@ -1644,9 +1642,13 @@ static void handle_message_new(eXosip_event_t *je)
 					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", exptime);
 					switch_event_fire(&s_event);
 				}
-				switch_mutex_lock(globals.reg_mutex);
-				switch_core_db_persistant_execute(globals.db, sql, 25);
-				switch_mutex_unlock(globals.reg_mutex);
+				if (sql) {
+					switch_mutex_lock(globals.reg_mutex);
+					switch_core_db_persistant_execute(globals.db, sql, 25);
+					switch_core_db_free(sql);
+					sql = NULL;
+					switch_mutex_unlock(globals.reg_mutex);
+				}
 				eXosip_lock();
 				if (eXosip_message_build_answer(je->tid, 200, &tmp) < 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "build_answer failed\n");
