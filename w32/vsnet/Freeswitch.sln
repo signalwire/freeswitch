@@ -201,8 +201,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_xml_rpc", "..\..\src\mo
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{99D6D74B-32A8-4441-A417-551B0E0A4510}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_rss", "..\..\src\mod\applications\mod_rss\mod_rss.vcproj", "{B69247FA-ECD6-40ED-8E44-5CA6C3BAF9A4}"
 	ProjectSection(ProjectDependencies) = postProject
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
