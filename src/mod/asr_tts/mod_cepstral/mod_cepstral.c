@@ -28,8 +28,11 @@
  *
  * mod_cepstral.c -- Cepstral Interface
  * 
- * Some material based on the Cepstral Swift SDK, 
- * Copyiright Cepstral LLC and used by permission
+ * Contains some material derived from the Cepstral Swift SDK, by  
+ * permission.  You are free to copy and modify the source under the  
+ * terms of FreeSWITCH itself, without additional permission from  
+ * Cepstral
+ * 
  *
  */
 #ifdef __ICC
