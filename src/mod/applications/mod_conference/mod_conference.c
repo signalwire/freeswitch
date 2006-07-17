@@ -704,129 +704,134 @@ static void conference_loop(conference_member_t *member)
 		switch_size_t file_sample_len = samples;
 		char *digit;
 		char msg[512];
+		switch_event_t *event;
+
+		if (switch_core_session_dequeue_event(member->session, &event) == SWITCH_STATUS_SUCCESS) {
+			switch_event_destroy(&event);
+		}
 
         if (switch_channel_has_dtmf(channel)) {
             switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-        }
 
-		for (digit = dtmf; *digit; digit++) {
-			switch(*digit) {
-			case '0':
-				if (switch_test_flag(member, MFLAG_CAN_SPEAK)) {
-					switch_clear_flag_locked(member, MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR);
-					if (member->conference->muted_sound) {
-						conference_member_play_file(member, member->conference->muted_sound, 0);
+			for (digit = dtmf; *digit; digit++) {
+				switch(*digit) {
+				case '0':
+					if (switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+						switch_clear_flag_locked(member, MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR);
+						if (member->conference->muted_sound) {
+							conference_member_play_file(member, member->conference->muted_sound, 0);
+						} else {
+							snprintf(msg, sizeof(msg), "Muted");
+							conference_member_say(member->conference, member, msg, 0);
+						}
 					} else {
-						snprintf(msg, sizeof(msg), "Muted");
-						conference_member_say(member->conference, member, msg, 0);
+						switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
+						if (member->conference->unmuted_sound) {
+							conference_member_play_file(member, member->conference->unmuted_sound, 0);
+						} else {
+							snprintf(msg, sizeof(msg), "Un-Muted");
+							conference_member_say(member->conference, member, msg, 0);
+						}
 					}
-				} else {
-					switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
-					if (member->conference->unmuted_sound) {
-						conference_member_play_file(member, member->conference->unmuted_sound, 0);
+					break;
+				case '*':
+					if (switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+						switch_clear_flag_locked(member, MFLAG_CAN_SPEAK|MFLAG_CAN_HEAR);
+						if (member->conference->muted_sound) {
+							conference_member_play_file(member, member->conference->muted_sound, 0);
+						} else {
+							snprintf(msg, sizeof(msg), "Muted");
+							conference_member_say(member->conference, member, msg, 0);
+						}
 					} else {
-						snprintf(msg, sizeof(msg), "Un-Muted");
-						conference_member_say(member->conference, member, msg, 0);
+						switch_set_flag_locked(member, MFLAG_CAN_SPEAK|MFLAG_CAN_HEAR);
+						if (member->conference->unmuted_sound) {
+							conference_member_play_file(member, member->conference->unmuted_sound, 0);
+						} else {
+							snprintf(msg, sizeof(msg), "UN-Muted");
+							conference_member_say(member->conference, member, msg, 0);
+						}
 					}
-				}
-				break;
-			case '*':
-				if (switch_test_flag(member, MFLAG_CAN_SPEAK)) {
-					switch_clear_flag_locked(member, MFLAG_CAN_SPEAK|MFLAG_CAN_HEAR);
-					if (member->conference->muted_sound) {
-						conference_member_play_file(member, member->conference->muted_sound, 0);
-					} else {
-						snprintf(msg, sizeof(msg), "Muted");
-						conference_member_say(member->conference, member, msg, 0);
+					break;
+				case '9':
+					switch_mutex_lock(member->flag_mutex);
+					member->energy_level += 100;
+					if (member->energy_level > 1200) {
+						member->energy_level = 1200;
 					}
-				} else {
-					switch_set_flag_locked(member, MFLAG_CAN_SPEAK|MFLAG_CAN_HEAR);
-					if (member->conference->unmuted_sound) {
-						conference_member_play_file(member, member->conference->unmuted_sound, 0);
-					} else {
-						snprintf(msg, sizeof(msg), "UN-Muted");
-						conference_member_say(member->conference, member, msg, 0);
+					switch_mutex_unlock(member->flag_mutex);
+					snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+					conference_member_say(member->conference, member, msg, 0);
+					break;
+				case '8':
+					switch_mutex_lock(member->flag_mutex);
+					member->energy_level = member->conference->energy_level;
+					switch_mutex_unlock(member->flag_mutex);
+					snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+					conference_member_say(member->conference, member, msg, 0);
+					break;
+				case '7':
+					switch_mutex_lock(member->flag_mutex);
+					member->energy_level -= 100;
+					if (member->energy_level < 0) {
+						member->energy_level = 0;
 					}
+					switch_mutex_unlock(member->flag_mutex);
+					snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
+					conference_member_say(member->conference, member, msg, 0);
+					break;
+				case '3':
+					switch_mutex_lock(member->flag_mutex);
+					member->volume_out_level++;
+					normalize_volume(member->volume_out_level);
+					switch_mutex_unlock(member->flag_mutex);
+					snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+					conference_member_say(member->conference, member, msg, 0);
+					break;
+				case '2':
+					switch_mutex_lock(member->flag_mutex);
+					member->volume_out_level = 0;
+					switch_mutex_unlock(member->flag_mutex);
+					snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+					conference_member_say(member->conference, member, msg, 0);
+					break;
+				case '1':
+					switch_mutex_lock(member->flag_mutex);
+					member->volume_out_level--;
+					normalize_volume(member->volume_out_level);
+					switch_mutex_unlock(member->flag_mutex);
+					snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
+					conference_member_say(member->conference, member, msg, 0);
+					break;
+				case '6':
+					switch_mutex_lock(member->flag_mutex);
+					member->volume_in_level++;
+					normalize_volume(member->volume_in_level);
+					switch_mutex_unlock(member->flag_mutex);
+					snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+					conference_member_say(member->conference, member, msg, 0);
+					break;
+				case '5':
+					switch_mutex_lock(member->flag_mutex);
+					member->volume_in_level = 0;
+					switch_mutex_unlock(member->flag_mutex);
+					snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+					conference_member_say(member->conference, member, msg, 0);
+					break;
+				case '4':
+					switch_mutex_lock(member->flag_mutex);
+					member->volume_in_level--;
+					normalize_volume(member->volume_in_level);
+					switch_mutex_unlock(member->flag_mutex);
+					snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
+					conference_member_say(member->conference, member, msg, 0);
+					break;
+				case '#':
+					switch_clear_flag_locked(member, MFLAG_RUNNING);
+					break;
+				default:
+					break;
 				}
-				break;
-			case '9':
-				switch_mutex_lock(member->flag_mutex);
-				member->energy_level += 100;
-				if (member->energy_level > 1200) {
-					member->energy_level = 1200;
-				}
-				switch_mutex_unlock(member->flag_mutex);
-				snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
-				conference_member_say(member->conference, member, msg, 0);
-				break;
-			case '8':
-				switch_mutex_lock(member->flag_mutex);
-				member->energy_level = member->conference->energy_level;
-				switch_mutex_unlock(member->flag_mutex);
-				snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
-				conference_member_say(member->conference, member, msg, 0);
-				break;
-			case '7':
-				switch_mutex_lock(member->flag_mutex);
-				member->energy_level -= 100;
-				if (member->energy_level < 0) {
-					member->energy_level = 0;
-				}
-				switch_mutex_unlock(member->flag_mutex);
-				snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
-				conference_member_say(member->conference, member, msg, 0);
-				break;
-			case '3':
-				switch_mutex_lock(member->flag_mutex);
-				member->volume_out_level++;
-				normalize_volume(member->volume_out_level);
-				switch_mutex_unlock(member->flag_mutex);
-				snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
-				conference_member_say(member->conference, member, msg, 0);
-				break;
-			case '2':
-				switch_mutex_lock(member->flag_mutex);
-				member->volume_out_level = 0;
-				switch_mutex_unlock(member->flag_mutex);
-				snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
-				conference_member_say(member->conference, member, msg, 0);
-				break;
-			case '1':
-				switch_mutex_lock(member->flag_mutex);
-				member->volume_out_level--;
-				normalize_volume(member->volume_out_level);
-				switch_mutex_unlock(member->flag_mutex);
-				snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
-				conference_member_say(member->conference, member, msg, 0);
-				break;
-			case '6':
-				switch_mutex_lock(member->flag_mutex);
-				member->volume_in_level++;
-				normalize_volume(member->volume_in_level);
-				switch_mutex_unlock(member->flag_mutex);
-				snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
-				conference_member_say(member->conference, member, msg, 0);
-				break;
-			case '5':
-				switch_mutex_lock(member->flag_mutex);
-				member->volume_in_level = 0;
-				switch_mutex_unlock(member->flag_mutex);
-				snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
-				conference_member_say(member->conference, member, msg, 0);
-				break;
-			case '4':
-				switch_mutex_lock(member->flag_mutex);
-				member->volume_in_level--;
-				normalize_volume(member->volume_in_level);
-				switch_mutex_unlock(member->flag_mutex);
-				snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
-				conference_member_say(member->conference, member, msg, 0);
-				break;
-			case '#':
-				switch_clear_flag_locked(member, MFLAG_RUNNING);
-				break;
-			default:
-				break;
 			}
 		}
 

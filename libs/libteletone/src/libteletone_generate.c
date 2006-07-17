@@ -30,6 +30,9 @@
  *
  */
 #include <libteletone.h>
+#define SMAX 32767
+#define SMIN -32768
+#define normalize_to_16bit(n) if (n > SMAX) n = SMAX; else if (n < SMIN) n = SMIN;
 
 
 
@@ -163,6 +166,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 			for (i = 0; i < freqlen; i++) {
 				sample += ((teletone_process_t) 2 * (ts->volume > 0 ? ts->volume : 1) * cos(tones[i] * ts->samples * period));
 			}
+			normalize_to_16bit(sample);
 			ts->buffer[ts->samples] = (teletone_audio_t)sample;
 			
 			for (c = 1; c < ts->channels; c++) {

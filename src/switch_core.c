@@ -1130,7 +1130,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_se
 SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_session_t *session, switch_event_t **event)
 	 
 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	assert(session != NULL);
 
@@ -1138,10 +1138,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
 		switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	}
 
-	if ((status = (switch_status_t) switch_queue_push(session->event_queue, *event) == SWITCH_STATUS_SUCCESS)) {
-		*event = NULL;
-	}	
-	
+	if (session->event_queue) {
+		if (switch_queue_trypush(session->event_queue, *event) == SWITCH_STATUS_SUCCESS) {
+			*event = NULL;
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	} 
+
 	return status;
 }
 

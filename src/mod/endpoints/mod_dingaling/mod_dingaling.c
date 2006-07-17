@@ -1509,9 +1509,12 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", from);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", subject);
 			switch_event_add_body(event, msg);
+
 			if (switch_core_session_queue_event(tech_pvt->session, &event) != SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 				switch_event_fire(&event);
 			}
+
 		}
 		break;
 
