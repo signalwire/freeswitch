@@ -449,11 +449,7 @@ End Sub
 
 Sub BuildLibs_iksemel(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "iksemel") Then 
-		WgetUnCompress "http://jabberstudio.2nw.net/iksemel/iksemel-1.2.tar.gz", LibDestDir 
-		If Not FSO.FolderExists(LibDestDir & "iksemel-1.2") Then
-			Wscript.echo "Unable to get iksemel from default download location, Trying backup location:"
-			WgetUnCompress LibsBase & "iksemel-1.2.tar.gz", LibDestDir
-		End If
+		WgetUnCompress LibsBase & "iksemel-1.2.tar.gz", LibDestDir
 		RenameFolder LibDestDir & "iksemel-1.2", "iksemel"
 		FSO.CopyFile Utilsdir & "iksemel\iksemel.vcproj", LibDestDir & "iksemel\", True
 		FSO.CopyFile Utilsdir & "iksemel\config.h", LibDestDir & "iksemel\include\", True
