@@ -239,7 +239,7 @@ End If
 If BuildModSpiderMonkey Then
 	BuildLibs_SpiderMonkey BuildDebug, BuildRelease
 	BuildLibs_curl BuildDebug, BuildRelease
-	BuildLibs_libetpan BuildDebug, BuildRelease
+'	BuildLibs_libetpan BuildDebug, BuildRelease
 End If
 
 WScript.Echo "Complete"
@@ -249,7 +249,7 @@ WScript.Echo "Complete"
 '  ******************
 Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "apr-util") Then 
-		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-util-1.2.6.tar.gz", LibDestDir
+'		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-util-1.2.6.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "apr-util-1.2.6") Then
 			Wscript.echo "Unable to get apr-util from default download location, Trying backup location:"
 			WgetUnCompress LibsBase & "apr-util-1.2.6.tar.gz", LibDestDir
@@ -286,7 +286,7 @@ End Sub
 
 Sub BuildLibs_apriconv(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "apr-iconv") Then 
-		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-iconv-1.1.1.tar.gz", LibDestDir
+'		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-iconv-1.1.1.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "apr-iconv-1.1.1") Then
 			Wscript.echo "Unable to get apr-iconv from default download location, Trying backup location:"
 			WgetUnCompress LibsBase & "apr-iconv-1.1.1.tar.gz", LibDestDir
@@ -316,7 +316,7 @@ End Sub
 
 Sub BuildLibs_apr(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "apr") Then 
-		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-1.2.6.tar.gz", LibDestDir
+'		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-1.2.6.tar.gz", LibDestDir
 		If Not FSO.FolderExists(LibDestDir & "apr-1.2.6") Then
 			Wscript.echo "Unable to get apr from default download location, Trying backup location:"
 			WgetUnCompress LibsBase & "apr-1.2.6.tar.gz", LibDestDir
