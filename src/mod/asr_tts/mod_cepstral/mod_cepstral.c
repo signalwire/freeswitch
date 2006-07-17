@@ -27,6 +27,9 @@
  *
  *
  * mod_cepstral.c -- Cepstral Interface
+ * 
+ * Some material based on the Cepstral Swift SDK, 
+ * Copyiright Cepstral LLC and used by permission
  *
  */
 #ifdef __ICC
