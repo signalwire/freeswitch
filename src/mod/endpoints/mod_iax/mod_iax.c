@@ -1099,8 +1099,12 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 							break;
 						}
 
-						bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-						frames = (int) (tech_pvt->read_frame.datalen / bytes);
+						if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
+							bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+							frames = (int) (tech_pvt->read_frame.datalen / bytes);
+						} else {
+							frames = 1;
+						}
 
 
 						tech_pvt->read_frame.samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;

@@ -291,15 +291,15 @@ static int activate_rtp(struct private_object *tech_pvt)
 	}
 
 	if (!(tech_pvt->rtp_session = switch_rtp_new(tech_pvt->profile->ip,
-						     tech_pvt->local_port,
-						     tech_pvt->remote_ip,
-						     tech_pvt->remote_port,
-						     tech_pvt->codec_num,
-						     tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
-						     tech_pvt->read_codec.implementation->microseconds_per_frame,
-						     flags,
-						     NULL,
-						     &err, switch_core_session_get_pool(tech_pvt->session)))) {
+												 tech_pvt->local_port,
+												 tech_pvt->remote_ip,
+												 tech_pvt->remote_port,
+												 tech_pvt->codec_num,
+												 0,
+												 tech_pvt->read_codec.implementation->microseconds_per_frame,
+												 flags,
+												 NULL,
+												 &err, switch_core_session_get_pool(tech_pvt->session)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return -1;
@@ -784,8 +784,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 
 		if (tech_pvt->read_frame.datalen > 0) {
-			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-			frames = (tech_pvt->read_frame.datalen / bytes);
+			if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
+				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+				frames = (tech_pvt->read_frame.datalen / bytes);
+			} else {
+				frames = 1;
+			}
 			samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 			ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
 			tech_pvt->timestamp_recv += (int32_t) samples;
@@ -841,9 +845,13 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
+	if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
+		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+		frames = ((int) frame->datalen / bytes);
+	} else {
+		frames = 1;
+	}
 
-	bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-	frames = ((int) frame->datalen / bytes);
 	samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 
 	//printf("%s send %d bytes %d samples in %d frames ts=%d\n", switch_channel_get_name(channel), frame->datalen, samples, frames, tech_pvt->timestamp_send);

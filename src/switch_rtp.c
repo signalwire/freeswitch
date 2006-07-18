@@ -796,10 +796,11 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				
 					switch_sockaddr_ip_get(&tx_host, rtp_session->from_addr);
 					switch_sockaddr_ip_get(&old_host, rtp_session->remote_addr);
-					
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Auto Changing port from %s:%u to %s:%u\n",
-									  old_host, old, tx_host, rtp_session->from_addr->port);
-					switch_rtp_set_remote_address(rtp_session, tx_host, rtp_session->from_addr->port, &err);
+					if (!switch_strlen_zero(tx_host) && rtp_session->from_addr->port > 0) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Auto Changing port from %s:%u to %s:%u\n",
+										  old_host, old, tx_host, rtp_session->from_addr->port);
+						switch_rtp_set_remote_address(rtp_session, tx_host, rtp_session->from_addr->port, &err);
+					}
 				}
 				switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 			}
@@ -1083,7 +1084,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD) && 
 		rtp_session->recv_msg.header.pt == rtp_session->vad_data.read_codec->implementation->ianacode &&
-		datalen == rtp_session->vad_data.read_codec->implementation->encoded_bytes_per_frame) {
+		((datalen == rtp_session->vad_data.read_codec->implementation->encoded_bytes_per_frame) || 
+		 (datalen > SWITCH_RTP_CNG_PAYLOAD && rtp_session->vad_data.read_codec->implementation->encoded_bytes_per_frame == 0))) {
 		int16_t decoded[SWITCH_RECCOMMENDED_BUFFER_SIZE/sizeof(int16_t)];
 		uint32_t rate;
 		uint32_t flags;

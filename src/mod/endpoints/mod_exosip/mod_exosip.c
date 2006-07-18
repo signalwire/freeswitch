@@ -562,7 +562,7 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 										   tech_pvt->remote_sdp_audio_ip,
 										   tech_pvt->remote_sdp_audio_port,
 										   tech_pvt->read_codec.implementation->ianacode,
-										   tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
+										   0, //tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 										   ms,
 										   flags,
 										   key,
@@ -718,8 +718,12 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 
 			if (tech_pvt->read_frame.datalen > 0) {
 				tech_pvt->last_read = switch_time_now();
-				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-				frames = (tech_pvt->read_frame.datalen / bytes);
+				if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
+					bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+					frames = (tech_pvt->read_frame.datalen / bytes);
+				} else {
+					frames = 1;
+				}
 				samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 				ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
 				tech_pvt->timestamp_recv += (int32_t) samples;
@@ -776,8 +780,12 @@ static switch_status_t exosip_write_frame(switch_core_session_t *session, switch
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
 	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
-		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-		frames = ((int) frame->datalen / bytes);
+		if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
+			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+			frames = ((int) frame->datalen / bytes);
+		} else {
+			frames = 1;
+		}
 		samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 	} else {
 		assert(0);
