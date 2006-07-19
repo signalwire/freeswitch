@@ -912,7 +912,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open XML Root!\n");
+		*err = "Cannot Open XML Root!";
 	}
 
 	if (hasmain) {
