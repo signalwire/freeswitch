@@ -2730,7 +2730,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	uint32_t itterations = 0;
 	uint8_t trans = 0;
 	switch_time_t last_commit = switch_time_now();
-	uint32_t freq = 1000, target = 500, diff = 0;
+	uint32_t freq = 1000, target = 1000, diff = 0;
 	
 	if (!runtime.event_db) {
 		runtime.event_db = switch_core_db_handle();
@@ -2810,7 +2810,7 @@ static void core_event_handler(switch_event_t *event)
 
 	switch (event->event_id) {
 	case SWITCH_EVENT_CHANNEL_DESTROY:
-		switch_core_db_mprintf("delete from channels where uuid='%s'", switch_event_get_header(event, "unique-id"));
+		sql = switch_core_db_mprintf("delete from channels where uuid='%s'", switch_event_get_header(event, "unique-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_CREATE:
 		sql = switch_core_db_mprintf("insert into channels (uuid,created,name,state) values('%q','%q','%q','%q')",
