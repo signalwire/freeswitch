@@ -2926,10 +2926,10 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 }
 
 
-SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new)
+SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit)
 {
-	if (new) {
-		runtime.session_limit = new;
+	if (new_limit) {
+		runtime.session_limit = new_limit;
 	}
 	
 	return runtime.session_limit;

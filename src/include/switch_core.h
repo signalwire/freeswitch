@@ -121,7 +121,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
   \param new new value (if > 0)
   \return the current session limit
 */
-SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new);
+SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit);
 
 /*! 
   \brief Destroy the core
