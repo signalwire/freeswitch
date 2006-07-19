@@ -184,20 +184,28 @@ static switch_status_t pause_function(char *cmd, switch_stream_handle_t *stream)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
-	switch_stream_handle_t *stream = (switch_stream_handle_t *) pArg;
+struct holder {
+	switch_stream_handle_t *stream;
+	uint32_t count;
+};
 
-	stream->write_function(stream, "%s|%s\n", argv[0], argv[1] ? argv[1] : "NULL");
+
+
+static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
+	struct holder *holder = (struct holder *) pArg;
+
+	holder->stream->write_function(holder->stream, "%s|%s\n", argv[0], argv[1] ? argv[1] : "NULL");
+	holder->count++;
 	return 0;
 }
-
 
 static switch_status_t show_function(char *cmd, switch_stream_handle_t *stream)
 {
 	char sql[1024];
 	char *errmsg;
 	switch_core_db_t *db = switch_core_db_handle();
-
+	struct holder holder;
+	
     if (!cmd) {
         sprintf (sql, "select * from interfaces");
     }
@@ -220,12 +228,17 @@ static switch_status_t show_function(char *cmd, switch_stream_handle_t *stream)
         return SWITCH_STATUS_SUCCESS;
     }
     
-	switch_core_db_exec(db, sql, show_callback, stream, &errmsg);
+	holder.stream = stream;
+	holder.count = 0;
+
+	switch_core_db_exec(db, sql, show_callback, &holder, &errmsg);
 
 	if (errmsg) {
 		stream->write_function(stream, "SQL ERR [%s]\n",errmsg);
 		switch_core_db_free(errmsg);
 		errmsg = NULL;
+	} else {
+		stream->write_function(stream, "%u total.\n", holder.count);
 	}
 
 	switch_core_db_close(db);
