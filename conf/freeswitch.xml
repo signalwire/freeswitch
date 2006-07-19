@@ -79,7 +79,7 @@
         <!-- <param name="ip" value="1.2.3.4"> -->
         <param name="port" value="4569"/>
         <param name="dialplan" value="XML"/>
-        <param name="codec-prefs" value="PCMU@20,PCMA,speex,L16"/>
+        <param name="codec-prefs" value="PCMU@20i,PCMA,speex,L16"/>
         <param name="codec-master" value="us"/>
         <param name="codec-rates" value="8"/>
       </settings>
@@ -119,7 +119,11 @@
         <param name="dtmf-duration" value="100"/>
         <!-- the @20 is optional number of ms you want to use.  Use it only
         if you know the codec supports it -->
-        <param name="codec-prefs" value="PCMU@20,PCMA@20"/>
+        <param name="codec-prefs" value="PCMU@20i,PCMA@20i"/>
+        <!-- Example to call for speex in wideband 16k mode 
+	you can have up to 2 '@; after the codec name followed by either
+	'i' (interval eg 20i for 20ms) or 'k' (kilohertz eg 16000k for 16khz)-->
+        <!--<param name="codec-prefs" value="SPEEX@16000k"/>-->
         <!-- Payload number to bind DTMF to-->
         <param name="rfc2833-pt" value="101"/>
         <!-- disable to trade async for more calls -->
