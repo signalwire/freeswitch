@@ -186,15 +186,46 @@ static switch_status_t pause_function(char *cmd, switch_stream_handle_t *stream)
 
 struct holder {
 	switch_stream_handle_t *stream;
+	char *http;
 	uint32_t count;
 };
 
-
-
 static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
 	struct holder *holder = (struct holder *) pArg;
+	int x;
 
-	holder->stream->write_function(holder->stream, "%s|%s\n", argv[0], argv[1] ? argv[1] : "NULL");
+
+	if (holder->count == 0) {
+		if (holder->http) {
+			holder->stream->write_function(holder->stream, "\n<tr>");
+		}
+
+		for(x = 0; x < argc; x++) {
+			if (holder->http) {
+				holder->stream->write_function(holder->stream, "<td>");
+				holder->stream->write_function(holder->stream, "<b>%s</b>%s", columnNames[x], x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
+			} else {
+				holder->stream->write_function(holder->stream, "%s%s", columnNames[x], x == (argc - 1) ? "\n" : ",");
+			}
+		}
+	} 
+
+	if (holder->http) {
+		holder->stream->write_function(holder->stream, "<tr bgcolor=%s>", holder->count % 2 == 0 ? "eeeeee" : "ffffff");
+	}
+
+	for(x = 0; x < argc; x++) {
+		if (holder->http) {
+			holder->stream->write_function(holder->stream, "<td>");
+			holder->stream->write_function(holder->stream, "%s%s", argv[x], x == (argc - 1) ? "</td></tr>\n" : "</td><td>");
+		} else {
+			holder->stream->write_function(holder->stream, "%s%s", argv[x], x == (argc - 1) ? "\n" : ",");
+		}
+	}
+	
+
+
+
 	holder->count++;
 	return 0;
 }
@@ -204,8 +235,12 @@ static switch_status_t show_function(char *cmd, switch_stream_handle_t *stream)
 	char sql[1024];
 	char *errmsg;
 	switch_core_db_t *db = switch_core_db_handle();
-	struct holder holder;
-	
+	struct holder holder = {0};
+
+	if (stream->event) {
+        holder.http = switch_event_get_header(stream->event, "http-host");
+    } 
+
     if (!cmd) {
         sprintf (sql, "select * from interfaces");
     }
@@ -231,14 +266,23 @@ static switch_status_t show_function(char *cmd, switch_stream_handle_t *stream)
 	holder.stream = stream;
 	holder.count = 0;
 
+	if (holder.http) {
+		holder.stream->write_function(holder.stream, "<table cellpadding=1 cellspacing=4 border=1>\n");
+	}
+
 	switch_core_db_exec(db, sql, show_callback, &holder, &errmsg);
+
+	if (holder.http) {
+		holder.stream->write_function(holder.stream, "</table>");
+	}
+
 
 	if (errmsg) {
 		stream->write_function(stream, "SQL ERR [%s]\n",errmsg);
 		switch_core_db_free(errmsg);
 		errmsg = NULL;
 	} else {
-		stream->write_function(stream, "%u total.\n", holder.count);
+		stream->write_function(stream, "\n%u total.\n", holder.count);
 	}
 
 	switch_core_db_close(db);

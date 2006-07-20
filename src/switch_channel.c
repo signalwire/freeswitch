@@ -593,6 +593,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 {
 	switch_caller_profile_t *caller_profile, *originator_caller_profile, *originatee_caller_profile;
 	switch_hash_index_t *hi;
+	switch_codec_t *codec;
 	void *val;
 	const void *var;
 	char state_num[25];
@@ -606,7 +607,16 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", (char *) state_num);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
-
+	
+	if ((codec = switch_core_session_get_read_codec(channel->session))) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", codec->implementation->iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Rate", "%u", codec->implementation->samples_per_second);
+	}
+	
+	if ((codec = switch_core_session_get_write_codec(channel->session))) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", codec->implementation->iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%u", codec->implementation->samples_per_second);
+	}
 
 	/* Index Caller's Profile */
 	if (caller_profile) {

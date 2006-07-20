@@ -2821,9 +2821,13 @@ static void core_event_handler(switch_event_t *event)
 									 );
 		break;
 	case SWITCH_EVENT_CHANNEL_EXECUTE:
-		sql = switch_core_db_mprintf("update channels set application='%q',application_data='%q' where uuid='%q'",
+		sql = switch_core_db_mprintf("update channels set application='%q',application_data='%q', read_codec='%q',read_rate='%q',write_codec='%q',write_rate='%q' where uuid='%q'",
 									 switch_event_get_header(event, "application"),
 									 switch_event_get_header(event, "application-data"),
+									 switch_event_get_header(event, "channel-read-codec-name"),
+									 switch_event_get_header(event, "channel-read-codec-rate"),
+									 switch_event_get_header(event, "channel-write-codec-name"),
+									 switch_event_get_header(event, "channel-write-codec-rate"),
 									 switch_event_get_header(event, "unique-id")
 									 );
 		break;
@@ -3018,7 +3022,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 			"   ip_addr  VARCHAR(255),\n"
 			"   dest  VARCHAR(255),\n"
 			"   application  VARCHAR(255),\n"
-			"   application_data  VARCHAR(255)\n"
+			"   application_data  VARCHAR(255),\n"
+			"   read_codec  VARCHAR(255),\n"
+			"   read_rate  VARCHAR(255),\n"
+			"   write_codec  VARCHAR(255),\n"
+			"   write_rate  VARCHAR(255)\n"
 			");\n";
 		char create_calls_sql[] =
 			"CREATE TABLE calls (\n"
