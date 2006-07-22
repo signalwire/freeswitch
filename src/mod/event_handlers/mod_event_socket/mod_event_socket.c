@@ -213,9 +213,10 @@ static void parse_command(listener_t *listener, char *cmd, char *reply, uint32_t
 
 	if (!switch_test_flag(listener, LFLAG_AUTHED)) {
 		if (!strncasecmp(cmd, "auth ", 5)) {
+			char *pass;
 			strip_cr(cmd);
 
-			char *pass = cmd + 5;
+			pass = cmd + 5;
 
 			if (!strcmp(prefs.password, pass)) {
 				switch_set_flag_locked(listener, LFLAG_AUTHED);
@@ -406,7 +407,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		}
 		
 		if (status == SWITCH_STATUS_BREAK) {
-			elapsed = time(NULL) - start;
+			elapsed = (uint32_t)(time(NULL) - start);
 			if (elapsed >= 15) {
 				switch_clear_flag_locked(listener, LFLAG_RUNNING);
 				break;
@@ -421,10 +422,10 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
  done:
 
 	while(switch_test_flag(listener, LFLAG_RUNNING) && listen_list.ready) {
+		uint8_t do_sleep = 1;
 		len = sizeof(buf);
 		memset(buf, 0, len);
 		status = switch_socket_recv(listener->sock, buf, &len);
-		uint8_t do_sleep = 1;
 		
 		if (!len && status != SWITCH_STATUS_BREAK) {
 			break;
@@ -554,7 +555,7 @@ static int config(void)
 				if (!strcmp(var, "listen-ip")) {
 					set_pref_ip(val);
 				} else if (!strcmp(var, "listen-port")) {
-					prefs.port = atoi(val);
+					prefs.port = (uint16_t)atoi(val);
 				} else if (!strcmp(var, "password")) {
 					set_pref_pass(val);
 				} 
@@ -586,7 +587,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
     switch_sockaddr_t *sa;
     switch_socket_t  *inbound_socket = NULL;
 	listener_t *listener;
-	uint32_t count;
 
 	memset(&listen_list, 0, sizeof(listen_list));
 	config();
@@ -600,7 +600,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 	
 	for(;;) {
-		count++;
 		rv = switch_sockaddr_info_get(&sa, prefs.ip, APR_INET, prefs.port, 0, pool);
 		if (rv) goto fail;
 		rv = switch_socket_create(&listen_list.sock, sa->family, SOCK_STREAM, APR_PROTO_TCP, pool);

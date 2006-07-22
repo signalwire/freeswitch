@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="mod_event_test"
-	ProjectGUID="{3A2A7795-C216-4FFF-B8EF-4D17A84BACCC}"
-	RootNamespace="mod_event_test"
+	Name="mod_event_socket"
+	ProjectGUID="{05515420-16DE-4E63-BE73-85BE85BA5142}"
+	RootNamespace="mod_event_socket"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -63,13 +63,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_event_test.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_event_socket.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_event_test.pdb"
+				ProgramDatabaseFile="$(OutDir)/mod_event_socket.pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_event_test.lib"
+				ImportLibrary="$(OutDir)/mod_event_socket.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -142,14 +142,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_event_test.dll"
+				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_event_socket.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/mod_event_test.lib"
+				ImportLibrary="$(OutDir)/mod_event_socket.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -187,7 +187,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\mod_event_test.c"
+				RelativePath=".\mod_event_socket.c"
 				>
 			</File>
 		</Filter>
