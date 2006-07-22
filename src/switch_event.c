@@ -248,6 +248,23 @@ SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event)
 	return EVENT_NAMES[event];
 }
 
+SWITCH_DECLARE(switch_status_t) switch_name_event(char *name, switch_event_types_t *type)
+{
+	switch_event_types_t x;
+	assert(BLOCK != NULL);
+	assert(RUNTIME_POOL != NULL);
+	
+	for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
+		if (!strcasecmp(name, EVENT_NAMES[x])) {
+			*type = x;
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+	
+	return SWITCH_STATUS_FALSE;
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *owner, char *subclass_name)
 {
 
@@ -454,9 +471,9 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 
 SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_event_t *todup)
 {
-	switch_event_header_t *header, *hp, *hp2;
+	switch_event_header_t *header, *hp, *hp2, *last = NULL;
 
-	if (switch_event_create_subclass(event, todup->event_id, todup->subclass->name) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_create_subclass(event, todup->event_id, todup->subclass ? todup->subclass->name : NULL) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -464,7 +481,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 	(*event)->event_user_data = todup->event_user_data;
 	(*event)->bind_user_data = todup->bind_user_data;
 
-	for (hp = todup->headers; hp && hp->next;) {
+	hp2 = (*event)->headers;
+
+	for (hp = todup->headers; hp; hp = hp->next) {
 		if ((header = ALLOC(sizeof(*header))) == 0) {
 			return SWITCH_STATUS_MEMERR;
 		}
@@ -474,13 +493,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 		header->name = DUP(hp->name);
 		header->value = DUP(hp->value);
 
-		for (hp2 = todup->headers; hp2 && hp2->next; hp2 = hp2->next);
-
-		if (hp2) {
-			hp2->next = header;
+		if (last) {
+			last->next = header;
 		} else {
 			(*event)->headers = header;
 		}
+
+		last = header;
+	}
+
+	if (todup->body) {
+		(*event)->body = DUP(todup->body);
 	}
 
 	return SWITCH_STATUS_SUCCESS;

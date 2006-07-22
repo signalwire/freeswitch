@@ -29,6 +29,7 @@ endpoints/mod_woomera
 #event_handlers/mod_event_test
 event_handlers/mod_xmpp_event
 #event_handlers/mod_zeroconf
+#event_handlers/mod_event_socket
 formats/mod_sndfile
 #languages/mod_perl
 #languages/mod_spidermonkey

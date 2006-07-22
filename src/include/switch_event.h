@@ -209,6 +209,14 @@ SWITCH_DECLARE(switch_status_t) switch_event_bind(char *id, switch_event_types_t
 SWITCH_DECLARE(char *) switch_event_name(switch_event_types_t event);
 
 /*!
+  \brief return the event id that matches a given event name
+  \param name the name of the event
+  \param type the event id to return
+  \return SWITCH_STATUS_SUCCESS if there was a match
+*/
+SWITCH_DECLARE(switch_status_t) switch_name_event(char *name, switch_event_types_t *type);
+
+/*!
   \brief Reserve a subclass name for private use with a custom event
   \param owner the owner of the event name
   \param subclass_name the name to reserve

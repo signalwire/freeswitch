@@ -566,7 +566,16 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		if (state < CS_HANGUP) {
 			switch_event_t *event;
 			if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
-				switch_channel_event_set_data(channel, event);
+				if (state == CS_RING) {
+					switch_channel_event_set_data(channel, event);
+				} else {
+					char state_num[25];
+					snprintf(state_num, sizeof(state_num), "%d", channel->state);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", (char *) switch_channel_state_name(channel->state));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", (char *) state_num);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
+				}
 				switch_event_fire(&event);
 			}
 		}
