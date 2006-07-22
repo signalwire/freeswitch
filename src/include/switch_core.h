@@ -118,7 +118,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 
 /*! 
   \brief Set/Get Session Limit
-  \param new new value (if > 0)
+  \param new_limit new value (if > 0)
   \return the current session limit
 */
 SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit);
