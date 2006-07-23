@@ -34,11 +34,7 @@ while ( defined ($_ = $term->readline($prompt)) ) {
   my $reply;
 
   if ($_) {
-    if ($_ =~ /^alog|^anolog/) {
-      $reply = $fs2->cmd($_);
-    } else {
-      $reply = $fs->cmd("api $_");
-    }
+    my $reply = $fs->cmd("api $_");
       
     if ($reply->{body}) {
       print $reply->{body};
