@@ -5,7 +5,7 @@ my $password = "ClueCon";
 
 
 my $fs = init FreeSWITCH::Client {-password => $password} or die "Error $@";
-my $term = new Term::ReadLine ?FreeSWITCH CLI?;
+my $term = new Term::ReadLine "FreeSWITCH CLI";
 my $prompt = "FS>";
 my $OUT = $term->OUT .. \*STDOUT;
 
