@@ -50,18 +50,18 @@ MysqlCDR::MysqlCDR(switch_mod_cdr_newchannel_t *newchannel) : BaseCDR(newchannel
 {
 	if(newchannel != 0)
 	{
-		clid_length = strlen(clid);
-		src_length = strlen(src);
-		dst_length = strlen(dst);
-		ani_length = strlen(ani);
-		ani2_length = strlen(ani2);
-		dialplan_length = strlen(dialplan);
-		myuuid_length = strlen(myuuid);
-		destuuid_length = strlen(destuuid);
-		srcchannel_length = strlen(srcchannel);
-		dstchannel_length = strlen(dstchannel);
-		lastapp_length = strlen(lastapp);
-		lastdata_length = strlen(lastdata);
+		clid_length = (long unsigned int)strlen(clid);
+		src_length = (long unsigned int)strlen(src);
+		dst_length = (long unsigned int)strlen(dst);
+		ani_length = (long unsigned int)strlen(ani);
+		ani2_length = (long unsigned int)strlen(ani2);
+		dialplan_length = (long unsigned int)strlen(dialplan);
+		myuuid_length = (long unsigned int)strlen(myuuid);
+		destuuid_length = (long unsigned int)strlen(destuuid);
+		srcchannel_length = (long unsigned int)strlen(srcchannel);
+		dstchannel_length = (long unsigned int)strlen(dstchannel);
+		lastapp_length = (long unsigned int)strlen(lastapp);
+		lastdata_length = (long unsigned int)strlen(lastdata);
 		
 		if(chanvars_fixed_list.size() > 0)
 			process_channel_variables(chanvars_fixed_list,newchannel->channel);
@@ -232,12 +232,12 @@ void MysqlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setti
 			mysql_autocommit(conn,0);
 			stmt = mysql_stmt_init(conn);
 		
-			mysql_stmt_prepare(stmt,sql_query,strlen(sql_query));
+			mysql_stmt_prepare(stmt,sql_query,(long unsigned int)strlen(sql_query));
 		
 			if(logchanvars)
 			{
 				stmt_chanvars = mysql_stmt_init(conn);
-				mysql_stmt_prepare(stmt_chanvars,sql_query_chanvars,strlen(sql_query_chanvars));
+				mysql_stmt_prepare(stmt_chanvars,sql_query_chanvars,(long unsigned int)strlen(sql_query_chanvars));
 			}
 		}
 	}
@@ -408,7 +408,7 @@ bool MysqlCDR::process_record()
 				case CDR_DECIMAL:
 				{
 					long unsigned int* stringlength = new long unsigned int;
-					*stringlength = iItr->second.size();
+					*stringlength = (long unsigned int)(iItr->second.size());
 				
 					char* x = new char[(*stringlength+1)];
 					strncpy(x,iItr->second.c_str(),*stringlength);
@@ -459,7 +459,7 @@ bool MysqlCDR::process_record()
 			char* varname_temp = &tempfirstvector[0];
 
 			bindme_chanvars[1].buffer_type = MYSQL_TYPE_VAR_STRING;
-			long unsigned int varname_length = iItr->first.size();
+			long unsigned int varname_length = (long unsigned int)(iItr->first.size());
 			bindme_chanvars[1].length = &varname_length;
 			bindme_chanvars[1].buffer_length = varname_length;
 			bindme_chanvars[1].buffer = varname_temp;
@@ -473,7 +473,7 @@ bool MysqlCDR::process_record()
 				bindme_chanvars[2].is_null = (my_bool*)1;
 			else
 			{
-				long unsigned int varvalue_length = iItr->second.size();
+				long unsigned int varvalue_length = (long unsigned int)(iItr->second.size());
 				bindme_chanvars[2].length = &varvalue_length;
 				bindme_chanvars[2].buffer_length = varvalue_length;
 				bindme_chanvars[2].buffer = varvalue_temp;
