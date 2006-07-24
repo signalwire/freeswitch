@@ -1,31 +1,40 @@
 /*
-* FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application Call Detail Recorder module
-*
-* Copyright 2006, Author: Yossi Neiman, president of Cartis Solutions, Inc. 
-* <freeswitch AT cartissolutions.com>
-*
-* Description: This C++ source file describes the MysqlCDR class which handles formatting a CDR out to
-* a MySQL 4.1.x or greater server using prepared statements.
-*
-*
-* Version: MPL 1.1
-* The contents of this file are subject to the Mozilla Public License Version
-* 1.1 (the "License"); you may not use this file except in compliance with
-* the License. You may obtain a copy of the License at
-* http://www.mozilla.org/MPL/
-*
-* Software distributed under the License is distributed on an "AS IS" basis,
-* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
-* for the specific language governing rights and limitations under the
-* License
-*
-* The Core API is the FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application by
-* Anthony Minnesale II <anthmct@yahoo.com>
-*
-* mysqlcdr.cpp
-*
-*/
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application Call Detail Recorder module
+ * Copyright 2006, Author: Yossi Neiman of Cartis Solutions, Inc. <freeswitch AT cartissolutions.com>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application Call Detail Recorder module
+ *
+ * The Initial Developer of the Original Code is
+ * Yossi Neiman <freeswitch AT cartissolutions.com>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * 
+ * Yossi Neiman <freeswitch AT cartissolutions.com>
+ *
+ * Description: This C++ source file describes the MysqlCDR class which handles formatting a CDR out to
+ * a MySQL 4.1.x or greater server using prepared statements.
+ *
+ * mysqlcdr.cpp
+ *
+ */
 
+#ifdef WIN32
+#include <Winsock2.h>
+#endif
 #include <mysql.h>
 #include <switch.h>
 #include <cstring>
