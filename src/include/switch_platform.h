@@ -65,7 +65,7 @@ BEGIN_EXTERN_C
  * C4819: The file contains a character that cannot be represented in the current code page
  * C4132: 'object' : const object should be initialized (fires innapropriately for prototyped forward declaration of cost var)
  */
-#pragma warning(disable:4152 4054 4100 4142 4200 4204 4706 4055 4214 4819 4132)
+#pragma warning(disable:4152 4054 4100 4142 4200 4204 4706 4055 4214 4819 4132 4510 4512 4610)
 
 #if (_MSC_VER >= 1400) // VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE

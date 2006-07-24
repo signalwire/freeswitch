@@ -39,8 +39,6 @@
 #ifndef SWITCH_APR_H
 #define SWITCH_APR_H
 
-BEGIN_EXTERN_C
-
 #include <apr.h>
 #include <apr_network_io.h>
 #include <apr_errno.h>
@@ -64,6 +62,8 @@ BEGIN_EXTERN_C
 #define APR_WANT_STRFUNC
 #include <apr_want.h>
 #include <apr_env.h>
+
+BEGIN_EXTERN_C
 
 /*
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions

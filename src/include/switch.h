@@ -43,7 +43,6 @@
 #define END_EXTERN_C
 #endif
 
-BEGIN_EXTERN_C
 
 //Need to include this before any other includes (MSVC Bug)
 #include <switch_platform.h>
@@ -75,7 +74,6 @@ BEGIN_EXTERN_C
 #include <switch_log.h>
 #include <switch_xml.h>
 
-END_EXTERN_C
 
 /** \mainpage FreeSWITCH
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
