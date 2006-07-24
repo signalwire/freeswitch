@@ -22,6 +22,7 @@ that much better:
  Michal "cypromis" Bielicki (michal.bielicki  AT halo2.pl) - Solaris porting, and autotools enhancements.
  James Martelletti <james@nerdc0re.com> - All around cool guy (mod_syslog)
  Johny Kadarisman <jkr888@gmail.com>
+ Yossi Neiman of Cartis Solutions, Inc. <freeswitch AT cartissolutions.com>  -  implementation of mod_cdr (perldd, mysql, csv)
  
 A big THANK YOU goes to:
 
