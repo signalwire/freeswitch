@@ -195,6 +195,186 @@
 				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.dll&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.lib&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\htdocs&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
+		<Configuration
+			Name="Debug with MySql|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo &quot;$(InputDir)getlibs.vbs&quot; Core Debug"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="switch.h"
+				PrecompiledHeaderFile="$(IntDir)\$(TargetName).pch"
+				BrowseInformation="0"
+				WarningLevel="4"
+				WarnAsError="true"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="4"
+				ForcedIncludeFiles=""
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresampled.lib srtp.lib"
+				OutputFile="$(OutDir)/FreeSwitch.dll"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
+				AddModuleNamesToAssembly=""
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)/FreeSwitchCore.pdb"
+				SubSystem="2"
+				OptimizeReferences="0"
+				EnableCOMDATFolding="0"
+				ImportLibrary="$(OutDir)/FreeSwitchCore.lib"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.dll&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.lib&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\htdocs&#x0D;&#x0A;&#x0D;&#x0A;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release with MySql|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="cscript /nologo &quot;$(InputDir)getlibs.vbs&quot; Core Release"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="switch.h"
+				PrecompiledHeaderFile="$(IntDir)\$(TargetName).pch"
+				BrowseInformation="0"
+				WarningLevel="4"
+				WarnAsError="true"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="false"
+				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresample.lib srtp.lib"
+				OutputFile="$(OutDir)/FreeSwitch.dll"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				ImportLibrary="$(OutDir)/FreeSwitchCore.lib"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.dll&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.lib&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\htdocs&#x0D;&#x0A;&#x0D;&#x0A;"
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -217,6 +397,22 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug with MySql|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release with MySql|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
