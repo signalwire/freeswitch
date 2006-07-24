@@ -95,12 +95,6 @@ typedef unsigned long	in_addr_t;
 #endif
 #define PACKED
 #include <io.h>
-#ifndef WIN32IOP_H //macro collision with perl
-#define write _write
-#define open _open
-#define close _close
-#define read _read
-#endif
 #else
 /* packed attribute */
 #ifndef PACKED
