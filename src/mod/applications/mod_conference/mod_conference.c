@@ -992,6 +992,17 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 {
 	confernce_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
+	uint32_t count;
+
+	switch_mutex_lock(conference->mutex);
+	switch_mutex_lock(conference->member_mutex);
+	count = conference->count;
+	switch_mutex_unlock(conference->member_mutex);
+	switch_mutex_unlock(conference->mutex);	
+
+	if (!count) {
+        return SWITCH_STATUS_FALSE;
+    }
 
 	if (*file != '/') {
 		return conference_say(conference, file, leadin);
@@ -1155,9 +1166,19 @@ static switch_status_t conference_say(conference_obj_t *conference, char *text, 
 	confernce_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_TTS;
+	uint32_t count;
 
+	switch_mutex_lock(conference->mutex);
+	switch_mutex_lock(conference->member_mutex);
+	count = conference->count;
 	if (!(conference->tts_engine && conference->tts_voice)) {
-		return SWITCH_STATUS_SUCCESS;
+        count = 0;
+    }
+	switch_mutex_unlock(conference->member_mutex);
+	switch_mutex_unlock(conference->mutex);	
+
+	if (!count) {
+		return SWITCH_STATUS_FALSE;
 	}
 
 	/* Setup a memory pool to use. */
@@ -1406,10 +1427,13 @@ static switch_status_t conf_function(char *buf, switch_stream_handle_t *stream)
 					char *tbuf = NULL;
 					char *text;
 
-					if ((tbuf = strdup(buf))) {
-						if ((text = strstr(tbuf, "say "))) {
+					if (argc > 2 && (tbuf = strdup(buf))) {
+						if ((text = strstr(tbuf, "say"))) {
 							text += 4;
-							if (text && conference_say(conference, text, 0) == SWITCH_STATUS_SUCCESS) {
+							while(*text == ' ') {
+								text++;
+							}
+							if (!switch_strlen_zero(text) && conference_say(conference, text, 0) == SWITCH_STATUS_SUCCESS) {
 								stream->write_function(stream, "(say) OK\n");
 								if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
@@ -1425,6 +1449,8 @@ static switch_status_t conf_function(char *buf, switch_stream_handle_t *stream)
 						}
 
 						free(tbuf);
+					} else {
+						stream->write_function(stream, "(say) Error! No text.");
 					}
 				} else if (!strcasecmp(argv[1], "saymember")) {
 					char *tbuf = NULL, *text, *name;

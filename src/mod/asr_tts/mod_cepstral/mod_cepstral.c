@@ -210,17 +210,23 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 
 	cepstral->done_gen = 0;
 	cepstral->done = 0;
-
+	
 	cepstral->tts_stream = NULL;
 	
 	if (!strncasecmp(text, fp, len)) {
 		text += len;
+		if (switch_strlen_zero(text)) {
+			return SWITCH_STATUS_FALSE;
+		}
 		swift_port_speak_file(cepstral->port, text, NULL, &cepstral->tts_stream, NULL); 
 	} else {
+		if (switch_strlen_zero(text)) {
+			return SWITCH_STATUS_FALSE;
+		}
 		swift_port_speak_text(cepstral->port, text, 0, NULL, &cepstral->tts_stream, NULL); 
 	}
 
-	return SWITCH_STATUS_FALSE;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static void cepstral_speech_flush_tts(switch_speech_handle_t *sh)
