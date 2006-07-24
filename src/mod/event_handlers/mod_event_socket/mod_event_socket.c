@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_event_socket.c -- Framework Demo Module
+ * mod_event_socket.c -- Socket Controled Event Handler
  *
  */
 #include <switch.h>
@@ -115,7 +115,7 @@ static void event_handler(switch_event_t *event)
 	switch_mutex_lock(listen_list.mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
 		if (switch_test_flag(l, LFLAG_EVENTS) && (l->event_list[(uint8_t)event->event_id] || l->event_list[(uint8_t)SWITCH_EVENT_ALL])) {
-			if (event->event_id != SWITCH_EVENT_CUSTOM || switch_core_hash_find(l->event_hash, switch_event_name(event->event_id))) {
+			if (event->event_id != SWITCH_EVENT_CUSTOM || (event->subclass && switch_core_hash_find(l->event_hash, event->subclass->name))) {
 				if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
 					switch_queue_push(l->event_queue, clone);
 				} else {
