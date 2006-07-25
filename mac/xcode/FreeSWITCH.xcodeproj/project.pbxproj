@@ -1,0 +1,1034 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D3DEC5F60A75D048002001CF /* apr_cpystrn.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5BB0A75CFB7002001CF /* apr_cpystrn.c */; };
+		D3DEC5F70A75D048002001CF /* apr_fnmatch.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5BC0A75CFB7002001CF /* apr_fnmatch.c */; };
+		D3DEC5F80A75D048002001CF /* apr_getpass.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5A00A75CFB7002001CF /* apr_getpass.c */; };
+		D3DEC5F90A75D048002001CF /* apr_hash.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5C50A75CFB7002001CF /* apr_hash.c */; };
+		D3DEC5FA0A75D048002001CF /* apr_pools.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5640A75CFB7002001CF /* apr_pools.c */; };
+		D3DEC5FB0A75D048002001CF /* apr_random.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5AD0A75CFB7002001CF /* apr_random.c */; };
+		D3DEC5FC0A75D048002001CF /* apr_snprintf.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5BD0A75CFB7002001CF /* apr_snprintf.c */; };
+		D3DEC5FD0A75D048002001CF /* apr_strings.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5BE0A75CFB7002001CF /* apr_strings.c */; };
+		D3DEC5FE0A75D048002001CF /* apr_strnatcmp.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5BF0A75CFB7002001CF /* apr_strnatcmp.c */; };
+		D3DEC5FF0A75D048002001CF /* apr_strtok.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5C00A75CFB7002001CF /* apr_strtok.c */; };
+		D3DEC6000A75D048002001CF /* apr_tables.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5C60A75CFB7002001CF /* apr_tables.c */; };
+		D3DEC6010A75D048002001CF /* charset.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC56E0A75CFB7002001CF /* charset.c */; };
+		D3DEC6020A75D048002001CF /* common.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5820A75CFB7002001CF /* common.c */; };
+		D3DEC6030A75D048002001CF /* copy.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC52D0A75CFB6002001CF /* copy.c */; };
+		D3DEC6040A75D048002001CF /* dir.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC52E0A75CFB6002001CF /* dir.c */; };
+		D3DEC6050A75D048002001CF /* dso.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC50E0A75CFB6002001CF /* dso.c */; };
+		D3DEC6060A75D048002001CF /* env.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC56F0A75CFB7002001CF /* env.c */; };
+		D3DEC6070A75D048002001CF /* epoll.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5A60A75CFB7002001CF /* epoll.c */; };
+		D3DEC6080A75D048002001CF /* errorcodes.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5700A75CFB7002001CF /* errorcodes.c */; };
+		D3DEC6090A75D048002001CF /* fileacc.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC52F0A75CFB6002001CF /* fileacc.c */; };
+		D3DEC60A0A75D048002001CF /* filedup.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5300A75CFB6002001CF /* filedup.c */; };
+		D3DEC60B0A75D048002001CF /* filepath.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5310A75CFB6002001CF /* filepath.c */; };
+		D3DEC60C0A75D048002001CF /* filepath_util.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5320A75CFB7002001CF /* filepath_util.c */; };
+		D3DEC60D0A75D048002001CF /* filestat.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5330A75CFB7002001CF /* filestat.c */; };
+		D3DEC60E0A75D048002001CF /* flock.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5340A75CFB7002001CF /* flock.c */; };
+		D3DEC60F0A75D048002001CF /* fullrw.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5350A75CFB7002001CF /* fullrw.c */; };
+		D3DEC6100A75D048002001CF /* getopt.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5710A75CFB7002001CF /* getopt.c */; };
+		D3DEC6110A75D048002001CF /* global_mutex.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5580A75CFB7002001CF /* global_mutex.c */; };
+		D3DEC6120A75D048002001CF /* groupinfo.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5F10A75CFB7002001CF /* groupinfo.c */; };
+		D3DEC6130A75D048002001CF /* inet_ntop.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5940A75CFB7002001CF /* inet_ntop.c */; };
+		D3DEC6140A75D048002001CF /* inet_pton.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5950A75CFB7002001CF /* inet_pton.c */; };
+		D3DEC6150A75D048002001CF /* kqueue.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5A70A75CFB7002001CF /* kqueue.c */; };
+		D3DEC6160A75D048002001CF /* mktemp.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5360A75CFB7002001CF /* mktemp.c */; };
+		D3DEC6170A75D048002001CF /* mmap.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5830A75CFB7002001CF /* mmap.c */; };
+		D3DEC6180A75D048002001CF /* multicast.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5960A75CFB7002001CF /* multicast.c */; };
+		D3DEC6190A75D048002001CF /* open.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5370A75CFB7002001CF /* open.c */; };
+		D3DEC61A0A75D048002001CF /* otherchild.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5720A75CFB7002001CF /* otherchild.c */; };
+		D3DEC61B0A75D048002001CF /* pipe.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5380A75CFB7002001CF /* pipe.c */; };
+		D3DEC61C0A75D048002001CF /* poll.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5A80A75CFB7002001CF /* poll.c */; };
+		D3DEC61D0A75D048002001CF /* port.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5A90A75CFB7002001CF /* port.c */; };
+		D3DEC61E0A75D048002001CF /* proc.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5DA0A75CFB7002001CF /* proc.c */; };
+		D3DEC61F0A75D048002001CF /* proc_mutex.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5590A75CFB7002001CF /* proc_mutex.c */; };
+		D3DEC6200A75D048002001CF /* procsup.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5DB0A75CFB7002001CF /* procsup.c */; };
+		D3DEC6210A75D048002001CF /* rand.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5730A75CFB7002001CF /* rand.c */; };
+		D3DEC6230A75D048002001CF /* readwrite.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5390A75CFB7002001CF /* readwrite.c */; };
+		D3DEC6240A75D048002001CF /* seek.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC53A0A75CFB7002001CF /* seek.c */; };
+		D3DEC6250A75D048002001CF /* select.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5AA0A75CFB7002001CF /* select.c */; };
+		D3DEC6260A75D048002001CF /* sendrecv.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5970A75CFB7002001CF /* sendrecv.c */; };
+		D3DEC6270A75D048002001CF /* sha2.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5AE0A75CFB7002001CF /* sha2.c */; };
+		D3DEC6290A75D048002001CF /* sha2_glue.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5B00A75CFB7002001CF /* sha2_glue.c */; };
+		D3DEC62A0A75D048002001CF /* shm.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5B70A75CFB7002001CF /* shm.c */; };
+		D3DEC62B0A75D048002001CF /* signals.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5DC0A75CFB7002001CF /* signals.c */; };
+		D3DEC62C0A75D048002001CF /* sockaddr.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5980A75CFB7002001CF /* sockaddr.c */; };
+		D3DEC62D0A75D048002001CF /* sockets.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5990A75CFB7002001CF /* sockets.c */; };
+		D3DEC62E0A75D048002001CF /* sockopt.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC59A0A75CFB7002001CF /* sockopt.c */; };
+		D3DEC62F0A75D048002001CF /* start.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5750A75CFB7002001CF /* start.c */; };
+		D3DEC6300A75D048002001CF /* tempdir.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC53B0A75CFB7002001CF /* tempdir.c */; };
+		D3DEC6310A75D048002001CF /* thread.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5DD0A75CFB7002001CF /* thread.c */; };
+		D3DEC6320A75D048002001CF /* thread_cond.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC55A0A75CFB7002001CF /* thread_cond.c */; };
+		D3DEC6330A75D048002001CF /* thread_mutex.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC55B0A75CFB7002001CF /* thread_mutex.c */; };
+		D3DEC6340A75D048002001CF /* thread_rwlock.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC55C0A75CFB7002001CF /* thread_rwlock.c */; };
+		D3DEC6350A75D048002001CF /* threadpriv.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5DE0A75CFB7002001CF /* threadpriv.c */; };
+		D3DEC6360A75D048002001CF /* time.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5E60A75CFB7002001CF /* time.c */; };
+		D3DEC6370A75D048002001CF /* timestr.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5E70A75CFB7002001CF /* timestr.c */; };
+		D3DEC6380A75D048002001CF /* userinfo.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5F20A75CFB7002001CF /* userinfo.c */; };
+		D3DEC6390A75D048002001CF /* version.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5760A75CFB7002001CF /* version.c */; };
+		D3DEC63A0A75D048002001CF /* waitio.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5C30A75CFB7002001CF /* waitio.c */; };
+		D3DEC6510A75D148002001CF /* apr_atomic.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC64E0A75D13B002001CF /* apr_atomic.c */; };
+		D3DEC6570A75D1D3002001CF /* apr.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC48D0A75CF62002001CF /* apr.h */; };
+		D3DEC6580A75D1D9002001CF /* apr_env.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4940A75CF62002001CF /* apr_env.h */; };
+		D3DEC6590A75D1DB002001CF /* apr_arch_thread_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4E40A75CF62002001CF /* apr_arch_thread_mutex.h */; };
+		D3DEC65A0A75D1DB002001CF /* apr_getopt.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC49A0A75CF62002001CF /* apr_getopt.h */; };
+		D3DEC65B0A75D1DC002001CF /* apr_arch_file_io.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4DA0A75CF62002001CF /* apr_arch_file_io.h */; };
+		D3DEC65C0A75D1DD002001CF /* apr_arch_inherit.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4DC0A75CF62002001CF /* apr_arch_inherit.h */; };
+		D3DEC65D0A75D1DD002001CF /* apr_file_io.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4970A75CF62002001CF /* apr_file_io.h */; };
+		D3DEC65E0A75D1DE002001CF /* apr_ring.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4A60A75CF62002001CF /* apr_ring.h */; };
+		D3DEC65F0A75D1DE002001CF /* apr_shm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4A70A75CF62002001CF /* apr_shm.h */; };
+		D3DEC6600A75D1DF002001CF /* apr_atomic.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4920A75CF62002001CF /* apr_atomic.h */; };
+		D3DEC6610A75D1DF002001CF /* apr_private_common.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4B70A75CF62002001CF /* apr_private_common.h */; };
+		D3DEC6620A75D1E2002001CF /* apr_thread_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4AD0A75CF62002001CF /* apr_thread_mutex.h */; };
+		D3DEC6630A75D1E3002001CF /* apr_thread_rwlock.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4AF0A75CF62002001CF /* apr_thread_rwlock.h */; };
+		D3DEC6640A75D1E4002001CF /* apr_arch_dso.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4D90A75CF62002001CF /* apr_arch_dso.h */; };
+		D3DEC6650A75D1E4002001CF /* apr_user.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4B10A75CF62002001CF /* apr_user.h */; };
+		D3DEC6660A75D1E5002001CF /* apr_arch_networkio.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4DF0A75CF62002001CF /* apr_arch_networkio.h */; };
+		D3DEC6670A75D1E5002001CF /* apr_inherit.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC49D0A75CF62002001CF /* apr_inherit.h */; };
+		D3DEC6680A75D1E6002001CF /* apr_errno.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4950A75CF62002001CF /* apr_errno.h */; };
+		D3DEC6690A75D1E6002001CF /* apr_thread_cond.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4AC0A75CF62002001CF /* apr_thread_cond.h */; };
+		D3DEC66A0A75D1E7002001CF /* apr_arch_shm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4E20A75CF62002001CF /* apr_arch_shm.h */; };
+		D3DEC66B0A75D1E7002001CF /* apr_arch_thread_rwlock.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4E50A75CF62002001CF /* apr_arch_thread_rwlock.h */; };
+		D3DEC66C0A75D1E8002001CF /* apr_dso.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4930A75CF62002001CF /* apr_dso.h */; };
+		D3DEC66D0A75D1E9002001CF /* apr_arch_global_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4DB0A75CF62002001CF /* apr_arch_global_mutex.h */; };
+		D3DEC66E0A75D1E9002001CF /* apr_hash.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC49C0A75CF62002001CF /* apr_hash.h */; };
+		D3DEC66F0A75D1E9002001CF /* apr_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4E70A75CF62002001CF /* apr_private.h */; };
+		D3DEC6700A75D1EA002001CF /* apr_support.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4AA0A75CF62002001CF /* apr_support.h */; };
+		D3DEC6710A75D1EA002001CF /* apr_global_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC49B0A75CF62002001CF /* apr_global_mutex.h */; };
+		D3DEC6720A75D1EB002001CF /* apr_proc_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4A40A75CF62002001CF /* apr_proc_mutex.h */; };
+		D3DEC6730A75D1EB002001CF /* apr_lib.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC49E0A75CF62002001CF /* apr_lib.h */; };
+		D3DEC6740A75D1EC002001CF /* apr_strings.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4A90A75CF62002001CF /* apr_strings.h */; };
+		D3DEC6750A75D1EC002001CF /* apr_poll.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4A10A75CF62002001CF /* apr_poll.h */; };
+		D3DEC6760A75D1ED002001CF /* apr_want.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4B30A75CF62002001CF /* apr_want.h */; };
+		D3DEC6770A75D1ED002001CF /* apr_allocator.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4910A75CF62002001CF /* apr_allocator.h */; };
+		D3DEC6780A75D1EE002001CF /* apr_fnmatch.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4980A75CF62002001CF /* apr_fnmatch.h */; };
+		D3DEC6790A75D1EE002001CF /* apr_thread_proc.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4AE0A75CF62002001CF /* apr_thread_proc.h */; };
+		D3DEC67A0A75D1EF002001CF /* apr_network_io.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4A00A75CF62002001CF /* apr_network_io.h */; };
+		D3DEC67B0A75D1EF002001CF /* apr_arch_misc.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4DE0A75CF62002001CF /* apr_arch_misc.h */; };
+		D3DEC67C0A75D1F0002001CF /* apr_arch_threadproc.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4E60A75CF62002001CF /* apr_arch_threadproc.h */; };
+		D3DEC67D0A75D1F4002001CF /* apr_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4B20A75CF62002001CF /* apr_version.h */; };
+		D3DEC67E0A75D1F5002001CF /* apr_arch_thread_cond.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4E30A75CF62002001CF /* apr_arch_thread_cond.h */; };
+		D3DEC67F0A75D1F5002001CF /* apr_arch_poll_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4E00A75CF62002001CF /* apr_arch_poll_private.h */; };
+		D3DEC6800A75D1F5002001CF /* apr_arch_internal_time.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4DD0A75CF62002001CF /* apr_arch_internal_time.h */; };
+		D3DEC6810A75D1F6002001CF /* apr_portable.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4A30A75CF62002001CF /* apr_portable.h */; };
+		D3DEC6820A75D1F6002001CF /* apr_general.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4990A75CF62002001CF /* apr_general.h */; };
+		D3DEC6830A75D1F7002001CF /* apr_arch_proc_mutex.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4E10A75CF62002001CF /* apr_arch_proc_mutex.h */; };
+		D3DEC6840A75D1F7002001CF /* apr_file_info.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4960A75CF62002001CF /* apr_file_info.h */; };
+		D3DEC6850A75D1F8002001CF /* apr_pools.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4A20A75CF62002001CF /* apr_pools.h */; };
+		D3DEC6860A75D1F8002001CF /* apr_time.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4B00A75CF62002001CF /* apr_time.h */; };
+		D3DEC6870A75D1F9002001CF /* apr_signal.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4A80A75CF62002001CF /* apr_signal.h */; };
+		D3DEC6880A75D1F9002001CF /* apr_tables.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4AB0A75CF62002001CF /* apr_tables.h */; };
+		D3DEC6890A75D1FA002001CF /* apr_random.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC4A50A75CF62002001CF /* apr_random.h */; };
+		D3DEC68A0A75D1FA002001CF /* apr_mmap.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC49F0A75CF62002001CF /* apr_mmap.h */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		D3DEC21D0A75CB06002001CF /* apr.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = apr.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3DEC21E0A75CB06002001CF /* apr.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = apr.plist; sourceTree = "<group>"; };
+		D3DEC48D0A75CF62002001CF /* apr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr.h; sourceTree = "<group>"; };
+		D3DEC4910A75CF62002001CF /* apr_allocator.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_allocator.h; sourceTree = "<group>"; };
+		D3DEC4920A75CF62002001CF /* apr_atomic.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_atomic.h; sourceTree = "<group>"; };
+		D3DEC4930A75CF62002001CF /* apr_dso.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_dso.h; sourceTree = "<group>"; };
+		D3DEC4940A75CF62002001CF /* apr_env.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_env.h; sourceTree = "<group>"; };
+		D3DEC4950A75CF62002001CF /* apr_errno.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_errno.h; sourceTree = "<group>"; };
+		D3DEC4960A75CF62002001CF /* apr_file_info.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_file_info.h; sourceTree = "<group>"; };
+		D3DEC4970A75CF62002001CF /* apr_file_io.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_file_io.h; sourceTree = "<group>"; };
+		D3DEC4980A75CF62002001CF /* apr_fnmatch.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_fnmatch.h; sourceTree = "<group>"; };
+		D3DEC4990A75CF62002001CF /* apr_general.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_general.h; sourceTree = "<group>"; };
+		D3DEC49A0A75CF62002001CF /* apr_getopt.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_getopt.h; sourceTree = "<group>"; };
+		D3DEC49B0A75CF62002001CF /* apr_global_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_global_mutex.h; sourceTree = "<group>"; };
+		D3DEC49C0A75CF62002001CF /* apr_hash.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_hash.h; sourceTree = "<group>"; };
+		D3DEC49D0A75CF62002001CF /* apr_inherit.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_inherit.h; sourceTree = "<group>"; };
+		D3DEC49E0A75CF62002001CF /* apr_lib.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_lib.h; sourceTree = "<group>"; };
+		D3DEC49F0A75CF62002001CF /* apr_mmap.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_mmap.h; sourceTree = "<group>"; };
+		D3DEC4A00A75CF62002001CF /* apr_network_io.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_network_io.h; sourceTree = "<group>"; };
+		D3DEC4A10A75CF62002001CF /* apr_poll.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_poll.h; sourceTree = "<group>"; };
+		D3DEC4A20A75CF62002001CF /* apr_pools.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_pools.h; sourceTree = "<group>"; };
+		D3DEC4A30A75CF62002001CF /* apr_portable.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_portable.h; sourceTree = "<group>"; };
+		D3DEC4A40A75CF62002001CF /* apr_proc_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_proc_mutex.h; sourceTree = "<group>"; };
+		D3DEC4A50A75CF62002001CF /* apr_random.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_random.h; sourceTree = "<group>"; };
+		D3DEC4A60A75CF62002001CF /* apr_ring.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_ring.h; sourceTree = "<group>"; };
+		D3DEC4A70A75CF62002001CF /* apr_shm.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_shm.h; sourceTree = "<group>"; };
+		D3DEC4A80A75CF62002001CF /* apr_signal.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_signal.h; sourceTree = "<group>"; };
+		D3DEC4A90A75CF62002001CF /* apr_strings.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_strings.h; sourceTree = "<group>"; };
+		D3DEC4AA0A75CF62002001CF /* apr_support.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_support.h; sourceTree = "<group>"; };
+		D3DEC4AB0A75CF62002001CF /* apr_tables.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_tables.h; sourceTree = "<group>"; };
+		D3DEC4AC0A75CF62002001CF /* apr_thread_cond.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_thread_cond.h; sourceTree = "<group>"; };
+		D3DEC4AD0A75CF62002001CF /* apr_thread_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_thread_mutex.h; sourceTree = "<group>"; };
+		D3DEC4AE0A75CF62002001CF /* apr_thread_proc.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_thread_proc.h; sourceTree = "<group>"; };
+		D3DEC4AF0A75CF62002001CF /* apr_thread_rwlock.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_thread_rwlock.h; sourceTree = "<group>"; };
+		D3DEC4B00A75CF62002001CF /* apr_time.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_time.h; sourceTree = "<group>"; };
+		D3DEC4B10A75CF62002001CF /* apr_user.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_user.h; sourceTree = "<group>"; };
+		D3DEC4B20A75CF62002001CF /* apr_version.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_version.h; sourceTree = "<group>"; };
+		D3DEC4B30A75CF62002001CF /* apr_want.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_want.h; sourceTree = "<group>"; };
+		D3DEC4B70A75CF62002001CF /* apr_private_common.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_private_common.h; sourceTree = "<group>"; };
+		D3DEC4D90A75CF62002001CF /* apr_arch_dso.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_dso.h; sourceTree = "<group>"; };
+		D3DEC4DA0A75CF62002001CF /* apr_arch_file_io.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_file_io.h; sourceTree = "<group>"; };
+		D3DEC4DB0A75CF62002001CF /* apr_arch_global_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_global_mutex.h; sourceTree = "<group>"; };
+		D3DEC4DC0A75CF62002001CF /* apr_arch_inherit.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_inherit.h; sourceTree = "<group>"; };
+		D3DEC4DD0A75CF62002001CF /* apr_arch_internal_time.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_internal_time.h; sourceTree = "<group>"; };
+		D3DEC4DE0A75CF62002001CF /* apr_arch_misc.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_misc.h; sourceTree = "<group>"; };
+		D3DEC4DF0A75CF62002001CF /* apr_arch_networkio.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_networkio.h; sourceTree = "<group>"; };
+		D3DEC4E00A75CF62002001CF /* apr_arch_poll_private.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_poll_private.h; sourceTree = "<group>"; };
+		D3DEC4E10A75CF62002001CF /* apr_arch_proc_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_proc_mutex.h; sourceTree = "<group>"; };
+		D3DEC4E20A75CF62002001CF /* apr_arch_shm.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_shm.h; sourceTree = "<group>"; };
+		D3DEC4E30A75CF62002001CF /* apr_arch_thread_cond.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_thread_cond.h; sourceTree = "<group>"; };
+		D3DEC4E40A75CF62002001CF /* apr_arch_thread_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_thread_mutex.h; sourceTree = "<group>"; };
+		D3DEC4E50A75CF62002001CF /* apr_arch_thread_rwlock.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_thread_rwlock.h; sourceTree = "<group>"; };
+		D3DEC4E60A75CF62002001CF /* apr_arch_threadproc.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_threadproc.h; sourceTree = "<group>"; };
+		D3DEC4E70A75CF62002001CF /* apr_private.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_private.h; sourceTree = "<group>"; };
+		D3DEC50E0A75CFB6002001CF /* dso.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = dso.c; sourceTree = "<group>"; };
+		D3DEC52D0A75CFB6002001CF /* copy.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = copy.c; sourceTree = "<group>"; };
+		D3DEC52E0A75CFB6002001CF /* dir.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = dir.c; sourceTree = "<group>"; };
+		D3DEC52F0A75CFB6002001CF /* fileacc.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = fileacc.c; sourceTree = "<group>"; };
+		D3DEC5300A75CFB6002001CF /* filedup.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = filedup.c; sourceTree = "<group>"; };
+		D3DEC5310A75CFB6002001CF /* filepath.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = filepath.c; sourceTree = "<group>"; };
+		D3DEC5320A75CFB7002001CF /* filepath_util.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = filepath_util.c; sourceTree = "<group>"; };
+		D3DEC5330A75CFB7002001CF /* filestat.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = filestat.c; sourceTree = "<group>"; };
+		D3DEC5340A75CFB7002001CF /* flock.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = flock.c; sourceTree = "<group>"; };
+		D3DEC5350A75CFB7002001CF /* fullrw.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = fullrw.c; sourceTree = "<group>"; };
+		D3DEC5360A75CFB7002001CF /* mktemp.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = mktemp.c; sourceTree = "<group>"; };
+		D3DEC5370A75CFB7002001CF /* open.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = open.c; sourceTree = "<group>"; };
+		D3DEC5380A75CFB7002001CF /* pipe.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = pipe.c; sourceTree = "<group>"; };
+		D3DEC5390A75CFB7002001CF /* readwrite.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = readwrite.c; sourceTree = "<group>"; };
+		D3DEC53A0A75CFB7002001CF /* seek.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = seek.c; sourceTree = "<group>"; };
+		D3DEC53B0A75CFB7002001CF /* tempdir.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = tempdir.c; sourceTree = "<group>"; };
+		D3DEC5580A75CFB7002001CF /* global_mutex.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = global_mutex.c; sourceTree = "<group>"; };
+		D3DEC5590A75CFB7002001CF /* proc_mutex.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = proc_mutex.c; sourceTree = "<group>"; };
+		D3DEC55A0A75CFB7002001CF /* thread_cond.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = thread_cond.c; sourceTree = "<group>"; };
+		D3DEC55B0A75CFB7002001CF /* thread_mutex.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = thread_mutex.c; sourceTree = "<group>"; };
+		D3DEC55C0A75CFB7002001CF /* thread_rwlock.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = thread_rwlock.c; sourceTree = "<group>"; };
+		D3DEC5640A75CFB7002001CF /* apr_pools.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_pools.c; sourceTree = "<group>"; };
+		D3DEC56E0A75CFB7002001CF /* charset.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = charset.c; sourceTree = "<group>"; };
+		D3DEC56F0A75CFB7002001CF /* env.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = env.c; sourceTree = "<group>"; };
+		D3DEC5700A75CFB7002001CF /* errorcodes.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = errorcodes.c; sourceTree = "<group>"; };
+		D3DEC5710A75CFB7002001CF /* getopt.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = getopt.c; sourceTree = "<group>"; };
+		D3DEC5720A75CFB7002001CF /* otherchild.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = otherchild.c; sourceTree = "<group>"; };
+		D3DEC5730A75CFB7002001CF /* rand.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = rand.c; sourceTree = "<group>"; };
+		D3DEC5750A75CFB7002001CF /* start.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = start.c; sourceTree = "<group>"; };
+		D3DEC5760A75CFB7002001CF /* version.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = version.c; sourceTree = "<group>"; };
+		D3DEC5820A75CFB7002001CF /* common.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = common.c; sourceTree = "<group>"; };
+		D3DEC5830A75CFB7002001CF /* mmap.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = mmap.c; sourceTree = "<group>"; };
+		D3DEC5940A75CFB7002001CF /* inet_ntop.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = inet_ntop.c; sourceTree = "<group>"; };
+		D3DEC5950A75CFB7002001CF /* inet_pton.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = inet_pton.c; sourceTree = "<group>"; };
+		D3DEC5960A75CFB7002001CF /* multicast.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = multicast.c; sourceTree = "<group>"; };
+		D3DEC5970A75CFB7002001CF /* sendrecv.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sendrecv.c; sourceTree = "<group>"; };
+		D3DEC5980A75CFB7002001CF /* sockaddr.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sockaddr.c; sourceTree = "<group>"; };
+		D3DEC5990A75CFB7002001CF /* sockets.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sockets.c; sourceTree = "<group>"; };
+		D3DEC59A0A75CFB7002001CF /* sockopt.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sockopt.c; sourceTree = "<group>"; };
+		D3DEC5A00A75CFB7002001CF /* apr_getpass.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_getpass.c; sourceTree = "<group>"; };
+		D3DEC5A60A75CFB7002001CF /* epoll.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = epoll.c; sourceTree = "<group>"; };
+		D3DEC5A70A75CFB7002001CF /* kqueue.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = kqueue.c; sourceTree = "<group>"; };
+		D3DEC5A80A75CFB7002001CF /* poll.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = poll.c; sourceTree = "<group>"; };
+		D3DEC5A90A75CFB7002001CF /* port.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = port.c; sourceTree = "<group>"; };
+		D3DEC5AA0A75CFB7002001CF /* select.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = select.c; sourceTree = "<group>"; };
+		D3DEC5AD0A75CFB7002001CF /* apr_random.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_random.c; sourceTree = "<group>"; };
+		D3DEC5AE0A75CFB7002001CF /* sha2.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sha2.c; sourceTree = "<group>"; };
+		D3DEC5B00A75CFB7002001CF /* sha2_glue.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sha2_glue.c; sourceTree = "<group>"; };
+		D3DEC5B70A75CFB7002001CF /* shm.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = shm.c; sourceTree = "<group>"; };
+		D3DEC5BB0A75CFB7002001CF /* apr_cpystrn.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_cpystrn.c; sourceTree = "<group>"; };
+		D3DEC5BC0A75CFB7002001CF /* apr_fnmatch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_fnmatch.c; sourceTree = "<group>"; };
+		D3DEC5BD0A75CFB7002001CF /* apr_snprintf.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_snprintf.c; sourceTree = "<group>"; };
+		D3DEC5BE0A75CFB7002001CF /* apr_strings.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_strings.c; sourceTree = "<group>"; };
+		D3DEC5BF0A75CFB7002001CF /* apr_strnatcmp.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_strnatcmp.c; sourceTree = "<group>"; };
+		D3DEC5C00A75CFB7002001CF /* apr_strtok.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_strtok.c; sourceTree = "<group>"; };
+		D3DEC5C30A75CFB7002001CF /* waitio.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = waitio.c; sourceTree = "<group>"; };
+		D3DEC5C50A75CFB7002001CF /* apr_hash.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_hash.c; sourceTree = "<group>"; };
+		D3DEC5C60A75CFB7002001CF /* apr_tables.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_tables.c; sourceTree = "<group>"; };
+		D3DEC5DA0A75CFB7002001CF /* proc.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = proc.c; sourceTree = "<group>"; };
+		D3DEC5DB0A75CFB7002001CF /* procsup.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = procsup.c; sourceTree = "<group>"; };
+		D3DEC5DC0A75CFB7002001CF /* signals.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = signals.c; sourceTree = "<group>"; };
+		D3DEC5DD0A75CFB7002001CF /* thread.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = thread.c; sourceTree = "<group>"; };
+		D3DEC5DE0A75CFB7002001CF /* threadpriv.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = threadpriv.c; sourceTree = "<group>"; };
+		D3DEC5E60A75CFB7002001CF /* time.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = time.c; sourceTree = "<group>"; };
+		D3DEC5E70A75CFB7002001CF /* timestr.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = timestr.c; sourceTree = "<group>"; };
+		D3DEC5F10A75CFB7002001CF /* groupinfo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = groupinfo.c; sourceTree = "<group>"; };
+		D3DEC5F20A75CFB7002001CF /* userinfo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = userinfo.c; sourceTree = "<group>"; };
+		D3DEC64E0A75D13B002001CF /* apr_atomic.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_atomic.c; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* FreeSWITCH */ = {
+			isa = PBXGroup;
+			children = (
+				08FB7795FE84155DC02AAC07 /* Source */,
+				1AB674ADFE9D54B511CA2CBB /* Products */,
+			);
+			name = FreeSWITCH;
+			sourceTree = "<group>";
+		};
+		08FB7795FE84155DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC2220A75CB3C002001CF /* apr */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		1AB674ADFE9D54B511CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC21E0A75CB06002001CF /* apr.plist */,
+				D3DEC21D0A75CB06002001CF /* apr.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D3DEC2220A75CB3C002001CF /* apr */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC48C0A75CF62002001CF /* include */,
+				D3DEC48A0A75CF35002001CF /* src */,
+			);
+			name = apr;
+			sourceTree = "<group>";
+		};
+		D3DEC48A0A75CF35002001CF /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC6480A75D13B002001CF /* atomic */,
+				D3DEC5020A75CFB6002001CF /* dso */,
+				D3DEC5110A75CFB6002001CF /* file_io */,
+				D3DEC5470A75CFB7002001CF /* locks */,
+				D3DEC5620A75CFB7002001CF /* memory */,
+				D3DEC5650A75CFB7002001CF /* misc */,
+				D3DEC5800A75CFB7002001CF /* mmap */,
+				D3DEC5860A75CFB7002001CF /* network_io */,
+				D3DEC59F0A75CFB7002001CF /* passwd */,
+				D3DEC5A10A75CFB7002001CF /* poll */,
+				D3DEC5AB0A75CFB7002001CF /* random */,
+				D3DEC5B10A75CFB7002001CF /* shmem */,
+				D3DEC5BA0A75CFB7002001CF /* strings */,
+				D3DEC5C10A75CFB7002001CF /* support */,
+				D3DEC5C40A75CFB7002001CF /* tables */,
+				D3DEC5C70A75CFB7002001CF /* threadproc */,
+				D3DEC5E40A75CFB7002001CF /* time */,
+				D3DEC5EC0A75CFB7002001CF /* user */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D3DEC48C0A75CF62002001CF /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC48D0A75CF62002001CF /* apr.h */,
+				D3DEC4910A75CF62002001CF /* apr_allocator.h */,
+				D3DEC4920A75CF62002001CF /* apr_atomic.h */,
+				D3DEC4930A75CF62002001CF /* apr_dso.h */,
+				D3DEC4940A75CF62002001CF /* apr_env.h */,
+				D3DEC4950A75CF62002001CF /* apr_errno.h */,
+				D3DEC4960A75CF62002001CF /* apr_file_info.h */,
+				D3DEC4970A75CF62002001CF /* apr_file_io.h */,
+				D3DEC4980A75CF62002001CF /* apr_fnmatch.h */,
+				D3DEC4990A75CF62002001CF /* apr_general.h */,
+				D3DEC49A0A75CF62002001CF /* apr_getopt.h */,
+				D3DEC49B0A75CF62002001CF /* apr_global_mutex.h */,
+				D3DEC49C0A75CF62002001CF /* apr_hash.h */,
+				D3DEC49D0A75CF62002001CF /* apr_inherit.h */,
+				D3DEC49E0A75CF62002001CF /* apr_lib.h */,
+				D3DEC49F0A75CF62002001CF /* apr_mmap.h */,
+				D3DEC4A00A75CF62002001CF /* apr_network_io.h */,
+				D3DEC4A10A75CF62002001CF /* apr_poll.h */,
+				D3DEC4A20A75CF62002001CF /* apr_pools.h */,
+				D3DEC4A30A75CF62002001CF /* apr_portable.h */,
+				D3DEC4A40A75CF62002001CF /* apr_proc_mutex.h */,
+				D3DEC4A50A75CF62002001CF /* apr_random.h */,
+				D3DEC4A60A75CF62002001CF /* apr_ring.h */,
+				D3DEC4A70A75CF62002001CF /* apr_shm.h */,
+				D3DEC4A80A75CF62002001CF /* apr_signal.h */,
+				D3DEC4A90A75CF62002001CF /* apr_strings.h */,
+				D3DEC4AA0A75CF62002001CF /* apr_support.h */,
+				D3DEC4AB0A75CF62002001CF /* apr_tables.h */,
+				D3DEC4AC0A75CF62002001CF /* apr_thread_cond.h */,
+				D3DEC4AD0A75CF62002001CF /* apr_thread_mutex.h */,
+				D3DEC4AE0A75CF62002001CF /* apr_thread_proc.h */,
+				D3DEC4AF0A75CF62002001CF /* apr_thread_rwlock.h */,
+				D3DEC4B00A75CF62002001CF /* apr_time.h */,
+				D3DEC4B10A75CF62002001CF /* apr_user.h */,
+				D3DEC4B20A75CF62002001CF /* apr_version.h */,
+				D3DEC4B30A75CF62002001CF /* apr_want.h */,
+				D3DEC4B40A75CF62002001CF /* arch */,
+			);
+			name = include;
+			path = "../../libs/apr-1.2.6/include";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC4B40A75CF62002001CF /* arch */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC4B70A75CF62002001CF /* apr_private_common.h */,
+				D3DEC4D80A75CF62002001CF /* unix */,
+			);
+			path = arch;
+			sourceTree = "<group>";
+		};
+		D3DEC4D80A75CF62002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC4D90A75CF62002001CF /* apr_arch_dso.h */,
+				D3DEC4DA0A75CF62002001CF /* apr_arch_file_io.h */,
+				D3DEC4DB0A75CF62002001CF /* apr_arch_global_mutex.h */,
+				D3DEC4DC0A75CF62002001CF /* apr_arch_inherit.h */,
+				D3DEC4DD0A75CF62002001CF /* apr_arch_internal_time.h */,
+				D3DEC4DE0A75CF62002001CF /* apr_arch_misc.h */,
+				D3DEC4DF0A75CF62002001CF /* apr_arch_networkio.h */,
+				D3DEC4E00A75CF62002001CF /* apr_arch_poll_private.h */,
+				D3DEC4E10A75CF62002001CF /* apr_arch_proc_mutex.h */,
+				D3DEC4E20A75CF62002001CF /* apr_arch_shm.h */,
+				D3DEC4E30A75CF62002001CF /* apr_arch_thread_cond.h */,
+				D3DEC4E40A75CF62002001CF /* apr_arch_thread_mutex.h */,
+				D3DEC4E50A75CF62002001CF /* apr_arch_thread_rwlock.h */,
+				D3DEC4E60A75CF62002001CF /* apr_arch_threadproc.h */,
+				D3DEC4E70A75CF62002001CF /* apr_private.h */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5020A75CFB6002001CF /* dso */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC50D0A75CFB6002001CF /* unix */,
+			);
+			name = dso;
+			path = "../../libs/apr-1.2.6/dso";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC50D0A75CFB6002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC50E0A75CFB6002001CF /* dso.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5110A75CFB6002001CF /* file_io */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC52C0A75CFB6002001CF /* unix */,
+			);
+			name = file_io;
+			path = "../../libs/apr-1.2.6/file_io";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC52C0A75CFB6002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC52D0A75CFB6002001CF /* copy.c */,
+				D3DEC52E0A75CFB6002001CF /* dir.c */,
+				D3DEC52F0A75CFB6002001CF /* fileacc.c */,
+				D3DEC5300A75CFB6002001CF /* filedup.c */,
+				D3DEC5310A75CFB6002001CF /* filepath.c */,
+				D3DEC5320A75CFB7002001CF /* filepath_util.c */,
+				D3DEC5330A75CFB7002001CF /* filestat.c */,
+				D3DEC5340A75CFB7002001CF /* flock.c */,
+				D3DEC5350A75CFB7002001CF /* fullrw.c */,
+				D3DEC5360A75CFB7002001CF /* mktemp.c */,
+				D3DEC5370A75CFB7002001CF /* open.c */,
+				D3DEC5380A75CFB7002001CF /* pipe.c */,
+				D3DEC5390A75CFB7002001CF /* readwrite.c */,
+				D3DEC53A0A75CFB7002001CF /* seek.c */,
+				D3DEC53B0A75CFB7002001CF /* tempdir.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5470A75CFB7002001CF /* locks */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5570A75CFB7002001CF /* unix */,
+			);
+			name = locks;
+			path = "../../libs/apr-1.2.6/locks";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5570A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5580A75CFB7002001CF /* global_mutex.c */,
+				D3DEC5590A75CFB7002001CF /* proc_mutex.c */,
+				D3DEC55A0A75CFB7002001CF /* thread_cond.c */,
+				D3DEC55B0A75CFB7002001CF /* thread_mutex.c */,
+				D3DEC55C0A75CFB7002001CF /* thread_rwlock.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5620A75CFB7002001CF /* memory */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5630A75CFB7002001CF /* unix */,
+			);
+			name = memory;
+			path = "../../libs/apr-1.2.6/memory";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5630A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5640A75CFB7002001CF /* apr_pools.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5650A75CFB7002001CF /* misc */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC56D0A75CFB7002001CF /* unix */,
+			);
+			name = misc;
+			path = "../../libs/apr-1.2.6/misc";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC56D0A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC56E0A75CFB7002001CF /* charset.c */,
+				D3DEC56F0A75CFB7002001CF /* env.c */,
+				D3DEC5700A75CFB7002001CF /* errorcodes.c */,
+				D3DEC5710A75CFB7002001CF /* getopt.c */,
+				D3DEC5720A75CFB7002001CF /* otherchild.c */,
+				D3DEC5730A75CFB7002001CF /* rand.c */,
+				D3DEC5750A75CFB7002001CF /* start.c */,
+				D3DEC5760A75CFB7002001CF /* version.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5800A75CFB7002001CF /* mmap */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5810A75CFB7002001CF /* unix */,
+			);
+			name = mmap;
+			path = "../../libs/apr-1.2.6/mmap";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5810A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5820A75CFB7002001CF /* common.c */,
+				D3DEC5830A75CFB7002001CF /* mmap.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5860A75CFB7002001CF /* network_io */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5930A75CFB7002001CF /* unix */,
+			);
+			name = network_io;
+			path = "../../libs/apr-1.2.6/network_io";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5930A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5940A75CFB7002001CF /* inet_ntop.c */,
+				D3DEC5950A75CFB7002001CF /* inet_pton.c */,
+				D3DEC5960A75CFB7002001CF /* multicast.c */,
+				D3DEC5970A75CFB7002001CF /* sendrecv.c */,
+				D3DEC5980A75CFB7002001CF /* sockaddr.c */,
+				D3DEC5990A75CFB7002001CF /* sockets.c */,
+				D3DEC59A0A75CFB7002001CF /* sockopt.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC59F0A75CFB7002001CF /* passwd */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5A00A75CFB7002001CF /* apr_getpass.c */,
+			);
+			name = passwd;
+			path = "../../libs/apr-1.2.6/passwd";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5A10A75CFB7002001CF /* poll */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5A50A75CFB7002001CF /* unix */,
+			);
+			name = poll;
+			path = "../../libs/apr-1.2.6/poll";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5A50A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5A60A75CFB7002001CF /* epoll.c */,
+				D3DEC5A70A75CFB7002001CF /* kqueue.c */,
+				D3DEC5A80A75CFB7002001CF /* poll.c */,
+				D3DEC5A90A75CFB7002001CF /* port.c */,
+				D3DEC5AA0A75CFB7002001CF /* select.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5AB0A75CFB7002001CF /* random */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5AC0A75CFB7002001CF /* unix */,
+			);
+			name = random;
+			path = "../../libs/apr-1.2.6/random";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5AC0A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5AD0A75CFB7002001CF /* apr_random.c */,
+				D3DEC5AE0A75CFB7002001CF /* sha2.c */,
+				D3DEC5B00A75CFB7002001CF /* sha2_glue.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5B10A75CFB7002001CF /* shmem */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5B60A75CFB7002001CF /* unix */,
+			);
+			name = shmem;
+			path = "../../libs/apr-1.2.6/shmem";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5B60A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5B70A75CFB7002001CF /* shm.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5BA0A75CFB7002001CF /* strings */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5BB0A75CFB7002001CF /* apr_cpystrn.c */,
+				D3DEC5BC0A75CFB7002001CF /* apr_fnmatch.c */,
+				D3DEC5BD0A75CFB7002001CF /* apr_snprintf.c */,
+				D3DEC5BE0A75CFB7002001CF /* apr_strings.c */,
+				D3DEC5BF0A75CFB7002001CF /* apr_strnatcmp.c */,
+				D3DEC5C00A75CFB7002001CF /* apr_strtok.c */,
+			);
+			name = strings;
+			path = "../../libs/apr-1.2.6/strings";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5C10A75CFB7002001CF /* support */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5C20A75CFB7002001CF /* unix */,
+			);
+			name = support;
+			path = "../../libs/apr-1.2.6/support";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5C20A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5C30A75CFB7002001CF /* waitio.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5C40A75CFB7002001CF /* tables */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5C50A75CFB7002001CF /* apr_hash.c */,
+				D3DEC5C60A75CFB7002001CF /* apr_tables.c */,
+			);
+			name = tables;
+			path = "../../libs/apr-1.2.6/tables";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5C70A75CFB7002001CF /* threadproc */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5D90A75CFB7002001CF /* unix */,
+			);
+			name = threadproc;
+			path = "../../libs/apr-1.2.6/threadproc";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5D90A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5DA0A75CFB7002001CF /* proc.c */,
+				D3DEC5DB0A75CFB7002001CF /* procsup.c */,
+				D3DEC5DC0A75CFB7002001CF /* signals.c */,
+				D3DEC5DD0A75CFB7002001CF /* thread.c */,
+				D3DEC5DE0A75CFB7002001CF /* threadpriv.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5E40A75CFB7002001CF /* time */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5E50A75CFB7002001CF /* unix */,
+			);
+			name = time;
+			path = "../../libs/apr-1.2.6/time";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5E50A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5E60A75CFB7002001CF /* time.c */,
+				D3DEC5E70A75CFB7002001CF /* timestr.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC5EC0A75CFB7002001CF /* user */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5F00A75CFB7002001CF /* unix */,
+			);
+			name = user;
+			path = "../../libs/apr-1.2.6/user";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC5F00A75CFB7002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC5F10A75CFB7002001CF /* groupinfo.c */,
+				D3DEC5F20A75CFB7002001CF /* userinfo.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		D3DEC6480A75D13B002001CF /* atomic */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC64D0A75D13B002001CF /* unix */,
+			);
+			name = atomic;
+			path = "../../libs/apr-1.2.6/atomic";
+			sourceTree = SOURCE_ROOT;
+		};
+		D3DEC64D0A75D13B002001CF /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC64E0A75D13B002001CF /* apr_atomic.c */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		D3DEC2180A75CB06002001CF /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DEC6570A75D1D3002001CF /* apr.h in Headers */,
+				D3DEC6580A75D1D9002001CF /* apr_env.h in Headers */,
+				D3DEC6590A75D1DB002001CF /* apr_arch_thread_mutex.h in Headers */,
+				D3DEC65A0A75D1DB002001CF /* apr_getopt.h in Headers */,
+				D3DEC65B0A75D1DC002001CF /* apr_arch_file_io.h in Headers */,
+				D3DEC65C0A75D1DD002001CF /* apr_arch_inherit.h in Headers */,
+				D3DEC65D0A75D1DD002001CF /* apr_file_io.h in Headers */,
+				D3DEC65E0A75D1DE002001CF /* apr_ring.h in Headers */,
+				D3DEC65F0A75D1DE002001CF /* apr_shm.h in Headers */,
+				D3DEC6600A75D1DF002001CF /* apr_atomic.h in Headers */,
+				D3DEC6610A75D1DF002001CF /* apr_private_common.h in Headers */,
+				D3DEC6620A75D1E2002001CF /* apr_thread_mutex.h in Headers */,
+				D3DEC6630A75D1E3002001CF /* apr_thread_rwlock.h in Headers */,
+				D3DEC6640A75D1E4002001CF /* apr_arch_dso.h in Headers */,
+				D3DEC6650A75D1E4002001CF /* apr_user.h in Headers */,
+				D3DEC6660A75D1E5002001CF /* apr_arch_networkio.h in Headers */,
+				D3DEC6670A75D1E5002001CF /* apr_inherit.h in Headers */,
+				D3DEC6680A75D1E6002001CF /* apr_errno.h in Headers */,
+				D3DEC6690A75D1E6002001CF /* apr_thread_cond.h in Headers */,
+				D3DEC66A0A75D1E7002001CF /* apr_arch_shm.h in Headers */,
+				D3DEC66B0A75D1E7002001CF /* apr_arch_thread_rwlock.h in Headers */,
+				D3DEC66C0A75D1E8002001CF /* apr_dso.h in Headers */,
+				D3DEC66D0A75D1E9002001CF /* apr_arch_global_mutex.h in Headers */,
+				D3DEC66E0A75D1E9002001CF /* apr_hash.h in Headers */,
+				D3DEC66F0A75D1E9002001CF /* apr_private.h in Headers */,
+				D3DEC6700A75D1EA002001CF /* apr_support.h in Headers */,
+				D3DEC6710A75D1EA002001CF /* apr_global_mutex.h in Headers */,
+				D3DEC6720A75D1EB002001CF /* apr_proc_mutex.h in Headers */,
+				D3DEC6730A75D1EB002001CF /* apr_lib.h in Headers */,
+				D3DEC6740A75D1EC002001CF /* apr_strings.h in Headers */,
+				D3DEC6750A75D1EC002001CF /* apr_poll.h in Headers */,
+				D3DEC6760A75D1ED002001CF /* apr_want.h in Headers */,
+				D3DEC6770A75D1ED002001CF /* apr_allocator.h in Headers */,
+				D3DEC6780A75D1EE002001CF /* apr_fnmatch.h in Headers */,
+				D3DEC6790A75D1EE002001CF /* apr_thread_proc.h in Headers */,
+				D3DEC67A0A75D1EF002001CF /* apr_network_io.h in Headers */,
+				D3DEC67B0A75D1EF002001CF /* apr_arch_misc.h in Headers */,
+				D3DEC67C0A75D1F0002001CF /* apr_arch_threadproc.h in Headers */,
+				D3DEC67D0A75D1F4002001CF /* apr_version.h in Headers */,
+				D3DEC67E0A75D1F5002001CF /* apr_arch_thread_cond.h in Headers */,
+				D3DEC67F0A75D1F5002001CF /* apr_arch_poll_private.h in Headers */,
+				D3DEC6800A75D1F5002001CF /* apr_arch_internal_time.h in Headers */,
+				D3DEC6810A75D1F6002001CF /* apr_portable.h in Headers */,
+				D3DEC6820A75D1F6002001CF /* apr_general.h in Headers */,
+				D3DEC6830A75D1F7002001CF /* apr_arch_proc_mutex.h in Headers */,
+				D3DEC6840A75D1F7002001CF /* apr_file_info.h in Headers */,
+				D3DEC6850A75D1F8002001CF /* apr_pools.h in Headers */,
+				D3DEC6860A75D1F8002001CF /* apr_time.h in Headers */,
+				D3DEC6870A75D1F9002001CF /* apr_signal.h in Headers */,
+				D3DEC6880A75D1F9002001CF /* apr_tables.h in Headers */,
+				D3DEC6890A75D1FA002001CF /* apr_random.h in Headers */,
+				D3DEC68A0A75D1FA002001CF /* apr_mmap.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		D3DEC21C0A75CB06002001CF /* apr.framework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3DEC21F0A75CB06002001CF /* Build configuration list for PBXNativeTarget "apr.framework" */;
+			buildPhases = (
+				D3DEC2260A75CB62002001CF /* ShellScript */,
+				D3DEC2180A75CB06002001CF /* Headers */,
+				D3DEC21A0A75CB06002001CF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = apr.framework;
+			productName = apr;
+			productReference = D3DEC21D0A75CB06002001CF /* apr.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 1DEB91EF08733DB70010E9CD /* Build configuration list for PBXProject "FreeSWITCH" */;
+			hasScannedForEncodings = 1;
+			mainGroup = 08FB7794FE84155DC02AAC07 /* FreeSWITCH */;
+			projectDirPath = "";
+			targets = (
+				D3DEC21C0A75CB06002001CF /* apr.framework */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		D3DEC2260A75CB62002001CF /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ -e ../../libs/apr-$FREESWITCH_APR_VERSION/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl $FREESWITCH_DOWNLOAD_URL/apr-$FREESWITCH_APR_VERSION.tar.gz -o ../../libs/apr-$FREESWITCH_APR_VERSION.tar.gz\ncd ../../libs\ntar zxfv apr-$FREESWITCH_APR_VERSION.tar.gz\ncd apr-$FREESWITCH_APR_VERSION\n./configure --enable-layout=\"Mac OS X Server\"\nmake apr.exp\ntouch .complete";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D3DEC21A0A75CB06002001CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DEC6510A75D148002001CF /* apr_atomic.c in Sources */,
+				D3DEC5F60A75D048002001CF /* apr_cpystrn.c in Sources */,
+				D3DEC5F70A75D048002001CF /* apr_fnmatch.c in Sources */,
+				D3DEC5F80A75D048002001CF /* apr_getpass.c in Sources */,
+				D3DEC5F90A75D048002001CF /* apr_hash.c in Sources */,
+				D3DEC5FA0A75D048002001CF /* apr_pools.c in Sources */,
+				D3DEC5FB0A75D048002001CF /* apr_random.c in Sources */,
+				D3DEC5FC0A75D048002001CF /* apr_snprintf.c in Sources */,
+				D3DEC5FD0A75D048002001CF /* apr_strings.c in Sources */,
+				D3DEC5FE0A75D048002001CF /* apr_strnatcmp.c in Sources */,
+				D3DEC5FF0A75D048002001CF /* apr_strtok.c in Sources */,
+				D3DEC6000A75D048002001CF /* apr_tables.c in Sources */,
+				D3DEC6010A75D048002001CF /* charset.c in Sources */,
+				D3DEC6020A75D048002001CF /* common.c in Sources */,
+				D3DEC6030A75D048002001CF /* copy.c in Sources */,
+				D3DEC6040A75D048002001CF /* dir.c in Sources */,
+				D3DEC6050A75D048002001CF /* dso.c in Sources */,
+				D3DEC6060A75D048002001CF /* env.c in Sources */,
+				D3DEC6070A75D048002001CF /* epoll.c in Sources */,
+				D3DEC6080A75D048002001CF /* errorcodes.c in Sources */,
+				D3DEC6090A75D048002001CF /* fileacc.c in Sources */,
+				D3DEC60A0A75D048002001CF /* filedup.c in Sources */,
+				D3DEC60B0A75D048002001CF /* filepath.c in Sources */,
+				D3DEC60C0A75D048002001CF /* filepath_util.c in Sources */,
+				D3DEC60D0A75D048002001CF /* filestat.c in Sources */,
+				D3DEC60E0A75D048002001CF /* flock.c in Sources */,
+				D3DEC60F0A75D048002001CF /* fullrw.c in Sources */,
+				D3DEC6100A75D048002001CF /* getopt.c in Sources */,
+				D3DEC6110A75D048002001CF /* global_mutex.c in Sources */,
+				D3DEC6120A75D048002001CF /* groupinfo.c in Sources */,
+				D3DEC6130A75D048002001CF /* inet_ntop.c in Sources */,
+				D3DEC6140A75D048002001CF /* inet_pton.c in Sources */,
+				D3DEC6150A75D048002001CF /* kqueue.c in Sources */,
+				D3DEC6160A75D048002001CF /* mktemp.c in Sources */,
+				D3DEC6170A75D048002001CF /* mmap.c in Sources */,
+				D3DEC6180A75D048002001CF /* multicast.c in Sources */,
+				D3DEC6190A75D048002001CF /* open.c in Sources */,
+				D3DEC61A0A75D048002001CF /* otherchild.c in Sources */,
+				D3DEC61B0A75D048002001CF /* pipe.c in Sources */,
+				D3DEC61C0A75D048002001CF /* poll.c in Sources */,
+				D3DEC61D0A75D048002001CF /* port.c in Sources */,
+				D3DEC61E0A75D048002001CF /* proc.c in Sources */,
+				D3DEC61F0A75D048002001CF /* proc_mutex.c in Sources */,
+				D3DEC6200A75D048002001CF /* procsup.c in Sources */,
+				D3DEC6210A75D048002001CF /* rand.c in Sources */,
+				D3DEC6230A75D048002001CF /* readwrite.c in Sources */,
+				D3DEC6240A75D048002001CF /* seek.c in Sources */,
+				D3DEC6250A75D048002001CF /* select.c in Sources */,
+				D3DEC6260A75D048002001CF /* sendrecv.c in Sources */,
+				D3DEC6270A75D048002001CF /* sha2.c in Sources */,
+				D3DEC6290A75D048002001CF /* sha2_glue.c in Sources */,
+				D3DEC62A0A75D048002001CF /* shm.c in Sources */,
+				D3DEC62B0A75D048002001CF /* signals.c in Sources */,
+				D3DEC62C0A75D048002001CF /* sockaddr.c in Sources */,
+				D3DEC62D0A75D048002001CF /* sockets.c in Sources */,
+				D3DEC62E0A75D048002001CF /* sockopt.c in Sources */,
+				D3DEC62F0A75D048002001CF /* start.c in Sources */,
+				D3DEC6300A75D048002001CF /* tempdir.c in Sources */,
+				D3DEC6310A75D048002001CF /* thread.c in Sources */,
+				D3DEC6320A75D048002001CF /* thread_cond.c in Sources */,
+				D3DEC6330A75D048002001CF /* thread_mutex.c in Sources */,
+				D3DEC6340A75D048002001CF /* thread_rwlock.c in Sources */,
+				D3DEC6350A75D048002001CF /* threadpriv.c in Sources */,
+				D3DEC6360A75D048002001CF /* time.c in Sources */,
+				D3DEC6370A75D048002001CF /* timestr.c in Sources */,
+				D3DEC6380A75D048002001CF /* userinfo.c in Sources */,
+				D3DEC6390A75D048002001CF /* version.c in Sources */,
+				D3DEC63A0A75D048002001CF /* waitio.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB91F008733DB70010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(FREESWITCH_ARCH)";
+				FREESWITCH_APR_VERSION = 1.2.6;
+				FREESWITCH_ARCH = "i386 ppc";
+				FREESWITCH_DOWNLOAD_URL = "http://svn.freeswitch.org/downloads/libs";
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = Debug;
+		};
+		1DEB91F108733DB70010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(FREESWITCH_ARCH)";
+				FREESWITCH_APR_VERSION = 1.2.6;
+				FREESWITCH_ARCH = "i386 ppc";
+				FREESWITCH_DOWNLOAD_URL = "http://svn.freeswitch.org/downloads/libs";
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = Release;
+		};
+		D3DEC2200A75CB06002001CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = NO;
+				INFOPLIST_FILE = apr.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_CFLAGS = (
+					"-g",
+					"-O2",
+				);
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-DDARWIN",
+					"-DSIGPROCMASK_SETS_THREAD_MASK",
+					"-no-cpp-precomp",
+				);
+				OTHER_LDFLAGS = "-lpthread";
+				PREBINDING = NO;
+				PRODUCT_NAME = apr;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D3DEC2210A75CB06002001CF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = NO;
+				INFOPLIST_FILE = apr.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_CFLAGS = (
+					"-g",
+					"-O2",
+				);
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-DDARWIN",
+					"-DSIGPROCMASK_SETS_THREAD_MASK",
+					"-no-cpp-precomp",
+				);
+				OTHER_LDFLAGS = "-lpthread";
+				PREBINDING = NO;
+				PRODUCT_NAME = apr;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB91EF08733DB70010E9CD /* Build configuration list for PBXProject "FreeSWITCH" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB91F008733DB70010E9CD /* Debug */,
+				1DEB91F108733DB70010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3DEC21F0A75CB06002001CF /* Build configuration list for PBXNativeTarget "apr.framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3DEC2200A75CB06002001CF /* Debug */,
+				D3DEC2210A75CB06002001CF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}
