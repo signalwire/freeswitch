@@ -1255,7 +1255,7 @@
 		D37671920A75F14200ACC1FB /* switch_utils.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_utils.c; path = ../../src/switch_utils.c; sourceTree = SOURCE_ROOT; };
 		D37671930A75F14200ACC1FB /* switch_xml.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_xml.c; path = ../../src/switch_xml.c; sourceTree = SOURCE_ROOT; };
 		D37671940A75F14200ACC1FB /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = ../../src/switch.c; sourceTree = SOURCE_ROOT; };
-		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
+		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD4DF0A768AC500FEDB19 /* srtp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = srtp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD4E00A768AC500FEDB19 /* srtp.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = srtp.plist; sourceTree = "<group>"; };
 		D38DD5260A768B6100FEDB19 /* resample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = resample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -4085,6 +4085,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D38DD4E10A768AC500FEDB19 /* Build configuration list for PBXNativeTarget "srtp" */;
 			buildPhases = (
+				D36503090A76CC1400C47A76 /* ShellScript */,
 				D38DD4DA0A768AC500FEDB19 /* Headers */,
 				D38DD4DC0A768AC500FEDB19 /* Sources */,
 			);
@@ -4491,6 +4492,19 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
 			shellScript = "if [ -e ../../libs/pcre-$FREESWITCH_PCRE_VERSION/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl $FREESWITCH_DOWNLOAD_URL/pcre-$FREESWITCH_PCRE_VERSION.tar.gz -o ../../libs/pcre-$FREESWITCH_PCRE_VERSION.tar.gz\ncd ../../libs\ntar zxfv pcre-$FREESWITCH_PCRE_VERSION.tar.gz\ncd pcre-$FREESWITCH_PCRE_VERSION\n./configure\nmake dftables\n./dftables pcre_chartables.c\ntouch .complete";
+		};
+		D36503090A76CC1400C47A76 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "cd ../../libs/srtp\n./configure";
 		};
 		D37670CA0A75ECF300ACC1FB /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
