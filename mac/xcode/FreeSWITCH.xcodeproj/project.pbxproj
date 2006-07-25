@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXAggregateTarget section */
-		D3BC31D20A769AE100DE971E /* Modules */ = {
+		D3BC31D20A769AE100DE971E /* Build Modules */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = D3BC31D80A769B0800DE971E /* Build configuration list for PBXAggregateTarget "Modules" */;
+			buildConfigurationList = D3BC31D80A769B0800DE971E /* Build configuration list for PBXAggregateTarget "Build Modules" */;
 			buildPhases = (
 			);
 			dependencies = (
@@ -30,13 +30,14 @@
 				D365020E0A76C67600C47A76 /* PBXTargetDependency */,
 				D36502640A76C92C00C47A76 /* PBXTargetDependency */,
 				D36503040A76CB8A00C47A76 /* PBXTargetDependency */,
+				D33DFADC0A76E0A200E49B16 /* PBXTargetDependency */,
 			);
-			name = Modules;
+			name = "Build Modules";
 			productName = Modules;
 		};
-		D3DEC8130A75D8C8002001CF /* FreeSWITCH */ = {
+		D3DEC8130A75D8C8002001CF /* Build FreeSWITCH */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = D3DEC8190A75D8F7002001CF /* Build configuration list for PBXAggregateTarget "FreeSWITCH" */;
+			buildConfigurationList = D3DEC8190A75D8F7002001CF /* Build configuration list for PBXAggregateTarget "Build FreeSWITCH" */;
 			buildPhases = (
 			);
 			dependencies = (
@@ -51,7 +52,7 @@
 				D38DD5750A768D9C00FEDB19 /* PBXTargetDependency */,
 				D3BC32550A769C2E00DE971E /* PBXTargetDependency */,
 			);
-			name = FreeSWITCH;
+			name = "Build FreeSWITCH";
 			productName = FreeSWITCH;
 		};
 /* End PBXAggregateTarget section */
@@ -778,11 +779,18 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		D33DFADB0A76E0A200E49B16 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D34725510A76D8D6001C8ED7 /* mod_iax */;
+			remoteInfo = mod_iax;
+		};
 		D34725570A76D904001C8ED7 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D34725340A76D7B1001C8ED7 /* iax2 */;
+			remoteGlobalIDString = D34725340A76D7B1001C8ED7;
 			remoteInfo = iax2;
 		};
 		D36501760A76C28200C47A76 /* PBXContainerItemProxy */ = {
@@ -4233,9 +4241,9 @@
 			productReference = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D38DD4400A7687A700FEDB19 /* freeswitch */ = {
+		D38DD4400A7687A700FEDB19 /* freeswitch_cli */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D38DD4430A7687C600FEDB19 /* Build configuration list for PBXNativeTarget "freeswitch" */;
+			buildConfigurationList = D38DD4430A7687C600FEDB19 /* Build configuration list for PBXNativeTarget "freeswitch_cli" */;
 			buildPhases = (
 				D38DD43E0A7687A700FEDB19 /* Sources */,
 				D38DD43F0A7687A700FEDB19 /* Frameworks */,
@@ -4246,7 +4254,7 @@
 			dependencies = (
 				D3EDD2A10A76D3C900AC4900 /* PBXTargetDependency */,
 			);
-			name = freeswitch;
+			name = freeswitch_cli;
 			productName = freeswitch;
 			productReference = D38DD4410A7687A700FEDB19 /* freeswitch */;
 			productType = "com.apple.product-type.tool";
@@ -4595,7 +4603,7 @@
 			mainGroup = 08FB7794FE84155DC02AAC07 /* FreeSWITCH */;
 			projectDirPath = "";
 			targets = (
-				D3DEC8130A75D8C8002001CF /* FreeSWITCH */,
+				D3DEC8130A75D8C8002001CF /* Build FreeSWITCH */,
 				D3DEC21C0A75CB06002001CF /* apr */,
 				D3DEC6CE0A75D4E9002001CF /* aprutil */,
 				D3DEC8300A75DA10002001CF /* teletone */,
@@ -4603,11 +4611,11 @@
 				D3DEC8E60A75E19F002001CF /* dingaling */,
 				D37670C40A75ECD400ACC1FB /* sqlite */,
 				D37671640A75F0DC00ACC1FB /* libfreeswitch */,
-				D38DD4400A7687A700FEDB19 /* freeswitch */,
+				D38DD4400A7687A700FEDB19 /* freeswitch_cli */,
 				D38DD4DE0A768AC500FEDB19 /* srtp */,
 				D38DD5250A768B6100FEDB19 /* resample */,
 				D38DD53F0A768C0900FEDB19 /* speakup */,
-				D3BC31D20A769AE100DE971E /* Modules */,
+				D3BC31D20A769AE100DE971E /* Build Modules */,
 				D3BC31D50A769AED00DE971E /* mod_echo */,
 				D3BC325E0A769CA700DE971E /* mod_dingaling */,
 				D3BC32820A769E0500DE971E /* mod_playback */,
@@ -5373,6 +5381,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		D33DFADC0A76E0A200E49B16 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D34725510A76D8D6001C8ED7 /* mod_iax */;
+			targetProxy = D33DFADB0A76E0A200E49B16 /* PBXContainerItemProxy */;
+		};
 		D34725580A76D904001C8ED7 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D34725340A76D7B1001C8ED7 /* iax */;
@@ -5505,7 +5518,7 @@
 		};
 		D38DD5750A768D9C00FEDB19 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D38DD4400A7687A700FEDB19 /* freeswitch */;
+			target = D38DD4400A7687A700FEDB19 /* freeswitch_cli */;
 			targetProxy = D38DD5740A768D9C00FEDB19 /* PBXContainerItemProxy */;
 		};
 		D3BC32530A769C1500DE971E /* PBXTargetDependency */ = {
@@ -5515,7 +5528,7 @@
 		};
 		D3BC32550A769C2E00DE971E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D3BC31D20A769AE100DE971E /* Modules */;
+			target = D3BC31D20A769AE100DE971E /* Build Modules */;
 			targetProxy = D3BC32540A769C2E00DE971E /* PBXContainerItemProxy */;
 		};
 		D3BC32670A769D6100DE971E /* PBXTargetDependency */ = {
@@ -7483,7 +7496,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D38DD4430A7687C600FEDB19 /* Build configuration list for PBXNativeTarget "freeswitch" */ = {
+		D38DD4430A7687C600FEDB19 /* Build configuration list for PBXNativeTarget "freeswitch_cli" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D38DD4440A7687C600FEDB19 /* Debug */,
@@ -7519,7 +7532,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D3BC31D80A769B0800DE971E /* Build configuration list for PBXAggregateTarget "Modules" */ = {
+		D3BC31D80A769B0800DE971E /* Build configuration list for PBXAggregateTarget "Build Modules" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3BC31D90A769B0800DE971E /* Debug */,
@@ -7654,7 +7667,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D3DEC8190A75D8F7002001CF /* Build configuration list for PBXAggregateTarget "FreeSWITCH" */ = {
+		D3DEC8190A75D8F7002001CF /* Build configuration list for PBXAggregateTarget "Build FreeSWITCH" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3DEC81A0A75D8F7002001CF /* Debug */,
