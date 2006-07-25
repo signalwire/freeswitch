@@ -552,7 +552,6 @@
 		D3DEC8F20A75E20A002001CF /* ldl_compat.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = ldl_compat.h; path = ../../libs/libdingaling/src/ldl_compat.h; sourceTree = SOURCE_ROOT; };
 		D3DEC8F30A75E20A002001CF /* libdingaling.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = libdingaling.c; path = ../../libs/libdingaling/src/libdingaling.c; sourceTree = SOURCE_ROOT; };
 		D3DEC8F40A75E20A002001CF /* libdingaling.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libdingaling.h; path = ../../libs/libdingaling/src/libdingaling.h; sourceTree = SOURCE_ROOT; };
-		D3DEC9220A75E36C002001CF /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -580,7 +579,6 @@
 		08FB7794FE84155DC02AAC07 /* FreeSWITCH */ = {
 			isa = PBXGroup;
 			children = (
-				D3DEC9220A75E36C002001CF /* AppKit.framework */,
 				08FB7795FE84155DC02AAC07 /* Source */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
