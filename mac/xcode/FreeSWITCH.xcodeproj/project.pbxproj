@@ -651,105 +651,105 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC31D50A769AED00DE971E /* mod_echo.dylib */;
+			remoteGlobalIDString = D3BC31D50A769AED00DE971E;
 			remoteInfo = mod_echo.dylib;
 		};
 		D3BC32540A769C2E00DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC31D20A769AE100DE971E /* Modules */;
+			remoteGlobalIDString = D3BC31D20A769AE100DE971E;
 			remoteInfo = Modules;
 		};
 		D3BC32660A769D6100DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC325E0A769CA700DE971E /* mod_dingaling */;
+			remoteGlobalIDString = D3BC325E0A769CA700DE971E;
 			remoteInfo = mod_dingaling;
 		};
 		D3BC32720A769D9900DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3DEC8E60A75E19F002001CF /* dingaling */;
+			remoteGlobalIDString = D3DEC8E60A75E19F002001CF;
 			remoteInfo = dingaling;
 		};
 		D3BC32740A769D9C00DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3DEC8A40A75DFDE002001CF /* iksemel */;
+			remoteGlobalIDString = D3DEC8A40A75DFDE002001CF;
 			remoteInfo = iksemel;
 		};
 		D3BC32B70A76A2F600DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC32820A769E0500DE971E /* mod_playback */;
+			remoteGlobalIDString = D3BC32820A769E0500DE971E;
 			remoteInfo = mod_playback;
 		};
 		D3BC32D50A76A68E00DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC32CA0A76A63400DE971E /* mod_bridgecall */;
+			remoteGlobalIDString = D3BC32CA0A76A63400DE971E;
 			remoteInfo = mod_bridgecall;
 		};
 		D3BC32F40A76A75F00DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC32E50A76A6FD00DE971E /* mod_l16 */;
+			remoteGlobalIDString = D3BC32E50A76A6FD00DE971E;
 			remoteInfo = mod_l16;
 		};
 		D3BC33080A76A7FB00DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC32F90A76A79600DE971E /* mod_commands */;
+			remoteGlobalIDString = D3BC32F90A76A79600DE971E;
 			remoteInfo = mod_commands;
 		};
 		D3BC33320A76A8CE00DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC33100A76A83D00DE971E /* mod_softtimer */;
+			remoteGlobalIDString = D3BC33100A76A83D00DE971E;
 			remoteInfo = mod_softtimer;
 		};
 		D3BC33340A76A8D000DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC331D0A76A87E00DE971E /* mod_g711 */;
+			remoteGlobalIDString = D3BC331D0A76A87E00DE971E;
 			remoteInfo = mod_g711;
 		};
 		D3BC334D0A76AA1E00DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC33410A76A9D900DE971E /* mod_conference */;
+			remoteGlobalIDString = D3BC33410A76A9D900DE971E;
 			remoteInfo = mod_conference;
 		};
 		D3BC34DE0A76B07A00DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC33590A76AB5600DE971E /* sndfile */;
+			remoteGlobalIDString = D3BC33590A76AB5600DE971E;
 			remoteInfo = sndfile;
 		};
 		D3BC34E00A76B07C00DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC34CC0A76AFEE00DE971E /* mod_sndfile */;
+			remoteGlobalIDString = D3BC34CC0A76AFEE00DE971E;
 			remoteInfo = mod_sndfile;
 		};
 		D3BC34FE0A76B1AB00DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3BC34E50A76B0FC00DE971E /* mod_console */;
+			remoteGlobalIDString = D3BC34E50A76B0FC00DE971E;
 			remoteInfo = mod_console;
 		};
 		D3DEC8140A75D8D3002001CF /* PBXContainerItemProxy */ = {
@@ -3153,6 +3153,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = D37671670A75F0DC00ACC1FB /* Build configuration list for PBXNativeTarget "libfreeswitch" */;
 			buildPhases = (
+				D3BC350D0A76B46F00DE971E /* ShellScript */,
 				D37671600A75F0DC00ACC1FB /* Headers */,
 				D37671610A75F0DC00ACC1FB /* Resources */,
 				D37671620A75F0DC00ACC1FB /* Sources */,
@@ -3599,6 +3600,19 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
 			shellScript = "if [ -e $FREESWITCH_INSTALL_PREFIX/freeswitch/conf/freeswitch.xml ]; then\n\texit 0\nfi\nmkdir -p $FREESWITCH_INSTALL_PREFIX/freeswitch/{log,bin,conf,db,mod}\ncp -f ../../conf/freeswitch.xml $FREESWITCH_INSTALL_PREFIX/freeswitch/conf/\n";
+		};
+		D3BC350D0A76B46F00DE971E /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ -e ../../.complete ]; then\n\texit 0\nfi\ncd ../..\n./configure\ntouch .complete\n";
 		};
 		D3DEC2260A75CB62002001CF /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
