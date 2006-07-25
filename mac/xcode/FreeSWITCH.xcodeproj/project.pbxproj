@@ -25,8 +25,8 @@
 				D3BC33330A76A8CE00DE971E /* PBXTargetDependency */,
 				D3BC33350A76A8D000DE971E /* PBXTargetDependency */,
 				D3BC334E0A76AA1E00DE971E /* PBXTargetDependency */,
-				D3BC34DF0A76B07A00DE971E /* PBXTargetDependency */,
 				D3BC34E10A76B07C00DE971E /* PBXTargetDependency */,
+				D36501770A76C28200C47A76 /* PBXTargetDependency */,
 			);
 			name = Modules;
 			productName = Modules;
@@ -54,6 +54,43 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		D36500860A76BE4700C47A76 /* mod_dialplan_xml.c in Sources */ = {isa = PBXBuildFile; fileRef = D36500850A76BE4700C47A76 /* mod_dialplan_xml.c */; };
+		D36500870A76BE5A00C47A76 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D36500880A76BE5A00C47A76 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D36500890A76BE5A00C47A76 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D365008A0A76BE5A00C47A76 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D365008B0A76BE5A00C47A76 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D365008C0A76BE5A00C47A76 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D365008D0A76BE5A00C47A76 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D365010F0A76C01A00C47A76 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D36501060A76C01A00C47A76 /* config.h */; };
+		D36501100A76C01A00C47A76 /* pcre_internal.h in Headers */ = {isa = PBXBuildFile; fileRef = D36501070A76C01A00C47A76 /* pcre_internal.h */; };
+		D36501110A76C01A00C47A76 /* pcre_scanner.h in Headers */ = {isa = PBXBuildFile; fileRef = D36501080A76C01A00C47A76 /* pcre_scanner.h */; };
+		D36501120A76C01A00C47A76 /* pcre_stringpiece.h in Headers */ = {isa = PBXBuildFile; fileRef = D36501090A76C01A00C47A76 /* pcre_stringpiece.h */; };
+		D36501130A76C01A00C47A76 /* pcre.h in Headers */ = {isa = PBXBuildFile; fileRef = D365010A0A76C01A00C47A76 /* pcre.h */; };
+		D36501140A76C01A00C47A76 /* pcrecpp.h in Headers */ = {isa = PBXBuildFile; fileRef = D365010B0A76C01A00C47A76 /* pcrecpp.h */; };
+		D36501150A76C01A00C47A76 /* pcreposix.h in Headers */ = {isa = PBXBuildFile; fileRef = D365010C0A76C01A00C47A76 /* pcreposix.h */; };
+		D36501160A76C01A00C47A76 /* ucp.h in Headers */ = {isa = PBXBuildFile; fileRef = D365010D0A76C01A00C47A76 /* ucp.h */; };
+		D36501170A76C01A00C47A76 /* ucpinternal.h in Headers */ = {isa = PBXBuildFile; fileRef = D365010E0A76C01A00C47A76 /* ucpinternal.h */; };
+		D36501380A76C06500C47A76 /* pcre_chartables.c in Sources */ = {isa = PBXBuildFile; fileRef = D36501190A76C06500C47A76 /* pcre_chartables.c */; };
+		D36501390A76C06500C47A76 /* pcre_compile.c in Sources */ = {isa = PBXBuildFile; fileRef = D365011A0A76C06500C47A76 /* pcre_compile.c */; };
+		D365013A0A76C06500C47A76 /* pcre_config.c in Sources */ = {isa = PBXBuildFile; fileRef = D365011B0A76C06500C47A76 /* pcre_config.c */; };
+		D365013B0A76C06500C47A76 /* pcre_dfa_exec.c in Sources */ = {isa = PBXBuildFile; fileRef = D365011C0A76C06500C47A76 /* pcre_dfa_exec.c */; };
+		D365013C0A76C06500C47A76 /* pcre_exec.c in Sources */ = {isa = PBXBuildFile; fileRef = D365011D0A76C06500C47A76 /* pcre_exec.c */; };
+		D365013D0A76C06500C47A76 /* pcre_fullinfo.c in Sources */ = {isa = PBXBuildFile; fileRef = D365011E0A76C06500C47A76 /* pcre_fullinfo.c */; };
+		D365013E0A76C06500C47A76 /* pcre_get.c in Sources */ = {isa = PBXBuildFile; fileRef = D365011F0A76C06500C47A76 /* pcre_get.c */; };
+		D365013F0A76C06500C47A76 /* pcre_globals.c in Sources */ = {isa = PBXBuildFile; fileRef = D36501200A76C06500C47A76 /* pcre_globals.c */; };
+		D36501400A76C06500C47A76 /* pcre_info.c in Sources */ = {isa = PBXBuildFile; fileRef = D36501210A76C06500C47A76 /* pcre_info.c */; };
+		D36501410A76C06500C47A76 /* pcre_maketables.c in Sources */ = {isa = PBXBuildFile; fileRef = D36501220A76C06500C47A76 /* pcre_maketables.c */; };
+		D36501420A76C06500C47A76 /* pcre_ord2utf8.c in Sources */ = {isa = PBXBuildFile; fileRef = D36501230A76C06500C47A76 /* pcre_ord2utf8.c */; };
+		D36501430A76C06500C47A76 /* pcre_refcount.c in Sources */ = {isa = PBXBuildFile; fileRef = D36501240A76C06500C47A76 /* pcre_refcount.c */; };
+		D36501480A76C06500C47A76 /* pcre_study.c in Sources */ = {isa = PBXBuildFile; fileRef = D36501290A76C06500C47A76 /* pcre_study.c */; };
+		D36501490A76C06500C47A76 /* pcre_tables.c in Sources */ = {isa = PBXBuildFile; fileRef = D365012A0A76C06500C47A76 /* pcre_tables.c */; };
+		D365014A0A76C06500C47A76 /* pcre_try_flipped.c in Sources */ = {isa = PBXBuildFile; fileRef = D365012B0A76C06500C47A76 /* pcre_try_flipped.c */; };
+		D365014B0A76C06500C47A76 /* pcre_ucp_findchar.c in Sources */ = {isa = PBXBuildFile; fileRef = D365012C0A76C06500C47A76 /* pcre_ucp_findchar.c */; };
+		D365014C0A76C06500C47A76 /* pcre_valid_utf8.c in Sources */ = {isa = PBXBuildFile; fileRef = D365012D0A76C06500C47A76 /* pcre_valid_utf8.c */; };
+		D365014D0A76C06500C47A76 /* pcre_version.c in Sources */ = {isa = PBXBuildFile; fileRef = D365012E0A76C06500C47A76 /* pcre_version.c */; };
+		D365014E0A76C06500C47A76 /* pcre_xclass.c in Sources */ = {isa = PBXBuildFile; fileRef = D365012F0A76C06500C47A76 /* pcre_xclass.c */; };
+		D365016E0A76C21600C47A76 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
 		D37671120A75EF2D00ACC1FB /* sqlite3.h in Headers */ = {isa = PBXBuildFile; fileRef = D376710B0A75EEE000ACC1FB /* sqlite3.h */; };
 		D37671200A75EF5200ACC1FB /* opcodes.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671070A75EEE000ACC1FB /* opcodes.c */; };
 		D37671210A75EF5200ACC1FB /* parse.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671090A75EEE000ACC1FB /* parse.c */; };
@@ -605,6 +642,90 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		D36501760A76C28200C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D365007F0A76BDF700C47A76 /* mod_dialplan_xml */;
+			remoteInfo = mod_dialplan_xml;
+		};
+		D36501A40A76C30F00C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3BC33590A76AB5600DE971E /* sndfile */;
+			remoteInfo = sndfile;
+		};
+		D36501A60A76C32800C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D36500F00A76BE9400C47A76 /* pcre */;
+			remoteInfo = pcre;
+		};
+		D36501AB0A76C36000C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC8E60A75E19F002001CF /* dingaling */;
+			remoteInfo = dingaling;
+		};
+		D36501AF0A76C36800C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC8A40A75DFDE002001CF /* iksemel */;
+			remoteInfo = iksemel;
+		};
+		D36501B40A76C3E300C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC21C0A75CB06002001CF /* apr */;
+			remoteInfo = apr;
+		};
+		D36501B60A76C3F200C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D38DD4DE0A768AC500FEDB19 /* srtp */;
+			remoteInfo = srtp;
+		};
+		D36501B80A76C3F600C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D38DD5250A768B6100FEDB19 /* resample */;
+			remoteInfo = resample;
+		};
+		D36501BA0A76C3F900C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D38DD53F0A768C0900FEDB19 /* speakup */;
+			remoteInfo = speakup;
+		};
+		D36501BC0A76C3FB00C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D37670C40A75ECD400ACC1FB /* sqlite */;
+			remoteInfo = sqlite;
+		};
+		D36501BE0A76C40000C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC21C0A75CB06002001CF /* apr */;
+			remoteInfo = apr;
+		};
+		D36501C00A76C40700C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC21C0A75CB06002001CF /* apr */;
+			remoteInfo = apr;
+		};
 		D37671510A75F04700ACC1FB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
@@ -731,13 +852,6 @@
 			remoteGlobalIDString = D3BC33410A76A9D900DE971E;
 			remoteInfo = mod_conference;
 		};
-		D3BC34DE0A76B07A00DE971E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D3BC33590A76AB5600DE971E;
-			remoteInfo = sndfile;
-		};
 		D3BC34E00A76B07C00DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
@@ -776,6 +890,38 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D36500800A76BDF700C47A76 /* mod_dialplan_xml.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_dialplan_xml.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D36500850A76BE4700C47A76 /* mod_dialplan_xml.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_dialplan_xml.c; path = ../../src/mod/dialplans/mod_dialplan_xml/mod_dialplan_xml.c; sourceTree = SOURCE_ROOT; };
+		D36500F10A76BE9400C47A76 /* pcre.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = pcre.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D36500F20A76BE9400C47A76 /* pcre.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = pcre.plist; sourceTree = "<group>"; };
+		D36501060A76C01A00C47A76 /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = config.h; path = "../../libs/pcre-6.4/config.h"; sourceTree = SOURCE_ROOT; };
+		D36501070A76C01A00C47A76 /* pcre_internal.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pcre_internal.h; path = "../../libs/pcre-6.4/pcre_internal.h"; sourceTree = SOURCE_ROOT; };
+		D36501080A76C01A00C47A76 /* pcre_scanner.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pcre_scanner.h; path = "../../libs/pcre-6.4/pcre_scanner.h"; sourceTree = SOURCE_ROOT; };
+		D36501090A76C01A00C47A76 /* pcre_stringpiece.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pcre_stringpiece.h; path = "../../libs/pcre-6.4/pcre_stringpiece.h"; sourceTree = SOURCE_ROOT; };
+		D365010A0A76C01A00C47A76 /* pcre.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pcre.h; path = "../../libs/pcre-6.4/pcre.h"; sourceTree = SOURCE_ROOT; };
+		D365010B0A76C01A00C47A76 /* pcrecpp.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pcrecpp.h; path = "../../libs/pcre-6.4/pcrecpp.h"; sourceTree = SOURCE_ROOT; };
+		D365010C0A76C01A00C47A76 /* pcreposix.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pcreposix.h; path = "../../libs/pcre-6.4/pcreposix.h"; sourceTree = SOURCE_ROOT; };
+		D365010D0A76C01A00C47A76 /* ucp.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = ucp.h; path = "../../libs/pcre-6.4/ucp.h"; sourceTree = SOURCE_ROOT; };
+		D365010E0A76C01A00C47A76 /* ucpinternal.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = ucpinternal.h; path = "../../libs/pcre-6.4/ucpinternal.h"; sourceTree = SOURCE_ROOT; };
+		D36501190A76C06500C47A76 /* pcre_chartables.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_chartables.c; path = "../../libs/pcre-6.4/pcre_chartables.c"; sourceTree = SOURCE_ROOT; };
+		D365011A0A76C06500C47A76 /* pcre_compile.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_compile.c; path = "../../libs/pcre-6.4/pcre_compile.c"; sourceTree = SOURCE_ROOT; };
+		D365011B0A76C06500C47A76 /* pcre_config.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_config.c; path = "../../libs/pcre-6.4/pcre_config.c"; sourceTree = SOURCE_ROOT; };
+		D365011C0A76C06500C47A76 /* pcre_dfa_exec.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_dfa_exec.c; path = "../../libs/pcre-6.4/pcre_dfa_exec.c"; sourceTree = SOURCE_ROOT; };
+		D365011D0A76C06500C47A76 /* pcre_exec.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_exec.c; path = "../../libs/pcre-6.4/pcre_exec.c"; sourceTree = SOURCE_ROOT; };
+		D365011E0A76C06500C47A76 /* pcre_fullinfo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_fullinfo.c; path = "../../libs/pcre-6.4/pcre_fullinfo.c"; sourceTree = SOURCE_ROOT; };
+		D365011F0A76C06500C47A76 /* pcre_get.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_get.c; path = "../../libs/pcre-6.4/pcre_get.c"; sourceTree = SOURCE_ROOT; };
+		D36501200A76C06500C47A76 /* pcre_globals.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_globals.c; path = "../../libs/pcre-6.4/pcre_globals.c"; sourceTree = SOURCE_ROOT; };
+		D36501210A76C06500C47A76 /* pcre_info.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_info.c; path = "../../libs/pcre-6.4/pcre_info.c"; sourceTree = SOURCE_ROOT; };
+		D36501220A76C06500C47A76 /* pcre_maketables.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_maketables.c; path = "../../libs/pcre-6.4/pcre_maketables.c"; sourceTree = SOURCE_ROOT; };
+		D36501230A76C06500C47A76 /* pcre_ord2utf8.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_ord2utf8.c; path = "../../libs/pcre-6.4/pcre_ord2utf8.c"; sourceTree = SOURCE_ROOT; };
+		D36501240A76C06500C47A76 /* pcre_refcount.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_refcount.c; path = "../../libs/pcre-6.4/pcre_refcount.c"; sourceTree = SOURCE_ROOT; };
+		D36501290A76C06500C47A76 /* pcre_study.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_study.c; path = "../../libs/pcre-6.4/pcre_study.c"; sourceTree = SOURCE_ROOT; };
+		D365012A0A76C06500C47A76 /* pcre_tables.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_tables.c; path = "../../libs/pcre-6.4/pcre_tables.c"; sourceTree = SOURCE_ROOT; };
+		D365012B0A76C06500C47A76 /* pcre_try_flipped.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_try_flipped.c; path = "../../libs/pcre-6.4/pcre_try_flipped.c"; sourceTree = SOURCE_ROOT; };
+		D365012C0A76C06500C47A76 /* pcre_ucp_findchar.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_ucp_findchar.c; path = "../../libs/pcre-6.4/pcre_ucp_findchar.c"; sourceTree = SOURCE_ROOT; };
+		D365012D0A76C06500C47A76 /* pcre_valid_utf8.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_valid_utf8.c; path = "../../libs/pcre-6.4/pcre_valid_utf8.c"; sourceTree = SOURCE_ROOT; };
+		D365012E0A76C06500C47A76 /* pcre_version.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_version.c; path = "../../libs/pcre-6.4/pcre_version.c"; sourceTree = SOURCE_ROOT; };
+		D365012F0A76C06500C47A76 /* pcre_xclass.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_xclass.c; path = "../../libs/pcre-6.4/pcre_xclass.c"; sourceTree = SOURCE_ROOT; };
 		D37670C50A75ECD400ACC1FB /* sqlite.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = sqlite.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D37670C60A75ECD400ACC1FB /* sqlite.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = sqlite.plist; sourceTree = "<group>"; };
 		D37670D40A75EE8300ACC1FB /* alter.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = alter.c; path = "../../libs/sqlite-3.3.6/src/alter.c"; sourceTree = SOURCE_ROOT; };
@@ -1298,6 +1444,28 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		D365007E0A76BDF700C47A76 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D365016E0A76C21600C47A76 /* pcre.framework in Frameworks */,
+				D36500870A76BE5A00C47A76 /* apr.framework in Frameworks */,
+				D36500880A76BE5A00C47A76 /* aprutil.framework in Frameworks */,
+				D36500890A76BE5A00C47A76 /* libfreeswitch.framework in Frameworks */,
+				D365008A0A76BE5A00C47A76 /* resample.framework in Frameworks */,
+				D365008B0A76BE5A00C47A76 /* sqlite.framework in Frameworks */,
+				D365008C0A76BE5A00C47A76 /* srtp.framework in Frameworks */,
+				D365008D0A76BE5A00C47A76 /* teletone.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D36500EF0A76BE9400C47A76 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D37670C30A75ECD400ACC1FB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -1532,6 +1700,7 @@
 		08FB7795FE84155DC02AAC07 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				D36501030A76BFBF00C47A76 /* pcre */,
 				D3BC335F0A76AB7100DE971E /* sndfile */,
 				D376716A0A75F0EF00ACC1FB /* freeswitch */,
 				D37670D00A75EDC900ACC1FB /* sqlite */,
@@ -1550,6 +1719,7 @@
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				D36500F20A76BE9400C47A76 /* pcre.plist */,
 				D3DEC8A60A75DFDE002001CF /* iksemel.plist */,
 				D3DEC8320A75DA10002001CF /* teletone.plist */,
 				D3DEC6D00A75D4E9002001CF /* aprutil.plist */,
@@ -1584,8 +1754,69 @@
 				D3BC335A0A76AB5600DE971E /* sndfile.framework */,
 				D3BC34CD0A76AFEE00DE971E /* mod_sndfile.dylib */,
 				D3BC34E60A76B0FC00DE971E /* mod_console.dylib */,
+				D36500800A76BDF700C47A76 /* mod_dialplan_xml.dylib */,
+				D36500F10A76BE9400C47A76 /* pcre.framework */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D36500810A76BE2000C47A76 /* dialplans */ = {
+			isa = PBXGroup;
+			children = (
+				D36500850A76BE4700C47A76 /* mod_dialplan_xml.c */,
+			);
+			name = dialplans;
+			sourceTree = "<group>";
+		};
+		D36501030A76BFBF00C47A76 /* pcre */ = {
+			isa = PBXGroup;
+			children = (
+				D36501050A76BFCF00C47A76 /* include */,
+				D36501040A76BFCA00C47A76 /* src */,
+			);
+			name = pcre;
+			sourceTree = "<group>";
+		};
+		D36501040A76BFCA00C47A76 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D36501190A76C06500C47A76 /* pcre_chartables.c */,
+				D365011A0A76C06500C47A76 /* pcre_compile.c */,
+				D365011B0A76C06500C47A76 /* pcre_config.c */,
+				D365011C0A76C06500C47A76 /* pcre_dfa_exec.c */,
+				D365011D0A76C06500C47A76 /* pcre_exec.c */,
+				D365011E0A76C06500C47A76 /* pcre_fullinfo.c */,
+				D365011F0A76C06500C47A76 /* pcre_get.c */,
+				D36501200A76C06500C47A76 /* pcre_globals.c */,
+				D36501210A76C06500C47A76 /* pcre_info.c */,
+				D36501220A76C06500C47A76 /* pcre_maketables.c */,
+				D36501230A76C06500C47A76 /* pcre_ord2utf8.c */,
+				D36501240A76C06500C47A76 /* pcre_refcount.c */,
+				D36501290A76C06500C47A76 /* pcre_study.c */,
+				D365012A0A76C06500C47A76 /* pcre_tables.c */,
+				D365012B0A76C06500C47A76 /* pcre_try_flipped.c */,
+				D365012C0A76C06500C47A76 /* pcre_ucp_findchar.c */,
+				D365012D0A76C06500C47A76 /* pcre_valid_utf8.c */,
+				D365012E0A76C06500C47A76 /* pcre_version.c */,
+				D365012F0A76C06500C47A76 /* pcre_xclass.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D36501050A76BFCF00C47A76 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D36501060A76C01A00C47A76 /* config.h */,
+				D36501070A76C01A00C47A76 /* pcre_internal.h */,
+				D36501080A76C01A00C47A76 /* pcre_scanner.h */,
+				D36501090A76C01A00C47A76 /* pcre_stringpiece.h */,
+				D365010A0A76C01A00C47A76 /* pcre.h */,
+				D365010B0A76C01A00C47A76 /* pcrecpp.h */,
+				D365010C0A76C01A00C47A76 /* pcreposix.h */,
+				D365010D0A76C01A00C47A76 /* ucp.h */,
+				D365010E0A76C01A00C47A76 /* ucpinternal.h */,
+			);
+			name = include;
 			sourceTree = "<group>";
 		};
 		D37670D00A75EDC900ACC1FB /* sqlite */ = {
@@ -1734,6 +1965,7 @@
 		D3BC31DE0A769B0E00DE971E /* modules */ = {
 			isa = PBXGroup;
 			children = (
+				D36500810A76BE2000C47A76 /* dialplans */,
 				D3BC34EC0A76B15D00DE971E /* loggers */,
 				D3BC34CE0A76B01E00DE971E /* formats */,
 				D3BC330C0A76A81400DE971E /* timers */,
@@ -2880,6 +3112,22 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		D36500EC0A76BE9400C47A76 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D365010F0A76C01A00C47A76 /* config.h in Headers */,
+				D36501100A76C01A00C47A76 /* pcre_internal.h in Headers */,
+				D36501110A76C01A00C47A76 /* pcre_scanner.h in Headers */,
+				D36501120A76C01A00C47A76 /* pcre_stringpiece.h in Headers */,
+				D36501130A76C01A00C47A76 /* pcre.h in Headers */,
+				D36501140A76C01A00C47A76 /* pcrecpp.h in Headers */,
+				D36501150A76C01A00C47A76 /* pcreposix.h in Headers */,
+				D36501160A76C01A00C47A76 /* ucp.h in Headers */,
+				D36501170A76C01A00C47A76 /* ucpinternal.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D37670C00A75ECD400ACC1FB /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -3131,6 +3379,41 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		D365007F0A76BDF700C47A76 /* mod_dialplan_xml */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D36500820A76BE2000C47A76 /* Build configuration list for PBXNativeTarget "mod_dialplan_xml" */;
+			buildPhases = (
+				D365007D0A76BDF700C47A76 /* Sources */,
+				D365007E0A76BDF700C47A76 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D36501A70A76C32800C47A76 /* PBXTargetDependency */,
+			);
+			name = mod_dialplan_xml;
+			productName = mod_dialplan_xml;
+			productReference = D36500800A76BDF700C47A76 /* mod_dialplan_xml.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
+		D36500F00A76BE9400C47A76 /* pcre */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D36500F30A76BE9500C47A76 /* Build configuration list for PBXNativeTarget "pcre" */;
+			buildPhases = (
+				D36500FE0A76BF2F00C47A76 /* ShellScript */,
+				D36500EC0A76BE9400C47A76 /* Headers */,
+				D36500EE0A76BE9400C47A76 /* Sources */,
+				D36500EF0A76BE9400C47A76 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = pcre;
+			productName = pcre;
+			productReference = D36500F10A76BE9400C47A76 /* pcre.framework */;
+			productType = "com.apple.product-type.framework";
+		};
 		D37670C40A75ECD400ACC1FB /* sqlite */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D37670C70A75ECD500ACC1FB /* Build configuration list for PBXNativeTarget "sqlite" */;
@@ -3162,6 +3445,11 @@
 			buildRules = (
 			);
 			dependencies = (
+				D36501BF0A76C40000C47A76 /* PBXTargetDependency */,
+				D36501BD0A76C3FB00C47A76 /* PBXTargetDependency */,
+				D36501B70A76C3F200C47A76 /* PBXTargetDependency */,
+				D36501B90A76C3F600C47A76 /* PBXTargetDependency */,
+				D36501BB0A76C3F900C47A76 /* PBXTargetDependency */,
 			);
 			name = libfreeswitch;
 			productName = libfreeswitch;
@@ -3260,6 +3548,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				D36501AC0A76C36000C47A76 /* PBXTargetDependency */,
 			);
 			name = mod_dingaling;
 			productName = mod_dingaling;
@@ -3405,6 +3694,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				D36501A50A76C30F00C47A76 /* PBXTargetDependency */,
 			);
 			name = mod_sndfile;
 			productName = mod_sndfile;
@@ -3456,6 +3746,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				D36501B50A76C3E300C47A76 /* PBXTargetDependency */,
 			);
 			name = aprutil;
 			productName = aprutil;
@@ -3506,6 +3797,8 @@
 			buildRules = (
 			);
 			dependencies = (
+				D36501C10A76C40700C47A76 /* PBXTargetDependency */,
+				D36501B00A76C36800C47A76 /* PBXTargetDependency */,
 			);
 			name = dingaling;
 			productName = dingaling;
@@ -3547,6 +3840,8 @@
 				D3BC33590A76AB5600DE971E /* sndfile */,
 				D3BC34CC0A76AFEE00DE971E /* mod_sndfile */,
 				D3BC34E50A76B0FC00DE971E /* mod_console */,
+				D365007F0A76BDF700C47A76 /* mod_dialplan_xml */,
+				D36500F00A76BE9400C47A76 /* pcre */,
 			);
 		};
 /* End PBXProject section */
@@ -3562,6 +3857,19 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		D36500FE0A76BF2F00C47A76 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ -e ../../libs/pcre-$FREESWITCH_PCRE_VERSION/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl $FREESWITCH_DOWNLOAD_URL/pcre-$FREESWITCH_PCRE_VERSION.tar.gz -o ../../libs/pcre-$FREESWITCH_PCRE_VERSION.tar.gz\ncd ../../libs\ntar zxfv pcre-$FREESWITCH_PCRE_VERSION.tar.gz\ncd pcre-$FREESWITCH_PCRE_VERSION\n./configure\nmake dftables\n./dftables pcre_chartables.c\ntouch .complete";
+		};
 		D37670CA0A75ECF300ACC1FB /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -3656,6 +3964,40 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		D365007D0A76BDF700C47A76 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D36500860A76BE4700C47A76 /* mod_dialplan_xml.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D36500EE0A76BE9400C47A76 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D36501380A76C06500C47A76 /* pcre_chartables.c in Sources */,
+				D36501390A76C06500C47A76 /* pcre_compile.c in Sources */,
+				D365013A0A76C06500C47A76 /* pcre_config.c in Sources */,
+				D365013B0A76C06500C47A76 /* pcre_dfa_exec.c in Sources */,
+				D365013C0A76C06500C47A76 /* pcre_exec.c in Sources */,
+				D365013D0A76C06500C47A76 /* pcre_fullinfo.c in Sources */,
+				D365013E0A76C06500C47A76 /* pcre_get.c in Sources */,
+				D365013F0A76C06500C47A76 /* pcre_globals.c in Sources */,
+				D36501400A76C06500C47A76 /* pcre_info.c in Sources */,
+				D36501410A76C06500C47A76 /* pcre_maketables.c in Sources */,
+				D36501420A76C06500C47A76 /* pcre_ord2utf8.c in Sources */,
+				D36501430A76C06500C47A76 /* pcre_refcount.c in Sources */,
+				D36501480A76C06500C47A76 /* pcre_study.c in Sources */,
+				D36501490A76C06500C47A76 /* pcre_tables.c in Sources */,
+				D365014A0A76C06500C47A76 /* pcre_try_flipped.c in Sources */,
+				D365014B0A76C06500C47A76 /* pcre_ucp_findchar.c in Sources */,
+				D365014C0A76C06500C47A76 /* pcre_valid_utf8.c in Sources */,
+				D365014D0A76C06500C47A76 /* pcre_version.c in Sources */,
+				D365014E0A76C06500C47A76 /* pcre_xclass.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D37670C20A75ECD400ACC1FB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -4098,6 +4440,66 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		D36501770A76C28200C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D365007F0A76BDF700C47A76 /* mod_dialplan_xml */;
+			targetProxy = D36501760A76C28200C47A76 /* PBXContainerItemProxy */;
+		};
+		D36501A50A76C30F00C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3BC33590A76AB5600DE971E /* sndfile */;
+			targetProxy = D36501A40A76C30F00C47A76 /* PBXContainerItemProxy */;
+		};
+		D36501A70A76C32800C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D36500F00A76BE9400C47A76 /* pcre */;
+			targetProxy = D36501A60A76C32800C47A76 /* PBXContainerItemProxy */;
+		};
+		D36501AC0A76C36000C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC8E60A75E19F002001CF /* dingaling */;
+			targetProxy = D36501AB0A76C36000C47A76 /* PBXContainerItemProxy */;
+		};
+		D36501B00A76C36800C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC8A40A75DFDE002001CF /* iksemel */;
+			targetProxy = D36501AF0A76C36800C47A76 /* PBXContainerItemProxy */;
+		};
+		D36501B50A76C3E300C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC21C0A75CB06002001CF /* apr */;
+			targetProxy = D36501B40A76C3E300C47A76 /* PBXContainerItemProxy */;
+		};
+		D36501B70A76C3F200C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D38DD4DE0A768AC500FEDB19 /* srtp */;
+			targetProxy = D36501B60A76C3F200C47A76 /* PBXContainerItemProxy */;
+		};
+		D36501B90A76C3F600C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D38DD5250A768B6100FEDB19 /* resample */;
+			targetProxy = D36501B80A76C3F600C47A76 /* PBXContainerItemProxy */;
+		};
+		D36501BB0A76C3F900C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D38DD53F0A768C0900FEDB19 /* speakup */;
+			targetProxy = D36501BA0A76C3F900C47A76 /* PBXContainerItemProxy */;
+		};
+		D36501BD0A76C3FB00C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D37670C40A75ECD400ACC1FB /* sqlite */;
+			targetProxy = D36501BC0A76C3FB00C47A76 /* PBXContainerItemProxy */;
+		};
+		D36501BF0A76C40000C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC21C0A75CB06002001CF /* apr */;
+			targetProxy = D36501BE0A76C40000C47A76 /* PBXContainerItemProxy */;
+		};
+		D36501C10A76C40700C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC21C0A75CB06002001CF /* apr */;
+			targetProxy = D36501C00A76C40700C47A76 /* PBXContainerItemProxy */;
+		};
 		D37671520A75F04700ACC1FB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D37670C40A75ECD400ACC1FB /* sqlite */;
@@ -4188,11 +4590,6 @@
 			target = D3BC33410A76A9D900DE971E /* mod_conference */;
 			targetProxy = D3BC334D0A76AA1E00DE971E /* PBXContainerItemProxy */;
 		};
-		D3BC34DF0A76B07A00DE971E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D3BC33590A76AB5600DE971E /* sndfile */;
-			targetProxy = D3BC34DE0A76B07A00DE971E /* PBXContainerItemProxy */;
-		};
 		D3BC34E10A76B07C00DE971E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D3BC34CC0A76AFEE00DE971E /* mod_sndfile */;
@@ -4248,6 +4645,7 @@
 				FREESWITCH_IKSEMEL_VERSION = 1.2;
 				FREESWITCH_INSTALL_PREFIX = "$(HOME)";
 				FREESWITCH_LIBSNDFILE_VERSION = 1.0.12;
+				FREESWITCH_PCRE_VERSION = 6.4;
 				FREESWITCH_RESAMPLE_VERSION = 0.1.3;
 				FREESWITCH_SQLITE_VERSION = 3.3.6;
 				FREESWITCH_SQLITE_VERSION_B = 3003006;
@@ -4255,6 +4653,99 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;
 				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = Release;
+		};
+		D36500830A76BE2000C47A76 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_dialplan_xml;
+			};
+			name = Debug;
+		};
+		D36500840A76BE2000C47A76 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_dialplan_xml;
+				SKIP_INSTALL = NO;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D36500F40A76BE9500C47A76 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
+				INFOPLIST_FILE = pcre.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Foundation,
+					"-framework",
+					AppKit,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = pcre;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D36500F50A76BE9500C47A76 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = pcre.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_CFLAGS = "-w";
+				PREBINDING = NO;
+				PRODUCT_NAME = pcre;
+				ZERO_LINK = NO;
 			};
 			name = Release;
 		};
@@ -5442,6 +5933,24 @@
 			buildConfigurations = (
 				1DEB91F008733DB70010E9CD /* Debug */,
 				1DEB91F108733DB70010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D36500820A76BE2000C47A76 /* Build configuration list for PBXNativeTarget "mod_dialplan_xml" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D36500830A76BE2000C47A76 /* Debug */,
+				D36500840A76BE2000C47A76 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D36500F30A76BE9500C47A76 /* Build configuration list for PBXNativeTarget "pcre" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D36500F40A76BE9500C47A76 /* Debug */,
+				D36500F50A76BE9500C47A76 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
