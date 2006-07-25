@@ -1040,6 +1040,13 @@
 			remoteGlobalIDString = D3DEC8300A75DA10002001CF;
 			remoteInfo = teletone.framework;
 		};
+		D3EDD2A00A76D3C900AC4900 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D37671640A75F0DC00ACC1FB /* libfreeswitch */;
+			remoteInfo = libfreeswitch;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -4074,6 +4081,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				D3EDD2A10A76D3C900AC4900 /* PBXTargetDependency */,
 			);
 			name = freeswitch;
 			productName = freeswitch;
@@ -4569,7 +4577,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "cd ../..\n./build/checkversion.sh force\nif [ -e .complete ]; then\n\texit 0\nfi\n./configure\ntouch .complete\n";
+			shellScript = "cd ../..\nif [ -e .complete ]; then\n\texit 0\nfi\n./configure\ntouch .complete\n";
 		};
 		D3DEC2260A75CB62002001CF /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -5385,6 +5393,11 @@
 			isa = PBXTargetDependency;
 			target = D3DEC8300A75DA10002001CF /* teletone */;
 			targetProxy = D3DEC8440A75DAC1002001CF /* PBXContainerItemProxy */;
+		};
+		D3EDD2A10A76D3C900AC4900 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D37671640A75F0DC00ACC1FB /* libfreeswitch */;
+			targetProxy = D3EDD2A00A76D3C900AC4900 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
