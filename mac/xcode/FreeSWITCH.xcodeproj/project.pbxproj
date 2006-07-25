@@ -324,7 +324,7 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D37670C40A75ECD400ACC1FB /* sqlite.framework */;
+			remoteGlobalIDString = D37670C40A75ECD400ACC1FB;
 			remoteInfo = sqlite.framework;
 		};
 		D3DEC8140A75D8D3002001CF /* PBXContainerItemProxy */ = {
@@ -388,62 +388,62 @@
 /* Begin PBXFileReference section */
 		D37670C50A75ECD400ACC1FB /* sqlite.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = sqlite.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D37670C60A75ECD400ACC1FB /* sqlite.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = sqlite.plist; sourceTree = "<group>"; };
-		D37670D40A75EE8300ACC1FB /* alter.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = alter.c; path = "../../libs/sqlite-3.3.5/src/alter.c"; sourceTree = SOURCE_ROOT; };
-		D37670D50A75EE8300ACC1FB /* analyze.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = analyze.c; path = "../../libs/sqlite-3.3.5/src/analyze.c"; sourceTree = SOURCE_ROOT; };
-		D37670D60A75EE8300ACC1FB /* attach.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = attach.c; path = "../../libs/sqlite-3.3.5/src/attach.c"; sourceTree = SOURCE_ROOT; };
-		D37670D70A75EE8300ACC1FB /* auth.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = auth.c; path = "../../libs/sqlite-3.3.5/src/auth.c"; sourceTree = SOURCE_ROOT; };
-		D37670D80A75EE8300ACC1FB /* btree.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = btree.c; path = "../../libs/sqlite-3.3.5/src/btree.c"; sourceTree = SOURCE_ROOT; };
-		D37670D90A75EE8300ACC1FB /* btree.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = btree.h; path = "../../libs/sqlite-3.3.5/src/btree.h"; sourceTree = SOURCE_ROOT; };
-		D37670DA0A75EE8300ACC1FB /* build.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = build.c; path = "../../libs/sqlite-3.3.5/src/build.c"; sourceTree = SOURCE_ROOT; };
-		D37670DB0A75EE8300ACC1FB /* callback.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = callback.c; path = "../../libs/sqlite-3.3.5/src/callback.c"; sourceTree = SOURCE_ROOT; };
-		D37670DC0A75EE8300ACC1FB /* complete.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = complete.c; path = "../../libs/sqlite-3.3.5/src/complete.c"; sourceTree = SOURCE_ROOT; };
-		D37670DD0A75EE8300ACC1FB /* date.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = date.c; path = "../../libs/sqlite-3.3.5/src/date.c"; sourceTree = SOURCE_ROOT; };
-		D37670DE0A75EE8300ACC1FB /* delete.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = delete.c; path = "../../libs/sqlite-3.3.5/src/delete.c"; sourceTree = SOURCE_ROOT; };
-		D37670DF0A75EE8300ACC1FB /* expr.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = expr.c; path = "../../libs/sqlite-3.3.5/src/expr.c"; sourceTree = SOURCE_ROOT; };
-		D37670E00A75EE8300ACC1FB /* func.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = func.c; path = "../../libs/sqlite-3.3.5/src/func.c"; sourceTree = SOURCE_ROOT; };
-		D37670E10A75EE8300ACC1FB /* hash.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = hash.c; path = "../../libs/sqlite-3.3.5/src/hash.c"; sourceTree = SOURCE_ROOT; };
-		D37670E20A75EE8300ACC1FB /* hash.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = hash.h; path = "../../libs/sqlite-3.3.5/src/hash.h"; sourceTree = SOURCE_ROOT; };
-		D37670E30A75EE8300ACC1FB /* insert.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = insert.c; path = "../../libs/sqlite-3.3.5/src/insert.c"; sourceTree = SOURCE_ROOT; };
-		D37670E40A75EE8300ACC1FB /* keywordhash.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = keywordhash.h; path = "../../libs/sqlite-3.3.5/src/keywordhash.h"; sourceTree = SOURCE_ROOT; };
-		D37670E50A75EE8300ACC1FB /* legacy.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = legacy.c; path = "../../libs/sqlite-3.3.5/src/legacy.c"; sourceTree = SOURCE_ROOT; };
-		D37670E60A75EE8300ACC1FB /* main.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = main.c; path = "../../libs/sqlite-3.3.5/src/main.c"; sourceTree = SOURCE_ROOT; };
-		D37670E70A75EE8300ACC1FB /* os_common.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = os_common.h; path = "../../libs/sqlite-3.3.5/src/os_common.h"; sourceTree = SOURCE_ROOT; };
-		D37670E80A75EE8300ACC1FB /* os_unix.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = os_unix.c; path = "../../libs/sqlite-3.3.5/src/os_unix.c"; sourceTree = SOURCE_ROOT; };
-		D37670E90A75EE8300ACC1FB /* os_win.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = os_win.c; path = "../../libs/sqlite-3.3.5/src/os_win.c"; sourceTree = SOURCE_ROOT; };
-		D37670EA0A75EE8300ACC1FB /* os.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = os.c; path = "../../libs/sqlite-3.3.5/src/os.c"; sourceTree = SOURCE_ROOT; };
-		D37670EB0A75EE8300ACC1FB /* os.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = os.h; path = "../../libs/sqlite-3.3.5/src/os.h"; sourceTree = SOURCE_ROOT; };
-		D37670EC0A75EE8300ACC1FB /* pager.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pager.c; path = "../../libs/sqlite-3.3.5/src/pager.c"; sourceTree = SOURCE_ROOT; };
-		D37670ED0A75EE8300ACC1FB /* pager.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pager.h; path = "../../libs/sqlite-3.3.5/src/pager.h"; sourceTree = SOURCE_ROOT; };
-		D37670EE0A75EE8300ACC1FB /* parse.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = parse.h; path = "../../libs/sqlite-3.3.5/src/parse.h"; sourceTree = SOURCE_ROOT; };
-		D37670EF0A75EE8300ACC1FB /* pragma.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pragma.c; path = "../../libs/sqlite-3.3.5/src/pragma.c"; sourceTree = SOURCE_ROOT; };
-		D37670F00A75EE8300ACC1FB /* prepare.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = prepare.c; path = "../../libs/sqlite-3.3.5/src/prepare.c"; sourceTree = SOURCE_ROOT; };
-		D37670F10A75EE8300ACC1FB /* printf.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = printf.c; path = "../../libs/sqlite-3.3.5/src/printf.c"; sourceTree = SOURCE_ROOT; };
-		D37670F20A75EE8300ACC1FB /* random.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = random.c; path = "../../libs/sqlite-3.3.5/src/random.c"; sourceTree = SOURCE_ROOT; };
-		D37670F30A75EE8300ACC1FB /* select.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = select.c; path = "../../libs/sqlite-3.3.5/src/select.c"; sourceTree = SOURCE_ROOT; };
-		D37670F40A75EE8300ACC1FB /* shell.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = shell.c; path = "../../libs/sqlite-3.3.5/src/shell.c"; sourceTree = SOURCE_ROOT; };
-		D37670F50A75EE8400ACC1FB /* sqliteInt.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = sqliteInt.h; path = "../../libs/sqlite-3.3.5/src/sqliteInt.h"; sourceTree = SOURCE_ROOT; };
-		D37670F60A75EE8400ACC1FB /* table.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = table.c; path = "../../libs/sqlite-3.3.5/src/table.c"; sourceTree = SOURCE_ROOT; };
-		D37670F70A75EE8400ACC1FB /* tokenize.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = tokenize.c; path = "../../libs/sqlite-3.3.5/src/tokenize.c"; sourceTree = SOURCE_ROOT; };
-		D37670F80A75EE8400ACC1FB /* trigger.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = trigger.c; path = "../../libs/sqlite-3.3.5/src/trigger.c"; sourceTree = SOURCE_ROOT; };
-		D37670F90A75EE8400ACC1FB /* update.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = update.c; path = "../../libs/sqlite-3.3.5/src/update.c"; sourceTree = SOURCE_ROOT; };
-		D37670FA0A75EE8400ACC1FB /* utf.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = utf.c; path = "../../libs/sqlite-3.3.5/src/utf.c"; sourceTree = SOURCE_ROOT; };
-		D37670FB0A75EE8400ACC1FB /* util.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = util.c; path = "../../libs/sqlite-3.3.5/src/util.c"; sourceTree = SOURCE_ROOT; };
-		D37670FC0A75EE8400ACC1FB /* vacuum.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vacuum.c; path = "../../libs/sqlite-3.3.5/src/vacuum.c"; sourceTree = SOURCE_ROOT; };
-		D37670FD0A75EE8400ACC1FB /* vdbe.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vdbe.c; path = "../../libs/sqlite-3.3.5/src/vdbe.c"; sourceTree = SOURCE_ROOT; };
-		D37670FE0A75EE8400ACC1FB /* vdbe.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = vdbe.h; path = "../../libs/sqlite-3.3.5/src/vdbe.h"; sourceTree = SOURCE_ROOT; };
-		D37670FF0A75EE8400ACC1FB /* vdbeapi.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vdbeapi.c; path = "../../libs/sqlite-3.3.5/src/vdbeapi.c"; sourceTree = SOURCE_ROOT; };
-		D37671000A75EE8400ACC1FB /* vdbeaux.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vdbeaux.c; path = "../../libs/sqlite-3.3.5/src/vdbeaux.c"; sourceTree = SOURCE_ROOT; };
-		D37671010A75EE8400ACC1FB /* vdbefifo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vdbefifo.c; path = "../../libs/sqlite-3.3.5/src/vdbefifo.c"; sourceTree = SOURCE_ROOT; };
-		D37671020A75EE8400ACC1FB /* vdbeInt.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = vdbeInt.h; path = "../../libs/sqlite-3.3.5/src/vdbeInt.h"; sourceTree = SOURCE_ROOT; };
-		D37671030A75EE8400ACC1FB /* vdbemem.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vdbemem.c; path = "../../libs/sqlite-3.3.5/src/vdbemem.c"; sourceTree = SOURCE_ROOT; };
-		D37671040A75EE8400ACC1FB /* where.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = where.c; path = "../../libs/sqlite-3.3.5/src/where.c"; sourceTree = SOURCE_ROOT; };
-		D37671070A75EEE000ACC1FB /* opcodes.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = opcodes.c; path = "../../libs/sqlite-3.3.5/opcodes.c"; sourceTree = SOURCE_ROOT; };
-		D37671080A75EEE000ACC1FB /* opcodes.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = opcodes.h; path = "../../libs/sqlite-3.3.5/opcodes.h"; sourceTree = SOURCE_ROOT; };
-		D37671090A75EEE000ACC1FB /* parse.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = parse.c; path = "../../libs/sqlite-3.3.5/parse.c"; sourceTree = SOURCE_ROOT; };
-		D376710A0A75EEE000ACC1FB /* parse.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = parse.h; path = "../../libs/sqlite-3.3.5/parse.h"; sourceTree = SOURCE_ROOT; };
-		D376710B0A75EEE000ACC1FB /* sqlite3.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = sqlite3.h; path = "../../libs/sqlite-3.3.5/sqlite3.h"; sourceTree = SOURCE_ROOT; };
-		D376710C0A75EF0100ACC1FB /* lemon.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = lemon.c; path = "../../libs/sqlite-3.3.5/tool/lemon.c"; sourceTree = SOURCE_ROOT; };
-		D376710D0A75EF0100ACC1FB /* mkkeywordhash.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mkkeywordhash.c; path = "../../libs/sqlite-3.3.5/tool/mkkeywordhash.c"; sourceTree = SOURCE_ROOT; };
+		D37670D40A75EE8300ACC1FB /* alter.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = alter.c; path = "../../libs/sqlite-3.3.6/src/alter.c"; sourceTree = SOURCE_ROOT; };
+		D37670D50A75EE8300ACC1FB /* analyze.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = analyze.c; path = "../../libs/sqlite-3.3.6/src/analyze.c"; sourceTree = SOURCE_ROOT; };
+		D37670D60A75EE8300ACC1FB /* attach.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = attach.c; path = "../../libs/sqlite-3.3.6/src/attach.c"; sourceTree = SOURCE_ROOT; };
+		D37670D70A75EE8300ACC1FB /* auth.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = auth.c; path = "../../libs/sqlite-3.3.6/src/auth.c"; sourceTree = SOURCE_ROOT; };
+		D37670D80A75EE8300ACC1FB /* btree.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = btree.c; path = "../../libs/sqlite-3.3.6/src/btree.c"; sourceTree = SOURCE_ROOT; };
+		D37670D90A75EE8300ACC1FB /* btree.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = btree.h; path = "../../libs/sqlite-3.3.6/src/btree.h"; sourceTree = SOURCE_ROOT; };
+		D37670DA0A75EE8300ACC1FB /* build.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = build.c; path = "../../libs/sqlite-3.3.6/src/build.c"; sourceTree = SOURCE_ROOT; };
+		D37670DB0A75EE8300ACC1FB /* callback.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = callback.c; path = "../../libs/sqlite-3.3.6/src/callback.c"; sourceTree = SOURCE_ROOT; };
+		D37670DC0A75EE8300ACC1FB /* complete.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = complete.c; path = "../../libs/sqlite-3.3.6/src/complete.c"; sourceTree = SOURCE_ROOT; };
+		D37670DD0A75EE8300ACC1FB /* date.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = date.c; path = "../../libs/sqlite-3.3.6/src/date.c"; sourceTree = SOURCE_ROOT; };
+		D37670DE0A75EE8300ACC1FB /* delete.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = delete.c; path = "../../libs/sqlite-3.3.6/src/delete.c"; sourceTree = SOURCE_ROOT; };
+		D37670DF0A75EE8300ACC1FB /* expr.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = expr.c; path = "../../libs/sqlite-3.3.6/src/expr.c"; sourceTree = SOURCE_ROOT; };
+		D37670E00A75EE8300ACC1FB /* func.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = func.c; path = "../../libs/sqlite-3.3.6/src/func.c"; sourceTree = SOURCE_ROOT; };
+		D37670E10A75EE8300ACC1FB /* hash.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = hash.c; path = "../../libs/sqlite-3.3.6/src/hash.c"; sourceTree = SOURCE_ROOT; };
+		D37670E20A75EE8300ACC1FB /* hash.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = hash.h; path = "../../libs/sqlite-3.3.6/src/hash.h"; sourceTree = SOURCE_ROOT; };
+		D37670E30A75EE8300ACC1FB /* insert.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = insert.c; path = "../../libs/sqlite-3.3.6/src/insert.c"; sourceTree = SOURCE_ROOT; };
+		D37670E40A75EE8300ACC1FB /* keywordhash.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = keywordhash.h; path = "../../libs/sqlite-3.3.6/src/keywordhash.h"; sourceTree = SOURCE_ROOT; };
+		D37670E50A75EE8300ACC1FB /* legacy.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = legacy.c; path = "../../libs/sqlite-3.3.6/src/legacy.c"; sourceTree = SOURCE_ROOT; };
+		D37670E60A75EE8300ACC1FB /* main.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = main.c; path = "../../libs/sqlite-3.3.6/src/main.c"; sourceTree = SOURCE_ROOT; };
+		D37670E70A75EE8300ACC1FB /* os_common.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = os_common.h; path = "../../libs/sqlite-3.3.6/src/os_common.h"; sourceTree = SOURCE_ROOT; };
+		D37670E80A75EE8300ACC1FB /* os_unix.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = os_unix.c; path = "../../libs/sqlite-3.3.6/src/os_unix.c"; sourceTree = SOURCE_ROOT; };
+		D37670E90A75EE8300ACC1FB /* os_win.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = os_win.c; path = "../../libs/sqlite-3.3.6/src/os_win.c"; sourceTree = SOURCE_ROOT; };
+		D37670EA0A75EE8300ACC1FB /* os.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = os.c; path = "../../libs/sqlite-3.3.6/src/os.c"; sourceTree = SOURCE_ROOT; };
+		D37670EB0A75EE8300ACC1FB /* os.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = os.h; path = "../../libs/sqlite-3.3.6/src/os.h"; sourceTree = SOURCE_ROOT; };
+		D37670EC0A75EE8300ACC1FB /* pager.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pager.c; path = "../../libs/sqlite-3.3.6/src/pager.c"; sourceTree = SOURCE_ROOT; };
+		D37670ED0A75EE8300ACC1FB /* pager.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pager.h; path = "../../libs/sqlite-3.3.6/src/pager.h"; sourceTree = SOURCE_ROOT; };
+		D37670EE0A75EE8300ACC1FB /* parse.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = parse.h; path = "../../libs/sqlite-3.3.6/src/parse.h"; sourceTree = SOURCE_ROOT; };
+		D37670EF0A75EE8300ACC1FB /* pragma.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pragma.c; path = "../../libs/sqlite-3.3.6/src/pragma.c"; sourceTree = SOURCE_ROOT; };
+		D37670F00A75EE8300ACC1FB /* prepare.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = prepare.c; path = "../../libs/sqlite-3.3.6/src/prepare.c"; sourceTree = SOURCE_ROOT; };
+		D37670F10A75EE8300ACC1FB /* printf.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = printf.c; path = "../../libs/sqlite-3.3.6/src/printf.c"; sourceTree = SOURCE_ROOT; };
+		D37670F20A75EE8300ACC1FB /* random.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = random.c; path = "../../libs/sqlite-3.3.6/src/random.c"; sourceTree = SOURCE_ROOT; };
+		D37670F30A75EE8300ACC1FB /* select.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = select.c; path = "../../libs/sqlite-3.3.6/src/select.c"; sourceTree = SOURCE_ROOT; };
+		D37670F40A75EE8300ACC1FB /* shell.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = shell.c; path = "../../libs/sqlite-3.3.6/src/shell.c"; sourceTree = SOURCE_ROOT; };
+		D37670F50A75EE8400ACC1FB /* sqliteInt.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = sqliteInt.h; path = "../../libs/sqlite-3.3.6/src/sqliteInt.h"; sourceTree = SOURCE_ROOT; };
+		D37670F60A75EE8400ACC1FB /* table.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = table.c; path = "../../libs/sqlite-3.3.6/src/table.c"; sourceTree = SOURCE_ROOT; };
+		D37670F70A75EE8400ACC1FB /* tokenize.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = tokenize.c; path = "../../libs/sqlite-3.3.6/src/tokenize.c"; sourceTree = SOURCE_ROOT; };
+		D37670F80A75EE8400ACC1FB /* trigger.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = trigger.c; path = "../../libs/sqlite-3.3.6/src/trigger.c"; sourceTree = SOURCE_ROOT; };
+		D37670F90A75EE8400ACC1FB /* update.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = update.c; path = "../../libs/sqlite-3.3.6/src/update.c"; sourceTree = SOURCE_ROOT; };
+		D37670FA0A75EE8400ACC1FB /* utf.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = utf.c; path = "../../libs/sqlite-3.3.6/src/utf.c"; sourceTree = SOURCE_ROOT; };
+		D37670FB0A75EE8400ACC1FB /* util.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = util.c; path = "../../libs/sqlite-3.3.6/src/util.c"; sourceTree = SOURCE_ROOT; };
+		D37670FC0A75EE8400ACC1FB /* vacuum.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vacuum.c; path = "../../libs/sqlite-3.3.6/src/vacuum.c"; sourceTree = SOURCE_ROOT; };
+		D37670FD0A75EE8400ACC1FB /* vdbe.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vdbe.c; path = "../../libs/sqlite-3.3.6/src/vdbe.c"; sourceTree = SOURCE_ROOT; };
+		D37670FE0A75EE8400ACC1FB /* vdbe.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = vdbe.h; path = "../../libs/sqlite-3.3.6/src/vdbe.h"; sourceTree = SOURCE_ROOT; };
+		D37670FF0A75EE8400ACC1FB /* vdbeapi.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vdbeapi.c; path = "../../libs/sqlite-3.3.6/src/vdbeapi.c"; sourceTree = SOURCE_ROOT; };
+		D37671000A75EE8400ACC1FB /* vdbeaux.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vdbeaux.c; path = "../../libs/sqlite-3.3.6/src/vdbeaux.c"; sourceTree = SOURCE_ROOT; };
+		D37671010A75EE8400ACC1FB /* vdbefifo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vdbefifo.c; path = "../../libs/sqlite-3.3.6/src/vdbefifo.c"; sourceTree = SOURCE_ROOT; };
+		D37671020A75EE8400ACC1FB /* vdbeInt.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = vdbeInt.h; path = "../../libs/sqlite-3.3.6/src/vdbeInt.h"; sourceTree = SOURCE_ROOT; };
+		D37671030A75EE8400ACC1FB /* vdbemem.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vdbemem.c; path = "../../libs/sqlite-3.3.6/src/vdbemem.c"; sourceTree = SOURCE_ROOT; };
+		D37671040A75EE8400ACC1FB /* where.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = where.c; path = "../../libs/sqlite-3.3.6/src/where.c"; sourceTree = SOURCE_ROOT; };
+		D37671070A75EEE000ACC1FB /* opcodes.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = opcodes.c; path = "../../libs/sqlite-3.3.6/opcodes.c"; sourceTree = SOURCE_ROOT; };
+		D37671080A75EEE000ACC1FB /* opcodes.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = opcodes.h; path = "../../libs/sqlite-3.3.6/opcodes.h"; sourceTree = SOURCE_ROOT; };
+		D37671090A75EEE000ACC1FB /* parse.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = parse.c; path = "../../libs/sqlite-3.3.6/parse.c"; sourceTree = SOURCE_ROOT; };
+		D376710A0A75EEE000ACC1FB /* parse.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = parse.h; path = "../../libs/sqlite-3.3.6/parse.h"; sourceTree = SOURCE_ROOT; };
+		D376710B0A75EEE000ACC1FB /* sqlite3.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = sqlite3.h; path = "../../libs/sqlite-3.3.6/sqlite3.h"; sourceTree = SOURCE_ROOT; };
+		D376710C0A75EF0100ACC1FB /* lemon.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = lemon.c; path = "../../libs/sqlite-3.3.6/tool/lemon.c"; sourceTree = SOURCE_ROOT; };
+		D376710D0A75EF0100ACC1FB /* mkkeywordhash.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mkkeywordhash.c; path = "../../libs/sqlite-3.3.6/tool/mkkeywordhash.c"; sourceTree = SOURCE_ROOT; };
 		D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = libfreeswitch.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D37671660A75F0DC00ACC1FB /* libfreeswitch.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = libfreeswitch.plist; sourceTree = "<group>"; };
 		D376716D0A75F12900ACC1FB /* switch_am_config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = switch_am_config.h; path = ../../src/include/switch_am_config.h; sourceTree = SOURCE_ROOT; };
@@ -1109,7 +1109,7 @@
 				D3DEC4B40A75CF62002001CF /* arch */,
 			);
 			name = include;
-			path = "../../libs/apr-1.2.6/include";
+			path = "../../libs/apr-1.2.7/include";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC4B40A75CF62002001CF /* arch */ = {
@@ -1149,7 +1149,7 @@
 				D3DEC50D0A75CFB6002001CF /* unix */,
 			);
 			name = dso;
-			path = "../../libs/apr-1.2.6/dso";
+			path = "../../libs/apr-1.2.7/dso";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC50D0A75CFB6002001CF /* unix */ = {
@@ -1166,7 +1166,7 @@
 				D3DEC52C0A75CFB6002001CF /* unix */,
 			);
 			name = file_io;
-			path = "../../libs/apr-1.2.6/file_io";
+			path = "../../libs/apr-1.2.7/file_io";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC52C0A75CFB6002001CF /* unix */ = {
@@ -1197,7 +1197,7 @@
 				D3DEC5570A75CFB7002001CF /* unix */,
 			);
 			name = locks;
-			path = "../../libs/apr-1.2.6/locks";
+			path = "../../libs/apr-1.2.7/locks";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5570A75CFB7002001CF /* unix */ = {
@@ -1218,7 +1218,7 @@
 				D3DEC5630A75CFB7002001CF /* unix */,
 			);
 			name = memory;
-			path = "../../libs/apr-1.2.6/memory";
+			path = "../../libs/apr-1.2.7/memory";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5630A75CFB7002001CF /* unix */ = {
@@ -1235,7 +1235,7 @@
 				D3DEC56D0A75CFB7002001CF /* unix */,
 			);
 			name = misc;
-			path = "../../libs/apr-1.2.6/misc";
+			path = "../../libs/apr-1.2.7/misc";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC56D0A75CFB7002001CF /* unix */ = {
@@ -1259,7 +1259,7 @@
 				D3DEC5810A75CFB7002001CF /* unix */,
 			);
 			name = mmap;
-			path = "../../libs/apr-1.2.6/mmap";
+			path = "../../libs/apr-1.2.7/mmap";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5810A75CFB7002001CF /* unix */ = {
@@ -1277,7 +1277,7 @@
 				D3DEC5930A75CFB7002001CF /* unix */,
 			);
 			name = network_io;
-			path = "../../libs/apr-1.2.6/network_io";
+			path = "../../libs/apr-1.2.7/network_io";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5930A75CFB7002001CF /* unix */ = {
@@ -1300,7 +1300,7 @@
 				D3DEC5A00A75CFB7002001CF /* apr_getpass.c */,
 			);
 			name = passwd;
-			path = "../../libs/apr-1.2.6/passwd";
+			path = "../../libs/apr-1.2.7/passwd";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5A10A75CFB7002001CF /* poll */ = {
@@ -1309,7 +1309,7 @@
 				D3DEC5A50A75CFB7002001CF /* unix */,
 			);
 			name = poll;
-			path = "../../libs/apr-1.2.6/poll";
+			path = "../../libs/apr-1.2.7/poll";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5A50A75CFB7002001CF /* unix */ = {
@@ -1330,7 +1330,7 @@
 				D3DEC5AC0A75CFB7002001CF /* unix */,
 			);
 			name = random;
-			path = "../../libs/apr-1.2.6/random";
+			path = "../../libs/apr-1.2.7/random";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5AC0A75CFB7002001CF /* unix */ = {
@@ -1349,7 +1349,7 @@
 				D3DEC5B60A75CFB7002001CF /* unix */,
 			);
 			name = shmem;
-			path = "../../libs/apr-1.2.6/shmem";
+			path = "../../libs/apr-1.2.7/shmem";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5B60A75CFB7002001CF /* unix */ = {
@@ -1371,7 +1371,7 @@
 				D3DEC5C00A75CFB7002001CF /* apr_strtok.c */,
 			);
 			name = strings;
-			path = "../../libs/apr-1.2.6/strings";
+			path = "../../libs/apr-1.2.7/strings";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5C10A75CFB7002001CF /* support */ = {
@@ -1380,7 +1380,7 @@
 				D3DEC5C20A75CFB7002001CF /* unix */,
 			);
 			name = support;
-			path = "../../libs/apr-1.2.6/support";
+			path = "../../libs/apr-1.2.7/support";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5C20A75CFB7002001CF /* unix */ = {
@@ -1398,7 +1398,7 @@
 				D3DEC5C60A75CFB7002001CF /* apr_tables.c */,
 			);
 			name = tables;
-			path = "../../libs/apr-1.2.6/tables";
+			path = "../../libs/apr-1.2.7/tables";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5C70A75CFB7002001CF /* threadproc */ = {
@@ -1407,7 +1407,7 @@
 				D3DEC5D90A75CFB7002001CF /* unix */,
 			);
 			name = threadproc;
-			path = "../../libs/apr-1.2.6/threadproc";
+			path = "../../libs/apr-1.2.7/threadproc";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5D90A75CFB7002001CF /* unix */ = {
@@ -1428,7 +1428,7 @@
 				D3DEC5E50A75CFB7002001CF /* unix */,
 			);
 			name = time;
-			path = "../../libs/apr-1.2.6/time";
+			path = "../../libs/apr-1.2.7/time";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5E50A75CFB7002001CF /* unix */ = {
@@ -1446,7 +1446,7 @@
 				D3DEC5F00A75CFB7002001CF /* unix */,
 			);
 			name = user;
-			path = "../../libs/apr-1.2.6/user";
+			path = "../../libs/apr-1.2.7/user";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC5F00A75CFB7002001CF /* unix */ = {
@@ -1464,7 +1464,7 @@
 				D3DEC64D0A75D13B002001CF /* unix */,
 			);
 			name = atomic;
-			path = "../../libs/apr-1.2.6/atomic";
+			path = "../../libs/apr-1.2.7/atomic";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC64D0A75D13B002001CF /* unix */ = {
@@ -1536,7 +1536,7 @@
 				D3DEC7000A75D601002001CF /* private */,
 			);
 			name = include;
-			path = "../../libs/apr-util-1.2.6/include";
+			path = "../../libs/apr-util-1.2.7/include";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC7000A75D601002001CF /* private */ = {
@@ -1568,7 +1568,7 @@
 				D3DEC7160A75D6A2002001CF /* apr_buckets_socket.c */,
 			);
 			name = buckets;
-			path = "../../libs/apr-util-1.2.6/buckets";
+			path = "../../libs/apr-util-1.2.7/buckets";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC7170A75D6A2002001CF /* crypto */ = {
@@ -1581,7 +1581,7 @@
 				D3DEC71C0A75D6A2002001CF /* uuid.c */,
 			);
 			name = crypto;
-			path = "../../libs/apr-util-1.2.6/crypto";
+			path = "../../libs/apr-util-1.2.7/crypto";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC71D0A75D6A2002001CF /* dbd */ = {
@@ -1593,7 +1593,7 @@
 				D3DEC7210A75D6A2002001CF /* apr_dbd_sqlite3.c */,
 			);
 			name = dbd;
-			path = "../../libs/apr-util-1.2.6/dbd";
+			path = "../../libs/apr-util-1.2.7/dbd";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC7220A75D6A2002001CF /* dbm */ = {
@@ -1607,7 +1607,7 @@
 				D3DEC7280A75D6A2002001CF /* sdbm */,
 			);
 			name = dbm;
-			path = "../../libs/apr-util-1.2.6/dbm";
+			path = "../../libs/apr-util-1.2.7/dbm";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC7280A75D6A2002001CF /* sdbm */ = {
@@ -1630,7 +1630,7 @@
 				D3DEC7310A75D6A2002001CF /* apr_base64.c */,
 			);
 			name = encoding;
-			path = "../../libs/apr-util-1.2.6/encoding";
+			path = "../../libs/apr-util-1.2.7/encoding";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC7320A75D6A2002001CF /* hooks */ = {
@@ -1639,7 +1639,7 @@
 				D3DEC7330A75D6A2002001CF /* apr_hooks.c */,
 			);
 			name = hooks;
-			path = "../../libs/apr-util-1.2.6/hooks";
+			path = "../../libs/apr-util-1.2.7/hooks";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC7390A75D6A2002001CF /* misc */ = {
@@ -1652,7 +1652,7 @@
 				D3DEC73E0A75D6A2002001CF /* apu_version.c */,
 			);
 			name = misc;
-			path = "../../libs/apr-util-1.2.6/misc";
+			path = "../../libs/apr-util-1.2.7/misc";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC73F0A75D6A2002001CF /* strmatch */ = {
@@ -1661,7 +1661,7 @@
 				D3DEC7400A75D6A2002001CF /* apr_strmatch.c */,
 			);
 			name = strmatch;
-			path = "../../libs/apr-util-1.2.6/strmatch";
+			path = "../../libs/apr-util-1.2.7/strmatch";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC7410A75D6A2002001CF /* uri */ = {
@@ -1670,7 +1670,7 @@
 				D3DEC7420A75D6A2002001CF /* apr_uri.c */,
 			);
 			name = uri;
-			path = "../../libs/apr-util-1.2.6/uri";
+			path = "../../libs/apr-util-1.2.7/uri";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC7440A75D6A2002001CF /* xlate */ = {
@@ -1679,7 +1679,7 @@
 				D3DEC7450A75D6A2002001CF /* xlate.c */,
 			);
 			name = xlate;
-			path = "../../libs/apr-util-1.2.6/xlate";
+			path = "../../libs/apr-util-1.2.7/xlate";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC7790A75D755002001CF /* xml */ = {
@@ -1688,7 +1688,7 @@
 				D3DEC77A0A75D755002001CF /* apr_xml.c */,
 			);
 			name = xml;
-			path = "../../libs/apr-util-1.2.6/xml";
+			path = "../../libs/apr-util-1.2.7/xml";
 			sourceTree = SOURCE_ROOT;
 		};
 		D3DEC8240A75D9E8002001CF /* teletone */ = {
@@ -2770,7 +2770,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(FREESWITCH_ARCH)";
-				FREESWITCH_APR_VERSION = 1.2.6;
+				FREESWITCH_APR_VERSION = 1.2.7;
 				FREESWITCH_ARCH = "i386 ppc";
 				FREESWITCH_DOWNLOAD_URL = "http://svn.freeswitch.org/downloads/libs";
 				FREESWITCH_IKSEMEL_VERSION = 1.2;
@@ -2791,8 +2791,8 @@
 				FREESWITCH_DOWNLOAD_URL = "http://svn.freeswitch.org/downloads/libs";
 				FREESWITCH_IKSEMEL_VERSION = 1.2;
 				FREESWITCH_RESAMPLE_VERSION = 0.1.3;
-				FREESWITCH_SQLITE_VERSION = 3.3.5;
-				FREESWITCH_SQLITE_VERSION_B = 3003005;
+				FREESWITCH_SQLITE_VERSION = 3.3.6;
+				FREESWITCH_SQLITE_VERSION_B = 3003006;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;
