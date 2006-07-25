@@ -17,6 +17,9 @@
 				D3DEC8170A75D8D6002001CF /* PBXTargetDependency */,
 				D3DEC8450A75DAC1002001CF /* PBXTargetDependency */,
 				D3DEC8840A75DE06002001CF /* PBXTargetDependency */,
+				D3DEC8960A75DEE1002001CF /* PBXTargetDependency */,
+				D3DEC8E00A75E17C002001CF /* PBXTargetDependency */,
+				D3DECA3A0A75E43C002001CF /* PBXTargetDependency */,
 			);
 			name = FreeSWITCH;
 			productName = FreeSWITCH;
@@ -227,6 +230,30 @@
 		D3DEC87F0A75DD47002001CF /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8770A75DD2F002001CF /* filterkit.c */; };
 		D3DEC8800A75DD47002001CF /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8780A75DD2F002001CF /* resample.c */; };
 		D3DEC8810A75DD47002001CF /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8790A75DD2F002001CF /* resamplesubs.c */; };
+		D3DEC8920A75DECF002001CF /* jb_speakup.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC88B0A75DEAF002001CF /* jb_speakup.h */; };
+		D3DEC8930A75DED2002001CF /* jb_speakup.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC88A0A75DEAF002001CF /* jb_speakup.c */; };
+		D3DEC8CC0A75E0F4002001CF /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8C80A75E0F4002001CF /* common.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3DEC8CD0A75E0F4002001CF /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8C90A75E0F4002001CF /* config.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3DEC8CE0A75E0F4002001CF /* finetune.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8CA0A75E0F4002001CF /* finetune.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3DEC8CF0A75E0F4002001CF /* iksemel.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8CB0A75E0F4002001CF /* iksemel.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3DEC8D00A75E107002001CF /* iks.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8BC0A75E0C9002001CF /* iks.c */; };
+		D3DEC8D10A75E107002001CF /* base64.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8B90A75E0C9002001CF /* base64.c */; };
+		D3DEC8D20A75E107002001CF /* io-posix.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8BE0A75E0C9002001CF /* io-posix.c */; };
+		D3DEC8D30A75E107002001CF /* filter.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8BB0A75E0C9002001CF /* filter.c */; };
+		D3DEC8D40A75E107002001CF /* stream.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8C60A75E0C9002001CF /* stream.c */; };
+		D3DEC8D50A75E107002001CF /* dom.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8BA0A75E0C9002001CF /* dom.c */; };
+		D3DEC8D60A75E107002001CF /* utility.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8C70A75E0C9002001CF /* utility.c */; };
+		D3DEC8D70A75E107002001CF /* jabber.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8BF0A75E0C9002001CF /* jabber.c */; };
+		D3DEC8D80A75E107002001CF /* sax.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8C40A75E0C9002001CF /* sax.c */; };
+		D3DEC8D90A75E107002001CF /* ikstack.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8BD0A75E0C9002001CF /* ikstack.c */; };
+		D3DEC8DA0A75E107002001CF /* md5.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8C30A75E0C9002001CF /* md5.c */; };
+		D3DEC8DB0A75E107002001CF /* sha.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8C50A75E0C9002001CF /* sha.c */; };
+		D3DEC8F50A75E217002001CF /* ldl_compat.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8F20A75E20A002001CF /* ldl_compat.h */; };
+		D3DEC8F60A75E21A002001CF /* libdingaling.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8F40A75E20A002001CF /* libdingaling.h */; };
+		D3DEC8F70A75E21F002001CF /* libdingaling.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8F30A75E20A002001CF /* libdingaling.c */; };
+		D3DEC9D50A75E409002001CF /* iksemel.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8A50A75DFDE002001CF /* iksemel.framework */; };
+		D3DEC9DC0A75E424002001CF /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D3DECA120A75E429002001CF /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -257,6 +284,27 @@
 			proxyType = 1;
 			remoteGlobalIDString = D3DEC8610A75DC09002001CF /* libresample */;
 			remoteInfo = libresample;
+		};
+		D3DEC8950A75DEE1002001CF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC8900A75DEC7002001CF /* libspeakup */;
+			remoteInfo = libspeakup;
+		};
+		D3DEC8DF0A75E17C002001CF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC8A40A75DFDE002001CF /* iksemel.framework */;
+			remoteInfo = iksemel.framework;
+		};
+		D3DECA390A75E43C002001CF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC8E60A75E19F002001CF /* dingaling.framework */;
+			remoteInfo = dingaling.framework;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -478,6 +526,33 @@
 		D3DEC8770A75DD2F002001CF /* filterkit.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = filterkit.c; path = "../../libs/libresample-0.1.3/src/filterkit.c"; sourceTree = SOURCE_ROOT; };
 		D3DEC8780A75DD2F002001CF /* resample.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = resample.c; path = "../../libs/libresample-0.1.3/src/resample.c"; sourceTree = SOURCE_ROOT; };
 		D3DEC8790A75DD2F002001CF /* resamplesubs.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = resamplesubs.c; path = "../../libs/libresample-0.1.3/src/resamplesubs.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC88A0A75DEAF002001CF /* jb_speakup.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = jb_speakup.c; path = ../../libs/libspeakup/src/jb_speakup.c; sourceTree = SOURCE_ROOT; };
+		D3DEC88B0A75DEAF002001CF /* jb_speakup.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = jb_speakup.h; path = ../../libs/libspeakup/src/jb_speakup.h; sourceTree = SOURCE_ROOT; };
+		D3DEC8910A75DEC7002001CF /* liblibspeakup.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = liblibspeakup.a; path = build/Debug/liblibspeakup.a; sourceTree = "<group>"; };
+		D3DEC8A50A75DFDE002001CF /* iksemel.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = iksemel.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3DEC8A60A75DFDE002001CF /* iksemel.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = iksemel.plist; sourceTree = "<group>"; };
+		D3DEC8B90A75E0C9002001CF /* base64.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = base64.c; path = "../../libs/iksemel-1.2/src/base64.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8BA0A75E0C9002001CF /* dom.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = dom.c; path = "../../libs/iksemel-1.2/src/dom.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8BB0A75E0C9002001CF /* filter.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = filter.c; path = "../../libs/iksemel-1.2/src/filter.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8BC0A75E0C9002001CF /* iks.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = iks.c; path = "../../libs/iksemel-1.2/src/iks.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8BD0A75E0C9002001CF /* ikstack.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = ikstack.c; path = "../../libs/iksemel-1.2/src/ikstack.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8BE0A75E0C9002001CF /* io-posix.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = "io-posix.c"; path = "../../libs/iksemel-1.2/src/io-posix.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8BF0A75E0C9002001CF /* jabber.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = jabber.c; path = "../../libs/iksemel-1.2/src/jabber.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8C30A75E0C9002001CF /* md5.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = md5.c; path = "../../libs/iksemel-1.2/src/md5.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8C40A75E0C9002001CF /* sax.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = sax.c; path = "../../libs/iksemel-1.2/src/sax.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8C50A75E0C9002001CF /* sha.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = sha.c; path = "../../libs/iksemel-1.2/src/sha.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8C60A75E0C9002001CF /* stream.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = stream.c; path = "../../libs/iksemel-1.2/src/stream.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8C70A75E0C9002001CF /* utility.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = utility.c; path = "../../libs/iksemel-1.2/src/utility.c"; sourceTree = SOURCE_ROOT; };
+		D3DEC8C80A75E0F4002001CF /* common.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = common.h; path = "../../libs/iksemel-1.2/include/common.h"; sourceTree = SOURCE_ROOT; };
+		D3DEC8C90A75E0F4002001CF /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = config.h; path = "../../libs/iksemel-1.2/include/config.h"; sourceTree = SOURCE_ROOT; };
+		D3DEC8CA0A75E0F4002001CF /* finetune.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = finetune.h; path = "../../libs/iksemel-1.2/include/finetune.h"; sourceTree = SOURCE_ROOT; };
+		D3DEC8CB0A75E0F4002001CF /* iksemel.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = iksemel.h; path = "../../libs/iksemel-1.2/include/iksemel.h"; sourceTree = SOURCE_ROOT; };
+		D3DEC8E70A75E19F002001CF /* dingaling.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = dingaling.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3DEC8E80A75E19F002001CF /* dingaling.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = dingaling.plist; sourceTree = "<group>"; };
+		D3DEC8F20A75E20A002001CF /* ldl_compat.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = ldl_compat.h; path = ../../libs/libdingaling/src/ldl_compat.h; sourceTree = SOURCE_ROOT; };
+		D3DEC8F30A75E20A002001CF /* libdingaling.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = libdingaling.c; path = ../../libs/libdingaling/src/libdingaling.c; sourceTree = SOURCE_ROOT; };
+		D3DEC8F40A75E20A002001CF /* libdingaling.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libdingaling.h; path = ../../libs/libdingaling/src/libdingaling.h; sourceTree = SOURCE_ROOT; };
+		D3DEC9220A75E36C002001CF /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -489,12 +564,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3DEC8E50A75E19F002001CF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DECA120A75E429002001CF /* aprutil.framework in Frameworks */,
+				D3DEC9DC0A75E424002001CF /* apr.framework in Frameworks */,
+				D3DEC9D50A75E409002001CF /* iksemel.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		08FB7794FE84155DC02AAC07 /* FreeSWITCH */ = {
 			isa = PBXGroup;
 			children = (
+				D3DEC9220A75E36C002001CF /* AppKit.framework */,
 				08FB7795FE84155DC02AAC07 /* Source */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
@@ -504,6 +590,9 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				D3DEC8EE0A75E1D2002001CF /* dingaling */,
+				D3DEC8B60A75E098002001CF /* iksemel */,
+				D3DEC8870A75DE7A002001CF /* speakup */,
 				D3DEC8580A75DB59002001CF /* resample */,
 				D3DEC8240A75D9E8002001CF /* teletone */,
 				D3DEC6C40A75D4AA002001CF /* aprutil */,
@@ -515,13 +604,18 @@
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				D3DEC8A60A75DFDE002001CF /* iksemel.plist */,
 				D3DEC8320A75DA10002001CF /* teletone.plist */,
 				D3DEC6D00A75D4E9002001CF /* aprutil.plist */,
+				D3DEC8E80A75E19F002001CF /* dingaling.plist */,
 				D3DEC21E0A75CB06002001CF /* apr.plist */,
 				D3DEC21D0A75CB06002001CF /* apr.framework */,
 				D3DEC6CF0A75D4E9002001CF /* aprutil.framework */,
 				D3DEC8310A75DA10002001CF /* teletone.framework */,
 				D3DEC8620A75DC09002001CF /* liblibresample.a */,
+				D3DEC8910A75DEC7002001CF /* liblibspeakup.a */,
+				D3DEC8E70A75E19F002001CF /* dingaling.framework */,
+				D3DEC8A50A75DFDE002001CF /* iksemel.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1243,6 +1337,96 @@
 			name = src;
 			sourceTree = "<group>";
 		};
+		D3DEC8870A75DE7A002001CF /* speakup */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC8890A75DE86002001CF /* include */,
+				D3DEC8880A75DE81002001CF /* src */,
+			);
+			name = speakup;
+			sourceTree = "<group>";
+		};
+		D3DEC8880A75DE81002001CF /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC88A0A75DEAF002001CF /* jb_speakup.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D3DEC8890A75DE86002001CF /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC88B0A75DEAF002001CF /* jb_speakup.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		D3DEC8B60A75E098002001CF /* iksemel */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC8B80A75E0AC002001CF /* include */,
+				D3DEC8B70A75E0A6002001CF /* src */,
+			);
+			name = iksemel;
+			sourceTree = "<group>";
+		};
+		D3DEC8B70A75E0A6002001CF /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC8BC0A75E0C9002001CF /* iks.c */,
+				D3DEC8B90A75E0C9002001CF /* base64.c */,
+				D3DEC8BE0A75E0C9002001CF /* io-posix.c */,
+				D3DEC8BB0A75E0C9002001CF /* filter.c */,
+				D3DEC8C60A75E0C9002001CF /* stream.c */,
+				D3DEC8BA0A75E0C9002001CF /* dom.c */,
+				D3DEC8C70A75E0C9002001CF /* utility.c */,
+				D3DEC8BF0A75E0C9002001CF /* jabber.c */,
+				D3DEC8C40A75E0C9002001CF /* sax.c */,
+				D3DEC8BD0A75E0C9002001CF /* ikstack.c */,
+				D3DEC8C30A75E0C9002001CF /* md5.c */,
+				D3DEC8C50A75E0C9002001CF /* sha.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D3DEC8B80A75E0AC002001CF /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC8C80A75E0F4002001CF /* common.h */,
+				D3DEC8C90A75E0F4002001CF /* config.h */,
+				D3DEC8CA0A75E0F4002001CF /* finetune.h */,
+				D3DEC8CB0A75E0F4002001CF /* iksemel.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		D3DEC8EE0A75E1D2002001CF /* dingaling */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC8F10A75E1EF002001CF /* include */,
+				D3DEC8F00A75E1E8002001CF /* src */,
+			);
+			name = dingaling;
+			sourceTree = "<group>";
+		};
+		D3DEC8F00A75E1E8002001CF /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC8F30A75E20A002001CF /* libdingaling.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D3DEC8F10A75E1EF002001CF /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC8F20A75E20A002001CF /* ldl_compat.h */,
+				D3DEC8F40A75E20A002001CF /* libdingaling.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -1369,6 +1553,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3DEC88D0A75DEC7002001CF /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DEC8920A75DECF002001CF /* jb_speakup.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3DEC8A00A75DFDE002001CF /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DEC8CC0A75E0F4002001CF /* common.h in Headers */,
+				D3DEC8CD0A75E0F4002001CF /* config.h in Headers */,
+				D3DEC8CE0A75E0F4002001CF /* finetune.h in Headers */,
+				D3DEC8CF0A75E0F4002001CF /* iksemel.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3DEC8E20A75E19F002001CF /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DEC8F50A75E217002001CF /* ldl_compat.h in Headers */,
+				D3DEC8F60A75E21A002001CF /* libdingaling.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
@@ -1440,6 +1652,56 @@
 			productReference = D3DEC8620A75DC09002001CF /* liblibresample.a */;
 			productType = "com.apple.product-type.library.static";
 		};
+		D3DEC8900A75DEC7002001CF /* libspeakup */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3DEC8990A75DEF0002001CF /* Build configuration list for PBXNativeTarget "libspeakup" */;
+			buildPhases = (
+				D3DEC88D0A75DEC7002001CF /* Headers */,
+				D3DEC88E0A75DEC7002001CF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = libspeakup;
+			productName = libspeakup;
+			productReference = D3DEC8910A75DEC7002001CF /* liblibspeakup.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		D3DEC8A40A75DFDE002001CF /* iksemel.framework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3DEC8A70A75DFDE002001CF /* Build configuration list for PBXNativeTarget "iksemel.framework" */;
+			buildPhases = (
+				D3DEC8AA0A75DFF7002001CF /* ShellScript */,
+				D3DEC8A00A75DFDE002001CF /* Headers */,
+				D3DEC8A20A75DFDE002001CF /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iksemel.framework;
+			productName = iksemel;
+			productReference = D3DEC8A50A75DFDE002001CF /* iksemel.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		D3DEC8E60A75E19F002001CF /* dingaling.framework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3DEC8E90A75E1A0002001CF /* Build configuration list for PBXNativeTarget "dingaling.framework" */;
+			buildPhases = (
+				D3DEC8E20A75E19F002001CF /* Headers */,
+				D3DEC8E40A75E19F002001CF /* Sources */,
+				D3DEC8E50A75E19F002001CF /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = dingaling.framework;
+			productName = dingaling;
+			productReference = D3DEC8E70A75E19F002001CF /* dingaling.framework */;
+			productType = "com.apple.product-type.framework";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1455,6 +1717,9 @@
 				D3DEC6CE0A75D4E9002001CF /* aprutil.framework */,
 				D3DEC8300A75DA10002001CF /* teletone.framework */,
 				D3DEC8610A75DC09002001CF /* libresample */,
+				D3DEC8900A75DEC7002001CF /* libspeakup */,
+				D3DEC8A40A75DFDE002001CF /* iksemel.framework */,
+				D3DEC8E60A75E19F002001CF /* dingaling.framework */,
 			);
 		};
 /* End PBXProject section */
@@ -1498,6 +1763,19 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
 			shellScript = "if [ -e ../../libs/libresample-$FREESWITCH_RESAMPLE_VERSION.tgz/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl $FREESWITCH_DOWNLOAD_URL/libresample-$FREESWITCH_RESAMPLE_VERSION.tgz -o ../../libs/libresample-$FREESWITCH_RESAMPLE_VERSION.tgz\ncd ../../libs\ntar zxfv libresample-$FREESWITCH_RESAMPLE_VERSION.tgz\ncd libresample-$FREESWITCH_RESAMPLE_VERSION\ntouch .complete";
+		};
+		D3DEC8AA0A75DFF7002001CF /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ -e ../../libs/iksemel-$FREESWITCH_IKSEMEL_VERSION/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl $FREESWITCH_DOWNLOAD_URL/iksemel-$FREESWITCH_IKSEMEL_VERSION.tar.gz -o ../../libs/iksemel-$FREESWITCH_IKSEMEL_VERSION.tar.gz\ncd ../../libs\ntar zxfv iksemel-$FREESWITCH_IKSEMEL_VERSION.tar.gz\ncd iksemel-$FREESWITCH_IKSEMEL_VERSION\n./configure \ntouch .complete";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1637,6 +1915,41 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3DEC88E0A75DEC7002001CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DEC8930A75DED2002001CF /* jb_speakup.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3DEC8A20A75DFDE002001CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DEC8D00A75E107002001CF /* iks.c in Sources */,
+				D3DEC8D10A75E107002001CF /* base64.c in Sources */,
+				D3DEC8D20A75E107002001CF /* io-posix.c in Sources */,
+				D3DEC8D30A75E107002001CF /* filter.c in Sources */,
+				D3DEC8D40A75E107002001CF /* stream.c in Sources */,
+				D3DEC8D50A75E107002001CF /* dom.c in Sources */,
+				D3DEC8D60A75E107002001CF /* utility.c in Sources */,
+				D3DEC8D70A75E107002001CF /* jabber.c in Sources */,
+				D3DEC8D80A75E107002001CF /* sax.c in Sources */,
+				D3DEC8D90A75E107002001CF /* ikstack.c in Sources */,
+				D3DEC8DA0A75E107002001CF /* md5.c in Sources */,
+				D3DEC8DB0A75E107002001CF /* sha.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3DEC8E40A75E19F002001CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DEC8F70A75E21F002001CF /* libdingaling.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1660,6 +1973,21 @@
 			target = D3DEC8610A75DC09002001CF /* libresample */;
 			targetProxy = D3DEC8830A75DE06002001CF /* PBXContainerItemProxy */;
 		};
+		D3DEC8960A75DEE1002001CF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC8900A75DEC7002001CF /* libspeakup */;
+			targetProxy = D3DEC8950A75DEE1002001CF /* PBXContainerItemProxy */;
+		};
+		D3DEC8E00A75E17C002001CF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC8A40A75DFDE002001CF /* iksemel.framework */;
+			targetProxy = D3DEC8DF0A75E17C002001CF /* PBXContainerItemProxy */;
+		};
+		D3DECA3A0A75E43C002001CF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC8E60A75E19F002001CF /* dingaling.framework */;
+			targetProxy = D3DECA390A75E43C002001CF /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -1670,6 +1998,7 @@
 				FREESWITCH_APR_VERSION = 1.2.6;
 				FREESWITCH_ARCH = "i386 ppc";
 				FREESWITCH_DOWNLOAD_URL = "http://svn.freeswitch.org/downloads/libs";
+				FREESWITCH_IKSEMEL_VERSION = 1.2;
 				FREESWITCH_RESAMPLE_VERSION = 0.1.3;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -1685,6 +2014,7 @@
 				FREESWITCH_APR_VERSION = 1.2.6;
 				FREESWITCH_ARCH = "i386 ppc";
 				FREESWITCH_DOWNLOAD_URL = "http://svn.freeswitch.org/downloads/libs";
+				FREESWITCH_IKSEMEL_VERSION = 1.2;
 				FREESWITCH_RESAMPLE_VERSION = 0.1.3;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -1903,6 +2233,130 @@
 			};
 			name = Release;
 		};
+		D3DEC89A0A75DEF0002001CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = libspeakup;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D3DEC89B0A75DEF0002001CF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				PREBINDING = NO;
+				PRODUCT_NAME = libspeakup;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3DEC8A80A75DFDE002001CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = iksemel.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_CFLAGS = (
+					"-DHAVE_CONFIG_H",
+					"-I.",
+					"-I.",
+					"-I../include",
+					"-I../include",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = iksemel;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D3DEC8A90A75DFDE002001CF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = iksemel.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_CFLAGS = (
+					"-DHAVE_CONFIG_H",
+					"-I.",
+					"-I.",
+					"-I../include",
+					"-I../include",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = iksemel;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3DEC8EA0A75E1A0002001CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = dingaling.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				PREBINDING = NO;
+				PRODUCT_NAME = dingaling;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D3DEC8EB0A75E1A0002001CF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = dingaling.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				PREBINDING = NO;
+				PRODUCT_NAME = dingaling;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1956,6 +2410,33 @@
 			buildConfigurations = (
 				D3DEC86A0A75DC28002001CF /* Debug */,
 				D3DEC86B0A75DC28002001CF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3DEC8990A75DEF0002001CF /* Build configuration list for PBXNativeTarget "libspeakup" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3DEC89A0A75DEF0002001CF /* Debug */,
+				D3DEC89B0A75DEF0002001CF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3DEC8A70A75DFDE002001CF /* Build configuration list for PBXNativeTarget "iksemel.framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3DEC8A80A75DFDE002001CF /* Debug */,
+				D3DEC8A90A75DFDE002001CF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3DEC8E90A75E1A0002001CF /* Build configuration list for PBXNativeTarget "dingaling.framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3DEC8EA0A75E1A0002001CF /* Debug */,
+				D3DEC8EB0A75E1A0002001CF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
