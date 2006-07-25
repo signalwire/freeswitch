@@ -213,6 +213,26 @@ static switch_status_t sndfile_file_write(switch_file_handle_t *handle, void *da
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t sndfile_file_set_string(switch_file_handle_t *handle, switch_audio_col_t col, const char *string)
+{
+	sndfile_context *context = handle->private_info;
+
+	return sf_set_string(context->handle, (int)col, string) ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t sndfile_file_get_string(switch_file_handle_t *handle, switch_audio_col_t col, const char **string)
+{
+	sndfile_context *context = handle->private_info;
+	const char *s;
+
+	if ((s = sf_get_string(context->handle, (int)col))) {
+		*string = s;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 /* Registration */
 
 static char **supported_formats;
@@ -224,6 +244,8 @@ static switch_file_interface_t sndfile_file_interface = {
 	/*.file_read */ sndfile_file_read,
 	/*.file_write */ sndfile_file_write,
 	/*.file_seek */ sndfile_file_seek,
+	/*.file_set_string */ sndfile_file_set_string,
+	/*.file_get_string */ sndfile_file_get_string,
 	/*.extens */ NULL,
 	/*.next */ NULL,
 };

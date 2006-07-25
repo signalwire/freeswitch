@@ -94,6 +94,16 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 #define SWITCH_FALSE 0
 #define SWITCH_CORE_QUEUE_LEN 100000
 
+
+typedef enum {
+	SWITCH_AUDIO_COL_STR_TITLE                    = 0x01,
+	SWITCH_AUDIO_COL_STR_COPYRIGHT                = 0x02,
+	SWITCH_AUDIO_COL_STR_SOFTWARE                 = 0x03,
+	SWITCH_AUDIO_COL_STR_ARTIST                   = 0x04,
+	SWITCH_AUDIO_COL_STR_COMMENT                  = 0x05,
+	SWITCH_AUDIO_COL_STR_DATE                     = 0x06
+} switch_audio_col_t;
+
 typedef enum {
 	SWITCH_XML_SECTION_RESULT = 0,
 	SWITCH_XML_SECTION_CONFIG = (1 << 0),

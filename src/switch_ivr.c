@@ -214,6 +214,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	switch_codec_t codec, *read_codec;
 	char *codec_name;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	char *p;
+	const char *vval;
 
 	if (!fh) {
 		fh = &lfh;
@@ -241,6 +243,41 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	switch_channel_answer(channel);
 
+	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_TITLE, vval);
+		switch_channel_set_variable(channel, "RECORD_TITLE", NULL);
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_COPYRIGHT"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_COPYRIGHT, vval);
+		switch_channel_set_variable(channel, "RECORD_COPYRIGHT", NULL);
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_SOFTWARE"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_SOFTWARE, vval);
+		switch_channel_set_variable(channel, "RECORD_SOFTWARE", NULL);
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_ARTIST"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_ARTIST, vval);
+		switch_channel_set_variable(channel, "RECORD_ARTIST", NULL);
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_COMMENT"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_COMMENT, vval);
+		switch_channel_set_variable(channel, "RECORD_COMMENT", NULL);
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_DATE"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_DATE, vval);
+		switch_channel_set_variable(channel, "RECORD_DATE", NULL);
+	}
 	
 	codec_name = "L16";
 	if (switch_core_codec_init(&codec,
@@ -333,7 +370,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_file_handle_t lfh;
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
-
+	const char *p;
+	char *title = "", *copyright = "", *software = "", *artist = "", *comment = "", *date = "";
+	
 	if (!fh) {
 		fh = &lfh;
 		memset(fh, 0, sizeof(lfh));
@@ -354,8 +393,52 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	write_frame.data = abuf;
 	write_frame.buflen = sizeof(abuf);
 
+	
+	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_TITLE, &p) == SWITCH_STATUS_SUCCESS) {
+		title = (char *) switch_core_session_strdup(session, (char *)p);
+		switch_channel_set_variable(channel, "RECORD_TITLE", (char *)p);
+	}
+	
+	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_COPYRIGHT, &p) == SWITCH_STATUS_SUCCESS) {
+		copyright = (char *) switch_core_session_strdup(session, (char *)p);
+		switch_channel_set_variable(channel, "RECORD_COPYRIGHT", (char *)p);
+	}
+	
+	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_SOFTWARE, &p) == SWITCH_STATUS_SUCCESS) {
+		software = (char *) switch_core_session_strdup(session, (char *)p);
+		switch_channel_set_variable(channel, "RECORD_SOFTWARE", (char *)p);
+	}
+	
+	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_ARTIST, &p) == SWITCH_STATUS_SUCCESS) {
+		artist = (char *) switch_core_session_strdup(session, (char *)p);
+		switch_channel_set_variable(channel, "RECORD_ARTIST", (char *)p);
+	}
+	
+	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_COMMENT, &p) == SWITCH_STATUS_SUCCESS) {
+		comment = (char *) switch_core_session_strdup(session, (char *)p);
+		switch_channel_set_variable(channel, "RECORD_COMMENT", (char *)p);
+	}
+	
+	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_DATE, &p) == SWITCH_STATUS_SUCCESS) {
+		date = (char *) switch_core_session_strdup(session, (char *)p);
+		switch_channel_set_variable(channel, "RECORD_DATE", (char *)p);
+	}
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+					  "OPEN FILE %s %uhz %u channels\n"
+					  "TITLE=%s\n"
+					  "COPYRIGHT=%s\n"
+					  "SOFTWARE=%s\n"
+					  "ARTIST=%s\n"
+					  "COMMENT=%s\n"
+					  "DATE=%s\n", file, fh->samplerate, fh->channels,
+					  title,
+					  copyright,
+					  software,
+					  artist,
+					  comment,
+					  date);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "OPEN FILE %s %uhz %u channels\n", file, fh->samplerate, fh->channels);
 
 	interval = read_codec->implementation->microseconds_per_frame / 1000;
 

@@ -867,6 +867,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, unsigned int *cur_pos, int64_t samples, int whence);
 
 /*! 
+  \brief Set metadata to the desired string
+  \param fh the file handle to set data to
+  \param col the enum of the col name
+  \param string the string to add
+  \return SWITCH_STATUS_SUCCESS with cur_pos adjusted to new position
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t *fh, switch_audio_col_t col, const char *string);
+
+/*! 
+  \brief get metadata of the desired string
+  \param fh the file handle to get data from
+  \param col the enum of the col name
+  \param string pointer to the string to fetch
+  \return SWITCH_STATUS_SUCCESS with cur_pos adjusted to new position
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t *fh, switch_audio_col_t col, const char **string);
+
+
+/*! 
   \brief Close an open file handle
   \param fh the file handle to close
   \return SWITCH_STATUS_SUCCESS if the file handle was closed
