@@ -71,16 +71,47 @@ static void set_function(switch_core_session_t *session, char *data)
 	}
 }
 
+static void strftime_function(switch_core_session_t *session, char *data)
+{
+	char *argv[2];
+	int argc;
+	char *lbuf;
+
+	if ((lbuf = switch_core_session_strdup(session, data))&&(argc = switch_separate_string(lbuf, '=', argv, (sizeof(argv) / sizeof(argv[0])))) > 1) {
+		switch_size_t retsize;
+		switch_time_exp_t tm;
+		char date[80] = "";
+		switch_channel_t *channel;
+
+		channel = switch_core_session_get_channel(session);
+		assert(channel != NULL);
+
+		switch_time_exp_lt(&tm, switch_time_now());
+		switch_strftime(date, &retsize, sizeof(date), argv[1], &tm);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", argv[0], date);
+		switch_channel_set_variable(channel, argv[0], date);
+	}
+	
+}
+
 static const switch_application_interface_t set_application_interface = {
 	/*.interface_name */ "set",
 	/*.application_function */ set_function
+};
+
+static const switch_application_interface_t strftime_application_interface = {
+	/*.interface_name */ "strftime",
+	/*.application_function */ strftime_function,
+	NULL,NULL,NULL,
+	&set_application_interface
+
 };
 
 static const switch_application_interface_t sleep_application_interface = {
 	/*.interface_name */ "sleep",
 	/*.application_function */ sleep_function,
 	NULL,NULL,NULL,
-	&set_application_interface
+	&strftime_application_interface
 };
 
 static const switch_loadable_module_interface_t mod_dptools_module_interface = {
