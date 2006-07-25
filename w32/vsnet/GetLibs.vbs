@@ -248,16 +248,13 @@ WScript.Echo "Complete"
 '  Lib Build Sectiton
 '  ******************
 Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
-	If Not FSO.FolderExists(LibDestDir & "apr-util") Then 
-'		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-util-1.2.6.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "apr-util-1.2.6") Then
-			Wscript.echo "Unable to get apr-util from default download location, Trying backup location:"
-			WgetUnCompress LibsBase & "apr-util-1.2.6.tar.gz", LibDestDir
-		End If
-		RenameFolder LibDestDir & "apr-util-1.2.6", "apr-util"
-		FSO.CopyFile Utilsdir & "apr\xml.vcproj", LibDestDir & "apr-util\xml\expat\lib\", True
-		FSO.CopyFile Utilsdir & "apr\libaprutil.vcproj", LibDestDir & "apr-util\", True
-	End If 
+	If Not FSO.FolderExists(LibDestDir & "apr-util") Then
+		Wscript.echo "Unable to get apr-util from default download location, Trying backup location:"
+		WgetUnCompress LibsBase & "apr-util-1.2.7.tar.gz", LibDestDir
+	End If
+	RenameFolder LibDestDir & "apr-util-1.2.7", "apr-util"
+	FSO.CopyFile Utilsdir & "apr\xml.vcproj", LibDestDir & "apr-util\xml\expat\lib\", True
+	FSO.CopyFile Utilsdir & "apr\libaprutil.vcproj", LibDestDir & "apr-util\", True
 	If FSO.FolderExists(LibDestDir & "apr-util") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\LibD\xml.lib") Then 
@@ -285,15 +282,12 @@ Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 End Sub
 
 Sub BuildLibs_apriconv(BuildDebug, BuildRelease)
-	If Not FSO.FolderExists(LibDestDir & "apr-iconv") Then 
-'		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-iconv-1.1.1.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "apr-iconv-1.1.1") Then
-			Wscript.echo "Unable to get apr-iconv from default download location, Trying backup location:"
-			WgetUnCompress LibsBase & "apr-iconv-1.1.1.tar.gz", LibDestDir
-		End If
-		RenameFolder LibDestDir & "apr-iconv-1.1.1", "apr-iconv"
-		FSO.CopyFile Utilsdir & "apr\libapriconv.vcproj", LibDestDir & "apr-iconv\", True
-	End If 
+	If Not FSO.FolderExists(LibDestDir & "apr-iconv-1.1.1") Then
+		Wscript.echo "Unable to get apr-iconv from default download location, Trying backup location:"
+		WgetUnCompress LibsBase & "apr-iconv-1.1.1.tar.gz", LibDestDir
+	End If
+	RenameFolder LibDestDir & "apr-iconv-1.1.1", "apr-iconv"
+	FSO.CopyFile Utilsdir & "apr\libapriconv.vcproj", LibDestDir & "apr-iconv\", True
 	If FSO.FolderExists(LibDestDir & "apr-iconv") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "apr-iconv\Debug\libapriconv-1.lib") Then 
@@ -315,16 +309,13 @@ Sub BuildLibs_apriconv(BuildDebug, BuildRelease)
 End Sub
 
 Sub BuildLibs_apr(BuildDebug, BuildRelease)
-	If Not FSO.FolderExists(LibDestDir & "apr") Then 
-'		WgetUnCompress "ftp://ftp.wayne.edu/apache/apr/apr-1.2.6.tar.gz", LibDestDir
-		If Not FSO.FolderExists(LibDestDir & "apr-1.2.6") Then
-			Wscript.echo "Unable to get apr from default download location, Trying backup location:"
-			WgetUnCompress LibsBase & "apr-1.2.6.tar.gz", LibDestDir
-		End If
-		RenameFolder LibDestDir & "apr-1.2.6", "apr"
-		FSO.CopyFile Utilsdir & "apr\libapr.vcproj", LibDestDir & "apr\", True
-		FSO.CopyFile Utilsdir & "apr\apr.hw", LibDestDir & "apr\include\", True
-	End If 
+	If Not FSO.FolderExists(LibDestDir & "apr") Then
+		Wscript.echo "Unable to get apr from default download location, Trying backup location:"
+		WgetUnCompress LibsBase & "apr-1.2.7.tar.gz", LibDestDir
+	End If
+	RenameFolder LibDestDir & "apr-1.2.7", "apr"
+	FSO.CopyFile Utilsdir & "apr\libapr.vcproj", LibDestDir & "apr\", True
+	FSO.CopyFile Utilsdir & "apr\apr.hw", LibDestDir & "apr\include\", True
 	If FSO.FolderExists(LibDestDir & "apr") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "apr\Debug\libapr-1.lib") Then 
@@ -421,16 +412,13 @@ Sub BuildLibs_srtp(BuildDebug, BuildRelease)
 End Sub
 
 Sub BuildLibs_sqlite(BuildDebug, BuildRelease)
-	If Not FSO.FolderExists(LibDestDir & "sqlite") Then 
-		WgetUnCompress "http://www.sqlite.org/sqlite-source-3_3_5.zip", LibDestDir 
-		If Not FSO.FolderExists(LibDestDir & "sqlite-source-3_3_5") Then
+		If Not FSO.FolderExists(LibDestDir & "sqlite") Then
 			Wscript.echo "Unable to get SQLite from default download location, Trying backup location:"
-			WgetUnCompress LibsBase & "sqlite-source-3_3_5.zip", LibDestDir
+			WgetUnCompress LibsBase & "sqlite-source-3_3_6.zip", LibDestDir
 		End If
-		RenameFolder LibDestDir & "sqlite-source-3_3_5", "sqlite"
+		RenameFolder LibDestDir & "sqlite-source-3_3_6", "sqlite"
 		FSO.CopyFile Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\", True
 		FindReplaceInFile LibDestDir & "sqlite\sqlite.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
-	End If
 	If FSO.FolderExists(LibDestDir & "sqlite") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "sqlite\Debug DLL\sqlite.lib") Then 
@@ -629,9 +617,10 @@ End Sub
 
 Sub BuildLibs_libsndfile(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "libsndfile") Then 
-		WgetUnCompress LibsBase & "libsndfile-1.0.12.tar.gz", LibDestDir
-		RenameFolder LibDestDir & "libsndfile-1.0.12", "libsndfile"
-		FSO.CopyFile Utilsdir & "libsndfile.vcproj", LibDestDir & "libsndfile\Win32\", True
+		WgetUnCompress LibsBase & "libsndfile-1.0.16.tar.gz", LibDestDir
+		RenameFolder LibDestDir & "libsndfile-1.0.16", "libsndfile"
+		FSO.CopyFile Utilsdir & "libsndfile\*.*", LibDestDir & "libsndfile\Win32\", True
+		FindReplaceInFile LibDestDir & "libsndfile\src\common.c", "memset (ptr + most,", "memset ((char *)ptr + most,"
 	End If 
 	If FSO.FolderExists(LibDestDir & "libsndfile") Then 
 		If BuildDebug Then
