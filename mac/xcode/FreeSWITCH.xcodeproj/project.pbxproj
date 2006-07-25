@@ -15,6 +15,7 @@
 			dependencies = (
 				D3DEC8150A75D8D3002001CF /* PBXTargetDependency */,
 				D3DEC8170A75D8D6002001CF /* PBXTargetDependency */,
+				D3DEC8450A75DAC1002001CF /* PBXTargetDependency */,
 			);
 			name = FreeSWITCH;
 			productName = FreeSWITCH;
@@ -212,6 +213,11 @@
 		D3DEC7FD0A75D7BE002001CF /* sdbm.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC7290A75D6A2002001CF /* sdbm.c */; };
 		D3DEC7FE0A75D7BE002001CF /* apr_dbm_berkeleydb.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC7240A75D6A2002001CF /* apr_dbm_berkeleydb.c */; };
 		D3DEC8000A75D7F9002001CF /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D3DEC8390A75DA62002001CF /* libteletone_detect.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8360A75DA62002001CF /* libteletone_detect.h */; };
+		D3DEC83A0A75DA62002001CF /* libteletone_generate.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8370A75DA62002001CF /* libteletone_generate.h */; };
+		D3DEC83B0A75DA62002001CF /* libteletone.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8380A75DA62002001CF /* libteletone.h */; };
+		D3DEC83E0A75DA75002001CF /* libteletone_detect.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC83C0A75DA75002001CF /* libteletone_detect.c */; };
+		D3DEC83F0A75DA75002001CF /* libteletone_generate.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC83D0A75DA75002001CF /* libteletone_generate.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -228,6 +234,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = D3DEC6CE0A75D4E9002001CF /* aprutil.framework */;
 			remoteInfo = aprutil.framework;
+		};
+		D3DEC8440A75DAC1002001CF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC8300A75DA10002001CF /* teletone.framework */;
+			remoteInfo = teletone.framework;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -433,6 +446,13 @@
 		D3DEC7420A75D6A2002001CF /* apr_uri.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_uri.c; sourceTree = "<group>"; };
 		D3DEC7450A75D6A2002001CF /* xlate.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = xlate.c; sourceTree = "<group>"; };
 		D3DEC77A0A75D755002001CF /* apr_xml.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_xml.c; sourceTree = "<group>"; };
+		D3DEC8310A75DA10002001CF /* teletone.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = teletone.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3DEC8320A75DA10002001CF /* teletone.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = teletone.plist; sourceTree = "<group>"; };
+		D3DEC8360A75DA62002001CF /* libteletone_detect.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libteletone_detect.h; path = ../../libs/libteletone/src/libteletone_detect.h; sourceTree = SOURCE_ROOT; };
+		D3DEC8370A75DA62002001CF /* libteletone_generate.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libteletone_generate.h; path = ../../libs/libteletone/src/libteletone_generate.h; sourceTree = SOURCE_ROOT; };
+		D3DEC8380A75DA62002001CF /* libteletone.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libteletone.h; path = ../../libs/libteletone/src/libteletone.h; sourceTree = SOURCE_ROOT; };
+		D3DEC83C0A75DA75002001CF /* libteletone_detect.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = libteletone_detect.c; path = ../../libs/libteletone/src/libteletone_detect.c; sourceTree = SOURCE_ROOT; };
+		D3DEC83D0A75DA75002001CF /* libteletone_generate.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = libteletone_generate.c; path = ../../libs/libteletone/src/libteletone_generate.c; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -441,6 +461,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				D3DEC8000A75D7F9002001CF /* apr.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3DEC82F0A75DA10002001CF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -459,6 +486,7 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				D3DEC8240A75D9E8002001CF /* teletone */,
 				D3DEC6C40A75D4AA002001CF /* aprutil */,
 				D3DEC2220A75CB3C002001CF /* apr */,
 			);
@@ -468,10 +496,12 @@
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				D3DEC8320A75DA10002001CF /* teletone.plist */,
 				D3DEC6D00A75D4E9002001CF /* aprutil.plist */,
 				D3DEC21E0A75CB06002001CF /* apr.plist */,
 				D3DEC21D0A75CB06002001CF /* apr.framework */,
 				D3DEC6CF0A75D4E9002001CF /* aprutil.framework */,
+				D3DEC8310A75DA10002001CF /* teletone.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1134,6 +1164,34 @@
 			path = "../../libs/apr-util-1.2.6/xml";
 			sourceTree = SOURCE_ROOT;
 		};
+		D3DEC8240A75D9E8002001CF /* teletone */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC8260A75D9F6002001CF /* include */,
+				D3DEC8250A75D9F1002001CF /* src */,
+			);
+			name = teletone;
+			sourceTree = "<group>";
+		};
+		D3DEC8250A75D9F1002001CF /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC83C0A75DA75002001CF /* libteletone_detect.c */,
+				D3DEC83D0A75DA75002001CF /* libteletone_generate.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D3DEC8260A75D9F6002001CF /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D3DEC8360A75DA62002001CF /* libteletone_detect.h */,
+				D3DEC8370A75DA62002001CF /* libteletone_generate.h */,
+				D3DEC8380A75DA62002001CF /* libteletone.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
@@ -1238,6 +1296,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3DEC82C0A75DA10002001CF /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DEC8390A75DA62002001CF /* libteletone_detect.h in Headers */,
+				D3DEC83A0A75DA62002001CF /* libteletone_generate.h in Headers */,
+				D3DEC83B0A75DA62002001CF /* libteletone.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
@@ -1276,6 +1344,23 @@
 			productReference = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		D3DEC8300A75DA10002001CF /* teletone.framework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3DEC8330A75DA10002001CF /* Build configuration list for PBXNativeTarget "teletone.framework" */;
+			buildPhases = (
+				D3DEC82C0A75DA10002001CF /* Headers */,
+				D3DEC82E0A75DA10002001CF /* Sources */,
+				D3DEC82F0A75DA10002001CF /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = teletone.framework;
+			productName = teletone;
+			productReference = D3DEC8310A75DA10002001CF /* teletone.framework */;
+			productType = "com.apple.product-type.framework";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -1289,6 +1374,7 @@
 				D3DEC8130A75D8C8002001CF /* FreeSWITCH */,
 				D3DEC21C0A75CB06002001CF /* apr.framework */,
 				D3DEC6CE0A75D4E9002001CF /* aprutil.framework */,
+				D3DEC8300A75DA10002001CF /* teletone.framework */,
 			);
 		};
 /* End PBXProject section */
@@ -1439,6 +1525,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3DEC82E0A75DA10002001CF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3DEC83E0A75DA75002001CF /* libteletone_detect.c in Sources */,
+				D3DEC83F0A75DA75002001CF /* libteletone_generate.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1451,6 +1546,11 @@
 			isa = PBXTargetDependency;
 			target = D3DEC6CE0A75D4E9002001CF /* aprutil.framework */;
 			targetProxy = D3DEC8160A75D8D6002001CF /* PBXContainerItemProxy */;
+		};
+		D3DEC8450A75DAC1002001CF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC8300A75DA10002001CF /* teletone.framework */;
+			targetProxy = D3DEC8440A75DAC1002001CF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1611,6 +1711,58 @@
 			};
 			name = Release;
 		};
+		D3DEC8340A75DA10002001CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = teletone.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Foundation,
+					"-framework",
+					AppKit,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D3DEC8350A75DA10002001CF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = teletone.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Foundation,
+					"-framework",
+					AppKit,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = teletone;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1646,6 +1798,15 @@
 			buildConfigurations = (
 				D3DEC81A0A75D8F7002001CF /* Debug */,
 				D3DEC81B0A75D8F7002001CF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3DEC8330A75DA10002001CF /* Build configuration list for PBXNativeTarget "teletone.framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3DEC8340A75DA10002001CF /* Debug */,
+				D3DEC8350A75DA10002001CF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
