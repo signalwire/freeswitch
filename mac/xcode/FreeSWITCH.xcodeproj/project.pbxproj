@@ -7,6 +7,20 @@
 	objects = {
 
 /* Begin PBXAggregateTarget section */
+		D3BC31D20A769AE100DE971E /* Modules */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = D3BC31D80A769B0800DE971E /* Build configuration list for PBXAggregateTarget "Modules" */;
+			buildPhases = (
+			);
+			dependencies = (
+				D3BC32530A769C1500DE971E /* PBXTargetDependency */,
+				D3BC32750A769D9C00DE971E /* PBXTargetDependency */,
+				D3BC32730A769D9900DE971E /* PBXTargetDependency */,
+				D3BC32670A769D6100DE971E /* PBXTargetDependency */,
+			);
+			name = Modules;
+			productName = Modules;
+		};
 		D3DEC8130A75D8C8002001CF /* FreeSWITCH */ = {
 			isa = PBXAggregateTarget;
 			buildConfigurationList = D3DEC8190A75D8F7002001CF /* Build configuration list for PBXAggregateTarget "FreeSWITCH" */;
@@ -17,13 +31,12 @@
 				D3DEC8150A75D8D3002001CF /* PBXTargetDependency */,
 				D3DEC8170A75D8D6002001CF /* PBXTargetDependency */,
 				D3DEC8450A75DAC1002001CF /* PBXTargetDependency */,
-				D3DEC8E00A75E17C002001CF /* PBXTargetDependency */,
 				D38DD53A0A768BF700FEDB19 /* PBXTargetDependency */,
-				D3DECA3A0A75E43C002001CF /* PBXTargetDependency */,
 				D37671520A75F04700ACC1FB /* PBXTargetDependency */,
 				D38DD5490A768C5700FEDB19 /* PBXTargetDependency */,
 				D38DD54B0A768C6E00FEDB19 /* PBXTargetDependency */,
 				D38DD5750A768D9C00FEDB19 /* PBXTargetDependency */,
+				D3BC32550A769C2E00DE971E /* PBXTargetDependency */,
 			);
 			name = FreeSWITCH;
 			productName = FreeSWITCH;
@@ -189,6 +202,32 @@
 		D38DD5590A768CC700FEDB19 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
 		D38DD55A0A768CCB00FEDB19 /* speakup.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5400A768C0900FEDB19 /* speakup.framework */; };
 		D38DD55C0A768CD600FEDB19 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D3BC31E10A769B3600DE971E /* mod_echo.c in Sources */ = {isa = PBXBuildFile; fileRef = D3BC31E00A769B3600DE971E /* mod_echo.c */; };
+		D3BC31E20A769B4300DE971E /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D3BC32410A769B7600DE971E /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D3BC32420A769B7600DE971E /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D3BC32440A769B8100DE971E /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D3BC32450A769B8C00DE971E /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D3BC32460A769B9100DE971E /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D3BC32480A769B9C00DE971E /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D3BC32650A769D4C00DE971E /* mod_dingaling.c in Sources */ = {isa = PBXBuildFile; fileRef = D3BC32640A769D4C00DE971E /* mod_dingaling.c */; };
+		D3BC32680A769D6B00DE971E /* dingaling.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8E70A75E19F002001CF /* dingaling.framework */; };
+		D3BC32690A769D6F00DE971E /* iksemel.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8A50A75DFDE002001CF /* iksemel.framework */; };
+		D3BC326A0A769D7700DE971E /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D3BC326B0A769D7700DE971E /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D3BC326C0A769D7700DE971E /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D3BC326D0A769D7700DE971E /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D3BC326E0A769D7700DE971E /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D3BC326F0A769D7700DE971E /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D3BC32700A769D7700DE971E /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D3BC32840A769E1E00DE971E /* mod_playback.c in Sources */ = {isa = PBXBuildFile; fileRef = D3BC327F0A769DF500DE971E /* mod_playback.c */; };
+		D3BC32850A769E2700DE971E /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D3BC32860A769E2700DE971E /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D3BC32870A769E2700DE971E /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D3BC32880A769E2700DE971E /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D3BC32890A769E2700DE971E /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D3BC328A0A769E2700DE971E /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D3BC328B0A769E2700DE971E /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
 		D3DEC5F60A75D048002001CF /* apr_cpystrn.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5BB0A75CFB7002001CF /* apr_cpystrn.c */; };
 		D3DEC5F70A75D048002001CF /* apr_fnmatch.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5BC0A75CFB7002001CF /* apr_fnmatch.c */; };
 		D3DEC5F80A75D048002001CF /* apr_getpass.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5A00A75CFB7002001CF /* apr_getpass.c */; };
@@ -420,36 +459,71 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D38DD5250A768B6100FEDB19 /* resample.framework */;
+			remoteGlobalIDString = D38DD5250A768B6100FEDB19;
 			remoteInfo = resample.framework;
 		};
 		D38DD5480A768C5700FEDB19 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D38DD53F0A768C0900FEDB19 /* speakup.framework */;
+			remoteGlobalIDString = D38DD53F0A768C0900FEDB19;
 			remoteInfo = speakup.framework;
 		};
 		D38DD54A0A768C6E00FEDB19 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D37671640A75F0DC00ACC1FB /* freeswitch.framework */;
+			remoteGlobalIDString = D37671640A75F0DC00ACC1FB;
 			remoteInfo = freeswitch.framework;
 		};
 		D38DD54C0A768C7400FEDB19 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D38DD4DE0A768AC500FEDB19 /* srtp.framework */;
+			remoteGlobalIDString = D38DD4DE0A768AC500FEDB19;
 			remoteInfo = srtp.framework;
 		};
 		D38DD5740A768D9C00FEDB19 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D38DD4400A7687A700FEDB19 /* freeswitch */;
+			remoteGlobalIDString = D38DD4400A7687A700FEDB19;
 			remoteInfo = freeswitch;
+		};
+		D3BC32520A769C1500DE971E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3BC31D50A769AED00DE971E /* mod_echo.dylib */;
+			remoteInfo = mod_echo.dylib;
+		};
+		D3BC32540A769C2E00DE971E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3BC31D20A769AE100DE971E /* Modules */;
+			remoteInfo = Modules;
+		};
+		D3BC32660A769D6100DE971E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3BC325E0A769CA700DE971E /* mod_dingaling */;
+			remoteInfo = mod_dingaling;
+		};
+		D3BC32720A769D9900DE971E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC8E60A75E19F002001CF /* dingaling */;
+			remoteInfo = dingaling;
+		};
+		D3BC32740A769D9C00DE971E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC8A40A75DFDE002001CF /* iksemel */;
+			remoteInfo = iksemel;
 		};
 		D3DEC8140A75D8D3002001CF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -471,20 +545,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = D3DEC8300A75DA10002001CF;
 			remoteInfo = teletone.framework;
-		};
-		D3DEC8DF0A75E17C002001CF /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D3DEC8A40A75DFDE002001CF;
-			remoteInfo = iksemel.framework;
-		};
-		D3DECA390A75E43C002001CF /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D3DEC8E60A75E19F002001CF;
-			remoteInfo = dingaling.framework;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -589,13 +649,19 @@
 		D37671920A75F14200ACC1FB /* switch_utils.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_utils.c; path = ../../src/switch_utils.c; sourceTree = SOURCE_ROOT; };
 		D37671930A75F14200ACC1FB /* switch_xml.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_xml.c; path = ../../src/switch_xml.c; sourceTree = SOURCE_ROOT; };
 		D37671940A75F14200ACC1FB /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = ../../src/switch.c; sourceTree = SOURCE_ROOT; };
-		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; name = freeswitch; path = build/Release/freeswitch; sourceTree = "<group>"; };
+		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD4DF0A768AC500FEDB19 /* srtp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = srtp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD4E00A768AC500FEDB19 /* srtp.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = srtp.plist; sourceTree = "<group>"; };
 		D38DD5260A768B6100FEDB19 /* resample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = resample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD5270A768B6100FEDB19 /* resample.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = resample.plist; sourceTree = "<group>"; };
 		D38DD5400A768C0900FEDB19 /* speakup.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = speakup.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD5410A768C0900FEDB19 /* speakup.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = speakup.plist; sourceTree = "<group>"; };
+		D3BC31D60A769AED00DE971E /* mod_echo.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_echo.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3BC31E00A769B3600DE971E /* mod_echo.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_echo.c; path = ../../src/mod/applications/mod_echo/mod_echo.c; sourceTree = SOURCE_ROOT; };
+		D3BC325F0A769CA700DE971E /* mod_dingaling.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_dingaling.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3BC32640A769D4C00DE971E /* mod_dingaling.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_dingaling.c; path = ../../src/mod/endpoints/mod_dingaling/mod_dingaling.c; sourceTree = SOURCE_ROOT; };
+		D3BC327F0A769DF500DE971E /* mod_playback.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_playback.c; path = ../../src/mod/applications/mod_playback/mod_playback.c; sourceTree = SOURCE_ROOT; };
+		D3BC32830A769E0500DE971E /* mod_playback.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_playback.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3DEC21D0A75CB06002001CF /* apr.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = apr.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3DEC21E0A75CB06002001CF /* apr.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = apr.plist; sourceTree = "<group>"; };
 		D3DEC48D0A75CF62002001CF /* apr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr.h; sourceTree = "<group>"; };
@@ -939,6 +1005,50 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3BC31D40A769AED00DE971E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3BC32480A769B9C00DE971E /* teletone.framework in Frameworks */,
+				D3BC32460A769B9100DE971E /* resample.framework in Frameworks */,
+				D3BC32450A769B8C00DE971E /* srtp.framework in Frameworks */,
+				D3BC32440A769B8100DE971E /* sqlite.framework in Frameworks */,
+				D3BC32410A769B7600DE971E /* apr.framework in Frameworks */,
+				D3BC32420A769B7600DE971E /* aprutil.framework in Frameworks */,
+				D3BC31E20A769B4300DE971E /* libfreeswitch.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3BC325D0A769CA700DE971E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3BC326A0A769D7700DE971E /* teletone.framework in Frameworks */,
+				D3BC326B0A769D7700DE971E /* resample.framework in Frameworks */,
+				D3BC326C0A769D7700DE971E /* srtp.framework in Frameworks */,
+				D3BC326D0A769D7700DE971E /* sqlite.framework in Frameworks */,
+				D3BC326E0A769D7700DE971E /* apr.framework in Frameworks */,
+				D3BC326F0A769D7700DE971E /* aprutil.framework in Frameworks */,
+				D3BC32700A769D7700DE971E /* libfreeswitch.framework in Frameworks */,
+				D3BC32690A769D6F00DE971E /* iksemel.framework in Frameworks */,
+				D3BC32680A769D6B00DE971E /* dingaling.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3BC32810A769E0500DE971E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3BC32850A769E2700DE971E /* teletone.framework in Frameworks */,
+				D3BC32860A769E2700DE971E /* resample.framework in Frameworks */,
+				D3BC32870A769E2700DE971E /* srtp.framework in Frameworks */,
+				D3BC32880A769E2700DE971E /* sqlite.framework in Frameworks */,
+				D3BC32890A769E2700DE971E /* apr.framework in Frameworks */,
+				D3BC328A0A769E2700DE971E /* aprutil.framework in Frameworks */,
+				D3BC328B0A769E2700DE971E /* libfreeswitch.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3DEC6CD0A75D4E9002001CF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -1010,6 +1120,9 @@
 				D38DD4DF0A768AC500FEDB19 /* srtp.framework */,
 				D38DD5260A768B6100FEDB19 /* resample.framework */,
 				D38DD5400A768C0900FEDB19 /* speakup.framework */,
+				D3BC31D60A769AED00DE971E /* mod_echo.dylib */,
+				D3BC325F0A769CA700DE971E /* mod_dingaling.dylib */,
+				D3BC32830A769E0500DE971E /* mod_playback.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1096,6 +1209,7 @@
 		D376716A0A75F0EF00ACC1FB /* freeswitch */ = {
 			isa = PBXGroup;
 			children = (
+				D3BC31DE0A769B0E00DE971E /* modules */,
 				D37671940A75F14200ACC1FB /* switch.c */,
 				D376716C0A75F0FB00ACC1FB /* include */,
 				D376716B0A75F0F600ACC1FB /* src */,
@@ -1154,6 +1268,32 @@
 				D37671840A75F12900ACC1FB /* switch.h */,
 			);
 			name = include;
+			sourceTree = "<group>";
+		};
+		D3BC31DE0A769B0E00DE971E /* modules */ = {
+			isa = PBXGroup;
+			children = (
+				D3BC32600A769D2B00DE971E /* endpoints */,
+				D3BC31DF0A769B1B00DE971E /* applications */,
+			);
+			name = modules;
+			sourceTree = "<group>";
+		};
+		D3BC31DF0A769B1B00DE971E /* applications */ = {
+			isa = PBXGroup;
+			children = (
+				D3BC327F0A769DF500DE971E /* mod_playback.c */,
+				D3BC31E00A769B3600DE971E /* mod_echo.c */,
+			);
+			name = applications;
+			sourceTree = "<group>";
+		};
+		D3BC32600A769D2B00DE971E /* endpoints */ = {
+			isa = PBXGroup;
+			children = (
+				D3BC32640A769D4C00DE971E /* mod_dingaling.c */,
+			);
+			name = endpoints;
 			sourceTree = "<group>";
 		};
 		D3DEC2220A75CB3C002001CF /* apr */ = {
@@ -2364,9 +2504,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		D37670C40A75ECD400ACC1FB /* sqlite.framework */ = {
+		D37670C40A75ECD400ACC1FB /* sqlite */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D37670C70A75ECD500ACC1FB /* Build configuration list for PBXNativeTarget "sqlite.framework" */;
+			buildConfigurationList = D37670C70A75ECD500ACC1FB /* Build configuration list for PBXNativeTarget "sqlite" */;
 			buildPhases = (
 				D37670CA0A75ECF300ACC1FB /* ShellScript */,
 				D37670C00A75ECD400ACC1FB /* Headers */,
@@ -2377,14 +2517,14 @@
 			);
 			dependencies = (
 			);
-			name = sqlite.framework;
+			name = sqlite;
 			productName = sqlite;
 			productReference = D37670C50A75ECD400ACC1FB /* sqlite.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D37671640A75F0DC00ACC1FB /* freeswitch.framework */ = {
+		D37671640A75F0DC00ACC1FB /* libfreeswitch */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D37671670A75F0DC00ACC1FB /* Build configuration list for PBXNativeTarget "freeswitch.framework" */;
+			buildConfigurationList = D37671670A75F0DC00ACC1FB /* Build configuration list for PBXNativeTarget "libfreeswitch" */;
 			buildPhases = (
 				D37671600A75F0DC00ACC1FB /* Headers */,
 				D37671610A75F0DC00ACC1FB /* Resources */,
@@ -2395,7 +2535,7 @@
 			);
 			dependencies = (
 			);
-			name = freeswitch.framework;
+			name = libfreeswitch;
 			productName = libfreeswitch;
 			productReference = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */;
 			productType = "com.apple.product-type.framework";
@@ -2416,9 +2556,9 @@
 			productReference = D38DD4410A7687A700FEDB19 /* freeswitch */;
 			productType = "com.apple.product-type.tool";
 		};
-		D38DD4DE0A768AC500FEDB19 /* srtp.framework */ = {
+		D38DD4DE0A768AC500FEDB19 /* srtp */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D38DD4E10A768AC500FEDB19 /* Build configuration list for PBXNativeTarget "srtp.framework" */;
+			buildConfigurationList = D38DD4E10A768AC500FEDB19 /* Build configuration list for PBXNativeTarget "srtp" */;
 			buildPhases = (
 				D38DD4DA0A768AC500FEDB19 /* Headers */,
 				D38DD4DC0A768AC500FEDB19 /* Sources */,
@@ -2427,14 +2567,14 @@
 			);
 			dependencies = (
 			);
-			name = srtp.framework;
+			name = srtp;
 			productName = srtp;
 			productReference = D38DD4DF0A768AC500FEDB19 /* srtp.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D38DD5250A768B6100FEDB19 /* resample.framework */ = {
+		D38DD5250A768B6100FEDB19 /* resample */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D38DD5280A768B6200FEDB19 /* Build configuration list for PBXNativeTarget "resample.framework" */;
+			buildConfigurationList = D38DD5280A768B6200FEDB19 /* Build configuration list for PBXNativeTarget "resample" */;
 			buildPhases = (
 				D38DD52B0A768B8C00FEDB19 /* ShellScript */,
 				D38DD5210A768B6100FEDB19 /* Headers */,
@@ -2444,14 +2584,14 @@
 			);
 			dependencies = (
 			);
-			name = resample.framework;
+			name = resample;
 			productName = resample;
 			productReference = D38DD5260A768B6100FEDB19 /* resample.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D38DD53F0A768C0900FEDB19 /* speakup.framework */ = {
+		D38DD53F0A768C0900FEDB19 /* speakup */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D38DD5420A768C0900FEDB19 /* Build configuration list for PBXNativeTarget "speakup.framework" */;
+			buildConfigurationList = D38DD5420A768C0900FEDB19 /* Build configuration list for PBXNativeTarget "speakup" */;
 			buildPhases = (
 				D38DD53B0A768C0900FEDB19 /* Headers */,
 				D38DD53D0A768C0900FEDB19 /* Sources */,
@@ -2460,14 +2600,62 @@
 			);
 			dependencies = (
 			);
-			name = speakup.framework;
+			name = speakup;
 			productName = speakup;
 			productReference = D38DD5400A768C0900FEDB19 /* speakup.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D3DEC21C0A75CB06002001CF /* apr.framework */ = {
+		D3BC31D50A769AED00DE971E /* mod_echo */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D3DEC21F0A75CB06002001CF /* Build configuration list for PBXNativeTarget "apr.framework" */;
+			buildConfigurationList = D3BC31DB0A769B0800DE971E /* Build configuration list for PBXNativeTarget "mod_echo" */;
+			buildPhases = (
+				D3BC31D30A769AED00DE971E /* Sources */,
+				D3BC31D40A769AED00DE971E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mod_echo;
+			productName = mod_echo;
+			productReference = D3BC31D60A769AED00DE971E /* mod_echo.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
+		D3BC325E0A769CA700DE971E /* mod_dingaling */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3BC32610A769D2B00DE971E /* Build configuration list for PBXNativeTarget "mod_dingaling" */;
+			buildPhases = (
+				D3BC325C0A769CA700DE971E /* Sources */,
+				D3BC325D0A769CA700DE971E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mod_dingaling;
+			productName = mod_dingaling;
+			productReference = D3BC325F0A769CA700DE971E /* mod_dingaling.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
+		D3BC32820A769E0500DE971E /* mod_playback */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3BC32940A769E2F00DE971E /* Build configuration list for PBXNativeTarget "mod_playback" */;
+			buildPhases = (
+				D3BC32800A769E0500DE971E /* Sources */,
+				D3BC32810A769E0500DE971E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mod_playback;
+			productName = mod_playback;
+			productReference = D3BC32830A769E0500DE971E /* mod_playback.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
+		D3DEC21C0A75CB06002001CF /* apr */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3DEC21F0A75CB06002001CF /* Build configuration list for PBXNativeTarget "apr" */;
 			buildPhases = (
 				D3DEC2260A75CB62002001CF /* ShellScript */,
 				D3DEC2180A75CB06002001CF /* Headers */,
@@ -2477,14 +2665,14 @@
 			);
 			dependencies = (
 			);
-			name = apr.framework;
+			name = apr;
 			productName = apr;
 			productReference = D3DEC21D0A75CB06002001CF /* apr.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D3DEC6CE0A75D4E9002001CF /* aprutil.framework */ = {
+		D3DEC6CE0A75D4E9002001CF /* aprutil */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D3DEC6D10A75D4EA002001CF /* Build configuration list for PBXNativeTarget "aprutil.framework" */;
+			buildConfigurationList = D3DEC6D10A75D4EA002001CF /* Build configuration list for PBXNativeTarget "aprutil" */;
 			buildPhases = (
 				D3DEC6D50A75D50F002001CF /* ShellScript */,
 				D3DEC6CA0A75D4E9002001CF /* Headers */,
@@ -2495,14 +2683,14 @@
 			);
 			dependencies = (
 			);
-			name = aprutil.framework;
+			name = aprutil;
 			productName = aprutil;
 			productReference = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D3DEC8300A75DA10002001CF /* teletone.framework */ = {
+		D3DEC8300A75DA10002001CF /* teletone */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D3DEC8330A75DA10002001CF /* Build configuration list for PBXNativeTarget "teletone.framework" */;
+			buildConfigurationList = D3DEC8330A75DA10002001CF /* Build configuration list for PBXNativeTarget "teletone" */;
 			buildPhases = (
 				D3DEC82C0A75DA10002001CF /* Headers */,
 				D3DEC82E0A75DA10002001CF /* Sources */,
@@ -2511,14 +2699,14 @@
 			);
 			dependencies = (
 			);
-			name = teletone.framework;
+			name = teletone;
 			productName = teletone;
 			productReference = D3DEC8310A75DA10002001CF /* teletone.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D3DEC8A40A75DFDE002001CF /* iksemel.framework */ = {
+		D3DEC8A40A75DFDE002001CF /* iksemel */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D3DEC8A70A75DFDE002001CF /* Build configuration list for PBXNativeTarget "iksemel.framework" */;
+			buildConfigurationList = D3DEC8A70A75DFDE002001CF /* Build configuration list for PBXNativeTarget "iksemel" */;
 			buildPhases = (
 				D3DEC8AA0A75DFF7002001CF /* ShellScript */,
 				D3DEC8A00A75DFDE002001CF /* Headers */,
@@ -2528,14 +2716,14 @@
 			);
 			dependencies = (
 			);
-			name = iksemel.framework;
+			name = iksemel;
 			productName = iksemel;
 			productReference = D3DEC8A50A75DFDE002001CF /* iksemel.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D3DEC8E60A75E19F002001CF /* dingaling.framework */ = {
+		D3DEC8E60A75E19F002001CF /* dingaling */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D3DEC8E90A75E1A0002001CF /* Build configuration list for PBXNativeTarget "dingaling.framework" */;
+			buildConfigurationList = D3DEC8E90A75E1A0002001CF /* Build configuration list for PBXNativeTarget "dingaling" */;
 			buildPhases = (
 				D3DEC8E20A75E19F002001CF /* Headers */,
 				D3DEC8E40A75E19F002001CF /* Sources */,
@@ -2545,7 +2733,7 @@
 			);
 			dependencies = (
 			);
-			name = dingaling.framework;
+			name = dingaling;
 			productName = dingaling;
 			productReference = D3DEC8E70A75E19F002001CF /* dingaling.framework */;
 			productType = "com.apple.product-type.framework";
@@ -2561,17 +2749,21 @@
 			projectDirPath = "";
 			targets = (
 				D3DEC8130A75D8C8002001CF /* FreeSWITCH */,
-				D3DEC21C0A75CB06002001CF /* apr.framework */,
-				D3DEC6CE0A75D4E9002001CF /* aprutil.framework */,
-				D3DEC8300A75DA10002001CF /* teletone.framework */,
-				D3DEC8A40A75DFDE002001CF /* iksemel.framework */,
-				D3DEC8E60A75E19F002001CF /* dingaling.framework */,
-				D37670C40A75ECD400ACC1FB /* sqlite.framework */,
-				D37671640A75F0DC00ACC1FB /* freeswitch.framework */,
+				D3DEC21C0A75CB06002001CF /* apr */,
+				D3DEC6CE0A75D4E9002001CF /* aprutil */,
+				D3DEC8300A75DA10002001CF /* teletone */,
+				D3DEC8A40A75DFDE002001CF /* iksemel */,
+				D3DEC8E60A75E19F002001CF /* dingaling */,
+				D37670C40A75ECD400ACC1FB /* sqlite */,
+				D37671640A75F0DC00ACC1FB /* libfreeswitch */,
 				D38DD4400A7687A700FEDB19 /* freeswitch */,
-				D38DD4DE0A768AC500FEDB19 /* srtp.framework */,
-				D38DD5250A768B6100FEDB19 /* resample.framework */,
-				D38DD53F0A768C0900FEDB19 /* speakup.framework */,
+				D38DD4DE0A768AC500FEDB19 /* srtp */,
+				D38DD5250A768B6100FEDB19 /* resample */,
+				D38DD53F0A768C0900FEDB19 /* speakup */,
+				D3BC31D20A769AE100DE971E /* Modules */,
+				D3BC31D50A769AED00DE971E /* mod_echo */,
+				D3BC325E0A769CA700DE971E /* mod_dingaling */,
+				D3BC32820A769E0500DE971E /* mod_playback */,
 			);
 		};
 /* End PBXProject section */
@@ -2780,6 +2972,30 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3BC31D30A769AED00DE971E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3BC31E10A769B3600DE971E /* mod_echo.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3BC325C0A769CA700DE971E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3BC32650A769D4C00DE971E /* mod_dingaling.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3BC32800A769E0500DE971E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3BC32840A769E1E00DE971E /* mod_playback.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3DEC21A0A75CB06002001CF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2937,27 +3153,27 @@
 /* Begin PBXTargetDependency section */
 		D37671520A75F04700ACC1FB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D37670C40A75ECD400ACC1FB /* sqlite.framework */;
+			target = D37670C40A75ECD400ACC1FB /* sqlite */;
 			targetProxy = D37671510A75F04700ACC1FB /* PBXContainerItemProxy */;
 		};
 		D38DD53A0A768BF700FEDB19 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D38DD5250A768B6100FEDB19 /* resample.framework */;
+			target = D38DD5250A768B6100FEDB19 /* resample */;
 			targetProxy = D38DD5390A768BF700FEDB19 /* PBXContainerItemProxy */;
 		};
 		D38DD5490A768C5700FEDB19 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D38DD53F0A768C0900FEDB19 /* speakup.framework */;
+			target = D38DD53F0A768C0900FEDB19 /* speakup */;
 			targetProxy = D38DD5480A768C5700FEDB19 /* PBXContainerItemProxy */;
 		};
 		D38DD54B0A768C6E00FEDB19 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D37671640A75F0DC00ACC1FB /* freeswitch.framework */;
+			target = D37671640A75F0DC00ACC1FB /* libfreeswitch */;
 			targetProxy = D38DD54A0A768C6E00FEDB19 /* PBXContainerItemProxy */;
 		};
 		D38DD54D0A768C7400FEDB19 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D38DD4DE0A768AC500FEDB19 /* srtp.framework */;
+			target = D38DD4DE0A768AC500FEDB19 /* srtp */;
 			targetProxy = D38DD54C0A768C7400FEDB19 /* PBXContainerItemProxy */;
 		};
 		D38DD5750A768D9C00FEDB19 /* PBXTargetDependency */ = {
@@ -2965,30 +3181,45 @@
 			target = D38DD4400A7687A700FEDB19 /* freeswitch */;
 			targetProxy = D38DD5740A768D9C00FEDB19 /* PBXContainerItemProxy */;
 		};
+		D3BC32530A769C1500DE971E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3BC31D50A769AED00DE971E /* mod_echo */;
+			targetProxy = D3BC32520A769C1500DE971E /* PBXContainerItemProxy */;
+		};
+		D3BC32550A769C2E00DE971E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3BC31D20A769AE100DE971E /* Modules */;
+			targetProxy = D3BC32540A769C2E00DE971E /* PBXContainerItemProxy */;
+		};
+		D3BC32670A769D6100DE971E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3BC325E0A769CA700DE971E /* mod_dingaling */;
+			targetProxy = D3BC32660A769D6100DE971E /* PBXContainerItemProxy */;
+		};
+		D3BC32730A769D9900DE971E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC8E60A75E19F002001CF /* dingaling */;
+			targetProxy = D3BC32720A769D9900DE971E /* PBXContainerItemProxy */;
+		};
+		D3BC32750A769D9C00DE971E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC8A40A75DFDE002001CF /* iksemel */;
+			targetProxy = D3BC32740A769D9C00DE971E /* PBXContainerItemProxy */;
+		};
 		D3DEC8150A75D8D3002001CF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D3DEC21C0A75CB06002001CF /* apr.framework */;
+			target = D3DEC21C0A75CB06002001CF /* apr */;
 			targetProxy = D3DEC8140A75D8D3002001CF /* PBXContainerItemProxy */;
 		};
 		D3DEC8170A75D8D6002001CF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D3DEC6CE0A75D4E9002001CF /* aprutil.framework */;
+			target = D3DEC6CE0A75D4E9002001CF /* aprutil */;
 			targetProxy = D3DEC8160A75D8D6002001CF /* PBXContainerItemProxy */;
 		};
 		D3DEC8450A75DAC1002001CF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D3DEC8300A75DA10002001CF /* teletone.framework */;
+			target = D3DEC8300A75DA10002001CF /* teletone */;
 			targetProxy = D3DEC8440A75DAC1002001CF /* PBXContainerItemProxy */;
-		};
-		D3DEC8E00A75E17C002001CF /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D3DEC8A40A75DFDE002001CF /* iksemel.framework */;
-			targetProxy = D3DEC8DF0A75E17C002001CF /* PBXContainerItemProxy */;
-		};
-		D3DECA3A0A75E43C002001CF /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D3DEC8E60A75E19F002001CF /* dingaling.framework */;
-			targetProxy = D3DECA390A75E43C002001CF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -3128,6 +3359,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = libfreeswitch.plist;
 				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				MACH_O_TYPE = mh_dylib;
 				OTHER_CFLAGS = (
 					"-DHAVE_CONFIG_H",
 					"-I.",
@@ -3349,6 +3581,160 @@
 				INSTALL_PATH = "$(HOME)/Library/Frameworks";
 				PREBINDING = NO;
 				PRODUCT_NAME = speakup;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3BC31D90A769B0800DE971E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = Modules;
+			};
+			name = Debug;
+		};
+		D3BC31DA0A769B0800DE971E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = Modules;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3BC31DC0A769B0800DE971E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_echo;
+			};
+			name = Debug;
+		};
+		D3BC31DD0A769B0800DE971E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_echo;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3BC32620A769D2B00DE971E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_dingaling;
+			};
+			name = Debug;
+		};
+		D3BC32630A769D2B00DE971E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_dingaling;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3BC32950A769E2F00DE971E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_playback;
+			};
+			name = Debug;
+		};
+		D3BC32960A769E2F00DE971E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_playback;
 				ZERO_LINK = NO;
 			};
 			name = Release;
@@ -3646,7 +4032,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D37670C70A75ECD500ACC1FB /* Build configuration list for PBXNativeTarget "sqlite.framework" */ = {
+		D37670C70A75ECD500ACC1FB /* Build configuration list for PBXNativeTarget "sqlite" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D37670C80A75ECD500ACC1FB /* Debug */,
@@ -3655,7 +4041,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D37671670A75F0DC00ACC1FB /* Build configuration list for PBXNativeTarget "freeswitch.framework" */ = {
+		D37671670A75F0DC00ACC1FB /* Build configuration list for PBXNativeTarget "libfreeswitch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D37671680A75F0DC00ACC1FB /* Debug */,
@@ -3673,7 +4059,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D38DD4E10A768AC500FEDB19 /* Build configuration list for PBXNativeTarget "srtp.framework" */ = {
+		D38DD4E10A768AC500FEDB19 /* Build configuration list for PBXNativeTarget "srtp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D38DD4E20A768AC500FEDB19 /* Debug */,
@@ -3682,7 +4068,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D38DD5280A768B6200FEDB19 /* Build configuration list for PBXNativeTarget "resample.framework" */ = {
+		D38DD5280A768B6200FEDB19 /* Build configuration list for PBXNativeTarget "resample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D38DD5290A768B6200FEDB19 /* Debug */,
@@ -3691,7 +4077,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D38DD5420A768C0900FEDB19 /* Build configuration list for PBXNativeTarget "speakup.framework" */ = {
+		D38DD5420A768C0900FEDB19 /* Build configuration list for PBXNativeTarget "speakup" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D38DD5430A768C0900FEDB19 /* Debug */,
@@ -3700,7 +4086,43 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D3DEC21F0A75CB06002001CF /* Build configuration list for PBXNativeTarget "apr.framework" */ = {
+		D3BC31D80A769B0800DE971E /* Build configuration list for PBXAggregateTarget "Modules" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3BC31D90A769B0800DE971E /* Debug */,
+				D3BC31DA0A769B0800DE971E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3BC31DB0A769B0800DE971E /* Build configuration list for PBXNativeTarget "mod_echo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3BC31DC0A769B0800DE971E /* Debug */,
+				D3BC31DD0A769B0800DE971E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3BC32610A769D2B00DE971E /* Build configuration list for PBXNativeTarget "mod_dingaling" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3BC32620A769D2B00DE971E /* Debug */,
+				D3BC32630A769D2B00DE971E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3BC32940A769E2F00DE971E /* Build configuration list for PBXNativeTarget "mod_playback" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3BC32950A769E2F00DE971E /* Debug */,
+				D3BC32960A769E2F00DE971E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3DEC21F0A75CB06002001CF /* Build configuration list for PBXNativeTarget "apr" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3DEC2200A75CB06002001CF /* Debug */,
@@ -3709,7 +4131,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D3DEC6D10A75D4EA002001CF /* Build configuration list for PBXNativeTarget "aprutil.framework" */ = {
+		D3DEC6D10A75D4EA002001CF /* Build configuration list for PBXNativeTarget "aprutil" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3DEC6D20A75D4EA002001CF /* Debug */,
@@ -3727,7 +4149,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D3DEC8330A75DA10002001CF /* Build configuration list for PBXNativeTarget "teletone.framework" */ = {
+		D3DEC8330A75DA10002001CF /* Build configuration list for PBXNativeTarget "teletone" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3DEC8340A75DA10002001CF /* Debug */,
@@ -3736,7 +4158,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D3DEC8A70A75DFDE002001CF /* Build configuration list for PBXNativeTarget "iksemel.framework" */ = {
+		D3DEC8A70A75DFDE002001CF /* Build configuration list for PBXNativeTarget "iksemel" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3DEC8A80A75DFDE002001CF /* Debug */,
@@ -3745,7 +4167,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D3DEC8E90A75E1A0002001CF /* Build configuration list for PBXNativeTarget "dingaling.framework" */ = {
+		D3DEC8E90A75E1A0002001CF /* Build configuration list for PBXNativeTarget "dingaling" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3DEC8EA0A75E1A0002001CF /* Debug */,
