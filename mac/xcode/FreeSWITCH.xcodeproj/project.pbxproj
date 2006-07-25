@@ -16,12 +16,13 @@
 				D3DEC8150A75D8D3002001CF /* PBXTargetDependency */,
 				D3DEC8170A75D8D6002001CF /* PBXTargetDependency */,
 				D3DEC8450A75DAC1002001CF /* PBXTargetDependency */,
-				D3DEC8840A75DE06002001CF /* PBXTargetDependency */,
-				D3DEC8960A75DEE1002001CF /* PBXTargetDependency */,
 				D3DEC8E00A75E17C002001CF /* PBXTargetDependency */,
+				D38DD53A0A768BF700FEDB19 /* PBXTargetDependency */,
 				D3DECA3A0A75E43C002001CF /* PBXTargetDependency */,
-				D3DECBC50A75E8BF002001CF /* PBXTargetDependency */,
 				D37671520A75F04700ACC1FB /* PBXTargetDependency */,
+				D38DD5490A768C5700FEDB19 /* PBXTargetDependency */,
+				D38DD54B0A768C6E00FEDB19 /* PBXTargetDependency */,
+				D38DD54D0A768C7400FEDB19 /* PBXTargetDependency */,
 			);
 			name = FreeSWITCH;
 			productName = FreeSWITCH;
@@ -47,7 +48,6 @@
 		D376712E0A75EF5200ACC1FB /* hash.c in Sources */ = {isa = PBXBuildFile; fileRef = D37670E10A75EE8300ACC1FB /* hash.c */; };
 		D376712F0A75EF5200ACC1FB /* insert.c in Sources */ = {isa = PBXBuildFile; fileRef = D37670E30A75EE8300ACC1FB /* insert.c */; };
 		D37671300A75EF5200ACC1FB /* legacy.c in Sources */ = {isa = PBXBuildFile; fileRef = D37670E50A75EE8300ACC1FB /* legacy.c */; };
-		D37671310A75EF5200ACC1FB /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D37670E60A75EE8300ACC1FB /* main.c */; };
 		D37671320A75EF5200ACC1FB /* os.c in Sources */ = {isa = PBXBuildFile; fileRef = D37670EA0A75EE8300ACC1FB /* os.c */; };
 		D37671330A75EF5200ACC1FB /* os_unix.c in Sources */ = {isa = PBXBuildFile; fileRef = D37670E80A75EE8300ACC1FB /* os_unix.c */; };
 		D37671340A75EF5200ACC1FB /* os_win.c in Sources */ = {isa = PBXBuildFile; fileRef = D37670E90A75EE8300ACC1FB /* os_win.c */; };
@@ -70,6 +70,124 @@
 		D37671460A75EF5200ACC1FB /* vdbefifo.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671010A75EE8400ACC1FB /* vdbefifo.c */; };
 		D37671470A75EF5200ACC1FB /* vdbemem.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671030A75EE8400ACC1FB /* vdbemem.c */; };
 		D37671480A75EF5200ACC1FB /* where.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671040A75EE8400ACC1FB /* where.c */; };
+		D38DD2EB0A76831C00FEDB19 /* switch_buffer.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671850A75F14200ACC1FB /* switch_buffer.c */; };
+		D38DD2EC0A76831C00FEDB19 /* switch_caller.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671860A75F14200ACC1FB /* switch_caller.c */; };
+		D38DD2ED0A76831C00FEDB19 /* switch_channel.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671870A75F14200ACC1FB /* switch_channel.c */; };
+		D38DD2EE0A76831C00FEDB19 /* switch_config.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671880A75F14200ACC1FB /* switch_config.c */; };
+		D38DD2EF0A76831C00FEDB19 /* switch_console.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671890A75F14200ACC1FB /* switch_console.c */; };
+		D38DD2F00A76831C00FEDB19 /* switch_core.c in Sources */ = {isa = PBXBuildFile; fileRef = D376718A0A75F14200ACC1FB /* switch_core.c */; };
+		D38DD2F10A76831C00FEDB19 /* switch_event.c in Sources */ = {isa = PBXBuildFile; fileRef = D376718B0A75F14200ACC1FB /* switch_event.c */; };
+		D38DD2F20A76831C00FEDB19 /* switch_ivr.c in Sources */ = {isa = PBXBuildFile; fileRef = D376718C0A75F14200ACC1FB /* switch_ivr.c */; };
+		D38DD2F30A76831C00FEDB19 /* switch_loadable_module.c in Sources */ = {isa = PBXBuildFile; fileRef = D376718D0A75F14200ACC1FB /* switch_loadable_module.c */; };
+		D38DD2F40A76831C00FEDB19 /* switch_log.c in Sources */ = {isa = PBXBuildFile; fileRef = D376718E0A75F14200ACC1FB /* switch_log.c */; };
+		D38DD2F50A76831C00FEDB19 /* switch_resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D376718F0A75F14200ACC1FB /* switch_resample.c */; };
+		D38DD2F60A76831C00FEDB19 /* switch_rtp.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671900A75F14200ACC1FB /* switch_rtp.c */; };
+		D38DD2F70A76831C00FEDB19 /* switch_stun.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671910A75F14200ACC1FB /* switch_stun.c */; };
+		D38DD2F80A76831C00FEDB19 /* switch_utils.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671920A75F14200ACC1FB /* switch_utils.c */; };
+		D38DD2F90A76831C00FEDB19 /* switch_xml.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671930A75F14200ACC1FB /* switch_xml.c */; };
+		D38DD2FA0A76832800FEDB19 /* switch_am_config.h in Headers */ = {isa = PBXBuildFile; fileRef = D376716D0A75F12900ACC1FB /* switch_am_config.h */; };
+		D38DD2FB0A76832800FEDB19 /* switch_apr.h in Headers */ = {isa = PBXBuildFile; fileRef = D376716E0A75F12900ACC1FB /* switch_apr.h */; };
+		D38DD2FC0A76832800FEDB19 /* switch_buffer.h in Headers */ = {isa = PBXBuildFile; fileRef = D376716F0A75F12900ACC1FB /* switch_buffer.h */; };
+		D38DD2FD0A76832800FEDB19 /* switch_caller.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671700A75F12900ACC1FB /* switch_caller.h */; };
+		D38DD2FE0A76832800FEDB19 /* switch_channel.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671710A75F12900ACC1FB /* switch_channel.h */; };
+		D38DD2FF0A76832800FEDB19 /* switch_config.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671720A75F12900ACC1FB /* switch_config.h */; };
+		D38DD3000A76832800FEDB19 /* switch_console.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671730A75F12900ACC1FB /* switch_console.h */; };
+		D38DD3010A76832800FEDB19 /* switch_core.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671740A75F12900ACC1FB /* switch_core.h */; };
+		D38DD3020A76832800FEDB19 /* switch_event.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671750A75F12900ACC1FB /* switch_event.h */; };
+		D38DD3030A76832800FEDB19 /* switch_frame.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671760A75F12900ACC1FB /* switch_frame.h */; };
+		D38DD3040A76832800FEDB19 /* switch_ivr.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671770A75F12900ACC1FB /* switch_ivr.h */; };
+		D38DD3050A76832800FEDB19 /* switch_loadable_module.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671780A75F12900ACC1FB /* switch_loadable_module.h */; };
+		D38DD3060A76832800FEDB19 /* switch_log.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671790A75F12900ACC1FB /* switch_log.h */; };
+		D38DD3070A76832800FEDB19 /* switch_module_interfaces.h in Headers */ = {isa = PBXBuildFile; fileRef = D376717A0A75F12900ACC1FB /* switch_module_interfaces.h */; };
+		D38DD3080A76832800FEDB19 /* switch_platform.h in Headers */ = {isa = PBXBuildFile; fileRef = D376717B0A75F12900ACC1FB /* switch_platform.h */; };
+		D38DD3090A76832800FEDB19 /* switch_resample.h in Headers */ = {isa = PBXBuildFile; fileRef = D376717C0A75F12900ACC1FB /* switch_resample.h */; };
+		D38DD30A0A76832800FEDB19 /* switch_rtp.h in Headers */ = {isa = PBXBuildFile; fileRef = D376717D0A75F12900ACC1FB /* switch_rtp.h */; };
+		D38DD30B0A76832800FEDB19 /* switch_sqlite.h in Headers */ = {isa = PBXBuildFile; fileRef = D376717E0A75F12900ACC1FB /* switch_sqlite.h */; };
+		D38DD30C0A76832800FEDB19 /* switch_stun.h in Headers */ = {isa = PBXBuildFile; fileRef = D376717F0A75F12900ACC1FB /* switch_stun.h */; };
+		D38DD30D0A76832800FEDB19 /* switch_types.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671800A75F12900ACC1FB /* switch_types.h */; };
+		D38DD30E0A76832800FEDB19 /* switch_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671810A75F12900ACC1FB /* switch_utils.h */; };
+		D38DD30F0A76832800FEDB19 /* switch_version.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671820A75F12900ACC1FB /* switch_version.h */; };
+		D38DD3100A76832800FEDB19 /* switch_xml.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671830A75F12900ACC1FB /* switch_xml.h */; };
+		D38DD3110A76832800FEDB19 /* switch.h in Headers */ = {isa = PBXBuildFile; fileRef = D37671840A75F12900ACC1FB /* switch.h */; };
+		D38DD3140A76835B00FEDB19 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D38DD34A0A76835F00FEDB19 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D38DD36F0A76836200FEDB19 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D38DD3770A76836E00FEDB19 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D38DD4460A7687ED00FEDB19 /* switch.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671940A75F14200ACC1FB /* switch.c */; };
+		D38DD4470A76881500FEDB19 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D38DD4AB0A76883100FEDB19 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D38DD4AC0A76883100FEDB19 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D38DD4AD0A76883100FEDB19 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D38DD4B00A76883100FEDB19 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D38DD4B40A76889500FEDB19 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D37670E60A75EE8300ACC1FB /* main.c */; };
+		D38DD4E40A768AE000FEDB19 /* aes.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB5A0A75E76E002001CF /* aes.h */; };
+		D38DD4E50A768AE000FEDB19 /* aes_cbc.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB5B0A75E76E002001CF /* aes_cbc.h */; };
+		D38DD4E60A768AE000FEDB19 /* aes_icm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB5C0A75E76E002001CF /* aes_icm.h */; };
+		D38DD4E70A768AE000FEDB19 /* alloc.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB5D0A75E76E002001CF /* alloc.h */; };
+		D38DD4E80A768AE000FEDB19 /* auth.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB5E0A75E76E002001CF /* auth.h */; };
+		D38DD4E90A768AE000FEDB19 /* cipher.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB5F0A75E76E002001CF /* cipher.h */; };
+		D38DD4EA0A768AE000FEDB19 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB600A75E76E002001CF /* config.h */; };
+		D38DD4EB0A768AE000FEDB19 /* crypto.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB610A75E76E002001CF /* crypto.h */; };
+		D38DD4EC0A768AE000FEDB19 /* crypto_kernel.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB620A75E76E002001CF /* crypto_kernel.h */; };
+		D38DD4ED0A768AE000FEDB19 /* crypto_math.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB630A75E76E002001CF /* crypto_math.h */; };
+		D38DD4EE0A768AE000FEDB19 /* crypto_types.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB640A75E76E002001CF /* crypto_types.h */; };
+		D38DD4EF0A768AE000FEDB19 /* cryptoalg.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB650A75E76E002001CF /* cryptoalg.h */; };
+		D38DD4F00A768AE000FEDB19 /* datatypes.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB660A75E76E002001CF /* datatypes.h */; };
+		D38DD4F10A768AE000FEDB19 /* err.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB670A75E76E002001CF /* err.h */; };
+		D38DD4F20A768AE000FEDB19 /* gf2_8.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB680A75E76E002001CF /* gf2_8.h */; };
+		D38DD4F30A768AE000FEDB19 /* hmac.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB690A75E76E002001CF /* hmac.h */; };
+		D38DD4F40A768AE000FEDB19 /* integers.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB6A0A75E76E002001CF /* integers.h */; };
+		D38DD4F50A768AE000FEDB19 /* kernel_compat.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB6B0A75E76E002001CF /* kernel_compat.h */; };
+		D38DD4F60A768AE000FEDB19 /* key.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB6C0A75E76E002001CF /* key.h */; };
+		D38DD4F70A768AE000FEDB19 /* null_auth.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB6D0A75E76E002001CF /* null_auth.h */; };
+		D38DD4F80A768AE000FEDB19 /* null_cipher.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB6E0A75E76E002001CF /* null_cipher.h */; };
+		D38DD4F90A768AE000FEDB19 /* prng.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB6F0A75E76E002001CF /* prng.h */; };
+		D38DD4FA0A768AE000FEDB19 /* rand_source.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB700A75E76E002001CF /* rand_source.h */; };
+		D38DD4FB0A768AE000FEDB19 /* rdb.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB710A75E76E002001CF /* rdb.h */; };
+		D38DD4FC0A768AE000FEDB19 /* rdbx.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB720A75E76E002001CF /* rdbx.h */; };
+		D38DD4FD0A768AE000FEDB19 /* rtp.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECA590A75E664002001CF /* rtp.h */; };
+		D38DD4FE0A768AE000FEDB19 /* sha1.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB730A75E76E002001CF /* sha1.h */; };
+		D38DD4FF0A768AE000FEDB19 /* srtp.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECA5A0A75E664002001CF /* srtp.h */; };
+		D38DD5000A768AE000FEDB19 /* stat.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB740A75E76E002001CF /* stat.h */; };
+		D38DD5010A768AE000FEDB19 /* xfm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DECB750A75E76E002001CF /* xfm.h */; };
+		D38DD5030A768AF200FEDB19 /* aes.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB460A75E76E002001CF /* aes.c */; };
+		D38DD5040A768AF200FEDB19 /* aes_cbc.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB480A75E76E002001CF /* aes_cbc.c */; };
+		D38DD5050A768AF200FEDB19 /* aes_icm.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB4A0A75E76E002001CF /* aes_icm.c */; };
+		D38DD5060A768AF200FEDB19 /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB770A75E76E002001CF /* alloc.c */; };
+		D38DD5070A768AF200FEDB19 /* auth.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB510A75E76E002001CF /* auth.c */; };
+		D38DD5080A768AF200FEDB19 /* cipher.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB4C0A75E76E002001CF /* cipher.c */; };
+		D38DD5090A768AF200FEDB19 /* crypto_kernel.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB790A75E76E002001CF /* crypto_kernel.c */; };
+		D38DD50A0A768AF200FEDB19 /* ctr_prng.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB900A75E76E002001CF /* ctr_prng.c */; };
+		D38DD50B0A768AF200FEDB19 /* err.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB7B0A75E76E002001CF /* err.c */; };
+		D38DD50C0A768AF200FEDB19 /* gf2_8.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB840A75E76E002001CF /* gf2_8.c */; };
+		D38DD50D0A768AF200FEDB19 /* hmac.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB530A75E76E002001CF /* hmac.c */; };
+		D38DD50E0A768AF200FEDB19 /* key.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB7D0A75E76E002001CF /* key.c */; };
+		D38DD50F0A768AF200FEDB19 /* math.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB850A75E76E002001CF /* math.c */; };
+		D38DD5100A768AF200FEDB19 /* null_auth.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB550A75E76E002001CF /* null_auth.c */; };
+		D38DD5110A768AF200FEDB19 /* null_cipher.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB4E0A75E76E002001CF /* null_cipher.c */; };
+		D38DD5120A768AF200FEDB19 /* prng.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB920A75E76E002001CF /* prng.c */; };
+		D38DD5130A768AF200FEDB19 /* rand_source.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB950A75E76E002001CF /* rand_source.c */; };
+		D38DD5140A768AF200FEDB19 /* rdb.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB890A75E76E002001CF /* rdb.c */; };
+		D38DD5150A768AF200FEDB19 /* rdbx.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB8B0A75E76E002001CF /* rdbx.c */; };
+		D38DD5160A768AF200FEDB19 /* sha1.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB570A75E76E002001CF /* sha1.c */; };
+		D38DD5170A768AF200FEDB19 /* srtp.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECA5D0A75E6EE002001CF /* srtp.c */; };
+		D38DD5180A768AF200FEDB19 /* stat.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB860A75E76E002001CF /* stat.c */; };
+		D38DD5190A768AF200FEDB19 /* xfm.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB440A75E76E002001CF /* xfm.c */; };
+		D38DD51F0A768B4700FEDB19 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D38DD52E0A768BA700FEDB19 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8730A75DD1A002001CF /* config.h */; };
+		D38DD52F0A768BA700FEDB19 /* configtemplate.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8740A75DD1A002001CF /* configtemplate.h */; };
+		D38DD5300A768BA700FEDB19 /* filterkit.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8750A75DD1A002001CF /* filterkit.h */; };
+		D38DD5310A768BA700FEDB19 /* resample_defs.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8760A75DD1A002001CF /* resample_defs.h */; };
+		D38DD5320A768BA700FEDB19 /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8720A75DCED002001CF /* libresample.h */; };
+		D38DD5330A768BAF00FEDB19 /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8770A75DD2F002001CF /* filterkit.c */; };
+		D38DD5340A768BAF00FEDB19 /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8780A75DD2F002001CF /* resample.c */; };
+		D38DD5350A768BAF00FEDB19 /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8790A75DD2F002001CF /* resamplesubs.c */; };
+		D38DD5450A768C3500FEDB19 /* jb_speakup.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC88B0A75DEAF002001CF /* jb_speakup.h */; };
+		D38DD5460A768C3800FEDB19 /* jb_speakup.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC88A0A75DEAF002001CF /* jb_speakup.c */; };
+		D38DD5540A768CB100FEDB19 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D38DD5590A768CC700FEDB19 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D38DD55A0A768CCB00FEDB19 /* speakup.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5400A768C0900FEDB19 /* speakup.framework */; };
+		D38DD55C0A768CD600FEDB19 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
 		D3DEC5F60A75D048002001CF /* apr_cpystrn.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5BB0A75CFB7002001CF /* apr_cpystrn.c */; };
 		D3DEC5F70A75D048002001CF /* apr_fnmatch.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5BC0A75CFB7002001CF /* apr_fnmatch.c */; };
 		D3DEC5F80A75D048002001CF /* apr_getpass.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5A00A75CFB7002001CF /* apr_getpass.c */; };
@@ -265,16 +383,6 @@
 		D3DEC83B0A75DA62002001CF /* libteletone.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8380A75DA62002001CF /* libteletone.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3DEC83E0A75DA75002001CF /* libteletone_detect.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC83C0A75DA75002001CF /* libteletone_detect.c */; };
 		D3DEC83F0A75DA75002001CF /* libteletone_generate.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC83D0A75DA75002001CF /* libteletone_generate.c */; };
-		D3DEC87A0A75DD3D002001CF /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8730A75DD1A002001CF /* config.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3DEC87B0A75DD3D002001CF /* configtemplate.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8740A75DD1A002001CF /* configtemplate.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3DEC87C0A75DD3D002001CF /* filterkit.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8750A75DD1A002001CF /* filterkit.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3DEC87D0A75DD3D002001CF /* resample_defs.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8760A75DD1A002001CF /* resample_defs.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3DEC87E0A75DD3D002001CF /* libresample.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8720A75DCED002001CF /* libresample.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		D3DEC87F0A75DD47002001CF /* filterkit.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8770A75DD2F002001CF /* filterkit.c */; };
-		D3DEC8800A75DD47002001CF /* resample.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8780A75DD2F002001CF /* resample.c */; };
-		D3DEC8810A75DD47002001CF /* resamplesubs.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC8790A75DD2F002001CF /* resamplesubs.c */; };
-		D3DEC8920A75DECF002001CF /* jb_speakup.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC88B0A75DEAF002001CF /* jb_speakup.h */; };
-		D3DEC8930A75DED2002001CF /* jb_speakup.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC88A0A75DEAF002001CF /* jb_speakup.c */; };
 		D3DEC8CC0A75E0F4002001CF /* common.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8C80A75E0F4002001CF /* common.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3DEC8CD0A75E0F4002001CF /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8C90A75E0F4002001CF /* config.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3DEC8CE0A75E0F4002001CF /* finetune.h in Headers */ = {isa = PBXBuildFile; fileRef = D3DEC8CA0A75E0F4002001CF /* finetune.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -297,26 +405,6 @@
 		D3DEC9D50A75E409002001CF /* iksemel.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8A50A75DFDE002001CF /* iksemel.framework */; };
 		D3DEC9DC0A75E424002001CF /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
 		D3DECA120A75E429002001CF /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
-		D3DECBAA0A75E798002001CF /* srtp.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECA5D0A75E6EE002001CF /* srtp.c */; };
-		D3DECBAB0A75E7A1002001CF /* cipher.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB4C0A75E76E002001CF /* cipher.c */; };
-		D3DECBAC0A75E7B6002001CF /* aes.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB460A75E76E002001CF /* aes.c */; };
-		D3DECBAD0A75E7B6002001CF /* aes_cbc.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB480A75E76E002001CF /* aes_cbc.c */; };
-		D3DECBAE0A75E7B6002001CF /* aes_icm.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB4A0A75E76E002001CF /* aes_icm.c */; };
-		D3DECBAF0A75E7B6002001CF /* null_cipher.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB4E0A75E76E002001CF /* null_cipher.c */; };
-		D3DECBB00A75E7C9002001CF /* auth.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB510A75E76E002001CF /* auth.c */; };
-		D3DECBB10A75E7C9002001CF /* hmac.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB530A75E76E002001CF /* hmac.c */; };
-		D3DECBB20A75E7C9002001CF /* null_auth.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB550A75E76E002001CF /* null_auth.c */; };
-		D3DECBB30A75E7C9002001CF /* sha1.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB570A75E76E002001CF /* sha1.c */; };
-		D3DECBB40A75E7DD002001CF /* datatypes.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB820A75E76E002001CF /* datatypes.c */; };
-		D3DECBB50A75E7DD002001CF /* stat.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB860A75E76E002001CF /* stat.c */; };
-		D3DECBB60A75E7EC002001CF /* alloc.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB770A75E76E002001CF /* alloc.c */; };
-		D3DECBB70A75E7EC002001CF /* key.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB7D0A75E76E002001CF /* key.c */; };
-		D3DECBB80A75E808002001CF /* ctr_prng.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB900A75E76E002001CF /* ctr_prng.c */; };
-		D3DECBB90A75E808002001CF /* prng.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB920A75E76E002001CF /* prng.c */; };
-		D3DECBBA0A75E811002001CF /* err.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB7B0A75E76E002001CF /* err.c */; };
-		D3DECBBB0A75E81B002001CF /* rdb.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB890A75E76E002001CF /* rdb.c */; };
-		D3DECBBC0A75E81B002001CF /* rdbx.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB8B0A75E76E002001CF /* rdbx.c */; };
-		D3DECBBD0A75E81B002001CF /* ut_sim.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DECB8D0A75E76E002001CF /* ut_sim.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -326,6 +414,34 @@
 			proxyType = 1;
 			remoteGlobalIDString = D37670C40A75ECD400ACC1FB;
 			remoteInfo = sqlite.framework;
+		};
+		D38DD5390A768BF700FEDB19 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D38DD5250A768B6100FEDB19 /* resample.framework */;
+			remoteInfo = resample.framework;
+		};
+		D38DD5480A768C5700FEDB19 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D38DD53F0A768C0900FEDB19 /* speakup.framework */;
+			remoteInfo = speakup.framework;
+		};
+		D38DD54A0A768C6E00FEDB19 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D37671640A75F0DC00ACC1FB /* freeswitch.framework */;
+			remoteInfo = freeswitch.framework;
+		};
+		D38DD54C0A768C7400FEDB19 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D38DD4DE0A768AC500FEDB19 /* srtp.framework */;
+			remoteInfo = srtp.framework;
 		};
 		D3DEC8140A75D8D3002001CF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -348,20 +464,6 @@
 			remoteGlobalIDString = D3DEC8300A75DA10002001CF;
 			remoteInfo = teletone.framework;
 		};
-		D3DEC8830A75DE06002001CF /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D3DEC8610A75DC09002001CF;
-			remoteInfo = libresample;
-		};
-		D3DEC8950A75DEE1002001CF /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D3DEC8900A75DEC7002001CF;
-			remoteInfo = libspeakup;
-		};
 		D3DEC8DF0A75E17C002001CF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
@@ -375,13 +477,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = D3DEC8E60A75E19F002001CF;
 			remoteInfo = dingaling.framework;
-		};
-		D3DECBC40A75E8BF002001CF /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D3DECA510A75E603002001CF;
-			remoteInfo = libsrtp;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -486,6 +581,13 @@
 		D37671920A75F14200ACC1FB /* switch_utils.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_utils.c; path = ../../src/switch_utils.c; sourceTree = SOURCE_ROOT; };
 		D37671930A75F14200ACC1FB /* switch_xml.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_xml.c; path = ../../src/switch_xml.c; sourceTree = SOURCE_ROOT; };
 		D37671940A75F14200ACC1FB /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = ../../src/switch.c; sourceTree = SOURCE_ROOT; };
+		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; name = freeswitch; path = build/Release/freeswitch; sourceTree = "<group>"; };
+		D38DD4DF0A768AC500FEDB19 /* srtp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = srtp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D38DD4E00A768AC500FEDB19 /* srtp.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = srtp.plist; sourceTree = "<group>"; };
+		D38DD5260A768B6100FEDB19 /* resample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = resample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D38DD5270A768B6100FEDB19 /* resample.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = resample.plist; sourceTree = "<group>"; };
+		D38DD5400A768C0900FEDB19 /* speakup.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = speakup.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D38DD5410A768C0900FEDB19 /* speakup.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = speakup.plist; sourceTree = "<group>"; };
 		D3DEC21D0A75CB06002001CF /* apr.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = apr.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3DEC21E0A75CB06002001CF /* apr.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = apr.plist; sourceTree = "<group>"; };
 		D3DEC48D0A75CF62002001CF /* apr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr.h; sourceTree = "<group>"; };
@@ -694,7 +796,6 @@
 		D3DEC8380A75DA62002001CF /* libteletone.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libteletone.h; path = ../../libs/libteletone/src/libteletone.h; sourceTree = SOURCE_ROOT; };
 		D3DEC83C0A75DA75002001CF /* libteletone_detect.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = libteletone_detect.c; path = ../../libs/libteletone/src/libteletone_detect.c; sourceTree = SOURCE_ROOT; };
 		D3DEC83D0A75DA75002001CF /* libteletone_generate.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = libteletone_generate.c; path = ../../libs/libteletone/src/libteletone_generate.c; sourceTree = SOURCE_ROOT; };
-		D3DEC8620A75DC09002001CF /* libresample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libresample.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3DEC8720A75DCED002001CF /* libresample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libresample.h; path = "../../libs/libresample-0.1.3/include/libresample.h"; sourceTree = SOURCE_ROOT; };
 		D3DEC8730A75DD1A002001CF /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = config.h; path = "../../libs/libresample-0.1.3/src/config.h"; sourceTree = SOURCE_ROOT; };
 		D3DEC8740A75DD1A002001CF /* configtemplate.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = configtemplate.h; path = "../../libs/libresample-0.1.3/src/configtemplate.h"; sourceTree = SOURCE_ROOT; };
@@ -705,7 +806,6 @@
 		D3DEC8790A75DD2F002001CF /* resamplesubs.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = resamplesubs.c; path = "../../libs/libresample-0.1.3/src/resamplesubs.c"; sourceTree = SOURCE_ROOT; };
 		D3DEC88A0A75DEAF002001CF /* jb_speakup.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = jb_speakup.c; path = ../../libs/libspeakup/src/jb_speakup.c; sourceTree = SOURCE_ROOT; };
 		D3DEC88B0A75DEAF002001CF /* jb_speakup.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = jb_speakup.h; path = ../../libs/libspeakup/src/jb_speakup.h; sourceTree = SOURCE_ROOT; };
-		D3DEC8910A75DEC7002001CF /* libspeakup.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libspeakup.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3DEC8A50A75DFDE002001CF /* iksemel.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = iksemel.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3DEC8A60A75DFDE002001CF /* iksemel.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = iksemel.plist; sourceTree = "<group>"; };
 		D3DEC8B90A75E0C9002001CF /* base64.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = base64.c; path = "../../libs/iksemel-1.2/src/base64.c"; sourceTree = SOURCE_ROOT; };
@@ -729,10 +829,8 @@
 		D3DEC8F20A75E20A002001CF /* ldl_compat.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = ldl_compat.h; path = ../../libs/libdingaling/src/ldl_compat.h; sourceTree = SOURCE_ROOT; };
 		D3DEC8F30A75E20A002001CF /* libdingaling.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = libdingaling.c; path = ../../libs/libdingaling/src/libdingaling.c; sourceTree = SOURCE_ROOT; };
 		D3DEC8F40A75E20A002001CF /* libdingaling.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libdingaling.h; path = ../../libs/libdingaling/src/libdingaling.h; sourceTree = SOURCE_ROOT; };
-		D3DECA520A75E603002001CF /* libsrtp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libsrtp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3DECA590A75E664002001CF /* rtp.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = rtp.h; path = ../../libs/srtp/include/rtp.h; sourceTree = SOURCE_ROOT; };
 		D3DECA5A0A75E664002001CF /* srtp.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = srtp.h; path = ../../libs/srtp/include/srtp.h; sourceTree = SOURCE_ROOT; };
-		D3DECA5B0A75E664002001CF /* ut_sim.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = ut_sim.h; path = ../../libs/srtp/include/ut_sim.h; sourceTree = SOURCE_ROOT; };
 		D3DECA5D0A75E6EE002001CF /* srtp.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = srtp.c; path = ../../libs/srtp/srtp/srtp.c; sourceTree = SOURCE_ROOT; };
 		D3DECB440A75E76E002001CF /* xfm.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = xfm.c; sourceTree = "<group>"; };
 		D3DECB460A75E76E002001CF /* aes.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = aes.c; sourceTree = "<group>"; };
@@ -782,7 +880,6 @@
 		D3DECB860A75E76E002001CF /* stat.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = stat.c; sourceTree = "<group>"; };
 		D3DECB890A75E76E002001CF /* rdb.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = rdb.c; sourceTree = "<group>"; };
 		D3DECB8B0A75E76E002001CF /* rdbx.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = rdbx.c; sourceTree = "<group>"; };
-		D3DECB8D0A75E76E002001CF /* ut_sim.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = ut_sim.c; sourceTree = "<group>"; };
 		D3DECB900A75E76E002001CF /* ctr_prng.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = ctr_prng.c; sourceTree = "<group>"; };
 		D3DECB920A75E76E002001CF /* prng.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = prng.c; sourceTree = "<group>"; };
 		D3DECB940A75E76E002001CF /* rand_linux_kernel.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = rand_linux_kernel.c; sourceTree = "<group>"; };
@@ -810,6 +907,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D38DD5540A768CB100FEDB19 /* resample.framework in Frameworks */,
+				D38DD51F0A768B4700FEDB19 /* srtp.framework in Frameworks */,
+				D38DD3770A76836E00FEDB19 /* sqlite.framework in Frameworks */,
+				D38DD36F0A76836200FEDB19 /* teletone.framework in Frameworks */,
+				D38DD34A0A76835F00FEDB19 /* aprutil.framework in Frameworks */,
+				D38DD3140A76835B00FEDB19 /* apr.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D38DD43F0A7687A700FEDB19 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D38DD55C0A768CD600FEDB19 /* srtp.framework in Frameworks */,
+				D38DD55A0A768CCB00FEDB19 /* speakup.framework in Frameworks */,
+				D38DD5590A768CC700FEDB19 /* resample.framework in Frameworks */,
+				D38DD4AB0A76883100FEDB19 /* apr.framework in Frameworks */,
+				D38DD4AC0A76883100FEDB19 /* aprutil.framework in Frameworks */,
+				D38DD4AD0A76883100FEDB19 /* teletone.framework in Frameworks */,
+				D38DD4B00A76883100FEDB19 /* sqlite.framework in Frameworks */,
+				D38DD4470A76881500FEDB19 /* libfreeswitch.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -828,13 +946,6 @@
 				D3DECA120A75E429002001CF /* aprutil.framework in Frameworks */,
 				D3DEC9DC0A75E424002001CF /* apr.framework in Frameworks */,
 				D3DEC9D50A75E409002001CF /* iksemel.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D3DECA500A75E603002001CF /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -874,19 +985,23 @@
 				D3DEC8320A75DA10002001CF /* teletone.plist */,
 				D3DEC6D00A75D4E9002001CF /* aprutil.plist */,
 				D3DEC8E80A75E19F002001CF /* dingaling.plist */,
+				D38DD5410A768C0900FEDB19 /* speakup.plist */,
 				D37671660A75F0DC00ACC1FB /* libfreeswitch.plist */,
 				D3DEC21E0A75CB06002001CF /* apr.plist */,
 				D37670C60A75ECD400ACC1FB /* sqlite.plist */,
+				D38DD4E00A768AC500FEDB19 /* srtp.plist */,
+				D38DD5270A768B6100FEDB19 /* resample.plist */,
 				D3DEC21D0A75CB06002001CF /* apr.framework */,
 				D3DEC6CF0A75D4E9002001CF /* aprutil.framework */,
 				D3DEC8310A75DA10002001CF /* teletone.framework */,
-				D3DEC8620A75DC09002001CF /* libresample.a */,
-				D3DEC8910A75DEC7002001CF /* libspeakup.a */,
 				D3DEC8E70A75E19F002001CF /* dingaling.framework */,
 				D3DEC8A50A75DFDE002001CF /* iksemel.framework */,
-				D3DECA520A75E603002001CF /* libsrtp.a */,
 				D37670C50A75ECD400ACC1FB /* sqlite.framework */,
 				D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */,
+				D38DD4410A7687A700FEDB19 /* freeswitch */,
+				D38DD4DF0A768AC500FEDB19 /* srtp.framework */,
+				D38DD5260A768B6100FEDB19 /* resample.framework */,
+				D38DD5400A768C0900FEDB19 /* speakup.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1863,7 +1978,6 @@
 			children = (
 				D3DECA590A75E664002001CF /* rtp.h */,
 				D3DECA5A0A75E664002001CF /* srtp.h */,
-				D3DECA5B0A75E664002001CF /* ut_sim.h */,
 			);
 			name = include;
 			sourceTree = "<group>";
@@ -1978,7 +2092,6 @@
 			children = (
 				D3DECB890A75E76E002001CF /* rdb.c */,
 				D3DECB8B0A75E76E002001CF /* rdbx.c */,
-				D3DECB8D0A75E76E002001CF /* ut_sim.c */,
 			);
 			path = replay;
 			sourceTree = "<group>";
@@ -2025,6 +2138,87 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D38DD2FA0A76832800FEDB19 /* switch_am_config.h in Headers */,
+				D38DD2FB0A76832800FEDB19 /* switch_apr.h in Headers */,
+				D38DD2FC0A76832800FEDB19 /* switch_buffer.h in Headers */,
+				D38DD2FD0A76832800FEDB19 /* switch_caller.h in Headers */,
+				D38DD2FE0A76832800FEDB19 /* switch_channel.h in Headers */,
+				D38DD2FF0A76832800FEDB19 /* switch_config.h in Headers */,
+				D38DD3000A76832800FEDB19 /* switch_console.h in Headers */,
+				D38DD3010A76832800FEDB19 /* switch_core.h in Headers */,
+				D38DD3020A76832800FEDB19 /* switch_event.h in Headers */,
+				D38DD3030A76832800FEDB19 /* switch_frame.h in Headers */,
+				D38DD3040A76832800FEDB19 /* switch_ivr.h in Headers */,
+				D38DD3050A76832800FEDB19 /* switch_loadable_module.h in Headers */,
+				D38DD3060A76832800FEDB19 /* switch_log.h in Headers */,
+				D38DD3070A76832800FEDB19 /* switch_module_interfaces.h in Headers */,
+				D38DD3080A76832800FEDB19 /* switch_platform.h in Headers */,
+				D38DD3090A76832800FEDB19 /* switch_resample.h in Headers */,
+				D38DD30A0A76832800FEDB19 /* switch_rtp.h in Headers */,
+				D38DD30B0A76832800FEDB19 /* switch_sqlite.h in Headers */,
+				D38DD30C0A76832800FEDB19 /* switch_stun.h in Headers */,
+				D38DD30D0A76832800FEDB19 /* switch_types.h in Headers */,
+				D38DD30E0A76832800FEDB19 /* switch_utils.h in Headers */,
+				D38DD30F0A76832800FEDB19 /* switch_version.h in Headers */,
+				D38DD3100A76832800FEDB19 /* switch_xml.h in Headers */,
+				D38DD3110A76832800FEDB19 /* switch.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D38DD4DA0A768AC500FEDB19 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D38DD4E40A768AE000FEDB19 /* aes.h in Headers */,
+				D38DD4E50A768AE000FEDB19 /* aes_cbc.h in Headers */,
+				D38DD4E60A768AE000FEDB19 /* aes_icm.h in Headers */,
+				D38DD4E70A768AE000FEDB19 /* alloc.h in Headers */,
+				D38DD4E80A768AE000FEDB19 /* auth.h in Headers */,
+				D38DD4E90A768AE000FEDB19 /* cipher.h in Headers */,
+				D38DD4EA0A768AE000FEDB19 /* config.h in Headers */,
+				D38DD4EB0A768AE000FEDB19 /* crypto.h in Headers */,
+				D38DD4EC0A768AE000FEDB19 /* crypto_kernel.h in Headers */,
+				D38DD4ED0A768AE000FEDB19 /* crypto_math.h in Headers */,
+				D38DD4EE0A768AE000FEDB19 /* crypto_types.h in Headers */,
+				D38DD4EF0A768AE000FEDB19 /* cryptoalg.h in Headers */,
+				D38DD4F00A768AE000FEDB19 /* datatypes.h in Headers */,
+				D38DD4F10A768AE000FEDB19 /* err.h in Headers */,
+				D38DD4F20A768AE000FEDB19 /* gf2_8.h in Headers */,
+				D38DD4F30A768AE000FEDB19 /* hmac.h in Headers */,
+				D38DD4F40A768AE000FEDB19 /* integers.h in Headers */,
+				D38DD4F50A768AE000FEDB19 /* kernel_compat.h in Headers */,
+				D38DD4F60A768AE000FEDB19 /* key.h in Headers */,
+				D38DD4F70A768AE000FEDB19 /* null_auth.h in Headers */,
+				D38DD4F80A768AE000FEDB19 /* null_cipher.h in Headers */,
+				D38DD4F90A768AE000FEDB19 /* prng.h in Headers */,
+				D38DD4FA0A768AE000FEDB19 /* rand_source.h in Headers */,
+				D38DD4FB0A768AE000FEDB19 /* rdb.h in Headers */,
+				D38DD4FC0A768AE000FEDB19 /* rdbx.h in Headers */,
+				D38DD4FD0A768AE000FEDB19 /* rtp.h in Headers */,
+				D38DD4FE0A768AE000FEDB19 /* sha1.h in Headers */,
+				D38DD4FF0A768AE000FEDB19 /* srtp.h in Headers */,
+				D38DD5000A768AE000FEDB19 /* stat.h in Headers */,
+				D38DD5010A768AE000FEDB19 /* xfm.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D38DD5210A768B6100FEDB19 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D38DD52E0A768BA700FEDB19 /* config.h in Headers */,
+				D38DD52F0A768BA700FEDB19 /* configtemplate.h in Headers */,
+				D38DD5300A768BA700FEDB19 /* filterkit.h in Headers */,
+				D38DD5310A768BA700FEDB19 /* resample_defs.h in Headers */,
+				D38DD5320A768BA700FEDB19 /* libresample.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D38DD53B0A768C0900FEDB19 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D38DD5450A768C3500FEDB19 /* jb_speakup.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2139,26 +2333,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D3DEC85E0A75DC09002001CF /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D3DEC87A0A75DD3D002001CF /* config.h in Headers */,
-				D3DEC87B0A75DD3D002001CF /* configtemplate.h in Headers */,
-				D3DEC87C0A75DD3D002001CF /* filterkit.h in Headers */,
-				D3DEC87D0A75DD3D002001CF /* resample_defs.h in Headers */,
-				D3DEC87E0A75DD3D002001CF /* libresample.h in Headers */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D3DEC88D0A75DEC7002001CF /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D3DEC8920A75DECF002001CF /* jb_speakup.h in Headers */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D3DEC8A00A75DFDE002001CF /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -2176,13 +2350,6 @@
 			files = (
 				D3DEC8F50A75E217002001CF /* ldl_compat.h in Headers */,
 				D3DEC8F60A75E21A002001CF /* libdingaling.h in Headers */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D3DECA4E0A75E603002001CF /* Headers */ = {
-			isa = PBXHeadersBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2223,6 +2390,71 @@
 			name = freeswitch.framework;
 			productName = libfreeswitch;
 			productReference = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		D38DD4400A7687A700FEDB19 /* freeswitch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D38DD4430A7687C600FEDB19 /* Build configuration list for PBXNativeTarget "freeswitch" */;
+			buildPhases = (
+				D38DD43E0A7687A700FEDB19 /* Sources */,
+				D38DD43F0A7687A700FEDB19 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = freeswitch;
+			productName = freeswitch;
+			productReference = D38DD4410A7687A700FEDB19 /* freeswitch */;
+			productType = "com.apple.product-type.tool";
+		};
+		D38DD4DE0A768AC500FEDB19 /* srtp.framework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D38DD4E10A768AC500FEDB19 /* Build configuration list for PBXNativeTarget "srtp.framework" */;
+			buildPhases = (
+				D38DD4DA0A768AC500FEDB19 /* Headers */,
+				D38DD4DC0A768AC500FEDB19 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = srtp.framework;
+			productName = srtp;
+			productReference = D38DD4DF0A768AC500FEDB19 /* srtp.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		D38DD5250A768B6100FEDB19 /* resample.framework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D38DD5280A768B6200FEDB19 /* Build configuration list for PBXNativeTarget "resample.framework" */;
+			buildPhases = (
+				D38DD52B0A768B8C00FEDB19 /* ShellScript */,
+				D38DD5210A768B6100FEDB19 /* Headers */,
+				D38DD5230A768B6100FEDB19 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = resample.framework;
+			productName = resample;
+			productReference = D38DD5260A768B6100FEDB19 /* resample.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		D38DD53F0A768C0900FEDB19 /* speakup.framework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D38DD5420A768C0900FEDB19 /* Build configuration list for PBXNativeTarget "speakup.framework" */;
+			buildPhases = (
+				D38DD53B0A768C0900FEDB19 /* Headers */,
+				D38DD53D0A768C0900FEDB19 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = speakup.framework;
+			productName = speakup;
+			productReference = D38DD5400A768C0900FEDB19 /* speakup.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 		D3DEC21C0A75CB06002001CF /* apr.framework */ = {
@@ -2276,39 +2508,6 @@
 			productReference = D3DEC8310A75DA10002001CF /* teletone.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D3DEC8610A75DC09002001CF /* libresample */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D3DEC8690A75DC28002001CF /* Build configuration list for PBXNativeTarget "libresample" */;
-			buildPhases = (
-				D3DEC8630A75DC14002001CF /* ShellScript */,
-				D3DEC85E0A75DC09002001CF /* Headers */,
-				D3DEC85F0A75DC09002001CF /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = libresample;
-			productName = libresample;
-			productReference = D3DEC8620A75DC09002001CF /* libresample.a */;
-			productType = "com.apple.product-type.library.static";
-		};
-		D3DEC8900A75DEC7002001CF /* libspeakup */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D3DEC8990A75DEF0002001CF /* Build configuration list for PBXNativeTarget "libspeakup" */;
-			buildPhases = (
-				D3DEC88D0A75DEC7002001CF /* Headers */,
-				D3DEC88E0A75DEC7002001CF /* Sources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = libspeakup;
-			productName = libspeakup;
-			productReference = D3DEC8910A75DEC7002001CF /* libspeakup.a */;
-			productType = "com.apple.product-type.library.static";
-		};
 		D3DEC8A40A75DFDE002001CF /* iksemel.framework */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D3DEC8A70A75DFDE002001CF /* Build configuration list for PBXNativeTarget "iksemel.framework" */;
@@ -2343,23 +2542,6 @@
 			productReference = D3DEC8E70A75E19F002001CF /* dingaling.framework */;
 			productType = "com.apple.product-type.framework";
 		};
-		D3DECA510A75E603002001CF /* libsrtp */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = D3DECA540A75E615002001CF /* Build configuration list for PBXNativeTarget "libsrtp" */;
-			buildPhases = (
-				D3DECA4E0A75E603002001CF /* Headers */,
-				D3DECA4F0A75E603002001CF /* Sources */,
-				D3DECA500A75E603002001CF /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = libsrtp;
-			productName = libsrtp;
-			productReference = D3DECA520A75E603002001CF /* libsrtp.a */;
-			productType = "com.apple.product-type.library.static";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -2374,13 +2556,14 @@
 				D3DEC21C0A75CB06002001CF /* apr.framework */,
 				D3DEC6CE0A75D4E9002001CF /* aprutil.framework */,
 				D3DEC8300A75DA10002001CF /* teletone.framework */,
-				D3DEC8610A75DC09002001CF /* libresample */,
-				D3DEC8900A75DEC7002001CF /* libspeakup */,
 				D3DEC8A40A75DFDE002001CF /* iksemel.framework */,
 				D3DEC8E60A75E19F002001CF /* dingaling.framework */,
-				D3DECA510A75E603002001CF /* libsrtp */,
 				D37670C40A75ECD400ACC1FB /* sqlite.framework */,
 				D37671640A75F0DC00ACC1FB /* freeswitch.framework */,
+				D38DD4400A7687A700FEDB19 /* freeswitch */,
+				D38DD4DE0A768AC500FEDB19 /* srtp.framework */,
+				D38DD5250A768B6100FEDB19 /* resample.framework */,
+				D38DD53F0A768C0900FEDB19 /* speakup.framework */,
 			);
 		};
 /* End PBXProject section */
@@ -2409,6 +2592,19 @@
 			shellPath = /bin/bash;
 			shellScript = "if [ -e ../../libs/sqlite-$FREESWITCH_SQLITE_VERSION/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl $FREESWITCH_DOWNLOAD_URL/sqlite-$FREESWITCH_SQLITE_VERSION.tar.gz -o ../../libs/sqlite-$FREESWITCH_SQLITE_VERSION.tar.gz\ncd ../../libs\ntar zxfv sqlite-$FREESWITCH_SQLITE_VERSION.tar.gz\ncd sqlite-$FREESWITCH_SQLITE_VERSION\n./configure --disable-tcl --enable-threadsafe\nsed -e s/--VERS--/$FREESWITCH_SQLITE_VERSION/ ./src/sqlite.h.in | sed -e s/--VERSION-NUMBER--/$FREESWITCH_SQLITE_VERSION_B/ >sqlite3.h\nmake parse.c opcodes.c keywordhash.h\ncp parse.h src\ncp opcodes.h src\ncp keywordhash.h src\ntouch .complete\n";
 		};
+		D38DD52B0A768B8C00FEDB19 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ -e ../../libs/libresample-$FREESWITCH_RESAMPLE_VERSION.tgz/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl $FREESWITCH_DOWNLOAD_URL/libresample-$FREESWITCH_RESAMPLE_VERSION.tgz -o ../../libs/libresample-$FREESWITCH_RESAMPLE_VERSION.tgz\ncd ../../libs\ntar zxfv libresample-$FREESWITCH_RESAMPLE_VERSION.tgz\ncd libresample-$FREESWITCH_RESAMPLE_VERSION\ntouch .complete";
+		};
 		D3DEC2260A75CB62002001CF /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -2435,19 +2631,6 @@
 			shellPath = /bin/bash;
 			shellScript = "if [ -e ../../libs/apr-util-$FREESWITCH_APR_VERSION/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl $FREESWITCH_DOWNLOAD_URL/apr-util-$FREESWITCH_APR_VERSION.tar.gz -o ../../libs/apr-util-$FREESWITCH_APR_VERSION.tar.gz\ncd ../../libs\ntar zxfv apr-util-$FREESWITCH_APR_VERSION.tar.gz\ncd apr-util-$FREESWITCH_APR_VERSION\n./configure --with-apr=../apr-$FREESWITCH_APR_VERSION\ntouch .complete";
 		};
-		D3DEC8630A75DC14002001CF /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/bash;
-			shellScript = "if [ -e ../../libs/libresample-$FREESWITCH_RESAMPLE_VERSION.tgz/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl $FREESWITCH_DOWNLOAD_URL/libresample-$FREESWITCH_RESAMPLE_VERSION.tgz -o ../../libs/libresample-$FREESWITCH_RESAMPLE_VERSION.tgz\ncd ../../libs\ntar zxfv libresample-$FREESWITCH_RESAMPLE_VERSION.tgz\ncd libresample-$FREESWITCH_RESAMPLE_VERSION\ntouch .complete";
-		};
 		D3DEC8AA0A75DFF7002001CF /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -2468,6 +2651,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D38DD4B40A76889500FEDB19 /* main.c in Sources */,
 				D37671200A75EF5200ACC1FB /* opcodes.c in Sources */,
 				D37671210A75EF5200ACC1FB /* parse.c in Sources */,
 				D37671220A75EF5200ACC1FB /* alter.c in Sources */,
@@ -2485,7 +2669,6 @@
 				D376712E0A75EF5200ACC1FB /* hash.c in Sources */,
 				D376712F0A75EF5200ACC1FB /* insert.c in Sources */,
 				D37671300A75EF5200ACC1FB /* legacy.c in Sources */,
-				D37671310A75EF5200ACC1FB /* main.c in Sources */,
 				D37671320A75EF5200ACC1FB /* os.c in Sources */,
 				D37671330A75EF5200ACC1FB /* os_unix.c in Sources */,
 				D37671340A75EF5200ACC1FB /* os_win.c in Sources */,
@@ -2515,6 +2698,77 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D38DD2EB0A76831C00FEDB19 /* switch_buffer.c in Sources */,
+				D38DD2EC0A76831C00FEDB19 /* switch_caller.c in Sources */,
+				D38DD2ED0A76831C00FEDB19 /* switch_channel.c in Sources */,
+				D38DD2EE0A76831C00FEDB19 /* switch_config.c in Sources */,
+				D38DD2EF0A76831C00FEDB19 /* switch_console.c in Sources */,
+				D38DD2F00A76831C00FEDB19 /* switch_core.c in Sources */,
+				D38DD2F10A76831C00FEDB19 /* switch_event.c in Sources */,
+				D38DD2F20A76831C00FEDB19 /* switch_ivr.c in Sources */,
+				D38DD2F30A76831C00FEDB19 /* switch_loadable_module.c in Sources */,
+				D38DD2F40A76831C00FEDB19 /* switch_log.c in Sources */,
+				D38DD2F50A76831C00FEDB19 /* switch_resample.c in Sources */,
+				D38DD2F60A76831C00FEDB19 /* switch_rtp.c in Sources */,
+				D38DD2F70A76831C00FEDB19 /* switch_stun.c in Sources */,
+				D38DD2F80A76831C00FEDB19 /* switch_utils.c in Sources */,
+				D38DD2F90A76831C00FEDB19 /* switch_xml.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D38DD43E0A7687A700FEDB19 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D38DD4460A7687ED00FEDB19 /* switch.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D38DD4DC0A768AC500FEDB19 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D38DD5030A768AF200FEDB19 /* aes.c in Sources */,
+				D38DD5040A768AF200FEDB19 /* aes_cbc.c in Sources */,
+				D38DD5050A768AF200FEDB19 /* aes_icm.c in Sources */,
+				D38DD5060A768AF200FEDB19 /* alloc.c in Sources */,
+				D38DD5070A768AF200FEDB19 /* auth.c in Sources */,
+				D38DD5080A768AF200FEDB19 /* cipher.c in Sources */,
+				D38DD5090A768AF200FEDB19 /* crypto_kernel.c in Sources */,
+				D38DD50A0A768AF200FEDB19 /* ctr_prng.c in Sources */,
+				D38DD50B0A768AF200FEDB19 /* err.c in Sources */,
+				D38DD50C0A768AF200FEDB19 /* gf2_8.c in Sources */,
+				D38DD50D0A768AF200FEDB19 /* hmac.c in Sources */,
+				D38DD50E0A768AF200FEDB19 /* key.c in Sources */,
+				D38DD50F0A768AF200FEDB19 /* math.c in Sources */,
+				D38DD5100A768AF200FEDB19 /* null_auth.c in Sources */,
+				D38DD5110A768AF200FEDB19 /* null_cipher.c in Sources */,
+				D38DD5120A768AF200FEDB19 /* prng.c in Sources */,
+				D38DD5130A768AF200FEDB19 /* rand_source.c in Sources */,
+				D38DD5140A768AF200FEDB19 /* rdb.c in Sources */,
+				D38DD5150A768AF200FEDB19 /* rdbx.c in Sources */,
+				D38DD5160A768AF200FEDB19 /* sha1.c in Sources */,
+				D38DD5170A768AF200FEDB19 /* srtp.c in Sources */,
+				D38DD5180A768AF200FEDB19 /* stat.c in Sources */,
+				D38DD5190A768AF200FEDB19 /* xfm.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D38DD5230A768B6100FEDB19 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D38DD5330A768BAF00FEDB19 /* filterkit.c in Sources */,
+				D38DD5340A768BAF00FEDB19 /* resample.c in Sources */,
+				D38DD5350A768BAF00FEDB19 /* resamplesubs.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D38DD53D0A768C0900FEDB19 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D38DD5460A768C3800FEDB19 /* jb_speakup.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2643,24 +2897,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D3DEC85F0A75DC09002001CF /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D3DEC87F0A75DD47002001CF /* filterkit.c in Sources */,
-				D3DEC8800A75DD47002001CF /* resample.c in Sources */,
-				D3DEC8810A75DD47002001CF /* resamplesubs.c in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		D3DEC88E0A75DEC7002001CF /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D3DEC8930A75DED2002001CF /* jb_speakup.c in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D3DEC8A20A75DFDE002001CF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -2688,33 +2924,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D3DECA4F0A75E603002001CF /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				D3DECBB00A75E7C9002001CF /* auth.c in Sources */,
-				D3DECBB10A75E7C9002001CF /* hmac.c in Sources */,
-				D3DECBB80A75E808002001CF /* ctr_prng.c in Sources */,
-				D3DECBB90A75E808002001CF /* prng.c in Sources */,
-				D3DECBBA0A75E811002001CF /* err.c in Sources */,
-				D3DECBB20A75E7C9002001CF /* null_auth.c in Sources */,
-				D3DECBB30A75E7C9002001CF /* sha1.c in Sources */,
-				D3DECBBB0A75E81B002001CF /* rdb.c in Sources */,
-				D3DECBBC0A75E81B002001CF /* rdbx.c in Sources */,
-				D3DECBBD0A75E81B002001CF /* ut_sim.c in Sources */,
-				D3DECBB60A75E7EC002001CF /* alloc.c in Sources */,
-				D3DECBB70A75E7EC002001CF /* key.c in Sources */,
-				D3DECBAC0A75E7B6002001CF /* aes.c in Sources */,
-				D3DECBAD0A75E7B6002001CF /* aes_cbc.c in Sources */,
-				D3DECBAE0A75E7B6002001CF /* aes_icm.c in Sources */,
-				D3DECBB40A75E7DD002001CF /* datatypes.c in Sources */,
-				D3DECBB50A75E7DD002001CF /* stat.c in Sources */,
-				D3DECBAF0A75E7B6002001CF /* null_cipher.c in Sources */,
-				D3DECBAB0A75E7A1002001CF /* cipher.c in Sources */,
-				D3DECBAA0A75E798002001CF /* srtp.c in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -2722,6 +2931,26 @@
 			isa = PBXTargetDependency;
 			target = D37670C40A75ECD400ACC1FB /* sqlite.framework */;
 			targetProxy = D37671510A75F04700ACC1FB /* PBXContainerItemProxy */;
+		};
+		D38DD53A0A768BF700FEDB19 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D38DD5250A768B6100FEDB19 /* resample.framework */;
+			targetProxy = D38DD5390A768BF700FEDB19 /* PBXContainerItemProxy */;
+		};
+		D38DD5490A768C5700FEDB19 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D38DD53F0A768C0900FEDB19 /* speakup.framework */;
+			targetProxy = D38DD5480A768C5700FEDB19 /* PBXContainerItemProxy */;
+		};
+		D38DD54B0A768C6E00FEDB19 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D37671640A75F0DC00ACC1FB /* freeswitch.framework */;
+			targetProxy = D38DD54A0A768C6E00FEDB19 /* PBXContainerItemProxy */;
+		};
+		D38DD54D0A768C7400FEDB19 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D38DD4DE0A768AC500FEDB19 /* srtp.framework */;
+			targetProxy = D38DD54C0A768C7400FEDB19 /* PBXContainerItemProxy */;
 		};
 		D3DEC8150A75D8D3002001CF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -2738,16 +2967,6 @@
 			target = D3DEC8300A75DA10002001CF /* teletone.framework */;
 			targetProxy = D3DEC8440A75DAC1002001CF /* PBXContainerItemProxy */;
 		};
-		D3DEC8840A75DE06002001CF /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D3DEC8610A75DC09002001CF /* libresample */;
-			targetProxy = D3DEC8830A75DE06002001CF /* PBXContainerItemProxy */;
-		};
-		D3DEC8960A75DEE1002001CF /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D3DEC8900A75DEC7002001CF /* libspeakup */;
-			targetProxy = D3DEC8950A75DEE1002001CF /* PBXContainerItemProxy */;
-		};
 		D3DEC8E00A75E17C002001CF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D3DEC8A40A75DFDE002001CF /* iksemel.framework */;
@@ -2757,11 +2976,6 @@
 			isa = PBXTargetDependency;
 			target = D3DEC8E60A75E19F002001CF /* dingaling.framework */;
 			targetProxy = D3DECA390A75E43C002001CF /* PBXContainerItemProxy */;
-		};
-		D3DECBC50A75E8BF002001CF /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D3DECA510A75E603002001CF /* libsrtp */;
-			targetProxy = D3DECBC40A75E8BF002001CF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -2786,6 +3000,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(FREESWITCH_ARCH)";
+				DSTROOT = /;
 				FREESWITCH_APR_VERSION = 1.2.7;
 				FREESWITCH_ARCH = "i386 ppc";
 				FREESWITCH_DOWNLOAD_URL = "http://svn.freeswitch.org/downloads/libs";
@@ -2897,8 +3112,106 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = libfreeswitch.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_CFLAGS = (
+					"-DHAVE_CONFIG_H",
+					"-I.",
+					"-I.",
+					"-I./src/include",
+					"-I../../libs/srtp/include",
+					"-I../../libs/srtp/crypto/include/",
+					"-I/usr/local/freeswitch/include",
+					"-g",
+					"-O2",
+					"-DDARWIN",
+					"-DSIGPROCMASK_SETS_THREAD_MASK",
+					"-no-cpp-precomp",
+					"-I/usr/local/freeswitch/include/apr-1",
+					"-I/usr/local/freeswitch/include/srtp",
+					"-I/usr/local/freeswitch/include/apr-1",
+					"-I/usr/local/include",
+					"-DMACOSX",
+					"-fPIC",
+					"-Wall",
+					"-I/usr/local/src/freeswitch.trunk/src/sqlite",
+					"-I/usr/local/src/freeswitch.trunk",
+					"-I/usr/local/src/freeswitch.trunk/src/include",
+					"-I/usr/local/freeswitch/include",
+					"$(OTHER_CFLAGS_QUOTED_1)",
+					"$(OTHER_CFLAGS_QUOTED_2)",
+					"$(OTHER_CFLAGS_QUOTED_3)",
+					"$(OTHER_CFLAGS_QUOTED_4)",
+					"$(OTHER_CFLAGS_QUOTED_5)",
+					"$(OTHER_CFLAGS_QUOTED_6)",
+					"$(OTHER_CFLAGS_QUOTED_7)",
+					"-Wall",
+					"-Werror",
+					"-Wstrict-prototypes",
+					"-Wmissing-prototypes",
+					"-g",
+					"-std=c99",
+					"-g",
+					"-O2",
+				);
+				OTHER_CFLAGS_QUOTED_1 = "-DSWITCH_MOD_DIR=\\\"/usr/local/freeswitch/mod\\\"";
+				OTHER_CFLAGS_QUOTED_2 = "-DSWITCH_PREFIX_DIR=\\\"/usr/local/freeswitch\\\"";
+				OTHER_CFLAGS_QUOTED_3 = "-DSWITCH_CONF_DIR=\\\"/usr/local/freeswitch/conf\\\"";
+				OTHER_CFLAGS_QUOTED_4 = "-DSWITCH_DB_DIR=\\\"/usr/local/freeswitch/db\\\"";
+				OTHER_CFLAGS_QUOTED_5 = "-DSWITCH_LOG_DIR=\\\"/usr/local/freeswitch/log\\\"";
+				OTHER_CFLAGS_QUOTED_6 = "-DSWITCH_SCRIPT_DIR=\\\"/usr/local/freeswitch/scripts\\\"";
+				OTHER_CFLAGS_QUOTED_7 = "-DSWITCH_HTDOCS_DIR=\\\"/usr/local/freeswitch/htdocs\\\"";
+				PREBINDING = NO;
+				PRODUCT_NAME = libfreeswitch;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D38DD4440A7687C600FEDB19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = "$(HOME)/bin";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D38DD4450A7687C600FEDB19 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(HOME)/bin";
+				PREBINDING = NO;
+				PRODUCT_NAME = freeswitch;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D38DD4E20A768AC500FEDB19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
+				INFOPLIST_FILE = srtp.plist;
 				INSTALL_PATH = "$(HOME)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
@@ -2907,7 +3220,120 @@
 					AppKit,
 				);
 				PREBINDING = NO;
-				PRODUCT_NAME = libfreeswitch;
+				PRODUCT_NAME = srtp;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D38DD4E30A768AC500FEDB19 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = srtp.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				PREBINDING = NO;
+				PRODUCT_NAME = srtp;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D38DD5290A768B6200FEDB19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
+				INFOPLIST_FILE = resample.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Foundation,
+					"-framework",
+					AppKit,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D38DD52A0A768B6200FEDB19 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = resample.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				PREBINDING = NO;
+				PRODUCT_NAME = resample;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D38DD5430A768C0900FEDB19 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
+				INFOPLIST_FILE = speakup.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Foundation,
+					"-framework",
+					AppKit,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = speakup;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D38DD5440A768C0900FEDB19 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = speakup.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				PREBINDING = NO;
+				PRODUCT_NAME = speakup;
 				ZERO_LINK = NO;
 			};
 			name = Release;
@@ -3094,66 +3520,6 @@
 			};
 			name = Release;
 		};
-		D3DEC86A0A75DC28002001CF /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_MODEL_TUNING = G5;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = resample;
-				ZERO_LINK = YES;
-			};
-			name = Debug;
-		};
-		D3DEC86B0A75DC28002001CF /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = resample;
-				ZERO_LINK = NO;
-			};
-			name = Release;
-		};
-		D3DEC89A0A75DEF0002001CF /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_MODEL_TUNING = G5;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = speakup;
-				ZERO_LINK = YES;
-			};
-			name = Debug;
-		};
-		D3DEC89B0A75DEF0002001CF /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				PREBINDING = NO;
-				PRODUCT_NAME = speakup;
-				ZERO_LINK = NO;
-			};
-			name = Release;
-		};
 		D3DEC8A80A75DFDE002001CF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3250,58 +3616,6 @@
 			};
 			name = Release;
 		};
-		D3DECA550A75E615002001CF /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_MODEL_TUNING = G5;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = /usr/local/lib;
-				OTHER_CFLAGS = (
-					"-DHAVE_CONFIG_H",
-					"-Icrypto/include",
-					"-I./include",
-					"-I./crypto/include",
-					"-Wall",
-					"-O4",
-					"-fexpensive-optimizations",
-					"-funroll-loops",
-				);
-				OTHER_LDFLAGS = "";
-				PREBINDING = NO;
-				PRODUCT_NAME = srtp;
-				ZERO_LINK = YES;
-			};
-			name = Debug;
-		};
-		D3DECA560A75E615002001CF /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/lib;
-				OTHER_CFLAGS = (
-					"-DHAVE_CONFIG_H",
-					"-Icrypto/include",
-					"-I./include",
-					"-I./crypto/include",
-					"-Wall",
-					"-O4",
-					"-fexpensive-optimizations",
-					"-funroll-loops",
-				);
-				OTHER_LDFLAGS = "";
-				PREBINDING = NO;
-				PRODUCT_NAME = srtp;
-				ZERO_LINK = NO;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -3328,6 +3642,42 @@
 			buildConfigurations = (
 				D37671680A75F0DC00ACC1FB /* Debug */,
 				D37671690A75F0DC00ACC1FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D38DD4430A7687C600FEDB19 /* Build configuration list for PBXNativeTarget "freeswitch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D38DD4440A7687C600FEDB19 /* Debug */,
+				D38DD4450A7687C600FEDB19 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D38DD4E10A768AC500FEDB19 /* Build configuration list for PBXNativeTarget "srtp.framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D38DD4E20A768AC500FEDB19 /* Debug */,
+				D38DD4E30A768AC500FEDB19 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D38DD5280A768B6200FEDB19 /* Build configuration list for PBXNativeTarget "resample.framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D38DD5290A768B6200FEDB19 /* Debug */,
+				D38DD52A0A768B6200FEDB19 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D38DD5420A768C0900FEDB19 /* Build configuration list for PBXNativeTarget "speakup.framework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D38DD5430A768C0900FEDB19 /* Debug */,
+				D38DD5440A768C0900FEDB19 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -3368,24 +3718,6 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D3DEC8690A75DC28002001CF /* Build configuration list for PBXNativeTarget "libresample" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D3DEC86A0A75DC28002001CF /* Debug */,
-				D3DEC86B0A75DC28002001CF /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		D3DEC8990A75DEF0002001CF /* Build configuration list for PBXNativeTarget "libspeakup" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D3DEC89A0A75DEF0002001CF /* Debug */,
-				D3DEC89B0A75DEF0002001CF /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		D3DEC8A70A75DFDE002001CF /* Build configuration list for PBXNativeTarget "iksemel.framework" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -3400,15 +3732,6 @@
 			buildConfigurations = (
 				D3DEC8EA0A75E1A0002001CF /* Debug */,
 				D3DEC8EB0A75E1A0002001CF /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		D3DECA540A75E615002001CF /* Build configuration list for PBXNativeTarget "libsrtp" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				D3DECA550A75E615002001CF /* Debug */,
-				D3DECA560A75E615002001CF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
