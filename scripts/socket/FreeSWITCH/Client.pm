@@ -89,7 +89,7 @@ sub output($$) {
   my ($self,$data) = @_;
   my $s = $self->{_sock};
 
-  print $s $data;
+  print $s $data ;
 }
 
 sub cmd($$$) {
@@ -97,10 +97,24 @@ sub cmd($$$) {
   my $cmd = shift;
   my $to = shift;
 
-  $self->output($cmd);
+  $self->output($cmd->{command});
+  foreach(keys %{$cmd}) {
+    next if ($_ eq "command");
+    $self->output($cmd->{$_});
+  }
+  $self->output("\n\n");
+
   my $h = $self->readhash($to);
 
   $h;
+}
+
+sub disconnect($) {
+  my $self = shift;
+  $self->{_sock}->shutdown(2);
+  $self->{_sock}->close();
+  undef $self->{_sock};
+  delete $self->{_sock};
 }
 
 sub connect($) {
@@ -120,8 +134,7 @@ sub connect($) {
 
   if ($h->{"content-type"} eq "auth/request") {
     my $pass = $self->{"_password"};
-    $self->output("auth $pass");
-    $h = $self->readhash(undef);
+    $h = $self->cmd({command => "auth $pass"});
   }
 
   if ($h->{'reply-text'} =~ "OK") {

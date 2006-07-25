@@ -112,6 +112,7 @@ static char *EVENT_NAMES[] = {
 	"SESSION_CRASH",
 	"MODULE_LOAD",
 	"DTMF",
+	"MESSAGE",
 	"ALL"
 };
 
