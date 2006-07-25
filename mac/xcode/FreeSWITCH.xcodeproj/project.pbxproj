@@ -15,8 +15,6 @@
 			dependencies = (
 				D3BC34FF0A76B1AB00DE971E /* PBXTargetDependency */,
 				D3BC32530A769C1500DE971E /* PBXTargetDependency */,
-				D3BC32750A769D9C00DE971E /* PBXTargetDependency */,
-				D3BC32730A769D9900DE971E /* PBXTargetDependency */,
 				D3BC32670A769D6100DE971E /* PBXTargetDependency */,
 				D3BC32B80A76A2F600DE971E /* PBXTargetDependency */,
 				D3BC32D60A76A68E00DE971E /* PBXTargetDependency */,
@@ -27,6 +25,9 @@
 				D3BC334E0A76AA1E00DE971E /* PBXTargetDependency */,
 				D3BC34E10A76B07C00DE971E /* PBXTargetDependency */,
 				D36501770A76C28200C47A76 /* PBXTargetDependency */,
+				D365020A0A76C67100C47A76 /* PBXTargetDependency */,
+				D365020C0A76C67400C47A76 /* PBXTargetDependency */,
+				D365020E0A76C67600C47A76 /* PBXTargetDependency */,
 			);
 			name = Modules;
 			productName = Modules;
@@ -91,6 +92,30 @@
 		D365014D0A76C06500C47A76 /* pcre_version.c in Sources */ = {isa = PBXBuildFile; fileRef = D365012E0A76C06500C47A76 /* pcre_version.c */; };
 		D365014E0A76C06500C47A76 /* pcre_xclass.c in Sources */ = {isa = PBXBuildFile; fileRef = D365012F0A76C06500C47A76 /* pcre_xclass.c */; };
 		D365016E0A76C21600C47A76 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D36501EC0A76C60300C47A76 /* mod_dptools.c in Sources */ = {isa = PBXBuildFile; fileRef = D36501EB0A76C60300C47A76 /* mod_dptools.c */; };
+		D36501EE0A76C61600C47A76 /* mod_ivrtest.c in Sources */ = {isa = PBXBuildFile; fileRef = D36501ED0A76C61600C47A76 /* mod_ivrtest.c */; };
+		D36501F00A76C62E00C47A76 /* mod_rss.c in Sources */ = {isa = PBXBuildFile; fileRef = D36501EF0A76C62E00C47A76 /* mod_rss.c */; };
+		D36501F10A76C64200C47A76 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D36501F20A76C64200C47A76 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D36501F30A76C64200C47A76 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D36501F40A76C64200C47A76 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D36501F50A76C64200C47A76 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D36501F60A76C64200C47A76 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D36501F70A76C64200C47A76 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D36501F80A76C64A00C47A76 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D36501F90A76C64A00C47A76 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D36501FA0A76C64A00C47A76 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D36501FB0A76C64A00C47A76 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D36501FC0A76C64A00C47A76 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D36501FD0A76C64A00C47A76 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D36501FE0A76C64A00C47A76 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D36501FF0A76C65300C47A76 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D36502000A76C65300C47A76 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D36502010A76C65300C47A76 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D36502020A76C65300C47A76 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D36502030A76C65300C47A76 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D36502040A76C65300C47A76 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D36502050A76C65300C47A76 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
 		D37671120A75EF2D00ACC1FB /* sqlite3.h in Headers */ = {isa = PBXBuildFile; fileRef = D376710B0A75EEE000ACC1FB /* sqlite3.h */; };
 		D37671200A75EF5200ACC1FB /* opcodes.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671070A75EEE000ACC1FB /* opcodes.c */; };
 		D37671210A75EF5200ACC1FB /* parse.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671090A75EEE000ACC1FB /* parse.c */; };
@@ -726,6 +751,34 @@
 			remoteGlobalIDString = D3DEC21C0A75CB06002001CF /* apr */;
 			remoteInfo = apr;
 		};
+		D36501D40A76C54300C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3DEC6CE0A75D4E9002001CF /* aprutil */;
+			remoteInfo = aprutil;
+		};
+		D36502090A76C67100C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D36501D80A76C57300C47A76 /* mod_dptools */;
+			remoteInfo = mod_dptools;
+		};
+		D365020B0A76C67400C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D36501DC0A76C57E00C47A76 /* mod_ivrtest */;
+			remoteInfo = mod_ivrtest;
+		};
+		D365020D0A76C67600C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D36501E00A76C58C00C47A76 /* mod_rss */;
+			remoteInfo = mod_rss;
+		};
 		D37671510A75F04700ACC1FB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
@@ -788,20 +841,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = D3BC325E0A769CA700DE971E;
 			remoteInfo = mod_dingaling;
-		};
-		D3BC32720A769D9900DE971E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D3DEC8E60A75E19F002001CF;
-			remoteInfo = dingaling;
-		};
-		D3BC32740A769D9C00DE971E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D3DEC8A40A75DFDE002001CF;
-			remoteInfo = iksemel;
 		};
 		D3BC32B70A76A2F600DE971E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -922,6 +961,12 @@
 		D365012D0A76C06500C47A76 /* pcre_valid_utf8.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_valid_utf8.c; path = "../../libs/pcre-6.4/pcre_valid_utf8.c"; sourceTree = SOURCE_ROOT; };
 		D365012E0A76C06500C47A76 /* pcre_version.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_version.c; path = "../../libs/pcre-6.4/pcre_version.c"; sourceTree = SOURCE_ROOT; };
 		D365012F0A76C06500C47A76 /* pcre_xclass.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pcre_xclass.c; path = "../../libs/pcre-6.4/pcre_xclass.c"; sourceTree = SOURCE_ROOT; };
+		D36501D90A76C57300C47A76 /* mod_dptools.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_dptools.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D36501DD0A76C57E00C47A76 /* mod_ivrtest.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_ivrtest.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D36501E10A76C58C00C47A76 /* mod_rss.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_rss.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D36501EB0A76C60300C47A76 /* mod_dptools.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_dptools.c; path = ../../src/mod/applications/mod_dptools/mod_dptools.c; sourceTree = SOURCE_ROOT; };
+		D36501ED0A76C61600C47A76 /* mod_ivrtest.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_ivrtest.c; path = ../../src/mod/applications/mod_ivrtest/mod_ivrtest.c; sourceTree = SOURCE_ROOT; };
+		D36501EF0A76C62E00C47A76 /* mod_rss.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_rss.c; path = ../../src/mod/applications/mod_rss/mod_rss.c; sourceTree = SOURCE_ROOT; };
 		D37670C50A75ECD400ACC1FB /* sqlite.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = sqlite.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D37670C60A75ECD400ACC1FB /* sqlite.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = sqlite.plist; sourceTree = "<group>"; };
 		D37670D40A75EE8300ACC1FB /* alter.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = alter.c; path = "../../libs/sqlite-3.3.6/src/alter.c"; sourceTree = SOURCE_ROOT; };
@@ -1466,6 +1511,48 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D36501D70A76C57300C47A76 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D36501F10A76C64200C47A76 /* apr.framework in Frameworks */,
+				D36501F20A76C64200C47A76 /* aprutil.framework in Frameworks */,
+				D36501F30A76C64200C47A76 /* libfreeswitch.framework in Frameworks */,
+				D36501F40A76C64200C47A76 /* resample.framework in Frameworks */,
+				D36501F50A76C64200C47A76 /* sqlite.framework in Frameworks */,
+				D36501F60A76C64200C47A76 /* srtp.framework in Frameworks */,
+				D36501F70A76C64200C47A76 /* teletone.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D36501DB0A76C57E00C47A76 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D36501F80A76C64A00C47A76 /* apr.framework in Frameworks */,
+				D36501F90A76C64A00C47A76 /* aprutil.framework in Frameworks */,
+				D36501FA0A76C64A00C47A76 /* libfreeswitch.framework in Frameworks */,
+				D36501FB0A76C64A00C47A76 /* resample.framework in Frameworks */,
+				D36501FC0A76C64A00C47A76 /* sqlite.framework in Frameworks */,
+				D36501FD0A76C64A00C47A76 /* srtp.framework in Frameworks */,
+				D36501FE0A76C64A00C47A76 /* teletone.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D36501DF0A76C58C00C47A76 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D36501FF0A76C65300C47A76 /* apr.framework in Frameworks */,
+				D36502000A76C65300C47A76 /* aprutil.framework in Frameworks */,
+				D36502010A76C65300C47A76 /* libfreeswitch.framework in Frameworks */,
+				D36502020A76C65300C47A76 /* resample.framework in Frameworks */,
+				D36502030A76C65300C47A76 /* sqlite.framework in Frameworks */,
+				D36502040A76C65300C47A76 /* srtp.framework in Frameworks */,
+				D36502050A76C65300C47A76 /* teletone.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D37670C30A75ECD400ACC1FB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -1756,6 +1843,9 @@
 				D3BC34E60A76B0FC00DE971E /* mod_console.dylib */,
 				D36500800A76BDF700C47A76 /* mod_dialplan_xml.dylib */,
 				D36500F10A76BE9400C47A76 /* pcre.framework */,
+				D36501D90A76C57300C47A76 /* mod_dptools.dylib */,
+				D36501DD0A76C57E00C47A76 /* mod_ivrtest.dylib */,
+				D36501E10A76C58C00C47A76 /* mod_rss.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1979,6 +2069,9 @@
 		D3BC31DF0A769B1B00DE971E /* applications */ = {
 			isa = PBXGroup;
 			children = (
+				D36501EF0A76C62E00C47A76 /* mod_rss.c */,
+				D36501ED0A76C61600C47A76 /* mod_ivrtest.c */,
+				D36501EB0A76C60300C47A76 /* mod_dptools.c */,
 				D3BC333E0A76A9CD00DE971E /* mod_conference.c */,
 				D3BC32FE0A76A7DD00DE971E /* mod_commands.c */,
 				D3BC327F0A769DF500DE971E /* mod_playback.c */,
@@ -3414,6 +3507,54 @@
 			productReference = D36500F10A76BE9400C47A76 /* pcre.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		D36501D80A76C57300C47A76 /* mod_dptools */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D36501E20A76C5FE00C47A76 /* Build configuration list for PBXNativeTarget "mod_dptools" */;
+			buildPhases = (
+				D36501D60A76C57300C47A76 /* Sources */,
+				D36501D70A76C57300C47A76 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mod_dptools;
+			productName = mod_dptools;
+			productReference = D36501D90A76C57300C47A76 /* mod_dptools.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
+		D36501DC0A76C57E00C47A76 /* mod_ivrtest */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D36501E50A76C5FE00C47A76 /* Build configuration list for PBXNativeTarget "mod_ivrtest" */;
+			buildPhases = (
+				D36501DA0A76C57E00C47A76 /* Sources */,
+				D36501DB0A76C57E00C47A76 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mod_ivrtest;
+			productName = mod_ivrtest;
+			productReference = D36501DD0A76C57E00C47A76 /* mod_ivrtest.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
+		D36501E00A76C58C00C47A76 /* mod_rss */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D36501E80A76C5FE00C47A76 /* Build configuration list for PBXNativeTarget "mod_rss" */;
+			buildPhases = (
+				D36501DE0A76C58C00C47A76 /* Sources */,
+				D36501DF0A76C58C00C47A76 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mod_rss;
+			productName = mod_rss;
+			productReference = D36501E10A76C58C00C47A76 /* mod_rss.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
 		D37670C40A75ECD400ACC1FB /* sqlite */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D37670C70A75ECD500ACC1FB /* Build configuration list for PBXNativeTarget "sqlite" */;
@@ -3446,6 +3587,7 @@
 			);
 			dependencies = (
 				D36501BF0A76C40000C47A76 /* PBXTargetDependency */,
+				D36501D50A76C54300C47A76 /* PBXTargetDependency */,
 				D36501BD0A76C3FB00C47A76 /* PBXTargetDependency */,
 				D36501B70A76C3F200C47A76 /* PBXTargetDependency */,
 				D36501B90A76C3F600C47A76 /* PBXTargetDependency */,
@@ -3842,6 +3984,9 @@
 				D3BC34E50A76B0FC00DE971E /* mod_console */,
 				D365007F0A76BDF700C47A76 /* mod_dialplan_xml */,
 				D36500F00A76BE9400C47A76 /* pcre */,
+				D36501D80A76C57300C47A76 /* mod_dptools */,
+				D36501DC0A76C57E00C47A76 /* mod_ivrtest */,
+				D36501E00A76C58C00C47A76 /* mod_rss */,
 			);
 		};
 /* End PBXProject section */
@@ -3995,6 +4140,30 @@
 				D365014C0A76C06500C47A76 /* pcre_valid_utf8.c in Sources */,
 				D365014D0A76C06500C47A76 /* pcre_version.c in Sources */,
 				D365014E0A76C06500C47A76 /* pcre_xclass.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D36501D60A76C57300C47A76 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D36501EC0A76C60300C47A76 /* mod_dptools.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D36501DA0A76C57E00C47A76 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D36501EE0A76C61600C47A76 /* mod_ivrtest.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D36501DE0A76C58C00C47A76 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D36501F00A76C62E00C47A76 /* mod_rss.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4500,6 +4669,26 @@
 			target = D3DEC21C0A75CB06002001CF /* apr */;
 			targetProxy = D36501C00A76C40700C47A76 /* PBXContainerItemProxy */;
 		};
+		D36501D50A76C54300C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3DEC6CE0A75D4E9002001CF /* aprutil */;
+			targetProxy = D36501D40A76C54300C47A76 /* PBXContainerItemProxy */;
+		};
+		D365020A0A76C67100C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D36501D80A76C57300C47A76 /* mod_dptools */;
+			targetProxy = D36502090A76C67100C47A76 /* PBXContainerItemProxy */;
+		};
+		D365020C0A76C67400C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D36501DC0A76C57E00C47A76 /* mod_ivrtest */;
+			targetProxy = D365020B0A76C67400C47A76 /* PBXContainerItemProxy */;
+		};
+		D365020E0A76C67600C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D36501E00A76C58C00C47A76 /* mod_rss */;
+			targetProxy = D365020D0A76C67600C47A76 /* PBXContainerItemProxy */;
+		};
 		D37671520A75F04700ACC1FB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D37670C40A75ECD400ACC1FB /* sqlite */;
@@ -4544,16 +4733,6 @@
 			isa = PBXTargetDependency;
 			target = D3BC325E0A769CA700DE971E /* mod_dingaling */;
 			targetProxy = D3BC32660A769D6100DE971E /* PBXContainerItemProxy */;
-		};
-		D3BC32730A769D9900DE971E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D3DEC8E60A75E19F002001CF /* dingaling */;
-			targetProxy = D3BC32720A769D9900DE971E /* PBXContainerItemProxy */;
-		};
-		D3BC32750A769D9C00DE971E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D3DEC8A40A75DFDE002001CF /* iksemel */;
-			targetProxy = D3BC32740A769D9C00DE971E /* PBXContainerItemProxy */;
 		};
 		D3BC32B80A76A2F600DE971E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -4745,6 +4924,141 @@
 				OTHER_CFLAGS = "-w";
 				PREBINDING = NO;
 				PRODUCT_NAME = pcre;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D36501E30A76C5FE00C47A76 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_dptools;
+			};
+			name = Debug;
+		};
+		D36501E40A76C5FE00C47A76 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_dptools;
+				SKIP_INSTALL = NO;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D36501E60A76C5FE00C47A76 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_ivrtest;
+			};
+			name = Debug;
+		};
+		D36501E70A76C5FE00C47A76 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_ivrtest;
+				SKIP_INSTALL = NO;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D36501E90A76C5FE00C47A76 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_rss;
+			};
+			name = Debug;
+		};
+		D36501EA0A76C5FE00C47A76 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_rss;
+				SKIP_INSTALL = NO;
 				ZERO_LINK = NO;
 			};
 			name = Release;
@@ -5951,6 +6265,33 @@
 			buildConfigurations = (
 				D36500F40A76BE9500C47A76 /* Debug */,
 				D36500F50A76BE9500C47A76 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D36501E20A76C5FE00C47A76 /* Build configuration list for PBXNativeTarget "mod_dptools" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D36501E30A76C5FE00C47A76 /* Debug */,
+				D36501E40A76C5FE00C47A76 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D36501E50A76C5FE00C47A76 /* Build configuration list for PBXNativeTarget "mod_ivrtest" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D36501E60A76C5FE00C47A76 /* Debug */,
+				D36501E70A76C5FE00C47A76 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D36501E80A76C5FE00C47A76 /* Build configuration list for PBXNativeTarget "mod_rss" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D36501E90A76C5FE00C47A76 /* Debug */,
+				D36501EA0A76C5FE00C47A76 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
