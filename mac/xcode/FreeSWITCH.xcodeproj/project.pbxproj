@@ -28,6 +28,7 @@
 				D365020A0A76C67100C47A76 /* PBXTargetDependency */,
 				D365020C0A76C67400C47A76 /* PBXTargetDependency */,
 				D365020E0A76C67600C47A76 /* PBXTargetDependency */,
+				D36502640A76C92C00C47A76 /* PBXTargetDependency */,
 			);
 			name = Modules;
 			productName = Modules;
@@ -116,6 +117,34 @@
 		D36502030A76C65300C47A76 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
 		D36502040A76C65300C47A76 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
 		D36502050A76C65300C47A76 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D365022B0A76C89400C47A76 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D36502260A76C89400C47A76 /* config.h */; };
+		D365022C0A76C89400C47A76 /* gsm.h in Headers */ = {isa = PBXBuildFile; fileRef = D36502270A76C89400C47A76 /* gsm.h */; };
+		D365022D0A76C89400C47A76 /* private.h in Headers */ = {isa = PBXBuildFile; fileRef = D36502280A76C89400C47A76 /* private.h */; };
+		D365022E0A76C89400C47A76 /* proto.h in Headers */ = {isa = PBXBuildFile; fileRef = D36502290A76C89400C47A76 /* proto.h */; };
+		D365022F0A76C89400C47A76 /* unproto.h in Headers */ = {isa = PBXBuildFile; fileRef = D365022A0A76C89400C47A76 /* unproto.h */; };
+		D365023E0A76C8A900C47A76 /* add.c in Sources */ = {isa = PBXBuildFile; fileRef = D36502300A76C8A900C47A76 /* add.c */; };
+		D365023F0A76C8A900C47A76 /* code.c in Sources */ = {isa = PBXBuildFile; fileRef = D36502310A76C8A900C47A76 /* code.c */; };
+		D36502400A76C8A900C47A76 /* decode.c in Sources */ = {isa = PBXBuildFile; fileRef = D36502320A76C8A900C47A76 /* decode.c */; };
+		D36502410A76C8A900C47A76 /* gsm_create.c in Sources */ = {isa = PBXBuildFile; fileRef = D36502330A76C8A900C47A76 /* gsm_create.c */; };
+		D36502420A76C8A900C47A76 /* gsm_decode.c in Sources */ = {isa = PBXBuildFile; fileRef = D36502340A76C8A900C47A76 /* gsm_decode.c */; };
+		D36502430A76C8A900C47A76 /* gsm_destroy.c in Sources */ = {isa = PBXBuildFile; fileRef = D36502350A76C8A900C47A76 /* gsm_destroy.c */; };
+		D36502440A76C8A900C47A76 /* gsm_encode.c in Sources */ = {isa = PBXBuildFile; fileRef = D36502360A76C8A900C47A76 /* gsm_encode.c */; };
+		D36502450A76C8A900C47A76 /* gsm_lpc.c in Sources */ = {isa = PBXBuildFile; fileRef = D36502370A76C8A900C47A76 /* gsm_lpc.c */; };
+		D36502460A76C8A900C47A76 /* gsm_option.c in Sources */ = {isa = PBXBuildFile; fileRef = D36502380A76C8A900C47A76 /* gsm_option.c */; };
+		D36502470A76C8A900C47A76 /* long_term.c in Sources */ = {isa = PBXBuildFile; fileRef = D36502390A76C8A900C47A76 /* long_term.c */; };
+		D36502480A76C8A900C47A76 /* preprocess.c in Sources */ = {isa = PBXBuildFile; fileRef = D365023A0A76C8A900C47A76 /* preprocess.c */; };
+		D36502490A76C8A900C47A76 /* rpe.c in Sources */ = {isa = PBXBuildFile; fileRef = D365023B0A76C8A900C47A76 /* rpe.c */; };
+		D365024A0A76C8A900C47A76 /* short_term.c in Sources */ = {isa = PBXBuildFile; fileRef = D365023C0A76C8A900C47A76 /* short_term.c */; };
+		D365024B0A76C8A900C47A76 /* table.c in Sources */ = {isa = PBXBuildFile; fileRef = D365023D0A76C8A900C47A76 /* table.c */; };
+		D36502560A76C8FD00C47A76 /* mod_gsm.c in Sources */ = {isa = PBXBuildFile; fileRef = D36502550A76C8FD00C47A76 /* mod_gsm.c */; };
+		D36502570A76C90700C47A76 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D36502580A76C90700C47A76 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D36502590A76C90700C47A76 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D365025A0A76C90700C47A76 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D365025B0A76C90700C47A76 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D365025C0A76C90700C47A76 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D365025D0A76C90700C47A76 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D365025F0A76C91100C47A76 /* gsm.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D365021E0A76C82200C47A76 /* gsm.framework */; };
 		D37671120A75EF2D00ACC1FB /* sqlite3.h in Headers */ = {isa = PBXBuildFile; fileRef = D376710B0A75EEE000ACC1FB /* sqlite3.h */; };
 		D37671200A75EF5200ACC1FB /* opcodes.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671070A75EEE000ACC1FB /* opcodes.c */; };
 		D37671210A75EF5200ACC1FB /* parse.c in Sources */ = {isa = PBXBuildFile; fileRef = D37671090A75EEE000ACC1FB /* parse.c */; };
@@ -779,6 +808,20 @@
 			remoteGlobalIDString = D36501E00A76C58C00C47A76 /* mod_rss */;
 			remoteInfo = mod_rss;
 		};
+		D36502610A76C92900C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D365021D0A76C82200C47A76 /* gsm */;
+			remoteInfo = gsm;
+		};
+		D36502630A76C92C00C47A76 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D36502500A76C8CD00C47A76 /* mod_gsm */;
+			remoteInfo = mod_gsm;
+		};
 		D37671510A75F04700ACC1FB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
@@ -967,6 +1010,29 @@
 		D36501EB0A76C60300C47A76 /* mod_dptools.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_dptools.c; path = ../../src/mod/applications/mod_dptools/mod_dptools.c; sourceTree = SOURCE_ROOT; };
 		D36501ED0A76C61600C47A76 /* mod_ivrtest.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_ivrtest.c; path = ../../src/mod/applications/mod_ivrtest/mod_ivrtest.c; sourceTree = SOURCE_ROOT; };
 		D36501EF0A76C62E00C47A76 /* mod_rss.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_rss.c; path = ../../src/mod/applications/mod_rss/mod_rss.c; sourceTree = SOURCE_ROOT; };
+		D365021E0A76C82200C47A76 /* gsm.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = gsm.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D365021F0A76C82200C47A76 /* gsm.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = gsm.plist; sourceTree = "<group>"; };
+		D36502260A76C89400C47A76 /* config.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = config.h; path = ../../libs/codec/gsm/inc/config.h; sourceTree = SOURCE_ROOT; };
+		D36502270A76C89400C47A76 /* gsm.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = gsm.h; path = ../../libs/codec/gsm/inc/gsm.h; sourceTree = SOURCE_ROOT; };
+		D36502280A76C89400C47A76 /* private.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = private.h; path = ../../libs/codec/gsm/inc/private.h; sourceTree = SOURCE_ROOT; };
+		D36502290A76C89400C47A76 /* proto.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = proto.h; path = ../../libs/codec/gsm/inc/proto.h; sourceTree = SOURCE_ROOT; };
+		D365022A0A76C89400C47A76 /* unproto.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = unproto.h; path = ../../libs/codec/gsm/inc/unproto.h; sourceTree = SOURCE_ROOT; };
+		D36502300A76C8A900C47A76 /* add.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = add.c; path = ../../libs/codec/gsm/src/add.c; sourceTree = SOURCE_ROOT; };
+		D36502310A76C8A900C47A76 /* code.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = code.c; path = ../../libs/codec/gsm/src/code.c; sourceTree = SOURCE_ROOT; };
+		D36502320A76C8A900C47A76 /* decode.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = decode.c; path = ../../libs/codec/gsm/src/decode.c; sourceTree = SOURCE_ROOT; };
+		D36502330A76C8A900C47A76 /* gsm_create.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = gsm_create.c; path = ../../libs/codec/gsm/src/gsm_create.c; sourceTree = SOURCE_ROOT; };
+		D36502340A76C8A900C47A76 /* gsm_decode.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = gsm_decode.c; path = ../../libs/codec/gsm/src/gsm_decode.c; sourceTree = SOURCE_ROOT; };
+		D36502350A76C8A900C47A76 /* gsm_destroy.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = gsm_destroy.c; path = ../../libs/codec/gsm/src/gsm_destroy.c; sourceTree = SOURCE_ROOT; };
+		D36502360A76C8A900C47A76 /* gsm_encode.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = gsm_encode.c; path = ../../libs/codec/gsm/src/gsm_encode.c; sourceTree = SOURCE_ROOT; };
+		D36502370A76C8A900C47A76 /* gsm_lpc.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = gsm_lpc.c; path = ../../libs/codec/gsm/src/gsm_lpc.c; sourceTree = SOURCE_ROOT; };
+		D36502380A76C8A900C47A76 /* gsm_option.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = gsm_option.c; path = ../../libs/codec/gsm/src/gsm_option.c; sourceTree = SOURCE_ROOT; };
+		D36502390A76C8A900C47A76 /* long_term.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = long_term.c; path = ../../libs/codec/gsm/src/long_term.c; sourceTree = SOURCE_ROOT; };
+		D365023A0A76C8A900C47A76 /* preprocess.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = preprocess.c; path = ../../libs/codec/gsm/src/preprocess.c; sourceTree = SOURCE_ROOT; };
+		D365023B0A76C8A900C47A76 /* rpe.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = rpe.c; path = ../../libs/codec/gsm/src/rpe.c; sourceTree = SOURCE_ROOT; };
+		D365023C0A76C8A900C47A76 /* short_term.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = short_term.c; path = ../../libs/codec/gsm/src/short_term.c; sourceTree = SOURCE_ROOT; };
+		D365023D0A76C8A900C47A76 /* table.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = table.c; path = ../../libs/codec/gsm/src/table.c; sourceTree = SOURCE_ROOT; };
+		D36502510A76C8CD00C47A76 /* mod_gsm.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_gsm.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D36502550A76C8FD00C47A76 /* mod_gsm.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_gsm.c; path = ../../src/mod/codecs/mod_gsm/mod_gsm.c; sourceTree = SOURCE_ROOT; };
 		D37670C50A75ECD400ACC1FB /* sqlite.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = sqlite.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D37670C60A75ECD400ACC1FB /* sqlite.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = sqlite.plist; sourceTree = "<group>"; };
 		D37670D40A75EE8300ACC1FB /* alter.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = alter.c; path = "../../libs/sqlite-3.3.6/src/alter.c"; sourceTree = SOURCE_ROOT; };
@@ -1553,6 +1619,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D365021C0A76C82200C47A76 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D365024F0A76C8CD00C47A76 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D365025F0A76C91100C47A76 /* gsm.framework in Frameworks */,
+				D36502570A76C90700C47A76 /* apr.framework in Frameworks */,
+				D36502580A76C90700C47A76 /* aprutil.framework in Frameworks */,
+				D36502590A76C90700C47A76 /* libfreeswitch.framework in Frameworks */,
+				D365025A0A76C90700C47A76 /* resample.framework in Frameworks */,
+				D365025B0A76C90700C47A76 /* sqlite.framework in Frameworks */,
+				D365025C0A76C90700C47A76 /* srtp.framework in Frameworks */,
+				D365025D0A76C90700C47A76 /* teletone.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D37670C30A75ECD400ACC1FB /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -1787,6 +1875,7 @@
 		08FB7795FE84155DC02AAC07 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				D36502230A76C84900C47A76 /* gsm */,
 				D36501030A76BFBF00C47A76 /* pcre */,
 				D3BC335F0A76AB7100DE971E /* sndfile */,
 				D376716A0A75F0EF00ACC1FB /* freeswitch */,
@@ -1806,6 +1895,7 @@
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				D365021F0A76C82200C47A76 /* gsm.plist */,
 				D36500F20A76BE9400C47A76 /* pcre.plist */,
 				D3DEC8A60A75DFDE002001CF /* iksemel.plist */,
 				D3DEC8320A75DA10002001CF /* teletone.plist */,
@@ -1846,6 +1936,8 @@
 				D36501D90A76C57300C47A76 /* mod_dptools.dylib */,
 				D36501DD0A76C57E00C47A76 /* mod_ivrtest.dylib */,
 				D36501E10A76C58C00C47A76 /* mod_rss.dylib */,
+				D365021E0A76C82200C47A76 /* gsm.framework */,
+				D36502510A76C8CD00C47A76 /* mod_gsm.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1905,6 +1997,48 @@
 				D365010C0A76C01A00C47A76 /* pcreposix.h */,
 				D365010D0A76C01A00C47A76 /* ucp.h */,
 				D365010E0A76C01A00C47A76 /* ucpinternal.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		D36502230A76C84900C47A76 /* gsm */ = {
+			isa = PBXGroup;
+			children = (
+				D36502250A76C86100C47A76 /* include */,
+				D36502240A76C85600C47A76 /* src */,
+			);
+			name = gsm;
+			sourceTree = "<group>";
+		};
+		D36502240A76C85600C47A76 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D36502300A76C8A900C47A76 /* add.c */,
+				D36502310A76C8A900C47A76 /* code.c */,
+				D36502320A76C8A900C47A76 /* decode.c */,
+				D36502330A76C8A900C47A76 /* gsm_create.c */,
+				D36502340A76C8A900C47A76 /* gsm_decode.c */,
+				D36502350A76C8A900C47A76 /* gsm_destroy.c */,
+				D36502360A76C8A900C47A76 /* gsm_encode.c */,
+				D36502370A76C8A900C47A76 /* gsm_lpc.c */,
+				D36502380A76C8A900C47A76 /* gsm_option.c */,
+				D36502390A76C8A900C47A76 /* long_term.c */,
+				D365023A0A76C8A900C47A76 /* preprocess.c */,
+				D365023B0A76C8A900C47A76 /* rpe.c */,
+				D365023C0A76C8A900C47A76 /* short_term.c */,
+				D365023D0A76C8A900C47A76 /* table.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D36502250A76C86100C47A76 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D36502260A76C89400C47A76 /* config.h */,
+				D36502270A76C89400C47A76 /* gsm.h */,
+				D36502280A76C89400C47A76 /* private.h */,
+				D36502290A76C89400C47A76 /* proto.h */,
+				D365022A0A76C89400C47A76 /* unproto.h */,
 			);
 			name = include;
 			sourceTree = "<group>";
@@ -2092,6 +2226,7 @@
 		D3BC32E70A76A73200DE971E /* codecs */ = {
 			isa = PBXGroup;
 			children = (
+				D36502550A76C8FD00C47A76 /* mod_gsm.c */,
 				D3BC331F0A76A8B200DE971E /* g711.c */,
 				D3BC33200A76A8B200DE971E /* g711.h */,
 				D3BC33210A76A8B200DE971E /* mod_g711.c */,
@@ -3221,6 +3356,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D36502190A76C82200C47A76 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D365022B0A76C89400C47A76 /* config.h in Headers */,
+				D365022C0A76C89400C47A76 /* gsm.h in Headers */,
+				D365022D0A76C89400C47A76 /* private.h in Headers */,
+				D365022E0A76C89400C47A76 /* proto.h in Headers */,
+				D365022F0A76C89400C47A76 /* unproto.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D37670C00A75ECD400ACC1FB /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -3553,6 +3700,41 @@
 			name = mod_rss;
 			productName = mod_rss;
 			productReference = D36501E10A76C58C00C47A76 /* mod_rss.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
+		D365021D0A76C82200C47A76 /* gsm */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D36502200A76C82300C47A76 /* Build configuration list for PBXNativeTarget "gsm" */;
+			buildPhases = (
+				D36502190A76C82200C47A76 /* Headers */,
+				D365021A0A76C82200C47A76 /* Resources */,
+				D365021B0A76C82200C47A76 /* Sources */,
+				D365021C0A76C82200C47A76 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = gsm;
+			productName = gsm;
+			productReference = D365021E0A76C82200C47A76 /* gsm.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		D36502500A76C8CD00C47A76 /* mod_gsm */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D36502520A76C8FA00C47A76 /* Build configuration list for PBXNativeTarget "mod_gsm" */;
+			buildPhases = (
+				D365024E0A76C8CD00C47A76 /* Sources */,
+				D365024F0A76C8CD00C47A76 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D36502620A76C92900C47A76 /* PBXTargetDependency */,
+			);
+			name = mod_gsm;
+			productName = mod_gsm;
+			productReference = D36502510A76C8CD00C47A76 /* mod_gsm.dylib */;
 			productType = "com.apple.product-type.objfile";
 		};
 		D37670C40A75ECD400ACC1FB /* sqlite */ = {
@@ -3987,11 +4169,20 @@
 				D36501D80A76C57300C47A76 /* mod_dptools */,
 				D36501DC0A76C57E00C47A76 /* mod_ivrtest */,
 				D36501E00A76C58C00C47A76 /* mod_rss */,
+				D365021D0A76C82200C47A76 /* gsm */,
+				D36502500A76C8CD00C47A76 /* mod_gsm */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		D365021A0A76C82200C47A76 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D37671610A75F0DC00ACC1FB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -4164,6 +4355,35 @@
 			buildActionMask = 2147483647;
 			files = (
 				D36501F00A76C62E00C47A76 /* mod_rss.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D365021B0A76C82200C47A76 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D365023E0A76C8A900C47A76 /* add.c in Sources */,
+				D365023F0A76C8A900C47A76 /* code.c in Sources */,
+				D36502400A76C8A900C47A76 /* decode.c in Sources */,
+				D36502410A76C8A900C47A76 /* gsm_create.c in Sources */,
+				D36502420A76C8A900C47A76 /* gsm_decode.c in Sources */,
+				D36502430A76C8A900C47A76 /* gsm_destroy.c in Sources */,
+				D36502440A76C8A900C47A76 /* gsm_encode.c in Sources */,
+				D36502450A76C8A900C47A76 /* gsm_lpc.c in Sources */,
+				D36502460A76C8A900C47A76 /* gsm_option.c in Sources */,
+				D36502470A76C8A900C47A76 /* long_term.c in Sources */,
+				D36502480A76C8A900C47A76 /* preprocess.c in Sources */,
+				D36502490A76C8A900C47A76 /* rpe.c in Sources */,
+				D365024A0A76C8A900C47A76 /* short_term.c in Sources */,
+				D365024B0A76C8A900C47A76 /* table.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D365024E0A76C8CD00C47A76 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D36502560A76C8FD00C47A76 /* mod_gsm.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4689,6 +4909,16 @@
 			target = D36501E00A76C58C00C47A76 /* mod_rss */;
 			targetProxy = D365020D0A76C67600C47A76 /* PBXContainerItemProxy */;
 		};
+		D36502620A76C92900C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D365021D0A76C82200C47A76 /* gsm */;
+			targetProxy = D36502610A76C92900C47A76 /* PBXContainerItemProxy */;
+		};
+		D36502640A76C92C00C47A76 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D36502500A76C8CD00C47A76 /* mod_gsm */;
+			targetProxy = D36502630A76C92C00C47A76 /* PBXContainerItemProxy */;
+		};
 		D37671520A75F04700ACC1FB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D37670C40A75ECD400ACC1FB /* sqlite */;
@@ -5058,6 +5288,98 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_rss;
+				SKIP_INSTALL = NO;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D36502210A76C82300C47A76 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
+				INFOPLIST_FILE = gsm.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Foundation,
+					"-framework",
+					AppKit,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = gsm;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D36502220A76C82300C47A76 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = gsm.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				PREBINDING = NO;
+				PRODUCT_NAME = gsm;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D36502530A76C8FA00C47A76 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_gsm;
+			};
+			name = Debug;
+		};
+		D36502540A76C8FA00C47A76 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_gsm;
 				SKIP_INSTALL = NO;
 				ZERO_LINK = NO;
 			};
@@ -6292,6 +6614,24 @@
 			buildConfigurations = (
 				D36501E90A76C5FE00C47A76 /* Debug */,
 				D36501EA0A76C5FE00C47A76 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D36502200A76C82300C47A76 /* Build configuration list for PBXNativeTarget "gsm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D36502210A76C82300C47A76 /* Debug */,
+				D36502220A76C82300C47A76 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D36502520A76C8FA00C47A76 /* Build configuration list for PBXNativeTarget "mod_gsm" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D36502530A76C8FA00C47A76 /* Debug */,
+				D36502540A76C8FA00C47A76 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
