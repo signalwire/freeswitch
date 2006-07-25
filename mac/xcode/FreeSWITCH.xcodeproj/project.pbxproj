@@ -3612,7 +3612,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "if [ -e ../../.complete ]; then\n\texit 0\nfi\ncd ../..\n./configure\ntouch .complete\n";
+			shellScript = "cd ../..\n./build/checkversion.sh force\nif [ -e .complete ]; then\n\texit 0\nfi\n./configure\ntouch .complete\n";
 		};
 		D3DEC2260A75CB62002001CF /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
