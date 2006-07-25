@@ -805,7 +805,7 @@ distclean-tags:
 
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
-	mkdir $(distdir)
+	mkdir -p $(distdir)
 	$(mkdir_p) $(distdir)/build/config $(distdir)/src/include
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \

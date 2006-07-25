@@ -116,62 +116,45 @@
 		D3542E5F09C36DE7000A33C3 /* apr_private.h in Headers */ = {isa = PBXBuildFile; fileRef = D32C91A909C10E6D00FCE413 /* apr_private.h */; settings = {ATTRIBUTES = (Public, ); }; };
 /* End PBXBuildFile section */
 
-/* Begin PBXBuildStyle section */
-		D3F01FCE09C1180000120915 /* Development */ = {
-			isa = PBXBuildStyle;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-			};
-			name = Development;
-		};
-		D3F01FCF09C1180000120915 /* Deployment */ = {
-			isa = PBXBuildStyle;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-			};
-			name = Deployment;
-		};
-/* End PBXBuildStyle section */
-
 /* Begin PBXFileReference section */
 		D32C90E609C10C4600FCE413 /* apr.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = apr.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D32C90E809C10C4600FCE413 /* apr-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "apr-Info.plist"; sourceTree = "<group>"; };
-		D32C914F09C10E6D00FCE413 /* apr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr.h; path = "../../../libs/apr-1.2.2/include/apr.h"; sourceTree = "<group>"; };
-		D32C915309C10E6D00FCE413 /* apr_allocator.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_allocator.h; path = "../../../libs/apr-1.2.2/include/apr_allocator.h"; sourceTree = "<group>"; };
-		D32C915409C10E6D00FCE413 /* apr_atomic.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_atomic.h; path = "../../../libs/apr-1.2.2/include/apr_atomic.h"; sourceTree = "<group>"; };
-		D32C915509C10E6D00FCE413 /* apr_dso.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_dso.h; path = "../../../libs/apr-1.2.2/include/apr_dso.h"; sourceTree = "<group>"; };
-		D32C915609C10E6D00FCE413 /* apr_env.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_env.h; path = "../../../libs/apr-1.2.2/include/apr_env.h"; sourceTree = "<group>"; };
-		D32C915709C10E6D00FCE413 /* apr_errno.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_errno.h; path = "../../../libs/apr-1.2.2/include/apr_errno.h"; sourceTree = "<group>"; };
-		D32C915809C10E6D00FCE413 /* apr_file_info.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_file_info.h; path = "../../../libs/apr-1.2.2/include/apr_file_info.h"; sourceTree = "<group>"; };
-		D32C915909C10E6D00FCE413 /* apr_file_io.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_file_io.h; path = "../../../libs/apr-1.2.2/include/apr_file_io.h"; sourceTree = "<group>"; };
-		D32C915A09C10E6D00FCE413 /* apr_fnmatch.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_fnmatch.h; path = "../../../libs/apr-1.2.2/include/apr_fnmatch.h"; sourceTree = "<group>"; };
-		D32C915B09C10E6D00FCE413 /* apr_general.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_general.h; path = "../../../libs/apr-1.2.2/include/apr_general.h"; sourceTree = "<group>"; };
-		D32C915C09C10E6D00FCE413 /* apr_getopt.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_getopt.h; path = "../../../libs/apr-1.2.2/include/apr_getopt.h"; sourceTree = "<group>"; };
-		D32C915D09C10E6D00FCE413 /* apr_global_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_global_mutex.h; path = "../../../libs/apr-1.2.2/include/apr_global_mutex.h"; sourceTree = "<group>"; };
-		D32C915E09C10E6D00FCE413 /* apr_hash.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_hash.h; path = "../../../libs/apr-1.2.2/include/apr_hash.h"; sourceTree = "<group>"; };
-		D32C915F09C10E6D00FCE413 /* apr_inherit.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_inherit.h; path = "../../../libs/apr-1.2.2/include/apr_inherit.h"; sourceTree = "<group>"; };
-		D32C916009C10E6D00FCE413 /* apr_lib.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_lib.h; path = "../../../libs/apr-1.2.2/include/apr_lib.h"; sourceTree = "<group>"; };
-		D32C916109C10E6D00FCE413 /* apr_mmap.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_mmap.h; path = "../../../libs/apr-1.2.2/include/apr_mmap.h"; sourceTree = "<group>"; };
-		D32C916209C10E6D00FCE413 /* apr_network_io.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_network_io.h; path = "../../../libs/apr-1.2.2/include/apr_network_io.h"; sourceTree = "<group>"; };
-		D32C916309C10E6D00FCE413 /* apr_poll.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_poll.h; path = "../../../libs/apr-1.2.2/include/apr_poll.h"; sourceTree = "<group>"; };
-		D32C916409C10E6D00FCE413 /* apr_pools.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_pools.h; path = "../../../libs/apr-1.2.2/include/apr_pools.h"; sourceTree = "<group>"; };
-		D32C916509C10E6D00FCE413 /* apr_portable.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_portable.h; path = "../../../libs/apr-1.2.2/include/apr_portable.h"; sourceTree = "<group>"; };
-		D32C916609C10E6D00FCE413 /* apr_proc_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_proc_mutex.h; path = "../../../libs/apr-1.2.2/include/apr_proc_mutex.h"; sourceTree = "<group>"; };
-		D32C916709C10E6D00FCE413 /* apr_random.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_random.h; path = "../../../libs/apr-1.2.2/include/apr_random.h"; sourceTree = "<group>"; };
-		D32C916809C10E6D00FCE413 /* apr_ring.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_ring.h; path = "../../../libs/apr-1.2.2/include/apr_ring.h"; sourceTree = "<group>"; };
-		D32C916909C10E6D00FCE413 /* apr_shm.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_shm.h; path = "../../../libs/apr-1.2.2/include/apr_shm.h"; sourceTree = "<group>"; };
-		D32C916A09C10E6D00FCE413 /* apr_signal.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_signal.h; path = "../../../libs/apr-1.2.2/include/apr_signal.h"; sourceTree = "<group>"; };
-		D32C916B09C10E6D00FCE413 /* apr_strings.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_strings.h; path = "../../../libs/apr-1.2.2/include/apr_strings.h"; sourceTree = "<group>"; };
-		D32C916C09C10E6D00FCE413 /* apr_support.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_support.h; path = "../../../libs/apr-1.2.2/include/apr_support.h"; sourceTree = "<group>"; };
-		D32C916D09C10E6D00FCE413 /* apr_tables.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_tables.h; path = "../../../libs/apr-1.2.2/include/apr_tables.h"; sourceTree = "<group>"; };
-		D32C916E09C10E6D00FCE413 /* apr_thread_cond.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_cond.h; path = "../../../libs/apr-1.2.2/include/apr_thread_cond.h"; sourceTree = "<group>"; };
-		D32C916F09C10E6D00FCE413 /* apr_thread_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_mutex.h; path = "../../../libs/apr-1.2.2/include/apr_thread_mutex.h"; sourceTree = "<group>"; };
-		D32C917009C10E6D00FCE413 /* apr_thread_proc.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_proc.h; path = "../../../libs/apr-1.2.2/include/apr_thread_proc.h"; sourceTree = "<group>"; };
-		D32C917109C10E6D00FCE413 /* apr_thread_rwlock.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_rwlock.h; path = "../../../libs/apr-1.2.2/include/apr_thread_rwlock.h"; sourceTree = "<group>"; };
-		D32C917209C10E6D00FCE413 /* apr_time.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_time.h; path = "../../../libs/apr-1.2.2/include/apr_time.h"; sourceTree = "<group>"; };
-		D32C917309C10E6D00FCE413 /* apr_user.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_user.h; path = "../../../libs/apr-1.2.2/include/apr_user.h"; sourceTree = "<group>"; };
-		D32C917409C10E6D00FCE413 /* apr_version.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_version.h; path = "../../../libs/apr-1.2.2/include/apr_version.h"; sourceTree = "<group>"; };
-		D32C917509C10E6D00FCE413 /* apr_want.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_want.h; path = "../../../libs/apr-1.2.2/include/apr_want.h"; sourceTree = "<group>"; };
+		D32C914F09C10E6D00FCE413 /* apr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr.h; path = "../../../libs/apr-1.2.6/include/apr.h"; sourceTree = "<group>"; };
+		D32C915309C10E6D00FCE413 /* apr_allocator.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_allocator.h; path = "../../../libs/apr-1.2.6/include/apr_allocator.h"; sourceTree = "<group>"; };
+		D32C915409C10E6D00FCE413 /* apr_atomic.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_atomic.h; path = "../../../libs/apr-1.2.6/include/apr_atomic.h"; sourceTree = "<group>"; };
+		D32C915509C10E6D00FCE413 /* apr_dso.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_dso.h; path = "../../../libs/apr-1.2.6/include/apr_dso.h"; sourceTree = "<group>"; };
+		D32C915609C10E6D00FCE413 /* apr_env.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_env.h; path = "../../../libs/apr-1.2.6/include/apr_env.h"; sourceTree = "<group>"; };
+		D32C915709C10E6D00FCE413 /* apr_errno.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_errno.h; path = "../../../libs/apr-1.2.6/include/apr_errno.h"; sourceTree = "<group>"; };
+		D32C915809C10E6D00FCE413 /* apr_file_info.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_file_info.h; path = "../../../libs/apr-1.2.6/include/apr_file_info.h"; sourceTree = "<group>"; };
+		D32C915909C10E6D00FCE413 /* apr_file_io.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_file_io.h; path = "../../../libs/apr-1.2.6/include/apr_file_io.h"; sourceTree = "<group>"; };
+		D32C915A09C10E6D00FCE413 /* apr_fnmatch.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_fnmatch.h; path = "../../../libs/apr-1.2.6/include/apr_fnmatch.h"; sourceTree = "<group>"; };
+		D32C915B09C10E6D00FCE413 /* apr_general.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_general.h; path = "../../../libs/apr-1.2.6/include/apr_general.h"; sourceTree = "<group>"; };
+		D32C915C09C10E6D00FCE413 /* apr_getopt.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_getopt.h; path = "../../../libs/apr-1.2.6/include/apr_getopt.h"; sourceTree = "<group>"; };
+		D32C915D09C10E6D00FCE413 /* apr_global_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_global_mutex.h; path = "../../../libs/apr-1.2.6/include/apr_global_mutex.h"; sourceTree = "<group>"; };
+		D32C915E09C10E6D00FCE413 /* apr_hash.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_hash.h; path = "../../../libs/apr-1.2.6/include/apr_hash.h"; sourceTree = "<group>"; };
+		D32C915F09C10E6D00FCE413 /* apr_inherit.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_inherit.h; path = "../../../libs/apr-1.2.6/include/apr_inherit.h"; sourceTree = "<group>"; };
+		D32C916009C10E6D00FCE413 /* apr_lib.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_lib.h; path = "../../../libs/apr-1.2.6/include/apr_lib.h"; sourceTree = "<group>"; };
+		D32C916109C10E6D00FCE413 /* apr_mmap.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_mmap.h; path = "../../../libs/apr-1.2.6/include/apr_mmap.h"; sourceTree = "<group>"; };
+		D32C916209C10E6D00FCE413 /* apr_network_io.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_network_io.h; path = "../../../libs/apr-1.2.6/include/apr_network_io.h"; sourceTree = "<group>"; };
+		D32C916309C10E6D00FCE413 /* apr_poll.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_poll.h; path = "../../../libs/apr-1.2.6/include/apr_poll.h"; sourceTree = "<group>"; };
+		D32C916409C10E6D00FCE413 /* apr_pools.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_pools.h; path = "../../../libs/apr-1.2.6/include/apr_pools.h"; sourceTree = "<group>"; };
+		D32C916509C10E6D00FCE413 /* apr_portable.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_portable.h; path = "../../../libs/apr-1.2.6/include/apr_portable.h"; sourceTree = "<group>"; };
+		D32C916609C10E6D00FCE413 /* apr_proc_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_proc_mutex.h; path = "../../../libs/apr-1.2.6/include/apr_proc_mutex.h"; sourceTree = "<group>"; };
+		D32C916709C10E6D00FCE413 /* apr_random.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_random.h; path = "../../../libs/apr-1.2.6/include/apr_random.h"; sourceTree = "<group>"; };
+		D32C916809C10E6D00FCE413 /* apr_ring.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_ring.h; path = "../../../libs/apr-1.2.6/include/apr_ring.h"; sourceTree = "<group>"; };
+		D32C916909C10E6D00FCE413 /* apr_shm.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_shm.h; path = "../../../libs/apr-1.2.6/include/apr_shm.h"; sourceTree = "<group>"; };
+		D32C916A09C10E6D00FCE413 /* apr_signal.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_signal.h; path = "../../../libs/apr-1.2.6/include/apr_signal.h"; sourceTree = "<group>"; };
+		D32C916B09C10E6D00FCE413 /* apr_strings.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_strings.h; path = "../../../libs/apr-1.2.6/include/apr_strings.h"; sourceTree = "<group>"; };
+		D32C916C09C10E6D00FCE413 /* apr_support.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_support.h; path = "../../../libs/apr-1.2.6/include/apr_support.h"; sourceTree = "<group>"; };
+		D32C916D09C10E6D00FCE413 /* apr_tables.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_tables.h; path = "../../../libs/apr-1.2.6/include/apr_tables.h"; sourceTree = "<group>"; };
+		D32C916E09C10E6D00FCE413 /* apr_thread_cond.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_cond.h; path = "../../../libs/apr-1.2.6/include/apr_thread_cond.h"; sourceTree = "<group>"; };
+		D32C916F09C10E6D00FCE413 /* apr_thread_mutex.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_mutex.h; path = "../../../libs/apr-1.2.6/include/apr_thread_mutex.h"; sourceTree = "<group>"; };
+		D32C917009C10E6D00FCE413 /* apr_thread_proc.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_proc.h; path = "../../../libs/apr-1.2.6/include/apr_thread_proc.h"; sourceTree = "<group>"; };
+		D32C917109C10E6D00FCE413 /* apr_thread_rwlock.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_thread_rwlock.h; path = "../../../libs/apr-1.2.6/include/apr_thread_rwlock.h"; sourceTree = "<group>"; };
+		D32C917209C10E6D00FCE413 /* apr_time.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_time.h; path = "../../../libs/apr-1.2.6/include/apr_time.h"; sourceTree = "<group>"; };
+		D32C917309C10E6D00FCE413 /* apr_user.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_user.h; path = "../../../libs/apr-1.2.6/include/apr_user.h"; sourceTree = "<group>"; };
+		D32C917409C10E6D00FCE413 /* apr_version.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_version.h; path = "../../../libs/apr-1.2.6/include/apr_version.h"; sourceTree = "<group>"; };
+		D32C917509C10E6D00FCE413 /* apr_want.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = apr_want.h; path = "../../../libs/apr-1.2.6/include/apr_want.h"; sourceTree = "<group>"; };
 		D32C917909C10E6D00FCE413 /* apr_private_common.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_private_common.h; sourceTree = "<group>"; };
 		D32C919B09C10E6D00FCE413 /* apr_arch_dso.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_dso.h; sourceTree = "<group>"; };
 		D32C919C09C10E6D00FCE413 /* apr_arch_file_io.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_arch_file_io.h; sourceTree = "<group>"; };
@@ -190,7 +173,7 @@
 		D32C91A909C10E6D00FCE413 /* apr_private.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr_private.h; sourceTree = "<group>"; };
 		D32C928509C1114B00FCE413 /* apr_atomic.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = apr_atomic.c; sourceTree = "<group>"; };
 		D32C929409C1114B00FCE413 /* dso.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = dso.c; sourceTree = "<group>"; };
-		D32C929809C1114B00FCE413 /* exports.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = exports.c; path = "../../../libs/apr-1.2.2/exports.c"; sourceTree = SOURCE_ROOT; };
+		D32C929809C1114B00FCE413 /* exports.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = exports.c; path = "../../../libs/apr-1.2.6/exports.c"; sourceTree = SOURCE_ROOT; };
 		D32C92B509C1114B00FCE413 /* copy.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = copy.c; sourceTree = "<group>"; };
 		D32C92B609C1114B00FCE413 /* dir.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = dir.c; sourceTree = "<group>"; };
 		D32C92B709C1114B00FCE413 /* fileacc.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = fileacc.c; sourceTree = "<group>"; };
@@ -330,7 +313,7 @@
 				D32C919A09C10E6D00FCE413 /* unix */,
 			);
 			name = arch;
-			path = "../../../libs/apr-1.2.2/include/arch";
+			path = "../../../libs/apr-1.2.6/include/arch";
 			sourceTree = "<group>";
 		};
 		D32C919A09C10E6D00FCE413 /* unix */ = {
@@ -387,7 +370,7 @@
 				D32C928409C1114B00FCE413 /* unix */,
 			);
 			name = atomic;
-			path = "../../../libs/apr-1.2.2/atomic";
+			path = "../../../libs/apr-1.2.6/atomic";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C928409C1114B00FCE413 /* unix */ = {
@@ -404,7 +387,7 @@
 				D32C929309C1114B00FCE413 /* unix */,
 			);
 			name = dso;
-			path = "../../../libs/apr-1.2.2/dso";
+			path = "../../../libs/apr-1.2.6/dso";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C929309C1114B00FCE413 /* unix */ = {
@@ -421,7 +404,7 @@
 				D32C92B409C1114B00FCE413 /* unix */,
 			);
 			name = file_io;
-			path = "../../../libs/apr-1.2.2/file_io";
+			path = "../../../libs/apr-1.2.6/file_io";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C92B409C1114B00FCE413 /* unix */ = {
@@ -452,7 +435,7 @@
 				D32C92E109C1114B00FCE413 /* unix */,
 			);
 			name = locks;
-			path = "../../../libs/apr-1.2.2/locks";
+			path = "../../../libs/apr-1.2.6/locks";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C92E109C1114B00FCE413 /* unix */ = {
@@ -473,7 +456,7 @@
 				D32C92ED09C1114B00FCE413 /* unix */,
 			);
 			name = memory;
-			path = "../../../libs/apr-1.2.2/memory";
+			path = "../../../libs/apr-1.2.6/memory";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C92ED09C1114B00FCE413 /* unix */ = {
@@ -490,7 +473,7 @@
 				D32C92F709C1114B00FCE413 /* unix */,
 			);
 			name = misc;
-			path = "../../../libs/apr-1.2.2/misc";
+			path = "../../../libs/apr-1.2.6/misc";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C92F709C1114B00FCE413 /* unix */ = {
@@ -514,7 +497,7 @@
 				D32C930B09C1114C00FCE413 /* unix */,
 			);
 			name = mmap;
-			path = "../../../libs/apr-1.2.2/mmap";
+			path = "../../../libs/apr-1.2.6/mmap";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C930B09C1114C00FCE413 /* unix */ = {
@@ -532,7 +515,7 @@
 				D32C931D09C1114C00FCE413 /* unix */,
 			);
 			name = network_io;
-			path = "../../../libs/apr-1.2.2/network_io";
+			path = "../../../libs/apr-1.2.6/network_io";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C931D09C1114C00FCE413 /* unix */ = {
@@ -555,7 +538,7 @@
 				D32C932A09C1114C00FCE413 /* apr_getpass.c */,
 			);
 			name = passwd;
-			path = "../../../libs/apr-1.2.2/passwd";
+			path = "../../../libs/apr-1.2.6/passwd";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C932B09C1114C00FCE413 /* poll */ = {
@@ -564,7 +547,7 @@
 				D32C932F09C1114C00FCE413 /* unix */,
 			);
 			name = poll;
-			path = "../../../libs/apr-1.2.2/poll";
+			path = "../../../libs/apr-1.2.6/poll";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C932F09C1114C00FCE413 /* unix */ = {
@@ -585,7 +568,7 @@
 				D32C933609C1114C00FCE413 /* unix */,
 			);
 			name = random;
-			path = "../../../libs/apr-1.2.2/random";
+			path = "../../../libs/apr-1.2.6/random";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C933609C1114C00FCE413 /* unix */ = {
@@ -605,7 +588,7 @@
 				D32C934009C1114C00FCE413 /* unix */,
 			);
 			name = shmem;
-			path = "../../../libs/apr-1.2.2/shmem";
+			path = "../../../libs/apr-1.2.6/shmem";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C934009C1114C00FCE413 /* unix */ = {
@@ -627,7 +610,7 @@
 				D32C934A09C1114C00FCE413 /* apr_strtok.c */,
 			);
 			name = strings;
-			path = "../../../libs/apr-1.2.2/strings";
+			path = "../../../libs/apr-1.2.6/strings";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C934B09C1114C00FCE413 /* support */ = {
@@ -636,7 +619,7 @@
 				D32C934C09C1114C00FCE413 /* unix */,
 			);
 			name = support;
-			path = "../../../libs/apr-1.2.2/support";
+			path = "../../../libs/apr-1.2.6/support";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C934C09C1114C00FCE413 /* unix */ = {
@@ -654,7 +637,7 @@
 				D32C935009C1114C00FCE413 /* apr_tables.c */,
 			);
 			name = tables;
-			path = "../../../libs/apr-1.2.2/tables";
+			path = "../../../libs/apr-1.2.6/tables";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C935109C1114C00FCE413 /* threadproc */ = {
@@ -663,7 +646,7 @@
 				D32C936309C1114C00FCE413 /* unix */,
 			);
 			name = threadproc;
-			path = "../../../libs/apr-1.2.2/threadproc";
+			path = "../../../libs/apr-1.2.6/threadproc";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C936309C1114C00FCE413 /* unix */ = {
@@ -684,7 +667,7 @@
 				D32C936F09C1114C00FCE413 /* unix */,
 			);
 			name = time;
-			path = "../../../libs/apr-1.2.2/time";
+			path = "../../../libs/apr-1.2.6/time";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C936F09C1114C00FCE413 /* unix */ = {
@@ -702,7 +685,7 @@
 				D32C937A09C1114C00FCE413 /* unix */,
 			);
 			name = user;
-			path = "../../../libs/apr-1.2.2/user";
+			path = "../../../libs/apr-1.2.6/user";
 			sourceTree = SOURCE_ROOT;
 		};
 		D32C937A09C1114C00FCE413 /* unix */ = {
@@ -775,52 +758,11 @@
 			);
 			buildRules = (
 			);
-			buildSettings = {
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
-				FRAMEWORK_VERSION = A;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
-				GCC_MODEL_TUNING = G5;
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
-				INFOPLIST_FILE = "apr-Info.plist";
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
-				OTHER_LDFLAGS = (
-					"-framework",
-					Foundation,
-					"-framework",
-					AppKit,
-				);
-				PREBINDING = NO;
-				PRODUCT_NAME = apr;
-				ZERO_LINK = YES;
-			};
 			dependencies = (
 			);
 			name = apr.framework;
 			productName = apr;
 			productReference = D32C90E609C10C4600FCE413 /* apr.framework */;
-			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
-<plist version=\"1.0\">
-<dict>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
-	<key>CFBundleExecutable</key>
-	<string>${EXECUTABLE_NAME}</string>
-	<key>CFBundleIdentifier</key>
-	<string>com.yourcompany.apr</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundlePackageType</key>
-	<string>FMWK</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
-	<key>CFBundleVersion</key>
-	<string>1.0</string>
-</dict>
-</plist>
-";
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
@@ -828,13 +770,7 @@
 /* Begin PBXProject section */
 		D32C90D809C10C3300FCE413 /* Project object */ = {
 			isa = PBXProject;
-			buildConfigurationList = D32C90D909C10C3300FCE413 /* Build configuration list for PBXProject "apr-1.2.2" */;
-			buildSettings = {
-			};
-			buildStyles = (
-				D3F01FCE09C1180000120915 /* Development */,
-				D3F01FCF09C1180000120915 /* Deployment */,
-			);
+			buildConfigurationList = D32C90D909C10C3300FCE413 /* Build configuration list for PBXProject "apr-1.2.6" */;
 			hasScannedForEncodings = 0;
 			mainGroup = D32C90D609C10C3300FCE413;
 			productRefGroup = D32C90E709C10C4600FCE413 /* apr-1.2.6 */;
@@ -1029,7 +965,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D32C90D909C10C3300FCE413 /* Build configuration list for PBXProject "apr-1.2.2" */ = {
+		D32C90D909C10C3300FCE413 /* Build configuration list for PBXProject "apr-1.2.6" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D32C90DA09C10C3300FCE413 /* Debug */,
