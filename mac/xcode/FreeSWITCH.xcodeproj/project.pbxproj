@@ -57,6 +57,31 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		D347253A0A76D7E7001C8ED7 /* answer.h in Headers */ = {isa = PBXBuildFile; fileRef = D34725170A76D756001C8ED7 /* answer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D347253B0A76D7E7001C8ED7 /* busy.h in Headers */ = {isa = PBXBuildFile; fileRef = D34725180A76D756001C8ED7 /* busy.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D347253C0A76D7E7001C8ED7 /* dialtone.h in Headers */ = {isa = PBXBuildFile; fileRef = D34725190A76D756001C8ED7 /* dialtone.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D347253D0A76D7E7001C8ED7 /* frame.h in Headers */ = {isa = PBXBuildFile; fileRef = D347251A0A76D756001C8ED7 /* frame.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D347253E0A76D7E7001C8ED7 /* iax-client.h in Headers */ = {isa = PBXBuildFile; fileRef = D347251B0A76D756001C8ED7 /* iax-client.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D347253F0A76D7E7001C8ED7 /* iax.h in Headers */ = {isa = PBXBuildFile; fileRef = D347251C0A76D756001C8ED7 /* iax.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D34725400A76D7E7001C8ED7 /* iax2-parser.h in Headers */ = {isa = PBXBuildFile; fileRef = D347251D0A76D756001C8ED7 /* iax2-parser.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D34725410A76D7E7001C8ED7 /* iax2.h in Headers */ = {isa = PBXBuildFile; fileRef = D347251E0A76D756001C8ED7 /* iax2.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D34725420A76D7E7001C8ED7 /* jitterbuf.h in Headers */ = {isa = PBXBuildFile; fileRef = D347251F0A76D756001C8ED7 /* jitterbuf.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D34725430A76D7E7001C8ED7 /* md5.h in Headers */ = {isa = PBXBuildFile; fileRef = D34725200A76D756001C8ED7 /* md5.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D34725440A76D7E7001C8ED7 /* ring10.h in Headers */ = {isa = PBXBuildFile; fileRef = D34725230A76D756001C8ED7 /* ring10.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D34725450A76D7E7001C8ED7 /* ringtone.h in Headers */ = {isa = PBXBuildFile; fileRef = D34725240A76D756001C8ED7 /* ringtone.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D34725460A76D7F7001C8ED7 /* iax.c in Sources */ = {isa = PBXBuildFile; fileRef = D34725260A76D773001C8ED7 /* iax.c */; };
+		D34725470A76D7F7001C8ED7 /* iax2-parser.c in Sources */ = {isa = PBXBuildFile; fileRef = D34725270A76D773001C8ED7 /* iax2-parser.c */; };
+		D34725480A76D7F7001C8ED7 /* jitterbuf.c in Sources */ = {isa = PBXBuildFile; fileRef = D34725280A76D773001C8ED7 /* jitterbuf.c */; };
+		D34725490A76D7F7001C8ED7 /* md5.c in Sources */ = {isa = PBXBuildFile; fileRef = D34725290A76D773001C8ED7 /* md5.c */; };
+		D347255B0A76D91E001C8ED7 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D347255C0A76D91E001C8ED7 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D347255D0A76D91E001C8ED7 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D347255E0A76D91E001C8ED7 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D347255F0A76D91E001C8ED7 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D34725600A76D91E001C8ED7 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D34725610A76D91E001C8ED7 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D34725C40A76D954001C8ED7 /* mod_iax.c in Sources */ = {isa = PBXBuildFile; fileRef = D34725C30A76D954001C8ED7 /* mod_iax.c */; };
+		D34725CA0A76D9BF001C8ED7 /* iax.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D34725350A76D7B1001C8ED7 /* iax.framework */; };
 		D36500860A76BE4700C47A76 /* mod_dialplan_xml.c in Sources */ = {isa = PBXBuildFile; fileRef = D36500850A76BE4700C47A76 /* mod_dialplan_xml.c */; };
 		D36500870A76BE5A00C47A76 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
 		D36500880A76BE5A00C47A76 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
@@ -753,6 +778,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		D34725570A76D904001C8ED7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D34725340A76D7B1001C8ED7 /* iax2 */;
+			remoteInfo = iax2;
+		};
 		D36501760A76C28200C47A76 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
@@ -1044,12 +1076,32 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D37671640A75F0DC00ACC1FB /* libfreeswitch */;
+			remoteGlobalIDString = D37671640A75F0DC00ACC1FB;
 			remoteInfo = libfreeswitch;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D34725170A76D756001C8ED7 /* answer.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = answer.h; path = ../../libs/iax/src/answer.h; sourceTree = SOURCE_ROOT; };
+		D34725180A76D756001C8ED7 /* busy.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = busy.h; path = ../../libs/iax/src/busy.h; sourceTree = SOURCE_ROOT; };
+		D34725190A76D756001C8ED7 /* dialtone.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = dialtone.h; path = ../../libs/iax/src/dialtone.h; sourceTree = SOURCE_ROOT; };
+		D347251A0A76D756001C8ED7 /* frame.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = frame.h; path = ../../libs/iax/src/frame.h; sourceTree = SOURCE_ROOT; };
+		D347251B0A76D756001C8ED7 /* iax-client.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = "iax-client.h"; path = "../../libs/iax/src/iax-client.h"; sourceTree = SOURCE_ROOT; };
+		D347251C0A76D756001C8ED7 /* iax.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = iax.h; path = ../../libs/iax/src/iax.h; sourceTree = SOURCE_ROOT; };
+		D347251D0A76D756001C8ED7 /* iax2-parser.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = "iax2-parser.h"; path = "../../libs/iax/src/iax2-parser.h"; sourceTree = SOURCE_ROOT; };
+		D347251E0A76D756001C8ED7 /* iax2.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = iax2.h; path = ../../libs/iax/src/iax2.h; sourceTree = SOURCE_ROOT; };
+		D347251F0A76D756001C8ED7 /* jitterbuf.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = jitterbuf.h; path = ../../libs/iax/src/jitterbuf.h; sourceTree = SOURCE_ROOT; };
+		D34725200A76D756001C8ED7 /* md5.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = md5.h; path = ../../libs/iax/src/md5.h; sourceTree = SOURCE_ROOT; };
+		D34725230A76D756001C8ED7 /* ring10.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = ring10.h; path = ../../libs/iax/src/ring10.h; sourceTree = SOURCE_ROOT; };
+		D34725240A76D756001C8ED7 /* ringtone.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = ringtone.h; path = ../../libs/iax/src/ringtone.h; sourceTree = SOURCE_ROOT; };
+		D34725260A76D773001C8ED7 /* iax.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = iax.c; path = ../../libs/iax/src/iax.c; sourceTree = SOURCE_ROOT; };
+		D34725270A76D773001C8ED7 /* iax2-parser.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = "iax2-parser.c"; path = "../../libs/iax/src/iax2-parser.c"; sourceTree = SOURCE_ROOT; };
+		D34725280A76D773001C8ED7 /* jitterbuf.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = jitterbuf.c; path = ../../libs/iax/src/jitterbuf.c; sourceTree = SOURCE_ROOT; };
+		D34725290A76D773001C8ED7 /* md5.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = md5.c; path = ../../libs/iax/src/md5.c; sourceTree = SOURCE_ROOT; };
+		D34725350A76D7B1001C8ED7 /* iax.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = iax.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D34725360A76D7B1001C8ED7 /* iax.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = iax.plist; sourceTree = "<group>"; };
+		D34725520A76D8D6001C8ED7 /* mod_iax.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_iax.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D34725C30A76D954001C8ED7 /* mod_iax.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_iax.c; path = ../../src/mod/endpoints/mod_iax/mod_iax.c; sourceTree = SOURCE_ROOT; };
 		D36500800A76BDF700C47A76 /* mod_dialplan_xml.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_dialplan_xml.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D36500850A76BE4700C47A76 /* mod_dialplan_xml.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_dialplan_xml.c; path = ../../src/mod/dialplans/mod_dialplan_xml/mod_dialplan_xml.c; sourceTree = SOURCE_ROOT; };
 		D36500F10A76BE9400C47A76 /* pcre.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = pcre.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1262,7 +1314,7 @@
 		D37671920A75F14200ACC1FB /* switch_utils.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_utils.c; path = ../../src/switch_utils.c; sourceTree = SOURCE_ROOT; };
 		D37671930A75F14200ACC1FB /* switch_xml.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_xml.c; path = ../../src/switch_xml.c; sourceTree = SOURCE_ROOT; };
 		D37671940A75F14200ACC1FB /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = ../../src/switch.c; sourceTree = SOURCE_ROOT; };
-		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
+		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD4DF0A768AC500FEDB19 /* srtp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = srtp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD4E00A768AC500FEDB19 /* srtp.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = srtp.plist; sourceTree = "<group>"; };
 		D38DD5260A768B6100FEDB19 /* resample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = resample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1684,6 +1736,21 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		D34725500A76D8D6001C8ED7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D34725CA0A76D9BF001C8ED7 /* iax.framework in Frameworks */,
+				D347255B0A76D91E001C8ED7 /* teletone.framework in Frameworks */,
+				D347255C0A76D91E001C8ED7 /* srtp.framework in Frameworks */,
+				D347255D0A76D91E001C8ED7 /* sqlite.framework in Frameworks */,
+				D347255E0A76D91E001C8ED7 /* resample.framework in Frameworks */,
+				D347255F0A76D91E001C8ED7 /* libfreeswitch.framework in Frameworks */,
+				D34725600A76D91E001C8ED7 /* aprutil.framework in Frameworks */,
+				D34725610A76D91E001C8ED7 /* apr.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D365007E0A76BDF700C47A76 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -2026,6 +2093,7 @@
 		08FB7795FE84155DC02AAC07 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				D34725140A76D712001C8ED7 /* iax2 */,
 				D365026B0A76CA2C00C47A76 /* ilbc */,
 				D36502230A76C84900C47A76 /* gsm */,
 				D36501030A76BFBF00C47A76 /* pcre */,
@@ -2047,6 +2115,7 @@
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				D34725360A76D7B1001C8ED7 /* iax.plist */,
 				D36502A30A76CA9600C47A76 /* ilbc.plist */,
 				D365021F0A76C82200C47A76 /* gsm.plist */,
 				D36500F20A76BE9400C47A76 /* pcre.plist */,
@@ -2093,8 +2162,49 @@
 				D36502510A76C8CD00C47A76 /* mod_gsm.dylib */,
 				D36502A20A76CA9600C47A76 /* ilbc.framework */,
 				D36502DA0A76CAF200C47A76 /* mod_ilbc.dylib */,
+				D34725350A76D7B1001C8ED7 /* iax.framework */,
+				D34725520A76D8D6001C8ED7 /* mod_iax.dylib */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D34725140A76D712001C8ED7 /* iax2 */ = {
+			isa = PBXGroup;
+			children = (
+				D34725160A76D72C001C8ED7 /* include */,
+				D34725150A76D725001C8ED7 /* src */,
+			);
+			name = iax2;
+			sourceTree = "<group>";
+		};
+		D34725150A76D725001C8ED7 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D34725260A76D773001C8ED7 /* iax.c */,
+				D34725270A76D773001C8ED7 /* iax2-parser.c */,
+				D34725280A76D773001C8ED7 /* jitterbuf.c */,
+				D34725290A76D773001C8ED7 /* md5.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D34725160A76D72C001C8ED7 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D34725170A76D756001C8ED7 /* answer.h */,
+				D34725180A76D756001C8ED7 /* busy.h */,
+				D34725190A76D756001C8ED7 /* dialtone.h */,
+				D347251A0A76D756001C8ED7 /* frame.h */,
+				D347251B0A76D756001C8ED7 /* iax-client.h */,
+				D347251C0A76D756001C8ED7 /* iax.h */,
+				D347251D0A76D756001C8ED7 /* iax2-parser.h */,
+				D347251E0A76D756001C8ED7 /* iax2.h */,
+				D347251F0A76D756001C8ED7 /* jitterbuf.h */,
+				D34725200A76D756001C8ED7 /* md5.h */,
+				D34725230A76D756001C8ED7 /* ring10.h */,
+				D34725240A76D756001C8ED7 /* ringtone.h */,
+			);
+			name = include;
 			sourceTree = "<group>";
 		};
 		D36500810A76BE2000C47A76 /* dialplans */ = {
@@ -2443,6 +2553,7 @@
 		D3BC32600A769D2B00DE971E /* endpoints */ = {
 			isa = PBXGroup;
 			children = (
+				D34725C30A76D954001C8ED7 /* mod_iax.c */,
 				D3BC32640A769D4C00DE971E /* mod_dingaling.c */,
 			);
 			name = endpoints;
@@ -3566,6 +3677,25 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		D34725300A76D7B1001C8ED7 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D347253A0A76D7E7001C8ED7 /* answer.h in Headers */,
+				D347253B0A76D7E7001C8ED7 /* busy.h in Headers */,
+				D347253C0A76D7E7001C8ED7 /* dialtone.h in Headers */,
+				D347253D0A76D7E7001C8ED7 /* frame.h in Headers */,
+				D347253E0A76D7E7001C8ED7 /* iax-client.h in Headers */,
+				D347253F0A76D7E7001C8ED7 /* iax.h in Headers */,
+				D34725400A76D7E7001C8ED7 /* iax2-parser.h in Headers */,
+				D34725410A76D7E7001C8ED7 /* iax2.h in Headers */,
+				D34725420A76D7E7001C8ED7 /* jitterbuf.h in Headers */,
+				D34725430A76D7E7001C8ED7 /* md5.h in Headers */,
+				D34725440A76D7E7001C8ED7 /* ring10.h in Headers */,
+				D34725450A76D7E7001C8ED7 /* ringtone.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D36500EC0A76BE9400C47A76 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -3875,6 +4005,39 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
+		D34725340A76D7B1001C8ED7 /* iax */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D34725370A76D7B2001C8ED7 /* Build configuration list for PBXNativeTarget "iax" */;
+			buildPhases = (
+				D34725300A76D7B1001C8ED7 /* Headers */,
+				D34725320A76D7B1001C8ED7 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iax;
+			productName = iax2;
+			productReference = D34725350A76D7B1001C8ED7 /* iax.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		D34725510A76D8D6001C8ED7 /* mod_iax */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D34725540A76D8FD001C8ED7 /* Build configuration list for PBXNativeTarget "mod_iax" */;
+			buildPhases = (
+				D347254F0A76D8D6001C8ED7 /* Sources */,
+				D34725500A76D8D6001C8ED7 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D34725580A76D904001C8ED7 /* PBXTargetDependency */,
+			);
+			name = mod_iax;
+			productName = mod_iax;
+			productReference = D34725520A76D8D6001C8ED7 /* mod_iax.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
 		D365007F0A76BDF700C47A76 /* mod_dialplan_xml */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D36500820A76BE2000C47A76 /* Build configuration list for PBXNativeTarget "mod_dialplan_xml" */;
@@ -4466,6 +4629,8 @@
 				D36502500A76C8CD00C47A76 /* mod_gsm */,
 				D36502A10A76CA9600C47A76 /* ilbc */,
 				D36502D90A76CAF200C47A76 /* mod_ilbc */,
+				D34725340A76D7B1001C8ED7 /* iax */,
+				D34725510A76D8D6001C8ED7 /* mod_iax */,
 			);
 		};
 /* End PBXProject section */
@@ -4621,6 +4786,25 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		D34725320A76D7B1001C8ED7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D34725460A76D7F7001C8ED7 /* iax.c in Sources */,
+				D34725470A76D7F7001C8ED7 /* iax2-parser.c in Sources */,
+				D34725480A76D7F7001C8ED7 /* jitterbuf.c in Sources */,
+				D34725490A76D7F7001C8ED7 /* md5.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D347254F0A76D8D6001C8ED7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D34725C40A76D954001C8ED7 /* mod_iax.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D365007D0A76BDF700C47A76 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -5189,6 +5373,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		D34725580A76D904001C8ED7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D34725340A76D7B1001C8ED7 /* iax */;
+			targetProxy = D34725570A76D904001C8ED7 /* PBXContainerItemProxy */;
+		};
 		D36501770A76C28200C47A76 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D365007F0A76BDF700C47A76 /* mod_dialplan_xml */;
@@ -5437,6 +5626,143 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;
 				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = Release;
+		};
+		D34725380A76D7B2001C8ED7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
+				INFOPLIST_FILE = iax.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_LDFLAGS = (
+					"-framework",
+					Foundation,
+					"-framework",
+					AppKit,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = iax2;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D34725390A76D7B2001C8ED7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = iax.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_CFLAGS = (
+					"-w",
+					"$(OTHER_CFLAGS_QUOTED_1)",
+					"$(OTHER_CFLAGS_QUOTED_2)",
+					"$(OTHER_CFLAGS_QUOTED_3)",
+					"$(OTHER_CFLAGS_QUOTED_4)",
+					"$(OTHER_CFLAGS_QUOTED_5)",
+					"$(OTHER_CFLAGS_QUOTED_6)",
+					"$(OTHER_CFLAGS_QUOTED_7)",
+					"-DSTDC_HEADERS=1",
+					"-DHAVE_SYS_TYPES_H=1",
+					"-DHAVE_SYS_STAT_H=1",
+					"-DHAVE_STDLIB_H=1",
+					"-DHAVE_STRING_H=1",
+					"-DHAVE_MEMORY_H=1",
+					"-DHAVE_STRINGS_H=1",
+					"-DHAVE_INTTYPES_H=1",
+					"-DHAVE_STDINT_H=1",
+					"-DHAVE_UNISTD_H=1",
+					"-DHAVE_DLFCN_H=1",
+					"-DSTDC_HEADERS=1",
+					"-I.",
+					"-I.",
+					"-Wall",
+					"-O2",
+					"-g",
+					"-Wall",
+					"-Wstrict-prototypes",
+					"-I",
+					.,
+					"-DDEBUG_SUPPORT",
+					"-DLIBIAX",
+					"-fsigned-char",
+					"-DMACOSX",
+					"-g",
+					"-O2",
+				);
+				OTHER_CFLAGS_QUOTED_1 = "-DPACKAGE_NAME=\\\"\\\"";
+				OTHER_CFLAGS_QUOTED_2 = "-DPACKAGE_TARNAME=\\\"\\\"";
+				OTHER_CFLAGS_QUOTED_3 = "-DPACKAGE_VERSION=\\\"\\\"";
+				OTHER_CFLAGS_QUOTED_4 = "-DPACKAGE_STRING=\\\"\\\"";
+				OTHER_CFLAGS_QUOTED_5 = "-DPACKAGE_BUGREPORT=\\\"\\\"";
+				OTHER_CFLAGS_QUOTED_6 = "-DPACKAGE=\\\"iax\\\"";
+				OTHER_CFLAGS_QUOTED_7 = "-DVERSION=\\\"0.2.3\\\"";
+				PREBINDING = NO;
+				PRODUCT_NAME = iax;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D34725550A76D8FD001C8ED7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_iax;
+			};
+			name = Debug;
+		};
+		D34725560A76D8FD001C8ED7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_iax;
+				SKIP_INSTALL = NO;
+				ZERO_LINK = NO;
 			};
 			name = Release;
 		};
@@ -7036,6 +7362,24 @@
 			buildConfigurations = (
 				1DEB91F008733DB70010E9CD /* Debug */,
 				1DEB91F108733DB70010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D34725370A76D7B2001C8ED7 /* Build configuration list for PBXNativeTarget "iax" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D34725380A76D7B2001C8ED7 /* Debug */,
+				D34725390A76D7B2001C8ED7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D34725540A76D8FD001C8ED7 /* Build configuration list for PBXNativeTarget "mod_iax" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D34725550A76D8FD001C8ED7 /* Debug */,
+				D34725560A76D8FD001C8ED7 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
