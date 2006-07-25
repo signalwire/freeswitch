@@ -15,6 +15,6 @@
 	<key>CFBundleSignature</key>
 	<string>BKW</string>
 	<key>CFBundleVersion</key>
-	<string>1.0</string>
+	<string>$(FREESWITCH_IKSEMEL_VERSION)</string>
 </dict>
 </plist>

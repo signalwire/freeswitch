@@ -7,14 +7,14 @@
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.yourcompany.sqlite</string>
+	<string>org.freeswitch.sqlite</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleSignature</key>
-	<string>????</string>
+	<string>BKW</string>
 	<key>CFBundleVersion</key>
-	<string>1.0</string>
+	<string>$(FREESWITCH_SQLITE_VERSION)</string>
 </dict>
 </plist>
