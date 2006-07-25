@@ -2040,6 +2040,7 @@
 				OTHER_CFLAGS = (
 					"-g",
 					"-O2",
+					"-w",
 				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
@@ -2071,6 +2072,7 @@
 				OTHER_CFLAGS = (
 					"-g",
 					"-O2",
+					"-w",
 				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
@@ -2282,6 +2284,7 @@
 					"-I.",
 					"-I../include",
 					"-I../include",
+					"-w",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = iksemel;
@@ -2308,6 +2311,7 @@
 					"-I.",
 					"-I../include",
 					"-I../include",
+					"-w",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = iksemel;
