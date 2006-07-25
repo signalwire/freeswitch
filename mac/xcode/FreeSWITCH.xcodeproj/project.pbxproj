@@ -13,6 +13,7 @@
 			buildPhases = (
 			);
 			dependencies = (
+				D38DD54D0A768C7400FEDB19 /* PBXTargetDependency */,
 				D3DEC8150A75D8D3002001CF /* PBXTargetDependency */,
 				D3DEC8170A75D8D6002001CF /* PBXTargetDependency */,
 				D3DEC8450A75DAC1002001CF /* PBXTargetDependency */,
@@ -22,7 +23,7 @@
 				D37671520A75F04700ACC1FB /* PBXTargetDependency */,
 				D38DD5490A768C5700FEDB19 /* PBXTargetDependency */,
 				D38DD54B0A768C6E00FEDB19 /* PBXTargetDependency */,
-				D38DD54D0A768C7400FEDB19 /* PBXTargetDependency */,
+				D38DD5750A768D9C00FEDB19 /* PBXTargetDependency */,
 			);
 			name = FreeSWITCH;
 			productName = FreeSWITCH;
@@ -443,6 +444,13 @@
 			remoteGlobalIDString = D38DD4DE0A768AC500FEDB19 /* srtp.framework */;
 			remoteInfo = srtp.framework;
 		};
+		D38DD5740A768D9C00FEDB19 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D38DD4400A7687A700FEDB19 /* freeswitch */;
+			remoteInfo = freeswitch;
+		};
 		D3DEC8140A75D8D3002001CF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
@@ -581,7 +589,7 @@
 		D37671920A75F14200ACC1FB /* switch_utils.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_utils.c; path = ../../src/switch_utils.c; sourceTree = SOURCE_ROOT; };
 		D37671930A75F14200ACC1FB /* switch_xml.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_xml.c; path = ../../src/switch_xml.c; sourceTree = SOURCE_ROOT; };
 		D37671940A75F14200ACC1FB /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = ../../src/switch.c; sourceTree = SOURCE_ROOT; };
-		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; name = freeswitch; path = build/Release/freeswitch; sourceTree = "<group>"; };
+		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; name = freeswitch; path = build/Release/freeswitch; sourceTree = "<group>"; };
 		D38DD4DF0A768AC500FEDB19 /* srtp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = srtp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD4E00A768AC500FEDB19 /* srtp.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = srtp.plist; sourceTree = "<group>"; };
 		D38DD5260A768B6100FEDB19 /* resample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = resample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2951,6 +2959,11 @@
 			isa = PBXTargetDependency;
 			target = D38DD4DE0A768AC500FEDB19 /* srtp.framework */;
 			targetProxy = D38DD54C0A768C7400FEDB19 /* PBXContainerItemProxy */;
+		};
+		D38DD5750A768D9C00FEDB19 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D38DD4400A7687A700FEDB19 /* freeswitch */;
+			targetProxy = D38DD5740A768D9C00FEDB19 /* PBXContainerItemProxy */;
 		};
 		D3DEC8150A75D8D3002001CF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
