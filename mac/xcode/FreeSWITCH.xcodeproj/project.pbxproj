@@ -4504,7 +4504,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
-			shellScript = "cd ../../libs/srtp\n./configure";
+			shellScript = "if [ -e ../../libs/srtp/.complete ]; then\n\texit 0\nfi\ncd ../../libs/srtp\n./configure\ntouch .complete";
 		};
 		D37670CA0A75ECF300ACC1FB /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
