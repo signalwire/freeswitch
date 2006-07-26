@@ -1439,28 +1439,28 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3E66A7E0A77E62D00D04E25 /* mod_woomera */;
+			remoteGlobalIDString = D3E66A7E0A77E62D00D04E25;
 			remoteInfo = mod_woomera;
 		};
 		D3E66AF90A77E70500D04E25 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3E66AF10A77E6B400D04E25 /* mod_syslog */;
+			remoteGlobalIDString = D3E66AF10A77E6B400D04E25;
 			remoteInfo = mod_syslog;
 		};
 		D3E66B320A77E82600D04E25 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3E66B070A77E73100D04E25 /* mod_event_multicast */;
+			remoteGlobalIDString = D3E66B070A77E73100D04E25;
 			remoteInfo = mod_event_multicast;
 		};
 		D3E66B340A77E82B00D04E25 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3E66B0F0A77E76200D04E25 /* mod_event_socket */;
+			remoteGlobalIDString = D3E66B0F0A77E76200D04E25;
 			remoteInfo = mod_event_socket;
 		};
 		D3EDD2A00A76D3C900AC4900 /* PBXContainerItemProxy */ = {
@@ -1828,7 +1828,7 @@
 		D37671920A75F14200ACC1FB /* switch_utils.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_utils.c; path = ../../src/switch_utils.c; sourceTree = SOURCE_ROOT; };
 		D37671930A75F14200ACC1FB /* switch_xml.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_xml.c; path = ../../src/switch_xml.c; sourceTree = SOURCE_ROOT; };
 		D37671940A75F14200ACC1FB /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = ../../src/switch.c; sourceTree = SOURCE_ROOT; };
-		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
+		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD4DF0A768AC500FEDB19 /* srtp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = srtp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD4E00A768AC500FEDB19 /* srtp.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = srtp.plist; sourceTree = "<group>"; };
 		D38DD5260A768B6100FEDB19 /* resample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = resample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -7557,7 +7557,7 @@
 				FREESWITCH_ARCH = "i386 ppc";
 				FREESWITCH_DOWNLOAD_URL = "http://svn.freeswitch.org/downloads/libs";
 				FREESWITCH_IKSEMEL_VERSION = 1.2;
-				FREESWITCH_INSTALL_PREFIX = "$(HOME)";
+				FREESWITCH_INSTALL_PREFIX = /Volumes/FreeSWITCH;
 				FREESWITCH_LIBOSIP2_VERSION = 2.2.3;
 				FREESWITCH_LIBSNDFILE_VERSION = 1.0.16;
 				FREESWITCH_PCRE_VERSION = 6.4;
@@ -7586,7 +7586,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = speex.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = "-w";
 				PREBINDING = NO;
 				PRODUCT_NAME = speex;
@@ -7606,7 +7606,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = speex.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = "-w";
 				PREBINDING = NO;
 				PRODUCT_NAME = speex;
@@ -7628,7 +7628,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = portaudio.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				PREBINDING = NO;
 				PRODUCT_NAME = portaudio;
 				ZERO_LINK = YES;
@@ -7647,7 +7647,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = portaudio.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				PREBINDING = NO;
 				PRODUCT_NAME = portaudio;
 				ZERO_LINK = NO;
@@ -7715,7 +7715,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = iax.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -7740,7 +7740,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = iax.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = (
 					"-w",
 					"$(OTHER_CFLAGS_QUOTED_1)",
@@ -7898,7 +7898,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = pcre.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -7923,7 +7923,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = pcre.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = "-w";
 				PREBINDING = NO;
 				PRODUCT_NAME = pcre;
@@ -8081,7 +8081,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = gsm.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -8106,7 +8106,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = gsm.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				PREBINDING = NO;
 				PRODUCT_NAME = gsm;
 				ZERO_LINK = NO;
@@ -8173,7 +8173,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = ilbc.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -8198,7 +8198,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = ilbc.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				PREBINDING = NO;
 				PRODUCT_NAME = ilbc;
 				ZERO_LINK = NO;
@@ -8265,7 +8265,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = sqlite.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -8291,7 +8291,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = sqlite.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = (
 					"-DHAVE_USLEEP=1",
 					"-DNDEBUG",
@@ -8324,7 +8324,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = libfreeswitch.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = (
 					"-fPIC",
 					"-Wmissing-prototypes",
@@ -8368,7 +8368,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = libfreeswitch.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				MACH_O_TYPE = mh_dylib;
 				OTHER_CFLAGS = (
 					"-fPIC",
@@ -8411,7 +8411,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				INSTALL_PATH = "$(HOME)/bin";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/bin";
 				PREBINDING = NO;
 				PRODUCT_NAME = freeswitch;
 				ZERO_LINK = YES;
@@ -8447,7 +8447,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = srtp.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -8472,7 +8472,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = srtp.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				PREBINDING = NO;
 				PRODUCT_NAME = srtp;
 				ZERO_LINK = NO;
@@ -8494,7 +8494,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = resample.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -8520,7 +8520,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = resample.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				PREBINDING = NO;
 				PRODUCT_NAME = resample;
 				ZERO_LINK = NO;
@@ -8542,7 +8542,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = speakup.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -8567,7 +8567,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = speakup.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				PREBINDING = NO;
 				PRODUCT_NAME = speakup;
 				ZERO_LINK = NO;
@@ -9062,7 +9062,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = sndfile.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -9087,7 +9087,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = sndfile.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = (
 					"-I/Developer/Headers/FlatCarbon",
 					"-w",
@@ -9204,7 +9204,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = NO;
 				INFOPLIST_FILE = apr.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = (
 					"-g",
 					"-O2",
@@ -9237,7 +9237,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = NO;
 				INFOPLIST_FILE = apr.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = (
 					"-g",
 					"-O2",
@@ -9270,7 +9270,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = aprutil.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = "";
 				PREBINDING = NO;
 				PRODUCT_NAME = aprutil;
@@ -9291,7 +9291,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = aprutil.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = "";
 				PREBINDING = NO;
 				PRODUCT_NAME = aprutil;
@@ -9335,7 +9335,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = teletone.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -9360,7 +9360,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = teletone.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -9387,7 +9387,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = iksemel.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = (
 					"-DHAVE_CONFIG_H",
 					"-I.",
@@ -9415,7 +9415,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = iksemel.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = (
 					"-DHAVE_CONFIG_H",
 					"-I.",
@@ -9444,7 +9444,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = dingaling.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				PREBINDING = NO;
 				PRODUCT_NAME = dingaling;
 				ZERO_LINK = YES;
@@ -9463,7 +9463,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = dingaling.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				PREBINDING = NO;
 				PRODUCT_NAME = dingaling;
 				ZERO_LINK = NO;
@@ -9665,7 +9665,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = osip2.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -9690,7 +9690,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = osip2.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = (
 					"-w",
 					"-DOSIP_MT",
@@ -9739,7 +9739,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = osipparser2.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -9764,7 +9764,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = osipparser2.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = (
 					"-w",
 					"-DHAVE_CONFIG_H",
@@ -9804,7 +9804,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = exosip2.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -9829,7 +9829,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				INFOPLIST_FILE = exosip2.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				OTHER_CFLAGS = (
 					"-w",
 					"-Wall",
