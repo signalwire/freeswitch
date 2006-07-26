@@ -240,7 +240,7 @@ static int on_msg(void *user_data, ikspak * pak)
 	stream.end = stream.data;
 	stream.data_size = sizeof(retbuf);
 	stream.write_function = switch_console_stream_write;
-	switch_api_execute(cmd, arg, &stream);
+	switch_api_execute(cmd, arg, NULL, &stream);
 
 	return 0;
 }
