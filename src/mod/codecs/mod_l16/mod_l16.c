@@ -31,7 +31,7 @@
  */
 #include <switch.h>
 
-static const char modname[] = "mod_rawaudio";
+static const char modname[] = "mod_l16";
 
 
 static switch_status_t switch_raw_init(switch_codec_t *codec, switch_codec_flag_t flags,

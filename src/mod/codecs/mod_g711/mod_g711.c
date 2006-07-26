@@ -33,7 +33,7 @@
 #include "g711.h"
 
 
-static const char modname[] = "mod_g711codec";
+static const char modname[] = "mod_g711";
 
 
 static switch_status_t switch_g711u_init(switch_codec_t *codec, switch_codec_flag_t flags,
