@@ -34,6 +34,10 @@
 				D3B407500A76EEE9000AF6D4 /* PBXTargetDependency */,
 				D315301B0A76F28800549119 /* PBXTargetDependency */,
 				D3AA5D760A77D61E008F105E /* PBXTargetDependency */,
+				D3E66AE70A77E65800D04E25 /* PBXTargetDependency */,
+				D3E66AFA0A77E70500D04E25 /* PBXTargetDependency */,
+				D3E66B330A77E82600D04E25 /* PBXTargetDependency */,
+				D3E66B350A77E82B00D04E25 /* PBXTargetDependency */,
 			);
 			name = "Build Modules";
 			productName = Modules;
@@ -903,6 +907,38 @@
 		D3DEC9DC0A75E424002001CF /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
 		D3DECA120A75E429002001CF /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
 		D3E66A360A77D9DC00D04E25 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F691440A77C199007E38CA /* config.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		D3E66A800A77E63C00D04E25 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D3E66A810A77E63C00D04E25 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D3E66A820A77E63C00D04E25 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D3E66A830A77E63C00D04E25 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D3E66A840A77E63C00D04E25 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D3E66A850A77E63C00D04E25 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D3E66A860A77E63C00D04E25 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D3E66AE40A77E64A00D04E25 /* mod_woomera.c in Sources */ = {isa = PBXBuildFile; fileRef = D3E66A7B0A77E61E00D04E25 /* mod_woomera.c */; };
+		D3E66AF70A77E6ED00D04E25 /* mod_syslog.c in Sources */ = {isa = PBXBuildFile; fileRef = D3E66AF60A77E6ED00D04E25 /* mod_syslog.c */; };
+		D3E66B160A77E7B300D04E25 /* mod_event_multicast.c in Sources */ = {isa = PBXBuildFile; fileRef = D3E66B150A77E7B300D04E25 /* mod_event_multicast.c */; };
+		D3E66B180A77E7C600D04E25 /* mod_event_socket.c in Sources */ = {isa = PBXBuildFile; fileRef = D3E66B170A77E7C600D04E25 /* mod_event_socket.c */; };
+		D3E66B190A77E7F400D04E25 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D3E66B1A0A77E7F400D04E25 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D3E66B1B0A77E7F400D04E25 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D3E66B1C0A77E7F400D04E25 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D3E66B1D0A77E7F400D04E25 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D3E66B1E0A77E7F400D04E25 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D3E66B1F0A77E7F400D04E25 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D3E66B200A77E7FC00D04E25 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D3E66B210A77E7FC00D04E25 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D3E66B220A77E7FC00D04E25 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D3E66B230A77E7FC00D04E25 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D3E66B240A77E7FC00D04E25 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D3E66B250A77E7FC00D04E25 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D3E66B260A77E7FC00D04E25 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D3E66B270A77E80400D04E25 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D3E66B280A77E80400D04E25 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D3E66B290A77E80400D04E25 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D3E66B2A0A77E80400D04E25 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D3E66B2B0A77E80400D04E25 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D3E66B2C0A77E80400D04E25 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D3E66B2D0A77E80400D04E25 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
 		D3F691200A77C12E007E38CA /* fsm_misc.c in Sources */ = {isa = PBXBuildFile; fileRef = D3F6910C0A77C12E007E38CA /* fsm_misc.c */; };
 		D3F691210A77C12E007E38CA /* fsm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F6910D0A77C12E007E38CA /* fsm.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3F691220A77C12E007E38CA /* ict_fsm.c in Sources */ = {isa = PBXBuildFile; fileRef = D3F6910E0A77C12E007E38CA /* ict_fsm.c */; };
@@ -1398,6 +1434,34 @@
 			proxyType = 1;
 			remoteGlobalIDString = D3DEC8300A75DA10002001CF;
 			remoteInfo = teletone.framework;
+		};
+		D3E66AE60A77E65800D04E25 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3E66A7E0A77E62D00D04E25 /* mod_woomera */;
+			remoteInfo = mod_woomera;
+		};
+		D3E66AF90A77E70500D04E25 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3E66AF10A77E6B400D04E25 /* mod_syslog */;
+			remoteInfo = mod_syslog;
+		};
+		D3E66B320A77E82600D04E25 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3E66B070A77E73100D04E25 /* mod_event_multicast */;
+			remoteInfo = mod_event_multicast;
+		};
+		D3E66B340A77E82B00D04E25 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3E66B0F0A77E76200D04E25 /* mod_event_socket */;
+			remoteInfo = mod_event_socket;
 		};
 		D3EDD2A00A76D3C900AC4900 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -2185,6 +2249,14 @@
 		D3DECBA30A75E76E002001CF /* rand_gen.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = rand_gen.c; sourceTree = "<group>"; };
 		D3DECBA50A75E76E002001CF /* sha1_driver.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sha1_driver.c; sourceTree = "<group>"; };
 		D3DECBA70A75E76E002001CF /* stat_driver.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = stat_driver.c; sourceTree = "<group>"; };
+		D3E66A7B0A77E61E00D04E25 /* mod_woomera.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_woomera.c; path = ../../src/mod/endpoints/mod_woomera/mod_woomera.c; sourceTree = SOURCE_ROOT; };
+		D3E66A7F0A77E62D00D04E25 /* mod_woomera.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_woomera.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3E66AF20A77E6B400D04E25 /* mod_syslog.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_syslog.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3E66AF60A77E6ED00D04E25 /* mod_syslog.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_syslog.c; path = ../../src/mod/loggers/mod_syslog/mod_syslog.c; sourceTree = SOURCE_ROOT; };
+		D3E66B080A77E73100D04E25 /* mod_event_multicast.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_event_multicast.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3E66B100A77E76200D04E25 /* mod_event_socket.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_event_socket.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3E66B150A77E7B300D04E25 /* mod_event_multicast.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_event_multicast.c; path = ../../src/mod/event_handlers/mod_event_multicast/mod_event_multicast.c; sourceTree = SOURCE_ROOT; };
+		D3E66B170A77E7C600D04E25 /* mod_event_socket.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_event_socket.c; path = ../../src/mod/event_handlers/mod_event_socket/mod_event_socket.c; sourceTree = SOURCE_ROOT; };
 		D3F690FD0A77C002007E38CA /* osip2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = osip2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3F690FE0A77C002007E38CA /* osip2.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = osip2.plist; sourceTree = "<group>"; };
 		D3F6910C0A77C12E007E38CA /* fsm_misc.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = fsm_misc.c; path = "../../libs/libosip2-2.2.3/src/osip2/fsm_misc.c"; sourceTree = SOURCE_ROOT; };
@@ -2723,6 +2795,62 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3E66A7D0A77E62D00D04E25 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3E66A800A77E63C00D04E25 /* apr.framework in Frameworks */,
+				D3E66A810A77E63C00D04E25 /* aprutil.framework in Frameworks */,
+				D3E66A820A77E63C00D04E25 /* libfreeswitch.framework in Frameworks */,
+				D3E66A830A77E63C00D04E25 /* resample.framework in Frameworks */,
+				D3E66A840A77E63C00D04E25 /* sqlite.framework in Frameworks */,
+				D3E66A850A77E63C00D04E25 /* srtp.framework in Frameworks */,
+				D3E66A860A77E63C00D04E25 /* teletone.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3E66AF00A77E6B400D04E25 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3E66B190A77E7F400D04E25 /* apr.framework in Frameworks */,
+				D3E66B1A0A77E7F400D04E25 /* aprutil.framework in Frameworks */,
+				D3E66B1B0A77E7F400D04E25 /* libfreeswitch.framework in Frameworks */,
+				D3E66B1C0A77E7F400D04E25 /* resample.framework in Frameworks */,
+				D3E66B1D0A77E7F400D04E25 /* sqlite.framework in Frameworks */,
+				D3E66B1E0A77E7F400D04E25 /* srtp.framework in Frameworks */,
+				D3E66B1F0A77E7F400D04E25 /* teletone.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3E66B060A77E73100D04E25 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3E66B200A77E7FC00D04E25 /* apr.framework in Frameworks */,
+				D3E66B210A77E7FC00D04E25 /* aprutil.framework in Frameworks */,
+				D3E66B220A77E7FC00D04E25 /* libfreeswitch.framework in Frameworks */,
+				D3E66B230A77E7FC00D04E25 /* resample.framework in Frameworks */,
+				D3E66B240A77E7FC00D04E25 /* sqlite.framework in Frameworks */,
+				D3E66B250A77E7FC00D04E25 /* srtp.framework in Frameworks */,
+				D3E66B260A77E7FC00D04E25 /* teletone.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3E66B0E0A77E76200D04E25 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3E66B270A77E80400D04E25 /* apr.framework in Frameworks */,
+				D3E66B280A77E80400D04E25 /* aprutil.framework in Frameworks */,
+				D3E66B290A77E80400D04E25 /* libfreeswitch.framework in Frameworks */,
+				D3E66B2A0A77E80400D04E25 /* resample.framework in Frameworks */,
+				D3E66B2B0A77E80400D04E25 /* sqlite.framework in Frameworks */,
+				D3E66B2C0A77E80400D04E25 /* srtp.framework in Frameworks */,
+				D3E66B2D0A77E80400D04E25 /* teletone.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3F690FB0A77C002007E38CA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -2869,6 +2997,10 @@
 				D3F6914C0A77C203007E38CA /* osipparser2.framework */,
 				D3F692020A77C51B007E38CA /* exosip2.framework */,
 				D3F693070A77D473007E38CA /* mod_exosip.dylib */,
+				D3E66A7F0A77E62D00D04E25 /* mod_woomera.dylib */,
+				D3E66AF20A77E6B400D04E25 /* mod_syslog.dylib */,
+				D3E66B080A77E73100D04E25 /* mod_event_multicast.dylib */,
+				D3E66B100A77E76200D04E25 /* mod_event_socket.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -3367,6 +3499,7 @@
 		D3BC31DE0A769B0E00DE971E /* modules */ = {
 			isa = PBXGroup;
 			children = (
+				D3E66B110A77E78E00D04E25 /* event_handlers */,
 				D36500810A76BE2000C47A76 /* dialplans */,
 				D3BC34EC0A76B15D00DE971E /* loggers */,
 				D3BC34CE0A76B01E00DE971E /* formats */,
@@ -3396,6 +3529,7 @@
 		D3BC32600A769D2B00DE971E /* endpoints */ = {
 			isa = PBXGroup;
 			children = (
+				D3E66A7B0A77E61E00D04E25 /* mod_woomera.c */,
 				D3F693110A77D4D6007E38CA /* mod_exosip.c */,
 				D3F693120A77D4D6007E38CA /* osip_rfc3264.c */,
 				D3F693130A77D4D6007E38CA /* osip_rfc3264.h */,
@@ -3547,6 +3681,7 @@
 		D3BC34EC0A76B15D00DE971E /* loggers */ = {
 			isa = PBXGroup;
 			children = (
+				D3E66AF60A77E6ED00D04E25 /* mod_syslog.c */,
 				D3BC34EA0A76B15900DE971E /* mod_console.c */,
 			);
 			name = loggers;
@@ -4525,6 +4660,15 @@
 				D3DECBA70A75E76E002001CF /* stat_driver.c */,
 			);
 			path = test;
+			sourceTree = "<group>";
+		};
+		D3E66B110A77E78E00D04E25 /* event_handlers */ = {
+			isa = PBXGroup;
+			children = (
+				D3E66B170A77E7C600D04E25 /* mod_event_socket.c */,
+				D3E66B150A77E7B300D04E25 /* mod_event_multicast.c */,
+			);
+			name = event_handlers;
 			sourceTree = "<group>";
 		};
 		D3F691090A77C0C3007E38CA /* osip2 */ = {
@@ -5870,6 +6014,70 @@
 			productReference = D3DEC8E70A75E19F002001CF /* dingaling.framework */;
 			productType = "com.apple.product-type.framework";
 		};
+		D3E66A7E0A77E62D00D04E25 /* mod_woomera */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3E66AE80A77E65E00D04E25 /* Build configuration list for PBXNativeTarget "mod_woomera" */;
+			buildPhases = (
+				D3E66A7C0A77E62D00D04E25 /* Sources */,
+				D3E66A7D0A77E62D00D04E25 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mod_woomera;
+			productName = mod_woomera;
+			productReference = D3E66A7F0A77E62D00D04E25 /* mod_woomera.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
+		D3E66AF10A77E6B400D04E25 /* mod_syslog */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3E66AF30A77E6EA00D04E25 /* Build configuration list for PBXNativeTarget "mod_syslog" */;
+			buildPhases = (
+				D3E66AEF0A77E6B400D04E25 /* Sources */,
+				D3E66AF00A77E6B400D04E25 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mod_syslog;
+			productName = mod_syslog;
+			productReference = D3E66AF20A77E6B400D04E25 /* mod_syslog.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
+		D3E66B070A77E73100D04E25 /* mod_event_multicast */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3E66B0A0A77E74F00D04E25 /* Build configuration list for PBXNativeTarget "mod_event_multicast" */;
+			buildPhases = (
+				D3E66B050A77E73100D04E25 /* Sources */,
+				D3E66B060A77E73100D04E25 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mod_event_multicast;
+			productName = mod_event_multicast;
+			productReference = D3E66B080A77E73100D04E25 /* mod_event_multicast.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
+		D3E66B0F0A77E76200D04E25 /* mod_event_socket */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3E66B120A77E78E00D04E25 /* Build configuration list for PBXNativeTarget "mod_event_socket" */;
+			buildPhases = (
+				D3E66B0D0A77E76200D04E25 /* Sources */,
+				D3E66B0E0A77E76200D04E25 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mod_event_socket;
+			productName = mod_event_socket;
+			productReference = D3E66B100A77E76200D04E25 /* mod_event_socket.dylib */;
+			productType = "com.apple.product-type.objfile";
+		};
 		D3F690FC0A77C002007E38CA /* osip2 */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D3F690FF0A77C003007E38CA /* Build configuration list for PBXNativeTarget "osip2" */;
@@ -5999,6 +6207,10 @@
 				D3B406C10A76EE4D000AF6D4 /* mod_speex */,
 				D3152FA70A76F21400549119 /* mod_portaudio */,
 				D3F693060A77D473007E38CA /* mod_exosip */,
+				D3E66A7E0A77E62D00D04E25 /* mod_woomera */,
+				D3E66AF10A77E6B400D04E25 /* mod_syslog */,
+				D3E66B070A77E73100D04E25 /* mod_event_multicast */,
+				D3E66B0F0A77E76200D04E25 /* mod_event_socket */,
 			);
 		};
 /* End PBXProject section */
@@ -6882,6 +7094,38 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3E66A7C0A77E62D00D04E25 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3E66AE40A77E64A00D04E25 /* mod_woomera.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3E66AEF0A77E6B400D04E25 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3E66AF70A77E6ED00D04E25 /* mod_syslog.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3E66B050A77E73100D04E25 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3E66B160A77E7B300D04E25 /* mod_event_multicast.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3E66B0D0A77E76200D04E25 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3E66B180A77E7C600D04E25 /* mod_event_socket.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D3F690FA0A77C002007E38CA /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -7243,6 +7487,26 @@
 			isa = PBXTargetDependency;
 			target = D3DEC8300A75DA10002001CF /* teletone */;
 			targetProxy = D3DEC8440A75DAC1002001CF /* PBXContainerItemProxy */;
+		};
+		D3E66AE70A77E65800D04E25 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3E66A7E0A77E62D00D04E25 /* mod_woomera */;
+			targetProxy = D3E66AE60A77E65800D04E25 /* PBXContainerItemProxy */;
+		};
+		D3E66AFA0A77E70500D04E25 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3E66AF10A77E6B400D04E25 /* mod_syslog */;
+			targetProxy = D3E66AF90A77E70500D04E25 /* PBXContainerItemProxy */;
+		};
+		D3E66B330A77E82600D04E25 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3E66B070A77E73100D04E25 /* mod_event_multicast */;
+			targetProxy = D3E66B320A77E82600D04E25 /* PBXContainerItemProxy */;
+		};
+		D3E66B350A77E82B00D04E25 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3E66B0F0A77E76200D04E25 /* mod_event_socket */;
+			targetProxy = D3E66B340A77E82B00D04E25 /* PBXContainerItemProxy */;
 		};
 		D3EDD2A10A76D3C900AC4900 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -9206,6 +9470,186 @@
 			};
 			name = Release;
 		};
+		D3E66AE90A77E65E00D04E25 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_woomera;
+			};
+			name = Debug;
+		};
+		D3E66AEA0A77E65E00D04E25 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_woomera;
+				SKIP_INSTALL = NO;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3E66AF40A77E6EA00D04E25 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_syslog;
+			};
+			name = Debug;
+		};
+		D3E66AF50A77E6EA00D04E25 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_syslog;
+				SKIP_INSTALL = NO;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3E66B0B0A77E74F00D04E25 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_event_multicast;
+			};
+			name = Debug;
+		};
+		D3E66B0C0A77E74F00D04E25 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_event_multicast;
+				SKIP_INSTALL = NO;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3E66B130A77E78E00D04E25 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = so;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = /usr/local/lib;
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_event_socket;
+			};
+			name = Debug;
+		};
+		D3E66B140A77E78E00D04E25 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_event_socket;
+				SKIP_INSTALL = NO;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
 		D3F691000A77C003007E38CA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -9831,6 +10275,42 @@
 			buildConfigurations = (
 				D3DEC8EA0A75E1A0002001CF /* Debug */,
 				D3DEC8EB0A75E1A0002001CF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3E66AE80A77E65E00D04E25 /* Build configuration list for PBXNativeTarget "mod_woomera" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3E66AE90A77E65E00D04E25 /* Debug */,
+				D3E66AEA0A77E65E00D04E25 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3E66AF30A77E6EA00D04E25 /* Build configuration list for PBXNativeTarget "mod_syslog" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3E66AF40A77E6EA00D04E25 /* Debug */,
+				D3E66AF50A77E6EA00D04E25 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3E66B0A0A77E74F00D04E25 /* Build configuration list for PBXNativeTarget "mod_event_multicast" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3E66B0B0A77E74F00D04E25 /* Debug */,
+				D3E66B0C0A77E74F00D04E25 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3E66B120A77E78E00D04E25 /* Build configuration list for PBXNativeTarget "mod_event_socket" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3E66B130A77E78E00D04E25 /* Debug */,
+				D3E66B140A77E78E00D04E25 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
