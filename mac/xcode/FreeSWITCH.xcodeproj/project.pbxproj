@@ -32,6 +32,7 @@
 				D36503040A76CB8A00C47A76 /* PBXTargetDependency */,
 				D33DFADC0A76E0A200E49B16 /* PBXTargetDependency */,
 				D3B407500A76EEE9000AF6D4 /* PBXTargetDependency */,
+				D315301B0A76F28800549119 /* PBXTargetDependency */,
 			);
 			name = "Build Modules";
 			productName = Modules;
@@ -144,6 +145,25 @@
 		D301521E0A76ECFC00117F59 /* vq_sse.h in Headers */ = {isa = PBXBuildFile; fileRef = D30151CE0A76ECFC00117F59 /* vq_sse.h */; };
 		D301521F0A76ECFC00117F59 /* vq.c in Sources */ = {isa = PBXBuildFile; fileRef = D30151CF0A76ECFC00117F59 /* vq.c */; };
 		D30152200A76ECFC00117F59 /* vq.h in Headers */ = {isa = PBXBuildFile; fileRef = D30151D00A76ECFC00117F59 /* vq.h */; };
+		D3152F8E0A76F19900549119 /* pa_mac_core.c in Sources */ = {isa = PBXBuildFile; fileRef = D3152F8D0A76F19900549119 /* pa_mac_core.c */; };
+		D3152F950A76F1C300549119 /* pa_convert.c in Sources */ = {isa = PBXBuildFile; fileRef = D3152F8F0A76F1C300549119 /* pa_convert.c */; };
+		D3152F960A76F1C300549119 /* pa_host.h in Headers */ = {isa = PBXBuildFile; fileRef = D3152F900A76F1C300549119 /* pa_host.h */; };
+		D3152F970A76F1C300549119 /* pa_lib.c in Sources */ = {isa = PBXBuildFile; fileRef = D3152F910A76F1C300549119 /* pa_lib.c */; };
+		D3152F980A76F1C300549119 /* pa_trace.c in Sources */ = {isa = PBXBuildFile; fileRef = D3152F920A76F1C300549119 /* pa_trace.c */; };
+		D3152F990A76F1C300549119 /* pa_trace.h in Headers */ = {isa = PBXBuildFile; fileRef = D3152F930A76F1C300549119 /* pa_trace.h */; };
+		D3152F9A0A76F1C300549119 /* portaudio.h in Headers */ = {isa = PBXBuildFile; fileRef = D3152F940A76F1C300549119 /* portaudio.h */; };
+		D3152F9C0A76F1E700549119 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BC34180A76ADF400DE971E /* CoreAudio.framework */; };
+		D3152FB10A76F24B00549119 /* mod_portaudio.c in Sources */ = {isa = PBXBuildFile; fileRef = D3152FAC0A76F24B00549119 /* mod_portaudio.c */; };
+		D3152FB20A76F24B00549119 /* pablio.c in Sources */ = {isa = PBXBuildFile; fileRef = D3152FAD0A76F24B00549119 /* pablio.c */; };
+		D3152FB30A76F24B00549119 /* ringbuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = D3152FAF0A76F24B00549119 /* ringbuffer.c */; };
+		D3152FB40A76F26700549119 /* portaudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3152F7D0A76F0A100549119 /* portaudio.framework */; };
+		D3152FB50A76F27000549119 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
+		D3152FB60A76F27000549119 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D3152FB70A76F27000549119 /* libfreeswitch.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37671650A75F0DC00ACC1FB /* libfreeswitch.framework */; };
+		D3152FB80A76F27000549119 /* resample.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD5260A768B6100FEDB19 /* resample.framework */; };
+		D3152FB90A76F27000549119 /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
+		D3152FBA0A76F27000549119 /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
+		D3152FBB0A76F27000549119 /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
 		D347253A0A76D7E7001C8ED7 /* answer.h in Headers */ = {isa = PBXBuildFile; fileRef = D34725170A76D756001C8ED7 /* answer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D347253B0A76D7E7001C8ED7 /* busy.h in Headers */ = {isa = PBXBuildFile; fileRef = D34725180A76D756001C8ED7 /* busy.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D347253C0A76D7E7001C8ED7 /* dialtone.h in Headers */ = {isa = PBXBuildFile; fileRef = D34725190A76D756001C8ED7 /* dialtone.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -874,6 +894,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		D3152F6E0A76EFF500549119 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D301514E0A76EB5D00117F59 /* speex */;
+			remoteInfo = speex;
+		};
+		D315301A0A76F28800549119 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3152FA70A76F21400549119 /* mod_portaudio */;
+			remoteInfo = mod_portaudio;
+		};
 		D33DFADB0A76E0A200E49B16 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
@@ -1074,7 +1108,7 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D3B406C10A76EE4D000AF6D4 /* mod_speex */;
+			remoteGlobalIDString = D3B406C10A76EE4D000AF6D4;
 			remoteInfo = mod_speex;
 		};
 		D3BC32520A769C1500DE971E /* PBXContainerItemProxy */ = {
@@ -1279,6 +1313,21 @@
 		D30151CE0A76ECFC00117F59 /* vq_sse.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = vq_sse.h; path = "../../libs/speex-1.1.11.1/libspeex/vq_sse.h"; sourceTree = SOURCE_ROOT; };
 		D30151CF0A76ECFC00117F59 /* vq.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = vq.c; path = "../../libs/speex-1.1.11.1/libspeex/vq.c"; sourceTree = SOURCE_ROOT; };
 		D30151D00A76ECFC00117F59 /* vq.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = vq.h; path = "../../libs/speex-1.1.11.1/libspeex/vq.h"; sourceTree = SOURCE_ROOT; };
+		D3152F7D0A76F0A100549119 /* portaudio.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = portaudio.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3152F7E0A76F0A100549119 /* portaudio.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = portaudio.plist; sourceTree = "<group>"; };
+		D3152F8D0A76F19900549119 /* pa_mac_core.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pa_mac_core.c; path = ../../libs/portaudio/pa_mac_core/pa_mac_core.c; sourceTree = SOURCE_ROOT; };
+		D3152F8F0A76F1C300549119 /* pa_convert.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pa_convert.c; path = ../../libs/portaudio/pa_common/pa_convert.c; sourceTree = SOURCE_ROOT; };
+		D3152F900A76F1C300549119 /* pa_host.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pa_host.h; path = ../../libs/portaudio/pa_common/pa_host.h; sourceTree = SOURCE_ROOT; };
+		D3152F910A76F1C300549119 /* pa_lib.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pa_lib.c; path = ../../libs/portaudio/pa_common/pa_lib.c; sourceTree = SOURCE_ROOT; };
+		D3152F920A76F1C300549119 /* pa_trace.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pa_trace.c; path = ../../libs/portaudio/pa_common/pa_trace.c; sourceTree = SOURCE_ROOT; };
+		D3152F930A76F1C300549119 /* pa_trace.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pa_trace.h; path = ../../libs/portaudio/pa_common/pa_trace.h; sourceTree = SOURCE_ROOT; };
+		D3152F940A76F1C300549119 /* portaudio.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = portaudio.h; path = ../../libs/portaudio/pa_common/portaudio.h; sourceTree = SOURCE_ROOT; };
+		D3152FA80A76F21400549119 /* mod_portaudio.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_portaudio.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3152FAC0A76F24B00549119 /* mod_portaudio.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_portaudio.c; path = ../../src/mod/endpoints/mod_portaudio/mod_portaudio.c; sourceTree = SOURCE_ROOT; };
+		D3152FAD0A76F24B00549119 /* pablio.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = pablio.c; path = ../../src/mod/endpoints/mod_portaudio/pablio.c; sourceTree = SOURCE_ROOT; };
+		D3152FAE0A76F24B00549119 /* pablio.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = pablio.h; path = ../../src/mod/endpoints/mod_portaudio/pablio.h; sourceTree = SOURCE_ROOT; };
+		D3152FAF0A76F24B00549119 /* ringbuffer.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = ringbuffer.c; path = ../../src/mod/endpoints/mod_portaudio/ringbuffer.c; sourceTree = SOURCE_ROOT; };
+		D3152FB00A76F24B00549119 /* ringbuffer.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = ringbuffer.h; path = ../../src/mod/endpoints/mod_portaudio/ringbuffer.h; sourceTree = SOURCE_ROOT; };
 		D34725170A76D756001C8ED7 /* answer.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = answer.h; path = ../../libs/iax/src/answer.h; sourceTree = SOURCE_ROOT; };
 		D34725180A76D756001C8ED7 /* busy.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = busy.h; path = ../../libs/iax/src/busy.h; sourceTree = SOURCE_ROOT; };
 		D34725190A76D756001C8ED7 /* dialtone.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = dialtone.h; path = ../../libs/iax/src/dialtone.h; sourceTree = SOURCE_ROOT; };
@@ -1935,10 +1984,26 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		D301514D0A76EB5D00117F59 /* Frameworks */ = {
+		D3152F7B0A76F0A100549119 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D3152F9C0A76F1E700549119 /* CoreAudio.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3152FA60A76F21400549119 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3152FB50A76F27000549119 /* apr.framework in Frameworks */,
+				D3152FB60A76F27000549119 /* aprutil.framework in Frameworks */,
+				D3152FB70A76F27000549119 /* libfreeswitch.framework in Frameworks */,
+				D3152FB80A76F27000549119 /* resample.framework in Frameworks */,
+				D3152FB90A76F27000549119 /* sqlite.framework in Frameworks */,
+				D3152FBA0A76F27000549119 /* srtp.framework in Frameworks */,
+				D3152FBB0A76F27000549119 /* teletone.framework in Frameworks */,
+				D3152FB40A76F26700549119 /* portaudio.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2314,6 +2379,7 @@
 		08FB7795FE84155DC02AAC07 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				D3152F820A76F0B500549119 /* portaudio */,
 				D30151640A76EC5300117F59 /* speex */,
 				D34725140A76D712001C8ED7 /* iax2 */,
 				D365026B0A76CA2C00C47A76 /* ilbc */,
@@ -2337,6 +2403,7 @@
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				D3152F7E0A76F0A100549119 /* portaudio.plist */,
 				D30151500A76EB5D00117F59 /* speex.plist */,
 				D34725360A76D7B1001C8ED7 /* iax.plist */,
 				D36502A30A76CA9600C47A76 /* ilbc.plist */,
@@ -2389,6 +2456,8 @@
 				D34725520A76D8D6001C8ED7 /* mod_iax.dylib */,
 				D301514F0A76EB5D00117F59 /* speex.framework */,
 				D3B406C20A76EE4D000AF6D4 /* mod_speex.dylib */,
+				D3152F7D0A76F0A100549119 /* portaudio.framework */,
+				D3152FA80A76F21400549119 /* mod_portaudio.dylib */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -2497,6 +2566,36 @@
 				D301516E0A76EC9F00117F59 /* speex_stereo.h */,
 				D301516F0A76EC9F00117F59 /* speex_types.h */,
 				D30151700A76EC9F00117F59 /* speex.h */,
+			);
+			name = include;
+			sourceTree = "<group>";
+		};
+		D3152F820A76F0B500549119 /* portaudio */ = {
+			isa = PBXGroup;
+			children = (
+				D3152F840A76F0D700549119 /* include */,
+				D3152F830A76F0CA00549119 /* src */,
+			);
+			name = portaudio;
+			sourceTree = "<group>";
+		};
+		D3152F830A76F0CA00549119 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				D3152F8F0A76F1C300549119 /* pa_convert.c */,
+				D3152F910A76F1C300549119 /* pa_lib.c */,
+				D3152F920A76F1C300549119 /* pa_trace.c */,
+				D3152F8D0A76F19900549119 /* pa_mac_core.c */,
+			);
+			name = src;
+			sourceTree = "<group>";
+		};
+		D3152F840A76F0D700549119 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				D3152F900A76F1C300549119 /* pa_host.h */,
+				D3152F930A76F1C300549119 /* pa_trace.h */,
+				D3152F940A76F1C300549119 /* portaudio.h */,
 			);
 			name = include;
 			sourceTree = "<group>";
@@ -2886,6 +2985,11 @@
 		D3BC32600A769D2B00DE971E /* endpoints */ = {
 			isa = PBXGroup;
 			children = (
+				D3152FAC0A76F24B00549119 /* mod_portaudio.c */,
+				D3152FAD0A76F24B00549119 /* pablio.c */,
+				D3152FAE0A76F24B00549119 /* pablio.h */,
+				D3152FAF0A76F24B00549119 /* ringbuffer.c */,
+				D3152FB00A76F24B00549119 /* ringbuffer.h */,
 				D34725C30A76D954001C8ED7 /* mod_iax.c */,
 				D3BC32640A769D4C00DE971E /* mod_dingaling.c */,
 			);
@@ -4067,6 +4171,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D3152F780A76F0A100549119 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3152F960A76F1C300549119 /* pa_host.h in Headers */,
+				D3152F990A76F1C300549119 /* pa_trace.h in Headers */,
+				D3152F9A0A76F1C300549119 /* portaudio.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D34725300A76D7B1001C8ED7 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -4401,9 +4515,7 @@
 			buildPhases = (
 				D30151540A76EB8E00117F59 /* ShellScript */,
 				D301514A0A76EB5D00117F59 /* Headers */,
-				D301514B0A76EB5D00117F59 /* Resources */,
 				D301514C0A76EB5D00117F59 /* Sources */,
-				D301514D0A76EB5D00117F59 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -4413,6 +4525,40 @@
 			productName = speex;
 			productReference = D301514F0A76EB5D00117F59 /* speex.framework */;
 			productType = "com.apple.product-type.framework";
+		};
+		D3152F7C0A76F0A100549119 /* portaudio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3152F7F0A76F0A200549119 /* Build configuration list for PBXNativeTarget "portaudio" */;
+			buildPhases = (
+				D3152F850A76F0F400549119 /* ShellScript */,
+				D3152F780A76F0A100549119 /* Headers */,
+				D3152F7A0A76F0A100549119 /* Sources */,
+				D3152F7B0A76F0A100549119 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = portaudio;
+			productName = portaudio;
+			productReference = D3152F7D0A76F0A100549119 /* portaudio.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		D3152FA70A76F21400549119 /* mod_portaudio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3152FA90A76F24800549119 /* Build configuration list for PBXNativeTarget "mod_portaudio" */;
+			buildPhases = (
+				D3152FA50A76F21400549119 /* Sources */,
+				D3152FA60A76F21400549119 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = mod_portaudio;
+			productName = mod_portaudio;
+			productReference = D3152FA80A76F21400549119 /* mod_portaudio.dylib */;
+			productType = "com.apple.product-type.objfile";
 		};
 		D34725340A76D7B1001C8ED7 /* iax */ = {
 			isa = PBXNativeTarget;
@@ -4720,6 +4866,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				D3152F6F0A76EFF500549119 /* PBXTargetDependency */,
 			);
 			name = mod_speex;
 			productName = mod_speex;
@@ -5058,18 +5205,13 @@
 				D34725510A76D8D6001C8ED7 /* mod_iax */,
 				D301514E0A76EB5D00117F59 /* speex */,
 				D3B406C10A76EE4D000AF6D4 /* mod_speex */,
+				D3152F7C0A76F0A100549119 /* portaudio */,
+				D3152FA70A76F21400549119 /* mod_portaudio */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		D301514B0A76EB5D00117F59 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		D365021A0A76C82200C47A76 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -5099,6 +5241,19 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/bash;
 			shellScript = "if [ -e ../../libs/speex-$FREESWITCH_SPEEX_VERSION/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl $FREESWITCH_DOWNLOAD_URL/speex-$FREESWITCH_SPEEX_VERSION.tar.gz -o ../../libs/speex-$FREESWITCH_SPEEX_VERSION.tar.gz\ncd ../../libs\ntar zxfv speex-$FREESWITCH_SPEEX_VERSION.tar.gz\ncd speex-$FREESWITCH_SPEEX_VERSION\n./configure \ntouch .complete";
+		};
+		D3152F850A76F0F400549119 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [ -e ../../libs/portaudio/.complete ]; then\n\texit 0\nfi\n/usr/bin/curl $FREESWITCH_DOWNLOAD_URL/portaudio.tar.gz -o ../../libs/portaudio.tar.gz\ncd ../../libs\ntar zxfv portaudio.tar.gz\ncd portaudio\ntouch .complete";
 		};
 		D34CEB600A76CEC100E26391 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -5273,6 +5428,27 @@
 				D30152180A76ECFC00117F59 /* vbr.c in Sources */,
 				D301521A0A76ECFC00117F59 /* vorbis_psy.c in Sources */,
 				D301521F0A76ECFC00117F59 /* vq.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3152F7A0A76F0A100549119 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3152F8E0A76F19900549119 /* pa_mac_core.c in Sources */,
+				D3152F950A76F1C300549119 /* pa_convert.c in Sources */,
+				D3152F970A76F1C300549119 /* pa_lib.c in Sources */,
+				D3152F980A76F1C300549119 /* pa_trace.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3152FA50A76F21400549119 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3152FB10A76F24B00549119 /* mod_portaudio.c in Sources */,
+				D3152FB20A76F24B00549119 /* pablio.c in Sources */,
+				D3152FB30A76F24B00549119 /* ringbuffer.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5871,6 +6047,16 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		D3152F6F0A76EFF500549119 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D301514E0A76EB5D00117F59 /* speex */;
+			targetProxy = D3152F6E0A76EFF500549119 /* PBXContainerItemProxy */;
+		};
+		D315301B0A76F28800549119 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3152FA70A76F21400549119 /* mod_portaudio */;
+			targetProxy = D315301A0A76F28800549119 /* PBXContainerItemProxy */;
+		};
 		D33DFADC0A76E0A200E49B16 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D34725510A76D8D6001C8ED7 /* mod_iax */;
@@ -6177,6 +6363,92 @@
 				OTHER_CFLAGS = "-w";
 				PREBINDING = NO;
 				PRODUCT_NAME = speex;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3152F800A76F0A200549119 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = portaudio.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				PREBINDING = NO;
+				PRODUCT_NAME = portaudio;
+				ZERO_LINK = YES;
+			};
+			name = Debug;
+		};
+		D3152F810A76F0A200549119 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				FRAMEWORK_VERSION = A;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				INFOPLIST_FILE = portaudio.plist;
+				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				PREBINDING = NO;
+				PRODUCT_NAME = portaudio;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		D3152FAA0A76F24800549119 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_portaudio;
+				SKIP_INSTALL = NO;
+			};
+			name = Debug;
+		};
+		D3152FAB0A76F24800549119 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				EXECUTABLE_EXTENSION = dylib;
+				EXECUTABLE_PREFIX = "";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
+				KEEP_PRIVATE_EXTERNS = NO;
+				MACH_O_TYPE = mh_bundle;
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = mod_portaudio;
+				SKIP_INSTALL = NO;
 				ZERO_LINK = NO;
 			};
 			name = Release;
@@ -7970,6 +8242,24 @@
 			buildConfigurations = (
 				D30151520A76EB5E00117F59 /* Debug */,
 				D30151530A76EB5E00117F59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3152F7F0A76F0A200549119 /* Build configuration list for PBXNativeTarget "portaudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3152F800A76F0A200549119 /* Debug */,
+				D3152F810A76F0A200549119 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3152FA90A76F24800549119 /* Build configuration list for PBXNativeTarget "mod_portaudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3152FAA0A76F24800549119 /* Debug */,
+				D3152FAB0A76F24800549119 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
