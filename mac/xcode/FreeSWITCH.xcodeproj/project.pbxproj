@@ -150,6 +150,7 @@
 		D301521E0A76ECFC00117F59 /* vq_sse.h in Headers */ = {isa = PBXBuildFile; fileRef = D30151CE0A76ECFC00117F59 /* vq_sse.h */; };
 		D301521F0A76ECFC00117F59 /* vq.c in Sources */ = {isa = PBXBuildFile; fileRef = D30151CF0A76ECFC00117F59 /* vq.c */; };
 		D30152200A76ECFC00117F59 /* vq.h in Headers */ = {isa = PBXBuildFile; fileRef = D30151D00A76ECFC00117F59 /* vq.h */; };
+		D30DE7670A7819B300C8AAD5 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
 		D3152F8E0A76F19900549119 /* pa_mac_core.c in Sources */ = {isa = PBXBuildFile; fileRef = D3152F8D0A76F19900549119 /* pa_mac_core.c */; };
 		D3152F950A76F1C300549119 /* pa_convert.c in Sources */ = {isa = PBXBuildFile; fileRef = D3152F8F0A76F1C300549119 /* pa_convert.c */; };
 		D3152F960A76F1C300549119 /* pa_host.h in Headers */ = {isa = PBXBuildFile; fileRef = D3152F900A76F1C300549119 /* pa_host.h */; };
@@ -2607,6 +2608,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D30DE7670A7819B300C8AAD5 /* System.framework in Frameworks */,
 				D38DD5540A768CB100FEDB19 /* resample.framework in Frameworks */,
 				D38DD51F0A768B4700FEDB19 /* srtp.framework in Frameworks */,
 				D38DD3770A76836E00FEDB19 /* sqlite.framework in Frameworks */,
