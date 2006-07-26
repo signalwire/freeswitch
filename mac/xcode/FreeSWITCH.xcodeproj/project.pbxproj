@@ -902,6 +902,7 @@
 		D3DEC9D50A75E409002001CF /* iksemel.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8A50A75DFDE002001CF /* iksemel.framework */; };
 		D3DEC9DC0A75E424002001CF /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
 		D3DECA120A75E429002001CF /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D3E66A360A77D9DC00D04E25 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F691440A77C199007E38CA /* config.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3F691200A77C12E007E38CA /* fsm_misc.c in Sources */ = {isa = PBXBuildFile; fileRef = D3F6910C0A77C12E007E38CA /* fsm_misc.c */; };
 		D3F691210A77C12E007E38CA /* fsm.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F6910D0A77C12E007E38CA /* fsm.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3F691220A77C12E007E38CA /* ict_fsm.c in Sources */ = {isa = PBXBuildFile; fileRef = D3F6910E0A77C12E007E38CA /* ict_fsm.c */; };
@@ -981,7 +982,7 @@
 		D3F691BC0A77C442007E38CA /* sdp_message.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F691B20A77C442007E38CA /* sdp_message.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		D3F691DA0A77C45F007E38CA /* osip_accept_encoding.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F691BF0A77C45F007E38CA /* osip_accept_encoding.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		D3F691DB0A77C45F007E38CA /* osip_accept_language.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F691C00A77C45F007E38CA /* osip_accept_language.h */; settings = {ATTRIBUTES = (Private, ); }; };
-		D3F691DC0A77C45F007E38CA /* osip_accept.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F691C10A77C45F007E38CA /* osip_accept.h */; settings = {ATTRIBUTES = (Private, ); }; };
+		D3F691DC0A77C45F007E38CA /* osip_accept.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F691C10A77C45F007E38CA /* osip_accept.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3F691DD0A77C45F007E38CA /* osip_alert_info.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F691C20A77C45F007E38CA /* osip_alert_info.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		D3F691DE0A77C45F007E38CA /* osip_allow.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F691C30A77C45F007E38CA /* osip_allow.h */; settings = {ATTRIBUTES = (Private, ); }; };
 		D3F691DF0A77C45F007E38CA /* osip_authentication_info.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F691C40A77C45F007E38CA /* osip_authentication_info.h */; settings = {ATTRIBUTES = (Private, ); }; };
@@ -4565,7 +4566,6 @@
 		D3F6910B0A77C0D6007E38CA /* include */ = {
 			isa = PBXGroup;
 			children = (
-				D3F691440A77C199007E38CA /* config.h */,
 				D3F691340A77C15A007E38CA /* internal.h */,
 				D3F691350A77C15A007E38CA /* osip_condv.h */,
 				D3F691360A77C15A007E38CA /* osip_dialog.h */,
@@ -4635,6 +4635,7 @@
 		D3F6915A0A77C3C4007E38CA /* include */ = {
 			isa = PBXGroup;
 			children = (
+				D3F691440A77C199007E38CA /* config.h */,
 				D3F691BF0A77C45F007E38CA /* osip_accept_encoding.h */,
 				D3F691C00A77C45F007E38CA /* osip_accept_language.h */,
 				D3F691C10A77C45F007E38CA /* osip_accept.h */,
@@ -5155,6 +5156,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D3E66A360A77D9DC00D04E25 /* config.h in Headers */,
 				D3F691A60A77C3E3007E38CA /* parser.h in Headers */,
 				D3F691B30A77C442007E38CA /* osip_body.h in Headers */,
 				D3F691B40A77C442007E38CA /* osip_const.h in Headers */,
@@ -9335,6 +9337,7 @@
 					"-DENABLE_TRACE",
 					"-I../../libs/libosip2-$(FREESWITCH_LIBOSIP2_VERSION)/include",
 					"-I../../libs/libosip2-$(FREESWITCH_LIBOSIP2_VERSION)/include/osipparser2/headers",
+					"-I../../libs/libosip2-$(FREESWITCH_LIBOSIP2_VERSION)",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = osipparser2;
