@@ -689,6 +689,31 @@
 		D3BC34F10A76B17800DE971E /* sqlite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D37670C50A75ECD400ACC1FB /* sqlite.framework */; };
 		D3BC34F20A76B17800DE971E /* srtp.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D38DD4DF0A768AC500FEDB19 /* srtp.framework */; };
 		D3BC34F30A76B17800DE971E /* teletone.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8310A75DA10002001CF /* teletone.framework */; };
+		D3BF925D0A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF925E0A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF925F0A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92600A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92610A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92620A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92630A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92640A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92650A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92660A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92670A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92680A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92690A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF926A0A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF926B0A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF926C0A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF926D0A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF926E0A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF926F0A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92700A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92710A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92720A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92730A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92740A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
+		D3BF92750A77F7FA00BEDBC8 /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3BF925C0A77F7FA00BEDBC8 /* System.framework */; };
 		D3DEC5F60A75D048002001CF /* apr_cpystrn.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5BB0A75CFB7002001CF /* apr_cpystrn.c */; };
 		D3DEC5F70A75D048002001CF /* apr_fnmatch.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5BC0A75CFB7002001CF /* apr_fnmatch.c */; };
 		D3DEC5F80A75D048002001CF /* apr_getpass.c in Sources */ = {isa = PBXBuildFile; fileRef = D3DEC5A00A75CFB7002001CF /* apr_getpass.c */; };
@@ -1828,7 +1853,7 @@
 		D37671920A75F14200ACC1FB /* switch_utils.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_utils.c; path = ../../src/switch_utils.c; sourceTree = SOURCE_ROOT; };
 		D37671930A75F14200ACC1FB /* switch_xml.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch_xml.c; path = ../../src/switch_xml.c; sourceTree = SOURCE_ROOT; };
 		D37671940A75F14200ACC1FB /* switch.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = switch.c; path = ../../src/switch.c; sourceTree = SOURCE_ROOT; };
-		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
+		D38DD4410A7687A700FEDB19 /* freeswitch */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = freeswitch; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD4DF0A768AC500FEDB19 /* srtp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = srtp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D38DD4E00A768AC500FEDB19 /* srtp.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = srtp.plist; sourceTree = "<group>"; };
 		D38DD5260A768B6100FEDB19 /* resample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = resample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1944,6 +1969,7 @@
 		D3BC34D20A76B03800DE971E /* mod_sndfile.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_sndfile.c; path = ../../src/mod/formats/mod_sndfile/mod_sndfile.c; sourceTree = SOURCE_ROOT; };
 		D3BC34E60A76B0FC00DE971E /* mod_console.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_console.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3BC34EA0A76B15900DE971E /* mod_console.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_console.c; path = ../../src/mod/loggers/mod_console/mod_console.c; sourceTree = SOURCE_ROOT; };
+		D3BF925C0A77F7FA00BEDBC8 /* System.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = System.framework; path = /System/Library/Frameworks/System.framework; sourceTree = "<absolute>"; };
 		D3DEC21D0A75CB06002001CF /* apr.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = apr.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3DEC21E0A75CB06002001CF /* apr.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = apr.plist; sourceTree = "<group>"; };
 		D3DEC48D0A75CF62002001CF /* apr.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = apr.h; sourceTree = "<group>"; };
@@ -2436,6 +2462,7 @@
 				D3152FBA0A76F27000549119 /* srtp.framework in Frameworks */,
 				D3152FBB0A76F27000549119 /* teletone.framework in Frameworks */,
 				D3152FB40A76F26700549119 /* portaudio.framework in Frameworks */,
+				D3BF92700A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2451,6 +2478,7 @@
 				D347255F0A76D91E001C8ED7 /* libfreeswitch.framework in Frameworks */,
 				D34725600A76D91E001C8ED7 /* aprutil.framework in Frameworks */,
 				D34725610A76D91E001C8ED7 /* apr.framework in Frameworks */,
+				D3BF926E0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2466,6 +2494,7 @@
 				D365008B0A76BE5A00C47A76 /* sqlite.framework in Frameworks */,
 				D365008C0A76BE5A00C47A76 /* srtp.framework in Frameworks */,
 				D365008D0A76BE5A00C47A76 /* teletone.framework in Frameworks */,
+				D3BF92680A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2487,6 +2516,7 @@
 				D36501F50A76C64200C47A76 /* sqlite.framework in Frameworks */,
 				D36501F60A76C64200C47A76 /* srtp.framework in Frameworks */,
 				D36501F70A76C64200C47A76 /* teletone.framework in Frameworks */,
+				D3BF92690A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2501,6 +2531,7 @@
 				D36501FC0A76C64A00C47A76 /* sqlite.framework in Frameworks */,
 				D36501FD0A76C64A00C47A76 /* srtp.framework in Frameworks */,
 				D36501FE0A76C64A00C47A76 /* teletone.framework in Frameworks */,
+				D3BF926A0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2515,6 +2546,7 @@
 				D36502030A76C65300C47A76 /* sqlite.framework in Frameworks */,
 				D36502040A76C65300C47A76 /* srtp.framework in Frameworks */,
 				D36502050A76C65300C47A76 /* teletone.framework in Frameworks */,
+				D3BF926B0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2537,6 +2569,7 @@
 				D365025B0A76C90700C47A76 /* sqlite.framework in Frameworks */,
 				D365025C0A76C90700C47A76 /* srtp.framework in Frameworks */,
 				D365025D0A76C90700C47A76 /* teletone.framework in Frameworks */,
+				D3BF926C0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2559,6 +2592,7 @@
 				D36502E10A76CB1000C47A76 /* sqlite.framework in Frameworks */,
 				D36502E20A76CB1000C47A76 /* srtp.framework in Frameworks */,
 				D36502E30A76CB1000C47A76 /* teletone.framework in Frameworks */,
+				D3BF926D0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2609,6 +2643,7 @@
 				D3B406CE0A76EED0000AF6D4 /* sqlite.framework in Frameworks */,
 				D3B406CF0A76EED0000AF6D4 /* srtp.framework in Frameworks */,
 				D3B406D00A76EED0000AF6D4 /* teletone.framework in Frameworks */,
+				D3BF926F0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2623,6 +2658,7 @@
 				D3BC32410A769B7600DE971E /* apr.framework in Frameworks */,
 				D3BC32420A769B7600DE971E /* aprutil.framework in Frameworks */,
 				D3BC31E20A769B4300DE971E /* libfreeswitch.framework in Frameworks */,
+				D3BF925D0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2639,6 +2675,7 @@
 				D3BC32700A769D7700DE971E /* libfreeswitch.framework in Frameworks */,
 				D3BC32690A769D6F00DE971E /* iksemel.framework in Frameworks */,
 				D3BC32680A769D6B00DE971E /* dingaling.framework in Frameworks */,
+				D3BF925E0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2653,6 +2690,7 @@
 				D3BC32890A769E2700DE971E /* apr.framework in Frameworks */,
 				D3BC328A0A769E2700DE971E /* aprutil.framework in Frameworks */,
 				D3BC328B0A769E2700DE971E /* libfreeswitch.framework in Frameworks */,
+				D3BF925F0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2667,6 +2705,7 @@
 				D3BC32D10A76A68400DE971E /* apr.framework in Frameworks */,
 				D3BC32D20A76A68400DE971E /* aprutil.framework in Frameworks */,
 				D3BC32D30A76A68400DE971E /* libfreeswitch.framework in Frameworks */,
+				D3BF92600A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2681,6 +2720,7 @@
 				D3BC32F10A76A75B00DE971E /* apr.framework in Frameworks */,
 				D3BC32F20A76A75B00DE971E /* aprutil.framework in Frameworks */,
 				D3BC32F30A76A75B00DE971E /* libfreeswitch.framework in Frameworks */,
+				D3BF92610A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2695,6 +2735,7 @@
 				D3BC33040A76A7EB00DE971E /* apr.framework in Frameworks */,
 				D3BC33050A76A7EB00DE971E /* aprutil.framework in Frameworks */,
 				D3BC33060A76A7EB00DE971E /* libfreeswitch.framework in Frameworks */,
+				D3BF92620A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2709,6 +2750,7 @@
 				D3BC33170A76A86A00DE971E /* sqlite.framework in Frameworks */,
 				D3BC33180A76A86A00DE971E /* srtp.framework in Frameworks */,
 				D3BC33190A76A86A00DE971E /* teletone.framework in Frameworks */,
+				D3BF92630A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2723,6 +2765,7 @@
 				D3BC332E0A76A8BC00DE971E /* sqlite.framework in Frameworks */,
 				D3BC332F0A76A8BC00DE971E /* srtp.framework in Frameworks */,
 				D3BC33300A76A8BC00DE971E /* teletone.framework in Frameworks */,
+				D3BF92640A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2737,6 +2780,7 @@
 				D3BC33490A76AA0D00DE971E /* sqlite.framework in Frameworks */,
 				D3BC334A0A76AA0D00DE971E /* srtp.framework in Frameworks */,
 				D3BC334B0A76AA0D00DE971E /* teletone.framework in Frameworks */,
+				D3BF92650A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2760,6 +2804,7 @@
 				D3BC34D80A76B04600DE971E /* sqlite.framework in Frameworks */,
 				D3BC34D90A76B04600DE971E /* srtp.framework in Frameworks */,
 				D3BC34DA0A76B04600DE971E /* teletone.framework in Frameworks */,
+				D3BF92660A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2774,6 +2819,7 @@
 				D3BC34F10A76B17800DE971E /* sqlite.framework in Frameworks */,
 				D3BC34F20A76B17800DE971E /* srtp.framework in Frameworks */,
 				D3BC34F30A76B17800DE971E /* teletone.framework in Frameworks */,
+				D3BF92670A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2806,6 +2852,7 @@
 				D3E66A840A77E63C00D04E25 /* sqlite.framework in Frameworks */,
 				D3E66A850A77E63C00D04E25 /* srtp.framework in Frameworks */,
 				D3E66A860A77E63C00D04E25 /* teletone.framework in Frameworks */,
+				D3BF92720A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2820,6 +2867,7 @@
 				D3E66B1D0A77E7F400D04E25 /* sqlite.framework in Frameworks */,
 				D3E66B1E0A77E7F400D04E25 /* srtp.framework in Frameworks */,
 				D3E66B1F0A77E7F400D04E25 /* teletone.framework in Frameworks */,
+				D3BF92730A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2834,6 +2882,7 @@
 				D3E66B240A77E7FC00D04E25 /* sqlite.framework in Frameworks */,
 				D3E66B250A77E7FC00D04E25 /* srtp.framework in Frameworks */,
 				D3E66B260A77E7FC00D04E25 /* teletone.framework in Frameworks */,
+				D3BF92740A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2848,6 +2897,7 @@
 				D3E66B2B0A77E80400D04E25 /* sqlite.framework in Frameworks */,
 				D3E66B2C0A77E80400D04E25 /* srtp.framework in Frameworks */,
 				D3E66B2D0A77E80400D04E25 /* teletone.framework in Frameworks */,
+				D3BF92750A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2889,6 +2939,7 @@
 				D3AA5D240A77D53D008F105E /* libfreeswitch.framework in Frameworks */,
 				D3AA5D250A77D53D008F105E /* aprutil.framework in Frameworks */,
 				D3AA5D260A77D53D008F105E /* apr.framework in Frameworks */,
+				D3BF92710A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2899,6 +2950,7 @@
 			isa = PBXGroup;
 			children = (
 				D3BC34180A76ADF400DE971E /* CoreAudio.framework */,
+				D3BF925C0A77F7FA00BEDBC8 /* System.framework */,
 				08FB7795FE84155DC02AAC07 /* Sources */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
