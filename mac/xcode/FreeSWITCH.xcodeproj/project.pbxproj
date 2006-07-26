@@ -1195,6 +1195,13 @@
 			remoteGlobalIDString = D3BC34E50A76B0FC00DE971E;
 			remoteInfo = mod_console;
 		};
+		D3D43FA00A76F41200FDA7FC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3152F7C0A76F0A100549119;
+			remoteInfo = portaudio;
+		};
 		D3DEC8140A75D8D3002001CF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
@@ -4554,6 +4561,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				D3D43FA10A76F41200FDA7FC /* PBXTargetDependency */,
 			);
 			name = mod_portaudio;
 			productName = mod_portaudio;
@@ -6262,6 +6270,11 @@
 			target = D3BC34E50A76B0FC00DE971E /* mod_console */;
 			targetProxy = D3BC34FE0A76B1AB00DE971E /* PBXContainerItemProxy */;
 		};
+		D3D43FA10A76F41200FDA7FC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3152F7C0A76F0A100549119 /* portaudio */;
+			targetProxy = D3D43FA00A76F41200FDA7FC /* PBXContainerItemProxy */;
+		};
 		D3DEC8150A75D8D3002001CF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D3DEC21C0A75CB06002001CF /* apr */;
@@ -7078,6 +7091,25 @@
 				GCC_PREFIX_HEADER = "$(SYSTEM_LIBRARY_DIR)/Frameworks/AppKit.framework/Headers/AppKit.h";
 				INFOPLIST_FILE = libfreeswitch.plist;
 				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				OTHER_CFLAGS = (
+					"-fPIC",
+					"-Wmissing-prototypes",
+					"-g",
+					"-std=c99",
+					"-O2",
+					"-Wstrict-prototypes",
+					"-DMACOSX",
+					"-DDARWIN",
+					"-Wall",
+					"-Werror",
+					"$(OTHER_CFLAGS_QUOTED_1)",
+					"$(OTHER_CFLAGS_QUOTED_2)",
+					"$(OTHER_CFLAGS_QUOTED_3)",
+					"$(OTHER_CFLAGS_QUOTED_4)",
+					"$(OTHER_CFLAGS_QUOTED_5)",
+					"$(OTHER_CFLAGS_QUOTED_6)",
+					"$(OTHER_CFLAGS_QUOTED_7)",
+				);
 				OTHER_LDFLAGS = (
 					"-framework",
 					Foundation,
@@ -7105,29 +7137,16 @@
 				INSTALL_PATH = "$(HOME)/Library/Frameworks";
 				MACH_O_TYPE = mh_dylib;
 				OTHER_CFLAGS = (
-					"-DHAVE_CONFIG_H",
-					"-I.",
-					"-I.",
-					"-I./src/include",
-					"-I../../libs/srtp/include",
-					"-I../../libs/srtp/crypto/include/",
-					"-I/usr/local/freeswitch/include",
-					"-g",
-					"-O2",
-					"-DDARWIN",
-					"-DSIGPROCMASK_SETS_THREAD_MASK",
-					"-no-cpp-precomp",
-					"-I/usr/local/freeswitch/include/apr-1",
-					"-I/usr/local/freeswitch/include/srtp",
-					"-I/usr/local/freeswitch/include/apr-1",
-					"-I/usr/local/include",
-					"-DMACOSX",
 					"-fPIC",
+					"-Wmissing-prototypes",
+					"-g",
+					"-std=c99",
+					"-O2",
+					"-Wstrict-prototypes",
+					"-DMACOSX",
+					"-DDARWIN",
 					"-Wall",
-					"-I/usr/local/src/freeswitch.trunk/src/sqlite",
-					"-I/usr/local/src/freeswitch.trunk",
-					"-I/usr/local/src/freeswitch.trunk/src/include",
-					"-I/usr/local/freeswitch/include",
+					"-Werror",
 					"$(OTHER_CFLAGS_QUOTED_1)",
 					"$(OTHER_CFLAGS_QUOTED_2)",
 					"$(OTHER_CFLAGS_QUOTED_3)",
@@ -7135,14 +7154,6 @@
 					"$(OTHER_CFLAGS_QUOTED_5)",
 					"$(OTHER_CFLAGS_QUOTED_6)",
 					"$(OTHER_CFLAGS_QUOTED_7)",
-					"-Wall",
-					"-Werror",
-					"-Wstrict-prototypes",
-					"-Wmissing-prototypes",
-					"-g",
-					"-std=c99",
-					"-g",
-					"-O2",
 				);
 				OTHER_CFLAGS_QUOTED_1 = "-DSWITCH_MOD_DIR=\\\"$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod\\\"";
 				OTHER_CFLAGS_QUOTED_2 = "-DSWITCH_PREFIX_DIR=\\\"$(FREESWITCH_INSTALL_PREFIX)/freeswitch\\\"";
