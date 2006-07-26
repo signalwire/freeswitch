@@ -429,7 +429,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 			*arg++ = '\0';
 		}
 		
-		if (switch_api_execute(api_cmd, arg, &stream) == SWITCH_STATUS_SUCCESS) {
+		if (switch_api_execute(api_cmd, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 			switch_size_t len;
 			char buf[1024];
 

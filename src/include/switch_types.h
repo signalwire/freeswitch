@@ -707,7 +707,7 @@ typedef switch_status_t (*switch_waitfor_write_hook_t)(switch_core_session_t *, 
 typedef switch_status_t (*switch_send_dtmf_hook_t)(switch_core_session_t *, char *);
 typedef struct switch_stream_handle switch_stream_handle_t;
 typedef switch_status_t (*switch_stream_handle_write_function_t)(switch_stream_handle_t *handle, char *fmt, ...);
-typedef switch_status_t (*switch_api_function_t)(char *in, switch_stream_handle_t *stream);
+typedef switch_status_t (*switch_api_function_t)(char *in, switch_core_session_t *session, switch_stream_handle_t *stream);
 typedef switch_status_t (*switch_input_callback_function_t)(switch_core_session_t *session,
 															void *input,
 															switch_input_type_t input_type,

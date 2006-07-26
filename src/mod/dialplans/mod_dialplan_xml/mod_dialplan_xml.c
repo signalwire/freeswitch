@@ -122,6 +122,13 @@ static void perform_substitution(pcre *re, int match_count, char *data, char *fi
 	substituted[y++] = '\0';
 }
 
+typedef enum {
+	BREAK_ON_TRUE,
+	BREAK_ON_FALSE,
+	BREAK_ALWAYS,
+	BREAK_NEVER
+} break_t;
+
 static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, switch_caller_extension_t **extension)
 {
 	switch_xml_t xcond, xaction;
@@ -135,17 +142,50 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 
 	for (xcond = switch_xml_child(xexten, "condition"); xcond; xcond = xcond->next) {
 		char *field = NULL;
+		char *do_break_a = NULL;
 		char *expression = NULL;
 		char *field_data = NULL;
+		char retbuf[1024] = "";
 		pcre *re = NULL;
 		int ovector[30];
-
-		field = (char *) switch_xml_attr(xcond, "field");
-		expression = (char *) switch_xml_attr_soft(xcond, "expression");
+		break_t do_break_i = BREAK_ON_FALSE;
 		
+		field = (char *) switch_xml_attr(xcond, "field");
+
+		expression = (char *) switch_xml_attr_soft(xcond, "expression");
+
+		if ((do_break_a = (char *) switch_xml_attr(xcond, "break"))) {
+			if (!strcasecmp(do_break_a, "on-true")) {
+				do_break_i = BREAK_ON_TRUE;
+			} else if (!strcasecmp(do_break_a, "on-false")) {
+				do_break_i = BREAK_ON_FALSE;
+			} else if (!strcasecmp(do_break_a, "always")) {
+				do_break_i = BREAK_ALWAYS;
+			} else if (!strcasecmp(do_break_a, "never")) {
+				do_break_i = BREAK_NEVER;
+			}
+		}
+
 		if (field) {
 			if (*field == '$') {
 				field_data = switch_channel_get_variable(channel, field + 1);
+			} else if (*field == '%') {
+				switch_stream_handle_t stream = {0};
+				char *cmd = switch_core_session_strdup(session, field + 1);
+				char *arg;
+				
+				if (cmd) {
+					if ((arg = strchr(cmd, ' '))) {
+						*arg++ = '\0';
+					}
+					stream.data = retbuf;
+					stream.end = stream.data;
+					stream.data_size = sizeof(retbuf);
+					stream.write_function = switch_console_stream_write;
+					if (switch_api_execute(cmd, arg, session, &stream) == SWITCH_STATUS_SUCCESS) {
+						field_data = retbuf;
+					}
+				}
 			} else {
 				field_data = switch_caller_get_field_by_name(caller_profile, field);
 			}
@@ -155,7 +195,27 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test conditions %s(%s) =~ /%s/\n", field, field_data, expression);
 			if (!(proceed = perform_regex(channel, field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Regex mismatch\n");
-				break;
+
+				for (xaction = switch_xml_child(xcond, "anti-action"); xaction; xaction = xaction->next) {
+					char *application = (char*) switch_xml_attr_soft(xaction, "application");
+					char *data = (char *) switch_xml_attr_soft(xaction, "data");
+
+					if (!*extension) {
+						if ((*extension =
+							 switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+							return 0;
+						}
+					}
+					
+					switch_caller_extension_add_application(session, *extension, application, data);
+				}
+
+				if (do_break_i == BREAK_ON_FALSE || do_break_i == BREAK_ALWAYS) {
+					break;
+				} else {
+					continue;
+				}
 			}
 			assert(re != NULL);
 		}
@@ -186,6 +246,10 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 		}
 
 		cleanre(re);
+
+		if (do_break_i == BREAK_ON_TRUE || do_break_i == BREAK_ALWAYS) {
+			break;
+		}
 	}
 	return proceed;
 }

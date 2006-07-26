@@ -108,7 +108,7 @@ static int switch_console_process(char *cmd, char *retbuf, int retlen)
 	stream.end = stream.data;
 	stream.data_size = retlen;
 	stream.write_function = switch_console_stream_write;
-	if (switch_api_execute(cmd, arg, &stream) == SWITCH_STATUS_SUCCESS) {
+	if (switch_api_execute(cmd, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Unknown Command: %s\n", cmd);

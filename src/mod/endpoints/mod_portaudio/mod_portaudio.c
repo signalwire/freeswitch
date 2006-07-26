@@ -116,11 +116,11 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan)
 	 static int dump_info(void);
 	 static switch_status_t load_config(void);
 	 static int get_dev_by_name(char *name, int in);
-	 static switch_status_t place_call(char *dest, switch_stream_handle_t *stream);
-	 static switch_status_t hup_call(char *callid, switch_stream_handle_t *stream);
-	 static switch_status_t call_info(char *callid, switch_stream_handle_t *stream);
-	 static switch_status_t send_dtmf(char *callid, switch_stream_handle_t *stream);
-	 static switch_status_t answer_call(char *callid, switch_stream_handle_t *stream);
+	 static switch_status_t place_call(char *dest, switch_core_session_t *session, switch_stream_handle_t *stream);
+	 static switch_status_t hup_call(char *callid, switch_core_session_t *session, switch_stream_handle_t *stream);
+	 static switch_status_t call_info(char *callid, switch_core_session_t *session, switch_stream_handle_t *stream);
+	 static switch_status_t send_dtmf(char *callid, switch_core_session_t *session, switch_stream_handle_t *stream);
+	 static switch_status_t answer_call(char *callid, switch_core_session_t *session, switch_stream_handle_t *stream);
 
 /* 
    State methods they get called when the state changes to the specific state 
@@ -822,10 +822,14 @@ static switch_status_t engage_device(struct private_object *tech_pvt)
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t place_call(char *dest, switch_stream_handle_t *stream)
+static switch_status_t place_call(char *dest, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	switch_core_session_t *session;
 	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (isession) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!dest) {
 		stream->write_function(stream, "Usage: pacall <exten>");
@@ -875,11 +879,15 @@ static switch_status_t place_call(char *dest, switch_stream_handle_t *stream)
 }
 
 
-static switch_status_t hup_call(char *callid, switch_stream_handle_t *stream)
+static switch_status_t hup_call(char *callid, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel = NULL;
 	char tmp[50];
+
+	if (isession) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (callid && !strcasecmp(callid, "last")) {
 		snprintf(tmp, sizeof(tmp), "%d", globals.call_id - 1);
@@ -919,11 +927,15 @@ static switch_status_t hup_call(char *callid, switch_stream_handle_t *stream)
 }
 
 
-static switch_status_t send_dtmf(char *callid, switch_stream_handle_t *stream)
+static switch_status_t send_dtmf(char *callid, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	struct private_object *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
 	char *dtmf;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if ((dtmf = strchr(callid, ' ')) != 0) {
 		*dtmf++ = '\0';
@@ -943,10 +955,14 @@ static switch_status_t send_dtmf(char *callid, switch_stream_handle_t *stream)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t answer_call(char *callid, switch_stream_handle_t *stream)
+static switch_status_t answer_call(char *callid, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	struct private_object *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
 		channel = switch_core_session_get_channel(tech_pvt->session);
@@ -975,11 +991,16 @@ static void print_info(struct private_object *tech_pvt, switch_stream_handle_t *
 
 }
 
-static switch_status_t call_info(char *callid, switch_stream_handle_t *stream)
+static switch_status_t call_info(char *callid, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	struct private_object *tech_pvt;
 	switch_hash_index_t *hi;
 	void *val;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (!callid || !strcasecmp(callid, "all")) {
 		for (hi = switch_hash_first(module_pool, globals.call_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);

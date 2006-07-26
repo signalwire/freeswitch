@@ -272,7 +272,7 @@ abyss_bool HandleHook(TSession *r)
 	ResponseStatus(r,200);
 	ResponseContentType(r, m);
     ResponseWrite(r);
-	switch_api_execute(command, r->query, &stream);
+	switch_api_execute(command, r->query, NULL, &stream);
 	HTTPWriteEnd(r);
     return TRUE;
 }
@@ -296,7 +296,7 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env *const envP, xmlrpc_value *const 
 	stream.end = stream.data;
 	stream.data_size = CMDLEN;
 	stream.write_function = switch_console_stream_write;
-	switch_api_execute(command, arg, &stream);
+	switch_api_execute(command, arg, NULL, &stream);
 
     /* Return our result. */
     val = xmlrpc_build_value(envP, "s", retbuf);

@@ -1838,13 +1838,25 @@ static JSBool js_api_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	if (argc > 1) {
 		char *cmd = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		switch_core_session_t *session = NULL;
+
+		if (argc > 2) {
+			JSObject *session_obj;
+			struct js_session *jss;
+			if (JS_ValueToObject(cx, argv[2], &session_obj)) {
+				if ((jss = JS_GetPrivate(cx, session_obj))) {
+					session = jss->session;
+				}
+			}
+		}
+		
 		switch_stream_handle_t stream = {0};
 		char retbuf[2048] = "";
 
 		stream.data = retbuf;
 		stream.end = stream.data;
 		stream.data_size = sizeof(retbuf);
-		switch_api_execute(cmd, arg, &stream);
+		switch_api_execute(cmd, arg, session, &stream);
 		stream.write_function = switch_console_stream_write;
 
 		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, retbuf));
@@ -2203,7 +2215,7 @@ static void js_thread_launch(char *text)
 }
 
 
-static switch_status_t launch_async(char *text, switch_stream_handle_t *stream)
+static switch_status_t launch_async(char *text, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 
 	if (switch_strlen_zero(text)) {

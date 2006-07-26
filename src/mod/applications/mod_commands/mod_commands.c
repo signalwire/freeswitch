@@ -35,10 +35,15 @@
 
 static const char modname[] = "mod_commands";
 
-static switch_status_t status_function(char *cmd, switch_stream_handle_t *stream)
+static switch_status_t status_function(char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	uint8_t html = 0;
 	switch_core_time_duration_t duration;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_core_measure_time(switch_core_uptime(), &duration);
 
 	if (cmd && strstr(cmd, "html")) {
@@ -75,19 +80,27 @@ static switch_status_t status_function(char *cmd, switch_stream_handle_t *stream
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t load_function(char *mod, switch_stream_handle_t *stream)
+static switch_status_t load_function(char *mod, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
 	switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod);
-	 stream->write_function(stream, "OK\n");
+	stream->write_function(stream, "OK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
-static switch_status_t reload_function(char *mod, switch_stream_handle_t *stream)
+static switch_status_t reload_function(char *mod, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	const char *err;
 	switch_xml_t xml_root;
 
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
 	if ((xml_root = switch_xml_open_root(1, &err))) {
 		switch_xml_free(xml_root);
 	}
@@ -96,9 +109,13 @@ static switch_status_t reload_function(char *mod, switch_stream_handle_t *stream
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t kill_function(char *dest, switch_stream_handle_t *stream)
+static switch_status_t kill_function(char *dest, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	switch_core_session_t *session = NULL;
+
+	if (isession) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if ((session = switch_core_session_locate(dest))) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -114,11 +131,15 @@ static switch_status_t kill_function(char *dest, switch_stream_handle_t *stream)
 }
 
 
-static switch_status_t transfer_function(char *cmd, switch_stream_handle_t *stream)
+static switch_status_t transfer_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	switch_core_session_t *session = NULL;
 	char *argv[4] = {0};
 	int argc = 0;
+
+	if (isession) {
+		return SWITCH_STATUS_FALSE;
+	}
 	
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
@@ -151,11 +172,15 @@ static switch_status_t transfer_function(char *cmd, switch_stream_handle_t *stre
 
 
 
-static switch_status_t pause_function(char *cmd, switch_stream_handle_t *stream)
+static switch_status_t pause_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	switch_core_session_t *session = NULL;
 	char *argv[4] = {0};
 	int argc = 0;
+
+	if (isession) {
+		return SWITCH_STATUS_FALSE;
+	}
 	
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
@@ -230,12 +255,16 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
 	return 0;
 }
 
-static switch_status_t show_function(char *cmd, switch_stream_handle_t *stream)
+static switch_status_t show_function(char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	char sql[1024];
 	char *errmsg;
 	switch_core_db_t *db = switch_core_db_handle();
 	struct holder holder = {0};
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (stream->event) {
         holder.http = switch_event_get_header(stream->event, "http-host");

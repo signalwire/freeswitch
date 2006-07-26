@@ -91,8 +91,27 @@ static void strftime_function(switch_core_session_t *session, char *data)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", argv[0], date);
 		switch_channel_set_variable(channel, argv[0], date);
 	}
-	
 }
+
+static switch_status_t strftime_api_function(char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+	switch_size_t retsize;
+	switch_time_exp_t tm;
+	char date[80] = "";
+	
+	switch_time_exp_lt(&tm, switch_time_now());
+	switch_strftime(date, &retsize, sizeof(date), fmt, &tm);
+	stream->write_function(stream, date);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_api_interface_t dptools_api_interface = {
+	/*.interface_name */ "strftime",
+	/*.desc */ "strftime",
+	/*.function */ strftime_api_function,
+	/*.next */ NULL
+};
 
 static const switch_application_interface_t set_application_interface = {
 	/*.interface_name */ "set",
@@ -120,7 +139,8 @@ static const switch_loadable_module_interface_t mod_dptools_module_interface = {
 	/*.timer_interface = */ NULL,
 	/*.dialplan_interface = */ NULL,
 	/*.codec_interface = */ NULL,
-	/*.application_interface */ &sleep_application_interface
+	/*.application_interface */ &sleep_application_interface,
+	/*.api_interface */ &dptools_api_interface
 };
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)

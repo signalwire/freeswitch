@@ -711,7 +711,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 	return i;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_stream_handle_t *stream)
+SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	switch_api_interface_t *api;
 	switch_status_t status;
@@ -734,7 +734,7 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_
 	}
 
 	if ((api = switch_loadable_module_get_api_interface(cmd)) != 0) {
-		status = api->function(arg, stream);
+		status = api->function(arg, session, stream);
 	} else {
 		status = SWITCH_STATUS_FALSE;
 		stream->write_function(stream, "INVALID COMMAND [%s]", cmd);

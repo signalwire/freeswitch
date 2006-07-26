@@ -188,7 +188,7 @@ static uint32_t conference_stop_file(conference_obj_t *conference, file_stop_t s
 static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin);
 static switch_status_t conference_say(conference_obj_t *conference, char *text, uint32_t leadin);
 static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
-static switch_status_t conf_function(char *buf, switch_stream_handle_t *stream);
+static switch_status_t conf_function(char *buf, switch_core_session_t *session, switch_stream_handle_t *stream);
 static switch_status_t audio_bridge_on_ring(switch_core_session_t *session);
 static switch_status_t conference_outcall(conference_obj_t *conference, switch_core_session_t *session, char *bridgeto, char *cid_name, char *cid_num);
 static void conference_function(switch_core_session_t *session, char *data);
@@ -1232,6 +1232,7 @@ static switch_status_t conference_say(conference_obj_t *conference, char *text, 
 static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim)
 {
 	conference_member_t *member = NULL;
+
 	switch_mutex_lock(conference->member_mutex);
 
 	for (member = conference->members; member; member = member->next) {
@@ -1264,7 +1265,7 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
 }
 
 /* API Interface Function */
-static switch_status_t conf_function(char *buf, switch_stream_handle_t *stream)
+static switch_status_t conf_function(char *buf, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	char *lbuf = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1292,6 +1293,10 @@ static switch_status_t conf_function(char *buf, switch_stream_handle_t *stream)
 		"conference <confname> dial <endpoint_module_name>/<destination>\n"
 		"conference <confname> transfer <member_id> <conference_name>\n"
 		;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (stream->event) {
 		http = switch_event_get_header(stream->event, "http-host");

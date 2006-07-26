@@ -191,10 +191,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
   \brief Execute a registered API command
   \param cmd the name of the API command to execute
   \param arg the optional arguement to the command
+  \param session an optional session
   \param stream stream for output
   \return the status returned by the API call
 */
-SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_stream_handle_t *stream);
+SWITCH_DECLARE(switch_status_t) switch_api_execute(char *cmd, char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
 
 
 

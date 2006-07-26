@@ -151,8 +151,8 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_dialplan, globals.dialplan);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, globals.codec_string);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string, globals.codec_rates_string);
 
-static switch_status_t dl_login(char *arg, switch_stream_handle_t *stream);
-static switch_status_t dl_logout(char *profile_name, switch_stream_handle_t *stream);
+static switch_status_t dl_login(char *arg, switch_core_session_t *session, switch_stream_handle_t *stream);
+static switch_status_t dl_logout(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream);
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
 static switch_status_t channel_on_ring(switch_core_session_t *session);
@@ -1248,9 +1248,13 @@ static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
 	}
 }
 
-static switch_status_t dl_logout(char *profile_name, switch_stream_handle_t *stream)
+static switch_status_t dl_logout(char *profile_name, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	struct mdl_profile *profile;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!profile_name) {
 		stream->write_function(stream, "NO PROFILE NAME SPECIFIED\n");
@@ -1267,13 +1271,17 @@ static switch_status_t dl_logout(char *profile_name, switch_stream_handle_t *str
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t dl_login(char *arg, switch_stream_handle_t *stream)
+static switch_status_t dl_login(char *arg, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	char *argv[10] = {0};
 	int argc = 0;
 	char *var, *val, *myarg;
 	struct mdl_profile *profile = NULL;
 	int x;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (switch_strlen_zero(arg)) {
 		stream->write_function(stream, "FAIL\n");
