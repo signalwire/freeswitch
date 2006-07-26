@@ -7744,6 +7744,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_portaudio;
@@ -7882,6 +7885,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_iax;
@@ -7927,6 +7933,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_dialplan_xml;
@@ -8020,6 +8029,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_dptools;
@@ -8065,6 +8077,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_ivrtest;
@@ -8110,6 +8125,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_rss;
@@ -8202,6 +8220,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_gsm;
@@ -8294,6 +8315,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_ilbc;
@@ -8478,8 +8502,10 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G5;
 				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/bin";
+				OTHER_LDFLAGS = "";
 				PREBINDING = NO;
 				PRODUCT_NAME = freeswitch;
+				WARNING_LDFLAGS = "";
 				ZERO_LINK = NO;
 			};
 			name = Release;
@@ -8664,6 +8690,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_speex;
@@ -8731,6 +8760,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_echo;
@@ -8776,6 +8808,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_dingaling;
@@ -8800,6 +8835,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_playback;
@@ -8821,6 +8859,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_playback;
@@ -8866,6 +8907,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_bridgecall;
@@ -8911,6 +8955,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_l16;
@@ -8956,6 +9003,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_commands;
@@ -9001,6 +9051,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_softtimer;
@@ -9046,6 +9099,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_g711;
@@ -9091,6 +9147,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_conference;
@@ -9188,6 +9247,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_sndfile;
@@ -9233,6 +9295,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_console;
@@ -9559,6 +9624,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_woomera;
@@ -9604,6 +9672,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_syslog;
@@ -9649,6 +9720,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_event_multicast;
@@ -9694,6 +9768,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_event_socket;
@@ -9951,6 +10028,9 @@
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
+					"-dynamic",
+					"-bundle",
+					"-force_flat_namespace",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = mod_exosip;
