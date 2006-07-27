@@ -36,6 +36,7 @@
 #include <list>
 #include <sstream>
 #include <mysql.h>
+#include <errmsg.h>
 
 #ifndef MYSQLCDR
 #define MYSQLCDR
@@ -55,7 +56,7 @@ class MysqlCDR : public BaseCDR {
 
 	private:
 		static bool activated;
-		static char *sql_query;
+		static char sql_query[1024];
 		static std::string tmp_sql_query; // Object must exist to bind the statement, this used for generating the sql
 		static char sql_query_chanvars[100];
 		static MYSQL *conn;
@@ -94,6 +95,7 @@ class MysqlCDR : public BaseCDR {
 		template <typename T> void add_parameter(T& param, enum_field_types type, bool *is_null=0);
 		void add_string_parameter(char* param, long unsigned int& param_length, enum_field_types type, bool* is_null=0);
 		void set_mysql_time(switch_time_exp_t& param, MYSQL_TIME& destination);
+		void connect_to_database();
 };
 
 #endif

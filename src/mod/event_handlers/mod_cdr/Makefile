@@ -1,7 +1,7 @@
 LDFLAGS += -I/usr/include/mysql -L/usr/lib64/mysql -lmysqlclient -lz -lcrypt -lnsl -lm -lssl -lcrypto
 CFLAGS += -I/usr/include/mysql -L/usr/lib64/mysql 
 CPPCC = g++
-OBJS=cdrcontainer.o basecdr.o baseregistry.o mysqlcdr.o pddcdr.o
+OBJS=cdrcontainer.o basecdr.o baseregistry.o mysqlcdr.o pddcdr.o csvcdr.o
 
 
 all:	depends $(OBJS) $(MODNAME).$(DYNAMIC_LIB_EXTEN)

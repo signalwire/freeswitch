@@ -59,6 +59,7 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 {
 	if(newchannel != 0)
 	{
+		errorstate = 0;
 		memset(clid,0,80);
 		memset(dialplan,0,80);
 		memset(myuuid,0,37);
@@ -84,9 +85,10 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 		if(newchannel->callerprofile->caller_id_name != 0)
 		{
 			strncpy(clid,newchannel->callerprofile->caller_id_name,strlen(newchannel->callerprofile->caller_id_name));
-			strncat(clid," ",1);
+			strncat(clid," <",2);
 			if(newchannel->callerprofile->caller_id_number != 0 )
 				strncat(clid,newchannel->callerprofile->caller_id_number,strlen(clid)+strlen(newchannel->callerprofile->caller_id_number));
+			strncat(clid,">",1);
 		}
 		
 		// Get the ANI information if it's set
@@ -100,9 +102,7 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 	
 		if(newchannel->callerprofile->network_addr != 0)
 			strncpy(network_addr,newchannel->callerprofile->network_addr,strlen(newchannel->callerprofile->network_addr));
-		
-		switch_console_printf(SWITCH_CHANNEL_LOG, "BaseCDR::BaseCDR(switch_mod_cdr_newchannel*) - Channel caller_profile loaded.\n");
-		
+				
 		originated = newchannel->originate;
 	
 		if(newchannel->originateprofile->uuid != 0)
@@ -146,8 +146,6 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 		hangupcause = switch_channel_get_cause(newchannel->channel);
 		hangupcause_text = switch_channel_cause2str(hangupcause);
 	
-		switch_console_printf(SWITCH_CHANNEL_LOG, "BaseCDR::BaseCDR(switch_mod_cdr_newchannel*) - Call state & length calculated.\n");
-		
 		if(newchannel->callerextension != 0)
 			if(newchannel->callerextension->last_application != 0)
 			{
@@ -158,8 +156,6 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 			}
 		
 		amaflags=0;
-		
-		switch_console_printf(SWITCH_CHANNEL_LOG, "BaseCDR::BaseCDR(switch_mod_cdr_newchannel*) - Processing completed.\n");
 	}
 }
 

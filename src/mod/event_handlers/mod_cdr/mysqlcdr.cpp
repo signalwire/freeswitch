@@ -83,10 +83,10 @@ std::list<std::string> MysqlCDR::chanvars_fixed_list;
 std::list<std::string> MysqlCDR::chanvars_supp_list;
 std::vector<switch_mod_cdr_sql_types_t> MysqlCDR::chanvars_fixed_types;
 bool MysqlCDR::activated = 0;
-char* MysqlCDR::sql_query = 0;
+char MysqlCDR::sql_query[1024] = "";
 std::string MysqlCDR::tmp_sql_query;
 char MysqlCDR::sql_query_chanvars[100] = "";
-MYSQL* MysqlCDR:: conn = 0;
+MYSQL* MysqlCDR::conn = 0;
 MYSQL_STMT* MysqlCDR::stmt=0;
 MYSQL_STMT* MysqlCDR::stmt_chanvars=0;
 char MysqlCDR::hostname[255] = "";
@@ -208,38 +208,38 @@ void MysqlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setti
 			}
 			
 			tmp_sql_query.append(")");
-			
-			std::vector<char> tempfirstvector(tmp_sql_query.begin(), tmp_sql_query.end());
-			tempfirstvector.push_back('\0');
-			sql_query = &tempfirstvector[0];
 	
 			char tempsql_query_chanvars[] = "INSERT INTO chanvars (callid,varname,varvalue) VALUES(?,?,?)";
 			memset(sql_query_chanvars,0,100);
 			strncpy(sql_query_chanvars,tempsql_query_chanvars,strlen(tempsql_query_chanvars));
 
-			conn = mysql_init(NULL);
-			mysql_options(conn, MYSQL_READ_DEFAULT_FILE, "");
-			if(mysql_real_connect(conn,hostname,username,password,dbname,0,NULL,0) == NULL)
-			{
-				char *error1 = "Cannot connect to MySQL Server.  The error was: ";
-				const char *error2 = mysql_error(conn);
-				strncat(error1,error2,strlen(error2));
-				switch_console_printf(SWITCH_CHANNEL_LOG,error1);
-			}
-			else
-				connectionstate = 1;
-	
-			mysql_autocommit(conn,0);
-			stmt = mysql_stmt_init(conn);
-		
-			mysql_stmt_prepare(stmt,sql_query,(long unsigned int)strlen(sql_query));
-		
-			if(logchanvars)
-			{
-				stmt_chanvars = mysql_stmt_init(conn);
-				mysql_stmt_prepare(stmt_chanvars,sql_query_chanvars,(long unsigned int)strlen(sql_query_chanvars));
-			}
+			strncpy(sql_query,tmp_sql_query.c_str(),tmp_sql_query.size());
+			connect_to_database();
 		}
+	}
+}
+
+void MysqlCDR::connect_to_database()
+{
+	conn = mysql_init(NULL);
+	mysql_options(conn, MYSQL_READ_DEFAULT_FILE, "");
+	if(mysql_real_connect(conn,hostname,username,password,dbname,0,NULL,0) == NULL)
+	{
+		const char *error1 = mysql_error(conn);
+		switch_console_printf(SWITCH_CHANNEL_LOG,"Cannot connect to MySQL Server.  The error was: %s\n",error1);
+	}
+	else
+		connectionstate = 1;
+	
+	mysql_autocommit(conn,0);
+	stmt = mysql_stmt_init(conn);
+		
+	mysql_stmt_prepare(stmt,sql_query,(long unsigned int)strlen(sql_query));
+		
+	if(logchanvars)
+	{
+		stmt_chanvars = mysql_stmt_init(conn);
+		mysql_stmt_prepare(stmt_chanvars,sql_query_chanvars,(long unsigned int)strlen(sql_query_chanvars));
 	}
 }
 
@@ -390,10 +390,8 @@ bool MysqlCDR::process_record()
 					*x = 0;
 					bool* is_null = new bool;
 					*is_null = 0;
-					std::cout << "CDR_TINY: " << iItr->second << " and its size is " << iItr->second.size() << " bytes." << std::endl << std::endl;
 					if(iItr->second.size() > 0)
 					{
-						std::cout << "Converting iItr->second to type char." << std::endl;
 						std::istringstream istring(iItr->second);
 						istring >> *x;
 					}
@@ -433,75 +431,93 @@ bool MysqlCDR::process_record()
 	bindmetemp = new MYSQL_BIND[bindme.size()];
 	copy(bindme.begin(), bindme.end(), bindmetemp);
 	
-	mysql_stmt_bind_param(stmt,bindmetemp);
-	int bah = mysql_stmt_execute(stmt);
-	switch_console_printf(SWITCH_CHANNEL_LOG,"MysqlCDR::process_record() - Statement executed? Error: %d\n",bah);
-	
-	const char* bah2 = mysql_stmt_error(stmt);
-	switch_console_printf(SWITCH_CHANNEL_LOG,"MySQL encountered error: %s\n",bah2);
-		
-	if(logchanvars && chanvars_supp.size() > 0)
+	for(int mysql_ping_result = -1, count = 0, mysql_stmt_error_code = -1; mysql_ping_result != 0 && count < 5 && mysql_stmt_error_code != 0 ; count++)
 	{
-		long long insertid = mysql_stmt_insert_id(stmt);
-
-		std::map<std::string,std::string>::iterator iItr,iBeg,iEnd;
-		iEnd = chanvars_supp.end();
-		for(iItr = chanvars_supp.begin(); iItr != iEnd; iItr++)
+		mysql_ping_result = mysql_ping(conn);
+		if(mysql_ping_result)
 		{
-			MYSQL_BIND bindme_chanvars[3];
-			memset(bindme_chanvars,0,sizeof(bindme_chanvars));
-			
-			bindme_chanvars[0].buffer_type = MYSQL_TYPE_LONGLONG;
-			bindme_chanvars[0].buffer = &insertid;
-			
-			std::vector<char> tempfirstvector(iItr->first.begin(), iItr->first.end());
-			tempfirstvector.push_back('\0');
-			char* varname_temp = &tempfirstvector[0];
-
-			bindme_chanvars[1].buffer_type = MYSQL_TYPE_VAR_STRING;
-			long unsigned int varname_length = (long unsigned int)(iItr->first.size());
-			bindme_chanvars[1].length = &varname_length;
-			bindme_chanvars[1].buffer_length = varname_length;
-			bindme_chanvars[1].buffer = varname_temp;
-			
-			std::vector<char> tempsecondvector(iItr->second.begin(), iItr->second.end());
-			tempsecondvector.push_back('\0');
-			char* varvalue_temp = &tempsecondvector[0];
-			
-			bindme_chanvars[2].buffer_type = MYSQL_TYPE_VAR_STRING;
-			if(iItr->second.size() == 0)
-				bindme_chanvars[2].is_null = (my_bool*)1;
-			else
+			switch(mysql_ping_result)
 			{
-				long unsigned int varvalue_length = (long unsigned int)(iItr->second.size());
-				bindme_chanvars[2].length = &varvalue_length;
-				bindme_chanvars[2].buffer_length = varvalue_length;
-				bindme_chanvars[2].buffer = varvalue_temp;
+				case CR_SERVER_GONE_ERROR:
+				case CR_SERVER_LOST:
+				{
+					switch_console_printf(SWITCH_CHANNEL_LOG,"We lost connection to the MySQL server.  Trying to reconnect.\n");
+					connect_to_database();
+					break;
+				}
+				default:
+				{
+					switch_console_printf(SWITCH_CHANNEL_LOG,"We have encountered an unknown error when pinging the MySQL server.  Attempting to reconnect anyways.\n");
+					connect_to_database();
+				}
+			}
+		}
+		else
+		{
+			mysql_stmt_bind_param(stmt,bindmetemp);
+			mysql_stmt_error_code = mysql_stmt_execute(stmt);
+			
+			if(mysql_stmt_error_code != 0)
+			{
+				errorstate = 1;
+				switch_console_printf(SWITCH_CHANNEL_LOG,"MysqlCDR::process_record() - Statement executed? Error: %d\n",mysql_stmt_error_code);
+			
+				const char* mysql_stmt_error_string = mysql_stmt_error(stmt);
+				switch_console_printf(SWITCH_CHANNEL_LOG,"MySQL encountered error: %s\n",mysql_stmt_error_string);
+			}
+			else
+				errorstate = 0;
+			
+			if(logchanvars && chanvars_supp.size() > 0 && errorstate == 0)
+			{
+				long long insertid = mysql_stmt_insert_id(stmt);
+
+				std::map<std::string,std::string>::iterator iItr,iBeg,iEnd;
+				iEnd = chanvars_supp.end();
+				for(iItr = chanvars_supp.begin(); iItr != iEnd; iItr++)
+				{
+					MYSQL_BIND bindme_chanvars[3];
+					memset(bindme_chanvars,0,sizeof(bindme_chanvars));
+			
+					bindme_chanvars[0].buffer_type = MYSQL_TYPE_LONGLONG;
+					bindme_chanvars[0].buffer = &insertid;
+			
+					std::vector<char> tempfirstvector(iItr->first.begin(), iItr->first.end());
+					tempfirstvector.push_back('\0');
+					char* varname_temp = &tempfirstvector[0];
+
+					bindme_chanvars[1].buffer_type = MYSQL_TYPE_VAR_STRING;
+					long unsigned int varname_length = (long unsigned int)(iItr->first.size());
+					bindme_chanvars[1].length = &varname_length;
+					bindme_chanvars[1].buffer_length = varname_length;
+					bindme_chanvars[1].buffer = varname_temp;
+			
+					std::vector<char> tempsecondvector(iItr->second.begin(), iItr->second.end());
+					tempsecondvector.push_back('\0');
+					char* varvalue_temp = &tempsecondvector[0];
+			
+					bindme_chanvars[2].buffer_type = MYSQL_TYPE_VAR_STRING;
+					if(iItr->second.size() == 0)
+						bindme_chanvars[2].is_null = (my_bool*)1;
+					else
+					{
+						long unsigned int varvalue_length = (long unsigned int)(iItr->second.size());
+						bindme_chanvars[2].length = &varvalue_length;
+						bindme_chanvars[2].buffer_length = varvalue_length;
+						bindme_chanvars[2].buffer = varvalue_temp;
+					}
+			
+					mysql_stmt_bind_param(stmt_chanvars,bindme_chanvars);
+					mysql_stmt_execute(stmt_chanvars);
+				}
 			}
 			
-			mysql_stmt_bind_param(stmt_chanvars,bindme_chanvars);
-			mysql_stmt_execute(stmt_chanvars);
+			if(errorstate == 0)
+				mysql_commit(conn);
+			else
+				mysql_rollback(conn);
 		}
 	}
-	
-	
-	mysql_commit(conn);
-	
-	/* For future use
-	if(!mysql_stmt_execute(stmt))
-	{
-		if(errorstate == TRUE)
-			reprocess_tempdumped_data();
-		mysql_commit(conn);
-		errorstate=FALSE();
-	}
-	else
-	{
-		errorstate = TRUE;
-		mysql_rollback(conn);
-		tempdump_data();
-	}
-	*/
 	
 	delete [] bindmetemp;
 	if(temp_chanvars_holder.size() > 0)
