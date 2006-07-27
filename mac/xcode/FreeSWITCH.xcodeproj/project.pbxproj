@@ -932,6 +932,31 @@
 		D3DEC9D50A75E409002001CF /* iksemel.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC8A50A75DFDE002001CF /* iksemel.framework */; };
 		D3DEC9DC0A75E424002001CF /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
 		D3DECA120A75E429002001CF /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
+		D3E3E9BC0A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9BD0A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9BE0A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9BF0A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9C00A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9C10A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9C20A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9C30A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9C40A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9C50A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9C60A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9C70A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9C80A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9C90A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9CA0A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9CB0A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9CC0A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9CD0A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9CE0A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9CF0A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9D00A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9D10A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9D20A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9D30A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
+		D3E3E9D40A786E4600DBE6EB /* bundle1.o in Frameworks */ = {isa = PBXBuildFile; fileRef = D3E3E9BB0A786E4600DBE6EB /* bundle1.o */; };
 		D3E66A360A77D9DC00D04E25 /* config.h in Headers */ = {isa = PBXBuildFile; fileRef = D3F691440A77C199007E38CA /* config.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D3E66A800A77E63C00D04E25 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
 		D3E66A810A77E63C00D04E25 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
@@ -2276,6 +2301,7 @@
 		D3DECBA30A75E76E002001CF /* rand_gen.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = rand_gen.c; sourceTree = "<group>"; };
 		D3DECBA50A75E76E002001CF /* sha1_driver.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = sha1_driver.c; sourceTree = "<group>"; };
 		D3DECBA70A75E76E002001CF /* stat_driver.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = stat_driver.c; sourceTree = "<group>"; };
+		D3E3E9BB0A786E4600DBE6EB /* bundle1.o */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.objfile"; name = bundle1.o; path = /Developer/SDKs/MacOSX10.4u.sdk/usr/lib/bundle1.o; sourceTree = "<absolute>"; };
 		D3E66A7B0A77E61E00D04E25 /* mod_woomera.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_woomera.c; path = ../../src/mod/endpoints/mod_woomera/mod_woomera.c; sourceTree = SOURCE_ROOT; };
 		D3E66A7F0A77E62D00D04E25 /* mod_woomera.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_woomera.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3E66AF20A77E6B400D04E25 /* mod_syslog.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_syslog.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2464,6 +2490,7 @@
 				D3152FBB0A76F27000549119 /* teletone.framework in Frameworks */,
 				D3152FB40A76F26700549119 /* portaudio.framework in Frameworks */,
 				D3BF92700A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9CF0A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2480,6 +2507,7 @@
 				D34725600A76D91E001C8ED7 /* aprutil.framework in Frameworks */,
 				D34725610A76D91E001C8ED7 /* apr.framework in Frameworks */,
 				D3BF926E0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9CD0A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2496,6 +2524,7 @@
 				D365008C0A76BE5A00C47A76 /* srtp.framework in Frameworks */,
 				D365008D0A76BE5A00C47A76 /* teletone.framework in Frameworks */,
 				D3BF92680A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9C70A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2518,6 +2547,7 @@
 				D36501F60A76C64200C47A76 /* srtp.framework in Frameworks */,
 				D36501F70A76C64200C47A76 /* teletone.framework in Frameworks */,
 				D3BF92690A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9C80A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2533,6 +2563,7 @@
 				D36501FD0A76C64A00C47A76 /* srtp.framework in Frameworks */,
 				D36501FE0A76C64A00C47A76 /* teletone.framework in Frameworks */,
 				D3BF926A0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9C90A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2548,6 +2579,7 @@
 				D36502040A76C65300C47A76 /* srtp.framework in Frameworks */,
 				D36502050A76C65300C47A76 /* teletone.framework in Frameworks */,
 				D3BF926B0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9CA0A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2571,6 +2603,7 @@
 				D365025C0A76C90700C47A76 /* srtp.framework in Frameworks */,
 				D365025D0A76C90700C47A76 /* teletone.framework in Frameworks */,
 				D3BF926C0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9CB0A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2594,6 +2627,7 @@
 				D36502E20A76CB1000C47A76 /* srtp.framework in Frameworks */,
 				D36502E30A76CB1000C47A76 /* teletone.framework in Frameworks */,
 				D3BF926D0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9CC0A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2646,6 +2680,7 @@
 				D3B406CF0A76EED0000AF6D4 /* srtp.framework in Frameworks */,
 				D3B406D00A76EED0000AF6D4 /* teletone.framework in Frameworks */,
 				D3BF926F0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9CE0A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2661,6 +2696,7 @@
 				D3BC32420A769B7600DE971E /* aprutil.framework in Frameworks */,
 				D3BC31E20A769B4300DE971E /* libfreeswitch.framework in Frameworks */,
 				D3BF925D0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9BC0A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2678,6 +2714,7 @@
 				D3BC32690A769D6F00DE971E /* iksemel.framework in Frameworks */,
 				D3BC32680A769D6B00DE971E /* dingaling.framework in Frameworks */,
 				D3BF925E0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9BD0A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2693,6 +2730,7 @@
 				D3BC328A0A769E2700DE971E /* aprutil.framework in Frameworks */,
 				D3BC328B0A769E2700DE971E /* libfreeswitch.framework in Frameworks */,
 				D3BF925F0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9BE0A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2708,6 +2746,7 @@
 				D3BC32D20A76A68400DE971E /* aprutil.framework in Frameworks */,
 				D3BC32D30A76A68400DE971E /* libfreeswitch.framework in Frameworks */,
 				D3BF92600A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9BF0A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2723,6 +2762,7 @@
 				D3BC32F20A76A75B00DE971E /* aprutil.framework in Frameworks */,
 				D3BC32F30A76A75B00DE971E /* libfreeswitch.framework in Frameworks */,
 				D3BF92610A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9C00A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2738,6 +2778,7 @@
 				D3BC33050A76A7EB00DE971E /* aprutil.framework in Frameworks */,
 				D3BC33060A76A7EB00DE971E /* libfreeswitch.framework in Frameworks */,
 				D3BF92620A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9C20A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2753,6 +2794,7 @@
 				D3BC33180A76A86A00DE971E /* srtp.framework in Frameworks */,
 				D3BC33190A76A86A00DE971E /* teletone.framework in Frameworks */,
 				D3BF92630A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9C10A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2768,6 +2810,7 @@
 				D3BC332F0A76A8BC00DE971E /* srtp.framework in Frameworks */,
 				D3BC33300A76A8BC00DE971E /* teletone.framework in Frameworks */,
 				D3BF92640A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9C30A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2783,6 +2826,7 @@
 				D3BC334A0A76AA0D00DE971E /* srtp.framework in Frameworks */,
 				D3BC334B0A76AA0D00DE971E /* teletone.framework in Frameworks */,
 				D3BF92650A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9C40A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2807,6 +2851,7 @@
 				D3BC34D90A76B04600DE971E /* srtp.framework in Frameworks */,
 				D3BC34DA0A76B04600DE971E /* teletone.framework in Frameworks */,
 				D3BF92660A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9C50A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2822,6 +2867,7 @@
 				D3BC34F20A76B17800DE971E /* srtp.framework in Frameworks */,
 				D3BC34F30A76B17800DE971E /* teletone.framework in Frameworks */,
 				D3BF92670A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9C60A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2855,6 +2901,7 @@
 				D3E66A850A77E63C00D04E25 /* srtp.framework in Frameworks */,
 				D3E66A860A77E63C00D04E25 /* teletone.framework in Frameworks */,
 				D3BF92720A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9D10A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2870,6 +2917,7 @@
 				D3E66B1E0A77E7F400D04E25 /* srtp.framework in Frameworks */,
 				D3E66B1F0A77E7F400D04E25 /* teletone.framework in Frameworks */,
 				D3BF92730A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9D20A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2885,6 +2933,7 @@
 				D3E66B250A77E7FC00D04E25 /* srtp.framework in Frameworks */,
 				D3E66B260A77E7FC00D04E25 /* teletone.framework in Frameworks */,
 				D3BF92740A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9D30A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2900,6 +2949,7 @@
 				D3E66B2C0A77E80400D04E25 /* srtp.framework in Frameworks */,
 				D3E66B2D0A77E80400D04E25 /* teletone.framework in Frameworks */,
 				D3BF92750A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9D40A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2942,6 +2992,7 @@
 				D3AA5D250A77D53D008F105E /* aprutil.framework in Frameworks */,
 				D3AA5D260A77D53D008F105E /* apr.framework in Frameworks */,
 				D3BF92710A77F7FA00BEDBC8 /* System.framework in Frameworks */,
+				D3E3E9D00A786E4600DBE6EB /* bundle1.o in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2951,6 +3002,7 @@
 		08FB7794FE84155DC02AAC07 /* FreeSWITCH */ = {
 			isa = PBXGroup;
 			children = (
+				D3E3E9BB0A786E4600DBE6EB /* bundle1.o */,
 				D3BC34180A76ADF400DE971E /* CoreAudio.framework */,
 				D3BF925C0A77F7FA00BEDBC8 /* System.framework */,
 				08FB7795FE84155DC02AAC07 /* Sources */,
@@ -7621,6 +7673,7 @@
 				FREESWITCH_SQLITE_VERSION_B = 3003006;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				OTHER_CFLAGS = "-fPIC";
 				PREBINDING = NO;
 				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
 			};
@@ -8449,7 +8502,6 @@
 				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/Library/Frameworks";
 				MACH_O_TYPE = mh_dylib;
 				OTHER_CFLAGS = (
-					"-fPIC",
 					"-Wmissing-prototypes",
 					"-g",
 					"-std=c99",
@@ -8504,6 +8556,7 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G5;
 				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/bin";
+				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				PREBINDING = NO;
 				PRODUCT_NAME = freeswitch;
