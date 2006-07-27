@@ -857,9 +857,9 @@ SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session_t *session,
 }
 
 /* **ONLY** alloc things with these functions that **WILL NOT** need
-   to be freed *EVER* ie this is for *PERMENANT* memory allocation */
+   to be freed *EVER* ie this is for *PERMANENT* memory allocation */
 
-SWITCH_DECLARE(void *) switch_core_permenant_alloc(switch_size_t memory)
+SWITCH_DECLARE(void *) switch_core_permanent_alloc(switch_size_t memory)
 {
 	void *ptr = NULL;
 	assert(runtime.memory_pool != NULL);
@@ -874,7 +874,7 @@ SWITCH_DECLARE(void *) switch_core_permenant_alloc(switch_size_t memory)
 	return ptr;
 }
 
-SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup)
+SWITCH_DECLARE(char *) switch_core_permanent_strdup(char *todup)
 {
 	char *duped = NULL;
 	switch_size_t len;

@@ -206,7 +206,7 @@ SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session_t *s
   \return a void pointer to the allocated memory
   \note this memory never goes out of scope until the core is destroyed
 */
-SWITCH_DECLARE(void *) switch_core_permenant_alloc(switch_size_t memory);
+SWITCH_DECLARE(void *) switch_core_permanent_alloc(switch_size_t memory);
 
 /*! 
   \brief Allocate memory directly from a memory pool
@@ -226,11 +226,11 @@ SWITCH_DECLARE(void *) switch_core_alloc(switch_memory_pool_t *pool, switch_size
 SWITCH_DECLARE(void *) switch_core_session_alloc(switch_core_session_t *session, switch_size_t memory);
 
 /*! 
-  \brief Copy a string using permenant memory allocation
+  \brief Copy a string using permanent memory allocation
   \param todup the string to duplicate
   \return a pointer to the newly duplicated string
 */
-SWITCH_DECLARE(char *) switch_core_permenant_strdup(char *todup);
+SWITCH_DECLARE(char *) switch_core_permanent_strdup(char *todup);
 
 /*! 
   \brief Copy a string using memory allocation from a session's pool

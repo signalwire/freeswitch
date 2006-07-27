@@ -270,7 +270,7 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 			break;
 		}
 
-		if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module_t))) == 0) {
+		if ((module = switch_core_permanent_alloc(sizeof(switch_loadable_module_t))) == 0) {
 			err = "Could not allocate memory\n";
 			break;
 		}
@@ -283,7 +283,7 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 		return SWITCH_STATUS_GENERR;
 	}
 
-	module->filename = switch_core_permenant_strdup(filename);
+	module->filename = switch_core_permanent_strdup(filename);
 	module->module_interface = module_interface;
 	module->switch_module_load = load_func_ptr;
 
@@ -365,7 +365,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 	const char *err = NULL; 
 	switch_loadable_module_interface_t *module_interface = NULL; 
 
-	if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module_t))) == 0) { 
+	if ((module = switch_core_permanent_alloc(sizeof(switch_loadable_module_t))) == 0) { 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Couldn't allocate memory\n"); 
 		return SWITCH_STATUS_GENERR; 
 	} 
@@ -384,7 +384,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 			break; 
 		} 
   
-		if ((module = switch_core_permenant_alloc(sizeof(switch_loadable_module_t))) == 0) { 
+		if ((module = switch_core_permanent_alloc(sizeof(switch_loadable_module_t))) == 0) { 
 			err = "Could not allocate memory\n"; 
 			break; 
 		} 
@@ -397,7 +397,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 		return SWITCH_STATUS_GENERR; 
 	} 
   
-	module->filename = switch_core_permenant_strdup(filename); 
+	module->filename = switch_core_permanent_strdup(filename); 
 	module->module_interface = module_interface; 
 	module->switch_module_load = load_func_ptr; 
   
