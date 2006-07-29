@@ -2095,7 +2095,7 @@ static void check_expire(time_t now)
 	char *errmsg;
 
 	switch_mutex_lock(globals.reg_mutex);
-	snprintf(sql, sizeof(sql), "select url from sip_registrations where expires > 0 and expires < %ld", now);	
+	snprintf(sql, sizeof(sql), "select url from sip_registrations where expires > 0 and expires < %" APR_TIME_T_FMT, now);	
 	switch_core_db_exec(globals.db, sql, del_callback, NULL, &errmsg);
 
 	if (errmsg) {
@@ -2104,7 +2104,7 @@ static void check_expire(time_t now)
 		errmsg = NULL;
 	}
 	
-	snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires < %ld", now);
+	snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires < %" APR_TIME_T_FMT, now);
 	switch_core_db_persistant_execute(globals.db, sql, 1);
 	switch_mutex_unlock(globals.reg_mutex);
 }
