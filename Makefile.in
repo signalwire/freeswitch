@@ -348,7 +348,7 @@ CLEANFILES = src/include/switch_version.h scripts/fsxs
 lib_LTLIBRARIES = libfreeswitch.la
 libfreeswitch_la_CFLAGS = $(AM_CFLAGS) -Wall -Werror -Wstrict-prototypes -Wmissing-prototypes -g -std=c99 
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0
-libfreeswitch_la_LIBADD = -lteletone -lresample -lsrtp -lsqlite3 -lspeakup
+libfreeswitch_la_LIBADD = -lteletone -lresample -lsrtp -lsqlite3 -lspeakup -lpcre
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 bin_SCRIPTS = scripts/fsxs
 freeswitch_SOURCES = src/switch.c\
@@ -805,7 +805,7 @@ distclean-tags:
 
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
-	mkdir -p $(distdir)
+	mkdir $(distdir)
 	$(mkdir_p) $(distdir)/build/config $(distdir)/src/include
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
@@ -1091,6 +1091,7 @@ depends:
 	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
 	./build/buildlib.sh . install srtp --prefix=$(PREFIX)
 	./build/buildlib.sh . install libspeakup --prefix=$(PREFIX)
+	./build/buildlib.sh . install pcre-6.4.tar.gz --prefix=$(PREFIX)
 	rm build/freeswitch.env
 
 modules: $(NAME)
