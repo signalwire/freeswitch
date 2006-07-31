@@ -33,7 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <pcre.h>
+
 
 static const char modname[] = "mod_dialplan_xml";
 

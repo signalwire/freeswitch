@@ -73,6 +73,7 @@
 #include <switch_stun.h>
 #include <switch_log.h>
 #include <switch_xml.h>
+#include <pcre.h>
 
 
 /** \mainpage FreeSWITCH
