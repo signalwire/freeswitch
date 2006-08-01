@@ -1843,6 +1843,8 @@ static JSBool js_api_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 		char *cmd = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		switch_core_session_t *session = NULL;
+		switch_stream_handle_t stream = {0};
+		char retbuf[2048] = "";
 
 		if (argc > 2) {
 			JSObject *session_obj;
@@ -1854,9 +1856,7 @@ static JSBool js_api_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 			}
 		}
 		
-		switch_stream_handle_t stream = {0};
-		char retbuf[2048] = "";
-
+		
 		stream.data = retbuf;
 		stream.end = stream.data;
 		stream.data_size = sizeof(retbuf);
