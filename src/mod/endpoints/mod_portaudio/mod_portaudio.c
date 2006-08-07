@@ -964,7 +964,7 @@ static switch_status_t answer_call(char *callid, switch_core_session_t *session,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
+	if (callid && (tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {
 		channel = switch_core_session_get_channel(tech_pvt->session);
 		assert(channel != NULL);
 		switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
