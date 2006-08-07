@@ -244,7 +244,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		mlen = 1;
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
-		if (status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS) {
+		if (status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS && status != 730035) {
 			return status;
 		}
 
