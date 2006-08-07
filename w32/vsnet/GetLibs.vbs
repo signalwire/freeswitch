@@ -175,6 +175,8 @@ If BuildCore Then
 	BuildLibs_srtp BuildDebug, BuildRelease
 	FSO.CopyFile LibDestDir & "srtp\include\*.h", LibDestDir & "include"
 	FSO.CopyFile LibDestDir & "srtp\crypto\include\*.h", LibDestDir & "include"
+	BuildLibs_pcre BuildDebug, BuildRelease
+	FSO.CopyFile LibDestDir & "pcre\win32\pcre.h", LibDestDir & "include"
 End If
 
 If BuildModXMLRpc Then
@@ -251,10 +253,10 @@ Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "apr-util") Then
 		Wscript.echo "Unable to get apr-util from default download location, Trying backup location:"
 		WgetUnCompress LibsBase & "apr-util-1.2.7.tar.gz", LibDestDir
+		RenameFolder LibDestDir & "apr-util-1.2.7", "apr-util"
+		FSO.CopyFile Utilsdir & "apr\xml.vcproj", LibDestDir & "apr-util\xml\expat\lib\", True
+		FSO.CopyFile Utilsdir & "apr\libaprutil.vcproj", LibDestDir & "apr-util\", True
 	End If
-	RenameFolder LibDestDir & "apr-util-1.2.7", "apr-util"
-	FSO.CopyFile Utilsdir & "apr\xml.vcproj", LibDestDir & "apr-util\xml\expat\lib\", True
-	FSO.CopyFile Utilsdir & "apr\libaprutil.vcproj", LibDestDir & "apr-util\", True
 	If FSO.FolderExists(LibDestDir & "apr-util") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "apr-util\xml\expat\lib\LibD\xml.lib") Then 
@@ -282,12 +284,12 @@ Sub BuildLibs_aprutil(BuildDebug, BuildRelease)
 End Sub
 
 Sub BuildLibs_apriconv(BuildDebug, BuildRelease)
-	If Not FSO.FolderExists(LibDestDir & "apr-iconv-1.1.1") Then
+	If Not FSO.FolderExists(LibDestDir & "apr-iconv") Then
 		Wscript.echo "Unable to get apr-iconv from default download location, Trying backup location:"
 		WgetUnCompress LibsBase & "apr-iconv-1.1.1.tar.gz", LibDestDir
+		RenameFolder LibDestDir & "apr-iconv-1.1.1", "apr-iconv"
+		FSO.CopyFile Utilsdir & "apr\libapriconv.vcproj", LibDestDir & "apr-iconv\", True
 	End If
-	RenameFolder LibDestDir & "apr-iconv-1.1.1", "apr-iconv"
-	FSO.CopyFile Utilsdir & "apr\libapriconv.vcproj", LibDestDir & "apr-iconv\", True
 	If FSO.FolderExists(LibDestDir & "apr-iconv") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "apr-iconv\Debug\libapriconv-1.lib") Then 
@@ -312,10 +314,10 @@ Sub BuildLibs_apr(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "apr") Then
 		Wscript.echo "Unable to get apr from default download location, Trying backup location:"
 		WgetUnCompress LibsBase & "apr-1.2.7.tar.gz", LibDestDir
+		RenameFolder LibDestDir & "apr-1.2.7", "apr"
+		FSO.CopyFile Utilsdir & "apr\libapr.vcproj", LibDestDir & "apr\", True
+		FSO.CopyFile Utilsdir & "apr\apr.hw", LibDestDir & "apr\include\", True
 	End If
-	RenameFolder LibDestDir & "apr-1.2.7", "apr"
-	FSO.CopyFile Utilsdir & "apr\libapr.vcproj", LibDestDir & "apr\", True
-	FSO.CopyFile Utilsdir & "apr\apr.hw", LibDestDir & "apr\include\", True
 	If FSO.FolderExists(LibDestDir & "apr") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "apr\Debug\libapr-1.lib") Then 
@@ -415,10 +417,10 @@ Sub BuildLibs_sqlite(BuildDebug, BuildRelease)
 		If Not FSO.FolderExists(LibDestDir & "sqlite") Then
 			Wscript.echo "Unable to get SQLite from default download location, Trying backup location:"
 			WgetUnCompress LibsBase & "sqlite-source-3_3_6.zip", LibDestDir
+			RenameFolder LibDestDir & "sqlite-source-3_3_6", "sqlite"
+			FSO.CopyFile Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\", True
+			FindReplaceInFile LibDestDir & "sqlite\sqlite.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
 		End If
-		RenameFolder LibDestDir & "sqlite-source-3_3_6", "sqlite"
-		FSO.CopyFile Utilsdir & "sqlite.vcproj", LibDestDir & "sqlite\", True
-		FindReplaceInFile LibDestDir & "sqlite\sqlite.vcproj", "WIN32;", "_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32;"
 	If FSO.FolderExists(LibDestDir & "sqlite") Then 
 		If BuildDebug Then
 			If Not FSO.FileExists(LibDestDir & "sqlite\Debug DLL\sqlite.lib") Then 
@@ -916,6 +918,16 @@ Sub CreateSwitchVersion()
 		FSO.CopyFile FreeswitchDir & "src\include\switch_version.h.in", FreeswitchDir & "src\include\switch_version.h", true
 		FindReplaceInFile FreeswitchDir & "src\include\switch_version.h", "@SVN_VERSION@", VERSION
 	End If
+	If VERSION = "" Then
+		VERSION = "UNKNOWN"
+		Set MyFile = fso.CreateTextFile(UtilsDir & "lastversion", True)
+		MyFile.WriteLine(VERSION)
+		MyFile.Close
+	
+		FSO.CopyFile FreeswitchDir & "src\include\switch_version.h.in", FreeswitchDir & "src\include\switch_version.h", true
+		FindReplaceInFile FreeswitchDir & "src\include\switch_version.h", "@SVN_VERSION@", VERSION
+	End If
+	
 End Sub
 
 Sub BuildViaVCBuild(ProjectFile, BuildType)
@@ -973,6 +985,7 @@ Sub GetVCBuild()
 End Sub
 
 Sub RenameFolder(FolderName, NewFolderName)
+	wscript.echo FolderName
 	Set Folder=FSO.GetFolder(FolderName)
 	Folder.Name = NewFolderName
 End Sub
