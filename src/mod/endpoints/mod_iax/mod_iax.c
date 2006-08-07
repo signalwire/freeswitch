@@ -239,10 +239,9 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 		static const switch_codec_implementation_t *imp;
 		for (imp = codecs[x]; imp; imp = imp->next) {
 			unsigned int codec = iana2ast(imp->ianacode);
-		
-			if (io == IAX_QUERY) {
+			if (io == IAX_QUERY && !(codec & local_cap)) {
 				iax_pref_codec_add(iax_session, codec);
-			}
+			}	
 			local_cap |= codec;
 		}
 	}
@@ -254,6 +253,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 	}
 
 	leading = iana2ast(codecs[0]->ianacode);
+	interval = codecs[0]->microseconds_per_frame / 1000;
 	if (io == IAX_QUERY) {
 		chosen = leading;
 		*format = chosen;
@@ -638,8 +638,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			if (!tech_pvt->read_frame.datalen) {
 				continue;
 			}
-
 			*frame = &tech_pvt->read_frame;
+#ifdef BIGENDIAN
+			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
+				switch_swap_linear((*frame)->data, (int) (*frame)->datalen);
+			}
+#endif
 			return SWITCH_STATUS_SUCCESS;
 		}
 
@@ -674,7 +678,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_FALSE;
 	}
-#ifndef BIGENDIAN
+#ifdef BIGENDIAN
 	if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
 		switch_swap_linear(frame->data, (int) frame->datalen / 2);
 	}
