@@ -617,7 +617,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
         attr = (char **)SWITCH_XML_NIL;
         d = ++s;
         
-        if (isalpha(*s) || *s == '_' || *s == ':' || *s < '\0') { // new tag
+        if (isalpha(*s) || *s == '_' || *s == ':' || (int8_t) *s < '\0') { // new tag
             if (! root->cur)
                 return switch_xml_err(root, d, "markup outside of root element");
 
