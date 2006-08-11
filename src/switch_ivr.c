@@ -1203,7 +1203,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			break;
 		}
 		
-		if ((time(NULL) - start) > timelimit) {
+		if ((time(NULL) - start) > (time_t)timelimit) {
 			break;
 		}
 		switch_yield(1000);
@@ -1216,7 +1216,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		   switch_channel_ready(peer_channel) &&
 		   !switch_channel_test_flag(peer_channel, CF_ANSWERED) &&
 		   !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) &&
-		   ((time(NULL) - start) < timelimit)) {
+		   ((time(NULL) - start) < (time_t)timelimit)) {
 		
 		/* read from the channel while we wait if the audio is up on it */
 		if (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
