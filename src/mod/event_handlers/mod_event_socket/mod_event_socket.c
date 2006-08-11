@@ -254,6 +254,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 
 			if (*mbuf == '\r' || *mbuf == '\n') { /* bah */
 				ptr = mbuf;
+				mbuf[0] = '\0';
 				continue;
 			}
 
@@ -460,6 +461,9 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 			snprintf(reply, reply_len, "-ERR invalid log level");
 		}
 	} else if (!strncasecmp(cmd, "nolog", 5)) {
+		void *pop;
+		while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS);
+		
 		if (switch_test_flag(listener, LFLAG_LOG)) {
 			switch_clear_flag_locked(listener, LFLAG_LOG);
 			snprintf(reply, reply_len, "+OK no longer logging");
@@ -519,6 +523,9 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		snprintf(reply, reply_len, "+OK event listener enabled %s", listener->format == EVENT_FORMAT_XML ? "xml" : "plain");
 		
 	} else if (!strncasecmp(cmd, "noevents", 8)) {
+		void *pop;
+		while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS);
+
 		if (switch_test_flag(listener, LFLAG_EVENTS)) {
 			uint8_t x = 0;
 			switch_clear_flag_locked(listener, LFLAG_EVENTS);
