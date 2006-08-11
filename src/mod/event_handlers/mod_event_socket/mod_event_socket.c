@@ -31,7 +31,7 @@
  */
 #include <switch.h>
 #define CMD_BUFLEN 1024 * 1000
-
+#define IS_BREAK(x) ((int)x || SWITCH_STATUS_BREAK || (int)x == 730035 || (int)x == 35)
 
 static const char modname[] = "mod_event_socket";
 static char *MARKER = "1";
@@ -244,12 +244,13 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		mlen = 1;
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
-		if (status != SWITCH_STATUS_BREAK && status != SWITCH_STATUS_SUCCESS) {
-			return status;
+		if (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_FALSE;
 		}
 
-		if (status != SWITCH_STATUS_BREAK && mlen) {
+		if (mlen) {
 			bytes++;
+			do_sleep = 0;
 
 			if (*mbuf == '\r' || *mbuf == '\n') { /* bah */
 				ptr = mbuf;
@@ -303,7 +304,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 				return SWITCH_STATUS_FALSE;
 			}
 		}
-
+		
 		if (!*mbuf) {
 			if (switch_test_flag(listener, LFLAG_LOG)) {
 				if (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
