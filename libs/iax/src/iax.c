@@ -1785,7 +1785,7 @@ int iax_auth_reply(struct iax_session *session, char *password, char *challenge,
 		convert_reply(realreply, (unsigned char *) reply);
 		iax_ie_append_str(&ied, IAX_IE_MD5_RESULT, (unsigned char *) realreply);
 	} else {
-		iax_ie_append_str(&ied, IAX_IE_MD5_RESULT, (unsigned char *) password);
+		iax_ie_append_str(&ied, IAX_IE_PASSWORD, (unsigned char *) password);
 	}
 	return send_command(session, AST_FRAME_IAX, IAX_COMMAND_AUTHREP, 0, ied.buf, ied.pos, -1);
 }
@@ -1808,7 +1808,7 @@ static int iax_regauth_reply(struct iax_session *session, char *password, char *
 		convert_reply(realreply, (unsigned char *) reply);
 		iax_ie_append_str(&ied, IAX_IE_MD5_RESULT, (unsigned char *) realreply);
 	} else {
-		iax_ie_append_str(&ied, IAX_IE_MD5_RESULT, (unsigned char *) password);
+		iax_ie_append_str(&ied, IAX_IE_PASSWORD, (unsigned char *) password);
 	}
 	return send_command(session, AST_FRAME_IAX, IAX_COMMAND_REGREQ, 0, ied.buf, ied.pos, -1);
 }
@@ -2244,7 +2244,7 @@ static struct iax_event *schedule_delivery(struct iax_event *e, time_in_ms_t ts,
 	
 	/* How many ms from now should this packet be delivered? (remember
 	   this can be a negative number, too */
-	ms = calc_rxstamp(e->session) - ts;
+	ms = (int)(calc_rxstamp(e->session) - ts);
 
 	/*  
 	   Drop voice frame if timestamp is way off 
