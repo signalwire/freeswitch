@@ -298,8 +298,8 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void)
 	switch_mutex_lock(port_lock);
 	port = NEXT_PORT;
 	NEXT_PORT += 2;
-	if (port > RTP_END_PORT) {
-		port = RTP_START_PORT;
+	if (NEXT_PORT > RTP_END_PORT) {
+		NEXT_PORT = RTP_START_PORT;
 	}
 	switch_mutex_unlock(port_lock);
 	return port;

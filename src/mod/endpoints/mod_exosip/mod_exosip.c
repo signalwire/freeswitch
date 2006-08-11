@@ -586,7 +586,9 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 		}
 	} else {
 		switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s][%s:%d]\n", err, 
+						  tech_pvt->local_sdp_audio_ip,
+						  tech_pvt->local_sdp_audio_port);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);

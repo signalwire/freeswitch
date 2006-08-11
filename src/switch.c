@@ -84,10 +84,6 @@ int main(int argc, char *argv[])
 	nice(-20);
 #endif
 
-#ifdef HAVE_MLOCKALL
-	mlockall(MCL_CURRENT|MCL_FUTURE);
-#endif
-
 #ifndef WIN32
 	if (argv[1] && !strcmp(argv[1], "-stop")) {
 		pid_t pid = 0;
@@ -181,6 +177,11 @@ int main(int argc, char *argv[])
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Ready");
 		switch_event_fire(&event);
 	}
+
+#ifdef HAVE_MLOCKALL
+	mlockall(MCL_CURRENT|MCL_FUTURE);
+#endif
+
 
 #ifdef CRASH_PROT
 #define __CP "ENABLED"
