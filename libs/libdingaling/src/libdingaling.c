@@ -64,7 +64,7 @@
 #define microsleep(x) apr_sleep(x * 1000)
 
 static int opt_timeout = 30;
-static int opt_use_tls = 0;
+
 
 static struct {
 	unsigned int flags;
@@ -73,6 +73,7 @@ static struct {
 	apr_pool_t *memory_pool;
 	unsigned int id;
 	ldl_logger_t logger;
+	apr_thread_mutex_t *flag_mutex;
 } globals;
 
 struct packet_node {
@@ -94,7 +95,9 @@ struct ldl_handle {
 	iksfilter *filter;
 	char *login;
 	char *password;
+	char *server;
 	char *status_msg;
+	uint16_t port;
 	int features;
 	int counter;
 	int job_done;
@@ -105,6 +108,7 @@ struct ldl_handle {
 	apr_hash_t *retry_hash;
 	apr_hash_t *probe_hash;
 	apr_thread_mutex_t *lock;
+	apr_thread_mutex_t *flag_mutex;
 	ldl_loop_callback_t loop_callback;
 	ldl_session_callback_t session_callback;
 	ldl_response_callback_t response_callback;
@@ -477,13 +481,26 @@ static int on_commands(void *user_data, ikspak *pak)
 	//char *to = iks_find_attrib(pak->x, "to");
 	char *iqid = iks_find_attrib(pak->x, "id");
 	char *type = iks_find_attrib(pak->x, "type");
+	uint8_t is_result = strcasecmp(type, "result") ? 0 : 1;
 	iks *xml;
 
-	//printf("XXXXX from=%s to=%s type=%s\n", from, to, type);
+	if (is_result) {
+		iks *tag = iks_child (pak->x);
+		while(tag) {
+			if (!strcasecmp(iks_name(tag), "bind")) {
+				char *jid = iks_find_cdata(tag, "jid");
+				char *resource = strchr(jid, '/');
+				handle->acc->resource = apr_pstrdup(handle->pool, resource);
+				handle->login = apr_pstrdup(handle->pool, jid);
+				break;
+			}
+			tag = iks_next_tag(tag);
+		}
+	}
 
-	if ((!strcasecmp(type, "result") || !strcasecmp(type, "error")) && iqid && from) {
+	if ((is_result || !strcasecmp(type, "error")) && iqid && from) {
 		cancel_retry(handle, iqid);
-		if (!strcasecmp(type, "result")) {
+		if (is_result) {
 			if (handle->response_callback) {
 				handle->response_callback(handle, iqid); 
 			}
@@ -528,10 +545,40 @@ static int on_result(void *user_data, ikspak *pak)
 	iks_insert_attrib(ctag, "ext", "sidebar voice-v1");
 	iks_insert_attrib(ctag, "client", "libdingaling");
 	iks_insert_attrib(ctag, "xmlns", "http://jabber.org/protocol/caps");
-	
+
 	apr_queue_push(handle->queue, msg);
-	ldl_set_flag(handle, LDL_FLAG_READY);
+	ldl_set_flag_locked(handle, LDL_FLAG_READY);
 	return IKS_FILTER_EAT;
+}
+
+static const char c64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+#define B64BUFFLEN 1024
+
+static int b64encode(unsigned char *in, uint32_t ilen, unsigned char *out, uint32_t olen) {
+	int x=0,y=0,bytes=0;
+	unsigned int b=0,l=0;
+
+	for(x=0;x<ilen;x++) {
+		b = (b<<8) + in[x];
+		l += 8;
+		while (l >= 6) {
+			out[bytes++] = c64[(b>>(l-=6))%64];
+			if(++y!=72) {
+				continue;
+			}
+			out[bytes++] = '\n';
+			y=0;
+		}
+	}
+
+	if (l > 0) {
+		out[bytes++] = c64[((b%16)<<(6-l))%64];
+	}
+	if (l != 0) while (l < 6) {
+		out[bytes++] = '=', l += 2;
+	}
+
+	return 0;
 }
 
 static int on_stream(ldl_handle_t *handle, int type, iks * node)
@@ -540,14 +587,20 @@ static int on_stream(ldl_handle_t *handle, int type, iks * node)
 
 	switch (type) {
 	case IKS_NODE_START:
-		if (opt_use_tls && !iks_is_secure(handle->parser)) {
-			iks_start_tls(handle->parser);
+		if (ldl_test_flag(handle, LDL_FLAG_TLS) && !iks_is_secure(handle->parser)) {
+			if (iks_has_tls()) {
+				iks_start_tls(handle->parser);
+			} else {
+				globals.logger(DL_LOG_DEBUG, "TLS NOT SUPPORTED IN THIS BUILD!\n");
+			}
 		}
 		break;
 	case IKS_NODE_NORMAL:
+		
+
 		if (strcmp("stream:features", iks_name(node)) == 0) {
 			handle->features = iks_stream_features(node);
-			if (opt_use_tls && !iks_is_secure(handle->parser))
+			if (ldl_test_flag(handle, LDL_FLAG_TLS) && !iks_is_secure(handle->parser))
 				break;
 			if (ldl_test_flag(handle, LDL_FLAG_CONNECTED)) {
 				iks *t;
@@ -566,7 +619,27 @@ static int on_stream(ldl_handle_t *handle, int type, iks * node)
 				if (handle->features & IKS_STREAM_SASL_MD5) {
 					iks_start_sasl(handle->parser, IKS_SASL_DIGEST_MD5, handle->acc->user, handle->password);
 				} else if (handle->features & IKS_STREAM_SASL_PLAIN) {
-					iks_start_sasl(handle->parser, IKS_SASL_PLAIN, handle->acc->user, handle->password);
+					iks *x = NULL;
+
+					if ((x = iks_new("auth"))) {
+						char s[512] = "";
+						char base64[1024] = "";
+						uint32_t slen;
+
+						iks_insert_attrib(x, "xmlns", IKS_NS_XMPP_SASL);
+						iks_insert_attrib(x, "mechanism", "PLAIN");
+						iks_insert_attrib(x, "encoding", "UTF-8");
+						snprintf(s, sizeof(s), "%c%s%c%s", 0, handle->acc->user, 0, handle->password);
+						slen = strlen(handle->acc->user) + strlen(handle->password) + 2;
+						b64encode((unsigned char *)s, slen, (unsigned char *) base64, sizeof(base64));
+						iks_insert_cdata(x, base64, 0);
+						iks_send(handle->parser, x);
+						iks_delete(x);
+					} else {
+						globals.logger(DL_LOG_DEBUG, "Memory ERROR!\n");
+						break;
+					}
+					
 				}
 			}
 		} else if (strcmp("failure", iks_name(node)) == 0) {
@@ -577,25 +650,25 @@ static int on_stream(ldl_handle_t *handle, int type, iks * node)
 		} else if (strcmp("success", iks_name(node)) == 0) {
 			globals.logger(DL_LOG_DEBUG, "XMPP server connected\n");
 			iks_send_header(handle->parser, handle->acc->server);
-			ldl_set_flag(handle, LDL_FLAG_CONNECTED);
+			ldl_set_flag_locked(handle, LDL_FLAG_CONNECTED);
 			if (handle->session_callback) {
 				handle->session_callback(handle, NULL, LDL_SIGNAL_CONNECTED, "core", "Server Connected", handle->login);
 			}
 		} else {
 			ikspak *pak;
-
 			if (!ldl_test_flag(handle, LDL_FLAG_AUTHORIZED)) {
 				if (handle->session_callback) {
 					handle->session_callback(handle, NULL, LDL_SIGNAL_LOGIN_SUCCESS, "core", "Login Success", handle->login);
 				}
 				globals.logger(DL_LOG_DEBUG, "XMPP authenticated\n");
-				ldl_set_flag(handle, LDL_FLAG_AUTHORIZED);
+				ldl_set_flag_locked(handle, LDL_FLAG_AUTHORIZED);
 			}
 
 			pak = iks_packet(node);
 			iks_filter_packet(handle->filter, pak);
-			if (handle->job_done == 1)
+			if (handle->job_done == 1) {
 				return IKS_HOOK;
+			}
 		}
 		break;
 #if 0
@@ -724,7 +797,6 @@ static void ldl_flush_queue(ldl_handle_t *handle)
 		apr_time_t now = apr_time_now();
 		x++;
 
-		//printf("%s %lld %lld %u\n", packet_node->id, packet_node->next, now, packet_node->retries);
 		if (packet_node->next <= now) {
 			if (packet_node->retries > 0) {
 				packet_node->retries--;
@@ -749,6 +821,46 @@ static void ldl_flush_queue(ldl_handle_t *handle)
 	apr_thread_mutex_unlock(handle->lock);
 }
 
+
+static void *APR_THREAD_FUNC queue_thread(apr_thread_t *thread, void *obj)
+{
+	ldl_handle_t *handle = (ldl_handle_t *) obj;
+
+	ldl_set_flag_locked(handle, LDL_FLAG_QUEUE_RUNNING);
+
+	while (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
+		ldl_flush_queue(handle);
+
+		if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS) {
+			int fd;
+
+			if ((fd = iks_fd(handle->parser)) > -1) {
+				shutdown(fd, 0x02);
+			}
+			ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);	
+			break;
+		}
+		microsleep(100);
+	}
+	
+	ldl_clear_flag_locked(handle, LDL_FLAG_QUEUE_RUNNING);
+
+	return NULL;
+}
+
+static void launch_queue_thread(ldl_handle_t *handle)
+{
+    apr_thread_t *thread;
+    apr_threadattr_t *thd_attr;;
+    apr_threadattr_create(&thd_attr, handle->pool);
+    apr_threadattr_detach_set(thd_attr, 1);
+
+	apr_threadattr_stacksize_set(thd_attr, 512 * 1024);
+	apr_thread_create(&thread, thd_attr, queue_thread, handle, handle->pool);
+
+}
+
+
 static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 {
 	while (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
@@ -769,7 +881,12 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 
 		j_setup_filter(handle, "fixme");
 
-		e = iks_connect_tcp(handle->parser, handle->acc->server, IKS_JABBER_PORT);
+		e = iks_connect_via(handle->parser,
+							handle->server ? handle->server : handle->acc->server,
+							handle->port ? handle->port : IKS_JABBER_PORT,
+							//handle->server ? handle->server : handle->acc->server);
+							handle->acc->server);
+
 		switch (e) {
 		case IKS_OK:
 			break;
@@ -783,12 +900,18 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 			continue;
 		}
 
+
+
 		handle->counter = opt_timeout;
+		if (ldl_test_flag(handle, LDL_FLAG_TLS)) {
+			launch_queue_thread(handle);
+		}
+
 		while (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 			e = iks_recv(handle->parser, 1);
-			if (handle->loop_callback) {
+			if (!ldl_test_flag(handle, LDL_FLAG_TLS) && handle->loop_callback) {
 				if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS) {
-					ldl_clear_flag(handle, LDL_FLAG_RUNNING);	
+					ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);	
 					break;
 				}
 			}
@@ -807,7 +930,8 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 				break;
 			}
 
-			if (ldl_test_flag(handle, LDL_FLAG_READY)) {
+			
+			if (!ldl_test_flag(handle, LDL_FLAG_TLS) && ldl_test_flag(handle, LDL_FLAG_READY)) {
 				ldl_flush_queue(handle);
 			}
 
@@ -828,11 +952,16 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 
 		iks_disconnect(handle->parser);
 		iks_parser_delete(handle->parser);
-		ldl_clear_flag(handle, LDL_FLAG_CONNECTED);
-		ldl_clear_flag(handle, LDL_FLAG_AUTHORIZED);
+		ldl_clear_flag_locked(handle, LDL_FLAG_CONNECTED);
+		ldl_clear_flag_locked(handle, LDL_FLAG_AUTHORIZED);
+	}
+	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);
+
+	while(ldl_test_flag(handle, LDL_FLAG_QUEUE_RUNNING)) {
+		microsleep(100);
 	}
 
-	ldl_clear_flag(handle, LDL_FLAG_RUNNING);
+
 }
 
 
@@ -1134,16 +1263,18 @@ ldl_status ldl_global_init(int debug)
 	}
 
 	memset(&globals, 0, sizeof(globals));
+
 	if (apr_pool_create(&globals.memory_pool, NULL) != LDL_STATUS_SUCCESS) {
 		globals.logger(DL_LOG_DEBUG, "Could not allocate memory pool\n");
 		return LDL_STATUS_MEMERR;
 	}
 
+	apr_thread_mutex_create(&globals.flag_mutex, APR_THREAD_MUTEX_NESTED, globals.memory_pool);
 	globals.log_stream = stdout;
 	globals.debug = debug;
 	globals.id = 300;
 	globals.logger = default_logger;
-	ldl_set_flag(&globals, LDL_FLAG_INIT);
+	ldl_set_flag_locked((&globals), LDL_FLAG_INIT);
 	
 	return LDL_STATUS_SUCCESS;
 }
@@ -1176,6 +1307,8 @@ int8_t ldl_handle_ready(ldl_handle_t *handle)
 ldl_status ldl_handle_init(ldl_handle_t **handle,
 						   char *login,
 						   char *password,
+						   char *server,
+						   ldl_user_flag_t flags,
 						   char *status_msg,
 						   ldl_loop_callback_t loop_callback,
 						   ldl_session_callback_t session_callback,
@@ -1184,11 +1317,22 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
 {
 	apr_pool_t *pool;
 	assert(ldl_test_flag(&globals, LDL_FLAG_INIT));
-	
+	*handle = NULL;	
 
 	if ((apr_pool_create(&pool, globals.memory_pool)) != LDL_STATUS_SUCCESS) {
 		return LDL_STATUS_MEMERR;
 	}
+
+	if (!login) {
+		globals.logger(DL_LOG_ERR, "No login supplied!\n");
+		return LDL_STATUS_FALSE;
+	}
+
+	if (!password) {
+		globals.logger(DL_LOG_ERR, "No password supplied!\n");
+		return LDL_STATUS_FALSE;
+	}
+	
 
 	if ((*handle = apr_palloc(pool, sizeof(ldl_handle_t)))) {
 		ldl_handle_t *new_handle = *handle;
@@ -1196,7 +1340,20 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
 		new_handle->log_stream = globals.log_stream;
 		new_handle->login = apr_pstrdup(pool, login);
 		new_handle->password = apr_pstrdup(pool, password);
-		new_handle->status_msg = apr_pstrdup(pool, status_msg);
+
+		if (server) {
+			char *p;
+
+			new_handle->server = apr_pstrdup(pool, server);
+			if ((p = strchr(new_handle->server, ':'))) {
+				*p++ = '\0';
+				new_handle->port = atoi(p);
+			}
+		}
+
+		if (status_msg) {
+			new_handle->status_msg = apr_pstrdup(pool, status_msg);
+		}
 
 		if (loop_callback) {
 			new_handle->loop_callback = loop_callback;
@@ -1212,32 +1369,39 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
 
 		new_handle->private_info = private_info;
 		new_handle->pool = pool;
+		new_handle->flags |= flags;
 		apr_queue_create(&new_handle->queue, LDL_HANDLE_QLEN, new_handle->pool);
 		apr_queue_create(&new_handle->retry_queue, LDL_HANDLE_QLEN, new_handle->pool);
-		new_handle->features |= IKS_STREAM_BIND|IKS_STREAM_SESSION |IKS_STREAM_SASL_PLAIN;
+		new_handle->features |= IKS_STREAM_BIND|IKS_STREAM_SESSION;
+
+		if (new_handle->flags & LDL_FLAG_SASL_PLAIN) {
+			new_handle->features |= IKS_STREAM_SASL_PLAIN;
+		} else if (new_handle->flags & LDL_FLAG_SASL_MD5) {
+			new_handle->features |= IKS_STREAM_SASL_MD5;
+		}
+
 		new_handle->sessions = apr_hash_make(new_handle->pool);
 		new_handle->retry_hash = apr_hash_make(new_handle->pool);
 		new_handle->probe_hash = apr_hash_make(new_handle->pool);
 		apr_thread_mutex_create(&new_handle->lock, APR_THREAD_MUTEX_NESTED, new_handle->pool);
+		apr_thread_mutex_create(&new_handle->flag_mutex, APR_THREAD_MUTEX_NESTED, new_handle->pool);
 
 		return LDL_STATUS_SUCCESS;
-	} else {
-		*handle = NULL;
-	}
-
+	} 
+	
 	return LDL_STATUS_FALSE;
 }
 
 void ldl_handle_run(ldl_handle_t *handle)
 {
-	ldl_set_flag(handle, LDL_FLAG_RUNNING);
+	ldl_set_flag_locked(handle, LDL_FLAG_RUNNING);
 	xmpp_connect(handle, handle->login, handle->password);
-	ldl_clear_flag(handle, LDL_FLAG_RUNNING);
+	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);
 }
 
 void ldl_handle_stop(ldl_handle_t *handle)
 {
-	ldl_clear_flag(handle, LDL_FLAG_RUNNING);
+	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);
 }
 
 ldl_status ldl_handle_destroy(ldl_handle_t **handle)
@@ -1246,6 +1410,7 @@ ldl_status ldl_handle_destroy(ldl_handle_t **handle)
 
 	ldl_flush_queue(*handle);
 	
+
 	apr_pool_destroy(pool);
 	*handle = NULL;
 	return LDL_STATUS_SUCCESS;

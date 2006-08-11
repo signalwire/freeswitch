@@ -100,8 +100,15 @@ typedef enum {
 	LDL_FLAG_RUNNING = (1 << 1),
 	LDL_FLAG_AUTHORIZED = (1 << 2),
 	LDL_FLAG_READY = (1 << 3),
-	LDL_FLAG_CONNECTED = (1 << 4)
+	LDL_FLAG_CONNECTED = (1 << 4),
+	LDL_FLAG_QUEUE_RUNNING = (1 << 5),
 } ldl_flag_t;
+
+typedef enum {
+	LDL_FLAG_TLS = (1 << 10),
+	LDL_FLAG_SASL_PLAIN = (1 << 11),
+	LDL_FLAG_SASL_MD5 = (1 << 12)
+} ldl_user_flag_t;
 
 typedef enum {
 	LDL_SIGNAL_NONE,
@@ -170,6 +177,23 @@ typedef void (*ldl_logger_t)(char *file, const char *func, int line, int level, 
   \param flag the or'd list of flags to clear
 */
 #define ldl_clear_flag(obj, flag) (obj)->flags &= ~(flag)
+
+/*!
+  \brief Set a flag on an arbitrary object while locked
+  \param obj the object to set the flags on
+  \param flag the or'd list of flags to set
+*/
+#define ldl_set_flag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
+apr_thread_mutex_lock(obj->flag_mutex);\
+(obj)->flags |= (flag);\
+apr_thread_mutex_unlock(obj->flag_mutex);
+
+/*!
+  \brief Clear a flag on an arbitrary object
+  \param obj the object to test
+  \param flag the or'd list of flags to clear
+*/
+#define ldl_clear_flag_locked(obj, flag) apr_thread_mutex_lock(obj->flag_mutex); (obj)->flags &= ~(flag); apr_thread_mutex_unlock(obj->flag_mutex);
 
 /*!
   \brief Copy flags from one arbitrary object to another
@@ -389,6 +413,8 @@ int8_t ldl_handle_ready(ldl_handle_t *handle);
 ldl_status ldl_handle_init(ldl_handle_t **handle,
 						   char *login,
 						   char *password,
+						   char *server,
+						   ldl_user_flag_t flags,
 						   char *status_msg,
 						   ldl_loop_callback_t loop_callback,
 						   ldl_session_callback_t session_callback,

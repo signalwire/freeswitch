@@ -97,10 +97,12 @@ struct mdl_profile {
     char *ip;
     char *extip;
     char *lanaddr;
+	char *server;
     char *exten;
     char *context;
     ldl_handle_t *handle;
-    unsigned int flags;
+    uint32_t flags;
+    uint32_t user_flags;
 };
 
 struct private_object {
@@ -1146,6 +1148,8 @@ static switch_status_t init_profile(struct mdl_profile *profile, uint8_t login)
 			if (ldl_handle_init(&handle,
 								profile->login,
 								profile->password,
+								profile->server,
+								profile->user_flags,
 								profile->message,
 								handle_loop,
 								handle_signalling,
@@ -1224,8 +1228,20 @@ static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
 		profile->ip = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "ext-rtp-ip")) {
 		profile->extip = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "server")) {
+		profile->server = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "lanaddr")) {
 		profile->lanaddr = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "tls")) {
+		if (switch_true(val)) {
+			profile->user_flags |= LDL_FLAG_TLS;
+		}
+	} else if (!strcasecmp(var, "sasl")) {
+		if (!strcasecmp(val, "plain")) {
+			profile->user_flags |= LDL_FLAG_SASL_PLAIN;
+		} else if (!strcasecmp(val, "md5")) {
+			profile->user_flags |= LDL_FLAG_SASL_MD5;
+		}
 	} else if (!strcasecmp(var, "exten")) {
 		profile->exten = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "context")) {
