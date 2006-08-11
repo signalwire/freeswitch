@@ -2080,7 +2080,6 @@ static switch_status_t conference_outcall(conference_obj_t *conference, switch_c
 	}
 
 	while ((!caller_channel || switch_channel_ready(caller_channel)) &&
-		   switch_channel_ready(peer_channel) &&
 		   !switch_channel_test_flag(peer_channel, CF_ANSWERED) &&
 		   !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) &&
 		   ((time(NULL) - start) < timelimit)) {
