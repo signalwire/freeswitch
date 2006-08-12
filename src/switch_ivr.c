@@ -453,6 +453,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
+
 		write_frame.codec = &codec;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed %s@%uhz %u channels %dms\n",
@@ -492,7 +493,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		int do_speed = 1;
 		int last_speed = -1;
 		switch_event_t *event;
-
+	
 		if (input_callback || buf) {
 			/*
 			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
@@ -590,10 +591,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		write_frame.datalen = (uint32_t)(olen * 2);
 		write_frame.samples = (uint32_t)olen;
+
+#ifndef WIN32
 #if __BYTE_ORDER == __BIG_ENDIAN
 		switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
 #endif
-		
+#endif
 		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
 			status = switch_core_session_write_frame(session, &write_frame, -1, stream_id);
 
