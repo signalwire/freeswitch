@@ -427,6 +427,10 @@ static int on_presence(void *user_data, ikspak *pak)
 	struct ldl_buffer *buffer;
 	size_t x;
 
+	iks *msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "Ding A Ling...."); 
+	apr_queue_push(handle->queue, msg);
+
+
 	apr_cpystrn(id, from, sizeof(id));
 	if ((resource = strchr(id, '/'))) {
 		*resource++ = '\0';
@@ -490,8 +494,41 @@ static int on_commands(void *user_data, ikspak *pak)
 			if (!strcasecmp(iks_name(tag), "bind")) {
 				char *jid = iks_find_cdata(tag, "jid");
 				char *resource = strchr(jid, '/');
+				iks *iq, *usersetting, *x;
 				handle->acc->resource = apr_pstrdup(handle->pool, resource);
 				handle->login = apr_pstrdup(handle->pool, jid);
+				if ((iq = iks_new("iq"))) {
+					char *njid = strdup(handle->login);
+					if ((resource = strchr(njid, '/'))) {
+						*resource++ = '\0';
+					}
+					iks_insert_attrib(iq, "type", "set");
+					iks_insert_attrib(iq, "to", njid);
+					iks_insert_attrib(iq, "id", "params");
+
+					usersetting = iks_insert(iq, "usersetting");
+					iks_insert_attrib(usersetting, "xmlns", "google:setting");
+					x = iks_insert(usersetting,  "autoacceptrequests");
+					iks_insert_attrib(x, "value", "true");
+					x = iks_insert(usersetting,  "mailnotifications");
+					iks_insert_attrib(x, "value", "false");
+					free(njid);
+					iks_send(handle->parser, iq);
+					iks_delete(iq);
+					if ((iq = iks_new("iq"))) {
+						iks_insert_attrib(iq, "type", "get");
+						iks_insert_attrib(iq, "id", "roster");
+						x = iks_insert(iq,  "query");
+						iks_insert_attrib(x, "xmlns", "jabber:iq:roster");
+						iks_insert_attrib(x, "xmlns:gr", "google:roster");
+						iks_insert_attrib(x, "gr:ext", "2");
+						iks_insert_attrib(x, "gr:include", "all");
+						iks_send(handle->parser, iq);
+						iks_delete(iq);
+					}
+
+
+				}
 				break;
 			}
 			tag = iks_next_tag(tag);
