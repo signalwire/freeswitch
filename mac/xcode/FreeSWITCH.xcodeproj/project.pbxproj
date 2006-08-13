@@ -217,6 +217,8 @@
 		D35834C70A8F80C9004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
 		D35834C90A8F80D1004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
 		D35834CA0A8F80D6004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834DD0A8F968C004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834DE0A8F9699004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
 		D36500860A76BE4700C47A76 /* mod_dialplan_xml.c in Sources */ = {isa = PBXBuildFile; fileRef = D36500850A76BE4700C47A76 /* mod_dialplan_xml.c */; };
 		D36500870A76BE5A00C47A76 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
 		D36500880A76BE5A00C47A76 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
@@ -1192,6 +1194,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = D34725340A76D7B1001C8ED7;
 			remoteInfo = iax2;
+		};
+		D35834D60A8F9679004459D4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D36500F00A76BE9400C47A76 /* pcre */;
+			remoteInfo = pcre;
 		};
 		D36501760A76C28200C47A76 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -2670,6 +2679,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834DD0A8F968C004459D4 /* pcre.framework in Frameworks */,
 				D30DE7670A7819B300C8AAD5 /* System.framework in Frameworks */,
 				D38DD5540A768CB100FEDB19 /* resample.framework in Frameworks */,
 				D38DD51F0A768B4700FEDB19 /* srtp.framework in Frameworks */,
@@ -2684,6 +2694,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834DE0A8F9699004459D4 /* pcre.framework in Frameworks */,
 				D38DD55C0A768CD600FEDB19 /* srtp.framework in Frameworks */,
 				D38DD55A0A768CCB00FEDB19 /* speakup.framework in Frameworks */,
 				D38DD5590A768CC700FEDB19 /* resample.framework in Frameworks */,
@@ -5783,6 +5794,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				D35834D70A8F9679004459D4 /* PBXTargetDependency */,
 				D36501BF0A76C40000C47A76 /* PBXTargetDependency */,
 				D36501D50A76C54300C47A76 /* PBXTargetDependency */,
 				D36501BD0A76C3FB00C47A76 /* PBXTargetDependency */,
@@ -7412,6 +7424,11 @@
 			isa = PBXTargetDependency;
 			target = D34725340A76D7B1001C8ED7 /* iax */;
 			targetProxy = D34725570A76D904001C8ED7 /* PBXContainerItemProxy */;
+		};
+		D35834D70A8F9679004459D4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D36500F00A76BE9400C47A76 /* pcre */;
+			targetProxy = D35834D60A8F9679004459D4 /* PBXContainerItemProxy */;
 		};
 		D36501770A76C28200C47A76 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
