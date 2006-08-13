@@ -60,7 +60,7 @@ PddCDR::PddCDR(switch_mod_cdr_newchannel_t *newchannel) : BaseCDR(newchannel)
 		
 		// Format the times
 		size_t retsizecsd, retsizecad, retsizeced; //csd == callstartdate, cad == callanswerdate, ced == callenddate, ceff == callenddate_forfile
-		char format[] = "%F %T";
+		char format[] = "%Y-%m-%d-%H-%M-%S";
 		switch_strftime(formattedcallstartdate,&retsizecsd,sizeof(formattedcallstartdate),format,&tempcallstart);
 		switch_strftime(formattedcallanswerdate,&retsizecad,sizeof(formattedcallanswerdate),format,&tempcallanswer);
 		switch_strftime(formattedcallenddate,&retsizeced,sizeof(formattedcallenddate),format,&tempcallend);

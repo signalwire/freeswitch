@@ -82,49 +82,55 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 		callanswerdate = newchannel->timetable->answered;
 		callenddate = newchannel->timetable->hungup;
 	
-		if(newchannel->callerprofile->caller_id_name != 0)
-		{
-			strncpy(clid,newchannel->callerprofile->caller_id_name,strlen(newchannel->callerprofile->caller_id_name));
-			strncat(clid," <",2);
-			if(newchannel->callerprofile->caller_id_number != 0 )
-				strncat(clid,newchannel->callerprofile->caller_id_number,strlen(clid)+strlen(newchannel->callerprofile->caller_id_number));
-			strncat(clid,">",1);
-		}
+		if (newchannel->callerprofile) {
+			if(newchannel->callerprofile->caller_id_name != 0)
+			{
+				strncpy(clid,newchannel->callerprofile->caller_id_name,strlen(newchannel->callerprofile->caller_id_name));
+				strncat(clid," <",2);
+				if(newchannel->callerprofile->caller_id_number != 0 )
+					strncat(clid,newchannel->callerprofile->caller_id_number,strlen(clid)+strlen(newchannel->callerprofile->caller_id_number));
+				strncat(clid,">",1);
+			}
+			
+			// Get the ANI information if it's set
+			if(newchannel->callerprofile->ani != 0)
+				strncpy(ani,newchannel->callerprofile->ani,strlen(newchannel->callerprofile->ani));
+			if(newchannel->callerprofile->ani2 != 0)
+				strncpy(ani2,newchannel->callerprofile->ani2,strlen(newchannel->callerprofile->ani2));
 		
-		// Get the ANI information if it's set
-		if(newchannel->callerprofile->ani != 0)
-			strncpy(ani,newchannel->callerprofile->ani,strlen(newchannel->callerprofile->ani));
-		if(newchannel->callerprofile->ani2 != 0)
-			strncpy(ani2,newchannel->callerprofile->ani2,strlen(newchannel->callerprofile->ani2));
-	
-		if(newchannel->callerprofile->dialplan != 0)
-			strncpy(dialplan,newchannel->callerprofile->dialplan,strlen(newchannel->callerprofile->dialplan));
-	
-		if(newchannel->callerprofile->network_addr != 0)
-			strncpy(network_addr,newchannel->callerprofile->network_addr,strlen(newchannel->callerprofile->network_addr));
-				
+			if(newchannel->callerprofile->dialplan != 0)
+				strncpy(dialplan,newchannel->callerprofile->dialplan,strlen(newchannel->callerprofile->dialplan));
+		
+			if(newchannel->callerprofile->network_addr != 0)
+				strncpy(network_addr,newchannel->callerprofile->network_addr,strlen(newchannel->callerprofile->network_addr));
+		}
+
 		originated = newchannel->originate;
 	
-		if(newchannel->originateprofile->uuid != 0)
+		if(newchannel->originateprofile && newchannel->originateprofile->uuid != 0)
 			strncpy(destuuid,newchannel->originateprofile->uuid,strlen(newchannel->originateprofile->uuid));
 	
 		// We still need to check if this is originated or not
 		if(originated == 0)
 		{
-			if(newchannel->callerprofile->destination_number != 0)
-				strncpy(src,newchannel->callerprofile->destination_number,strlen(newchannel->callerprofile->destination_number));
-			if(newchannel->callerprofile->caller_id_number != 0)
-				strncpy(dst,newchannel->callerprofile->caller_id_number,strlen(newchannel->callerprofile->caller_id_number));
-			if(newchannel->originateprofile->chan_name != 0)
+			if (newchannel->callerprofile) {
+				if(newchannel->callerprofile->destination_number != 0)
+					strncpy(src,newchannel->callerprofile->destination_number,strlen(newchannel->callerprofile->destination_number));
+				if(newchannel->callerprofile->caller_id_number != 0)
+					strncpy(dst,newchannel->callerprofile->caller_id_number,strlen(newchannel->callerprofile->caller_id_number));
+			}
+			if(newchannel->originateprofile && newchannel->originateprofile->chan_name != 0)
 				strncpy(dstchannel,newchannel->originateprofile->chan_name,strlen(newchannel->originateprofile->chan_name));
 		}
 		else
 		{
-			if(newchannel->callerprofile->caller_id_number != 0)
-				strncpy(src,newchannel->callerprofile->caller_id_number,strlen(newchannel->callerprofile->caller_id_number));
-			if(newchannel->callerprofile->destination_number != 0)
-				strncpy(dst,newchannel->callerprofile->destination_number,strlen(newchannel->callerprofile->destination_number));
-			if(newchannel->originateprofile->chan_name != 0)
+			if (newchannel->callerprofile) {
+				if(newchannel->callerprofile->caller_id_number != 0)
+					strncpy(src,newchannel->callerprofile->caller_id_number,strlen(newchannel->callerprofile->caller_id_number));
+				if(newchannel->callerprofile->destination_number != 0)
+					strncpy(dst,newchannel->callerprofile->destination_number,strlen(newchannel->callerprofile->destination_number));
+			}
+			if(newchannel->originateprofile && newchannel->originateprofile->chan_name != 0)
 				strncpy(dstchannel,newchannel->originateprofile->chan_name,strlen(newchannel->originateprofile->chan_name));
 		}
 		
