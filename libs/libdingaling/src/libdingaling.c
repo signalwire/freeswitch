@@ -592,7 +592,8 @@ static const char c64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxy
 #define B64BUFFLEN 1024
 
 static int b64encode(unsigned char *in, uint32_t ilen, unsigned char *out, uint32_t olen) {
-	int x=0,y=0,bytes=0;
+	int y=0,bytes=0;
+	uint32_t x=0;
 	unsigned int b=0,l=0;
 
 	for(x=0;x<ilen;x++) {
@@ -667,7 +668,7 @@ static int on_stream(ldl_handle_t *handle, int type, iks * node)
 						iks_insert_attrib(x, "mechanism", "PLAIN");
 						iks_insert_attrib(x, "encoding", "UTF-8");
 						snprintf(s, sizeof(s), "%c%s%c%s", 0, handle->acc->user, 0, handle->password);
-						slen = strlen(handle->acc->user) + strlen(handle->password) + 2;
+						slen = (uint32_t)(strlen(handle->acc->user) + strlen(handle->password) + 2);
 						b64encode((unsigned char *)s, slen, (unsigned char *) base64, sizeof(base64));
 						iks_insert_cdata(x, base64, 0);
 						iks_send(handle->parser, x);
