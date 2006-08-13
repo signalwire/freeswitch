@@ -195,6 +195,28 @@
 		D34725610A76D91E001C8ED7 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
 		D34725C40A76D954001C8ED7 /* mod_iax.c in Sources */ = {isa = PBXBuildFile; fileRef = D34725C30A76D954001C8ED7 /* mod_iax.c */; };
 		D34725CA0A76D9BF001C8ED7 /* iax.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D34725350A76D7B1001C8ED7 /* iax.framework */; };
+		D35834B20A8F8047004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834B40A8F8052004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834B50A8F8058004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834B60A8F805D004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834B70A8F8069004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834B80A8F806E004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834B90A8F8072004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834BA0A8F807A004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834BB0A8F807F004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834BC0A8F8085004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834BE0A8F8094004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834BF0A8F8099004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834C00A8F809F004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834C10A8F80A3004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834C20A8F80A9004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834C30A8F80AF004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834C40A8F80B3004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834C50A8F80BB004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834C60A8F80C1004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834C70A8F80C9004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834C90A8F80D1004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		D35834CA0A8F80D6004459D4 /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
 		D36500860A76BE4700C47A76 /* mod_dialplan_xml.c in Sources */ = {isa = PBXBuildFile; fileRef = D36500850A76BE4700C47A76 /* mod_dialplan_xml.c */; };
 		D36500870A76BE5A00C47A76 /* apr.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC21D0A75CB06002001CF /* apr.framework */; };
 		D36500880A76BE5A00C47A76 /* aprutil.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D3DEC6CF0A75D4E9002001CF /* aprutil.framework */; };
@@ -2481,6 +2503,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834C30A8F80AF004459D4 /* pcre.framework in Frameworks */,
 				D3152FB50A76F27000549119 /* apr.framework in Frameworks */,
 				D3152FB60A76F27000549119 /* aprutil.framework in Frameworks */,
 				D3152FB70A76F27000549119 /* libfreeswitch.framework in Frameworks */,
@@ -2498,6 +2521,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834C20A8F80A9004459D4 /* pcre.framework in Frameworks */,
 				D34725CA0A76D9BF001C8ED7 /* iax.framework in Frameworks */,
 				D347255B0A76D91E001C8ED7 /* teletone.framework in Frameworks */,
 				D347255C0A76D91E001C8ED7 /* srtp.framework in Frameworks */,
@@ -2539,6 +2563,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834BE0A8F8094004459D4 /* pcre.framework in Frameworks */,
 				D36501F10A76C64200C47A76 /* apr.framework in Frameworks */,
 				D36501F20A76C64200C47A76 /* aprutil.framework in Frameworks */,
 				D36501F30A76C64200C47A76 /* libfreeswitch.framework in Frameworks */,
@@ -2555,6 +2580,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834BF0A8F8099004459D4 /* pcre.framework in Frameworks */,
 				D36501F80A76C64A00C47A76 /* apr.framework in Frameworks */,
 				D36501F90A76C64A00C47A76 /* aprutil.framework in Frameworks */,
 				D36501FA0A76C64A00C47A76 /* libfreeswitch.framework in Frameworks */,
@@ -2571,6 +2597,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834C00A8F809F004459D4 /* pcre.framework in Frameworks */,
 				D36501FF0A76C65300C47A76 /* apr.framework in Frameworks */,
 				D36502000A76C65300C47A76 /* aprutil.framework in Frameworks */,
 				D36502010A76C65300C47A76 /* libfreeswitch.framework in Frameworks */,
@@ -2594,6 +2621,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834C10A8F80A3004459D4 /* pcre.framework in Frameworks */,
 				D365025F0A76C91100C47A76 /* gsm.framework in Frameworks */,
 				D36502570A76C90700C47A76 /* apr.framework in Frameworks */,
 				D36502580A76C90700C47A76 /* aprutil.framework in Frameworks */,
@@ -2671,6 +2699,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834C40A8F80B3004459D4 /* pcre.framework in Frameworks */,
 				D3B4072E0A76EED9000AF6D4 /* speex.framework in Frameworks */,
 				D3B406CA0A76EED0000AF6D4 /* apr.framework in Frameworks */,
 				D3B406CB0A76EED0000AF6D4 /* aprutil.framework in Frameworks */,
@@ -2688,6 +2717,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834B20A8F8047004459D4 /* pcre.framework in Frameworks */,
 				D3BC32480A769B9C00DE971E /* teletone.framework in Frameworks */,
 				D3BC32460A769B9100DE971E /* resample.framework in Frameworks */,
 				D3BC32450A769B8C00DE971E /* srtp.framework in Frameworks */,
@@ -2704,6 +2734,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834B40A8F8052004459D4 /* pcre.framework in Frameworks */,
 				D3BC326A0A769D7700DE971E /* teletone.framework in Frameworks */,
 				D3BC326B0A769D7700DE971E /* resample.framework in Frameworks */,
 				D3BC326C0A769D7700DE971E /* srtp.framework in Frameworks */,
@@ -2722,6 +2753,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834B50A8F8058004459D4 /* pcre.framework in Frameworks */,
 				D3BC32850A769E2700DE971E /* teletone.framework in Frameworks */,
 				D3BC32860A769E2700DE971E /* resample.framework in Frameworks */,
 				D3BC32870A769E2700DE971E /* srtp.framework in Frameworks */,
@@ -2754,6 +2786,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834B60A8F805D004459D4 /* pcre.framework in Frameworks */,
 				D3BC32ED0A76A75B00DE971E /* teletone.framework in Frameworks */,
 				D3BC32EE0A76A75B00DE971E /* resample.framework in Frameworks */,
 				D3BC32EF0A76A75B00DE971E /* srtp.framework in Frameworks */,
@@ -2770,6 +2803,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834B70A8F8069004459D4 /* pcre.framework in Frameworks */,
 				D3BC33000A76A7EB00DE971E /* teletone.framework in Frameworks */,
 				D3BC33010A76A7EB00DE971E /* resample.framework in Frameworks */,
 				D3BC33020A76A7EB00DE971E /* srtp.framework in Frameworks */,
@@ -2786,6 +2820,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834B90A8F8072004459D4 /* pcre.framework in Frameworks */,
 				D3BC33130A76A86A00DE971E /* apr.framework in Frameworks */,
 				D3BC33140A76A86A00DE971E /* aprutil.framework in Frameworks */,
 				D3BC33150A76A86A00DE971E /* libfreeswitch.framework in Frameworks */,
@@ -2802,6 +2837,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834B80A8F806E004459D4 /* pcre.framework in Frameworks */,
 				D3BC332A0A76A8BC00DE971E /* apr.framework in Frameworks */,
 				D3BC332B0A76A8BC00DE971E /* aprutil.framework in Frameworks */,
 				D3BC332C0A76A8BC00DE971E /* libfreeswitch.framework in Frameworks */,
@@ -2818,6 +2854,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834BA0A8F807A004459D4 /* pcre.framework in Frameworks */,
 				D3BC33450A76AA0D00DE971E /* apr.framework in Frameworks */,
 				D3BC33460A76AA0D00DE971E /* aprutil.framework in Frameworks */,
 				D3BC33470A76AA0D00DE971E /* libfreeswitch.framework in Frameworks */,
@@ -2842,6 +2879,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834BB0A8F807F004459D4 /* pcre.framework in Frameworks */,
 				D3BC34DC0A76B05C00DE971E /* sndfile.framework in Frameworks */,
 				D3BC34D40A76B04600DE971E /* apr.framework in Frameworks */,
 				D3BC34D50A76B04600DE971E /* aprutil.framework in Frameworks */,
@@ -2859,6 +2897,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834BC0A8F8085004459D4 /* pcre.framework in Frameworks */,
 				D3BC34ED0A76B17800DE971E /* apr.framework in Frameworks */,
 				D3BC34EE0A76B17800DE971E /* aprutil.framework in Frameworks */,
 				D3BC34EF0A76B17800DE971E /* libfreeswitch.framework in Frameworks */,
@@ -2893,6 +2932,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834C60A8F80C1004459D4 /* pcre.framework in Frameworks */,
 				D3E66A800A77E63C00D04E25 /* apr.framework in Frameworks */,
 				D3E66A810A77E63C00D04E25 /* aprutil.framework in Frameworks */,
 				D3E66A820A77E63C00D04E25 /* libfreeswitch.framework in Frameworks */,
@@ -2909,6 +2949,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834C70A8F80C9004459D4 /* pcre.framework in Frameworks */,
 				D3E66B190A77E7F400D04E25 /* apr.framework in Frameworks */,
 				D3E66B1A0A77E7F400D04E25 /* aprutil.framework in Frameworks */,
 				D3E66B1B0A77E7F400D04E25 /* libfreeswitch.framework in Frameworks */,
@@ -2925,6 +2966,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834C90A8F80D1004459D4 /* pcre.framework in Frameworks */,
 				D3E66B200A77E7FC00D04E25 /* apr.framework in Frameworks */,
 				D3E66B210A77E7FC00D04E25 /* aprutil.framework in Frameworks */,
 				D3E66B220A77E7FC00D04E25 /* libfreeswitch.framework in Frameworks */,
@@ -2941,6 +2983,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834CA0A8F80D6004459D4 /* pcre.framework in Frameworks */,
 				D3E66B270A77E80400D04E25 /* apr.framework in Frameworks */,
 				D3E66B280A77E80400D04E25 /* aprutil.framework in Frameworks */,
 				D3E66B290A77E80400D04E25 /* libfreeswitch.framework in Frameworks */,
@@ -2981,6 +3024,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D35834C50A8F80BB004459D4 /* pcre.framework in Frameworks */,
 				D3AA5D290A77D54A008F105E /* exosip2.framework in Frameworks */,
 				D3AA5D2A0A77D54A008F105E /* osip2.framework in Frameworks */,
 				D3AA5D2B0A77D54A008F105E /* osipparser2.framework in Frameworks */,
