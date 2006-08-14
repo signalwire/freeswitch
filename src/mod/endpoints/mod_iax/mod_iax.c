@@ -934,9 +934,9 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 		/* Wait for an event. */
 		if ((iaxevent = iax_get_event(0)) == NULL) {
-			switch_yield(1000);
+			switch_yield(100);
 			continue;
-		} else if (iaxevent) {
+		} else {
 			struct private_object *tech_pvt = iax_get_private(iaxevent->session);
 
 			if (globals.debug && iaxevent->etype != IAX_EVENT_VOICE) {
