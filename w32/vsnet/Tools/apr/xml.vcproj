@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="xml"
 	ProjectGUID="{155844C3-EC5F-407F-97A4-A2DDADED9B2F}"
+	RootNamespace="xml"
 	>
 	<Platforms>
 		<Platform
@@ -45,7 +46,7 @@
 				AdditionalIncludeDirectories="."
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;VERSION=\&quot;expat_1.95.2\&quot;"
 				StringPooling="true"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile=".\LibR/xml.pch"
 				AssemblerListingLocation=".\LibR/"
@@ -119,7 +120,7 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="."
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;VERSION=\&quot;expat_1.95.2\&quot;"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\LibD/xml.pch"
 				AssemblerListingLocation=".\LibD/"
 				ObjectFile=".\LibD/"

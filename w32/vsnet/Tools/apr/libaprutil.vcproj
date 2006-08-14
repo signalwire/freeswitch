@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="libaprutil"
 	ProjectGUID="{F057DA7F-79E5-4B00-845C-EF446EF055E3}"
+	RootNamespace="libaprutil"
 	>
 	<Platforms>
 		<Platform
@@ -49,7 +50,7 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="./include,../apr/include,./include/private,../apr-iconv/include,./dbm/sdbm,./xml/expat/lib"
 				PreprocessorDefinitions="_DEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/libaprutil.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
@@ -148,7 +149,7 @@
 				AdditionalIncludeDirectories="./include,../apr/include,./include/private,../apr-iconv/include,./dbm/sdbm,./xml/expat/lib"
 				PreprocessorDefinitions="NDEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
 				StringPooling="true"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile=".\Release/libaprutil.pch"
 				AssemblerListingLocation=".\Release/"

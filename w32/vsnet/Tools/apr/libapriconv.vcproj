@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="libapriconv"
 	ProjectGUID="{101130D1-3EA6-4ED2-B65D-CEB5243A20ED}"
+	RootNamespace="libapriconv"
 	>
 	<Platforms>
 		<Platform
@@ -48,7 +49,7 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="./include,../apr/include"
 				PreprocessorDefinitions="_DEBUG;API_DECLARE_EXPORT;WIN32;_WINDOWS"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/libapriconv.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
@@ -147,7 +148,7 @@
 				AdditionalIncludeDirectories="./include,../apr/include"
 				PreprocessorDefinitions="NDEBUG;API_DECLARE_EXPORT;WIN32;_WINDOWS"
 				StringPooling="true"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile=".\Release/libapriconv.pch"
 				AssemblerListingLocation=".\Release/"
