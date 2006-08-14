@@ -2171,6 +2171,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 	switch_xml_t cxml = NULL, cfg = NULL, profile = NULL, profiles = NULL;
 	char *flags_str;
 	member_flag_t uflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
+	switch_core_session_message_t msg = {0};
 	
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -2404,8 +2405,18 @@ static void conference_function(switch_core_session_t *session, char *data)
 	}
 	switch_set_flag_locked((&member), MFLAG_RUNNING | uflags);
 
+	msg.from = __FILE__;
+
+	/* Tell the channel we are going to be in a bridge */
+	msg.message_id = SWITCH_MESSAGE_INDICATE_BRIDGE;
+	switch_core_session_receive_message(session, &msg);
+
 	/* Run the confernece loop */
 	conference_loop(&member);
+
+	/* Tell the channel we are no longer going to be in a bridge */
+	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
+	switch_core_session_receive_message(session, &msg);
 
 	/* Remove the caller from the conference */
 	conference_del_member(member.last_conference, &member);
