@@ -2,8 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="libaprutil"
-	ProjectGUID="{F057DA7F-79E5-4B00-845C-EF446EF055E3}"
+	Name="aprutil"
+	ProjectGUID="{D132C6C3-FB77-47B0-8BEF-092C93D2E9F5}"
+	RootNamespace="aprutil"
 	>
 	<Platforms>
 		<Platform
@@ -14,108 +15,10 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
-			ConfigurationType="2"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/libaprutil.tlb"
-				HeaderFileName=""
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc "
-				Optimization="0"
-				AdditionalIncludeDirectories="./include,../apr/include,./include/private,../apr-iconv/include,./dbm/sdbm,./xml/expat/lib"
-				PreprocessorDefinitions="_DEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
-				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/libaprutil.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName="Debug\libaprutil_src"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG,APU_VERSION_ONLY"
-				Culture="1033"
-				AdditionalIncludeDirectories="./include;../apr/include"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib mswsock.lib wldap32.lib  xml.lib libapr-1.lib libapriconv-1.lib"
-				OutputFile="Debug/libaprutil-1.dll"
-				LinkIncremental="1"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="xml\expat\lib\LibD;..\apr\Debug;..\apr-iconv\Debug"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/libaprutil-1.pdb"
-				SubSystem="2"
-				BaseAddress="0x6EE60000"
-				ImportLibrary=".\Debug/libaprutil-1.lib"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile=".\Debug/libaprutil.bsc"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
-			ConfigurationType="2"
+			OutputDirectory=".\LibR"
+			IntermediateDirectory=".\LibR"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -134,26 +37,20 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Release/libaprutil.tlb"
-				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="./include,../apr/include,./include/private,../apr-iconv/include,./dbm/sdbm,./xml/expat/lib"
-				PreprocessorDefinitions="NDEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/libaprutil.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName="Release\libaprutil_src"
+				PrecompiledHeaderFile=".\LibR/aprutil.pch"
+				AssemblerListingLocation=".\LibR/"
+				ObjectFile=".\LibR/"
+				ProgramDataBaseFileName="LibR\aprutil_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -163,33 +60,19 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG,APU_VERSION_ONLY"
+				PreprocessorDefinitions="NDEBUG"
 				Culture="1033"
-				AdditionalIncludeDirectories="./include;../apr/include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib mswsock.lib wldap32.lib  xml.lib libapr-1.lib libapriconv-1.lib"
-				OutputFile="Release/libaprutil-1.dll"
-				LinkIncremental="1"
+				Name="VCLibrarianTool"
+				OutputFile="LibR\aprutil-1.lib"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="xml\expat\lib\LibR;..\apr\Release;..\apr-iconv\Release"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Release/libaprutil-1.pdb"
-				SubSystem="2"
-				OptimizeReferences="2"
-				BaseAddress="0x6EE60000"
-				ImportLibrary=".\Release/libaprutil-1.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -197,16 +80,82 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/libaprutil.bsc"
+				OutputFile=".\LibR/aprutil.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory=".\LibD"
+			IntermediateDirectory=".\LibD"
+			ConfigurationType="4"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="./include,../apr/include,./include/private,../apr-iconv/include,./dbm/sdbm,./xml/expat/lib"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
+				RuntimeLibrary="3"
+				PrecompiledHeaderFile=".\LibD/aprutil.pch"
+				AssemblerListingLocation=".\LibD/"
+				ObjectFile=".\LibD/"
+				ProgramDataBaseFileName="LibD\aprutil_src"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="LibD\aprutil-1.lib"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				SuppressStartupBanner="true"
+				OutputFile=".\LibD/aprutil.bsc"
+			/>
+			<Tool
+				Name="VCFxCopTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -226,21 +175,21 @@
 					RelativePath="buckets\apr_brigade.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -248,21 +197,21 @@
 					RelativePath="buckets\apr_buckets.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -270,21 +219,21 @@
 					RelativePath="buckets\apr_buckets_alloc.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -292,21 +241,21 @@
 					RelativePath="buckets\apr_buckets_eos.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -314,21 +263,21 @@
 					RelativePath="buckets\apr_buckets_file.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -336,21 +285,21 @@
 					RelativePath="buckets\apr_buckets_flush.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -358,21 +307,21 @@
 					RelativePath="buckets\apr_buckets_heap.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -380,21 +329,21 @@
 					RelativePath="buckets\apr_buckets_mmap.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -402,21 +351,21 @@
 					RelativePath="buckets\apr_buckets_pipe.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -424,21 +373,21 @@
 					RelativePath="buckets\apr_buckets_pool.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -446,21 +395,21 @@
 					RelativePath="buckets\apr_buckets_refcount.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -468,21 +417,21 @@
 					RelativePath="buckets\apr_buckets_simple.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -490,21 +439,21 @@
 					RelativePath="buckets\apr_buckets_socket.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -516,21 +465,21 @@
 					RelativePath="crypto\apr_md4.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -538,21 +487,21 @@
 					RelativePath="crypto\apr_md5.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
 						/>
 					</FileConfiguration>
 				</File>
@@ -560,21 +509,21 @@
 					RelativePath="crypto\apr_sha1.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -582,21 +531,21 @@
 					RelativePath="crypto\getuuid.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -604,21 +553,21 @@
 					RelativePath="crypto\uuid.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -630,21 +579,21 @@
 					RelativePath="dbd\apr_dbd.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -652,21 +601,21 @@
 					RelativePath="dbd\apr_dbd_pgsql.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -674,21 +623,21 @@
 					RelativePath="dbd\apr_dbd_sqlite2.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -696,21 +645,21 @@
 					RelativePath="dbd\apr_dbd_sqlite3.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -722,21 +671,21 @@
 					RelativePath="dbm\apr_dbm.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
 						/>
 					</FileConfiguration>
 				</File>
@@ -744,21 +693,21 @@
 					RelativePath="dbm\apr_dbm_berkeleydb.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -766,21 +715,21 @@
 					RelativePath="dbm\apr_dbm_gdbm.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -788,21 +737,21 @@
 					RelativePath="dbm\apr_dbm_sdbm.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -814,21 +763,21 @@
 					RelativePath="encoding\apr_base64.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -840,21 +789,21 @@
 					RelativePath="hooks\apr_hooks.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -866,21 +815,21 @@
 					RelativePath="ldap\apr_ldap_init.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -888,21 +837,21 @@
 					RelativePath="ldap\apr_ldap_option.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -910,21 +859,21 @@
 					RelativePath="ldap\apr_ldap_url.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -936,21 +885,21 @@
 					RelativePath="misc\apr_date.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -958,21 +907,21 @@
 					RelativePath="misc\apr_queue.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -980,21 +929,21 @@
 					RelativePath="misc\apr_reslist.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1002,21 +951,21 @@
 					RelativePath="misc\apr_rmm.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1028,21 +977,21 @@
 					RelativePath="dbm\sdbm\sdbm.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1050,21 +999,21 @@
 					RelativePath="dbm\sdbm\sdbm_hash.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1072,21 +1021,21 @@
 					RelativePath="dbm\sdbm\sdbm_lock.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1094,21 +1043,21 @@
 					RelativePath="dbm\sdbm\sdbm_pair.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1132,21 +1081,21 @@
 					RelativePath="strmatch\apr_strmatch.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1158,21 +1107,21 @@
 					RelativePath="uri\apr_uri.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1184,21 +1133,21 @@
 					RelativePath="xlate\xlate.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1210,21 +1159,21 @@
 					RelativePath="xml\apr_xml.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;APU_DECLARE_EXPORT;API_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1245,7 +1194,7 @@
 				RelativePath="include\apr_ldap.hw"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1255,7 +1204,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1277,7 +1226,7 @@
 				RelativePath="include\apu.hw"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1287,7 +1236,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1305,7 +1254,7 @@
 				RelativePath="include\private\apu_config.hw"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1315,7 +1264,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1333,7 +1282,7 @@
 				RelativePath="include\private\apu_select_dbm.hw"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1343,7 +1292,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1365,7 +1314,7 @@
 				RelativePath="include\apu_want.hw"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1375,13 +1324,37 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu_want.h from apu_want.hw"
 						CommandLine="type .\include\apu_want.hw &gt; .\include\apu_want.h&#x0D;&#x0A;"
 						Outputs=".\include\apu_want.h"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="uri\gen_uri_delims.exe"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating uri_delims.h"
+						CommandLine=".\uri\gen_uri_delims.exe &gt;.\uri\uri_delims.h&#x0D;&#x0A;"
+						Outputs=".\uri\uri_delims.h"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating uri_delims.h"
+						CommandLine=".\uri\gen_uri_delims.exe &gt;.\uri\uri_delims.h&#x0D;&#x0A;"
+						Outputs=".\uri\uri_delims.h"
 					/>
 				</FileConfiguration>
 			</File>
@@ -1473,33 +1446,7 @@
 				RelativePath="include\apr_xml.h"
 				>
 			</File>
-			<File
-				RelativePath="include\apu_version.h"
-				>
-			</File>
 		</Filter>
-		<File
-			RelativePath="libaprutil.rc"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-					AdditionalIncludeDirectories=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-					AdditionalIncludeDirectories=""
-				/>
-			</FileConfiguration>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

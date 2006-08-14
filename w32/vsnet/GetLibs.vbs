@@ -726,7 +726,6 @@ Sub BuildLibs_libresample(BuildDebug, BuildRelease)
 	If Not FSO.FolderExists(LibDestDir & "libresample") Then 
 		WgetUnCompress LibsBase & "libresample-0.1.3.zip", LibDestDir
 		RenameFolder LibDestDir & "libresample-0.1.3", "libresample"
-		FSO.CopyFile Utilsdir & "libresample.vcproj", LibDestDir & "libresample\win\", True
 	End If 
 	If FSO.FolderExists(LibDestDir & "libresample") Then 
 		If BuildDebug Then

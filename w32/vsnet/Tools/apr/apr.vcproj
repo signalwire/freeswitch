@@ -2,8 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="libapr"
-	ProjectGUID="{F6C55D93-B927-4483-BB69-15AEF3DD2DFF}"
+	Name="apr"
+	ProjectGUID="{DDAD655A-6818-4696-B544-7B46259FF289}"
+	RootNamespace="apr"
 	>
 	<Platforms>
 		<Platform
@@ -14,10 +15,10 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
-			ConfigurationType="2"
+			Name="Release|Win32"
+			OutputDirectory=".\LibR"
+			IntermediateDirectory=".\LibR"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -36,24 +37,20 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/libapr.tlb"
-				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/EHsc "
 				Optimization="0"
+				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="./include,./include/arch,./include/arch/win32,./include/arch/unix"
-				PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS"
-				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/libapr.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName="Debug\libapr_src"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;APR_DECLARE_EXPORT;WIN32;_WINDOWS;NDEBUG"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				PrecompiledHeaderFile=".\LibR/apr.pch"
+				AssemblerListingLocation=".\LibR/"
+				ObjectFile=".\LibR/"
+				ProgramDataBaseFileName="LibR\apr_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -63,31 +60,19 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG,APR_VERSION_ONLY"
+				PreprocessorDefinitions="NDEBUG"
 				Culture="1033"
-				AdditionalIncludeDirectories="./include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib mswsock.lib rpcrt4.lib"
-				OutputFile="Debug/libapr-1.dll"
-				LinkIncremental="1"
+				Name="VCLibrarianTool"
+				OutputFile="LibR\apr-1.lib"
 				SuppressStartupBanner="true"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/libapr-1.pdb"
-				SubSystem="2"
-				BaseAddress="0x6EEC0000"
-				ImportLibrary=".\Debug/libapr-1.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -95,26 +80,20 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/libapr.bsc"
+				OutputFile=".\LibR/apr.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
-			ConfigurationType="2"
+			Name="Debug|Win32"
+			OutputDirectory=".\LibD"
+			IntermediateDirectory=".\LibD"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -133,26 +112,17 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Release/libapr.tlb"
-				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				InlineFunctionExpansion="1"
+				Optimization="0"
 				AdditionalIncludeDirectories="./include,./include/arch,./include/arch/win32,./include/arch/unix"
-				PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS"
-				StringPooling="true"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/libapr.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName="Release\libapr_src"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;;APR_DECLARE_EXPORT;WIN32;_WINDOWS"
+				RuntimeLibrary="3"
+				PrecompiledHeaderFile=".\LibD/apr.pch"
+				AssemblerListingLocation=".\LibD/"
+				ObjectFile=".\LibD/"
+				ProgramDataBaseFileName="LibD\apr_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -162,32 +132,19 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG,APR_VERSION_ONLY"
+				PreprocessorDefinitions="_DEBUG"
 				Culture="1033"
-				AdditionalIncludeDirectories="./include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib mswsock.lib rpcrt4.lib"
-				OutputFile="Release/libapr-1.dll"
-				LinkIncremental="1"
+				Name="VCLibrarianTool"
+				OutputFile="LibD\apr-1.lib"
 				SuppressStartupBanner="true"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Release/libapr-1.pdb"
-				SubSystem="2"
-				OptimizeReferences="2"
-				BaseAddress="0x6EEC0000"
-				ImportLibrary=".\Release/libapr-1.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -195,16 +152,10 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/libapr.bsc"
+				OutputFile=".\LibD/apr.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -225,21 +176,21 @@
 					RelativePath="atomic\win32\apr_atomic.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -251,21 +202,21 @@
 					RelativePath="dso\win32\dso.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -277,21 +228,21 @@
 					RelativePath="file_io\unix\copy.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -299,21 +250,21 @@
 					RelativePath="file_io\win32\dir.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -321,21 +272,21 @@
 					RelativePath="file_io\unix\fileacc.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -343,21 +294,21 @@
 					RelativePath="file_io\win32\filedup.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -365,21 +316,21 @@
 					RelativePath="file_io\win32\filepath.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -387,21 +338,21 @@
 					RelativePath="file_io\unix\filepath_util.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -409,21 +360,21 @@
 					RelativePath="file_io\win32\filestat.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -431,21 +382,21 @@
 					RelativePath="file_io\win32\filesys.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -453,21 +404,21 @@
 					RelativePath="file_io\win32\flock.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -475,21 +426,21 @@
 					RelativePath="file_io\unix\fullrw.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -497,21 +448,21 @@
 					RelativePath="file_io\unix\mktemp.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -519,21 +470,21 @@
 					RelativePath="file_io\win32\open.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -541,21 +492,21 @@
 					RelativePath="file_io\win32\pipe.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -563,21 +514,21 @@
 					RelativePath="file_io\win32\readwrite.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -585,21 +536,21 @@
 					RelativePath="file_io\win32\seek.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -607,21 +558,21 @@
 					RelativePath="file_io\unix\tempdir.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -633,21 +584,21 @@
 					RelativePath="locks\win32\proc_mutex.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -655,21 +606,21 @@
 					RelativePath="locks\win32\thread_cond.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -677,21 +628,21 @@
 					RelativePath="locks\win32\thread_mutex.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -699,21 +650,21 @@
 					RelativePath="locks\win32\thread_rwlock.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -725,21 +676,21 @@
 					RelativePath="memory\unix\apr_pools.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -751,23 +702,23 @@
 					RelativePath="misc\win32\apr_app.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						ExcludedFromBuild="true"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -775,21 +726,21 @@
 					RelativePath="misc\win32\charset.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -797,21 +748,21 @@
 					RelativePath="misc\win32\env.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -819,21 +770,21 @@
 					RelativePath="misc\unix\errorcodes.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;"
 						/>
 					</FileConfiguration>
 				</File>
@@ -841,21 +792,21 @@
 					RelativePath="misc\unix\getopt.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -863,21 +814,21 @@
 					RelativePath="misc\win32\internal.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -885,21 +836,21 @@
 					RelativePath="misc\win32\misc.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -907,21 +858,21 @@
 					RelativePath="misc\unix\otherchild.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -929,21 +880,21 @@
 					RelativePath="misc\win32\rand.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -951,21 +902,21 @@
 					RelativePath="misc\win32\start.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -973,21 +924,21 @@
 					RelativePath="misc\win32\utf8.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -995,21 +946,21 @@
 					RelativePath="misc\unix\version.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1021,21 +972,21 @@
 					RelativePath="mmap\unix\common.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1043,21 +994,21 @@
 					RelativePath="mmap\win32\mmap.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1069,21 +1020,21 @@
 					RelativePath="network_io\unix\inet_ntop.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1091,21 +1042,21 @@
 					RelativePath="network_io\unix\inet_pton.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1113,21 +1064,21 @@
 					RelativePath="network_io\unix\multicast.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1135,21 +1086,21 @@
 					RelativePath="poll\unix\select.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1157,21 +1108,21 @@
 					RelativePath="network_io\win32\sendrecv.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1179,65 +1130,47 @@
 					RelativePath="network_io\unix\sockaddr.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="network_io\win32\sockets.c"
 					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
 				</File>
 				<File
 					RelativePath="network_io\win32\sockopt.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1249,21 +1182,21 @@
 					RelativePath="passwd\apr_getpass.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1275,21 +1208,21 @@
 					RelativePath="random\unix\apr_random.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1297,21 +1230,21 @@
 					RelativePath="random\unix\sha2.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1319,21 +1252,21 @@
 					RelativePath="random\unix\sha2_glue.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1345,21 +1278,21 @@
 					RelativePath="shmem\win32\shm.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1371,21 +1304,21 @@
 					RelativePath="strings\apr_cpystrn.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1393,21 +1326,21 @@
 					RelativePath="strings\apr_fnmatch.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1415,21 +1348,21 @@
 					RelativePath="strings\apr_snprintf.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1437,21 +1370,21 @@
 					RelativePath="strings\apr_strings.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1459,21 +1392,21 @@
 					RelativePath="strings\apr_strnatcmp.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1481,21 +1414,21 @@
 					RelativePath="strings\apr_strtok.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1507,21 +1440,21 @@
 					RelativePath="tables\apr_hash.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1529,21 +1462,21 @@
 					RelativePath="tables\apr_tables.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1555,21 +1488,21 @@
 					RelativePath="threadproc\win32\proc.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1577,21 +1510,21 @@
 					RelativePath="threadproc\win32\signals.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1599,21 +1532,21 @@
 					RelativePath="threadproc\win32\thread.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1621,21 +1554,21 @@
 					RelativePath="threadproc\win32\threadpriv.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1647,21 +1580,21 @@
 					RelativePath="time\win32\access.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1669,21 +1602,21 @@
 					RelativePath="time\win32\time.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1691,21 +1624,21 @@
 					RelativePath="time\win32\timestr.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1717,21 +1650,21 @@
 					RelativePath="user\win32\groupinfo.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1739,21 +1672,21 @@
 					RelativePath="user\win32\userinfo.c"
 					>
 					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
 						Name="Release|Win32"
 						>
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -1818,7 +1751,7 @@
 				RelativePath="include\apr.h.in"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1826,7 +1759,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1838,7 +1771,7 @@
 				RelativePath="include\apr.hnw"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1846,7 +1779,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -1858,7 +1791,7 @@
 				RelativePath="include\apr.hw"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -1868,7 +1801,7 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -2015,28 +1948,6 @@
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath="libapr.rc"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-					AdditionalIncludeDirectories=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-					AdditionalIncludeDirectories=""
-				/>
-			</FileConfiguration>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

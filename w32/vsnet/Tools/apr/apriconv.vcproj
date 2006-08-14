@@ -2,8 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="libapriconv"
-	ProjectGUID="{101130D1-3EA6-4ED2-B65D-CEB5243A20ED}"
+	Name="apriconv"
+	ProjectGUID="{6690467D-A482-49C8-9D7E-AD414E6E832C}"
+	RootNamespace="apriconv"
 	>
 	<Platforms>
 		<Platform
@@ -15,9 +16,9 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
-			ConfigurationType="2"
+			OutputDirectory=".\LibD"
+			IntermediateDirectory=".\LibD"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -36,23 +37,17 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/libapriconv.tlb"
-				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="./include,../apr/include"
-				PreprocessorDefinitions="_DEBUG;API_DECLARE_EXPORT;WIN32;_WINDOWS"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_DEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/libapriconv.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName="Debug\libapriconv_src"
+				PrecompiledHeaderFile=".\LibD/apriconv.pch"
+				AssemblerListingLocation=".\LibD/"
+				ObjectFile=".\LibD/"
+				ProgramDataBaseFileName="LibD\apriconv_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -62,32 +57,18 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG,API_VERSION_ONLY"
 				Culture="1033"
-				AdditionalIncludeDirectories="./include;../apr/include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="libapr-1.lib"
-				OutputFile="Debug/libapriconv-1.dll"
-				LinkIncremental="1"
+				Name="VCLibrarianTool"
+				OutputFile="LibD\apriconv-1.lib"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\apr\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/libapriconv-1.pdb"
-				SubSystem="2"
-				BaseAddress="0x6EE50000"
-				ImportLibrary=".\Debug/libapriconv-1.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -95,16 +76,10 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Debug/libapriconv.bsc"
+				OutputFile=".\LibD/apriconv.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -112,9 +87,9 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
-			ConfigurationType="2"
+			OutputDirectory=".\LibR"
+			IntermediateDirectory=".\LibR"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -133,26 +108,20 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="true"
-				SuppressStartupBanner="true"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Release/libapriconv.tlb"
-				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="./include,../apr/include"
-				PreprocessorDefinitions="NDEBUG;API_DECLARE_EXPORT;WIN32;_WINDOWS"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;NDEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/libapriconv.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName="Release\libapriconv_src"
+				PrecompiledHeaderFile=".\LibR/apriconv.pch"
+				AssemblerListingLocation=".\LibR/"
+				ObjectFile=".\LibR/"
+				ProgramDataBaseFileName="LibR\apriconv_src"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -162,33 +131,18 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG,API_VERSION_ONLY"
 				Culture="1033"
-				AdditionalIncludeDirectories="./include;../apr/include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="libapr-1.lib"
-				OutputFile="Release/libapriconv-1.dll"
-				LinkIncremental="1"
+				Name="VCLibrarianTool"
+				OutputFile="LibR\apriconv-1.lib"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\apr\$(OutDir)"
-				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Release/libapriconv-1.pdb"
-				SubSystem="2"
-				OptimizeReferences="2"
-				BaseAddress="0x6EE50000"
-				ImportLibrary=".\Release/libapriconv-1.lib"
-				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -196,16 +150,10 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/libapriconv.bsc"
+				OutputFile=".\LibR/apriconv.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -231,7 +179,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -240,7 +188,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -253,7 +201,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -262,7 +210,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -275,7 +223,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -284,7 +232,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -297,7 +245,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -306,7 +254,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -319,7 +267,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -328,7 +276,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -341,7 +289,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -350,7 +298,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -363,7 +311,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 					<FileConfiguration
@@ -372,7 +320,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
+							PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;API_DECLARE_EXPORT;WIN32;_WINDOWS;$(NoInherit)"
 						/>
 					</FileConfiguration>
 				</File>
@@ -382,10 +330,6 @@
 			Name="Header Files"
 			Filter=".h"
 			>
-			<File
-				RelativePath="include\api_version.h"
-				>
-			</File>
 			<File
 				RelativePath="include\apr_iconv.h"
 				>
@@ -399,28 +343,6 @@
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath="libapriconv.rc"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-					AdditionalIncludeDirectories=""
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCResourceCompilerTool"
-					PreprocessorDefinitions=""
-					AdditionalIncludeDirectories=""
-				/>
-			</FileConfiguration>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

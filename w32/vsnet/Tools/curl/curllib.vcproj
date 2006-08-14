@@ -4,7 +4,6 @@
 	Version="8.00"
 	Name="curllib"
 	ProjectGUID="{87EE9DA4-DE1E-4448-8324-183C98DCA588}"
-	RootNamespace="curllib"
 	>
 	<Platforms>
 		<Platform
@@ -52,7 +51,7 @@
 				AdditionalIncludeDirectories=".,..\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;BUILDING_LIBCURL"
 				StringPooling="true"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile=".\Release/curllib.pch"
 				AssemblerListingLocation=".\Release/"
@@ -133,7 +132,7 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;BUILDING_LIBCURL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\Debug/curllib.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
