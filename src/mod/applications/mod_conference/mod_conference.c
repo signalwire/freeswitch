@@ -53,6 +53,8 @@ static struct {
 	switch_mutex_t *id_mutex;
 	switch_mutex_t *hash_mutex;
 	uint32_t id_pool;
+	int32_t running;
+	uint32_t threads;
 } globals;
 
 struct conference_member;
@@ -451,7 +453,9 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		return NULL;
 	}
 
-	while(!switch_test_flag(conference, CFLAG_DESTRUCT)) {
+	globals.threads++;
+
+	while(globals.running && !switch_test_flag(conference, CFLAG_DESTRUCT)) {
 		uint8_t file_frame[CONF_BUFFER_SIZE] = {0};
 		switch_size_t file_sample_len = samples;
 		switch_size_t file_data_len = samples * 2;
@@ -654,7 +658,8 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			switch_core_destroy_memory_pool(&pool);
 		}
 	}
-	
+
+	globals.threads--;	
 	return NULL;
 }
 
@@ -2908,6 +2913,22 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	/* Release the config registry handle */
 	switch_xml_free(cxml);
 
+	globals.running = 1;
 	/* indicate that the module should continue to be loaded */
 	return status;
+}
+
+
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
+{
+
+
+	if (globals.running) {
+		globals.running = 0;
+		while (globals.threads) {
+			switch_yield(100000);
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
 }
