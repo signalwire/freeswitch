@@ -443,12 +443,12 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_body(switch_event_t *event, cha
 	va_list ap;
 	if (fmt) {
 		va_start(ap, fmt);
-		vsnprintf(data, sizeof(data), fmt, ap);
+		ret = vsnprintf(data, sizeof(data), fmt, ap);
 		va_end(ap);
 	}
 
 	if (ret == -1) {
-		return SWITCH_STATUS_MEMERR;
+		return SWITCH_STATUS_GENERR;
 	} else {
 		event->body = DUP(data);
 		return SWITCH_STATUS_SUCCESS;
