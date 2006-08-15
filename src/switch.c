@@ -220,12 +220,9 @@ int main(int argc, char *argv[])
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
 	switch_core_session_hupall();
+	switch_yield(10000);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
 	switch_loadable_module_shutdown();
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Tearing down environment.\n");
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Exiting Now.\n");
 	switch_core_destroy();
-
-
 	return 0;
 }

@@ -118,7 +118,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 	assert(obj == NULL || obj != NULL);
 	THREAD_RUNNING = 1;
 
-	while(LOG_QUEUE) {
+	while(THREAD_RUNNING == 1) {
 		void *pop = NULL;
 		switch_log_node_t *node = NULL;
 		switch_log_binding_t *binding;
@@ -128,7 +128,6 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 		}
 		
 		if (!pop) {
-			LOG_QUEUE = NULL;
 			break;
 		}
 		
@@ -277,7 +276,11 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool)
 
 SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 {
+	THREAD_RUNNING = -1;
 	switch_queue_push(LOG_QUEUE, NULL);
+	while (THREAD_RUNNING) {
+		switch_yield(1000);
+	}
 	return SWITCH_STATUS_SUCCESS;
 }
 

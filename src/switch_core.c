@@ -3116,10 +3116,11 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 {
 
+
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");
 	switch_event_shutdown();
-
-
+	
 	switch_queue_push(runtime.sql_queue, NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Waiting for unfinished SQL transactions\n");
 	while (switch_queue_size(runtime.sql_queue) > 0) {
@@ -3128,10 +3129,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_core_db_close(runtime.db);
 	switch_core_db_close(runtime.event_db);
 	switch_xml_destroy();
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Finalizing Shutdown.\n");
 	switch_log_shutdown();
-	switch_yield(10000);
+
 	if (runtime.memory_pool) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Unallocating memory pool.\n");
 		apr_pool_destroy(runtime.memory_pool);
 		apr_terminate();
 	}
