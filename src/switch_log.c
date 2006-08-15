@@ -118,7 +118,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 	assert(obj == NULL || obj != NULL);
 	THREAD_RUNNING = 1;
 
-	for(;;) {
+	while(LOG_QUEUE) {
 		void *pop = NULL;
 		switch_log_node_t *node = NULL;
 		switch_log_binding_t *binding;
@@ -128,6 +128,7 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 		}
 		
 		if (!pop) {
+			LOG_QUEUE = NULL;
 			break;
 		}
 		
@@ -222,23 +223,23 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, char *file
 					switch_event_fire(&event);
 				}
 		} else {
-			if (level == SWITCH_LOG_CONSOLE || !THREAD_RUNNING) {
+			if (level == SWITCH_LOG_CONSOLE || !LOG_QUEUE || !THREAD_RUNNING) {
 				fprintf(handle, data);
-			} 
-
-			if (level <= MAX_LEVEL) {
-				switch_log_node_t *node = malloc(sizeof(*node));
-				node->data = data;
-				node->file = strdup(filep);
-				node->func = strdup(func);
-				node->line = line;
-				node->level = level;
-				node->content = content;
-				node->timestamp = now;
-				switch_queue_push(LOG_QUEUE, node);
-			} else {
 				free(data);
-			}
+			} else if (level <= MAX_LEVEL) {
+				switch_log_node_t *node;
+
+				if ((node = malloc(sizeof(*node)))) {
+					node->data = data;
+					node->file = strdup(filep);
+					node->func = strdup(func);
+					node->line = line;
+					node->level = level;
+					node->content = content;
+					node->timestamp = now;
+					switch_queue_push(LOG_QUEUE, node);
+				}
+			} 
 		}
 	}
 

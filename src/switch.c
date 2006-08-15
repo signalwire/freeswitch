@@ -225,5 +225,7 @@ int main(int argc, char *argv[])
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Tearing down environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Exiting Now.\n");
 	switch_core_destroy();
+
+
 	return 0;
 }
