@@ -40,42 +40,17 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *caller_channel;
 	switch_core_session_t *peer_session;
-	switch_caller_profile_t *caller_profile, *caller_caller_profile;
-	char chan_type[128] = { '\0' }, *chan_data;
-	unsigned int timelimit = 60;			/* probably a useful option to pass in when there's time */
+	unsigned int timelimit = 60; /* probably a useful option to pass in when there's time */
+
 	caller_channel = switch_core_session_get_channel(session);
 	assert(caller_channel != NULL);
 
-
-	strncpy(chan_type, data, sizeof(chan_type));
-
-	if ((chan_data = strchr(chan_type, '/')) != 0) {
-		*chan_data = '\0';
-		chan_data++;
-	}
-
-	caller_caller_profile = switch_channel_get_caller_profile(caller_channel);
-	caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-											   caller_caller_profile->username,
-											   caller_caller_profile->dialplan,
-											   caller_caller_profile->caller_id_name,
-											   caller_caller_profile->caller_id_number,
-											   caller_caller_profile->network_addr, 
-											   NULL, 
-											   NULL, 
-											   caller_caller_profile->rdnis,
-											   caller_caller_profile->source,
-											   caller_caller_profile->context,
-											   chan_data);
-
-
-
-	if (switch_core_session_outgoing_channel(session, chan_type, caller_profile, &peer_session, NULL) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_outcall(session, &peer_session, data) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
 		switch_channel_hangup(caller_channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
 		return;
 	} else {
+		/* peer channel is read locked now the bridge func will unlock it for us */
 		switch_ivr_multi_threaded_bridge(session, peer_session, timelimit, NULL, NULL, NULL);
 	}
 }

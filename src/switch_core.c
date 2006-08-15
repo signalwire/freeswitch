@@ -233,7 +233,15 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_session_t *session)
 {
-	return (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (!switch_channel_test_flag(session->channel, CF_LOCK_THREAD)) {
+		if ((status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock)) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_set_flag(session->channel, CF_LOCK_THREAD);
+		}
+	}
+	
+	return status;
 }
 
 SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session_t *session)
@@ -243,6 +251,7 @@ SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session_t *sessi
 
 SWITCH_DECLARE(void) switch_core_session_rwunlock(switch_core_session_t *session)
 {
+	switch_channel_clear_flag(session->channel, CF_LOCK_THREAD);
 	switch_thread_rwlock_unlock(session->rwlock);
 }
 
@@ -283,7 +292,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(void)
 	switch_mutex_unlock(runtime.session_table_mutex);
 
 	while(runtime.session_count) {
-		switch_yield(1000);
+		switch_yield(10000);
 	}
 }
 
@@ -3116,15 +3125,13 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 {
 
-
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");
 	switch_event_shutdown();
 	
 	switch_queue_push(runtime.sql_queue, NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Waiting for unfinished SQL transactions\n");
 	while (switch_queue_size(runtime.sql_queue) > 0) {
-		switch_yield(1000);
+		switch_yield(10000);
 	}
 	switch_core_db_close(runtime.db);
 	switch_core_db_close(runtime.event_db);
@@ -3132,15 +3139,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Finalizing Shutdown.\n");
 	switch_log_shutdown();
-
-	if (runtime.memory_pool) {
-		apr_pool_destroy(runtime.memory_pool);
-		apr_terminate();
-	}
 	
 	if(runtime.console != stdout && runtime.console != stderr) {
 		fclose(runtime.console);
 		runtime.console = NULL;
+	}
+
+	if (runtime.memory_pool) {
+		apr_pool_destroy(runtime.memory_pool);
+		apr_terminate();
 	}
 
 	return SWITCH_STATUS_SUCCESS;

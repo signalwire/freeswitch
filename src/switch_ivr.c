@@ -1177,7 +1177,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_outcall(switch_core_session_t *sessio
 												   caller_caller_profile->caller_id_name,
 												   caller_caller_profile->caller_id_number,
 												   caller_caller_profile->network_addr, 
-												   NULL, 
+												   NULL,
 												   NULL, 
 												   caller_caller_profile->rdnis,
 												   caller_caller_profile->source,
@@ -1206,6 +1206,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_outcall(switch_core_session_t *sessio
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	} 
+
+	switch_core_session_read_lock(peer_session);
 
 	peer_channel = switch_core_session_get_channel(peer_session);
 	assert(peer_channel != NULL);
@@ -1294,12 +1296,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 {
 	switch_core_thread_session_t *this_audio_thread, *other_audio_thread;
 	switch_channel_t *caller_channel, *peer_channel;
-	time_t start;
 	int stream_id = 0;
-	switch_frame_t *read_frame = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
-
 	caller_channel = switch_core_session_get_channel(session);
 	assert(caller_channel != NULL);
 
@@ -1328,59 +1327,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	this_audio_thread->running = 2;
 
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
-
-	if (switch_core_session_runing(peer_session)) {
-		switch_channel_set_state(peer_channel, CS_RING);
-	} else {
-		switch_core_session_thread_launch(peer_session);
-	}
-
-	time(&start);
-
-	for (;;) {
-		int state = switch_channel_get_state(peer_channel);
-		if (state >= CS_RING) {
-			break;
-		}
-		
-		if (!switch_channel_ready(caller_channel)) {
-			break;
-		}
-		
-		if ((time(NULL) - start) > (time_t)timelimit) {
-			break;
-		}
-		switch_yield(1000);
-	}
-
-	switch_channel_pre_answer(caller_channel);
-	
-
-	while (switch_channel_ready(caller_channel) &&
-		   switch_channel_ready(peer_channel) &&
-		   !switch_channel_test_flag(peer_channel, CF_ANSWERED) &&
-		   !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) &&
-		   ((time(NULL) - start) < (time_t)timelimit)) {
-		
-		/* read from the channel while we wait if the audio is up on it */
-		if (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
-			switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
-			
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				break;
-			}
-			if (read_frame) {
-				//memset(read_frame->data, 0, read_frame->datalen);
-				if (switch_core_session_write_frame(session, read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
-			}
-
-		} else {
-			switch_yield(1000);
-		}
-
-	}
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
 		switch_channel_answer(caller_channel);
