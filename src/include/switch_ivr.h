@@ -164,6 +164,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 													  void *buf,
 													  unsigned int buflen);
 
+/*!
+  \brief Make an outgoing call
+  \param session originating session
+  \param bleg B leg session
+  \param bridgeto the desired remote callstring
+  \return SWITCH_STATUS_SUCCESS if bleg is a running session.
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_outcall(switch_core_session_t *session,
+                                                   switch_core_session_t **bleg,
+                                                   char *bridgeto);
 
 /*!
   \brief Bridge Audio from one session to another
