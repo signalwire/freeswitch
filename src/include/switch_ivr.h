@@ -169,11 +169,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
   \param session originating session
   \param bleg B leg session
   \param bridgeto the desired remote callstring
+  \param table optional state handler table to install on the channel
+  \param cid_name_override override the caller id name
+  \param cid_num_override override the caller id number
   \return SWITCH_STATUS_SUCCESS if bleg is a running session.
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_outcall(switch_core_session_t *session,
-                                                   switch_core_session_t **bleg,
-                                                   char *bridgeto);
+SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
+													 switch_core_session_t **bleg,
+													 char *bridgeto,
+													 const switch_state_handler_table_t *table,
+													 char *cid_name_override,
+													 char *cid_num_override);
 
 /*!
   \brief Bridge Audio from one session to another

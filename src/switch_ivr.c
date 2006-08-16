@@ -1142,9 +1142,12 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 
 
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_outcall(switch_core_session_t *session,
-												   switch_core_session_t **bleg,
-												   char *bridgeto)
+SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
+													 switch_core_session_t **bleg,
+													 char *bridgeto,
+													 const switch_state_handler_table_t *table,
+													 char *cid_name_override,
+													 char *cid_num_override)
 										  
 {
 	switch_core_session_t *peer_session;
@@ -1170,12 +1173,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_outcall(switch_core_session_t *sessio
 		assert(caller_channel != NULL);
 		caller_caller_profile = switch_channel_get_caller_profile(caller_channel);
 
+		if (!cid_name_override) {
+			cid_name_override = caller_caller_profile->caller_id_name;
+		}
+		if (!cid_num_override) {
+			cid_num_override = caller_caller_profile->caller_id_number;
+		}
 
 		caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 												   caller_caller_profile->username,
 												   caller_caller_profile->dialplan,
-												   caller_caller_profile->caller_id_name,
-												   caller_caller_profile->caller_id_number,
+												   cid_name_override,
+												   cid_num_override,
 												   caller_caller_profile->network_addr, 
 												   NULL,
 												   NULL, 
@@ -1184,12 +1193,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_outcall(switch_core_session_t *sessio
 												   caller_caller_profile->context,
 												   chan_data);
 	} else {
-
+		if (!cid_name_override) {
+			cid_name_override = "FreeSWITCH";
+		}
+		if (!cid_num_override) {
+			cid_num_override = "0000000000";
+		}
 		caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 												   NULL,
 												   NULL,
-												   "FreeSWITCH",
-												   "0000000000",
+												   cid_name_override,
+												   cid_num_override,
 												   NULL,
 												   NULL, 
 												   NULL, 
@@ -1212,7 +1226,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_outcall(switch_core_session_t *sessio
 	peer_channel = switch_core_session_get_channel(peer_session);
 	assert(peer_channel != NULL);
 		
-	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
+	if (!table) {
+		table = &audio_bridge_peer_state_handlers;
+	}
+
+	switch_channel_add_state_handler(peer_channel, table);
 
 	if (switch_core_session_runing(peer_session)) {
 		switch_channel_set_state(peer_channel, CS_RING);
@@ -1246,7 +1264,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_outcall(switch_core_session_t *sessio
 		   !switch_channel_test_flag(peer_channel, CF_ANSWERED) &&
 		   !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) &&
 		   ((time(NULL) - start) < (time_t)timelimit)) {
-		
+
 		/* read from the channel while we wait if the audio is up on it */
 		if (session && (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA))) {
 			switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
@@ -1263,7 +1281,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_outcall(switch_core_session_t *sessio
 		} else {
 			switch_yield(1000);
 		}
-
+		
 	}
 
 	if (caller_channel && switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
@@ -1277,6 +1295,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_outcall(switch_core_session_t *sessio
 		switch_channel_hangup(peer_channel, SWITCH_CAUSE_NO_ANSWER);
 		status = SWITCH_STATUS_FALSE;
 	}
+
 
  done:
 	free(chan_type);

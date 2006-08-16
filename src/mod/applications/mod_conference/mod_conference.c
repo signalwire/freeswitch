@@ -1974,148 +1974,32 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 static switch_status_t conference_outcall(conference_obj_t *conference, switch_core_session_t *session, char *bridgeto, char *cid_name, char *cid_num)
 {
 	switch_core_session_t *peer_session;
-	switch_caller_profile_t *caller_profile, *caller_caller_profile;
-	char *chan_type, *chan_data;
-	unsigned int timelimit = 60;
 	switch_channel_t *peer_channel;
-	time_t start;
-	switch_frame_t *read_frame = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *caller_channel = NULL;
 
-	chan_type = strdup(bridgeto);
-		
-	if ((chan_data = strchr(chan_type, '/')) != 0) {
-		*chan_data = '\0';
-		chan_data++;
-	}
-	
-	if (session) {
-		caller_channel = switch_core_session_get_channel(session);
-		assert(caller_channel != NULL);
-		caller_caller_profile = switch_channel_get_caller_profile(caller_channel);
 
-		if (!cid_name) {
-			cid_name = caller_caller_profile->caller_id_name;
-		}
-
-		if (!cid_num) {
-			cid_num = caller_caller_profile->caller_id_number;
-		}
-		
-		caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-												   caller_caller_profile->username,
-												   caller_caller_profile->dialplan,
-												   cid_name,
-												   cid_num,
-												   caller_caller_profile->network_addr, 
-												   NULL, 
-												   NULL, 
-												   caller_caller_profile->rdnis,
-												   caller_caller_profile->source,
-												   caller_caller_profile->context,
-												   chan_data);
-	} else {
-
-		if (!cid_name) {
-			cid_name = conference->caller_id_name;
-		}
-
-		if (!cid_num) {
-			cid_num = conference->caller_id_number;
-		}
-
-		caller_profile = switch_caller_profile_new(conference->pool,
-												   NULL,
-												   NULL,
-												   cid_name,
-												   cid_num,
-												   NULL,
-												   NULL, 
-												   NULL, 
-												   NULL,
-												   (char *) global_app_name,
-												   NULL,
-												   chan_data);
-	}
-
-
-
-	if (switch_core_session_outgoing_channel(session, chan_type, caller_profile, &peer_session, NULL) !=
-		SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(session, &peer_session, bridgeto, &audio_bridge_peer_state_handlers, cid_name, cid_num) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
-		if (caller_channel) {
+		if (session) {
+			caller_channel = switch_core_session_get_channel(session);
 			switch_channel_hangup(caller_channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
 		}
-		status = SWITCH_STATUS_FALSE;
 		goto done;
 	} 
 
+
+	switch_core_session_rwunlock(peer_session);
 	peer_channel = switch_core_session_get_channel(peer_session);
 	assert(peer_channel != NULL);
-		
-	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
-
-	if (switch_core_session_runing(peer_session)) {
-		switch_channel_set_state(peer_channel, CS_RING);
-	} else {
-		switch_core_session_thread_launch(peer_session);
-	}
-
-	time(&start);
-
-	for (;;) {
-		int state = switch_channel_get_state(peer_channel);
-		if (state >= CS_RING) {
-			break;
-		}
-		
-		if (caller_channel && !switch_channel_ready(caller_channel)) {
-			break;
-		}
-		
-		if ((time(NULL) - start) > (time_t)timelimit) {
-			break;
-		}
-		switch_yield(1000);
-	}
-
-	if (caller_channel) {
-		switch_channel_pre_answer(caller_channel);
-	}
-
-	while ((!caller_channel || switch_channel_ready(caller_channel)) &&
-		   !switch_channel_test_flag(peer_channel, CF_ANSWERED) &&
-		   !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) &&
-		   ((time(NULL) - start) < (time_t)timelimit)) {
-		
-		/* read from the channel while we wait if the audio is up on it */
-		if (session && (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA))) {
-			switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
-			
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				break;
-			}
-			if (read_frame) {
-				if (switch_core_session_write_frame(session, read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
-					break;
-				}
-			}
-
-		} else {
-			switch_yield(1000);
-		}
-
-	}
-
+	
 	if (caller_channel && switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
 		switch_channel_answer(caller_channel);
 	}
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 		switch_caller_extension_t *extension = NULL;
-		if ((extension = switch_caller_extension_new(peer_session, caller_profile->destination_number,
-													 caller_profile->destination_number)) == 0) {
+		if ((extension = switch_caller_extension_new(peer_session, conference->name, conference->name)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 			status = SWITCH_STATUS_MEMERR;
 			goto done;
@@ -2132,7 +2016,6 @@ static switch_status_t conference_outcall(conference_obj_t *conference, switch_c
 	}
 
  done:
-	free(chan_type);
 	return status;
 }
 
