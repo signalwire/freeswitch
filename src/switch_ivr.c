@@ -439,7 +439,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					  comment,
 					  date);
 
-
+	assert(read_codec != NULL);
 	interval = read_codec->implementation->microseconds_per_frame / 1000;
 
 
