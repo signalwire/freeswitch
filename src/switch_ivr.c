@@ -1154,6 +1154,41 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 	char buf[10] = "";
 	char *p, term;
 
+
+	if (!strcasecmp(collect->key, "exec")) {
+		char *data;
+		const switch_application_interface_t *application_interface;
+		char *app_name, *app_data;
+
+		if (!(data = collect->file)) {
+			goto wbreak;
+		}
+
+		app_name = data;
+
+		if ((app_data = strchr(app_name, ' '))) {
+			*app_data++ = '\0';
+		}
+		
+		if ((application_interface = switch_loadable_module_get_application_interface(app_name)) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", app_name);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			goto wbreak;
+		}
+
+		if (!application_interface->application_function) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Function for %s\n", app_name);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			goto wbreak;
+		}
+
+		application_interface->application_function(collect->session, app_data);
+		if (switch_channel_get_state(channel) < CS_HANGUP) {
+			switch_channel_set_flag(channel, CF_WINNER);
+		}
+		goto wbreak;
+	}
+
 	while(switch_channel_ready(channel)) {
 		memset(buf, 0, sizeof(buf));
 
