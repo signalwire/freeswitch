@@ -1196,52 +1196,46 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 
 	int32_t i;
 	*idx = -1;
+	int32_t hups = 0;	
 	
-	if (len == 1) {
-		*idx = 0;
-		return (switch_channel_get_state(peer_channels[0]) < CS_HANGUP &&
-				!switch_channel_test_flag(peer_channels[0], CF_ANSWERED) &&
-				!switch_channel_test_flag(peer_channels[0], CF_EARLY_MEDIA)) ? 1 : 0;
-	} else {
-		int32_t hups = 0;
+	for (i = 0; i < len; i++) {
+		if (!peer_channels[i]) {
+			continue;
+		}
+		if (switch_channel_get_state(peer_channels[i]) >= CS_HANGUP) {
+			hups++;
+		} else if ((switch_channel_test_flag(peer_channels[i], CF_ANSWERED) || (len == 1 && switch_channel_test_flag(peer_channels[0], CF_EARLY_MEDIA))) && 
+				   !switch_channel_test_flag(peer_channels[i], CF_TAGGED)) {
 
-		for (i = 0; i < len; i++) {
-			if (!peer_channels[i]) {
-				continue;
-			}
-			if (switch_channel_get_state(peer_channels[i]) >= CS_HANGUP) {
-				hups++;
-			} else if (switch_channel_test_flag(peer_channels[i], CF_ANSWERED) && !switch_channel_test_flag(peer_channels[i], CF_TAGGED)) {
+			if (key) {
+				struct key_collect *collect;
 
-				if (key) {
-					struct key_collect *collect;
-
-					if ((collect = switch_core_session_alloc(peer_sessions[i], sizeof(*collect)))) {
-						switch_channel_set_flag(peer_channels[i], CF_TAGGED);
-						collect->key = key;
-						if (file) {
-							collect->file = switch_core_session_strdup(peer_sessions[i], file);
-						}
-						collect->session = peer_sessions[i];
-						launch_collect_thread(collect);
+				if ((collect = switch_core_session_alloc(peer_sessions[i], sizeof(*collect)))) {
+					switch_channel_set_flag(peer_channels[i], CF_TAGGED);
+					collect->key = key;
+					if (file) {
+						collect->file = switch_core_session_strdup(peer_sessions[i], file);
 					}
-				} else {
-					*idx = i;
-                    return 0;
-					
+					collect->session = peer_sessions[i];
+					launch_collect_thread(collect);
 				}
-			} else if (switch_channel_test_flag(peer_channels[i], CF_WINNER)) {
+			} else {
 				*idx = i;
 				return 0;
+					
 			}
-		}
-
-		if (hups == len) {
+		} else if (switch_channel_test_flag(peer_channels[i], CF_WINNER)) {
+			*idx = i;
 			return 0;
-		} else {
-			return 1;
 		}
 	}
+
+	if (hups == len) {
+		return 0;
+	} else {
+		return 1;
+	}
+	
 }
 
 #define MAX_PEERS 256
@@ -1266,7 +1260,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_memory_pool_t *pool;
 	char *data = NULL;
 	int i, argc;
-	int32_t idx = -1, ccount = 0;
+	int32_t idx = -1;
 	switch_codec_t write_codec = {0};
 	switch_frame_t write_frame = {0};
 	uint8_t err = 0, fdata[1024];
@@ -1301,8 +1295,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (session) {
 		caller_channel = switch_core_session_get_channel(session);
 		assert(caller_channel != NULL);
-
-
 
 		if ((var = switch_channel_get_variable(caller_channel, "group_confirm_key"))) {
 			key = switch_core_session_strdup(session, var);
@@ -1414,15 +1406,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	time(&start);
-	for (i = 0; i < argc; i++) {
-		if (peer_channels[i]) {
-			ccount++;
-		}
-	}
-	
-	if (ccount == 1) {
-		key = file = NULL;
-	}
 
 	for (;;) {
 		for (i = 0; i < argc; i++) {
