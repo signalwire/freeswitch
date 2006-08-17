@@ -1292,7 +1292,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_frame_t *read_frame = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *caller_channel = NULL;
-	switch_memory_pool_t *pool;
+	switch_memory_pool_t *pool = NULL;
 	char *data = NULL;
 	int i, argc;
 	int32_t idx = -1;
