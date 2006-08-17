@@ -1229,9 +1229,9 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 									char *key)
 {
 
-	int32_t i;
+	uint32_t i;
+	uint32_t hups = 0;	
 	*idx = -1;
-	int32_t hups = 0;	
 	
 	for (i = 0; i < len; i++) {
 		if (!peer_channels[i]) {
