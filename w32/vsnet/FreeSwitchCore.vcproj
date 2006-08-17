@@ -17,8 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;&quot;..\..\libs\libresample-0.1.3\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -68,10 +68,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresampled.lib srtp.lib"
-				OutputFile="$(OutDir)/FreeSwitch.dll"
-				LinkIncremental="2"
+				LinkLibraryDependencies="true"
+				AdditionalDependencies="Ws2_32.lib Mswsock.lib Rpcrt4.lib"
+				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.dll"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
 				AddModuleNamesToAssembly=""
 				GenerateDebugInformation="true"
@@ -105,13 +105,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.dll&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.lib&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\htdocs&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="xcopy $(SolutionDir)conf\*.* $(SolutionDir)$(OutDir)\conf\ /C /D /Y&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\db md  $(SolutionDir)$(OutDir)\db&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\log md  $(SolutionDir)$(OutDir)\log&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\log md  $(SolutionDir)$(OutDir)\htdocs&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
@@ -134,7 +134,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;&quot;..\..\libs\libresample-0.1.3\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="2"
@@ -157,12 +157,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="Ws2_32.lib Mswsock.lib libapr-1.lib sqlite.lib libapriconv-1.lib libaprutil-1.lib Rpcrt4.lib libresample.lib srtp.lib"
-				OutputFile="$(OutDir)/FreeSwitch.dll"
+				LinkLibraryDependencies="true"
+				AdditionalDependencies="Ws2_32.lib Mswsock.lib Rpcrt4.lib"
+				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)/FreeSwitchCore.pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -192,7 +193,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(Projectdir)..\..\conf\*.* $(Outdir)\conf\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.dll&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;xcopy &quot;$(Projectdir)..\..\libs\sqlite\$(IntDir) DLL\*.lib&quot; $(Outdir)\ /C /D /Y&#x0D;&#x0A;if not exist $(Outdir)\db md  $(Outdir)\db&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\log&#x0D;&#x0A;if not exist $(Outdir)\log md  $(Outdir)\htdocs&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="xcopy $(SolutionDir)conf\*.* $(SolutionDir)$(OutDir)\conf\ /C /D /Y&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\db md  $(SolutionDir)$(OutDir)\db&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\log md  $(SolutionDir)$(OutDir)\log&#x0D;&#x0A;if not exist $(SolutionDir)$(OutDir)\log md  $(SolutionDir)$(OutDir)\htdocs&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

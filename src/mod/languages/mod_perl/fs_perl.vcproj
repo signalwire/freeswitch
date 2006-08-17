@@ -63,8 +63,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\Perl\$(ProjectName).dll"
-				LinkIncremental="2"
+				OutputFile="$(SolutionDir)$(OutDir)/Perl/$(InputName).dll"
+				Version=""
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\w32\vsnet\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -142,7 +143,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\Perl\$(ProjectName).dll"
+				OutputFile="$(SolutionDir)$(OutDir)/Perl/$(InputName).dll"
+				Version=""
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\w32\vsnet\$(ConfigurationName)&quot;"
 				GenerateDebugInformation="true"

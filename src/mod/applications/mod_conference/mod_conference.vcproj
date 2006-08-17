@@ -17,8 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
@@ -63,11 +63,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_conference.dll"
-				LinkIncremental="2"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_conference.pdb"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary="$(OutDir)/mod_conference.lib"
 				TargetMachine="1"
@@ -99,8 +99,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
@@ -142,10 +142,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_conference.dll"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

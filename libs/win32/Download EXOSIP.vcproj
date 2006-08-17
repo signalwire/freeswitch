@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="Download EXOSIP"
+	ProjectGUID="{C038D7B4-B116-4C3E-93E2-45D295429808}"
+	RootNamespace="Download EXOSIP"
+	Keyword="Win32Proj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				Description="Downloading EXOSIP."
+				CommandLine="if not exist $(ProjectDir)..\libosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\libeXosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libeXosip2-2.2.2.tar.gz $(ProjectDir).."
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				Description="Downloading EXOSIP."
+				CommandLine="if not exist $(ProjectDir)..\libosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\libeXosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libeXosip2-2.2.2.tar.gz $(ProjectDir).."
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

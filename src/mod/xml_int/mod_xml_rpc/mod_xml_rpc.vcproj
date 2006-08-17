@@ -17,15 +17,15 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_XMLRpc Debug"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c-1.03.14\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c-1.03.14&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;ABYSS_WIN32;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -64,12 +64,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="curllib.lib  Winmm.lib Ws2_32.lib xmlrpcD.lib Abyss.lib xml.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_xml_rpc.dll"
-				LinkIncremental="2"
+				AdditionalDependencies="Winmm.lib Ws2_32.lib"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;..\..\..\..\libs\xmlrpc\lib;&quot;..\..\..\..\libs\xmlrpc\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibD&quot;"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_xml_rpc.pdb"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary="$(OutDir)/mod_xml_rpc.lib"
 				TargetMachine="1"
@@ -101,15 +101,15 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_XMLRpc Release"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -125,7 +125,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c-1.03.14\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c-1.03.14&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;ABYSS_WIN32;CURL_STATICLIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -145,11 +145,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="curllib.lib  Winmm.lib Ws2_32.lib xmlrpc.lib Abyss.lib xml.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_xml_rpc.dll"
+				AdditionalDependencies="Winmm.lib Ws2_32.lib"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;..\..\..\..\libs\xmlrpc\lib;&quot;..\..\..\..\libs\xmlrpc\lib\abyss\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\apr-util\xml\expat\lib\LibR&quot;"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

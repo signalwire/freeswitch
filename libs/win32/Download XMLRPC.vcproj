@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="Download XMLRPC"
+	ProjectGUID="{EC8D4AE8-0F3E-454A-BFB8-D56A5D9C0121}"
+	RootNamespace="Download XMLRPC"
+	Keyword="Win32Proj"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				Description="Downloading XMLRPC."
+				CommandLine="if not exist $(ProjectDir)..\xmlrpc-c-1.03.14 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/xmlrpc-c-1.03.14.tgz $(ProjectDir)..&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="10"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				Description="Downloading XMLRPC."
+				CommandLine="if not exist $(ProjectDir)..\xmlrpc-c-1.03.14 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/xmlrpc-c-1.03.14.tgz $(ProjectDir)..&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

@@ -44,13 +44,6 @@ BEGIN_EXTERN_C
 
 #ifdef _MSC_VER
 
-#ifndef FREESWITCHCORE_EXPORTS
-#pragma comment(lib, "FreeSwitchCore.lib")
-#pragma comment(lib, "libapr-1.lib")
-#pragma comment(lib, "libaprutil-1.lib")
-#pragma comment(lib, "libapriconv-1.lib")
-#pragma comment(lib, "sqlite.lib")
-#endif
 
 /* disable the following warnings 
  * C4152: non standard extension, function/data ptr conversion in expression

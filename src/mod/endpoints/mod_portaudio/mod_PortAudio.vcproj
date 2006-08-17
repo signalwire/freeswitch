@@ -17,15 +17,15 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_PortAudio Debug"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio\pa_common&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio\pa_win_wmme&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio_v18_1\pa_common&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio_v18_1\pa_win_wmme&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -65,12 +65,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIMBCTD"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib  PAStaticWMMED.lib Winmm.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_PortAudio.dll"
-				LinkIncremental="2"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib  Winmm.lib"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\portaudio\winvc\Lib&quot;;..\..\..\..\w32\vsnet\$(OutDir)"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_PortAudio.pdb"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary="$(OutDir)/mod_PortAudio.lib"
 				TargetMachine="1"
@@ -102,15 +102,15 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_PortAudio Release"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -126,7 +126,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio\pa_common&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio\pa_win_wmme&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio_v18_1\pa_common&quot;;&quot;$(InputDir)..\..\..\..\libs\portaudio_v18_1\pa_win_wmme&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
@@ -146,11 +146,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib  PAStaticWMME.lib Winmm.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_PortAudio.dll"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib Winmm.lib"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\portaudio\winvc\Lib&quot;;..\..\..\..\w32\vsnet\$(OutDir)"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

@@ -17,15 +17,15 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_sndfile Debug"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libsndfile\Win32&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\win32\libsndfile\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -64,12 +64,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libsndfile.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_sndfile.dll"
-				LinkIncremental="2"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\libsndfile\Win32\$(OutDir)&quot;;&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_sndfile.pdb"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary="$(OutDir)/mod_sndfile.lib"
 				TargetMachine="1"
@@ -101,15 +100,15 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_sndfile Release"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -125,7 +124,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libsndfile\Win32&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\win32\libsndfile\&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -145,11 +144,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libsndfile.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_sndfile.dll"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\libsndfile\Win32\$(OutDir)&quot;;&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

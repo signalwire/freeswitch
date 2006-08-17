@@ -162,21 +162,6 @@ If BuildCore Then
 	If Not FSO.FolderExists(LibDestDir & "include") Then
 		FSO.CreateFolder(LibDestDir & "include")
 	End If
-	BuildLibs_apr BuildDebug, BuildRelease
-	FSO.CopyFile LibDestDir & "apr\include\*.h", LibDestDir & "include"
-	BuildLibs_apriconv BuildDebug, BuildRelease
-	FSO.CopyFile LibDestDir & "apr-iconv\include\*.h", LibDestDir & "include"
-	BuildLibs_aprutil BuildDebug, BuildRelease
-	FSO.CopyFile LibDestDir & "apr-util\include\*.h", LibDestDir & "include"
-	BuildLibs_libresample BuildDebug, BuildRelease
-	FSO.CopyFile LibDestDir & "libresample\include\*.h", LibDestDir & "include"
-	BuildLibs_sqlite BuildDebug, BuildRelease	
-	FSO.CopyFile LibDestDir & "sqlite\*.h", LibDestDir & "include"
-	BuildLibs_srtp BuildDebug, BuildRelease
-	FSO.CopyFile LibDestDir & "srtp\include\*.h", LibDestDir & "include"
-	FSO.CopyFile LibDestDir & "srtp\crypto\include\*.h", LibDestDir & "include"
-	BuildLibs_pcre BuildDebug, BuildRelease
-	FSO.CopyFile LibDestDir & "pcre\win32\pcre.h", LibDestDir & "include"
 End If
 
 If BuildModXMLRpc Then
@@ -195,7 +180,7 @@ End If
 
 If BuildModDingaling Then
 	BuildLibs_iksemel BuildDebug, BuildRelease
-	BuildLibs_libdingaling BuildDebug, BuildRelease
+'	BuildLibs_libdingaling BuildDebug, BuildRelease
 End If
 
 If BuildModIaxChan Then

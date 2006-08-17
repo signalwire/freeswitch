@@ -63,8 +63,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/FreeSwitch.exe"
-				LinkIncremental="2"
+				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.exe"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(OutDir)"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)/FreeSwitchConsole.pdb"
@@ -141,10 +141,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/FreeSwitch.exe"
+				OutputFile="$(SolutionDir)$(ConfigurationName)/FreeSwitch.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(OutDir)"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)/FreeSwitchConsole.pdb"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

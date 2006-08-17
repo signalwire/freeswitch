@@ -17,15 +17,15 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_iax Debug"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -65,12 +65,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_iax.dll"
-				LinkIncremental="2"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib Winmm.lib"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\iax\$(OutDir)&quot;;&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_iax.pdb"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary="$(OutDir)/mod_iax.lib"
 				TargetMachine="1"
@@ -102,15 +102,15 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_iax Release"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -147,11 +147,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib libiax2.lib Winmm.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_iax.dll"
+				AdditionalDependencies="Ws2_32.lib Iphlpapi.lib Winmm.lib"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\iax\$(OutDir)&quot;;&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

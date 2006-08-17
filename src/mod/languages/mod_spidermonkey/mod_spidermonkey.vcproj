@@ -17,15 +17,15 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_SpiderMonkey Debug"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js20051231\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;DEBUG;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -64,13 +64,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="js32.lib curllib.lib ws2_32.lib winmm.lib sqlite.lib fdlibm.lib libnspr4.lib libplc4.lib libplds4.lib libteletone.lib FreeSwitchCore.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_spidermonkey.dll"
-				LinkIncremental="2"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\js\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\curl\lib\$(OutDir)&quot;;&quot;..\..\..\..\libs\sqlite\$(OutDir)&quot;;..\..\..\..\libs\js\nspr\lib;&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;..\..\..\..\libs\libetpan\build-windows\libetpan\$(OutDir)&quot;"
+				LinkLibraryDependencies="true"
+				AdditionalDependencies="ws2_32.lib winmm.lib libnspr4.lib libplc4.lib libplds4.lib"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\lib&quot;"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/mod_spidermonkey.pdb"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary="$(OutDir)/mod_spidermonkey.lib"
 				TargetMachine="1"
@@ -102,15 +102,15 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="cscript /nologo &quot;$(InputDir)..\..\..\..\w32\vsnet\getlibs.vbs&quot; Mod_SpiderMonkey Release"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -126,7 +126,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js20051231\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -146,12 +146,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				LinkLibraryDependencies="false"
-				AdditionalDependencies="js32.lib curllib.lib ws2_32.lib winmm.lib sqlite.lib fdlibm.lib libnspr4.lib libplc4.lib libplds4.lib libteletone.lib FreeSwitchCore.lib"
-				OutputFile="..\..\..\..\w32\vsnet\$(OutDir)/mod/mod_spidermonkey.dll"
+				LinkLibraryDependencies="true"
+				AdditionalDependencies="ws2_32.lib winmm.lib libnspr4.lib libplc4.lib libplds4.lib"
+				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\js\src\$(OutDir)&quot;;&quot;..\..\..\..\libs\curl\lib\$(OutDir)&quot;;&quot;..\..\..\..\libs\sqlite\$(OutDir)&quot;;..\..\..\..\libs\js\nspr\lib;&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;..\..\..\..\libs\libetpan\build-windows\libetpan\$(OutDir)&quot;"
+				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\lib&quot;"
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
