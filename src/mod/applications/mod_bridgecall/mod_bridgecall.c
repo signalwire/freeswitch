@@ -40,18 +40,23 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *caller_channel;
 	switch_core_session_t *peer_session;
-	unsigned int timelimit = 60; /* probably a useful option to pass in when there's time */
+	unsigned int timelimit = 60;
+	char *var;
 
 	caller_channel = switch_core_session_get_channel(session);
 	assert(caller_channel != NULL);
 
-	if (switch_ivr_originate(session, &peer_session, data, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+	if ((var = switch_channel_get_variable(caller_channel, "call_timeout"))) {
+		timelimit = atoi(var);
+	}
+
+	if (switch_ivr_originate(session, &peer_session, data, timelimit, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
 		switch_channel_hangup(caller_channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
 		return;
 	} else {
 		/* peer channel is read locked now the bridge func will unlock it for us */
-		switch_ivr_multi_threaded_bridge(session, peer_session, timelimit, NULL, NULL, NULL);
+		switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
 	}
 }
 

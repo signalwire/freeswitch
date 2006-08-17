@@ -355,6 +355,8 @@ CF_LOCK_THREAD	= (1 <<  6) - Prevent the channel thread from exiting while this 
 CF_BRIDGED		= (1 <<  7) - Channel in a bridge
 CF_HOLD			= (1 <<  8) - Channel is on hold
 CF_SERVICE		= (1 <<  9) - Channel has a service thread
+CF_TAGGED		= (1 << 10) - Channel is tagged
+CF_WINNER		= (1 << 10) - Channel is the winner
 </pre>
  */
 
@@ -368,7 +370,9 @@ typedef enum {
 	CF_LOCK_THREAD	= (1 <<  6),
 	CF_BRIDGED		= (1 <<  7),
 	CF_HOLD			= (1 <<  8),
-	CF_SERVICE		= (1 <<  9)
+	CF_SERVICE		= (1 <<  9),
+	CF_TAGGED		= (1 << 10),
+	CF_WINNER		= (1 << 11)
 } switch_channel_flag_t;
 
 
@@ -636,7 +640,8 @@ typedef enum {
 	SWITCH_CAUSE_PROTOCOL_ERROR = 111,
 	SWITCH_CAUSE_INTERWORKING = 127,
 	SWITCH_CAUSE_CRASH = 500,
-	SWITCH_CAUSE_SYSTEM_SHUTDOWN = 501
+	SWITCH_CAUSE_SYSTEM_SHUTDOWN = 501,
+	SWITCH_CAUSE_LOSE_RACE = 502
 } switch_call_cause_t;
 
 

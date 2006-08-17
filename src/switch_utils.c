@@ -75,8 +75,9 @@ SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key)
 SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen)
 {
 	int argc;
-	char *scan;
-	int paren = 0;
+	char *ptr;
+	int quot = 0;
+	char qc = '"';
 
 	if (!buf || !array || !arraylen) {
 		return 0;
@@ -84,25 +85,33 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 
 	memset(array, 0, arraylen * sizeof(*array));
 
-	scan = buf;
+	ptr = buf;
 
-	for (argc = 0; *scan && (argc < arraylen - 1); argc++) {
-		array[argc] = scan;
-		for (; *scan; scan++) {
-			if (*scan == '(')
-				paren++;
-			else if (*scan == ')') {
-				if (paren)
-					paren--;
-			} else if ((*scan == delim) && !paren) {
-				*scan++ = '\0';
+	for (argc = 0; *ptr && (argc < arraylen - 1); argc++) {
+		array[argc] = ptr;
+		for (; *ptr; ptr++) {
+			if (*ptr == qc) {
+				if (quot) {
+					quot--;
+				} else {
+					quot++;
+				}
+			} else if ((*ptr == delim) && !quot) {
+				*ptr++ = '\0';
 				break;
 			}
 		}
 	}
 
-	if (*scan) {
-		array[argc++] = scan;
+	if (*ptr) {
+		char *e;
+		if (*ptr == qc) {
+			ptr++;
+		}
+		if ((e = strchr(ptr, qc))) {
+			*e = '\0';
+		}
+		array[argc++] = ptr;
 	}
 
 	return argc;

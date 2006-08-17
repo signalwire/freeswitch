@@ -541,7 +541,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (fh->speed > 2) {
 			fh->speed = 2;
-		} else if(fh->speed < -2) {
+		} else if (fh->speed < -2) {
 			fh->speed = -2;
 		}
 		
@@ -1140,131 +1140,344 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 	/*.on_hold */ audio_bridge_on_hold,
 };
 
+struct key_collect {
+	char *key;
+	char *file;
+	switch_core_session_t *session;
+};
 
 
+static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void *obj)
+{
+	struct key_collect *collect = (struct key_collect *) obj;
+	switch_channel_t *channel = switch_core_session_get_channel(collect->session);
+	char buf[10] = "";
+	char *p, term;
+
+	while(switch_channel_ready(channel)) {
+		memset(buf, 0, sizeof(buf));
+
+		if (collect->file) {
+			switch_ivr_play_file(collect->session, NULL, collect->file, NULL, NULL, buf, sizeof(buf));
+		} else {
+			switch_ivr_collect_digits_count(collect->session, buf, sizeof(buf), 1, "", &term, 0);
+		}
+
+		for(p = buf; *p; p++) {
+			if (*collect->key == *p) {
+				switch_channel_set_flag(channel, CF_WINNER);
+				goto wbreak;
+			}
+		}
+	}
+ wbreak:
+
+	return NULL;
+}
+
+static void launch_collect_thread(struct key_collect *collect)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	
+	switch_threadattr_create(&thd_attr, switch_core_session_get_pool(collect->session));
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_thread_create(&thread, thd_attr, collect_thread_run, collect, switch_core_session_get_pool(collect->session));
+}
+
+static uint8_t check_channel_status(switch_channel_t **peer_channels,
+									switch_core_session_t **peer_sessions,
+									uint32_t len,
+									int32_t *idx,
+									char *file,
+									char *key)
+{
+
+	int32_t i;
+	*idx = -1;
+	
+	if (len == 1) {
+		*idx = 0;
+		return (switch_channel_get_state(peer_channels[0]) < CS_HANGUP &&
+				!switch_channel_test_flag(peer_channels[0], CF_ANSWERED) &&
+				!switch_channel_test_flag(peer_channels[0], CF_EARLY_MEDIA)) ? 1 : 0;
+	} else {
+		int32_t hups = 0;
+
+		for (i = 0; i < len; i++) {
+			if (!peer_channels[i]) {
+				continue;
+			}
+			if (switch_channel_get_state(peer_channels[i]) >= CS_HANGUP) {
+				hups++;
+			} else if (switch_channel_test_flag(peer_channels[i], CF_ANSWERED) && !switch_channel_test_flag(peer_channels[i], CF_TAGGED)) {
+
+				if (key) {
+					struct key_collect *collect;
+
+					if ((collect = switch_core_session_alloc(peer_sessions[i], sizeof(*collect)))) {
+						switch_channel_set_flag(peer_channels[i], CF_TAGGED);
+						collect->key = key;
+						if (file) {
+							collect->file = switch_core_session_strdup(peer_sessions[i], file);
+						}
+						collect->session = peer_sessions[i];
+						launch_collect_thread(collect);
+					}
+				} else {
+					*idx = i;
+                    return 0;
+					
+				}
+			} else if (switch_channel_test_flag(peer_channels[i], CF_WINNER)) {
+				*idx = i;
+				return 0;
+			}
+		}
+
+		if (hups == len) {
+			return 0;
+		} else {
+			return 1;
+		}
+	}
+}
+
+#define MAX_PEERS 256
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,
 													 char *bridgeto,
+													 uint32_t timelimit_sec,
 													 const switch_state_handler_table_t *table,
 													 char *cid_name_override,
 													 char *cid_num_override)
 										  
 {
-	switch_core_session_t *peer_session;
-	switch_caller_profile_t *caller_profile, *caller_caller_profile;
-	char *chan_type, *chan_data;
-	unsigned int timelimit = 60;
-	switch_channel_t *peer_channel;
+	char *peer_names[MAX_PEERS];
+	switch_core_session_t *peer_session, *peer_sessions[MAX_PEERS];
+	switch_caller_profile_t *caller_profiles[MAX_PEERS], *caller_caller_profile;
+	char *chan_type = NULL, *chan_data;
+	switch_channel_t *peer_channel = NULL, *peer_channels[MAX_PEERS];
 	time_t start;
 	switch_frame_t *read_frame = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *caller_channel = NULL;
+	switch_memory_pool_t *pool;
+	char *data = NULL;
+	int i, argc;
+	int32_t idx = -1, ccount = 0;
+	switch_codec_t write_codec = {0};
+	switch_frame_t write_frame = {0};
+	uint8_t err = 0, fdata[1024];
+	char *file = NULL, *key = NULL, *odata, *var;
 
+	write_frame.data = fdata;
+	
 	*bleg = NULL;
-	chan_type = strdup(bridgeto);
-		
-	if ((chan_data = strchr(chan_type, '/')) != 0) {
-		*chan_data = '\0';
-		chan_data++;
+	odata = strdup(bridgeto);
+	data = odata;
+
+	if (!strncasecmp(data, "confirm=", 8)) {
+		data += 8;
+		file = data;
+		if ((data = strchr(file, ';'))) {
+			*data++ = '\0';
+			if ((key = strchr(file, ':'))) {
+				*key++ = '\0';
+			} else {
+				err++;
+			}
+		} else {
+			err++;
+		}
+	}
+
+	if (err) {
+		status = SWITCH_STATUS_GENERR;
+		goto done;
 	}
 	
 	if (session) {
 		caller_channel = switch_core_session_get_channel(session);
 		assert(caller_channel != NULL);
-		caller_caller_profile = switch_channel_get_caller_profile(caller_channel);
 
-		if (!cid_name_override) {
-			cid_name_override = caller_caller_profile->caller_id_name;
-		}
-		if (!cid_num_override) {
-			cid_num_override = caller_caller_profile->caller_id_number;
-		}
 
-		caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-												   caller_caller_profile->username,
-												   caller_caller_profile->dialplan,
-												   cid_name_override,
-												   cid_num_override,
-												   caller_caller_profile->network_addr, 
-												   NULL,
-												   NULL, 
-												   caller_caller_profile->rdnis,
-												   caller_caller_profile->source,
-												   caller_caller_profile->context,
-												   chan_data);
-	} else {
-		if (!cid_name_override) {
-			cid_name_override = "FreeSWITCH";
+
+		if ((var = switch_channel_get_variable(caller_channel, "group_confirm_key"))) {
+			key = switch_core_session_strdup(session, var);
+			if ((var = switch_channel_get_variable(caller_channel, "group_confirm_file"))) {
+				file = switch_core_session_strdup(session, var);
+			}
 		}
-		if (!cid_num_override) {
-			cid_num_override = "0000000000";
-		}
-		caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-												   NULL,
-												   NULL,
-												   cid_name_override,
-												   cid_num_override,
-												   NULL,
-												   NULL, 
-												   NULL, 
-												   NULL,
-												   __FILE__,
-												   NULL,
-												   chan_data);
+	}
+	
+
+
+	if (file && !strcmp(file, "undef")) {
+		file = NULL;
 	}
 
-
-
-	if (switch_core_session_outgoing_channel(session, chan_type, caller_profile, &peer_session, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
-		status = SWITCH_STATUS_FALSE;
-		goto done;
-	} 
-
-	switch_core_session_read_lock(peer_session);
-
-	peer_channel = switch_core_session_get_channel(peer_session);
-	assert(peer_channel != NULL);
+	argc = switch_separate_string(data, '&', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
+	
+	for (i = 0; i < argc; i++) {
 		
-	if (!table) {
-		table = &audio_bridge_peer_state_handlers;
-	}
+		chan_type = peer_names[i];
+		if ((chan_data = strchr(chan_type, '/')) != 0) {
+			*chan_data = '\0';
+			chan_data++;
+		}
+	
+		if (session) {
+			if (!switch_channel_ready(caller_channel)) {
+				status = SWITCH_STATUS_FALSE;
+				goto done;
+			}
 
-	switch_channel_add_state_handler(peer_channel, table);
+			caller_caller_profile = switch_channel_get_caller_profile(caller_channel);
 
-	if (switch_core_session_runing(peer_session)) {
-		switch_channel_set_state(peer_channel, CS_RING);
-	} else {
-		switch_core_session_thread_launch(peer_session);
+			if (!cid_name_override) {
+				cid_name_override = caller_caller_profile->caller_id_name;
+			}
+			if (!cid_num_override) {
+				cid_num_override = caller_caller_profile->caller_id_number;
+			}
+
+			caller_profiles[i] = switch_caller_profile_new(switch_core_session_get_pool(session),
+														   caller_caller_profile->username,
+														   caller_caller_profile->dialplan,
+														   cid_name_override,
+														   cid_num_override,
+														   caller_caller_profile->network_addr, 
+														   NULL,
+														   NULL, 
+														   caller_caller_profile->rdnis,
+														   caller_caller_profile->source,
+														   caller_caller_profile->context,
+														   chan_data);
+			pool = NULL;
+		} else {
+			if (!cid_name_override) {
+				cid_name_override = "FreeSWITCH";
+			}
+			if (!cid_num_override) {
+				cid_num_override = "0000000000";
+			}
+
+			if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
+				status = SWITCH_STATUS_TERM;
+				goto done;
+			}
+
+			caller_profiles[i] = switch_caller_profile_new(pool,
+														   NULL,
+														   NULL,
+														   cid_name_override,
+														   cid_num_override,
+														   NULL,
+														   NULL, 
+														   NULL,
+														   NULL,
+														   __FILE__,
+														   NULL,
+														   chan_data);
+		}
+
+
+		if (switch_core_session_outgoing_channel(session, chan_type, caller_profiles[i], &peer_sessions[i], pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
+			if (pool) {
+				switch_core_destroy_memory_pool(&pool);
+			}
+			caller_profiles[i] = NULL;
+			peer_channels[i] = NULL;
+			peer_sessions[i] = NULL;
+			continue;
+		} 
+		pool = NULL;
+	
+		peer_channels[i] = switch_core_session_get_channel(peer_sessions[i]);
+		assert(peer_channels[i] != NULL);
+		
+		if (!table) {
+			table = &audio_bridge_peer_state_handlers;
+		}
+
+		switch_channel_add_state_handler(peer_channels[i], table);
+
+		if (switch_core_session_runing(peer_sessions[i])) {
+			switch_channel_set_state(peer_channels[i], CS_RING);
+		} else {
+			switch_core_session_thread_launch(peer_sessions[i]);
+		}
 	}
 
 	time(&start);
+	for (i = 0; i < argc; i++) {
+		if (peer_channels[i]) {
+			ccount++;
+		}
+	}
+	
+	if (ccount == 1) {
+		key = file = NULL;
+	}
 
 	for (;;) {
-		int state = switch_channel_get_state(peer_channel);
-		if (state >= CS_RING) {
-			break;
-		}
-		
-		if (caller_channel && !switch_channel_ready(caller_channel)) {
-			break;
-		}
-		
-		if ((time(NULL) - start) > (time_t)timelimit) {
-			break;
-		}
-		switch_yield(1000);
-	}
+		for (i = 0; i < argc; i++) {
+			int state;
 
-	if (caller_channel) {
+			if (!peer_channels[i]) {
+				continue;
+			}
+
+			state = switch_channel_get_state(peer_channels[i]);
+
+			if (state >= CS_RING) {
+				goto endfor1;
+			}
+		
+			if (caller_channel && !switch_channel_ready(caller_channel)) {
+				break;
+			}
+		
+			if ((time(NULL) - start) > (time_t)timelimit_sec) {
+				break;
+			}
+			switch_yield(1000);
+		}
+	}
+ endfor1:
+
+	if (session) {
+		switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 		switch_channel_pre_answer(caller_channel);
+
+		if (switch_core_codec_init(&write_codec,
+								   "L16",
+								   read_codec->implementation->samples_per_second,
+								   read_codec->implementation->microseconds_per_frame / 1000,
+								   1,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								   NULL,
+								   pool) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
+							  read_codec->implementation->samples_per_second,
+							  read_codec->implementation->microseconds_per_frame / 1000);
+			write_frame.codec = &write_codec;
+			write_frame.datalen = read_codec->implementation->bytes_per_frame;
+			write_frame.samples = write_frame.datalen / 2;
+			memset(write_frame.data, 255, write_frame.datalen);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error!");
+			switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
+		}
 	}
 
-	while ((!caller_channel || switch_channel_ready(caller_channel)) &&
-		   !switch_channel_test_flag(peer_channel, CF_ANSWERED) &&
-		   !switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA) &&
-		   ((time(NULL) - start) < (time_t)timelimit)) {
-
+	while ((!caller_channel || switch_channel_ready(caller_channel)) && 
+		   check_channel_status(peer_channels, peer_sessions, argc, &idx, file, key) && ((time(NULL) - start) < (time_t)timelimit_sec)) {
+		
 		/* read from the channel while we wait if the audio is up on it */
 		if (session && (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA))) {
 			switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
@@ -1273,7 +1486,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				break;
 			}
 			if (read_frame) {
-				if (switch_core_session_write_frame(session, read_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
+				if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
 			}
@@ -1284,11 +1497,32 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		
 	}
 
+	switch_core_session_reset(session);
+
+	for (i = 0; i < argc; i++) {
+		if (!peer_channels[i]) {
+			continue;
+		}
+		if (i != idx) {
+			switch_channel_hangup(peer_channels[i], SWITCH_CAUSE_LOSE_RACE);
+		}
+	}
+
+
+	if (idx > -1) {
+		peer_session = peer_sessions[idx];
+		peer_channel = peer_channels[idx];
+	} else {
+		status = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
 	if (caller_channel && switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
 		switch_channel_answer(caller_channel);
 	}
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
+		switch_core_session_read_lock(peer_session);
 		*bleg = peer_session;
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
@@ -1298,18 +1532,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 
  done:
-	free(chan_type);
+	if (odata) {
+		free(odata);
+	}
+	if (write_codec.implementation) {
+		switch_core_codec_destroy(&write_codec);
+	}
 	return status;
 }
 
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_session_t *session, 
-															   switch_core_session_t *peer_session,
-															   unsigned int timelimit,
-															   switch_input_callback_function_t input_callback,
-															   void *session_data,
-															   void *peer_session_data)
-															   
+																 switch_core_session_t *peer_session,
+																 switch_input_callback_function_t input_callback,
+																 void *session_data,
+																 void *peer_session_data)
+	 
 
 															   
 {

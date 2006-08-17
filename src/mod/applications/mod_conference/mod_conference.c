@@ -192,7 +192,12 @@ static switch_status_t conference_say(conference_obj_t *conference, char *text, 
 static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
 static switch_status_t conf_function(char *buf, switch_core_session_t *session, switch_stream_handle_t *stream);
 static switch_status_t audio_bridge_on_ring(switch_core_session_t *session);
-static switch_status_t conference_outcall(conference_obj_t *conference, switch_core_session_t *session, char *bridgeto, char *cid_name, char *cid_num);
+static switch_status_t conference_outcall(conference_obj_t *conference,
+										  switch_core_session_t *session,
+										  char *bridgeto,
+										  uint32_t timeout,
+										  char *cid_name,
+										  char *cid_num);
 static void conference_function(switch_core_session_t *session, char *data);
 static void launch_conference_thread(conference_obj_t *conference);
 static void *SWITCH_THREAD_FUNC input_thread_run(switch_thread_t *thread, void *obj);
@@ -1387,7 +1392,7 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 					goto done;
 				} else if (!strcasecmp(argv[1], "dial")) {
 					if (argc > 2) {
-						conference_outcall(conference, NULL, argv[2], argv[3], argv[4]);
+						conference_outcall(conference, NULL, argv[2], 60, argv[3], argv[4]);
 						stream->write_function(stream, "OK\n");
 						goto done;
 					} else {
@@ -1971,7 +1976,12 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 	/*.on_hold */ NULL,
 };
 
-static switch_status_t conference_outcall(conference_obj_t *conference, switch_core_session_t *session, char *bridgeto, char *cid_name, char *cid_num)
+static switch_status_t conference_outcall(conference_obj_t *conference,
+										  switch_core_session_t *session,
+										  char *bridgeto,
+										  uint32_t timeout,
+										  char *cid_name,
+										  char *cid_num)
 {
 	switch_core_session_t *peer_session;
 	switch_channel_t *peer_channel;
@@ -1979,7 +1989,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference, switch_c
 	switch_channel_t *caller_channel = NULL;
 
 
-	if (switch_ivr_originate(session, &peer_session, bridgeto, &audio_bridge_peer_state_handlers, cid_name, cid_num) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(session, &peer_session, bridgeto, timeout, &audio_bridge_peer_state_handlers, cid_name, cid_num) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
 		if (session) {
 			caller_channel = switch_core_session_get_channel(session);
@@ -2172,7 +2182,11 @@ static void conference_function(switch_core_session_t *session, char *data)
 
 			if (strlen(pin) < strlen(conference->pin)) {
 				buf = pin + strlen(pin);
-				switch_ivr_collect_digits_count(session, buf, sizeof(pin) - (unsigned int)strlen(pin), (unsigned int)strlen(conference->pin) - (unsigned int)strlen(pin), "#", &term, 10000);
+				switch_ivr_collect_digits_count(session,
+												buf,
+												sizeof(pin) - (unsigned int)strlen(pin),
+												(unsigned int)strlen(conference->pin) - (unsigned int)strlen(pin),
+												"#", &term, 10000);
 			}
 
 			if (strcmp(pin, conference->pin)) {
@@ -2196,7 +2210,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 	}
 
 	if (bridgeto) {
-		if (conference_outcall(conference, session, bridgeto, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+		if (conference_outcall(conference, session, bridgeto, 60, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
 	}

@@ -84,6 +84,7 @@ static struct switch_cause_table CAUSE_CHART[] = {
 	{ "INTERWORKING", SWITCH_CAUSE_INTERWORKING },
 	{ "CRASH", SWITCH_CAUSE_CRASH },
 	{ "SYSTEM_SHUTDOWN", SWITCH_CAUSE_SYSTEM_SHUTDOWN },
+	{ "LOSE_RACE", SWITCH_CAUSE_LOSE_RACE },
 	{ NULL, 0 }
 };
 
@@ -798,17 +799,20 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
 
 	assert(channel != NULL);
 
-
-	for (index = 0; index < channel->state_handler_index; index++) {
-		if (channel->state_handlers[index] != state_handler) {
-			new_handlers[i++] = channel->state_handlers[index];
+	if (state_handler) {
+		for (index = 0; index < channel->state_handler_index; index++) {
+			if (channel->state_handlers[index] != state_handler) {
+				new_handlers[i++] = channel->state_handlers[index];
+			}
 		}
 	}
 	for (index = 0; index < SWITCH_MAX_STATE_HANDLERS; index++) {
 		channel->state_handlers[index] = NULL;
 	}
-	for (index = 0; index < i; index++) {
-		channel->state_handlers[index] = new_handlers[i];
+	if (state_handler) {
+		for (index = 0; index < i; index++) {
+			channel->state_handlers[index] = new_handlers[i];
+		}
 	}
 
 }

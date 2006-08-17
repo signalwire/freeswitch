@@ -1903,7 +1903,7 @@ static JSBool js_bridge(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 		return JS_FALSE;
 	}
 
-	switch_ivr_multi_threaded_bridge(jss_a->session, jss_b->session, timelimit, NULL, NULL, NULL);
+	switch_ivr_multi_threaded_bridge(jss_a->session, jss_b->session, NULL, NULL, NULL);
 	return JS_TRUE;
 }
 

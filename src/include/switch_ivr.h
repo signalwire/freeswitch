@@ -169,6 +169,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
   \param session originating session
   \param bleg B leg session
   \param bridgeto the desired remote callstring
+  \param timelimit_sec timeout in seconds for outgoing call
   \param table optional state handler table to install on the channel
   \param cid_name_override override the caller id name
   \param cid_num_override override the caller id number
@@ -177,6 +178,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,
 													 char *bridgeto,
+													 uint32_t timelimit_sec,
 													 const switch_state_handler_table_t *table,
 													 char *cid_name_override,
 													 char *cid_num_override);
@@ -185,18 +187,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
   \brief Bridge Audio from one session to another
   \param session one session
   \param peer_session the other session
-  \param timelimit maximum number of seconds to wait for both channels to be answered
   \param dtmf_callback code to execute if any dtmf is dialed during the bridge
   \param session_data data to pass to the DTMF callback for session
   \param peer_session_data data to pass to the DTMF callback for peer_session
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_session_t *session, 
-															   switch_core_session_t *peer_session,
-															   unsigned int timelimit,
-															   switch_input_callback_function_t dtmf_callback,
-															   void *session_data,
-															   void *peer_session_data);
+																 switch_core_session_t *peer_session,
+																 switch_input_callback_function_t dtmf_callback,
+																 void *session_data,
+																 void *peer_session_data);
 
 
 /*!

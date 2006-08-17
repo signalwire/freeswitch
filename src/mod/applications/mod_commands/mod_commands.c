@@ -209,6 +209,72 @@ static switch_status_t pause_function(char *cmd, switch_core_session_t *isession
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t originate_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	switch_channel_t *caller_channel;
+	switch_core_session_t *caller_session;
+	char *argv[7] = {0};
+	int x, argc = 0;
+	char *aleg, *exten, *dp, *context, *cid_name, *cid_num;
+	uint32_t timeout = 60;
+
+	if (isession) {
+		stream->write_function(stream, "Illegal Usage\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "Usage: originate <call url> <exten> [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>]\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	for(x = 0; x < argc; x++) {
+		if (!strcasecmp(argv[x], "undef")) {
+			argv[x] = NULL;
+		}
+	}
+
+	aleg = argv[0];
+	exten = argv[1];
+	dp = argv[2];
+	context = argv[3];
+	cid_name = argv[4];
+	cid_num = argv[5];
+	
+	if (!dp) {
+		dp = "XML";
+	}
+
+	if (!context) {
+		context = "default";
+	}
+
+	if (argv[6]) {
+		timeout = atoi(argv[6]);
+	}
+
+	if (!aleg && exten) {
+		stream->write_function(stream, "Invalid Arguements\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_ivr_originate(NULL, &caller_session, aleg, timeout, NULL, cid_name, cid_num) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "Cannot Create Outgoing Channel! [%s]\n", aleg);
+		return SWITCH_STATUS_SUCCESS;
+	} 
+
+	caller_channel = switch_core_session_get_channel(caller_session);
+	assert(caller_channel != NULL);
+	switch_channel_clear_state_handler(caller_channel, NULL);
+	switch_core_session_rwunlock(caller_session);
+
+	switch_ivr_session_transfer(caller_session, exten, dp, context);
+
+	return SWITCH_STATUS_SUCCESS;;
+}
+
 struct holder {
 	switch_stream_handle_t *stream;
 	char *http;
@@ -349,7 +415,7 @@ static switch_api_interface_t transfer_api_interface = {
 
 static switch_api_interface_t load_api_interface = {
 	/*.interface_name */ "load",
-	/*.desc */ "Load Modile",
+	/*.desc */ "Load Module",
 	/*.function */ load_function,
 	/*.next */ &transfer_api_interface
 };
@@ -369,6 +435,14 @@ static switch_api_interface_t commands_api_interface = {
 	/*.next */ &reload_api_interface
 };
 
+static switch_api_interface_t originate_api_interface = {
+	/*.interface_name */ "originate",
+	/*.desc */ "Originate a Call",
+	/*.function */ originate_function,
+	/*.next */ &commands_api_interface
+};
+
+
 static const switch_loadable_module_interface_t mod_commands_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
@@ -376,7 +450,7 @@ static const switch_loadable_module_interface_t mod_commands_module_interface = 
 	/*.dialplan_interface */ NULL,
 	/*.codec_interface */ NULL,
 	/*.application_interface */ NULL,
-	/*.api_interface */ &commands_api_interface
+	/*.api_interface */ &originate_api_interface
 };
 
 
