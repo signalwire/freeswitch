@@ -65,7 +65,8 @@ typedef enum {
 	TFLAG_LANADDR = (1 << 16),
 	TFLAG_AUTO = (1 << 17),
 	TFLAG_DTMF = (1 << 18),
-	TFLAG_TIMER = ( 1 << 19)
+	TFLAG_TIMER = ( 1 << 19),
+	TFLAG_TERM = ( 1 << 20)
 } TFLAGS;
 
 typedef enum {
@@ -185,7 +186,10 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
 		assert(tech_pvt != NULL);
 
 		if (tech_pvt->dlsession) {
-			ldl_session_terminate(tech_pvt->dlsession);
+			if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
+				ldl_session_terminate(tech_pvt->dlsession);
+				switch_set_flag_locked(tech_pvt, TFLAG_TERM);
+			}
 			ldl_session_destroy(&tech_pvt->dlsession);
 		}
 
@@ -682,7 +686,10 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 	
 	if (tech_pvt->dlsession) {
-		ldl_session_terminate(tech_pvt->dlsession);
+		if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
+			ldl_session_terminate(tech_pvt->dlsession);
+			switch_set_flag_locked(tech_pvt, TFLAG_TERM);
+		}
 		ldl_session_destroy(&tech_pvt->dlsession);
 	}
 
@@ -717,7 +724,10 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 
 			if (tech_pvt->dlsession) {
-				ldl_session_terminate(tech_pvt->dlsession);
+				if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
+					ldl_session_terminate(tech_pvt->dlsession);
+					switch_set_flag_locked(tech_pvt, TFLAG_TERM);
+				}
 				ldl_session_destroy(&tech_pvt->dlsession);
 
 			}
@@ -1840,6 +1850,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			switch_channel_state_t state = switch_channel_get_state(channel);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hungup %s %u %d\n", switch_channel_get_name(channel), state, CS_INIT);
 			switch_mutex_lock(tech_pvt->flag_mutex);
+			switch_set_flag(tech_pvt, TFLAG_TERM);
 			switch_set_flag(tech_pvt, TFLAG_BYE);
 			switch_clear_flag(tech_pvt, TFLAG_IO);
 			switch_mutex_unlock(tech_pvt->flag_mutex);

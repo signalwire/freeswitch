@@ -201,16 +201,20 @@ ldl_status ldl_session_destroy(ldl_session_t **session_p)
 
 	if (session) {
 		apr_pool_t *pool = session->pool;
+		apr_hash_t *hash = session->handle->sessions;
 
 		if (globals.debug) {
 			globals.logger(DL_LOG_DEBUG, "Destroyed Session %s\n", session->id);
 		}
+
 		if (session->id) {
-			apr_hash_set(session->handle->sessions, session->id, APR_HASH_KEY_STRING, NULL);
+			apr_hash_set(hash, session->id, APR_HASH_KEY_STRING, NULL);
 		}
+
 		if (session->them) {
-			apr_hash_set(session->handle->sessions, session->them, APR_HASH_KEY_STRING, NULL);
+			apr_hash_set(hash, session->them, APR_HASH_KEY_STRING, NULL);
 		}
+
 		apr_pool_destroy(pool);
 		pool = NULL;
 		*session_p = NULL;
@@ -501,6 +505,8 @@ static int on_commands(void *user_data, ikspak *pak)
 	char *iqid = iks_find_attrib(pak->x, "id");
 	char *type = iks_find_attrib(pak->x, "type");
 	uint8_t is_result = strcasecmp(type, "result") ? 0 : 1;
+	uint8_t is_error = strcasecmp(type, "error") ? 0 : 1;
+
 	iks *xml;
 
 	if (is_result) {
@@ -550,18 +556,18 @@ static int on_commands(void *user_data, ikspak *pak)
 		}
 	}
 
-	if ((is_result || !strcasecmp(type, "error")) && iqid && from) {
+	if ((is_result || is_error) && iqid && from) {
+
 		cancel_retry(handle, iqid);
 		if (is_result) {
 			if (handle->response_callback) {
 				handle->response_callback(handle, iqid); 
 			}
 			return IKS_FILTER_EAT;
+		} else if (is_error) {
+			return IKS_FILTER_EAT;
 		}
 	}
-
-
-
 	
 	xml = iks_child (pak->x);
 	while (xml) {
