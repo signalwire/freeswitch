@@ -201,8 +201,10 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
 			if (state > CS_INIT && state < CS_HANGUP) {
 				channel_on_hangup(*session);
 			}
-			
-			ldl_session_set_private(tech_pvt->dlsession, NULL);
+
+			if (tech_pvt->dlsession) {
+				ldl_session_set_private(tech_pvt->dlsession, NULL);
+			}
 			switch_core_session_destroy(session);
 		}
 	}
