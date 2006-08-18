@@ -1,7 +1,7 @@
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install speex-1.1.11.1.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install speex-1.1.12.tar.gz --prefix=$(PREFIX)
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o

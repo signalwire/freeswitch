@@ -205,6 +205,7 @@ static switch_status_t switch_speex_encode(switch_codec_t *codec,
 	speex_bits_pack(&context->encoder_bits, 15, 5);
 	*encoded_data_len = speex_bits_write(&context->encoder_bits, (char *) encoded_data, context->encoder_frame_size);
 	speex_bits_reset(&context->encoder_bits);
+	(*encoded_data_len)--;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -287,10 +288,10 @@ static const switch_codec_implementation_t speex_32k_implementation = {
 
 static const switch_codec_implementation_t speex_16k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 100,
+	/*.ianacode */ 99,
 	/*.iananame */ "speex",
-	/*.samples_per_second */ 22000,
-	/*.bits_per_second */ 128000,
+	/*.samples_per_second */ 16000,
+	/*.bits_per_second */ 22000,
 	/*.nanoseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 320,
 	/*.bytes_per_frame */ 640,
@@ -307,14 +308,14 @@ static const switch_codec_implementation_t speex_16k_implementation = {
 
 static const switch_codec_implementation_t speex_8k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
-	/*.ianacode */ 97,
+	/*.ianacode */ 98,
 	/*.iananame */ "speex",
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 11000,
 	/*.nanoseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
 	/*.bytes_per_frame */ 320,
-	/*.encoded_bytes_per_frame */ 28,
+	/*.encoded_bytes_per_frame */ 0,
 	/*.number_of_channels */ 1,
 	/*.pref_frames_per_packet */ 1,
 	/*.max_frames_per_packet */ 1,
