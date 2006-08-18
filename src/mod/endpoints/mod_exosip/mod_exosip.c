@@ -1000,11 +1000,13 @@ static int find_callback(void *pArg, int argc, char **argv, char **columnNames){
 static int del_callback(void *pArg, int argc, char **argv, char **columnNames){
 	switch_event_t *s_event;
 
-	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_EXPIRE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "key", "%s", argv[0]);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "url", "%s", argv[1]);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%d", argv[2]);
-		switch_event_fire(&s_event);
+	if (argc >=3 ) {
+		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_EXPIRE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "key", "%s", argv[0]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "url", "%s", argv[1]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%d", argv[2]);
+			switch_event_fire(&s_event);
+		}
 	}
 	return 0;
 }
