@@ -1653,7 +1653,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		break;
 	case LDL_SIGNAL_TRANSPORT_ACCEPT:
 		switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
-		printf("\n**************************************\n");
 		break;
 	case LDL_SIGNAL_INITIATE:
 		if (signal) {
