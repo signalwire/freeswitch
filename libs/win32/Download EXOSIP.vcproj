@@ -22,11 +22,12 @@
 			ConfigurationType="10"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Downloading EXOSIP."
-				CommandLine="if not exist $(ProjectDir)..\libosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\libeXosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libeXosip2-2.2.2.tar.gz $(ProjectDir).."
+				CommandLine="if not exist $(ProjectDir)..\libosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\libeXosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libeXosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -45,11 +46,12 @@
 			ConfigurationType="10"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Downloading EXOSIP."
-				CommandLine="if not exist $(ProjectDir)..\libosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\libeXosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libeXosip2-2.2.2.tar.gz $(ProjectDir).."
+				CommandLine="if not exist $(ProjectDir)..\libosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\libeXosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libeXosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

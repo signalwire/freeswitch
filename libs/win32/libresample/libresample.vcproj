@@ -53,7 +53,7 @@
 				ProgramDataBaseFileName=".\Debug/"
 				WarningLevel="0"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

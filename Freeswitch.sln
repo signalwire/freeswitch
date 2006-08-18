@@ -41,7 +41,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_xmpp_event", "src\mod\e
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_sndfile", "src\mod\formats\mod_sndfile\mod_sndfilel.vcproj", "{AFAC0568-7548-42D5-9F6A-8D3400A1E4F6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_sndfile", "src\mod\formats\mod_sndfile\mod_sndfile.vcproj", "{AFAC0568-7548-42D5-9F6A-8D3400A1E4F6}"
 	ProjectSection(ProjectDependencies) = postProject
 		{101130D1-3EA6-4ED2-B65D-CEB5243A20ED} = {101130D1-3EA6-4ED2-B65D-CEB5243A20ED}
 		{3D0370CA-BED2-4657-A475-32375CBCB6E4} = {3D0370CA-BED2-4657-A475-32375CBCB6E4}

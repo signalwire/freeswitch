@@ -16,8 +16,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\LibR"
-			IntermediateDirectory=".\LibR"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\LibR\xml.lib"
+				OutputFile="$(OutDir)\$(ProjectName).lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -91,8 +91,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\LibD"
-			IntermediateDirectory=".\LibD"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
@@ -141,7 +141,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\LibD\xml.lib"
+				OutputFile="$(OutDir)\$(ProjectName).lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -370,7 +370,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating config.h from winconfig.h"
-						CommandLine="if not exist $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h type $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\winconfig.h &gt; $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h"
+						CommandLine="if not exist $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h type $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\winconfig.h &gt; $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h&#x0D;&#x0A;"
 						Outputs="$(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h"
 					/>
 				</FileConfiguration>
@@ -380,7 +380,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating config.h from winconfig.h"
-						CommandLine="if not exist $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h type $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\winconfig.h &gt; $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h"
+						CommandLine="if not exist $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h type $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\winconfig.h &gt; $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h&#x0D;&#x0A;"
 						Outputs="$(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h"
 					/>
 				</FileConfiguration>

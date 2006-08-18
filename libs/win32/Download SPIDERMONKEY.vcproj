@@ -22,11 +22,12 @@
 			ConfigurationType="10"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Downloading SPIDERMONKEY."
-				CommandLine="if not exist $(ProjectDir)..\js20051231 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/js20051231.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.debug cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.debug.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.release cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.release.zip $(ProjectDir).."
+				CommandLine="if not exist $(ProjectDir)..\js20051231 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/js20051231.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.debug cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.debug.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.release cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.release.zip $(ProjectDir)..&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -45,11 +46,12 @@
 			ConfigurationType="10"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 				Description="Downloading SPIDERMONKEY."
-				CommandLine="if not exist $(ProjectDir)..\js20051231 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/js20051231.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.debug cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.debug.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.release cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.release.zip $(ProjectDir).."
+				CommandLine="if not exist $(ProjectDir)..\js20051231 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/js20051231.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.debug cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.debug.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.release cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.release.zip $(ProjectDir)..&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"

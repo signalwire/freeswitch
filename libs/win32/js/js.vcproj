@@ -110,7 +110,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.release\nspr-4.6.1\lib\libnspr4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.release\nspr-4.6.1\lib\libplc4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.release\nspr-4.6.1\lib\libplds4.dll $(OutDir)\ /C /Y /D"
+				CommandLine="xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.release\nspr-4.6.1\lib\libnspr4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.release\nspr-4.6.1\lib\libplc4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.release\nspr-4.6.1\lib\libplds4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -156,7 +156,7 @@
 				ProgramDataBaseFileName=".\Debug/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -173,7 +173,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="odbc32.lib odbccp32.lib libnspr4.lib"
 				OutputFile="$(OutDir)\js32.dll"
-				LinkIncremental="2"
+				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\nspr-4.6.1.winnt5.debug\nspr-4.6.1\lib"
 				GenerateDebugInformation="true"
@@ -207,7 +207,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.debug\nspr-4.6.1\lib\libnspr4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.debug\nspr-4.6.1\lib\libplc4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.debug\nspr-4.6.1\lib\libplds4.dll $(OutDir)\ /C /Y /D"
+				CommandLine="xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.debug\nspr-4.6.1\lib\libnspr4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.debug\nspr-4.6.1\lib\libplc4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.debug\nspr-4.6.1\lib\libplds4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
