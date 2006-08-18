@@ -674,6 +674,38 @@ static switch_status_t js_speak_dtmf_callback(switch_core_session_t *session, vo
 	
 }
 
+static JSBool session_flush_digits(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+	switch_channel_t *channel;
+	char buf[256];
+	switch_size_t has;
+
+	channel = switch_core_session_get_channel(jss->session);
+    assert(channel != NULL);
+
+	if ((has = switch_channel_has_dtmf(channel))) {
+		switch_channel_dequeue_dtmf(channel, buf, has);
+	}
+
+	*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
+    return JS_TRUE;
+}
+
+static JSBool session_flush_events(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+	switch_event_t *event;
+
+	while (switch_core_session_dequeue_event(jss->session, &event) == SWITCH_STATUS_SUCCESS) {
+		switch_event_destroy(&event);
+	}
+	
+	*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
+    return JS_TRUE;
+	
+}
+
 static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -1158,6 +1190,8 @@ enum session_tinyid {
 static JSFunctionSpec session_methods[] = {
 	{"streamFile", session_streamfile, 1}, 
 	{"recordFile", session_recordfile, 1}, 
+	{"flushEvents", session_flush_events, 1}, 
+	{"flushDigits", session_flush_digits, 1}, 
 	{"speak", session_speak, 1}, 
 	{"getDigits", session_get_digits, 1},
 	{"answer", session_answer, 0}, 
