@@ -1645,7 +1645,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing Payload index %u %s %u\n", y, payloads[x].name, payloads[x].id);
 							tech_pvt->codec_name = tech_pvt->codecs[y]->iananame;
 							tech_pvt->codec_num = tech_pvt->codecs[y]->ianacode;
-							tech_pvt->r_codec_num = payloads[x].id;
+							tech_pvt->r_codec_num = (switch_payload_t)(payloads[x].id);
 							if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 								do_describe(tech_pvt, 0);
 							}
