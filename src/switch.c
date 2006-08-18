@@ -36,7 +36,21 @@
 #include <sys/mman.h>
 #endif
 
+#ifdef CRASH_PROT
+#define __CP "ENABLED"
+#else
+#define __CP "DISABLED"
+#endif
+
+#define PIDFILE "freeswitch.pid"
+#define LOGFILE "freeswitch.log"
 static int RUNNING = 0;
+static char *lfile = LOGFILE;
+static char *pfile = PIDFILE;
+
+#ifdef __ICC
+#pragma warning (disable:167)
+#endif
 
 static int handle_SIGPIPE(int sig)
 {
@@ -67,129 +81,35 @@ static int handle_SIGHUP(int sig)
 	return 0;
 }
 
-int main(int argc, char *argv[])
+static void set_high_priority()
 {
-	char *lfile = "freeswitch.log";
-	char *pfile = "freeswitch.pid";
-	char path[256] = "";
-	char *ppath = NULL;
-	const char *err = NULL;
-	switch_event_t *event;
-	int bg = 0;
-	FILE *f;
 #ifdef WIN32
 	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #else
-	int pid;
 	nice(-20);
 #endif
+}
 
-#ifndef WIN32
-	if (argv[1] && !strcmp(argv[1], "-stop")) {
-		pid_t pid = 0;
-		switch_core_set_globals();
-		snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
-		if ((f = fopen(path, "r")) == 0) {
-			fprintf(stderr, "Cannot open pid file %s.\n", path);
-			return 255;
-		}
-		fscanf(f, "%d", &pid);
-		if (pid > 0) {
-			fprintf(stderr, "Killing %d\n", (int) pid);
-			kill(pid, SIGTERM);
-		}
-
-		fclose(f);
-		return 0;
-	}
-#endif
-
-	if (argv[1] && !strcmp(argv[1], "-nc")) {
-		bg++;
-	}
-
-	if (bg) {
-		//snprintf(path, sizeof(path), "%s%c%s", SWITCH_GLOBAL_dirs.log_dir, sep, lfile);
-		ppath = lfile;
-
-		signal(SIGHUP, (void *) handle_SIGHUP);
-		signal(SIGTERM, (void *) handle_SIGHUP);
-
-#ifdef WIN32
-		FreeConsole();
-#else
-		if ((pid = fork())) {
-			fprintf(stderr, "%d Backgrounding.\n", (int)pid);
-			exit(0);
-		}
-#endif
-	
-	}
-
-
-	if (switch_core_init(ppath, &err) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Cannot Initilize [%s]\n", err);
-		return 255;
-	}
-
-
-#ifdef __ICC
-#pragma warning (disable:167)
-#endif
-
-	/* set signal handlers */
-	signal(SIGINT, (void *) handle_SIGINT);
-#ifdef SIGPIPE
-	signal(SIGPIPE, (void *) handle_SIGPIPE);
-#endif
-#ifdef TRAP_BUS
-	signal(SIGBUS, (void *) handle_SIGBUS);
-#endif
-
-
-
-
-
-
-	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
-	if ((f = fopen(path, "w")) == 0) {
-		fprintf(stderr, "Cannot open pid file %s.\n", path);
-		return 255;
-	}
-
-	fprintf(f, "%d", getpid());
-	fclose(f);
-	
-	if (!err) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
-		if (switch_loadable_module_init() != SWITCH_STATUS_SUCCESS) {
-			err = "Cannot load modules";
-		}
-	}
-
-	if (err) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s", err);
-		exit(-1);
-	}
-
-	if (switch_event_create(&event, SWITCH_EVENT_STARTUP) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Ready");
+static int freeswitch_shutdown()
+{
+	switch_event_t *event;
+	if (switch_event_create(&event, SWITCH_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Shutting Down");
 		switch_event_fire(&event);
 	}
 
-#ifdef HAVE_MLOCKALL
-	mlockall(MCL_CURRENT|MCL_FUTURE);
-#endif
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
+	switch_core_session_hupall();
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
+	switch_loadable_module_shutdown();
+	switch_core_destroy();
+	return 0;
+}
 
-
-#ifdef CRASH_PROT
-#define __CP "ENABLED"
-#else
-#define __CP "DISABLED"
-#endif
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "freeswitch Version %s Started. Crash Protection [%s] Max Sessions[%u]\n\n", SWITCH_VERSION_FULL, __CP, switch_core_session_limit(0));
+static void freeswitch_runtime_loop(int bg)
+{
+	FILE *f;
+	char path[256] = "";
 	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 
 	if (bg) {
@@ -212,16 +132,117 @@ int main(int argc, char *argv[])
 		/* wait for console input */
 		switch_console_loop();
 	}
+}
+
+static int freeswitch_kill_background()
+{
+#ifdef WIN32
+#else
+	char path[256] = "";
+	pid_t pid = 0;
+	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
+	if ((f = fopen(path, "r")) == 0) {
+		fprintf(stderr, "Cannot open pid file %s.\n", path);
+		return 255;
+	}
+	fscanf(f, "%d", &pid);
+	if (pid > 0) {
+		fprintf(stderr, "Killing %d\n", (int) pid);
+		kill(pid, SIGTERM);
+	}
+
+	fclose(f);
+#endif
+	return 0;
+}
+
+static int freeswitch_init(char *path, const char **err)
+{
+	switch_event_t *event;
+	if (switch_core_init(path, err) != SWITCH_STATUS_SUCCESS) {
+		return 255;
+	}
+
+	/* set signal handlers */
+	signal(SIGINT, (void *) handle_SIGINT);
+#ifdef SIGPIPE
+	signal(SIGPIPE, (void *) handle_SIGPIPE);
+#endif
+#ifdef TRAP_BUS
+	signal(SIGBUS, (void *) handle_SIGBUS);
+#endif
 	
-	if (switch_event_create(&event, SWITCH_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Shutting Down");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
+	if (switch_loadable_module_init() != SWITCH_STATUS_SUCCESS) {
+		*err = "Cannot load modules";
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s", err);
+		return 255;
+	}
+
+	if (switch_event_create(&event, SWITCH_EVENT_STARTUP) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Ready");
 		switch_event_fire(&event);
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
-	switch_core_session_hupall();
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
-	switch_loadable_module_shutdown();
-	switch_core_destroy();
+#ifdef HAVE_MLOCKALL
+	mlockall(MCL_CURRENT|MCL_FUTURE);
+#endif
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "freeswitch Version %s Started. Crash Protection [%s] Max Sessions[%u]\n\n", SWITCH_VERSION_FULL, __CP, switch_core_session_limit(0));
 	return 0;
+}
+
+int main(int argc, char *argv[])
+{
+	char path[256] = "";
+	char *ppath = NULL;
+	const char *err = NULL;
+	int bg = 0;
+	FILE *f;
+
+	set_high_priority();
+	switch_core_set_globals();
+
+	if (argv[1] && !strcmp(argv[1], "-stop")) {
+		return freeswitch_kill_background();
+	}
+
+	if (argv[1] && !strcmp(argv[1], "-nc")) {
+		bg++;
+	}
+
+	if (bg) {
+		ppath = lfile;
+
+		signal(SIGHUP, (void *) handle_SIGHUP);
+		signal(SIGTERM, (void *) handle_SIGHUP);
+
+#ifdef WIN32
+		FreeConsole();
+#else
+		if ((pid = fork())) {
+			fprintf(stderr, "%d Backgrounding.\n", (int)pid);
+			exit(0);
+		}
+#endif
+	}
+
+	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
+	if ((f = fopen(path, "w")) == 0) {
+		fprintf(stderr, "Cannot open pid file %s.\n", path);
+		return 255;
+	}
+
+	fprintf(f, "%d", getpid());
+	fclose(f);
+
+	if (freeswitch_init(ppath, &err) == 255) {
+		fprintf(stderr, "Cannot Initilize [%s]\n", err);
+		return 255;
+	}
+
+	freeswitch_runtime_loop(bg);
+
+	return freeswitch_shutdown();
 }
