@@ -291,7 +291,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(void)
 	}
 	switch_mutex_unlock(runtime.session_table_mutex);
 
-	while(runtime.session_count) {
+	while(runtime.session_count > 0) {
 		switch_yield(10000);
 	}
 }
@@ -2492,7 +2492,9 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session
 	pool = NULL;
 
 	switch_mutex_lock(runtime.session_table_mutex);
-	runtime.session_count--;
+	if (runtime.session_count) {
+		runtime.session_count--;
+	}
 	switch_mutex_unlock(runtime.session_table_mutex);
 }
 
