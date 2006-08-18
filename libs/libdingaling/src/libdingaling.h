@@ -53,6 +53,8 @@ extern "C" {
 
 /*! \brief A structure to store a jingle candidate */
 struct ldl_candidate {
+	/*! the transport id of the candidate */
+	char *tid;
 	/*! the name of the candidate */
 	char *name;
 	/*! the type of the candidate */
@@ -80,6 +82,8 @@ struct ldl_payload {
 	unsigned int id;
 	/*! the transfer rate of the payload type */
 	unsigned int rate;
+	/*! the bits per second of the payload type */
+	unsigned int bps;
 };
 typedef struct ldl_payload ldl_payload_t;
 
@@ -287,6 +291,13 @@ void ldl_session_set_private(ldl_session_t *session, void *private_data);
 void *ldl_session_get_private(ldl_session_t *session);
 
 /*!
+  \brief Accept a candidate
+  \param session the session to accept on
+  \param candidate the candidate to accept
+*/
+void ldl_session_accept_candidate(ldl_session_t *session, ldl_candidate_t *candidate);
+
+/*!
   \brief Set a custom logger
   \param logger the logger function
 */
@@ -316,6 +327,14 @@ unsigned int ldl_session_terminate(ldl_session_t *session);
 */
 void *ldl_handle_get_private(ldl_handle_t *handle);
 
+/*!
+  \brief Send a message to a session
+  \param session the session handle
+  \param to the message recipiant
+  \param subject optional subject
+  \param body body of the message
+*/
+void ldl_session_send_msg(ldl_session_t *session, char *subject, char *body);
 
 /*!
   \brief Send a message

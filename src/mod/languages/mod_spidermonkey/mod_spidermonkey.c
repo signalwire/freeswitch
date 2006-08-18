@@ -149,6 +149,262 @@ struct db_obj {
 };
 
 
+/* Event Object */
+/*********************************************************************************/
+static JSBool event_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	if (argc > 0) {
+		switch_event_t *event;
+		switch_event_types_t etype;
+		char *ename = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+
+		if (switch_name_event(ename, &etype) != SWITCH_STATUS_SUCCESS) {
+			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+			return JS_TRUE;
+		}
+
+		if (etype == SWITCH_EVENT_CUSTOM) {
+			char *subclass_name;
+			if (argc < 1) {
+				*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+				return JS_TRUE;
+			}
+			
+			subclass_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+			if (switch_event_create_subclass(&event, etype, subclass_name) != SWITCH_STATUS_SUCCESS) {
+				*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+				return JS_TRUE;
+			}
+
+		} else {
+			if (!switch_event_create(&event, etype) != SWITCH_STATUS_SUCCESS) {
+				*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+				return JS_TRUE;
+			}
+		}
+
+		JS_SetPrivate(cx, obj, event);
+		return JS_TRUE;
+	}
+
+	return JS_FALSE;
+}
+
+static void event_destroy(JSContext *cx, JSObject *obj)
+{
+	switch_event_t *event = JS_GetPrivate(cx, obj);
+
+	if (event) {
+		switch_event_destroy(&event);
+	}
+}
+
+static JSBool event_add_header(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	switch_event_t *event = JS_GetPrivate(cx, obj);
+
+	if (!event) {
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		return JS_TRUE;
+	}
+
+	if (argc > 1) {
+		char *hname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		char *hval = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, hname, hval);
+		*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
+		return JS_TRUE;
+	}
+
+	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+	return JS_TRUE;
+}
+
+static JSBool event_get_header(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	switch_event_t *event = JS_GetPrivate(cx, obj);
+
+	if (!event) {
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		return JS_TRUE;
+	}
+
+	if (argc > 0) {
+		char *hname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		char *val = switch_event_get_header(event, hname);
+		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, val));
+		return JS_TRUE;
+	}
+
+	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+	return JS_TRUE;
+}
+
+static JSBool event_add_body(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	switch_event_t *event = JS_GetPrivate(cx, obj);
+
+	if (!event) {
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		return JS_TRUE;
+	}
+
+	if (argc > 0) {
+		char *body = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		switch_event_add_body(event, body);
+		*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
+		return JS_TRUE;
+	}
+
+	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+	return JS_TRUE;
+}
+
+static JSBool event_get_body(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	switch_event_t *event = JS_GetPrivate(cx, obj);
+
+	if (!event) {
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		return JS_TRUE;
+	}
+
+	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, switch_event_get_body(event)));
+
+	return JS_TRUE;
+}
+
+static JSBool event_serialize(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	switch_event_t *event = JS_GetPrivate(cx, obj);
+	char buf[1024];
+	uint8_t isxml = 0;
+
+	if (!event) {
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		return JS_TRUE;
+	}
+
+	if (argc > 0) {
+		char *arg = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		if (!strcasecmp(arg, "xml")) {
+			isxml++;
+		}
+	}
+
+	if (isxml) {
+		switch_xml_t xml;
+		char *xmlstr;
+		if ((xml = switch_event_xmlize(event, NULL))) {
+            xmlstr = switch_xml_toxml(xml);
+			*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, xmlstr));
+			switch_xml_free(xml);
+            free(xmlstr);
+		} else {
+			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		}
+	} else {
+		switch_event_serialize(event, buf, sizeof(buf), NULL);
+		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, buf));
+	}
+
+	return JS_TRUE;
+}
+
+static JSBool event_fire(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	switch_event_t *event = JS_GetPrivate(cx, obj);
+
+	if (event) {
+		switch_event_fire(&event);
+		JS_SetPrivate(cx, obj, NULL);
+		*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
+		return JS_TRUE;
+	}
+
+	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+	return JS_TRUE;
+}
+
+static JSBool event_destroy_(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	switch_event_t *event = JS_GetPrivate(cx, obj);
+
+	if (event) {
+		switch_event_destroy(&event);
+		JS_SetPrivate(cx, obj, NULL);
+		*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
+		return JS_TRUE;
+	}
+
+	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+	return JS_TRUE;
+}
+
+
+
+enum event_tinyid {
+	EVENT_READY
+};
+
+static JSFunctionSpec event_methods[] = {
+	{"addHeader", event_add_header, 1},
+	{"getHeader", event_get_header, 1},
+	{"addBody", event_add_body, 1},
+	{"getBody", event_get_body, 1},
+	{"serialize", event_serialize, 0},
+	{"fire", event_fire, 0},
+	{"destroy", event_destroy_, 0},
+	{0}
+};
+
+
+static JSPropertySpec event_props[] = {
+	{"ready", EVENT_READY, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{0}
+};
+
+
+static JSBool event_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
+{
+	JSBool res = JS_TRUE;
+	switch_event_t *event = JS_GetPrivate(cx, obj);
+	char *name;
+	int param = 0;
+
+    if (!event) {
+        *vp = BOOLEAN_TO_JSVAL( JS_FALSE );
+		return JS_TRUE;
+    }
+
+	
+	name = JS_GetStringBytes(JS_ValueToString(cx, id));
+    /* numbers are our props anything else is a method */
+    if (name[0] >= 48 && name[0] <= 57) {
+        param = atoi(name);
+    } else {
+        return JS_TRUE;
+    }
+	
+	switch(param) {
+	case EVENT_READY:
+		*vp = BOOLEAN_TO_JSVAL( JS_TRUE );
+		break;
+	}
+
+	return res;
+}
+
+JSClass event_class = {
+	"Event", JSCLASS_HAS_PRIVATE, 
+	JS_PropertyStub,  JS_PropertyStub,	event_getProperty,  JS_PropertyStub, 
+	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  event_destroy, NULL, NULL, NULL,
+	event_construct
+};
+
+
+
+
 static void js_error(JSContext *cx, const char *message, JSErrorReport *report)
 {
 	if (message) {
@@ -681,6 +937,52 @@ static JSBool session_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 	return JS_TRUE;
 }
 
+static JSBool session_get_event(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+	switch_event_t *event;
+
+	if (switch_core_session_dequeue_event(jss->session, &event) == SWITCH_STATUS_SUCCESS) {
+		JSObject *Event;
+		if ((Event = JS_DefineObject(cx, obj, "Event", &event_class, NULL, 0))) {
+			if ((JS_SetPrivate(cx, Event, event) &&
+				 JS_DefineProperties(cx, Event, event_props) &&
+				 JS_DefineFunctions(cx, Event, event_methods))) {
+				*rval = OBJECT_TO_JSVAL ( Event );
+				return JS_TRUE;
+			}
+		}
+	}
+	
+	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+    return JS_TRUE;
+	
+}
+
+static JSBool session_send_event(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+	switch_event_t *event;
+	JSObject *Event;
+
+	if (argc > 0) {
+		if (JS_ValueToObject(cx, argv[0], &Event)) {
+			if ((event = JS_GetPrivate(cx, Event))) {
+				if (switch_core_session_receive_event(jss->session, &event) != SWITCH_STATUS_SUCCESS) {
+					*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+					return JS_TRUE;
+				}
+
+				JS_SetPrivate(cx, Event, NULL);
+			}
+		}
+	}
+
+	*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
+    return JS_TRUE;
+	
+}
+
 
 static JSBool session_hangup(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -845,6 +1147,7 @@ static JSBool js_fetchurl_file(JSContext *cx, JSObject *obj, uintN argc, jsval *
 }
 #endif
 
+
 /* Session Object */
 /*********************************************************************************/
 enum session_tinyid {
@@ -860,6 +1163,8 @@ static JSFunctionSpec session_methods[] = {
 	{"answer", session_answer, 0}, 
 	{"ready", session_ready, 0}, 
 	{"waitForAnswer", session_wait_for_answer, 0}, 
+	{"getEvent", session_get_event, 0},
+	{"sendEvent", session_send_event, 0},
 	{"hangup", session_hangup, 0}, 
 	{"execute", session_execute, 0}, 
 	{0}
@@ -2124,6 +2429,18 @@ static int env_init(JSContext *cx, JSObject *javascript_object)
 				 db_methods,
 				 db_props,
 				 db_methods
+				 );
+
+	JS_InitClass(cx,
+				 javascript_object,
+				 NULL,
+				 &event_class,
+				 event_construct,
+				 3,
+				 event_props,
+				 event_methods,
+				 event_props,
+				 event_methods
 				 );
 
 	return 1;

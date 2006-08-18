@@ -156,6 +156,13 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
 SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *header_name);
 
 /*!
+  \brief Retrieve the body value from an event
+  \param event the event to read the body from
+  \return the value of the body or NULL
+*/
+SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event);
+
+/*!
   \brief Add a header to an event
   \param event the event to add the header to
   \param stack the stack sense (stack it on the top or on the bottom)

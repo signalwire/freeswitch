@@ -1174,6 +1174,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_sess
 	return status;
 }
 
+SWITCH_DECLARE(int32_t) switch_core_session_event_count(switch_core_session_t *session)
+{
+	if (session->event_queue) {
+		return (int32_t) switch_queue_size(session->event_queue);
+	}
+
+	return -1;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_session_t *session, switch_event_t **event)
 	 
 {

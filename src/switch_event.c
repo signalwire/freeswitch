@@ -393,6 +393,15 @@ SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, char *head
 	return NULL;
 }
 
+SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event)
+{
+	if (event) {
+		return event->body;
+	}
+
+	return NULL;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, switch_stack_t stack, char *header_name,
 													  char *fmt, ...)
 {
@@ -623,7 +632,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, char *fm
 			switch_xml_t xbody = NULL;
 
 			add_xml_header(xml, "Content-Length", blena, off++);
-			if ((xbody = switch_xml_add_child_d(xml, "body", 0))) {
+			if ((xbody = switch_xml_add_child_d(xml, "body", off++))) {
 				switch_xml_set_txt_d(xbody, body);
 			}
 		}

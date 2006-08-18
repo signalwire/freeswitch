@@ -190,6 +190,11 @@ char *ldl_session_get_id(ldl_session_t *session)
 	return session->id;
 }
 
+void ldl_session_send_msg(ldl_session_t *session, char *subject, char *body)
+{
+	ldl_handle_send_msg(session->handle, session->them, subject, body);
+}
+
 ldl_status ldl_session_destroy(ldl_session_t **session_p)
 {
 	ldl_session_t *session = *session_p;
@@ -277,7 +282,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 	while(xml) {
 		char *type = xtype ? xtype : iks_find_attrib(xml, "type");
 		iks *tag;
-
+		
 		if (type) {
 			
 			if (!strcasecmp(type, "initiate") || !strcasecmp(type, "accept")) {
@@ -298,7 +303,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 							if (!strcasecmp(iks_name(itag), "payload-type") && session->payload_len < LDL_MAX_PAYLOADS) {
 								char *name = iks_find_attrib(itag, "name");
 								char *id = iks_find_attrib(itag, "id");
-								char *rate = iks_find_attrib(itag, "rate");
+								char *rate = iks_find_attrib(itag, "clockrate");
 								if (name && id) {
 									session->payloads[session->payload_len].name = apr_pstrdup(session->pool, name);
 									session->payloads[session->payload_len].id = atoi(id);
@@ -317,9 +322,14 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 					}
 					tag = iks_next_tag(tag);
 				}
-			} else if (!strcasecmp(type, "candidates")) {
+			} else if (!strcasecmp(type, "transport-info")) {
+				char *tid = iks_find_attrib(xml, "id");
 				signal = LDL_SIGNAL_CANDIDATES;
 				tag = iks_child (xml);
+				
+				if (tag && !strcasecmp(iks_name(tag), "transport")) {
+					tag = iks_child(tag);
+				}
 				
 				while(tag) {
 					if (!strcasecmp(iks_name(tag), "info_element")) {
@@ -354,6 +364,11 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 						}
 						
 						session->candidates[index].pref = pref;
+
+						if (tid) {
+							session->candidates[index].tid = apr_pstrdup(session->pool, tid);
+						}
+
 						if ((key = iks_find_attrib(tag, "name"))) {
 							session->candidates[index].name = apr_pstrdup(session->pool, key);
 						}
@@ -427,8 +442,8 @@ static int on_presence(void *user_data, ikspak *pak)
 	struct ldl_buffer *buffer;
 	size_t x;
 
-	iks *msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "Ding A Ling...."); 
-	apr_queue_push(handle->queue, msg);
+	//iks *msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "Ding A Ling...."); 
+	//apr_queue_push(handle->queue, msg);
 
 
 	apr_cpystrn(id, from, sizeof(id));
@@ -1087,6 +1102,31 @@ void *ldl_session_get_private(ldl_session_t *session)
 	return session->private_data;
 }
 
+void ldl_session_accept_candidate(ldl_session_t *session, ldl_candidate_t *candidate)
+{
+	iks *iq, *sess, *tp;
+	unsigned int myid;
+    char idbuf[80];
+	myid = next_id();
+    snprintf(idbuf, sizeof(idbuf), "%u", myid);
+
+	iq = iks_new("iq");
+	iks_insert_attrib(iq, "type", "set");
+	iks_insert_attrib(iq, "id", idbuf);
+	iks_insert_attrib(iq, "from", session->handle->login);
+	iks_insert_attrib(iq, "to", session->them);
+	sess = iks_insert (iq, "session");
+    iks_insert_attrib(sess, "xmlns", "http://www.google.com/session");
+	iks_insert_attrib(sess, "type", "transport-accept");
+	iks_insert_attrib(sess, "id", candidate->tid);
+	iks_insert_attrib(sess, "xmlns", "http://www.google.com/session");
+	iks_insert_attrib(sess, "initiator", session->initiator ? session->initiator : session->them);
+	tp = iks_insert (sess, "transport");
+	iks_insert_attrib(tp, "xmlns", "http://www.google.com/transport/p2p");
+
+	apr_queue_push(session->handle->queue, iq);
+}
+
 void *ldl_handle_get_private(ldl_handle_t *handle)
 {
 	return handle->private_info;
@@ -1128,18 +1168,27 @@ unsigned int ldl_session_terminate(ldl_session_t *session)
 
 }
 
+
 unsigned int ldl_session_candidates(ldl_session_t *session,
-								  ldl_candidate_t *candidates,
-								  unsigned int clen)
+									ldl_candidate_t *candidates,
+									unsigned int clen)
 
 {
 	iks *iq, *sess, *tag;
 	unsigned int x, id;
 
-	new_session_iq(session, &iq, &sess, &id, "candidates");
+
 	for (x = 0; x < clen; x++) {
 		char buf[512];
-		tag = iks_insert(sess, "candidate");
+		iq = NULL;
+		sess = NULL;
+		id = 0;
+
+		new_session_iq(session, &iq, &sess, &id, "transport-info");
+		tag = iks_insert(sess, "transport");
+		iks_insert_attrib(tag, "xmlns", "http://www.google.com/transport/p2p");
+		tag = iks_insert(tag, "candidate");
+
 		if (candidates[x].name) {
 			iks_insert_attrib(tag, "name", candidates[x].name);
 		}
@@ -1169,12 +1218,12 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 
 		iks_insert_attrib(tag, "network", "0");
 		iks_insert_attrib(tag, "generation", "0");
+		schedule_packet(session->handle, id, iq, LDL_RETRY);
 	}
-	schedule_packet(session->handle, id, iq, LDL_RETRY);
+
 
 	return id;
 }
-
 
 char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *buf, unsigned int len)
 {
@@ -1232,13 +1281,14 @@ unsigned int ldl_session_describe(ldl_session_t *session,
 								unsigned int plen,
 								ldl_description_t description)
 {
-	iks *iq, *sess, *tag, *payload;
+	iks *iq, *sess, *tag, *payload, *tp;
 	unsigned int x, id;
 	
 
 	new_session_iq(session, &iq, &sess, &id, description == LDL_DESCRIPTION_ACCEPT ? "accept" : "initiate");
 	tag = iks_insert(sess, "description");
 	iks_insert_attrib(tag, "xmlns", "http://www.google.com/session/phone");
+	iks_insert_attrib(tag, "xml:lang", "en");
 	for (x = 0; x < plen; x++) {
 		char idbuf[80];
 		payload = iks_insert(tag, "payload-type");
@@ -1249,10 +1299,19 @@ unsigned int ldl_session_describe(ldl_session_t *session,
 		iks_insert_attrib(payload, "name", payloads[x].name);
 		if (payloads[x].rate) {
 			sprintf(idbuf, "%d", payloads[x].rate);
-			iks_insert_attrib(payload, "rate", idbuf);
+			iks_insert_attrib(payload, "clockrate", idbuf);
+		}
+		if (payloads[x].bps) {
+			sprintf(idbuf, "%d", payloads[x].bps);
+			iks_insert_attrib(payload, "bitrate", idbuf);
 		}
 	}
 
+	if (description == LDL_DESCRIPTION_INITIATE) {
+		tp = iks_insert (sess, "transport");
+		iks_insert_attrib(tp, "xmlns", "http://www.google.com/transport/p2p");
+	}
+	
 	schedule_packet(session->handle, id, iq, LDL_RETRY);
 
 	return id;

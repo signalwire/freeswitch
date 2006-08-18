@@ -443,6 +443,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_session_t *session, switch_event_t **event);
 
+
+/*! 
+  \brief Indicate the number of waiting events on a session
+  \param session the session to check
+  \return the number of events
+*/
+SWITCH_DECLARE(int32_t) switch_core_session_event_count(switch_core_session_t *session);
+
 /*! 
   \brief DE-Queue an event on a given session
   \param session the session to de-queue the message on

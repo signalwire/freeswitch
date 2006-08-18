@@ -134,6 +134,7 @@ struct private_object {
 	uint32_t last_read;
 	char *codec_name;
 	switch_payload_t codec_num;
+	switch_payload_t r_codec_num;
 	switch_time_t next_desc;
 	switch_time_t next_cand;
 	char *stun_ip;
@@ -244,7 +245,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	switch_rtp_flag_t flags;
 
 	if (tech_pvt->rtp_session) {
-		return 0;
+		return 1;
 	}
 
 	if (!strncasecmp(tech_pvt->codec_name, "ilbc", 4)) {
@@ -260,7 +261,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 				   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return -1;
+		return 0;
 	}
 	tech_pvt->read_frame.rate = tech_pvt->read_codec.implementation->samples_per_second;
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
@@ -276,7 +277,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 				   NULL, switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Can't load codec?\n");
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return -1;
+		return 0;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Write Codec to %s\n",  tech_pvt->codec_name);
 							
@@ -287,6 +288,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SETUP RTP %s:%d -> %s:%d\n", tech_pvt->profile->ip, tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
 	
 	flags = SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ;
+	//flags = SWITCH_RTP_FLAG_AUTOADJ;
 
 	if (switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
 	  flags |= SWITCH_RTP_FLAG_USE_TIMER;
@@ -304,7 +306,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 												 &err, switch_core_session_get_pool(tech_pvt->session)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return -1;
+		return 0;
 	} else {
 		uint8_t vad_in = switch_test_flag(tech_pvt, TFLAG_VAD_IN) ? 1 : 0;
 		uint8_t vad_out = switch_test_flag(tech_pvt, TFLAG_VAD_OUT) ? 1 : 0;
@@ -316,7 +318,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 		}
 	}
 
-	return 0;
+	return 1;
 }
 
 
@@ -444,18 +446,23 @@ static int do_describe(struct private_object *tech_pvt, int force)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Don't have my codec yet here's one\n");
 			tech_pvt->codec_name = lame(tech_pvt->codecs[0]->iananame);
 			tech_pvt->codec_num = tech_pvt->codecs[0]->ianacode;
+			tech_pvt->r_codec_num = tech_pvt->codecs[0]->ianacode;
 			tech_pvt->codec_index = 0;
 					
 			payloads[0].name = lame(tech_pvt->codecs[0]->iananame);
 			payloads[0].id = tech_pvt->codecs[0]->ianacode;
+			payloads[0].rate = tech_pvt->codecs[0]->samples_per_second;
+			payloads[0].bps = tech_pvt->codecs[0]->bits_per_second;
 			
 		} else {
 			payloads[0].name = lame(tech_pvt->codecs[tech_pvt->codec_index]->iananame);
 			payloads[0].id = tech_pvt->codecs[tech_pvt->codec_index]->ianacode;
+			payloads[0].rate = tech_pvt->codecs[0]->samples_per_second;
+			payloads[0].bps = tech_pvt->codecs[0]->bits_per_second;
 		}
 
 				
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send Describe [%s]\n", payloads[0].name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send Describe [%s@%d]\n", payloads[0].name, payloads[0].rate);
 		tech_pvt->desc_id = ldl_session_describe(tech_pvt->dlsession, payloads, 1,
 												 switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? LDL_DESCRIPTION_INITIATE : LDL_DESCRIPTION_ACCEPT);
 		switch_set_flag_locked(tech_pvt, TFLAG_CODEC_READY);
@@ -499,7 +506,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, vo
 		elapsed = (unsigned int)((now - started) / 1000);
 
 		if (switch_channel_get_state(channel) >= CS_HANGUP || switch_test_flag(tech_pvt, TFLAG_BYE)) {
-			return NULL;
+			goto out;
 		}
 
 		
@@ -528,10 +535,12 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, vo
 	}
 	
 	if (switch_channel_get_state(channel) >= CS_HANGUP || switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		return NULL;
+		goto out;
 	}	
 
-	activate_rtp(tech_pvt);
+	if (!activate_rtp(tech_pvt)) {
+		goto out;
+	}
 	
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		do_candidates(tech_pvt, 0);
@@ -541,6 +550,13 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, vo
 		switch_core_session_thread_launch(session);
 	}
 	switch_channel_set_state(channel, CS_INIT);
+	return NULL;
+	
+ out:
+	if (!switch_core_session_runing(tech_pvt->session)) {
+		channel_on_hangup(tech_pvt->session);
+		switch_core_session_destroy(&tech_pvt->session);
+	}
 	return NULL;
 }
 
@@ -920,6 +936,33 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+static switch_status_t channel_receive_event(switch_core_session_t *session, switch_event_t *event)
+{
+	switch_channel_t *channel;
+    struct private_object *tech_pvt;
+	char *subject, *body;
+
+    channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+    tech_pvt = switch_core_session_get_private(session);
+    assert(tech_pvt != NULL);
+
+
+	if (!(body = switch_event_get_body(event))) {
+		body = "";
+	}
+
+	if (!(subject = switch_event_get_header(event, "subject"))) {
+		subject = "None";
+	}
+
+	ldl_session_send_msg(tech_pvt->dlsession, subject, body);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static const switch_state_handler_table_t channel_event_handlers = {
 	/*.on_init */ channel_on_init,
 	/*.on_ring */ channel_on_ring,
@@ -938,7 +981,8 @@ static const switch_io_routines_t channel_io_routines = {
 	/*.waitfor_read */ channel_waitfor_read,
 	/*.waitfor_write */ channel_waitfor_write,
 	/*.send_dtmf */ channel_send_dtmf,
-	/*.receive_message*/ channel_receive_message
+	/*.receive_message*/ channel_receive_message,
+	/*.receive_event*/ channel_receive_event
 };
 
 static const switch_endpoint_interface_t channel_endpoint_interface = {
@@ -1531,7 +1575,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			if (*msg == '+') {
 				switch_channel_queue_dtmf(channel, msg + 1);
 				switch_set_flag_locked(tech_pvt, TFLAG_DTMF);
-				switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
+				if (tech_pvt->rtp_session) {
+					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
+				}
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SESSION MSG [%s]\n", msg);
 		}
@@ -1594,11 +1640,12 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							match = (payloads[x].id == tech_pvt->codecs[y]->ianacode) ? 1 : 0;
 						}
 						
-						if (match) {
+						if (match && payloads[x].rate == tech_pvt->codecs[y]->samples_per_second) {
 							tech_pvt->codec_index = y;
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Choosing Payload index %u %s %u\n", y, payloads[x].name, payloads[x].id);
 							tech_pvt->codec_name = tech_pvt->codecs[y]->iananame;
 							tech_pvt->codec_num = tech_pvt->codecs[y]->ianacode;
+							tech_pvt->r_codec_num = payloads[x].id;
 							if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 								do_describe(tech_pvt, 0);
 							}
@@ -1663,7 +1710,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Acceptable Candidate %s:%d\n", candidates[x].address, candidates[x].port);
 
-
+						if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+							ldl_session_accept_candidate(dlsession, &candidates[x]);
+						}
 
 						if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {
 							exten = profile->exten;
@@ -1719,10 +1768,13 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						ldl_session_set_ip(dlsession, tech_pvt->remote_ip);
 						tech_pvt->remote_port = candidates[x].port;
 						tech_pvt->remote_user = switch_core_session_strdup(session, candidates[x].username);
+
 						
 						if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 							do_candidates(tech_pvt, 0);
 						}
+				
+						
 						switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT);
 						
 						return LDL_STATUS_SUCCESS;
