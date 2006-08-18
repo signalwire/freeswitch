@@ -66,7 +66,8 @@ typedef enum {
 	TFLAG_AUTO = (1 << 17),
 	TFLAG_DTMF = (1 << 18),
 	TFLAG_TIMER = ( 1 << 19),
-	TFLAG_TERM = ( 1 << 20)
+	TFLAG_TERM = ( 1 << 20),
+	TFLAG_TRANSPORT_ACCEPT = (1 << 21),
 } TFLAGS;
 
 typedef enum {
@@ -542,6 +543,7 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, vo
 	while(! (switch_test_flag(tech_pvt, TFLAG_CODEC_READY) && 
 			 switch_test_flag(tech_pvt, TFLAG_RTP_READY) && 
 			 switch_test_flag(tech_pvt, TFLAG_ANSWER) && 
+			 switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT) &&
 			 switch_test_flag(tech_pvt, TFLAG_TRANSPORT))) {
 		now = switch_time_now();
 		elapsed = (unsigned int)((now - started) / 1000);
@@ -1608,6 +1610,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				tech_pvt->local_port = switch_rtp_request_port();
 				switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 				tech_pvt->recip = switch_core_session_strdup(session, from);
+				switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
 				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -1648,7 +1651,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 		}
 		break;
-
+	case LDL_SIGNAL_TRANSPORT_ACCEPT:
+		switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
+		printf("\n**************************************\n");
 		break;
 	case LDL_SIGNAL_INITIATE:
 		if (signal) {
