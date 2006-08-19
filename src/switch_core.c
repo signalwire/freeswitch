@@ -32,7 +32,19 @@
 
 #include <switch.h>
 #include <stdio.h>
+#include <switch_version.h>
+
+#ifdef HAVE_MLOCKALL
+#include <sys/mman.h>
+#endif
+
 //#define DEBUG_ALLOC
+
+#ifdef CRASH_PROT
+#define __CP "ENABLED"
+#else
+#define __CP "DISABLED"
+#endif
 
 #define SWITCH_EVENT_QUEUE_LEN 256
 #define SWITCH_SQL_QUEUE_LEN 2000
@@ -3109,7 +3121,65 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	runtime.initiated = switch_time_now();
 	return SWITCH_STATUS_SUCCESS;
 }
+#ifdef SIGPIPE
+static int handle_SIGPIPE(int sig)
+{
+	if(sig);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig Pipe!\n");
+	return 0;
+}
+#endif
+#ifdef TRAP_BUS
+static int handle_SIGBUS(int sig)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig BUS!\n");
+	return 0;
+}
+#endif
 
+/* no ctl-c mofo */
+static int handle_SIGINT(int sig)
+{
+	if (sig);
+	return 0;
+}
+SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, const char **err)
+{
+	switch_event_t *event;
+	if (switch_core_init(console, err) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
+	}
+
+	/* set signal handlers */
+	signal(SIGINT, (void *) handle_SIGINT);
+#ifdef SIGPIPE
+	signal(SIGPIPE, (void *) handle_SIGPIPE);
+#endif
+#ifdef TRAP_BUS
+	signal(SIGBUS, (void *) handle_SIGBUS);
+#endif
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");
+	if (switch_loadable_module_init() != SWITCH_STATUS_SUCCESS) {
+		*err = "Cannot load modules";
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error: %s", err);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_create(&event, SWITCH_EVENT_STARTUP) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Ready");
+		switch_event_fire(&event);
+	}
+
+#ifdef HAVE_MLOCKALL
+	mlockall(MCL_CURRENT|MCL_FUTURE);
+#endif
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "freeswitch Version %s Started. Crash Protection [%s] Max Sessions[%u]\n\n", SWITCH_VERSION_FULL, __CP, switch_core_session_limit(0));
+	return SWITCH_STATUS_SUCCESS;
+
+}
 
 SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_core_time_duration_t *duration)
 {
@@ -3135,6 +3205,16 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 
 SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 {
+	switch_event_t *event;
+	if (switch_event_create(&event, SWITCH_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Shutting Down");
+		switch_event_fire(&event);
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
+	switch_core_session_hupall();
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
+	switch_loadable_module_shutdown();
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");
 	switch_event_shutdown();

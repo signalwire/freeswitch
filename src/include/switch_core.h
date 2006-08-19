@@ -117,6 +117,14 @@ struct switch_core_runtime;
 SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err);
 
 /*! 
+  \brief Initilize the core and load modules
+  \param console optional FILE stream for output
+  \param err a pointer to set any errors to
+  \note to be called at application startup instead of switch_core_init.  Includes module loading.
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, const char **err);
+
+/*! 
   \brief Set/Get Session Limit
   \param new_limit new value (if > 0)
   \return the current session limit
