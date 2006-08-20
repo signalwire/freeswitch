@@ -2967,22 +2967,22 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 		snprintf(SWITCH_GLOBAL_dirs.base_dir, BUFSIZE, "%s", exePath);
 	}
 	if (!SWITCH_GLOBAL_dirs.mod_dir && (SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(BUFSIZE))) {
-		snprintf(SWITCH_GLOBAL_dirs.mod_dir, BUFSIZE, "%s\\mod", exePath);
+		snprintf(SWITCH_GLOBAL_dirs.mod_dir, BUFSIZE, "%smod", exePath);
 	}
 	if (!SWITCH_GLOBAL_dirs.conf_dir && (SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(BUFSIZE))) {
-		snprintf(SWITCH_GLOBAL_dirs.conf_dir, BUFSIZE, "%s\\conf", exePath);
+		snprintf(SWITCH_GLOBAL_dirs.conf_dir, BUFSIZE, "%sconf", exePath);
 	}
 	if (!SWITCH_GLOBAL_dirs.log_dir && (SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(BUFSIZE))) {
-		snprintf(SWITCH_GLOBAL_dirs.log_dir, BUFSIZE, "%s\\log", exePath);
+		snprintf(SWITCH_GLOBAL_dirs.log_dir, BUFSIZE, "%slog", exePath);
 	}
 	if (!SWITCH_GLOBAL_dirs.db_dir && (SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(BUFSIZE))) {
-		snprintf(SWITCH_GLOBAL_dirs.db_dir, BUFSIZE, "%s\\db", exePath);
+		snprintf(SWITCH_GLOBAL_dirs.db_dir, BUFSIZE, "%sdb", exePath);
 	}
 	if (!SWITCH_GLOBAL_dirs.script_dir && (SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(BUFSIZE))) {
-		snprintf(SWITCH_GLOBAL_dirs.script_dir, BUFSIZE, "%s\\scripts", exePath);
+		snprintf(SWITCH_GLOBAL_dirs.script_dir, BUFSIZE, "%sscripts", exePath);
 	}
 	if (!SWITCH_GLOBAL_dirs.htdocs_dir && (SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(BUFSIZE))) {
-		snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%s\\mod", exePath);
+		snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%shtdocs", exePath);
 	}
 #else
 	SWITCH_GLOBAL_dirs.base_dir = SWITCH_PREFIX_DIR;
