@@ -2963,25 +2963,25 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	GetModuleFileName( NULL, exePath, BUFSIZE );
 	lastbacklash = strrchr( exePath, '\\');
 	exePath[(lastbacklash - exePath + 1)] = '\0';
-	if ((SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(BUFSIZE))) {
+	if (!SWITCH_GLOBAL_dirs.base_dir && (SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(BUFSIZE))) {
 		snprintf(SWITCH_GLOBAL_dirs.base_dir, BUFSIZE, "%s", exePath);
 	}
-	if ((SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(BUFSIZE))) {
+	if (!SWITCH_GLOBAL_dirs.mod_dir && (SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(BUFSIZE))) {
 		snprintf(SWITCH_GLOBAL_dirs.mod_dir, BUFSIZE, "%s\\mod", exePath);
 	}
-	if ((SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(BUFSIZE))) {
+	if (!SWITCH_GLOBAL_dirs.conf_dir && (SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(BUFSIZE))) {
 		snprintf(SWITCH_GLOBAL_dirs.conf_dir, BUFSIZE, "%s\\conf", exePath);
 	}
-	if ((SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(BUFSIZE))) {
+	if (!SWITCH_GLOBAL_dirs.log_dir && (SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(BUFSIZE))) {
 		snprintf(SWITCH_GLOBAL_dirs.log_dir, BUFSIZE, "%s\\log", exePath);
 	}
-	if ((SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(BUFSIZE))) {
+	if (!SWITCH_GLOBAL_dirs.db_dir && (SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(BUFSIZE))) {
 		snprintf(SWITCH_GLOBAL_dirs.db_dir, BUFSIZE, "%s\\db", exePath);
 	}
-	if ((SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(BUFSIZE))) {
+	if (!SWITCH_GLOBAL_dirs.script_dir && (SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(BUFSIZE))) {
 		snprintf(SWITCH_GLOBAL_dirs.script_dir, BUFSIZE, "%s\\scripts", exePath);
 	}
-	if ((SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(BUFSIZE))) {
+	if (!SWITCH_GLOBAL_dirs.htdocs_dir && (SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(BUFSIZE))) {
 		snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%s\\mod", exePath);
 	}
 #else
@@ -2998,7 +2998,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 #else
 #ifdef WIN32
 	GetTempPath(dwBufSize, lpPathBuffer);
-	if ((SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(BUFSIZE))) {
+	if (!SWITCH_GLOBAL_dirs.htdocs_dir && (SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(BUFSIZE))) {
 		snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%s", lpPathBuffer);
 	}
 #else
@@ -3269,6 +3269,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 		apr_pool_destroy(runtime.memory_pool);
 		apr_terminate();
 	}
+
+#ifdef WIN32
+	free(SWITCH_GLOBAL_dirs.base_dir);
+	free(SWITCH_GLOBAL_dirs.mod_dir);
+	free(SWITCH_GLOBAL_dirs.conf_dir);
+	free(SWITCH_GLOBAL_dirs.log_dir);
+	free(SWITCH_GLOBAL_dirs.db_dir);
+	free(SWITCH_GLOBAL_dirs.script_dir);
+	free(SWITCH_GLOBAL_dirs.htdocs_dir);
+	free(SWITCH_GLOBAL_dirs.temp_dir);
+#endif
 
 	return SWITCH_STATUS_SUCCESS;
 }
