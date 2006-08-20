@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
- *
+ * Brian K. West <brian.west@mac.com>
  *
  * mod_echo.c -- Echo application
  *
