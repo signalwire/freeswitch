@@ -2955,10 +2955,36 @@ static void core_event_handler(switch_event_t *event)
 SWITCH_DECLARE(void) switch_core_set_globals(void)
 {
 #ifdef WIN32
-#define BUFSIZE 50
+#define BUFSIZE 1024
     char lpPathBuffer[BUFSIZE];
 	DWORD dwBufSize=BUFSIZE;
-#endif
+	char exePath[1024];
+	char *lastbacklash;
+	GetModuleFileName( NULL, exePath, BUFSIZE );
+	lastbacklash = strrchr( exePath, '\\');
+	exePath[(lastbacklash - exePath + 1)] = '\0';
+	if ((SWITCH_GLOBAL_dirs.base_dir = (char *) malloc(BUFSIZE))) {
+		snprintf(SWITCH_GLOBAL_dirs.base_dir, BUFSIZE, "%s", exePath);
+	}
+	if ((SWITCH_GLOBAL_dirs.mod_dir = (char *) malloc(BUFSIZE))) {
+		snprintf(SWITCH_GLOBAL_dirs.mod_dir, BUFSIZE, "%s\\mod", exePath);
+	}
+	if ((SWITCH_GLOBAL_dirs.conf_dir = (char *) malloc(BUFSIZE))) {
+		snprintf(SWITCH_GLOBAL_dirs.conf_dir, BUFSIZE, "%s\\conf", exePath);
+	}
+	if ((SWITCH_GLOBAL_dirs.log_dir = (char *) malloc(BUFSIZE))) {
+		snprintf(SWITCH_GLOBAL_dirs.log_dir, BUFSIZE, "%s\\log", exePath);
+	}
+	if ((SWITCH_GLOBAL_dirs.db_dir = (char *) malloc(BUFSIZE))) {
+		snprintf(SWITCH_GLOBAL_dirs.db_dir, BUFSIZE, "%s\\db", exePath);
+	}
+	if ((SWITCH_GLOBAL_dirs.script_dir = (char *) malloc(BUFSIZE))) {
+		snprintf(SWITCH_GLOBAL_dirs.script_dir, BUFSIZE, "%s\\scripts", exePath);
+	}
+	if ((SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(BUFSIZE))) {
+		snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%s\\mod", exePath);
+	}
+#else
 	SWITCH_GLOBAL_dirs.base_dir = SWITCH_PREFIX_DIR;
 	SWITCH_GLOBAL_dirs.mod_dir = SWITCH_MOD_DIR;
 	SWITCH_GLOBAL_dirs.conf_dir = SWITCH_CONF_DIR;
@@ -2966,12 +2992,15 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	SWITCH_GLOBAL_dirs.db_dir = SWITCH_DB_DIR;
 	SWITCH_GLOBAL_dirs.script_dir = SWITCH_SCRIPT_DIR;
 	SWITCH_GLOBAL_dirs.htdocs_dir = SWITCH_HTDOCS_DIR;
+#endif
 #ifdef SWITCH_TEMP_DIR
 	SWITCH_GLOBAL_dirs.temp_dir = SWITCH_TEMP_DIR;
 #else
 #ifdef WIN32
 	GetTempPath(dwBufSize, lpPathBuffer);
-	SWITCH_GLOBAL_dirs.temp_dir = lpPathBuffer;
+	if ((SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(BUFSIZE))) {
+		snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%s", lpPathBuffer);
+	}
 #else
 	SWITCH_GLOBAL_dirs.temp_dir = "/tmp/";
 #endif

@@ -37,6 +37,7 @@
 static int RUNNING = 0;
 static char *lfile = LOGFILE;
 static char *pfile = PIDFILE;
+#define SERVICENAME "Freeswitch"
 
 #ifdef __ICC
 #pragma warning (disable:167)
@@ -44,6 +45,8 @@ static char *pfile = PIDFILE;
 
 
 #ifdef WIN32
+#include <winsock2.h>
+#include <windows.h>
 static HANDLE shutdown_event;
 #endif
 
@@ -86,6 +89,7 @@ static int freeswitch_kill_background()
 	FILE *f;
 	char path[256] = "";
 	pid_t pid = 0;
+	switch_core_set_globals();
 	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
 	if ((f = fopen(path, "r")) == 0) {
 		fprintf(stderr, "Cannot open pid file %s.\n", path);
@@ -113,6 +117,55 @@ static int freeswitch_kill_background()
 	return 0;
 }
 
+#ifdef WIN32
+SERVICE_STATUS_HANDLE hStatus;
+SERVICE_STATUS status;
+
+void WINAPI ServiceCtrlHandler( DWORD control )
+{
+    switch( control )
+    {
+    case SERVICE_CONTROL_SHUTDOWN:
+    case SERVICE_CONTROL_STOP:
+        // do shutdown stuff here
+		switch_core_destroy();
+        status.dwCurrentState = SERVICE_STOPPED;
+        status.dwWin32ExitCode = 0;
+        status.dwCheckPoint = 0;
+        status.dwWaitHint = 0;
+        break;
+    case SERVICE_CONTROL_INTERROGATE:
+        // just set the current state to whatever it is...
+        break;
+    }
+
+    SetServiceStatus( hStatus, &status );
+}
+
+void WINAPI service_main( DWORD numArgs, char **args )
+{
+	const char *err = NULL;
+    // we have to initialize the service-specific stuff
+    memset( &status, 0, sizeof(SERVICE_STATUS) );
+    status.dwServiceType = SERVICE_WIN32;
+    status.dwCurrentState = SERVICE_START_PENDING;
+    status.dwControlsAccepted = SERVICE_ACCEPT_STOP;
+
+    hStatus = RegisterServiceCtrlHandler( SERVICENAME, &ServiceCtrlHandler );
+
+    SetServiceStatus( hStatus, &status );
+	set_high_priority();
+	if (switch_core_init_and_modload(lfile, &err) != SWITCH_STATUS_SUCCESS) {
+	    status.dwCurrentState = SERVICE_STOPPED;
+	} else {
+		status.dwCurrentState = SERVICE_RUNNING;
+	}
+
+    SetServiceStatus( hStatus, &status );
+}
+
+#endif
+
 int main(int argc, char *argv[])
 {
 	char path[256] = "";
@@ -122,8 +175,59 @@ int main(int argc, char *argv[])
 	FILE *f;
 	pid_t pid = 0;
 
+#ifdef WIN32
+    SERVICE_TABLE_ENTRY dispatchTable[] =
+    {
+        { SERVICENAME, &service_main },
+        { NULL, NULL }
+    };
+
+	if (argv[1] && !strcmp(argv[1], "-service")) {
+		if(StartServiceCtrlDispatcher( dispatchTable ) == 0 )
+		{
+			//Not loaded as a service
+			fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
+			fprintf(stderr, "To install the service load freeswitch with -install\n");
+		}
+		exit(0);
+	}
+	if (argv[1] && !strcmp(argv[1], "-install")) {
+		char exePath[1024];
+	    char servicePath[1024];
+
+		SC_HANDLE handle = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );
+		GetModuleFileName( NULL, exePath, 1024 );
+		snprintf(servicePath, sizeof(servicePath), "%s -service", exePath);
+		CreateService(
+			handle,
+			SERVICENAME,
+			SERVICENAME,
+			GENERIC_READ | GENERIC_EXECUTE,
+			SERVICE_WIN32_OWN_PROCESS,
+			SERVICE_AUTO_START,
+			SERVICE_ERROR_IGNORE,
+			servicePath,
+			NULL,
+			NULL,
+			NULL,
+			NULL,
+			NULL
+		);
+		exit(0);
+	}
+	if (argv[1] && !strcmp(argv[1], "-uninstall")) {
+		SC_HANDLE handle = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );
+		SC_HANDLE service = OpenService( handle, SERVICENAME, DELETE );
+		if( service != NULL )
+		{
+			// remove the service!
+			DeleteService( service );
+		}
+		exit(0);
+	}
+#endif
+
 	set_high_priority();
-	switch_core_set_globals();
 
 	if (argv[1] && !strcmp(argv[1], "-stop")) {
 		return freeswitch_kill_background();
@@ -133,15 +237,6 @@ int main(int argc, char *argv[])
 		bg++;
 	}
 
-	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
-	if ((f = fopen(path, "w")) == 0) {
-		fprintf(stderr, "Cannot open pid file %s.\n", path);
-		return 255;
-	}
-
-	fprintf(f, "%d", pid = getpid());
-	fclose(f);
-
 	if (bg) {
 		ppath = lfile;
 
@@ -150,7 +245,7 @@ int main(int argc, char *argv[])
 
 #ifdef WIN32
 		FreeConsole();
-		snprintf(path, sizeof(path), "Global\\Freeswitch.%d", pid);
+		snprintf(path, sizeof(path), "Global\\Freeswitch.%d", getpid());
 		shutdown_event = CreateEvent(NULL, FALSE, FALSE, path);		
 #else
 		if ((pid = fork())) {
@@ -164,6 +259,15 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Cannot Initilize [%s]\n", err);
 		return 255;
 	}
+
+	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
+	if ((f = fopen(path, "w")) == 0) {
+		fprintf(stderr, "Cannot open pid file %s.\n", path);
+		return 255;
+	}
+
+	fprintf(f, "%d", pid = getpid());
+	fclose(f);
 
 	freeswitch_runtime_loop(bg);
 
