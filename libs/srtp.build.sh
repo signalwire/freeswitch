@@ -7,8 +7,8 @@ fi
 
 ./configure $@ $opts
 
-make clean uninstall all
-make install
+$MAKE clean uninstall all
+$MAKE install
 
 
 
