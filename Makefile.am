@@ -3,7 +3,7 @@
 EXTRA_DIST =
 SUBDIRS = 
 AUTOMAKE_OPTS = gnu foreign
-AM_MAKE=`which gmake 2>/dev/null || which make 2>/dev/null || make`
+AM_MAKE=`which gmake 2>/dev/null || which make 2>/dev/null || echo make`
 MAKE=$(AM_MAKE)
 NAME=freeswitch
 PREFIX=$(prefix)
