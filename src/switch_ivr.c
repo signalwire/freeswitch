@@ -1328,10 +1328,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		status = SWITCH_STATUS_GENERR;
 		goto done;
 	}
-	
+
 	if (session) {
 		caller_channel = switch_core_session_get_channel(session);
 		assert(caller_channel != NULL);
+
+		switch_channel_set_variable(caller_channel, "originate_disposition", "failure");
 
 		if ((var = switch_channel_get_variable(caller_channel, "group_confirm_key"))) {
 			key = switch_core_session_strdup(session, var);
@@ -1399,20 +1401,34 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				goto done;
 			}
 
-			caller_profiles[i] = switch_caller_profile_new(pool,
-														   NULL,
-														   NULL,
-														   cid_name_override,
-														   cid_num_override,
-														   NULL,
-														   NULL, 
-														   NULL,
-														   NULL,
-														   __FILE__,
-														   NULL,
-														   chan_data);
+			if (caller_profile_override) {
+				caller_profiles[i] = switch_caller_profile_new(pool,
+															   caller_profile_override->username,
+															   caller_profile_override->dialplan,
+															   caller_profile_override->caller_id_name,
+															   caller_profile_override->caller_id_number,
+															   caller_profile_override->network_addr, 
+															   caller_profile_override->ani,
+															   caller_profile_override->ani2,
+															   caller_profile_override->rdnis,
+															   caller_profile_override->source,
+															   caller_profile_override->context,
+															   chan_data);
+			} else {
+				caller_profiles[i] = switch_caller_profile_new(pool,
+															   NULL,
+															   NULL,
+															   cid_name_override,
+															   cid_num_override,
+															   NULL,
+															   NULL, 
+															   NULL,
+															   NULL,
+															   __FILE__,
+															   NULL,
+															   chan_data);
+			}
 		}
-
 
 		if (switch_core_session_outgoing_channel(session, chan_type, caller_profiles[i], &peer_sessions[i], pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
@@ -1526,10 +1542,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			continue;
 		}
 		if (i != idx) {
-			if (caller_channel) {
-				switch_channel_set_variable(caller_channel, "originate_disposition", "lost race");
-				switch_channel_hangup(peer_channels[i], SWITCH_CAUSE_LOSE_RACE);
-			}
+			switch_channel_hangup(peer_channels[i], SWITCH_CAUSE_LOSE_RACE);
 		}
 	}
 

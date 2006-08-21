@@ -1217,6 +1217,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 
 		snprintf(name, sizeof(name), "Exosip/%s-%04x", event->request->from->url->username, rand() & 0xffff);
 		switch_channel_set_name(channel, name);
+		switch_channel_set_variable(channel, "endpoint_disposition", "INVITE");
 
 		if (osip_message_header_get_byname (event->request, "SrtpRealm", 0, &tedious)) {
 			tech_pvt->realm = switch_core_session_strdup(session, osip_header_get_value(tedious));
@@ -1503,31 +1504,31 @@ static void destroy_call_by_event(eXosip_event_t *event)
 
 	switch (event->type) {
 	case EXOSIP_CALL_RELEASED:
-		switch_channel_set_variable(channel, "exosip_disposition", "RELEASED");
+		switch_channel_set_variable(channel, "endpoint_disposition", "RELEASED");
 		cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		break;
 	case EXOSIP_CALL_CLOSED:
-		switch_channel_set_variable(channel, "exosip_disposition", "CLOSED");
+		switch_channel_set_variable(channel, "endpoint_disposition", "CLOSED");
 		cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		break;
 	case EXOSIP_CALL_NOANSWER:
-		switch_channel_set_variable(channel, "exosip_disposition", "NO ANSWER");
+		switch_channel_set_variable(channel, "endpoint_disposition", "NO ANSWER");
 		cause = SWITCH_CAUSE_NO_ANSWER;
 		break;
 	case EXOSIP_CALL_REQUESTFAILURE:
-		switch_channel_set_variable(channel, "exosip_disposition", "REQUEST FAILURE");
+		switch_channel_set_variable(channel, "endpoint_disposition", "REQUEST FAILURE");
 		cause = SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
 		break;
 	case EXOSIP_CALL_SERVERFAILURE:
-		switch_channel_set_variable(channel, "exosip_disposition", "SERVER FAILURE");
+		switch_channel_set_variable(channel, "endpoint_disposition", "SERVER FAILURE");
 		cause = SWITCH_CAUSE_CALL_REJECTED;
 		break;
 	case EXOSIP_CALL_GLOBALFAILURE:
-		switch_channel_set_variable(channel, "exosip_disposition", "GLOBAL FAILURE");
+		switch_channel_set_variable(channel, "endpoint_disposition", "GLOBAL FAILURE");
 		cause = SWITCH_CAUSE_CALL_REJECTED;
 		break;
 	default:
-		switch_channel_set_variable(channel, "exosip_disposition", "UNKNOWN");
+		switch_channel_set_variable(channel, "endpoint_disposition", "UNKNOWN");
 		cause = SWITCH_CAUSE_SWITCH_CONGESTION;
 		break;
 	}
@@ -1735,6 +1736,8 @@ static void handle_answer(eXosip_event_t * event)
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return;
 	}
+
+	switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 
 
 	conn = eXosip_get_audio_connection(remote_sdp);

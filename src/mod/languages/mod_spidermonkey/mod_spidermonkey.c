@@ -803,6 +803,55 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
 }
 
+static JSBool session_set_variable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+    switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(jss->session);
+    assert(channel != NULL);
+
+	if (argc > 1) {
+		char *var, *val;
+
+		var = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		val = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+		switch_channel_set_variable(channel, var, val);
+		*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
+	} else {
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+	}
+ 	
+	return JS_TRUE;
+}
+
+static JSBool session_get_variable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+    switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(jss->session);
+    assert(channel != NULL);
+
+	if (argc > 0) {
+		char *var, *val;
+		
+		var = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+		val = switch_channel_get_variable(channel, var);
+
+		if (val) {
+			*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, val));
+		} else {
+			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		}
+	} else {
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+	}
+ 	
+	return JS_TRUE;
+}
+
+
 static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -1193,6 +1242,8 @@ static JSFunctionSpec session_methods[] = {
 	{"flushEvents", session_flush_events, 1}, 
 	{"flushDigits", session_flush_digits, 1}, 
 	{"speak", session_speak, 1}, 
+	{"setVariable", session_set_variable, 1}, 
+	{"getVariable", session_get_variable, 1}, 
 	{"getDigits", session_get_digits, 1},
 	{"answer", session_answer, 0}, 
 	{"ready", session_ready, 0}, 
@@ -1414,7 +1465,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 												   context,
 												   dest);
 		
-		if (switch_ivr_originate(NULL, &peer_session, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile) != SWITCH_STATUS_SUCCESS) {
+		if (switch_ivr_originate(session, &peer_session, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Create Outgoing Channel! [%s]\n", dest);
 			return JS_TRUE;
 		}
