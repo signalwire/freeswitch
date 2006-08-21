@@ -1500,22 +1500,34 @@ static void destroy_call_by_event(eXosip_event_t *event)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "destroy %s\n", switch_channel_get_name(channel));
 	exosip_kill_channel(tech_pvt->session, SWITCH_SIG_KILL);
 
+
 	switch (event->type) {
 	case EXOSIP_CALL_RELEASED:
+		switch_channel_set_variable(channel, "exosip_disposition", "RELEASED");
+		cause = SWITCH_CAUSE_NORMAL_CLEARING;
+		break;
 	case EXOSIP_CALL_CLOSED:
+		switch_channel_set_variable(channel, "exosip_disposition", "CLOSED");
 		cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		break;
 	case EXOSIP_CALL_NOANSWER:
+		switch_channel_set_variable(channel, "exosip_disposition", "NO ANSWER");
 		cause = SWITCH_CAUSE_NO_ANSWER;
 		break;
 	case EXOSIP_CALL_REQUESTFAILURE:
+		switch_channel_set_variable(channel, "exosip_disposition", "REQUEST FAILURE");
 		cause = SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
 		break;
 	case EXOSIP_CALL_SERVERFAILURE:
+		switch_channel_set_variable(channel, "exosip_disposition", "SERVER FAILURE");
+		cause = SWITCH_CAUSE_CALL_REJECTED;
+		break;
 	case EXOSIP_CALL_GLOBALFAILURE:
+		switch_channel_set_variable(channel, "exosip_disposition", "GLOBAL FAILURE");
 		cause = SWITCH_CAUSE_CALL_REJECTED;
 		break;
 	default:
+		switch_channel_set_variable(channel, "exosip_disposition", "UNKNOWN");
 		cause = SWITCH_CAUSE_SWITCH_CONGESTION;
 		break;
 	}

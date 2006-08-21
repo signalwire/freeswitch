@@ -1280,7 +1280,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 uint32_t timelimit_sec,
 													 const switch_state_handler_table_t *table,
 													 char *cid_name_override,
-													 char *cid_num_override)
+													 char *cid_num_override,
+													 switch_caller_profile_t *caller_profile_override
+													 )
 										  
 {
 	char *peer_names[MAX_PEERS];
@@ -1361,8 +1363,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				goto done;
 			}
 
-			caller_caller_profile = switch_channel_get_caller_profile(caller_channel);
-
+			caller_caller_profile = caller_profile_override ? caller_profile_override : switch_channel_get_caller_profile(caller_channel);
+			
 			if (!cid_name_override) {
 				cid_name_override = caller_caller_profile->caller_id_name;
 			}
@@ -1515,14 +1517,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		
 	}
 
-	switch_core_session_reset(session);
+	if (session) {
+		switch_core_session_reset(session);
+	}
 
 	for (i = 0; i < argc; i++) {
 		if (!peer_channels[i]) {
 			continue;
 		}
 		if (i != idx) {
-			switch_channel_hangup(peer_channels[i], SWITCH_CAUSE_LOSE_RACE);
+			if (caller_channel) {
+				switch_channel_set_variable(caller_channel, "originate_disposition", "lost race");
+				switch_channel_hangup(peer_channels[i], SWITCH_CAUSE_LOSE_RACE);
+			}
 		}
 	}
 
@@ -1542,9 +1549,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 		switch_core_session_read_lock(peer_session);
 		*bleg = peer_session;
+		if (caller_channel) {
+			switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
+		}
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
-		switch_channel_hangup(peer_channel, SWITCH_CAUSE_NO_ANSWER);
+		if (caller_channel) {
+			switch_channel_set_variable(caller_channel, "originate_disposition", "no answer");
+			switch_channel_hangup(caller_channel, SWITCH_CAUSE_NO_ANSWER);
+		}
 		status = SWITCH_STATUS_FALSE;
 	}
 

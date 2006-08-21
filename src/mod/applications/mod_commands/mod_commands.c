@@ -260,7 +260,7 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_ivr_originate(NULL, &caller_session, aleg, timeout, NULL, cid_name, cid_num) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(NULL, &caller_session, aleg, timeout, NULL, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "Cannot Create Outgoing Channel! [%s]\n", aleg);
 		return SWITCH_STATUS_SUCCESS;
 	} 

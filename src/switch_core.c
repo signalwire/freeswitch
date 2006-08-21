@@ -247,11 +247,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_sessio
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (!switch_channel_test_flag(session->channel, CF_LOCK_THREAD)) {
-		if ((status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock)) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_set_flag(session->channel, CF_LOCK_THREAD);
-		}
-	}
+
+	status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
 	
 	return status;
 }
@@ -263,8 +260,9 @@ SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session_t *sessi
 
 SWITCH_DECLARE(void) switch_core_session_rwunlock(switch_core_session_t *session)
 {
-	switch_channel_clear_flag(session->channel, CF_LOCK_THREAD);
+
 	switch_thread_rwlock_unlock(session->rwlock);
+
 }
 
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_str)

@@ -107,6 +107,7 @@ struct ldl_handle {
 	apr_hash_t *sessions;
 	apr_hash_t *retry_hash;
 	apr_hash_t *probe_hash;
+	apr_hash_t *sub_hash;
 	apr_thread_mutex_t *lock;
 	apr_thread_mutex_t *flag_mutex;
 	ldl_loop_callback_t loop_callback;
@@ -438,6 +439,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 	return LDL_STATUS_SUCCESS;
 }
 
+const char *marker = "TRUE";
 
 static int on_presence(void *user_data, ikspak *pak)
 {
@@ -447,10 +449,12 @@ static int on_presence(void *user_data, ikspak *pak)
 	char *resource;
 	struct ldl_buffer *buffer;
 	size_t x;
-
-	//iks *msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "Ding A Ling...."); 
-	//apr_queue_push(handle->queue, msg);
-
+	
+	if (!apr_hash_get(handle->sub_hash, from, APR_HASH_KEY_STRING)) {
+		apr_hash_set(handle->sub_hash, 	apr_pstrdup(handle->pool, from), APR_HASH_KEY_STRING, &marker);
+		iks *msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "Ding A Ling...."); 
+		apr_queue_push(handle->queue, msg);
+	}
 
 	apr_cpystrn(id, from, sizeof(id));
 	if ((resource = strchr(id, '/'))) {
@@ -517,42 +521,21 @@ static int on_commands(void *user_data, ikspak *pak)
 			if (!strcasecmp(iks_name(tag), "bind")) {
 				char *jid = iks_find_cdata(tag, "jid");
 				char *resource = strchr(jid, '/');
-				iks *iq, *usersetting, *x;
+				iks *iq, *x;
 				handle->acc->resource = apr_pstrdup(handle->pool, resource);
 				handle->login = apr_pstrdup(handle->pool, jid);
 				if ((iq = iks_new("iq"))) {
-					char *njid = strdup(handle->login);
-					if ((resource = strchr(njid, '/'))) {
-						*resource++ = '\0';
-					}
-					iks_insert_attrib(iq, "type", "set");
-					iks_insert_attrib(iq, "to", njid);
-					iks_insert_attrib(iq, "id", "params");
-
-					usersetting = iks_insert(iq, "usersetting");
-					iks_insert_attrib(usersetting, "xmlns", "google:setting");
-					x = iks_insert(usersetting,  "autoacceptrequests");
-					iks_insert_attrib(x, "value", "true");
-					x = iks_insert(usersetting,  "mailnotifications");
-					iks_insert_attrib(x, "value", "false");
-					free(njid);
+					iks_insert_attrib(iq, "type", "get");
+					iks_insert_attrib(iq, "id", "roster");
+					x = iks_insert(iq,  "query");
+					iks_insert_attrib(x, "xmlns", "jabber:iq:roster");
+					iks_insert_attrib(x, "xmlns:gr", "google:roster");
+					iks_insert_attrib(x, "gr:ext", "2");
+					iks_insert_attrib(x, "gr:include", "all");
 					iks_send(handle->parser, iq);
 					iks_delete(iq);
-					if ((iq = iks_new("iq"))) {
-						iks_insert_attrib(iq, "type", "get");
-						iks_insert_attrib(iq, "id", "roster");
-						x = iks_insert(iq,  "query");
-						iks_insert_attrib(x, "xmlns", "jabber:iq:roster");
-						iks_insert_attrib(x, "xmlns:gr", "google:roster");
-						iks_insert_attrib(x, "gr:ext", "2");
-						iks_insert_attrib(x, "gr:include", "all");
-						iks_send(handle->parser, iq);
-						iks_delete(iq);
-					}
-
-
+					break;
 				}
-				break;
 			}
 			tag = iks_next_tag(tag);
 		}
@@ -1488,6 +1471,7 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
 		new_handle->sessions = apr_hash_make(new_handle->pool);
 		new_handle->retry_hash = apr_hash_make(new_handle->pool);
 		new_handle->probe_hash = apr_hash_make(new_handle->pool);
+		new_handle->sub_hash = apr_hash_make(new_handle->pool);
 		apr_thread_mutex_create(&new_handle->lock, APR_THREAD_MUTEX_NESTED, new_handle->pool);
 		apr_thread_mutex_create(&new_handle->flag_mutex, APR_THREAD_MUTEX_NESTED, new_handle->pool);
 

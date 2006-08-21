@@ -1989,7 +1989,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	switch_channel_t *caller_channel = NULL;
 
 
-	if (switch_ivr_originate(session, &peer_session, bridgeto, timeout, &audio_bridge_peer_state_handlers, cid_name, cid_num) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(session, &peer_session, bridgeto, timeout, &audio_bridge_peer_state_handlers, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
 		if (session) {
 			caller_channel = switch_core_session_get_channel(session);

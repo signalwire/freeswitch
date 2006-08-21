@@ -1337,12 +1337,11 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	switch_memory_pool_t *pool = NULL;
-	if (argc > 2) {
+	if (argc > 1) {
 		struct js_session *jss = NULL;
 		JSObject *session_obj;
 		switch_core_session_t *session = NULL, *peer_session = NULL;
 		switch_caller_profile_t *caller_profile = NULL;
-		char *channel_type = NULL;
 		char *dest = NULL;
 		char *dialplan = NULL;
 		char *cid_name = "";
@@ -1353,6 +1352,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		char *rdnis = "";
 		char *context = "";
 		char *username = NULL;
+		char *to = NULL;
 		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
@@ -1362,35 +1362,37 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			}
 		}
 
-		channel_type = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		dest = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
+		dest = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 
+		if (argc > 2) {
+			dialplan = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
+		}
 		if (argc > 3) {
-			dialplan = JS_GetStringBytes(JS_ValueToString(cx, argv[3]));
+			context = JS_GetStringBytes(JS_ValueToString(cx, argv[3]));
 		}
 		if (argc > 4) {
-			context = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
+			cid_name = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
 		}
 		if (argc > 5) {
-			cid_name = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
+			cid_num = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
 		}
 		if (argc > 6) {
-			cid_num = JS_GetStringBytes(JS_ValueToString(cx, argv[6]));
+			network_addr = JS_GetStringBytes(JS_ValueToString(cx, argv[6]));
 		}
 		if (argc > 7) {
-			network_addr = JS_GetStringBytes(JS_ValueToString(cx, argv[7]));
+			ani = JS_GetStringBytes(JS_ValueToString(cx, argv[7]));
 		}
 		if (argc > 8) {
-			ani = JS_GetStringBytes(JS_ValueToString(cx, argv[8]));
+			ani2 = JS_GetStringBytes(JS_ValueToString(cx, argv[8]));
 		}
 		if (argc > 9) {
-			ani2 = JS_GetStringBytes(JS_ValueToString(cx, argv[9]));
+			rdnis = JS_GetStringBytes(JS_ValueToString(cx, argv[9]));
 		}
 		if (argc > 10) {
-			rdnis = JS_GetStringBytes(JS_ValueToString(cx, argv[10]));
+			username = JS_GetStringBytes(JS_ValueToString(cx, argv[10]));
 		}
 		if (argc > 11) {
-			username = JS_GetStringBytes(JS_ValueToString(cx, argv[11]));
+			to = JS_GetStringBytes(JS_ValueToString(cx, argv[11]));
 		}
 		
 		
@@ -1399,20 +1401,34 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			return JS_FALSE;
 		}
 
-		caller_profile = switch_caller_profile_new(pool, username, dialplan, cid_name, cid_num, network_addr, ani, ani2, rdnis, (char *)modname, context, dest);
-		if (switch_core_session_outgoing_channel(session, channel_type, caller_profile, &peer_session, pool) == SWITCH_STATUS_SUCCESS) {
-			jss = switch_core_session_alloc(peer_session, sizeof(*jss));
-			jss->session = peer_session;
-			jss->flags = 0;
-			jss->cx = cx;
-			jss->obj = obj;
-			JS_SetPrivate(cx, obj, jss);
-			switch_core_session_thread_launch(peer_session);
-			switch_set_flag(jss, S_HUP);
+		caller_profile = switch_caller_profile_new(pool,
+												   username,
+												   dialplan,
+												   cid_name,
+												   cid_num,
+												   network_addr,
+												   ani,
+												   ani2,
+												   rdnis,
+												   (char *)modname,
+												   context,
+												   dest);
+		
+		if (switch_ivr_originate(NULL, &peer_session, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Create Outgoing Channel! [%s]\n", dest);
 			return JS_TRUE;
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Channel\n");			
 		}
+
+		switch_core_session_rwunlock(peer_session);
+
+		jss = switch_core_session_alloc(peer_session, sizeof(*jss));
+		jss->session = peer_session;
+		jss->flags = 0;
+		jss->cx = cx;
+		jss->obj = obj;
+		JS_SetPrivate(cx, obj, jss);
+		switch_set_flag(jss, S_HUP);
+
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Missing Args\n");
 	}
@@ -1494,6 +1510,9 @@ static void fileio_destroy(JSContext *cx, JSObject *obj)
 	struct fileio_obj *fio = JS_GetPrivate(cx, obj);
 
 	if (fio) {
+		if (fio->fd) {
+			switch_file_close(fio->fd);
+		}
 		switch_memory_pool_t *pool = fio->pool;
 		switch_core_destroy_memory_pool(&pool);
 		pool = NULL;
@@ -2214,7 +2233,6 @@ static JSBool js_bridge(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 {
 	struct js_session *jss_a = NULL, *jss_b = NULL;
 	JSObject *session_obj_a = NULL, *session_obj_b = NULL;
-	int32 timelimit = 60;
 
 	if (argc > 1) {
 		if (JS_ValueToObject(cx, argv[0], &session_obj_a)) {
@@ -2231,12 +2249,6 @@ static JSBool js_bridge(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 		} 
 	}
 	
-	if (argc > 3) {
-		if (!JS_ValueToInt32(cx, argv[3], &timelimit)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Convert to INT\n");
-			return JS_FALSE;
-		}
-	}
 	if (!(jss_a && jss_b)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure! %s %s\n", jss_a ? "y" : "n", jss_b ? "y" : "n");
 		return JS_FALSE;

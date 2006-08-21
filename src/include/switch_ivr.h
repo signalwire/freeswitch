@@ -173,6 +173,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
   \param table optional state handler table to install on the channel
   \param cid_name_override override the caller id name
   \param cid_num_override override the caller id number
+  \param caller_profile_override override the entire calling caller profile
   \return SWITCH_STATUS_SUCCESS if bleg is a running session.
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
@@ -181,7 +182,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 uint32_t timelimit_sec,
 													 const switch_state_handler_table_t *table,
 													 char *cid_name_override,
-													 char *cid_num_override);
+													 char *cid_num_override,
+													 switch_caller_profile_t *caller_profile_override);
 
 /*!
   \brief Bridge Audio from one session to another
