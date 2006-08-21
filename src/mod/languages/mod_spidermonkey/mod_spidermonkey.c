@@ -1561,10 +1561,11 @@ static void fileio_destroy(JSContext *cx, JSObject *obj)
 	struct fileio_obj *fio = JS_GetPrivate(cx, obj);
 
 	if (fio) {
-		if (fio->fd) {
+		switch_memory_pool_t *pool;
+			if (fio->fd) {
 			switch_file_close(fio->fd);
 		}
-		switch_memory_pool_t *pool = fio->pool;
+		pool = fio->pool;
 		switch_core_destroy_memory_pool(&pool);
 		pool = NULL;
 	}

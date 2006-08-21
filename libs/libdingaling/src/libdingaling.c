@@ -451,8 +451,9 @@ static int on_presence(void *user_data, ikspak *pak)
 	size_t x;
 	
 	if (!apr_hash_get(handle->sub_hash, from, APR_HASH_KEY_STRING)) {
+		iks *msg;
 		apr_hash_set(handle->sub_hash, 	apr_pstrdup(handle->pool, from), APR_HASH_KEY_STRING, &marker);
-		iks *msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "Ding A Ling...."); 
+		msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "Ding A Ling...."); 
 		apr_queue_push(handle->queue, msg);
 	}
 
