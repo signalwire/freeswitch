@@ -1108,6 +1108,7 @@ modules: $(NAME)
 	@if [ ! -f $(PWD)/modules.conf ] ; then cp $(PWD)/modules.conf.in $(PWD)/modules.conf ; fi
 	@echo making modules
 	@rm -f build/freeswitch.env
+	@if [ -f $(PWD)/modbuild.env ] ; then cp $(PWD)/modbuild.env build/freeswitch.env ; fi
 	@./build/addenv.sh build/freeswitch.env MAKE "$(MAKE)"
 	@./build/addenv.sh build/freeswitch.env DYLD_LIBRARY_PATH "$(PREFIX)/lib:$DYLD_LIBRARY_PATH"
 	@./build/addenv.sh build/freeswitch.env LD_LIBRARY_PATH "$(PREFIX)/lib:$LD_LIBRARY_PATH"

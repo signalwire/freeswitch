@@ -176,9 +176,9 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 {
 	char hostname[256];
 	char cmd[2048];
-	int running = 1, x = 0, activity = 1;
+	int running = 1, activity = 1;
 	char *retbuf = (char *)malloc(CMD_BUFLEN);
-
+	switch_size_t x = 0;
 
 	assert(retbuf != NULL);
 	gethostname(hostname, sizeof(hostname));

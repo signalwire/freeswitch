@@ -456,7 +456,7 @@ static switch_status_t js_stream_dtmf_callback(switch_core_session_t *session, v
 			for(d = dtmf; *d; d++) {
 				cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
 				if ((cb_state->ret_buffer_len > cb_state->digit_count)||
-					(cb_state->ret_buffer_len > sizeof(cb_state->ret_buffer))||
+					(cb_state->ret_buffer_len > (int32_t) sizeof(cb_state->ret_buffer))||
 					(cb_state->ret_buffer_len >= cb_state->digit_count)
 					) {
 					return SWITCH_STATUS_FALSE;
@@ -573,7 +573,7 @@ static switch_status_t js_record_dtmf_callback(switch_core_session_t *session, v
 			for(d = dtmf; *d; d++) {
 				cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
 				if ((cb_state->ret_buffer_len > cb_state->digit_count)||
-					(cb_state->ret_buffer_len > sizeof(cb_state->ret_buffer))||
+					(cb_state->ret_buffer_len > (int32_t) sizeof(cb_state->ret_buffer))||
 					(cb_state->ret_buffer_len >= cb_state->digit_count)
 					) {
 					return SWITCH_STATUS_FALSE;
@@ -642,7 +642,7 @@ static switch_status_t js_speak_dtmf_callback(switch_core_session_t *session, vo
 			for(d = dtmf; *d; d++) {
 				cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
 				if ((cb_state->ret_buffer_len > cb_state->digit_count)||
-					(cb_state->ret_buffer_len > sizeof(cb_state->ret_buffer))||
+					(cb_state->ret_buffer_len > (int32_t) sizeof(cb_state->ret_buffer))||
 					(cb_state->ret_buffer_len >= cb_state->digit_count)
 					) {
 					return SWITCH_STATUS_FALSE;

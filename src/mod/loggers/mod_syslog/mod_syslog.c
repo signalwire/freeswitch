@@ -105,8 +105,8 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
-	*interface = &console_module_interface;
 	switch_status_t status;
+	*interface = &console_module_interface;
 
 	if ((status=load_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;

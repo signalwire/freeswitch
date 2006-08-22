@@ -20,8 +20,8 @@ if [ -z $end ] ; then
 fi
 
 if [ -f $mod/Makefile ] ; then
-    MODNAME=$end $make -C $mod $@
+    CFLAGS="$MOD_CFLAGS $CFLAGS " MODNAME=$end $make -C $mod $@
 else 
-    MODNAME=$end $make -f $pwd/generic_mod.mk -C $mod $@
+    CFLAGS="$MOD_CFLAGS $CFLAGS" MODNAME=$end $make -f $pwd/generic_mod.mk -C $mod $@
 fi
 
