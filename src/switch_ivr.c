@@ -1189,10 +1189,16 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		goto wbreak;
 	}
 
+	if (!switch_channel_ready(channel)) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		goto wbreak;
+	}
+
 	while(switch_channel_ready(channel)) {
 		memset(buf, 0, sizeof(buf));
 
 		if (collect->file) {
+
 			switch_ivr_play_file(collect->session, NULL, collect->file, NULL, NULL, buf, sizeof(buf));
 		} else {
 			switch_ivr_collect_digits_count(collect->session, buf, sizeof(buf), 1, "", &term, 0);
@@ -1244,13 +1250,14 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 
 			if (key) {
 				struct key_collect *collect;
-
+				
 				if ((collect = switch_core_session_alloc(peer_sessions[i], sizeof(*collect)))) {
 					switch_channel_set_flag(peer_channels[i], CF_TAGGED);
 					collect->key = key;
 					if (file) {
 						collect->file = switch_core_session_strdup(peer_sessions[i], file);
 					}
+				
 					collect->session = peer_sessions[i];
 					launch_collect_thread(collect);
 				}
@@ -1461,15 +1468,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	time(&start);
 
 	for (;;) {
+		uint32_t valid_channels = 0;
 		for (i = 0; i < argc; i++) {
 			int state;
 
 			if (!peer_channels[i]) {
 				continue;
 			}
-
+			valid_channels++;
 			state = switch_channel_get_state(peer_channels[i]);
-
+			
 			if (state >= CS_RING) {
 				goto endfor1;
 			}
@@ -1483,6 +1491,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 			switch_yield(1000);
 		}
+
+		if (valid_channels == 0) {
+			status = SWITCH_STATUS_GENERR;
+			goto done;
+		}
+
 	}
  endfor1:
 
@@ -1513,7 +1527,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	while ((!caller_channel || switch_channel_ready(caller_channel)) && 
 		   check_channel_status(peer_channels, peer_sessions, argc, &idx, file, key) && ((time(NULL) - start) < (time_t)timelimit_sec)) {
-		
+
 		/* read from the channel while we wait if the audio is up on it */
 		if (session && (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA))) {
 			switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);

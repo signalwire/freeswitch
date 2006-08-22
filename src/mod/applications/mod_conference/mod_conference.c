@@ -1963,6 +1963,7 @@ static switch_status_t audio_bridge_on_ring(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CUSTOM RING\n");
 
 	/* put the channel in a passive state so we can loop audio to it */
+	switch_channel_set_state(channel, CS_TRANSMIT);
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -1999,7 +2000,6 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	} 
 
 
-	switch_core_session_rwunlock(peer_session);
 	peer_channel = switch_core_session_get_channel(peer_session);
 	assert(peer_channel != NULL);
 	

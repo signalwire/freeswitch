@@ -1470,8 +1470,6 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			return JS_TRUE;
 		}
 
-		switch_core_session_rwunlock(peer_session);
-
 		jss = switch_core_session_alloc(peer_session, sizeof(*jss));
 		jss->session = peer_session;
 		jss->flags = 0;

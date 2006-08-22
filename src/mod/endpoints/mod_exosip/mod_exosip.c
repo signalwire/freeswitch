@@ -1717,7 +1717,6 @@ static void handle_answer(eXosip_event_t *event)
 	uint8_t pre_answer = 0;
 
 
-
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cannot answer nonexistant call [%d]!\n", event->cid);
 		return;
@@ -1729,7 +1728,6 @@ static void handle_answer(eXosip_event_t *event)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "one pre-answer is enough for call [%d]!\n", event->cid);
 			return;
 		}
-		switch_set_flag_locked(tech_pvt, TFLAG_PRE_ANSWER);
 	}
 
 	channel = switch_core_session_get_channel(tech_pvt->session);
@@ -1743,8 +1741,14 @@ static void handle_answer(eXosip_event_t *event)
 
 	/* Get all of the remote SDP elements... stuff */
 	if ((remote_sdp = eXosip_get_sdp_info(event->response)) == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant Find SDP?\n");
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		/* Exosip is daft, they send the same event for both 180 and 183 WTF!!*/
+		if (!pre_answer) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant Find SDP?\n");
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "I am daft, don't mind me.\n");
+		}
+		
 		return;
 	}
 
@@ -1767,13 +1771,8 @@ static void handle_answer(eXosip_event_t *event)
 	tech_pvt->did = event->did;
 	tech_pvt->tid = event->tid;
 
-	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
-		switch_core_codec_destroy(&tech_pvt->read_codec);
-		switch_core_codec_destroy(&tech_pvt->write_codec);
-		switch_clear_flag_locked(tech_pvt, TFLAG_USING_CODEC);
-	}
-
-	{
+	if (!switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
+	
 		int rate = atoi(drate);
 		int ms = globals.codec_ms;
 
@@ -1842,6 +1841,7 @@ static void handle_answer(eXosip_event_t *event)
 		channel = switch_core_session_get_channel(tech_pvt->session);
 		assert(channel != NULL);
 		if (pre_answer) {
+			switch_set_flag_locked(tech_pvt, TFLAG_PRE_ANSWER);
 			switch_channel_pre_answer(channel);
 		} else {
 			switch_channel_answer(channel);
