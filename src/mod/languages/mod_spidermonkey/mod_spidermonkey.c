@@ -1624,7 +1624,7 @@ static JSBool fileio_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	}
 
 	if (data) {
-		wrote = 0;
+		wrote = strlen(data);
 		*rval = BOOLEAN_TO_JSVAL( (switch_file_write(fio->fd, data, &wrote) == SWITCH_STATUS_SUCCESS) ? JS_TRUE : JS_FALSE);
 	}
 
