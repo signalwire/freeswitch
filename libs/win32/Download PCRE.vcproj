@@ -26,8 +26,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading PCRE."
-				CommandLine="if not exist $(ProjectDir)..\pcre-6.4 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/pcre-6.4.tar.gz $(ProjectDir).."
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -50,8 +48,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading PCRE."
-				CommandLine="if not exist $(ProjectDir)..\pcre-6.4 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/pcre-6.4.tar.gz $(ProjectDir).."
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -67,6 +63,30 @@
 	<References>
 	</References>
 	<Files>
+		<File
+			RelativePath=".\pcre\cleancount"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading PCRE."
+					CommandLine="if not exist $(ProjectDir)..\pcre-6.4 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/pcre-6.4.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\pcre-6.4"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading PCRE."
+					CommandLine="if not exist $(ProjectDir)..\pcre-6.4 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/pcre-6.4.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\pcre-6.4"
+				/>
+			</FileConfiguration>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

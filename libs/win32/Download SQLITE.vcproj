@@ -26,8 +26,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading SQLITE."
-				CommandLine="if not exist $(ProjectDir)..\sqlite-source-3_3_6 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sqlite-source-3_3_6.zip $(ProjectDir).."
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -50,8 +48,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading SQLITE."
-				CommandLine="if not exist $(ProjectDir)..\sqlite-source-3_3_6 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sqlite-source-3_3_6.zip $(ProjectDir).."
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -67,6 +63,30 @@
 	<References>
 	</References>
 	<Files>
+		<File
+			RelativePath=".\sqlite\cleancount"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading SQLITE."
+					CommandLine="if not exist $(ProjectDir)..\sqlite-source-3_3_6 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sqlite-source-3_3_6.zip $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\sqlite-source-3_3_6"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading SQLITE."
+					CommandLine="if not exist $(ProjectDir)..\sqlite-source-3_3_6 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sqlite-source-3_3_6.zip $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\sqlite-source-3_3_6"
+				/>
+			</FileConfiguration>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

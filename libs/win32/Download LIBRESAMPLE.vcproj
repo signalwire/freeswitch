@@ -26,8 +26,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading LIBRESAMPLE."
-				CommandLine="if not exist $(ProjectDir)..\libresample-0.1.3 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libresample-0.1.3.zip $(ProjectDir).."
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -50,8 +48,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading LIBRESAMPLE."
-				CommandLine="if not exist $(ProjectDir)..\libresample-0.1.3 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libresample-0.1.3.zip $(ProjectDir).."
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -67,6 +63,30 @@
 	<References>
 	</References>
 	<Files>
+		<File
+			RelativePath=".\libresample\cleancount"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading LIBRESAMPLE."
+					CommandLine="if not exist $(ProjectDir)..\libresample-0.1.3 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libresample-0.1.3.zip $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\libresample-0.1.3"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading LIBRESAMPLE."
+					CommandLine="if not exist $(ProjectDir)..\libresample-0.1.3 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libresample-0.1.3.zip $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\libresample-0.1.3"
+				/>
+			</FileConfiguration>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
