@@ -52,7 +52,7 @@ static char RFC2833_CHARS[] = "0123456789*#ABCDF";
 
 SWITCH_DECLARE(char) switch_rfc2833_to_char(int event)
 {
-	if (event > -1 && event < sizeof(RFC2833_CHARS)) {
+	if (event > -1 && event < (int32_t) sizeof(RFC2833_CHARS)) {
 		return RFC2833_CHARS[event];
 	}
 	return '\0';
