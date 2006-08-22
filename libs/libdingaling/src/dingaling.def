@@ -26,3 +26,5 @@ ldl_global_set_logger
 ldl_handle_send_msg
 ldl_session_get_value
 ldl_session_set_value
+ldl_session_accept_candidate
+ldl_session_send_msg
