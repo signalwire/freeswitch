@@ -1541,9 +1541,10 @@ static JSBool fileio_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *
 		}
 		switch_core_new_memory_pool(&pool);
 		if (switch_file_open(&fd, path, flags, SWITCH_FPROT_UREAD|SWITCH_FPROT_UWRITE, pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Open File!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Open File: %s\n", path);
 			switch_core_destroy_memory_pool(&pool);
-			return JS_FALSE;
+			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+			return JS_TRUE;
 		}
 		fio = switch_core_alloc(pool, sizeof(*fio));
 		fio->fd = fd;
@@ -1554,7 +1555,7 @@ static JSBool fileio_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *
 		return JS_TRUE;
 	}
 
-	return JS_FALSE;
+	return JS_TRUE;
 }
 static void fileio_destroy(JSContext *cx, JSObject *obj)
 {
@@ -1578,6 +1579,10 @@ static JSBool fileio_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 	switch_size_t read = 0;
 
 	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+
+	if (fio) {
+		return JS_TRUE;
+	}
 
 	if (!(fio->flags & SWITCH_FOPEN_READ)) {
 		return JS_TRUE;
@@ -1604,6 +1609,12 @@ static JSBool fileio_read(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 static JSBool fileio_data(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct fileio_obj *fio = JS_GetPrivate(cx, obj);
+
+	if (!fio) {
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		return JS_TRUE;
+	}
+
 	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, fio->buf));
 	return JS_TRUE;
 }
@@ -1613,6 +1624,11 @@ static JSBool fileio_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 	struct fileio_obj *fio = JS_GetPrivate(cx, obj);
 	switch_size_t wrote = 0;
 	char *data = NULL;
+
+	if (!fio) {
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		return JS_TRUE;
+	}
 
 	if (!(fio->flags & SWITCH_FOPEN_WRITE)) {
 		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
@@ -1633,7 +1649,7 @@ static JSBool fileio_write(JSContext *cx, JSObject *obj, uintN argc, jsval *argv
 }
 
 enum fileio_tinyid {
-	FILEIO_PATH
+	FILEIO_PATH, FILEIO_OPEN
 };
 
 static JSFunctionSpec fileio_methods[] = {
@@ -1646,6 +1662,7 @@ static JSFunctionSpec fileio_methods[] = {
 
 static JSPropertySpec fileio_props[] = {
 	{"path", FILEIO_PATH, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"open", FILEIO_OPEN, JSPROP_READONLY|JSPROP_PERMANENT}, 
 	{0}
 };
 
@@ -1667,7 +1684,14 @@ static JSBool fileio_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *
 	
 	switch(param) {
 	case FILEIO_PATH:
-		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, fio->path));
+		if (fio) {
+			*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, fio->path));
+		} else {
+			*vp = BOOLEAN_TO_JSVAL( JS_FALSE );
+		}
+		break;
+	case FILEIO_OPEN:
+		*vp = BOOLEAN_TO_JSVAL( fio ? JS_TRUE : JS_FALSE );
 		break;
 	}
 
@@ -2197,6 +2221,11 @@ JSClass teletone_class = {
 
 /* Built-In*/
 /*********************************************************************************/
+static JSBool js_exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	return JS_FALSE;
+}
+
 static JSBool js_log(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	char *level_str, *msg;
@@ -2433,6 +2462,7 @@ static JSBool js_email(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 
 static JSFunctionSpec fs_functions[] = {
 	{"console_log", js_log, 2}, 
+	{"exit", js_exit, 0}, 
 	{"include", js_include, 1}, 
 	{"email", js_email, 2}, 
 	{"bridge", js_bridge, 2},
