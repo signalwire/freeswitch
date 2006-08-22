@@ -1560,7 +1560,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
-		switch_core_session_read_lock(peer_session);
 		*bleg = peer_session;
 		if (caller_channel) {
 			switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");

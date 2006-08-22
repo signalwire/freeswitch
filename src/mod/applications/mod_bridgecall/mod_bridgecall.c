@@ -55,7 +55,6 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 		switch_channel_hangup(caller_channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
 		return;
 	} else {
-		/* peer channel is read locked now the bridge func will unlock it for us */
 		switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
 	}
 }
