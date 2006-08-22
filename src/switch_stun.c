@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Fanzhou Zhao <fanzhou@gmail.com> 2006-08-22 (Bugfix 2357-2358)
  *
  *
  * switch_stun.c STUN (Simple Traversal of UDP over NAT)
@@ -91,18 +92,18 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
 {
 	char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	int max;
-	uint8_t x;
+	uint16_t x;
 
 	if (!set) {
 		set = chars;
 	}
 
-	max = (int)strlen(set) - 1;
+	max = (int)strlen(set);
 
 	srand((unsigned int)apr_time_now());
 
 	for(x = 0; x < len; x++) {
-		int j = 1+(int)(max*1.0*rand()/(RAND_MAX+1.0));
+		int j = (int)(max*1.0*rand()/(RAND_MAX+1.0));
 		buf[x] = set[j];
 	}
 }
