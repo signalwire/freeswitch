@@ -77,7 +77,8 @@ typedef enum {
 	TFLAG_VAD_OUT = ( 1 << 13),
 	TFLAG_VAD = ( 1 << 14),
 	TFLAG_TIMER = ( 1 << 15),
-	TFLAG_AA = (1 << 16)
+	TFLAG_AA = (1 << 16),
+	TFLAG_PRE_ANSWER = (1 << 17)
 } TFLAGS;
 
 
@@ -349,13 +350,7 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 		tech_set_codecs(tech_pvt);
 
 
-		sprintf(dbuf, "%u", tech_pvt->te);
-		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(dbuf));
-		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, tech_pvt->te, "telephone-event", 8000, 0);
-		sprintf(dbuf, "%u telephone-event/8000", tech_pvt->te);
-		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(dbuf));
-		sprintf(dbuf, "%u 0-15", tech_pvt->te);
-		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "fmtp", osip_strdup(dbuf));
+
 		
 		if (tech_pvt->num_codecs > 0) {
 			int i, lastcode = -1;
@@ -365,7 +360,7 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
 				imp = tech_pvt->codecs[i];
 
-				while(NULL != imp) {
+				if (imp) {
 					uint32_t sps = imp->samples_per_second;
 
 					if (lastcode != imp->ianacode) {
@@ -381,14 +376,18 @@ static switch_status_t exosip_on_init(switch_core_session_t *session)
 					snprintf(tmp, sizeof(tmp), "%u %s/%d", imp->ianacode, imp->iananame, sps);
 					sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(tmp));
 					memset(tmp, 0, sizeof(tmp));
-					if (imp) {
-						imp = imp->next;
-					}
 				} 
 			}
 		}
 
 
+		sprintf(dbuf, "%u", tech_pvt->te);
+		sdp_message_m_payload_add(tech_pvt->local_sdp, 0, osip_strdup(dbuf));
+		sdp_add_codec(tech_pvt->sdp_config, SWITCH_CODEC_TYPE_AUDIO, tech_pvt->te, "telephone-event", 8000, 0);
+		sprintf(dbuf, "%u telephone-event/8000", tech_pvt->te);
+		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "rtpmap", osip_strdup(dbuf));
+		sprintf(dbuf, "%u 0-15", tech_pvt->te);
+		sdp_message_a_attribute_add(tech_pvt->local_sdp, 0, "fmtp", osip_strdup(dbuf));
 
 		/* Setup our INVITE */
 		eXosip_lock();
@@ -1328,7 +1327,7 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 			static const switch_codec_implementation_t *imp = NULL;
 
 			for (i = 0; i < tech_pvt->num_codecs; i++) {
-				for (imp = tech_pvt->codecs[i]; imp; imp = imp->next) {
+				if ((imp = tech_pvt->codecs[i])) {
 					sdp_add_codec(tech_pvt->sdp_config,
 								  tech_pvt->codecs[i]->codec_type,
 								  imp->ianacode,
@@ -1705,7 +1704,7 @@ static void handle_message_new(eXosip_event_t *je)
 }
 
 
-static void handle_answer(eXosip_event_t * event)
+static void handle_answer(eXosip_event_t *event)
 {
 	osip_message_t *ack = NULL;
 	sdp_message_t *remote_sdp = NULL;
@@ -1715,10 +1714,22 @@ static void handle_answer(eXosip_event_t * event)
 	char *dpayload = NULL, *dname = NULL, *drate = NULL;
 	switch_channel_t *channel;
 	const switch_codec_implementation_t *imp = NULL;
+	uint8_t pre_answer = 0;
+
+
 
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cannot answer nonexistant call [%d]!\n", event->cid);
 		return;
+	}
+
+	if (event->type == EXOSIP_CALL_RINGING) {
+		pre_answer = 1;
+		if (switch_test_flag(tech_pvt, TFLAG_PRE_ANSWER)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "one pre-answer is enough for call [%d]!\n", event->cid);
+			return;
+		}
+		switch_set_flag_locked(tech_pvt, TFLAG_PRE_ANSWER);
 	}
 
 	channel = switch_core_session_get_channel(tech_pvt->session);
@@ -1755,6 +1766,13 @@ static void handle_answer(eXosip_event_t * event)
 	/* Assign them thar IDs */
 	tech_pvt->did = event->did;
 	tech_pvt->tid = event->tid;
+
+	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+		switch_core_codec_destroy(&tech_pvt->write_codec);
+		switch_clear_flag_locked(tech_pvt, TFLAG_USING_CODEC);
+	}
+
 	{
 		int rate = atoi(drate);
 		int ms = globals.codec_ms;
@@ -1823,9 +1841,15 @@ static void handle_answer(eXosip_event_t * event)
 	if (switch_test_flag(tech_pvt, TFLAG_RTP)) {
 		channel = switch_core_session_get_channel(tech_pvt->session);
 		assert(channel != NULL);
-		switch_channel_answer(channel);
+		if (pre_answer) {
+			switch_channel_pre_answer(channel);
+		} else {
+			switch_channel_answer(channel);
+		} 
 	}
 }
+
+
 
 
 static const char *event_names[] = {
@@ -2205,7 +2229,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			/* This is like a 100 Trying... yeah */
 			break;
 		case EXOSIP_CALL_RINGING:
-			//handle_ringing(event);
+			handle_answer(event);
 			break;
 		case EXOSIP_CALL_REDIRECTED:
 			break;

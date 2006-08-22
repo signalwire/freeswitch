@@ -3203,7 +3203,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, cons
 	mlockall(MCL_CURRENT|MCL_FUTURE);
 #endif
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "freeswitch Version %s Started. Crash Protection [%s] Max Sessions[%u]\n\n", SWITCH_VERSION_FULL, __CP, switch_core_session_limit(0));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\n\n", SWITCH_VERSION_FULL, __CP, switch_core_session_limit(0));
 	return SWITCH_STATUS_SUCCESS;
 
 }

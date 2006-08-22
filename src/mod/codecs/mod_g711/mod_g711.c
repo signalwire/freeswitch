@@ -207,7 +207,7 @@ static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
 	/*.decode */ switch_g711u_decode,
 	/*.destroy */ switch_g711u_destroy
 };
-#endif
+
 
 static const switch_codec_implementation_t g711u_8k_30ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
@@ -248,6 +248,7 @@ static const switch_codec_implementation_t g711u_16k_implementation = {
 	/*.destroy */ switch_g711u_destroy,
 	/*.next */ &g711u_8k_30ms_implementation
 };
+#endif
 
 static const switch_codec_implementation_t g711u_8k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
@@ -266,7 +267,7 @@ static const switch_codec_implementation_t g711u_8k_implementation = {
 	/*.encode */ switch_g711u_encode,
 	/*.decode */ switch_g711u_decode,
 	/*.destroy */ switch_g711u_destroy,
-	/*.next */ &g711u_16k_implementation
+	///*.next */ &g711u_16k_implementation
 };
 
 
