@@ -218,6 +218,23 @@ static int on_stream(struct session *sess, int type, iks * node)
 	return IKS_OK;
 }
 
+
+static int on_subscribe(void *user_data, ikspak *pak)
+{
+	char *from = iks_find_attrib(pak->x, "from");
+	struct session *sess = (struct session *) user_data;
+
+	iks *msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "mod_xmpp_event"); 
+	iks_send(sess->parser, msg);
+	iks_delete(msg);
+		
+	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, from, "mod_xmpp_event"); 
+	iks_send(sess->parser, msg);
+	iks_delete(msg);
+
+	return IKS_FILTER_EAT;
+}
+
 static int on_msg(void *user_data, ikspak * pak)
 {
 	char *cmd = iks_find_cdata(pak->x, "body");
@@ -276,6 +293,12 @@ static void j_setup_filter(struct session *sess)
 	iks_filter_add_rule(my_filter, on_error, sess,
 						IKS_RULE_TYPE, IKS_PAK_IQ,
 						IKS_RULE_SUBTYPE, IKS_TYPE_ERROR, IKS_RULE_ID, "auth", IKS_RULE_DONE);
+
+	iks_filter_add_rule(my_filter, on_subscribe, sess,
+						IKS_RULE_TYPE, IKS_PAK_S10N,
+						IKS_RULE_SUBTYPE, IKS_TYPE_SUBSCRIBE,
+						IKS_RULE_DONE);
+
 }
 
 static void xmpp_connect(char *jabber_id, char *pass)
