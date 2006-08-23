@@ -26,11 +26,12 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading CURL."
-				CommandLine="if not exist $(ProjectDir)..\curl-7.15.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/curl-7.15.2.tar.gz $(ProjectDir).."
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				CommandLine=""
+				Outputs=""
 			/>
 			<Tool
 				Name="VCMIDLTool"
@@ -50,8 +51,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading CURL."
-				CommandLine="if not exist $(ProjectDir)..\curl-7.15.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/curl-7.15.2.tar.gz $(ProjectDir).."
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -67,6 +67,30 @@
 	<References>
 	</References>
 	<Files>
+		<File
+			RelativePath=".\curl\cleancount"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading CURL."
+					CommandLine="if not exist $(ProjectDir)..\curl-7.15.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/curl-7.15.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\curl-7.15.2"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading CURL."
+					CommandLine="if not exist $(ProjectDir)..\curl-7.15.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/curl-7.15.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\curl-7.15.2"
+				/>
+			</FileConfiguration>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -1289,7 +1289,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu_config.h from apu_config.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\apu_config.h type ..\..\apr-util-1.2.7\include\apu_config.hw &gt; ..\..\apr-util-1.2.7\include\apu_config.h&#x0D;&#x0A;"
+						CommandLine="if not exist ..\..\apr-util-1.2.7\include\private\apu_config.h type ..\..\apr-util-1.2.7\include\private\apu_config.hw &gt; ..\..\apr-util-1.2.7\include\private\apu_config.h&#x0D;&#x0A;"
 						Outputs="..\..\apr-util-1.2.7\include\private\apu_config.h"
 					/>
 				</FileConfiguration>
@@ -1299,7 +1299,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu_config.h from apu_config.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\apu_config.h type ..\..\apr-util-1.2.7\include\apu_config.hw &gt; ..\..\apr-util-1.2.7\include\apu_config.h&#x0D;&#x0A;"
+						CommandLine="if not exist ..\..\apr-util-1.2.7\include\private\apu_config.h type ..\..\apr-util-1.2.7\include\private\apu_config.hw &gt; ..\..\apr-util-1.2.7\include\private\apu_config.h&#x0D;&#x0A;"
 						Outputs="..\..\apr-util-1.2.7\include\private\apu_config.h"
 					/>
 				</FileConfiguration>
@@ -1317,7 +1317,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu_select_dbm.h from apu_select_dbm.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\apu_select_dbm.h type ..\..\apr-util-1.2.7\include\apu_select_dbm.hw &gt; ..\..\apr-util-1.2.7\include\apu_select_dbm.h&#x0D;&#x0A;"
+						CommandLine="if not exist ..\..\apr-util-1.2.7\include\private\apu_select_dbm.h type ..\..\apr-util-1.2.7\include\private\apu_select_dbm.hw &gt; ..\..\apr-util-1.2.7\include\private\apu_select_dbm.h&#x0D;&#x0A;"
 						Outputs="..\..\apr-util-1.2.7\include\private\apu_select_dbm.h"
 					/>
 				</FileConfiguration>
@@ -1327,7 +1327,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu_select_dbm.h from apu_select_dbm.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\apu_select_dbm.h type ..\..\apr-util-1.2.7\include\apu_select_dbm.hw &gt; ..\..\apr-util-1.2.7\include\apu_select_dbm.h&#x0D;&#x0A;"
+						CommandLine="if not exist ..\..\apr-util-1.2.7\include\private\apu_select_dbm.h type ..\..\apr-util-1.2.7\include\private\apu_select_dbm.hw &gt; ..\..\apr-util-1.2.7\include\private\apu_select_dbm.h&#x0D;&#x0A;"
 						Outputs="..\..\apr-util-1.2.7\include\private\apu_select_dbm.h"
 					/>
 				</FileConfiguration>

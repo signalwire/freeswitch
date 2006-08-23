@@ -26,11 +26,12 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading EXOSIP."
-				CommandLine="if not exist $(ProjectDir)..\libosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\libeXosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libeXosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				CommandLine=""
+				Outputs=""
 			/>
 			<Tool
 				Name="VCMIDLTool"
@@ -50,8 +51,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading EXOSIP."
-				CommandLine="if not exist $(ProjectDir)..\libosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\libeXosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libeXosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -67,6 +67,30 @@
 	<References>
 	</References>
 	<Files>
+		<File
+			RelativePath=".\exosip\cleancount"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading EXOSIP."
+					CommandLine="if not exist $(ProjectDir)..\libosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\libeXosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libeXosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\libosip2-2.2.2;$(ProjectDir)..\libeXosip2-2.2.2"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading EXOSIP."
+					CommandLine="if not exist $(ProjectDir)..\libosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\libeXosip2-2.2.2 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libeXosip2-2.2.2.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\libosip2-2.2.2;$(ProjectDir)..\libeXosip2-2.2.2"
+				/>
+			</FileConfiguration>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

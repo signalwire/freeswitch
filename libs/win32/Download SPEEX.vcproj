@@ -26,11 +26,12 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading SPEEX."
-				CommandLine="if not exist $(ProjectDir)..\speex-1.1.11.1 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/speex-1.1.11.1.tar.gz $(ProjectDir).."
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				CommandLine=""
+				Outputs=""
 			/>
 			<Tool
 				Name="VCMIDLTool"
@@ -50,8 +51,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description="Downloading SPEEX."
-				CommandLine="if not exist $(ProjectDir)..\speex-1.1.11.1 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/speex-1.1.11.1.tar.gz $(ProjectDir).."
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -67,6 +67,30 @@
 	<References>
 	</References>
 	<Files>
+		<File
+			RelativePath=".\speex\cleancount"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading SPEEX."
+					CommandLine="if not exist $(ProjectDir)..\speex-1.1.11.1 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/speex-1.1.11.1.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\speex-1.1.11.1"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|Win32"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Downloading SPEEX."
+					CommandLine="if not exist $(ProjectDir)..\speex-1.1.11.1 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/speex-1.1.11.1.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\speex-1.1.11.1"
+				/>
+			</FileConfiguration>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
