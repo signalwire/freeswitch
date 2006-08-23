@@ -39,25 +39,19 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_1BD78CCD666E4BB5BE1168302E9613A2"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_1CFB1AB04E024FC993E0EB4859DF8408"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_1F21CF104E90499E8F6BBD2136A52884"
+        "MsmKey" = "8:_2814E641538B42EFA83525986A9D5AC1"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_2814E641538B42EFA83525986A9D5AC1"
+        "MsmKey" = "8:_28FBC5A60B44423B8A2CC378347483CE"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -81,20 +75,20 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_36D88C9590054DCA8F6ABAE6F05C2FD6"
+        "MsmKey" = "8:_329D8DAE6C01FCF026E9DFB48B932203"
+        "OwnerKey" = "8:_28FBC5A60B44423B8A2CC378347483CE"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3FBEFE0119944C6781F81104ECEF37CA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_3F927D72DFA53DCF09A9D5F6EB00333D"
-        "OwnerKey" = "8:_E72980C058C646E0A7FAF423EB57EA6E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_413E616556854689B457A68A06830A82"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_434751B6D0F145369B02AAB899929A6D"
+        "OwnerKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -105,8 +99,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_4F16AA4E02A545BEA97556AC80AAB7C0"
-        "OwnerKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
+        "MsmKey" = "8:_59CFED0C4EC0492C945E4EBC04FE965F"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -117,14 +111,14 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_6753CE9F969E43A2A50ADEC0245F58A4"
+        "MsmKey" = "8:_684D96FA2BDD46909367E651099D8C4E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_684D96FA2BDD46909367E651099D8C4E"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_69EB1A147CC2428435BDCA35014C96E1"
+        "OwnerKey" = "8:_D2EF447106B24E67907DAED3D39CFBB1"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -147,78 +141,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_1CFB1AB04E024FC993E0EB4859DF8408"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_F0B800E719294692A02518CFD8CBAEFF"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_EF14CB99F3414BB689D0CB0E6D6B8AB8"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_E72980C058C646E0A7FAF423EB57EA6E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_D1269F1E49D442CF8EAC96C23E60325D"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_B20769E090034897B32E3EA4EC1BA8A0"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_A0D5F714A0F94250A1C39603B699AB82"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_83C1B93AD71B4F8F9E074F9607B60DF1"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_4A285D260C3748A4BEFA6E5A9004D128"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_318FCC99E8D143D6B4F9F534E63009B3"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_2F2FEC549F02436EB87961BD1B9E5783"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
-        "OwnerKey" = "8:_2814E641538B42EFA83525986A9D5AC1"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_83062AA0528B40A59202BC7668F7132A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -237,8 +159,32 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_95DF1AC815283888345057940530D1C0"
+        "MsmKey" = "8:_879085EF680EFDF6242DCB77439EC825"
         "OwnerKey" = "8:_F0B800E719294692A02518CFD8CBAEFF"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_879085EF680EFDF6242DCB77439EC825"
+        "OwnerKey" = "8:_3FBEFE0119944C6781F81104ECEF37CA"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_879085EF680EFDF6242DCB77439EC825"
+        "OwnerKey" = "8:_59CFED0C4EC0492C945E4EBC04FE965F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_879085EF680EFDF6242DCB77439EC825"
+        "OwnerKey" = "8:_D2EF447106B24E67907DAED3D39CFBB1"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_91BA2668F87764F53188E93BC8D363D7"
+        "OwnerKey" = "8:_59CFED0C4EC0492C945E4EBC04FE965F"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -255,14 +201,26 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_A164EF86C4B57E41C8CE77B48F39DAC7"
+        "OwnerKey" = "8:_D2EF447106B24E67907DAED3D39CFBB1"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_A3936A2727E73289F5804D5DA006FD0A"
+        "OwnerKey" = "8:_28FBC5A60B44423B8A2CC378347483CE"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_A40E3F2045F44C60A8509FDFE47E6C45"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_A55F680EDBCDA3F18A46EF6CFC14A1D5"
-        "OwnerKey" = "8:_E72980C058C646E0A7FAF423EB57EA6E"
+        "MsmKey" = "8:_A944ADCEDF884574A23F7BA5420A6BA1"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -285,14 +243,8 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_B4DB166A7F41DC9EF58E277B90CC68AB"
-        "OwnerKey" = "8:_E72980C058C646E0A7FAF423EB57EA6E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_B4DB166A7F41DC9EF58E277B90CC68AB"
-        "OwnerKey" = "8:_F0B800E719294692A02518CFD8CBAEFF"
+        "MsmKey" = "8:_BB649A2C1ABE4895859025B09A240323"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -321,8 +273,32 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_D2EF447106B24E67907DAED3D39CFBB1"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D592DB08174B5F2D4673E8D6ADE17177"
+        "OwnerKey" = "8:_5A636BB90F7F4B86ACB8839EA2C899AA"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D592DB08174B5F2D4673E8D6ADE17177"
+        "OwnerKey" = "8:_59CFED0C4EC0492C945E4EBC04FE965F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_D6F0F5845FAD4707975CE012A33CD607"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D7E82DD20D5B47395F635480C8E3A1D3"
+        "OwnerKey" = "8:_F0B800E719294692A02518CFD8CBAEFF"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -339,25 +315,115 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_E72980C058C646E0A7FAF423EB57EA6E"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_E763C699DF0948B6984DDEB96A2DFD06"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_EC68A140B58841DA9B9172BAFA5BEC63"
-        "OwnerKey" = "8:_UNDEFINED"
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_1CFB1AB04E024FC993E0EB4859DF8408"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_EE46A936D4054F7286909355BF2AE5D7"
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_28FBC5A60B44423B8A2CC378347483CE"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_A944ADCEDF884574A23F7BA5420A6BA1"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_3FBEFE0119944C6781F81104ECEF37CA"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_59CFED0C4EC0492C945E4EBC04FE965F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_D2EF447106B24E67907DAED3D39CFBB1"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_BB649A2C1ABE4895859025B09A240323"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_F0B800E719294692A02518CFD8CBAEFF"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_EF14CB99F3414BB689D0CB0E6D6B8AB8"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_D1269F1E49D442CF8EAC96C23E60325D"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_B20769E090034897B32E3EA4EC1BA8A0"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_A0D5F714A0F94250A1C39603B699AB82"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_83C1B93AD71B4F8F9E074F9607B60DF1"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_4A285D260C3748A4BEFA6E5A9004D128"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_318FCC99E8D143D6B4F9F534E63009B3"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_2F2FEC549F02436EB87961BD1B9E5783"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EB3C084D5A374CF9977F7BB6A840ED19"
+        "OwnerKey" = "8:_2814E641538B42EFA83525986A9D5AC1"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_EC68A140B58841DA9B9172BAFA5BEC63"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -596,10 +662,10 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1BD78CCD666E4BB5BE1168302E9613A2"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_329D8DAE6C01FCF026E9DFB48B932203"
             {
-            "SourcePath" = "8:..\\..\\libs\\apr-iconv\\Release\\libapriconv-1.dll"
-            "TargetName" = "8:libapriconv-1.dll"
+            "SourcePath" = "8:MSWSOCK.dll"
+            "TargetName" = "8:MSWSOCK.dll"
             "Tag" = "8:"
             "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
             "Condition" = "8:"
@@ -612,56 +678,16 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_36D88C9590054DCA8F6ABAE6F05C2FD6"
-            {
-            "SourcePath" = "8:..\\..\\src\\mod\\languages\\mod_perl\\fs_perl.pm"
-            "TargetName" = "8:fs_perl.pm"
-            "Tag" = "8:"
-            "Folder" = "8:_27A96C279A6A44E8A2FDF8D51CD86E29"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3F927D72DFA53DCF09A9D5F6EB00333D"
-            {
-            "SourcePath" = "8:libaprutil-1.dll"
-            "TargetName" = "8:libaprutil-1.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
+            "Exclude" = "11:TRUE"
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_413E616556854689B457A68A06830A82"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_69EB1A147CC2428435BDCA35014C96E1"
             {
-            "SourcePath" = "8:..\\..\\src\\mod\\languages\\mod_perl\\freeswitch.pm"
-            "TargetName" = "8:freeswitch.pm"
+            "SourcePath" = "8:libsqlite.dll"
+            "TargetName" = "8:libsqlite.dll"
             "Tag" = "8:"
-            "Folder" = "8:_27A96C279A6A44E8A2FDF8D51CD86E29"
+            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -672,8 +698,8 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_83062AA0528B40A59202BC7668F7132A"
@@ -696,10 +722,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_95DF1AC815283888345057940530D1C0"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_879085EF680EFDF6242DCB77439EC825"
             {
-            "SourcePath" = "8:FreeSwitch.dll"
-            "TargetName" = "8:FreeSwitch.dll"
+            "SourcePath" = "8:libapr.dll"
+            "TargetName" = "8:libapr.dll"
             "Tag" = "8:"
             "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
             "Condition" = "8:"
@@ -712,7 +738,67 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:FALSE"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_91BA2668F87764F53188E93BC8D363D7"
+            {
+            "SourcePath" = "8:libapriconv.dll"
+            "TargetName" = "8:libapriconv.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A164EF86C4B57E41C8CE77B48F39DAC7"
+            {
+            "SourcePath" = "8:libaprutil.dll"
+            "TargetName" = "8:libaprutil.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A3936A2727E73289F5804D5DA006FD0A"
+            {
+            "SourcePath" = "8:RPCRT4.dll"
+            "TargetName" = "8:RPCRT4.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:TRUE"
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
@@ -736,12 +822,12 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A55F680EDBCDA3F18A46EF6CFC14A1D5"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D592DB08174B5F2D4673E8D6ADE17177"
             {
-            "SourcePath" = "8:sqlite.dll"
-            "TargetName" = "8:sqlite.dll"
+            "SourcePath" = "8:WLDAP32.dll"
+            "TargetName" = "8:WLDAP32.dll"
             "Tag" = "8:"
-            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
+            "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
             "Condition" = "8:"
             "Transitive" = "11:FALSE"
             "Vital" = "11:TRUE"
@@ -752,14 +838,14 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:FALSE"
+            "Exclude" = "11:TRUE"
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_B4DB166A7F41DC9EF58E277B90CC68AB"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D7E82DD20D5B47395F635480C8E3A1D3"
             {
-            "SourcePath" = "8:libapr-1.dll"
-            "TargetName" = "8:libapr-1.dll"
+            "SourcePath" = "8:FreeSwitch.dll"
+            "TargetName" = "8:FreeSwitch.dll"
             "Tag" = "8:"
             "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
             "Condition" = "8:"
@@ -772,7 +858,7 @@
             "SharedLegacy" = "11:FALSE"
             "PackageAs" = "3:1"
             "Register" = "3:1"
-            "Exclude" = "11:FALSE"
+            "Exclude" = "11:TRUE"
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
@@ -887,7 +973,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Freeswitch"
         "ProductCode" = "8:{317A9CC0-40DC-4803-A13E-5937F05F9D2E}"
-        "PackageCode" = "8:{F5FFEAA8-6C32-4FFC-9DA5-FC799FDB8B8F}"
+        "PackageCode" = "8:{1D8A7E8D-EB20-448D-BE2E-553C8344A847}"
         "UpgradeCode" = "8:{8080E3A5-7ADD-4173-8913-BDA439D1C8DD}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
@@ -1518,7 +1604,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_4F16AA4E02A545BEA97556AC80AAB7C0"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_434751B6D0F145369B02AAB899929A6D"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
@@ -1532,7 +1618,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_7BE928D7D9AD4CC3A3D85B1AA764FEB0"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_EB3C084D5A374CF9977F7BB6A840ED19"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
@@ -1551,7 +1637,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_10A983E896C14286A47AAB6A8570EE6D"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_ivrtest.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_ivrtest.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1579,7 +1665,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_1CFB1AB04E024FC993E0EB4859DF8408"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_dingaling.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_dingaling.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1605,37 +1691,9 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_1F21CF104E90499E8F6BBD2136A52884"
-            {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_cepstral.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{692F6330-4D87-4C82-81DF-40DB5892636E}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_2814E641538B42EFA83525986A9D5AC1"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_ilbc.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_ilbc.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1661,9 +1719,37 @@
                 {
                 }
             }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_28FBC5A60B44423B8A2CC378347483CE"
+            {
+            "SourcePath" = "8:..\\..\\debug\\libapr.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{F6C55D93-B927-4483-BB69-15AEF3DD2DFF}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_2D09AB81AB8D45FF97E9DFA4DAC3465D"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_zeroconf.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_zeroconf.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1691,7 +1777,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_2F2FEC549F02436EB87961BD1B9E5783"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_iax.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_iax.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1719,7 +1805,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_318FCC99E8D143D6B4F9F534E63009B3"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_sndfile.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_sndfile.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1745,9 +1831,37 @@
                 {
                 }
             }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_3FBEFE0119944C6781F81104ECEF37CA"
+            {
+            "SourcePath" = "8:..\\..\\debug\\libapriconv.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{101130D1-3EA6-4ED2-B65D-CEB5243A20ED}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4A285D260C3748A4BEFA6E5A9004D128"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_spidermonkey.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_spidermonkey.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1773,9 +1887,37 @@
                 {
                 }
             }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_59CFED0C4EC0492C945E4EBC04FE965F"
+            {
+            "SourcePath" = "8:..\\..\\debug\\libaprutil.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{F057DA7F-79E5-4B00-845C-EF446EF055E3}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5A636BB90F7F4B86ACB8839EA2C899AA"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_ldap.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_ldap.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1801,37 +1943,9 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_6753CE9F969E43A2A50ADEC0245F58A4"
-            {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_perl.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{7B077E7F-1BE7-4291-AB86-55E527B25CAC}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_684D96FA2BDD46909367E651099D8C4E"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_dialplan_directory.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_dialplan_directory.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1859,7 +1973,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_6E5C001E7A314DCEA0A4BF52BF74BCAD"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_speex.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_speex.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1887,7 +2001,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_72A8732C0C0C4D0EAAE89DBB82073335"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_playback.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_playback.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1915,7 +2029,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_7358123D2D064AD1BC517911A8B23D1B"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_softtimer.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_softtimer.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1943,7 +2057,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_83C1B93AD71B4F8F9E074F9607B60DF1"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_xmpp_event.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_xmpp_event.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1971,7 +2085,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_87768631363249B2B301143C193612F7"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_g711.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_g711.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -1999,7 +2113,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_9A293E8A356A4959BB6E541B7DC213CD"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_bridgecall.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_bridgecall.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2027,7 +2141,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_A0D5F714A0F94250A1C39603B699AB82"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\libteletone.dll"
+            "SourcePath" = "8:..\\..\\libs\\libteletone\\debug\\libteletone.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
@@ -2053,9 +2167,37 @@
                 {
                 }
             }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_A944ADCEDF884574A23F7BA5420A6BA1"
+            {
+            "SourcePath" = "8:..\\..\\debug\\libsqlite.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{6EDFEFD5-3596-4FA9-8EBA-B331547B35A3}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_AD2EB44FE6D548F2A8DA4F9F2CE817AC"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_l16.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_l16.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2083,7 +2225,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B0A2E9B4C45D4098AFD734D0C4E3EAFB"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_conference.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_conference.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2111,7 +2253,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B20769E090034897B32E3EA4EC1BA8A0"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_gsm.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_gsm.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2137,9 +2279,37 @@
                 {
                 }
             }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_BB649A2C1ABE4895859025B09A240323"
+            {
+            "SourcePath" = "8:..\\..\\debug\\libpcre.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{8D04B550-D240-4A44-8A18-35DA3F7038D9}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_C105055EE271471A999CE7022E617EB7"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_commands.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_commands.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2167,7 +2337,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_C81AC700C1BC4A55B98DF12C0CBAFD6F"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_dialplan_xml.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_dialplan_xml.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2195,7 +2365,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_D0BB09AFB8D94B76918F0EE85BCCAD0A"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_dptools.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_dptools.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2223,7 +2393,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_D1269F1E49D442CF8EAC96C23E60325D"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_xml_rpc.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_xml_rpc.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2249,9 +2419,37 @@
                 {
                 }
             }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_D2EF447106B24E67907DAED3D39CFBB1"
+            {
+            "SourcePath" = "8:..\\..\\debug\\FreeSwitch.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{202D7A4E-760D-4D0E-AFA1-D7459CED30FF}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_D6F0F5845FAD4707975CE012A33CD607"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_rss.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_rss.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2279,7 +2477,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_D7EC5795A9C645AC8E129C2EE6D461ED"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_event_multicast.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_event_multicast.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2307,7 +2505,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_E4BCD553B2054B0F8BC67428E1A11674"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_echo.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_echo.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2333,37 +2531,9 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_E72980C058C646E0A7FAF423EB57EA6E"
-            {
-            "SourcePath" = "8:..\\vsnet\\Debug\\FreeSwitch.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{202D7A4E-760D-4D0E-AFA1-D7459CED30FF}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_E763C699DF0948B6984DDEB96A2DFD06"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_PortAudio.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_PortAudio.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2391,7 +2561,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_EC68A140B58841DA9B9172BAFA5BEC63"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_exosip.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_exosip.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2417,37 +2587,9 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_EE46A936D4054F7286909355BF2AE5D7"
-            {
-            "SourcePath" = "8:..\\vsnet\\debug\\perl\\fs_perl.dll"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_27A96C279A6A44E8A2FDF8D51CD86E29"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{B0C6CFF9-7DCD-4A21-8BA4-C2011E18DED8}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_EF14CB99F3414BB689D0CB0E6D6B8AB8"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_console.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_console.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2475,7 +2617,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_F0B800E719294692A02518CFD8CBAEFF"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\FreeSwitch.exe"
+            "SourcePath" = "8:..\\..\\debug\\FreeSwitch.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_04AC783F1C9F41AEB4E947C46CE9C9FF"
@@ -2503,7 +2645,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_F84240319757424DB1C58AD0AD420127"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_event_test.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_event_test.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
@@ -2531,7 +2673,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_FB1B9FBDC3294F1C96DAC4246C013C22"
             {
-            "SourcePath" = "8:..\\vsnet\\Debug\\mod\\mod_woomera.dll"
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_woomera.dll"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
