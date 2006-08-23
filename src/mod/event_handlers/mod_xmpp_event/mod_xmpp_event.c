@@ -253,6 +253,7 @@ static int on_msg(void *user_data, ikspak * pak)
 	switch_stream_handle_t stream = {0};
 	char retbuf[2048] = "";
 	char *p;
+	iks *msg;
 
 	if ((p = strchr(cmd, '\r')) != 0) {
 		*p++ = '\0';
@@ -269,6 +270,13 @@ static int on_msg(void *user_data, ikspak * pak)
 	stream.data_size = sizeof(retbuf);
 	stream.write_function = switch_console_stream_write;
 	switch_api_execute(cmd, arg, NULL, &stream);
+
+	
+	msg = iks_make_msg(IKS_TYPE_NONE, globals.target_jid, retbuf);
+	iks_insert_attrib(msg, "subject", "Reply");
+	iks_send(globals.session.parser, msg);
+	iks_delete(msg);
+	
 
 	return 0;
 }
