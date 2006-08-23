@@ -148,6 +148,17 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_jid, globals.jid)
 
 static int on_result(struct session *sess, ikspak * pak)
 {
+	iks *msg, *ctag;
+
+	msg = iks_make_pres (IKS_SHOW_AVAILABLE, "Available"); 
+	ctag = iks_insert(msg, "c");
+	iks_insert_attrib(ctag, "node", "http://www.freeswitch.org/xmpp/client/caps");
+	iks_insert_attrib(ctag, "ver", "1.0.0.1");
+	iks_insert_attrib(ctag, "client", "libdingaling");
+	iks_insert_attrib(ctag, "xmlns", "http://jabber.org/protocol/caps");
+
+	iks_send(sess->parser, msg);
+    iks_delete(msg);
 
 	return IKS_FILTER_EAT;
 }
