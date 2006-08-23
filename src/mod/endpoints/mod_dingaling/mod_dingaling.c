@@ -498,8 +498,8 @@ static int do_describe(struct private_object *tech_pvt, int force)
 		} else {
 			payloads[0].name = lame(tech_pvt->codecs[tech_pvt->codec_index]->iananame);
 			payloads[0].id = tech_pvt->codecs[tech_pvt->codec_index]->ianacode;
-			payloads[0].rate = tech_pvt->codecs[0]->samples_per_second;
-			payloads[0].bps = tech_pvt->codecs[0]->bits_per_second;
+			payloads[0].rate = tech_pvt->codecs[tech_pvt->codec_index]->samples_per_second;
+			payloads[0].bps = tech_pvt->codecs[tech_pvt->codec_index]->bits_per_second;
 		}
 
 				
