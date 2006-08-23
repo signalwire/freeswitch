@@ -1742,7 +1742,7 @@ static int handle_call_transfer(eXosip_event_t *event)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "message_send_answer info failed! %d\n", event->tid);
     }
 
-    if (1) {
+	{
 		osip_from_t *refer = NULL;
 		osip_uri_t *refer_uri = NULL;
 		char *refer_str = NULL;
@@ -1829,7 +1829,7 @@ static void handle_answer(eXosip_event_t *event)
 	char *dpayload = NULL, *dname = NULL, *drate = NULL;
 	switch_channel_t *channel;
 	const switch_codec_implementation_t *imp = NULL;
-	uint8_t pre_answer = 0, reinvite = 0;
+	uint8_t pre_answer = 0, reinvite = 0, isack = 0;
 
 
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
@@ -1845,24 +1845,31 @@ static void handle_answer(eXosip_event_t *event)
 		}
 	} else if (event->type == EXOSIP_CALL_REINVITE) {
 		reinvite = 1;
+	} else if (event->type == EXOSIP_CALL_ACK) {
+		isack = 1;
 	}
 
 	channel = switch_core_session_get_channel(tech_pvt->session);
 	assert(channel != NULL);
 
-	if (!event->response) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Someone answered... with no SDP information - WTF?!?\n");
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		return;
-	}
 
-	if (reinvite) {
+	if (reinvite || isack) {
 		if ((remote_sdp = eXosip_get_sdp_info(event->request)) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant Find SDP?\n");
-			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			if (!isack) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant Find SDP?\n");
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
 			return;
 		}
 	} else {
+
+		if (!event->response) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Someone answered... with no SDP information - WTF?!?\n");
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			return;
+		}
+
+
 		/* Get all of the remote SDP elements... stuff */
 		if ((remote_sdp = eXosip_get_sdp_info(event->response)) == 0) {
 			/* Exosip is daft, they send the same event for both 180 and 183 WTF!!*/
@@ -1879,10 +1886,21 @@ static void handle_answer(eXosip_event_t *event)
 
 	switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 
-
 	conn = eXosip_get_audio_connection(remote_sdp);
 	remote_med = eXosip_get_audio_media(remote_sdp);
 
+	if (!strcmp(conn->c_addr, "0.0.0.0")) {
+		eXosip_lock();
+		eXosip_call_build_ack(event->did, &ack);
+		eXosip_call_send_ack(event->did, ack);
+		eXosip_unlock();
+
+		switch_safe_free(dname);
+		switch_safe_free(drate);
+		switch_safe_free(dpayload);
+		return;
+	}
+	
 	/* Grab IP/port */
 	tech_pvt->remote_sdp_audio_port = (switch_port_t)atoi(remote_med->m_port);
 	snprintf(tech_pvt->remote_sdp_audio_ip, 50, conn->c_addr);
@@ -1905,7 +1923,7 @@ static void handle_answer(eXosip_event_t *event)
 		switch_clear_flag_locked(tech_pvt, TFLAG_USING_CODEC);
 	}
 
-	if (reinvite) {
+	if (reinvite || isack) {
 		switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
 	}
 
@@ -1957,7 +1975,7 @@ static void handle_answer(eXosip_event_t *event)
 		}
 	}
 
-
+	
 	eXosip_lock();
 	eXosip_call_build_ack(event->did, &ack);
 	eXosip_call_send_ack(event->did, ack);
@@ -2358,6 +2376,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			}
 			break;
 		case EXOSIP_CALL_ACK:
+			handle_answer(event);
 			/* If audio is not flowing and this has SDP - fire it up! */
 			break;
 		case EXOSIP_CALL_ANSWERED:
