@@ -78,7 +78,8 @@ typedef enum {
 	TFLAG_VAD = ( 1 << 14),
 	TFLAG_TIMER = ( 1 << 15),
 	TFLAG_AA = (1 << 16),
-	TFLAG_PRE_ANSWER = (1 << 17)
+	TFLAG_PRE_ANSWER = (1 << 17),
+	TFLAG_REINVITE = (1 << 18)
 } TFLAGS;
 
 
@@ -517,9 +518,12 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 	channel = switch_core_session_get_channel(tech_pvt->session);
 	assert(channel != NULL);
 
-	if (tech_pvt->rtp_session) {
+
+	if (tech_pvt->rtp_session && !switch_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
+
+
 
 	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
 		bw = tech_pvt->read_codec.implementation->bits_per_second;
@@ -554,6 +558,22 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 
 	if (switch_test_flag(tech_pvt, TFLAG_AA)) {
 		flags |= SWITCH_RTP_FLAG_AUTOADJ;
+	}
+
+
+	if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_REINVITE)) {
+		switch_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
+		
+		if (switch_rtp_set_remote_address(tech_pvt->rtp_session,
+										  tech_pvt->remote_sdp_audio_ip,
+										  tech_pvt->remote_sdp_audio_port,
+										  &err) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP CHANGING DEST TO: [%s:%d]\n", 
+							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
+		}
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
@@ -1704,6 +1724,101 @@ static void handle_message_new(eXosip_event_t *je)
 }
 
 
+static int handle_call_transfer(eXosip_event_t *event)
+{
+    osip_message_t *sip = event->request;
+    osip_header_t *refer_hdr;
+	int res;
+
+    if (osip_message_header_get_byname (sip, "Refer-To", 0, &refer_hdr) < 0) {
+		eXosip_call_send_answer(event->tid, 400, NULL);
+		return 0;
+    }
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Refer: %s\n", refer_hdr->hvalue);
+
+	res = eXosip_call_send_answer(event->tid, 202, NULL);
+    if (res) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "message_send_answer info failed! %d\n", event->tid);
+    }
+
+    if (1) {
+		osip_from_t *refer = NULL;
+		osip_uri_t *refer_uri = NULL;
+		char *refer_str = NULL;
+		
+		if (osip_from_init(&refer) < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Memory error\n");
+			return -1;
+		}
+
+		if (osip_from_parse(refer, refer_hdr->hvalue) < 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parse error\n");
+			osip_from_free(refer);
+			refer = NULL;
+			return -1;
+		}
+
+		refer_uri = osip_from_get_url (refer);
+
+		if (osip_uri_to_str(refer_uri, &refer_str) < 0) {
+			osip_from_free(refer);
+			return -1;
+		}
+
+		printf("TEST %s\n", refer_str);
+#if 0
+
+		transfer_to = opbx_bridged_channel(p->owner);
+		if (transfer_to) {
+			/* 	    int extout = 0; */
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Got SIP blind transfer, applying to '%s'\n", transfer_to->name);
+
+            /* Must release c's lock now, because it will not longer
+			   be accessible after the transfer! */
+			*nounlock = true;
+
+			/* 	    opbx_setstate(transfer_to, OPBX_STATE_RING); */
+			/* 	    hook_channel(transfer_to, NULL); */
+
+			opbx_mutex_unlock(&p->owner->lock);
+			/* 	    opbx_masq_park_call(p->owner, NULL, 0, &extout); */
+
+			/* 	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Parked to %d\n", extout); */
+
+			opbx_async_goto(transfer_to, p->friend->context, refer_str, 1);
+
+			{
+				osip_message_t *req = NULL;
+				if (eXosip_call_build_notify(event->did,
+											 EXOSIP_SUBCRSTATE_ACTIVE,
+											 &req) < 0) {
+					opbx_log(LOG_WARNING, "eXosip_call_build_notify failed\n");
+				} else {
+					const char sip_frag[] = "SIP/2.0 100 Trying\r\n\r\n";
+					osip_message_set_header(req, osip_strdup("Event"),
+											osip_strdup("refer"));
+					osip_message_set_body(req, sip_frag, strlen(sip_frag));
+					osip_message_set_content_type(req, "message/sipfrag");
+					if (eXosip_call_send_request(event->did, req) < 0) {
+						opbx_log(LOG_WARNING,
+								 "eXosip_call_send_request failed\n");
+					} else {
+						opbx_log(LOG_DEBUG, "Notify ok\n");
+					}
+				}
+			}
+		} else {
+			opbx_log(LOG_WARNING, "No channel up!");
+		}
+#endif
+		osip_free(refer_str);
+		osip_from_free(refer);
+    }
+    return 0;
+}
+
 static void handle_answer(eXosip_event_t *event)
 {
 	osip_message_t *ack = NULL;
@@ -1714,7 +1829,7 @@ static void handle_answer(eXosip_event_t *event)
 	char *dpayload = NULL, *dname = NULL, *drate = NULL;
 	switch_channel_t *channel;
 	const switch_codec_implementation_t *imp = NULL;
-	uint8_t pre_answer = 0;
+	uint8_t pre_answer = 0, reinvite = 0;
 
 
 	if ((tech_pvt = get_pvt_by_call_id(event->cid)) == 0) {
@@ -1728,6 +1843,8 @@ static void handle_answer(eXosip_event_t *event)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "one pre-answer is enough for call [%d]!\n", event->cid);
 			return;
 		}
+	} else if (event->type == EXOSIP_CALL_REINVITE) {
+		reinvite = 1;
 	}
 
 	channel = switch_core_session_get_channel(tech_pvt->session);
@@ -1739,17 +1856,25 @@ static void handle_answer(eXosip_event_t *event)
 		return;
 	}
 
-	/* Get all of the remote SDP elements... stuff */
-	if ((remote_sdp = eXosip_get_sdp_info(event->response)) == 0) {
-		/* Exosip is daft, they send the same event for both 180 and 183 WTF!!*/
-		if (!pre_answer) {
+	if (reinvite) {
+		if ((remote_sdp = eXosip_get_sdp_info(event->request)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant Find SDP?\n");
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "I am daft, don't mind me.\n");
+			return;
 		}
+	} else {
+		/* Get all of the remote SDP elements... stuff */
+		if ((remote_sdp = eXosip_get_sdp_info(event->response)) == 0) {
+			/* Exosip is daft, they send the same event for both 180 and 183 WTF!!*/
+			if (!pre_answer) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cant Find SDP?\n");
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "I am daft, don't mind me.\n");
+			}
 		
-		return;
+			return;
+		}
 	}
 
 	switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
@@ -1770,6 +1895,19 @@ static void handle_answer(eXosip_event_t *event)
 	/* Assign them thar IDs */
 	tech_pvt->did = event->did;
 	tech_pvt->tid = event->tid;
+
+	
+	if (switch_test_flag(tech_pvt, TFLAG_USING_CODEC) && strcasecmp(dname, tech_pvt->read_codec.implementation->iananame)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Changing Codec from %s to %s\n", tech_pvt->read_codec.implementation->iananame, dname);
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+		switch_core_codec_destroy(&tech_pvt->write_codec);
+		switch_core_session_reset(tech_pvt->session);
+		switch_clear_flag_locked(tech_pvt, TFLAG_USING_CODEC);
+	}
+
+	if (reinvite) {
+		switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
+	}
 
 	if (!switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
 	
@@ -2212,11 +2350,11 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			break;
 		case EXOSIP_CALL_REINVITE:
 			/* See what the reinvite is about - on hold or whatever */
-			//handle_reinvite(event);
+			handle_answer(event);
 			break;
 		case EXOSIP_CALL_MESSAGE_NEW:
 			if (event->request != NULL && MSG_IS_REFER(event->request)) {
-				//handle_call_transfer(event);
+				handle_call_transfer(event);
 			}
 			break;
 		case EXOSIP_CALL_ACK:
