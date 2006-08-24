@@ -2209,7 +2209,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 		
 	}
 
-	if (bridgeto) {
+	if (!switch_strlen_zero(bridgeto) && strcasecmp(bridgeto, "none")) {
 		if (conference_outcall(conference, session, bridgeto, 60, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
