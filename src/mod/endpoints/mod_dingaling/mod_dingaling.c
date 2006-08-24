@@ -184,9 +184,8 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
 		struct private_object *tech_pvt = NULL;
 			
 		tech_pvt = switch_core_session_get_private(*session);
-		assert(tech_pvt != NULL);
 
-		if (tech_pvt->dlsession) {
+		if (tech_pvt && tech_pvt->dlsession) {
 			if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
 				ldl_session_terminate(tech_pvt->dlsession);
 				switch_set_flag_locked(tech_pvt, TFLAG_TERM);
@@ -203,7 +202,7 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
 				channel_on_hangup(*session);
 			}
 
-			if (tech_pvt->dlsession) {
+			if (tech_pvt && tech_pvt->dlsession) {
 				ldl_session_set_private(tech_pvt->dlsession, NULL);
 			}
 			switch_core_session_destroy(session);
