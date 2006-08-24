@@ -121,6 +121,7 @@ struct conference_obj {
 	char *pin;
 	char *pin_sound;
 	char *bad_pin_sound;
+	char *profile_name;
 	uint32_t flags;
 	switch_mutex_t *flag_mutex;
 	uint32_t rate;
@@ -2070,6 +2071,8 @@ static void conference_function(switch_core_session_t *session, char *data)
 	char *flags_str;
 	member_flag_t uflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
 	switch_core_session_message_t msg = {0};
+	uint8_t isbr = 0;
+	char *dpin = NULL;
 	
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -2103,32 +2106,39 @@ static void conference_function(switch_core_session_t *session, char *data)
 	}
 
 	if (!strncasecmp(mydata, bridge_prefix, strlen(bridge_prefix))) {
-		char *uuid = switch_core_session_get_uuid(session);
-		
+		isbr = 1;
 		mydata += strlen(bridge_prefix);
-		conf_name = mydata;
-
-		if ((bridgeto = strchr(conf_name, ':'))) {
+		if ((bridgeto = strchr(mydata, ':'))) {
 			*bridgeto++ = '\0';
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Config Error!\n");
 			goto done;
 		}
+	}
 
-		if ((profile_name = strchr(conf_name, '@'))) {
-			*profile_name++ = '\0';
+	conf_name = mydata;
 
-			/* Open the config from the xml registry */
-			if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
-				goto done;
-			}
-			
-			if ((profiles = switch_xml_child(cfg, "profiles"))) {
-				profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
-			}
+	if ((dpin = strchr(conf_name, '+'))) {
+		*dpin++ = '\0';
+	}
+
+	if ((profile_name = strchr(conf_name, '@'))) {
+		*profile_name++ = '\0';
+
+		/* Open the config from the xml registry */
+		if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
+			goto done;
 		}
+		
+		if ((profiles = switch_xml_child(cfg, "profiles"))) {
+			profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
+		}
+	} 
 
+	if (isbr) {
+		char *uuid = switch_core_session_get_uuid(session);
+		
 		if (!strcmp(conf_name, "_uuid_")) {
 			conf_name = uuid;
 		}
@@ -2141,10 +2151,6 @@ static void conference_function(switch_core_session_t *session, char *data)
 		/* Create the conference object. */
 		conference = conference_new(conf_name, profile, pool);
 
-		/* Release the config registry handle */
-		switch_xml_free(cxml);
-		cxml = NULL;
-
 		if (!conference) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			goto done;
@@ -2153,6 +2159,11 @@ static void conference_function(switch_core_session_t *session, char *data)
 		/* Set the minimum number of members (once you go above it you cannot go below it) */
 		conference->min = 2;
 
+		if (dpin) {
+			printf("ASS [%s]\n", dpin);
+			conference->pin = switch_core_strdup(conference->pool, dpin);
+		}
+
 		/* Indicate the conference is dynamic */
 		switch_set_flag_locked(conference, CFLAG_DYNAMIC);	
 
@@ -2160,12 +2171,32 @@ static void conference_function(switch_core_session_t *session, char *data)
 		launch_conference_thread(conference);
 
 	} else {
-		conf_name = mydata;
-		freepool = pool;
 		/* Figure out what conference to call. */
-		if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Conference called %s found.\n", conf_name);
-			goto done;
+		if ((conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
+			freepool = pool;
+		} else {
+			/* Create the conference object. */
+			conference = conference_new(conf_name, profile, pool);
+		
+
+			if (!conference) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+				goto done;
+			}
+			
+			if (dpin) {
+				conference->pin = switch_core_strdup(conference->pool, dpin);
+			}
+				
+			/* Set the minimum number of members (once you go above it you cannot go below it) */
+			conference->min = 1;
+
+			/* Indicate the conference is dynamic */
+			switch_set_flag_locked(conference, CFLAG_DYNAMIC);
+
+			/* Start the conference thread for this conference */
+			launch_conference_thread(conference);
+
 		}
 
 		if (conference->pin) {
@@ -2178,7 +2209,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 
 			if (conference->pin_sound) {
 				conference_local_play_file(session, conference->pin_sound, 20, pin, sizeof(pin));
-			}
+			} 
 
 			if (strlen(pin) < strlen(conference->pin)) {
 				buf = pin + strlen(pin);
@@ -2208,6 +2239,13 @@ static void conference_function(switch_core_session_t *session, char *data)
 		}
 		
 	}
+
+	/* Release the config registry handle */
+	if (cxml) {
+		switch_xml_free(cxml);
+		cxml = NULL;
+	}
+
 
 	if (!switch_strlen_zero(bridgeto) && strcasecmp(bridgeto, "none")) {
 		if (conference_outcall(conference, session, bridgeto, 60, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
@@ -2757,8 +2795,6 @@ static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch
 /* Called by FreeSWITCH when the module loads */
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
-	switch_xml_t cfg, cxml, room, rooms, profiles, profile = NULL;
-	conference_obj_t *conference;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
 	memset(&globals, 0, sizeof(globals));
@@ -2777,38 +2813,11 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_TERM;
 	}
 
-	/* Open the config from the xml registry */
-	if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
-        return SWITCH_STATUS_TERM;
-    }
-
 	/* Setup a hash to store conferences by name */
 	switch_core_hash_init(&globals.conference_hash, globals.conference_pool);
 	switch_mutex_init(&globals.conference_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 	switch_mutex_init(&globals.id_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 	switch_mutex_init(&globals.hash_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
-
-	/* Itterate the config */
-	if ((rooms = switch_xml_child(cfg, "rooms"))) {
-		/* Parse various rooms. */
-		for (room = switch_xml_child(rooms, "room"); room; room = room->next) {
-			char *name = (char *) switch_xml_attr_soft(room, "name");
-			char *pname = (char *) switch_xml_attr_soft(room, "profile");
-			
-			if ((profiles = switch_xml_child(cfg, "profiles"))) {
-				profile = switch_xml_find_child(profiles, "profile", "name", pname);
-			}
-
-			if ((conference = conference_new(name, profile, NULL))) {
-				/* Start the conference thread for this conference */
-				launch_conference_thread(conference);
-			}
-		}
-	}
-	
-	/* Release the config registry handle */
-	switch_xml_free(cxml);
 
 	globals.running = 1;
 	/* indicate that the module should continue to be loaded */

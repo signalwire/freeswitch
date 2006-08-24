@@ -349,9 +349,6 @@
           <param name="caller-id-number" value="8777423583"/>
         </profile>
       </profiles>
-      <rooms>
-        <room name="freeswitch" profile="default"/>
-      </rooms>
     </configuration>
   </section>
   <section name="dialplan" description="Regex/XML Dialplan">
