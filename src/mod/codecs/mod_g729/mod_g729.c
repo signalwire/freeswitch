@@ -32,7 +32,7 @@
 #include "switch.h"
 #include "g729.h"
 
-static const char modname[] = "mod_codec_g729";
+static const char modname[] = "mod_g729";
 
 
 struct g729_context {
