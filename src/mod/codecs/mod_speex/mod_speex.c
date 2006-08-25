@@ -33,7 +33,7 @@
 #include <speex/speex.h>
 #include <speex/speex_preprocess.h>
 
-static const char modname[] = "mod_speexcodec";
+static const char modname[] = "mod_speex";
 
 static const switch_codec_settings_t default_codec_settings = {
 	/*.quality */ 5,
