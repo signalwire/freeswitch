@@ -1501,9 +1501,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
  endfor1:
 
 	if (session) {
-		switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
-		switch_channel_pre_answer(caller_channel);
+		switch_codec_t *read_codec = NULL;
 
+		switch_channel_pre_answer(caller_channel);
+		read_codec = switch_core_session_get_read_codec(session);
+
+		assert(read_codec != NULL);
 		if (switch_core_codec_init(&write_codec,
 								   "L16",
 								   read_codec->implementation->samples_per_second,
