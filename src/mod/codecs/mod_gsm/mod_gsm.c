@@ -31,7 +31,7 @@
  */  
 #include "switch.h"
 #include "gsm.h"
-static const char modname[] = "mod_codec_gsm";
+static const char modname[] = "mod_gsm";
 struct gsm_context {
 	gsm encoder;
 	gsm decoder;
