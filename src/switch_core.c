@@ -353,8 +353,17 @@ SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *sessi
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
+	switch_event_t *event;
+
 	assert(session != NULL);
 
+	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(session->channel, event);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", codec->implementation->iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-rate", "%d", codec->implementation->samples_per_second);
+		switch_event_fire(&event);
+	}
+				
 	session->read_codec = codec;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -366,7 +375,15 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(switch_core_
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
+	switch_event_t *event;
 	assert(session != NULL);
+
+	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(session->channel, event);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-write-codec-name", codec->implementation->iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-write-codec-rate", "%d", codec->implementation->samples_per_second);
+		switch_event_fire(&event);
+	}
 
 	session->write_codec = codec;
 	return SWITCH_STATUS_SUCCESS;
@@ -2867,14 +2884,18 @@ static void core_event_handler(switch_event_t *event)
 									 switch_event_get_header(event, "channel-state")
 									 );
 		break;
-	case SWITCH_EVENT_CHANNEL_EXECUTE:
-		sql = switch_core_db_mprintf("update channels set application='%q',application_data='%q', read_codec='%q',read_rate='%q',write_codec='%q',write_rate='%q' where uuid='%q'",
-									 switch_event_get_header(event, "application"),
-									 switch_event_get_header(event, "application-data"),
+	case SWITCH_EVENT_CODEC:
+		sql = switch_core_db_mprintf("update channels set read_codec='%q',read_rate='%q',write_codec='%q',write_rate='%q' where uuid='%q'",
 									 switch_event_get_header(event, "channel-read-codec-name"),
 									 switch_event_get_header(event, "channel-read-codec-rate"),
 									 switch_event_get_header(event, "channel-write-codec-name"),
 									 switch_event_get_header(event, "channel-write-codec-rate"),
+									 switch_event_get_header(event, "unique-id"));
+		break;
+	case SWITCH_EVENT_CHANNEL_EXECUTE:
+		sql = switch_core_db_mprintf("update channels set application='%q',application_data='%q' where uuid='%q'",
+									 switch_event_get_header(event, "application"),
+									 switch_event_get_header(event, "application-data"),
 									 switch_event_get_header(event, "unique-id")
 									 );
 		break;

@@ -113,6 +113,7 @@ static char *EVENT_NAMES[] = {
 	"MODULE_LOAD",
 	"DTMF",
 	"MESSAGE",
+	"CODEC",
 	"ALL"
 };
 

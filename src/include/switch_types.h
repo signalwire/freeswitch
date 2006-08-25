@@ -558,6 +558,7 @@ typedef enum {
 	SWITCH_EVENT_MODULE_LOAD		- Module was loaded
 	SWITCH_EVENT_DTMF				- DTMF was sent
 	SWITCH_EVENT_MESSAGE			- A Basic Message
+	SWITCH_EVENT_CODEC				- Codec Change
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -586,6 +587,7 @@ typedef enum {
 	SWITCH_EVENT_MODULE_LOAD,
 	SWITCH_EVENT_DTMF,
 	SWITCH_EVENT_MESSAGE,
+	SWITCH_EVENT_CODEC,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
