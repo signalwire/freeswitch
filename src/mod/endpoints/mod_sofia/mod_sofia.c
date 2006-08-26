@@ -180,13 +180,13 @@ static switch_status_t sofia_on_loopback(switch_core_session_t *session);
 static switch_status_t sofia_on_transmit(switch_core_session_t *session);
 
 static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
-											 switch_core_session_t **new_session, switch_memory_pool_t *pool);
+											  switch_core_session_t **new_session, switch_memory_pool_t *pool);
 
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
-									   switch_io_flag_t flags, int stream_id);
+										switch_io_flag_t flags, int stream_id);
 
 static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
-										switch_io_flag_t flags, int stream_id);
+										 switch_io_flag_t flags, int stream_id);
 
 static switch_status_t config_sofia(int reload);
 
@@ -205,7 +205,7 @@ static void attach_private(switch_core_session_t *session,
                            private_object_t *tech_pvt,
                            char *channame);
 
-static void terminate_session(switch_core_session_t **session, switch_call_cause_t cause);
+static void terminate_session(switch_core_session_t **session, switch_call_cause_t cause, int line);
 
 static switch_status_t tech_choose_port(private_object_t *tech_pvt);
 
@@ -358,31 +358,32 @@ static void attach_private(switch_core_session_t *session,
 	switch_channel_set_name(channel, name);
 }
 
-static void terminate_session(switch_core_session_t **session, switch_call_cause_t cause)
+static void terminate_session(switch_core_session_t **session, switch_call_cause_t cause, int line)
 {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Term called from line: %d\n", line);
 	if (*session) {
 		switch_channel_t *channel = switch_core_session_get_channel(*session);
 		switch_channel_state_t state = switch_channel_get_state(channel);
 		struct private_object *tech_pvt = NULL;
 			
 		tech_pvt = switch_core_session_get_private(*session);
-		assert(tech_pvt != NULL);
 
-		if (state > CS_INIT && state < CS_HANGUP) {
-			switch_channel_hangup(channel, cause);
-		}
-		
-		if (!switch_test_flag(tech_pvt, TFLAG_READY)) {
+		if (tech_pvt) {
 			if (state > CS_INIT && state < CS_HANGUP) {
-				sofia_on_hangup(*session);
+				switch_channel_hangup(channel, cause);
+			}
+			
+			if (!switch_test_flag(tech_pvt, TFLAG_READY)) {
+				if (state > CS_INIT && state < CS_HANGUP) {
+					sofia_on_hangup(*session);
+				}
+				switch_core_session_destroy(session);
 			} 
-
+		} else {
 			switch_core_session_destroy(session);
-
 		}
 	}
 }
-
 
 static switch_status_t tech_choose_port(private_object_t *tech_pvt)
 {
@@ -404,7 +405,7 @@ static switch_status_t tech_choose_port(private_object_t *tech_pvt)
 			char *stun_ip = tech_pvt->profile->extrtpip + 5;
 			if (!stun_ip) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! NO STUN SERVER\n");
-				terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 				return SWITCH_STATUS_FALSE;
 			}
 			if (switch_stun_lookup(&ip,
@@ -414,7 +415,7 @@ static switch_status_t tech_choose_port(private_object_t *tech_pvt)
 								   &err,
 								   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Stun Failed! %s:%d [%s]\n", stun_ip, SWITCH_STUN_DEFAULT_PORT, err);
-				terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 				return SWITCH_STATUS_FALSE;
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Stun Success [%s]:[%d]\n", ip, sdp_port);
@@ -457,9 +458,9 @@ static void do_invite(switch_core_session_t *session)
 }
 
 /* 
-State methods they get called when the state changes to the specific state 
-returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
-so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
+   State methods they get called when the state changes to the specific state 
+   returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
+   so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
 static switch_status_t sofia_on_init(switch_core_session_t *session)
 {
@@ -595,7 +596,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 	assert(tech_pvt->codecs[tech_pvt->codec_index] != NULL);
 
 	if (tech_pvt->rtp_session) {
-	  return SWITCH_STATUS_SUCCESS;
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 
@@ -608,7 +609,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 							   NULL,
 							   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
-		terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 		return SWITCH_STATUS_FALSE;
 	} else {
 		if (switch_core_codec_init(&tech_pvt->write_codec,
@@ -620,7 +621,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 								   NULL,
 								   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
-			terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 			return SWITCH_STATUS_FALSE;
 		} else {
 			int ms;
@@ -683,7 +684,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
-		terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		terminate_session(&tech_pvt->session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -721,7 +722,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 
 
 static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
-									   switch_io_flag_t flags, int stream_id)
+										switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt = NULL;
 	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
@@ -826,7 +827,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 
 static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
-										switch_io_flag_t flags, int stream_id)
+										 switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt;
 	switch_channel_t *channel = NULL;
@@ -958,17 +959,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
-	  if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_TIMER)) {
-	    switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
-	  }
-	  break;
+		if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_TIMER)) {
+			switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "De-activate timed RTP!\n");
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
-	  if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_TIMER)) {
-	    switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
-	    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
-	  }
-	  break;
+		if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_TIMER)) {
+			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-activate timed RTP!\n");
+		}
+		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS: {
 		struct private_object *tech_pvt;
 	    switch_channel_t *channel = NULL;
@@ -980,13 +981,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	    assert(tech_pvt != NULL);
 
 	    if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+			switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
 			/* Transmit 183 Progress with SDP */
 			tech_choose_port(tech_pvt);
 			set_local_sdp(tech_pvt);
 			activate_rtp(tech_pvt);
-			//help me this 183 line will not work.  The resulting 183 has no sdp, sigh...
-			nua_respond(tech_pvt->nh, SIP_183_SESSION_PROGRESS, SOATAG_LOCAL_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
+			nua_respond(tech_pvt->nh, SIP_183_SESSION_PROGRESS, SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
 			//nua_respond(tech_pvt->nh, SIP_200_OK, SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
 	    }
 	}
@@ -1037,7 +1038,7 @@ static const switch_loadable_module_interface_t sofia_module_interface = {
 };
 
 static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
-											 switch_core_session_t **new_session, switch_memory_pool_t *pool)
+											  switch_core_session_t **new_session, switch_memory_pool_t *pool)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_core_session_t *nsession;
@@ -1056,7 +1057,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 
 	if (!(tech_pvt = (struct private_object *) switch_core_session_alloc(nsession, sizeof(*tech_pvt)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
-		terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 		goto done;
 	}
 
@@ -1065,7 +1066,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	
 	if (!(dest = strchr(profile_name, '/'))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");
-        terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+        terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
         goto done;
 	}
 
@@ -1073,7 +1074,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	
 	if (!(profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, profile_name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
-        terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+        terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
         goto done;
 	}
 	
@@ -1224,7 +1225,7 @@ static void sip_i_state(int status,
 			if (match) {
 				tech_choose_port(tech_pvt);
                 activate_rtp(tech_pvt);
-				switch_channel_set_variable(channel, "endpoint_disposition", "PROGRESS");
+				switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
                 switch_channel_pre_answer(channel);
 				return;
 			}
@@ -1273,30 +1274,36 @@ static void sip_i_state(int status,
 	case nua_callstate_completed:
 		break;
 	case nua_callstate_ready:
-		if (session && r_sdp) {
-			su_home_t home[1] = { SU_HOME_INIT(home) };
-			sdp_parser_t *parser = sdp_parse(home, r_sdp, (int)strlen(r_sdp), 0);
-			sdp_session_t *sdp;
-			uint8_t match = 0;
+		if (session) {
+			if (r_sdp) {
+				su_home_t home[1] = { SU_HOME_INIT(home) };
+				sdp_parser_t *parser = sdp_parse(home, r_sdp, (int)strlen(r_sdp), 0);
+				sdp_session_t *sdp;
+				uint8_t match = 0;
 
-			if (tech_pvt->num_codecs) {
-				if ((sdp = sdp_session(parser))) {
-					match = negotiate_sdp(session, sdp);
+				if (tech_pvt->num_codecs) {
+					if ((sdp = sdp_session(parser))) {
+						match = negotiate_sdp(session, sdp);
+					}
 				}
-			}
 
-			if (parser) {
-				sdp_parser_free(parser);
-			}
+				if (parser) {
+					sdp_parser_free(parser);
+				}
 
-			if (home) {
-				su_home_deinit(home);
-			}
+				if (home) {
+					su_home_deinit(home);
+				}
 
-			if (match) {
+				if (match) {
+					switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
+					tech_choose_port(tech_pvt);
+					activate_rtp(tech_pvt);
+					switch_channel_answer(channel);
+					return;
+				}
+			} else if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 				switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
-				tech_choose_port(tech_pvt);
-				activate_rtp(tech_pvt);
 				switch_channel_answer(channel);
 				return;
 			}
@@ -1309,7 +1316,7 @@ static void sip_i_state(int status,
 	case nua_callstate_terminated:
 		if (session) {
 			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
-			terminate_session(&session, SWITCH_CAUSE_NORMAL_CLEARING);
+			terminate_session(&session, SWITCH_CAUSE_NORMAL_CLEARING, __LINE__);
 		}
 		break;
 	}
@@ -1338,7 +1345,7 @@ static void sip_i_invite(nua_t *nua,
 
 			if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
-				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 				return;
 			}
 
@@ -1522,7 +1529,8 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 							  event_callback, /* Callback for processing events */
 							  profile, /* Additional data to pass to callback */
 							  NUTAG_URL(profile->url),
-							  NUTAG_EARLY_MEDIA(1),   
+							  NUTAG_EARLY_MEDIA(1),
+							  SIPTAG_SUPPORTED_STR("100rel, precondition"),
 							  TAG_END()); /* Last tag should always finish the sequence */
 
 	for (node = profile->aliases; node; node = node->next) {
@@ -1531,6 +1539,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 							   profile, /* Additional data to pass to callback */
 							   NUTAG_URL(node->url),
 							   NUTAG_EARLY_MEDIA(1),
+							   SIPTAG_SUPPORTED_STR("100rel, precondition"),
 							   TAG_END()); /* Last tag should always finish the sequence */
 
 	}
