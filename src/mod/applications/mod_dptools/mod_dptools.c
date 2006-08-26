@@ -45,6 +45,14 @@ static void sleep_function(switch_core_session_t *session, char *data)
 	}
 }
 
+static void answer_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+	switch_channel_answer(channel);
+}
+
 static void set_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
@@ -118,11 +126,19 @@ static const switch_application_interface_t set_application_interface = {
 	/*.application_function */ set_function
 };
 
+static const switch_application_interface_t answer_application_interface = {
+	/*.interface_name */ "answer",
+	/*.application_function */ answer_function,
+	NULL,NULL,NULL,
+	&set_application_interface
+
+};
+
 static const switch_application_interface_t strftime_application_interface = {
 	/*.interface_name */ "strftime",
 	/*.application_function */ strftime_function,
 	NULL,NULL,NULL,
-	&set_application_interface
+	&answer_application_interface
 
 };
 

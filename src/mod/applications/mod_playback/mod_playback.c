@@ -91,7 +91,7 @@ static void speak_function(switch_core_session_t *session, char *data)
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
 
-	switch_channel_answer(channel);
+	switch_channel_pre_answer(channel);
 	switch_ivr_speak_text(session, engine, voice, timer_name, codec->implementation->samples_per_second, on_dtmf, text, buf, sizeof(buf));
 	
 }
