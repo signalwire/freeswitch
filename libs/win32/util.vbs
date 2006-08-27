@@ -45,6 +45,9 @@ If objArgs.Count >=3 Then
 			Wget objArgs(1), Showpath(objArgs(2))
 		Case "GetUnzip"		
 			WgetUnCompress objArgs(1), Showpath(objArgs(2))
+		Case "Version"					
+			'CreateVersion(tmpFolder, VersionDir, includebase, includedest)
+			CreateVersion Showpath(objArgs(1)), Showpath(objArgs(2)), objArgs(3), objArgs(4)
 	End Select
 End If
 
@@ -180,3 +183,62 @@ Function Showpath(folderspec)
 	Set f = FSO.GetFolder(folderspec)
 	showpath = f.path & "\"
 End Function
+
+Sub FindReplaceInFile(FileName, sFind, sReplace)
+	Const OpenAsASCII = 0  ' Opens the file as ASCII (TristateFalse) 
+	Const OpenAsUnicode = -1  ' Opens the file as Unicode (TristateTrue) 
+	Const OpenAsDefault = -2  ' Opens the file using the system default 
+	
+	Const OverwriteIfExist = -1 
+	Const FailIfNotExist   =  0 
+	Const ForReading       =  1 
+	
+	Set fOrgFile = FSO.OpenTextFile(FileName, ForReading, FailIfNotExist, OpenAsASCII)
+	sText = fOrgFile.ReadAll
+	fOrgFile.Close
+	sText = Replace(sText, sFind, sReplace)
+	Set fNewFile = FSO.CreateTextFile(FileName, OverwriteIfExist, OpenAsASCII)
+	fNewFile.WriteLine sText
+	fNewFile.Close
+End Sub
+
+Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
+	Dim oExec
+	If Right(tmpFolder, 1) <> "\" Then tmpFolder = tmpFolder & "\" End If
+	If Not FSO.FileExists(tmpFolder & "svnversion.exe") Then 
+		Wget ToolsBase & "svnversion.exe", tmpFolder
+	End If	
+	Dim sLastFile
+	Const OverwriteIfExist = -1 
+	Const ForReading       =  1 
+	VersionCmd="svnversion " & quote & VersionDir & "." & quote &  " -n"
+	Set MyFile = fso.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
+	MyFile.WriteLine("@" & "cd " & quote & tmpFolder & quote )
+	MyFile.WriteLine("@" & VersionCmd)
+	MyFile.Close
+	Set oExec = WshShell.Exec(tmpFolder & "tmpVersion.Bat")
+	Do
+		strFromProc = OExec.StdOut.ReadLine()
+		VERSION=strFromProc
+	Loop While Not OExec.StdOut.atEndOfStream
+	sLastVersion = ""
+	Set sLastFile = FSO.OpenTextFile(tmpFolder & "lastversion", ForReading, true, OpenAsASCII)
+	If Not sLastFile.atEndOfStream Then
+		sLastVersion = sLastFile.ReadLine()
+	End If
+	sLastFile.Close
+	
+	If VERSION = "" Then
+		VERSION = "UNKNOWN"
+	End If
+
+	If VERSION <> sLastVersion Then
+		Set MyFile = fso.CreateTextFile(tmpFolder & "lastversion", True)
+		MyFile.WriteLine(VERSION)
+		MyFile.Close
+	
+		FSO.CopyFile includebase, includedest, true
+		FindReplaceInFile includedest, "@SVN_VERSION@", VERSION
+	End If
+	
+End Sub
