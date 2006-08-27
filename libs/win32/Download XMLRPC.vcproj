@@ -76,7 +76,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading XMLRPC."
-					CommandLine="if not exist $(ProjectDir)..\xmlrpc-c-1.03.14 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/xmlrpc-c-1.03.14.tgz $(ProjectDir)..&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\xmlrpc-c-1.03.14&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/xmlrpc-c-1.03.14.tgz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\xmlrpc-c-1.03.14"
 				/>
 			</FileConfiguration>
@@ -86,7 +86,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading XMLRPC."
-					CommandLine="if not exist $(ProjectDir)..\xmlrpc-c-1.03.14 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/xmlrpc-c-1.03.14.tgz $(ProjectDir)..&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\xmlrpc-c-1.03.14&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/xmlrpc-c-1.03.14.tgz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\xmlrpc-c-1.03.14"
 				/>
 			</FileConfiguration>

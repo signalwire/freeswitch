@@ -76,7 +76,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading SPIDERMONKEY."
-					CommandLine="if not exist $(ProjectDir)..\js20051231 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/js20051231.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.debug cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.debug.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.release cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.release.zip $(ProjectDir)..&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\js20051231&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/js20051231.zip &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\nspr-4.6.1.winnt5.debug&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.debug.zip &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\nspr-4.6.1.winnt5.release&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.release.zip &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\js20051231"
 				/>
 			</FileConfiguration>
@@ -86,7 +86,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading SPIDERMONKEY."
-					CommandLine="if not exist $(ProjectDir)..\js20051231 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/js20051231.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.debug cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.debug.zip $(ProjectDir)..&#x0D;&#x0A;if not exist $(ProjectDir)..\nspr-4.6.1.winnt5.release cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.release.zip $(ProjectDir)..&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\js20051231&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/js20051231.zip &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\nspr-4.6.1.winnt5.debug&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.debug.zip &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\nspr-4.6.1.winnt5.release&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/nspr-4.6.1.winnt5.release.zip &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\js20051231"
 				/>
 			</FileConfiguration>

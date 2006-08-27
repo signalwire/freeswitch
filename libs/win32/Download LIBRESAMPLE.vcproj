@@ -72,7 +72,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading LIBRESAMPLE."
-					CommandLine="if not exist $(ProjectDir)..\libresample-0.1.3 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libresample-0.1.3.zip $(ProjectDir)..&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\libresample-0.1.3&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libresample-0.1.3.zip &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\libresample-0.1.3"
 				/>
 			</FileConfiguration>
@@ -82,7 +82,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading LIBRESAMPLE."
-					CommandLine="if not exist $(ProjectDir)..\libresample-0.1.3 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libresample-0.1.3.zip $(ProjectDir)..&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\libresample-0.1.3&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libresample-0.1.3.zip &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\libresample-0.1.3"
 				/>
 			</FileConfiguration>

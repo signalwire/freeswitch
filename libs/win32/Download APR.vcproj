@@ -26,7 +26,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description=""
 				CommandLine=""
 			/>
 			<Tool
@@ -52,7 +51,6 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				Description=""
 				CommandLine=""
 			/>
 			<Tool
@@ -78,7 +76,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading APR."
-					CommandLine="if not exist $(ProjectDir)..\apr-1.2.7 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/apr-1.2.7.tar.gz $(ProjectDir).."
+					CommandLine="if not exist &quot;$(ProjectDir)..\apr-1.2.7&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/apr-1.2.7.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\apr-1.2.7"
 				/>
 			</FileConfiguration>
@@ -88,7 +86,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading APR."
-					CommandLine="if not exist $(ProjectDir)..\apr-1.2.7 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/apr-1.2.7.tar.gz $(ProjectDir).."
+					CommandLine="if not exist &quot;$(ProjectDir)..\apr-1.2.7&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/apr-1.2.7.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\apr-1.2.7"
 				/>
 			</FileConfiguration>

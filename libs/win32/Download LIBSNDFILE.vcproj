@@ -76,7 +76,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading LIBSNDFILE."
-					CommandLine="if not exist $(ProjectDir)..\libsndfile-1.0.16 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libsndfile-1.0.16.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\libsndfile-1.0.16&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libsndfile-1.0.16.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\libsndfile-1.0.16"
 				/>
 			</FileConfiguration>
@@ -86,7 +86,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading LIBSNDFILE."
-					CommandLine="if not exist $(ProjectDir)..\libsndfile-1.0.16 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libsndfile-1.0.16.tar.gz $(ProjectDir)..&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\libsndfile-1.0.16&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/libsndfile-1.0.16.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\libsndfile-1.0.16"
 				/>
 			</FileConfiguration>

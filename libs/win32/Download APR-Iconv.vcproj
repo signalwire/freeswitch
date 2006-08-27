@@ -25,6 +25,9 @@
 			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
@@ -43,6 +46,9 @@
 			CharacterSet="2"
 			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
 			<Tool
 				Name="VCCustomBuildTool"
 			/>
@@ -66,7 +72,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading APR-Iconv."
-					CommandLine="if not exist $(ProjectDir)..\apr-iconv-1.1.1 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/apr-iconv-1.1.1.tar.gz $(ProjectDir).."
+					CommandLine="if not exist &quot;$(ProjectDir)..\apr-iconv-1.1.1&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/apr-iconv-1.1.1.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\apr-iconv-1.1.1"
 				/>
 			</FileConfiguration>
@@ -76,7 +82,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading APR-Iconv."
-					CommandLine="if not exist $(ProjectDir)..\apr-iconv-1.1.1 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/apr-iconv-1.1.1.tar.gz $(ProjectDir).."
+					CommandLine="if not exist &quot;$(ProjectDir)..\apr-iconv-1.1.1&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/apr-iconv-1.1.1.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\apr-iconv-1.1.1"
 				/>
 			</FileConfiguration>

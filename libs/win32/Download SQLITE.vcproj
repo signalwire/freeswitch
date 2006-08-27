@@ -72,7 +72,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading SQLITE."
-					CommandLine="if not exist $(ProjectDir)..\sqlite-source-3_3_6 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sqlite-source-3_3_6.zip $(ProjectDir)..&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\sqlite-source-3_3_6&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sqlite-source-3_3_6.zip &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\sqlite-source-3_3_6"
 				/>
 			</FileConfiguration>
@@ -82,7 +82,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading SQLITE."
-					CommandLine="if not exist $(ProjectDir)..\sqlite-source-3_3_6 cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sqlite-source-3_3_6.zip $(ProjectDir)..&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\sqlite-source-3_3_6&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sqlite-source-3_3_6.zip &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\sqlite-source-3_3_6"
 				/>
 			</FileConfiguration>
