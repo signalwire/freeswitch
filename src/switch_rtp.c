@@ -547,7 +547,7 @@ SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
 {
-	return switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) ? 1 : 0;
+	return (rtp_session != NULL && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) ? 1 : 0;
 }
 
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)

@@ -1678,7 +1678,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			this_audio_thread->running = 2;
 
 
-			if (!switch_channel_test_flag(peer_channel, CF_TRANSFER)) {
+			if (!switch_channel_test_flag(peer_channel, CF_TRANSFER) && switch_channel_get_state(peer_channel) < CS_HANGUP) {
 				switch_core_session_kill_channel(peer_session, SWITCH_SIG_KILL);
 				switch_channel_hangup(peer_channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			}

@@ -723,7 +723,6 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		set_local_sdp(tech_pvt);
 		activate_rtp(tech_pvt);
 		if (tech_pvt->nh) {
-			tech_pvt->contact = sip_contact_create(tech_pvt->home, URL_STRING_MAKE("sip:1000@208.64.200.40"), NULL);
 			nua_respond(tech_pvt->nh, SIP_200_OK, SIPTAG_CONTACT(tech_pvt->contact), SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP:\n%s\n", tech_pvt->local_sdp_str);
 		}
@@ -995,10 +994,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	    if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 			switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
+
 			/* Transmit 183 Progress with SDP */
 			tech_choose_port(tech_pvt);
 			set_local_sdp(tech_pvt);
 			activate_rtp(tech_pvt);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "183 SDP:\n%s\n", tech_pvt->local_sdp_str);
 			nua_respond(tech_pvt->nh, SIP_183_SESSION_PROGRESS, SIPTAG_CONTACT(tech_pvt->contact), SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
 			//nua_respond(tech_pvt->nh, SIP_200_OK, SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
 	    }
@@ -1251,6 +1252,9 @@ static void sip_i_state(int status,
 			uint8_t match = 0;
 			
 
+			tech_pvt->contact = sip_contact_create(tech_pvt->home, URL_STRING_MAKE("sip:1000@208.64.200.40"), NULL);
+			
+
 			if (tech_pvt->num_codecs) {
 				if ((sdp = sdp_session(parser))) {
 					match = negotiate_sdp(session, sdp);
@@ -1267,7 +1271,7 @@ static void sip_i_state(int status,
 				switch_channel_set_state(channel, CS_INIT);
 				switch_set_flag_locked(tech_pvt, TFLAG_READY);
 				switch_core_session_thread_launch(session);
-				//nua_respond(nh, SIP_180_RINGING, TAG_END());
+				//nua_respond(nh, SIP_100_TRYING, SIPTAG_CONTACT(tech_pvt->contact), TAG_END());
 				return;
 			}
 		}
@@ -1531,9 +1535,14 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 							  event_callback, /* Callback for processing events */
 							  profile, /* Additional data to pass to callback */
 							  NUTAG_URL(profile->url),
-							  NUTAG_EARLY_MEDIA(1),
-							  SIPTAG_SUPPORTED_STR("100rel, precondition"),
 							  TAG_END()); /* Last tag should always finish the sequence */
+
+	nua_set_params(profile->nua,
+				   NUTAG_EARLY_MEDIA(1),
+				   SIPTAG_SUPPORTED_STR("100rel, precondition"),
+				   NUTAG_AUTOANSWER(0),
+				   NUTAG_AUTOALERT(0));
+				   
 
 	for (node = profile->aliases; node; node = node->next) {
 		node->nua = nua_create(profile->s_root, /* Event loop */
@@ -1542,8 +1551,16 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 							   NUTAG_URL(node->url),
 							   NUTAG_EARLY_MEDIA(1),
 							   SIPTAG_SUPPORTED_STR("100rel, precondition"),
+							   NUTAG_AUTOANSWER(0),
+							   NUTAG_AUTOALERT(0),
 							   TAG_END()); /* Last tag should always finish the sequence */
 
+		nua_set_params(node->nua,
+					   NUTAG_EARLY_MEDIA(1),
+					   SIPTAG_SUPPORTED_STR("100rel, precondition"),
+					   NUTAG_AUTOANSWER(0),
+					   NUTAG_AUTOALERT(0));
+		
 	}
 
 	su_root_run(profile->s_root);
