@@ -170,6 +170,7 @@ struct switch_rtp {
 	struct switch_rtp_rfc2833_data dtmf_data;
 	uint8_t mini;
 	switch_payload_t te;
+	switch_mutex_t *flag_mutex;
 };
 
 static int global_init = 0;
@@ -332,9 +333,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
 		switch_socket_opt_set(rtp_session->sock, APR_SO_NONBLOCK, TRUE);
-		switch_set_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
-	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_IO);
+	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_IO);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -378,9 +379,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		return SWITCH_STATUS_MEMERR;
 	}
 
+
+
 	rtp_session->pool = pool;
 	rtp_session->flags = flags;
 	rtp_session->te = 101;
+
+	switch_mutex_init(&rtp_session->flag_mutex, SWITCH_MUTEX_NESTED, rtp_session->pool);
 	switch_mutex_init(&rtp_session->dtmf_data.dtmf_mutex, SWITCH_MUTEX_NESTED, rtp_session->pool);
 	switch_buffer_create(rtp_session->pool, &rtp_session->dtmf_data.dtmf_buffer, 128);
 	/* for from address on recvfrom calls */
@@ -390,7 +395,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	if (crypto_key) {
 		int len;
 
-		switch_set_flag(rtp_session, SWITCH_RTP_FLAG_SECURE);
+		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_SECURE);
 		crypto_policy_set_rtp_default(&policy.rtp);
 		crypto_policy_set_rtcp_default(&policy.rtcp);
 		policy.ssrc.type  = ssrc_any_inbound;
@@ -502,7 +507,7 @@ SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
 		switch_rtp_miniframe_probe(rtp_session);
-		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
+		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_MINI);
 	}
 
 	return rtp_session;
@@ -537,24 +542,33 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 {
 	apr_socket_shutdown(rtp_session->sock, APR_SHUTDOWN_READWRITE);
-	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
+	switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_IO);
 }
 
+SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
+{
+	return switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO) ? 1 : 0;
+}
 
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 {
+
+	if (!switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_IO)) {
+		return;
+	}
+
 	switch_rtp_kill_socket(*rtp_session);
 	switch_socket_close((*rtp_session)->sock);
 
 	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_VAD)) {
 		switch_rtp_disable_vad(*rtp_session);
 	}
+
 	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE)) {
 		srtp_dealloc((*rtp_session)->recv_ctx);
 		srtp_dealloc((*rtp_session)->send_ctx);
 	}
 
-	*rtp_session = NULL;
 	return;
 }
 
@@ -591,7 +605,7 @@ SWITCH_DECLARE(void) switch_rtp_set_invald_handler(switch_rtp_t *rtp_session, sw
 SWITCH_DECLARE(void) switch_rtp_set_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flags) 
 {
 	
-	switch_set_flag(rtp_session, flags);
+	switch_set_flag_locked(rtp_session, flags);
 
 }
 
@@ -605,7 +619,7 @@ SWITCH_DECLARE(uint8_t) switch_rtp_test_flag(switch_rtp_t *rtp_session, switch_r
 SWITCH_DECLARE(void) switch_rtp_clear_flag(switch_rtp_t *rtp_session, switch_rtp_flag_t flags) 
 {
 	
-	switch_clear_flag(rtp_session, flags);
+	switch_clear_flag_locked(rtp_session, flags);
 
 }
 
@@ -698,7 +712,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
 		
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
-			switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_BREAK);
+			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 			return 0;
 		}
 
@@ -727,7 +741,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			uint32_t effective_size = (uint32_t)(bytes - sizeof(srtp_mini_hdr_t));
 			if (rtp_session->recv_msg.header.pt == RTP_MAGIC_NUMBER) {
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
-					switch_set_flag(rtp_session, SWITCH_RTP_FLAG_MINI);
+					switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_MINI);
 					rtp_session->rpacket_size = ntohl(rtp_session->recv_msg.header.ts);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "YAY MINI-RTP! %d\n", rtp_session->rpacket_size);
 					switch_rtp_miniframe_probe(rtp_session);
@@ -802,7 +816,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						switch_rtp_set_remote_address(rtp_session, tx_host, rtp_session->from_addr->port, &err);
 					}
 				}
-				switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+				switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 			}
 		}
 
@@ -1231,7 +1245,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_disable_vad(switch_rtp_t *rtp_session
 		return SWITCH_STATUS_GENERR;
 	}
 	switch_core_codec_destroy(&rtp_session->vad_data.vad_codec);
-	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_VAD);
+	switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_VAD);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1268,7 +1282,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 	rtp_session->vad_data.start = 0;
 	rtp_session->vad_data.next_scan = time(NULL);
 	rtp_session->vad_data.scan_freq = 0;
-	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_VAD);
+	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_VAD);
 	switch_set_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_CNG);
 	return SWITCH_STATUS_SUCCESS;
 }

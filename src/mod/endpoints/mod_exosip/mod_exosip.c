@@ -490,7 +490,7 @@ static void deactivate_rtp(struct private_object *tech_pvt)
 {
 	int loops = 0;//, sock = -1;
 
-	if (tech_pvt->rtp_session) {
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		while (loops < 10 && (switch_test_flag(tech_pvt, TFLAG_READING) || switch_test_flag(tech_pvt, TFLAG_WRITING))) {
 			switch_yield(10000);
 			loops++;
@@ -587,7 +587,7 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 										   key,
 										   &err, switch_core_session_get_pool(tech_pvt->session));
 
-	if (tech_pvt->rtp_session) {
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		uint8_t vad_in = switch_test_flag(tech_pvt, TFLAG_VAD_IN) ? 1 : 0;
 		uint8_t vad_out = switch_test_flag(tech_pvt, TFLAG_VAD_OUT) ? 1 : 0;
 		uint8_t inb = switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? 0 : 1;
@@ -840,7 +840,7 @@ static switch_status_t exosip_kill_channel(switch_core_session_t *session, int s
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 
-	if (tech_pvt->rtp_session) {
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		switch_rtp_kill_socket(tech_pvt->rtp_session);
 	}
 

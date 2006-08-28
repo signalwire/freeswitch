@@ -286,7 +286,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	int ms = 20;
 	switch_rtp_flag_t flags;
 
-	if (tech_pvt->rtp_session) {
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		return 1;
 	}
 
@@ -695,7 +695,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		ldl_session_destroy(&tech_pvt->dlsession);
 	}
 
-	if (tech_pvt->rtp_session) {
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		switch_rtp_destroy(&tech_pvt->rtp_session);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NUKE RTP\n");
 		tech_pvt->rtp_session = NULL;
@@ -734,7 +734,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 
 			}
 
-			if (tech_pvt->rtp_session) {
+			if (switch_rtp_ready(tech_pvt->rtp_session)) {
 				switch_rtp_kill_socket(tech_pvt->rtp_session);
 			}
 
@@ -1629,7 +1629,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			if (*msg == '+') {
 				switch_channel_queue_dtmf(channel, msg + 1);
 				switch_set_flag_locked(tech_pvt, TFLAG_DTMF);
-				if (tech_pvt->rtp_session) {
+				if (switch_rtp_ready(tech_pvt->rtp_session)) {
 					switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
 				}
 			}

@@ -1242,7 +1242,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	*frame = NULL;
 
 	while (switch_channel_test_flag(session->channel, CF_HOLD)) {
-		return SWITCH_STATUS_BREAK;
+		status = SWITCH_STATUS_BREAK;
+		goto done;
 	}
 
 	if (session->endpoint_interface->io_routines->read_frame) {
@@ -1261,15 +1262,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		}
 	}
 
-	if (status != SWITCH_STATUS_SUCCESS || !(*frame)) {
-		return status;
+	if (status != SWITCH_STATUS_SUCCESS) {
+		goto done;
+	}
+
+	if (!(*frame)) {
+		goto done;
 	}
 
 	assert(session != NULL);
 	assert(*frame != NULL);
 	
 	if (switch_test_flag(*frame, SFF_CNG)) {
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
 
 	if ((session->read_codec && (*frame)->codec && session->read_codec->implementation != (*frame)->codec->implementation)) {
@@ -1318,7 +1324,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			default:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s decoder error!\n",
 								  session->read_codec->codec_interface->interface_name);
-				return status;
+				goto done;
 			}
 		}
 		if (session->read_resampler) {
@@ -1346,7 +1352,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_buffer_create(session->pool, &session->raw_read_buffer, bytes);
 				}
 				if (!switch_buffer_write(session->raw_read_buffer, read_frame->data, read_frame->datalen)) {
-					return SWITCH_STATUS_MEMERR;
+					status = SWITCH_STATUS_MEMERR;
+					goto done;
 				}
 			}
 
@@ -1401,6 +1408,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				goto top;
 			}
 		}
+	}
+
+ done:
+	if (!(*frame)) {
+		status = SWITCH_STATUS_FALSE;
 	}
 
 	return status;
