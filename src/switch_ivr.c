@@ -1069,15 +1069,6 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	data->running = 0;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
 
-	if (switch_channel_test_flag(chan_a, CF_ORIGINATOR)) {
-		if (!switch_channel_test_flag(chan_b, CF_TRANSFER)) {
-			switch_core_session_kill_channel(session_b, SWITCH_SIG_KILL);
-			switch_channel_hangup(chan_b, SWITCH_CAUSE_NORMAL_CLEARING);
-		}
-		switch_channel_clear_flag(chan_a, CF_ORIGINATOR);
-		his_thread->running = 0;
-	}
-
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
 	data->running = 0;
 	return NULL;
@@ -1645,7 +1636,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
 
-	if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
 		switch_channel_answer(caller_channel);
 	}
 
@@ -1685,7 +1676,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			this_audio_thread->objs[4] = NULL;
 			this_audio_thread->objs[5] = NULL;
 			this_audio_thread->running = 2;
+
+
+			if (!switch_channel_test_flag(peer_channel, CF_TRANSFER)) {
+				switch_core_session_kill_channel(peer_session, SWITCH_SIG_KILL);
+				switch_channel_hangup(peer_channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			}
+
+			switch_channel_clear_flag(caller_channel, CF_ORIGINATOR);
+			other_audio_thread->running = 0;
+			
 			switch_core_session_rwunlock(peer_session);
+			
 		} else {
 			status = SWITCH_STATUS_FALSE;
 		}
