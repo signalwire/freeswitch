@@ -1736,6 +1736,10 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
+	/*  Adding Note so we can destroy these properly. Will remind tony.
+	 *  nua_destroy (nua);
+	 *  su_root_destroy (root);
+	 */
 	su_deinit();
 
 	return SWITCH_STATUS_SUCCESS;
