@@ -25,7 +25,7 @@ If Not IsObject(oStream)  Then
 Else
 	UseWgetEXE=false
 End If
-
+Randomize
 Set objArgs = WScript.Arguments
 quote=Chr(34)
 ScriptDir=Left(WScript.ScriptFullName,Len(WScript.ScriptFullName)-Len(WScript.ScriptName))
@@ -91,19 +91,20 @@ Sub GetWgetEXE(DestFolder)
 End Sub
 
 Sub UnCompress(Archive, DestFolder)
+	batname = "tmp" & CStr(Int(10000*Rnd)) & ".bat"
 	wscript.echo("Extracting: " & Archive)
-	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
+	Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
 	MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Archive & quote & " -y -o" & quote & DestFolder & quote )
 	MyFile.Close
-	Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
+	Set oExec = WshShell.Exec(UtilsDir & batname)
 	Do
 		WScript.Echo OExec.StdOut.ReadLine()
 	Loop While Not OExec.StdOut.atEndOfStream
 	If FSO.FileExists(Left(Archive, Len(Archive)-3))Then  
-		Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
+		Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
 		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Left(Archive, Len(Archive)-3) & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
-		Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
+		Set oExec = WshShell.Exec(UtilsDir & batname)
 		Do
 			WScript.Echo OExec.StdOut.ReadLine()
 		Loop While Not OExec.StdOut.atEndOfStream
@@ -111,10 +112,10 @@ Sub UnCompress(Archive, DestFolder)
 		FSO.DeleteFile Left(Archive, Len(Archive)-3) ,true 
 	End If
 	If FSO.FileExists(Left(Archive, Len(Archive)-3) & "tar")Then  
-		Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
+		Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
 		MyFile.WriteLine("@" & quote & UtilsDir & "7za.exe" & quote & " x " & quote & Left(Archive, Len(Archive)-3) & "tar" & quote & " -y -o" & quote & DestFolder & quote )
 		MyFile.Close
-		Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
+		Set oExec = WshShell.Exec(UtilsDir & batname)
 		Do
 			WScript.Echo OExec.StdOut.ReadLine()
 		Loop While Not OExec.StdOut.atEndOfStream
@@ -123,6 +124,9 @@ Sub UnCompress(Archive, DestFolder)
 	End If
 	
 	WScript.Sleep(500)
+	If FSO.FileExists(UtilsDir & batname)Then  
+		FSO.DeleteFile UtilsDir & batname, True
+	End If
 End Sub
 
 Sub Wget(URL, DestFolder)
@@ -134,11 +138,12 @@ Sub Wget(URL, DestFolder)
 	Wscript.echo("Downloading: " & URL)
 	
 If UseWgetEXE Then
-	Set MyFile = fso.CreateTextFile(UtilsDir & "tmpcmd.Bat", True)
+	batname = "tmp" & CStr(Int(10000*Rnd)) & ".bat"
+	Set MyFile = fso.CreateTextFile(UtilsDir & batname, True)
 	MyFile.WriteLine("@cd " & quote & DestFolder & quote)
 	MyFile.WriteLine("@" & quote & UtilsDir & "wget.exe" & quote & " " & URL)
 	MyFile.Close
-	Set oExec = WshShell.Exec(UtilsDir & "tmpcmd.Bat")
+	Set oExec = WshShell.Exec(UtilsDir & batname)
 	Do
 		WScript.Echo OExec.StdOut.ReadLine()
 	Loop While Not OExec.StdOut.atEndOfStream
