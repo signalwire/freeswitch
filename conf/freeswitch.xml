@@ -102,7 +102,28 @@
       <param name="all" value="DEBUG"/>
       </mappings>
     </configuration>
-  
+    <configuration name="sofia.conf" description="sofia Endpoint">
+      <profile name="test">
+        <param name="debug" value="1"/>
+        <param name="rfc2833-pt" value="101"/>
+        <param name="sip-port" value="5060"/>
+        <param name="dialplan" value="XML"/>
+        <param name="dtmf-duration" value="100"/>
+        <param name="codec-prefs" value="PCMU@20i"/>
+        <param name="codec-ms" value="20"/>
+        <param name="use-rtp-timer" value="true"/>
+        <param name="rtp-ip" value="192.168.1.20"/>
+        <param name="sip-ip" value="192.168.1.20"/>
+        <!-- optional ; -->
+        <!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/>-->
+        <!-- <param name="ext-rtp-ip" value="100.101.102.103"/> -->
+        <!-- VAD choose one (out is a good choice); -->
+        <!-- <param name="vad" value="in"/> -->
+        <!-- <param name="vad" value="out"/> -->
+        <!-- <param name="vad" value="both"/> -->
+        <!--<param name="alias" value="sip:10.0.1.251:5555"/>-->
+      </profile>
+    </configuration>
     <configuration name="syslog.conf" description="Syslog Logger">
     <!-- SYSLOG -->
     <!-- emerg   - system is unusable  -->
