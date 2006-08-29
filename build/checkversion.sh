@@ -1,5 +1,9 @@
 #!/bin/sh
 
+if [ -f .noversion ] ; then
+    exit
+fi
+
 if eval test x${1} = xforce ; then
 	rm -f .version
 fi

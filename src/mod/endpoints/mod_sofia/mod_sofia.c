@@ -724,7 +724,9 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		set_local_sdp(tech_pvt);
 		activate_rtp(tech_pvt);
 		if (tech_pvt->nh) {
-			nua_respond(tech_pvt->nh, SIP_200_OK, SIPTAG_CONTACT(tech_pvt->contact), SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
+			nua_respond(tech_pvt->nh, SIP_200_OK, 
+						//SIPTAG_CONTACT(tech_pvt->contact),
+						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP:\n%s\n", tech_pvt->local_sdp_str);
 		}
 	}
@@ -1001,7 +1003,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			set_local_sdp(tech_pvt);
 			activate_rtp(tech_pvt);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "183 SDP:\n%s\n", tech_pvt->local_sdp_str);
-			nua_respond(tech_pvt->nh, SIP_183_SESSION_PROGRESS, SIPTAG_CONTACT(tech_pvt->contact), SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
+			nua_respond(tech_pvt->nh, SIP_183_SESSION_PROGRESS,
+						//SIPTAG_CONTACT(tech_pvt->contact),
+						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
 			//nua_respond(tech_pvt->nh, SIP_200_OK, SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
 	    }
 	}
@@ -1241,7 +1245,9 @@ static void sip_i_state(int status,
 			}
 		}
 		switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
-		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, SIPTAG_CONTACT(tech_pvt->contact), TAG_END());
+		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
+					//SIPTAG_CONTACT(tech_pvt->contact), 
+					TAG_END());
 		break;
 	case nua_callstate_completing:
 		nua_ack(nh, TAG_END());
@@ -1270,12 +1276,13 @@ static void sip_i_state(int status,
 				switch_channel_set_state(channel, CS_INIT);
 				switch_set_flag_locked(tech_pvt, TFLAG_READY);
 				switch_core_session_thread_launch(session);
-				//nua_respond(nh, SIP_100_TRYING, SIPTAG_CONTACT(tech_pvt->contact), TAG_END());
 				return;
 			}
 		}
 		switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
-		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, SIPTAG_CONTACT(tech_pvt->contact), TAG_END());
+		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
+					//SIPTAG_CONTACT(tech_pvt->contact), 
+					TAG_END());
 		break;		
 	case nua_callstate_early:
 		break;
@@ -1314,7 +1321,9 @@ static void sip_i_state(int status,
 			}
 		}
 		switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
-		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, SIPTAG_CONTACT(tech_pvt->contact), TAG_END());
+		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
+					//SIPTAG_CONTACT(tech_pvt->contact), 
+					TAG_END());
 		break;
 	case nua_callstate_terminating:
 		break;
@@ -1366,6 +1375,8 @@ static void sip_i_invite(nua_t *nua,
 			
 			snprintf(username, sizeof(username), "%s@%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host);
 			attach_private(session, profile, tech_pvt, username);
+
+			snprintf(username, sizeof(username), "sip:%s@%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host);
 			tech_pvt->contact = sip_contact_create(tech_pvt->home, URL_STRING_MAKE(username), NULL);
 			
 			channel = switch_core_session_get_channel(session);
