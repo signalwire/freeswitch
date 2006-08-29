@@ -34,10 +34,12 @@
 
 static const char modname[] = "mod_g726";
 
+
 typedef struct {
 	g726_state context;
-	uint8_t flag;
-	uint8_t bytes;
+	uint8_t buf[5];
+	uint8_t bits_per_frame;
+	uint8_t bits;
 } g726_handle_t;
 
 static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag_t flags,
@@ -54,7 +56,7 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 	} else {
 		g726_init_state(&handle->context);
 		codec->private_info = handle;
-		handle->bytes = codec->implementation->encoded_bytes_per_frame / (codec->implementation->microseconds_per_frame / 1000);
+		handle->bits_per_frame = codec->implementation->bits_per_second / (codec->implementation->samples_per_second);
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
@@ -115,17 +117,19 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 	if (decoded_data_len % len == 0) {
 		uint32_t new_len = 0;
 		int16_t *ddp = decoded_data;
-		int8_t *edp = encoded_data;
+		//int8_t *edp = encoded_data;
 		int x;
 		uint32_t loops = decoded_data_len / (sizeof(*ddp));
 
 		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
-			if (handle->flag & 0x80) {
-				edp[new_len++] = ((handle->flag & 0xf) << handle->bytes) | encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
-				handle->flag = 0;
+#if 0
+			if (handle->buf & 0x80) {
+				edp[new_len++] = ((handle->buf & 0xf) << handle->bits_per_frame) | encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
+				handle->buf = 0;
 			} else {
-				handle->flag = 0x80 | encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
+				handle->buf = 0x80 | encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
 			}
+#endif
 			ddp++;
 		}
 
@@ -217,10 +221,10 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 
 static const switch_codec_implementation_t g726_16k_implementation = { 
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 2, 
+	/*.ianacode */ 127, 
 	/*.iananame */ "G726-16", 
 	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 8000, 
+	/*.bits_per_second */ 16000, 
 	/*.microseconds_per_frame */ 20000, 
 	/*.samples_per_frame */ 160, 
 	/*.bytes_per_frame */ 320, 
@@ -240,7 +244,7 @@ static const switch_codec_implementation_t g726_24k_implementation = {
 	/*.ianacode */ 2, 
 	/*.iananame */ "G726-24", 
 	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 12075, 
+	/*.bits_per_second */ 24000, 
 	/*.microseconds_per_frame */ 20000, 
 	/*.samples_per_frame */ 160, 
 	/*.bytes_per_frame */ 320, 
@@ -259,7 +263,7 @@ static const switch_codec_implementation_t g726_32k_implementation = {
 	/*.ianacode */ 2, 
 	/*.iananame */ "G726-32", 
 	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 16000, 
+	/*.bits_per_second */ 32000, 
 	/*.microseconds_per_frame */ 20000, 
 	/*.samples_per_frame */ 160, 
 	/*.bytes_per_frame */ 320, 
@@ -278,7 +282,7 @@ static const switch_codec_implementation_t g726_40k_implementation = {
 	/*.ianacode */ 2, 
 	/*.iananame */ "G726-40", 
 	/*.samples_per_second */ 8000,
-	/*.bits_per_second */ 20000, 
+	/*.bits_per_second */ 40000, 
 	/*.microseconds_per_frame */ 20000, 
 	/*.samples_per_frame */ 160, 
 	/*.bytes_per_frame */ 320, 
