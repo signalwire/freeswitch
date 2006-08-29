@@ -590,27 +590,17 @@ static void deactivate_rtp(private_object_t *tech_pvt)
 	}
 }
 
-
-
-
-static switch_status_t activate_rtp(private_object_t *tech_pvt)
+static switch_status_t tech_set_codec(private_object_t *tech_pvt)
 {
-	int bw, ms;
 	switch_channel_t *channel;
-	const char *err = NULL;
-	switch_rtp_flag_t flags;
-
-	assert(tech_pvt != NULL);
-
-	channel = switch_core_session_get_channel(tech_pvt->session);
-	assert(channel != NULL);
-
 	assert(tech_pvt->codecs[tech_pvt->codec_index] != NULL);
 
-	if (switch_rtp_ready(tech_pvt->rtp_session)) {
+	if (tech_pvt->read_codec.implementation) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	channel = switch_core_session_get_channel(tech_pvt->session);
+	assert(channel != NULL);
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,  
 							   tech_pvt->rm_encoding,
@@ -648,7 +638,31 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 			switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 		}
 	}
+	return SWITCH_STATUS_SUCCESS;
+}
 
+
+static switch_status_t activate_rtp(private_object_t *tech_pvt)
+{
+	int bw, ms;
+	switch_channel_t *channel;
+	const char *err = NULL;
+	switch_rtp_flag_t flags;
+	switch_status_t status;
+
+	assert(tech_pvt != NULL);
+
+	channel = switch_core_session_get_channel(tech_pvt->session);
+	assert(channel != NULL);
+
+
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if ((status = tech_set_codec(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
 	
 	bw = tech_pvt->read_codec.implementation->bits_per_second;
 	ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
@@ -993,7 +1007,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	    tech_pvt = switch_core_session_get_private(session);
 	    assert(tech_pvt != NULL);
-
+		
 	    if (!switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 			switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Asked to send early media by %s\n", msg->from);
@@ -1006,7 +1020,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			nua_respond(tech_pvt->nh, SIP_183_SESSION_PROGRESS,
 						//SIPTAG_CONTACT(tech_pvt->contact),
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
-			//nua_respond(tech_pvt->nh, SIP_200_OK, SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
 	    }
 	}
 		break;
@@ -1157,6 +1170,9 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 				}
 
 				if (match) {
+					if (tech_set_codec(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+						match = 0;
+					}
 					break;
 				}
 			}

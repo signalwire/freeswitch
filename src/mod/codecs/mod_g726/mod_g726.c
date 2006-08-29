@@ -34,20 +34,27 @@
 
 static const char modname[] = "mod_g726";
 
+typedef struct {
+	g726_state context;
+	uint8_t flag;
+	uint8_t bytes;
+} g726_handle_t;
+
 static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									  const switch_codec_settings_t *codec_settings) 
 {
 	int encoding, decoding;
-	g726_state *context = NULL;
+	g726_handle_t *handle;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
 
-	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(g726_state))))) {
+	if (!(encoding || decoding) || (!(handle = switch_core_alloc(codec->memory_pool, sizeof(*handle))))) {
 		return SWITCH_STATUS_FALSE;
 	} else {
-		g726_init_state(context);
-		codec->private_info = context;
+		g726_init_state(&handle->context);
+		codec->private_info = handle;
+		handle->bytes = codec->implementation->encoded_bytes_per_frame / (codec->implementation->microseconds_per_frame / 1000);
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
@@ -75,7 +82,8 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 										unsigned int *flag) 
 {
 
-	g726_state *context = codec->private_info;
+	g726_handle_t *handle = codec->private_info;
+	g726_state *context = &handle->context;
 	uint32_t len = codec->implementation->bytes_per_frame;
 	uint32_t elen = codec->implementation->encoded_bytes_per_frame;
 	encoder_t encoder;
@@ -112,17 +120,17 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 		uint32_t loops = decoded_data_len / (sizeof(*ddp));
 
 		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
-			int sample = encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
-			*edp = sample;
-			edp++;
-
+			if (handle->flag & 0x80) {
+				edp[new_len++] = ((handle->flag & 0xf) << handle->bytes) | encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
+				handle->flag = 0;
+			} else {
+				handle->flag = 0x80 | encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
+			}
 			ddp++;
-			new_len++;
 		}
 
 		if (new_len <= *encoded_data_len) {
-			printf("encode %d->%d %d\n", decoded_data_len, elen, new_len / 2);
-			*encoded_data_len = new_len / 2;
+			*encoded_data_len = new_len;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
 			return SWITCH_STATUS_FALSE;
