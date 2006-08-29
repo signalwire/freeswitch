@@ -61,7 +61,7 @@ BEGIN_EXTERN_C
 !strcasecmp(expr, "true") ||\
 atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
 
-#define SWITCH_STATUS_IS_BREAK(x) (x || x == SWITCH_STATUS_BREAK || x == 730035 || x == 35)
+#define SWITCH_STATUS_IS_BREAK(x) (x == SWITCH_STATUS_BREAK || x == 730035 || x == 35)
 
 /*!
   \brief Return a printable name of a switch_priority_t

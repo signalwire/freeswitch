@@ -31,7 +31,6 @@
  */
 #include <switch.h>
 #define CMD_BUFLEN 1024 * 1000
-#define IS_BREAK(x) ((int)x || SWITCH_STATUS_BREAK || (int)x == 730035 || (int)x == 35)
 
 static const char modname[] = "mod_event_socket";
 static char *MARKER = "1";
@@ -68,6 +67,7 @@ typedef struct listener listener_t;
 static struct {
 	switch_socket_t *sock;
 	switch_mutex_t *mutex;
+	switch_mutex_t *sock_mutex;
 	listener_t *listeners;
 	uint8_t ready;
 } listen_list;
@@ -152,17 +152,20 @@ static switch_loadable_module_interface_t event_socket_module_interface = {
 
 
 static void close_socket(switch_socket_t **sock) {
-
+	switch_mutex_lock(listen_list.sock_mutex);
 	if (*sock) {
 		apr_socket_shutdown(*sock, APR_SHUTDOWN_READWRITE);
 		switch_socket_close(*sock);
 		*sock = NULL;
 	}
+	switch_mutex_unlock(listen_list.sock_mutex);
 }
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
 	listener_t *l;
+
+	close_socket(&listen_list.sock);
 
 	switch_mutex_lock(listen_list.mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
@@ -170,7 +173,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 	}
 	switch_mutex_unlock(listen_list.mutex);
 
-	close_socket(&listen_list.sock);
+
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -646,7 +649,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 }
 
 
-/* Create a thread for the conference and launch it */
+/* Create a thread for the socket and launch it */
 static void launch_listener_thread(listener_t *listener)
 {
 	switch_thread_t *thread;
@@ -718,7 +721,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	}
 
 	switch_mutex_init(&listen_list.mutex, SWITCH_MUTEX_NESTED, pool);
-
+	switch_mutex_init(&listen_list.sock_mutex, SWITCH_MUTEX_NESTED, pool);
+	
 	
 	for(;;) {
 		rv = switch_sockaddr_info_get(&sa, prefs.ip, APR_INET, prefs.port, 0, pool);
@@ -767,11 +771,12 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 		listener->sock = inbound_socket;
 		listener->pool = listener_pool;
+		listener_pool = NULL;
 		listener->format = EVENT_FORMAT_PLAIN;
-		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener_pool);
-		switch_core_hash_init(&listener->event_hash, listener_pool);
-
+		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+		switch_core_hash_init(&listener->event_hash, listener->pool);
 		launch_listener_thread(listener);
+		
 	}
 
 	close_socket(&listen_list.sock);
