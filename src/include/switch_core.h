@@ -89,6 +89,8 @@ struct switch_core_session_message {
 struct switch_core_thread_session {
 	/*! status of the thread */
 	int running;
+	/*! mutex */
+	switch_mutex_t *mutex;
 	/*! array of void pointers to pass mutiple data objects */
 	void *objs[SWITCH_MAX_CORE_THREAD_SESSION_OBJS];
 	/*! a pointer to a memory pool if the thread has it's own pool */

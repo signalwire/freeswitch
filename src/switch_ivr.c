@@ -979,7 +979,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
 	switch_channel_set_flag(chan_a, CF_BRIDGED);
 
-	while (data->running > 0 && his_thread->running > 0) {
+	while (switch_channel_ready(chan_a) && data->running > 0 && his_thread->running > 0) {
 		switch_channel_state_t b_state = switch_channel_get_state(chan_b);
 		switch_status_t status;
 		switch_event_t *event;
@@ -987,7 +987,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		switch (b_state) {
 		case CS_HANGUP:
 		case CS_DONE:
+			switch_mutex_lock(data->mutex);
 			data->running = -1;
+			switch_mutex_unlock(data->mutex);
 			continue;
 		default:
 			break;
@@ -1024,7 +1026,9 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				if (input_callback) {
 					if (input_callback(session_a, dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
+						switch_mutex_lock(data->mutex);
 						data->running = -1;
+						switch_mutex_unlock(data->mutex);
 						break;
 					}
 				}
@@ -1049,13 +1053,18 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		if (SWITCH_READ_ACCEPTABLE(status)) {
 			if (status != SWITCH_STATUS_BREAK) {
 				if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "write: %s Bad Frame....[%u] Bubye!\n", switch_channel_get_name(chan_b), read_frame->datalen);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "write: %s Bad Frame....[%u] Bubye!\n",
+									  switch_channel_get_name(chan_b), read_frame->datalen);
+					switch_mutex_lock(data->mutex);
 					data->running = -1;
+					switch_mutex_unlock(data->mutex);
 				}
 			} 
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "read: %s Bad Frame.... Bubye!\n", switch_channel_get_name(chan_a));
+			switch_mutex_lock(data->mutex);
 			data->running = -1;
+			switch_mutex_unlock(data->mutex);
 		}
 
 		//switch_yield(1000);
@@ -1066,11 +1075,12 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	msg.from = __FILE__;
 	switch_core_session_receive_message(session_a, &msg);
 
-	data->running = 0;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
 
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
+	switch_mutex_lock(data->mutex);
 	data->running = 0;
+	switch_mutex_unlock(data->mutex);
 	return NULL;
 }
 
@@ -1625,6 +1635,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	other_audio_thread->objs[4] = session_data;
 	other_audio_thread->objs[5] = this_audio_thread;
 	other_audio_thread->running = 5;
+	switch_mutex_init(&other_audio_thread->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
 	this_audio_thread->objs[0] = peer_session;
 	this_audio_thread->objs[1] = session;
@@ -1633,6 +1644,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	this_audio_thread->objs[4] = peer_session_data;
 	this_audio_thread->objs[5] = other_audio_thread;
 	this_audio_thread->running = 2;
+	switch_mutex_init(&this_audio_thread->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(peer_session));
 
 	switch_channel_add_state_handler(peer_channel, &audio_bridge_peer_state_handlers);
 
@@ -1675,8 +1687,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			this_audio_thread->objs[3] = NULL;
 			this_audio_thread->objs[4] = NULL;
 			this_audio_thread->objs[5] = NULL;
-			this_audio_thread->running = 2;
-
+			switch_mutex_lock(this_audio_thread->mutex);
+			this_audio_thread->running = 0;
+			switch_mutex_unlock(this_audio_thread->mutex);
 
 			if (!switch_channel_test_flag(peer_channel, CF_TRANSFER) && switch_channel_get_state(peer_channel) < CS_HANGUP) {
 				switch_core_session_kill_channel(peer_session, SWITCH_SIG_KILL);
@@ -1684,8 +1697,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			}
 
 			switch_channel_clear_flag(caller_channel, CF_ORIGINATOR);
-			other_audio_thread->running = 0;
-			
+
+			if (other_audio_thread->running > 0) {
+				switch_mutex_lock(other_audio_thread->mutex);
+				other_audio_thread->running = -1;
+				switch_mutex_unlock(other_audio_thread->mutex);
+				while (other_audio_thread->running) {
+					switch_yield(1000);
+				}
+			}
 			switch_core_session_rwunlock(peer_session);
 			
 		} else {
