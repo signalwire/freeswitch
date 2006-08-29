@@ -57,6 +57,7 @@ struct listener {
 	uint32_t flags;
 	switch_log_level_t level;
 	char *retbuf;
+	char *ebuf;
 	uint8_t event_list[SWITCH_EVENT_ALL];
 	switch_hash_t *event_hash;
 	struct listener *next;
@@ -334,11 +335,15 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					switch_event_t *event = (switch_event_t *) pop;
 					char *etype, *packet, *xmlstr = NULL;
 
+					if (!listener->ebuf) {
+						listener->ebuf = switch_core_alloc(listener->pool, CMD_BUFLEN);
+					}
+
 					do_sleep = 0;
 					if (listener->format == EVENT_FORMAT_PLAIN) {
 						etype = "plain";
-						switch_event_serialize(event, buf, sizeof(buf), NULL);
-						packet = buf;
+						switch_event_serialize(event, listener->ebuf, CMD_BUFLEN, NULL);
+						packet = listener->ebuf;
 					} else {
 						switch_xml_t xml;
 						etype = "xml";
