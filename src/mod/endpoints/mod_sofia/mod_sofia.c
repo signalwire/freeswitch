@@ -110,6 +110,7 @@ struct sofia_profile {
 	char *extsipip;
 	char *username;
 	char *url;
+	char *sipdomain;
 	int sip_port;
 	char *codec_string;
 	char *codec_order[SWITCH_MAX_CODECS];
@@ -1250,10 +1251,8 @@ static void sip_i_state(int status,
 			sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
 			sdp_session_t *sdp;
 			uint8_t match = 0;
-			
 
-			tech_pvt->contact = sip_contact_create(tech_pvt->home, URL_STRING_MAKE("sip:1000@208.64.200.40"), NULL);
-			
+
 
 			if (tech_pvt->num_codecs) {
 				if ((sdp = sdp_session(parser))) {
@@ -1367,6 +1366,7 @@ static void sip_i_invite(nua_t *nua,
 			
 			snprintf(username, sizeof(username), "%s@%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host);
 			attach_private(session, profile, tech_pvt, username);
+			tech_pvt->contact = sip_contact_create(tech_pvt->home, URL_STRING_MAKE(username), NULL);
 			
 			channel = switch_core_session_get_channel(session);
 			switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
@@ -1538,10 +1538,11 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 							  TAG_END()); /* Last tag should always finish the sequence */
 
 	nua_set_params(profile->nua,
-				   NUTAG_EARLY_MEDIA(1),
-				   SIPTAG_SUPPORTED_STR("100rel, precondition"),
+				   NUTAG_EARLY_MEDIA(1),				   
 				   NUTAG_AUTOANSWER(0),
-				   NUTAG_AUTOALERT(0));
+				   NUTAG_AUTOALERT(0),
+				   SIPTAG_SUPPORTED_STR("100rel, precondition")
+				   );
 				   
 
 	for (node = profile->aliases; node; node = node->next) {
@@ -1549,16 +1550,12 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 							   event_callback, /* Callback for processing events */
 							   profile, /* Additional data to pass to callback */
 							   NUTAG_URL(node->url),
-							   NUTAG_EARLY_MEDIA(1),
-							   SIPTAG_SUPPORTED_STR("100rel, precondition"),
-							   NUTAG_AUTOANSWER(0),
-							   NUTAG_AUTOALERT(0),
 							   TAG_END()); /* Last tag should always finish the sequence */
 
 		nua_set_params(node->nua,
 					   NUTAG_EARLY_MEDIA(1),
-					   SIPTAG_SUPPORTED_STR("100rel, precondition"),
 					   NUTAG_AUTOANSWER(0),
+					   SIPTAG_SUPPORTED_STR("100rel, precondition"),
 					   NUTAG_AUTOALERT(0));
 		
 	}
@@ -1655,6 +1652,8 @@ static switch_status_t config_sofia(int reload)
 				profile->rtpip = switch_core_strdup(profile->pool, val);
 			} else if (!strcmp(var, "sip-ip")) {
 				profile->sipip = switch_core_strdup(profile->pool, val);
+			} else if (!strcmp(var, "sip-domain")) {
+				profile->sipdomain = switch_core_strdup(profile->pool, val);
 			} else if (!strcmp(var, "ext-sip-ip")) {
 				profile->extsipip = switch_core_strdup(profile->pool, val);
 			} else if (!strcmp(var, "username")) {
@@ -1709,6 +1708,9 @@ static switch_status_t config_sofia(int reload)
 			profile->dialplan = switch_core_strdup(profile->pool, "default");
 		}
 
+		if (!profile->sipdomain) {
+			profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
+		}
 
 		snprintf(url, sizeof(url), "sip:%s:%d", profile->sipip, profile->sip_port);
 		profile->url = switch_core_strdup(profile->pool, url);
