@@ -76,7 +76,7 @@
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
 				AddModuleNamesToAssembly=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)/FreeSwitchCore.pdb"
+				ProgramDatabaseFile="$(SolutionDir)$(OutDir)/FreeSwitch.pdb"
 				SubSystem="2"
 				OptimizeReferences="0"
 				EnableCOMDATFolding="0"
