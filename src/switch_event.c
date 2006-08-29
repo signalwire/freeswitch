@@ -671,7 +671,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Calling-Function", func);
 	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Calling-File", switch_cut_path(file));
 	switch_time_exp_lt(&tm, switch_time_now());
-	switch_strftime(date, &retsize, sizeof(date), "%a, %d-%b-%Y %X", &tm);
+	switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Date-Local", date);
 	switch_rfc822_date(date, switch_time_now());
 	switch_event_add_header(*event, SWITCH_STACK_TOP, "Event-Date-GMT", date);
