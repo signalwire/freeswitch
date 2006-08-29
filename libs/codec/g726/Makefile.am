@@ -13,13 +13,14 @@ libg726_la_SOURCES	= src/g726_16.c \
 src/g726_24.c  \
 src/g726_32.c  \
 src/g726_40.c  \
-src/g72x.c
+src/g72x.c \
+src/g711.c
 
 libg726_la_CFLAGS	= $(AM_CFLAGS)
 libg726_la_LDFLAGS	= 
 
 library_includedir	= $(prefix)/include
-library_include_HEADERS =  src/g72x.h src/private.h
+library_include_HEADERS =  src/g72x.h src/private.h src/g711.h
 
 
 
