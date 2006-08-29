@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="libg726"
-	ProjectGUID="{989BB874-7AF1-44CB-8E5C-CC8113D267E8}"
+	ProjectGUID="{5A6A281A-AA50-470A-8305-202BDA1CD1BF}"
 	RootNamespace="libg726"
 	Keyword="Win32Proj"
 	>
@@ -146,6 +146,10 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
+			<File
+				RelativePath=".\src\g711.c"
+				>
+			</File>
 			<File
 				RelativePath=".\src\g726_16.c"
 				>
