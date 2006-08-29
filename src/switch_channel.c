@@ -877,7 +877,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 	switch_core_session_message_t msg;
 	char *uuid = switch_core_session_get_uuid(channel->session);
 	switch_status_t status;
-
+	
 	assert(channel != NULL);
 
 	if (channel->state >= CS_HANGUP) {
@@ -893,8 +893,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 	status = switch_core_session_message_send(uuid, &msg);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_event_t *event;
+
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Pre-Answer %s!\n", channel->name);
 		switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PROGRESS) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(channel, event);
+			switch_event_fire(&event);
+		}
 	}
 
 	return status;
