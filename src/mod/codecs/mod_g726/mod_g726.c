@@ -31,6 +31,7 @@
  */  
 #include "switch.h"
 #include "g72x.h"
+#define BITS_IN_A_BYTE 8
 
 static const char modname[] = "mod_g726";
 
@@ -38,8 +39,14 @@ static const char modname[] = "mod_g726";
 typedef struct {
 	g726_state context;
 	uint8_t buf[5];
+	uint8_t *ptr;
 	uint8_t bits_per_frame;
 	uint8_t bits;
+	uint8_t bbits;
+	uint8_t d_bits;
+	uint8_t d_bbits;
+	uint8_t dcount;
+	uint8_t save;
 } g726_handle_t;
 
 static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag_t flags,
@@ -57,6 +64,7 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 		g726_init_state(&handle->context);
 		codec->private_info = handle;
 		handle->bits_per_frame = codec->implementation->bits_per_second / (codec->implementation->samples_per_second);
+		handle->ptr = handle->buf;
 		return SWITCH_STATUS_SUCCESS;
 	}
 }
@@ -117,19 +125,49 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 	if (decoded_data_len % len == 0) {
 		uint32_t new_len = 0;
 		int16_t *ddp = decoded_data;
-		//int8_t *edp = encoded_data;
+		uint8_t *edp = encoded_data;
 		int x;
 		uint32_t loops = decoded_data_len / (sizeof(*ddp));
 
 		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
-#if 0
-			if (handle->buf & 0x80) {
-				edp[new_len++] = ((handle->buf & 0xf) << handle->bits_per_frame) | encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
-				handle->buf = 0;
+			int edata = encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
+
+			if (!handle->bbits) {
+				*handle->ptr = edata;
+			} else if ((handle->bbits + handle->bits_per_frame) <= BITS_IN_A_BYTE) {
+				*handle->ptr <<= handle->bits_per_frame;
+				*handle->ptr |= edata;
 			} else {
-				handle->buf = 0x80 | encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
+				int remain, next, rdata, ndata;
+
+				remain = BITS_IN_A_BYTE - handle->bits_per_frame;
+				next = handle->bits_per_frame - remain;
+				rdata = edata;
+				ndata = edata;
+
+				rdata >>= remain;
+				*handle->ptr <<= remain;
+				*handle->ptr |= rdata;
+
+				handle->ptr++;
+				
+				ndata &= (1 << next) - 1;
+				*handle->ptr = ndata;
+
+				handle->bbits = 0;
 			}
-#endif
+			handle->bits += handle->bits_per_frame;
+			handle->bbits += handle->bits_per_frame;
+
+			if ((handle->bits % BITS_IN_A_BYTE) == 0) {
+				int bytes = handle->bits / BITS_IN_A_BYTE, count;
+				for(count = 0; count < bytes; count++) {
+					edp[new_len++] = handle->buf[count];
+				}
+				handle->bits = handle->bbits = 0;
+				handle->ptr = handle->buf;
+				memset(handle->buf, 0, sizeof(handle->buf));
+			}
 			ddp++;
 		}
 
@@ -159,26 +197,28 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 										unsigned int *flag) 
 {
 
-	g726_state *context = codec->private_info;
-	uint32_t len = codec->implementation->bytes_per_frame;
+	g726_handle_t *handle = codec->private_info;
+	g726_state *context = &handle->context;
+	//uint32_t len = codec->implementation->bytes_per_frame;
 	uint32_t elen = codec->implementation->encoded_bytes_per_frame;
 	decoder_t decoder;
 
+
 	switch(elen) {
-	case 40:
+	case 100:
 		decoder = g726_40_decoder;
 		break;
-	case 32:
+	case 80:
 		decoder = g726_32_decoder;
 		break;
-	case 24:
+	case 60:
 		decoder = g726_24_decoder;
 		break;
-	case 16:
+	case 40:
 		decoder = g726_16_decoder;
 		break;
 	default:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid Encoding Size!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid Encoding Size %d!\n", elen);
 		return SWITCH_STATUS_FALSE;
 		break;
 	}
@@ -189,18 +229,54 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 	}
 
 
-	if (encoded_data_len % elen == 0) {
-		int loops = (int) encoded_data_len / elen;
-		char *edp = encoded_data;
+	{
+
+		int loops = ((int)encoded_data_len * BITS_IN_A_BYTE) / handle->bits_per_frame;
+		int8_t *edp = encoded_data;
 		int16_t *ddp = decoded_data;
 		int x;
 		uint32_t new_len = 0;
 
 		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
-			*(int16_t *)ddp = decoder(*(int *)edp, AUDIO_ENCODING_LINEAR, context);
-			ddp += len;
-			edp += elen;
-			new_len += len;
+			int in = 0;
+			int bits = 0;
+			int8_t over = 0;
+			int8_t under = 0;
+
+			if (handle->save) {
+				in = handle->save;
+				handle->save = 0;
+			}
+			
+			handle->d_bits += handle->bits_per_frame;
+			bits = handle->d_bbits + handle->bits_per_frame;
+
+			if (bits > BITS_IN_A_BYTE) {
+				int tmp;
+				over = bits - BITS_IN_A_BYTE;
+				under = handle->bits_per_frame - over;
+				handle->dcount = 0;
+				tmp = *edp >> (BITS_IN_A_BYTE - (handle->bits_per_frame * handle->dcount));
+				in = tmp >> over;
+				handle->save = tmp;
+				handle->save  &= (1 << under) - 1;
+				edp++;
+			} else if (bits == BITS_IN_A_BYTE) {
+				handle->d_bbits = 0;
+				in = *edp;
+				edp++;
+				handle->dcount = 0;
+			} else {
+				in |= *edp >> (BITS_IN_A_BYTE - (handle->bits_per_frame * handle->dcount));
+				handle->d_bbits = bits;
+			}
+
+			
+
+			handle->dcount++;
+
+			*ddp++ = decoder(in, AUDIO_ENCODING_LINEAR, context);
+			new_len += 2;
 		}
 
 		if (new_len <= *decoded_data_len) {
@@ -209,6 +285,7 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!!\n");
 			return SWITCH_STATUS_FALSE;
 		}
+
 	}
 
 	return SWITCH_STATUS_SUCCESS;
