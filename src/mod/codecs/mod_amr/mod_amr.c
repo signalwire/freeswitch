@@ -34,6 +34,30 @@
 #include "switch.h"
 #include "amr.h"
 
+/*
+ * Check section 8.1 of rfc3267 for possible sdp options.
+ *  
+ * SDP Example 
+ * 
+ * a=fmtp:97 mode-set=0,2,5,7; mode-change-period=2; mode-change-neighbor=1
+ *
+ *                                 Class A   total speech
+ *                Index   Mode       bits       bits
+ *                ----------------------------------------
+ *                  0     AMR 4.75   42         95
+ *                  1     AMR 5.15   49        103
+ *                  2     AMR 5.9    55        118
+ *                  3     AMR 6.7    58        134
+ *                  4     AMR 7.4    61        148
+ *                  5     AMR 7.95   75        159
+ *                  6     AMR 10.2   65        204
+ *                  7     AMR 12.2   81        244
+ *                  8     AMR SID    39         39
+ *
+ *        Table 1.  The number of class A bits for the AMR codec.
+ *
+ */
+
 static const char modname[] = "mod_amr";
 
 struct amr_context {
@@ -80,7 +104,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		return SWITCH_STATUS_FALSE;
 	} else {
 
-		context->mode = AMR_Mode;
+		context->mode = AMR_Mode; /* start in mode 7 */
 
 		if (encoding) {
 			context->encoder_state = Encoder_Interface_init(0);
