@@ -46,7 +46,7 @@ Flag UseVx = True;
 
 enum Crate WrkRate = Rate63;
 
-static const char modname[] = "mod_g723";
+static const char modname[] = "mod_g723_1";
 
 struct g723_context {
 	struct cod_state encoder_object;

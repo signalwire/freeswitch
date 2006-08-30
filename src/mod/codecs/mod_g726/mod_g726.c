@@ -43,6 +43,7 @@ typedef struct {
 	uint8_t bits_per_frame;
 	uint8_t bits;
 	uint8_t bbits;
+	uint8_t ecount;
 	uint8_t d_bits;
 	uint8_t d_bbits;
 	uint8_t dcount;
@@ -131,12 +132,15 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 
 		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
 			int edata = encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
-
+			
+			
+			handle->ecount++;
 			if (!handle->bbits) {
 				*handle->ptr = edata;
 			} else if ((handle->bbits + handle->bits_per_frame) <= BITS_IN_A_BYTE) {
-				*handle->ptr <<= handle->bits_per_frame;
-				*handle->ptr |= edata;
+				printf ("WTF %d\n", BITS_IN_A_BYTE - (handle->bits_per_frame * handle->ecount));
+				*handle->ptr += (edata << (BITS_IN_A_BYTE - (handle->bits_per_frame * handle->ecount)));
+				handle->ecount = 0;
 			} else {
 				int remain, next, rdata, ndata;
 
@@ -145,16 +149,11 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 				rdata = edata;
 				ndata = edata;
 
-				rdata >>= remain;
-				*handle->ptr <<= remain;
-				*handle->ptr |= rdata;
-
-				handle->ptr++;
-				
-				ndata &= (1 << next) - 1;
+				*handle->ptr += (edata << remain);
 				*handle->ptr = ndata;
 
 				handle->bbits = 0;
+				handle->ecount = 0;
 			}
 			handle->bits += handle->bits_per_frame;
 			handle->bbits += handle->bits_per_frame;
