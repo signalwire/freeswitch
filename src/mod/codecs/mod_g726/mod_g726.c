@@ -64,7 +64,7 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 	} else {
 		g726_init_state(&handle->context);
 		codec->private_info = handle;
-		handle->bits_per_frame = codec->implementation->bits_per_second / (codec->implementation->samples_per_second);
+		handle->bits_per_frame = (uint8_t)(codec->implementation->bits_per_second / (codec->implementation->samples_per_second));
 		handle->ptr = handle->buf;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -147,7 +147,7 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 		uint32_t new_len = 0;
 		int16_t *ddp = decoded_data;
 		uint8_t *edp = encoded_data;
-		int x;
+		uint32_t x;
 		uint32_t loops = decoded_data_len / (sizeof(*ddp));
 
 		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
@@ -184,7 +184,7 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 				rdata = edata;
 				ndata = edata;
 
-				*handle->ptr += (edata << remain);
+				*handle->ptr += (uint8_t)(edata << remain);
 				*handle->ptr = ndata;
 
 				handle->bbits = 0;
