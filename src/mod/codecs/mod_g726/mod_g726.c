@@ -159,7 +159,7 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 				//printf("new byte assign the %d bits\n", handle->bits_per_frame);
 				*handle->ptr = edata;
 			} else if (bits <= BITS_IN_A_BYTE) {
-				int shift_by = ((handle->bits_per_frame * (handle->ecount)) - handle->bits_per_frame);
+				int shift_by = ((handle->bits_per_frame * (handle->ecount -1)));
 				//printf ("shift by %d and add %d bits\n", shift_by, handle->bits_per_frame);
 				//*handle->ptr <<= shift_by;
 				//*handle->ptr |= edata;
@@ -168,8 +168,9 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 				//printf("edata\n");
 				//print_bits(edata);
 				//printf("\n");
-
-				*handle->ptr |= (edata << 4);
+				
+				*handle->ptr <<= shift_by;
+				*handle->ptr |= edata;
 
 				//printf("handle\n");
 				//print_bits(*handle->ptr);

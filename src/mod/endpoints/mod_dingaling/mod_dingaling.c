@@ -458,7 +458,10 @@ static char *lame(char *in)
 static int do_describe(struct private_object *tech_pvt, int force)
 {
 	ldl_payload_t payloads[5];
-	assert(switch_core_session_get_channel(tech_pvt->session) != NULL);
+
+	if (!tech_pvt->session) {
+		return 0;
+	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_DO_DESC)) {
 		return 1;
