@@ -1160,7 +1160,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 						tech_pvt->rm_encoding = switch_core_session_strdup(session, (char *)map->rm_encoding);
 						tech_pvt->pt = (switch_payload_t)map->rm_pt;
 						tech_pvt->rm_rate = map->rm_rate;
-						tech_pvt->codec_ms = 20;
+						tech_pvt->codec_ms = imp->microseconds_per_frame / 1000;
 						tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *)sdp->sdp_connection->c_address);
 						tech_pvt->remote_sdp_audio_port = (switch_port_t)m->m_port;
 						break;
