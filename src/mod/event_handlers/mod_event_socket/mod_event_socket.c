@@ -58,7 +58,7 @@ struct listener {
 	switch_log_level_t level;
 	char *retbuf;
 	char *ebuf;
-	uint8_t event_list[SWITCH_EVENT_ALL];
+	uint8_t event_list[SWITCH_EVENT_ALL+1];
 	switch_hash_t *event_hash;
 	struct listener *next;
 };
