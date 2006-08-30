@@ -26,6 +26,8 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Brian K. West <brian.west@mac.com>
  *
+ * The amr codec itself is not distributed with this module.
+ *
  * mod_amr.c -- GSM-AMR Codec Module
  *
  */  

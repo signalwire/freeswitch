@@ -26,6 +26,8 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Brian K. West <brian.west@mac.com>
  *
+ * The g723.2 codec itself is not distributed with this module.
+ *
  * mod_g723.c -- G723.1 Codec Module
  *
  */  

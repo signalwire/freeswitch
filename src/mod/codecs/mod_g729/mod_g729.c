@@ -26,7 +26,9 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
  *
- * mod_codec_g729.c -- G729 Codec Module
+ * The g729 codec itself is not distributed with this module.
+ *
+ * mod_g729.c -- G729 Codec Module
  *
  */  
 #include "switch.h"
