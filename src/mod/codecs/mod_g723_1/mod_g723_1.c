@@ -196,12 +196,12 @@ static const switch_codec_implementation_t g723_1_60ms_implementation = {
 };
 #endif
 static const switch_codec_interface_t g723_1_30ms_codec_interface = { 
-	/*.interface_name */ "g723 6.3k", 
+	/*.interface_name */ "g723.1 6.3k", 
 	/*.implementations */ &g723_1_30ms_implementation, 
 };
 #if 0
 static const switch_codec_interface_t g723_1_60ms_codec_interface = { 
-	/*.interface_name */ "g723 6.3k", 
+	/*.interface_name */ "g723.1 6.3k", 
 	/*.implementations */ &g723_1_60ms_implementation, 
 	/*.next */ &g723_1_30ms_codec_interface
 };
