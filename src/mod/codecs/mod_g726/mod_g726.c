@@ -80,6 +80,26 @@ static switch_status_t switch_g726_destroy(switch_codec_t *codec)
 typedef int (*encoder_t)(int, int, g726_state *);
 typedef int (*decoder_t)(int, int, g726_state *);
 
+
+static void print_bits(uint8_t byte)
+{
+	int i;
+
+	for (i=7;i>=0;i--) {
+		//for (i=0;i<=7;i++) {
+		if(byte & (1 << i)) {
+			printf("1");
+		} else {
+			printf("0");
+		}
+	}
+}
+
+
+
+
+
+
 static switch_status_t switch_g726_encode(switch_codec_t *codec, 
 										switch_codec_t *other_codec, 
 										void *decoded_data,
@@ -132,15 +152,29 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 
 		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
 			int edata = encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
-			
+			int bits = handle->bbits + handle->bits_per_frame;
 			
 			handle->ecount++;
 			if (!handle->bbits) {
+				//printf("new byte assign the %d bits\n", handle->bits_per_frame);
 				*handle->ptr = edata;
-			} else if ((handle->bbits + handle->bits_per_frame) <= BITS_IN_A_BYTE) {
-				printf ("WTF %d\n", BITS_IN_A_BYTE - (handle->bits_per_frame * handle->ecount));
-				*handle->ptr += (edata << (BITS_IN_A_BYTE - (handle->bits_per_frame * handle->ecount)));
-				handle->ecount = 0;
+			} else if (bits <= BITS_IN_A_BYTE) {
+				int shift_by = ((handle->bits_per_frame * (handle->ecount)) - handle->bits_per_frame);
+				//printf ("shift by %d and add %d bits\n", shift_by, handle->bits_per_frame);
+				//*handle->ptr <<= shift_by;
+				//*handle->ptr |= edata;
+				if (shift_by);
+
+				//printf("edata\n");
+				//print_bits(edata);
+				//printf("\n");
+
+				*handle->ptr |= (edata << 4);
+
+				//printf("handle\n");
+				//print_bits(*handle->ptr);
+				//printf("\n");				
+
 			} else {
 				int remain, next, rdata, ndata;
 
@@ -155,8 +189,16 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 				handle->bbits = 0;
 				handle->ecount = 0;
 			}
-			handle->bits += handle->bits_per_frame;
+			handle->bits = bits;
 			handle->bbits += handle->bits_per_frame;
+
+			if (0) {
+			for(x = 0; x < 5; x++) {
+				print_bits(handle->buf[x]);
+				printf(" ");
+			}
+			printf("\n");
+			}
 
 			if ((handle->bits % BITS_IN_A_BYTE) == 0) {
 				int bytes = handle->bits / BITS_IN_A_BYTE, count;
@@ -165,6 +207,7 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 				}
 				handle->bits = handle->bbits = 0;
 				handle->ptr = handle->buf;
+				handle->ecount = 0;
 				memset(handle->buf, 0, sizeof(handle->buf));
 			}
 			ddp++;

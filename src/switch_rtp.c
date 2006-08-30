@@ -317,8 +317,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 	}
 
 	if (rtp_session->sock) {
-		switch_socket_close(rtp_session->sock);
-		rtp_session->sock = NULL;
+		switch_rtp_kill_socket(rtp_session);
 	}
 	
 	if (switch_socket_create(&rtp_session->sock, AF_INET, SOCK_DGRAM, 0, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
@@ -541,8 +540,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 {
+	switch_mutex_lock(rtp_session->flag_mutex);
 	apr_socket_shutdown(rtp_session->sock, APR_SHUTDOWN_READWRITE);
-	switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_IO);
+	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
+	switch_mutex_unlock(rtp_session->flag_mutex);
 }
 
 SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
@@ -557,8 +558,11 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		return;
 	}
 
+	switch_mutex_lock((*rtp_session)->flag_mutex);
 	switch_rtp_kill_socket(*rtp_session);
 	switch_socket_close((*rtp_session)->sock);
+	(*rtp_session)->sock = NULL;
+	switch_mutex_unlock((*rtp_session)->flag_mutex);
 
 	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_VAD)) {
 		switch_rtp_disable_vad(*rtp_session);
