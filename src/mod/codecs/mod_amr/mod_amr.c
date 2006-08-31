@@ -62,6 +62,7 @@ static const char modname[] = "mod_amr";
 
 struct amr_context {
 	void *encoder_state;
+	void *decoder_state;
 	int mode;
 };
 
@@ -105,13 +106,15 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 	} else {
 
 		context->mode = AMR_Mode; /* start in mode 7 */
+		context->encoder_state = NULL;
+		context->decoder_state = NULL;
 
 		if (encoding) {
 			context->encoder_state = Encoder_Interface_init(0);
 		}
 
 		if (decoding) {
-			Decoder_Interface_init();
+			context->decoder_state = Decoder_Interface_init();
 		}
 
 		codec->private_info = context;
@@ -123,8 +126,13 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 static switch_status_t switch_amr_destroy(switch_codec_t *codec) 
 {
 	struct amr_context *context = codec->private_info;
-	Encoder_Interface_exit(context->encoder_state);
-	Decoder_Interface_exit(context->encoder_state);
+
+	if (context->encoder_state) {
+		Encoder_Interface_exit(context->encoder_state);
+	}
+	if (context->decoder_state) {
+		Decoder_Interface_exit(context->decoder_state);
+	}
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
