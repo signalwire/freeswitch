@@ -32,7 +32,7 @@
  *
  */  
 #include "switch.h"
-#include "amr.h"
+#include "amr-nb/amr-nb.h"
 
 /*
  * Check section 8.1 of rfc3267 for possible sdp options.

@@ -1,5 +1,5 @@
 CFLAGS += -I$(PREFIX)/include/amr
-LDFLAGS +=-lamr
+LDFLAGS +=-lamrnb
 
 all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
