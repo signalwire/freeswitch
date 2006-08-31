@@ -392,6 +392,12 @@
         </condition>
       </extension>
 
+      <extension name="testmusic">
+        <condition field="destination_number" expression="^1234$">
+          <action application="bridge" data="exosip/1234@66.250.68.194"/>
+        </condition>
+      </extension>
+
       <!-- Enter an existing conference -->
       <extension name="1000">
         <condition field="destination_number" expression="^1000$">
