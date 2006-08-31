@@ -16,9 +16,9 @@ And here is an inevitably incomplete list of MUCH-APPRECIATED CONTRIBUTORS --
 people who have submitted patches, reported bugs, and generally made Freeswitch
 that much better:
 
- Joshua Colp - For his help making mod_exosip possible, and for just being a swell guy!
  Brian K. West - For countless hours of work on BSD and Mac support, finding countless bugs, 
-  and moral support.
+  and moral support.  Xcode project files.
+ Joshua Colp - For his help making mod_exosip possible, and for just being a swell guy!
  Michal "cypromis" Bielicki (michal.bielicki  AT halo2.pl) - Solaris porting, and autotools enhancements.
  James Martelletti <james@nerdc0re.com> - All around cool guy (mod_syslog)
  Johny Kadarisman <jkr888@gmail.com>
