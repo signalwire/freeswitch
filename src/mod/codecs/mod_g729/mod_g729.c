@@ -36,13 +36,10 @@
 
 static const char modname[] = "mod_g729";
 
-
 struct g729_context {
-
 	struct dec_state decoder_object;
 	struct cod_state encoder_object;
 };
-
 
 static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									  const switch_codec_settings_t *codec_settings) 
@@ -73,14 +70,11 @@ static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag
 	}
 }
 
-
 static switch_status_t switch_g729_destroy(switch_codec_t *codec) 
 {
 	codec->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
 
 static switch_status_t switch_g729_encode(switch_codec_t *codec, 
 										switch_codec_t *other_codec, 
@@ -94,7 +88,6 @@ static switch_status_t switch_g729_encode(switch_codec_t *codec,
 										uint32_t *encoded_rate, 
 										unsigned int *flag) 
 {
-
 	struct g729_context *context = codec->private_info;
 	int cbret = 0;
 
@@ -123,11 +116,8 @@ static switch_status_t switch_g729_encode(switch_codec_t *codec,
 			return SWITCH_STATUS_FALSE;
 		}
 	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
 
 static switch_status_t switch_g729_decode(switch_codec_t *codec, 
 										switch_codec_t *other_codec, 
@@ -141,7 +131,6 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 										uint32_t *decoded_rate, 
 										unsigned int *flag) 
 {
-
 	struct g729_context *context = codec->private_info;
 	int divisor = 10;
 	int plen = 10;
@@ -168,15 +157,10 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 
 		if (encoded_data_len % divisor == 0) {
 			uint8_t *test;
-
 			int loops = (int) encoded_data_len / divisor;
-
 			char *edp = encoded_data;
-
 			short *ddp = decoded_data;
-
 			int x;
-
 			uint32_t new_len = 0;
 
 			test = (uint8_t *) encoded_data;
@@ -209,14 +193,8 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n", encoded_data_len);
 		return SWITCH_STATUS_FALSE;
 	}
-
-
-
 	return SWITCH_STATUS_SUCCESS;
-
 }
-
-
 
 /* Registration */ 
 
@@ -259,12 +237,50 @@ static const switch_codec_implementation_t g729_8k_implementation = {
 	&g729_10ms_8k_implementation
 };
 
+static const switch_codec_implementation_t g729a_10ms_8k_implementation = { 
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
+	/*.ianacode */ 18, 
+	/*.iananame */ "G729a", 
+	/*.samples_per_second */ 8000, 
+	/*.bits_per_second */ 32000, 
+	/*.microseconds_per_frame */ 10000, 
+	/*.samples_per_frame */ 80, 
+	/*.bytes_per_frame */ 160, 
+	/*.encoded_bytes_per_frame */ 10, 
+	/*.number_of_channels */ 1, 
+	/*.pref_frames_per_packet */ 1, 
+	/*.max_frames_per_packet */ 1, 
+	/*.init */ switch_g729_init, 
+	/*.encode */ switch_g729_encode, 
+	/*.decode */ switch_g729_decode, 
+	/*.destroy */ switch_g729_destroy, 
+	&g729_8k_implementation
+};
+
+static const switch_codec_implementation_t g729a_8k_implementation = { 
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
+	/*.ianacode */ 18, 
+	/*.iananame */ "G729a", 
+	/*.samples_per_second */ 8000, 
+	/*.bits_per_second */ 64000, 
+	/*.microseconds_per_frame */ 20000, 
+	/*.samples_per_frame */ 160, 
+	/*.bytes_per_frame */ 320, 
+	/*.encoded_bytes_per_frame */ 20, 
+	/*.number_of_channels */ 1, 
+	/*.pref_frames_per_packet */ 1, 
+	/*.max_frames_per_packet */ 1, 
+	/*.init */ switch_g729_init, 
+	/*.encode */ switch_g729_encode, 
+	/*.decode */ switch_g729_decode, 
+	/*.destroy */ switch_g729_destroy, 
+	&g729a_10ms_8k_implementation
+};
 
 static const switch_codec_interface_t g729_codec_interface = { 
 	/*.interface_name */ "g729", 
-	/*.implementations */ &g729_8k_implementation, 
+	/*.implementations */ &g729a_8k_implementation, 
 };
-
 
 static switch_loadable_module_interface_t g729_module_interface = { 
 	/*.module_name */ modname, 
@@ -275,17 +291,12 @@ static switch_loadable_module_interface_t g729_module_interface = {
 	/*.application_interface */ NULL 
 };
 
-
-
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
 													 char *filename)
 {
-
 	/* connect my internal structure to the blank pointer passed to me */ 
 	*module_interface = &g729_module_interface;
 
-
 	/* indicate that the module should continue to be loaded */ 
 	return SWITCH_STATUS_SUCCESS;
-
 }
