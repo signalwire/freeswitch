@@ -63,7 +63,7 @@ static const char modname[] = "mod_amr";
 struct amr_context {
 	void *encoder_state;
 	void *decoder_state;
-	int mode;
+	int enc_mode;
 };
 
 enum
@@ -105,7 +105,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		return SWITCH_STATUS_FALSE;
 	} else {
 
-		context->mode = AMR_Mode; /* start in mode 7 */
+		context->enc_mode = AMR_Mode; /* start in mode 7 */
 		context->encoder_state = NULL;
 		context->decoder_state = NULL;
 
@@ -155,7 +155,7 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	*encoded_data_len = Encoder_Interface_Encode(context->encoder_state, context->mode, (void *)decoded_data, encoded_data, 0);
+	*encoded_data_len = Encoder_Interface_Encode( context->encoder_state, context->enc_mode, (void *)decoded_data, encoded_data, 0 );
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -173,14 +173,15 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 										unsigned int *flag) 
 {
 	struct amr_context *context = codec->private_info;
+	//int dec_mode;
 	
-	context->mode = *(char *)encoded_data & 0xF;
+	//dec_mode = (*(char *)encoded_data >> 3) & 0xF;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	Decoder_Interface_Decode( context, (void *)encoded_data, (void *)decoded_data, 0 );
+	Decoder_Interface_Decode( context->decoder_state, (void *)encoded_data, (void *)decoded_data, 0 );
 
 	*decoded_data_len = codec->implementation->samples_per_frame;
 
