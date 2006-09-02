@@ -75,6 +75,8 @@ BEGIN_EXTERN_C
 #endif
 #endif
 
+#define inline __inline
+
 #ifndef uint32_t
 typedef unsigned __int8		uint8_t;
 typedef unsigned __int16	uint16_t;
