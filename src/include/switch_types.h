@@ -72,6 +72,32 @@ BEGIN_EXTERN_C
 #define SWITCH_HTDOCS_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "htdocs"
 #endif
 
+#define SWITCH_BITS_PER_BYTE 8
+typedef uint8_t switch_byte_t;
+
+typedef enum {
+	SWITCH_BITPACK_MODE_RFC3551,
+	SWITCH_BITPACK_MODE_AAL2
+} switch_bitpack_mode_t;
+
+
+typedef struct {
+	switch_byte_t *buf;
+	uint32_t buflen;
+	switch_byte_t *cur;
+	uint32_t bytes;
+	uint32_t bits_tot;
+	switch_byte_t bits_cur;
+	switch_byte_t bits_rem;
+	switch_byte_t frame_bits;
+	switch_byte_t shiftby;
+	switch_byte_t this;
+	switch_byte_t under;
+	switch_byte_t over;
+	switch_bitpack_mode_t mode;
+} switch_bitpack_t;
+
+
 struct switch_directories {
 	char *base_dir;
 	char *mod_dir;
@@ -417,6 +443,7 @@ SWITCH_CODEC_FLAG_SILENCE_START =	(1 <<  2) - Start period of silence
 SWITCH_CODEC_FLAG_SILENCE_STOP =	(1 <<  3) - End period of silence
 SWITCH_CODEC_FLAG_SILENCE =			(1 <<  4) - Silence
 SWITCH_CODEC_FLAG_FREE_POOL =		(1 <<  5) - Free codec's pool on destruction
+SWITCH_CODEC_FLAG_AAL2 =			(1 <<  6) - USE AAL2 Bitpacking
 </pre>
 */
 typedef enum {
@@ -426,7 +453,7 @@ typedef enum {
 	SWITCH_CODEC_FLAG_SILENCE_STOP =	(1 <<  3),
 	SWITCH_CODEC_FLAG_SILENCE =			(1 <<  4),
 	SWITCH_CODEC_FLAG_FREE_POOL =		(1 <<  5),
-
+	SWITCH_CODEC_FLAG_AAL2 =			(1 <<  6)
 } switch_codec_flag_t;
 
 

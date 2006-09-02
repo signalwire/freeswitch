@@ -125,6 +125,7 @@ struct sofia_profile {
 	su_root_t *s_root;
 	sip_alias_node_t *aliases;
 	switch_payload_t te;
+	uint32_t codec_flags;
 };
 
 
@@ -300,7 +301,7 @@ static void set_local_sdp(private_object_t *tech_pvt)
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, imp->samples_per_second);
-			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d", imp->microseconds_per_frame / 1000);
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", imp->microseconds_per_frame / 1000);
 		}
 	}
 	
@@ -607,7 +608,7 @@ static switch_status_t tech_set_codec(private_object_t *tech_pvt)
 							   tech_pvt->rm_rate,
 							   tech_pvt->codec_ms,
 							   1,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | tech_pvt->profile->codec_flags,
 							   NULL,
 							   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
@@ -619,7 +620,7 @@ static switch_status_t tech_set_codec(private_object_t *tech_pvt)
 								   tech_pvt->rm_rate,
 								   tech_pvt->codec_ms,
 								   1,
-								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE | tech_pvt->profile->codec_flags,
 								   NULL,
 								   switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
@@ -1683,6 +1684,10 @@ static switch_status_t config_sofia(int reload)
 				profile->sipdomain = switch_core_strdup(profile->pool, val);
 			} else if (!strcmp(var, "ext-sip-ip")) {
 				profile->extsipip = switch_core_strdup(profile->pool, val);
+			} else if (!strcmp(var, "bitpacking")) {
+				if (!strcasecmp(val, "aal2")) {
+					profile->codec_flags = SWITCH_CODEC_FLAG_AAL2;
+				} 
 			} else if (!strcmp(var, "username")) {
 				profile->username = switch_core_strdup(profile->pool, val);
 			} else if (!strcmp(var, "context")) {
