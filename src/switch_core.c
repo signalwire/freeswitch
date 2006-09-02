@@ -269,18 +269,22 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_st
 {
 	switch_core_session_t *session;
 
-	switch_mutex_lock(runtime.session_table_mutex);
-	if ((session = switch_core_hash_find(runtime.session_table, uuid_str))) {
-		/* Acquire a read lock on the session */
-		if (switch_thread_rwlock_tryrdlock(session->rwlock) != SWITCH_STATUS_SUCCESS) {
-			/* not available, forget it */
-			session = NULL;
+	if (uuid_str) {
+		switch_mutex_lock(runtime.session_table_mutex);
+		if ((session = switch_core_hash_find(runtime.session_table, uuid_str))) {
+			/* Acquire a read lock on the session */
+			if (switch_thread_rwlock_tryrdlock(session->rwlock) != SWITCH_STATUS_SUCCESS) {
+				/* not available, forget it */
+				session = NULL;
+			}
 		}
-	}
-	switch_mutex_unlock(runtime.session_table_mutex);
+		switch_mutex_unlock(runtime.session_table_mutex);
 
-	/* if its not NULL, now it's up to you to rwunlock this */
-	return session;
+		/* if its not NULL, now it's up to you to rwunlock this */
+		return session;
+	} else {
+		return NULL;
+	}
 }
 
 SWITCH_DECLARE(void) switch_core_session_hupall(void)

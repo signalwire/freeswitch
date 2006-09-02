@@ -117,7 +117,7 @@ static switch_status_t kill_function(char *dest, switch_core_session_t *isession
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((session = switch_core_session_locate(dest))) {
+	if (dest && (session = switch_core_session_locate(dest))) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_core_session_kill_channel(session, SWITCH_SIG_KILL);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
