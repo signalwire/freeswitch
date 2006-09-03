@@ -1415,6 +1415,11 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 
 		dest = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 
+		if (!strchr(dest, '/')) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid Channel String\n");
+			return JS_TRUE;
+		}
+
 		if (argc > 2) {
 			dialplan = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
 		}

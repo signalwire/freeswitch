@@ -1078,9 +1078,17 @@ static char *find_reg_url(switch_core_db_t *db, char *key, char *val, switch_siz
 static switch_status_t exosip_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
 											 switch_core_session_t **new_session, switch_memory_pool_t *pool)
 {
+
+	if (!outbound_profile->destination_number) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid Destination!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+
 	if ((*new_session = switch_core_session_request(&exosip_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
 		switch_channel_t *channel;
+
 
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt =
