@@ -138,8 +138,7 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 		uint32_t new_len = 0;
 		int16_t *ddp = decoded_data;
 		uint8_t *edp = encoded_data;
-		int x;
-		uint32_t loops = decoded_data_len / (sizeof(*ddp));
+		uint32_t x, loops = decoded_data_len / (sizeof(*ddp));
 
 		switch_bitpack_init(&handle->pack, handle->bits_per_frame, edp, *encoded_data_len, handle->mode);
 

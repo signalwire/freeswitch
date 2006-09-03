@@ -91,7 +91,7 @@ typedef struct {
 	switch_byte_t bits_rem;
 	switch_byte_t frame_bits;
 	switch_byte_t shiftby;
-	switch_byte_t this;
+	switch_byte_t this_byte;
 	switch_byte_t under;
 	switch_byte_t over;
 	switch_bitpack_mode_t mode;

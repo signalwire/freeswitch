@@ -88,23 +88,23 @@ static inline void switch_bitpack_init(switch_bitpack_t *pack, int32_t bitlen, s
 
 static inline void pack_check_over(switch_bitpack_t *pack)
 {
-	switch_byte_t this = pack->this;	
+	switch_byte_t this_byte = pack->this_byte;	
 
 	if (pack->over) {
 		pack->bits_cur = pack->over;
 
 		if (pack->mode == SWITCH_BITPACK_MODE_RFC3551) {
-			this &= SWITCH_BITPACKED_MASKS[pack->over];
-			this <<= pack->under;
-			*pack->cur |= this;
+			this_byte &= SWITCH_BITPACKED_MASKS[pack->over];
+			this_byte <<= pack->under;
+			*pack->cur |= this_byte;
 			pack->cur++;
 		} else {
 			switch_byte_t mask = SWITCH_BITS_PER_BYTE - pack->over;
-			this &= SWITCH_REVERSE_BITPACKED_MASKS[mask];
-			this >>= mask;
+			this_byte &= SWITCH_REVERSE_BITPACKED_MASKS[mask];
+			this_byte >>= mask;
 
 			*pack->cur <<= pack->over;
-			*pack->cur |= this;
+			*pack->cur |= this_byte;
 			pack->cur++;
 		}
 
@@ -145,14 +145,14 @@ static inline int8_t switch_bitpack_done(switch_bitpack_t *pack)
 DoxyDefine(int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t in))
 static inline int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t in)
 {
-	switch_byte_t this;
+	switch_byte_t this_byte;
 
 	if (unpack->cur - unpack->buf > unpack->buflen) {
 		return -1;
 	}
 
 	unpack->bits_cur = 0;
-	unpack->this = this = in;
+	unpack->this_byte = this_byte = in;
 
 
 
@@ -161,7 +161,7 @@ static inline int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t 
 		switch_byte_t next = unpack->bits_cur + unpack->frame_bits;
 		switch_byte_t under_in;
 		switch_byte_t mask;
-		this = unpack->this;
+		this_byte = unpack->this_byte;
 
 		if (next > SWITCH_BITS_PER_BYTE) {
 			unpack->over = next - SWITCH_BITS_PER_BYTE;
@@ -170,12 +170,12 @@ static inline int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t 
 			if (unpack->mode == SWITCH_BITPACK_MODE_RFC3551) {
 				mask = SWITCH_BITS_PER_BYTE - unpack->under;
 
-				under_in = this & SWITCH_REVERSE_BITPACKED_MASKS[mask];
+				under_in = this_byte & SWITCH_REVERSE_BITPACKED_MASKS[mask];
 				under_in >>= mask;
 				*unpack->cur |= under_in;
 			} else {
 				mask = unpack->under;
-				under_in = this & SWITCH_BITPACKED_MASKS[mask];
+				under_in = this_byte & SWITCH_BITPACKED_MASKS[mask];
 				*unpack->cur <<= mask;
 				*unpack->cur |= under_in;
 			}
@@ -184,15 +184,15 @@ static inline int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t 
 		}
 
 		if (unpack->mode == SWITCH_BITPACK_MODE_RFC3551) {
-			this >>= unpack->bits_cur;
-			this &= SWITCH_BITPACKED_MASKS[unpack->frame_bits];
-			*unpack->cur |= this;
+			this_byte >>= unpack->bits_cur;
+			this_byte &= SWITCH_BITPACKED_MASKS[unpack->frame_bits];
+			*unpack->cur |= this_byte;
 			unpack->cur++;
 		} else {
-			this >>= (SWITCH_BITS_PER_BYTE - next);
-			this &= SWITCH_BITPACKED_MASKS[unpack->frame_bits];
+			this_byte >>= (SWITCH_BITS_PER_BYTE - next);
+			this_byte &= SWITCH_BITPACKED_MASKS[unpack->frame_bits];
 
-			*unpack->cur |= this;
+			*unpack->cur |= this_byte;
 			unpack->cur++;
 		}
 
