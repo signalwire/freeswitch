@@ -64,7 +64,7 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 	if (!(encoding || decoding) || (!(handle = switch_core_alloc(codec->memory_pool, sizeof(*handle))))) {
 		return SWITCH_STATUS_FALSE;
 	} else {
-		handle->bytes = codec->implementation->encoded_bytes_per_frame;
+		handle->bytes = (switch_byte_t) codec->implementation->encoded_bytes_per_frame;
 		
 		switch(handle->bytes) {
 		case 100:
@@ -95,7 +95,7 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 
 		g726_init_state(&handle->context);
 		codec->private_info = handle;
-		handle->bits_per_frame = (switch_byte_t) codec->implementation->bits_per_second / (codec->implementation->samples_per_second);
+		handle->bits_per_frame = (switch_byte_t) (codec->implementation->bits_per_second / (codec->implementation->samples_per_second));
 		handle->mode = (flags & SWITCH_CODEC_FLAG_AAL2 || strstr(codec->implementation->iananame, "AAL2")) 
 			? SWITCH_BITPACK_MODE_AAL2 : SWITCH_BITPACK_MODE_RFC3551;
 		return SWITCH_STATUS_SUCCESS;
@@ -144,7 +144,7 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 
 		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
 			int edata = handle->encoder(*ddp, AUDIO_ENCODING_LINEAR, context);
-			switch_bitpack_in(&handle->pack, edata);
+			switch_bitpack_in(&handle->pack, (switch_byte_t) edata);
 			ddp++;
 		}
 		switch_bitpack_done(&handle->pack);

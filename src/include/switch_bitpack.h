@@ -264,7 +264,7 @@ static inline int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in)
 			pack->bytes++;
 			pack->bits_cur = pack->shiftby = 0;
 		} else {
-			pack->bits_cur = next;
+			pack->bits_cur = (switch_byte_t) next;
 		}
 	}
 
