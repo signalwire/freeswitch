@@ -41,7 +41,7 @@ typedef int (*decoder_t)(int, int, g726_state *);
 
 typedef struct {
 	g726_state context;
-	uint8_t bits_per_frame;
+	switch_byte_t bits_per_frame;
 	encoder_t encoder;
 	decoder_t decoder;
 	switch_bitpack_t pack;
@@ -55,7 +55,7 @@ typedef struct {
 static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									  const switch_codec_settings_t *codec_settings) 
 {
-	switch_byte_t encoding, decoding;
+	uint32_t encoding, decoding;
 	g726_handle_t *handle;
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
@@ -95,7 +95,7 @@ static switch_status_t switch_g726_init(switch_codec_t *codec, switch_codec_flag
 
 		g726_init_state(&handle->context);
 		codec->private_info = handle;
-		handle->bits_per_frame = codec->implementation->bits_per_second / (codec->implementation->samples_per_second);
+		handle->bits_per_frame = (switch_byte_t) codec->implementation->bits_per_second / (codec->implementation->samples_per_second);
 		handle->mode = (flags & SWITCH_CODEC_FLAG_AAL2 || strstr(codec->implementation->iananame, "AAL2")) 
 			? SWITCH_BITPACK_MODE_AAL2 : SWITCH_BITPACK_MODE_RFC3551;
 		return SWITCH_STATUS_SUCCESS;
@@ -137,7 +137,7 @@ static switch_status_t switch_g726_encode(switch_codec_t *codec,
 	if (decoded_data_len % len == 0) {
 		uint32_t new_len = 0;
 		int16_t *ddp = decoded_data;
-		uint8_t *edp = encoded_data;
+		switch_byte_t *edp = encoded_data;
 		uint32_t x, loops = decoded_data_len / (sizeof(*ddp));
 
 		switch_bitpack_init(&handle->pack, handle->bits_per_frame, edp, *encoded_data_len, handle->mode);

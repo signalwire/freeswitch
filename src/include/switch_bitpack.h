@@ -253,7 +253,7 @@ static inline int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in)
 		if (pack->mode == SWITCH_BITPACK_MODE_RFC3551) {
 			in <<= pack->shiftby;
 			*pack->cur |= in;
-			pack->shiftby += pack->frame_bits;
+			pack->shiftby = (switch_byte_t)(pack->shiftby + pack->frame_bits);
 		} else {
 			*pack->cur <<= pack->frame_bits;
 			*pack->cur |= in;
