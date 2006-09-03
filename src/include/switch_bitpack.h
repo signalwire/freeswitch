@@ -75,7 +75,7 @@ static const int8_t SWITCH_REVERSE_BITPACKED_MASKS[] = {255, 254, 252, 248, 240,
   \param mode RFC3551 or AAL2 mode (curse you backwards folks) 
 */
 DoxyDefine(void switch_bitpack_init(switch_bitpack_t *pack, int32_t bitlen, switch_byte_t *buf, uint32_t buflen, switch_bitpack_mode_t mode))
-static inline void switch_bitpack_init(switch_bitpack_t *pack, int32_t bitlen, switch_byte_t *buf, uint32_t buflen, switch_bitpack_mode_t mode)
+static inline void switch_bitpack_init(switch_bitpack_t *pack, switch_byte_t bitlen, switch_byte_t *buf, uint32_t buflen, switch_bitpack_mode_t mode)
 {
 	memset(pack, 0, sizeof(*pack));
 	memset(buf, 0, buflen);
@@ -147,7 +147,7 @@ static inline int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t 
 {
 	switch_byte_t this_byte;
 
-	if (unpack->cur - unpack->buf > unpack->buflen) {
+	if ((uint32_t)(unpack->cur - unpack->buf) > unpack->buflen) {
 		return -1;
 	}
 
@@ -218,14 +218,14 @@ static inline int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in)
 {
 	int next = pack->bits_cur + pack->frame_bits;
 
-	if (pack->cur - pack->buf > pack->buflen) {
+	if ((uint32_t)(pack->cur - pack->buf) > pack->buflen) {
 		return -1;
 	} 
 
 	pack->bits_tot += pack->frame_bits;
 
 	if (next > SWITCH_BITS_PER_BYTE) {
-		int a = 0, b = 0, rem, nxt;
+		switch_byte_t a = 0, b = 0, rem, nxt;
 		rem = SWITCH_BITS_PER_BYTE - pack->bits_cur;
 		nxt = pack->frame_bits - rem ;
 		if (pack->mode == SWITCH_BITPACK_MODE_RFC3551) {

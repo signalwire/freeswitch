@@ -193,7 +193,7 @@ static switch_status_t switch_g726_decode(switch_codec_t *codec,
 			switch_bitpack_out(&handle->unpack, in[z++]);
 		}
 		for(y = 0; y < handle->bytes; y++) {
-			*ddp++ = handle->decoder(handle->buf[y], AUDIO_ENCODING_LINEAR, context);
+			*ddp++ = (int16_t) handle->decoder(handle->buf[y], AUDIO_ENCODING_LINEAR, context);
             new_len += 2;
 		}
 		switch_bitpack_done(&handle->unpack);
