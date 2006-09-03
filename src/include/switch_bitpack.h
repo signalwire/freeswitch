@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * switch_utils.h -- Compatability and Helper Code
+ * switch_bitpack.h -- BITPACKING code for RFC3551 and AAL2 packing
  *
  */
 /*! \file switch_bitpack.h
@@ -74,6 +74,7 @@ static const int8_t SWITCH_REVERSE_BITPACKED_MASKS[] = {255, 254, 252, 248, 240,
   \param buflen the length of the storage buffer
   \param mode RFC3551 or AAL2 mode (curse you backwards folks) 
 */
+DoxyDefine(void switch_bitpack_init(switch_bitpack_t *pack, int32_t bitlen, switch_byte_t *buf, uint32_t buflen, switch_bitpack_mode_t mode))
 static inline void switch_bitpack_init(switch_bitpack_t *pack, int32_t bitlen, switch_byte_t *buf, uint32_t buflen, switch_bitpack_mode_t mode)
 {
 	memset(pack, 0, sizeof(*pack));
@@ -117,6 +118,7 @@ static inline void pack_check_over(switch_bitpack_t *pack)
   \brief finalize a bitpack object
   \param pack the pack/unpack object
 */
+DoxyDefine(int8_t switch_bitpack_done(switch_bitpack_t *pack))
 static inline int8_t switch_bitpack_done(switch_bitpack_t *pack)
 {
 
@@ -140,6 +142,7 @@ static inline int8_t switch_bitpack_done(switch_bitpack_t *pack)
   \param in a 1 byte int packed with bits
   \return -1 if the buffer is full otherwise 0
 */
+DoxyDefine(int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t in))
 static inline int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t in)
 {
 	switch_byte_t this;
@@ -210,6 +213,7 @@ static inline int8_t switch_bitpack_out(switch_bitpack_t *unpack, switch_byte_t 
   \param in a 1 byte int with 1 packet worth of bits
   \return -1 if the buffer is full otherwise 0
 */
+DoxyDefine(int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in))
 static inline int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in)
 {
 	int next = pack->bits_cur + pack->frame_bits;
