@@ -1017,7 +1017,11 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
         return SWITCH_STATUS_FALSE;
     }
 
+#ifdef WIN32
+	if (file[1] != ':') {
+#else
 	if (*file != '/') {
+#endif
 		return conference_say(conference, file, leadin);
 	}
 
@@ -2173,19 +2177,23 @@ static void conference_function(switch_core_session_t *session, char *data)
 		*dpin++ = '\0';
 	}
 
+	/* Open the config from the xml registry */
+	if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
+		goto done;
+	}
+
 	if ((profile_name = strchr(conf_name, '@'))) {
 		*profile_name++ = '\0';
 
-		/* Open the config from the xml registry */
-		if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
-			goto done;
-		}
-		
 		if ((profiles = switch_xml_child(cfg, "profiles"))) {
 			profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
 		}
-	} 
+	} else {
+		if ((profiles = switch_xml_child(cfg, "profiles"))) {
+			profile = switch_xml_find_child(profiles, "profile", "name", "default");
+		}
+	}
 
 	if (isbr) {
 		char *uuid = switch_core_session_get_uuid(session);
