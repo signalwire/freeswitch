@@ -23,6 +23,7 @@ that much better:
  James Martelletti <james@nerdc0re.com> - All around cool guy (mod_syslog)
  Johny Kadarisman <jkr888@gmail.com>
  Yossi Neiman of Cartis Solutions, Inc. <freeswitch AT cartissolutions.com>  -  implementation of mod_cdr (perldd, mysql, csv)
+ Stefan Knoblich - Various patches and support.  Thanks.
  
 A big THANK YOU goes to:
 
