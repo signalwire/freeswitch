@@ -1569,8 +1569,8 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 				   NUTAG_EARLY_MEDIA(1),				   
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOALERT(0),
-				   SIPTAG_SUPPORTED_STR("100rel, precondition")
-				   );
+				   SIPTAG_SUPPORTED_STR("100rel, precondition"),
+				   TAG_END());
 				   
 
 	for (node = profile->aliases; node; node = node->next) {
@@ -1584,7 +1584,8 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 					   NUTAG_EARLY_MEDIA(1),
 					   NUTAG_AUTOANSWER(0),
 					   SIPTAG_SUPPORTED_STR("100rel, precondition"),
-					   NUTAG_AUTOALERT(0));
+					   NUTAG_AUTOALERT(0),
+					   TAG_END());
 		
 	}
 
