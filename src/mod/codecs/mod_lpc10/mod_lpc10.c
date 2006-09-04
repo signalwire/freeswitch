@@ -78,7 +78,6 @@ static switch_status_t switch_lpc10_init(switch_codec_t *codec, switch_codec_fla
 	}
 }
 
-
 static switch_status_t switch_lpc10_destroy(switch_codec_t *codec) 
 {
 	codec->private_info = NULL;
@@ -98,13 +97,11 @@ static switch_status_t switch_lpc10_encode(switch_codec_t *codec,
 										unsigned int *flag) 
 {
 	struct lpc10_context *context = codec->private_info;
-	int i;
-	INT32 bits[BitsPerFrame];
+	uint8_t i;
+	int32_t bits[BitsPerFrame];
 	real speech[SamplesPerFrame];
-	short * sampleBuffer = (short *)encoded_data;
-	unsigned char * buffer = (unsigned char *)decoded_data;
-
-
+	const short *sampleBuffer = (const short *)decoded_data;
+	unsigned char *buffer = (unsigned char *)encoded_data;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
@@ -142,8 +139,8 @@ static switch_status_t switch_lpc10_decode(switch_codec_t *codec,
 	int i;
 	INT32 bits[BitsPerFrame];
 	real speech[SamplesPerFrame];
-	short * sampleBuffer = (short *)decoded_data;
-	unsigned char * buffer = (unsigned char *)encoded_data;
+	short *sampleBuffer = (short *)decoded_data;
+	const unsigned char *buffer = (const unsigned char *)encoded_data;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
