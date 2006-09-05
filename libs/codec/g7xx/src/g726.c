@@ -57,8 +57,8 @@
 #include <tgmath.h>
 #endif
 
-#include "g711.h"
-#include "g726.h"
+#include "g7xx/g711.h"
+#include "g7xx/g726.h"
 
 #if !defined(FALSE)
 #define FALSE 0

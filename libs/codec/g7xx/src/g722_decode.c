@@ -35,7 +35,7 @@
 #include <tgmath.h>
 #endif
 
-#include "g722.h"
+#include "g7xx/g722.h"
 
 #if !defined(FALSE)
 #define FALSE 0
