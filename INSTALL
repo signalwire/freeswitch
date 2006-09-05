@@ -22,6 +22,8 @@ UNIX:
 	*) Rebuild all the dependancies
 	   make megaclean 
 
+  *) Build freeswitch without automatically installing the support libraries (you will need to manually build them all):
+     make nodepends
 
 Windows 32:
 
