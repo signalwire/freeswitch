@@ -9,6 +9,6 @@ libg7xx_la_CFLAGS	= $(AM_CFLAGS)
 libg7xx_la_LDFLAGS	= 
 
 library_includedir      = $(prefix)/include/g7xx
-library_include_HEADERS = src/include/g722.h src/include/g711.h src/include/g726.h
+library_include_HEADERS = src/include/g7xx/g722.h src/include/g7xx/g711.h src/include/g7xx/g726.h
 
 
