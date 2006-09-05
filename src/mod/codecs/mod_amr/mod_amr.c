@@ -88,8 +88,6 @@ enum
 		AMR_BITRATE_1220
 	};
 
-//static short bytes_per_frame[16]={ 13, 14, 16, 18, 19, 21, 26, 31, 6, 0, 0, 0, 0, 0, 0, 0 };
-
 #define AMR_Mode  7
 
 static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_t flags,
@@ -173,9 +171,6 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 										unsigned int *flag) 
 {
 	struct amr_context *context = codec->private_info;
-	//int dec_mode;
-	
-	//dec_mode = (*(char *)encoded_data >> 3) & 0xF;
 
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
