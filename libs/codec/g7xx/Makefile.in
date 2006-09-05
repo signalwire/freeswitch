@@ -196,11 +196,11 @@ AUTOMAKE_OPTS = gnu
 MAKE = gmake
 NAME = libg7xx
 lib_LTLIBRARIES = libg7xx.la
-libg7xx_la_SOURCES = g711.c g722_decode.c g722_encode.c g726.c
+libg7xx_la_SOURCES = src/g711.c src/g722_decode.c src/g722_encode.c src/g726.c
 libg7xx_la_CFLAGS = $(AM_CFLAGS)
 libg7xx_la_LDFLAGS = 
 library_includedir = $(prefix)/include/g7xx
-library_include_HEADERS = g722.h g711.h g726.h
+library_include_HEADERS = src/include/g722.h src/include/g711.h src/include/g726.h
 all: all-am
 
 .SUFFIXES:
@@ -300,33 +300,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
-libg7xx_la-g711.lo: g711.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -MT libg7xx_la-g711.lo -MD -MP -MF "$(DEPDIR)/libg7xx_la-g711.Tpo" -c -o libg7xx_la-g711.lo `test -f 'g711.c' || echo '$(srcdir)/'`g711.c; \
+libg7xx_la-g711.lo: src/g711.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -MT libg7xx_la-g711.lo -MD -MP -MF "$(DEPDIR)/libg7xx_la-g711.Tpo" -c -o libg7xx_la-g711.lo `test -f 'src/g711.c' || echo '$(srcdir)/'`src/g711.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libg7xx_la-g711.Tpo" "$(DEPDIR)/libg7xx_la-g711.Plo"; else rm -f "$(DEPDIR)/libg7xx_la-g711.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='g711.c' object='libg7xx_la-g711.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/g711.c' object='libg7xx_la-g711.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -c -o libg7xx_la-g711.lo `test -f 'g711.c' || echo '$(srcdir)/'`g711.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -c -o libg7xx_la-g711.lo `test -f 'src/g711.c' || echo '$(srcdir)/'`src/g711.c
 
-libg7xx_la-g722_decode.lo: g722_decode.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -MT libg7xx_la-g722_decode.lo -MD -MP -MF "$(DEPDIR)/libg7xx_la-g722_decode.Tpo" -c -o libg7xx_la-g722_decode.lo `test -f 'g722_decode.c' || echo '$(srcdir)/'`g722_decode.c; \
+libg7xx_la-g722_decode.lo: src/g722_decode.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -MT libg7xx_la-g722_decode.lo -MD -MP -MF "$(DEPDIR)/libg7xx_la-g722_decode.Tpo" -c -o libg7xx_la-g722_decode.lo `test -f 'src/g722_decode.c' || echo '$(srcdir)/'`src/g722_decode.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libg7xx_la-g722_decode.Tpo" "$(DEPDIR)/libg7xx_la-g722_decode.Plo"; else rm -f "$(DEPDIR)/libg7xx_la-g722_decode.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='g722_decode.c' object='libg7xx_la-g722_decode.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/g722_decode.c' object='libg7xx_la-g722_decode.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -c -o libg7xx_la-g722_decode.lo `test -f 'g722_decode.c' || echo '$(srcdir)/'`g722_decode.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -c -o libg7xx_la-g722_decode.lo `test -f 'src/g722_decode.c' || echo '$(srcdir)/'`src/g722_decode.c
 
-libg7xx_la-g722_encode.lo: g722_encode.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -MT libg7xx_la-g722_encode.lo -MD -MP -MF "$(DEPDIR)/libg7xx_la-g722_encode.Tpo" -c -o libg7xx_la-g722_encode.lo `test -f 'g722_encode.c' || echo '$(srcdir)/'`g722_encode.c; \
+libg7xx_la-g722_encode.lo: src/g722_encode.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -MT libg7xx_la-g722_encode.lo -MD -MP -MF "$(DEPDIR)/libg7xx_la-g722_encode.Tpo" -c -o libg7xx_la-g722_encode.lo `test -f 'src/g722_encode.c' || echo '$(srcdir)/'`src/g722_encode.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libg7xx_la-g722_encode.Tpo" "$(DEPDIR)/libg7xx_la-g722_encode.Plo"; else rm -f "$(DEPDIR)/libg7xx_la-g722_encode.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='g722_encode.c' object='libg7xx_la-g722_encode.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/g722_encode.c' object='libg7xx_la-g722_encode.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -c -o libg7xx_la-g722_encode.lo `test -f 'g722_encode.c' || echo '$(srcdir)/'`g722_encode.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -c -o libg7xx_la-g722_encode.lo `test -f 'src/g722_encode.c' || echo '$(srcdir)/'`src/g722_encode.c
 
-libg7xx_la-g726.lo: g726.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -MT libg7xx_la-g726.lo -MD -MP -MF "$(DEPDIR)/libg7xx_la-g726.Tpo" -c -o libg7xx_la-g726.lo `test -f 'g726.c' || echo '$(srcdir)/'`g726.c; \
+libg7xx_la-g726.lo: src/g726.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -MT libg7xx_la-g726.lo -MD -MP -MF "$(DEPDIR)/libg7xx_la-g726.Tpo" -c -o libg7xx_la-g726.lo `test -f 'src/g726.c' || echo '$(srcdir)/'`src/g726.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libg7xx_la-g726.Tpo" "$(DEPDIR)/libg7xx_la-g726.Plo"; else rm -f "$(DEPDIR)/libg7xx_la-g726.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='g726.c' object='libg7xx_la-g726.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/g726.c' object='libg7xx_la-g726.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -c -o libg7xx_la-g726.lo `test -f 'g726.c' || echo '$(srcdir)/'`g726.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libg7xx_la_CFLAGS) $(CFLAGS) -c -o libg7xx_la-g726.lo `test -f 'src/g726.c' || echo '$(srcdir)/'`src/g726.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -406,6 +406,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
+	$(mkdir_p) $(distdir)/src/include
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
