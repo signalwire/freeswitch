@@ -46,6 +46,16 @@ specification by other means.
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#ifndef __inline__
+#define __inline__ __inline
+#endif
+typedef unsigned __int8 uint8_t;
+typedef __int16 int16_t;
+typedef __int32 int32_t;
+typedef unsigned __int16 uint16_t;
+#endif
+
 #if defined(__i386__)
 /*! \brief Find the bit position of the highest set bit in a word
     \param bits The word to be searched

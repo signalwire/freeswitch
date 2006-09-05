@@ -27,6 +27,22 @@
 #if !defined(_G722_H_)
 #define _G722_H_
 
+#ifdef _MSC_VER
+#ifndef __inline__
+#define __inline__ __inline
+#endif
+typedef unsigned __int8 uint8_t;
+typedef __int16 int16_t;
+typedef __int32 int32_t;
+typedef unsigned __int16 uint16_t;
+#ifndef INT16_MAX
+#define  INT16_MAX   0x7fff 
+#endif
+#ifndef INT16_MIN
+#define  INT16_MIN   (-INT16_MAX - 1) 
+#endif
+#endif
+
 /*! \page g722_page G.722 encoding and decoding
 \section g722_page_sec_1 What does it do?
 The G.722 module is a bit exact implementation of the ITU G.722 specification for all three

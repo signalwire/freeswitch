@@ -21,12 +21,14 @@
 #include <config.h>
 #endif
 
-#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <tgmath.h>
 #include <assert.h>
+#ifndef _MSC_VER
+#include <inttypes.h>
+#include <tgmath.h>
+#endif
 
 #include "g711.h"
 

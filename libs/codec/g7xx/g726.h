@@ -46,6 +46,16 @@
 #if !defined(_G726_H_)
 #define _G726_H_
 
+#ifdef _MSC_VER
+#ifndef __inline__
+#define __inline__ __inline
+#endif
+typedef unsigned __int8 uint8_t;
+typedef __int16 int16_t;
+typedef __int32 int32_t;
+typedef unsigned __int16 uint16_t;
+#endif
+
 /*! \page g726_page G.726 encoding and decoding
 \section g726_page_sec_1 What does it do?
 

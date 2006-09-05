@@ -30,10 +30,12 @@
 #endif
 
 #include <stdio.h>
-#include <inttypes.h>
 #include <memory.h>
 #include <stdlib.h>
+#ifndef _MSC_VER
+#include <inttypes.h>
 #include <tgmath.h>
+#endif
 
 #include "g722.h"
 
