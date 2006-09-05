@@ -123,30 +123,40 @@ static switch_api_interface_t dptools_api_interface = {
 
 static const switch_application_interface_t set_application_interface = {
 	/*.interface_name */ "set",
-	/*.application_function */ set_function
+	/*.application_function */ set_function,
+	/* long_desc */ "Set a channel varaible for the channel calling the application.",
+	/* short_desc */ "Set a channel varaible.",
+	/* syntax */ "<varname>=[<value>|_UNDEF_]",
+	/*.next */ NULL
 };
 
 static const switch_application_interface_t answer_application_interface = {
 	/*.interface_name */ "answer",
 	/*.application_function */ answer_function,
-	NULL,NULL,NULL,
-	&set_application_interface
+	/* long_desc */ "Answer the call for a channel.",
+	/* short_desc */ "Answer the call.",
+	/* syntax */ "",
+	/*.next */ &set_application_interface
 
 };
 
 static const switch_application_interface_t strftime_application_interface = {
 	/*.interface_name */ "strftime",
 	/*.application_function */ strftime_function,
-	NULL,NULL,NULL,
-	&answer_application_interface
+	/* long_desc */ NULL,
+	/* short_desc */ NULL,
+	/* syntax */ NULL,
+	/*.next */ &answer_application_interface
 
 };
 
 static const switch_application_interface_t sleep_application_interface = {
 	/*.interface_name */ "sleep",
 	/*.application_function */ sleep_function,
-	NULL,NULL,NULL,
-	&strftime_application_interface
+	/* long_desc */ "Pause the channel for a given number of milliseconds, consuming the audio for that period of time.",
+	/* short_desc */ "Pause a channel",
+	/* syntax */ "<pausemilliseconds>",
+	/* next */ &strftime_application_interface
 };
 
 static const switch_loadable_module_interface_t mod_dptools_module_interface = {
