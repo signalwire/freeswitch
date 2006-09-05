@@ -183,7 +183,7 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 
 	Decoder_Interface_Decode( context->decoder_state, (void *)encoded_data, (void *)decoded_data, 0 );
 
-	*decoded_data_len = codec->implementation->samples_per_frame;
+	*decoded_data_len = codec->implementation->bytes_per_frame;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -198,7 +198,7 @@ static const switch_codec_implementation_t amr_implementation = {
 	/*.bits_per_second */ 0, 
 	/*.microseconds_per_frame */ 20000, 
 	/*.samples_per_frame */ 160, 
-	/*.bytes_per_frame */ 0, 
+	/*.bytes_per_frame */ 320,
 	/*.encoded_bytes_per_frame */ 0, 
 	/*.number_of_channels */ 1, 
 	/*.pref_frames_per_packet */ 1, 
