@@ -255,7 +255,7 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 		timeout = atoi(argv[6]);
 	}
 
-	if (!aleg && exten) {
+	if (!aleg || !exten) {
 		stream->write_function(stream, "Invalid Arguements\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
