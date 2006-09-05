@@ -40,6 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="src/include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -103,6 +104,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="src/include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -148,19 +150,19 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\g711.c"
+				RelativePath=".\src\g711.c"
 				>
 			</File>
 			<File
-				RelativePath=".\g722_decode.c"
+				RelativePath=".\src\g722_decode.c"
 				>
 			</File>
 			<File
-				RelativePath=".\g722_encode.c"
+				RelativePath=".\src\g722_encode.c"
 				>
 			</File>
 			<File
-				RelativePath=".\g726.c"
+				RelativePath=".\src\g726.c"
 				>
 			</File>
 		</Filter>
@@ -170,15 +172,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\g711.h"
+				RelativePath="./src/include/g7xx/g711.h"
 				>
 			</File>
 			<File
-				RelativePath=".\g722.h"
+				RelativePath="./src/include/g7xx/g722.h"
 				>
 			</File>
 			<File
-				RelativePath=".\g726.h"
+				RelativePath="./src/include/g7xx/g726.h"
 				>
 			</File>
 		</Filter>
