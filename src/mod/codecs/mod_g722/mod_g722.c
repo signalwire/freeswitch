@@ -119,7 +119,7 @@ static const switch_codec_implementation_t g722_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 9,
 	/*.iananame */ "G722",
-	/*.samples_per_second */ 16000,
+	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 64000,
 	/*.microseconds_per_frame */ 20000,
 	/*.samples_per_frame */ 160,
