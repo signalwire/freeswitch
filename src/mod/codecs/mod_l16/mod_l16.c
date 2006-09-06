@@ -195,11 +195,11 @@ static const switch_codec_implementation_t raw_8k_60ms_implementation = {
 	/*.ianacode */ 10,
 	/*.iananame */ "L16",
 	/*.samples_per_second */ 8000,
-	/*.bits_per_second */ 256000,
-	/*.microseconds_per_frame */ 60000,
-	/*.samples_per_frame */ 480,
-	/*.bytes_per_frame */ 960,
-	/*.encoded_bytes_per_frame */ 960,
+	/*.bits_per_second */ 128000,
+	/*.microseconds_per_frame */ 22500,
+	/*.samples_per_frame */ 180,
+	/*.bytes_per_frame */ 360,
+	/*.encoded_bytes_per_frame */ 360,
 	/*.number_of_channels */ 1,
 	/*.pref_frames_per_packet */ 1,
 	/*.max_frames_per_packet */ 1,
@@ -229,7 +229,6 @@ static const switch_codec_implementation_t raw_8k_120ms_implementation = {
 	/*.destroy */ switch_raw_destroy,
 	/*.next */ &raw_8k_60ms_implementation
 };
-
 
 static const switch_codec_interface_t raw_codec_interface = {
 	/*.interface_name */ "raw signed linear (16 bit)",

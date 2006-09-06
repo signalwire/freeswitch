@@ -833,8 +833,13 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 			if (tech_pvt->read_frame.datalen > 0) {
 				tech_pvt->last_read = switch_time_now();
-				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-				frames = (tech_pvt->read_frame.datalen / bytes);
+
+				if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
+					bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+					frames = (tech_pvt->read_frame.datalen / bytes);
+				} else
+					frames = 1;
+
 				samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 				ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
 				tech_pvt->timestamp_recv += (int32_t) samples;
@@ -884,8 +889,12 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
 
-	bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-	frames = ((int) frame->datalen / bytes);
+	if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
+		bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+		frames = ((int) frame->datalen / bytes);
+	} else
+		frames = 1;
+
 	samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 
 #if 0
