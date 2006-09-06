@@ -108,7 +108,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 		for (ptr = new_module->module_interface->codec_interface; ptr; ptr = ptr->next) {
 			for (impl = ptr->implementations; impl; impl = impl->next) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
-								  "Adding Codec '%s' (%s) %dkhz %dms\n",
+								  "Adding Codec '%s' (%s) %dhz %dms\n",
 								  impl->iananame,
 								  ptr->interface_name,
 								  impl->samples_per_second, impl->microseconds_per_frame / 1000);
