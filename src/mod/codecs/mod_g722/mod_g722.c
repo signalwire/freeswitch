@@ -53,13 +53,20 @@ static switch_status_t switch_g722_init(switch_codec_t *codec, switch_codec_flag
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct g722_context))))) { 
 		return SWITCH_STATUS_FALSE;
 	} else {
-		if (!(encoding || decoding)) {
-			
+		if (!(encoding || decoding)) {			
 			if (encoding) {
-				g722_encode_init(&context->encoder_object, 64000, G722_PACKED);
+				if(codec->implementation->samples_per_second == 16000){
+					g722_encode_init(&context->encoder_object, 64000, G722_PACKED);
+				} else {
+					g722_encode_init(&context->encoder_object, 64000, G722_SAMPLE_RATE_8000);
+				}
 			}
 			if (decoding) {
-				g722_decode_init(&context->decoder_object, 64000, G722_PACKED);
+				if(codec->implementation->samples_per_second == 16000){
+					g722_decode_init(&context->decoder_object, 64000, G722_PACKED);
+				} else {
+					g722_decode_init(&context->decoder_object, 64000, G722_SAMPLE_RATE_8000);
+				}
 			}
 		}
 	}
@@ -115,7 +122,7 @@ static switch_status_t switch_g722_destroy(switch_codec_t *codec)
 
 /* Registration */
 
-static const switch_codec_implementation_t g722_implementation = {
+static const switch_codec_implementation_t g722_8k_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 9,
 	/*.iananame */ "G722",
@@ -132,12 +139,31 @@ static const switch_codec_implementation_t g722_implementation = {
 	/*.encode */ switch_g722_encode,
 	/*.decode */ switch_g722_decode,
 	/*.destroy */ switch_g722_destroy,
-	///*.next */ &g711u_16k_implementation
+};
+
+static const switch_codec_implementation_t g722_16k_implementation = {
+	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
+	/*.ianacode */ 9,
+	/*.iananame */ "G722",
+	/*.samples_per_second */ 16000,
+	/*.bits_per_second */ 64000,
+	/*.microseconds_per_frame */ 20000,
+	/*.samples_per_frame */ 160,
+	/*.bytes_per_frame */ 320,
+	/*.encoded_bytes_per_frame */ 160,
+	/*.number_of_channels */ 1,
+	/*.pref_frames_per_packet */ 1,
+	/*.max_frames_per_packet */ 1,
+	/*.init */ switch_g722_init,
+	/*.encode */ switch_g722_encode,
+	/*.decode */ switch_g722_decode,
+	/*.destroy */ switch_g722_destroy,
+	/*.next */ &g722_8k_implementation
 };
 
 static const switch_codec_interface_t g722_codec_interface = {
 	/*.interface_name */ "g722",
-	/*.implementations */ &g722_implementation
+	/*.implementations */ &g722_16k_implementation
 };
 
 static switch_loadable_module_interface_t g722_module_interface = {
