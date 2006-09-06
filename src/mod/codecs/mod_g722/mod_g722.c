@@ -53,23 +53,22 @@ static switch_status_t switch_g722_init(switch_codec_t *codec, switch_codec_flag
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct g722_context))))) { 
 		return SWITCH_STATUS_FALSE;
 	} else {
-		if (!(encoding || decoding)) {			
-			if (encoding) {
-				if(codec->implementation->samples_per_second == 16000){
-					g722_encode_init(&context->encoder_object, 64000, G722_PACKED);
-				} else {
-					g722_encode_init(&context->encoder_object, 64000, G722_SAMPLE_RATE_8000);
-				}
+		if (encoding) {
+			if(codec->implementation->samples_per_second == 16000){
+				g722_encode_init(&context->encoder_object, 64000, G722_PACKED);
+			} else {
+				g722_encode_init(&context->encoder_object, 64000, G722_SAMPLE_RATE_8000);
 			}
-			if (decoding) {
-				if(codec->implementation->samples_per_second == 16000){
-					g722_decode_init(&context->decoder_object, 64000, G722_PACKED);
-				} else {
-					g722_decode_init(&context->decoder_object, 64000, G722_SAMPLE_RATE_8000);
-				}
+		}
+		if (decoding) {
+			if(codec->implementation->samples_per_second == 16000){
+				g722_decode_init(&context->decoder_object, 64000, G722_PACKED);
+			} else {
+				g722_decode_init(&context->decoder_object, 64000, G722_SAMPLE_RATE_8000);
 			}
 		}
 	}
+
 	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;	
 }
