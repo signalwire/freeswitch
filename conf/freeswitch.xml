@@ -386,11 +386,11 @@
         </condition>
       </extension>
 
-      <extension name="devconf">
+      <!--<extension name="devconf">
         <condition field="destination_number" expression="^888$">
           <action application="bridge" data="exosip/888@66.250.68.194"/>
         </condition>
-      </extension>
+      </extension> -->
 
       <extension name="testmusic">
         <condition field="destination_number" expression="^1234$">
