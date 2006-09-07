@@ -859,7 +859,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n", 
 						  channel->name,
 						  state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_STATE) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(channel->hangup_cause));
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}
