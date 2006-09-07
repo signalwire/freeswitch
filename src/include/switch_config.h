@@ -104,7 +104,7 @@ SWITCH_DECLARE(void) switch_config_close_file(switch_config_t *cfg);
 */
 SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t *cfg, char **var, char **val);
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 /** @} */
 

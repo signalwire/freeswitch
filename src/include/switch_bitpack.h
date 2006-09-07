@@ -278,5 +278,5 @@ static inline int8_t switch_bitpack_in(switch_bitpack_t *pack, switch_byte_t in)
 }
 ///\}
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 #endif

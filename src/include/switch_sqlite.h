@@ -1804,6 +1804,6 @@ DoxyDefine(void switch_core_db_free(char *z);)
 /** @} */
 /** @} */
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

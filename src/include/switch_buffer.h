@@ -109,6 +109,6 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer_t *buffer, switch
 SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer);
 /** @} */
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

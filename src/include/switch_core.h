@@ -1170,6 +1170,6 @@ SWITCH_DECLARE(void) switch_core_set_globals(void);
   \}
 */
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

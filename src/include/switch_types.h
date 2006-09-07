@@ -783,6 +783,6 @@ struct switch_channel;
 /*! \brief A core session representing a call and all of it's resources */
 struct switch_core_session;
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

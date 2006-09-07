@@ -393,6 +393,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_raw_mode (switch_channel_t *c
 SWITCH_DECLARE(switch_status_t) switch_channel_get_raw_mode (switch_channel_t *channel, int *freq, int *bits, int *channels, int *ms, int *kbps);
 /** @} */
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

@@ -156,7 +156,7 @@ SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len);
 
 ///\}
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif
 

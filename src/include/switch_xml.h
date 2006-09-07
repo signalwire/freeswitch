@@ -331,7 +331,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_searc
 ///\return the section mask
 SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(char *str);
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 ///\}
 

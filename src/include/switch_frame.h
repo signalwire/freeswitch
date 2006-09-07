@@ -68,6 +68,6 @@ struct switch_frame {
 	switch_frame_flag_t flags;
 };
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

@@ -117,6 +117,6 @@ SWITCH_DECLARE(const char *) switch_log_level2str(switch_log_level_t level);
 SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str);
 
 ///\}
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

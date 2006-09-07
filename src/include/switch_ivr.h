@@ -216,7 +216,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 
 /** @} */
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif
 

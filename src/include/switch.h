@@ -37,10 +37,10 @@
 
 #ifdef __cplusplus
 #define SWITCH_BEGIN_EXTERN_C       extern "C" {
-#define END_EXTERN_C         }
+#define SWITCH_END_EXTERN_C         }
 #else
 #define SWITCH_BEGIN_EXTERN_C
-#define END_EXTERN_C
+#define SWITCH_END_EXTERN_C
 #endif
 
 

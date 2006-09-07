@@ -240,6 +240,6 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup (char **ip,
 #define switch_stun_packet_length(packet) ntohs(packet->header.length) + sizeof(switch_stun_packet_header_t)
 ///\}
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

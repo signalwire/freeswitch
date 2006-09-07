@@ -536,6 +536,6 @@ struct switch_api_interface {
 	const struct switch_api_interface *next;
 };
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

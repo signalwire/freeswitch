@@ -1433,6 +1433,6 @@ SWITCH_DECLARE(switch_status_t) switch_mutex_init(switch_mutex_t **lock,
 /** @} */
 /** @} */
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

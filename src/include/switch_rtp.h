@@ -373,6 +373,6 @@ SWITCH_DECLARE(void *)switch_rtp_get_private(switch_rtp_t *rtp_session);
   \}
 */
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

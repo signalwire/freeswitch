@@ -195,7 +195,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
 
 SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_t *caller_profile, char *prefix, switch_event_t *event);
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 /** @} */
 

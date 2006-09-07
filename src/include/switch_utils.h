@@ -210,6 +210,6 @@ SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t s
 #define SWITCH_READ_ACCEPTABLE(status) status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK
 SWITCH_DECLARE(size_t) switch_url_encode(char *url, char *buf, size_t len);
 SWITCH_DECLARE(char *) switch_url_decode(char *s);
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

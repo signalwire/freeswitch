@@ -230,6 +230,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void);
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void);
 ///\}
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif

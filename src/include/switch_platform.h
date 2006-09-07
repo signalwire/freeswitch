@@ -141,6 +141,6 @@ typedef unsigned long	in_addr_t;
 #define DoxyDefine(x)
 #endif
 
-END_EXTERN_C
+SWITCH_END_EXTERN_C
 
 #endif
