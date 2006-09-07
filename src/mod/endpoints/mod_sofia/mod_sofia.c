@@ -1661,6 +1661,8 @@ static switch_status_t config_sofia(int reload)
 		profile->name = switch_core_strdup(profile->pool, xprofilename);
 
 		profile->dtmf_duration = 100;		
+		profile->codec_ms = 20;
+
 		for (param = switch_xml_child(xprofile, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -1738,10 +1740,6 @@ static switch_status_t config_sofia(int reload)
 			profile->rtpip = switch_core_strdup(profile->pool, "127.0.0.1");
 		}
 
-		if (!profile->codec_ms) {
-			profile->codec_ms = 20;
-		}
-		
 		if (!profile->sip_port) {
 			profile->sip_port = 5060;
 		}

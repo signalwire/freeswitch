@@ -1439,17 +1439,13 @@ static switch_status_t exosip_create_call(eXosip_event_t * event)
 
 		{
 			int rate = atoi(drate);
-			int ms = globals.codec_ms;
+			int ms = 0; //globals.codec_ms;
 
 
 			if (imp) {
 				ms = imp->microseconds_per_frame / 1000;
 			}
 
-			if (!strcasecmp(dname, "ilbc")) {
-				ms = 30;
-			}
-			
 			if (switch_core_codec_init(&tech_pvt->read_codec,
 									   dname,
 									   rate,
@@ -1938,11 +1934,7 @@ static void handle_answer(eXosip_event_t *event)
 	if (!switch_test_flag(tech_pvt, TFLAG_USING_CODEC)) {
 	
 		int rate = atoi(drate);
-		int ms = globals.codec_ms;
-
-		if (!strcasecmp(dname, "ilbc")) {
-			ms = 30;
-		}
+		int ms = 0; //globals.codec_ms;
 
 		if (imp) {
 			ms = imp->microseconds_per_frame / 1000;
@@ -2273,7 +2265,7 @@ static int config_exosip(int reload)
 	}
 
 	if (!globals.codec_ms) {
-		globals.codec_ms = 20;
+		globals.codec_ms = 0;
 	}
 
 	if (!globals.port) {

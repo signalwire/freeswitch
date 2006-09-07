@@ -502,8 +502,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, ch
 
 		return SWITCH_STATUS_SUCCESS;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec %s Exists but not at the desired implementation.\n",
-							  codec_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec %s Exists but not at the desired implementation. %dhz %dms\n",
+						  codec_name,
+						  rate,
+						  ms);
 	}
 
 	return SWITCH_STATUS_NOTIMPL;
