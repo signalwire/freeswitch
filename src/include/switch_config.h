@@ -58,7 +58,7 @@
 
 #include <switch.h>
 
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 /*! \brief A simple file handle representing an open configuration file **/
 struct switch_config {

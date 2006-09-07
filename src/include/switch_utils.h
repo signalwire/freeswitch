@@ -40,7 +40,7 @@
 
 #include <switch.h>
 
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 #ifndef snprintf
 #define snprintf apr_snprintf

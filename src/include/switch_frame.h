@@ -38,7 +38,7 @@
 
 #include <switch.h>
 
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 /*! \brief An abstraction of a data frame */
 struct switch_frame {

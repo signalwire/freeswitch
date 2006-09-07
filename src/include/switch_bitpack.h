@@ -35,7 +35,7 @@
 */
 #ifndef SWITCH_BITPACK_H
 #define SWITCH_BITPACK_H
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 #include <switch.h>
 

@@ -36,7 +36,7 @@
 
 #include <switch.h>
 
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 #ifdef WIN32
 #define SWITCH_PATH_SEPARATOR "\\"

@@ -41,7 +41,7 @@
 
 #include <switch.h>
 
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CMD_CHUNK_LEN 1024
 #define SWITCH_STANDARD_STREAM(s) if ((s.data = (char *)malloc(SWITCH_CMD_CHUNK_LEN))) { \
 		memset(s.data, 0, SWITCH_CMD_CHUNK_LEN);						\

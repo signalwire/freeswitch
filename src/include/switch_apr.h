@@ -63,7 +63,7 @@
 #include <apr_want.h>
 #include <apr_env.h>
 
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 /*
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions

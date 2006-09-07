@@ -34,7 +34,7 @@
 #ifndef SWITCH_PLATFORM_H
 #define SWITCH_PLATFORM_H
 
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 #ifdef __ICC
 #pragma warning (disable:810 869 981 279 1469 188)

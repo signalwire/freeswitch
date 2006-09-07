@@ -35,7 +35,7 @@
 #ifndef SWITCH_SQLITE_H
 #define SWITCH_SQLITE_H
 
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 #include <sqlite3.h>
 

@@ -43,7 +43,7 @@
 #define SWITCH_RESAMPLE_H
 
 #include <switch.h>
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 #include <stdlib.h>
 
 /*!

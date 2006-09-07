@@ -65,7 +65,7 @@
 ///\defgroup xml1 XML Library Functions
 ///\ingroup core1
 ///\{
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 #define SWITCH_XML_BUFSIZE 1024 // size of internal memory buffers
 

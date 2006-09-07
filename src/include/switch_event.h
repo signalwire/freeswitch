@@ -60,7 +60,7 @@
 
 #include <switch.h>
 
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 /*! \brief An event Header */
 struct switch_event_header{

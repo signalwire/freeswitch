@@ -41,7 +41,7 @@
 
 #include <switch.h>
 
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 /*! \brief A table of functions to execute at various states 
 */

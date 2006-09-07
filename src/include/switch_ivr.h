@@ -40,7 +40,7 @@
 
 #include <switch.h>
 
-BEGIN_EXTERN_C
+SWITCH_BEGIN_EXTERN_C
 
 static const switch_state_handler_table_t noop_state_handler = {0};
 
