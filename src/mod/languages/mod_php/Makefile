@@ -1,10 +1,11 @@
-CFLAGS += -I/usr/local/include/php/TSRM -I/usr/local/include/php/main/ -I/usr/local/include/php/Zend/ -I/usr/local/include/php/
+CFLAGS += -I$(PREFIX)/include/php/TSRM -I$(PREFIX)/include/php/main/ -I$(PREFIX)/include/php/Zend/ -I$(PREFIX)/include/php/
 PHPMOD=freeswitch
+LDFLAGS += -lphp4
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PHPMOD).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install php-4.4.4.tar.gz --prefix=$(PREFIX) --enable-embed
 %.o:  %.c
 	$(CC) -fPIC $(CFLAGS) -c $< -o $@
 

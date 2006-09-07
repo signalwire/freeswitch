@@ -226,7 +226,7 @@ void freeswitch_error_handler(int type, const char *error_filename, const uint e
 		Z_STRVAL_P(tmp) = (char *) estrndup(buffer, buffer_len);
 		Z_STRLEN_P(tmp) = buffer_len;
 		Z_TYPE_P(tmp) = IS_STRING;
-		zend_hash_update(EG(active_symbol_table), "php_errormsg", sizeof("php_errormsg"), (void **) & tmp, sizeof(pval *), NULL);
+		zend_hash_update(EG(active_symbol_table), "php_errormsg", sizeof("php_errormsg"), &tmp, sizeof(pval *), NULL);
 	}
 	efree(buffer);
 }
@@ -339,7 +339,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &php_module_interface;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
+	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
