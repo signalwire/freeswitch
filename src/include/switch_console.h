@@ -42,6 +42,17 @@
 #include <switch.h>
 
 BEGIN_EXTERN_C
+#define SWITCH_CMD_CHUNK_LEN 1024
+#define SWITCH_STANDARD_STREAM(s) if ((s.data = (char *)malloc(SWITCH_CMD_CHUNK_LEN))) { \
+		memset(s.data, 0, SWITCH_CMD_CHUNK_LEN);						\
+		s.end = s.data;\
+		s.data_size = SWITCH_CMD_CHUNK_LEN;\
+		s.write_function = switch_console_stream_write;\
+		s.alloc_len = SWITCH_CMD_CHUNK_LEN;\
+		s.alloc_chunk = SWITCH_CMD_CHUNK_LEN;\
+	}
+
+ 
 
 /*!
   \brief A simple comand loop that reads input from the terminal

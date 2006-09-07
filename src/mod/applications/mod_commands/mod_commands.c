@@ -260,7 +260,7 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_ivr_originate(NULL, &caller_session, aleg, timeout, NULL, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(NULL, &caller_session, aleg, timeout, &noop_state_handler, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "Cannot Create Outgoing Channel! [%s]\n", aleg);
 		return SWITCH_STATUS_SUCCESS;
 	} 
@@ -268,9 +268,32 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 	caller_channel = switch_core_session_get_channel(caller_session);
 	assert(caller_channel != NULL);
 	switch_channel_clear_state_handler(caller_channel, NULL);
-	switch_core_session_rwunlock(caller_session);
 
-	switch_ivr_session_transfer(caller_session, exten, dp, context);
+
+	if (*exten == '&') {
+		switch_caller_extension_t *extension = NULL;
+		char *app_name = switch_core_session_strdup(caller_session, (exten + 1));
+		char *arg, *e;
+
+		if ((e = strchr(app_name, ')'))) {
+			*e = '\0';
+		}
+
+		if ((arg = strchr(app_name, '('))) {
+			*arg++ = '\0';
+		}
+
+		if ((extension = switch_caller_extension_new(caller_session, app_name, arg)) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+			switch_channel_hangup(caller_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			return SWITCH_STATUS_MEMERR;
+		}
+		switch_caller_extension_add_application(caller_session, extension, app_name, arg);
+		switch_channel_set_caller_extension(caller_channel, extension);
+		switch_channel_set_state(caller_channel, CS_EXECUTE);
+	} else {
+		switch_ivr_session_transfer(caller_session, exten, dp, context);
+	}
 
 	return SWITCH_STATUS_SUCCESS;;
 }

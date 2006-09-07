@@ -9,6 +9,7 @@ applications/mod_ivrtest
 applications/mod_playback
 applications/mod_skel
 #applications/mod_rss
+#applications/mod_park
 #asr_tts/mod_cepstral
 codecs/mod_g711
 codecs/mod_ilbc

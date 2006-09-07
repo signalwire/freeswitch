@@ -99,13 +99,41 @@ struct switch_core_thread_session {
 
 struct switch_core_session;
 struct switch_core_runtime;
-
+struct switch_core_port_allocator;
 
 /*!
   \defgroup core1 Core Library 
   \ingroup FREESWITCH
   \{ 
 */
+
+///\defgroup pa1 Port Allocation
+///\ingroup core1
+///\{
+
+/*!
+  \brief Initilize the port allocator
+  \param start the starting port
+  \param end the ending port
+  \param inc the amount to increment each port
+  \param new pointer for the return value
+  \return SWITCH_STATUS_SUCCESS if the operation was a success
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start, switch_port_t end, uint32_t inc, switch_core_port_allocator_t **new);
+
+/*!
+  \brief Get a port from the port allocator
+  \param alloc the allocator object
+  \return the port
+*/
+SWITCH_DECLARE(switch_port_t) switch_core_port_allocator_request_port(switch_core_port_allocator_t *alloc);
+
+/*!
+  \brief destroythe port allocator
+  \param alloc the allocator object
+*/
+SWITCH_DECLARE(void) switch_core_port_allocator_destroy(switch_core_port_allocator_t **alloc);
+///\}
 
 ///\defgroup ss Startup/Shutdown
 ///\ingroup core1
@@ -468,6 +496,30 @@ SWITCH_DECLARE(int32_t) switch_core_session_event_count(switch_core_session_t *s
   \return the  SWITCH_STATUS_SUCCESS if the event was de-queued
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_session_t *session, switch_event_t **event);
+
+/*! 
+  \brief Queue a private event on a given session
+  \param session the session to queue the message on
+  \param event the event to queue
+  \return the status returned by the message handler
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_core_session_t *session, switch_event_t **event);
+
+
+/*! 
+  \brief Indicate the number of waiting private events on a session
+  \param session the session to check
+  \return the number of events
+*/
+SWITCH_DECLARE(int32_t) switch_core_session_private_event_count(switch_core_session_t *session);
+
+/*! 
+  \brief DE-Queue a private event on a given session
+  \param session the session to de-queue the message on
+  \param event the de-queued event
+  \return the  SWITCH_STATUS_SUCCESS if the event was de-queued
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch_core_session_t *session, switch_event_t **event);
 
 
 /*! 

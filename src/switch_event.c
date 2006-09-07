@@ -101,6 +101,8 @@ static char *EVENT_NAMES[] = {
 	"CHANNEL_UNBRIDGE",
 	"CHANNEL_PROGRESS",
 	"CHANNEL_OUTGOING",
+	"CHANNEL_PARK",
+	"CHANNEL_UNPARK",
 	"API",
 	"LOG",
 	"INBOUND_CHAN",
@@ -116,6 +118,7 @@ static char *EVENT_NAMES[] = {
 	"DTMF",
 	"MESSAGE",
 	"CODEC",
+	"BACKGROUND_JOB",
 	"ALL"
 };
 

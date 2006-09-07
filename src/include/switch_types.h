@@ -382,7 +382,8 @@ CF_BRIDGED		= (1 <<  7) - Channel in a bridge
 CF_HOLD			= (1 <<  8) - Channel is on hold
 CF_SERVICE		= (1 <<  9) - Channel has a service thread
 CF_TAGGED		= (1 << 10) - Channel is tagged
-CF_WINNER		= (1 << 10) - Channel is the winner
+CF_WINNER		= (1 << 11) - Channel is the winner
+CF_CONTROLLED	= (1 << 12) - Channel is under control
 </pre>
  */
 
@@ -398,7 +399,8 @@ typedef enum {
 	CF_HOLD			= (1 <<  8),
 	CF_SERVICE		= (1 <<  9),
 	CF_TAGGED		= (1 << 10),
-	CF_WINNER		= (1 << 11)
+	CF_WINNER		= (1 << 11),
+	CF_CONTROLLED	= (1 << 12)
 } switch_channel_flag_t;
 
 
@@ -571,6 +573,10 @@ typedef enum {
     SWITCH_EVENT_CHANNEL_EXECUTE	- A channel has executed a module's application
 	SWITCH_EVENT_CHANNEL_BRIDGE     - A channel has bridged to another channel
 	SWITCH_EVENT_CHANNEL_UNBRIDGE   - A channel has unbridged from another channel
+    SWITCH_EVENT_CHANNEL_PROGRESS	- A channel has been parked
+    SWITCH_EVENT_CHANNEL_OUTGOING	- A channel has been unparked
+	SWITCH_EVENT_CHANNEL_PARK 		- A channel has been parked
+	SWITCH_EVENT_CHANNEL_UNPARK 	- A channel has been unparked
     SWITCH_EVENT_API				- An API call has been executed
     SWITCH_EVENT_LOG				- A LOG event has been triggered
     SWITCH_EVENT_INBOUND_CHAN		- A new inbound channel has been created
@@ -586,8 +592,7 @@ typedef enum {
 	SWITCH_EVENT_DTMF				- DTMF was sent
 	SWITCH_EVENT_MESSAGE			- A Basic Message
 	SWITCH_EVENT_CODEC				- Codec Change
-	SWITCH_EVENT_PROGRESS			- Early Media
-	SWITCH_EVENT_OUTGOING			- Outgoing Channel
+	SWITCH_EVENT_BACKGROUND_JOB		- Background Job
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -604,6 +609,8 @@ typedef enum {
 	SWITCH_EVENT_CHANNEL_UNBRIDGE,
 	SWITCH_EVENT_CHANNEL_PROGRESS,
 	SWITCH_EVENT_CHANNEL_OUTGOING,
+	SWITCH_EVENT_CHANNEL_PARK,
+	SWITCH_EVENT_CHANNEL_UNPARK,
 	SWITCH_EVENT_API,
 	SWITCH_EVENT_LOG,
 	SWITCH_EVENT_INBOUND_CHAN,
@@ -619,6 +626,7 @@ typedef enum {
 	SWITCH_EVENT_DTMF,
 	SWITCH_EVENT_MESSAGE,
 	SWITCH_EVENT_CODEC,
+	SWITCH_EVENT_BACKGROUND_JOB,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
@@ -728,6 +736,7 @@ typedef struct switch_api_interface switch_api_interface_t;
 typedef struct switch_file_interface switch_file_interface_t;
 typedef struct switch_speech_interface switch_speech_interface_t;
 typedef struct switch_directory_interface switch_directory_interface_t;
+typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 
 typedef void (*switch_application_function_t)(switch_core_session_t *, char *);
 typedef void (*switch_event_callback_t)(switch_event_t *);

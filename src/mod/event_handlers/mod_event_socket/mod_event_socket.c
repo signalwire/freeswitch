@@ -56,10 +56,10 @@ struct listener {
 	switch_mutex_t *flag_mutex;
 	uint32_t flags;
 	switch_log_level_t level;
-	char *retbuf;
 	char *ebuf;
 	uint8_t event_list[SWITCH_EVENT_ALL+1];
 	switch_hash_t *event_hash;
+	switch_thread_rwlock_t *rwlock;
 	struct listener *next;
 };
 
@@ -282,17 +282,20 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					if (count == 1) {
 						switch_event_create(event, SWITCH_EVENT_MESSAGE);
 						switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Command", mbuf);
-					} else {
+					} else if (cur) {
 						char *var, *val;
-						var = mbuf;
-						if ((val = strchr(var, ':'))) {
-							*val++ = '\0';
-							while(*val == ' ') {
-								val++;
+						var = cur;
+						strip_cr(var);
+						if (!switch_strlen_zero(var)) {
+							if ((val = strchr(var, ':'))) {
+								*val++ = '\0';
+								while(*val == ' ') {
+									val++;
+								}
+							} 
+							if (var && val) {
+								switch_event_add_header(*event, SWITCH_STACK_BOTTOM, var, val);
 							}
-						} 
-						if (var && val) {
-							switch_event_add_header(*event, SWITCH_STACK_BOTTOM, var, val);
 						}
 					}
 					
@@ -385,6 +388,71 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 
 }
 
+struct api_command_struct {
+	char *api_cmd;
+	char *arg;
+	listener_t *listener;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	uint8_t bg;
+};
+
+static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
+{
+
+	struct api_command_struct *acs = (struct api_command_struct *) obj;
+	switch_stream_handle_t stream = {0};
+
+	if (switch_thread_rwlock_tryrdlock(acs->listener->rwlock) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! cannot get read lock.\n");
+		goto done;
+	}
+
+
+	SWITCH_STANDARD_STREAM(stream);
+
+	if (stream.data) {
+		if (switch_api_execute(acs->api_cmd, acs->arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+
+			if (acs->bg) {
+				switch_event_t *event;
+
+				if (switch_event_create(&event, SWITCH_EVENT_BACKGROUND_JOB) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Job-UUID", acs->uuid_str);
+					switch_event_add_body(event, stream.data);
+					switch_event_fire(&event);
+				}
+			} else {
+				switch_size_t len;
+				char buf[1024];
+				len = strlen(stream.data) + 1;			
+				snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %"APR_SSIZE_T_FMT"\n\n", len);
+				len = strlen(buf) + 1;
+				switch_socket_send(acs->listener->sock, buf, &len);
+				len = strlen(stream.data) + 1;
+				switch_socket_send(acs->listener->sock, stream.data, &len);
+			}
+		}
+		free(stream.data);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+	}
+
+	switch_thread_rwlock_unlock(acs->listener->rwlock);
+	
+
+ done:
+	if (acs && acs->bg) {
+		if (acs->api_cmd) {
+			free(acs->api_cmd);
+		}
+		if (acs->arg) {
+			free(acs->arg);
+		}
+		free(acs);
+	}
+	return NULL;
+	
+}
 static switch_status_t parse_command(listener_t *listener, switch_event_t *event, char *reply, uint32_t reply_len)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -419,38 +487,98 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		goto done;
 	}
 	
-	if (!strncasecmp(cmd, "api ", 4)) {
-		char *api_cmd = cmd + 4;
-		switch_stream_handle_t stream = {0};
-		char *arg;
+	if (!strncasecmp(cmd, "sendmsg", 7)) {
+		switch_core_session_t *session;
+		char *uuid = cmd + 8;
 
-		if (!listener->retbuf) {
-			listener->retbuf = switch_core_alloc(listener->pool, CMD_BUFLEN);
+
+		if (uuid) {
+			while(*uuid == ' ') {
+				uuid++;
+			}
+			strip_cr(uuid);
 		}
 
-		stream.data = listener->retbuf;
-		stream.end = stream.data;
-		stream.data_size = CMD_BUFLEN;
-		stream.write_function = switch_console_stream_write;
+		if (!uuid) {
+			uuid = switch_event_get_header(event, "session-id");
+		}
 
+		if ((session = switch_core_session_locate(uuid))) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			if (!switch_channel_test_flag(channel, CF_CONTROLLED)) {
+				switch_core_session_rwunlock(session);
+				session = NULL;
+			}
+		}
+		
+		if (session) {
+			if ((status = switch_core_session_queue_private_event(session, &event)) == SWITCH_STATUS_SUCCESS) {
+				snprintf(reply, reply_len, "+OK");
+			} else {
+				snprintf(reply, reply_len, "-ERR memory error");
+			}
+			switch_core_session_rwunlock(session);
+		} else {
+			snprintf(reply, reply_len, "-ERR invalid session id [%s]", uuid);
+		}
+
+		goto done;
+	
+	} else if (!strncasecmp(cmd, "api ", 4)) {
+		struct api_command_struct acs = {0};
+		char *api_cmd = cmd + 4;
+		char *arg = NULL;
 		strip_cr(api_cmd);
 
 		if ((arg = strchr(api_cmd, ' '))) {
 			*arg++ = '\0';
 		}
-		
-		if (switch_api_execute(api_cmd, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-			switch_size_t len;
-			char buf[1024];
 
-			len = strlen(listener->retbuf) + 1;			
-			snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %"APR_SSIZE_T_FMT"\n\n", len);
-			len = strlen(buf) + 1;
-			switch_socket_send(listener->sock, buf, &len);
-			len = strlen(listener->retbuf) + 1;
-			switch_socket_send(listener->sock, listener->retbuf, &len);
-			return SWITCH_STATUS_SUCCESS;
-		} 
+		acs.listener = listener;
+		acs.api_cmd = api_cmd;
+		acs.arg = arg;
+		acs.bg = 0;
+
+		api_exec(NULL, (void *) &acs);
+		snprintf(reply, reply_len, "+OK");
+
+		return SWITCH_STATUS_SUCCESS;
+	} else if (!strncasecmp(cmd, "bgapi ", 6)) {
+		struct api_command_struct *acs;
+		char *api_cmd = cmd + 6;
+		char *arg = NULL;
+		strip_cr(api_cmd);
+
+		if ((arg = strchr(api_cmd, ' '))) {
+			*arg++ = '\0';
+		}
+
+		if ((acs = malloc(sizeof(*acs)))) {
+			switch_thread_t *thread;
+			switch_threadattr_t *thd_attr = NULL;
+			switch_uuid_t uuid;
+
+			memset(acs, 0, sizeof(*acs));
+			acs->listener = listener;
+			if (api_cmd) {
+				acs->api_cmd = strdup(api_cmd);
+			}
+			if (arg) {
+				acs->arg = strdup(arg);
+			}
+			acs->bg = 1;	
+			switch_threadattr_create(&thd_attr, listener->pool);
+			switch_threadattr_detach_set(thd_attr, 1);
+			switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+			switch_thread_create(&thread, thd_attr, api_exec, acs, listener->pool);
+			switch_uuid_get(&uuid);
+			switch_uuid_format(acs->uuid_str, &uuid);
+			snprintf(reply, reply_len, "+OK Job-UUID: %s", acs->uuid_str);
+		} else {
+			snprintf(reply, reply_len, "-ERR memory error!");
+		}
+
+		return SWITCH_STATUS_SUCCESS;
 	} else if (!strncasecmp(cmd, "log", 3)) {
 
 		char *level_s;
@@ -643,7 +771,15 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		remove_listener(listener);
 	}
 
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Thread done, waiting for children\n");
+
+	switch_thread_rwlock_wrlock(listener->rwlock);
+	switch_thread_rwlock_unlock(listener->rwlock);
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Closed\n");
+
+
 
 	if (listener->pool) {
 		switch_memory_pool_t *pool = listener->pool;
@@ -734,6 +870,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 		if (rv) goto fail;
 		rv = switch_socket_create(&listen_list.sock, sa->family, SOCK_STREAM, APR_PROTO_TCP, pool);
 		if (rv) goto sock_fail;
+		rv = switch_socket_opt_set(listen_list.sock, SWITCH_SO_REUSEADDR, 1);
+		if (rv) goto sock_fail;
 		rv = switch_socket_bind(listen_list.sock, sa);
 		if (rv) goto sock_fail;
 		rv = switch_socket_listen(listen_list.sock, 5);
@@ -742,7 +880,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 		break;
 	sock_fail:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error!\n");
-		switch_yield(1000000);
+		switch_yield(100000);
 	}
 
 	listen_list.ready = 1;
@@ -771,6 +909,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			break;
 		}
 		
+		switch_thread_rwlock_create(&listener->rwlock, listener_pool);
 		switch_queue_create(&listener->event_queue, SWITCH_CORE_QUEUE_LEN, listener_pool);
 		switch_queue_create(&listener->log_queue, SWITCH_CORE_QUEUE_LEN, listener_pool);
 

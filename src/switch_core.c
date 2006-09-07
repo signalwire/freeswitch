@@ -88,6 +88,7 @@ struct switch_core_session {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	void *private_info;
 	switch_queue_t *event_queue;
+	switch_queue_t *private_event_queue;
 };
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs;
@@ -134,6 +135,64 @@ static void db_pick_path(char *dbname, char *buf, switch_size_t size)
 	} else {
 		snprintf(buf, size, "%s%s%s.db", SWITCH_GLOBAL_dirs.db_dir, SWITCH_PATH_SEPARATOR, dbname);
 	}
+}
+
+struct switch_core_port_allocator {
+	switch_port_t start;
+	switch_port_t end;
+	switch_port_t next;
+	uint32_t inc;
+	switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
+};
+
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start, switch_port_t end, uint32_t inc, switch_core_port_allocator_t **new)
+{
+	switch_status_t status;
+	switch_memory_pool_t *pool;
+	switch_core_port_allocator_t *alloc;
+
+	if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+
+	if (!(alloc = switch_core_alloc(pool, sizeof(*alloc)))) {
+		switch_core_destroy_memory_pool(&pool);
+		return SWITCH_STATUS_MEMERR;
+	}
+	
+	alloc->start = start;
+	alloc->next = start;
+	alloc->end = end;
+	if (!(alloc->inc = inc)) {
+		alloc->inc = 2;
+	}
+	switch_mutex_init(&alloc->mutex, SWITCH_MUTEX_NESTED, pool);
+	alloc->pool = pool;
+	*new = alloc;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_port_t) switch_core_port_allocator_request_port(switch_core_port_allocator_t *alloc)
+{
+	switch_port_t port;
+
+	switch_mutex_lock(alloc->mutex);
+	port = alloc->next;
+	alloc->next += alloc->inc;
+	if (alloc->next > alloc->end) {
+		alloc->next = alloc->start;
+	}
+	switch_mutex_unlock(alloc->mutex);
+	return port;
+}
+
+SWITCH_DECLARE(void) switch_core_port_allocator_destroy(switch_core_port_allocator_t **alloc)
+{
+	switch_memory_pool_t *pool = (*alloc)->pool;
+	switch_core_destroy_memory_pool(&pool);
+	*alloc = NULL;
 }
 
 SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(char *filename)
@@ -1192,7 +1251,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_se
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_queue_event(switch_core_session_t *session, switch_event_t **event)
-	 
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -1231,6 +1289,52 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_se
 	
 	if (session->event_queue) {
 		if ((status = (switch_status_t) switch_queue_trypop(session->event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+			*event = (switch_event_t *) pop;
+		}
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_core_session_t *session, switch_event_t **event)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	assert(session != NULL);
+
+	if (!session->private_event_queue) {
+		switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
+	}
+
+	if (session->private_event_queue) {
+		if (switch_queue_trypush(session->private_event_queue, *event) == SWITCH_STATUS_SUCCESS) {
+			*event = NULL;
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	} 
+
+	return status;
+}
+
+SWITCH_DECLARE(int32_t) switch_core_session_private_event_count(switch_core_session_t *session)
+{
+	if (session->private_event_queue) {
+		return (int32_t) switch_queue_size(session->private_event_queue);
+	}
+
+	return -1;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch_core_session_t *session, switch_event_t **event)
+	 
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	void *pop;
+
+	assert(session != NULL);
+	
+	if (session->private_event_queue) {
+		if ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
 			*event = (switch_event_t *) pop;
 		}
 	}

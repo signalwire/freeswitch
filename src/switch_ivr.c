@@ -75,6 +75,90 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	return status;
 }
 
+
+static void switch_ivr_parse_event(switch_core_session_t *session, switch_event_t *event)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *cmd = switch_event_get_header(event, "call-command");
+	unsigned long cmd_hash;
+	apr_ssize_t hlen = APR_HASH_KEY_STRING;
+	unsigned long CMD_EXECUTE = apr_hashfunc_default("execute", &hlen);
+	unsigned long CMD_HANGUP = apr_hashfunc_default("hangup", &hlen);
+
+    assert(channel != NULL);
+	hlen = (switch_size_t) strlen(cmd);
+	cmd_hash = apr_hashfunc_default(cmd, &hlen);
+
+	if (!switch_strlen_zero(cmd)) {
+		if (cmd_hash == CMD_EXECUTE) {
+			const switch_application_interface_t *application_interface;
+			char *app_name = switch_event_get_header(event, "execute-app-name");
+			char *app_arg = switch_event_get_header(event, "execute-app-arg");
+						
+			if (app_name && app_arg) {
+				if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
+					if (application_interface->application_function) {
+						application_interface->application_function(session, app_arg);
+					}
+				}
+			}
+		} else if (cmd_hash == CMD_HANGUP) {
+			char *cause_name = switch_event_get_header(event, "hangup-cause");
+			switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+
+			if (cause_name) {
+				cause = switch_channel_str2cause(cause_name);
+			}
+
+			switch_channel_hangup(channel, cause);
+		}
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_channel_t *channel;
+	switch_frame_t *frame;
+	int stream_id;
+	switch_event_t *event;
+	
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);	
+
+	switch_channel_answer(channel);
+
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PARK) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
+
+	switch_channel_set_flag(channel, CF_CONTROLLED);
+	while (switch_channel_ready(channel)) {
+		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
+			if ((status = switch_core_session_read_frame(session, &frame, -1, stream_id)) == SWITCH_STATUS_SUCCESS) {
+				if (!SWITCH_READ_ACCEPTABLE(status)) {
+					break;
+				}
+
+				if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+					switch_ivr_parse_event(session, event);
+					switch_event_destroy(&event);
+				}
+
+			}
+		}
+	}
+	switch_channel_clear_flag(channel, CF_CONTROLLED);
+
+	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNPARK) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_event_set_data(channel, event);
+		switch_event_fire(&event);
+	}
+
+	return status;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session,
 																 switch_input_callback_function_t input_callback,
 																 void *buf,
@@ -95,6 +179,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		switch_event_t *event;
 
 		char dtmf[128];
+
+
+		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+			switch_ivr_parse_event(session, event);
+			switch_event_destroy(&event);
+		}
 
 		if (switch_channel_has_dtmf(channel)) {
 			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
@@ -159,6 +249,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 
 	while(switch_channel_ready(channel)) {
 		switch_frame_t *read_frame;
+		switch_event_t *event;
 
 		if (timeout) {
 			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
@@ -167,6 +258,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 			}
 		}
 		
+		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+			switch_ivr_parse_event(session, event);
+			switch_event_destroy(&event);
+		}
+
 		if (switch_channel_has_dtmf(channel)) {
 			char dtmf[128];
 			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
@@ -301,6 +397,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	while(switch_channel_ready(channel)) {
 		switch_size_t len;
 		switch_event_t *event;
+
+
+		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+			switch_ivr_parse_event(session, event);
+			switch_event_destroy(&event);
+		}
 
 		if (input_callback || buf) {
 			/*
@@ -494,6 +596,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		int last_speed = -1;
 		switch_event_t *event;
 	
+
+		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+			switch_ivr_parse_event(session, event);
+			switch_event_destroy(&event);
+		}
+
 		if (input_callback || buf) {
 			/*
 			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
@@ -710,6 +818,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	ilen = len;
 	while(switch_channel_ready(channel)) {
 		switch_event_t *event;
+
+		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+			switch_ivr_parse_event(session, event);
+			switch_event_destroy(&event);
+		}
 
 		if (input_callback || buf) {
 			/*
@@ -1015,7 +1128,12 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				ans_a++;
 			}
 			
-
+			if (switch_core_session_dequeue_private_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_set_flag(chan_b, CF_HOLD);
+				switch_ivr_parse_event(session_a, event);
+				switch_channel_clear_flag(chan_b, CF_HOLD);
+				switch_event_destroy(&event);
+			}
 
 			/* if 1 channel has DTMF pass it to the other */
 			if (switch_channel_has_dtmf(chan_a)) {
@@ -1092,8 +1210,8 @@ static switch_status_t audio_bridge_on_loopback(switch_core_session_t *session)
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	if ((arg = switch_channel_get_private(channel))) {
-		switch_channel_set_private(channel, NULL);
+	if ((arg = switch_channel_get_private(channel, "_bridge_"))) {
+		switch_channel_set_private(channel, "_bridge_", NULL);
 		audio_bridge_thread(NULL, (void *) arg);
 	} else {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -1453,11 +1571,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		peer_channels[i] = switch_core_session_get_channel(peer_sessions[i]);
 		assert(peer_channels[i] != NULL);
 		
-		if (!table) {
+		if (table == &noop_state_handler) {
+			table = NULL;
+		} else if (!table) {
 			table = &audio_bridge_peer_state_handlers;
 		}
 
-		switch_channel_add_state_handler(peer_channels[i], table);
+		if (table) {
+			switch_channel_add_state_handler(peer_channels[i], table);
+		}
 
 		if (switch_core_session_runing(peer_sessions[i])) {
 			switch_channel_set_state(peer_channels[i], CS_RING);
@@ -1672,7 +1794,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		switch_core_session_receive_message(session, &msg);
 
 		if (switch_core_session_read_lock(peer_session) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_set_private(peer_channel, other_audio_thread);
+			switch_channel_set_private(peer_channel, "_bridge_", other_audio_thread);
 			switch_channel_set_state(peer_channel, CS_LOOPBACK);
 			audio_bridge_thread(NULL, (void *) this_audio_thread);
 
@@ -1691,7 +1813,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			this_audio_thread->running = 0;
 			switch_mutex_unlock(this_audio_thread->mutex);
 
-			if (!switch_channel_test_flag(peer_channel, CF_TRANSFER) && switch_channel_get_state(peer_channel) < CS_HANGUP) {
+			if (!switch_channel_test_flag(peer_channel, CF_TRANSFER) && 
+				switch_channel_get_state(peer_channel) < CS_HANGUP) {
 				switch_core_session_kill_channel(peer_session, SWITCH_SIG_KILL);
 				switch_channel_hangup(peer_channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			}

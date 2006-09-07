@@ -32,7 +32,7 @@
 #include <switch.h>
 #include <switch_console.h>
 #include <switch_version.h>
-#define CMD_BUFLEN 1024 * 1000
+#define CMD_BUFLEN 1024;
 
 
 SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle_t *handle, char *fmt, ...)
@@ -58,13 +58,37 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 	va_end(ap);
 	
 	if (data) {
-		switch_size_t len = handle->data_size - handle->data_len;
+		switch_size_t remaining = handle->data_size - handle->data_len;
+		switch_size_t need = strlen(data) + 1;
+		
+		
+		if ((remaining < need) && handle->alloc_len) {
+			switch_size_t new_len;
+			
+			if (need < handle->alloc_chunk) {
+				need = handle->alloc_chunk;
+			}
 
-		if (len <= strlen(data)) {
+			new_len = handle->data_size + need;
+			if ((handle->data = realloc(handle->data, new_len))) {
+				handle->data_size = handle->alloc_len = new_len;
+				buf = handle->data;
+
+				remaining = handle->data_size - handle->data_len;
+				handle->end = (uint8_t *)(handle->data) + handle->data_len;
+				end = handle->end;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+				free(data);
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+
+		if (remaining < need) {
 			ret = -1;
 		} else {
 			ret = 0;
-			snprintf(end, len, data);
+			snprintf(end, remaining, data);
 			handle->data_len = strlen(buf);
 			handle->end = (uint8_t *)(handle->data) + handle->data_len;
 		}
@@ -75,7 +99,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 }
 
 
-static int switch_console_process(char *cmd, char *retbuf, int retlen)
+static int switch_console_process(char *cmd)
 {
 	char *arg = NULL;
 	switch_stream_handle_t stream = {0};
@@ -103,16 +127,19 @@ static int switch_console_process(char *cmd, char *retbuf, int retlen)
 	if ((arg = strchr(cmd, ' ')) != 0) {
 		*arg++ = '\0';
 	}
-
-	stream.data = retbuf;
-	stream.end = stream.data;
-	stream.data_size = retlen;
-	stream.write_function = switch_console_stream_write;
-	if (switch_api_execute(cmd, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", retbuf);
+	
+	SWITCH_STANDARD_STREAM(stream);
+	if (stream.data) {
+		if (switch_api_execute(cmd, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", stream.data);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Unknown Command: %s\n", cmd);
+		}
+		free(stream.data);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Unknown Command: %s\n", cmd);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 	}
+
 	return 1;
 }
 
@@ -177,13 +204,9 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 	char hostname[256];
 	char cmd[2048];
 	int running = 1, activity = 1;
-	char *retbuf = (char *)malloc(CMD_BUFLEN);
 	switch_size_t x = 0;
 
-	assert(retbuf != NULL);
 	gethostname(hostname, sizeof(hostname));
-
-	memset(retbuf, 0, CMD_BUFLEN);
 
 	while (running) {
 		if (activity) {
@@ -207,11 +230,9 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		}
 	
 		if (cmd[0]) {
-			*retbuf = '\0';
-			running = switch_console_process(cmd, retbuf, CMD_BUFLEN);
+			running = switch_console_process(cmd);
 		}
 	}
 	
-	free(retbuf);
 
 }

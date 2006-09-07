@@ -104,8 +104,8 @@ struct switch_channel {
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
 	switch_hash_t *variables;
+	switch_hash_t *private_hash;
 	switch_channel_timetable_t *times;
-	void *private_info;
 	switch_call_cause_t hangup_cause;
 	int freq;
 	int bits;
@@ -163,6 +163,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	}
 
 	switch_core_hash_init(&(*channel)->variables, pool);
+	switch_core_hash_init(&(*channel)->private_hash, pool);
 	switch_buffer_create(pool, &(*channel)->dtmf_buffer, 128);
 	switch_mutex_init(&(*channel)->dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->flag_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -305,17 +306,17 @@ SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_chann
 	return switch_hash_first(pool, channel->variables);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, void *private_info)
+SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, char *key, void *private_info)
 {
 	assert(channel != NULL);
-	channel->private_info = private_info;
+	switch_core_hash_insert_dup(channel->private_hash, switch_core_session_strdup(channel->session, key), private_info);
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel)
+SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, char *key)
 {
 	assert(channel != NULL);
-	return channel->private_info;
+	return switch_core_hash_find(channel->private_hash, key);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_set_name(switch_channel_t *channel, char *name)

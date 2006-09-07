@@ -298,17 +298,19 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_ha
 /*!
   \brief Set private data on channel
   \param channel channel on which to set data
+  \param key unique keyname to associate your private data to
   \param private_info void pointer to private data
   \return SWITCH_STATUS_SUCCESS if data was set
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, void *private_info);
+SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, char *key, void *private_info);
 
 /*!
   \brief Retrieve private from a given channel
   \param channel channel to retrieve data from
+  \param key unique keyname to retrieve your private data
   \return void pointer to channel's private data
 */
-SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel);
+SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, char *key);
 
 /*!
   \brief Assign a name to a given channel

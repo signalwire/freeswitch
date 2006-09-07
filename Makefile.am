@@ -206,6 +206,8 @@ everything: install install_mod
 
 installall: install install_mod
 
+sure: clean modclean modwipe uninstall installall
+
 wayclean: clean modclean
 
 modwipe:

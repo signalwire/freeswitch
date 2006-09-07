@@ -42,6 +42,8 @@
 
 BEGIN_EXTERN_C
 
+static const switch_state_handler_table_t noop_state_handler = {};
+
 /**
  * @defgroup switch_ivr IVR Library
  * @ingroup core1
@@ -58,6 +60,8 @@ BEGIN_EXTERN_C
   \return SWITCH_STATUS_SUCCESS if the channel is still up
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms);
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session);
 
 /*!
   \brief Wait for DTMF digits calling a pluggable callback function when digits are collected.
