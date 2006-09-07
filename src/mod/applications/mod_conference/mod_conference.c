@@ -1557,7 +1557,6 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 						conference_member_t *member;
 
 						if ((member = conference_member_get(conference, id))) {
-							switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
 
 							if (argv[3]) {
 								switch_mutex_lock(member->flag_mutex);
@@ -1595,7 +1594,6 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 						conference_member_t *member;
 
 						if ((member = conference_member_get(conference, id))) {
-							switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
 
 							if (argv[3]) {
 								switch_mutex_lock(member->flag_mutex);
@@ -1633,7 +1631,6 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 						conference_member_t *member;
 
 						if ((member = conference_member_get(conference, id))) {
-							switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
 
 							if (argv[3]) {
 								switch_mutex_lock(member->flag_mutex);
