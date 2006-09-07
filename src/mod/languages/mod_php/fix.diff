@@ -1,0 +1,10 @@
+--- switch_swig_wrap.c	2006-09-07 14:16:42.000000000 -0400
++++ fix.c	2006-09-07 14:16:29.000000000 -0400
+@@ -284,6 +284,7 @@
+ 
+ 
+ #include <string.h>
++#include "switch.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
