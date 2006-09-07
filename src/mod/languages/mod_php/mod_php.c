@@ -235,8 +235,6 @@ void freeswitch_error_handler(int type, const char *error_filename, const uint e
 
 static void freeswitch_request_ctor(switch_php_obj_t *request_context TSRMLS_DC)
 {
-/*	ast_register_string_constant("JELLO", "FISH"); */
-
 	zend_error_cb = freeswitch_error_handler;
 
 	SG(request_info).argc = request_context->argc;
@@ -278,8 +276,7 @@ static void php_function(switch_core_session_t *session, char *data)
 	uint32_t len = strlen((char *) data) + ulen + 2;
 	char *mydata = switch_core_session_alloc(session, len);
 
-	switch_copy_string(mydata, uuid, len);
-	snprintf(mydata + ulen, len - ulen, " %s", data);
+	snprintf(mydata, len, "-q %s %s", data, uuid);
 	
 	TSRMLS_FETCH();
 
