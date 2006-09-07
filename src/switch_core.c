@@ -141,12 +141,12 @@ struct switch_core_port_allocator {
 	switch_port_t start;
 	switch_port_t end;
 	switch_port_t next;
-	uint32_t inc;
+	uint8_t inc;
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 };
 
-SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start, switch_port_t end, uint32_t inc, switch_core_port_allocator_t **new)
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start, switch_port_t end, uint8_t inc, switch_core_port_allocator_t **new_allocator)
 {
 	switch_status_t status;
 	switch_memory_pool_t *pool;
@@ -169,7 +169,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t sta
 	}
 	switch_mutex_init(&alloc->mutex, SWITCH_MUTEX_NESTED, pool);
 	alloc->pool = pool;
-	*new = alloc;
+	*new_allocator = alloc;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -180,7 +180,7 @@ SWITCH_DECLARE(switch_port_t) switch_core_port_allocator_request_port(switch_cor
 
 	switch_mutex_lock(alloc->mutex);
 	port = alloc->next;
-	alloc->next += alloc->inc;
+	alloc->next = alloc->next + alloc->inc;
 	if (alloc->next > alloc->end) {
 		alloc->next = alloc->start;
 	}

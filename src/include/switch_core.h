@@ -119,7 +119,7 @@ struct switch_core_port_allocator;
   \param new pointer for the return value
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start, switch_port_t end, uint32_t inc, switch_core_port_allocator_t **new);
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start, switch_port_t end, uint8_t inc, switch_core_port_allocator_t **new_allocator);
 
 /*!
   \brief Get a port from the port allocator
