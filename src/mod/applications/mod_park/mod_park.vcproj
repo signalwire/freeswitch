@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="mod_park"
-	ProjectGUID="{0E2C6395-13B9-46E5-9264-8859D346018D}"
+	ProjectGUID="{2740F45C-475A-4DE0-BCED-6E2E5F6C4B8B}"
 	RootNamespace="mod_park"
 	Keyword="Win32Proj"
 	>
