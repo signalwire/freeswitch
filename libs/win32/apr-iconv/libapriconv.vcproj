@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist $(ProjectDir)..\..\include\ md  $(ProjectDir)..\..\include\&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr-iconv-1.1.1\include\*.h&quot; $(ProjectDir)..\..\include\ /C /D /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr-iconv-1.1.1\include\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -123,7 +123,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist $(ProjectDir)..\..\include\ md  $(ProjectDir)..\..\include\&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr-iconv-1.1.1\include\*.h&quot; $(ProjectDir)..\..\include\ /C /D /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr-iconv-1.1.1\include\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
