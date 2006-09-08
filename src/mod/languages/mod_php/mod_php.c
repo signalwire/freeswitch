@@ -30,7 +30,15 @@
  * mod_php.c -- PHP Module
  *
  */
-#include <switch.h>
+
+#ifndef _REENTRANT
+#define _REENTRANT
+#endif
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "php.h"
 #include "php_variables.h"
 #include "ext/standard/info.h"
@@ -41,6 +49,8 @@
 #include "php_version.h"
 #include "TSRM.h"
 #include "ext/standard/php_standard.h"
+
+#include <switch.h>
 
 const char modname[] = "mod_php";
 
@@ -239,8 +249,8 @@ static void freeswitch_request_ctor(switch_php_obj_t *request_context TSRMLS_DC)
 
 	SG(request_info).argc = request_context->argc;
 	SG(request_info).argv = request_context->argv;
-
 	SG(request_info).path_translated    = estrdup(request_context->argv[0]);
+
 }
 
 static void freeswitch_request_dtor(switch_php_obj_t *request_context TSRMLS_DC)
@@ -276,9 +286,9 @@ static void php_function(switch_core_session_t *session, char *data)
 	uint32_t len = strlen((char *) data) + ulen + 2;
 	char *mydata = switch_core_session_alloc(session, len);
 
-	snprintf(mydata, len, "-q %s %s", data, uuid);
-	
 	TSRMLS_FETCH();
+
+	snprintf(mydata, len, "%s %s", data, uuid);
 
 	request_context = (switch_php_obj_t *) switch_core_session_alloc(session, sizeof(*request_context));
 
@@ -333,6 +343,15 @@ static switch_loadable_module_interface_t php_module_interface = {
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
+
+	php_core_globals *core_globals;
+
+	tsrm_startup(128, 1, 0, NULL);
+	core_globals = ts_resource(core_globals_id);
+	
+	sapi_startup(&fs_sapi_module);
+	fs_sapi_module.startup(&fs_sapi_module);
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &php_module_interface;
 
