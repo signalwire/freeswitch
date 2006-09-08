@@ -179,7 +179,7 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 
 /* Registration */ 
 
-static const switch_codec_implementation_t g723_1_30ms_implementation = { 
+static const switch_codec_implementation_t g723_1_implementation = { 
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 	/*.ianacode */ 4, 
 	/*.iananame */ "G723", 
@@ -191,49 +191,24 @@ static const switch_codec_implementation_t g723_1_30ms_implementation = {
 	/*.encoded_bytes_per_frame */ 24, 
 	/*.number_of_channels */ 1, 
 	/*.pref_frames_per_packet */ 1, 
-	/*.max_frames_per_packet */ 2, 
+	/*.max_frames_per_packet */ 4, 
 	/*.init */ switch_g723_init, 
 	/*.encode */ switch_g723_encode, 
 	/*.decode */ switch_g723_decode, 
 	/*.destroy */ switch_g723_destroy, 
 };
-#if 0
-static const switch_codec_implementation_t g723_1_60ms_implementation = { 
-	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 4, 
-	/*.iananame */ "G723", 
-	/*.samples_per_second */ 8000, 
-	/*.bits_per_second */ 6300, 
-	/*.microseconds_per_frame */ 60000, 
-	/*.samples_per_frame */ 240, 
-	/*.bytes_per_frame */ 480, 
-	/*.encoded_bytes_per_frame */ 24, 
-	/*.number_of_channels */ 1, 
-	/*.pref_frames_per_packet */ 2, 
-	/*.max_frames_per_packet */ 2, 
-	/*.init */ switch_g723_init, 
-	/*.encode */ switch_g723_encode, 
-	/*.decode */ switch_g723_decode, 
-	/*.destroy */ switch_g723_destroy, 
-};
-#endif
-static const switch_codec_interface_t g723_1_30ms_codec_interface = { 
+
+static const switch_codec_interface_t g723_1_codec_interface = { 
 	/*.interface_name */ "g723.1 6.3k", 
-	/*.implementations */ &g723_1_30ms_implementation, 
+	/*.implementations */ &g723_1_implementation, 
 };
-#if 0
-static const switch_codec_interface_t g723_1_60ms_codec_interface = { 
-	/*.interface_name */ "g723.1 6.3k", 
-	/*.implementations */ &g723_1_60ms_implementation, 
-	/*.next */ &g723_1_30ms_codec_interface
-};
-#endif
+
 static switch_loadable_module_interface_t g723_module_interface = { 
 	/*.module_name */ modname, 
 	/*.endpoint_interface */ NULL, 
 	/*.timer_interface */ NULL, 
 	/*.dialplan_interface */ NULL, 
-	/*.codec_interface */ &g723_1_30ms_codec_interface, 
+	/*.codec_interface */ &g723_1_codec_interface, 
 	/*.application_interface */ NULL 
 };
 
