@@ -197,6 +197,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 										  switch_core_session_t *session,
 										  char *bridgeto,
 										  uint32_t timeout,
+										  char *flags,
 										  char *cid_name,
 										  char *cid_num);
 static void conference_function(switch_core_session_t *session, char *data);
@@ -1399,7 +1400,7 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 					goto done;
 				} else if (!strcasecmp(argv[1], "dial")) {
 					if (argc > 2) {
-						conference_outcall(conference, NULL, argv[2], 60, argv[3], argv[4]);
+						conference_outcall(conference, NULL, argv[2], 60, argv[3], argv[4], argv[5]);
 						stream->write_function(stream, "OK\n");
 						goto done;
 					} else {
@@ -2034,6 +2035,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 										  switch_core_session_t *session,
 										  char *bridgeto,
 										  uint32_t timeout,
+										  char *flags,
 										  char *cid_name,
 										  char *cid_num)
 {
@@ -2041,6 +2043,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	switch_channel_t *peer_channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *caller_channel = NULL;
+	char appdata[512];
 
 
 	if (switch_ivr_originate(session, &peer_session, bridgeto, timeout, &audio_bridge_peer_state_handlers, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
@@ -2068,7 +2071,13 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 			goto done;
 		}
 		/* add them to the conference */
-		switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, conference->name);
+		if (flags) {
+			snprintf(appdata, sizeof(appdata), "%s +flags{%s}", conference->name, flags);
+			switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, appdata);
+		} else {
+			switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, conference->name);
+		}
+
 		switch_channel_set_caller_extension(peer_channel, extension);
 		switch_channel_set_state(peer_channel, CS_EXECUTE);
 
@@ -2303,7 +2312,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 
 
 	if (!switch_strlen_zero(bridgeto) && strcasecmp(bridgeto, "none")) {
-		if (conference_outcall(conference, session, bridgeto, 60, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+		if (conference_outcall(conference, session, bridgeto, 60, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
 	}
