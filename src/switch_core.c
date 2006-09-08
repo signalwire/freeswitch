@@ -1559,11 +1559,14 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 {
 	/* sweep theese under the rug, they wont be leaked they will be reclaimed
 	   when the session ends.
-	 */
-	session->raw_write_buffer = NULL;
-	session->raw_read_buffer = NULL;
+	*/
+
 	session->read_resampler = NULL;
 	session->write_resampler = NULL;
+
+	/* wipe theese, they will be recreated if need be */
+	switch_buffer_destroy(&(*session)->raw_read_buffer);
+	switch_buffer_destroy(&(*session)->raw_write_buffer);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame,
