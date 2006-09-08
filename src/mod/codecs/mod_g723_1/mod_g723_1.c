@@ -63,7 +63,7 @@ struct g723_context {
 static switch_status_t switch_g723_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									  const switch_codec_settings_t *codec_settings) 
 {
-#ifndef G723_PASSTHROUGH
+#ifdef G723_PASSTHROUGH
 	codec->flags |= SWITCH_CODEC_FLAG_PASSTHROUGH;
 	return  SWITCH_STATUS_FALSE;
 #else
@@ -118,7 +118,7 @@ static switch_status_t switch_g723_encode(switch_codec_t *codec,
 										uint32_t *encoded_rate, 
 										unsigned int *flag) 
 {
-#ifndef G723_PASSTHROUGH
+#ifdef G723_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
 	return SWITCH_STATUS_FALSE;
 #else
@@ -154,7 +154,7 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 										uint32_t *decoded_rate, 
 										unsigned int *flag) 
 {
-#ifndef G723_PASSTHROUGH
+#ifdef G723_PASSTHROUGH
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
 	return SWITCH_STATUS_FALSE;
 #else
