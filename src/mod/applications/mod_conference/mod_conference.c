@@ -1019,7 +1019,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
     }
 
 #ifdef WIN32
-	if (file[1] != ':') {
+	if (*(file +1) != ':' && *file != '/') {
 #else
 	if (*file != '/') {
 #endif
