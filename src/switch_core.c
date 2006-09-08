@@ -49,6 +49,18 @@
 #define SWITCH_EVENT_QUEUE_LEN 256
 #define SWITCH_SQL_QUEUE_LEN 2000
 
+
+struct switch_audio_bug {
+	switch_codec_t *read_codec;
+    switch_codec_t *write_codec;
+	switch_buffer_t *raw_write_buffer;
+	switch_buffer_t *raw_read_buffer;
+	uint8_t data[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	switch_audio_bug_read_callback_t read_callback;
+	switch_audio_bug_read_callback_t write_callback;
+	struct switch_audio_bug *next;
+};
+	
 struct switch_core_session {
 	uint32_t id;
 	char name[80];
@@ -1565,8 +1577,8 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session)
 	session->write_resampler = NULL;
 
 	/* wipe theese, they will be recreated if need be */
-	switch_buffer_destroy(&(*session)->raw_read_buffer);
-	switch_buffer_destroy(&(*session)->raw_write_buffer);
+	switch_buffer_destroy(&session->raw_read_buffer);
+	switch_buffer_destroy(&session->raw_write_buffer);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_session_t *session, switch_frame_t *frame,

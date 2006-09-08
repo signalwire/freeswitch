@@ -739,7 +739,9 @@ typedef struct switch_file_interface switch_file_interface_t;
 typedef struct switch_speech_interface switch_speech_interface_t;
 typedef struct switch_directory_interface switch_directory_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;
-
+typedef struct switch_audio_bug switch_audio_bug_t;
+typedef void (*switch_audio_bug_read_callback_t)(switch_audio_bug_t *);
+typedef void (*switch_audio_bug_write_callback_t)(switch_audio_bug_t *);
 typedef void (*switch_application_function_t)(switch_core_session_t *, char *);
 typedef void (*switch_event_callback_t)(switch_event_t *);
 typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t)(switch_core_session_t *);
@@ -784,6 +786,8 @@ typedef switch_xml_t (*switch_xml_search_function_t)(char *section,
 struct switch_channel;
 /*! \brief A core session representing a call and all of it's resources */
 struct switch_core_session;
+/*! \brief An audio bug */
+struct switch_audio_bug;
 
 SWITCH_END_EXTERN_C
 
