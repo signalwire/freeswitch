@@ -65,7 +65,7 @@ static switch_status_t switch_g723_init(switch_codec_t *codec, switch_codec_flag
 {
 #ifndef G723_PASSTHROUGH
 	codec->flags |= SWITCH_CODEC_FLAG_PASSTHROUGH;
-	return SWITCH_STATUS_SUCCESS;
+	return  SWITCH_STATUS_FALSE;
 #else
 	struct g723_context *context = NULL;
 	int encoding, decoding;
