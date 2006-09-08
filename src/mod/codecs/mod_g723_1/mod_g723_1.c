@@ -32,6 +32,8 @@
  *
  */  
 #include "switch.h"
+
+#ifndef G723_PASSTHROUGH
 #include "g723.h"
 
 #define TYPE_HIGH 0x0
@@ -45,19 +47,26 @@ Flag UseHp = True;
 Flag UseVx = True;
 
 enum Crate WrkRate = Rate63;
+#endif
 
 static const char modname[] = "mod_g723_1";
 
+#ifndef G723_PASSTHROUGH
 struct g723_context {
 	struct cod_state encoder_object;
 	struct dec_state decoder_object;
 	float cod_float_buf[Frame];
 	float dec_float_buf[Frame];
 };
+#endif
 
 static switch_status_t switch_g723_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									  const switch_codec_settings_t *codec_settings) 
 {
+#ifndef G723_PASSTHROUGH
+	codec->flags |= SWITCH_CODEC_FLAG_PASSTHROUGH;
+	return SWITCH_STATUS_SUCCESS;
+#else
 	struct g723_context *context = NULL;
 	int encoding, decoding;
 
@@ -85,12 +94,15 @@ static switch_status_t switch_g723_init(switch_codec_t *codec, switch_codec_flag
 
 		return SWITCH_STATUS_SUCCESS;
 	}
+#endif
 }
 
 
 static switch_status_t switch_g723_destroy(switch_codec_t *codec) 
 {
+#ifndef G723_PASSTHROUGH
 	codec->private_info = NULL;
+#endif
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -106,6 +118,10 @@ static switch_status_t switch_g723_encode(switch_codec_t *codec,
 										uint32_t *encoded_rate, 
 										unsigned int *flag) 
 {
+#ifndef G723_PASSTHROUGH
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
+	return SWITCH_STATUS_FALSE;
+#else
 	struct g723_context *context = codec->private_info;
 	int16_t *decoded_slin_buf = (int16_t *) decoded_data;
 	char *ebuf = (char *) encoded_data;
@@ -123,6 +139,7 @@ static switch_status_t switch_g723_encode(switch_codec_t *codec,
 	*encoded_data_len = codec->implementation->encoded_bytes_per_frame;
 
 	return SWITCH_STATUS_SUCCESS;
+#endif
 }
 
 static switch_status_t switch_g723_decode(switch_codec_t *codec, 
@@ -137,6 +154,10 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 										uint32_t *decoded_rate, 
 										unsigned int *flag) 
 {
+#ifndef G723_PASSTHROUGH
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
+	return SWITCH_STATUS_FALSE;
+#else
 	struct g723_context *context = codec->private_info;
 	int x;
 	int16_t *to_slin_buf = decoded_data;
@@ -153,6 +174,7 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 	*decoded_data_len = codec->implementation->bytes_per_frame;
 
 	return SWITCH_STATUS_SUCCESS;
+#endif
 }
 
 /* Registration */ 
