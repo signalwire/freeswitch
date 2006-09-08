@@ -1630,7 +1630,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		read_codec = switch_core_session_get_read_codec(session);
 
 		assert(read_codec != NULL);
-		if (!(pass = switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
+		if (!(pass = (uint8_t)switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
 			if (switch_core_codec_init(&write_codec,
 									   "L16",
 									   read_codec->implementation->samples_per_second,
