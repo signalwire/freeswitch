@@ -498,6 +498,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, ch
 			}
 			switch_set_flag(codec, SWITCH_CODEC_FLAG_FREE_POOL);
 		}
+
 		implementation->init(codec, flags, codec_settings);
 
 		return SWITCH_STATUS_SUCCESS;

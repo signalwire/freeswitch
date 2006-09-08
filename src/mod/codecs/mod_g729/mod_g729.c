@@ -31,20 +31,27 @@
  * mod_g729.c -- G729 Codec Module
  *
  */  
-#include "switch.h"
-#include "g729.h"
 
 static const char modname[] = "mod_g729";
+
+#include "switch.h"
+
+#ifndef G729_PASSTHROUGH
+#include "g729.h"
 
 struct g729_context {
 	struct dec_state decoder_object;
 	struct cod_state encoder_object;
 };
+#endif
 
 static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									  const switch_codec_settings_t *codec_settings) 
 {
-
+#ifdef G729_PASSTHROUGH
+	codec->flags |= SWITCH_CODEC_FLAG_PASSTHROUGH;
+	return SWITCH_STATUS_SUCCESS;
+#else 
 	struct g729_context *context = NULL;
 	int encoding, decoding;
 
@@ -68,11 +75,14 @@ static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag
 		return SWITCH_STATUS_SUCCESS;
 
 	}
+#endif
 }
 
 static switch_status_t switch_g729_destroy(switch_codec_t *codec) 
 {
+#ifndef G729_PASSTHROUGH
 	codec->private_info = NULL;
+#endif
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -88,6 +98,10 @@ static switch_status_t switch_g729_encode(switch_codec_t *codec,
 										uint32_t *encoded_rate, 
 										unsigned int *flag) 
 {
+#ifdef G729_PASSTHROUGH
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
+	return SWITCH_STATUS_FALSE;
+#else
 	struct g729_context *context = codec->private_info;
 	int cbret = 0;
 
@@ -117,6 +131,7 @@ static switch_status_t switch_g729_encode(switch_codec_t *codec,
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
+#endif
 }
 
 static switch_status_t switch_g729_decode(switch_codec_t *codec, 
@@ -131,6 +146,10 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 										uint32_t *decoded_rate, 
 										unsigned int *flag) 
 {
+#ifdef G729_PASSTHROUGH
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This codec is only usable in passthrough mode!\n");
+	return SWITCH_STATUS_FALSE;
+#else
 	struct g729_context *context = codec->private_info;
 	int divisor = 10;
 	int plen = 10;
@@ -194,6 +213,7 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 	return SWITCH_STATUS_SUCCESS;
+#endif
 }
 
 /* Registration */ 

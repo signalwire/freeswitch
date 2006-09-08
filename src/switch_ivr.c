@@ -1426,7 +1426,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	int32_t idx = -1;
 	switch_codec_t write_codec = {0};
 	switch_frame_t write_frame = {0};
-	uint8_t err = 0, fdata[1024];
+	uint8_t err = 0, fdata[1024], pass = 0;
 	char *file = NULL, *key = NULL, *odata, *var;
 
 	write_frame.data = fdata;
@@ -1630,24 +1630,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		read_codec = switch_core_session_get_read_codec(session);
 
 		assert(read_codec != NULL);
-		if (switch_core_codec_init(&write_codec,
-								   "L16",
-								   read_codec->implementation->samples_per_second,
-								   read_codec->implementation->microseconds_per_frame / 1000,
-								   1,
-								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-								   NULL,
-								   pool) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-							  read_codec->implementation->samples_per_second,
-							  read_codec->implementation->microseconds_per_frame / 1000);
-			write_frame.codec = &write_codec;
-			write_frame.datalen = read_codec->implementation->bytes_per_frame;
-			write_frame.samples = write_frame.datalen / 2;
-			memset(write_frame.data, 255, write_frame.datalen);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error!");
-			switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
+		if (!(pass = switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
+			if (switch_core_codec_init(&write_codec,
+									   "L16",
+									   read_codec->implementation->samples_per_second,
+									   read_codec->implementation->microseconds_per_frame / 1000,
+									   1,
+									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+									   NULL,
+									   pool) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
+								  read_codec->implementation->samples_per_second,
+								  read_codec->implementation->microseconds_per_frame / 1000);
+				write_frame.codec = &write_codec;
+				write_frame.datalen = read_codec->implementation->bytes_per_frame;
+				write_frame.samples = write_frame.datalen / 2;
+				memset(write_frame.data, 255, write_frame.datalen);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error!");
+				switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
+			}
 		}
 	}
 
@@ -1661,7 +1663,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
 			}
-			if (read_frame) {
+			if (read_frame && !pass) {
 				if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
@@ -1718,7 +1720,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	if (odata) {
 		free(odata);
 	}
-	if (write_codec.implementation) {
+	if (!pass && write_codec.implementation) {
 		switch_core_codec_destroy(&write_codec);
 	}
 	return status;

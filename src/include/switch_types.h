@@ -446,6 +446,7 @@ SWITCH_CODEC_FLAG_SILENCE_STOP =	(1 <<  3) - End period of silence
 SWITCH_CODEC_FLAG_SILENCE =			(1 <<  4) - Silence
 SWITCH_CODEC_FLAG_FREE_POOL =		(1 <<  5) - Free codec's pool on destruction
 SWITCH_CODEC_FLAG_AAL2 =			(1 <<  6) - USE AAL2 Bitpacking
+SWITCH_CODEC_FLAG_PASSTHROUGH =		(1 <<  7) - Passthrough only
 </pre>
 */
 typedef enum {
@@ -455,7 +456,8 @@ typedef enum {
 	SWITCH_CODEC_FLAG_SILENCE_STOP =	(1 <<  3),
 	SWITCH_CODEC_FLAG_SILENCE =			(1 <<  4),
 	SWITCH_CODEC_FLAG_FREE_POOL =		(1 <<  5),
-	SWITCH_CODEC_FLAG_AAL2 =			(1 <<  6)
+	SWITCH_CODEC_FLAG_AAL2 =			(1 <<  6),
+	SWITCH_CODEC_FLAG_PASSTHROUGH =		(1 <<  7)
 } switch_codec_flag_t;
 
 
