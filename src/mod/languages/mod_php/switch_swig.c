@@ -67,7 +67,13 @@ void fs_console_clean(char *msg)
 
 switch_core_session_t *fs_core_session_locate(char *uuid)
 {
-	return switch_core_session_locate(uuid);
+	switch_core_session_t *session;
+
+	if ((session = switch_core_session_locate(uuid))) {
+		switch_core_session_rwunlock(session);
+	}
+
+	return session;
 }
 
 void fs_channel_answer(switch_core_session_t *session)
@@ -123,6 +129,17 @@ int fs_ivr_play_file(switch_core_session_t *session,
 	}
 	
 	status = switch_ivr_play_file(session, NULL, file, timer_name, NULL, NULL, 0);
+	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+}
+
+
+int fs_ivr_play_file2(switch_core_session_t *session,
+					  char *file)
+
+{
+	switch_status_t status;
+	
+	status = switch_ivr_play_file(session, NULL, file, NULL, NULL, NULL, 0);
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 

@@ -24,7 +24,6 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
- * Alex Leigh <php (at) postfin (dot) com>
  *
  *
  * mod_php.c -- PHP Module
@@ -39,287 +38,40 @@
 #define _GNU_SOURCE
 #endif
 
-#include "php.h"
-#include "php_variables.h"
-#include "ext/standard/info.h"
-#include "php_ini.h"
-#include "php_globals.h"
-#include "SAPI.h"
-#include "php_main.h"
-#include "php_version.h"
-#include "TSRM.h"
-#include "ext/standard/php_standard.h"
+#include <sapi/embed/php_embed.h>
 
 #include <switch.h>
 
 const char modname[] = "mod_php";
 
-static int php_freeswitch_startup(sapi_module_struct *sapi_module)
-{
-	return SUCCESS;
-}
 
-static int sapi_freeswitch_ub_write(const char *str, unsigned int str_length TSRMLS_DC)
-{
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, (char *)str);
-	return str_length;
-}
-
-
-/*
- * sapi_freeswitch_header_handler: Add/update response headers with those provided by the PHP engine.
- */
-static int sapi_freeswitch_header_handler(sapi_header_struct * sapi_header, sapi_headers_struct * sapi_headers TSRMLS_DC)
-{
-	return 0;
-}
-
-/*
- * sapi_freeswitch_send_headers: Transmit the headers to the client. This has the
- * effect of starting the response under freeswitch.
- */
-static int sapi_freeswitch_send_headers(sapi_headers_struct * sapi_headers TSRMLS_DC)
-{
-	return SAPI_HEADER_SENT_SUCCESSFULLY;
-}
-
-static int sapi_freeswitch_read_post(char *buffer, uint count_bytes TSRMLS_DC)
-{
-	return 0;
-}
-
-/*
- * sapi_freeswitch_read_cookies: Return cookie information into PHP.
- */
-static char *sapi_freeswitch_read_cookies(TSRMLS_D)
-{
-	return NULL;
-}
-
-static void sapi_freeswitch_register_server_variables(zval * track_vars_array TSRMLS_DC)
-{
-}
-
-static void freeswitch_log_message(char *message)
-{
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, message);
-}
-
-
-sapi_module_struct fs_sapi_module = {
-   "freeswitch",					/* name */
-   "FreeSWITCH",					/* pretty name */
-
-   php_freeswitch_startup,			/* startup */
-   php_module_shutdown_wrapper,			/* shutdown */
-
-   NULL,					/* activate */
-   NULL,					/* deactivate */
-
-   sapi_freeswitch_ub_write,			/* unbuffered write */
-   NULL,					/* flush */
-   NULL,					/* get uid */
-   NULL,					/* getenv */
-
-   php_error,					/* error handler */
-
-   sapi_freeswitch_header_handler,		/* header handler */
-   sapi_freeswitch_send_headers,			/* send headers handler */
-   NULL,					/* send header handler */
-
-   sapi_freeswitch_read_post,			/* read POST data */
-   sapi_freeswitch_read_cookies,			/* read Cookies */
-
-   sapi_freeswitch_register_server_variables,	/* register server variables */
-   freeswitch_log_message,			/* Log message */
-   NULL,					/* Get request time */
-
-   NULL,					/* Block interruptions */
-   NULL,					/* Unblock interruptions */
-
-   STANDARD_SAPI_MODULE_PROPERTIES
-};
-
-
-
-typedef struct switch_php_obj {
-	switch_core_session_t *session;
-	int argc;
-	char *argv[129];
-} switch_php_obj_t;
-
-
-
-void freeswitch_error_handler(int type, const char *error_filename, const uint error_lineno, const char *format, va_list args)
-{
-	char *buffer;
-	int buffer_len;
-	TSRMLS_FETCH();
-
-	buffer_len = vspprintf(&buffer, PG(log_errors_max_len), format, args);
-
-	/* display/log the error if necessary */
-	if((EG(error_reporting) & type || (type & E_CORE)) && (PG(log_errors) || PG(display_errors))) {
-		char *error_type_str;
-
-		switch (type) {
-			case E_ERROR:
-			case E_CORE_ERROR:
-			case E_COMPILE_ERROR:
-			case E_USER_ERROR:
-				error_type_str = "Fatal error";
-				break;
-			case E_WARNING:
-			case E_CORE_WARNING:
-			case E_COMPILE_WARNING:
-			case E_USER_WARNING:
-				error_type_str = "Warning";
-				break;
-			case E_PARSE:
-				error_type_str = "Parse error";
-				break;
-			case E_NOTICE:
-			case E_USER_NOTICE:
-				error_type_str = "Notice";
-				break;
-			default:
-				error_type_str = "Unknown error";
-				break;
-		}
-
-		if(PG(log_errors)) {
-			char *log_buffer;
-#ifdef PHP_WIN32
-			if(type == E_CORE_ERROR || type == E_CORE_WARNING) {
-				MessageBox(NULL, buffer, error_type_str, MB_OK|ZEND_SERVICE_MB_STYLE);
-			}
-#endif
-			spprintf(&log_buffer, 0, "PHP %s:  %s in %s on line %d", error_type_str, buffer, error_filename, error_lineno);
-			php_log_err(log_buffer TSRMLS_CC);
-			efree(log_buffer);
-		}
- 
-		if(PG(display_errors)) {
-			//char *prepend_string = INI_STR("error_prepend_string");
-			char *append_string = INI_STR("error_append_string");
-			//char *error_format = "%s\n%s: %s in %s on line %d\n%s";    
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG_CLEAN, (char *) error_filename, buffer, error_lineno, SWITCH_LOG_DEBUG, STR_PRINT(append_string));
-		}
-	}
-
-	/* Bail out if we can't recover */
-	switch(type) {
-		case E_CORE_ERROR:
-		case E_ERROR:
-		/*case E_PARSE: the parser would return 1 (failure), we can bail out nicely */
-		case E_COMPILE_ERROR:
-		case E_USER_ERROR:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nPHP: %s exiting\n", error_filename);
-			EG(exit_status) = 255;
-#if MEMORY_LIMIT
-			/* restore memory limit */
-			AG(memory_limit) = PG(memory_limit); 
-#endif
-			efree(buffer);
-			zend_bailout();
-			return;
-			break;
-	}
-
-	/* Log if necessary */
-	if(PG(track_errors) && EG(active_symbol_table)) {
-		pval *tmp;
-
-		ALLOC_ZVAL(tmp);
-		INIT_PZVAL(tmp);
-		Z_STRVAL_P(tmp) = (char *) estrndup(buffer, buffer_len);
-		Z_STRLEN_P(tmp) = buffer_len;
-		Z_TYPE_P(tmp) = IS_STRING;
-		zend_hash_update(EG(active_symbol_table), "php_errormsg", sizeof("php_errormsg"), &tmp, sizeof(pval *), NULL);
-	}
-	efree(buffer);
-}
-
-
-
-static void freeswitch_request_ctor(switch_php_obj_t *request_context TSRMLS_DC)
-{
-	zend_error_cb = freeswitch_error_handler;
-
-	SG(request_info).argc = request_context->argc;
-	SG(request_info).argv = request_context->argv;
-	SG(request_info).path_translated    = estrdup(request_context->argv[0]);
-
-}
-
-static void freeswitch_request_dtor(switch_php_obj_t *request_context TSRMLS_DC)
-{
-	efree(SG(request_info).path_translated);
-}
-
-int freeswitch_module_main(switch_php_obj_t *request_context TSRMLS_DC)
-{
-	int retval;
-	zend_file_handle file_handle;
-
-	if(php_request_startup(TSRMLS_C) == FAILURE) {
-		return FAILURE;
-	}
-
-	file_handle.type = ZEND_HANDLE_FILENAME;
-	file_handle.filename = SG(request_info).path_translated;
-	file_handle.free_filename = 0;
-	file_handle.opened_path = NULL;
-
-	retval = php_execute_script(&file_handle TSRMLS_CC);
-	php_request_shutdown(NULL);
-
-	return retval;
-}
 
 static void php_function(switch_core_session_t *session, char *data)
 {
 	char *uuid = switch_core_session_get_uuid(session);
-	switch_php_obj_t *request_context;
 	uint32_t ulen = strlen(uuid);
 	uint32_t len = strlen((char *) data) + ulen + 2;
 	char *mydata = switch_core_session_alloc(session, len);
+	int argc;
+	char *argv[5];
+	char php_code[1024]; 
+	void*** tsrm_ls = NULL;
 
-	TSRMLS_FETCH();
+	snprintf(mydata, len, "%s %s", uuid, data);
 
-	snprintf(mydata, len, "%s %s", data, uuid);
-
-	request_context = (switch_php_obj_t *) switch_core_session_alloc(session, sizeof(*request_context));
-
-	request_context->session = session;
-
-	if(switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid Params\n");
-		return;
-	}
-
-	request_context->argc = switch_separate_string(mydata, ' ', 
-												   request_context->argv, 
-												   (sizeof(request_context->argv) / sizeof(request_context->argv[0])));
+	argc = switch_separate_string(mydata, ' ',
+								  argv,
+								  (sizeof(argv) / sizeof(argv[0])));
 	
+	sprintf(php_code, "$uuid=\"%s\"; include(\"%s\");\n", argv[0], argv[1]);
+	php_embed_init(argc, argv, &tsrm_ls);
 
-	SG(server_context) = request_context;
+	//PHP_EMBED_START_BLOCK(argc, argv);
+	zend_eval_string(php_code, NULL, "Embedded code" TSRMLS_CC);
+	//PHP_EMBED_END_BLOCK();
+	php_embed_shutdown(tsrm_ls);
 
-	freeswitch_request_ctor(request_context TSRMLS_CC);
-	freeswitch_module_main(request_context TSRMLS_CC);
-	freeswitch_request_dtor(request_context TSRMLS_CC);
 
-	/*
-	 * This call is ostensibly provided to free the memory from PHP/TSRM when
-	 * the thread terminated, but, it leaks a structure in some hash list
-	 * according to the developers. Not calling this will leak the entire
-	 * interpreter, around 100k, but calling it and then terminating the
-	 * thread will leak the struct (around a k). The only answer with the
-	 * current TSRM implementation is to reuse the threads that allocate TSRM
-	 * resources.
-	 */
-	/* ts_free_thread(); */
 
 }
 
@@ -343,15 +95,6 @@ static switch_loadable_module_interface_t php_module_interface = {
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
-
-	php_core_globals *core_globals;
-
-	tsrm_startup(128, 1, 0, NULL);
-	core_globals = ts_resource(core_globals_id);
-	
-	sapi_startup(&fs_sapi_module);
-	fs_sapi_module.startup(&fs_sapi_module);
-	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &php_module_interface;
 

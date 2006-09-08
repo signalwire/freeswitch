@@ -3,8 +3,9 @@ PCFG=$(PREFIX)/bin/php-config
 
 LCFLAGS=-fPIC -DZTS -DPTHREADS
 CFLAGS += `$(PCFG) --includes`
+MDIR += `$(PCFG) --extension-dir`
 PHPMOD=freeswitch
-LDFLAGS += `$(PCFG) --ldflags` -lcrypt -lcrypt -lresolv -lm -ldl -lnsl -lxml2 -lz -lm -lxml2 -lz -lm -lxml2 -lz -lm -lcrypt -lxml2 -lz -lm -lxml2 -lz -lm -lxml2 -lz -lm -lcrypt -lphp5
+PHPLDFLAGS = `$(PCFG) --ldflags` -lcrypt -lresolv -lm -ldl -lnsl -lxml2 -lz -lphp5
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PHPMOD).$(DYNAMIC_LIB_EXTEN)
 
@@ -19,7 +20,10 @@ reswig:
 	patch -p0 -i fix.diff
 
 switch_swig_wrap.o: switch_swig_wrap.c Makefile
-	$(CC) $(LCFLAGS) -w $(CFLAGS) -c $< -o $@
+	$(CC)  -w $(CFLAGS) -c $< -o $@
+
+switch_swig.o: switch_swig.c Makefile
+	$(CC)  -w $(CFLAGS) -c $< -o $@
 
 
 $(PHPMOD).$(DYNAMIC_LIB_EXTEN): $(MODNAME).$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o switch_swig.o Makefile
@@ -27,10 +31,13 @@ $(PHPMOD).$(DYNAMIC_LIB_EXTEN): $(MODNAME).$(DYNAMIC_LIB_EXTEN) switch_swig_wrap
 
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c $(MODNAME).o $(OBJS) Makefile
-	$(CC) $(LCFLAGS) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
+	$(CC) $(LCFLAGS) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS) $(PHPLDFLAGS)
 
 clean:
 	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
 
 install:
+	mkdir -p $(MDIR)
+	cp -f php_$(PHPMOD).$(DYNAMIC_LIB_EXTEN) $(MDIR)
 	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
+	cp -f $(PHPMOD).php $(PREFIX)/lib/php
