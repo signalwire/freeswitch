@@ -32,7 +32,8 @@
 #ifndef HAVE_CURL
 #define HAVE_CURL
 #endif
-#define JS_BUFFER_SIZE 131072
+#define JS_BUFFER_SIZE 1024 * 32
+#define JS_BLOCK_SIZE JS_BUFFER_SIZE
 #ifdef __ICC
 #pragma warning (disable:310 193 1418)
 #endif
@@ -2007,7 +2008,7 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 		}
 	}
 
-	switch_buffer_create(pool, &tto->audio_buffer, JS_BUFFER_SIZE);
+	switch_buffer_create_dynamic(&tto->audio_buffer, JS_BLOCK_SIZE, JS_BUFFER_SIZE, 0);
 	tto->pool = pool;
 	tto->obj = obj;
 	tto->cx = cx;
@@ -2027,6 +2028,8 @@ static void teletone_destroy(JSContext *cx, JSObject *obj)
 			switch_core_timer_destroy(tto->timer);
 		}
 		teletone_destroy_session(&tto->ts);
+		switch_buffer_destroy(&tto->audio_buffer);
+		switch_buffer_destroy(&tto->loop_buffer);
 		switch_core_codec_destroy(&tto->codec);
 		pool = tto->pool;
 		tto->pool = NULL;
@@ -2088,7 +2091,7 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			}
 			loops--;
 			if (!tto->loop_buffer) {
-				switch_buffer_create(tto->pool, &tto->loop_buffer, JS_BUFFER_SIZE);
+				switch_buffer_create_dynamic(&tto->loop_buffer, JS_BLOCK_SIZE, JS_BUFFER_SIZE, 0);
 			}
 		} 
 

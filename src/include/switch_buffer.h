@@ -62,6 +62,18 @@ struct switch_buffer;
  */
 SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool, switch_buffer_t **buffer, switch_size_t max_len);
 
+/*! \brief Allocate a new dynamic switch_buffer 
+ * \param buffer returned pointer to the new buffer
+ * \param blocksize length to realloc by as data is added
+ * \param start_len ammount of memory to reserve initially
+ * \param max_len length the buffer is allowed to grow to
+ * \return status
+ */
+SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **buffer,
+															 switch_size_t blocksize,
+															 switch_size_t start_len,
+															 switch_size_t max_len);
+
 /*! \brief Get the length of a switch_buffer_t 
  * \param buffer any buffer of type switch_buffer_t
  * \return int size of the buffer.
@@ -107,6 +119,13 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer_t *buffer, switch
  * \param buffer any buffer of type switch_buffer_t
  */
 SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer);
+
+/*! \brief Destroy the buffer
+ * \param buffer buffer to destroy
+ * \note only neccessary on dynamic buffers (noop on pooled ones)
+ */
+SWITCH_DECLARE(void) switch_buffer_destroy(switch_buffer_t **buffer);
+
 /** @} */
 
 SWITCH_END_EXTERN_C

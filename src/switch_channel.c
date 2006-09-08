@@ -164,7 +164,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 
 	switch_core_hash_init(&(*channel)->variables, pool);
 	switch_core_hash_init(&(*channel)->private_hash, pool);
-	switch_buffer_create(pool, &(*channel)->dtmf_buffer, 128);
+	switch_buffer_create_dynamic(&(*channel)->dtmf_buffer, 128, 128, 0);
+
 	switch_mutex_init(&(*channel)->dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->flag_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->profile_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -280,6 +281,11 @@ SWITCH_DECLARE(switch_size_t) switch_channel_dequeue_dtmf(switch_channel_t *chan
 
 	return bytes;
 
+}
+
+SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel)
+{
+	switch_buffer_destroy(&channel->dtmf_buffer);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel,

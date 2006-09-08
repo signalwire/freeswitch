@@ -370,6 +370,8 @@ static switch_status_t wanpipe_on_hangup(switch_core_session_t *session)
 
 	teletone_destroy_session(&tech_pvt->tone_session);
 
+	switch_buffer_destroy(&tech_pvt->dtmf_buffer);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -623,7 +625,7 @@ static switch_status_t wanpipe_send_dtmf(switch_core_session_t *session, char *d
 
 	if (!tech_pvt->dtmf_buffer) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Allocate DTMF Buffer....");
-		if (switch_buffer_create(switch_core_session_get_pool(session), &tech_pvt->dtmf_buffer, 3192) != SWITCH_STATUS_SUCCESS) {
+		if (switch_buffer_create_dynamic(&tech_pvt->dtmf_buffer, 1024, 3192, 0) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_ERROR, "Failed to allocate DTMF Buffer!\n");
 			return SWITCH_STATUS_FALSE;
 		} else {

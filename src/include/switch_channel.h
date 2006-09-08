@@ -137,6 +137,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel,
 								uint32_t flags);
 
 /*!
+  \brief Uninitalize a channel
+  \param channel the channel to uninit
+*/
+SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel);
+
+/*!
   \brief Set the given channel's caller profile
   \param channel channel to assign the profile to
   \param caller_profile the profile to assign

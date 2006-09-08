@@ -1465,9 +1465,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				perfect = TRUE;
 			} else {
 				if (!session->raw_read_buffer) {
-					switch_size_t bytes = session->read_codec->implementation->bytes_per_frame * 10;
+					switch_size_t bytes = session->read_codec->implementation->bytes_per_frame * 2;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Engaging Read Buffer at %u bytes\n", bytes);
-					switch_buffer_create(session->pool, &session->raw_read_buffer, bytes);
+					switch_buffer_create_dynamic(&session->raw_read_buffer, bytes, bytes, 0);
 				}
 				if (!switch_buffer_write(session->raw_read_buffer, read_frame->data, read_frame->datalen)) {
 					status = SWITCH_STATUS_MEMERR;
@@ -1671,13 +1671,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				perfect = TRUE;
 			} else {
 				if (!session->raw_write_buffer) {
-					switch_size_t bytes = session->write_codec->implementation->bytes_per_frame * 10;
+					switch_size_t bytes = session->write_codec->implementation->bytes_per_frame * 2;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 										  "Engaging Write Buffer at %u bytes to accomodate %u->%u\n",
 										  bytes,
 										  write_frame->datalen, session->write_codec->implementation->bytes_per_frame);
 					if ((status =
-						 switch_buffer_create(session->pool, &session->raw_write_buffer, bytes)) != SWITCH_STATUS_SUCCESS) {
+						 switch_buffer_create_dynamic(&session->raw_write_buffer, bytes, bytes, 0)) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Buffer Failed!\n");
 						return status;
 					}
@@ -2642,6 +2642,10 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session
 		switch_channel_event_set_data((*session)->channel, event);
 		switch_event_fire(&event);
 	}
+
+	switch_buffer_destroy(&(*session)->raw_read_buffer);
+	switch_buffer_destroy(&(*session)->raw_write_buffer);
+	switch_channel_uninit((*session)->channel);
 
 	pool = (*session)->pool;
 	*session = NULL;

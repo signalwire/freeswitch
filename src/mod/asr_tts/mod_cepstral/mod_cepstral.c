@@ -42,7 +42,8 @@
 #include <swift.h>
 #include <switch.h>
 
-#define MY_BUF_LEN 1024 * 256
+#define MY_BUF_LEN 1024 * 32
+#define MY_BLOCK_SIZE MY_BUF_LEN
 
 static const char modname[] = "mod_cepstral";
 
@@ -119,7 +120,7 @@ static switch_status_t cepstral_speech_open(switch_speech_handle_t *sh, char *vo
 			return SWITCH_STATUS_MEMERR;
 		}
 
-		if (switch_buffer_create(sh->memory_pool, &cepstral->audio_buffer, MY_BUF_LEN) != SWITCH_STATUS_SUCCESS) {
+		if (switch_buffer_create_dynamic(&cepstral->audio_buffer, MY_BLOCK_SIZE, MY_BUF_LEN, 0) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write Buffer Failed!\n");
 			return SWITCH_STATUS_MEMERR;
 		}
@@ -195,6 +196,8 @@ static switch_status_t cepstral_speech_close(switch_speech_handle_t *sh, switch_
 	cepstral->port = NULL;
 	//cepstral->engine = NULL;
 	
+	switch_buffer_destroy(&cepstral->audio_buffer);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

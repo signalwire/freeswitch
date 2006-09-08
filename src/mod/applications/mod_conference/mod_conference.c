@@ -40,6 +40,10 @@ static char *global_cf_name = "conference.conf";
 #define CONF_EVENT_MAINT "conference::maintenence"
 #define CONF_DEFAULT_LEADIN 20
 
+#define CONF_DBLOCK_SIZE CONF_BUFFER_SIZE
+#define CONF_DBUFFER_SIZE CONF_BUFFER_SIZE
+#define CONF_DBUFFER_MAX 0
+
 typedef enum {
 	FILE_STOP_CURRENT,
 	FILE_STOP_ALL
@@ -2355,7 +2359,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 							   switch_core_session_get_pool(session));
 		
 		/* Setup an audio buffer for the resampled audio */
-		if (switch_buffer_create(pool, &member.resample_buffer, CONF_BUFFER_SIZE) != SWITCH_STATUS_SUCCESS) {
+		if (switch_buffer_create_dynamic(&member.resample_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 			goto done;
 		}
@@ -2381,13 +2385,13 @@ static void conference_function(switch_core_session_t *session, char *data)
 	}
 	
 	/* Setup an audio buffer for the incoming audio */
-	if (switch_buffer_create(pool, &member.audio_buffer, CONF_BUFFER_SIZE) != SWITCH_STATUS_SUCCESS) {
+	if (switch_buffer_create_dynamic(&member.audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto codec_done1;
 	}
 
 	/* Setup an audio buffer for the outgoing audio */
-	if (switch_buffer_create(pool, &member.mux_buffer, CONF_BUFFER_SIZE) != SWITCH_STATUS_SUCCESS) {
+	if (switch_buffer_create_dynamic(&member.mux_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
 		goto codec_done1;
 	}
@@ -2435,6 +2439,10 @@ static void conference_function(switch_core_session_t *session, char *data)
 	switch_core_codec_destroy(&member.write_codec);
  done:
 
+	switch_buffer_destroy(&member.resample_buffer);
+	switch_buffer_destroy(&member.audio_buffer);
+	switch_buffer_destroy(&member.mux_buffer);
+	
 	/* Release the config registry handle */
 	if (cxml) {
 		switch_xml_free(cxml);
