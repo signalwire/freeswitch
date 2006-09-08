@@ -550,7 +550,11 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	if (tech_pvt->nh) {
 		if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
-			nua_bye(tech_pvt->nh, TAG_END());
+			if (switch_test_flag(tech_pvt, TFLAG_ANS)) {
+				nua_bye(tech_pvt->nh, TAG_END());
+			} else {
+				nua_cancel(tech_pvt->nh, TAG_END());
+			}
 		}
 		nua_handle_bind(tech_pvt->nh, NULL);
 		nua_handle_destroy(tech_pvt->nh);
