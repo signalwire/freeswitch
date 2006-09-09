@@ -294,7 +294,7 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 	} else {
 		switch_ivr_session_transfer(caller_session, exten, dp, context);
 	}
-
+	stream->write_function(stream, "Created Session: %s\n", switch_core_session_get_uuid(caller_session));
 	return SWITCH_STATUS_SUCCESS;;
 }
 
