@@ -1897,6 +1897,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		}
 		if (do_bugs) {
 			do_write = 1;
+			write_frame = frame;
 			goto done;
 		}
 		if (session->write_codec) {
