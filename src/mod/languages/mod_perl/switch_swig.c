@@ -55,9 +55,15 @@ int fs_console_loop(void)
 	return 0;
 }
 
-void fs_console_log(char *msg)
+void fs_console_log(char *level_str, char *msg)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, msg);
+	switch_log_level_t level = SWITCH_LOG_DEBUG;
+
+	if (level_str) {
+		level = switch_log_str2level(level_str);
+	}
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, level, msg);
 }
 
 void fs_console_clean(char *msg)

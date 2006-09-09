@@ -61,6 +61,7 @@ package fs_perl;
 *fs_channel_get_variable = *fs_perlc::fs_channel_get_variable;
 *fs_channel_set_state = *fs_perlc::fs_channel_set_state;
 *fs_ivr_play_file = *fs_perlc::fs_ivr_play_file;
+*fs_ivr_play_file2 = *fs_perlc::fs_ivr_play_file2;
 
 # ------- VARIABLE STUBS --------
 
