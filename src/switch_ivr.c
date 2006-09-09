@@ -448,6 +448,138 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	return status;
 }
 
+static void record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	switch_file_handle_t *fh = (switch_file_handle_t *) user_data;
+	uint8_t data[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	switch_frame_t frame = {0};
+
+	frame.data = data;
+	frame.buflen = SWITCH_RECCOMMENDED_BUFFER_SIZE;
+	
+	switch(type) {
+	case SWITCH_ABC_TYPE_INIT:
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+		switch_core_file_close(fh);
+	case SWITCH_ABC_TYPE_READ:
+		if (fh) {
+			switch_size_t len;
+
+			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
+				len = (switch_size_t) frame.datalen / 2;
+				switch_core_file_write(fh, frame.data, &len);
+			}
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE:
+		break;
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_session_t *session, char *file) 
+{
+	switch_media_bug_t *bug;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	assert(channel != NULL);
+	if ((bug = switch_channel_get_private(channel, file))) {
+		switch_channel_set_private(channel, file, NULL);
+		switch_core_media_bug_remove(session, &bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	return SWITCH_STATUS_FALSE;
+	
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file,  switch_file_handle_t *fh)
+{
+	switch_channel_t *channel;
+	switch_codec_t *read_codec;
+	char *p;
+	const char *vval;
+	switch_media_bug_t *bug;
+	switch_status_t status;
+
+	if (!fh) {
+		if (!(fh = switch_core_session_alloc(session, sizeof(*fh)))) {
+			return SWITCH_STATUS_MEMERR;
+		}
+	}
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+    read_codec = switch_core_session_get_read_codec(session);
+    assert(read_codec != NULL);
+
+    fh->channels = read_codec->implementation->number_of_channels;
+    fh->samplerate = read_codec->implementation->samples_per_second;
+
+
+    if (switch_core_file_open(fh,
+                              file,
+                              SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
+                              switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+        switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+        switch_core_session_reset(session);
+        return SWITCH_STATUS_GENERR;
+    }
+
+    switch_channel_answer(channel);
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_TITLE, vval);
+		switch_channel_set_variable(channel, "RECORD_TITLE", NULL);
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_COPYRIGHT"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_COPYRIGHT, vval);
+		switch_channel_set_variable(channel, "RECORD_COPYRIGHT", NULL);
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_SOFTWARE"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_SOFTWARE, vval);
+		switch_channel_set_variable(channel, "RECORD_SOFTWARE", NULL);
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_ARTIST"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_ARTIST, vval);
+		switch_channel_set_variable(channel, "RECORD_ARTIST", NULL);
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_COMMENT"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_COMMENT, vval);
+		switch_channel_set_variable(channel, "RECORD_COMMENT", NULL);
+	}
+
+	if ((p = switch_channel_get_variable(channel, "RECORD_DATE"))) {
+		vval = (const char *) switch_core_session_strdup(session, p);
+		switch_core_file_set_string(fh, SWITCH_AUDIO_COL_STR_DATE, vval);
+		switch_channel_set_variable(channel, "RECORD_DATE", NULL);
+	}
+
+	
+
+	if ((status = switch_core_media_bug_add(session,
+											record_callback,
+											fh,
+											&bug)) != SWITCH_STATUS_SUCCESS) {
+		switch_core_file_close(fh);
+		return status;
+	}
+
+	switch_channel_set_private(channel, file, bug);
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, 
 												   switch_file_handle_t *fh,
 												   char *file,

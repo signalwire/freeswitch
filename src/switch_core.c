@@ -50,15 +50,15 @@
 #define SWITCH_SQL_QUEUE_LEN 2000
 
 
-struct switch_audio_bug {
-	switch_codec_t *read_codec;
-    switch_codec_t *write_codec;
+struct switch_media_bug {
 	switch_buffer_t *raw_write_buffer;
 	switch_buffer_t *raw_read_buffer;
-	uint8_t data[SWITCH_RECCOMMENDED_BUFFER_SIZE];
-	switch_audio_bug_read_callback_t read_callback;
-	switch_audio_bug_read_callback_t write_callback;
-	struct switch_audio_bug *next;
+	switch_media_bug_callback_t callback;
+	switch_mutex_t *read_mutex;
+	switch_mutex_t *write_mutex;
+	switch_core_session_t *session;
+	void *user_data;
+	struct switch_media_bug *next;
 };
 	
 struct switch_core_session {
@@ -101,6 +101,8 @@ struct switch_core_session {
 	void *private_info;
 	switch_queue_t *event_queue;
 	switch_queue_t *private_event_queue;
+	switch_thread_rwlock_t *bug_rwlock;
+	switch_media_bug_t *bugs;
 };
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs;
@@ -149,6 +151,175 @@ static void db_pick_path(char *dbname, char *buf, switch_size_t size)
 	}
 }
 
+static void switch_core_media_bug_destroy(switch_media_bug_t *bug)
+{
+	switch_buffer_destroy(&bug->raw_read_buffer);
+	switch_buffer_destroy(&bug->raw_write_buffer);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame)
+{
+	uint32_t bytes = 0;
+	uint8_t data[SWITCH_RECCOMMENDED_BUFFER_SIZE] = {0};
+	uint32_t datalen = 0;
+	int16_t *dp, *fp;
+	uint32_t x;
+	uint32_t rlen = switch_buffer_inuse(bug->raw_read_buffer);
+	uint32_t wlen = switch_buffer_inuse(bug->raw_write_buffer);
+	uint32_t blen;
+	uint32_t rdlen = 0;
+	uint32_t maxlen;
+
+	if (!rlen && !wlen) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	maxlen = sizeof(data) > frame->buflen ? frame->buflen :  sizeof(data);
+	if ((rdlen = rlen > wlen ? wlen : rlen) > maxlen) {
+		rdlen = maxlen;
+	}
+	
+	frame->datalen = 0;
+
+	if (rlen) {
+		switch_mutex_lock(bug->read_mutex);
+		
+		frame->datalen = (uint32_t) switch_buffer_read(bug->raw_read_buffer,
+													   frame->data,
+													   rdlen);
+		switch_mutex_unlock(bug->read_mutex);
+	}
+
+	if (wlen) {
+		switch_mutex_lock(bug->write_mutex);
+		datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer,
+												data,
+												rdlen);
+		switch_mutex_unlock(bug->write_mutex);
+	}
+
+	bytes = (datalen > frame->datalen) ? datalen : frame->datalen;
+
+	if (bytes) {
+		dp = (int16_t *) data;
+		fp = (int16_t *) frame->data;
+		
+		rlen = frame->datalen / 2;
+		wlen = datalen / 2;
+		blen = bytes / 2;
+		
+		for(x = 0; x < blen; x++) {
+			int32_t z = 0;
+
+			if (x < rlen) {
+				z += (int32_t) *(fp+x);
+			}
+			if (x < wlen) {
+				z += (int32_t)*(dp+x);
+			}
+			switch_normalize_to_16bit(z);
+			*(fp+x) = (int16_t) z;
+		}
+
+		frame->datalen = bytes;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+#define MAX_BUG_BUFFER 1024 * 512
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t *session,
+														  switch_media_bug_callback_t callback,
+														  void *user_data,
+														  switch_media_bug_t **new_bug)
+
+{
+	switch_media_bug_t *bug;
+	switch_size_t bytes;
+
+	if (!(bug = switch_core_session_alloc(session, sizeof(*bug)))) {
+		return SWITCH_STATUS_MEMERR;
+	}
+
+	bug->callback = callback;
+	bug->user_data = user_data;
+	bug->session = session;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
+	bytes = session->read_codec->implementation->bytes_per_frame * 2;
+	switch_buffer_create_dynamic(&bug->raw_read_buffer, bytes, bytes, MAX_BUG_BUFFER);
+	bytes = session->write_codec->implementation->bytes_per_frame * 2;
+	switch_buffer_create_dynamic(&bug->raw_write_buffer, bytes, bytes, MAX_BUG_BUFFER);
+	switch_mutex_init(&bug->read_mutex, SWITCH_MUTEX_NESTED, session->pool);
+	switch_mutex_init(&bug->write_mutex, SWITCH_MUTEX_NESTED, session->pool);
+
+	switch_thread_rwlock_wrlock(session->bug_rwlock);
+	bug->next = session->bugs;
+	session->bugs = bug;
+	switch_thread_rwlock_unlock(session->bug_rwlock);
+	*new_bug = bug;
+
+	if (bug->callback) {
+		bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_INIT);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_session_t *session)
+{
+	switch_media_bug_t *bp;
+
+	if (session->bugs) {
+		switch_thread_rwlock_wrlock(session->bug_rwlock);
+		for (bp = session->bugs; bp; bp = bp->next) {
+			if (bp->callback) {
+				bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
+			}
+			switch_core_media_bug_destroy(bp);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(session->channel));
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session_t *session, switch_media_bug_t **bug)
+{
+	switch_media_bug_t *bp = NULL, *last = NULL;
+
+	if (session->bugs) {
+		switch_thread_rwlock_wrlock(session->bug_rwlock);
+		for (bp = session->bugs; bp; bp = bp->next) {
+			if (bp == *bug) {
+				if (last) {
+					last->next = bp->next;
+				} else {
+					session->bugs = bp->next;
+				}
+				break;
+			}
+			last = bp;
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+
+		if (bp) {
+			if (bp->callback) {
+				bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_CLOSE);
+			}
+			switch_core_media_bug_destroy(bp);
+			*bug = NULL;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(session->channel));
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 struct switch_core_port_allocator {
 	switch_port_t start;
 	switch_port_t end;
@@ -158,7 +329,10 @@ struct switch_core_port_allocator {
 	switch_memory_pool_t *pool;
 };
 
-SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start, switch_port_t end, uint8_t inc, switch_core_port_allocator_t **new_allocator)
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start,
+															   switch_port_t end,
+															   uint8_t inc,
+															   switch_core_port_allocator_t **new_allocator)
 {
 	switch_status_t status;
 	switch_memory_pool_t *pool;
@@ -1362,7 +1536,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 {
 	switch_io_event_hook_read_frame_t *ptr;
 	switch_status_t status;
-	int need_codec, perfect;
+	int need_codec, perfect, do_bugs = 0;
  top:
 	
 	status = SWITCH_STATUS_FALSE;
@@ -1420,6 +1594,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		need_codec = TRUE;
 	}
 
+	if (session->bugs && !need_codec) {
+		do_bugs = 1;
+		need_codec = 1;
+	}
+
 	if (status == SWITCH_STATUS_SUCCESS && need_codec) {
 		switch_frame_t *enc_frame, *read_frame = *frame;
 
@@ -1470,6 +1649,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			read_frame->samples = session->read_resampler->to_len;
 			read_frame->datalen = session->read_resampler->to_len * 2;
 			read_frame->rate = session->read_resampler->to_rate;
+		}
+
+		if (session->bugs) {
+			switch_media_bug_t *bp;
+			switch_thread_rwlock_rdlock(session->bug_rwlock);
+			for (bp = session->bugs; bp; bp = bp->next) {
+				switch_mutex_lock(bp->read_mutex);
+				switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
+				if (bp->callback) {
+					bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ);
+				}
+				switch_mutex_unlock(bp->read_mutex);
+			}
+			switch_thread_rwlock_unlock(session->bug_rwlock);
+		}
+
+		if (do_bugs) {
+			goto done;
 		}
 
 		if (session->read_codec) {
@@ -1587,7 +1784,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_frame_t *enc_frame = NULL, *write_frame = frame;
-	unsigned int flag = 0, need_codec = 0, perfect = 0;
+	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0;
 	switch_io_flag_t io_flag = SWITCH_IO_FLAG_NOOP;
 
 	assert(session != NULL);
@@ -1618,6 +1815,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (!session->write_codec && frame->codec) {
 		need_codec = TRUE;
+	}
+
+	if (session->bugs && !need_codec) {
+		do_bugs = 1;
+		need_codec = 1;
 	}
 
 	if (need_codec) {
@@ -1680,7 +1882,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			write_frame->rate = session->write_resampler->to_rate;
 		}
 
-
+		if (session->bugs) {
+			switch_media_bug_t *bp;
+			switch_thread_rwlock_rdlock(session->bug_rwlock);
+			for (bp = session->bugs; bp; bp = bp->next) {
+				switch_mutex_lock(bp->write_mutex);
+				switch_buffer_write(bp->raw_write_buffer, write_frame->data, write_frame->datalen);
+				switch_mutex_unlock(bp->write_mutex);
+				if (bp->callback) {
+					bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE);
+				}
+			}
+			switch_thread_rwlock_unlock(session->bug_rwlock);
+		}
+		if (do_bugs) {
+			do_write = 1;
+			goto done;
+		}
 		if (session->write_codec) {
 			if (write_frame->datalen == session->write_codec->implementation->bytes_per_frame) {
 				perfect = TRUE;
@@ -1819,6 +2037,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			}
 		}
 	} else {
+		do_write = 1;
+	}
+
+ done:
+	if (do_write) {
 		return perform_write(session, frame, timeout, io_flag, stream_id);
 	}
 
@@ -2658,6 +2881,7 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session
 		switch_event_fire(&event);
 	}
 
+	switch_core_media_bug_remove_all(*session);
 	switch_buffer_destroy(&(*session)->raw_read_buffer);
 	switch_buffer_destroy(&(*session)->raw_write_buffer);
 	switch_channel_uninit((*session)->channel);
@@ -2889,6 +3113,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	session->enc_read_frame.buflen = sizeof(session->enc_read_buf);
 
 	switch_mutex_init(&session->mutex, SWITCH_MUTEX_NESTED, session->pool);
+	switch_thread_rwlock_create(&session->bug_rwlock, session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);
 	switch_thread_rwlock_create(&session->rwlock, session->pool);
 

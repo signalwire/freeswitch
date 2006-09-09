@@ -133,6 +133,26 @@ static void record_function(switch_core_session_t *session, char *data)
 }
 
 
+static void record_session_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	switch_ivr_record_session(session, data, NULL);	
+}
+
+
+static void stop_record_session_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	switch_ivr_stop_record_session(session, data);	
+}
+
+
 static const switch_application_interface_t speak_application_interface = {
 	/*.interface_name */ "speak",
 	/*.application_function */ speak_function
@@ -145,11 +165,27 @@ static const switch_application_interface_t record_application_interface = {
 	&speak_application_interface
 };
 
+
+static const switch_application_interface_t record_session_application_interface = {
+	/*.interface_name */ "record_session",
+	/*.application_function */ record_session_function,
+	NULL,NULL,NULL,
+	&record_application_interface
+};
+
+
+static const switch_application_interface_t stop_record_session_application_interface = {
+	/*.interface_name */ "stop_record_session",
+	/*.application_function */ stop_record_session_function,
+	NULL,NULL,NULL,
+	&record_session_application_interface
+};
+
 static const switch_application_interface_t playback_application_interface = {
 	/*.interface_name */ "playback",
 	/*.application_function */ playback_function,
 	NULL,NULL,NULL,
-	/*.next*/				  &record_application_interface
+	/*.next*/				  &stop_record_session_application_interface
 };
 
 static const switch_loadable_module_interface_t mod_playback_module_interface = {

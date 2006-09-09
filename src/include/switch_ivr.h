@@ -94,7 +94,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 																const char *terminators,
 																char *terminator,
 																unsigned int timeout);
-	
+
+/*!
+  \brief Record a session to disk
+  \param session the session to record
+  \param file the path to the file
+  \param fh file handle to use (NULL for builtin one)
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t *session, char *file,  switch_file_handle_t *fh);
+
+/*!
+  \brief Stop Recording a session
+  \param session the session to stop recording
+  \param file the path to the file
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_session_t *session, char *file);
+
 /*!
   \brief play a file from the disk to the session
   \param session the session to play the file too

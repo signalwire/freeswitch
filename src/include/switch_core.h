@@ -107,6 +107,50 @@ struct switch_core_port_allocator;
   \{ 
 */
 
+
+///\defgroup pa1 Media Bugs
+///\ingroup core1
+///\{
+
+/*!
+  \brief Add a media bug to the session
+  \param session the session to add the bug to
+  \param callback a callback for events
+  \param user_data arbitrary user data
+  \param new_bug pointer to assign new bug to
+  \return SWITCH_STATUS_SUCCESS if the operation was a success
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t *session,
+														  switch_media_bug_callback_t callback,
+														  void *user_data,
+														  switch_media_bug_t **new_bug);
+
+
+/*!
+  \brief Remove a media bug from the session
+  \param session the session to remove the bug from
+  \param bug bug to remove
+  \return SWITCH_STATUS_SUCCESS if the operation was a success
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session_t *session, switch_media_bug_t **bug);
+
+/*!
+  \brief Remove all media bugs from the session
+  \param session the session to remove the bugs from
+  \return SWITCH_STATUS_SUCCESS if the operation was a success
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_session_t *session);
+
+/*!
+  \brief Read a frame from the bug
+  \param bug the bug to read from
+  \param frame the frame to write the data to
+  \return the amount of data 
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame);
+
+///\}
+
 ///\defgroup pa1 Port Allocation
 ///\ingroup core1
 ///\{
@@ -119,7 +163,10 @@ struct switch_core_port_allocator;
   \param new pointer for the return value
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
-SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start, switch_port_t end, uint8_t inc, switch_core_port_allocator_t **new_allocator);
+SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(switch_port_t start,
+															   switch_port_t end,
+															   uint8_t inc,
+															   switch_core_port_allocator_t **new_allocator);
 
 /*!
   \brief Get a port from the port allocator

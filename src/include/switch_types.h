@@ -80,6 +80,12 @@ typedef enum {
 	SWITCH_BITPACK_MODE_AAL2
 } switch_bitpack_mode_t;
 
+typedef enum {
+	SWITCH_ABC_TYPE_INIT,
+	SWITCH_ABC_TYPE_READ,
+	SWITCH_ABC_TYPE_WRITE,
+	SWITCH_ABC_TYPE_CLOSE,
+} switch_abc_type_t;
 
 typedef struct {
 	switch_byte_t *buf;
@@ -739,9 +745,8 @@ typedef struct switch_file_interface switch_file_interface_t;
 typedef struct switch_speech_interface switch_speech_interface_t;
 typedef struct switch_directory_interface switch_directory_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;
-typedef struct switch_audio_bug switch_audio_bug_t;
-typedef void (*switch_audio_bug_read_callback_t)(switch_audio_bug_t *);
-typedef void (*switch_audio_bug_write_callback_t)(switch_audio_bug_t *);
+typedef struct switch_media_bug switch_media_bug_t;
+typedef void (*switch_media_bug_callback_t)(switch_media_bug_t *, void *, switch_abc_type_t);
 typedef void (*switch_application_function_t)(switch_core_session_t *, char *);
 typedef void (*switch_event_callback_t)(switch_event_t *);
 typedef switch_caller_extension_t *(*switch_dialplan_hunt_function_t)(switch_core_session_t *);
@@ -787,7 +792,7 @@ struct switch_channel;
 /*! \brief A core session representing a call and all of it's resources */
 struct switch_core_session;
 /*! \brief An audio bug */
-struct switch_audio_bug;
+struct switch_media_bug;
 
 SWITCH_END_EXTERN_C
 
