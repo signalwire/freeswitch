@@ -108,7 +108,7 @@ struct switch_core_port_allocator;
 */
 
 
-///\defgroup pa1 Media Bugs
+///\defgroup mb1 Media Bugs
 ///\ingroup core1
 ///\{
 
