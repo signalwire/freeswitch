@@ -10,7 +10,7 @@ PHPLDFLAGS = `$(PCFG) --ldflags` -lcrypt -lresolv -lm -ldl -lnsl -lxml2 -lz -lph
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PHPMOD).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install php-5.1.6.tar.gz --prefix=$(PREFIX) --enable-embed=static --enable-static --with-pic
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install php-5.1.6.tar.gz --prefix=$(PREFIX) --enable-embed=static --enable-static --with-pic --with-mysql --with-curl
 %.o:  %.c
 	$(CC) $(LCFLAGS) $(CFLAGS) -c $< -o $@
 

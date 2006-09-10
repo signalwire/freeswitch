@@ -1,10 +1,8 @@
 <?
+include("classFreeswitch.php");
 
-include("freeswitch.php");
+$fs = new fs_class_api;
 
-fs_core_set_globals();
-fs_core_init("");
-fs_loadable_module_init();
-fs_console_loop();
-fs_core_destroy();
+$fs->fs_start();
+
 ?>
