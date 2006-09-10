@@ -164,10 +164,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	uint32_t datalen = 0;
 	int16_t *dp, *fp;
 	uint32_t x;
-	uint32_t rlen = switch_buffer_inuse(bug->raw_read_buffer);
-	uint32_t wlen = switch_buffer_inuse(bug->raw_write_buffer);
+	size_t rlen = switch_buffer_inuse(bug->raw_read_buffer);
+	size_t wlen = switch_buffer_inuse(bug->raw_write_buffer);
 	uint32_t blen;
-	uint32_t rdlen = 0;
+	size_t rdlen = 0;
 	uint32_t maxlen;
 
 	if (!rlen && !wlen) {
