@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\sofia-sip\win32\pthread&quot;;."
+				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -55,7 +55,7 @@
 				BrowseInformation="1"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -121,7 +121,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\sofia-sip\win32\pthread&quot;;."
+				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC"
 				StringPooling="true"
 				RuntimeLibrary="2"
