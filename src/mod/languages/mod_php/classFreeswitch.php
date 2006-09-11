@@ -35,7 +35,7 @@ require("freeswitch.php");  // Required for freeswitch driver to be loaded
 class fs_class_api {
 	Private $uuid;
 
-    	function fs_class_api() {
+    	function fs_class_api($uuid) {
 		$this->uuid = $uuid;
 	
 	}

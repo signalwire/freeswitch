@@ -241,9 +241,10 @@ static void php_function(switch_core_session_t *session, char *data)
 	// Clean up after PHP and such
         php_embed_shutdown(tsrm_ls);
 
-	// Return back to the Dialplan
-        return;
 
+
+	// Return back to the Dialplan
+        
 // Buh bye now!
 }
 
@@ -288,18 +289,19 @@ void*** tsrm_ls = NULL;
 }
 
 /*
-  Called when the system shuts down
+  //Called when the system shuts down
   SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
   {
   return SWITCH_STATUS_SUCCESS;
   }
-*/
 
-/*
-  If it exists, this is called in it's own thread when the module-load completes
+
+
+  //If it exists, this is called in it's own thread when the module-load completes
   SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
   {
   return SWITCH_STATUS_SUCCESS;
   }
-*/
 
+
+*/

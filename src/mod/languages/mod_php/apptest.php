@@ -8,12 +8,10 @@
 */
 require("classFreeswitch.php");
 
-echo "uuid: $uuid\n";
-
-$fs = new fs_class_api();
+$fs = new fs_class_api($uuid); // $uuid MUST be there for the class to work.
 
 $fs->fs_answer();
 
-$fs->fs_play_file("/ram/sr8k.wav");
+//$fs->fs_play_file("/ram/sr8k.wav");
 
 ?>
