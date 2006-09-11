@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;LIBSOFIA_SIP_UA_STATIC"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -65,10 +65,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libsofia_sip_ua.lib"
+				AdditionalDependencies="ws2_32.lib pthreadVC2.lib"
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(ProjectDir)..\..\..\..\libs\sofia-sip\win32\libsofia-sip-ua\$(OutDir)&quot;;&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;"
+				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32\pthread&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
@@ -127,7 +127,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;LIBSOFIA_SIP_UA_STATIC"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -147,10 +147,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="libsofia_sip_ua.lib"
+				AdditionalDependencies="ws2_32.lib pthreadVC2.lib"
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;$(ProjectDir)..\..\..\..\libs\sofia-sip\win32\libsofia-sip-ua\$(OutDir)&quot;;&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;"
+				AdditionalLibraryDirectories="&quot;..\..\..\..\w32\vsnet\$(OutDir)&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32\pthread&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
