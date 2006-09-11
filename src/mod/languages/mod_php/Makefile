@@ -2,7 +2,7 @@
 PCFG=$(PREFIX)/bin/php-config
 
 LCFLAGS=-fPIC -DZTS -DPTHREADS
-CFLAGS += `$(PCFG) --includes`
+CFLAGS += `$(PCFG) --includes` -g3
 MDIR += `$(PCFG) --extension-dir`
 PHPMOD=freeswitch
 PHPLDFLAGS = `$(PCFG) --ldflags` -lcrypt -lresolv -lm -ldl -lnsl -lxml2 -lz -lphp5
@@ -10,7 +10,7 @@ PHPLDFLAGS = `$(PCFG) --ldflags` -lcrypt -lresolv -lm -ldl -lnsl -lxml2 -lz -lph
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PHPMOD).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install php-5.1.6.tar.gz --prefix=$(PREFIX) --enable-embed=static --enable-static --with-pic --with-mysql --with-curl
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install php-5.1.6.tar.gz --prefix=$(PREFIX) --enable-embed=shared --enable-shared --with-pic --with-mysql --with-curl --enable-maintainer-zts --with-tsrm-pthreads
 %.o:  %.c
 	$(CC) $(LCFLAGS) $(CFLAGS) -c $< -o $@
 
@@ -41,3 +41,7 @@ install:
 	cp -f php_$(PHPMOD).$(DYNAMIC_LIB_EXTEN) $(MDIR)
 	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
 	cp -f $(PHPMOD).php $(PREFIX)/lib/php
+	cp -f classFreeswitch.php $(PREFIX)/lib/php
+	cp -f freeswitch.php $(PREFIX)/lib/php
+	cp -f apptest.php $(PREFIX)/scripts
+	cp -f test.php $(PREFIX)/scripts

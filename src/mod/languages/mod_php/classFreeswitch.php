@@ -31,13 +31,12 @@
  *
  */
 require("freeswitch.php");  // Required for freeswitch driver to be loaded
-global $sessn;
+
 class fs_class_api {
+	Private $uuid;
+
     	function fs_class_api() {
-		if($sessn = $this->fs_getsessn($uuid)){}
-		else{
-		   echo "Couldnt get sessn!\n";
-		}
+		$this->uuid = $uuid;
 	
 	}
 	
@@ -62,99 +61,88 @@ class fs_class_api {
 		
 	}
 
-	function fs_getsessn($uuid){
-		
-		return fs_core_sessn_locate($uuid);
-	
-	}
 
 	function fs_answer(){
 		
-		fs_channel_answer($sessn);
+		fs_channel_answer($this->uuid);
 		
 	}
 
-	function fs_early_media($sessn){
+	function fs_early_media(){
 		
-		fs_channel_pre_answer($sessn);
+		fs_channel_pre_answer($this->uuid);
 		
 	}
 
 	function fs_hangup($cause){
 		
-		fs_channel_hangup($sessn, $cause);
+		fs_channel_hangup($this->uuid, $cause);
 		
 	}
 
 	function fs_set_variable($var, $val){
 		
-		fs_channel_set_variable($sessn, $var, $val);
+		fs_channel_set_variable($this->uuid, $var, $val);
 		
 	}
 	
 	function fs_get_variable($var){
 		
-		return fs_channel_get_var($sessn, $var);
+		return fs_channel_get_var($this->uuid, $var);
 		
 	}
 
 	function fs_set_channel_state($state){
 		
-		fs_channel_set_state($sessn, $state);
+		fs_channel_set_state($this->uuid, $state);
 		
 	}
 	
 	function fs_play_file($file){
 		
-		return fs_ivr_play_file($sessn, $file, NULL, NULL, NULL, 0);
+		return fs_ivr_play_file($this->uuid, $file, NULL, NULL, NULL, 0);
 				
 	}
 	
 	function record_file($file){
 		
-		return fs_switch_ivr_record_file($sessn, NULL, $file, NULL, NULL, 0);
+		return fs_switch_ivr_record_file($this->uuid, NULL, $file, NULL, NULL, 0);
 		
 	}
 	
 	function fs_wait($ms){
 		
-		return fs_switch_ivr_sleep($sessn, $ms);
+		return fs_switch_ivr_sleep($this->uuid, $ms);
 		
 	}
 	
 	function fs_get_dtmf_callback($len){
 		
-		return fs_switch_ivr_collect_digits_callback($sessn, NULL, NULL, $len);
+		return fs_switch_ivr_collect_digits_callback($this->uuid, NULL, NULL, $len);
 		
 	}
 
 	function fs_get_digit_count ($maxdigits, $terminator, $timeout){
 		
-		return fs_switch_ivr_collect_digits_count($sessn, NULL, NULL, $maxdigits, NULL, $terminator, $timeout);
-		
-	}
-
-	function fs_x_way($peer_sessn, $dtmf, $sessn_data, $peer_data){
-		
-		return fs_switch_ivr_multi_threaded_bridge ($sessn, $peer_sessn, $dtmf, $sessn_data, $peer_data);
+		return fs_switch_ivr_collect_digits_count($this->uuid, NULL, NULL, $maxdigits, NULL, $terminator, $timeout);
 		
 	}
 
 	function fs_dial($data, $timelimit){
 		
-		return fs_switch_ivr_originate(sessn, NULL, $data, $timelimit, NULL, NULL, NULL, NULL);
+		return fs_switch_ivr_originate($this->uuid, NULL, $data, $timelimit, NULL, NULL, NULL, NULL);
 
 	}
 
 	function fs_transfer($exten, $dialplan, $context){
 		
-		return fs_switch_ivr_sessn_transfer($sessn, $exten, $dialplan, $context);
+		return fs_switch_ivr_sessn_transfer($this->uuid, $exten, $dialplan, $context);
 		
 	}
 
 	function fs_speak($ttsName, $voice, $text, $dtmf=NULL){
 		
-		return fs_switch_ivr_speak_text($sessn, $ttsName, NULL, NULL, $dtmf, $text, NULL, 0);
+		return fs_switch_ivr_speak_text($this->uuid, $ttsName, NULL, NULL, $dtmf, $text, NULL, 0);
 		
 	}
 

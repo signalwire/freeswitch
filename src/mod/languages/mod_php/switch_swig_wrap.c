@@ -885,13 +885,12 @@ static void SWIG_Php4_SetModule(swig_module_info *pointer) {
 
 #define SWIGTYPE_p_p_switch_core_session_t swig_types[0]
 #define SWIGTYPE_p_p_void swig_types[1]
-#define SWIGTYPE_p_switch_channel_t swig_types[2]
-#define SWIGTYPE_p_switch_core_session_t swig_types[3]
-#define SWIGTYPE_p_switch_file_handle_t swig_types[4]
-#define SWIGTYPE_p_switch_input_callback_function_t swig_types[5]
-#define SWIGTYPE_p_uint32_t swig_types[6]
-static swig_type_info *swig_types[8];
-static swig_module_info swig_module = {swig_types, 7, 0, 0, 0, 0};
+#define SWIGTYPE_p_switch_core_session_t swig_types[2]
+#define SWIGTYPE_p_switch_file_handle_t swig_types[3]
+#define SWIGTYPE_p_switch_input_callback_function_t swig_types[4]
+#define SWIGTYPE_p_uint32_t swig_types[5]
+static swig_type_info *swig_types[7];
+static swig_module_info swig_module = {swig_types, 6, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1013,7 +1012,6 @@ zend_module_entry* SWIG_module_entry = &freeswitch_module_entry;
 
 static swig_type_info _swigt__p_p_switch_core_session_t = {"_p_p_switch_core_session_t", "switch_core_session_t **", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_p_void = {"_p_p_void", "void **", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_switch_channel_t = {"_p_switch_channel_t", "switch_channel_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_core_session_t = {"_p_switch_core_session_t", "switch_core_session_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_file_handle_t = {"_p_switch_file_handle_t", "switch_file_handle_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_switch_input_callback_function_t = {"_p_switch_input_callback_function_t", "switch_input_callback_function_t *", 0, 0, (void*)0, 0};
@@ -1022,7 +1020,6 @@ static swig_type_info _swigt__p_uint32_t = {"_p_uint32_t", "uint32_t *", 0, 0, (
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_p_switch_core_session_t,
   &_swigt__p_p_void,
-  &_swigt__p_switch_channel_t,
   &_swigt__p_switch_core_session_t,
   &_swigt__p_switch_file_handle_t,
   &_swigt__p_switch_input_callback_function_t,
@@ -1031,7 +1028,6 @@ static swig_type_info *swig_type_initial[] = {
 
 static swig_cast_info _swigc__p_p_switch_core_session_t[] = {  {&_swigt__p_p_switch_core_session_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_void[] = {  {&_swigt__p_p_void, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_switch_channel_t[] = {  {&_swigt__p_switch_channel_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_core_session_t[] = {  {&_swigt__p_switch_core_session_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_file_handle_t[] = {  {&_swigt__p_switch_file_handle_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_switch_input_callback_function_t[] = {  {&_swigt__p_switch_input_callback_function_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -1040,7 +1036,6 @@ static swig_cast_info _swigc__p_uint32_t[] = {  {&_swigt__p_uint32_t, 0, 0, 0},{
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_p_switch_core_session_t,
   _swigc__p_p_void,
-  _swigc__p_switch_channel_t,
   _swigc__p_switch_core_session_t,
   _swigc__p_switch_file_handle_t,
   _swigc__p_switch_input_callback_function_t,
@@ -1052,7 +1047,6 @@ static swig_cast_info *swig_cast_initial[] = {
 
 /* end header section */
 /* vdecl subsection */
-static int le_swig__p_switch_channel_t=0; /* handle for  */
 static int le_swig__p_switch_file_handle_t=0; /* handle for  */
 static int le_swig__p_switch_core_session_t=0; /* handle for  */
 static int le_swig__p_p_switch_core_session_t=0; /* handle for  */
@@ -1259,7 +1253,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_channel_answer) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   zval **args[1];
   
   SWIG_ResetError();
@@ -1268,10 +1262,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_channel_answer) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_channel_answer. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   fs_channel_answer(arg1);
   
@@ -1282,7 +1276,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_channel_pre_answer) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   zval **args[1];
   
   SWIG_ResetError();
@@ -1291,10 +1285,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_channel_pre_answer) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_channel_pre_answer. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   fs_channel_pre_answer(arg1);
   
@@ -1305,7 +1299,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_channel_hangup) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   zval **args[2];
   
@@ -1315,10 +1309,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_channel_hangup) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_channel_hangup. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /*@SWIG:CONVERT_STRING_IN@*/
@@ -1335,7 +1329,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_channel_set_variable) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   zval **args[3];
@@ -1346,10 +1340,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_channel_set_variable) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_channel_set_variable. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /*@SWIG:CONVERT_STRING_IN@*/
@@ -1372,7 +1366,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_channel_get_variable) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   zval **args[2];
   
@@ -1382,10 +1376,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_channel_get_variable) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_channel_get_variable. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /*@SWIG:CONVERT_STRING_IN@*/
@@ -1402,7 +1396,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_channel_set_state) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   zval **args[2];
   
@@ -1412,10 +1406,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_channel_set_state) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_channel_set_state. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /*@SWIG:CONVERT_STRING_IN@*/
@@ -1432,7 +1426,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_ivr_play_file) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   switch_input_callback_function_t arg4 ;
@@ -1448,10 +1442,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_ivr_play_file) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_ivr_play_file. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /*@SWIG:CONVERT_STRING_IN@*/
@@ -1496,7 +1490,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_record_file) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   switch_file_handle_t *arg2 = (switch_file_handle_t *) 0 ;
   char *arg3 = (char *) 0 ;
   switch_input_callback_function_t arg4 ;
@@ -1512,10 +1506,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_record_file) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_switch_ivr_record_file. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /* typemap(in) SWIGTYPE * */
@@ -1560,7 +1554,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_sleep) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   uint32_t arg2 ;
   int result;
   uint32_t *tmp2 ;
@@ -1572,10 +1566,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_sleep) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_switch_ivr_sleep. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     if(SWIG_ConvertPtr(*args[1], (void **) &tmp2, SWIGTYPE_p_uint32_t, 0) < 0) {
@@ -1594,7 +1588,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_ivr_play_file2) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   int result;
   zval **args[2];
@@ -1605,10 +1599,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_ivr_play_file2) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_ivr_play_file2. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /*@SWIG:CONVERT_STRING_IN@*/
@@ -1627,7 +1621,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_collect_digits_callback) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   switch_input_callback_function_t arg2 ;
   void *arg3 = (void *) 0 ;
   unsigned int arg4 ;
@@ -1641,10 +1635,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_collect_digits_callback) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_switch_ivr_collect_digits_callback. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     if(SWIG_ConvertPtr(*args[1], (void **) &tmp2, SWIGTYPE_p_switch_input_callback_function_t, 0) < 0) {
@@ -1677,7 +1671,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_collect_digits_count) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   unsigned int arg3 ;
   unsigned int arg4 ;
@@ -1693,10 +1687,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_collect_digits_count) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_switch_ivr_collect_digits_count. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /*@SWIG:CONVERT_STRING_IN@*/
@@ -1745,7 +1739,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_originate) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   switch_core_session_t **arg2 = (switch_core_session_t **) 0 ;
   char *arg3 = (char *) 0 ;
   uint32_t arg4 ;
@@ -1759,10 +1753,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_originate) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_switch_ivr_originate. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /* typemap(in) SWIGTYPE * */
@@ -1793,7 +1787,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_session_transfer) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
@@ -1806,10 +1800,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_session_transfer) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_switch_ivr_session_transfer. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /*@SWIG:CONVERT_STRING_IN@*/
@@ -1840,7 +1834,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_speak_text) {
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   char *arg4 = (char *) 0 ;
@@ -1860,10 +1854,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_speak_text) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_switch_ivr_speak_text. Expected SWIGTYPE_p_switch_core_session_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /*@SWIG:CONVERT_STRING_IN@*/
@@ -1926,7 +1920,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_switch_channel_get_variable) {
-  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *result = 0 ;
   zval **args[2];
@@ -1937,10 +1931,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_channel_get_variable) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_channel_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_switch_channel_get_variable. Expected SWIGTYPE_p_switch_channel_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /*@SWIG:CONVERT_STRING_IN@*/
@@ -1963,7 +1957,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_fs_switch_channel_set_variable) {
-  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   int result;
@@ -1975,10 +1969,10 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_channel_set_variable) {
   }
   
   {
-    /* typemap(in) SWIGTYPE * */
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_switch_channel_t, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fs_switch_channel_set_variable. Expected SWIGTYPE_p_switch_channel_t");
-    }
+    /*@SWIG:CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[0]);
+    arg1 = (char *) Z_STRVAL_PP(args[0]);
+    /*@SWIG@*/;
   }
   {
     /*@SWIG:CONVERT_STRING_IN@*/
@@ -2002,10 +1996,6 @@ fail:
 }
 
 
-/* NEW Destructor style */
-static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_switch_channel_t) {
-  /* bah! No destructor for this simple type!! */
-}
 /* NEW Destructor style */
 static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_switch_file_handle_t) {
   /* bah! No destructor for this simple type!! */
@@ -2260,8 +2250,6 @@ SWIG_PropagateClientData(void) {
 ZEND_INIT_MODULE_GLOBALS(freeswitch, freeswitch_init_globals, freeswitch_destroy_globals);
 
 /* Register resource destructors for pointer types */
-le_swig__p_switch_channel_t=zend_register_list_destructors_ex(_wrap_destroy_p_switch_channel_t,NULL,(char *)(SWIGTYPE_p_switch_channel_t->name),module_number);
-SWIG_TypeClientData(SWIGTYPE_p_switch_channel_t,&le_swig__p_switch_channel_t);
 le_swig__p_switch_file_handle_t=zend_register_list_destructors_ex(_wrap_destroy_p_switch_file_handle_t,NULL,(char *)(SWIGTYPE_p_switch_file_handle_t->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_switch_file_handle_t,&le_swig__p_switch_file_handle_t);
 le_swig__p_switch_core_session_t=zend_register_list_destructors_ex(_wrap_destroy_p_switch_core_session_t,NULL,(char *)(SWIGTYPE_p_switch_core_session_t->name),module_number);
