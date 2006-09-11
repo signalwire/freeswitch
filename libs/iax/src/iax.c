@@ -904,6 +904,7 @@ int __iax_shutdown(void)
 	}
 	
 	if (netfd > -1) {
+		shutdown(netfd, 2);
 		close(netfd);
 	}
 

@@ -75,6 +75,7 @@ static struct {
 	char *codec_rates[SWITCH_MAX_CODECS];
 	int codec_rates_last;
 	unsigned int flags;
+	switch_port_t fd;
 } globals;
 
 struct private_object {
@@ -916,7 +917,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 	iax_set_error(iax_err_cb);
 	iax_set_output(iax_out_cb);
-	//netfd = iax_get_fd();
+	globals.fd = iax_get_fd();
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IAX Ready Port %d\n", globals.port);
 
@@ -933,9 +934,10 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 		}
 
 		/* Wait for an event. */
-		if ((iaxevent = iax_get_event(0)) == NULL) {
-			switch_yield(100);
-			continue;
+		if ((iaxevent = iax_get_event(-1)) == NULL) {
+			//switch_yield(100);
+			//continue;
+			break;
 		} else {
 			struct private_object *tech_pvt = iax_get_private(iaxevent->session);
 
@@ -1160,6 +1162,10 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 
 	running = -1;
 
+	if (globals.fd) {
+		/* Die Mutha $%#$@% Die Mutha $#%#$^ Die*/
+		shutdown(globals.fd, 2);
+	}
 	iax_shutdown();
 
 	while (running) {
