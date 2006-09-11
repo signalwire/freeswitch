@@ -3596,7 +3596,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, cons
 	}
 
 #ifdef HAVE_MLOCKALL
+#ifdef USE_MLOCKALL
 	mlockall(MCL_CURRENT|MCL_FUTURE);
+#endif
 #endif
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\n\n", SWITCH_VERSION_FULL, __CP, switch_core_session_limit(0));
