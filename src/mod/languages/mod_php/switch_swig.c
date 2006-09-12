@@ -112,57 +112,38 @@ switch_core_session_t *fs_core_session_locate(char *uuid)
 	return session;
 }
 
-void fs_channel_answer(char *uuid)
+void fs_channel_answer(switch_core_session_t *session)
 {
-	switch_core_session_t *session;
-	session = fs_core_session_locate(uuid);
-
-	switch_channel_t *channel;
-	channel  = switch_core_session_get_channel(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_answer(channel);
 }
 
-void fs_channel_pre_answer(char *uuid)
+void fs_channel_pre_answer(switch_core_session_t *session)
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_pre_answer(channel);
 }
 
-void fs_channel_hangup(char *uuid, char *cause)
+void fs_channel_hangup(switch_core_session_t *session, char *cause)
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_hangup(channel, switch_channel_str2cause(cause));
 }
 
-void fs_channel_set_variable(char *uuid, char *var, char *val)
+void fs_channel_set_variable(switch_core_session_t *session, char *var, char *val)
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_set_variable(channel, var, val);
 }
 
-void fs_channel_get_variable(char *uuid, char *var)
+void fs_channel_get_variable(switch_core_session_t *session, char *var)
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_get_variable(channel, var);
 }
 
-void fs_channel_set_state(char *uuid, char *state)
+void fs_channel_set_state(switch_core_session_t *session, char *state)
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state_t fs_state = switch_channel_get_state(channel);
 
@@ -176,16 +157,13 @@ void fs_channel_set_state(char *uuid, char *state)
 IVR Routines!  You can do IVR in PHP NOW!
 */
 
-int fs_ivr_play_file(char *uuid,
-			 char *file,
-			 char *timer_name,
-			 switch_input_callback_function_t dtmf_callback,
-			 void *buf,
-			 unsigned int buflen)
+int fs_ivr_play_file(switch_core_session_t *session,
+					 char *file,
+					 char *timer_name,
+					 switch_input_callback_function_t dtmf_callback,
+					 void *buf,
+					 unsigned int buflen)
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
 	switch_status_t status;
 	if (switch_strlen_zero(timer_name)) {
 		timer_name = NULL;
@@ -195,40 +173,31 @@ int fs_ivr_play_file(char *uuid,
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int fs_switch_ivr_record_file(char *uuid,
-				switch_file_handle_t *fh,
-				char *file,
-				switch_input_callback_function_t dtmf_callback,
-				void *buf,
-				unsigned int buflen)
+int fs_switch_ivr_record_file(switch_core_session_t *session,
+						switch_file_handle_t *fh,
+						char *file,
+						switch_input_callback_function_t dtmf_callback,
+						void *buf,
+						unsigned int buflen)
 {  
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
 	switch_status_t status;
 	
         status = switch_ivr_record_file(session, fh, file, dtmf_callback, buf, buflen);
         return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int fs_switch_ivr_sleep(char *uuid,
-				uint32_t ms)
+int fs_switch_ivr_sleep(switch_core_session_t *session,
+					uint32_t ms)
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
 	switch_status_t status;
 	status = switch_ivr_sleep(session, ms);
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int fs_ivr_play_file2(char *uuid,
-			  char *file)
+int fs_ivr_play_file2(switch_core_session_t *session,
+					  char *file)
 
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
 	switch_status_t status;
 	
 	status = switch_ivr_play_file(session, NULL, file, NULL, NULL, NULL, 0);
@@ -236,21 +205,18 @@ int fs_ivr_play_file2(char *uuid,
 }
 
 
-int fs_switch_ivr_collect_digits_callback (char *uuid,
-						switch_input_callback_function_t dtmf_callback,
-						void *buf,
-						unsigned int buflen)
+int fs_switch_ivr_collect_digits_callback (switch_core_session_t *session,
+							switch_input_callback_function_t dtmf_callback,
+							void *buf,
+							unsigned int buflen)
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
         switch_status_t status;
 
         status = switch_ivr_collect_digits_callback(session, dtmf_callback, buf, buflen);
         return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int fs_switch_ivr_collect_digits_count(char *uuid,
+int fs_switch_ivr_collect_digits_count  	(switch_core_session_t *session,
 					char *buf,
 					unsigned int buflen,
 					unsigned int maxdigits,
@@ -258,9 +224,6 @@ int fs_switch_ivr_collect_digits_count(char *uuid,
 					char *terminator,
 					unsigned int timeout)  
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
         switch_status_t status;
 
         status = switch_ivr_collect_digits_count(session, buf, buflen, maxdigits, terminators, terminator, timeout);
@@ -280,7 +243,7 @@ int fs_switch_ivr_collect_digits_count(char *uuid,
 }
 */
 
-int fs_switch_ivr_originate(char *uuid,
+int fs_switch_ivr_originate       (switch_core_session_t *session,
 				switch_core_session_t **bleg,
 				char *  	bridgeto,
 				uint32_t  	timelimit_sec)
@@ -289,8 +252,6 @@ int fs_switch_ivr_originate(char *uuid,
 				char *  	cid_num_override,
 				switch_caller_profile_t *caller_profile_override)  */
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
 
         switch_channel_t *caller_channel;
         switch_core_session_t *peer_session;
@@ -315,21 +276,18 @@ int fs_switch_ivr_originate(char *uuid,
 
 }
 
-int fs_switch_ivr_session_transfer(char *uuid,
+int fs_switch_ivr_session_transfer(switch_core_session_t *session,
 				char *extension,
 				char *dialplan,
 				char *context)  
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
         switch_status_t status;
 
         status = switch_ivr_session_transfer(session,extension,dialplan,context);
         return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
-int fs_switch_ivr_speak_text      (char *uuid,
+int fs_switch_ivr_speak_text      (switch_core_session_t *session,
 				char *tts_name,
 				char *voice_name,
 				char *timer_name,
@@ -339,9 +297,6 @@ int fs_switch_ivr_speak_text      (char *uuid,
 				void *buf,
 				unsigned int buflen)  
 {
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
         switch_status_t status;
 
         status = switch_ivr_speak_text(session,tts_name,voice_name,timer_name,rate,dtmf_callback,text,buf,buflen);
@@ -355,28 +310,17 @@ int fs_switch_ivr_speak_text      (char *uuid,
 
 */
 
-char* fs_switch_channel_get_variable(char *uuid, char *varname)
+char* fs_switch_channel_get_variable(switch_channel_t *channel, char *varname)
 {
-	switch_channel_t *channel;
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
-	channel = switch_core_session_get_channel(session);
 	return switch_channel_get_variable(channel, varname);
 }
 
 
-int fs_switch_channel_set_variable(char *uuid, char *varname, char *value)
+int fs_switch_channel_set_variable(switch_channel_t *channel, char *varname, char *value)
 {
-	switch_channel_t *channel;
-        switch_core_session_t *session;
-        session = fs_core_session_locate(uuid);
-
-
         switch_status_t status;
-	channel = switch_core_session_get_channel(session);
+
         status = switch_channel_set_variable(channel, varname, value);
         return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }  
 
-//char* 

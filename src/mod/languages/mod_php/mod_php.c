@@ -25,6 +25,8 @@
  *
  * Anthony Minessale II <anthmct@yahoo.com>
  * Brian Fertig <brian.fertig@convergencetek.com>
+ * Steph Fox <steph@zend.com> 
+ *
  *
  * mod_php.c -- PHP Module
  *
@@ -233,7 +235,7 @@ static void php_function(switch_core_session_t *session, char *data)
 	//ZEND_SET_SYMBOL(&EG(active_symbol_table), "session", php_session);
 
 	// Force Some INI entries weather the user likes it or not
-	zend_alter_ini_entry("register_globals",sizeof("register_globals"),"1", sizeof("1") - 1, PHP_INI_SYSTEM, PHP_INI_STAGE_RUNTIME);
+	//zend_alter_ini_entry("register_globals", strlen("register_globals")+1, "1", 1, PHP_INI_SYSTEM, PHP_INI_STAGE_RUNTIME);
 
 	// Execute the bloody script
         retval = php_execute_script(&script TSRMLS_CC);

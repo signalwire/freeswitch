@@ -10,7 +10,7 @@ PHPLDFLAGS = `$(PCFG) --ldflags` -lcrypt -lresolv -lm -ldl -lnsl -lxml2 -lz -lph
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PHPMOD).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install php-5.1.6.tar.gz --prefix=$(PREFIX) --enable-embed=shared --enable-shared --with-pic --with-mysql --with-curl --enable-maintainer-zts --with-tsrm-pthreads
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install php-5.1.6.tar.gz --prefix=$(PREFIX) --enable-embed=shared --enable-shared --with-pic --with-mysql --with-curl --enable-maintainer-zts --with-tsrm-pthreads --enable-debug
 %.o:  %.c
 	$(CC) $(LCFLAGS) $(CFLAGS) -c $< -o $@
 
@@ -45,3 +45,4 @@ install:
 	cp -f freeswitch.php $(PREFIX)/lib/php
 	cp -f apptest.php $(PREFIX)/scripts
 	cp -f test.php $(PREFIX)/scripts
+	cp -f php.ini $(PREFIX)/lib
