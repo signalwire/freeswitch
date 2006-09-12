@@ -189,6 +189,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
   \brief Make an outgoing call
   \param session originating session
   \param bleg B leg session
+  \param cause a pointer to hold call cause
   \param bridgeto the desired remote callstring
   \param timelimit_sec timeout in seconds for outgoing call
   \param table optional state handler table to install on the channel
@@ -199,6 +200,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,
+													 switch_call_cause_t *cause,
 													 char *bridgeto,
 													 uint32_t timelimit_sec,
 													 const switch_state_handler_table_t *table,

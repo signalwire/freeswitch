@@ -1534,6 +1534,7 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 #define MAX_PEERS 256
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,
+													 switch_call_cause_t *cause,
 													 char *bridgeto,
 													 uint32_t timelimit_sec,
 													 const switch_state_handler_table_t *table,
@@ -1849,6 +1850,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 
  done:
+	if (caller_channel) {
+		*cause = switch_channel_get_cause(caller_channel);
+	} else {
+		*cause = SWITCH_CAUSE_CHANNEL_UNACCEPTABLE;
+	}
 	if (odata) {
 		free(odata);
 	}

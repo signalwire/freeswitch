@@ -2044,13 +2044,21 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *caller_channel = NULL;
 	char appdata[512];
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
-
-	if (switch_ivr_originate(session, &peer_session, bridgeto, timeout, &audio_bridge_peer_state_handlers, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(session,
+							 &peer_session,
+							 &cause,
+							 bridgeto,
+							 timeout,
+							 &audio_bridge_peer_state_handlers,
+							 cid_name,
+							 cid_num,
+							 NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
 		if (session) {
 			caller_channel = switch_core_session_get_channel(session);
-			switch_channel_hangup(caller_channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
+			switch_channel_hangup(caller_channel, cause);
 		}
 		goto done;
 	} 

@@ -1390,6 +1390,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 {
 	switch_memory_pool_t *pool = NULL;
 	if (argc > 1) {
+		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		struct js_session *jss = NULL;
 		JSObject *session_obj;
 		switch_core_session_t *session = NULL, *peer_session = NULL;
@@ -1471,7 +1472,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 												   context,
 												   dest);
 		
-		if (switch_ivr_originate(session, &peer_session, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile) != SWITCH_STATUS_SUCCESS) {
+		if (switch_ivr_originate(session, &peer_session, &cause, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Create Outgoing Channel! [%s]\n", dest);
 			return JS_TRUE;
 		}

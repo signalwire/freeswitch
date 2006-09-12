@@ -42,6 +42,7 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 	switch_core_session_t *peer_session;
 	unsigned int timelimit = 60;
 	char *var;
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
 	caller_channel = switch_core_session_get_channel(session);
 	assert(caller_channel != NULL);
@@ -50,7 +51,7 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 		timelimit = atoi(var);
 	}
 
-	if (switch_ivr_originate(session, &peer_session, data, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
 		switch_channel_hangup(caller_channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
 		return;
