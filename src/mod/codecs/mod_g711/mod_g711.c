@@ -30,7 +30,7 @@
  *
  */
 #include <switch.h>
-#include "tmp.h"
+#include "g711.h"
 
 
 static const char modname[] = "mod_g711";
