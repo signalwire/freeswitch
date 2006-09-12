@@ -7,11 +7,13 @@ CFLAGS += `$(PCFG) --includes` -g3 -fno-strict-aliasing
 MDIR += `$(PCFG) --extension-dir`
 PHPMOD=freeswitch
 PHPLDFLAGS = `$(PCFG) --ldflags` -lcrypt -lresolv -lm -ldl -lnsl -lxml2 -lz -lphp5
-
+MOD_CFLAGS += -fPIC
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PHPMOD).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install php-5.1.6.tar.gz --prefix=$(PREFIX) --enable-embed=shared --enable-shared --with-pic --with-mysql --with-curl --enable-maintainer-zts --with-tsrm-pthreads --enable-debug
+	MOD_CFLAGS="$(MOD_CFLAGS)" MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install zlib-1.2.3.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install curl-7.15.2.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install php-5.1.6.tar.gz --prefix=$(PREFIX) --enable-embed=shared --enable-shared --with-pic --with-zlib=$(PREFIX) --with-curl --enable-maintainer-zts --with-tsrm-pthreads --enable-debug
 %.o:  %.c
 	$(CC) $(LCFLAGS) $(CFLAGS) -c $< -o $@
 
