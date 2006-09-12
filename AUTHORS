@@ -18,13 +18,15 @@ that much better:
 
  Brian K. West - For countless hours of work on BSD and Mac support, finding countless bugs, 
   and moral support.  Xcode project files.
- Joshua Colp - For his help making mod_exosip possible, and for just being a swell guy!
+ Joshua Colp - For his help making mod_exosip possible (which we are now getting rid of but oh well), 
+               and for just being a swell guy! (until he backstabbed us, c'est la vie)
  Michal "cypromis" Bielicki (michal.bielicki  AT halo2.pl) - Solaris porting, and autotools enhancements.
  James Martelletti <james@nerdc0re.com> - All around cool guy (mod_syslog)
  Johny Kadarisman <jkr888@gmail.com>
  Yossi Neiman of Cartis Solutions, Inc. <freeswitch AT cartissolutions.com>  -  implementation of mod_cdr (perldd, mysql, csv)
  Stefan Knoblich - Various patches and support.  Thanks.
- 
+ Justin Unger - Lots of help with patches and SIP testing. Thanks! 
+
 A big THANK YOU goes to:
 
 Justin Cassidy - Build related cleanups and automatic build setup.
