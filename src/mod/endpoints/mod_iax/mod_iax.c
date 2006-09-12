@@ -75,7 +75,7 @@ static struct {
 	char *codec_rates[SWITCH_MAX_CODECS];
 	int codec_rates_last;
 	unsigned int flags;
-	switch_port_t fd;
+	int fd;
 } globals;
 
 struct private_object {
