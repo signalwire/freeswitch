@@ -1,4 +1,4 @@
-CFLAGS += -I$(BASE)/libs/codec/g7xx/src/include/g7xx
+CFLAGS += -I$(BASE)/libs/codec/g7xx/src/include
 all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
