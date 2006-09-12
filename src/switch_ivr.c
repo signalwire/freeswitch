@@ -1555,7 +1555,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_channel_t *caller_channel = NULL;
 	switch_memory_pool_t *pool = NULL;
 	char *data = NULL;
-	int i, argc;
+	int i, argc = 0;
 	int32_t idx = -1;
 	switch_codec_t write_codec = {0};
 	switch_frame_t write_frame = {0};
@@ -1850,17 +1850,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 
  done:
-	if (caller_channel) {
-		*cause = switch_channel_get_cause(caller_channel);
+	*cause = SWITCH_CAUSE_UNALLOCATED;
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n", switch_channel_get_name(peer_channel));
 	} else {
-		*cause = SWITCH_CAUSE_CHANNEL_UNACCEPTABLE;
+		if (peer_channel) {
+			*cause = switch_channel_get_cause(peer_channel);
+		} else {
+			for (i = 0; i < argc; i++) {
+				if (!peer_channels[i]) {
+					continue;
+				}
+			
+				*cause = switch_channel_get_cause(peer_channels[i]);
+				break;
+			}
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Error Cause: %d [%s]\n", *cause, switch_channel_cause2str(*cause));
 	}
+
 	if (odata) {
 		free(odata);
 	}
 	if (!pass && write_codec.implementation) {
 		switch_core_codec_destroy(&write_codec);
 	}
+
 	return status;
 }
 
