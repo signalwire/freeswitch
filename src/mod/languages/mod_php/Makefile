@@ -2,7 +2,8 @@
 PCFG=$(PREFIX)/bin/php-config
 
 LCFLAGS=-fPIC -DZTS -DPTHREADS
-CFLAGS += `$(PCFG) --includes` -g3
+# we should NOT use -fno-strict-aliasing.  we need to fix this issue, but it is an issue in the php header files.  we need to be careful of the optimization level on this module becuase of this setting.
+CFLAGS += `$(PCFG) --includes` -g3 -fno-strict-aliasing
 MDIR += `$(PCFG) --extension-dir`
 PHPMOD=freeswitch
 PHPLDFLAGS = `$(PCFG) --ldflags` -lcrypt -lresolv -lm -ldl -lnsl -lxml2 -lz -lphp5
