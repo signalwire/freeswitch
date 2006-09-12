@@ -111,6 +111,7 @@ struct sofia_profile {
 	char *username;
 	char *url;
 	char *sipdomain;
+	char *timer_name;
 	int sip_port;
 	char *codec_string;
 	char *codec_order[SWITCH_MAX_CODECS];
@@ -697,6 +698,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 										   tech_pvt->codec_ms * 1000,
 										   (switch_rtp_flag_t) flags,
 										   NULL,
+										   tech_pvt->profile->timer_name,
 										   &err,
 										   switch_core_session_get_pool(tech_pvt->session));
 	
@@ -1698,6 +1700,8 @@ static switch_status_t config_sofia(int reload)
 				profile->sipip = switch_core_strdup(profile->pool, val);
 			} else if (!strcmp(var, "sip-domain")) {
 				profile->sipdomain = switch_core_strdup(profile->pool, val);
+			} else if (!strcmp(var, "rtp-timer-name")) {
+				profile->timer_name = switch_core_strdup(profile->pool, val);
 			} else if (!strcmp(var, "ext-sip-ip")) {
 				profile->extsipip = switch_core_strdup(profile->pool, val);
 			} else if (!strcmp(var, "bitpacking")) {

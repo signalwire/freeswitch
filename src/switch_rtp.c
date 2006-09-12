@@ -161,7 +161,6 @@ struct switch_rtp {
 	uint32_t packet_size;
 	uint32_t rpacket_size;
 	switch_time_t last_read;
-	switch_time_t next_read;
 	uint32_t ms_per_packet;
 	uint32_t remote_port;
 	uint8_t stuncount;
@@ -171,6 +170,7 @@ struct switch_rtp {
 	uint8_t mini;
 	switch_payload_t te;
 	switch_mutex_t *flag_mutex;
+	switch_timer_t timer;
 };
 
 static int global_init = 0;
@@ -353,13 +353,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_remote_address(switch_rtp_t *rtp_
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session,
-												switch_payload_t payload,
-												uint32_t packet_size,
-												uint32_t ms_per_packet,
-												switch_rtp_flag_t flags, 
-												char *crypto_key,
-												const char **err,
-												switch_memory_pool_t *pool)
+												  switch_payload_t payload,
+												  uint32_t packet_size,
+												  uint32_t ms_per_packet,
+												  switch_rtp_flag_t flags, 
+												  char *crypto_key,
+												  char *timer_name,
+												  const char **err,
+												  switch_memory_pool_t *pool)
 {
 	switch_rtp_t *rtp_session = NULL;
 	srtp_policy_t policy;
@@ -456,7 +457,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->payload = payload;
 	rtp_session->ms_per_packet = ms_per_packet;
 	rtp_session->packet_size = packet_size;
-	rtp_session->next_read = switch_time_now() + rtp_session->ms_per_packet;
 
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_SECURE)) {
 		err_status_t stat;
@@ -473,26 +473,33 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		}
 	}
 
+	if (!timer_name) {
+		timer_name = "soft";
+	}
+
+	switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, packet_size, rtp_session->pool);
+
 	*new_rtp_session = rtp_session;
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_rtp_t *)switch_rtp_new(char *rx_host,
-					     switch_port_t rx_port,
-					     char *tx_host,
-					     switch_port_t tx_port,
-					     switch_payload_t payload,
-					     uint32_t packet_size,
-					     uint32_t ms_per_packet,
-					     switch_rtp_flag_t flags,
-					     char *crypto_key,
-					     const char **err,
-					     switch_memory_pool_t *pool) 
+											 switch_port_t rx_port,
+											 char *tx_host,
+											 switch_port_t tx_port,
+											 switch_payload_t payload,
+											 uint32_t packet_size,
+											 uint32_t ms_per_packet,
+											 switch_rtp_flag_t flags,
+											 char *crypto_key,
+											 char *timer_name,
+											 const char **err,
+											 switch_memory_pool_t *pool) 
 {
 	switch_rtp_t *rtp_session;
 
-	if (switch_rtp_create(&rtp_session, payload, packet_size, ms_per_packet, flags, crypto_key, err, pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_rtp_create(&rtp_session, payload, packet_size, ms_per_packet, flags, crypto_key, timer_name, err, pool) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
 	}
 
@@ -571,6 +578,10 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE)) {
 		srtp_dealloc((*rtp_session)->recv_ctx);
 		srtp_dealloc((*rtp_session)->send_ctx);
+	}
+
+	if ((*rtp_session)->timer.timer_interface) {
+		switch_core_timer_destroy(&(*rtp_session)->timer);
 	}
 
 	return;
@@ -714,6 +725,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	for(;;) {
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
+
+		if (!SWITCH_STATUS_IS_BREAK(status)) {
+			switch_core_timer_step(&rtp_session->timer);
+		}
 		
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
@@ -773,17 +788,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 			}
 		}
-
-		if ((switch_time_now() - rtp_session->next_read) > 1000) {
+		if (switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS) {
 			do_2833(rtp_session);
-
-			/* Set the next waypoint */
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_TIMER_RECLOCK)) {
-				rtp_session->next_read = switch_time_now() + rtp_session->ms_per_packet;
-			} else {
-				rtp_session->next_read += rtp_session->ms_per_packet;
-			}
-
+			
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 				/* We're late! We're Late!*/
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {
@@ -877,7 +884,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	}
 
 	rtp_session->last_read = switch_time_now();
-	rtp_session->next_read += rtp_session->ms_per_packet;
 	*payload_type = rtp_session->recv_msg.header.pt;
 
 

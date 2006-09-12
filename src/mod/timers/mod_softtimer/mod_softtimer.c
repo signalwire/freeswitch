@@ -48,7 +48,7 @@ struct timer_private {
 #endif
 };
 
-static switch_status_t soft_timer_init(switch_timer_t *timer)
+static inline switch_status_t soft_timer_init(switch_timer_t *timer)
 {
 	struct timer_private *private;
 
@@ -65,7 +65,7 @@ static switch_status_t soft_timer_init(switch_timer_t *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t soft_timer_next(switch_timer_t *timer)
+static inline switch_status_t soft_timer_next(switch_timer_t *timer)
 {
 	struct timer_private *private = timer->private_info;
 
@@ -91,7 +91,44 @@ static switch_status_t soft_timer_next(switch_timer_t *timer)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t soft_timer_destroy(switch_timer_t *timer)
+static inline switch_status_t soft_timer_step(switch_timer_t *timer)
+{
+	struct timer_private *private = timer->private_info;
+#ifdef WINTIMER
+	private->base.QuadPart += timer->interval * (private->freq.QuadPart / 1000);
+#else
+	private->reference += timer->interval * 1000;
+#endif
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static inline switch_status_t soft_timer_check(switch_timer_t *timer)
+
+{
+	struct timer_private *private = timer->private_info;
+#ifdef WINTIMER
+	QueryPerformanceCounter(&private->now);
+	if (private->now.QuadPart >= private->base.QuadPart) {
+		private->base.QuadPart += timer->interval * (private->freq.QuadPart / 1000);
+		return SWITCH_STATUS_SUCCESS;
+	} else {
+		return SWITCH_STATUS_FALSE;
+	}
+#else
+	if (switch_time_now() < private->reference) {
+		return SWITCH_STATUS_FALSE;
+	} else {
+		private->reference += timer->interval * 1000;
+		return SWITCH_STATUS_SUCCESS;
+	}
+#endif
+	
+}
+
+
+static inline switch_status_t soft_timer_destroy(switch_timer_t *timer)
 {
 	timer->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
@@ -101,6 +138,8 @@ static const switch_timer_interface_t soft_timer_interface = {
 	/*.interface_name */ "soft",
 	/*.timer_init */ soft_timer_init,
 	/*.timer_next */ soft_timer_next,
+	/*.timer_step */ soft_timer_step,
+	/*.timer_check */ soft_timer_check,
 	/*.timer_destroy */ soft_timer_destroy
 };
 

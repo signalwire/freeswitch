@@ -102,6 +102,7 @@ struct mdl_profile {
 	char *server;
     char *exten;
     char *context;
+	char *timer_name;
     ldl_handle_t *handle;
     uint32_t flags;
     uint32_t user_flags;
@@ -343,6 +344,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 												 tech_pvt->read_codec.implementation->microseconds_per_frame,
 												 flags,
 												 NULL,
+												 tech_pvt->profile->timer_name,
 												 &err, switch_core_session_get_pool(tech_pvt->session)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -1326,6 +1328,8 @@ static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
 		profile->extip = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "server")) {
 		profile->server = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "rtp-timer-name")) {
+		profile->timer_name = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "lanaddr")) {
 		profile->lanaddr = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "tls")) {

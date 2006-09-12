@@ -1050,6 +1050,26 @@ SWITCH_DECLARE(int) switch_core_timer_next(switch_timer_t *timer)
 
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_timer_step(switch_timer_t *timer)
+{
+	if (!timer->timer_interface) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not initilized!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	return timer->timer_interface->timer_step(timer);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_timer_check(switch_timer_t *timer)
+{
+	if (!timer->timer_interface) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer is not initilized!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	return timer->timer_interface->timer_check(timer);
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
 {

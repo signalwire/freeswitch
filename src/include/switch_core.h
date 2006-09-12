@@ -788,6 +788,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, ch
 SWITCH_DECLARE(int) switch_core_timer_next(switch_timer_t *timer);
 
 /*! 
+  \brief Step the timer one step
+  \param timer the timer to wait on
+  \return the newest sample count
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_timer_step(switch_timer_t *timer);
+
+/*! 
+  \brief Check if the current step has been exceeded
+  \param timer the timer to wait on
+  \return the newest sample count
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_timer_check(switch_timer_t *timer);
+
+/*! 
   \brief Destroy an allocated timer
   \param timer timer to destroy
   \return SWITCH_STATUS_SUCCESS after destruction

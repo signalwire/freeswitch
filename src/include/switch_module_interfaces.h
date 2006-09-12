@@ -240,6 +240,10 @@ struct switch_timer_interface {
 	switch_status_t (*timer_init)(switch_timer_t *);
 	/*! function to wait for one cycle to pass */
 	switch_status_t (*timer_next)(switch_timer_t *);
+	/*! function to step the timer one step */
+	switch_status_t (*timer_step)(switch_timer_t *);
+	/*! function to check if the current step has expired */
+	switch_status_t (*timer_check)(switch_timer_t *);
 	/*! function to deallocate the timer */
 	switch_status_t (*timer_destroy)(switch_timer_t *);
 	const struct switch_timer_interface *next;
