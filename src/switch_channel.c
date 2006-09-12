@@ -566,7 +566,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 						  channel->name,
 						  state_names[last_state], 
 						  state_names[state]);
+		switch_mutex_lock(channel->flag_mutex);
 		channel->state = state;
+		switch_mutex_unlock(channel->flag_mutex);
 
 		if (state == CS_HANGUP && channel->hangup_cause == SWITCH_CAUSE_UNALLOCATED) {
 			channel->hangup_cause = SWITCH_CAUSE_NORMAL_CLEARING;
@@ -859,8 +861,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	if (channel->state < CS_HANGUP) {
 		switch_event_t *event;
 		switch_channel_state_t last_state = channel->state;
-
+		switch_mutex_lock(channel->flag_mutex);
 		channel->state = CS_HANGUP;
+		switch_mutex_unlock(channel->flag_mutex);
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n", 
 						  channel->name,

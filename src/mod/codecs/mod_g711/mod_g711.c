@@ -30,7 +30,7 @@
  *
  */
 #include <switch.h>
-#include "g711.h"
+#include "tmp.h"
 
 
 static const char modname[] = "mod_g711";
@@ -68,7 +68,7 @@ static switch_status_t switch_g711u_encode(switch_codec_t *codec,
 	ebuf = encoded_data;
 
 	for (i = 0; i < decoded_data_len / sizeof(short); i++) {
-		ebuf[i] = linear2ulaw(dbuf[i]);
+		ebuf[i] = linear_to_ulaw(dbuf[i]);
 	}
 
 	*encoded_data_len = i;
@@ -96,7 +96,7 @@ static switch_status_t switch_g711u_decode(switch_codec_t *codec,
 		*decoded_data_len = codec->implementation->bytes_per_frame;
 	} else {
 		for (i = 0; i < encoded_data_len; i++) {
-			dbuf[i] = ulaw2linear(ebuf[i]);
+			dbuf[i] = ulaw_to_linear(ebuf[i]);
 		}
 
 		*decoded_data_len = i * 2;
@@ -143,7 +143,7 @@ static switch_status_t switch_g711a_encode(switch_codec_t *codec,
 	ebuf = encoded_data;
 
 	for (i = 0; i < decoded_data_len / sizeof(short); i++) {
-		ebuf[i] = linear2alaw(dbuf[i]);
+		ebuf[i] = linear_to_alaw(dbuf[i]);
 	}
 
 	*encoded_data_len = i;
@@ -171,7 +171,7 @@ static switch_status_t switch_g711a_decode(switch_codec_t *codec,
 		*decoded_data_len = codec->implementation->bytes_per_frame;
 	} else {
 		for (i = 0; i < encoded_data_len; i++) {
-			dbuf[i] = alaw2linear(ebuf[i]);
+			dbuf[i] = alaw_to_linear(ebuf[i]);
 		}
 
 		*decoded_data_len = i * 2;

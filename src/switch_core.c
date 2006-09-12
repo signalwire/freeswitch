@@ -2468,7 +2468,11 @@ static void switch_core_standard_on_hold(switch_core_session_t *session)
 
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session_t *session)
 {
-	switch_thread_cond_signal(session->cond);
+	/* If trylock fails the signal is already awake so we need'nt bother */
+	if (switch_mutex_trylock(session->mutex) == SWITCH_STATUS_SUCCESS) {
+		switch_thread_cond_signal(session->cond);
+		switch_mutex_unlock(session->mutex);
+	} 
 }
 
 SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session_t *session)
@@ -2593,7 +2597,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State NEW\n", switch_channel_get_name(session->channel));
 				break;
 			case CS_DONE:
-				continue;
+				goto done;
 			case CS_HANGUP:	/* Deactivate and end the thread */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HANGUP\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_hangup ||
@@ -2630,8 +2634,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 						switch_core_standard_on_hangup(session);
 					}
 				}
-				switch_channel_set_state(session->channel, CS_DONE);
-				midstate = switch_channel_get_state(session->channel);
+				goto done;
 				break;
 			case CS_INIT:		/* Basic setup tasks */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State INIT\n", switch_channel_get_name(session->channel));
@@ -2864,10 +2867,13 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			switch_thread_cond_wait(session->cond, session->mutex);
 		} 
 	}
+ done:
+
 #ifdef CRASH_PROT
 	apr_hash_set(runtime.stack_table, &thread_id, sizeof(thread_id), NULL);
 #endif
 	session->thread_running = 0;
+	switch_mutex_unlock(session->mutex);
 }
 
 SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session)
