@@ -2372,7 +2372,7 @@ static void switch_core_standard_on_init(switch_core_session_t *session)
 static void switch_core_standard_on_hangup(switch_core_session_t *session)
 {
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HANGUP %s\n", switch_channel_get_name(session->channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HANGUP %s, cause: %s\n", switch_channel_get_name(session->channel),switch_channel_cause2str(switch_channel_get_cause(session->channel)));
 
 }
 

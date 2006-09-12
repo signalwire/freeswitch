@@ -80,7 +80,8 @@ typedef enum {
 	CFLAG_DYNAMIC = (1 << 1),
 	CFLAG_ENFORCE_MIN = (1 << 2),
 	CFLAG_DESTRUCT = (1 << 3),
-	CFLAG_LOCKED = (1 << 4)
+	CFLAG_LOCKED = (1 << 4),
+	CFLAG_ANSWERED = (1 << 5)
 } conf_flag_t;
 
 typedef enum {
@@ -127,6 +128,7 @@ struct conference_obj {
 	char *bad_pin_sound;
 	char *profile_name;
 	uint32_t flags;
+	switch_call_cause_t bridge_hangup_cause;
 	switch_mutex_t *flag_mutex;
 	uint32_t rate;
 	uint32_t interval;
@@ -645,7 +647,13 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 		for(imember = conference->members; imember; imember = imember->next) {
 			switch_channel_t *channel = switch_core_session_get_channel(imember->session);
-			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			// add this little bit to preserve the bridge cause code in case of an early media call that
+			// never answers
+			if (switch_test_flag(conference, CFLAG_ANSWERED)) 
+				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);	
+			else 	
+				// put actual cause code from outbound channel hangup here
+				switch_channel_hangup(channel, conference->bridge_hangup_cause);
 			switch_clear_flag_locked(imember, MFLAG_RUNNING);
 		}
 
@@ -698,12 +706,6 @@ static void conference_loop(conference_member_t *member)
 		return;
 	}
 
-	if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
-		/* Answer the channel */
-		switch_channel_answer(channel);
-	}
-
-	/* Prepare the write frame */
 	write_frame.data = data;
 	write_frame.buflen = sizeof(data);
 	write_frame.codec = &member->write_codec;
@@ -723,7 +725,20 @@ static void conference_loop(conference_member_t *member)
 		if (switch_core_session_dequeue_event(member->session, &event) == SWITCH_STATUS_SUCCESS) {
 			switch_event_destroy(&event);
 		}
-
+#if 1
+		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			// test to see if outbound channel has answered
+			if (switch_channel_test_flag(channel, CF_ANSWERED) && !switch_test_flag(member->conference, CFLAG_ANSWERED)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Outbound conference channel answered, setting CFLAG_ANSWERED");
+				switch_set_flag(member->conference, CFLAG_ANSWERED);
+			}
+		} else {
+			if (switch_test_flag(member->conference, CFLAG_ANSWERED) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CLFAG_ANSWERED set, answering inbound channel\n");
+				switch_channel_answer(channel);
+			}
+		}
+#endif
         if (switch_channel_has_dtmf(channel)) {
             switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
 
@@ -945,6 +960,15 @@ static void conference_loop(conference_member_t *member)
 	
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 	switch_core_timer_destroy(&timer);
+
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel leaving conference, cause: %s\n",
+			switch_channel_cause2str(switch_channel_get_cause(channel)));
+
+	// if it's an outbound channel, store the release cause in the conference struct, we might need it
+	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		member->conference->bridge_hangup_cause = switch_channel_get_cause(channel);
+	}
 
 	/* Wait for the input thead to end */
 	while(switch_test_flag(member, MFLAG_ITHREAD)) {
@@ -2055,7 +2079,8 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 							 cid_name,
 							 cid_num,
 							 NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel, cause: %s\n",
+				  switch_channel_cause2str(cause));
 		if (session) {
 			caller_channel = switch_core_session_get_channel(session);
 			switch_channel_hangup(caller_channel, cause);
@@ -2319,7 +2344,9 @@ static void conference_function(switch_core_session_t *session, char *data)
 		if (conference_outcall(conference, session, bridgeto, 60, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
-	}
+	} //else 	
+		// if we're not using "bridge:" set the conference answered flag
+		//switch_set_flag(conference, CFLAG_ANSWERED);
 
 
 
