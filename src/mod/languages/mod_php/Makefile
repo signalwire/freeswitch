@@ -37,8 +37,9 @@ clean:
 	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
 
 install:
-	mkdir -p $(MDIR)
-	cp -f php_$(PHPMOD).$(DYNAMIC_LIB_EXTEN) $(MDIR)
+	#mkdir -p $(MDIR)
+	#cp -f php_$(PHPMOD).$(DYNAMIC_LIB_EXTEN) $(MDIR)
+	cp -f php_$(PHPMOD).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/lib/php/extensions
 	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
 	cp -f $(PHPMOD).php $(PREFIX)/lib/php
 	cp -f classFreeswitch.php $(PREFIX)/lib/php
