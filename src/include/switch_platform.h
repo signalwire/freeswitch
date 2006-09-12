@@ -75,6 +75,7 @@ SWITCH_BEGIN_EXTERN_C
 #endif
 #endif
 
+#undef inline
 #define inline __inline
 
 #ifndef uint32_t
