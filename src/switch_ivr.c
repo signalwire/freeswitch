@@ -1836,23 +1836,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 		*bleg = peer_session;
-		if (caller_channel) {
-			switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
-		}
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
-		if (caller_channel) {
-			switch_channel_set_variable(caller_channel, "originate_disposition", "no answer");
-			switch_channel_hangup(caller_channel, SWITCH_CAUSE_NO_ANSWER);
-		}
 		status = SWITCH_STATUS_FALSE;
 	}
-
 
  done:
 	*cause = SWITCH_CAUSE_UNALLOCATED;
 
 	if (status == SWITCH_STATUS_SUCCESS) {
+		if (caller_channel) {
+			switch_channel_set_variable(caller_channel, "originate_disposition", "call accepted");
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Success: [%s]\n", switch_channel_get_name(peer_channel));
 	} else {
 		if (peer_channel) {
@@ -1862,10 +1857,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (!peer_channels[i]) {
 					continue;
 				}
-			
+				
 				*cause = switch_channel_get_cause(peer_channels[i]);
 				break;
 			}
+		}
+		if (caller_channel) {
+			switch_channel_set_variable(caller_channel, "originate_disposition", switch_channel_cause2str(*cause));
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Error Cause: %d [%s]\n", *cause, switch_channel_cause2str(*cause));
 	}
