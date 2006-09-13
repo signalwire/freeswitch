@@ -547,6 +547,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 {
+	assert(rtp_session != NULL);
 	switch_mutex_lock(rtp_session->flag_mutex);
 	apr_socket_shutdown(rtp_session->sock, APR_SHUTDOWN_READWRITE);
 	switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);

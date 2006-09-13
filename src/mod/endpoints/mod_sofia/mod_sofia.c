@@ -649,7 +649,6 @@ static void deactivate_rtp(private_object_t *tech_pvt)
 			loops++;
 		}
 		switch_rtp_destroy(&tech_pvt->rtp_session);
-		tech_pvt->rtp_session = NULL;
 	}
 }
 
