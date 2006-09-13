@@ -76,6 +76,8 @@ static struct {
 	int codec_rates_last;
 	unsigned int flags;
 	int fd;
+	int calls;
+	switch_mutex_t *mutex;
 } globals;
 
 struct private_object {
@@ -468,6 +470,9 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	/* Move Channel's State Machine to RING */
 	switch_channel_set_state(channel, CS_RING);
+	switch_mutex_lock(globals.mutex);
+	globals.calls++;
+	switch_mutex_unlock(globals.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -538,7 +543,13 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
-
+	switch_mutex_lock(globals.mutex);
+	globals.calls--;
+	if (globals.calls < 0) {
+		globals.calls = 0;
+	}
+	switch_mutex_unlock(globals.mutex);
+		
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -826,6 +837,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_TERM;
 	}
 
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &channel_module_interface;
 
@@ -849,7 +861,7 @@ static switch_status_t load_config(void)
 	switch_xml_t cfg, xml, settings, param;
 
 	memset(&globals, 0, sizeof(globals));
-
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
 		return SWITCH_STATUS_TERM;
@@ -929,15 +941,27 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 	for (;;) {
 
+
 		if (running == -1) {
 			break;
 		}
 
 		/* Wait for an event. */
-		if ((iaxevent = iax_get_event(-1)) == NULL) {
-			//switch_yield(100);
-			//continue;
-			break;
+		if ((iaxevent = iax_get_event(0)) == NULL) {
+			int waitlen = 0;
+			
+			if (globals.calls == 0) {
+				waitlen = 10000;
+			} else if (globals.calls == 1) {
+				waitlen = 1000;
+			} else if (globals.calls < 10) {
+				waitlen = 100;
+			} else {
+				waitlen = 10;
+			}
+
+			switch_yield(waitlen);
+			continue;
 		} else {
 			struct private_object *tech_pvt = iax_get_private(iaxevent->session);
 
