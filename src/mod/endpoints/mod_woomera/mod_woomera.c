@@ -1318,6 +1318,9 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	switch_set_flag(profile, PFLAG_INBOUND | PFLAG_OUTBOUND);
 	profile->name = "main";
 	strncpy(profile->dialplan, "default", sizeof(profile->dialplan) - 1);
+	strncpy(profile->audio_ip, "127.0.0.1", sizeof(profile->audio_ip) - 1);
+	strncpy(profile->woomera_host, "127.0.0.1", sizeof(profile->woomera_host) - 1);
+	profile->woomera_port = (switch_port_t)42420;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
