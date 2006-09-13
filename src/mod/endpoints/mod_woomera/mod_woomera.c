@@ -1337,7 +1337,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		for (param = switch_xml_child(xmlp, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
-			if (!strcmp(var, "audio_ip")) {
+			if (!strcmp(var, "audio-ip")) {
 				strncpy(profile->audio_ip, val, sizeof(profile->audio_ip) - 1);
 			} else if (!strcmp(var, "host")) {
 				strncpy(profile->woomera_host, val, sizeof(profile->woomera_host) - 1);
