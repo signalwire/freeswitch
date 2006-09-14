@@ -580,6 +580,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define FILE_STARTSAMPLES 512 * 128
+#define FILE_BLOCKSIZE 1024
 SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, 
 												   switch_file_handle_t *fh,
 												   char *file,
@@ -589,7 +591,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 												   unsigned int buflen)
 {
 	switch_channel_t *channel;
-	short abuf[960];
+	int16_t abuf[FILE_STARTSAMPLES+1];
 	char dtmf[128];
 	uint32_t interval = 0, samples = 0;
 	uint32_t ilen = 0;
@@ -676,6 +678,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	assert(read_codec != NULL);
 	interval = read_codec->implementation->microseconds_per_frame / 1000;
 
+	if (!fh->audio_buffer) {
+		switch_buffer_create_dynamic(&fh->audio_buffer, FILE_BLOCKSIZE, (FILE_STARTSAMPLES * sizeof(int16_t)) + FILE_BLOCKSIZE, 0);
+	} 
 
 	codec_name = "L16";
 
@@ -771,8 +776,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			olen = ilen;
 			do_speed = 0;
 		} else {
-			olen = ilen;
+			olen = FILE_STARTSAMPLES;
 			switch_core_file_read(fh, abuf, &olen);
+			switch_buffer_write(fh->audio_buffer, abuf, olen * 2);
+			olen = switch_buffer_read(fh->audio_buffer, abuf, ilen * 2) / 2;
 		}
 
 		if (done || olen <= 0) {
@@ -796,9 +803,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			short *bp = write_frame.data;
 			switch_size_t wrote = 0;
 			
-			if (!fh->audio_buffer) {
-				switch_buffer_create(fh->memory_pool, &fh->audio_buffer, SWITCH_RECCOMMENDED_BUFFER_SIZE);
-			} 
 			
 			supplement = (int) (factor * olen);
 			newlen = (fh->speed > 0) ? olen - supplement : olen + supplement;
@@ -872,6 +876,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done playing file\n");
 	switch_core_file_close(fh);
+	switch_buffer_destroy(&fh->audio_buffer);
 	switch_core_codec_destroy(&codec);
 
 	if (timer_name) {

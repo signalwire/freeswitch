@@ -39,6 +39,7 @@
 #endif
 
 //#define DEBUG_ALLOC
+#define DO_EVENTS
 
 #ifdef CRASH_PROT
 #define __CP "ENABLED"
@@ -3268,7 +3269,7 @@ static void switch_core_sql_thread_launch(void)
 	
 }
 
-
+#ifdef DO_EVENTS
 static void core_event_handler(switch_event_t *event)
 {
 	char *sql = NULL;
@@ -3371,6 +3372,7 @@ static void core_event_handler(switch_event_t *event)
 		sql = NULL;
 	}
 }
+#endif
 
 SWITCH_DECLARE(void) switch_core_set_globals(void)
 {
@@ -3553,11 +3555,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 		switch_core_db_exec(runtime.db, create_channels_sql, NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, create_calls_sql, NULL, NULL, NULL);
 		switch_core_db_exec(runtime.db, create_interfaces_sql, NULL, NULL, NULL);
-		
+#ifdef DO_EVENTS		
 		if (switch_event_bind("core_db", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, core_event_handler, NULL) !=
 			SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event handler!\n");
 		}
+#endif
 	}
 
 	runtime.session_id = 1;

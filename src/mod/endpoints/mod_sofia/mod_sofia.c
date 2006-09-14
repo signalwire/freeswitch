@@ -642,7 +642,6 @@ static switch_status_t sofia_on_transmit(switch_core_session_t *session)
 static void deactivate_rtp(private_object_t *tech_pvt)
 {
 	int loops = 0;//, sock = -1;
-
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		while (loops < 10 && (switch_test_flag(tech_pvt, TFLAG_READING) || switch_test_flag(tech_pvt, TFLAG_WRITING))) {
 			switch_yield(10000);
@@ -730,10 +729,6 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 	ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
 
 	flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_MINI);
-	if (switch_test_flag(tech_pvt, TFLAG_TIMER)) {
-		flags = (switch_rtp_flag_t) (flags | SWITCH_RTP_FLAG_USE_TIMER);
-	}
-	
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
 					  switch_channel_get_name(channel),
@@ -1844,6 +1839,10 @@ static switch_status_t config_sofia(int reload)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds!\n");
 				}
 			}
+		}
+
+		if (switch_test_flag(profile, TFLAG_TIMER) && !profile->timer_name) {
+			profile->timer_name = switch_core_strdup(profile->pool, "soft");			
 		}
 
 		if (!profile->username) {

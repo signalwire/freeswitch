@@ -171,6 +171,8 @@ struct switch_rtp {
 	switch_payload_t te;
 	switch_mutex_t *flag_mutex;
 	switch_timer_t timer;
+	uint8_t ready;
+	switch_time_t last_time;
 };
 
 static int global_init = 0;
@@ -472,13 +474,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 			return SWITCH_STATUS_FALSE;
 		}
 	}
-
-	if (!timer_name) {
-		timer_name = "soft";
+	switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+	if (timer_name) {
+		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, packet_size, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_FALSE;
+		}
+		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 	}
 
-	switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, packet_size, rtp_session->pool);
-
+	rtp_session->ready++;
 	*new_rtp_session = rtp_session;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -556,13 +560,12 @@ SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(uint8_t) switch_rtp_ready(switch_rtp_t *rtp_session)
 {
-	return (rtp_session != NULL && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) ? 1 : 0;
+	return (rtp_session != NULL && rtp_session->ready) ? 1 : 0;
 }
 
 SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 {
-
-	if (!switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_IO)) {
+	if (!switch_rtp_ready(*rtp_session)) {
 		return;
 	}
 
@@ -721,13 +724,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 {
 	switch_size_t bytes;
 	switch_status_t status;
-
-
+	switch_time_t now = 0;
+	
 	for(;;) {
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
 
-		if (!SWITCH_STATUS_IS_BREAK(status)) {
+		if (!SWITCH_STATUS_IS_BREAK(status) && rtp_session->timer.timer_interface) {
 			switch_core_timer_step(&rtp_session->timer);
 		}
 		
@@ -789,9 +792,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 			}
 		}
-		if (switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS) {
+		
+		if ((!rtp_session->timer.timer_interface && (now=switch_time_now()) - rtp_session->last_time > 10000) || 
+			switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS) {
 			do_2833(rtp_session);
-			
+			rtp_session->last_time = now;
+
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {
 				/* We're late! We're Late!*/
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {

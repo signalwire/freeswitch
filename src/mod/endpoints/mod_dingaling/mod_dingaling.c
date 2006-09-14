@@ -1242,6 +1242,10 @@ static switch_status_t init_profile(struct mdl_profile *profile, uint8_t login)
 		profile->exten) {
 		ldl_handle_t *handle;
 
+		if (switch_test_flag(profile, TFLAG_TIMER) && !profile->timer_name) {
+			profile->timer_name = switch_core_strdup(module_pool, "soft");			
+		}
+
 		if (login) {
 			if (ldl_handle_init(&handle,
 								profile->login,

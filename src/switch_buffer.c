@@ -39,7 +39,8 @@ typedef enum {
 } switch_buffer_flag_t;
 
 struct switch_buffer {
-	unsigned char *data;
+	switch_byte_t *data;
+	switch_byte_t *front;
 	switch_size_t used;
 	switch_size_t datalen;
 	switch_size_t max_len;
@@ -56,6 +57,7 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool,
 		&& (new_buffer->data = switch_core_alloc(pool, max_len)) != 0) {
 		new_buffer->datalen = max_len;
 		new_buffer->id = buffer_id++;
+		new_buffer->front = new_buffer->data;
 		*buffer = new_buffer;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -84,6 +86,7 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **b
 		new_buffer->datalen = start_len;
 		new_buffer->id = buffer_id++;
 		new_buffer->blocksize = blocksize;
+		new_buffer->front = new_buffer->data;
 		switch_set_flag(new_buffer, SWITCH_BUFFER_FLAG_DYNAMIC);
 		
 		*buffer = new_buffer;
@@ -163,8 +166,9 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *
 		reading = buffer->used;
 	}
 
-	memcpy(data, buffer->data, reading);
-	memmove(buffer->data, buffer->data + reading, buffer->datalen - reading);
+	memcpy(data, buffer->front, reading);
+
+	buffer->front += reading;
 	buffer->used -= reading;
 	//if (buffer->id == 3) printf("%u o %d = %d\n", buffer->id, (uint32_t)reading, (uint32_t)buffer->used);
 	return reading;
@@ -180,10 +184,15 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 
 	freespace = buffer->datalen - buffer->used;
 
+	if (buffer->front != buffer->data) {
+		memmove(buffer->data, buffer->front, buffer->used);
+		buffer->front = buffer->data;
+	}
+
 	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_DYNAMIC)) {
 		if (freespace < datalen) {
 			switch_size_t new_size, new_block_size;
-
+			
 			new_size = buffer->datalen + datalen;
 			new_block_size = buffer->datalen + buffer->blocksize;
 
@@ -194,7 +203,6 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 			if (!(buffer->data = realloc(buffer->data, new_size))) {
 				return 0;
 			}
-			
 			buffer->datalen = new_size;
 		}
 	}
