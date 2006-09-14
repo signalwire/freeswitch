@@ -103,6 +103,51 @@ static switch_status_t mod_syslog_logger(const switch_log_node_t *node, switch_l
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t load_config(void)
+{
+	char *cf = "syslog.conf";
+	switch_xml_t cfg, xml, settings, param;
+
+	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+	} else {
+		if ((settings = switch_xml_child(cfg, "settings"))) {
+			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				if (!strcmp(var, "ident")) {
+					set_global_ident(val);
+				} else if (!strcmp(var, "facility")) {
+					set_global_facility(val);
+				} else if (!strcmp(var, "format")) {
+					set_global_format(val);
+				} else if (!strcmp(var, "level")) {
+					set_global_level(val);;
+				}
+	
+			}
+		}
+		switch_xml_free(xml);
+	}
+
+	if (switch_strlen_zero(globals.ident)) {
+		set_global_ident(DEFAULT_IDENT);
+	}
+	if (switch_strlen_zero(globals.facility)) {
+		set_global_facility(DEFAULT_FACILITY);
+	}
+	if (switch_strlen_zero(globals.format)) {
+		set_global_format(DEFAULT_FORMAT);
+	}
+	if (switch_strlen_zero(globals.level)) {
+		set_global_level(DEFAULT_LEVEL);
+	}
+
+
+	return 0;
+}
+
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
 	switch_status_t status;
@@ -126,46 +171,3 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_unload(const switch_loadable_m
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t load_config(void)
-{
-	switch_config_t cfg;
-	char *var, *val;
-	char *cf = "syslog.conf";
-
-	memset(&globals, 0, sizeof(globals));
-
-	if (switch_config_open_file(&cfg, cf)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
-
-		while (switch_config_next_pair(&cfg, &var, &val)) {
-			if (!strcasecmp(cfg.category, "settings")) {
-				if (!strcmp(var, "ident")) {
-					set_global_ident(val);
-				} else if (!strcmp(var, "facility")) {
-					set_global_facility(val);
-				} else if (!strcmp(var, "format")) {
-					set_global_format(val);
-				} else if (!strcmp(var, "level")) {
-					set_global_level(val);;
-				}
-			}
-		}
-
-		switch_config_close_file(&cfg);
-	}
-	
-	if (switch_strlen_zero(globals.ident)) {
-		set_global_ident(DEFAULT_IDENT);
-	}
-	if (switch_strlen_zero(globals.facility)) {
-		set_global_facility(DEFAULT_FACILITY);
-	}
-	if (switch_strlen_zero(globals.format)) {
-		set_global_format(DEFAULT_FORMAT);
-	}
-	if (switch_strlen_zero(globals.level)) {
-		set_global_level(DEFAULT_LEVEL);
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-}
