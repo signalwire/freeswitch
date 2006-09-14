@@ -1384,7 +1384,9 @@ static void sip_i_state(int status,
 				return;
 			}
 		}
-		switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+		if (channel) {
+			switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+		}
 		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
 					//SIPTAG_CONTACT(tech_pvt->contact), 
 					TAG_END());
@@ -1419,7 +1421,9 @@ static void sip_i_state(int status,
 				return;
 			}
 		}
-		switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+		if (channel) {
+			switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+		}
 		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
 					//SIPTAG_CONTACT(tech_pvt->contact), 
 					TAG_END());
@@ -1460,7 +1464,9 @@ static void sip_i_state(int status,
 				return;
 			}
 		}
-		switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+		if (channel) {
+			switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+		}
 		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
 					//SIPTAG_CONTACT(tech_pvt->contact), 
 					TAG_END());
