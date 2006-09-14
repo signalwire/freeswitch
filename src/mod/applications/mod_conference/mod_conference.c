@@ -709,6 +709,10 @@ static void conference_loop(conference_member_t *member)
 	write_frame.data = data;
 	write_frame.buflen = sizeof(data);
 	write_frame.codec = &member->write_codec;
+
+	if (switch_test_flag(member->conference, CFLAG_ANSWERED)) {
+		switch_channel_answer(channel);
+	}
 	
 	/* Start a thread to read data and feed it into the buffer and use this thread to generate output */
 	launch_input_thread(member, switch_core_session_get_pool(member->session));
@@ -957,7 +961,7 @@ static void conference_loop(conference_member_t *member)
 			}
 		}
 	} /* Rinse ... Repeat */
-	
+
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
 	switch_core_timer_destroy(&timer);
 
@@ -2344,9 +2348,12 @@ static void conference_function(switch_core_session_t *session, char *data)
 		if (conference_outcall(conference, session, bridgeto, 60, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
-	} //else 	
+	} else {	
 		// if we're not using "bridge:" set the conference answered flag
-		//switch_set_flag(conference, CFLAG_ANSWERED);
+		// and this isn't an outbound channel, answer the call
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) 
+			switch_set_flag(conference, CFLAG_ANSWERED);
+	}
 
 
 

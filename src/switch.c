@@ -62,7 +62,7 @@ static void set_high_priority()
 #ifdef WIN32
 	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
 #else
-	//nice(-20);
+	//nice(-19);
 #endif
 }
 

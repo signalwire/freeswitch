@@ -3624,6 +3624,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, cons
 		switch_event_fire(&event);
 	}
 
+//#define USE_MLOCKALL
 #ifdef HAVE_MLOCKALL
 #ifdef USE_MLOCKALL
 	mlockall(MCL_CURRENT|MCL_FUTURE);

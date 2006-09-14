@@ -187,7 +187,7 @@ static switch_status_t switch_g711a_destroy(switch_codec_t *codec)
 
 /* Registration */
 
-#if 0
+
 
 static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
@@ -208,7 +208,7 @@ static const switch_codec_implementation_t g711u_8k_60ms_implementation = {
 	/*.destroy */ switch_g711u_destroy
 };
 
-
+#if 0
 static const switch_codec_implementation_t g711u_8k_30ms_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO,
 	/*.ianacode */ 0,
@@ -268,6 +268,7 @@ static const switch_codec_implementation_t g711u_8k_implementation = {
 	/*.decode */ switch_g711u_decode,
 	/*.destroy */ switch_g711u_destroy,
 	///*.next */ &g711u_16k_implementation
+	&g711u_8k_60ms_implementation
 };
 
 

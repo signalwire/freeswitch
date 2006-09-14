@@ -37,16 +37,18 @@ static switch_memory_pool_t *module_pool = NULL;
 static struct {
 	int32_t RUNNING;
 	switch_mutex_t *mutex;
+	uint32_t timer_milliseconds;
+	uint32_t timer_microseconds;
 } globals;
 
 static const char modname[] = "mod_threadtimer";
 #define MAX_ELEMENTS 1000
 
 struct timer_private {
-	uint32_t tick;
-	uint32_t reference;
+	uint64_t tick;
+	uint64_t reference;
 	uint32_t interval;
-	switch_mutex_t *mutex;
+	//switch_mutex_t *mutex;
 	struct timer_private *next;
 };
 
@@ -60,10 +62,29 @@ typedef struct timer_head timer_head_t;
 
 static timer_head_t *TIMER_MATRIX[MAX_ELEMENTS+1];
 
+#define IDLE_SPEED 100
+
+static inline void set_timer(void)
+{
+	uint32_t index = 0, min = IDLE_SPEED;
+
+	for(index = 0; index < MAX_ELEMENTS; index++) {
+		if (TIMER_MATRIX[index] && TIMER_MATRIX[index]->private_info) {
+			if (min > index) {
+				min = index;
+			}
+		}
+	}
+
+	globals.timer_milliseconds = min;
+	globals.timer_microseconds = min * 1000;
+}
+
 static inline switch_status_t timer_init(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
 	timer_head_t *head;
+
 
 	if ((private_info = switch_core_alloc(timer->memory_pool, sizeof(*private_info)))) {
 		timer->private_info = private_info;
@@ -76,35 +97,28 @@ static inline switch_status_t timer_init(switch_timer_t *timer)
 
 		head = TIMER_MATRIX[timer->interval];
 
-		switch_mutex_init(&private_info->mutex, SWITCH_MUTEX_NESTED, timer->memory_pool);
+		//switch_mutex_init(&private_info->mutex, SWITCH_MUTEX_NESTED, timer->memory_pool);
 		private_info->interval = timer->interval;
 
 		switch_mutex_lock(head->mutex);
 		private_info->next = head->private_info;
 		head->private_info = private_info;
 		switch_mutex_unlock(head->mutex);
-		
+		set_timer();
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	return SWITCH_STATUS_MEMERR;
 }
 
-#define MAX_TICKS 0xFFFFFF00
-#define check_overflow(p) if (p->reference > MAX_TICKS) {\
-		switch_mutex_lock(p->mutex);\
-		p->reference = p->tick = 0;\
-		switch_mutex_unlock(p->mutex);\
-	}\
-
-
 static inline switch_status_t timer_step(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 
-	switch_mutex_lock(private_info->mutex);
+	//switch_mutex_lock(private_info->mutex);
 	private_info->reference += private_info->interval;
-	switch_mutex_unlock(private_info->mutex);
+	//switch_mutex_unlock(private_info->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -119,7 +133,6 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
 	while (private_info->tick < private_info->reference) {
 		switch_yield(1000);
 	}
-	check_overflow(private_info);
 	timer->samplecount += timer->samples;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -131,15 +144,14 @@ static inline switch_status_t timer_check(switch_timer_t *timer)
 	timer_private_t *private_info = timer->private_info;
 	switch_status_t status;
 
-	switch_mutex_lock(private_info->mutex);
+	//switch_mutex_lock(private_info->mutex);
 	if (private_info->tick < private_info->reference) {
 		status = SWITCH_STATUS_FALSE;
 	} else {
 		private_info->reference += private_info->interval;
-		check_overflow(private_info);
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	switch_mutex_unlock(private_info->mutex);
+	//switch_mutex_unlock(private_info->mutex);
 
 	return status;
 }
@@ -167,7 +179,7 @@ static inline switch_status_t timer_destroy(switch_timer_t *timer)
 		last = ptr;
 	}
 	switch_mutex_unlock(head->mutex);
-	
+	set_timer();
 	timer->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -205,6 +217,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 {
 	switch_time_t reference = switch_time_now();
@@ -214,19 +228,22 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
+	globals.timer_microseconds = IDLE_SPEED  * 1000;
+	globals.timer_milliseconds = IDLE_SPEED;
 
 	globals.RUNNING = 1;
 
 	while(globals.RUNNING == 1) {
-		reference += 1000;
-		
+		reference += globals.timer_microseconds;
+		//printf("TEST %d\n", globals.timer_microseconds);
 		while (switch_time_now() < reference) {
-			switch_yield(500);
+			//switch_yield((reference - now) - 1000);
+			switch_yield(globals.timer_microseconds >> 1);
 		}
 
-		current_ms++;
+		current_ms += globals.timer_milliseconds;
 
-		for (x = 0; x < 1000; x++) {
+		for (x = 0; x < MAX_ELEMENTS; x++) {
 			int i = x, index;
 			if (i == 0) {
 				i = 1;
@@ -237,9 +254,9 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			if (TIMER_MATRIX[index] && TIMER_MATRIX[index]->private_info) {
 				switch_mutex_lock(TIMER_MATRIX[index]->mutex);
 				for (ptr = TIMER_MATRIX[index]->private_info; ptr; ptr = ptr->next) {
-					switch_mutex_lock(ptr->mutex);
+					//switch_mutex_lock(ptr->mutex);
 					ptr->tick += ptr->interval;
-					switch_mutex_unlock(ptr->mutex);
+					//switch_mutex_unlock(ptr->mutex);
 				}
 				switch_mutex_unlock(TIMER_MATRIX[index]->mutex);
 			}
