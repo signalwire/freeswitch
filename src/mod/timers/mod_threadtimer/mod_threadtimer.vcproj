@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="mod_threadtimer"
-	ProjectGUID="{DCC13474-28DF-47CA-A8EB-72F8CE9A78C5}"
+	ProjectGUID="{F2DCC46E-3BE4-4392-81BF-973B2E47EB64}"
 	RootNamespace="mod_threadtimer"
 	Keyword="Win32Proj"
 	>
