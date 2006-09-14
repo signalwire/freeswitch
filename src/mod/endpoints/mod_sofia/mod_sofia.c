@@ -1344,12 +1344,13 @@ static void sip_i_state(int status,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s entering state [%s]\n", 
 						  switch_channel_get_name(channel),
 						  nua_callstate_name(ss_state));
+
+		if (r_sdp) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);			
+			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, (char *)r_sdp);
+		}
 	}
 
-	if (r_sdp) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);			
-		tech_pvt->remote_sdp_str = switch_core_session_strdup(session, (char *)r_sdp);
-	}
 
 	switch ((enum nua_callstate)ss_state) {
 	case nua_callstate_init:
