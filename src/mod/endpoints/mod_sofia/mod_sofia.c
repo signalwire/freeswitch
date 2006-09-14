@@ -908,8 +908,13 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 		}
 
 	} 
-
+	
 	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
+
+	if (tech_pvt->read_frame.datalen == 0) {
+		*frame = NULL;
+		return SWITCH_STATUS_GENERR;
+	}
 
 	*frame = &tech_pvt->read_frame;
 
