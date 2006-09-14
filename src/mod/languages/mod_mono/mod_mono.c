@@ -36,12 +36,12 @@
 #include <mono/metadata/debug-helpers.h>
 #include <mono/metadata/image.h>
 #include <mono/metadata/threads.h>
-#include <gc/gc.h>
+//#include <gc/gc.h>
 #include <switch.h>
 
 #define SWITCH_MONO_MODULES  "mono/" 
 #define SWITCH_MONO_LIBDIR   "lib/"
-#define SWITCH_MONO_ASSEMBLY "Freeswitch.dll"
+#define SWITCH_MONO_ASSEMBLY "FreeSwitch.dll"
 
 /* Module functions */
 switch_status_t mod_mono_load_modules(const char *module_dir);
@@ -90,7 +90,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_FALSE;
 	}		
 	
-	/* Construct the path to the Freeswitch assembly, then check to make sure it exists */
+	/* Construct the path to the FreeSwitch assembly, then check to make sure it exists */
 	switch_size_t assembly_dir_len  = strlen(SWITCH_GLOBAL_dirs.base_dir) + strlen(SWITCH_MONO_LIBDIR) + 2; /* Account for / and \0 */
 	switch_size_t assembly_file_len = assembly_dir_len + strlen(SWITCH_MONO_ASSEMBLY);
 	char *assembly_dir  = (char *) switch_core_alloc(mono_pool, assembly_dir_len);
@@ -102,11 +102,11 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	snprintf(assembly_file, assembly_file_len, "%s/%s%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_MONO_LIBDIR, SWITCH_MONO_ASSEMBLY);
 
 	if (apr_stat(finfo, assembly_file, 0, mono_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not find Freeswitch.NET assembly");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not find FreeSwitch.NET assembly\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	/* Mono wants to know where it will be able to find the Freeswitch assembly if it's not in the GAC */
+	/* Mono wants to know where it will be able to find the FreeSwitch assembly if it's not in the GAC */
 	if (getenv("MONO_PATH") != NULL) {
 		switch_size_t mono_path_len = strlen(getenv("MONO_PATH")) + strlen(assembly_dir) + 2; /* Account for : and \0 */ 
 		char *mono_path = (char *) switch_core_alloc(mono_pool, mono_path_len);
@@ -144,7 +144,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	for (p = switch_hash_first(mono_pool, globals.plugins); p; p = switch_hash_next(p)) {
 		mono_plugin *plugin = (mono_plugin *) switch_core_alloc(mono_pool, sizeof(*plugin));
-		switch_size_t *key_length = NULL;
+		apr_ssize_t *key_length = NULL;
 		const void *key = NULL;
 		void *value = NULL;
 
