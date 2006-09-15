@@ -45,31 +45,27 @@ static const char modname[] = "mod_threadtimer";
 #define MAX_ELEMENTS 1000
 
 struct timer_private {
-	uint64_t tick;
-	uint64_t reference;
-	uint32_t interval;
-	//switch_mutex_t *mutex;
-	struct timer_private *next;
+    uint32_t reference;
 };
-
 typedef struct timer_private timer_private_t;
 
-struct timer_head {
-	timer_private_t *private_info;
-	switch_mutex_t *mutex;
+struct timer_matrix {
+	uint64_t tick;
+	uint32_t count;
 };
-typedef struct timer_head timer_head_t;
+typedef struct timer_matrix timer_matrix_t;
 
-static timer_head_t *TIMER_MATRIX[MAX_ELEMENTS+1];
+static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS+1];
 
 #define IDLE_SPEED 100
+
 
 static inline void set_timer(void)
 {
 	uint32_t index = 0, min = IDLE_SPEED;
 
 	for(index = 0; index < MAX_ELEMENTS; index++) {
-		if (TIMER_MATRIX[index] && TIMER_MATRIX[index]->private_info) {
+		if (TIMER_MATRIX[index].count) {
 			if (min > index) {
 				min = index;
 			}
@@ -83,27 +79,13 @@ static inline void set_timer(void)
 static inline switch_status_t timer_init(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
-	timer_head_t *head;
-
 
 	if ((private_info = switch_core_alloc(timer->memory_pool, sizeof(*private_info)))) {
+		switch_mutex_lock(globals.mutex);
+		TIMER_MATRIX[timer->interval].count++;
+		switch_mutex_unlock(globals.mutex);
 		timer->private_info = private_info;
-		if (!TIMER_MATRIX[timer->interval]) {
-			if (!(TIMER_MATRIX[timer->interval] = switch_core_alloc(module_pool, sizeof(timer_head_t)))) {
-				return SWITCH_STATUS_MEMERR;
-			}
-			switch_mutex_init(&TIMER_MATRIX[timer->interval]->mutex, SWITCH_MUTEX_NESTED, module_pool);
-		}
-
-		head = TIMER_MATRIX[timer->interval];
-
-		//switch_mutex_init(&private_info->mutex, SWITCH_MUTEX_NESTED, timer->memory_pool);
-		private_info->interval = timer->interval;
-
-		switch_mutex_lock(head->mutex);
-		private_info->next = head->private_info;
-		head->private_info = private_info;
-		switch_mutex_unlock(head->mutex);
+		private_info->reference = TIMER_MATRIX[timer->interval].tick;
 		set_timer();
 
 		return SWITCH_STATUS_SUCCESS;
@@ -116,9 +98,7 @@ static inline switch_status_t timer_step(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 
-	//switch_mutex_lock(private_info->mutex);
-	private_info->reference += private_info->interval;
-	//switch_mutex_unlock(private_info->mutex);
+	private_info->reference += timer->interval;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -128,9 +108,8 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
 
-
 	timer_step(timer);
-	while (private_info->tick < private_info->reference) {
+	while (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		switch_yield(1000);
 	}
 	timer->samplecount += timer->samples;
@@ -144,14 +123,12 @@ static inline switch_status_t timer_check(switch_timer_t *timer)
 	timer_private_t *private_info = timer->private_info;
 	switch_status_t status;
 
-	//switch_mutex_lock(private_info->mutex);
-	if (private_info->tick < private_info->reference) {
+	if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		status = SWITCH_STATUS_FALSE;
 	} else {
-		private_info->reference += private_info->interval;
+		private_info->reference += timer->interval;
 		status = SWITCH_STATUS_SUCCESS;
 	}
-	//switch_mutex_unlock(private_info->mutex);
 
 	return status;
 }
@@ -159,26 +136,9 @@ static inline switch_status_t timer_check(switch_timer_t *timer)
 
 static inline switch_status_t timer_destroy(switch_timer_t *timer)
 {
-	timer_private_t *private_info = timer->private_info;
-	timer_head_t *head;
-	timer_private_t *ptr, *last = NULL;
-
-	head = TIMER_MATRIX[timer->interval];
-	assert(head != NULL);
-	assert(private_info != NULL);
-
-	switch_mutex_lock(head->mutex);
-	for(ptr = head->private_info; ptr; ptr = ptr->next) {
-		if (ptr == private_info) {
-			if (last) {
-				last->next = private_info->next;
-			} else {
-				head->private_info = private_info->next;
-			}
-		}
-		last = ptr;
-	}
-	switch_mutex_unlock(head->mutex);
+	switch_mutex_lock(globals.mutex);
+	TIMER_MATRIX[timer->interval].count--;
+	switch_mutex_unlock(globals.mutex);
 	set_timer();
 	timer->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
@@ -223,7 +183,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 {
 	switch_time_t reference = switch_time_now();
 	uint32_t current_ms = 0;
-	timer_private_t *ptr;
 	uint32_t x;
 	
 	memset(&globals, 0, sizeof(globals));
@@ -235,7 +194,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 	while(globals.RUNNING == 1) {
 		reference += globals.timer_microseconds;
-		//printf("TEST %d\n", globals.timer_microseconds);
+
 		while (switch_time_now() < reference) {
 			//switch_yield((reference - now) - 1000);
 			switch_yield(globals.timer_microseconds >> 1);
@@ -251,14 +210,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			
 			index = (current_ms % i == 0) ? i : 0; 
 
-			if (TIMER_MATRIX[index] && TIMER_MATRIX[index]->private_info) {
-				switch_mutex_lock(TIMER_MATRIX[index]->mutex);
-				for (ptr = TIMER_MATRIX[index]->private_info; ptr; ptr = ptr->next) {
-					//switch_mutex_lock(ptr->mutex);
-					ptr->tick += ptr->interval;
-					//switch_mutex_unlock(ptr->mutex);
-				}
-				switch_mutex_unlock(TIMER_MATRIX[index]->mutex);
+			if (TIMER_MATRIX[index].count) {
+				TIMER_MATRIX[index].tick += index;
 			}
 		}
 

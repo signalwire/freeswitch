@@ -204,9 +204,7 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms)
 {
 	int nsds = 0;
 
-	if (switch_poll(poll, 1, &nsds, ms) != SWITCH_STATUS_SUCCESS) {
-		return -1;
-	}
+	switch_poll(poll, 1, &nsds, ms);
 
 	return nsds;
 }

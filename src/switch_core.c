@@ -90,8 +90,8 @@ struct switch_core_session {
 	switch_audio_resampler_t *read_resampler;
 	switch_audio_resampler_t *write_resampler;
 
-	switch_mutex_t *mutex;
-	switch_thread_cond_t *cond;
+	//switch_mutex_t *mutex;
+	//switch_thread_cond_t *cond;
 
 	switch_thread_rwlock_t *rwlock;
 
@@ -2489,11 +2489,13 @@ static void switch_core_standard_on_hold(switch_core_session_t *session)
 
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session_t *session)
 {
-	/* If trylock fails the signal is already awake so we need'nt bother */
+	return;
+	/* If trylock fails the signal is already awake so we needn't bother 
 	if (switch_mutex_trylock(session->mutex) == SWITCH_STATUS_SUCCESS) {
 		switch_thread_cond_signal(session->cond);
 		switch_mutex_unlock(session->mutex);
 	} 
+	*/
 }
 
 SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session_t *session)
@@ -2605,7 +2607,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	driver_state_handler = endpoint_interface->state_handler;
 	assert(driver_state_handler != NULL);
 
-	switch_mutex_lock(session->mutex);
+	//switch_mutex_lock(session->mutex);
 
 	while ((state = switch_channel_get_state(session->channel)) != CS_DONE) {
 		if (state != laststate) {
@@ -2884,17 +2886,26 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			laststate = midstate;
 		}
 		
-		if (state < CS_DONE && midstate == switch_channel_get_state(session->channel)) {
-			switch_thread_cond_wait(session->cond, session->mutex);
-		} 
+		if (state >= CS_HANGUP) {
+			goto done;
+		}
+
+		if (midstate == switch_channel_get_state(session->channel)) {
+			//switch_thread_cond_wait(session->cond, session->mutex);
+			switch_yield(10000);
+		} else {
+			switch_yield(1000);
+		}
+
 	}
  done:
+	//switch_mutex_unlock(session->mutex);
 
 #ifdef CRASH_PROT
 	apr_hash_set(runtime.stack_table, &thread_id, sizeof(thread_id), NULL);
 #endif
 	session->thread_running = 0;
-	switch_mutex_unlock(session->mutex);
+
 }
 
 SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session)
@@ -3140,9 +3151,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	session->enc_read_frame.data = session->enc_read_buf;
 	session->enc_read_frame.buflen = sizeof(session->enc_read_buf);
 
-	switch_mutex_init(&session->mutex, SWITCH_MUTEX_NESTED, session->pool);
+	//switch_mutex_init(&session->mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_thread_rwlock_create(&session->bug_rwlock, session->pool);
-	switch_thread_cond_create(&session->cond, session->pool);
+	//switch_thread_cond_create(&session->cond, session->pool);
 	switch_thread_rwlock_create(&session->rwlock, session->pool);
 
 	switch_mutex_lock(runtime.session_table_mutex);

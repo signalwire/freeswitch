@@ -739,7 +739,6 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 					  tech_pvt->read_codec.implementation->ianacode,
 					  tech_pvt->read_codec.implementation->microseconds_per_frame / 1000);
 
-
 	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
 										   tech_pvt->local_sdp_audio_port,
 										   tech_pvt->remote_sdp_audio_ip,
@@ -1360,80 +1359,82 @@ static void sip_i_state(int status,
 	case nua_callstate_calling:
 		break;
 	case nua_callstate_proceeding:
-		if (session && r_sdp) {
-			sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
-			sdp_session_t *sdp;
-			uint8_t match = 0;
-
-			if (tech_pvt->num_codecs) {
-				if ((sdp = sdp_session(parser))) {
-					match = negotiate_sdp(session, sdp);
-				}
-			}
-
-			if (parser) {
-				sdp_parser_free(parser);
-			}
-
-
-			if (match) {
-				tech_choose_port(tech_pvt);
-                activate_rtp(tech_pvt);
-				switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
-                switch_channel_pre_answer(channel);
-				return;
-			}
-		}
 		if (channel) {
-			switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+			if (r_sdp) {
+				sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
+				sdp_session_t *sdp;
+				uint8_t match = 0;
+
+				if (tech_pvt->num_codecs) {
+					if ((sdp = sdp_session(parser))) {
+						match = negotiate_sdp(session, sdp);
+					}
+				}
+
+				if (parser) {
+					sdp_parser_free(parser);
+				}
+
+
+				if (match) {
+					tech_choose_port(tech_pvt);
+					activate_rtp(tech_pvt);
+					switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
+					switch_channel_pre_answer(channel);
+					return;
+				}
+				switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+				nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
+							//SIPTAG_CONTACT(tech_pvt->contact), 
+							TAG_END());
+			}
 		}
-		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
-					//SIPTAG_CONTACT(tech_pvt->contact), 
-					TAG_END());
+
 		break;
 	case nua_callstate_completing:
 		nua_ack(nh, TAG_END());
 		break;
 	case nua_callstate_received: 
-		if (session && r_sdp) {
-			sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
-			sdp_session_t *sdp;
-			uint8_t match = 0;
-
-
-
-			if (tech_pvt->num_codecs) {
-				if ((sdp = sdp_session(parser))) {
-					match = negotiate_sdp(session, sdp);
-				}
-			}
-
-			if (parser) {
-				sdp_parser_free(parser);
-			}
-
-
-			if (match) {
-				switch_channel_set_variable(channel, "endpoint_disposition", "RECEIVED");
-				switch_channel_set_state(channel, CS_INIT);
-				switch_set_flag_locked(tech_pvt, TFLAG_READY);
-				switch_core_session_thread_launch(session);
-				return;
-			}
-		}
 		if (channel) {
-			switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+			if (r_sdp) {
+				sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
+				sdp_session_t *sdp;
+				uint8_t match = 0;
+
+
+
+				if (tech_pvt->num_codecs) {
+					if ((sdp = sdp_session(parser))) {
+						match = negotiate_sdp(session, sdp);
+					}
+				}
+
+				if (parser) {
+					sdp_parser_free(parser);
+				}
+
+
+				if (match) {
+					switch_channel_set_variable(channel, "endpoint_disposition", "RECEIVED");
+					switch_channel_set_state(channel, CS_INIT);
+					switch_set_flag_locked(tech_pvt, TFLAG_READY);
+					switch_core_session_thread_launch(session);
+					return;
+				}
+				switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+				nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
+							//SIPTAG_CONTACT(tech_pvt->contact), 
+							TAG_END());
+			}
 		}
-		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
-					//SIPTAG_CONTACT(tech_pvt->contact), 
-					TAG_END());
+
 		break;		
 	case nua_callstate_early:
 		break;
 	case nua_callstate_completed:
 		break;
 	case nua_callstate_ready:
-		if (session) {
+		if (channel) {
 			if (r_sdp) {
 				sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
 				sdp_session_t *sdp;
@@ -1458,18 +1459,19 @@ static void sip_i_state(int status,
 					switch_channel_answer(channel);
 					return;
 				}
+
+				switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
+				nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
+							//SIPTAG_CONTACT(tech_pvt->contact), 
+							TAG_END());
 			} else if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 				switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 				switch_channel_answer(channel);
 				return;
-			}
+			} //else probably an ack
+
 		}
-		if (channel) {
-			switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
-		}
-		nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
-					//SIPTAG_CONTACT(tech_pvt->contact), 
-					TAG_END());
+
 		break;
 	case nua_callstate_terminating:
 		break;

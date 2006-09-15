@@ -589,10 +589,11 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 				switch_event_fire(&event);
 			}
 		}
-		
+		/*		
 		if (state < CS_DONE) {
 			switch_core_session_signal_state_change(channel->session);
 		}
+		*/
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_WARNING, "%s Invalid State Change %s -> %s\n", 
 						  channel->name,
@@ -875,7 +876,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		}
 
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
-		switch_core_session_signal_state_change(channel->session);
+		//switch_core_session_signal_state_change(channel->session);
 	}
 	return channel->state;
 }
