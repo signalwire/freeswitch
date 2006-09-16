@@ -145,7 +145,7 @@ static inline switch_status_t timer_destroy(switch_timer_t *timer)
 }
 
 static const switch_timer_interface_t timer_interface = {
-	/*.interface_name */ "thread_soft",
+	/*.interface_name */ "soft",
 	/*.timer_init */ timer_init,
 	/*.timer_next */ timer_next,
 	/*.timer_step */ timer_step,
