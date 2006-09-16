@@ -585,7 +585,7 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 										   ms,
 										   flags,
 										   key,
-										   "thread_soft",
+										   "soft",
 										   &err, switch_core_session_get_pool(tech_pvt->session));
 
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
