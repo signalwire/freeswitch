@@ -381,8 +381,14 @@ SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t *channel)
 {
+	switch_channel_state_t state;
 	assert(channel != NULL);
-	return channel->state;
+
+	switch_mutex_lock(channel->flag_mutex);
+	state = channel->state;
+	switch_mutex_unlock(channel->flag_mutex);
+
+	return state;
 }
 
 SWITCH_DECLARE(unsigned int) switch_channel_ready(switch_channel_t *channel)
@@ -433,16 +439,18 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 
 	assert(channel != NULL);
+	switch_mutex_lock(channel->flag_mutex);
+
 	last_state = channel->state;
 
 	if (last_state == state) {
-		return state;
+		goto done;
 	}
 
 	if (last_state >= CS_HANGUP && state < last_state) {
-		return last_state;
+		goto done;
 	}
-
+	
 	/* STUB for more dev
 	   case CS_INIT:
 	   switch(state) {
@@ -589,11 +597,11 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 				switch_event_fire(&event);
 			}
 		}
-		/*		
+				
 		if (state < CS_DONE) {
 			switch_core_session_signal_state_change(channel->session);
 		}
-		*/
+		
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_WARNING, "%s Invalid State Change %s -> %s\n", 
 						  channel->name,
@@ -606,6 +614,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 			assert(0);
 		}
 	}
+ done:
+	switch_mutex_unlock(channel->flag_mutex);
 	return channel->state;
 }
 
@@ -854,6 +864,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 																   switch_call_cause_t hangup_cause)
 {
 	assert(channel != NULL);
+	switch_mutex_lock(channel->flag_mutex);
 
 	if (channel->times && !channel->times->hungup) {
 		channel->times->hungup = switch_time_now();
@@ -862,9 +873,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	if (channel->state < CS_HANGUP) {
 		switch_event_t *event;
 		switch_channel_state_t last_state = channel->state;
-		switch_mutex_lock(channel->flag_mutex);
 		channel->state = CS_HANGUP;
-		switch_mutex_unlock(channel->flag_mutex);
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n", 
 						  channel->name,
@@ -876,8 +885,10 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		}
 
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
-		//switch_core_session_signal_state_change(channel->session);
+		switch_core_session_signal_state_change(channel->session);
 	}
+
+	switch_mutex_unlock(channel->flag_mutex);
 	return channel->state;
 }
 

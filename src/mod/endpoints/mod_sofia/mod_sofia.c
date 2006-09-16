@@ -375,7 +375,7 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
 		switch_channel_t *channel = switch_core_session_get_channel(*session);
 		switch_channel_state_t state = switch_channel_get_state(channel);
 		struct private_object *tech_pvt = NULL;
-			
+
 		tech_pvt = switch_core_session_get_private(*session);
 
 		if (tech_pvt) {
@@ -456,7 +456,6 @@ static void do_invite(switch_core_session_t *session)
 	switch_set_flag_locked(tech_pvt, TFLAG_READY);
 	
 	tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL, SIPTAG_TO_STR(tech_pvt->dest), TAG_END());
-
 	nua_handle_bind(tech_pvt->nh, session);
 	nua_invite(tech_pvt->nh,
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
@@ -1560,7 +1559,12 @@ static void event_callback(nua_event_t   event,
 						   sip_t const  *sip,
 						   tagi_t        tags[])
 {
-
+	if (session) {
+		if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+			/* too late */
+			return;
+		}
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "channel [%s] event [%s] status [%d] [%s]\n",
 					  session ? switch_channel_get_name(switch_core_session_get_channel(session)) : "null",nua_event_name (event), status, phrase);
 	
@@ -1680,6 +1684,10 @@ static void event_callback(nua_event_t   event,
 		//tl_print(stdout, "", tags);
 		break;
 
+	}
+
+	if (session) {
+		switch_core_session_rwunlock(session);
 	}
 }
 
