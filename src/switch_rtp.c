@@ -810,7 +810,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (rtp_session->timer.interval) {
-			check = (switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS);
+			check = (uint8_t)(switch_core_timer_check(&rtp_session->timer) == SWITCH_STATUS_SUCCESS);
 		}
 
 		if (check) {

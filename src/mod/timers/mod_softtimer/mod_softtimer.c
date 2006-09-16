@@ -45,7 +45,7 @@ static const char modname[] = "mod_softtimer";
 #define MAX_ELEMENTS 1000
 
 struct timer_private {
-    uint32_t reference;
+    uint64_t reference;
 };
 typedef struct timer_private timer_private_t;
 
