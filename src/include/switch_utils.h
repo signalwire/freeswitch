@@ -166,7 +166,11 @@ switch_mutex_unlock(obj->flag_mutex);
 /*!
   \brief Wait a desired number of microseconds and yield the CPU
 */
+#ifdef HAVE_USLEEP
+#define switch_yield(ms) usleep(ms);
+#else
 #define switch_yield(ms) apr_sleep(ms * 10); //apr_thread_yield();
+#endif
 
 /*!
   \brief Declares a function designed to set a dymaic global string
