@@ -169,7 +169,7 @@ switch_mutex_unlock(obj->flag_mutex);
 #ifdef HAVE_USLEEP
 #define switch_yield(ms) usleep(ms);
 #else
-#define switch_yield(ms) apr_sleep(ms * 10); //apr_thread_yield();
+#define switch_yield(ms) apr_sleep((ms) * 10); //apr_thread_yield();
 #endif
 
 /*!

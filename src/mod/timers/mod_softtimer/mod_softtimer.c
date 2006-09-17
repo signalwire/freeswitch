@@ -38,7 +38,7 @@ static struct {
 	int32_t RUNNING;
 	switch_mutex_t *mutex;
 	uint32_t timer_milliseconds;
-	uint32_t timer_microseconds;
+	switch_interval_time_t timer_microseconds;
 } globals;
 
 static const char modname[] = "mod_softtimer";

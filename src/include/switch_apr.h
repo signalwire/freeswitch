@@ -1053,6 +1053,9 @@ DoxyDefine(apr_status_t switch_poll(switch_pollfd_t *aprset, apr_int32_t numsock
  /** number of microseconds since 00:00:00 january 1, 1970 UTC */
 typedef apr_time_t switch_time_t;
 
+ /** number of microseconds in the interval */
+typedef apr_interval_time_t switch_interval_time_t;
+
 /**
  * a structure similar to ANSI struct tm with the following differences:
  *  - tm_usec isn't an ANSI field
