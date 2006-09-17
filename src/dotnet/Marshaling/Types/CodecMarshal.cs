@@ -32,7 +32,7 @@
 using System;
 using System.Text;
 
-namespace FreeSwitch.NET.Marshaling.Types
+namespace FreeSwitch.Marshaling.Types
 {
     internal class CodecMarshal
     {

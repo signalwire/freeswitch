@@ -31,9 +31,9 @@
  */
 using System;
 using System.Runtime.InteropServices;
-using FreeSwitch.NET.Marshaling;
+using FreeSwitch.Marshaling;
 
-namespace FreeSwitch.NET.Types
+namespace FreeSwitch.Types
 {
     public delegate Status InputCallbackFunction(
         [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StreamHandleMarshaler))]

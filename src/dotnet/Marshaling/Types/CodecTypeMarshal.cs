@@ -31,7 +31,7 @@
  */
 using System;
 
-namespace FreeSwitch.NET.Marshaling.Types
+namespace FreeSwitch.Marshaling.Types
 {
     internal enum CodecTypesMarshal
     {

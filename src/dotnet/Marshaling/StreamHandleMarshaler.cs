@@ -31,11 +31,11 @@
  */
 using System;
 using System.Collections;
-using FreeSwitch.NET.Marshaling.Types;
-using FreeSwitch.NET.Types;
+using FreeSwitch.Marshaling.Types;
+using FreeSwitch.Types;
 using System.Runtime.InteropServices;
 
-namespace FreeSwitch.NET.Marshaling
+namespace FreeSwitch.Marshaling
 {
     class StreamHandleMarshaler : ICustomMarshaler
     {

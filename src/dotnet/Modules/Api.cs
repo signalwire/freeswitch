@@ -33,9 +33,9 @@ using System;
 using System.Collections;
 using System.Text;
 using System.Runtime.InteropServices;
-using FreeSwitch.NET.Types;
+using FreeSwitch.Types;
 
-namespace FreeSwitch.NET.Modules
+namespace FreeSwitch.Modules
 {
     public class Api
     {

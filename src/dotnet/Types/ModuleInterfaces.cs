@@ -34,7 +34,7 @@ using System.Collections;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace FreeSwitch.NET.Types
+namespace FreeSwitch.Types
 {
     /*
     public class ApplicationInterface

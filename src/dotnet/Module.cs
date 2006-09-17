@@ -35,9 +35,9 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using FreeSwitch.NET;
-using FreeSwitch.NET.Types;
-using FreeSwitch.NET.Modules;
-using FreeSwitch.NET.Marshaling.Types;
+using FreeSwitch.Types;
+using FreeSwitch.Modules;
+using FreeSwitch.Marshaling.Types;
 
 namespace FreeSwitch.NET
 {

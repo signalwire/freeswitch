@@ -33,9 +33,9 @@ using System;
 using System.Collections;
 using System.Runtime.InteropServices;
 using System.Text;
-using FreeSwitch.NET.Marshaling.Types;
+using FreeSwitch.Marshaling.Types;
 
-namespace FreeSwitch.NET.Types
+namespace FreeSwitch.Types
 {
     /*
      * 	uint32_t id;

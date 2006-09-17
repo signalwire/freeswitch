@@ -31,10 +31,10 @@
  */
 using System;
 using System.Runtime.InteropServices;
-using FreeSwitch.NET.Types;
-using FreeSwitch.NET.Marshaling.Types;
+using FreeSwitch.Types;
+using FreeSwitch.Marshaling.Types;
 
-namespace FreeSwitch.NET.Marshaling
+namespace FreeSwitch.Marshaling
 {
     class ChannelMarshaler : ICustomMarshaler
     {

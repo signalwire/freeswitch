@@ -33,7 +33,7 @@ using System;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace FreeSwitch.NET.Marshaling.Types
+namespace FreeSwitch.Marshaling.Types
 {
     [StructLayout(LayoutKind.Sequential, Pack=1)]
     internal class CoreSessionMarshal

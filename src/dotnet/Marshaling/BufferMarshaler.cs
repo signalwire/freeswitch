@@ -31,10 +31,10 @@
  */
 using System;
 using System.Runtime.InteropServices;
-using FreeSwitch.NET.Marshaling.Types;
-using FreeSwitch.NET.Types;
+using FreeSwitch.Marshaling.Types;
+using FreeSwitch.Types;
 
-namespace FreeSwitch.NET.Marshaling
+namespace FreeSwitch.Marshaling
 {
     class BufferMarshaler : ICustomMarshaler
     {
@@ -60,14 +60,14 @@ namespace FreeSwitch.NET.Marshaling
 
         public IntPtr MarshalManagedToNative(object obj)
         {
-            FreeSwitch.NET.Types.Buffer buffer = (FreeSwitch.NET.Types.Buffer)obj;
+            FreeSwitch.Types.Buffer buffer = (FreeSwitch.Types.Buffer)obj;
 
             return buffer.marshaledObject.Handle;
         }
 
         public object MarshalNativeToManaged(IntPtr bufferPtr)
         {
-            FreeSwitch.NET.Types.Buffer buffer        = new FreeSwitch.NET.Types.Buffer();
+            FreeSwitch.Types.Buffer buffer        = new FreeSwitch.Types.Buffer();
             BufferMarshal           bufferMarshal = new BufferMarshal();
 
             Marshal.PtrToStructure(bufferPtr, bufferMarshal);

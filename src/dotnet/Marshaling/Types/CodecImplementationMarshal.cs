@@ -30,9 +30,9 @@
  *
  */
 using System;
-using FreeSwitch.NET.Types;
+using FreeSwitch.Types;
 
-namespace FreeSwitch.NET.Marshaling.Types
+namespace FreeSwitch.Marshaling.Types
 {
     internal class CodecImplementationMarshal
     {

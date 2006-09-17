@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace FreeSwitch.NET.Types
+namespace FreeSwitch.Types
 {
     public class MemoryPool
     {

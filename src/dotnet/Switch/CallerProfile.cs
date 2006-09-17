@@ -32,11 +32,11 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using FreeSwitch.NET.Types;
-using FreeSwitch.NET.Marshaling;
-using FreeSwitch.NET.Marshaling.Types;
+using FreeSwitch.Types;
+using FreeSwitch.Marshaling;
+using FreeSwitch.Marshaling.Types;
 
-namespace FreeSwitch.NET
+namespace FreeSwitch
 {
     public partial class Switch
     {

@@ -31,7 +31,7 @@
  */
 using System;
 
-namespace FreeSwitch.NET.Types
+namespace FreeSwitch.Types
 {
     public enum Status
     {

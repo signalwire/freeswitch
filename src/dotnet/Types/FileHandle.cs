@@ -31,9 +31,9 @@
  */
 using System;
 using System.Runtime.InteropServices;
-using FreeSwitch.NET.Marshaling.Types;
+using FreeSwitch.Marshaling.Types;
 
-namespace FreeSwitch.NET.Types
+namespace FreeSwitch.Types
 {
     public class FileHandle
     {

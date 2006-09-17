@@ -32,7 +32,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace FreeSwitch.NET.Marshaling.Types
+namespace FreeSwitch.Marshaling.Types
 {
     [StructLayout(LayoutKind.Sequential)]
     internal class BufferMarshal

@@ -34,7 +34,7 @@ using System.Runtime.CompilerServices;
 using System.Diagnostics;
 using System.Text;
 
-namespace FreeSwitch.NET
+namespace FreeSwitch
 {
 	public partial class Switch
 	{

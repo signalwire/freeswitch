@@ -1,8 +1,8 @@
 all: $(MODNAME).so 
 
 $(MODNAME).so:
-	gmcs -debug -unsafe -t:library -keyfile:public.snk \
-	-out:Freeswitch.dll -reference:Mono.Posix.dll \
+	/usr/local/freeswitch/bin/gmcs -debug -unsafe -t:library -keyfile:public.snk \
+	-out:FreeSwitch.dll -reference:Mono.Posix.dll \
 	Properties/AssemblyInfo.cs \
 	Marshaling/Types/ApiInterfaceMarshal.cs \
 	Marshaling/Types/ApplicationInterfaceMarshal.cs \
@@ -24,6 +24,7 @@ $(MODNAME).so:
 	Marshaling/Types/IOEventHooksMarshal.cs \
 	Marshaling/Types/LoadableModuleInterfaceMarshal.cs \
 	Marshaling/Types/LoadableModuleMarshal.cs \
+	Marshaling/Types/StreamHandleMarshal.cs \
 	Marshaling/Types/TypesMarshal.cs \
 	Marshaling/BufferMarshaler.cs \
 	Marshaling/CallerExtensionMarshaler.cs \
@@ -57,6 +58,8 @@ $(MODNAME).so:
 	Types/ChannelTimetable.cs \
 	Types/CoreSession.cs \
 	Types/DtmfCallbackFunction.cs \
+	Types/InputCallbackFunction.cs \
+	Types/InputType.cs \
 	Types/Event.cs \
 	Types/FileHandle.cs \
 	Types/LoadableModule.cs \
@@ -67,12 +70,10 @@ $(MODNAME).so:
 	Types/StreamHandle.cs \
 	Types/TextChannel.cs \
 	Common.cs \
-	Core.cs \
-	Ivr.cs \
 	Module.cs \
 	
 clean:
 	rm -fr *.dll
 
 install:
-	cp -f Freeswitch.dll /usr/local/freeswitch/lib/
+	cp -f FreeSwitch.dll /usr/local/freeswitch/lib/

@@ -34,7 +34,7 @@ using System.Collections;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace FreeSwitch.NET.Types
+namespace FreeSwitch.Types
 {
     public enum Priority
     {

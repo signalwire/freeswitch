@@ -33,11 +33,11 @@ using System;
 using System.Collections;
 using System.Text;
 using System.Runtime.InteropServices;
-using FreeSwitch.NET.Marshaling;
-using FreeSwitch.NET.Types;
-using FreeSwitch.NET.Marshaling.Types;
+using FreeSwitch.Marshaling;
+using FreeSwitch.Types;
+using FreeSwitch.Marshaling.Types;
 
-namespace FreeSwitch.NET.Modules
+namespace FreeSwitch.Modules
 {
     public class Application
     {

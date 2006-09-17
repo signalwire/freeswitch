@@ -33,9 +33,9 @@ using System;
 using System.Collections;
 using System.Runtime.InteropServices;
 using System.Text;
-using FreeSwitch.NET.Marshaling;
+using FreeSwitch.Marshaling;
 
-namespace FreeSwitch.NET.Types
+namespace FreeSwitch.Types
 {
     public delegate Status WriteFunction(
         [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StreamHandleMarshaler))]
