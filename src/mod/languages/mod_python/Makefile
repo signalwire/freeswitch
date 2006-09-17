@@ -1,13 +1,13 @@
-LCFLAGS=-fPIC -DZTS -DPTHREADS -Xlinker -export-dynamic
+LCFLAGS=-fPIC -DZTS -DPTHREADS -Xlinker 
 CFLAGS += -fPIC -I$(PREFIX)/include/python2.4/
 PYMOD=freeswitch
-LDFLAGS=-lpython2.4 -Xlinker -export-dynamic -L$(PREFIX)/lib/python2.4/config/
+LDFLAGS=-lpython2.4 -Xlinker -L$(PREFIX)/lib/python2.4/config/
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PYMOD).$(DYNAMIC_LIB_EXTEN)
 
 depends:
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install Python-2.4.3.tgz --prefix=$(PREFIX) 
-	
+
 %.o:  %.c
 	$(CC) $(LCFLAGS) $(CFLAGS) -c $< -o $@
 
@@ -39,4 +39,4 @@ clean:
 install:
 	#cp -f py_$(PYMOD).$(DYNAMIC_LIB_EXTEN) $(MDIR)
 	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
-	
+
