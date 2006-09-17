@@ -141,6 +141,11 @@ static void switch_core_standard_on_hold(switch_core_session_t *session);
 /* The main runtime obj we keep this hidden for ourselves */
 static struct switch_core_runtime runtime;
 
+/* Mutex and conditional for sql lite */
+static switch_mutex_t *SWITCH_SQL_MUTEX;
+static switch_thread_cond_t *SWITCH_SQL_CONDITIONAL;
+
+
 static void db_pick_path(char *dbname, char *buf, switch_size_t size)
 {
 
@@ -3208,20 +3213,23 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 	uint8_t trans = 0;
 	switch_time_t last_commit = switch_time_now();
 	uint32_t freq = 1000, target = 1000, diff = 0;
+
+	//if these are null we have big problems
+	assert(SWITCH_SQL_MUTEX != NULL);
+	assert(SWITCH_SQL_CONDITIONAL != NULL);
 	
 	if (!runtime.event_db) {
 		runtime.event_db = switch_core_db_handle();
 	}
 	switch_queue_create(&runtime.sql_queue, SWITCH_SQL_QUEUE_LEN, runtime.memory_pool);
+
+	switch_mutex_lock(SWITCH_SQL_MUTEX);
 	
 	for(;;) {
-		uint32_t work = 0;
-
 		if (switch_queue_trypop(runtime.sql_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			char *sql = (char *) pop;
 
 			if (sql) {
-				work++;
 				if (itterations == 0) {
 					char *isql = "begin transaction CORE1;";
 					if (switch_core_db_persistant_execute(runtime.event_db, isql, 25) != SWITCH_STATUS_SUCCESS) {
@@ -3241,6 +3249,15 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "SQL thread ending\n");
 				break;
 			}
+		} else {
+			//Are we currently in a transaction, wait accordingly
+			if(trans) {
+				//we need to finish a transaction in a bit, wait around until we have more work or that time comes
+				switch_thread_cond_timedwait(SWITCH_SQL_CONDITIONAL, SWITCH_SQL_MUTEX, (freq * 1000)  + last_commit - switch_time_now());
+			} else {
+				//wait until we have more work
+				switch_thread_cond_wait(SWITCH_SQL_CONDITIONAL, SWITCH_SQL_MUTEX);
+			}
 		}
 		
 		if (diff < freq) {
@@ -3249,7 +3266,6 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 
 		if (trans && (itterations == target || diff >= freq)) {
 			char *sql = "end transaction CORE1";
-			work++;
 			if (switch_core_db_persistant_execute(runtime.event_db, sql, 25) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "SQL exec error! [%s]\n", sql);
 			}
@@ -3258,9 +3274,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 			trans = 0;
 			diff = 0;
 		}
-		if (!work) {
-			switch_yield(1000);
-		}
+		
 	}
 	return NULL;
 }
@@ -3272,6 +3286,10 @@ static void switch_core_sql_thread_launch(void)
 	switch_threadattr_t *thd_attr;;
 	
 	assert(runtime.memory_pool != NULL);
+
+	//create the mutex and conditional
+	switch_mutex_init(&SWITCH_SQL_MUTEX, SWITCH_MUTEX_NESTED, runtime.memory_pool);
+	switch_thread_cond_create(&SWITCH_SQL_CONDITIONAL, runtime.memory_pool);
 
 	switch_threadattr_create(&thd_attr, runtime.memory_pool);
 	switch_threadattr_detach_set(thd_attr, 1);
@@ -3380,6 +3398,16 @@ static void core_event_handler(switch_event_t *event)
 
 	if (sql) {
 		switch_queue_push(runtime.sql_queue, sql);
+
+		//See if we need to wake up the sql thread
+		if(switch_mutex_trylock(SWITCH_SQL_MUTEX) == SWITCH_STATUS_SUCCESS) {
+                        //wake up the SQL thread
+                        switch_thread_cond_signal(SWITCH_SQL_CONDITIONAL);
+
+                        //give up our lock
+                        switch_mutex_unlock(SWITCH_SQL_MUTEX);
+		}
+
 		sql = NULL;
 	}
 }
@@ -3686,6 +3714,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_event_shutdown();
 	
 	switch_queue_push(runtime.sql_queue, NULL);
+	//See if we need to wake up the sql thread
+	if(switch_mutex_trylock(SWITCH_SQL_MUTEX) == SWITCH_STATUS_SUCCESS) {
+		//wake up the SQL thread
+		switch_thread_cond_signal(SWITCH_SQL_CONDITIONAL);
+
+		//give up our lock
+		switch_mutex_unlock(SWITCH_SQL_MUTEX);
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Waiting for unfinished SQL transactions\n");
 	while (switch_queue_size(runtime.sql_queue) > 0) {
 		switch_yield(10000);

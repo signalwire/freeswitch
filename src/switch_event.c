@@ -35,6 +35,9 @@
 static switch_event_node_t *EVENT_NODES[SWITCH_EVENT_ALL + 1] = { NULL };
 static switch_mutex_t *BLOCK = NULL;
 static switch_mutex_t *POOL_LOCK = NULL;
+static switch_mutex_t *EVENT_QUEUE_MUTEX = NULL;
+static switch_mutex_t *EVENT_QUEUE_HAVEMORE_MUTEX = NULL;
+static switch_thread_cond_t *EVENT_QUEUE_CONDITIONAL = NULL;
 static switch_memory_pool_t *RUNTIME_POOL = NULL;
 //static switch_memory_pool_t *APOOL = NULL;
 //static switch_memory_pool_t *BPOOL = NULL;
@@ -44,6 +47,7 @@ static int POOL_COUNT_MAX = SWITCH_CORE_QUEUE_LEN;
 
 static switch_hash_t *CUSTOM_HASH = NULL;
 static int THREAD_RUNNING = 0;
+static int EVENT_QUEUE_HAVEMORE = 0;
 
 #if 0
 static void *locked_alloc(switch_size_t len)
@@ -174,25 +178,56 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 	assert(obj == NULL);
 	assert(POOL_LOCK != NULL);
 	assert(RUNTIME_POOL != NULL);
+	assert(EVENT_QUEUE_MUTEX != NULL);
+	assert(EVENT_QUEUE_HAVEMORE_MUTEX != NULL);
+	assert(EVENT_QUEUE_CONDITIONAL != NULL);
 	THREAD_RUNNING = 1;
 	
 	queues[0] = EVENT_QUEUE[SWITCH_PRIORITY_HIGH];
 	queues[1] = EVENT_QUEUE[SWITCH_PRIORITY_NORMAL];
 	queues[2] = EVENT_QUEUE[SWITCH_PRIORITY_LOW];
+
+	switch_mutex_lock(EVENT_QUEUE_MUTEX);
 	
 	for(;;) {
 		int any;
+
 
 		len[1] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_NORMAL]);
 		len[2] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_LOW]);
 		len[0] = switch_queue_size(EVENT_QUEUE[SWITCH_PRIORITY_HIGH]);
 		any = len[1] + len[2] + len[0];
 
+	
 		if (!any) {
-			if (THREAD_RUNNING != 1) {
-				break;
+			//lock on havemore so we are the only ones poking at it while we check it
+			//see if we saw anything in the queues or have a check again flag
+			switch_mutex_lock(EVENT_QUEUE_HAVEMORE_MUTEX);
+			if(!EVENT_QUEUE_HAVEMORE) {
+				//See if we need to quit
+				if (THREAD_RUNNING != 1) {
+					//give up our lock
+					switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
+
+					//Game over
+					break;
+				}
+
+				//give up our lock
+				switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
+
+				//wait until someone tells us we have something to do
+				switch_thread_cond_wait(EVENT_QUEUE_CONDITIONAL, EVENT_QUEUE_MUTEX);
+			} else {
+				//Caught a race, one of the queues was updated after we looked at it
+				//reset our flag
+				EVENT_QUEUE_HAVEMORE = 0;
+
+				//Give up our lock
+				switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
 			}
-			switch_yield(1000);
+
+			//go grab some events
 			continue;
 		}
 
@@ -304,6 +339,27 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	if (THREAD_RUNNING > 0) {
 		THREAD_RUNNING = -1;
 
+		//Lock on havemore to make sure he event thread, if currently running
+		// doesn't check the HAVEMORE flag before we set it
+		switch_mutex_lock(EVENT_QUEUE_HAVEMORE_MUTEX);
+		//See if the event thread is sitting
+		if(switch_mutex_trylock(EVENT_QUEUE_MUTEX) == SWITCH_STATUS_SUCCESS) {
+			//we don't need havemore anymore, the thread was sitting already
+			switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
+
+			//wake up the event thread
+			switch_thread_cond_signal(EVENT_QUEUE_CONDITIONAL);
+
+			//give up our lock
+			switch_mutex_unlock(EVENT_QUEUE_MUTEX);
+		} else { // it wasn't waiting which means we might have updated a queue it already looked at
+			//set a flag so it knows to read the queues again
+			EVENT_QUEUE_HAVEMORE = 1;
+
+			//variable updated, give up the mutex
+			switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
+		}
+
 		while (x < 100 && THREAD_RUNNING) {
 			switch_yield(1000);
 			if (THREAD_RUNNING == last) {
@@ -344,6 +400,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Eventing Engine.\n");
 	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
 	switch_mutex_init(&POOL_LOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
+	switch_mutex_init(&EVENT_QUEUE_MUTEX, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
+	switch_mutex_init(&EVENT_QUEUE_HAVEMORE_MUTEX, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
+	switch_thread_cond_create(&EVENT_QUEUE_CONDITIONAL, RUNTIME_POOL);
 	switch_core_hash_init(&CUSTOM_HASH, RUNTIME_POOL);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, switch_event_thread, NULL, RUNTIME_POOL);
@@ -662,6 +721,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 
 	assert(BLOCK != NULL);
 	assert(RUNTIME_POOL != NULL);
+	assert(EVENT_QUEUE_HAVEMORE_MUTEX != NULL);
+	assert(EVENT_QUEUE_MUTEX != NULL);
+	assert(EVENT_QUEUE_CONDITIONAL != NULL);
+	assert(RUNTIME_POOL != NULL);
 
 	if (THREAD_RUNNING <= 0) {
 		/* sorry we're closed */
@@ -690,6 +753,29 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(char *file, char *fun
 	}
 
 	switch_queue_push(EVENT_QUEUE[(*event)->priority], *event);
+
+	//Lock on havemore to make sure he event thread, if currently running
+	// doesn't check the HAVEMORE flag before we set it
+	switch_mutex_lock(EVENT_QUEUE_HAVEMORE_MUTEX);
+	//See if the event thread is sitting
+	if(switch_mutex_trylock(EVENT_QUEUE_MUTEX) == SWITCH_STATUS_SUCCESS) {
+		//we don't need havemore anymore, the thread was sitting already
+		switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
+
+		//wake up the event thread
+		switch_thread_cond_signal(EVENT_QUEUE_CONDITIONAL);
+
+		//give up our lock
+		switch_mutex_unlock(EVENT_QUEUE_MUTEX);
+	} else { // it wasn't waiting which means we might have updated a queue it already looked at
+		//set a flag so it knows to read the queues again
+		EVENT_QUEUE_HAVEMORE = 1;
+
+		//variable updated, give up the mutex
+		switch_mutex_unlock(EVENT_QUEUE_HAVEMORE_MUTEX);
+	}
+		
+
 	*event = NULL;
 
 	return SWITCH_STATUS_SUCCESS;

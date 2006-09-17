@@ -6,7 +6,7 @@ LCFLAGS=-fPIC -DZTS -DPTHREADS
 CFLAGS += `$(PCFG) --includes` -g3 -fno-strict-aliasing
 MDIR += `$(PCFG) --extension-dir`
 PHPMOD=freeswitch
-PHPLDFLAGS = `$(PCFG) --ldflags` -lcrypt -lresolv -lm -ldl -lnsl -lxml2 -lz -lphp5
+PHPLDFLAGS = `$(PCFG) --ldflags` -lm -ldl -lxml2 -lz -lphp5
 MOD_CFLAGS += -fPIC
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PHPMOD).$(DYNAMIC_LIB_EXTEN)
 

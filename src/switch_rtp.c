@@ -483,12 +483,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		timer_name = "soft";
 	}
 
-	if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, packet_size, rtp_session->pool) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting timer [%s] %d bytes per %dms\n", timer_name, packet_size, ms_per_packet);
-	} else {
-		memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error starting timer [%s], async RTP disabled\n", timer_name);
-		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+	if (timer_name) {
+		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, packet_size, rtp_session->pool) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting timer [%s] %d bytes per %dms\n", timer_name, packet_size, ms_per_packet);
+		} else {
+			memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error starting timer [%s], async RTP disabled\n", timer_name);
+			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
+		}
 	}
 
 	rtp_session->ready++;
