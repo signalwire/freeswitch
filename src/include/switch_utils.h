@@ -166,10 +166,12 @@ switch_mutex_unlock(obj->flag_mutex);
 /*!
   \brief Wait a desired number of microseconds and yield the CPU
 */
-#ifdef HAVE_USLEEP
+#if defined(HAVE_USLEEP)
 #define switch_yield(ms) usleep(ms);
+#elif defined(WIN32)
+#define switch_yield(ms) Sleep((DWORD)((ms) / 1000));
 #else
-#define switch_yield(ms) apr_sleep((ms) * 10); //apr_thread_yield();
+#define switch_yield(ms) apr_sleep(ms); //apr_thread_yield();
 #endif
 
 /*!
