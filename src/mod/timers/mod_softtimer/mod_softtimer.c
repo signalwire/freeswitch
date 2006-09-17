@@ -197,7 +197,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 
 		while (switch_time_now() < reference) {
 			//switch_yield((reference - now) - 1000);
-			switch_yield(globals.timer_microseconds >> 1);
+			//switch_yield(globals.timer_microseconds >> 1);
+			switch_yield(1000);
 		}
 
 		current_ms += globals.timer_milliseconds;

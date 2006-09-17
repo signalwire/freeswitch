@@ -812,9 +812,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
 	switch_channel_t *channel = NULL;
 	int payload = 0;
-	switch_time_t now, started = switch_time_now(), last_act = switch_time_now();
-	unsigned int elapsed;
-	uint32_t hard_timeout = 60000 * 3;
+	//switch_time_t now, started = switch_time_now(), last_act = switch_time_now();
+	//unsigned int elapsed;
+	//uint32_t hard_timeout = 60000 * 3;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -835,10 +835,12 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
 	
 	if (tech_pvt->last_read) {
+#if 0
 		elapsed = (unsigned int)((switch_time_now() - tech_pvt->last_read) / 1000);
 		if (elapsed > 60000) {
 			return SWITCH_STATUS_TIMEOUT;
 		}
+#endif
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
@@ -853,7 +855,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 
 		while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
-			now = switch_time_now();
+			//now = switch_time_now();
 			tech_pvt->read_frame.flags = SFF_NONE;
 
 			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
@@ -865,7 +867,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 			
 			payload = tech_pvt->read_frame.payload;
 
-
+#if 0
 			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
 
 			if (timeout > -1) {
@@ -878,7 +880,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 			if (elapsed >= hard_timeout) {
 				return SWITCH_STATUS_BREAK;
 			}
-
+#endif
 			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
 				char dtmf[128];
 				switch_rtp_dequeue_dtmf(tech_pvt->rtp_session, dtmf, sizeof(dtmf));
