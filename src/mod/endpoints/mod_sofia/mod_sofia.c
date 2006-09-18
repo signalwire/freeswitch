@@ -727,7 +727,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 	bw = tech_pvt->read_codec.implementation->bits_per_second;
 	ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
 
-	flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_MINI);
+	flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_MINI | SWITCH_RTP_FLAG_AUTOADJ);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
 					  switch_channel_get_name(channel),
