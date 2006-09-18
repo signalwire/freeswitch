@@ -183,7 +183,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug Passthrough|Win32"
-			OutputDirectory="$(ConfigurationName)"
+			OutputDirectory="Debug"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
@@ -266,7 +266,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release Passthrough|Win32"
-			OutputDirectory="$(ConfigurationName)"
+			OutputDirectory="Release"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
