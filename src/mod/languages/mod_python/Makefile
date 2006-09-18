@@ -1,4 +1,4 @@
-LCFLAGS=-fPIC -DZTS -DPTHREADS 
+LCFLAGS=-fPIC -DZTS -DPTHREADS -Xlinker 
 CFLAGS += -fPIC -I$(PREFIX)/include/python2.4/
 PYMOD=freeswitch
 LDFLAGS=-lpython2.4 -Xlinker -L$(PREFIX)/lib/python2.4/config/
@@ -31,7 +31,7 @@ $(PYMOD).$(DYNAMIC_LIB_EXTEN): $(MODNAME).$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.
 
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c $(MODNAME).o $(OBJS) Makefile
-	$(CC) $(LCFLAGS) -shared -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
+	$(CC) $(LCFLAGS) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
 
 clean:
 	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
