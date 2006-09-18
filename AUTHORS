@@ -26,7 +26,7 @@ that much better:
  Yossi Neiman of Cartis Solutions, Inc. <freeswitch AT cartissolutions.com>  -  implementation of mod_cdr (perldd, mysql, csv)
  Stefan Knoblich - Various patches and support.  Thanks.
  Justin Unger - <justinunger at gmail dot com> Lots of help with patches and SIP testing. Thanks! 
- Paul D. Tinsley - Various patches and support.
+ Paul D. Tinsley - Various patches and support. <pdt at jackhammer.org>
 
 A big THANK YOU goes to:
 

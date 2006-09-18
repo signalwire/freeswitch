@@ -12,7 +12,7 @@ depends:
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(GETTEXT_TARBALL) --prefix=$(PREFIX) --with-pic
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(PKGCONFIG_TARBALL) --prefix=$(PREFIX) --with-pic
 	export PKG_CONFIG=$(PREFIX)/bin/pkg-config; export MSGFMT=$(PREFIX)/bin/; MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(GLIB_TARBALL) --prefix=$(PREFIX) --with-pic
-	export PATH=$(PATH):$(PREFIX)/bin/; MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(TARBALL) --prefix=$(PREFIX) --with-pic
+	export PATH=$(PATH):$(PREFIX)/bin/; MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(TARBALL) --prefix=$(PREFIX) --with-pic --with-gc=boehm --with-preview=yes --without-sigaltstack
 
 %.o:  %.c
 	$(CC) -fPIC $(CFLAGS) -c -o $@ $<
