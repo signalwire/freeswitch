@@ -609,13 +609,13 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			if (switch_test_flag(tech_pvt, TFLAG_ANS)) {
 				nua_bye(tech_pvt->nh, TAG_END());
 			} else {
-				if (switch_test_flag(tech_pvt, TFLAG_INBOUND)) 
+				if (switch_test_flag(tech_pvt, TFLAG_INBOUND)) {
 					nua_respond(tech_pvt->nh, sip_cause, NULL, TAG_END());
-				else 
+				} else {
 					nua_cancel(tech_pvt->nh, TAG_END());
+				}
 			}
 		}
-		nua_handle_bind(tech_pvt->nh, NULL);
 		nua_handle_destroy(tech_pvt->nh);
 		tech_pvt->nh = NULL;
 	}
