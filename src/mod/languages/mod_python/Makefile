@@ -1,4 +1,4 @@
-LCFLAGS=-fPIC -DZTS -DPTHREADS -Xlinker 
+LCFLAGS=-fPIC
 CFLAGS += -fPIC -I$(PREFIX)/include/python2.4/
 PYMOD=freeswitch
 LDFLAGS=-lpython2.4 -Xlinker -L$(PREFIX)/lib/python2.4/config/
