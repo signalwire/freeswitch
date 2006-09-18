@@ -42,10 +42,7 @@
 
 #include <ruby.h>
 
-
 const char modname[] = "mod_ruby";
-
-
 
 static void ruby_function(switch_core_session_t *session, char *data)
 {
@@ -56,7 +53,6 @@ static void ruby_function(switch_core_session_t *session, char *data)
 	int argc, state;
 	char *argv[5];
 	char ruby_code[1024]; 
-	//void*** tsrm_ls = NULL;
 
 	snprintf(mydata, len, "%s %s", uuid, data);
 
@@ -70,16 +66,14 @@ static void ruby_function(switch_core_session_t *session, char *data)
 
 	ruby_script("embedded");	
 	rb_load_file(data);
-    	rb_p(rb_eval_string_protect(argv[1], &state));
-    	if (state) {
+	rb_p(rb_eval_string_protect(argv[1], &state));
+	if (state) {
 		VALUE error = rb_inspect(rb_gv_get("$!"));
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Your code is broken.  \nHere is the error I found: %s\n",error);		
-    	}
+	}
 	state = ruby_exec();
 	state = ruby_cleanup(state);
 	ruby_finalize();	
-
-
 }
 
 static const switch_application_interface_t ruby_application_interface = {
@@ -105,24 +99,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &ruby_module_interface;
 
-	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
-
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-
-/*
-  Called when the system shuts down
-  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
-  {
-  return SWITCH_STATUS_SUCCESS;
-  }
-*/
-
-/*
-  If it exists, this is called in it's own thread when the module-load completes
-  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
-  {
-  return SWITCH_STATUS_SUCCESS;
-  }
-*/
