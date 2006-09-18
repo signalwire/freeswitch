@@ -39,6 +39,7 @@ static switch_status_t status_function(char *cmd, switch_core_session_t *session
 {
 	uint8_t html = 0;
 	switch_core_time_duration_t duration;
+	char *http;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -46,7 +47,11 @@ static switch_status_t status_function(char *cmd, switch_core_session_t *session
 
 	switch_core_measure_time(switch_core_uptime(), &duration);
 
-	if (cmd && strstr(cmd, "html")) {
+	if (stream->event) {
+        http = switch_event_get_header(stream->event, "http-host");
+    }
+
+	if (http || (cmd && strstr(cmd, "html"))) {
 		html = 1;
 		stream->write_function(stream, "<h1>FreeSWITCH Status</h1>\n<b>");
 	}
@@ -61,6 +66,8 @@ static switch_status_t status_function(char *cmd, switch_core_session_t *session
 						   duration.mms, duration.mms == 1 ? "" : "s"
 						   );
 
+	stream->write_function(stream, "%d sessions\n", switch_core_session_count());
+	
 	if (html) {
 		stream->write_function(stream, "</b>\n");
 	}

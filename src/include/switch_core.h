@@ -361,6 +361,12 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session);
 
 /*! 
+  \brief Provide the total number of sessions
+  \return the total number of allocated sessions
+*/
+SWITCH_DECLARE(uint32_t) switch_core_session_count(void);
+
+/*! 
   \brief Allocate and return a new session from the core based on a given endpoint module name
   \param endpoint_name the name of the endpoint module
   \param pool the pool to use
