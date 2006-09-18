@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Michael Jerris <mike@jerris.com>
  *
  *
  * switch.c -- Main

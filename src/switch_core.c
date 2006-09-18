@@ -24,6 +24,8 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Michael Jerris <mike@jerris.com>
+ * Paul D. Tinsley <pdt at jackhammer.org>
  *
  *
  * switch_core.c -- Main Core Library
