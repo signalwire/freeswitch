@@ -226,7 +226,7 @@ static switch_status_t wanpipe_on_init(switch_core_session_t *session)
 {
 	struct private_object *tech_pvt;
 	switch_channel_t *channel = NULL;
-	wanpipe_tdm_api_t tdm_api = {};
+	wanpipe_tdm_api_t tdm_api = {0};
 	int err = 0;
 	int mtu_mru;
 	unsigned int rate = 8000;
