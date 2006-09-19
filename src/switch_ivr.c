@@ -1655,9 +1655,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 )
 										  
 {
-	char *peer_names[MAX_PEERS];
-	switch_core_session_t *peer_session, *peer_sessions[MAX_PEERS];
-	switch_caller_profile_t *caller_profiles[MAX_PEERS], *caller_caller_profile;
+	char *peer_names[MAX_PEERS] = {0};
+	switch_core_session_t *peer_session, *peer_sessions[MAX_PEERS] = {0};
+	switch_caller_profile_t *caller_profiles[MAX_PEERS] = {0}, *caller_caller_profile;
 	char *chan_type = NULL, *chan_data;
 	switch_channel_t *peer_channel = NULL, *peer_channels[MAX_PEERS] = {0};
 	time_t start;
