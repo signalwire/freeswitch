@@ -233,6 +233,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, char *extension, char *dialplan, char *context);
 
+
+/*!
+  \brief Bridge two existing sessions
+  \param originator_uuid the uuid of the originator
+  \param originatee_uuid the uuid of the originator
+  \return SWITCH_STATUS_SUCCESS if all is well 
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(char *originator_uuid, char *originatee_uuid);
+
 /** @} */
 
 SWITCH_END_EXTERN_C

@@ -248,6 +248,13 @@ SWITCH_DECLARE(int) switch_channel_test_flag(switch_channel_t *channel, switch_c
 SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flags);
 
 /*!
+  \brief Set given flag(s) on a given channel to be applied on the next state change
+  \param channel channel on which to set flag(s)
+  \param flags or'd list of flags to set
+*/
+SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, switch_channel_flag_t flags);
+
+/*!
   \brief Clear given flag(s) from a channel
   \param channel channel to clear flags from
   \param flags or'd list of flags to clear

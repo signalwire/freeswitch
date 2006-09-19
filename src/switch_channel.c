@@ -98,6 +98,7 @@ struct switch_channel {
 	switch_core_session_t *session;
 	switch_channel_state_t state;
 	uint32_t flags;
+	uint32_t state_flags;
 	switch_caller_profile_t *caller_profile;
 	switch_caller_profile_t *originator_caller_profile;
 	switch_caller_profile_t *originatee_caller_profile;
@@ -374,6 +375,15 @@ SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_c
 	switch_set_flag_locked(channel, flags);
 }
 
+SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, switch_channel_flag_t flags)
+{
+	assert(channel != NULL);
+
+	switch_mutex_lock(channel->flag_mutex);
+	channel->state_flags |= flags;
+	switch_mutex_unlock(channel->flag_mutex);
+}
+
 SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {
 	assert(channel != NULL);
@@ -395,7 +405,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t
 SWITCH_DECLARE(unsigned int) switch_channel_ready(switch_channel_t *channel)
 {
 	assert(channel != NULL);
-	return (channel->state > CS_RING && channel->state < CS_HANGUP) ? 1 : 0;
+	return (channel->state > CS_RING && channel->state < CS_HANGUP && !switch_test_flag(channel, CF_TRANSFER)) ? 1 : 0;
 }
 
 static const char *state_names[] = {
@@ -616,6 +626,12 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		}
 	}
  done:
+	
+	if (channel->state_flags) {
+		channel->flags |= channel->state_flags;
+		channel->state_flags = 0;
+	}
+
 	switch_mutex_unlock(channel->flag_mutex);
 	return channel->state;
 }

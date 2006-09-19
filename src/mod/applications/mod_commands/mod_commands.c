@@ -178,6 +178,27 @@ static switch_status_t transfer_function(char *cmd, switch_core_session_t *isess
 
 
 
+static switch_status_t uuid_bridge_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	char *argv[4] = {0};
+	int argc = 0;
+
+	if (isession) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc != 2) {
+		stream->write_function(stream, "Invalid Parameters\nUsage: uuid_bridge <uuid> <other_uuid>\n");
+	} else {
+		switch_ivr_uuid_bridge(argv[0], argv[1]);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 
 static switch_status_t pause_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
@@ -415,11 +436,19 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 }
 
 
+
+static switch_api_interface_t uuid_bridge_api_interface = {
+	/*.interface_name */ "uuid_bridge",
+	/*.desc */ "uuid_bridge",
+	/*.function */ uuid_bridge_function,
+	/*.next */ NULL
+};
+
 static switch_api_interface_t status_api_interface = {
 	/*.interface_name */ "status",
 	/*.desc */ "status",
 	/*.function */ status_function,
-	/*.next */ NULL
+	/*.next */ &uuid_bridge_api_interface
 };
 
 static switch_api_interface_t show_api_interface = {
