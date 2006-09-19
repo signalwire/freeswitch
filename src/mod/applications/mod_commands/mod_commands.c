@@ -39,7 +39,7 @@ static switch_status_t status_function(char *cmd, switch_core_session_t *session
 {
 	uint8_t html = 0;
 	switch_core_time_duration_t duration;
-	char *http;
+	char *http = NULL;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
