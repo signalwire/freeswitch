@@ -1809,7 +1809,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			peer_channels[i] = NULL;
 			peer_sessions[i] = NULL;
 			continue;
-		} 
+		}
+
+		switch_core_session_read_lock(peer_sessions[i]);
 		pool = NULL;
 	
 		peer_channels[i] = switch_core_session_get_channel(peer_sessions[i]);
@@ -1984,6 +1986,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 	if (!pass && write_codec.implementation) {
 		switch_core_codec_destroy(&write_codec);
+	}
+
+	for (i = 0; i < argc; i++) {
+		if (!peer_channels[i]) {
+			continue;
+		}
+		switch_core_session_rwunlock(peer_sessions[i]);
 	}
 
 	return status;

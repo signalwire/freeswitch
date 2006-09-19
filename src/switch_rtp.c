@@ -584,10 +584,15 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	}
 
 	switch_mutex_lock((*rtp_session)->flag_mutex);
+	
+	if ((*rtp_session)->packet_buffer) {
+		switch_buffer_destroy(&(*rtp_session)->packet_buffer);
+	}
+			
 	switch_rtp_kill_socket(*rtp_session);
 	switch_socket_close((*rtp_session)->sock);
 	(*rtp_session)->sock = NULL;
-	switch_mutex_unlock((*rtp_session)->flag_mutex);
+
 
 	if (switch_test_flag((*rtp_session), SWITCH_RTP_FLAG_VAD)) {
 		switch_rtp_disable_vad(*rtp_session);
@@ -601,6 +606,8 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	if ((*rtp_session)->timer.timer_interface) {
 		switch_core_timer_destroy(&(*rtp_session)->timer);
 	}
+
+	switch_mutex_unlock((*rtp_session)->flag_mutex);
 
 	return;
 }
@@ -1099,7 +1106,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		send_msg->header.m = m ? 1 : 0;
 		if (packetize) {
 			if (!rtp_session->packet_buffer) {
-				if (switch_buffer_create(rtp_session->pool, &rtp_session->packet_buffer, rtp_session->packet_size * 2) != SWITCH_STATUS_SUCCESS) {
+				if (switch_buffer_create_dynamic(&rtp_session->packet_buffer, rtp_session->packet_size, rtp_session->packet_size * 2, 0) 
+					!= SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Buffer memory error\n");
 					return -1;
 				}
