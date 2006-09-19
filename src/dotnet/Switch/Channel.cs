@@ -85,6 +85,15 @@ namespace FreeSwitch
                 Channel channel);
 
         [DllImport("freeswitch")]
+        [return: MarshalAs(UnmanagedType.LPStr)]
+        public extern static
+            string switch_channel_get_variable(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(ChannelMarshaler))]
+                Channel channel,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string varname);
+
+        [DllImport("freeswitch")]
         [return: MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CallerProfileMarshaler))]
         public extern static
             CallerProfile switch_channel_get_originator_caller_profile(

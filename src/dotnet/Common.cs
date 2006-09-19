@@ -32,7 +32,7 @@
 using System;
 using System.Reflection;
 
-namespace FreeSwitch.NET
+namespace FreeSwitch
 {
     public class Common
     {

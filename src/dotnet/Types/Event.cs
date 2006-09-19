@@ -101,20 +101,4 @@ namespace FreeSwitch.Types
         public string Name;
         public string Value;
     }
-
-    public enum EventType
-    {
-        SWITCH_EVENT_CUSTOM,
-        SWITCH_EVENT_CHANNEL_STATE,
-        SWITCH_EVENT_CHANNEL_ANSWER,
-        SWITCH_EVENT_CHANNEL_HANGUP,
-        SWITCH_EVENT_API,
-        SWITCH_EVENT_LOG,
-        SWITCH_EVENT_INBOUND_CHAN,
-        SWITCH_EVENT_OUTBOUND_CHAN,
-        SWITCH_EVENT_STARTUP,
-        SWITCH_EVENT_SHUTDOWN,
-        SWITCH_EVENT_ALL
-    }
-
 }

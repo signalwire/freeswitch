@@ -36,7 +36,7 @@ using FreeSwitch.Marshaling;
 namespace FreeSwitch.Types
 {
     public delegate Status InputCallbackFunction(
-        [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StreamHandleMarshaler))]
+        [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CoreSessionMarshaler))]
         CoreSession session,
         [MarshalAs(UnmanagedType.LPStr)]
         string input,

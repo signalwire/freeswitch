@@ -109,7 +109,7 @@ namespace FreeSwitch.Types
             get
             {
                 CoreSessionMarshal coreSessionMarshal = (CoreSessionMarshal)marshaledObject.Wrapper;
-
+                 
                 if (coreSessionMarshal.thread_running <= 0)
                     return false;
                 else

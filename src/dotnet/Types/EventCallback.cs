@@ -26,21 +26,16 @@
  * James Martelletti <james@nerdc0re.com>
  *
  *
- * CodecMarshal.cs -- 
+ * EventCallback.cs -- 
  *
  */
 using System;
-using System.Text;
+using System.Runtime.InteropServices;
+using FreeSwitch.Marshaling;
 
-namespace FreeSwitch.Marshaling.Types
+namespace FreeSwitch.Types
 {
-    internal class CodecMarshal
-    {
-        internal IntPtr codec_interface;
-        internal IntPtr implementation;
-        internal IntPtr codec_settings;
-        internal UInt32 flags;
-        internal IntPtr memory_pool;
-        internal IntPtr private_info;
-    }
+    public delegate void EventCallback(
+        [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(EventMarshaler))]
+        Event _event);
 }

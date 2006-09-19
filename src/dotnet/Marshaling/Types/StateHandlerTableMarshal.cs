@@ -26,21 +26,24 @@
  * James Martelletti <james@nerdc0re.com>
  *
  *
- * CodecMarshal.cs -- 
+ * StateHandlerTableMarshal.cs -- 
  *
  */
 using System;
-using System.Text;
+using System.Runtime.InteropServices;
+using FreeSwitch.Types;
 
 namespace FreeSwitch.Marshaling.Types
 {
-    internal class CodecMarshal
+    [StructLayout(LayoutKind.Sequential)]
+    internal class StateHandlerTableMarshal
     {
-        internal IntPtr codec_interface;
-        internal IntPtr implementation;
-        internal IntPtr codec_settings;
-        internal UInt32 flags;
-        internal IntPtr memory_pool;
-        internal IntPtr private_info;
+        internal IntPtr on_init;
+        internal IntPtr on_ring;
+        internal IntPtr on_execute;
+        internal IntPtr on_hangup;
+        internal IntPtr on_loopback;
+        internal IntPtr on_transmit;
+        internal IntPtr on_hold;
     }
 }

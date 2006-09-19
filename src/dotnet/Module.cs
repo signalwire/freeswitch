@@ -34,12 +34,11 @@ using System.Collections;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using FreeSwitch.NET;
 using FreeSwitch.Types;
 using FreeSwitch.Modules;
 using FreeSwitch.Marshaling.Types;
 
-namespace FreeSwitch.NET
+namespace FreeSwitch
 {
     /// <summary>
     /// Base class for all Freeswitch.NET modules
@@ -92,19 +91,25 @@ namespace FreeSwitch.NET
             /* Set the module_name field of the LoadableModuleInterface */
             module_interface.module_name = Marshal.StringToHGlobalAnsi(filename);
 
-            /* Grab the first ApiInterface in our array and add a pointer to this in our ModuleInterface*/
-            Api apiIndex = (Api)apiInterfaces[0];
-            
-            module_interface.api_interface = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(ApiInterfaceMarshal)));
-            
-            Marshal.StructureToPtr(apiIndex.handle.Wrapper, module_interface.api_interface, true);
-            
-            /* For each Application interface */
-            Application applicationIndex = (Application)applicationInterfaces[0];
-            
-            module_interface.application_interface = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(ApplicationInterfaceMarshal)));
-            
-            Marshal.StructureToPtr(applicationIndex.handle.Wrapper, module_interface.application_interface, true);                
+            if (apiInterfaces.Count > 0)
+            {
+                /* Grab the first ApiInterface in our array and add a pointer to this in our ModuleInterface*/
+                Api apiIndex = (Api)apiInterfaces[0];
+
+                module_interface.api_interface = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(ApiInterfaceMarshal)));
+
+                Marshal.StructureToPtr(apiIndex.handle.Wrapper, module_interface.api_interface, true);
+            }
+
+            if (applicationInterfaces.Count > 0)
+            {
+                /* For each Application interface */
+                Application applicationIndex = (Application)applicationInterfaces[0];
+
+                module_interface.application_interface = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(ApplicationInterfaceMarshal)));
+
+                Marshal.StructureToPtr(applicationIndex.handle.Wrapper, module_interface.application_interface, true);
+            }
 
             /* Finally, marshal the moduleinterface class and return */
             Marshal.StructureToPtr(module_interface, module, true);
@@ -200,6 +205,10 @@ namespace FreeSwitch.NET
                                                         module.module_shutdown);
         }
 
-        
+        public string Name
+        {
+            set { name = value; }
+            get { return name; }
+        }
 	}
 }	

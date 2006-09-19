@@ -43,6 +43,8 @@ namespace FreeSwitch.Marshaling.Types
         internal IntPtr end;
         internal int    data_size;
         internal int    data_len;
+        internal int    alloc_len;
+        internal int    alloc_chunk;
         internal IntPtr _event;
     }
 }

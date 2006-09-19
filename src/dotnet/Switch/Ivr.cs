@@ -41,11 +41,66 @@ namespace FreeSwitch
     public partial class Switch
     {
         [DllImport("freeswitch")]
+        public extern static
+            Status switch_ivr_sleep(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession session,
+                UInt32 ms);
+
+        [DllImport("freeswitch")]
+        public extern static
+            Status switch_ivr_park(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession session);
+
+        [DllImport("freeswitch")]
+        public extern static
+            Status switch_ivr_collect_digits_callback(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession session,
+                InputCallbackFunction dtmfCallback,
+                IntPtr buf,
+                uint buflen);
+
+        [DllImport("freeswitch")]
+        public extern static
+            Status switch_ivr_collect_digits_count(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession session,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string buffer,
+                uint buflen,
+                uint maxdigits,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string terminators,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string terminator,
+                uint timeout);
+
+        [DllImport("freeswitch")]
+        public extern static
+            Status switch_ivr_record_session(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession session,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string file,
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(FileHandleMarshaler))]
+                FileHandle fh);
+
+        [DllImport("freeswitch")]
+        public extern static
+            Status switch_ivr_stop_record_session(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession session,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string file);
+
+        [DllImport("freeswitch")]
         extern public static
             Status switch_ivr_play_file(
-                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(CoreSessionMarshaler))]
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
                 CoreSession session,
-                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(FileHandleMarshaler))]
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(FileHandleMarshaler))]
                 FileHandle fh,
                 [MarshalAs(UnmanagedType.LPStr)]
                 string file,
@@ -54,18 +109,6 @@ namespace FreeSwitch
                 InputCallbackFunction input_callback,
                 IntPtr buf,
                 uint buflen);
-
-        [DllImport("freeswitch")]
-        public extern static
-            Status switch_ivr_multi_threaded_bridge(
-                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
-                CoreSession session,
-                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
-                CoreSession peer_session,
-                uint timelimit,
-                IntPtr dtmf_callback,
-                IntPtr session_data,
-                IntPtr peer_session_data);
 
         [DllImport("freeswitch")]
         public extern static
@@ -78,5 +121,82 @@ namespace FreeSwitch
                 InputCallbackFunction input_callback,
                 IntPtr buf,
                 uint buflen);
+
+        [DllImport("freeswitch")]
+        public extern static
+            Status switch_ivr_speak_text_handle(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession session,
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(SpeechHandleMarshaler))]
+                SpeechHandle sh,
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CodecMarshaler))]
+                Codec codec,
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(TimerMarshaler))]
+                Timer timer,
+                InputCallbackFunction dtmfCallback,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string text,
+                IntPtr buf,
+                uint buflen);
+
+        [DllImport("freeswitch")]
+        public extern static
+            Status switch_ivr_speak_text(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession session,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string tts_name,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string voice_name,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string timer_name,
+                uint rate,
+                InputCallbackFunction dtmfCallback,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string text,
+                IntPtr buf,
+                uint buflen);
+
+        [DllImport("freeswitch")]
+        public extern static
+            Status switch_ivr_originate(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession session,
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                ref CoreSession bleg,
+                IntPtr cause,
+                IntPtr bridgeto,
+                UInt32 timelimit_sec,
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(StateHandlerTableMarshaler))]
+                StateHandlerTable table,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string cid_name_override,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string cid_num_override,
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CallerProfileMarshaler))]
+                CallerProfile caller_profile_override);
+
+        [DllImport("freeswitch")]
+        public extern static
+            Status switch_ivr_multi_threaded_bridge(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession session,
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession peer_session,
+                InputCallbackFunction dtmfCallback,
+                IntPtr session_data,
+                IntPtr peer_session_data);
+
+        [DllImport("freeswitch")]
+        public extern static
+            Status switch_ivr_session_transfer(
+                [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+                CoreSession session,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string extension,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string dialplan,
+                [MarshalAs(UnmanagedType.LPStr)]
+                string context);
     }
 }

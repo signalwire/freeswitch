@@ -7,8 +7,8 @@
     <ProjectGuid>{251CAABC-16C3-4593-A491-603B908094E0}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FreeSwitch.NET</RootNamespace>
-    <AssemblyName>Freeswitch</AssemblyName>
+    <RootNamespace>FreeSwitch</RootNamespace>
+    <AssemblyName>FreeSwitch.NET</AssemblyName>
     <StartupObject>
     </StartupObject>
     <SignAssembly>true</SignAssembly>
@@ -42,11 +42,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Common.cs" />
+    <Compile Include="Log.cs" />
+    <Compile Include="Ivr.cs" />
     <Compile Include="Marshaling\BufferMarshaler.cs" />
     <Compile Include="Marshaling\CallerExtensionMarshaler.cs" />
     <Compile Include="Marshaling\CallerProfileMarshaler.cs" />
     <Compile Include="Marshaling\ChannelMarshaler.cs" />
     <Compile Include="Marshaling\ChannelTimetableMarshaler.cs" />
+    <Compile Include="Marshaling\CodecMarshaler.cs" />
+    <Compile Include="Marshaling\StateHandlerTableMarshaler.cs" />
+    <Compile Include="Marshaling\TimerMarshaler.cs" />
+    <Compile Include="Marshaling\SpeechHandleMarshaler.cs" />
     <Compile Include="Marshaling\StreamHandleMarshaler.cs" />
     <Compile Include="Marshaling\CoreSessionMarshaler.cs" />
     <Compile Include="Marshaling\EventMarshaler.cs" />
@@ -65,6 +71,9 @@
     <Compile Include="Marshaling\Types\CodecInterfaceMarshal.cs" />
     <Compile Include="Marshaling\Types\CodecMarshal.cs" />
     <Compile Include="Marshaling\Types\CodecTypeMarshal.cs" />
+    <Compile Include="Marshaling\Types\StateHandlerTableMarshal.cs" />
+    <Compile Include="Marshaling\Types\TimerMarshal.cs" />
+    <Compile Include="Marshaling\Types\SpeechHandleMarshal.cs" />
     <Compile Include="Marshaling\Types\StreamHandleMarshal.cs" />
     <Compile Include="Marshaling\Types\TypesMarshal.cs" />
     <Compile Include="Marshaling\Types\FileHandleMarshal.cs" />
@@ -79,6 +88,8 @@
     <Compile Include="Switch\CallerProfile.cs" />
     <Compile Include="Switch\Channel.cs" />
     <Compile Include="Switch\Console.cs" />
+    <Compile Include="Switch\Log.cs" />
+    <Compile Include="Switch\Event.cs" />
     <Compile Include="Switch\StreamHandle.cs" />
     <Compile Include="Switch\CoreSession.cs" />
     <Compile Include="Switch\Ivr.cs" />
@@ -96,6 +107,13 @@
     <Compile Include="Modules\Application.cs" />
     <Compile Include="Types\ApplicationFunction.cs" />
     <Compile Include="Types\CallCause.cs" />
+    <Compile Include="Types\Codec.cs" />
+    <Compile Include="Types\LogLevel.cs" />
+    <Compile Include="Types\StateHandlerTable.cs" />
+    <Compile Include="Types\Timer.cs" />
+    <Compile Include="Types\SpeechHandle.cs" />
+    <Compile Include="Types\EventCallback.cs" />
+    <Compile Include="Types\EventType.cs" />
     <Compile Include="Types\InputCallbackFunction.cs" />
     <Compile Include="Types\InputType.cs" />
     <Compile Include="Types\ModuleInterfaces.cs" />

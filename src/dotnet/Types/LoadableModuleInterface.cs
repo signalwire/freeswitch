@@ -37,11 +37,7 @@ using FreeSwitch.Marshaling;
 
 namespace FreeSwitch.Types
 {
-    public delegate Status WriteFunction(
-        [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StreamHandleMarshaler))]
-        StreamHandle streamHandle,
-        [MarshalAs(UnmanagedType.LPStr)]
-        string fmt);
+
 
     //public delegate void ModuleLoad();
 

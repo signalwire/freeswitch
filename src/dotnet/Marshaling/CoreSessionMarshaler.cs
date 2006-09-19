@@ -61,14 +61,36 @@ namespace FreeSwitch.Marshaling
         public IntPtr MarshalManagedToNative(object obj)
         {
             CoreSession coreSession = (CoreSession)obj;
-            
-            return coreSession.marshaledObject.Handle;
+
+            Console.WriteLine("CoreSession: Marshalling Managed to Native");
+
+            if (coreSession.marshaledObject.Handle != IntPtr.Zero)
+            {
+
+                Console.WriteLine("Returning: 0x{0:x}", coreSession.marshaledObject.Handle.ToInt32());
+                return coreSession.marshaledObject.Handle;
+            }
+            else
+            {
+                CoreSessionMarshal coreSessionMarshal = new CoreSessionMarshal();
+                IntPtr coreSessionPtr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(CoreSessionMarshal)));
+
+                Marshal.StructureToPtr(coreSessionMarshal, coreSessionPtr, true);
+
+                coreSession.marshaledObject = new HandleRef(coreSessionMarshal, coreSessionPtr);
+
+                Console.WriteLine("CoreSession: NO OBJECT EXISTS OMG");
+                Console.WriteLine("Returning: 0x{0:x}", coreSession.marshaledObject.Handle.ToInt32());
+                return coreSession.marshaledObject.Handle;
+            }
         }
 
         public object MarshalNativeToManaged(IntPtr coreSessionPtr)
         {
             CoreSessionMarshal coreSessionMarshal = new CoreSessionMarshal();
             CoreSession        coreSession        = new CoreSession();
+
+            Console.WriteLine("CoreSession: Marshalling Native to Managed");
 
             Marshal.PtrToStructure(coreSessionPtr, coreSessionMarshal);
 

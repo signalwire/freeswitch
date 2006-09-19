@@ -49,11 +49,13 @@ namespace FreeSwitch.Types
             CoreSession session,
             [MarshalAs(UnmanagedType.LPStr)]
             string data);
-
+    
     public delegate Status
         ApiFunction(
             [MarshalAs(UnmanagedType.LPStr)]
-            string command,
+            string input,
+            [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(CoreSessionMarshaler))]
+            CoreSession session,
             [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(StreamHandleMarshaler))]
             StreamHandle streamHandle);
 }

@@ -31,19 +31,25 @@
  */
 using System;
 using System.Runtime.InteropServices;
+using FreeSwitch.Marshaling;
 using FreeSwitch.Marshaling.Types;
 
 namespace FreeSwitch.Types
 {
+    public delegate Status StreamHandleWriteFunction(
+        [MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef=typeof(StreamHandleMarshaler))]
+        StreamHandle streamHandle,
+        [MarshalAs(UnmanagedType.LPStr)]
+        string fmt);
+
     public class StreamHandle
     {
         internal HandleRef     marshaledObject;
-        internal WriteFunction writeFunction;
 
         public void Write(string data)
         {
             StreamHandleMarshal streamHandleMarshal = (StreamHandleMarshal)marshaledObject.Wrapper;
-            WriteFunction       writeFunction       = (WriteFunction)Marshal.GetDelegateForFunctionPointer(streamHandleMarshal.write_function, typeof(WriteFunction));
+            StreamHandleWriteFunction writeFunction = (StreamHandleWriteFunction)Marshal.GetDelegateForFunctionPointer(streamHandleMarshal.write_function, typeof(StreamHandleWriteFunction));
 
             writeFunction(this, data);
         }

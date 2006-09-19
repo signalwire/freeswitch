@@ -219,5 +219,15 @@ namespace FreeSwitch.Types
         {
             return Switch.switch_channel_answer(this);
         }
+
+        public ChannelState Hangup(CallCause cause)
+        {
+            return Switch.switch_channel_perform_hangup(this, "file", "func", 666, cause);
+        }
+
+        public string GetVariable(string varname)
+        {
+            return Switch.switch_channel_get_variable(this, varname);
+        }
     }
 }

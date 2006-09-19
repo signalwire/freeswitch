@@ -26,21 +26,19 @@
  * James Martelletti <james@nerdc0re.com>
  *
  *
- * CodecMarshal.cs -- 
+ * StateHandlerTable.cs -- 
  *
  */
 using System;
-using System.Text;
+using System.Runtime.InteropServices;
+using FreeSwitch.Marshaling;
+using FreeSwitch.Marshaling.Types;
 
-namespace FreeSwitch.Marshaling.Types
+namespace FreeSwitch.Types
 {
-    internal class CodecMarshal
+    public class StateHandlerTable
     {
-        internal IntPtr codec_interface;
-        internal IntPtr implementation;
-        internal IntPtr codec_settings;
-        internal UInt32 flags;
-        internal IntPtr memory_pool;
-        internal IntPtr private_info;
+        internal HandleRef     marshaledObject;
+
     }
 }

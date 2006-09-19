@@ -26,21 +26,24 @@
  * James Martelletti <james@nerdc0re.com>
  *
  *
- * CodecMarshal.cs -- 
+ * TimerMarshal.cs -- 
  *
  */
 using System;
-using System.Text;
+using System.Runtime.InteropServices;
+using FreeSwitch.Types;
 
 namespace FreeSwitch.Marshaling.Types
 {
-    internal class CodecMarshal
+    [StructLayout(LayoutKind.Sequential)]
+    internal class TimerMarshal
     {
-        internal IntPtr codec_interface;
-        internal IntPtr implementation;
-        internal IntPtr codec_settings;
-        internal UInt32 flags;
-        internal IntPtr memory_pool;
-        internal IntPtr private_info;
+        int interval;
+        UInt32 flags;
+        uint samples;
+        uint samplecount;
+        IntPtr timer_interface;
+        IntPtr memory_pool;
+        IntPtr private_info;
     }
 }

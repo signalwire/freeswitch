@@ -26,21 +26,41 @@
  * James Martelletti <james@nerdc0re.com>
  *
  *
- * CodecMarshal.cs -- 
+ * SpeechHandle.cs -- 
  *
  */
 using System;
-using System.Text;
+using System.Runtime.InteropServices;
+using FreeSwitch.Marshaling;
+using FreeSwitch.Marshaling.Types;
 
-namespace FreeSwitch.Marshaling.Types
+namespace FreeSwitch.Types
 {
-    internal class CodecMarshal
+    /*
+    internal IntPtr speech_interface;
+    internal UInt32 flags;
+    internal IntPtr name;
+    internal UInt32 rate;
+    internal UInt32 speed;
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 80)]
+    internal byte[] voice;
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 80)]
+    internal byte[] engine;
+    internal IntPtr memory_pool;
+    internal IntPtr private_info;
+    */
+    public class SpeechHandle
     {
-        internal IntPtr codec_interface;
-        internal IntPtr implementation;
-        internal IntPtr codec_settings;
-        internal UInt32 flags;
-        internal IntPtr memory_pool;
-        internal IntPtr private_info;
+        internal HandleRef marshaledObject;
+        
+        public UInt32 flags
+        {
+            get
+            {
+                SpeechHandleMarshal speechHandleMarshal = (SpeechHandleMarshal)marshaledObject.Wrapper;
+
+                return speechHandleMarshal.flags;
+            }
+        }
     }
 }
