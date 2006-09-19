@@ -71,7 +71,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t
   \param channel channel to test
   \return true if the channel is ready
 */
-SWITCH_DECLARE(unsigned int) switch_channel_ready(switch_channel_t *channel);
+SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel);
 
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,

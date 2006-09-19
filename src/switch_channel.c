@@ -402,7 +402,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t
 	return state;
 }
 
-SWITCH_DECLARE(unsigned int) switch_channel_ready(switch_channel_t *channel)
+SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel)
 {
 	assert(channel != NULL);
 	return (channel->state > CS_RING && channel->state < CS_HANGUP && !switch_test_flag(channel, CF_TRANSFER)) ? 1 : 0;

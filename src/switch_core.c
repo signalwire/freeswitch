@@ -3248,7 +3248,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t *thread, 
 				}
 
 				itterations++;
-				newlen = strlen(sql) + 2;
+				newlen = (uint32_t)strlen(sql) + 2;
 				if (len + newlen > sql_len) {
 					sql_len = len + SQLLEN;
 					if (!(sqlbuf = realloc(sqlbuf, sql_len))) {
