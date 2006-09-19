@@ -952,12 +952,10 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			
 			if (globals.calls == 0) {
 				waitlen = 10000;
-			} else if (globals.calls == 1) {
-				waitlen = 1000;
 			} else if (globals.calls < 10) {
-				waitlen = 100;
+				waitlen = 1000;
 			} else {
-				waitlen = 10;
+				waitlen = 500;
 			}
 
 			switch_yield(waitlen);

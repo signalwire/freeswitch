@@ -1354,7 +1354,11 @@ static switch_status_t audio_bridge_on_loopback(switch_core_session_t *session)
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
 	switch_channel_clear_state_handler(channel, &audio_bridge_peer_state_handlers);
-		
+
+	if (!switch_channel_test_flag(channel, CF_TRANSFER)) {
+		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	}
+	
 	return SWITCH_STATUS_FALSE;
 }
 
@@ -1406,22 +1410,32 @@ static switch_status_t uuid_bridge_on_transmit(switch_core_session_t *session)
 	assert(channel != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CUSTOM TRANSMIT\n");
+	switch_channel_clear_state_handler(channel, NULL);
+
+	if (!switch_channel_test_flag(channel, CF_ORIGINATOR)) {
+		switch_channel_set_flag(channel, CF_TAGGED);
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if ((other_session = switch_channel_get_private(channel, "_uuid_bridge_"))) {
 		switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 		switch_channel_state_t state = switch_channel_get_state(other_channel);
+		switch_channel_state_t mystate = switch_channel_get_state(channel);
 		switch_event_t *event;
 		uint8_t ready_a, ready_b;
 		switch_caller_profile_t *profile, *new_profile;
 
+		switch_channel_clear_flag(channel, CF_TRANSFER);
 		switch_channel_set_private(channel, "_uuid_bridge_", NULL);
-		while (state <= CS_HANGUP && state != CS_TRANSMIT) {
+
+		while (mystate <= CS_HANGUP && state <= CS_HANGUP && !switch_channel_test_flag(other_channel, CF_TAGGED)) {
 			switch_yield(1000);
 			state = switch_channel_get_state(other_channel);
+			mystate = switch_channel_get_state(channel);
 		}
 
-		switch_channel_clear_flag(channel, CF_TRANSFER);
-		switch_channel_clear_flag(other_channel, CF_TRANSFER);
+		switch_channel_clear_flag(other_channel, CF_TRANSFER|CF_TAGGED);
+
 
 		switch_core_session_reset(session);
 		switch_core_session_reset(other_session);
@@ -2053,7 +2067,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				switch_channel_event_set_data(caller_channel, event);
 				switch_event_fire(&event);
 			}
-		
+
+			if (switch_channel_get_state(caller_channel) != CS_EXECUTE && !switch_channel_test_flag(caller_channel, CF_TRANSFER)) {
+				switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			}
+
 			this_audio_thread->objs[0] = NULL;
 			this_audio_thread->objs[1] = NULL;
 			this_audio_thread->objs[2] = NULL;
@@ -2063,13 +2081,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_mutex_lock(this_audio_thread->mutex);
 			this_audio_thread->running = 0;
 			switch_mutex_unlock(this_audio_thread->mutex);
-
-			if (!switch_channel_test_flag(peer_channel, CF_TRANSFER) && 
-				switch_channel_get_state(peer_channel) < CS_HANGUP) {
-				switch_core_session_kill_channel(peer_session, SWITCH_SIG_KILL);
-				switch_channel_hangup(peer_channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			}
-
+			
 			switch_channel_clear_flag(caller_channel, CF_ORIGINATOR);
 
 			if (other_audio_thread->running > 0) {
@@ -2118,8 +2130,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(char *originator_uuid, ch
 			 * inturrupt anything they are already doing.
 			 * originatee_session will fall asleep and originator_session will bridge to it
 			 */
-
+			
+			switch_channel_clear_state_handler(originator_channel, NULL);
+			switch_channel_clear_state_handler(originatee_channel, NULL);
+			switch_channel_set_flag(originator_channel, CF_ORIGINATOR);
 			switch_channel_add_state_handler(originator_channel, &uuid_bridge_state_handlers);
+			switch_channel_add_state_handler(originatee_channel, &uuid_bridge_state_handlers);
 			switch_channel_set_private(originator_channel, "_uuid_bridge_", originatee_session);
 
 			/* switch_channel_set_state_flag sets flags you want to be set when the next stat change happens */

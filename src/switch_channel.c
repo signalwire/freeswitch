@@ -846,12 +846,14 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
 	for (index = 0; index < SWITCH_MAX_STATE_HANDLERS; index++) {
 		channel->state_handlers[index] = NULL;
 	}
+
 	if (state_handler) {
 		for (index = 0; index < i; index++) {
 			channel->state_handlers[index] = new_handlers[i];
 		}
 	}
 
+	channel->state_handler_index = i;
 }
 
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel,

@@ -2892,9 +2892,6 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 		endstate = switch_channel_get_state(session->channel);
 
-		if (endstate >= CS_HANGUP) {
-			goto done;
-		}
 
 		if (midstate == endstate) {
 			switch_thread_cond_wait(session->cond, session->mutex);
