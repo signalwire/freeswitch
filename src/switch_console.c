@@ -221,13 +221,22 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		if (activity) {
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\nfreeswitch@%s> ", hostname);
 		}
-		
+
+#ifdef _MSC_VER
+//Microsofts macros don't pass their own compilers warnings.
+#pragma warning(push)
+#pragma warning(disable: 4127 4389)
+#endif
+
 		FD_ZERO(&rfds);
 		FD_ZERO(&efds);
 		FD_SET(fileno(stdin), &rfds);
 		FD_SET(fileno(stdin), &efds);
 		activity = select(fileno(stdin)+1, &rfds, NULL, &efds, &tv);
 
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 		if (activity == 0) {
 			fflush(stdout);
 			continue;

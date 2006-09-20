@@ -233,8 +233,6 @@ int main(int argc, char *argv[])
 
 #ifdef WIN32
 		FreeConsole();
-		snprintf(path, sizeof(path), "Global\\Freeswitch.%d", getpid());
-		shutdown_event = CreateEvent(NULL, FALSE, FALSE, path);		
 #else
 		if ((pid = fork())) {
 			fprintf(stderr, "%d Backgrounding.\n", (int)pid);

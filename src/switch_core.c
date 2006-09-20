@@ -3511,12 +3511,17 @@ SWITCH_DECLARE(int32_t) set_high_priority(void)
 	return 0;
 }
 
-
 SWITCH_DECLARE(void) switch_core_runtime_loop(int bg)
 {
+#ifdef WIN32
+	HANDLE shutdown_event;
+	char path[256] = "";
+#endif
 	if (bg) {
 		bg = 0;
 #ifdef WIN32
+		snprintf(path, sizeof(path), "Global\\Freeswitch.%d", getpid());
+		shutdown_event = CreateEvent(NULL, FALSE, FALSE, path);		
 		WaitForSingleObject(shutdown_event, INFINITE);
 #else
 		runtime.running = 1;
