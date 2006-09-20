@@ -636,7 +636,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 					switch_core_hash_insert_dup(listener->event_hash, cur, MARKER);
 				} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
 					key_count++;
-					listener->event_list[(uint8_t)type] = 1;
+					if (type == SWITCH_EVENT_ALL) {
+						uint32_t x = 0;
+						for (x = 0; x < SWITCH_EVENT_ALL; x++) {
+							listener->event_list[x] = 0;
+						}
+					}
+					listener->event_list[type] = 1;
 					if (type == SWITCH_EVENT_CUSTOM) {
 						custom++;
 					}
@@ -657,6 +663,63 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		}
 
 		snprintf(reply, reply_len, "+OK event listener enabled %s", listener->format == EVENT_FORMAT_XML ? "xml" : "plain");
+
+	} else if (!strncasecmp(cmd, "nixevent", 8)) {
+		char *next, *cur;
+		uint32_t count = 0, key_count = 0;
+		uint8_t custom = 0;
+		
+		strip_cr(cmd);
+		cur = cmd + 5;
+
+		if (cur && (cur = strchr(cur, ' '))) {
+			for(cur++; cur; count++) {
+				switch_event_types_t type;
+
+				if ((next = strchr(cur, ' '))) {
+					*next++ = '\0';
+				}
+				
+				if (custom) {
+					switch_core_hash_delete(listener->event_hash, cur);
+				} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
+					uint32_t x = 0;
+					key_count++;
+
+					if (type == SWITCH_EVENT_ALL) {
+
+						for (x = 0; x <= SWITCH_EVENT_ALL; x++) {
+							listener->event_list[x] = 0;
+						}
+					} else {
+						if (listener->event_list[SWITCH_EVENT_ALL]) {
+							listener->event_list[SWITCH_EVENT_ALL] = 0;
+							for (x = 0; x < SWITCH_EVENT_ALL; x++) {
+								listener->event_list[x] = 1;
+							}
+						}
+						listener->event_list[type] = 0;
+					}
+
+					if (type == SWITCH_EVENT_CUSTOM) {
+						custom++;
+					}
+				}
+
+				cur = next;
+			}
+		} 
+
+		if (!key_count) {
+			snprintf(reply, reply_len, "-ERR no keywords supplied");
+			goto done;
+		}
+
+		if (!switch_test_flag(listener, LFLAG_EVENTS)) {
+			switch_set_flag_locked(listener, LFLAG_EVENTS);
+		}
+
+		snprintf(reply, reply_len, "+OK events nixed");
 		
 	} else if (!strncasecmp(cmd, "noevents", 8)) {
 		void *pop;
