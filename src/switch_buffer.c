@@ -170,6 +170,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *
 
 	buffer->front += reading;
 	buffer->used -= reading;
+
 	//if (buffer->id == 3) printf("%u o %d = %d\n", buffer->id, (uint32_t)reading, (uint32_t)buffer->used);
 	return reading;
 }
@@ -184,7 +185,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 
 	freespace = buffer->datalen - buffer->used;
 
-	if (buffer->front != buffer->data) {
+	if (buffer->used && buffer->data != buffer->front) {
 		memmove(buffer->data, buffer->front, buffer->used);
 		buffer->front = buffer->data;
 	}
@@ -192,7 +193,6 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_DYNAMIC)) {
 		if (freespace < datalen) {
 			switch_size_t new_size, new_block_size;
-			
 			new_size = buffer->datalen + datalen;
 			new_block_size = buffer->datalen + buffer->blocksize;
 
@@ -203,6 +203,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 			if (!(buffer->data = realloc(buffer->data, new_size))) {
 				return 0;
 			}
+			buffer->front = buffer->data;
 			buffer->datalen = new_size;
 		}
 	}
