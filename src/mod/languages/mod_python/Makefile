@@ -2,11 +2,13 @@ LCFLAGS=-fPIC
 CFLAGS += -fPIC -I$(PREFIX)/include/python2.4/
 PYMOD=freeswitch
 LDFLAGS=-lpython2.4 -Xlinker -L$(PREFIX)/lib/python2.4/config/
+SWIGCFILE=../../../switch_swig.c
+SWIGIFILE=../../../switch_swig.i
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PYMOD).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install Python-2.4.3.tgz --prefix=$(PREFIX) --enable-threads
+	MAKE=$(MAKE) PY_CFLAGS=-fPIC $(BASE)/build/buildlib.sh $(BASE) install Python-2.4.3.tgz --prefix=$(PREFIX) --enable-threads
 
 %.o:  %.c
 	$(CC) $(LCFLAGS) $(CFLAGS) -c $< -o $@
@@ -16,13 +18,13 @@ mod_python.c:
 
 reswig: 
 	rm -f switch_swig_wrap.c config.m4 CREDITS *${PYMOD}*
-	swig -lswitch_swig.i -ignoremissing -DMULTIPLICITY -python -module $(PYMOD) switch_swig.c
+	swig -o switch_swig_wrap.c -l$(SWIGIFILE) -ignoremissing -DMULTIPLICITY -python -module $(PYMOD) $(SWIGCFILE)
 	patch -p0 -i fix.diff
 
 switch_swig_wrap.o: switch_swig_wrap.c Makefile
 	$(CC)  -w $(CFLAGS) -c $< -o $@
 
-switch_swig.o: switch_swig.c Makefile
+switch_swig.o: $(SWIGCFILE) Makefile
 	$(CC)  -w $(CFLAGS) -c $< -o $@
 
 

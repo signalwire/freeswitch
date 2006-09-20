@@ -6,7 +6,8 @@ CFLAGS  += -DEMBED_PERL
 LDFLAGS +=  $(shell $(PERL) -MExtUtils::Embed -e ldopts)
 LDFLAGS +=  $(shell $(PERL) -MConfig -e 'print $$Config{libs}')  
 OBJS += perlxsi.o
-
+SWIGCFILE=../../../switch_swig.c
+SWIGIFILE=../../../switch_swig.i
 
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) fs_perl.$(DYNAMIC_LIB_EXTEN)
@@ -23,7 +24,10 @@ depends:
 
 reswig: 
 	rm switch_swig_wrap.c
-	swig -lswitch_swig.i -ignoremissing -DMULTIPLICITY -perl5 -module fs_perl switch_swig.c
+	swig -o switch_swig_wrap.c -l$(SWIGIFILE) -ignoremissing -DMULTIPLICITY -perl5 -module fs_perl $(SWIGCFILE)
+
+switch_swig.o: $(SWIGCFILE) Makefile
+	$(CC)  -w $(CFLAGS) -c $< -o $@
 
 switch_swig_wrap.o: switch_swig_wrap.c
 	$(CC) -w $(CFLAGS) -c $< -o $@

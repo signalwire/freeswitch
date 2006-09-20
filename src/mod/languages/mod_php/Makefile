@@ -8,6 +8,9 @@ MDIR += `$(PCFG) --extension-dir`
 PHPMOD=freeswitch
 PHPLDFLAGS = `$(PCFG) --ldflags` -lm -ldl -lxml2 -lz -lphp5
 MOD_CFLAGS += -fPIC
+SWIGCFILE=../../../switch_swig.c
+SWIGIFILE=../../../switch_swig.i
+
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PHPMOD).$(DYNAMIC_LIB_EXTEN)
 
 depends:
@@ -19,13 +22,13 @@ depends:
 
 reswig: 
 	rm -f switch_swig_wrap.c config.m4 CREDITS *$(PHPMOD)*
-	swig -lswitch_swig.i -ignoremissing -DMULTIPLICITY -php -module $(PHPMOD) switch_swig.c
+	swig -o switch_swig_wrap.c -l$(SWIGIFILE) -ignoremissing -DMULTIPLICITY -php -module $(PHPMOD) $(SWIGCFILE)
 	patch -p0 -i fix.diff
 
 switch_swig_wrap.o: switch_swig_wrap.c Makefile
 	$(CC)  -w $(CFLAGS) -c $< -o $@
 
-switch_swig.o: switch_swig.c Makefile
+switch_swig.o: $(SWIGCFILE) Makefile
 	$(CC)  -w $(CFLAGS) -c $< -o $@
 
 

@@ -61,7 +61,7 @@ static void ruby_function(switch_core_session_t *session, char *data)
 	sprintf(ruby_code, "$uuid=\"%s\"; include(\"%s\");\n", argv[0], argv[1]);
 
 	ruby_init();
-			
+	
 	ruby_init_loadpath();
 
 	ruby_script("embedded");	

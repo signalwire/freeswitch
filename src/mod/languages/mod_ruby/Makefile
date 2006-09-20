@@ -2,11 +2,13 @@ LCFLAGS=-fPIC -DZTS -DPTHREADS
 CFLAGS += -fPIC -I../../../../libs/ruby-1.8.5/
 RBMOD=freeswitch
 LDFLAGS=-lruby-static -L$(PREFIX)/lib/ 
+SWIGCFILE=../../../switch_swig.c
+SWIGIFILE=../../../switch_swig.i
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(RBMOD).$(DYNAMIC_LIB_EXTEN)
-	
+
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install ruby-1.8.5.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) MOD_CFLAGS=-fPIC $(BASE)/build/buildlib.sh $(BASE) install ruby-1.8.5.tar.gz --prefix=$(PREFIX)
 	cp -f config.h ../../../../libs/ruby-1.8.5/
 
 %.o:  %.c
@@ -17,13 +19,12 @@ mod_ruby.c:
 
 reswig: 
 	rm -f switch_swig_wrap.c config.m4 CREDITS *${RBMOD}*
-	swig -lswitch_swig.i -ignoremissing -DMULTIPLICITY -ruby -module $(RBMOD) switch_swig.c
-	patch -p0 -i fix.diff
+	swig -o switch_swig_wrap.c -l$(SWIGIFILE) -ignoremissing -DMULTIPLICITY -ruby -module $(RBMOD) $(SWIGCFILE)
 
 switch_swig_wrap.o: switch_swig_wrap.c Makefile
 	$(CC)  -w $(CFLAGS) -c $< -o $@
 
-switch_swig.o: switch_swig.c Makefile
+switch_swig.o: $(SWIGCFILE) Makefile
 	$(CC)  -w $(CFLAGS) -c $< -o $@
 
 
@@ -40,4 +41,3 @@ clean:
 install:
 	#cp -f rb_$(RBMOD).$(DYNAMIC_LIB_EXTEN) $(MDIR)
 	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
-	
