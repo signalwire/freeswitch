@@ -601,17 +601,20 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	su_home_deinit(tech_pvt->home);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s hanging up, cause: %s, SIP response: %d\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s hanging up, cause: %s\n", 
 			  switch_channel_get_name(channel), switch_channel_cause2str(cause), sip_cause);
 
 	if (tech_pvt->nh) {
 		if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
 			if (switch_test_flag(tech_pvt, TFLAG_ANS)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending BYE\n");
 				nua_bye(tech_pvt->nh, TAG_END());
 			} else {
 				if (switch_test_flag(tech_pvt, TFLAG_INBOUND)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
 					nua_respond(tech_pvt->nh, sip_cause, NULL, TAG_END());
 				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL\n");
 					nua_cancel(tech_pvt->nh, TAG_END());
 				}
 			}
@@ -1465,6 +1468,7 @@ static void sip_i_state(int status,
 							//SIPTAG_CONTACT(tech_pvt->contact), 
 							TAG_END());
 			} else if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
+				switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 				switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 				switch_channel_answer(channel);
 				return;
