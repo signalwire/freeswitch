@@ -841,6 +841,10 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}		
 		
 		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DATAWAIT)) {
+				switch_yield(rtp_session->ms_per_packet);
+				continue;
+			}
 			return 0;
 		}
 

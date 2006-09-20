@@ -176,6 +176,7 @@ typedef enum {
 	SWITCH_RTP_FLAG_VAD           - Enable VAD
 	SWITCH_RTP_FLAG_BREAK		  - Stop what you are doing and return SWITCH_STATUS_BREAK
 	SWITCH_RTP_FLAG_MINI		  - Use mini RTP when possible
+	SWITCH_RTP_FLAG_DATAWAIT	  - Do not return from reads unless there is data even when non blocking
 </pre>
  */
 typedef enum {
@@ -189,7 +190,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_GOOGLEHACK = (1 << 7),
 	SWITCH_RTP_FLAG_VAD = (1 << 8),
 	SWITCH_RTP_FLAG_BREAK = ( 1 << 9),
-	SWITCH_RTP_FLAG_MINI = ( 1 << 10)
+	SWITCH_RTP_FLAG_MINI = ( 1 << 10),
+	SWITCH_RTP_FLAG_DATAWAIT = (1 << 11)
 } switch_rtp_flag_t;
 
 /*!
@@ -690,9 +692,16 @@ typedef enum {
 	SWITCH_CAUSE_INTERWORKING = 127,
 	SWITCH_CAUSE_CRASH = 500,
 	SWITCH_CAUSE_SYSTEM_SHUTDOWN = 501,
-	SWITCH_CAUSE_LOSE_RACE = 502
+	SWITCH_CAUSE_LOSE_RACE = 502,
+	SWITCH_CAUSE_MANAGER_REQUEST = 503
 } switch_call_cause_t;
 
+typedef enum {
+	SCSC_PAUSE_INBOUND,
+	SCSC_HUPALL,
+	SCSC_SHUTDOWN,
+	SCSC_CHECK_RUNNING
+} switch_session_ctl_t;
 
 typedef uint8_t switch_payload_t;
 typedef struct switch_rtp switch_rtp_t;

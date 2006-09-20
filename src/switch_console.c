@@ -203,20 +203,33 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 {
 	char hostname[256];
 	char cmd[2048];
-	int running = 1, activity = 1;
+	uint32_t activity = 1, running = 1;
 	switch_size_t x = 0;
 
 	gethostname(hostname, sizeof(hostname));
 
-	while (running) {
+	while(running) {
+		uint32_t arg;
+		fd_set rfds, efds;
+		struct timeval tv = {0, 20000};
+
+		switch_core_session_ctl(SCSC_CHECK_RUNNING, &arg);
+		if (!arg) {
+			break;
+		}
+
 		if (activity) {
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "\nfreeswitch@%s> ", hostname);
 		}
-		//activity = switch_socket_waitfor(fileno(stdin), 100, POLLIN | POLLERR);
+		
+		FD_ZERO(&rfds);
+		FD_ZERO(&efds);
+		FD_SET(fileno(stdin), &rfds);
+		FD_SET(fileno(stdin), &efds);
+		activity = select(fileno(stdin)+1, &rfds, NULL, &efds, &tv);
 
 		if (activity == 0) {
 			fflush(stdout);
-			switch_sleep(100);
 			continue;
 		}
 

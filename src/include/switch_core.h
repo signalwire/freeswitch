@@ -409,8 +409,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_st
 
 /*! 
   \brief Hangup All Sessions
+  \param cause the hangup cause to apply to the hungup channels
 */
-SWITCH_DECLARE(void) switch_core_session_hupall(void);
+SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause);
 
 /*! 
   \brief Send a message to another session using it's uuid
@@ -1198,6 +1199,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_close(switch_directory_han
 */
 SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel);
 
+
+/*! 
+  \brief Set the maximum priority the process can obtain
+  \return 0 on success
+*/
+SWITCH_DECLARE(int32_t) set_high_priority(void);
+
+/*! 
+  \brief Run endlessly until the system is shutdown
+  \param bg divert console to the background
+*/
+SWITCH_DECLARE(void) switch_core_runtime_loop(int bg);
+
 /*!
   \brief Set the output console to the desired file
   \param console the file path
@@ -1216,6 +1230,14 @@ SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_cor
   \return a number of microseconds
 */
 SWITCH_DECLARE(switch_time_t) switch_core_uptime(void);
+
+/*!
+  \brief send a control message to the core
+  \param cmd the command
+  \param val the command arguement (if needed)
+  \return 0 on success nonzero on error
+*/
+SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, uint32_t *val);
 
 /*!
   \brief Get the output console

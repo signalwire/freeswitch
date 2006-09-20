@@ -727,7 +727,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 	bw = tech_pvt->read_codec.implementation->bits_per_second;
 	ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
 
-	flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_MINI | SWITCH_RTP_FLAG_AUTOADJ);
+	flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_MINI | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
 					  switch_channel_get_name(channel),
@@ -812,6 +812,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
 	switch_channel_t *channel = NULL;
 	int payload = 0;
+
 	//switch_time_t now, started = switch_time_now(), last_act = switch_time_now();
 	//unsigned int elapsed;
 	//uint32_t hard_timeout = 60000 * 3;
@@ -903,8 +904,6 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 				tech_pvt->read_frame.samples = (int) samples;
 				break;
 			}
-
-			switch_yield(1000);
 		}
 
 	} 

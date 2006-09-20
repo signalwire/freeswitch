@@ -87,6 +87,49 @@ static switch_status_t status_function(char *cmd, switch_core_session_t *session
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t ctl_function(char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+	int argc;
+	char *mydata, *argv[5];
+	uint32_t arg = 0;
+
+	if (switch_strlen_zero(data)) {
+		stream->write_function(stream, "USAGE: fsctl [hupall|pause|resume|shutdown]\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if ((mydata = strdup(data))) {
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	
+		if (!strcmp(argv[0], "hupall")) {
+			arg = 1;
+			switch_core_session_ctl(SCSC_HUPALL, &arg);
+		} else if (!strcmp(argv[0], "pause")) {
+			arg = 1;
+			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+		} else if (!strcmp(argv[0], "resume")) {
+			arg = 0;
+			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
+		} else if (!strcmp(argv[0], "shutdown")) {
+			arg = 0;
+			switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
+		} else {
+			stream->write_function(stream, "INVALID COMMAND [%s]\n", argv[0]);
+			goto end;
+		} 
+
+		stream->write_function(stream, "OK\n");
+	end:
+		free(mydata);
+	} else {
+		stream->write_function(stream, "MEM ERR\n");
+	}
+
+    return SWITCH_STATUS_SUCCESS;
+	
+}
+
+
 static switch_status_t load_function(char *mod, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 
@@ -436,11 +479,18 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 
 
 
+static switch_api_interface_t ctl_api_interface = {
+	/*.interface_name */ "fsctl",
+	/*.desc */ "control messages",
+	/*.function */ ctl_function,
+	/*.next */ 
+};
+
 static switch_api_interface_t uuid_bridge_api_interface = {
 	/*.interface_name */ "uuid_bridge",
 	/*.desc */ "uuid_bridge",
 	/*.function */ uuid_bridge_function,
-	/*.next */ NULL
+	/*.next */ &ctl_api_interface
 };
 
 static switch_api_interface_t status_api_interface = {

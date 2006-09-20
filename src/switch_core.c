@@ -127,6 +127,9 @@ struct switch_core_runtime {
 	uint32_t session_count;
 	uint32_t session_limit;
 	switch_queue_t *sql_queue;
+	uint32_t no_new_sessions;
+	uint32_t shutting_down;
+	uint8_t running;
 };
 
 /* Prototypes */
@@ -536,7 +539,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_st
 	}
 }
 
-SWITCH_DECLARE(void) switch_core_session_hupall(void)
+SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 {
 	switch_hash_index_t *hi;
 	void *val;
@@ -549,7 +552,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(void)
 		if (val) {
 			session = (switch_core_session_t *) val;
 			channel = switch_core_session_get_channel(session);
-			switch_channel_hangup(channel, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
+			switch_channel_hangup(channel, cause);
 		}
 	}
 	switch_mutex_unlock(runtime.session_table_mutex);
@@ -3111,6 +3114,11 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 		return NULL;
 	}
 
+	if (runtime.no_new_sessions || runtime.shutting_down) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read my lips: no new sessions!\n");
+		return NULL;
+	}
+
 	if (pool) {
 		usepool = pool;
 	} else if (switch_core_new_memory_pool(&usepool) != SWITCH_STATUS_SUCCESS) {
@@ -3474,6 +3482,55 @@ SWITCH_DECLARE(uint32_t) switch_core_session_limit(uint32_t new_limit)
 	return runtime.session_limit;
 }
 
+
+SWITCH_DECLARE(int32_t) set_high_priority(void)
+{
+#ifdef __linux__
+	struct sched_param sched = {0};
+	sched.sched_priority = 1;
+	if (sched_setscheduler(0, SCHED_RR, &sched)) {
+        sched.sched_priority = 0;
+        if (sched_setscheduler(0, SCHED_OTHER, &sched)) {
+			return -1;
+		}
+	}
+#endif
+
+#ifdef WIN32
+	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+#else
+	nice(-10);
+#endif
+
+#define USE_MLOCKALL
+#ifdef HAVE_MLOCKALL
+#ifdef USE_MLOCKALL
+	mlockall(MCL_CURRENT|MCL_FUTURE);
+#endif
+#endif
+	return 0;
+}
+
+
+SWITCH_DECLARE(void) switch_core_runtime_loop(int bg)
+{
+	if (bg) {
+		bg = 0;
+#ifdef WIN32
+		WaitForSingleObject(shutdown_event, INFINITE);
+#else
+		runtime.running = 1;
+		while(runtime.running) {
+			switch_yield(1000000);
+		}
+#endif
+	}  else {
+		/* wait for console input */
+		switch_console_loop();
+	}
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
@@ -3602,7 +3659,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	}
 
 	runtime.session_id = 1;
-
+	runtime.running = 1;
 	switch_core_hash_init(&runtime.session_table, runtime.memory_pool);
 	switch_mutex_init(&runtime.session_table_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 #ifdef CRASH_PROT
@@ -3662,13 +3719,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, cons
 		switch_event_fire(&event);
 	}
 
-//#define USE_MLOCKALL
-#ifdef HAVE_MLOCKALL
-#ifdef USE_MLOCKALL
-	mlockall(MCL_CURRENT|MCL_FUTURE);
-#endif
-#endif
-
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nFreeSWITCH Version %s Started.\nCrash Protection [%s]\nMax Sessions[%u]\n\n", SWITCH_VERSION_FULL, __CP, switch_core_session_limit(0));
 	return SWITCH_STATUS_SUCCESS;
 
@@ -3696,6 +3746,31 @@ SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 	return switch_time_now() - runtime.initiated;
 }
 
+SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, uint32_t *val)
+{
+
+	if (runtime.shutting_down) {
+		return -1;
+	}
+
+	switch (cmd) {
+	case SCSC_PAUSE_INBOUND:
+		runtime.no_new_sessions = *val;
+		break;
+	case SCSC_HUPALL:
+		switch_core_session_hupall(SWITCH_CAUSE_MANAGER_REQUEST);
+		break;
+	case SCSC_SHUTDOWN:
+		runtime.running = 0;
+		break;
+	case SCSC_CHECK_RUNNING:
+		*val = runtime.running;
+		break;
+	}
+
+	return 0;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 {
 	switch_event_t *event;
@@ -3703,9 +3778,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Shutting Down");
 		switch_event_fire(&event);
 	}
+	runtime.shutting_down = 1;
+	runtime.no_new_sessions = 1;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
-	switch_core_session_hupall();
+	switch_core_session_hupall(SWITCH_CAUSE_SYSTEM_SHUTDOWN);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
 	switch_loadable_module_shutdown();
 

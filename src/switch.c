@@ -35,7 +35,7 @@
 
 #define PIDFILE "freeswitch.pid"
 #define LOGFILE "freeswitch.log"
-static int RUNNING = 0;
+
 static char *lfile = LOGFILE;
 static char *pfile = PIDFILE;
 #define SERVICENAME "Freeswitch"
@@ -53,37 +53,12 @@ static HANDLE shutdown_event;
 
 	static int handle_SIGHUP(int sig)
 {
+	uint32_t arg = 0;
 	if(sig);
-	RUNNING = 0;
+	switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
 	return 0;
 }
 
-static void set_high_priority()
-{
-#ifdef WIN32
-	SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-#else
-	//nice(-19);
-#endif
-}
-
-static void freeswitch_runtime_loop(int bg)
-{
-	if (bg) {
-		bg = 0;
-#ifdef WIN32
-		WaitForSingleObject(shutdown_event, INFINITE);
-#else
-		RUNNING = 1;
-		while(RUNNING) {
-			switch_yield(10000);
-		}
-#endif
-	}  else {
-		/* wait for console input */
-		switch_console_loop();
-	}
-}
 
 static int freeswitch_kill_background()
 {
@@ -175,6 +150,7 @@ int main(int argc, char *argv[])
 	int bg = 0;
 	FILE *f;
 	pid_t pid = 0;
+	int x, die = 0;
 
 #ifdef WIN32
     SERVICE_TABLE_ENTRY dispatchTable[] =
@@ -182,60 +158,71 @@ int main(int argc, char *argv[])
         { SERVICENAME, &service_main },
         { NULL, NULL }
     };
-
-	if (argv[1] && !strcmp(argv[1], "-service")) {
-		if(StartServiceCtrlDispatcher( dispatchTable ) == 0 )
-		{
-			//Not loaded as a service
-			fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
-			fprintf(stderr, "To install the service load freeswitch with -install\n");
-		}
-		exit(0);
-	}
-	if (argv[1] && !strcmp(argv[1], "-install")) {
-		char exePath[1024];
-	    char servicePath[1024];
-
-		SC_HANDLE handle = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );
-		GetModuleFileName( NULL, exePath, 1024 );
-		snprintf(servicePath, sizeof(servicePath), "%s -service", exePath);
-		CreateService(
-			handle,
-			SERVICENAME,
-			SERVICENAME,
-			GENERIC_READ | GENERIC_EXECUTE,
-			SERVICE_WIN32_OWN_PROCESS,
-			SERVICE_AUTO_START,
-			SERVICE_ERROR_IGNORE,
-			servicePath,
-			NULL,
-			NULL,
-			NULL,
-			NULL,
-			NULL
-		);
-		exit(0);
-	}
-	if (argv[1] && !strcmp(argv[1], "-uninstall")) {
-		SC_HANDLE handle = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );
-		SC_HANDLE service = OpenService( handle, SERVICENAME, DELETE );
-		if( service != NULL )
-		{
-			// remove the service!
-			DeleteService( service );
-		}
-		exit(0);
-	}
 #endif
 
-	set_high_priority();
+	for (x = 1; x < argc; x++) {
+#ifdef WIN32
+		if (x == 1) {
+			if (argv[x] && !strcmp(argv[x], "-service")) {
+				if(StartServiceCtrlDispatcher( dispatchTable ) == 0 )
+					{
+						//Not loaded as a service
+						fprintf(stderr, "Error Freeswitch loaded as a console app with -service option\n");
+						fprintf(stderr, "To install the service load freeswitch with -install\n");
+					}
+				exit(0);
+			}
+			if (argv[x] && !strcmp(argv[x], "-install")) {
+				char exePath[1024];
+				char servicePath[1024];
 
-	if (argv[1] && !strcmp(argv[1], "-stop")) {
-		return freeswitch_kill_background();
+				SC_HANDLE handle = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );
+				GetModuleFileName( NULL, exePath, 1024 );
+				snprintf(servicePath, sizeof(servicePath), "%s -service", exePath);
+				CreateService(
+							  handle,
+							  SERVICENAME,
+							  SERVICENAME,
+							  GENERIC_READ | GENERIC_EXECUTE,
+							  SERVICE_WIN32_OWN_PROCESS,
+							  SERVICE_AUTO_START,
+							  SERVICE_ERROR_IGNORE,
+							  servicePath,
+							  NULL,
+							  NULL,
+							  NULL,
+							  NULL,
+							  NULL
+							  );
+				exit(0);
+			}
+			if (argv[x] && !strcmp(argv[x], "-uninstall")) {
+				SC_HANDLE handle = OpenSCManager( NULL, NULL, SC_MANAGER_ALL_ACCESS );
+				SC_HANDLE service = OpenService( handle, SERVICENAME, DELETE );
+				if( service != NULL )
+					{
+						// remove the service!
+						DeleteService( service );
+					}
+				exit(0);
+			}
+		}
+#endif
+		if (argv[x] && !strcmp(argv[x], "-hp")) {
+			set_high_priority();
+		}
+		
+		if (argv[x] && !strcmp(argv[x], "-stop")) {
+			die++;
+		}
+
+		if (argv[x] && !strcmp(argv[x], "-nc")) {
+			bg++;
+		}
 	}
 
-	if (argv[1] && !strcmp(argv[1], "-nc")) {
-		bg++;
+	if (die) {
+		return freeswitch_kill_background();
 	}
 
 	if (bg) {
@@ -270,7 +257,7 @@ int main(int argc, char *argv[])
 	fprintf(f, "%d", pid = getpid());
 	fclose(f);
 
-	freeswitch_runtime_loop(bg);
+	switch_core_runtime_loop(bg);
 
 	return switch_core_destroy();
 }
