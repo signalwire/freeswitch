@@ -475,15 +475,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		}
 	}
 
-	if (timer_name) {
+	if (!switch_strlen_zero(timer_name)) {
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_USE_TIMER);
 	}
 
-	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) && !timer_name) {
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER) && switch_strlen_zero(timer_name)) {
 		timer_name = "soft";
 	}
 
-	if (timer_name) {
+	if (!switch_strlen_zero(timer_name)) {
 		if (switch_core_timer_init(&rtp_session->timer, timer_name, ms_per_packet / 1000, packet_size, rtp_session->pool) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting timer [%s] %d bytes per %dms\n", timer_name, packet_size, ms_per_packet);
 		} else {
