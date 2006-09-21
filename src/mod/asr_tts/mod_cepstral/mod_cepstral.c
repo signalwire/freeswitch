@@ -215,6 +215,14 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 	cepstral->done = 0;
 	
 	cepstral->tts_stream = NULL;
+
+	if (cepstral->audio_buffer) {
+		switch_byte_t data[1280];
+		memset(data, 255, sizeof(data));
+		switch_mutex_lock(cepstral->audio_lock);
+		switch_buffer_write(cepstral->audio_buffer, data, sizeof(data));
+		switch_mutex_unlock(cepstral->audio_lock);
+	}
 	
 	if (!strncasecmp(text, fp, len)) {
 		text += len;
