@@ -37,8 +37,6 @@ static switch_memory_pool_t *module_pool = NULL;
 static struct {
 	int32_t RUNNING;
 	switch_mutex_t *mutex;
-	uint32_t timer_milliseconds;
-	switch_interval_time_t timer_microseconds;
 } globals;
 
 static const char modname[] = "mod_softtimer";
@@ -60,22 +58,6 @@ static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS+1];
 #define IDLE_SPEED 100
 
 
-static inline void set_timer(void)
-{
-	uint32_t index = 0, min = IDLE_SPEED;
-
-	for(index = 0; index < MAX_ELEMENTS; index++) {
-		if (TIMER_MATRIX[index].count) {
-			if (min > index) {
-				min = index;
-			}
-		}
-	}
-
-	globals.timer_milliseconds = min;
-	globals.timer_microseconds = min * 1000;
-}
-
 static inline switch_status_t timer_init(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
@@ -86,8 +68,6 @@ static inline switch_status_t timer_init(switch_timer_t *timer)
 		switch_mutex_unlock(globals.mutex);
 		timer->private_info = private_info;
 		private_info->reference = TIMER_MATRIX[timer->interval].tick;
-		set_timer();
-
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -113,7 +93,6 @@ static inline switch_status_t timer_next(switch_timer_t *timer)
 		switch_yield(1000);
 	}
 	timer->samplecount += timer->samples;
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -139,7 +118,6 @@ static inline switch_status_t timer_destroy(switch_timer_t *timer)
 	switch_mutex_lock(globals.mutex);
 	TIMER_MATRIX[timer->interval].count--;
 	switch_mutex_unlock(globals.mutex);
-	set_timer();
 	timer->private_info = NULL;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -187,21 +165,17 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
-	globals.timer_microseconds = IDLE_SPEED  * 1000;
-	globals.timer_milliseconds = IDLE_SPEED;
 
 	globals.RUNNING = 1;
 
 	while(globals.RUNNING == 1) {
-		reference += globals.timer_microseconds;
+		reference += 1000;
 
 		while (switch_time_now() < reference) {
-			//switch_yield((reference - now) - 1000);
-			//switch_yield(globals.timer_microseconds >> 1);
 			switch_yield(1000);
 		}
 
-		current_ms += globals.timer_milliseconds;
+		current_ms++;
 
 		for (x = 0; x < MAX_ELEMENTS; x++) {
 			int i = x, index;

@@ -40,7 +40,7 @@ typedef enum {
 
 struct switch_buffer {
 	switch_byte_t *data;
-	switch_byte_t *front;
+	switch_byte_t *head;
 	switch_size_t used;
 	switch_size_t datalen;
 	switch_size_t max_len;
@@ -57,7 +57,7 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create(switch_memory_pool_t *pool,
 		&& (new_buffer->data = switch_core_alloc(pool, max_len)) != 0) {
 		new_buffer->datalen = max_len;
 		new_buffer->id = buffer_id++;
-		new_buffer->front = new_buffer->data;
+		new_buffer->head = new_buffer->data;
 		*buffer = new_buffer;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -86,7 +86,7 @@ SWITCH_DECLARE(switch_status_t) switch_buffer_create_dynamic(switch_buffer_t **b
 		new_buffer->datalen = start_len;
 		new_buffer->id = buffer_id++;
 		new_buffer->blocksize = blocksize;
-		new_buffer->front = new_buffer->data;
+		new_buffer->head = new_buffer->data;
 		switch_set_flag(new_buffer, SWITCH_BUFFER_FLAG_DYNAMIC);
 		
 		*buffer = new_buffer;
@@ -143,10 +143,11 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer_t *buffer, switch
 		reading = buffer->used;
 	}
 
-	memmove(buffer->data, buffer->data + reading, buffer->datalen - reading);
-	buffer->used -= datalen;
+	memmove(buffer->data, buffer->data + reading, reading);
+	buffer->head = buffer->data;
+	buffer->used -= reading;
 
-	return buffer->datalen;
+	return buffer->used;
 }
 
 SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *data, switch_size_t datalen)
@@ -166,12 +167,11 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *
 		reading = buffer->used;
 	}
 
-	memcpy(data, buffer->front, reading);
-
-	buffer->front += reading;
+	memcpy(data, buffer->head, reading);
 	buffer->used -= reading;
+	buffer->head += reading;
 
-	//if (buffer->id == 3) printf("%u o %d = %d\n", buffer->id, (uint32_t)reading, (uint32_t)buffer->used);
+	//if (buffer->id == 4) printf("%u o %d = %d\n", buffer->id, (uint32_t)reading, (uint32_t)buffer->used);
 	return reading;
 }
 
@@ -182,28 +182,33 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 	assert(buffer != NULL);
 	assert(data != NULL);
 	assert(buffer->data != NULL);
+	
+	if (!datalen) {
+		return buffer->used;
+	}
 
 	freespace = buffer->datalen - buffer->used;
 
-	if (buffer->used && buffer->data != buffer->front) {
-		memmove(buffer->data, buffer->front, buffer->used);
-		buffer->front = buffer->data;
+	if (buffer->data != buffer->head) {
+		memmove(buffer->data, buffer->head, buffer->used);
+		buffer->head = buffer->data;
 	}
 
 	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_DYNAMIC)) {
 		if (freespace < datalen) {
 			switch_size_t new_size, new_block_size;
+
 			new_size = buffer->datalen + datalen;
 			new_block_size = buffer->datalen + buffer->blocksize;
 
 			if (new_block_size > new_size) {
 				new_size = new_block_size;
 			}
-
+			buffer->head = buffer->data;
 			if (!(buffer->data = realloc(buffer->data, new_size))) {
 				return 0;
 			}
-			buffer->front = buffer->data;
+			buffer->head = buffer->data;
 			buffer->datalen = new_size;
 		}
 	}
@@ -216,7 +221,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 		memcpy(buffer->data + buffer->used, data, datalen);
 		buffer->used += datalen;
 	}
-	//if (buffer->id == 3) printf("%u i %d = %d\n", buffer->id, (uint32_t)datalen, (uint32_t)buffer->used);
+	//if (buffer->id == 4) printf("%u i %d = %d\n", buffer->id, (uint32_t)datalen, (uint32_t)buffer->used);
 
 	return buffer->used;
 }
@@ -227,7 +232,7 @@ SWITCH_DECLARE(void) switch_buffer_zero(switch_buffer_t *buffer)
     assert(buffer->data != NULL);
 
 	buffer->used = 0;
-	
+	buffer->head = buffer->data;
 }
 
 SWITCH_DECLARE(void) switch_buffer_destroy(switch_buffer_t **buffer)

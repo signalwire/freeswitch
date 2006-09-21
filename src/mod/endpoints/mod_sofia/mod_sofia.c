@@ -1713,6 +1713,8 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 				   NUTAG_EARLY_MEDIA(1),				   
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOALERT(0),
+				   //NUTAG_ALLOW("REGISTER"),
+				   //SIPTAG_ALLOW_STR("REGISTER"),
 				   SIPTAG_SUPPORTED_STR("100rel, precondition"),
 				   TAG_END());
 				   
