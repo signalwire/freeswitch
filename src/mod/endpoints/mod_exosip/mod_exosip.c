@@ -551,7 +551,7 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "using Realm %s\n", tech_pvt->realm);
 		}
 	}
-	flags = SWITCH_RTP_FLAG_MINI | SWITCH_RTP_FLAG_RAW_WRITE;
+	flags = SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT;
 	if (switch_test_flag(tech_pvt, TFLAG_TIMER)) {
 		flags |= SWITCH_RTP_FLAG_USE_TIMER;
 	}
@@ -667,9 +667,6 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
 	switch_channel_t *channel = NULL;
 	int payload = 0;
-	switch_time_t now, started = switch_time_now(), last_act = switch_time_now();
-	unsigned int elapsed;
-	uint32_t hard_timeout = 60000 * 3;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -688,13 +685,6 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 		assert(0);
 	}
 	
-	if (tech_pvt->last_read) {
-		elapsed = (unsigned int)((switch_time_now() - tech_pvt->last_read) / 1000);
-		if (elapsed > 60000) {
-			return SWITCH_STATUS_TIMEOUT;
-		}
-	}
-
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		switch_status_t status;
 
@@ -707,7 +697,6 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 
 
 		while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
-			now = switch_time_now();
 			tech_pvt->read_frame.flags = 0;
 
 			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
@@ -717,19 +706,6 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 			
 			payload = tech_pvt->read_frame.payload;
 
-
-			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
-
-			if (timeout > -1) {
-				if (elapsed >= (unsigned int)timeout) {
-					return SWITCH_STATUS_BREAK;
-				}
-			}
-			
-			elapsed = (unsigned int)((switch_time_now() - last_act) / 1000);
-			if (elapsed >= hard_timeout) {
-				return SWITCH_STATUS_BREAK;
-			}
 
 			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {
 				char dtmf[128];
@@ -753,7 +729,6 @@ static switch_status_t exosip_read_frame(switch_core_session_t *session, switch_
 				break;
 			}
 
-			switch_yield(1000);
 		}
 
 	}
