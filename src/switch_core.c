@@ -2508,7 +2508,7 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session
 	
 }
 
-SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session_t *session)
+SWITCH_DECLARE(unsigned int) switch_core_session_running(switch_core_session_t *session)
 {
 	return session->thread_running;
 }

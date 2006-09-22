@@ -283,7 +283,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session);
   \brief determine if the session's state machine is running
   \param session the session on which to check
 */
-SWITCH_DECLARE(unsigned int) switch_core_session_runing(switch_core_session_t *session);
+SWITCH_DECLARE(unsigned int) switch_core_session_running(switch_core_session_t *session);
 
 /*! 
   \brief Allocate memory from the main pool with no intention of returning it

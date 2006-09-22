@@ -1829,7 +1829,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			switch_channel_add_state_handler(peer_channels[i], table);
 		}
 
-		if (switch_core_session_runing(peer_sessions[i])) {
+		if (switch_core_session_running(peer_sessions[i])) {
 			switch_channel_set_state(peer_channels[i], CS_RING);
 		} else {
 			switch_core_session_thread_launch(peer_sessions[i]);

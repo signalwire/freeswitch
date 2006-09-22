@@ -177,28 +177,19 @@ static ldl_status handle_response(ldl_handle_t *handle, char *id);
 static switch_status_t load_config(void);
 
 
-static void terminate_session(switch_core_session_t **session, switch_call_cause_t cause)
+static void terminate_session(switch_core_session_t **session, int line, switch_call_cause_t cause)
 {
 	if (*session) {
 		switch_channel_t *channel = switch_core_session_get_channel(*session);
 		switch_channel_state_t state = switch_channel_get_state(channel);
 		struct private_object *tech_pvt = NULL;
-			
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Terminate called from line %d state=%s\n", line, switch_channel_state_name(state));
+ 
 		tech_pvt = switch_core_session_get_private(*session);
 
-		if (tech_pvt && tech_pvt->dlsession) {
-			if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
-				ldl_session_terminate(tech_pvt->dlsession);
-				switch_set_flag_locked(tech_pvt, TFLAG_TERM);
-			}
-			ldl_session_destroy(&tech_pvt->dlsession);
-		}
 
-		if (state > CS_INIT && state < CS_HANGUP) {
-			switch_channel_hangup(channel, cause);
-		}
-		
-		if (!switch_core_session_runing(*session)) {
+		if (state < CS_INIT || !switch_core_session_running(*session)) {
 			if (state > CS_INIT && state < CS_HANGUP) {
 				channel_on_hangup(*session);
 			}
@@ -207,8 +198,28 @@ static void terminate_session(switch_core_session_t **session, switch_call_cause
 				ldl_session_set_private(tech_pvt->dlsession, NULL);
 			}
 			switch_core_session_destroy(session);
+		} else if (tech_pvt){
+			if (switch_test_flag(tech_pvt, TFLAG_TERM)) {
+				/*once is enough*/
+				return;
+			}
+
+			if (tech_pvt->dlsession) {
+				if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
+					ldl_session_terminate(tech_pvt->dlsession);
+				}
+				ldl_session_destroy(&tech_pvt->dlsession);
+			}
+			switch_set_flag_locked(tech_pvt, TFLAG_TERM);
 		}
+
+		if (state < CS_HANGUP) {
+			switch_channel_hangup(channel, cause);
+		}
+		
+		*session = NULL;
 	}
+
 }
 
 static void dl_logger(char *file, const char *func, int line, int level, char *fmt, ...)
@@ -474,7 +485,7 @@ static int do_describe(struct private_object *tech_pvt, int force)
 	memset(payloads, 0, sizeof(payloads));
 	switch_set_flag_locked(tech_pvt, TFLAG_DO_CAND);
 	if (!get_codecs(tech_pvt)) {
-		terminate_session(&tech_pvt->session, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+		terminate_session(&tech_pvt->session, __LINE__, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 		switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 		return 0;
@@ -522,6 +533,12 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, vo
 	switch_time_t now;
 	unsigned int elapsed;
 
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		/* too late */
+		return NULL;
+	}
+
+
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
@@ -564,13 +581,13 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, vo
 			}
 		}
 		if (elapsed > 60000) {
-			terminate_session(&tech_pvt->session, SWITCH_CAUSE_NORMAL_CLEARING);
+			terminate_session(&tech_pvt->session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
 			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 			switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-			return NULL;
+			goto done;
 		}
 		if (switch_test_flag(tech_pvt, TFLAG_BYE) || ! switch_test_flag(tech_pvt, TFLAG_IO)) {
-			return NULL;
+			goto done;
 		}
 		switch_yield(1000);
 		//printf("WAIT %s %d %d %d %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_TRANSPORT), switch_test_flag(tech_pvt, TFLAG_CODEC_READY), switch_test_flag(tech_pvt, TFLAG_RTP_READY), switch_test_flag(tech_pvt, TFLAG_ANSWER));
@@ -594,10 +611,14 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, vo
 		switch_core_session_thread_launch(session);
 	}
 	switch_channel_set_state(channel, CS_INIT);
-	return NULL;
+	goto done;
 	
  out:
-	terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+	terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+ done:
+	if (session) {
+		switch_core_session_rwunlock(session);
+	}
 	return NULL;
 }
 
@@ -875,7 +896,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		terminate_session(&session, SWITCH_CAUSE_NORMAL_CLEARING);
+		terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -908,7 +929,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		terminate_session(&session, SWITCH_CAUSE_NORMAL_CLEARING);
+		terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1099,7 +1120,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			*callto++ = '\0';
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid URL!\n");
-			terminate_session(new_session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return SWITCH_STATUS_GENERR;
 		}
 		
@@ -1110,17 +1131,17 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		if ((mdl_profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
 			if (!ldl_handle_ready(mdl_profile->handle)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doh! we are not logged in yet!\n");
-				terminate_session(new_session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return SWITCH_STATUS_GENERR;
 			}
 			if (!(full_id = ldl_handle_probe(mdl_profile->handle, callto, idbuf, sizeof(idbuf)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown Recipient!\n");
-				terminate_session(new_session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return SWITCH_STATUS_GENERR;
 			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown Profile!\n");
-			terminate_session(new_session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return SWITCH_STATUS_GENERR;
 		}
 		
@@ -1140,7 +1161,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			tech_pvt->dnis = switch_core_session_strdup(*new_session, dnis);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
-			terminate_session(new_session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return SWITCH_STATUS_GENERR;
 		}
 
@@ -1155,7 +1176,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			tech_pvt->caller_profile = caller_profile;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doh! no caller profile\n");
-			terminate_session(new_session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return SWITCH_STATUS_GENERR;
 		}
 
@@ -1172,7 +1193,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		ldl_session_set_value(dlsession, "caller_id_number", outbound_profile->caller_id_number);
 		tech_pvt->dlsession = dlsession;
 		if (!get_codecs(tech_pvt)) {
-			terminate_session(new_session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
             return SWITCH_STATUS_GENERR;
 		}
 		//tech_pvt->desc_id = ldl_session_describe(dlsession, NULL, 0, LDL_DESCRIPTION_INITIATE);
@@ -1535,12 +1556,14 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 	switch_channel_t *channel = NULL;
     struct private_object *tech_pvt = NULL;
 	switch_event_t *event;
-
+	ldl_status status = LDL_STATUS_SUCCESS;
+	
 	assert(handle != NULL);
 
 	if (!(profile = ldl_handle_get_private(handle))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR NO PROFILE!\n");
-		return LDL_STATUS_FALSE;
+		status = LDL_STATUS_FALSE;
+		goto done;
 	}
 
 	if (!dlsession) {
@@ -1577,7 +1600,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			break;
 			
 		}
-		return LDL_STATUS_SUCCESS;
+		status = LDL_STATUS_SUCCESS;
+		goto done;
 	}
 	
 
@@ -1587,21 +1611,24 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
-
+		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "using Existing session for %s\n", ldl_session_get_id(dlsession));
 
 		if (switch_channel_get_state(channel) >= CS_HANGUP) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call %s is already over\n", switch_channel_get_name(channel));
-			return LDL_STATUS_FALSE;
+			status = LDL_STATUS_FALSE;
+			goto done;
 		}
 
 	} else {
 		if (signal != LDL_SIGNAL_INITIATE) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session is already dead\n");
-			return LDL_STATUS_FALSE;
+			status = LDL_STATUS_FALSE;
+			goto done;
 		}
 		if ((session = switch_core_session_request(&channel_endpoint_interface, NULL)) != 0) {
 			switch_core_session_add_stream(session, NULL);
+			
 			if ((tech_pvt = (struct private_object *) switch_core_session_alloc(session, sizeof(struct private_object))) != 0) {
 				memset(tech_pvt, 0, sizeof(*tech_pvt));
 				switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
@@ -1618,8 +1645,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hey where is my memory pool?\n");
-				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				return LDL_STATUS_FALSE;
+				terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				status = LDL_STATUS_FALSE;
+				goto done;
 			}
 
 
@@ -1627,7 +1655,11 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			ldl_session_set_private(dlsession, session);
 			tech_pvt->dlsession = dlsession;
 			negotiate_thread_launch(session);
+		} else {
+			status = LDL_STATUS_FALSE;
+			goto done;
 		}
+
 	}
 
 	switch(signal) {
@@ -1669,7 +1701,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				if (!strcasecmp(msg, "accept")) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 					if (!do_candidates(tech_pvt, 0)) {
-						terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						status = LDL_STATUS_FALSE;
+						goto done;
 					}
 				}
 			}
@@ -1681,8 +1715,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 
 			if (!get_codecs(tech_pvt)) {
-				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				return LDL_STATUS_FALSE;
+				terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				status = LDL_STATUS_FALSE;
+				goto done;
 			}
 
 			
@@ -1713,18 +1748,21 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							tech_pvt->codec_rate = payloads[x].rate;
 							if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 								if (!do_describe(tech_pvt, 0)) {
-									terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-									return LDL_STATUS_FALSE;
+									terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+									status = LDL_STATUS_FALSE;
+									goto done;
 								}
 							}
-							return LDL_STATUS_SUCCESS;
+							status = LDL_STATUS_SUCCESS;
+							goto done;
 						}
 					}
 				}
 				if (!match && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 					if (!do_describe(tech_pvt, 0)) {
-						terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-						return LDL_STATUS_FALSE;
+						terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						status = LDL_STATUS_FALSE;
+						goto done;
 					}
 				}
 			}
@@ -1829,8 +1867,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						}
 
 						if (!get_codecs(tech_pvt)) {
-							terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-							return LDL_STATUS_FALSE;
+							terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+							status = LDL_STATUS_FALSE;
+							goto done;
 						}
 
 						
@@ -1842,15 +1881,17 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						
 						if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 							if (!do_candidates(tech_pvt, 0)) {
-								terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-								return LDL_STATUS_FALSE;
+								terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+								status = LDL_STATUS_FALSE;
+								goto done;
 							}
 						}
 				
 						
 						switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT);
 						
-						return LDL_STATUS_SUCCESS;
+						status = LDL_STATUS_SUCCESS;
+						goto done;
 					}
 				}
 			}
@@ -1866,15 +1907,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			switch_set_flag(tech_pvt, TFLAG_BYE);
 			switch_clear_flag(tech_pvt, TFLAG_IO);
 			switch_mutex_unlock(tech_pvt->flag_mutex);
-			terminate_session(&session, SWITCH_CAUSE_NORMAL_CLEARING);
-
-			if (state <= CS_INIT && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy unused Session\n");
-				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "End Call\n");
-			}
-
+			terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "End Call\n");
+			goto done;
 		}
 		break;
 
@@ -1883,7 +1918,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		break;
 	}
 
-	return LDL_STATUS_SUCCESS;
+ done:
+	
+	return status;
 }
 
 static ldl_status handle_response(ldl_handle_t *handle, char *id)
