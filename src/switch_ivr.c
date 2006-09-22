@@ -580,7 +580,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define FILE_STARTSAMPLES 512 * 64
+#define FILE_STARTSAMPLES 1024 * 32
 #define FILE_BLOCKSIZE 1024 * 8
 #define FILE_BUFSIZE 1024 * 64
 
@@ -593,9 +593,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 												   unsigned int buflen)
 {
 	switch_channel_t *channel;
-	int16_t abuf[FILE_STARTSAMPLES+1];
+	int16_t abuf[FILE_STARTSAMPLES];
 	char dtmf[128];
-	uint32_t interval = 0, samples = 0;
+	uint32_t interval = 0, samples = 0, framelen;
 	uint32_t ilen = 0;
 	switch_size_t olen = 0;
 	switch_frame_t write_frame = {0};
@@ -610,7 +610,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 	const char *p;
 	char *title = "", *copyright = "", *software = "", *artist = "", *comment = "", *date = "";
+	uint8_t asis = 0;
+	char *ext;
 	
+	if (file) {
+		if ((ext = strrchr(file, '.'))) {
+			ext++;
+		} else {
+			char *new_file;
+			ext = read_codec->implementation->iananame;
+			uint32_t len = (uint32_t)strlen(file) + (uint32_t)strlen(ext) + 2;
+			new_file = switch_core_session_alloc(session, len);
+			snprintf(new_file, len, "%s.%s", file, ext);
+			file = new_file;
+			asis = 1;
+		}
+	}
+
 	if (!fh) {
 		fh = &lfh;
 		memset(fh, 0, sizeof(lfh));
@@ -684,27 +700,40 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_buffer_create_dynamic(&fh->audio_buffer, FILE_BLOCKSIZE, FILE_BUFSIZE, 0);
 	} 
 
-	codec_name = "L16";
-
-	if (switch_core_codec_init(&codec,
-							   codec_name,
-							   fh->samplerate,
-							   interval,
-							   fh->channels,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, pool) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
-
-		write_frame.codec = &codec;
+	if (asis) {
+		write_frame.codec = read_codec;
+		samples = read_codec->implementation->samples_per_frame;
+		framelen = read_codec->implementation->encoded_bytes_per_frame;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed %s@%uhz %u channels %dms\n",
+		codec_name = "L16";
+
+		if (switch_core_codec_init(&codec,
+								   codec_name,
+								   fh->samplerate,
+								   interval,
+								   fh->channels,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+								   NULL, pool) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG,
+							  SWITCH_LOG_DEBUG,
+							  "Codec Activated %s@%uhz %u channels %dms\n",
+							  codec_name,
+							  fh->samplerate,
+							  fh->channels,
+							  interval);
+
+			write_frame.codec = &codec;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed %s@%uhz %u channels %dms\n",
 							  codec_name, fh->samplerate, fh->channels, interval);
-		switch_core_file_close(fh);
-		switch_core_session_reset(session);
-		return SWITCH_STATUS_GENERR;
+			switch_core_file_close(fh);
+			switch_core_session_reset(session);
+			return SWITCH_STATUS_GENERR;
+		}
+		samples = codec.implementation->samples_per_frame;
+		framelen = codec.implementation->bytes_per_frame;
 	}
 
-	samples = codec.implementation->bytes_per_frame / 2;
 
 	if (timer_name) {
 		uint32_t len;
@@ -729,6 +758,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	}
 
 	ilen = samples;
+
 	while(switch_channel_ready(channel)) {
 		int done = 0;
 		int do_speed = 1;
@@ -770,36 +800,41 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		}
 		
 		if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-			memset(abuf, 0, ilen * 2);
+			memset(abuf, 0, framelen);
 			olen = ilen;
             do_speed = 0;
-		} else if (fh->audio_buffer && (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t)(ilen * 2))) {
-			switch_buffer_read(fh->audio_buffer, abuf, ilen * 2);
-			olen = ilen;
+		} else if (fh->audio_buffer && (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t)(framelen))) {
+			switch_buffer_read(fh->audio_buffer, abuf, framelen);
+			olen = asis ? framelen : ilen;
 			do_speed = 0;
 		} else {
-			olen = FILE_STARTSAMPLES;
+			olen = 32 * framelen;
 			switch_core_file_read(fh, abuf, &olen);
-			switch_buffer_write(fh->audio_buffer, abuf, olen * 2);
-			olen = switch_buffer_read(fh->audio_buffer, abuf, ilen * 2) / 2;
+			switch_buffer_write(fh->audio_buffer, abuf, asis ? olen : olen * 2);
+			olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
+			if (!asis) {
+				olen /= 2;
+			} 
 		}
 
 		if (done || olen <= 0) {
 			break;
 		}
 
-		if (fh->speed > 2) {
-			fh->speed = 2;
-		} else if (fh->speed < -2) {
-			fh->speed = -2;
+		if (!asis) {
+			if (fh->speed > 2) {
+				fh->speed = 2;
+			} else if (fh->speed < -2) {
+				fh->speed = -2;
+			}
 		}
 		
-		if (fh->audio_buffer && last_speed > -1 && last_speed != fh->speed) {
+		if (!asis && fh->audio_buffer && last_speed > -1 && last_speed != fh->speed) {
 			switch_buffer_zero(fh->audio_buffer);
 		}
 
 		
-		if (fh->speed && do_speed) {
+		if (!asis && fh->speed && do_speed) {
 			float factor = 0.25f * abs(fh->speed);
 			switch_size_t newlen, supplement, step;
 			short *bp = write_frame.data;
@@ -833,14 +868,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			}
 			last_speed = fh->speed;
 			continue;
-		} 
-
-		write_frame.datalen = (uint32_t)(olen * 2);
+		}
+		
+		write_frame.datalen = (uint32_t)(olen * (asis ? 1 : 2));
 		write_frame.samples = (uint32_t)olen;
+
+		
+
 
 #ifndef WIN32
 #if __BYTE_ORDER == __BIG_ENDIAN
-		switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
+		if (!asis) {switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);}
 #endif
 #endif
 		for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
@@ -879,8 +917,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done playing file\n");
 	switch_core_file_close(fh);
 	switch_buffer_destroy(&fh->audio_buffer);
-	switch_core_codec_destroy(&codec);
-
+	if (!asis) {
+		switch_core_codec_destroy(&codec);
+	}
 	if (timer_name) {
 		/* End the audio absorbing thread */
 		switch_core_thread_session_end(&thread_session);

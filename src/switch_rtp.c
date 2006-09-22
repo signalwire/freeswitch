@@ -588,7 +588,10 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 	if ((*rtp_session)->packet_buffer) {
 		switch_buffer_destroy(&(*rtp_session)->packet_buffer);
 	}
-			
+	if ((*rtp_session)->dtmf_data.dtmf_buffer) {
+		switch_buffer_destroy(&(*rtp_session)->dtmf_data.dtmf_buffer);
+	}
+
 	switch_rtp_kill_socket(*rtp_session);
 	switch_socket_close((*rtp_session)->sock);
 	(*rtp_session)->sock = NULL;
