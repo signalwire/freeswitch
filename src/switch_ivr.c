@@ -580,8 +580,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define FILE_STARTSAMPLES 512 * 128
-#define FILE_BLOCKSIZE 1024
+#define FILE_STARTSAMPLES 512 * 64
+#define FILE_BLOCKSIZE 1024 * 8
+#define FILE_BUFSIZE 1024 * 64
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, 
 												   switch_file_handle_t *fh,
 												   char *file,
@@ -679,7 +681,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	interval = read_codec->implementation->microseconds_per_frame / 1000;
 
 	if (!fh->audio_buffer) {
-		switch_buffer_create_dynamic(&fh->audio_buffer, FILE_BLOCKSIZE, (FILE_STARTSAMPLES * sizeof(int16_t)) + FILE_BLOCKSIZE, 0);
+		switch_buffer_create_dynamic(&fh->audio_buffer, FILE_BLOCKSIZE, FILE_BUFSIZE, 0);
 	} 
 
 	codec_name = "L16";

@@ -42,6 +42,7 @@ struct switch_buffer {
 	switch_byte_t *data;
 	switch_byte_t *head;
 	switch_size_t used;
+	switch_size_t actually_used;
 	switch_size_t datalen;
 	switch_size_t max_len;
 	switch_size_t blocksize;
@@ -146,7 +147,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_toss(switch_buffer_t *buffer, switch
 	memmove(buffer->data, buffer->data + reading, reading);
 	buffer->head = buffer->data;
 	buffer->used -= reading;
-
+	buffer->actually_used = buffer->used;
 	return buffer->used;
 }
 
@@ -177,7 +178,7 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_read(switch_buffer_t *buffer, void *
 
 SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void *data, switch_size_t datalen)
 {
-	switch_size_t freespace;
+	switch_size_t freespace, actual_freespace;
 
 	assert(buffer != NULL);
 	assert(data != NULL);
@@ -187,13 +188,22 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 		return buffer->used;
 	}
 
+	actual_freespace = buffer->datalen - buffer->actually_used;
+
+	if (actual_freespace < datalen) {
+		memmove(buffer->data, buffer->head, buffer->used);
+		buffer->head = buffer->data;
+		buffer->actually_used = buffer->used;
+	}
+
 	freespace = buffer->datalen - buffer->used;
 
+	/*
 	if (buffer->data != buffer->head) {
 		memmove(buffer->data, buffer->head, buffer->used);
 		buffer->head = buffer->data;
 	}
-
+	*/
 	if (switch_test_flag(buffer, SWITCH_BUFFER_FLAG_DYNAMIC)) {
 		if (freespace < datalen) {
 			switch_size_t new_size, new_block_size;
@@ -218,8 +228,9 @@ SWITCH_DECLARE(switch_size_t) switch_buffer_write(switch_buffer_t *buffer, void 
 	if (freespace < datalen) {
 		return 0;
 	} else {
-		memcpy(buffer->data + buffer->used, data, datalen);
+		memcpy(buffer->head + buffer->used, data, datalen);
 		buffer->used += datalen;
+		buffer->actually_used += datalen;
 	}
 	//if (buffer->id == 4) printf("%u i %d = %d\n", buffer->id, (uint32_t)datalen, (uint32_t)buffer->used);
 

@@ -52,6 +52,8 @@
 #define SWITCH_EVENT_QUEUE_LEN 256
 #define SWITCH_SQL_QUEUE_LEN 2000
 
+#define SWITCH_BUFFER_BLOCK_FRAMES 25
+#define SWITCH_BUFFER_START_FRAMES 50
 
 struct switch_media_bug {
 	switch_buffer_t *raw_write_buffer;
@@ -253,10 +255,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	bug->user_data = user_data;
 	bug->session = session;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
-	bytes = session->read_codec->implementation->bytes_per_frame * 2;
-	switch_buffer_create_dynamic(&bug->raw_read_buffer, bytes, bytes, MAX_BUG_BUFFER);
-	bytes = session->write_codec->implementation->bytes_per_frame * 2;
-	switch_buffer_create_dynamic(&bug->raw_write_buffer, bytes, bytes, MAX_BUG_BUFFER);
+	bytes = session->read_codec->implementation->bytes_per_frame;
+	switch_buffer_create_dynamic(&bug->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
+	bytes = session->write_codec->implementation->bytes_per_frame;
+	switch_buffer_create_dynamic(&bug->raw_write_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
 	switch_mutex_init(&bug->read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&bug->write_mutex, SWITCH_MUTEX_NESTED, session->pool);
 
@@ -1701,9 +1703,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				perfect = TRUE;
 			} else {
 				if (!session->raw_read_buffer) {
-					switch_size_t bytes = session->read_codec->implementation->bytes_per_frame * 2;
+					switch_size_t bytes = session->read_codec->implementation->bytes_per_frame;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Engaging Read Buffer at %u bytes\n", bytes);
-					switch_buffer_create_dynamic(&session->raw_read_buffer, bytes, bytes, 0);
+					switch_buffer_create_dynamic(&session->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, 0);
 				}
 				if (!switch_buffer_write(session->raw_read_buffer, read_frame->data, read_frame->datalen)) {
 					status = SWITCH_STATUS_MEMERR;
@@ -1932,13 +1934,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				perfect = TRUE;
 			} else {
 				if (!session->raw_write_buffer) {
-					switch_size_t bytes = session->write_codec->implementation->bytes_per_frame * 2;
+					switch_size_t bytes = session->write_codec->implementation->bytes_per_frame;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 										  "Engaging Write Buffer at %u bytes to accomodate %u->%u\n",
 										  bytes,
 										  write_frame->datalen, session->write_codec->implementation->bytes_per_frame);
-					if ((status =
-						 switch_buffer_create_dynamic(&session->raw_write_buffer, bytes, bytes, 0)) != SWITCH_STATUS_SUCCESS) {
+					if ((status =switch_buffer_create_dynamic(&session->raw_write_buffer,
+															  bytes * SWITCH_BUFFER_BLOCK_FRAMES,
+															  bytes * SWITCH_BUFFER_START_FRAMES,
+															  0)) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Buffer Failed!\n");
 						return status;
 					}

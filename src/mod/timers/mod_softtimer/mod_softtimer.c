@@ -155,8 +155,12 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/* I cant resist setting this to 10ms, we dont even run anything smaller than 20ms so this is already 
+   twice the granularity we need, we'll change it if we need anything smaller
+*/
 
-
+#define STEP_MS 10
+#define STEP_MIC 10000
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 {
 	switch_time_t reference = switch_time_now();
@@ -169,13 +173,13 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	globals.RUNNING = 1;
 
 	while(globals.RUNNING == 1) {
-		reference += 1000;
+		reference += STEP_MIC;
 
 		while (switch_time_now() < reference) {
-			switch_yield(1000);
+			switch_yield(STEP_MIC);
 		}
 
-		current_ms++;
+		current_ms += STEP_MS;
 
 		for (x = 0; x < MAX_ELEMENTS; x++) {
 			int i = x, index;
