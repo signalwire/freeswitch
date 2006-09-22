@@ -486,8 +486,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 
 		goto done;
 	}
-	
-	if (!strncasecmp(cmd, "sendmsg", 7)) {
+
+
+	if (!strncasecmp(cmd, "sendevent", 9)) {
+		switch_event_fire(&event);
+		snprintf(reply, reply_len, "+OK");
+		goto done;
+	} else if (!strncasecmp(cmd, "sendmsg", 7)) {
 		switch_core_session_t *session;
 		char *uuid = cmd + 8;
 
