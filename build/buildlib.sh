@@ -45,7 +45,7 @@ else
 
     if [ ! -f $tar ] ; then
 	rm -fr $uncompressed
-	wget $base/$tar
+	wget $base/$tar || ftp $base/$tar
 	if [ ! -f $tar ] ; then
 	    echo cannot find $tar
 	    exit
