@@ -96,12 +96,12 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	char *assembly_dir  = (char *) switch_core_alloc(mono_pool, assembly_dir_len);
 	char *assembly_file = (char *) switch_core_alloc(mono_pool, assembly_file_len);
 
-	apr_finfo_t *finfo = (apr_finfo_t *) switch_core_alloc(mono_pool, sizeof(*finfo));
+	apr_finfo_t *assembly_finfo = (apr_finfo_t *) switch_core_alloc(mono_pool, sizeof(*assembly_finfo));
 
 	snprintf(assembly_dir, assembly_dir_len, "%s/%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_MONO_LIBDIR);
 	snprintf(assembly_file, assembly_file_len, "%s/%s%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_MONO_LIBDIR, SWITCH_MONO_ASSEMBLY);
 
-	if (apr_stat(finfo, assembly_file, 0, mono_pool) != SWITCH_STATUS_SUCCESS) {
+	if (apr_stat(assembly_finfo, assembly_file, 0, mono_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Could not find FreeSwitch.NET assembly\n");
 		return SWITCH_STATUS_FALSE;
 	}
@@ -178,6 +178,13 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
  */ 
 switch_status_t mod_mono_load_modules(const char *module_dir)
 {
+	apr_finfo_t *module_finfo = (apr_finfo_t *) switch_core_alloc(mono_pool, sizeof(*module_finfo));
+	
+	if (apr_stat(module_finfo, module_dir, 0, mono_pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not access module dir!.\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	
 	apr_dir_t *module_dir_handle;
 	char *file;
 	size_t len;
