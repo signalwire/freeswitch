@@ -13,9 +13,9 @@ if [ -f $root/build/freeswitch.env ] ; then
     . $root/build/freeswitch.env
 fi
 
-if [ -z $MAKE ] ; then
+if [ -z "$MAKE" ] ; then
     make=`which gmake 2>/dev/null`
-    if [ -z $MAKE ] ; then
+    if [ -z "$MAKE" ] ; then
 	make=make
     fi
 fi
@@ -23,7 +23,7 @@ fi
 install=
 base=http://svn.freeswitch.org/downloads/libs
 
-if [ ! -z $1 ] && [ $1 = install ] ; then
+if [ ! -z "$1" ] && [ "$1" = install ] ; then
     install=1
     shift
 fi

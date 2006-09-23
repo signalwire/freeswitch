@@ -204,7 +204,6 @@ target_alias = @target_alias@
 EXTRA_DIST = 
 SUBDIRS = 
 AUTOMAKE_OPTS = gnu
-MAKE = gmake
 NAME = libgsm
 AM_CC = gcc
 AM_CFLAGS = -I./inc -DNeedFunctionPrototypes=1 -funroll-loops  -fPIC -DSASR -DNDEBUG -DWAV49

@@ -1,7 +1,6 @@
 EXTRA_DIST =
 SUBDIRS = 
 AUTOMAKE_OPTS= gnu
-MAKE=gmake
 NAME=libgsm
 
 AM_CC=gcc

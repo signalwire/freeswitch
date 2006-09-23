@@ -209,7 +209,6 @@ target_alias = @target_alias@
 EXTRA_DIST = 
 SUBDIRS = 
 AUTOMAKE_OPTS = gnu
-MAKE = gmake
 NAME = libilbc
 AM_CC = gcc
 AM_CFLAGS = -Wall -O3 -funroll-loops

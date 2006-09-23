@@ -193,7 +193,6 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 AM_CFLAGS = -I./src/include -fPIC -O3 -Dsingle -funroll-loops -fomit-frame-pointer
 AUTOMAKE_OPTS = gnu
-MAKE = gmake
 NAME = libg7xx
 lib_LTLIBRARIES = libg7xx.la
 libg7xx_la_SOURCES = src/g711.c src/g722_decode.c src/g722_encode.c src/g726.c

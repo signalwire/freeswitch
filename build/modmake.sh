@@ -1,4 +1,7 @@
 #!/bin/sh
+
+make=$1
+shift
 pwd=$1
 shift
 mod=$1
@@ -8,14 +11,8 @@ if [ -f $pwd/build/freeswitch.env ] ; then
     . $pwd/build/freeswitch.env
 fi
 
-make=`which gmake`
-
-if [ -z $make ] ; then
-    make=`which make`
-fi
-
 end=`echo $mod | sed "s/^.*\///g"`
-if [ -z $end ] ; then
+if [ -z "$end" ] ; then
     end=$mod
 fi
 

@@ -1,7 +1,6 @@
 EXTRA_DIST =
 SUBDIRS = 
 AUTOMAKE_OPTS= gnu
-MAKE=gmake
 NAME=libg7xx
 
 AM_CC=gcc
