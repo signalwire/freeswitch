@@ -34,6 +34,21 @@
 static const char modname[] = "mod_dptools";
 
 
+static void transfer_function(switch_core_session_t *session, char *data)
+{
+	int argc;
+	char *argv[4] = {0};
+	char *mydata;
+
+	if ((mydata = switch_core_session_strdup(session, data))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
+			switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No extension specified.\n");
+		}
+	}
+}
+
 static void sleep_function(switch_core_session_t *session, char *data)
 {
 
@@ -159,13 +174,22 @@ static const switch_application_interface_t sleep_application_interface = {
 	/* next */ &strftime_application_interface
 };
 
+static const switch_application_interface_t transfer_application_interface = {
+	/*.interface_name */ "transfer",
+	/*.application_function */ transfer_function,
+	/* long_desc */ "Immediatly transfer the calling channel to a new extension",
+	/* short_desc */ "Transfer a channel",
+	/* syntax */ "<exten> [<dialplan> <context>]",
+	/* next */ &sleep_application_interface
+};
+
 static const switch_loadable_module_interface_t mod_dptools_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
 	/*.dialplan_interface = */ NULL,
 	/*.codec_interface = */ NULL,
-	/*.application_interface */ &sleep_application_interface,
+	/*.application_interface */ &transfer_application_interface,
 	/*.api_interface */ &dptools_api_interface
 };
 
