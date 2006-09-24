@@ -77,6 +77,8 @@ static struct {
 	int supress_dtmf_tone;
 	int configured_spans;
 	char *dialplan;
+	switch_hash_t *call_hash;
+	switch_mutex_t *hash_mutex;
 } globals;
 
 struct wanpipe_pri_span {
@@ -92,6 +94,15 @@ struct wanpipe_pri_span {
 	struct sangoma_pri spri;
 };
 
+struct wpsock {
+	int fd;
+	char *name;
+	struct private_object *tech_pvt;
+};
+
+typedef struct wpsock wpsock_t;
+
+
 #define MAX_SPANS 128
 static struct wanpipe_pri_span *SPANS[MAX_SPANS];
 
@@ -106,7 +117,7 @@ struct private_object {
 	struct sangoma_pri *spri;
 	sangoma_api_hdr_t hdrframe;
 	switch_caller_profile_t *caller_profile;
-	int socket;
+	wpsock_t *wpsock;
 	int callno;
 	int span;
 	int cause;
@@ -126,6 +137,83 @@ struct private_object {
 struct channel_map {
 	switch_core_session_t *map[36];
 };
+
+static int wp_close(struct private_object *tech_pvt)
+{
+	int ret = 0;
+
+	switch_mutex_lock(globals.hash_mutex);
+	if (tech_pvt->wpsock && tech_pvt->wpsock->tech_pvt == tech_pvt) {
+		tech_pvt->wpsock->tech_pvt = NULL;
+		ret = 1;
+	}
+	switch_mutex_unlock(globals.hash_mutex);
+	
+	return ret;
+}
+
+static int wp_open(struct private_object *tech_pvt, int span, int chan)
+{
+	int fd;
+	wpsock_t *sock;
+	char name[25];
+	
+	snprintf(name, sizeof(name), "s%dc%d", span, chan);
+
+	switch_mutex_lock(globals.hash_mutex);
+	if ((sock = switch_core_hash_find(globals.call_hash, name))) {
+		fd = sock->fd;
+	} else {
+		if ((fd = sangoma_open_tdmapi_span_chan(span, chan)) > -1) {
+			if ((sock = malloc(sizeof(*sock)))) {
+				memset(sock, 0, sizeof(*sock));
+				sock->fd = fd;
+				sock->name = strdup(name);
+				switch_core_hash_insert(globals.call_hash, sock->name, sock);
+			}
+		}
+	}
+
+	if (sock) {
+		if (sock->tech_pvt) {
+			if (tech_pvt->session) {
+				switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
+		}
+		sock->tech_pvt = tech_pvt;
+		tech_pvt->wpsock = sock;
+	}
+
+	switch_mutex_unlock(globals.hash_mutex);
+
+	return sock ? 1 : 0;
+}
+
+static int wp_restart(int span, int chan)
+{
+	wpsock_t *sock;
+	int fd;
+	char name[25];
+	
+	snprintf(name, sizeof(name), "s%dc%d", span, chan);
+
+	switch_mutex_lock(globals.hash_mutex);
+	if ((sock = switch_core_hash_find(globals.call_hash, name))) {
+		switch_core_hash_delete(globals.call_hash, sock->name);
+		fd = sock->fd;
+	} else {
+		fd = sangoma_open_tdmapi_span_chan(span, chan);
+	}
+	switch_mutex_unlock(globals.hash_mutex);
+
+	if (fd > -1) {
+		close(fd);
+		return 0;
+	}
+	
+	return -1;
+}
 
 
 static void set_global_dialplan(char *dialplan)
@@ -240,15 +328,15 @@ static switch_status_t wanpipe_on_init(switch_core_session_t *session)
 
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 
-	err = sangoma_tdm_set_codec(tech_pvt->socket, &tdm_api, WP_SLINEAR);
+	err = sangoma_tdm_set_codec(tech_pvt->wpsock->fd, &tdm_api, WP_SLINEAR);
 	
-	mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->socket, &tdm_api);	
+	mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->wpsock->fd, &tdm_api);	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WANPIPE INIT MTU is %d\n", mtu_mru);
 
 	if (mtu_mru != globals.mtu) {
-		sangoma_tdm_set_usr_period(tech_pvt->socket, &tdm_api, 40);
-		err = sangoma_tdm_set_usr_period(tech_pvt->socket, &tdm_api, new_mtu);
-		mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->socket, &tdm_api);
+		sangoma_tdm_set_usr_period(tech_pvt->wpsock->fd, &tdm_api, 40);
+		err = sangoma_tdm_set_usr_period(tech_pvt->wpsock->fd, &tdm_api, new_mtu);
+		mtu_mru = sangoma_tdm_get_usr_mtu_mru(tech_pvt->wpsock->fd, &tdm_api);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ADJUSTED MTU AFTER SETTING IT TO %d is %d %d [%s]\n", new_mtu, mtu_mru, err, strerror(err));
 		if (mtu_mru != globals.mtu) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failure to adjust MTU\n");
@@ -344,7 +432,8 @@ static switch_status_t wanpipe_on_hangup(switch_core_session_t *session)
 		chanmap = tech_pvt->spri->private_info;
 	}
 
-	sangoma_socket_close(&tech_pvt->socket);
+	//sangoma_socket_close(&tech_pvt->wpsock->fd);
+	wp_close(tech_pvt);
 
 	switch_core_codec_destroy(&tech_pvt->read_codec);
 	switch_core_codec_destroy(&tech_pvt->write_codec);
@@ -434,7 +523,7 @@ static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch
 	assert(tech_pvt != NULL);
 
 
-	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->wpsock->fd < 0) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -444,16 +533,16 @@ static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch
 	memset(tech_pvt->databuf, 0, sizeof(tech_pvt->databuf));
 	while (bytes < globals.mtu) {
 
-		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->wpsock->fd < 0) {
 			return SWITCH_STATUS_GENERR;
 		}
 
 
-		if (sangoma_socket_waitfor(tech_pvt->socket, 1000, POLLIN | POLLERR | POLLHUP) <= 0) {
+		if (sangoma_socket_waitfor(tech_pvt->wpsock->fd, 1000, POLLIN | POLLERR | POLLHUP) <= 0) {
 			return SWITCH_STATUS_GENERR;
 		}
 
-		if ((res = sangoma_readmsg_socket(tech_pvt->socket,
+		if ((res = sangoma_readmsg_socket(tech_pvt->wpsock->fd,
 										  &tech_pvt->hdrframe,
 										  sizeof(tech_pvt->hdrframe), bp, sizeof(tech_pvt->databuf) - bytes, 0)) < 0) {
 			if (errno == EBUSY) {
@@ -467,7 +556,7 @@ static switch_status_t wanpipe_read_frame(switch_core_session_t *session, switch
 		bp += bytes;
 	}
 
-	if (!bytes || switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+	if (!bytes || switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->wpsock->fd < 0) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -520,7 +609,7 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 
 
 	while (tech_pvt->dtmf_buffer && bwrote < frame->datalen && bytes > 0 && switch_buffer_inuse(tech_pvt->dtmf_buffer) > 0) {
-		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+		if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->wpsock->fd < 0) {
 			return SWITCH_STATUS_GENERR;
 		}
 
@@ -530,14 +619,14 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 			}
 		}
 
-		if (sangoma_socket_waitfor(tech_pvt->socket, 1000, POLLOUT | POLLERR | POLLHUP) <= 0) {
+		if (sangoma_socket_waitfor(tech_pvt->wpsock->fd, 1000, POLLOUT | POLLERR | POLLHUP) <= 0) {
 			return SWITCH_STATUS_GENERR;
 		}
 
 #ifdef DOTRACE	
 		write(tech_pvt->fd, dtmf, (int) bread);
 #endif
-		result = sangoma_sendmsg_socket(tech_pvt->socket,
+		result = sangoma_sendmsg_socket(tech_pvt->wpsock->fd,
 									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), dtmf, bread, 0);
 		if (result < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -557,7 +646,7 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 		}
 	}
 
-	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->socket < 0) {
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || tech_pvt->wpsock->fd < 0) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -570,7 +659,7 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 		unsigned int towrite;
 
 #if 1
-		if (sangoma_socket_waitfor(tech_pvt->socket, 1000, POLLOUT | POLLERR | POLLHUP) <= 0) {
+		if (sangoma_socket_waitfor(tech_pvt->wpsock->fd, 1000, POLLOUT | POLLERR | POLLHUP) <= 0) {
 			return SWITCH_STATUS_GENERR;
 		}
 #endif
@@ -586,7 +675,7 @@ static switch_status_t wanpipe_write_frame(switch_core_session_t *session, switc
 			towrite = globals.mtu;
 		}
 
-		result = sangoma_sendmsg_socket(tech_pvt->socket,
+		result = sangoma_sendmsg_socket(tech_pvt->wpsock->fd,
 									 &tech_pvt->hdrframe, sizeof(tech_pvt->hdrframe), bp, towrite, 0);
 		if (result < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
@@ -664,7 +753,8 @@ static switch_status_t wanpipe_kill_channel(switch_core_session_t *session, int 
 	switch_clear_flag(tech_pvt, TFLAG_MEDIA);
 	switch_mutex_unlock(tech_pvt->flag_mutex);
 
-	sangoma_socket_close(&tech_pvt->socket);
+	//sangoma_socket_close(&tech_pvt->wpsock->fd);
+	//wp_close(tech_pvt);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -805,9 +895,9 @@ static switch_status_t wanpipe_outgoing_channel(switch_core_session_t *session, 
 
 			if (bchan) {
 				int chan, span;
-				
+
 				if (sangoma_span_chan_fromif(bchan, &span, &chan)) {
-					if ((tech_pvt->socket = sangoma_open_tdmapi_span_chan(span, chan)) < 0) {
+					if (!wp_open(tech_pvt, span, chan)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd for s%dc%d! [%s]\n", span, chan, strerror(errno));
 						switch_core_session_destroy(new_session);
 						return SWITCH_STATUS_GENERR;
@@ -889,7 +979,7 @@ static switch_status_t wanpipe_outgoing_channel(switch_core_session_t *session, 
 						return SWITCH_STATUS_GENERR;
 					}
 
-					if ((tech_pvt->socket = sangoma_open_tdmapi_span_chan(spri->span, channo)) < 0) {
+					if (!wp_open(tech_pvt, spri->span, channo)) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
 						switch_core_session_destroy(new_session);
 						pri_sr_free(sr);
@@ -942,6 +1032,10 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
+
+	memset(&globals, 0, sizeof(globals));
+	switch_core_hash_init(&globals.call_hash, module_pool);
+	switch_mutex_init(&globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
 
 	/* start the pri's */
 	if ((status = config_wanpipe(0)) != SWITCH_STATUS_SUCCESS) {
@@ -1117,7 +1211,6 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 
 	if ((session = switch_core_session_request(&wanpipe_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
-		int fd;
 		char ani2str[4] = "";
 		//wanpipe_tdm_api_t tdm_api;
 
@@ -1166,12 +1259,11 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 		tech_pvt->callno = event->ring.channel;
 		tech_pvt->span = spri->span;
 
-		if ((fd = sangoma_open_tdmapi_span_chan(spri->span, event->ring.channel)) < 0) {
+		if (!wp_open(tech_pvt, spri->span, event->ring.channel)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd!\n");
 		}
 		//sangoma_tdm_set_hw_period(fd, &tdm_api, 480);
 
-		tech_pvt->socket = fd;
 		chanmap->map[event->ring.channel] = session;
 
 		switch_channel_set_state(channel, CS_INIT);
@@ -1192,7 +1284,6 @@ static int check_flags(struct sangoma_pri *spri)
 
 static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri_event *event)
 {
-	int fd;
 	switch_core_session_t *session;
 	struct channel_map *chanmap;
 
@@ -1213,11 +1304,8 @@ static int on_restart(struct sangoma_pri *spri, sangoma_pri_event_t event_type, 
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	}
 	
-	if ((fd = sangoma_open_tdmapi_span_chan(spri->span, event->restart.channel)) < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open fd [%s]!\n", strerror(errno));
-	} else {
-		close(fd);
-	}
+	wp_restart(spri->span, event->restart.channel);
+
 	return 0;
 }
 
@@ -1306,6 +1394,7 @@ static switch_status_t config_wanpipe(int reload)
 	globals.mtu = DEFAULT_MTU;
 	globals.dtmf_on = 150;
 	globals.dtmf_off = 50;
+
 
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
