@@ -228,7 +228,7 @@ static void strip_cr(char *s)
 static switch_status_t read_packet(listener_t *listener, switch_event_t **event, uint32_t timeout) 
 {
 	switch_size_t mlen;
-	char mbuf[1024] = "";
+	char mbuf[2048] = "";
 	char buf[1024] = "";
 	switch_size_t len;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -238,7 +238,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 	void *pop;
 	char *ptr;
 	uint8_t crcount = 0;
-
+	uint32_t max_len = sizeof(mbuf);
 	*event = NULL;
 	start = time(NULL);
 	ptr = mbuf;
@@ -253,12 +253,13 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		}
 
 		if (mlen) {
-			bytes++;
+			bytes += mlen;
 			do_sleep = 0;
 
 			if (*mbuf == '\r' || *mbuf == '\n') { /* bah */
 				ptr = mbuf;
 				mbuf[0] = '\0';
+				bytes = 0;
 				continue;
 			}
 
@@ -268,10 +269,15 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 				crcount = 0;
 			}
 			ptr++;
+
+			if (bytes >= max_len) {
+				crcount = 2;
+			}
+
 			if (crcount == 2) {
 				char *next;
 				char *cur = mbuf;
-
+				bytes = 0;
 				while(cur) {
 					if ((next = strchr(cur, '\r')) || (next = strchr(cur, '\n'))) {
 						while (*next == '\r' || *next == '\n') {
