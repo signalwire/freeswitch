@@ -65,6 +65,8 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		AE21414E0AC7BEBF00524EAE /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
+		AE21414F0AC7BEC100524EAE /* pcre.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D36500F10A76BE9400C47A76 /* pcre.framework */; };
 		D30151710A76EC9F00117F59 /* speex_bits.h in Headers */ = {isa = PBXBuildFile; fileRef = D30151670A76EC9F00117F59 /* speex_bits.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D30151720A76EC9F00117F59 /* speex_callbacks.h in Headers */ = {isa = PBXBuildFile; fileRef = D30151680A76EC9F00117F59 /* speex_callbacks.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		D30151730A76EC9F00117F59 /* speex_config_types.h in Headers */ = {isa = PBXBuildFile; fileRef = D30151690A76EC9F00117F59 /* speex_config_types.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -1199,7 +1201,7 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 08FB7793FE84155DC02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = D36500F00A76BE9400C47A76 /* pcre */;
+			remoteGlobalIDString = D36500F00A76BE9400C47A76;
 			remoteInfo = pcre;
 		};
 		D36501760A76C28200C47A76 /* PBXContainerItemProxy */ = {
@@ -1937,8 +1939,8 @@
 		D3BC330D0A76A82A00DE971E /* mod_softtimer.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_softtimer.c; path = ../../src/mod/timers/mod_softtimer/mod_softtimer.c; sourceTree = SOURCE_ROOT; };
 		D3BC33110A76A83D00DE971E /* mod_softtimer.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_softtimer.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		D3BC331E0A76A87E00DE971E /* mod_g711.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_g711.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
-		D3BC331F0A76A8B200DE971E /* g711.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = g711.c; path = ../../src/mod/codecs/mod_g711/g711.c; sourceTree = SOURCE_ROOT; };
-		D3BC33200A76A8B200DE971E /* g711.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = g711.h; path = ../../src/mod/codecs/mod_g711/g711.h; sourceTree = SOURCE_ROOT; };
+		D3BC331F0A76A8B200DE971E /* g711.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = g711.c; path = ../../libs/codec/g7xx/src/g711.c; sourceTree = SOURCE_ROOT; };
+		D3BC33200A76A8B200DE971E /* g711.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = g711.h; path = ../../libs/codec/g7xx/src/include/g7xx/g711.h; sourceTree = SOURCE_ROOT; };
 		D3BC33210A76A8B200DE971E /* mod_g711.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_g711.c; path = ../../src/mod/codecs/mod_g711/mod_g711.c; sourceTree = SOURCE_ROOT; };
 		D3BC333E0A76A9CD00DE971E /* mod_conference.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = mod_conference.c; path = ../../src/mod/applications/mod_conference/mod_conference.c; sourceTree = SOURCE_ROOT; };
 		D3BC33420A76A9D900DE971E /* mod_conference.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; includeInIndex = 0; path = mod_conference.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -2665,6 +2667,7 @@
 				D36502E30A76CB1000C47A76 /* teletone.framework in Frameworks */,
 				D3BF926D0A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 				D3E3E9CC0A786E4600DBE6EB /* bundle1.o in Frameworks */,
+				AE21414E0AC7BEBF00524EAE /* pcre.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2790,6 +2793,7 @@
 				D3BC32D30A76A68400DE971E /* libfreeswitch.framework in Frameworks */,
 				D3BF92600A77F7FA00BEDBC8 /* System.framework in Frameworks */,
 				D3E3E9BF0A786E4600DBE6EB /* bundle1.o in Frameworks */,
+				AE21414F0AC7BEC100524EAE /* pcre.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9209,6 +9213,7 @@
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G5;
+				HEADER_SEARCH_PATHS = ../../libs/codec/g7xx/src/include;
 				INSTALL_PATH = "$(FREESWITCH_INSTALL_PREFIX)/freeswitch/mod";
 				KEEP_PRIVATE_EXTERNS = NO;
 				MACH_O_TYPE = mh_bundle;
