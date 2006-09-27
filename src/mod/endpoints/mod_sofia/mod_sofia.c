@@ -142,7 +142,6 @@ struct sofia_profile {
 	switch_payload_t te;
 	uint32_t codec_flags;
 	switch_mutex_t *reg_mutex;
-	switch_core_db_t *db;
 };
 
 
@@ -310,10 +309,16 @@ static void check_expire(sofia_profile_t *profile, time_t now)
 {
 	char sql[1024];
 	char *errmsg;
+	switch_core_db_t *db;
+
+	if (!(db = switch_core_db_open_file(profile->dbname))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+		return;
+	}
 
 	switch_mutex_lock(profile->reg_mutex);
 	snprintf(sql, sizeof(sql), "select * from sip_registrations where expires > 0 and expires < %ld", (long) now);	
-	switch_core_db_exec(profile->db, sql, del_callback, NULL, &errmsg);
+	switch_core_db_exec(db, sql, del_callback, NULL, &errmsg);
 
 	if (errmsg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s][%s]\n", sql, errmsg);
@@ -322,15 +327,22 @@ static void check_expire(sofia_profile_t *profile, time_t now)
 	}
 	
 	snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires < %ld", (long) now);
-	switch_core_db_persistant_execute(profile->db, sql, 1);
+	switch_core_db_persistant_execute(db, sql, 1);
 	switch_mutex_unlock(profile->reg_mutex);
+
+	switch_core_db_close(db);
 }
 
 static char *find_reg_url(sofia_profile_t *profile, char *user, char *host, char *val, switch_size_t len)
 {
 	char *errmsg;
 	struct callback_t cbt = {0};
+	switch_core_db_t *db;
 
+	if (!(db = switch_core_db_open_file(profile->dbname))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+		return NULL;
+	}
 
 	cbt.val = val;
 	cbt.len = len;
@@ -341,7 +353,7 @@ static char *find_reg_url(sofia_profile_t *profile, char *user, char *host, char
 		snprintf(val, len, "select contact from sip_registrations where user='%s'", user);	
 	}
 
-	switch_core_db_exec(profile->db, val, find_callback, &cbt, &errmsg);
+	switch_core_db_exec(db, val, find_callback, &cbt, &errmsg);
 
 	if (errmsg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s][%s]\n", val, errmsg);
@@ -350,6 +362,8 @@ static char *find_reg_url(sofia_profile_t *profile, char *user, char *host, char
 	}
 
 	switch_mutex_unlock(profile->reg_mutex);
+
+	switch_core_db_close(db);
 	return cbt.matches ? val : NULL;
 }
 
@@ -1740,11 +1754,18 @@ static void sip_i_register(nua_t *nua,
 		switch_event_fire(&s_event);
 	}
 	if (sql) {
+		switch_core_db_t *db;
+
+		if (!(db = switch_core_db_open_file(profile->dbname))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+			return;
+		}
 		switch_mutex_lock(profile->reg_mutex);
-		switch_core_db_persistant_execute(profile->db, sql, 25);
-					switch_core_db_free(sql);
-					sql = NULL;
-					switch_mutex_unlock(profile->reg_mutex);
+		switch_core_db_persistant_execute(db, sql, 25);
+		switch_core_db_free(sql);
+		sql = NULL;
+		switch_mutex_unlock(profile->reg_mutex);
+		switch_core_db_close(db);
 	}
 	
 	switch_xml_free(xml);
@@ -1915,7 +1936,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 	switch_memory_pool_t *pool;
 	sip_alias_node_t *node;
 	uint32_t loops = 0;
-
+	switch_core_db_t *db;
 
 	profile->s_root = su_root_create(NULL);
 	profile->nua = nua_create(profile->s_root, /* Event loop */
@@ -1951,12 +1972,13 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 	}
 
 
-	if ((profile->db = switch_core_db_open_file(profile->dbname))) {
-		switch_core_db_test_reactive(profile->db, "select * from sip_registrations", reg_sql);
+	if ((db = switch_core_db_open_file(profile->dbname))) {
+		switch_core_db_test_reactive(db, "select * from sip_registrations", reg_sql);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 		return NULL;
 	}
+	switch_core_db_close(db);
 
 	switch_mutex_init(&profile->reg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 
