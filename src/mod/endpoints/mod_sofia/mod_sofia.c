@@ -49,6 +49,9 @@ typedef struct private_object private_object_t;
 
 #define MY_EVENT_REGISTER "sofia::register"
 #define MY_EVENT_EXPIRE "sofia::expire"
+#define MULTICAST_EVENT "multicast::event"
+
+
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sdp.h>
@@ -295,10 +298,11 @@ static int del_callback(void *pArg, int argc, char **argv, char **columnNames){
 
 	if (argc >=3 ) {
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_EXPIRE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user", "%s", argv[0]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "host", "%s", argv[1]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", argv[2]);
-			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%d", argv[3]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", argv[0]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "user", "%s", argv[1]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "host", "%s", argv[2]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", argv[3]);
+			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%d", argv[4]);
 			switch_event_fire(&s_event);
 		}
 	}
@@ -317,7 +321,7 @@ static void check_expire(sofia_profile_t *profile, time_t now)
 	}
 
 	switch_mutex_lock(profile->reg_mutex);
-	snprintf(sql, sizeof(sql), "select * from sip_registrations where expires > 0 and expires < %ld", (long) now);	
+	snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0 and expires < %ld", profile->name, (long) now);	
 	switch_core_db_exec(db, sql, del_callback, NULL, &errmsg);
 
 	if (errmsg) {
@@ -1746,10 +1750,11 @@ static void sip_i_register(nua_t *nua,
 	}
 	
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from_user", "%s", from_user);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from_host", "%s", from_host);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact_user", "%s", contact_user);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact_host", "%s", contact_host);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", profile->name);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", from_user);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", from_host);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact-user", "%s", contact_user);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact-host", "%s", contact_host);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long)expires->ex_delta);
 		switch_event_fire(&s_event);
 	}
@@ -2181,6 +2186,66 @@ static switch_status_t config_sofia(int reload)
 
 }
 
+static void event_handler(switch_event_t *event)
+{
+	char *subclass, *sql;
+
+	if ((subclass = switch_event_get_header(event, "orig-event-subclass")) && !strcmp(subclass, MY_EVENT_REGISTER)) {
+		char *from_user = switch_event_get_header(event, "orig-from-user");
+		char *from_host = switch_event_get_header(event, "orig-from-host");
+		char *contact_user = switch_event_get_header(event, "orig-contact-user");
+		char *contact_host = switch_event_get_header(event, "orig-contact-host");
+		char *exp_str = switch_event_get_header(event, "orig-expires");
+		long expires = time(NULL) + atol(exp_str);
+		char *profile_name = switch_event_get_header(event, "orig-profile-name");
+		sofia_profile_t *profile;
+		char buf[512];
+
+		if (!profile_name || !(profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, profile_name))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile\n");
+			return;
+		}
+
+
+		if (!find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
+			sql = switch_core_db_mprintf("insert into sip_registrations values ('%q','%q','sip:%q@%q',%ld)", 
+										 from_user,
+										 from_host,
+										 contact_user,
+										 contact_host,
+										 expires);
+		} else {
+			sql = switch_core_db_mprintf("update sip_registrations set contact='sip:%q@%q', expires=%ld where user='%q' and host='%q'",
+										 contact_user,
+										 contact_host,
+										 expires,
+										 from_user,
+										 from_host);
+			
+		}
+	
+		if (sql) {
+			switch_core_db_t *db;
+
+			if (!(db = switch_core_db_open_file(profile->dbname))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+				return;
+			}
+			switch_mutex_lock(profile->reg_mutex);
+			switch_core_db_persistant_execute(db, sql, 25);
+			switch_core_db_free(sql);
+			sql = NULL;
+			switch_mutex_unlock(profile->reg_mutex);
+			switch_core_db_close(db);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s@%s\n", 
+							  from_user, from_host, contact_user, contact_host);
+
+		}
+
+	}
+}
+
+
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 
@@ -2192,6 +2257,12 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 	
+
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT, event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_TERM;
+	}
+
 	su_init();
 
 

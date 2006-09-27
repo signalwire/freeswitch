@@ -74,6 +74,14 @@
         </modules>
     </configuration>
 
+    <configuration name="event_multicast.conf" description="Multicast Event">
+      <settings>
+        <param name="address" value="225.1.1.1"/>
+        <param name="port" value="424242"/>
+        <param name="bindings" value="all"/>
+      </settings>
+    </configuration>
+
     <configuration name="event_socket.conf" description="Socket Client">
       <settings>
         <param name="listen-ip" value="127.0.0.1"/>

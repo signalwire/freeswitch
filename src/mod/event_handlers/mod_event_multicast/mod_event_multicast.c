@@ -39,6 +39,9 @@ static switch_memory_pool_t *module_pool = NULL;
 static struct {
 	char *address;
 	char *bindings;
+	uint32_t key_count;
+	char hostname[80];
+	uint64_t host_hash;
 	switch_port_t port;
 	switch_sockaddr_t *addr;
 	switch_socket_t *udp_socket;
@@ -50,17 +53,23 @@ static struct {
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address)
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings)
 
+
 #define MULTICAST_EVENT "multicast::event"
 
 
-static switch_status_t load_config(void)
+	 static switch_status_t load_config(void)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *cf = "event_multicast.conf";
 	switch_xml_t cfg, xml, settings, param;
 	char *next, *cur;
-	uint32_t count = 0, key_count = 0;
+	uint32_t count = 0;
 	uint8_t custom = 0;
+	apr_ssize_t hlen = APR_HASH_KEY_STRING;
+
+	gethostname(globals.hostname, sizeof(globals.hostname));
+	globals.host_hash = apr_hashfunc_default(globals.hostname, &hlen);
+	globals.key_count = 0;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -101,7 +110,7 @@ static switch_status_t load_config(void)
 			if (custom) {
 				switch_core_hash_insert_dup(globals.event_hash, cur, MARKER);
 			} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
-				key_count++;
+				globals.key_count++;
 				if (type == SWITCH_EVENT_ALL) {
 					uint32_t x = 0;
 					for (x = 0; x < SWITCH_EVENT_ALL; x++) {
@@ -118,10 +127,10 @@ static switch_status_t load_config(void)
 		}
 	}
 
-	if (!key_count) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Bindings Assuming ALL!\n");
-		globals.event_list[SWITCH_EVENT_ALL] = 1;
+	if (!globals.key_count) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "No Bindings\n");
 	}
+
 	return status;
 
 }
@@ -147,15 +156,21 @@ static void event_handler(switch_event_t *event)
 		}
 	}
 
-	switch (event->event_id) {
-	case SWITCH_EVENT_LOG:
-		return;
-	default:
-		switch_event_serialize(event, buf, sizeof(buf), NULL);
-		len = strlen(buf);
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT\n--------------------------------\n%s\n", buf);
-		switch_socket_sendto(globals.udp_socket, globals.addr, 0, buf, &len);
-		break;
+	if (send) {
+		char *packet;
+		memcpy(buf, &globals.host_hash, sizeof(globals.host_hash));
+		packet = buf + sizeof(globals.host_hash);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", globals.hostname);
+		switch (event->event_id) {
+		case SWITCH_EVENT_LOG:
+			return;
+		default:
+			switch_event_serialize(event, packet, sizeof(buf) - sizeof(globals.host_hash), NULL);
+			len = strlen(packet) + sizeof(globals.host_hash);;
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT\n--------------------------------\n%s\n", buf);
+			switch_socket_sendto(globals.udp_socket, globals.addr, 0, buf, &len);
+			break;
+		}
 	}
 }
 
@@ -172,15 +187,18 @@ static switch_loadable_module_interface_t event_test_module_interface = {
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
+
 	memset(&globals, 0, sizeof(globals));
-	
-	if (load_config() != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Configure\n");
-		return SWITCH_STATUS_TERM;
-	}
 
 	if (switch_core_new_memory_pool(&module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
+		return SWITCH_STATUS_TERM;
+	}
+
+	switch_core_hash_init(&globals.event_hash, module_pool);
+	
+	if (load_config() != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Configure\n");
 		return SWITCH_STATUS_TERM;
 	}
 
@@ -212,17 +230,19 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_TERM;
 	}
 
-	switch_core_hash_init(&globals.event_hash, module_pool);
+
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &event_test_module_interface;
 
+	
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL) !=
 		SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		switch_socket_close(globals.udp_socket);
 		return SWITCH_STATUS_GENERR;
 	}
+
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -246,20 +266,34 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 {
 	switch_event_t *local_event;
-	char buf[65536];
+	char buf[65536] = {0};
+	switch_sockaddr_t *addr;
 
-
+	switch_sockaddr_info_get(&addr, NULL, SWITCH_UNSPEC, 0, 0, module_pool);
 	globals.running = 1;
 	while(globals.running == 1) {
-		switch_sockaddr_t addr = {0};
+		char *myaddr;
 		size_t len = sizeof(buf);
 		memset(buf, 0, len);
 		
-		if (switch_socket_recvfrom(&addr, globals.udp_socket, 0, buf, &len) == SWITCH_STATUS_SUCCESS) {
+		switch_sockaddr_ip_get(&myaddr, globals.addr);
+
+		if (switch_socket_recvfrom(addr, globals.udp_socket, 0, buf, &len) == SWITCH_STATUS_SUCCESS) {
+			char *packet;
+			uint64_t host_hash = 0;
+
+			memcpy(&host_hash, buf, sizeof(host_hash));
+			packet = buf + sizeof(host_hash);
+			
+			if (host_hash == globals.host_hash) {
+				continue;
+			}
+
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT %d\n--------------------------------\n%s\n", (int) len, packet);
 			if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {
-				char *var, *val, *term = NULL;
+				char *var, *val, *term = NULL, tmpname[128];
 				switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, "Multicast", "yes");
-				var = buf;
+				var = packet;
 				while(*var) {
 					if ((val = strchr(var, ':')) != 0) {
 						*val++ = '\0';
@@ -272,15 +306,15 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 								term++;
 							}
 						}
-			
-						switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, var, val);
+						snprintf(tmpname, sizeof(tmpname), "Orig-%s", var);
+						switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, tmpname, val);
 						var = term + 1;
 					} else {
 						break;
 					}
 				} 
 
-				if (!switch_strlen_zero(var)) {
+				if (var && strlen(var) > 1) {
 					switch_event_add_body(local_event, var);
 				}
 
@@ -288,7 +322,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 			
 			}
 		}
-
 	}
 		
 	globals.running = 0;
