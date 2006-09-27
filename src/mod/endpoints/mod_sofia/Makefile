@@ -1,5 +1,5 @@
 VERSION = sofia-sip-1.12
-TARBALL = sofia-sip-1.12.1.tar.gz
+TARBALL = sofia-sip-1.12.2.tar.gz
 CFLAGS += -I. -I$(PREFIX)/include/$(VERSION)
 LDFLAGS += -lsofia-sip-ua
 LINKER=$(CC)
