@@ -30,6 +30,7 @@
  *
  */
 #include <switch.h>
+static char *MARKER = "1";
 
 static const char modname[] = "mod_event_multicast";
 
@@ -37,13 +38,17 @@ static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
 	char *address;
+	char *bindings;
 	switch_port_t port;
 	switch_sockaddr_t *addr;
 	switch_socket_t *udp_socket;
+	switch_hash_t *event_hash;
+	uint8_t event_list[SWITCH_EVENT_ALL+1];
 	int running;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_address, globals.address)
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings)
 
 #define MULTICAST_EVENT "multicast::event"
 
@@ -53,6 +58,9 @@ static switch_status_t load_config(void)
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *cf = "event_multicast.conf";
 	switch_xml_t cfg, xml, settings, param;
+	char *next, *cur;
+	uint32_t count = 0, key_count = 0;
+	uint8_t custom = 0;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -71,6 +79,8 @@ static switch_status_t load_config(void)
 
 			if (!strcasecmp(var, "address")) {
 				set_global_address(val);
+			} else if (!strcasecmp(var, "bindings")) {
+				set_global_bindings(val);
 			} else if (!strcasecmp(var, "port")) {
 				globals.port = (switch_port_t)atoi(val);
 			}
@@ -79,20 +89,63 @@ static switch_status_t load_config(void)
 
 	switch_xml_free(xml);
 
+
+	if (globals.bindings) {
+		for(cur = globals.bindings; cur; count++) {
+			switch_event_types_t type;
+
+			if ((next = strchr(cur, ' '))) {
+				*next++ = '\0';
+			}
+				
+			if (custom) {
+				switch_core_hash_insert_dup(globals.event_hash, cur, MARKER);
+			} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
+				key_count++;
+				if (type == SWITCH_EVENT_ALL) {
+					uint32_t x = 0;
+					for (x = 0; x < SWITCH_EVENT_ALL; x++) {
+						globals.event_list[x] = 0;
+					}
+				}
+				globals.event_list[type] = 1;
+				if (type == SWITCH_EVENT_CUSTOM) {
+					custom++;
+				}
+			}
+
+			cur = next;
+		}
+	}
+
+	if (!key_count) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Bindings Assuming ALL!\n");
+		globals.event_list[SWITCH_EVENT_ALL] = 1;
+	}
 	return status;
 
 }
 
 static void event_handler(switch_event_t *event)
 {
-	char buf[1024];
+	char buf[65536];
 	size_t len;
+	uint8_t send = 0;
+
 
 	if (event->subclass && !strcmp(event->subclass->name, MULTICAST_EVENT)) {
 		/* ignore our own events to avoid ping pong*/
 		return;
 	}
 
+	if (globals.event_list[(uint8_t)SWITCH_EVENT_ALL]) {
+		send = 1;
+	} else if ((globals.event_list[(uint8_t)event->event_id])) {
+		if (event->event_id != SWITCH_EVENT_CUSTOM || 
+			(event->subclass && switch_core_hash_find(globals.event_hash, event->subclass->name))) {
+			send = 1;
+		}
+	}
 
 	switch (event->event_id) {
 	case SWITCH_EVENT_LOG:
@@ -159,6 +212,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_TERM;
 	}
 
+	switch_core_hash_init(&globals.event_hash, module_pool);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &event_test_module_interface;
@@ -192,13 +246,15 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 {
 	switch_event_t *local_event;
-	char buf[1024];
-	
+	char buf[65536];
+
+
 	globals.running = 1;
 	while(globals.running == 1) {
 		switch_sockaddr_t addr = {0};
 		size_t len = sizeof(buf);
 		memset(buf, 0, len);
+		
 		if (switch_socket_recvfrom(&addr, globals.udp_socket, 0, buf, &len) == SWITCH_STATUS_SUCCESS) {
 			if (switch_event_create_subclass(&local_event, SWITCH_EVENT_CUSTOM, MULTICAST_EVENT) == SWITCH_STATUS_SUCCESS) {
 				char *var, *val, *term = NULL;
@@ -206,7 +262,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 				var = buf;
 				while(*var) {
 					if ((val = strchr(var, ':')) != 0) {
-						char varname[512];
 						*val++ = '\0';
 						while(*val == ' ') {
 							val++;
@@ -217,15 +272,20 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 								term++;
 							}
 						}
-						snprintf(varname, sizeof(varname), "Remote-%s", var);
-						switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, varname, val);
+			
+						switch_event_add_header(local_event, SWITCH_STACK_BOTTOM, var, val);
 						var = term + 1;
 					} else {
 						break;
 					}
 				} 
 
+				if (!switch_strlen_zero(var)) {
+					switch_event_add_body(local_event, var);
+				}
+
 				switch_event_fire(&local_event);
+			
 			}
 		}
 
