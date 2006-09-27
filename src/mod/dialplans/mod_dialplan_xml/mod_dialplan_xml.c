@@ -293,6 +293,7 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 		if (!(xcontext = switch_xml_find_child(cfg, "context", "name", "global"))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "context %s not found\n", context);
 			switch_channel_hangup(channel, SWITCH_CAUSE_MESSAGE_TYPE_NONEXIST);
+			switch_xml_free(xml);
 			return NULL;
 		}
 	}
