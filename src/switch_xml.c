@@ -168,8 +168,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, char *chil
 
 	for (p = switch_xml_child(node, childname); p; p = p->next) {
 		const char *aname = switch_xml_attr(p, attrname);
-
-		if (!strcasecmp(aname, value)) {
+		if (aname && value && !strcasecmp(aname, value)) {
 			break;
 		}
 	}

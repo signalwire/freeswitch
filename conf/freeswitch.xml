@@ -476,6 +476,12 @@
   </section>
 
   <section name="directory" description="User Directory">
+    <domain name="mydomain.com">
+      <user id="1000">
+	<param name="password" value="mypass"/>
+	<param name="mypref" value="myval"/>
+	</user>
+    </domain>
   </section>
 
 </document>
