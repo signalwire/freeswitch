@@ -26,7 +26,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot; cscript /nologo &quot;$(ProjectDir)..\util.vbs&quot; Get http://svn.freeswitch.org/downloads/win32/gawk.exe &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;cd &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;&quot;$(ProjectDir)..\..\sofia-sip\win32\autogen.cmd&quot;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\sofia-sip-1.12.2\win32\gawk.exe&quot; cscript /nologo &quot;$(ProjectDir)..\util.vbs&quot; Get http://svn.freeswitch.org/downloads/win32/gawk.exe &quot;$(ProjectDir)..\..\sofia-sip-1.12.2\win32\&quot;&#x0D;&#x0A;cd /D &quot;$(ProjectDir)..\..\sofia-sip-1.12.2\win32\&quot;&#x0D;&#x0A;&quot;autogen.cmd&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -43,8 +43,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC"
+				AdditionalIncludeDirectories="&quot;..\..\sofia-sip-1.12.2\win32&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -103,7 +103,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot; cscript /nologo &quot;$(ProjectDir)..\util.vbs&quot; Get http://svn.freeswitch.org/downloads/win32/gawk.exe &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;cd &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;&quot;$(ProjectDir)..\..\sofia-sip\win32\autogen.cmd&quot;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\sofia-sip-1.12.2\win32\gawk.exe&quot; cscript /nologo &quot;$(ProjectDir)..\util.vbs&quot; Get http://svn.freeswitch.org/downloads/win32/gawk.exe &quot;$(ProjectDir)..\..\sofia-sip-1.12.2\win32\&quot;&#x0D;&#x0A;cd /D &quot;$(ProjectDir)..\..\sofia-sip-1.12.2\win32\&quot;&#x0D;&#x0A;&quot;autogen.cmd&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -121,8 +121,8 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC"
+				AdditionalIncludeDirectories="&quot;..\..\sofia-sip-1.12.2\win32&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip-1.12.2\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -181,7 +181,7 @@
 				Filter="su*.c"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\inet_ntop.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\inet_ntop.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -203,7 +203,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\inet_pton.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\inet_pton.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -225,7 +225,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -247,7 +247,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_addrinfo.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_addrinfo.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -269,7 +269,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_alloc.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_alloc.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -291,7 +291,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_alloc_lock.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_alloc_lock.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -313,7 +313,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_bm.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_bm.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -335,7 +335,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_default_log.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_default_log.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -357,7 +357,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_errno.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_errno.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -379,7 +379,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_global_log.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_global_log.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -401,7 +401,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_localinfo.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_localinfo.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -423,7 +423,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_log.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_log.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -445,7 +445,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_md5.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_md5.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -467,33 +467,11 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_os_nw.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_os_nw.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_port.c"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_root.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_port.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -515,7 +493,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_sprintf.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_root.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -537,7 +515,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_strdup.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_sprintf.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -559,7 +537,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_strlst.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_strdup.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -581,7 +559,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_strlst.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -603,7 +581,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_tag_io.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -625,7 +603,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_taglist.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_tag_io.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -647,7 +625,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_time.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_taglist.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -669,7 +647,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_time0.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_time.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -691,7 +669,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_timer.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_time0.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -713,7 +691,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_uniqueid.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_timer.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -735,7 +713,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_vector.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_uniqueid.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -757,7 +735,29 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_wait.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_vector.c"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_wait.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -783,7 +783,7 @@
 				Name="ipt"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\base64.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\ipt\base64.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -805,7 +805,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\rc4.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\ipt\rc4.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -827,7 +827,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\string0.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\ipt\string0.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -849,7 +849,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\token64.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\ipt\token64.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -876,7 +876,7 @@
 				Filter="url*.c"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\url\url.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\url\url.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -898,7 +898,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\url\url_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\url\url_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -920,7 +920,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\url\url_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\url\url_tag_ref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -947,7 +947,7 @@
 				Filter="features*.c"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\features\features.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\features\features.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -974,7 +974,7 @@
 				Filter="bnf*.c"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\bnf\bnf.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\bnf\bnf.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1001,7 +1001,7 @@
 				Filter="msg*.c"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1023,7 +1023,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_auth.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_auth.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1045,7 +1045,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_basic.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_basic.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1067,7 +1067,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_date.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_date.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1089,7 +1089,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_generic.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_generic.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1111,7 +1111,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_header_copy.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_header_copy.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1133,7 +1133,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_header_make.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_header_make.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1155,7 +1155,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_mclass.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_mclass.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1177,7 +1177,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_mime.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_mime.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1199,7 +1199,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_mime_table.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_mime_table.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1221,7 +1221,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_parser.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_parser.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1243,7 +1243,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_parser_util.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_parser_util.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1265,7 +1265,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1291,7 +1291,7 @@
 				Name="clib replacement"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\memcspn.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\memcspn.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1313,7 +1313,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\memmem.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\memmem.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1335,7 +1335,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\memspn.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\memspn.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1357,7 +1357,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\strcasestr.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\strcasestr.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1379,7 +1379,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\strtoull.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\strtoull.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1405,7 +1405,7 @@
 				Name="sip"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_basic.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_basic.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1427,7 +1427,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_caller_prefs.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_caller_prefs.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1449,7 +1449,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_event.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_event.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1471,7 +1471,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_extra.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_extra.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1493,7 +1493,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_feature.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_feature.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1515,7 +1515,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_header.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_header.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1537,7 +1537,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_mime.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_mime.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1559,7 +1559,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_parser.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_parser.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1581,7 +1581,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_parser_table.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_parser_table.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1603,7 +1603,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_prack.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_prack.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1625,7 +1625,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_pref_util.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_pref_util.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1647,7 +1647,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_reason.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_reason.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1669,7 +1669,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_refer.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_refer.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1691,7 +1691,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_security.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_security.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1713,7 +1713,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_session.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_session.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1735,7 +1735,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_status.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_status.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1757,7 +1757,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1779,7 +1779,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_tag_class.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_tag_class.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1801,7 +1801,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_tag_ref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1823,7 +1823,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_time.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_time.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1845,7 +1845,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_util.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_util.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1871,7 +1871,7 @@
 				Name="http"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\http_basic.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\http_basic.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1893,7 +1893,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\http_extra.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\http_extra.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1915,7 +1915,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\http_header.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\http_header.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1937,7 +1937,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\http_parser.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\http_parser.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1959,7 +1959,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\http_parser_table.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\http_parser_table.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1981,7 +1981,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\http_status.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\http_status.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2003,7 +2003,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\http_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\http_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2025,7 +2025,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\http_tag_class.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\http_tag_class.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2047,7 +2047,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\http_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\http_tag_ref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2073,7 +2073,7 @@
 				Name="nth"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nth\nth_client.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nth\nth_client.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2095,7 +2095,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nth\nth_server.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nth\nth_server.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2117,7 +2117,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nth\nth_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nth\nth_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2139,7 +2139,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nth\nth_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nth\nth_tag_ref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2165,7 +2165,7 @@
 				Name="sresolv"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sresolv\sres.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2187,7 +2187,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres_blocking.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sresolv\sres_blocking.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2209,7 +2209,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres_cache.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sresolv\sres_cache.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2231,7 +2231,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sresolv.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sresolv\sresolv.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2257,7 +2257,7 @@
 				Name="nea"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nea\nea.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nea\nea.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2279,7 +2279,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nea\nea_debug.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nea\nea_debug.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2301,7 +2301,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nea\nea_event.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nea\nea_event.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2323,7 +2323,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nea\nea_server.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nea\nea_server.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2345,7 +2345,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nea\nea_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nea\nea_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2367,7 +2367,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nea\nea_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nea\nea_tag_ref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2393,7 +2393,7 @@
 				Name="iptsec"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_client.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\auth_client.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2415,7 +2415,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_common.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\auth_common.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2437,7 +2437,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_digest.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\auth_digest.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2459,7 +2459,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_module.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\auth_module.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2481,7 +2481,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_module_http.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\auth_module_http.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2503,7 +2503,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_module_sip.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\auth_module_sip.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2525,7 +2525,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_plugin.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\auth_plugin.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2547,7 +2547,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_plugin_delayed.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\auth_plugin_delayed.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2569,7 +2569,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\auth_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2591,7 +2591,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\auth_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\auth_tag_ref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2613,7 +2613,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\iptsec_debug.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\iptsec_debug.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2639,7 +2639,7 @@
 				Name="stun"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\stun\stun.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun\stun.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2661,7 +2661,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\stun\stun_common.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun\stun_common.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2683,7 +2683,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\stun\stun_dns.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun\stun_dns.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2705,33 +2705,11 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\stun\stun_internal.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun\stun_internal.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\stun\stun_mini.c"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\stun\stun_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun\stun_mini.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2753,7 +2731,29 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\stun\stun_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun\stun_tag.c"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun\stun_tag_ref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2779,7 +2779,7 @@
 				Name="nua"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2801,7 +2801,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_common.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_common.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2823,7 +2823,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_dialog.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_dialog.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2845,33 +2845,11 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_dialog.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_dialog.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_event_server.c"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_message.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_event_server.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2893,11 +2871,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_notifier.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_options.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_message.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2919,7 +2893,11 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_params.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_notifier.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_options.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2941,11 +2919,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_params.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_publish.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_params.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2967,7 +2941,11 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_register.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_params.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_publish.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2989,7 +2967,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_session.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_register.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3011,7 +2989,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_stack.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_session.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3033,11 +3011,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_stack.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_subnotref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_stack.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3059,7 +3033,11 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_stack.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_subnotref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3081,7 +3059,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3103,7 +3081,29 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\outbound.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\nua_tag_ref.c"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\outbound.c"
 					>
 				</File>
 			</Filter>
@@ -3111,7 +3111,7 @@
 				Name="nta"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\nta.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\nta.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3133,7 +3133,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\nta_check.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\nta_check.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3155,7 +3155,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\nta_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\nta_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3177,7 +3177,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\nta_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\nta_tag_ref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3199,7 +3199,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\sl_read_payload.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\sl_read_payload.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3221,7 +3221,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\sl_utils_log.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\sl_utils_log.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3243,7 +3243,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\sl_utils_print.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\sl_utils_print.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3269,7 +3269,7 @@
 				Name="tport"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\tport.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3291,33 +3291,11 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_internal.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\tport_internal.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_logging.c"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_stub_sigcomp.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\tport_logging.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3339,7 +3317,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_stub_stun.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\tport_stub_sigcomp.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3361,7 +3339,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\tport_stub_stun.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3383,7 +3361,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\tport_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3405,7 +3383,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_connect.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\tport_tag_ref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3427,7 +3405,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_tcp.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\tport_type_connect.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3449,7 +3427,29 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_type_udp.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\tport_type_tcp.c"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\tport_type_udp.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3475,7 +3475,7 @@
 				Name="sdp"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sdp\sdp.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3497,7 +3497,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_parse.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sdp\sdp_parse.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3519,7 +3519,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_print.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sdp\sdp_print.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3541,7 +3541,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sdp\sdp_tag.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3563,7 +3563,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sdp\sdp_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sdp\sdp_tag_ref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3589,7 +3589,7 @@
 				Name="soa"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\soa\soa.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\soa\soa.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3611,33 +3611,11 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa_session.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\soa\sofia-sip-1.12.2\soa_session.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\soa\soa_static.c"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							AdditionalIncludeDirectories=""
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\soa\soa_tag.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\soa\soa_static.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3659,7 +3637,29 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\soa\soa_tag_ref.c"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\soa\soa_tag.c"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\soa\soa_tag_ref.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3691,123 +3691,123 @@
 				Filter="su*.h"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\htable.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\htable.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\htable2.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\htable2.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\rbtree.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\rbtree.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_addrinfo.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_addrinfo.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_alloc.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_alloc.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_alloc_stat.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_alloc_stat.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_bm.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_bm.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_config.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_config.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_debug.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_debug.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_errno.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_errno.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_localinfo.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_localinfo.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_log.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_log.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_md5.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_md5.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_module_debug.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_module_debug.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_os_nw.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_os_nw.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_port.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\su_port.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_source.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_source.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_strlst.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_strlst.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_tag.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag_class.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_tag_class.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag_inline.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_tag_inline.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tag_io.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_tag_io.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_tagarg.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_tagarg.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_time.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_time.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_types.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_types.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_uniqueid.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_uniqueid.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_vector.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_vector.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_wait.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\su_wait.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\tstdef.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\su\sofia-sip-1.12.2\tstdef.h"
 					>
 				</File>
 			</Filter>
@@ -3819,7 +3819,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\sofia-sip\su_configure.h"
+					RelativePath="..\sofia-sip-1.12.2\su_configure.h"
 					>
 				</File>
 				<File
@@ -3831,19 +3831,19 @@
 				Name="ipt headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\base64.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\ipt\sofia-sip-1.12.2\base64.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\rc4.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\ipt\sofia-sip-1.12.2\rc4.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\string0.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\ipt\sofia-sip-1.12.2\string0.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\ipt\sofia-sip\token64.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\ipt\sofia-sip-1.12.2\token64.h"
 					>
 				</File>
 			</Filter>
@@ -3852,15 +3852,15 @@
 				Filter="url*.h"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\url\sofia-sip\url.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\url\sofia-sip-1.12.2\url.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\url\sofia-sip\url_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\url\sofia-sip-1.12.2\url_tag.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\url\sofia-sip\url_tag_class.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\url\sofia-sip-1.12.2\url_tag_class.h"
 					>
 				</File>
 			</Filter>
@@ -3869,7 +3869,7 @@
 				Filter="features*.h"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\features\sofia-sip\sofia_features.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\features\sofia-sip-1.12.2\sofia_features.h"
 					>
 				</File>
 			</Filter>
@@ -3878,11 +3878,11 @@
 				Filter="bnf*.h"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\bnf\sofia-sip\bnf.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\bnf\sofia-sip-1.12.2\bnf.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\bnf\sofia-sip\hostdomain.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\bnf\sofia-sip-1.12.2\hostdomain.h"
 					>
 				</File>
 			</Filter>
@@ -3890,63 +3890,63 @@
 				Name="msg headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_addr.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_addr.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_bnf.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_bnf.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_buffer.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_buffer.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_date.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_date.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_header.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_header.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\msg_internal.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\msg_internal.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mclass.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_mclass.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mclass_hash.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_mclass_hash.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mime.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_mime.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_mime_protos.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_mime_protos.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_parser.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_parser.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_protos.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_protos.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_tag_class.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_tag_class.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\msg\sofia-sip\msg_types.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\msg\sofia-sip-1.12.2\msg_types.h"
 					>
 				</File>
 			</Filter>
@@ -3954,47 +3954,47 @@
 				Name="sip headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sofia-sip-1.12.2\sip.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_extensions.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_extensions.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_hclasses.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sofia-sip-1.12.2\sip_hclasses.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_header.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sofia-sip-1.12.2\sip_header.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sip_internal.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sip_internal.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_parser.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sofia-sip-1.12.2\sip_parser.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_protos.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sofia-sip-1.12.2\sip_protos.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_status.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sofia-sip-1.12.2\sip_status.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sofia-sip-1.12.2\sip_tag.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_tag_class.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sofia-sip-1.12.2\sip_tag_class.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sip\sofia-sip\sip_util.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sip\sofia-sip-1.12.2\sip_util.h"
 					>
 				</File>
 			</Filter>
@@ -4002,35 +4002,35 @@
 				Name="http headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\sofia-sip-1.12.2\http.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_hclasses.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\sofia-sip-1.12.2\http_hclasses.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_header.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\sofia-sip-1.12.2\http_header.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_parser.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\sofia-sip-1.12.2\http_parser.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_protos.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\sofia-sip-1.12.2\http_protos.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_status.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\sofia-sip-1.12.2\http_status.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\sofia-sip-1.12.2\http_tag.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\http\sofia-sip\http_tag_class.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\http\sofia-sip-1.12.2\http_tag_class.h"
 					>
 				</File>
 			</Filter>
@@ -4038,11 +4038,11 @@
 				Name="nth headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nth\sofia-sip\nth.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nth\sofia-sip-1.12.2\nth.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nth\sofia-sip\nth_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nth\sofia-sip-1.12.2\nth_tag.h"
 					>
 				</File>
 			</Filter>
@@ -4050,23 +4050,23 @@
 				Name="sresolv headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sresolv\sofia-resolv\sres.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres_async.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sresolv\sofia-resolv\sres_async.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres_cache.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sresolv\sofia-resolv\sres_cache.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres_record.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sresolv\sofia-resolv\sres_record.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-sip\sresolv.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sresolv\sofia-sip-1.12.2\sresolv.h"
 					>
 				</File>
 			</Filter>
@@ -4074,15 +4074,15 @@
 				Name="nea headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nea\sofia-sip\nea.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nea\sofia-sip-1.12.2\nea.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nea\nea_debug.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nea\nea_debug.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nea\sofia-sip\nea_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nea\sofia-sip-1.12.2\nea_tag.h"
 					>
 				</File>
 			</Filter>
@@ -4090,27 +4090,27 @@
 				Name="iptsec headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_client.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\sofia-sip-1.12.2\auth_client.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_digest.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\sofia-sip-1.12.2\auth_digest.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_module.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\sofia-sip-1.12.2\auth_module.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_ntlm.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\sofia-sip-1.12.2\auth_ntlm.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\sofia-sip\auth_plugin.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\sofia-sip-1.12.2\auth_plugin.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\iptsec\iptsec_debug.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\iptsec\iptsec_debug.h"
 					>
 				</File>
 			</Filter>
@@ -4118,15 +4118,15 @@
 				Name="stun headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\stun\sofia-sip\stun.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun\sofia-sip-1.12.2\stun.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\stun\sofia-sip\stun_common.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun\sofia-sip-1.12.2\stun_common.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\stun\sofia-sip\stun_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\stun\sofia-sip-1.12.2\stun_tag.h"
 					>
 				</File>
 			</Filter>
@@ -4134,11 +4134,11 @@
 				Name="nua headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\sofia-sip\nua.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\sofia-sip-1.12.2\nua.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\sofia-sip\nua_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nua\sofia-sip-1.12.2\nua_tag.h"
 					>
 				</File>
 			</Filter>
@@ -4146,27 +4146,27 @@
 				Name="nta headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\sofia-sip-1.12.2\nta.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\nta_internal.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\nta_internal.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta_stateless.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\sofia-sip-1.12.2\nta_stateless.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\sofia-sip-1.12.2\nta_tag.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\nta_tport.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\sofia-sip-1.12.2\nta_tport.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nta\sofia-sip\sl_utils.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\nta\sofia-sip-1.12.2\sl_utils.h"
 					>
 				</File>
 			</Filter>
@@ -4174,19 +4174,19 @@
 				Name="tport headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\sofia-sip\tport.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\sofia-sip-1.12.2\tport.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\sofia-sip\tport_plugins.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\sofia-sip-1.12.2\tport_plugins.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\sofia-sip\tport_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\sofia-sip-1.12.2\tport_tag.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\tport\tport_tls.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\tport\tport_tls.h"
 					>
 				</File>
 			</Filter>
@@ -4194,11 +4194,11 @@
 				Name="sdp headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sdp\sofia-sip\sdp.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sdp\sofia-sip-1.12.2\sdp.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sdp\sofia-sip\sdp_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\sdp\sofia-sip-1.12.2\sdp_tag.h"
 					>
 				</File>
 			</Filter>
@@ -4206,15 +4206,15 @@
 				Name="soa headers"
 				>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\soa\sofia-sip-1.12.2\soa.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa_add.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\soa\sofia-sip-1.12.2\soa_add.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\sofia-sip\libsofia-sip-ua\soa\sofia-sip\soa_tag.h"
+					RelativePath="..\..\sofia-sip-1.12.2\libsofia-sip-ua\soa\sofia-sip-1.12.2\soa_tag.h"
 					>
 				</File>
 			</Filter>

@@ -2196,7 +2196,7 @@ static void event_handler(switch_event_t *event)
 		char *contact_user = switch_event_get_header(event, "orig-contact-user");
 		char *contact_host = switch_event_get_header(event, "orig-contact-host");
 		char *exp_str = switch_event_get_header(event, "orig-expires");
-		long expires = time(NULL) + atol(exp_str);
+		long expires = (long)time(NULL) + atol(exp_str);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
 		sofia_profile_t *profile;
 		char buf[512];
