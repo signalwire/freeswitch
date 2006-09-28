@@ -63,6 +63,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib"
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
@@ -142,6 +143,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib"
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\w32\vsnet\$(OutDir)"
