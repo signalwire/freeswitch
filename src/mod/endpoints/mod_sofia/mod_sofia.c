@@ -1723,7 +1723,7 @@ static char *get_auth_data(char *dbname, char *nonce, char *npassword, uint32_t 
 {
 	switch_core_db_t *db;
 	switch_core_db_stmt_t *stmt;
-	char *sql, *ret = NULL;
+	char *sql = NULL, *ret = NULL;
 
 	if (mutex) {
 		switch_mutex_lock(mutex);
@@ -1808,9 +1808,9 @@ static void sip_i_register(nua_t *nua,
 	if (authorization) {
 		int index;
 		char *cur;
+		char npassword[512] = "";
 		char *nonce, *uri, *qop, *cnonce, *nc, *input, *response;
 		nonce = uri = qop = cnonce = nc = response = NULL;
-		char npassword[512] = "";
 
 		for(index = 0; (cur=(char*)authorization->au_params[index]); index++) {
 			char *var, *val, *p, *work; 
