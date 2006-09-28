@@ -1815,10 +1815,10 @@ static JSBool db_next(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 	
 	if (dbo->stmt) {
-		int result = switch_core_db_step(dbo->stmt);
 		int running = 1;
 
 		while (running < 5000) {
+			int result = switch_core_db_step(dbo->stmt);
 			if (result == SQLITE_ROW) {
 				*rval = BOOLEAN_TO_JSVAL( JS_TRUE );	
 				break;

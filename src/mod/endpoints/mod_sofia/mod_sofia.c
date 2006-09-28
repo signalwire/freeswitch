@@ -56,12 +56,24 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sdp.h>
 #include <sofia-sip/sip_protos.h>
+#include <sofia-sip/auth_module.h>
+#include <sofia-sip/su_md5.h>
 
 static char reg_sql[] =
 "CREATE TABLE sip_registrations (\n"
 "   user            VARCHAR(255),\n"
 "   host            VARCHAR(255),\n"
 "   contact         VARCHAR(255),\n"
+"   expires         INTEGER(8)"
+");\n";
+
+
+static char auth_sql[] =
+"CREATE TABLE sip_authentication (\n"
+"   user            VARCHAR(255),\n"
+"   host            VARCHAR(255),\n"
+"   passwd            VARCHAR(255),\n"
+"   nonce           VARCHAR(255),\n"
 "   expires         INTEGER(8)"
 ");\n";
 
@@ -279,6 +291,30 @@ static switch_status_t config_sofia(int reload);
 
 /* BODY OF THE MODULE */
 /*************************************************************************************************************************************************************/
+
+static void execute_sql(char *dbname, char *sql, switch_mutex_t *mutex)
+{
+	switch_core_db_t *db;
+
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+	if (!(db = switch_core_db_open_file(dbname))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", dbname);
+		goto end;
+	}
+	
+	switch_core_db_persistant_execute(db, sql, 25);
+	switch_core_db_close(db);
+
+ end:
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+}
+
+
 struct callback_t {
 	char *val;
 	switch_size_t len;
@@ -331,7 +367,9 @@ static void check_expire(sofia_profile_t *profile, time_t now)
 	}
 	
 	snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires < %ld", (long) now);
-	switch_core_db_persistant_execute(db, sql, 1);
+	switch_core_db_persistant_execute(db, sql, 25);
+	snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires < %ld", (long) now);
+	switch_core_db_persistant_execute(db, sql, 25);
 	switch_mutex_unlock(profile->reg_mutex);
 
 	switch_core_db_close(db);
@@ -917,6 +955,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			nua_respond(tech_pvt->nh, SIP_200_OK, 
 						//SIPTAG_CONTACT(tech_pvt->contact),
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP:\n%s\n", tech_pvt->local_sdp_str);
 		}
 	}
@@ -1449,7 +1488,7 @@ static void sip_i_state(int status,
 	int ss_state = nua_callstate_init;
 	switch_channel_t *channel = NULL;
 	private_object_t *tech_pvt = NULL;
-	
+
 	tl_gets(tags, 
 			NUTAG_CALLSTATE_REF(ss_state),
 			NUTAG_OFFER_RECV_REF(offer_recv),
@@ -1680,6 +1719,66 @@ static void sip_i_invite(nua_t *nua,
 	}
 }
 
+static char *get_auth_data(char *dbname, char *nonce, char *npassword, uint32_t len, switch_mutex_t *mutex)
+{
+	switch_core_db_t *db;
+	switch_core_db_stmt_t *stmt;
+	char *sql, *ret = NULL;
+
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+	if (!(db = switch_core_db_open_file(dbname))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", dbname);
+		goto end;
+	}
+
+	sql = switch_core_db_mprintf("select passwd from sip_authentication where nonce='%q'", nonce);
+	
+	if(switch_core_db_prepare(db, sql, -1, &stmt, 0)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Statement Error!\n");
+		goto fail;
+	} else {
+		int running = 1;
+		int colcount;
+
+		while (running < 5000) {
+			int result = switch_core_db_step(stmt);
+
+			if (result == SQLITE_ROW) {
+				if ((colcount = switch_core_db_column_count(stmt))) {
+					switch_copy_string(npassword, (char *)switch_core_db_column_text(stmt, 0), len);
+					ret = npassword;
+				}
+				break;
+			} else if (result == SQLITE_BUSY) {
+				running++;
+				switch_yield(1000);
+				continue;
+			}
+			break;
+		}
+			
+		switch_core_db_finalize(stmt);
+	}
+	
+
+ fail:
+
+	switch_core_db_close(db);
+
+ end:
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+
+	if (sql) {
+		switch_core_db_free(sql);
+	}
+	
+	return ret;
+}
 
 static void sip_i_register(nua_t *nua,
 						   sofia_profile_t *profile,
@@ -1690,9 +1789,9 @@ static void sip_i_register(nua_t *nua,
 {
 	sip_from_t const *from = sip->sip_from;
 	sip_expires_t const *expires = sip->sip_expires;
-	//sip_to_t const *to = sip->sip_to;
+	sip_authorization_t const *authorization = sip->sip_authorization;
 	sip_contact_t const *contact = sip->sip_contact;
-	// SIP_407_PROXY_AUTH_REQUIRED
+
 	switch_xml_t domain, xml, user, param;
 	char params[1024] = "";
 	char *sql;
@@ -1702,35 +1801,170 @@ static void sip_i_register(nua_t *nua,
 	char *contact_user = (char *) contact->m_url->url_user;
 	char *contact_host = (char *) contact->m_url->url_host;
 	char buf[512];
+	char *passwd;
+	uint8_t ok = 0, stale = 0;
+
 	
-	snprintf(params, sizeof(params), "from_user=%s&from_host=%s&contact_user=%s&contact_host=%s",
-			 from_user,
-			 from_host,
-			 contact_user,
-			 contact_host 
-			 );
+	if (authorization) {
+		int index;
+		char *cur;
+		char *nonce, *uri, *qop, *cnonce, *nc, *input, *response;
+		nonce = uri = qop = cnonce = nc = response = NULL;
+		char npassword[512] = "";
+
+		for(index = 0; (cur=(char*)authorization->au_params[index]); index++) {
+			char *var, *val, *p, *work; 
+			var = val = work = NULL;
+			if ((work = strdup(cur))) {
+				var = work;
+				if ((val = strchr(var, '='))) {
+					*val++ = '\0';
+					while(*val == '"') {
+						*val++ = '\0';
+					}
+					if ((p = strchr(val, '"'))) {
+						*p = '\0';
+					}
+
+					if (!strcasecmp(var, "nonce")) {
+						nonce = strdup(val);
+					} else if (!strcasecmp(var, "uri")) {
+						uri = strdup(val);
+					} else if (!strcasecmp(var, "qop")) {
+						qop = strdup(val);
+					} else if (!strcasecmp(var, "cnonce")) {
+						cnonce = strdup(val);
+					} else if (!strcasecmp(var, "response")) {
+						response = strdup(val);
+					} else if (!strcasecmp(var, "nc")) {
+						nc = strdup(val);
+					}
+				}
+				
+				free(work);
+			}
+		}
+
+		
+		if (get_auth_data(profile->dbname, nonce, npassword, sizeof(npassword), profile->reg_mutex)) {
+			su_md5_t ctx;
+			char uridigest[2 * SU_MD5_DIGEST_SIZE + 1];
+			char bigdigest[2 * SU_MD5_DIGEST_SIZE + 1];
+
+			input = switch_core_db_mprintf("REGISTER:%q", uri);
+			su_md5_init(&ctx);
+			su_md5_strupdate(&ctx, input);
+			su_md5_hexdigest(&ctx, uridigest);
+			su_md5_deinit(&ctx);
+			switch_core_db_free(input);
+			
+			input = switch_core_db_mprintf("%q:%q:%q:%q:%q:%q", npassword, nonce, nc, cnonce, qop, uridigest);
+
+			memset(&ctx, 0, sizeof(ctx));
+			su_md5_init(&ctx);
+			su_md5_strupdate(&ctx, input);
+			su_md5_hexdigest(&ctx, bigdigest);
+			su_md5_deinit(&ctx);
+
+			if (!strcasecmp(bigdigest, response)) {
+				ok = 1;
+			}
+
+			switch_core_db_free(input);
+		} else {
+			stale = 1;
+		}
+
+		switch_safe_free(nonce);
+		switch_safe_free(uri);
+		switch_safe_free(qop);
+		switch_safe_free(cnonce);
+		switch_safe_free(nc);
+		switch_safe_free(response);
+
+		if (!ok && !stale) {
+			nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_END());
+			return;
+		}
+	} 
+
+	if (!authorization || stale) {
+		snprintf(params, sizeof(params), "from_user=%s&from_host=%s&contact_user=%s&contact_host=%s",
+				 from_user,
+				 from_host,
+				 contact_user,
+				 contact_host 
+				 );
 
 
-	if (switch_xml_locate("directory", "domain", "name", (char *)from->a_url->url_host, &xml, &domain, params) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of directory failed\n");
-		nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
-		return;
-	}
+		if (switch_xml_locate("directory", "domain", "name", (char *)from->a_url->url_host, &xml, &domain, params) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of directory failed\n");
+			nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
+			return;
+		}
 
-	if (!(user = switch_xml_find_child(domain, "user", "id", from_user))) {
-		nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
+		if (!(user = switch_xml_find_child(domain, "user", "id", from_user))) {
+			nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
+			switch_xml_free(xml);
+			return;
+		}
+	
+
+		for (param = switch_xml_child(user, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+		
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "param [%s]=[%s]\n", var, val);
+		
+			if (!strcasecmp(var, "password")) {
+				passwd = val;
+			}
+	
+		}
+	
+		if (passwd) {
+			switch_uuid_t uuid;
+			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+			char *sql, *auth_str;
+
+			su_md5_t ctx;
+			char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1];
+			char *input;
+
+			input = switch_core_db_mprintf("%s:%s:%s", from_user, from_host, passwd);
+			su_md5_init(&ctx);
+			su_md5_strupdate(&ctx, input);
+			su_md5_hexdigest(&ctx, hexdigest);
+			su_md5_deinit(&ctx);
+			switch_core_db_free(input);
+
+			switch_uuid_get(&uuid);
+			switch_uuid_format(uuid_str, &uuid);
+			sql = switch_core_db_mprintf("delete from sip_authentication where user='%q'and host='%q';\n"
+										 "insert into sip_authentication values('%q','%q','%q','%q', %ld)",
+										 from_user,
+										 from_host,
+										 from_user,
+										 from_host,
+										 hexdigest,
+										 uuid_str,
+										 time(NULL) + 60);
+
+			auth_str = switch_core_db_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth-int\"", from_host, uuid_str, 
+											  stale ? " stale=\"true\"," : "");
+
+
+			nua_respond(nh, SIP_401_UNAUTHORIZED,
+						SIPTAG_WWW_AUTHENTICATE_STR(auth_str),
+						TAG_END());
+
+			execute_sql(profile->dbname, sql, profile->reg_mutex);
+			switch_core_db_free(sql);
+			switch_core_db_free(auth_str);
+		}
 		switch_xml_free(xml);
 		return;
 	}
-	
-
-	for (param = switch_xml_child(user, "param"); param; param = param->next) {
-		char *var = (char *) switch_xml_attr_soft(param, "name");
-		char *val = (char *) switch_xml_attr_soft(param, "value");
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "param [%s]=[%s]\n", var, val);
-	}
-
 
 	if (!find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
 		sql = switch_core_db_mprintf("insert into sip_registrations values ('%q','%q','sip:%q@%q',%ld)", 
@@ -1758,22 +1992,14 @@ static void sip_i_register(nua_t *nua,
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long)expires->ex_delta);
 		switch_event_fire(&s_event);
 	}
-	if (sql) {
-		switch_core_db_t *db;
 
-		if (!(db = switch_core_db_open_file(profile->dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-			return;
-		}
-		switch_mutex_lock(profile->reg_mutex);
-		switch_core_db_persistant_execute(db, sql, 25);
+	if (sql) {
+		execute_sql(profile->dbname, sql, profile->reg_mutex);
 		switch_core_db_free(sql);
 		sql = NULL;
-		switch_mutex_unlock(profile->reg_mutex);
-		switch_core_db_close(db);
 	}
 	
-	switch_xml_free(xml);
+
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a Register from [%s@%s] contact [%s@%s] expires %ld\n", 
 					  from_user, 
@@ -1783,9 +2009,8 @@ static void sip_i_register(nua_t *nua,
 					  (long)expires->ex_delta
 					  );
 
-	
+
 	nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(contact), TAG_END());
-	//nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED, TAG_END());
 }
 
 static void event_callback(nua_event_t   event,
@@ -1979,6 +2204,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 
 	if ((db = switch_core_db_open_file(profile->dbname))) {
 		switch_core_db_test_reactive(db, "select * from sip_registrations", reg_sql);
+		switch_core_db_test_reactive(db, "select * from sip_authentication", auth_sql);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 		return NULL;
@@ -2063,9 +2289,6 @@ static switch_status_t config_sofia(int reload)
 			xprofilename = "unnamed";
 		}
 		
-
-		
-
 		profile->pool = pool;
 
 		profile->name = switch_core_strdup(profile->pool, xprofilename);
@@ -2225,18 +2448,9 @@ static void event_handler(switch_event_t *event)
 		}
 	
 		if (sql) {
-			switch_core_db_t *db;
-
-			if (!(db = switch_core_db_open_file(profile->dbname))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-				return;
-			}
-			switch_mutex_lock(profile->reg_mutex);
-			switch_core_db_persistant_execute(db, sql, 25);
+			execute_sql(profile->dbname, sql, profile->reg_mutex);
 			switch_core_db_free(sql);
 			sql = NULL;
-			switch_mutex_unlock(profile->reg_mutex);
-			switch_core_db_close(db);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s@%s\n", 
 							  from_user, from_host, contact_user, contact_host);
 
