@@ -78,7 +78,17 @@ Sub GetCompressionTools(DestFolder)
 	Dim oExec
 	If Right(DestFolder, 1) <> "\" Then DestFolder = DestFolder & "\" End If
 	If Not FSO.FileExists(DestFolder & "7za.exe") Then 
-		Wget ToolsBase & "7za.exe", DestFolder
+		If Not FSO.FileExists(DestFolder & "7za.tag") Then 
+			Set MyFile = fso.CreateTextFile(DestFolder & "7za.tag", True)
+			MyFile.WriteLine("This file marks a pending download for 7za.exe so we don't download it twice at the same time")
+			MyFile.Close
+				
+				Wget ToolsBase & "7za.exe", DestFolder
+			
+			FSO.DeleteFile DestFolder & "7za.tag" ,true 
+		Else
+			WScript.Sleep(5000)
+		End If	
 	End If	
 End Sub
 
