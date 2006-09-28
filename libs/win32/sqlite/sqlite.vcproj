@@ -77,7 +77,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist $(ProjectDir)..\..\include\ md  $(ProjectDir)..\..\include\&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; $(ProjectDir)..\..\include\ /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -140,7 +140,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist $(ProjectDir)..\..\include\ md  $(ProjectDir)..\..\include\&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; $(ProjectDir)..\..\include\ /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -221,7 +221,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist $(ProjectDir)..\..\include\ md  $(ProjectDir)..\..\include\&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; $(ProjectDir)..\..\include\ /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -295,7 +295,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist $(ProjectDir)..\..\include\ md  $(ProjectDir)..\..\include\&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; $(ProjectDir)..\..\include\ /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
