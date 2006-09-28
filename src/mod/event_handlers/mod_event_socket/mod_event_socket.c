@@ -227,12 +227,12 @@ static void strip_cr(char *s)
 
 static switch_status_t read_packet(listener_t *listener, switch_event_t **event, uint32_t timeout) 
 {
-	switch_size_t mlen;
+	switch_size_t mlen, bytes = 0;
 	char mbuf[2048] = "";
 	char buf[1024] = "";
 	switch_size_t len;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	int count = 0, bytes = 0;
+	int count = 0;
 	uint32_t elapsed = 0;
 	time_t start = 0;
 	void *pop;
