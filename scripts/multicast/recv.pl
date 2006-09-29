@@ -8,5 +8,6 @@ my $socket = IO::Socket::Multicast->new( LocalPort => $port, ReuseAddr => 1 );
 $socket->mcast_add($ip);
 
 while($socket->recv($data,1024)) {
+  $data =~ s/^.{8}//;
   print $data;
 }

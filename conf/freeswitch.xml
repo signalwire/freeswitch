@@ -77,7 +77,7 @@
     <configuration name="event_multicast.conf" description="Multicast Event">
       <settings>
         <param name="address" value="225.1.1.1"/>
-        <param name="port" value="424242"/>
+        <param name="port" value="4242"/>
         <param name="bindings" value="all"/>
       </settings>
     </configuration>
@@ -123,6 +123,7 @@
         <param name="rtp-timer-name" value="soft"/>
         <param name="rtp-ip" value="192.168.1.20"/>
         <param name="sip-ip" value="192.168.1.20"/>
+        <!--<param name="auth-calls" value="true"/>-->
         <!-- optional ; -->
         <!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/>-->
         <!-- <param name="ext-rtp-ip" value="100.101.102.103"/> -->
@@ -484,9 +485,13 @@
   </section>
 
   <section name="directory" description="User Directory">
+    <!--the domain or ip (the right hand side of the @ in the addr-->
     <domain name="mydomain.com">
+    <!--the user id (the left hand side of the @ in the addr-->
       <user id="1000">
+	<!-- omit password for authless registration -->
 	<param name="password" value="mypass"/>
+	<!--various endpoints and application will look for user specific settings here -->
 	<param name="mypref" value="myval"/>
 	</user>
     </domain>

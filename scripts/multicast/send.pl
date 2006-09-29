@@ -13,5 +13,5 @@ $/ = undef;
 my $buf = <I>;
 close(I);
 
-$socket->send("$buf\n");
+$socket->send("00000000$buf\n");
 
