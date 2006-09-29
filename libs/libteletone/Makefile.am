@@ -3,8 +3,7 @@ SUBDIRS =
 AUTOMAKE_OPTS= gnu
 NAME=teletone
 
-AM_CC=gcc
-AM_CFLAGS	= -D_GNU_SOURCE -Wall -Werror -ansi -pedantic -g -O2 -I./src
+AM_CFLAGS	= new_AM_CFLAGS -I./src
 AM_CPPFLAGS = $(AM_CFLAGS)
 AM_LDFLAGS = -lm
 

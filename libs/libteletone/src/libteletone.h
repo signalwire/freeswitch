@@ -65,6 +65,10 @@ typedef struct {
 #include <libteletone_generate.h>
 #include <libteletone_detect.h>
 
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
 #ifdef __cplusplus
 }
 #endif
