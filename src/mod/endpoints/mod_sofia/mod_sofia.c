@@ -1863,7 +1863,7 @@ static uint8_t handle_register(nua_t *nua,
 
 		
 		if (switch_xml_locate("directory", "domain", "name", from_host, &xml, &domain, params) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of directory failed\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find domain for [%s@%s]\n", from_user, from_host);
 			nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
 			return 1;
 		}
