@@ -102,6 +102,8 @@ typedef struct sip_alias_node sip_alias_node_t;
 
 typedef enum {
 	PFLAG_AUTH_CALLS = (1 << 0),
+	PFLAG_BLIND_REG = (1 << 1),
+	PFLAG_AUTH_ALL = (1 << 2),
 } PFLAGS;
 
 typedef enum {
@@ -200,6 +202,7 @@ struct private_object {
 	char *remote_sdp_str;
 	char *local_sdp_str;
 	char *dest;
+	char *key;
 	unsigned long rm_rate;
 	switch_payload_t pt;
 	switch_mutex_t *flag_mutex;
@@ -253,6 +256,8 @@ static void do_invite(switch_core_session_t *session);
 
 static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp);
 
+static char *get_auth_data(char *dbname, char *nonce, char *npassword, uint32_t len, switch_mutex_t *mutex);
+
 static void sip_i_state(int status,
                         char const *phrase,
                         nua_t *nua,
@@ -296,6 +301,108 @@ static switch_status_t config_sofia(int reload);
 
 /* BODY OF THE MODULE */
 /*************************************************************************************************************************************************************/
+
+typedef enum {
+	AUTH_OK,
+	AUTH_FORBIDDEN,
+	AUTH_STALE,
+} auth_res_t;
+
+static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, char *regstr, char *np, uint32_t nplen)
+{
+	int index;
+	char *cur;
+	su_md5_t ctx;
+	char uridigest[2 * SU_MD5_DIGEST_SIZE + 1];
+	char bigdigest[2 * SU_MD5_DIGEST_SIZE + 1];
+	char *nonce, *uri, *qop, *cnonce, *nc, *response, *input = NULL, *input2 = NULL;
+	auth_res_t ret = AUTH_OK;
+	char *npassword = NULL;
+	nonce = uri = qop = cnonce = nc = response = NULL;
+
+
+
+	for(index = 0; (cur=(char*)authorization->au_params[index]); index++) {
+		char *var, *val, *p, *work; 
+		var = val = work = NULL;
+		if ((work = strdup(cur))) {
+			var = work;
+			if ((val = strchr(var, '='))) {
+				*val++ = '\0';
+				while(*val == '"') {
+					*val++ = '\0';
+				}
+				if ((p = strchr(val, '"'))) {
+					*p = '\0';
+				}
+
+				if (!strcasecmp(var, "nonce")) {
+					nonce = strdup(val);
+				} else if (!strcasecmp(var, "uri")) {
+					uri = strdup(val);
+				} else if (!strcasecmp(var, "qop")) {
+					qop = strdup(val);
+				} else if (!strcasecmp(var, "cnonce")) {
+					cnonce = strdup(val);
+				} else if (!strcasecmp(var, "response")) {
+					response = strdup(val);
+				} else if (!strcasecmp(var, "nc")) {
+					nc = strdup(val);
+				}
+			}
+				
+			free(work);
+		}
+	}
+
+	if (switch_strlen_zero(np)) {
+		if (!get_auth_data(profile->dbname, nonce, np, nplen, profile->reg_mutex)) {
+			ret = AUTH_STALE;
+			goto end;
+		} 
+	}
+
+	npassword = np;
+
+	if ((input = switch_core_db_mprintf("%s:%q", regstr, uri))) {
+		su_md5_init(&ctx);
+		su_md5_strupdate(&ctx, input);
+		su_md5_hexdigest(&ctx, uridigest);
+		su_md5_deinit(&ctx);
+	}
+
+	if ((input2 = switch_core_db_mprintf("%q:%q:%q:%q:%q:%q", npassword, nonce, nc, cnonce, qop, uridigest))) {
+		memset(&ctx, 0, sizeof(ctx));
+		su_md5_init(&ctx);
+		su_md5_strupdate(&ctx, input2);
+		su_md5_hexdigest(&ctx, bigdigest);
+		su_md5_deinit(&ctx);
+		
+		if (!strcasecmp(bigdigest, response)) {
+			ret = AUTH_OK;
+		} else {
+			ret = AUTH_FORBIDDEN;
+		}
+	}
+
+ end:
+	if (input) {
+		switch_core_db_free(input);
+	}
+	if (input2) {
+		switch_core_db_free(input2);
+	}
+	switch_safe_free(nonce);
+	switch_safe_free(uri);
+	switch_safe_free(qop);
+	switch_safe_free(cnonce);
+	switch_safe_free(nc);
+	switch_safe_free(response);
+
+	return ret;
+
+}
+
 
 static void execute_sql(char *dbname, char *sql, switch_mutex_t *mutex)
 {
@@ -1391,7 +1498,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 			for (map = m->m_rtpmaps; map; map = map->rm_next) {
 				int32_t i;
 								
-				if (!strcmp(map->rm_encoding, "telephone-event")) {
+				if (!strcasecmp(map->rm_encoding, "telephone-event")) {
 					tech_pvt->te = (switch_payload_t)map->rm_pt;
 				}
 
@@ -1737,7 +1844,9 @@ static uint8_t handle_register(nua_t *nua,
 							   nua_handle_t *nh,
 							   switch_core_session_t *session,
 							   sip_t const *sip,
-							   sofia_regtype_t regtype)
+							   sofia_regtype_t regtype,
+							   char *key,
+							   uint32_t keylen)
 {
 	sip_from_t const *from = sip->sip_from;
 	sip_expires_t const *expires = sip->sip_expires;
@@ -1754,101 +1863,39 @@ static uint8_t handle_register(nua_t *nua,
 	char *contact_host = (char *) contact->m_url->url_host;
 	char buf[512];
 	char *passwd = NULL;
-	uint8_t ok = 0, stale = 0, ret = 0;
-	long exptime = expires ? expires->ex_delta : 60;
+	uint8_t stale = 0, ret = 0, forbidden = 0;
+	auth_res_t auth_res;
+
+	long exptime = 60;
+
+	if (expires) {
+		exptime = expires->ex_delta;
+	} else if (contact->m_expires) {
+		exptime = atol(contact->m_expires);
+	} 
 
 	if (regtype == REG_REGISTER) {
 		authorization = sip->sip_authorization;
 	} else if (regtype == REG_INVITE) {
 		authorization = sip->sip_proxy_authorization;
 	}
-	
+
+	if ((profile->pflags & PFLAG_BLIND_REG)) {
+		goto reg;
+	}
+
 	if (authorization) {
-		int index;
-		char *cur;
-		char npassword[512] = "";
-		char *nonce, *uri, *qop, *cnonce, *nc, *input, *response;
-		nonce = uri = qop = cnonce = nc = response = NULL;
-		for(index = 0; (cur=(char*)authorization->au_params[index]); index++) {
-			char *var, *val, *p, *work; 
-			var = val = work = NULL;
-			if ((work = strdup(cur))) {
-				var = work;
-				if ((val = strchr(var, '='))) {
-					*val++ = '\0';
-					while(*val == '"') {
-						*val++ = '\0';
-					}
-					if ((p = strchr(val, '"'))) {
-						*p = '\0';
-					}
+		auth_res = parse_auth(profile, authorization, (char *)sip->sip_request->rq_method_name, key, keylen);
 
-					if (!strcasecmp(var, "nonce")) {
-						nonce = strdup(val);
-					} else if (!strcasecmp(var, "uri")) {
-						uri = strdup(val);
-					} else if (!strcasecmp(var, "qop")) {
-						qop = strdup(val);
-					} else if (!strcasecmp(var, "cnonce")) {
-						cnonce = strdup(val);
-					} else if (!strcasecmp(var, "response")) {
-						response = strdup(val);
-					} else if (!strcasecmp(var, "nc")) {
-						nc = strdup(val);
-					}
-				}
-				
-				free(work);
-			}
-		}
-
-		if (get_auth_data(profile->dbname, nonce, npassword, sizeof(npassword), profile->reg_mutex)) {
-			su_md5_t ctx;
-			char uridigest[2 * SU_MD5_DIGEST_SIZE + 1];
-			char bigdigest[2 * SU_MD5_DIGEST_SIZE + 1];
-			char *regstr;
-
-			if (regtype == REG_REGISTER) {
-				regstr = "REGISTER";
-			} else if (regtype == REG_INVITE) {
-				regstr = "INVITE";
+		if (auth_res != AUTH_OK && auth_res != AUTH_STALE) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send %s for [%s@%s]\n",
+							  forbidden ? "forbidden" : "challange",
+							  from_user, from_host);
+			if (auth_res == AUTH_FORBIDDEN) {
+				nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
 			} else {
-				regstr = "WTF";
+				nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_END());
 			}
-
-			input = switch_core_db_mprintf("%s:%q", regstr, uri);
-			su_md5_init(&ctx);
-			su_md5_strupdate(&ctx, input);
-			su_md5_hexdigest(&ctx, uridigest);
-			su_md5_deinit(&ctx);
-			switch_core_db_free(input);
-			
-			input = switch_core_db_mprintf("%q:%q:%q:%q:%q:%q", npassword, nonce, nc, cnonce, qop, uridigest);
-
-			memset(&ctx, 0, sizeof(ctx));
-			su_md5_init(&ctx);
-			su_md5_strupdate(&ctx, input);
-			su_md5_hexdigest(&ctx, bigdigest);
-			su_md5_deinit(&ctx);
-
-			if (!strcasecmp(bigdigest, response)) {
-				ok = 1;
-			}
-
-			switch_core_db_free(input);
-		} else {
-			stale = 1;
-		}
-
-		switch_safe_free(nonce);
-		switch_safe_free(uri);
-		switch_safe_free(qop);
-		switch_safe_free(cnonce);
-		switch_safe_free(nc);
-		switch_safe_free(response);
-
-		if (!ok && !stale) {
-			nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_END());
 			return 1;
 		}
 	} 
@@ -1905,6 +1952,7 @@ static uint8_t handle_register(nua_t *nua,
 
 			switch_uuid_get(&uuid);
 			switch_uuid_format(uuid_str, &uuid);
+
 			sql = switch_core_db_mprintf("delete from sip_authentication where user='%q'and host='%q';\n"
 										 "insert into sip_authentication values('%q','%q','%q','%q', %ld)",
 										 from_user,
@@ -1915,11 +1963,12 @@ static uint8_t handle_register(nua_t *nua,
 										 uuid_str,
 										 time(NULL) + 60);
 
-			auth_str = switch_core_db_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth-int\"", from_host, uuid_str, 
+			auth_str = switch_core_db_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, 
 											  stale ? " stale=\"true\"," : "");
 
 
 			if (regtype == REG_REGISTER) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "invalid for [%s@%s]\n", from_user, from_host);
 				nua_respond(nh, SIP_401_UNAUTHORIZED,
 							SIPTAG_WWW_AUTHENTICATE_STR(auth_str),
 							TAG_END());
@@ -1944,6 +1993,7 @@ static uint8_t handle_register(nua_t *nua,
 			return ret;
 		}
 	}
+ reg:
 
 	if (!find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
 		sql = switch_core_db_mprintf("insert into sip_registrations values ('%q','%q','sip:%q@%q',%ld)", 
@@ -2006,15 +2056,15 @@ static void sip_i_invite(nua_t *nua,
 						 tagi_t tags[])
 {
 
+	char key[128] = "";
 
 	if (!session) {
 
 		if ((profile->pflags & PFLAG_AUTH_CALLS)) {
-			if (handle_register(nua, profile, nh, session, sip, REG_INVITE)) {
+			if (handle_register(nua, profile, nh, session, sip, REG_INVITE, key, sizeof(key))) {
 				return;
 			}
 		}
-
 
 		if ((session = switch_core_session_request(&sofia_endpoint_interface, NULL))) {
 			private_object_t *tech_pvt = NULL;
@@ -2029,6 +2079,10 @@ static void sip_i_invite(nua_t *nua,
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 				return;
+			}
+
+			if (!switch_strlen_zero(key)) {
+				tech_pvt->key = switch_core_session_strdup(session, key);
 			}
 
 			displayname = switch_core_session_strdup(session, (char *) from->a_display);
@@ -2077,7 +2131,7 @@ static void sip_i_register(nua_t *nua,
 						   sip_t const *sip,
 						   tagi_t tags[])
 {
-	handle_register(nua, profile, nh, session, sip, REG_REGISTER);
+	handle_register(nua, profile, nh, session, sip, REG_REGISTER, NULL, 0);
 }
 
 static void event_callback(nua_event_t   event,
@@ -2090,14 +2144,43 @@ static void event_callback(nua_event_t   event,
 						   sip_t const  *sip,
 						   tagi_t        tags[])
 {
+	struct private_object *tech_pvt = NULL;
+	auth_res_t auth_res = AUTH_FORBIDDEN;
+
 	if (session) {
 		if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 			/* too late */
 			return;
 		}
+		tech_pvt = switch_core_session_get_private(session);
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "channel [%s] event [%s] status [%d] [%s]\n",
-					  session ? switch_channel_get_name(switch_core_session_get_channel(session)) : "null",nua_event_name (event), status, phrase);
+
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "event [%s] status [%d][%s] %s\n",
+					  nua_event_name (event), status, phrase,
+					  session ? switch_channel_get_name(switch_core_session_get_channel(session)) : "no session"
+					  );
+
+	if ((profile->pflags & PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip) {
+		sip_authorization_t const *authorization = NULL;
+
+		if (sip->sip_authorization) {
+			authorization = sip->sip_authorization;
+		} else if (sip->sip_proxy_authorization) {
+			authorization = sip->sip_proxy_authorization;
+		}
+
+		if (authorization) {
+			auth_res = parse_auth(profile, authorization, (char *)sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key));
+		}
+
+		if (auth_res != AUTH_OK) {
+			switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_END());
+			return;
+		}
+	}
 	
 	switch (event) {
 	case nua_r_shutdown:    
@@ -2371,15 +2454,15 @@ static switch_status_t config_sofia(int reload)
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
-			if (!strcmp(var, "debug")) {
+			if (!strcasecmp(var, "debug")) {
 				profile->debug = atoi(val);
-			} else if (!strcmp(var, "use-rtp-timer") && switch_true(val)) {
+			} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 			  	switch_set_flag(profile, TFLAG_TIMER);
-			} else if (!strcmp(var, "rfc2833-pt")) {
+			} else if (!strcasecmp(var, "rfc2833-pt")) {
                 profile->te = (switch_payload_t) atoi(val);
-			} else if (!strcmp(var, "sip-port")) {
+			} else if (!strcasecmp(var, "sip-port")) {
 				profile->sip_port = atoi(val);
-			} else if (!strcmp(var, "vad")) {
+			} else if (!strcasecmp(var, "vad")) {
 				if (!strcasecmp(val, "in")) {
 					switch_set_flag(profile, TFLAG_VAD_IN);
 				} else if (!strcasecmp(val, "out")) {
@@ -2390,31 +2473,39 @@ static switch_status_t config_sofia(int reload)
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
 				}
-			} else if (!strcmp(var, "ext-rtp-ip")) {
+			} else if (!strcasecmp(var, "ext-rtp-ip")) {
 				profile->extrtpip = switch_core_strdup(profile->pool, val);
-			} else if (!strcmp(var, "rtp-ip")) {
+			} else if (!strcasecmp(var, "rtp-ip")) {
 				profile->rtpip = switch_core_strdup(profile->pool, val);
-			} else if (!strcmp(var, "sip-ip")) {
+			} else if (!strcasecmp(var, "sip-ip")) {
 				profile->sipip = switch_core_strdup(profile->pool, val);
-			} else if (!strcmp(var, "sip-domain")) {
+			} else if (!strcasecmp(var, "sip-domain")) {
 				profile->sipdomain = switch_core_strdup(profile->pool, val);
-			} else if (!strcmp(var, "rtp-timer-name")) {
+			} else if (!strcasecmp(var, "rtp-timer-name")) {
 				profile->timer_name = switch_core_strdup(profile->pool, val);
-			} else if (!strcmp(var, "auth-calls")) {
+			} else if (!strcasecmp(var, "auth-calls")) {
 				if (switch_true(val)) {
 					profile->pflags |= PFLAG_AUTH_CALLS;
 				}
-			} else if (!strcmp(var, "ext-sip-ip")) {
+			} else if (!strcasecmp(var, "accept-blind-reg")) {
+				if (switch_true(val)) {
+					profile->pflags |= PFLAG_BLIND_REG;
+				}
+			} else if (!strcasecmp(var, "auth-all-packets")) {
+				if (switch_true(val)) {
+					profile->pflags |= PFLAG_AUTH_ALL;
+				}
+			} else if (!strcasecmp(var, "ext-sip-ip")) {
 				profile->extsipip = switch_core_strdup(profile->pool, val);
-			} else if (!strcmp(var, "bitpacking")) {
+			} else if (!strcasecmp(var, "bitpacking")) {
 				if (!strcasecmp(val, "aal2")) {
 					profile->codec_flags = SWITCH_CODEC_FLAG_AAL2;
 				} 
-			} else if (!strcmp(var, "username")) {
+			} else if (!strcasecmp(var, "username")) {
 				profile->username = switch_core_strdup(profile->pool, val);
-			} else if (!strcmp(var, "context")) {
+			} else if (!strcasecmp(var, "context")) {
 				profile->context = switch_core_strdup(profile->pool, val);
-			} else if (!strcmp(var, "alias")) {
+			} else if (!strcasecmp(var, "alias")) {
 				sip_alias_node_t *node;
 				if ((node = switch_core_alloc(profile->pool, sizeof(*node)))) {
 					if ((node->url = switch_core_strdup(profile->pool, val))) {
@@ -2422,16 +2513,16 @@ static switch_status_t config_sofia(int reload)
 						profile->aliases = node;
 					}
 				}
-			} else if (!strcmp(var, "dialplan")) {
+			} else if (!strcasecmp(var, "dialplan")) {
 				profile->dialplan = switch_core_strdup(profile->pool, val);
-			} else if (!strcmp(var, "max-calls")) {
+			} else if (!strcasecmp(var, "max-calls")) {
 				profile->max_calls = atoi(val);
-			} else if (!strcmp(var, "codec-prefs")) {
+			} else if (!strcasecmp(var, "codec-prefs")) {
 				profile->codec_string = switch_core_strdup(profile->pool, val);
 				profile->codec_order_last = switch_separate_string(profile->codec_string, ',', profile->codec_order, SWITCH_MAX_CODECS);
-			} else if (!strcmp(var, "codec-ms")) {
+			} else if (!strcasecmp(var, "codec-ms")) {
 				profile->codec_ms = atoi(val);
-			} else if (!strcmp(var, "dtmf-duration")) {
+			} else if (!strcasecmp(var, "dtmf-duration")) {
 				int dur = atoi(val);
 				if (dur > 10 && dur < 8000) {
 					profile->dtmf_duration = dur;
@@ -2486,7 +2577,7 @@ static void event_handler(switch_event_t *event)
 {
 	char *subclass, *sql;
 
-	if ((subclass = switch_event_get_header(event, "orig-event-subclass")) && !strcmp(subclass, MY_EVENT_REGISTER)) {
+	if ((subclass = switch_event_get_header(event, "orig-event-subclass")) && !strcasecmp(subclass, MY_EVENT_REGISTER)) {
 		char *from_user = switch_event_get_header(event, "orig-from-user");
 		char *from_host = switch_event_get_header(event, "orig-from-host");
 		char *contact_user = switch_event_get_header(event, "orig-contact-user");

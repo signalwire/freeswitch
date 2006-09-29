@@ -123,7 +123,15 @@
         <param name="rtp-timer-name" value="soft"/>
         <param name="rtp-ip" value="192.168.1.20"/>
         <param name="sip-ip" value="192.168.1.20"/>
+
+	<!-- this lets anything register -->
+	<!--  comment the next line and uncomment one or both of the other 2 lines for call authentication -->
+	<param name="accept-blind-reg" value="true"/>
+
         <!--<param name="auth-calls" value="true"/>-->
+	<!-- on authed calls, authenticate *all* the packets not just invite --->
+	<!--<param name="auth-all-packets" value="true"/>-->
+
         <!-- optional ; -->
         <!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/>-->
         <!-- <param name="ext-rtp-ip" value="100.101.102.103"/> -->
