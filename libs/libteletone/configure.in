@@ -2,9 +2,9 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
+AC_INIT(libteletone, 0.1, BUG-REPORT-ADDRESS)
+AC_CONFIG_AUX_DIR(build)
 AM_INIT_AUTOMAKE(libteletone,0.1)
-AC_CONFIG_AUX_DIR(build/config)
 AC_CONFIG_SRCDIR([src])
 #AC_CONFIG_HEADER([])
 
@@ -13,8 +13,6 @@ AC_PROG_CC
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 AC_PROG_INSTALL
-dnl invoked here cause the macros require it as well and I kicked it out of them :)
-AC_CANONICAL_HOST
 #  Optimize
 AC_ARG_ENABLE(optimization,
 [AC_HELP_STRING([--enable-optimization],[Set if you want us to add max optimising compiler flags])],[enable_optimizer="$enableval"],[enable_optimizer="no"])
@@ -41,21 +39,21 @@ AX_COMPILER_VENDOR
 case "$host" in
         *-solaris2*)
                 if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
-                        new_AM_CFLAGS="${CFLAGS} -KPIC -DPIC"
+                        new_AM_CFLAGS="-KPIC -DPIC"
                         new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
                 fi
         ;;
         *-darwin*)
                 if test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
-                        new_AM_CFLAGS="${CFLAGS} -DMACOSX"
+                        new_AM_CFLAGS="-DMACOSX"
                 fi
         ;;
         x86_64-unknown-linux-gnu)
-                new_AM_CFLAGS="${CFLAGS} -fPIC"
+                new_AM_CFLAGS="-fPIC"
                 new_AM_LDFLAGS=""
         ;;
         i*6-unknown-linux-gnu)
-                new_AM_CFLAGS="${CFLAGS} -fpic"
+                new_AM_CFLAGS="-fpic"
                 new_AM_LDFLAGS=""
         ;;
 esac
