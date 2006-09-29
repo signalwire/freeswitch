@@ -101,6 +101,10 @@ struct sip_alias_node {
 typedef struct sip_alias_node sip_alias_node_t;
 
 typedef enum {
+	PFLAG_AUTH_CALLS = (1 << 0),
+} PFLAGS;
+
+typedef enum {
 	TFLAG_IO = (1 << 0),
 	TFLAG_INBOUND = (1 << 1),
 	TFLAG_OUTBOUND = (1 << 2),
@@ -149,6 +153,7 @@ struct sofia_profile {
 	int codec_ms;
 	int dtmf_duration;
 	unsigned int flags;
+	unsigned int pflags;
 	uint32_t max_calls;
 	nua_t *nua;
 	switch_memory_pool_t *pool;
@@ -1343,9 +1348,13 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	if ((host = strchr(dest, '%'))) {
 		char buf[128];
 		*host++ = '\0';
-		find_reg_url(profile, dest, host, buf, sizeof(buf));
-		tech_pvt->dest = switch_core_session_strdup(nsession, buf);
-		dest = tech_pvt->dest + 4;
+		if (find_reg_url(profile, dest, host, buf, sizeof(buf))) {
+			tech_pvt->dest = switch_core_session_strdup(nsession, buf);
+			dest = tech_pvt->dest + 4;
+		} else {
+			terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			goto done;
+		}
 	} else {
 		tech_pvt->dest = switch_core_session_alloc(nsession, strlen(dest) + 5);
 		snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
@@ -1655,69 +1664,6 @@ static void sip_i_state(int status,
 
 }
 
-static void sip_i_invite(nua_t *nua, 
-						 sofia_profile_t *profile,
-						 nua_handle_t *nh, 
-						 switch_core_session_t *session, 
-						 sip_t const *sip,
-						 tagi_t tags[])
-{
-
-	
-	if (!session) {
-		if ((session = switch_core_session_request(&sofia_endpoint_interface, NULL))) {
-			private_object_t *tech_pvt = NULL;
-			switch_channel_t *channel = NULL;
-			sip_from_t const *from = sip->sip_from;
-			sip_to_t const *to = sip->sip_to;
-			char *displayname;
-			char username[256];
-
-
-			if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
-				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
-				return;
-			}
-
-			displayname = switch_core_session_strdup(session, (char *) from->a_display);
-			if (*displayname == '"') {
-				char *p;
-				
-				displayname++;
-				if ((p = strchr(displayname, '"'))) {
-					*p = '\0';
-				}
-			}
-			
-			snprintf(username, sizeof(username), "%s@%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host);
-			attach_private(session, profile, tech_pvt, username);
-
-			snprintf(username, sizeof(username), "sip:%s@%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host);
-			tech_pvt->contact = sip_contact_create(tech_pvt->home, URL_STRING_MAKE(username), NULL);
-			
-			channel = switch_core_session_get_channel(session);
-			switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
-			
-			if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-																	  (char *) from->a_url->url_user,
-																	  profile->dialplan,
-																	  displayname,
-																	  (char *) from->a_url->url_user,
-																	  (char *) from->a_url->url_host,
-																	  NULL,
-																	  NULL,
-																	  NULL,
-																	  (char *)modname,
-																	  profile->context,
-																	  (char *) to->a_url->url_user)) != 0) {
-				switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
-			}
-			switch_set_flag_locked(tech_pvt, TFLAG_INBOUND);
-			nua_handle_bind(nh, session);
-		}
-	}
-}
 
 static char *get_auth_data(char *dbname, char *nonce, char *npassword, uint32_t len, switch_mutex_t *mutex)
 {
@@ -1780,12 +1726,18 @@ static char *get_auth_data(char *dbname, char *nonce, char *npassword, uint32_t 
 	return ret;
 }
 
-static void sip_i_register(nua_t *nua,
-						   sofia_profile_t *profile,
-						   nua_handle_t *nh,
-						   switch_core_session_t *session,
-						   sip_t const *sip,
-						   tagi_t tags[])
+
+typedef enum {
+	REG_REGISTER,
+	REG_INVITE
+} sofia_regtype_t;
+
+static uint8_t handle_register(nua_t *nua,
+							   sofia_profile_t *profile,
+							   nua_handle_t *nh,
+							   switch_core_session_t *session,
+							   sip_t const *sip,
+							   sofia_regtype_t regtype)
 {
 	sip_from_t const *from = sip->sip_from;
 	sip_expires_t const *expires = sip->sip_expires;
@@ -1801,9 +1753,15 @@ static void sip_i_register(nua_t *nua,
 	char *contact_user = (char *) contact->m_url->url_user;
 	char *contact_host = (char *) contact->m_url->url_host;
 	char buf[512];
-	char *passwd;
-	uint8_t ok = 0, stale = 0;
+	char *passwd = NULL;
+	uint8_t ok = 0, stale = 0, ret = 0;
+	long exptime = expires ? expires->ex_delta : 60;
 
+	if (regtype == REG_REGISTER) {
+		authorization = sip->sip_authorization;
+	} else if (regtype == REG_INVITE) {
+		authorization = sip->sip_proxy_authorization;
+	}
 	
 	if (authorization) {
 		int index;
@@ -1811,7 +1769,6 @@ static void sip_i_register(nua_t *nua,
 		char npassword[512] = "";
 		char *nonce, *uri, *qop, *cnonce, *nc, *input, *response;
 		nonce = uri = qop = cnonce = nc = response = NULL;
-
 		for(index = 0; (cur=(char*)authorization->au_params[index]); index++) {
 			char *var, *val, *p, *work; 
 			var = val = work = NULL;
@@ -1845,13 +1802,21 @@ static void sip_i_register(nua_t *nua,
 			}
 		}
 
-		
 		if (get_auth_data(profile->dbname, nonce, npassword, sizeof(npassword), profile->reg_mutex)) {
 			su_md5_t ctx;
 			char uridigest[2 * SU_MD5_DIGEST_SIZE + 1];
 			char bigdigest[2 * SU_MD5_DIGEST_SIZE + 1];
+			char *regstr;
 
-			input = switch_core_db_mprintf("REGISTER:%q", uri);
+			if (regtype == REG_REGISTER) {
+				regstr = "REGISTER";
+			} else if (regtype == REG_INVITE) {
+				regstr = "INVITE";
+			} else {
+				regstr = "WTF";
+			}
+
+			input = switch_core_db_mprintf("%s:%q", regstr, uri);
 			su_md5_init(&ctx);
 			su_md5_strupdate(&ctx, input);
 			su_md5_hexdigest(&ctx, uridigest);
@@ -1884,7 +1849,7 @@ static void sip_i_register(nua_t *nua,
 
 		if (!ok && !stale) {
 			nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_END());
-			return;
+			return 1;
 		}
 	} 
 
@@ -1896,17 +1861,18 @@ static void sip_i_register(nua_t *nua,
 				 contact_host 
 				 );
 
-
-		if (switch_xml_locate("directory", "domain", "name", (char *)from->a_url->url_host, &xml, &domain, params) != SWITCH_STATUS_SUCCESS) {
+		
+		if (switch_xml_locate("directory", "domain", "name", from_host, &xml, &domain, params) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of directory failed\n");
 			nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
-			return;
+			return 1;
 		}
 
 		if (!(user = switch_xml_find_child(domain, "user", "id", from_user))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", from_user, from_host);
 			nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
 			switch_xml_free(xml);
-			return;
+			return 1;
 		}
 	
 
@@ -1919,7 +1885,6 @@ static void sip_i_register(nua_t *nua,
 			if (!strcasecmp(var, "password")) {
 				passwd = val;
 			}
-	
 		}
 	
 		if (passwd) {
@@ -1954,16 +1919,30 @@ static void sip_i_register(nua_t *nua,
 											  stale ? " stale=\"true\"," : "");
 
 
-			nua_respond(nh, SIP_401_UNAUTHORIZED,
-						SIPTAG_WWW_AUTHENTICATE_STR(auth_str),
-						TAG_END());
+			if (regtype == REG_REGISTER) {
+				nua_respond(nh, SIP_401_UNAUTHORIZED,
+							SIPTAG_WWW_AUTHENTICATE_STR(auth_str),
+							TAG_END());
+			} else if (regtype == REG_INVITE) {
+				nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED,
+							SIPTAG_PROXY_AUTHENTICATE_STR(auth_str),
+							TAG_END());
+
+			}
 
 			execute_sql(profile->dbname, sql, profile->reg_mutex);
 			switch_core_db_free(sql);
 			switch_core_db_free(auth_str);
+			ret = 1;
+		} else {
+			ret = 0;
 		}
+		
 		switch_xml_free(xml);
-		return;
+
+		if (ret) {
+			return ret;
+		}
 	}
 
 	if (!find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
@@ -1972,24 +1951,26 @@ static void sip_i_register(nua_t *nua,
 									 from_host,
 									 contact_user,
 									 contact_host,
-									 (long) time(NULL) + (long)expires->ex_delta);
+									 (long) time(NULL) + (long)exptime);
+
 	} else {
 		sql = switch_core_db_mprintf("update sip_registrations set contact='sip:%q@%q', expires=%ld where user='%q' and host='%q'",
 									 contact_user,
                                      contact_host,
-									 (long) time(NULL) + (long)expires->ex_delta,
+									 (long) time(NULL) + (long)exptime,
 									 from_user,
 									 from_host);
 		
 	}
-	
+
+			
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", profile->name);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", from_user);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", from_host);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact-user", "%s", contact_user);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact-host", "%s", contact_host);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long)expires->ex_delta);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long)exptime);
 		switch_event_fire(&s_event);
 	}
 
@@ -1999,18 +1980,104 @@ static void sip_i_register(nua_t *nua,
 		sql = NULL;
 	}
 	
-
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Got a Register from [%s@%s] contact [%s@%s] expires %ld\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Register from [%s@%s] contact [%s@%s] expires %ld\n", 
 					  from_user, 
 					  from_host,
 					  contact_user,
 					  contact_host,
-					  (long)expires->ex_delta
+					  (long)exptime
 					  );
 
+	if (regtype == REG_REGISTER) {
+		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(contact), TAG_END());
+		return 1;
+	}
 
-	nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(contact), TAG_END());
+	return 0;
+}
+
+
+
+static void sip_i_invite(nua_t *nua, 
+						 sofia_profile_t *profile,
+						 nua_handle_t *nh, 
+						 switch_core_session_t *session, 
+						 sip_t const *sip,
+						 tagi_t tags[])
+{
+
+
+	if (!session) {
+
+		if ((profile->pflags & PFLAG_AUTH_CALLS)) {
+			if (handle_register(nua, profile, nh, session, sip, REG_INVITE)) {
+				return;
+			}
+		}
+
+
+		if ((session = switch_core_session_request(&sofia_endpoint_interface, NULL))) {
+			private_object_t *tech_pvt = NULL;
+			switch_channel_t *channel = NULL;
+			sip_from_t const *from = sip->sip_from;
+			sip_to_t const *to = sip->sip_to;
+			char *displayname;
+			char username[256];
+
+
+			if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
+				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+				return;
+			}
+
+			displayname = switch_core_session_strdup(session, (char *) from->a_display);
+			if (*displayname == '"') {
+				char *p;
+				
+				displayname++;
+				if ((p = strchr(displayname, '"'))) {
+					*p = '\0';
+				}
+			}
+			
+			snprintf(username, sizeof(username), "%s@%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host);
+			attach_private(session, profile, tech_pvt, username);
+
+			snprintf(username, sizeof(username), "sip:%s@%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host);
+			tech_pvt->contact = sip_contact_create(tech_pvt->home, URL_STRING_MAKE(username), NULL);
+			
+			channel = switch_core_session_get_channel(session);
+			switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
+			
+			if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+																	  (char *) from->a_url->url_user,
+																	  profile->dialplan,
+																	  displayname,
+																	  (char *) from->a_url->url_user,
+																	  (char *) from->a_url->url_host,
+																	  NULL,
+																	  NULL,
+																	  NULL,
+																	  (char *)modname,
+																	  profile->context,
+																	  (char *) to->a_url->url_user)) != 0) {
+				switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
+			}
+			switch_set_flag_locked(tech_pvt, TFLAG_INBOUND);
+			nua_handle_bind(nh, session);
+		}
+	}
+}
+
+static void sip_i_register(nua_t *nua,
+						   sofia_profile_t *profile,
+						   nua_handle_t *nh,
+						   switch_core_session_t *session,
+						   sip_t const *sip,
+						   tagi_t tags[])
+{
+	handle_register(nua, profile, nh, session, sip, REG_REGISTER);
 }
 
 static void event_callback(nua_event_t   event,
@@ -2179,6 +2246,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 				   NUTAG_EARLY_MEDIA(1),				   
 				   NUTAG_AUTOANSWER(0),
 				   NUTAG_AUTOALERT(0),
+				   //NUTAG_AUTOTRYING(0),
 				   NUTAG_ALLOW("REGISTER"),
 				   SIPTAG_SUPPORTED_STR("100rel, precondition"),
 				   TAG_END());
@@ -2194,9 +2262,10 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 		nua_set_params(node->nua,
 					   NUTAG_EARLY_MEDIA(1),
 					   NUTAG_AUTOANSWER(0),
+					   NUTAG_AUTOALERT(0),
+					   //NUTAG_AUTOTRYING(0),
 					   NUTAG_ALLOW("REGISTER"),
 					   SIPTAG_SUPPORTED_STR("100rel, precondition"),
-					   NUTAG_AUTOALERT(0),
 					   TAG_END());
 		
 	}
@@ -2331,6 +2400,10 @@ static switch_status_t config_sofia(int reload)
 				profile->sipdomain = switch_core_strdup(profile->pool, val);
 			} else if (!strcmp(var, "rtp-timer-name")) {
 				profile->timer_name = switch_core_strdup(profile->pool, val);
+			} else if (!strcmp(var, "auth-calls")) {
+				if (switch_true(val)) {
+					profile->pflags |= PFLAG_AUTH_CALLS;
+				}
 			} else if (!strcmp(var, "ext-sip-ip")) {
 				profile->extsipip = switch_core_strdup(profile->pool, val);
 			} else if (!strcmp(var, "bitpacking")) {
