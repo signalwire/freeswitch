@@ -20,8 +20,8 @@ opts="-fPIC"
 fi
 
 CFLAGS=$opts ./configure $@
-make
-make install
+$MAKE 
+$MAKE install
 
 
 
