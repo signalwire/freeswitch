@@ -581,7 +581,7 @@ static switch_status_t activate_rtp(struct private_object *tech_pvt)
 										   tech_pvt->remote_sdp_audio_ip,
 										   tech_pvt->remote_sdp_audio_port,
 										   tech_pvt->read_codec.implementation->ianacode,
-										   0, //tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
+										   tech_pvt->read_codec.implementation->encoded_bytes_per_frame,
 										   ms,
 										   flags,
 										   key,
