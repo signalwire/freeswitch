@@ -1,9 +1,12 @@
+OS_ARCH         := $(subst /,_,$(shell uname -s | sed /\ /s//_/))
 VERSION = sofia-sip-1.12
 TARBALL = sofia-sip-1.12.2.tar.gz
 CFLAGS += -I. -I$(PREFIX)/include/$(VERSION)
 LDFLAGS += -lsofia-sip-ua
 LINKER=$(CC)
-
+ifeq ($(OS_ARCH),Darwin)
+	LDFLAGS +=-framework CoreFoundation -framework SystemConfiguration
+endif
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
