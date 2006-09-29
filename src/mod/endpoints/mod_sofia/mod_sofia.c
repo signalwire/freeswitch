@@ -256,7 +256,7 @@ static void do_invite(switch_core_session_t *session);
 
 static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp);
 
-static char *get_auth_data(char *dbname, char *nonce, char *npassword, uint32_t len, switch_mutex_t *mutex);
+static char *get_auth_data(char *dbname, char *nonce, char *npassword, size_t len, switch_mutex_t *mutex);
 
 static void sip_i_state(int status,
                         char const *phrase,
@@ -308,7 +308,7 @@ typedef enum {
 	AUTH_STALE,
 } auth_res_t;
 
-static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, char *regstr, char *np, uint32_t nplen)
+static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, char *regstr, char *np, size_t nplen)
 {
 	int index;
 	char *cur;
@@ -1772,7 +1772,7 @@ static void sip_i_state(int status,
 }
 
 
-static char *get_auth_data(char *dbname, char *nonce, char *npassword, uint32_t len, switch_mutex_t *mutex)
+static char *get_auth_data(char *dbname, char *nonce, char *npassword, size_t len, switch_mutex_t *mutex)
 {
 	switch_core_db_t *db;
 	switch_core_db_stmt_t *stmt;
