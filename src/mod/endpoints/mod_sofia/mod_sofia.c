@@ -1795,7 +1795,7 @@ static void sip_i_state(int status,
 			set_local_sdp(tech_pvt);
 			tech_set_codec(tech_pvt);
 			switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
-			printf("WOOHOO REINVITE!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Reinvite\n");
 		}
 		break;
 	case nua_callstate_ready:
