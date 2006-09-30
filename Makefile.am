@@ -142,10 +142,10 @@ freeswitch_LDADD = ${top_builddir}/libfreeswitch.la
 
 
 version: Makefile src/include/switch_version.h
-	./build/checkversion.sh
+	MAKE=$(MAKE) ./build/checkversion.sh
 
 newversion: Makefile
-	./build/checkversion.sh force
+	MAKE=$(MAKE) ./build/checkversion.sh force
 	$(MAKE)
 
 .nodepends:

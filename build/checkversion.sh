@@ -16,5 +16,12 @@ grep "@SVN_VERSION@" src/include/switch_version.h && force=1
 if [ $oldversion != $version ] || [ $force = 1 ] ; then
     cat src/include/switch_version.h.in | sed "s/@SVN_VERSION@/$version/g" > src/include/switch_version.h
     echo $version > .version
-    make modclean
+    if [ -z "$MAKE" ] ; then
+	make=`which gmake 2>/dev/null`
+	if [ -z "$MAKE" ] ; then
+	    make=make
+	fi
+    fi
+		
+    $MAKE modclean
 fi
