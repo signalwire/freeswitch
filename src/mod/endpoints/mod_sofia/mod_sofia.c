@@ -128,7 +128,8 @@ typedef enum {
 	TFLAG_VAD_OUT = ( 1 << 12),
 	TFLAG_VAD = ( 1 << 13),
 	TFLAG_TIMER = (1 << 14),
-	TFLAG_READY = (1 << 15)
+	TFLAG_READY = (1 << 15),
+	TFLAG_REINVITE = (1 << 16)
 } TFLAGS;
 
 static struct {
@@ -970,7 +971,19 @@ static switch_status_t tech_set_codec(private_object_t *tech_pvt)
 	assert(tech_pvt->codecs[tech_pvt->codec_index] != NULL);
 
 	if (tech_pvt->read_codec.implementation) {
-		return SWITCH_STATUS_SUCCESS;
+		if (strcasecmp(tech_pvt->read_codec.implementation->iananame, tech_pvt->rm_encoding) ||
+			tech_pvt->read_codec.implementation->samples_per_second != tech_pvt->rm_rate) {
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Changing Codec from %s to %s\n",
+							  tech_pvt->read_codec.implementation->iananame, tech_pvt->rm_encoding);
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+		switch_core_codec_destroy(&tech_pvt->write_codec);
+		switch_core_session_reset(tech_pvt->session);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Already using %s\n",
+							  tech_pvt->read_codec.implementation->iananame);
+			return SWITCH_STATUS_SUCCESS;
+		}
 	}
 
 	channel = switch_core_session_get_channel(tech_pvt->session);
@@ -1030,7 +1043,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 	assert(channel != NULL);
 
 
-	if (switch_rtp_ready(tech_pvt->rtp_session)) {
+	if (switch_rtp_ready(tech_pvt->rtp_session) && !switch_test_flag(tech_pvt, TFLAG_REINVITE)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1051,6 +1064,22 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 					  tech_pvt->remote_sdp_audio_port,
 					  tech_pvt->read_codec.implementation->ianacode,
 					  tech_pvt->read_codec.implementation->microseconds_per_frame / 1000);
+
+
+	if (tech_pvt->rtp_session && switch_test_flag(tech_pvt, TFLAG_REINVITE)) {
+		switch_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
+		
+		if (switch_rtp_set_remote_address(tech_pvt->rtp_session,
+										  tech_pvt->remote_sdp_audio_ip,
+										  tech_pvt->remote_sdp_audio_port,
+										  &err) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP CHANGING DEST TO: [%s:%d]\n", 
+							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
+		}
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	tech_pvt->rtp_session = switch_rtp_new(tech_pvt->local_sdp_audio_ip,
 										   tech_pvt->local_sdp_audio_port,
@@ -1761,6 +1790,13 @@ static void sip_i_state(int status,
 	case nua_callstate_early:
 		break;
 	case nua_callstate_completed:
+		if (tech_pvt && r_sdp) {
+			tech_choose_port(tech_pvt);
+			set_local_sdp(tech_pvt);
+			tech_set_codec(tech_pvt);
+			switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
+			printf("WOOHOO REINVITE!\n");
+		}
 		break;
 	case nua_callstate_ready:
 		if (channel) {
