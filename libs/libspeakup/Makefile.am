@@ -1,7 +1,6 @@
 EXTRA_DIST =
 SUBDIRS = 
 AUTOMAKE_OPTS= gnu
-MAKE=make
 NAME=speakup
 PREFIX=$(prefix)
 AM_CFLAGS	= $(new_AM_CFLAGS) -I. -I./src -I$(prefix)/include
