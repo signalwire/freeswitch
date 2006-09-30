@@ -35,7 +35,7 @@
 #define HAVE_UNISTD_H 1
 
 /* Enable Optimization. */
-#define OPTIMZER 
+/* #undef OPTIMZER */
 
 /* Name of package */
 #define PACKAGE "libresample"
@@ -62,7 +62,7 @@
 #define VERSION "0.13"
 
 /* define it the right way ;) */
-#define __FUNCTION__ __func__
+#define __FUNCTION__ 
 
 /* sunpro is bad at inline */
 #define inline 
