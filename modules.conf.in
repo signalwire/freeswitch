@@ -26,7 +26,6 @@ codecs/mod_l16
 dialplans/mod_dialplan_xml
 #directories/mod_ldap
 endpoints/mod_dingaling
-#endpoints/mod_exosip
 endpoints/mod_iax
 endpoints/mod_portaudio
 endpoints/mod_sofia

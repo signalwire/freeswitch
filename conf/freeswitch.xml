@@ -28,8 +28,7 @@
 	<!-- <load module="mod_ldap"/> -->
 	
 	<!-- Endpoints -->
-	<load module="mod_exosip"/>
-	<!--<load module="mod_sofia"/>-->
+	<load module="mod_sofia"/>
 	<!--<load module="mod_iax"/>-->
 	<load module="mod_portaudio"/>
 	<!-- <load module="mod_woomera"/> -->
@@ -175,46 +174,6 @@
 	<param name="facility" value="user"/>
 	<param name="format" value="${time} - ${message}"/>
 	<param name="level" value="debug,info,warning-alert"/>
-      </settings>
-    </configuration>
-    
-    <configuration name="exosip.conf" description="Exosip Endpoint">
-      <settings>
-	<param name="port" value="5060"/>
-	<param name="dialplan" value="XML"/>
-	<param name="dtmf-duration" value="100"/>
-	<!-- the @20 is optional number of ms you want to use.  Use it only
-	     if you know the codec supports it -->
-	<param name="codec-prefs" value="PCMU@20i,PCMA@20i"/>
-	<!-- Example to call for speex in wideband 16k mode 
-	     you can have up to 2 '@; after the codec name followed by either
-	     'i' (interval eg 20i for 20ms) or 'k' (kilohertz eg 16000k for 16khz)-->
-	<!--<param name="codec-prefs" value="SPEEX@16000k"/>-->
-	<!-- Payload number to bind DTMF to-->
-	<param name="rfc2833-pt" value="101"/>
-	<!-- disable to trade async for more calls -->
-	<param name="use-rtp-timer" value="true"/>
-	<!-- auto sense NAT issues and adjust accordingly -->
-	<param name="use-rtp-auto-adjust" value="true"/>
-	<!-- pick one (default if not specified is 'guess'); -->
-	<param name="rtp-ip" value="guess"/>
-	<!-- <param name-"rtp-ip" value="10.0.0.1"/> -->
-	<!-- leave commented or 0.0.0.0 for all ip -->
-	<!-- <param name="sip-ip" value="127.0.0.1"/> -->
-	
-	<!-- optional ; -->
-	<!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/> -->
-	<!-- <param name="ext-rtp-ip" value="100.101.102.103"/> -->
-	
-	<!-- specify 'myrealm' with certian key -->
-	<!-- use !myrealm! at beginning of url to activate -->
-	<!-- exosip/!myrealm!1000@dest -->
-	<!-- srtp:<param name="myrealm" value="ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"/> -->
-	
-	<!-- VAD choose one (out is a good choice); -->
-	<!-- <param name="vad" value="in"/> -->
-	<!-- <param name="vad" value="out"/> -->
-	<!-- <param name="vad" value="both"/> -->
       </settings>
     </configuration>
     
@@ -470,13 +429,13 @@ the desired file.  This is for demo purposes both actions
 could have been under the same <extension> tag as well.
       -->
       <extension name="playsound1" continue="true">
-	<condition field="source" expression="mod_exosip"/>
+	<condition field="source" expression="mod_sofia"/>
 	<condition field="destination_number" expression="^4(\d+)">
 	  <action application="playback" data="/var/sounds/beep.gsm"/>
 	</condition>
       </extension>
       <extension name="playsound2">
-	<condition field="source" expression="mod_exosip"/>
+	<condition field="source" expression="mod_sofia"/>
 	<condition field="destination_number" expression="^4(\d+)">
 	  <action application="playback" data="/root/$1.raw"/>
 	</condition>
