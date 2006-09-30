@@ -2216,7 +2216,7 @@ static void sip_r_register(int status,
 	} else if (sip->sip_proxy_authenticate) {
 		authenticate = sip->sip_proxy_authenticate;
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF status = '%d'\n", status);  
+
 	if (status == 200) {
 		if (!sofia_private->session) {
 			oreg->state = REG_STATE_REGISTER;
