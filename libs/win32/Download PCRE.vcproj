@@ -72,8 +72,8 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading PCRE."
-					CommandLine="if not exist &quot;$(ProjectDir)..\pcre-6.4&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/pcre-6.4.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\pcre-6.4"
+					CommandLine="if not exist &quot;$(ProjectDir)..\pcre-6.7&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/pcre-6.7.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\pcre-6.7"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -82,8 +82,8 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading PCRE."
-					CommandLine="if not exist &quot;$(ProjectDir)..\pcre-6.4&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/pcre-6.4.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\pcre-6.4"
+					CommandLine="if not exist &quot;$(ProjectDir)..\pcre-6.7&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/pcre-6.7.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\pcre-6.7"
 				/>
 			</FileConfiguration>
 		</File>
