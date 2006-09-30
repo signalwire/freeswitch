@@ -39,13 +39,23 @@
 #define HAVE_APR
 #include <switch.h>
 
+struct outbound_reg;
+typedef struct outbound_reg outbound_reg_t;
+
 struct sofia_profile;
 typedef struct sofia_profile sofia_profile_t;
 #define NUA_MAGIC_T sofia_profile_t
 
+struct sofia_private {
+	switch_core_session_t *session;
+	outbound_reg_t *oreg;
+};
+
+typedef struct sofia_private sofia_private_t;
+
 struct private_object;
 typedef struct private_object private_object_t;
-#define NUA_HMAGIC_T switch_core_session_t
+#define NUA_HMAGIC_T sofia_private_t
 
 #define MY_EVENT_REGISTER "sofia::register"
 #define MY_EVENT_EXPIRE "sofia::expire"
@@ -76,10 +86,6 @@ static char auth_sql[] =
 "   nonce           VARCHAR(255),\n"
 "   expires         INTEGER(8)"
 ");\n";
-
-
-
-
 
 static const char modname[] = "mod_sofia";
 #define STRLEN 15
@@ -133,6 +139,41 @@ static struct {
 	switch_mutex_t *mutex;
 } globals;
 
+typedef enum {
+	REG_FLAG_AUTHED = (1 << 0),
+} reg_flags_t;
+
+typedef enum {
+	REG_STATE_UNREGED,
+	REG_STATE_TRYING,
+	REG_STATE_REGISTER,
+	REG_STATE_REGED,
+	REG_STATE_FAILED,
+	REG_STATE_EXPIRED
+} reg_state_t;
+
+struct outbound_reg {
+	sofia_private_t sofia_private;
+	nua_handle_t *nh;
+	sofia_profile_t *profile;
+	char *name;
+	char *register_scheme;
+	char *register_realm;
+	char *register_username;
+	char *register_password;
+	char *register_from;
+	char *register_to;
+	char *register_proxy;
+	char *expires_str;
+	uint32_t freq;
+	time_t expires;
+	time_t retry;
+	uint32_t flags;
+	reg_state_t state;
+	switch_memory_pool_t *pool;
+	struct outbound_reg *next;
+};
+
 struct sofia_profile {
 	int debug;
 	char *name;
@@ -163,12 +204,14 @@ struct sofia_profile {
 	sip_alias_node_t *aliases;
 	switch_payload_t te;
 	uint32_t codec_flags;
-	switch_mutex_t *reg_mutex;
+	switch_mutex_t *ireg_mutex;
+	switch_mutex_t *oreg_mutex;
+	outbound_reg_t *registrations;
 };
 
 
-
 struct private_object {
+	sofia_private_t sofia_private;
 	uint32_t flags;
 	switch_core_session_t *session;
 	switch_frame_t read_frame;
@@ -263,21 +306,21 @@ static void sip_i_state(int status,
                         nua_t *nua,
                         sofia_profile_t *profile,
                         nua_handle_t *nh,
-                        switch_core_session_t *session,
+						sofia_private_t *sofia_private,
                         sip_t const *sip,
                         tagi_t tags[]);
 
 static void sip_i_invite(nua_t *nua,
                          sofia_profile_t *profile,
                          nua_handle_t *nh,
-                         switch_core_session_t *session,
+						 sofia_private_t *sofia_private,
                          sip_t const *sip,
                          tagi_t tags[]);
 
 static void sip_i_register(nua_t *nua,
 						   sofia_profile_t *profile,
 						   nua_handle_t *nh,
-						   switch_core_session_t *session,
+						   sofia_private_t *sofia_private,
 						   sip_t const *sip,
 						   tagi_t tags[]);
 
@@ -287,7 +330,7 @@ static void event_callback(nua_event_t   event,
                            nua_t        *nua,
                            sofia_profile_t  *profile,
                            nua_handle_t *nh,
-                           switch_core_session_t *session,
+						   sofia_private_t *sofia_private,
                            sip_t const  *sip,
                            tagi_t        tags[]);
 
@@ -356,7 +399,7 @@ static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const
 	}
 
 	if (switch_strlen_zero(np)) {
-		if (!get_auth_data(profile->dbname, nonce, np, nplen, profile->reg_mutex)) {
+		if (!get_auth_data(profile->dbname, nonce, np, nplen, profile->ireg_mutex)) {
 			ret = AUTH_STALE;
 			goto end;
 		} 
@@ -468,7 +511,7 @@ static void check_expire(sofia_profile_t *profile, time_t now)
 		return;
 	}
 
-	switch_mutex_lock(profile->reg_mutex);
+	switch_mutex_lock(profile->ireg_mutex);
 	snprintf(sql, sizeof(sql), "select '%s',* from sip_registrations where expires > 0 and expires < %ld", profile->name, (long) now);	
 	switch_core_db_exec(db, sql, del_callback, NULL, &errmsg);
 
@@ -482,7 +525,7 @@ static void check_expire(sofia_profile_t *profile, time_t now)
 	switch_core_db_persistant_execute(db, sql, 25);
 	snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires < %ld", (long) now);
 	switch_core_db_persistant_execute(db, sql, 25);
-	switch_mutex_unlock(profile->reg_mutex);
+	switch_mutex_unlock(profile->ireg_mutex);
 
 	switch_core_db_close(db);
 }
@@ -500,7 +543,7 @@ static char *find_reg_url(sofia_profile_t *profile, char *user, char *host, char
 
 	cbt.val = val;
 	cbt.len = len;
-	switch_mutex_lock(profile->reg_mutex);
+	switch_mutex_lock(profile->ireg_mutex);
 	if (host) {
 		snprintf(val, len, "select contact from sip_registrations where user='%s' and host='%s'", user, host);	
 	} else {
@@ -515,7 +558,7 @@ static char *find_reg_url(sofia_profile_t *profile, char *user, char *host, char
 		errmsg = NULL;
 	}
 
-	switch_mutex_unlock(profile->reg_mutex);
+	switch_mutex_unlock(profile->ireg_mutex);
 
 	switch_core_db_close(db);
 	return cbt.matches ? val : NULL;
@@ -723,7 +766,8 @@ static void do_invite(switch_core_session_t *session)
 	switch_set_flag_locked(tech_pvt, TFLAG_READY);
 	
 	tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL, SIPTAG_TO_STR(tech_pvt->dest), TAG_END());
-	nua_handle_bind(tech_pvt->nh, session);
+	tech_pvt->sofia_private.session = session;
+	nua_handle_bind(tech_pvt->nh, &tech_pvt->sofia_private);
 	nua_invite(tech_pvt->nh,
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 			   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
@@ -1593,7 +1637,7 @@ static void sip_i_state(int status,
 						nua_t *nua,
 						sofia_profile_t *profile,
 						nua_handle_t *nh,
-						switch_core_session_t *session,
+						sofia_private_t *sofia_private,
 						sip_t const *sip,
 						tagi_t tags[])
 	 
@@ -1604,7 +1648,8 @@ static void sip_i_state(int status,
 	int ss_state = nua_callstate_init;
 	switch_channel_t *channel = NULL;
 	private_object_t *tech_pvt = NULL;
-
+	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
+	
 	tl_gets(tags, 
 			NUTAG_CALLSTATE_REF(ss_state),
 			NUTAG_OFFER_RECV_REF(offer_recv),
@@ -1842,7 +1887,6 @@ typedef enum {
 static uint8_t handle_register(nua_t *nua,
 							   sofia_profile_t *profile,
 							   nua_handle_t *nh,
-							   switch_core_session_t *session,
 							   sip_t const *sip,
 							   sofia_regtype_t regtype,
 							   char *key,
@@ -1852,7 +1896,6 @@ static uint8_t handle_register(nua_t *nua,
 	sip_expires_t const *expires = sip->sip_expires;
 	sip_authorization_t const *authorization = sip->sip_authorization;
 	sip_contact_t const *contact = sip->sip_contact;
-
 	switch_xml_t domain, xml, user, param;
 	char params[1024] = "";
 	char *sql;
@@ -1865,8 +1908,8 @@ static uint8_t handle_register(nua_t *nua,
 	char *passwd = NULL;
 	uint8_t stale = 0, ret = 0, forbidden = 0;
 	auth_res_t auth_res;
-
 	long exptime = 60;
+
 
 	if (expires) {
 		exptime = expires->ex_delta;
@@ -1979,7 +2022,7 @@ static uint8_t handle_register(nua_t *nua,
 
 			}
 
-			execute_sql(profile->dbname, sql, profile->reg_mutex);
+			execute_sql(profile->dbname, sql, profile->ireg_mutex);
 			switch_core_db_free(sql);
 			switch_core_db_free(auth_str);
 			ret = 1;
@@ -2025,7 +2068,7 @@ static uint8_t handle_register(nua_t *nua,
 	}
 
 	if (sql) {
-		execute_sql(profile->dbname, sql, profile->reg_mutex);
+		execute_sql(profile->dbname, sql, profile->ireg_mutex);
 		switch_core_db_free(sql);
 		sql = NULL;
 	}
@@ -2051,17 +2094,17 @@ static uint8_t handle_register(nua_t *nua,
 static void sip_i_invite(nua_t *nua, 
 						 sofia_profile_t *profile,
 						 nua_handle_t *nh, 
-						 switch_core_session_t *session, 
+						 sofia_private_t *sofia_private,
 						 sip_t const *sip,
 						 tagi_t tags[])
 {
-
+	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
 	char key[128] = "";
 
 	if (!session) {
 
 		if ((profile->pflags & PFLAG_AUTH_CALLS)) {
-			if (handle_register(nua, profile, nh, session, sip, REG_INVITE, key, sizeof(key))) {
+			if (handle_register(nua, profile, nh, sip, REG_INVITE, key, sizeof(key))) {
 				return;
 			}
 		}
@@ -2119,7 +2162,8 @@ static void sip_i_invite(nua_t *nua,
 				switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 			}
 			switch_set_flag_locked(tech_pvt, TFLAG_INBOUND);
-			nua_handle_bind(nh, session);
+			tech_pvt->sofia_private.session = session;
+			nua_handle_bind(nh, &tech_pvt->sofia_private);
 		}
 	}
 }
@@ -2127,25 +2171,94 @@ static void sip_i_invite(nua_t *nua,
 static void sip_i_register(nua_t *nua,
 						   sofia_profile_t *profile,
 						   nua_handle_t *nh,
-						   switch_core_session_t *session,
+						   sofia_private_t *sofia_private,
 						   sip_t const *sip,
 						   tagi_t tags[])
 {
-	handle_register(nua, profile, nh, session, sip, REG_REGISTER, NULL, 0);
+	//switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
+	handle_register(nua, profile, nh, sip, REG_REGISTER, NULL, 0);
 }
 
-static void event_callback(nua_event_t   event,
-						   int           status,
-						   char const   *phrase,
-						   nua_t        *nua,
-						   sofia_profile_t  *profile,
+
+
+static void sip_r_register(int status,
+						   char const *phrase,
+						   nua_t *nua,
+						   sofia_profile_t *profile,
 						   nua_handle_t *nh,
-						   switch_core_session_t *session,
-						   sip_t const  *sip,
-						   tagi_t        tags[])
+						   sofia_private_t *sofia_private,
+						   sip_t const *sip,
+						   tagi_t tags[])
+{
+	outbound_reg_t *oreg = NULL;
+	sip_www_authenticate_t const *authenticate = NULL;
+
+	if (sofia_private) {
+		if (sofia_private->oreg) {
+			oreg = sofia_private->oreg;
+		} else if (profile) {
+			/* NOTE
+			   this is a linked list, when nua_identity comes 
+			   we need to actually pick the right one...
+			 */
+			oreg = profile->registrations;
+		}
+	} 
+
+	if (!oreg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No authentication available!\n");
+		return;
+	}
+
+	if (sip->sip_www_authenticate) {
+		authenticate = sip->sip_www_authenticate;
+	} else if (sip->sip_proxy_authenticate) {
+		authenticate = sip->sip_proxy_authenticate;
+	}
+
+	if (authenticate) {
+		char const *realm = (char const *) *authenticate->au_params;
+		char const *scheme = (char const *) authenticate->au_scheme;
+		char authentication[256] = "";
+		int ss_state;
+
+		snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, strstr(realm, "=") + 1, 
+				 oreg->register_username,
+				 oreg->register_password);
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
+						  profile->username, authentication);
+
+
+		ss_state = nua_callstate_authenticating;
+
+		tl_gets(tags,
+				NUTAG_CALLSTATE_REF(ss_state),
+				SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
+				TAG_END());
+
+		nua_authenticate(nh, NUTAG_AUTH(authentication), TAG_END());
+
+	} else if (status == 200) {
+		if (!sofia_private->session) {
+			oreg->state = REG_STATE_REGISTER;
+		}
+	}
+}
+
+static void event_callback(nua_event_t event,
+						   int status,
+						   char const *phrase,
+						   nua_t *nua,
+						   sofia_profile_t *profile,
+						   nua_handle_t *nh,
+						   sofia_private_t *sofia_private,
+						   sip_t const *sip,
+						   tagi_t tags[])
 {
 	struct private_object *tech_pvt = NULL;
 	auth_res_t auth_res = AUTH_FORBIDDEN;
+	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
 
 	if (session) {
 		if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
@@ -2184,107 +2297,104 @@ static void event_callback(nua_event_t   event,
 	
 	switch (event) {
 	case nua_r_shutdown:    
-		//sip_r_shutdown(status, phrase, nua, profile, nh, session, sip, tags);
+		//sip_r_shutdown(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_r_get_params:    
-		//sip_r_get_params(status, phrase, nua, profile, nh, session, sip, tags);
-		break;
-
-	case nua_r_register:
-		//sip_r_register(status, phrase, nua, profile, nh, session, sip, tags);
-		break;
-    
-	case nua_r_unregister:
-		//sip_r_unregister(status, phrase, nua, profile, nh, session, sip, tags);
-		break;
-    
-	case nua_r_options:
-		//sip_r_options(status, phrase, nua, profile, nh, session, sip, tags);
+		//sip_r_get_params(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_r_invite:
-		//sip_r_invite(status, phrase, nua, profile, nh, session, sip, tags);
+	case nua_r_register:
+		sip_r_register(status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		break;
+    
+	case nua_r_unregister:
+		//sip_r_unregister(status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		break;
+    
+	case nua_r_options:
+		//sip_r_options(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_i_fork:
-		//sip_i_fork(status, phrase, nua, profile, nh, session, sip, tags);
+		//sip_i_fork(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
     
 	case nua_i_invite:
-		sip_i_invite(nua, profile, nh, session, sip, tags);
+		sip_i_invite(nua, profile, nh, sofia_private, sip, tags);
 		break;
 
     case nua_i_register:
- 		sip_i_register (nua, profile, nh, session, sip, tags);
+ 		sip_i_register (nua, profile, nh, sofia_private, sip, tags);
         break;
 
 	case nua_i_prack:
-		//sip_i_prack(nua, profile, nh, session, sip, tags);
+		//sip_i_prack(nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_i_state:
-		sip_i_state(status, phrase, nua, profile, nh, session, sip, tags);
+		sip_i_state(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
     
 	case nua_r_bye:
-		//sip_r_bye(status, phrase, nua, profile, nh, session, sip, tags);
+		//sip_r_bye(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_i_bye:
-		//sip_i_bye(nua, profile, nh, session, sip, tags);
+		//sip_i_bye(nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_r_message:
-		//sip_r_message(status, phrase, nua, profile, nh, session, sip, tags);
+		//sip_r_message(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_i_message:
-		//sip_i_message(nua, profile, nh, session, sip, tags);
+		//sip_i_message(nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_r_info:
-		//sip_r_info(status, phrase, nua, profile, nh, session, sip, tags);
+		//sip_r_info(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_i_info:
-		//sip_i_info(nua, profile, nh, session, sip, tags);
+		//sip_i_info(nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_r_refer:
-		//sip_r_refer(status, phrase, nua, profile, nh, session, sip, tags);
+		//sip_r_refer(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_i_refer:
-		//sip_i_refer(nua, profile, nh, session, sip, tags);
+		//sip_i_refer(nua, profile, nh, sofia_private, sip, tags);
 		break;
      
 	case nua_r_subscribe:
-		//sip_r_subscribe(status, phrase, nua, profile, nh, session, sip, tags);
+		//sip_r_subscribe(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_r_unsubscribe:
-		//sip_r_unsubscribe(status, phrase, nua, profile, nh, session, sip, tags);
+		//sip_r_unsubscribe(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_r_publish:
-		//sip_r_publish(status, phrase, nua, profile, nh, session, sip, tags);
+		//sip_r_publish(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
     
 	case nua_r_notify:
-		//sip_r_notify(status, phrase, nua, profile, nh, session, sip, tags);
+		//sip_r_notify(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
      
 	case nua_i_notify:
-		//sip_i_notify(nua, profile, nh, session, sip, tags);
+		//sip_i_notify(nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_i_cancel:
-		//sip_i_cancel(nua, profile, nh, session, sip, tags);
+		//sip_i_cancel(nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_i_error:
-		//sip_i_error(nua, profile, nh, session, status, phrase, tags);
+		//sip_i_error(nua, profile, nh, sofia_private, status, phrase, tags);
 		break;
 
 	case nua_i_active:
@@ -2309,14 +2419,66 @@ static void event_callback(nua_event_t   event,
 	}
 }
 
-#define REG_SECONDS 30
+static void check_oreg(sofia_profile_t *profile, time_t now)
+{
+	outbound_reg_t *oregp;
+	for (oregp = profile->registrations; oregp; oregp = oregp->next) {
+		int ss_state = nua_callstate_authenticating;
+		reg_state_t ostate = oregp->state;
+
+		switch(ostate) {
+		case REG_STATE_REGISTER:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,  "registered %s\n", oregp->name);
+			oregp->expires = now + oregp->freq;
+			oregp->state = REG_STATE_REGED;
+			oregp->retry = 0;
+			break;
+		case REG_STATE_UNREGED:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,  "registering %s\n", oregp->name);
+			if ((oregp->nh = nua_handle(oregp->profile->nua, NULL,
+										NUTAG_URL(oregp->register_proxy),
+										SIPTAG_TO_STR(oregp->register_to),
+										NUTAG_CALLSTATE_REF(ss_state),
+										SIPTAG_FROM_STR(oregp->register_from), TAG_END()))) {
+
+				oregp->sofia_private.oreg = oregp;
+				nua_handle_bind(oregp->nh, &oregp->sofia_private);
+				nua_register(oregp->nh,
+							 SIPTAG_FROM_STR(oregp->register_from),
+							 SIPTAG_CONTACT_STR(oregp->register_from),
+							 SIPTAG_EXPIRES_STR(oregp->expires_str),
+							 NUTAG_REGISTRAR(oregp->register_proxy),
+							 TAG_NULL());
+				oregp->state = REG_STATE_TRYING;
+				oregp->retry = now + 10;
+			}
+			break;
+		default:
+			if (oregp->retry && now >= oregp->retry) {
+				oregp->state = REG_STATE_UNREGED;
+				oregp->retry = 0;
+			}
+			if (oregp->expires && now >= oregp->expires) {
+				oregp->state = REG_STATE_UNREGED;
+				oregp->expires = 0;
+			}
+			break;
+		}
+	}
+
+}
+
+#define IREG_SECONDS 30
+#define OREG_SECONDS 1
 static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void *obj)
 {
 	sofia_profile_t *profile = (sofia_profile_t *) obj;
 	switch_memory_pool_t *pool;
 	sip_alias_node_t *node;
-	uint32_t loops = 0;
+	uint32_t ireg_loops = 0;
+	uint32_t oreg_loops = 0;
 	switch_core_db_t *db;
+
 
 	profile->s_root = su_root_create(NULL);
 	profile->nua = nua_create(profile->s_root, /* Event loop */
@@ -2363,18 +2525,25 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 	}
 	switch_core_db_close(db);
 
-	switch_mutex_init(&profile->reg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+	switch_mutex_init(&profile->ireg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
+	switch_mutex_init(&profile->oreg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 
 	switch_mutex_lock(globals.mutex);
 	globals.running = 1;
 	switch_mutex_unlock(globals.mutex);
 
-	loops = REG_SECONDS;
+	ireg_loops = IREG_SECONDS;
+	oreg_loops = OREG_SECONDS;
 
 	while(globals.running == 1) {
-		if (++loops >= REG_SECONDS) {
+		if (++ireg_loops >= IREG_SECONDS) {
 			check_expire(profile, time(NULL));
-			loops = 0;
+			ireg_loops = 0;
+		}
+
+		if (++oreg_loops >= OREG_SECONDS) {
+			check_oreg(profile, time(NULL));
+			oreg_loops = 0;
 		}
 
 		su_root_step(profile->s_root, 1000);
@@ -2411,8 +2580,10 @@ static void launch_profile_thread(sofia_profile_t *profile)
 static switch_status_t config_sofia(int reload)
 {
 	char *cf = "sofia.conf";
-	switch_xml_t cfg, xml = NULL, xprofile, param;
+	switch_xml_t cfg, xml = NULL, xprofile, param, settings, profiles, registration, registrations;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	sofia_profile_t *profile = NULL;
+	char url[512] = "";
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
@@ -2420,150 +2591,233 @@ static switch_status_t config_sofia(int reload)
 		goto done;
 	}
 
-	for (xprofile = switch_xml_child(cfg, "profile"); xprofile; xprofile = xprofile->next) {
-		char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
-		sofia_profile_t *profile;
-		switch_memory_pool_t *pool = NULL;
-		char url[512] = "";
+	if ((profiles = switch_xml_child(cfg, "profiles"))) {
+		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
+			if (!(settings = switch_xml_child(xprofile, "settings"))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Settings, check the new config!\n", cf);
+			} else {
+				char *xprofilename = (char *) switch_xml_attr_soft(xprofile, "name");
+				switch_memory_pool_t *pool = NULL;
 
-		/* Setup the pool */
-		if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-			goto done;
-		}
+				
+				/* Setup the pool */
+				if ((status = switch_core_new_memory_pool(&pool)) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+					goto done;
+				}
 
-		if (!(profile = (sofia_profile_t *) switch_core_alloc(pool, sizeof(*profile)))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
-			goto done;
-		}
+				if (!(profile = (sofia_profile_t *) switch_core_alloc(pool, sizeof(*profile)))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+					goto done;
+				}
 
-		if (!xprofilename) {
-			xprofilename = "unnamed";
-		}
+				if (!xprofilename) {
+					xprofilename = "unnamed";
+				}
 		
-		profile->pool = pool;
+				profile->pool = pool;
 
-		profile->name = switch_core_strdup(profile->pool, xprofilename);
-		snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
-		profile->dbname = switch_core_strdup(profile->pool, url);
+				profile->name = switch_core_strdup(profile->pool, xprofilename);
+				snprintf(url, sizeof(url), "sofia_reg_%s", xprofilename);
+				profile->dbname = switch_core_strdup(profile->pool, url);
 
-		profile->dtmf_duration = 100;		
-		profile->codec_ms = 20;
+				profile->dtmf_duration = 100;		
+				profile->codec_ms = 20;
 
-		for (param = switch_xml_child(xprofile, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr_soft(param, "name");
-			char *val = (char *) switch_xml_attr_soft(param, "value");
+				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+					char *var = (char *) switch_xml_attr_soft(param, "name");
+					char *val = (char *) switch_xml_attr_soft(param, "value");
 
-			if (!strcasecmp(var, "debug")) {
-				profile->debug = atoi(val);
-			} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
-			  	switch_set_flag(profile, TFLAG_TIMER);
-			} else if (!strcasecmp(var, "rfc2833-pt")) {
-                profile->te = (switch_payload_t) atoi(val);
-			} else if (!strcasecmp(var, "sip-port")) {
-				profile->sip_port = atoi(val);
-			} else if (!strcasecmp(var, "vad")) {
-				if (!strcasecmp(val, "in")) {
-					switch_set_flag(profile, TFLAG_VAD_IN);
-				} else if (!strcasecmp(val, "out")) {
-					switch_set_flag(profile, TFLAG_VAD_OUT);
-				} else if (!strcasecmp(val, "both")) {
-					switch_set_flag(profile, TFLAG_VAD_IN);
-					switch_set_flag(profile, TFLAG_VAD_OUT);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
-				}
-			} else if (!strcasecmp(var, "ext-rtp-ip")) {
-				profile->extrtpip = switch_core_strdup(profile->pool, val);
-			} else if (!strcasecmp(var, "rtp-ip")) {
-				profile->rtpip = switch_core_strdup(profile->pool, val);
-			} else if (!strcasecmp(var, "sip-ip")) {
-				profile->sipip = switch_core_strdup(profile->pool, val);
-			} else if (!strcasecmp(var, "sip-domain")) {
-				profile->sipdomain = switch_core_strdup(profile->pool, val);
-			} else if (!strcasecmp(var, "rtp-timer-name")) {
-				profile->timer_name = switch_core_strdup(profile->pool, val);
-			} else if (!strcasecmp(var, "auth-calls")) {
-				if (switch_true(val)) {
-					profile->pflags |= PFLAG_AUTH_CALLS;
-				}
-			} else if (!strcasecmp(var, "accept-blind-reg")) {
-				if (switch_true(val)) {
-					profile->pflags |= PFLAG_BLIND_REG;
-				}
-			} else if (!strcasecmp(var, "auth-all-packets")) {
-				if (switch_true(val)) {
-					profile->pflags |= PFLAG_AUTH_ALL;
-				}
-			} else if (!strcasecmp(var, "ext-sip-ip")) {
-				profile->extsipip = switch_core_strdup(profile->pool, val);
-			} else if (!strcasecmp(var, "bitpacking")) {
-				if (!strcasecmp(val, "aal2")) {
-					profile->codec_flags = SWITCH_CODEC_FLAG_AAL2;
-				} 
-			} else if (!strcasecmp(var, "username")) {
-				profile->username = switch_core_strdup(profile->pool, val);
-			} else if (!strcasecmp(var, "context")) {
-				profile->context = switch_core_strdup(profile->pool, val);
-			} else if (!strcasecmp(var, "alias")) {
-				sip_alias_node_t *node;
-				if ((node = switch_core_alloc(profile->pool, sizeof(*node)))) {
-					if ((node->url = switch_core_strdup(profile->pool, val))) {
-						node->next = profile->aliases;
-						profile->aliases = node;
+					if (!strcasecmp(var, "debug")) {
+						profile->debug = atoi(val);
+					} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
+						switch_set_flag(profile, TFLAG_TIMER);
+					} else if (!strcasecmp(var, "rfc2833-pt")) {
+						profile->te = (switch_payload_t) atoi(val);
+					} else if (!strcasecmp(var, "sip-port")) {
+						profile->sip_port = atoi(val);
+					} else if (!strcasecmp(var, "vad")) {
+						if (!strcasecmp(val, "in")) {
+							switch_set_flag(profile, TFLAG_VAD_IN);
+						} else if (!strcasecmp(val, "out")) {
+							switch_set_flag(profile, TFLAG_VAD_OUT);
+						} else if (!strcasecmp(val, "both")) {
+							switch_set_flag(profile, TFLAG_VAD_IN);
+							switch_set_flag(profile, TFLAG_VAD_OUT);
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invald option %s for VAD\n", val);
+						}
+					} else if (!strcasecmp(var, "ext-rtp-ip")) {
+						profile->extrtpip = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "rtp-ip")) {
+						profile->rtpip = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "sip-ip")) {
+						profile->sipip = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "sip-domain")) {
+						profile->sipdomain = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "rtp-timer-name")) {
+						profile->timer_name = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "auth-calls")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_AUTH_CALLS;
+						}
+					} else if (!strcasecmp(var, "accept-blind-reg")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_BLIND_REG;
+						}
+					} else if (!strcasecmp(var, "auth-all-packets")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_AUTH_ALL;
+						}
+					} else if (!strcasecmp(var, "ext-sip-ip")) {
+						profile->extsipip = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "bitpacking")) {
+						if (!strcasecmp(val, "aal2")) {
+							profile->codec_flags = SWITCH_CODEC_FLAG_AAL2;
+						} 
+					} else if (!strcasecmp(var, "username")) {
+						profile->username = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "context")) {
+						profile->context = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "alias")) {
+						sip_alias_node_t *node;
+						if ((node = switch_core_alloc(profile->pool, sizeof(*node)))) {
+							if ((node->url = switch_core_strdup(profile->pool, val))) {
+								node->next = profile->aliases;
+								profile->aliases = node;
+							}
+						}
+					} else if (!strcasecmp(var, "dialplan")) {
+						profile->dialplan = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "max-calls")) {
+						profile->max_calls = atoi(val);
+					} else if (!strcasecmp(var, "codec-prefs")) {
+						profile->codec_string = switch_core_strdup(profile->pool, val);
+						profile->codec_order_last = switch_separate_string(profile->codec_string, ',', profile->codec_order, SWITCH_MAX_CODECS);
+					} else if (!strcasecmp(var, "codec-ms")) {
+						profile->codec_ms = atoi(val);
+					} else if (!strcasecmp(var, "dtmf-duration")) {
+						int dur = atoi(val);
+						if (dur > 10 && dur < 8000) {
+							profile->dtmf_duration = dur;
+						} else {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds!\n");
+						}
 					}
 				}
-			} else if (!strcasecmp(var, "dialplan")) {
-				profile->dialplan = switch_core_strdup(profile->pool, val);
-			} else if (!strcasecmp(var, "max-calls")) {
-				profile->max_calls = atoi(val);
-			} else if (!strcasecmp(var, "codec-prefs")) {
-				profile->codec_string = switch_core_strdup(profile->pool, val);
-				profile->codec_order_last = switch_separate_string(profile->codec_string, ',', profile->codec_order, SWITCH_MAX_CODECS);
-			} else if (!strcasecmp(var, "codec-ms")) {
-				profile->codec_ms = atoi(val);
-			} else if (!strcasecmp(var, "dtmf-duration")) {
-				int dur = atoi(val);
-				if (dur > 10 && dur < 8000) {
-					profile->dtmf_duration = dur;
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds!\n");
+
+				if (switch_test_flag(profile, TFLAG_TIMER) && !profile->timer_name) {
+					profile->timer_name = switch_core_strdup(profile->pool, "soft");			
 				}
+
+				if (!profile->username) {
+					profile->username = switch_core_strdup(profile->pool, "FreeSWITCH");
+				}
+
+				if (!profile->rtpip) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting ip to '127.0.0.1'\n");
+					profile->rtpip = switch_core_strdup(profile->pool, "127.0.0.1");
+				}
+
+				if (!profile->sip_port) {
+					profile->sip_port = 5060;
+				}
+
+				if (!profile->dialplan) {
+					profile->dialplan = switch_core_strdup(profile->pool, "default");
+				}
+
+				if (!profile->sipdomain) {
+					profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
+				}
+
+				snprintf(url, sizeof(url), "sip:%s:%d", profile->sipip, profile->sip_port);
+				profile->url = switch_core_strdup(profile->pool, url);
+			}
+			if (profile) {
+				if ((registrations = switch_xml_child(xprofile, "registrations"))) {
+					uint32_t reg_count = 0;
+					for (registration = switch_xml_child(registrations, "registration"); registration; registration = registration->next) {
+						char *name = (char *) switch_xml_attr_soft(registration, "name");
+						outbound_reg_t *oreg;
+
+						if (++reg_count > 1) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+											  "Sorry, only one registration per profile for now =(:::, ask the sofia team for NUTAG_IDENTITY!!!!\n");
+						}
+						if (switch_strlen_zero(name)) {
+							name = "anonymous";
+						}
+
+						if ((oreg = switch_core_alloc(profile->pool, sizeof(*oreg)))) {
+							oreg->pool = profile->pool;
+							oreg->profile = profile;
+							oreg->name = switch_core_strdup(oreg->pool, name);
+							oreg->freq = 60;
+
+							for (param = switch_xml_child(registration, "param"); param; param = param->next) {
+								char *var = (char *) switch_xml_attr_soft(param, "name");
+								char *val = (char *) switch_xml_attr_soft(param, "value");
+								
+								if (!strcmp(var, "register-scheme")) {
+									oreg->register_scheme = switch_core_strdup(oreg->pool, val);
+								} else if (!strcmp(var, "register-realm")) {
+									oreg->register_realm = switch_core_strdup(oreg->pool, val);
+								} else if (!strcmp(var, "register-username")) {
+									oreg->register_username = switch_core_strdup(oreg->pool, val);
+								} else if (!strcmp(var, "register-password")) {
+									oreg->register_password = switch_core_strdup(oreg->pool, val);
+								} else if (!strcmp(var, "register-from")) {
+									oreg->register_from = switch_core_strdup(oreg->pool, val);
+								} else if (!strcmp(var, "register-to")) {
+									oreg->register_to = switch_core_strdup(oreg->pool, val);
+								} else if (!strcmp(var, "register-proxy")) {
+									oreg->register_proxy = switch_core_strdup(oreg->pool, val);
+								} else if (!strcmp(var, "register-frequency")) {
+									oreg->expires_str = switch_core_strdup(oreg->pool, val);
+									oreg->freq = atoi(val);
+								}
+							}
+							if (switch_strlen_zero(oreg->register_scheme)) {
+								oreg->register_scheme = switch_core_strdup(oreg->pool, "Digest");
+							}
+							if (switch_strlen_zero(oreg->register_realm)) {
+								oreg->register_realm = switch_core_strdup(oreg->pool, "freeswitch.org");
+							}
+							if (switch_strlen_zero(oreg->register_username)) {
+								oreg->register_username = switch_core_strdup(oreg->pool, "freeswitch");
+							}
+							if (switch_strlen_zero(oreg->register_password)) {
+								oreg->register_password = switch_core_strdup(oreg->pool, "works");
+							}							
+							if (switch_strlen_zero(oreg->register_from)) {
+								oreg->register_from = switch_core_strdup(oreg->pool, "FreeSWITCH <sip:freeswitch@freeswitch.org>");
+							}
+							if (switch_strlen_zero(oreg->register_to)) {
+								oreg->register_to = switch_core_strdup(oreg->pool, "sip:freeswitch@freeswitch.org");
+							}
+							if (switch_strlen_zero(oreg->register_proxy)) {
+								oreg->register_proxy = switch_core_strdup(oreg->pool, "sip:freeswitch@freeswitch.org");
+							}
+
+							if (switch_strlen_zero(oreg->expires_str)) {
+								oreg->expires_str = switch_core_strdup(oreg->pool, "300");
+							}
+
+							oreg->freq = atoi(oreg->expires_str);
+
+							oreg->next = profile->registrations;
+							profile->registrations = oreg;
+						}
+					}
+				}
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Started Profile %s [%s]\n", profile->name, url);
+				launch_profile_thread(profile);
+				profile = NULL;
 			}
 		}
-
-		if (switch_test_flag(profile, TFLAG_TIMER) && !profile->timer_name) {
-			profile->timer_name = switch_core_strdup(profile->pool, "soft");			
-		}
-
-		if (!profile->username) {
-			profile->username = switch_core_strdup(profile->pool, "FreeSWITCH");
-		}
-
-		if (!profile->rtpip) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Setting ip to '127.0.0.1'\n");
-			profile->rtpip = switch_core_strdup(profile->pool, "127.0.0.1");
-		}
-
-		if (!profile->sip_port) {
-			profile->sip_port = 5060;
-		}
-
-		if (!profile->dialplan) {
-			profile->dialplan = switch_core_strdup(profile->pool, "default");
-		}
-
-		if (!profile->sipdomain) {
-			profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
-		}
-
-		snprintf(url, sizeof(url), "sip:%s:%d", profile->sipip, profile->sip_port);
-		profile->url = switch_core_strdup(profile->pool, url);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Started Profile %s [%s]\n", profile->name, url);
-		launch_profile_thread(profile);
-
 	}
-	
  done:
 	if (xml) {
 		switch_xml_free(xml);
@@ -2612,7 +2866,7 @@ static void event_handler(switch_event_t *event)
 		}
 	
 		if (sql) {
-			execute_sql(profile->dbname, sql, profile->reg_mutex);
+			execute_sql(profile->dbname, sql, profile->ireg_mutex);
 			switch_core_db_free(sql);
 			sql = NULL;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s@%s\n", 
