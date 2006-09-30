@@ -165,7 +165,7 @@ depends:
 	./build/buildlib.sh . install sqlite-3.3.6.tar.gz --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
 	./build/buildlib.sh . install apr-1.2.7.tar.gz --prefix=$(PREFIX)
 	./build/buildlib.sh . install apr-util-1.2.7.tar.gz --with-apr=../apr-1.2.7 --prefix=$(PREFIX)
-	./build/buildlib.sh . libresample-0.1.3.tgz --prefix=$(PREFIX)
+	./build/buildlib.sh . install libresample --prefix=$(PREFIX)
 	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
 	./build/buildlib.sh . install srtp --prefix=$(PREFIX)
 	./build/buildlib.sh . install libspeakup --prefix=$(PREFIX)
