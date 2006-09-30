@@ -1,7 +1,6 @@
 EXTRA_DIST =
 SUBDIRS = 
 AUTOMAKE_OPTS= gnu
-MAKE=make
 NAME=dingaling
 PREFIX=$(prefix)
 AM_CC=gcc
