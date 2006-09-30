@@ -41,7 +41,8 @@ DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
 	build/compile build/config.guess build/config.sub \
-	build/depcomp build/install-sh build/ltmain.sh build/missing
+	build/depcomp build/install-sh build/ltmain.sh build/missing \
+	mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
@@ -218,7 +219,7 @@ AM_LDFLAGS = -lm
 lib_LTLIBRARIES = libteletone.la
 libteletone_la_SOURCES = src/libteletone_generate.c src/libteletone_detect.c
 libteletone_la_CFLAGS = $(AM_CFLAGS)
-libteletone_la_LDFLAGS = 
+libteletone_la_LDFLAGS = -version-info 0:1:0
 library_includedir = $(prefix)/include
 library_include_HEADERS = src/libteletone.h src/libteletone_detect.h src/libteletone_generate.h
 all: all-recursive
