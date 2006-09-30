@@ -22,12 +22,14 @@
 	<!-- <load module="mod_zeroconf"/> -->
 	<!-- <load module="mod_xmpp_event"/> -->
 	<!-- <load module="mod_event_socket"/> -->
+	<!-- <load module="mod_cdr"/> -->
 
 	<!-- Directory Interfaces -->
 	<!-- <load module="mod_ldap"/> -->
 	
 	<!-- Endpoints -->
 	<load module="mod_exosip"/>
+	<!--<load module="mod_sofia"/>-->
 	<!--<load module="mod_iax"/>-->
 	<load module="mod_portaudio"/>
 	<!-- <load module="mod_woomera"/> -->
