@@ -2204,45 +2204,48 @@ static void sip_r_register(int status,
 			oreg = profile->registrations;
 		}
 	} 
-
+	
 	if (!oreg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No authentication available!\n");
+		nua_handle_destroy(nh); 
 		return;
 	}
-
+	
 	if (sip->sip_www_authenticate) {
 		authenticate = sip->sip_www_authenticate;
 	} else if (sip->sip_proxy_authenticate) {
 		authenticate = sip->sip_proxy_authenticate;
 	}
-
-	if (authenticate) {
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "WTF status = '%d'\n", status);  
+	if (status == 200) {
+		if (!sofia_private->session) {
+			oreg->state = REG_STATE_REGISTER;
+		}
+		nua_handle_destroy(nh);
+	} else if (authenticate) {
 		char const *realm = (char const *) *authenticate->au_params;
 		char const *scheme = (char const *) authenticate->au_scheme;
 		char authentication[256] = "";
 		int ss_state;
-
+		
 		snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, strstr(realm, "=") + 1, 
 				 oreg->register_username,
 				 oreg->register_password);
 		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
 						  profile->username, authentication);
-
-
+		
+		
 		ss_state = nua_callstate_authenticating;
-
+		
 		tl_gets(tags,
 				NUTAG_CALLSTATE_REF(ss_state),
-				SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
+					SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
 				TAG_END());
-
+		
 		nua_authenticate(nh, NUTAG_AUTH(authentication), TAG_END());
-
-	} else if (status == 200) {
-		if (!sofia_private->session) {
-			oreg->state = REG_STATE_REGISTER;
-		}
+		
+		
 	}
 }
 
@@ -2431,7 +2434,6 @@ static void check_oreg(sofia_profile_t *profile, time_t now)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,  "registered %s\n", oregp->name);
 			oregp->expires = now + oregp->freq;
 			oregp->state = REG_STATE_REGED;
-			oregp->retry = 0;
 			break;
 		case REG_STATE_UNREGED:
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,  "registering %s\n", oregp->name);
@@ -2449,15 +2451,18 @@ static void check_oreg(sofia_profile_t *profile, time_t now)
 							 SIPTAG_EXPIRES_STR(oregp->expires_str),
 							 NUTAG_REGISTRAR(oregp->register_proxy),
 							 TAG_NULL());
-				oregp->state = REG_STATE_TRYING;
 				oregp->retry = now + 10;
+				oregp->state = REG_STATE_TRYING;
 			}
 			break;
-		default:
+
+		case REG_STATE_TRYING:
 			if (oregp->retry && now >= oregp->retry) {
 				oregp->state = REG_STATE_UNREGED;
 				oregp->retry = 0;
 			}
+			break;
+		default:
 			if (oregp->expires && now >= oregp->expires) {
 				oregp->state = REG_STATE_UNREGED;
 				oregp->expires = 0;
