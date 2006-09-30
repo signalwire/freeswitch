@@ -2753,7 +2753,7 @@ static switch_status_t config_sofia(int reload)
 							oreg->pool = profile->pool;
 							oreg->profile = profile;
 							oreg->name = switch_core_strdup(oreg->pool, name);
-							oreg->freq = 60;
+							oreg->freq = 0;
 
 							for (param = switch_xml_child(registration, "param"); param; param = param->next) {
 								char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2805,7 +2805,9 @@ static switch_status_t config_sofia(int reload)
 							}
 
 							oreg->freq = atoi(oreg->expires_str);
-
+							if (!oreg->freq) {
+								oreg->state = REG_STATE_REGED;
+							}
 							oreg->next = profile->registrations;
 							profile->registrations = oreg;
 						}
