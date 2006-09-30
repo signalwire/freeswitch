@@ -173,7 +173,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\libresample-0.1.3\src\filterkit.c"
+				RelativePath="..\..\libresample\src\filterkit.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -193,7 +193,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\libresample-0.1.3\src\resample.c"
+				RelativePath="..\..\libresample\src\resample.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -213,7 +213,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\libresample-0.1.3\src\resamplesubs.c"
+				RelativePath="..\..\libresample\src\resamplesubs.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -238,7 +238,7 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\..\libresample-0.1.3\src\filterkit.h"
+				RelativePath="..\..\libresample\src\filterkit.h"
 				>
 			</File>
 			<File
@@ -246,7 +246,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\libresample-0.1.3\src\resample_defs.h"
+				RelativePath="..\..\libresample\src\resample_defs.h"
 				>
 			</File>
 		</Filter>
