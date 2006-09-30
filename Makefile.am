@@ -169,7 +169,7 @@ depends:
 	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
 	./build/buildlib.sh . install srtp --prefix=$(PREFIX)
 	./build/buildlib.sh . install libspeakup --prefix=$(PREFIX)
-	./build/buildlib.sh . install pcre-6.4.tar.gz --prefix=$(PREFIX)
+	./build/buildlib.sh . install pcre-6.7.tar.gz --prefix=$(PREFIX)
 	rm build/freeswitch.env
 
 
