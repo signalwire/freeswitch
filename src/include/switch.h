@@ -84,7 +84,7 @@
  * \section supports Supported Platforms
  * Freeswitch has been built on the following platforms:
  *
- *  - Linux (x86)
+ *  - Linux (x86 & x86_64)
  *  - Windows (MSVC 2005)
  *  - Mac OS X (intel & ppc )
  *  - OpenBSD, FreeBSD 6
