@@ -94,19 +94,30 @@
  *
  *  libFreeSwitch:
  *		- APR (http://apr.apache.org)
+ *		- APR-Util (http://apr.apache.org)
  *		- SQLite (http://www.sqlite.org)
  *		- libresample (http://ccrma-www.stanford.edu/~jos/resample/Free_Resampling_Software.html)
+ *		- Pcre (http://www.pcre.org/)
+ *		- SRTP (http://srtp.sourceforge.net/srtp.html)
  *
  *	Additionally, the experimental external modules make use of several external modules:
  *
- *	mod_exosip:
- *		- eXoSIP (http://savannah.nongnu.org/projects/exosip/)
  *
- *	mod_iax:
- *		- libiax2 (forked from http://iaxclient.sourceforge.net/)
+ *  ASR/TTS
+ *	mod_cepstral
+ *		- Cepstral (commercial) (http://www.cepstral.com/)
  *
+ *  Codecs
  *	mod_speex
  *		- libspeex (http://www.speex.org/)
+ *
+ *  Directories
+ *	mod_ldap
+ *		- openldap (*nix only http://www.openldap.org/)
+ * 
+ *  Endpoints
+ *	mod_iax
+ *		- libiax2 (forked from http://iaxclient.sourceforge.net/)
  *
  *	mod_portaudio
  *		- portaudio (http://www.portaudio.com/)
@@ -114,11 +125,40 @@
  *	mod_woomera
  *		- openh323/woomera (http://www.voxgratia.org/)
  *
+ *	mod_dingaling
+ *		- libdingaling (internal library distributed with freeswitch which depends on)
+ *		- APR (http://apr.apache.org)
+ *		- iksemel (http://iksemel.jabberstudio.org/)
+ *
+ *	mod_sofia
+ *		- sofia-sip (http://opensource.nokia.com/projects/sofia-sip/)
+ *
+ *  Event Hanlders
  *	mod_xmpp_event
  *		- iksemel (http://iksemel.jabberstudio.org/)
  *
+ *	mod_zeroconf
+ *		- libhowl (No longer available http://www.porchdogsoft.com/products/howl/)
+ *
+ *	mod_cdr
+ *		- Mysql (http://www.mysql.com/)
+ *		- unixodbc (*nix only http://www.unixodbc.org/)
+ *
+ *  Formats
  *	mod_sndfile
  *		- libsndfile (http://www.mega-nerd.com/libsndfile/)
+ *
+ *  Languages
+ *	mod_spidermonkey
+ *		- spidermonkey (http://www.mozilla.org/js/spidermonkey/)
+ *
+ *	mod_perl
+ *		- perl (http://www.perl.org/)
+ *
+ *  XML interfaces
+ *	mod_xml_rpc
+ *		- xmlrpc-c (http://xmlrpc-c.sourceforge.net/)
+ *
  *
  * \section license Licensing
  *
