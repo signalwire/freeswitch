@@ -586,11 +586,11 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 	
 	if (!(codec = switch_core_hash_find(loadable_modules.codec_hash, name))) {
 		for(x = 0; x < strlen(name); x++) {
-			altname[x] = (char)toupper(name[x]);
+			altname[x] = (char)toupper((int)name[x]);
 		}
 		if (!(codec = switch_core_hash_find(loadable_modules.codec_hash, altname))) {
 			for(x = 0; x < strlen(name); x++) {
-				altname[x] = (char)tolower(name[x]);
+				altname[x] = (char)tolower((int)name[x]);
 			}
 			codec = switch_core_hash_find(loadable_modules.codec_hash, altname);
 		}
