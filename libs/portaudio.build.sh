@@ -27,8 +27,10 @@ patch <<__EOF__
  
  #ifdef __linux__
  #include <linux/soundcard.h>
-+#elif defined(__FreeBSD__) || defined( __NetBSD__) || defined( __OpenBSD__)
++#elif defined(__FreeBSD__) || defined( __NetBSD__) 
 +#include <sys/soundcard.h>
++#elif defined( __OpenBSD__) 
++#include <soundcard.h>
  #else
  #include <machine/soundcard.h> /* JH20010905 */
  #endif
