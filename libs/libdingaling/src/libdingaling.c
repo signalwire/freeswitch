@@ -464,7 +464,7 @@ static int on_presence(void *user_data, ikspak *pak)
 
 	if (resource) {
 		for (x = 0; x < strlen(resource); x++) {
-			resource[x] = tolower(resource[x]);
+			resource[x] = (char)tolower((int)resource[x]);
 		}
 	}
 
