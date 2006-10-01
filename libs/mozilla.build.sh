@@ -1,5 +1,7 @@
 hosttype=`uname -s`
 
+pthreadopts=""
+
 if [ $hosttype = "FreeBSD" ] ; then
 
 patch <<__EOF__ 
@@ -20,8 +22,8 @@ patch <<__EOF__
 __EOF__
 
 cp js/src/config/Linux_All.mk js/src/config/`uname -s``uname -r`.mk
-ldflags=-lpthread
 
+pthreadopts=" --with-pthreads=yes"
 fi
 
 arch=`uname -m`
@@ -31,7 +33,7 @@ if [ $arch = "x86_64" ] ; then
 opts="--enable-64bit"
 fi
 
-cd nsprpub && LDFLAGS=$ldflags ./configure $opts && $MAKE
+cd nsprpub && ./configure $opts $pthreadopts && $MAKE
 
 cd ../js/src && JS_THREADSAFE=1 JS_HAS_FILE_OBJECT=1 OTHER_LIBS="-L../../../mozilla/nsprpub/dist/lib" INCLUDES="-I../../../mozilla/nsprpub/dist/include/nspr"  $MAKE -f Makefile.ref `find . -name libjs.a`
 
