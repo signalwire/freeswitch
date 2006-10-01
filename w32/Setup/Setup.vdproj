@@ -172,6 +172,12 @@
         "Entry"
         {
         "MsmKey" = "8:_87C07635A76B4C5D85C78D91ED64A537"
+        "OwnerKey" = "8:_FBB0E565B1DE49CE9C827ACAC337AC5B"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_87C07635A76B4C5D85C78D91ED64A537"
         "OwnerKey" = "8:_F0B800E719294692A02518CFD8CBAEFF"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -430,6 +436,12 @@
         "Entry"
         {
         "MsmKey" = "8:_FB1B9FBDC3294F1C96DAC4246C013C22"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_FBB0E565B1DE49CE9C827ACAC337AC5B"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2620,6 +2632,34 @@
             "OutputConfiguration" = "8:"
             "OutputGroupCanonicalName" = "8:Built"
             "OutputProjectGuid" = "8:{FE3540C5-3303-46E0-A69E-D92F775687F1}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_FBB0E565B1DE49CE9C827ACAC337AC5B"
+            {
+            "SourcePath" = "8:..\\..\\debug\\mod\\mod_sofia.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_B6E020422C78490D96F78DB0E1A3F521"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{0DF3ABD0-DDC0-4265-B778-07C66780979B}"
             "ShowKeyOutput" = "11:TRUE"
                 "ExcludeFilters"
                 {
