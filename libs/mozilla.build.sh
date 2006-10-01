@@ -26,6 +26,10 @@ cp js/src/config/Linux_All.mk js/src/config/`uname -s``uname -r`.mk
 pthreadopts=" --with-pthreads=yes"
 fi
 
+if [ $hosttype = "OpenBSD" ] ; then
+cp js/src/config/Linux_All.mk js/src/config/`uname -s``uname -r`.mk
+fi
+
 arch=`uname -m`
 
 opts=""
