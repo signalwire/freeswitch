@@ -1,164 +1,166 @@
 <?xml version="1.0"?>
 <document type="freeswitch/xml">
+
   <section name="configuration" description="Various Configuration">
+    
     <configuration name="switch.conf" description="Modules">
       <settings>
-	<!--Most channels to allow at once -->
-	<param name="max-sessions" value="1000"/>
+        <!--Most channels to allow at once -->
+        <param name="max-sessions" value="1000"/>
       </settings>
     </configuration>
+
     <configuration name="modules.conf" description="Modules">
       <modules>
-	<!-- Loggers (I'd load these first) -->
-	<load module="mod_console"/>
-	<!-- <load module="mod_syslog"/> -->
+        <!-- Loggers (I'd load these first) -->
+        <load module="mod_console"/>
+        <!-- <load module="mod_syslog"/> -->
 
-	<!-- XML Interfaces -->
-	<!-- <load module="mod_xml_rpc"/> -->
-	
-	<!-- Event Handlers -->
-	<!-- <load module="mod_event_multicast"/> -->
-	<!-- <load module="mod_event_test"/> -->
-	<!-- <load module="mod_zeroconf"/> -->
-	<!-- <load module="mod_xmpp_event"/> -->
-	<!-- <load module="mod_event_socket"/> -->
-	<!-- <load module="mod_cdr"/> -->
+        <!-- XML Interfaces -->
+        <!-- <load module="mod_xml_rpc"/> -->
 
-	<!-- Directory Interfaces -->
-	<!-- <load module="mod_ldap"/> -->
-	
-	<!-- Endpoints -->
-	<load module="mod_sofia"/>
-	<!--<load module="mod_iax"/>-->
-	<load module="mod_portaudio"/>
-	<!-- <load module="mod_woomera"/> -->
-	<!-- <load module="mod_wanpipe"/> -->
-	<!-- <load module="mod_dingaling"/> -->
-	
-	<!-- Applications -->
-	<load module="mod_bridgecall"/>
-	<load module="mod_echo"/>
-	<load module="mod_dptools"/>
-	<!-- <load module="mod_ivrtest"/> -->
-	<load module="mod_playback"/>
-	<load module="mod_commands"/>
-	<!-- <load module="mod_commands"/> -->
-	
-	<!-- Dialplan Interfaces -->
-	<load module="mod_dialplan_xml"/>
-	<!-- <load module="mod_dialplan_directory"/> -->
+        <!-- Event Handlers -->
+        <!-- <load module="mod_cdr"/> -->
+        <!-- <load module="mod_event_multicast"/> -->
+        <!-- <load module="mod_event_socket"/> -->
+        <!-- <load module="mod_xmpp_event"/> -->
+        <!-- <load module="mod_zeroconf"/> -->
 
-	<!-- Codec Interfaces -->
-	<load module="mod_g711"/>
-	<load module="mod_gsm"/>
-	<load module="mod_l16"/>
-	<!-- <load module="mod_speex"/> -->
-	<!-- <load module="mod_ilbc"/> -->
-	
-	<!-- File Format Interfaces -->
-	<load module="mod_sndfile"/>
-	
-	<!-- Timers -->
-	<load module="mod_softtimer"/>
-	
-	<!-- Languages -->
-	<!-- <load module="mod_spidermonkey"/> -->
-	<!-- <load module="mod_perl"/> -->
-	
-	<!-- ASR /TTS -->
-	<!-- <load module="mod_cepstral"/> -->
-	<!-- <load module="mod_rss"/> -->
+        <!-- Directory Interfaces -->
+        <!-- <load module="mod_ldap"/> -->
 
-	<!-- Conference Bridges -->
-	<!--<load module="mod_conference"/>-->
+        <!-- Endpoints -->
+        <!-- <load module="mod_dingaling"/> -->
+        <!--<load module="mod_iax"/>-->
+        <load module="mod_portaudio"/>
+        <load module="mod_sofia"/>
+        <!-- <load module="mod_wanpipe"/> -->
+        <!-- <load module="mod_woomera"/> -->
+
+        <!-- Applications -->
+        <load module="mod_bridgecall"/>
+        <load module="mod_commands"/>
+        <!--<load module="mod_conference"/>-->
+        <load module="mod_dptools"/>
+        <load module="mod_echo"/>
+        <!--<load module="mod_park"/>-->
+        <load module="mod_playback"/>
+
+        <!-- Dialplan Interfaces -->
+        <!-- <load module="mod_dialplan_directory"/> -->
+        <load module="mod_dialplan_xml"/>
+
+        <!-- Codec Interfaces -->
+        <load module="mod_g711"/>
+        <load module="mod_gsm"/>
+        <!-- <load module="mod_ilbc"/> -->
+        <load module="mod_l16"/>
+        <!-- <load module="mod_speex"/> -->
+
+        <!-- File Format Interfaces -->
+        <load module="mod_sndfile"/>
+        <load module="mod_native_file"/>
+
+        <!-- Timers -->
+        <load module="mod_softtimer"/>
+
+        <!-- Languages -->
+        <!-- <load module="mod_spidermonkey"/> -->
+        <!-- <load module="mod_perl"/> -->
+
+        <!-- ASR /TTS -->
+        <!-- <load module="mod_cepstral"/> -->
+        <!-- <load module="mod_rss"/> -->
 
       </modules>
     </configuration>
 
     <configuration name="event_multicast.conf" description="Multicast Event">
       <settings>
-	<param name="address" value="225.1.1.1"/>
-	<param name="port" value="4242"/>
-	<param name="bindings" value="all"/>
+        <param name="address" value="225.1.1.1"/>
+        <param name="port" value="4242"/>
+        <param name="bindings" value="all"/>
       </settings>
     </configuration>
 
     <configuration name="event_socket.conf" description="Socket Client">
       <settings>
-	<param name="listen-ip" value="127.0.0.1"/>
-	<param name="listen-port" value="8021"/>
-	<param name="password" value="ClueCon"/>
+        <param name="listen-ip" value="127.0.0.1"/>
+        <param name="listen-port" value="8021"/>
+        <param name="password" value="ClueCon"/>
       </settings>
     </configuration>
 
     <configuration name="iax.conf" description="IAX Configuration">
       <settings>
-	<param name="debug" value="0"/>
-	<!-- <param name="ip" value="1.2.3.4"> -->
-	<param name="port" value="4569"/>
-	<param name="dialplan" value="XML"/>
-	<param name="codec-prefs" value="PCMU@20i,PCMA,speex,L16"/>
-	<param name="codec-master" value="us"/>
-	<param name="codec-rates" value="8"/>
+        <param name="debug" value="0"/>
+        <!-- <param name="ip" value="1.2.3.4"> -->
+        <param name="port" value="4569"/>
+        <param name="dialplan" value="XML"/>
+        <param name="codec-prefs" value="PCMU@20i,PCMA,speex,L16"/>
+        <param name="codec-master" value="us"/>
+        <param name="codec-rates" value="8"/>
       </settings>
     </configuration>
-    
+
     <configuration name="console.conf" description="Console Logger">
       <!-- pick a file name, a function name or 'all' -->
       <!-- map as many as you need for specific debugging -->
       <mappings>
-	<!-- <param name="log_event" value="DEBUG"/> -->
-	<param name="all" value="DEBUG"/>
+        <!-- <param name="log_event" value="DEBUG"/> -->
+        <param name="all" value="DEBUG"/>
       </mappings>
     </configuration>
+
     <configuration name="sofia.conf" description="sofia Endpoint">
       <profiles>
-	<profile name="test">
-	  <registrations>
-	    <registration name="asterlink">
-	      <param name="register-scheme" value="Digest"/>
-	      <param name="register-realm" value=""/>
-	      <param name="register-username" value="1001"/>
-	      <param name="register-password" value="nhy65tgb"/>
-	      <param name="register-from" value="sip:1001@208.64.200.40"/>
-	      <param name="register-to" value="sip:1001@66.250.68.194"/>
-	      <param name="register-proxy" value="sip:66.250.68.194:5060"/>
-	      <param name="register-frequency" value="20"/>
-	    </registration>
-	  </registrations>
-	  <settings>
-	    <param name="debug" value="1"/>
-	    <param name="rfc2833-pt" value="101"/>
-	    <param name="sip-port" value="5060"/>
-	    <param name="dialplan" value="XML"/>
-	    <param name="dtmf-duration" value="100"/>
-	    <param name="codec-prefs" value="PCMU@20i"/>
-	    <param name="codec-ms" value="20"/>
-	    <param name="use-rtp-timer" value="true"/>
-	    <param name="rtp-timer-name" value="soft"/>
-	    <param name="rtp-ip" value="192.168.1.20"/>
-	    <param name="sip-ip" value="192.168.1.20"/>
+        <profile name="test">
+          <registrations>
+            <registration name="asterlink">
+              <param name="register-scheme" value="Digest"/>
+              <param name="register-realm" value=""/>
+              <param name="register-username" value="1001"/>
+              <param name="register-password" value="nhy65tgb"/>
+              <param name="register-from" value="sip:1001@208.64.200.40"/>
+              <param name="register-to" value="sip:1001@66.250.68.194"/>
+              <param name="register-proxy" value="sip:66.250.68.194:5060"/>
+              <param name="register-frequency" value="20"/>
+            </registration>
+          </registrations>
+          <settings>
+            <param name="debug" value="1"/>
+            <param name="rfc2833-pt" value="101"/>
+            <param name="sip-port" value="5060"/>
+            <param name="dialplan" value="XML"/>
+            <param name="dtmf-duration" value="100"/>
+            <param name="codec-prefs" value="PCMU@20i"/>
+            <param name="codec-ms" value="20"/>
+            <param name="use-rtp-timer" value="true"/>
+            <param name="rtp-timer-name" value="soft"/>
+            <param name="rtp-ip" value="192.168.1.20"/>
+            <param name="sip-ip" value="192.168.1.20"/>
 
-	    <!-- this lets anything register -->
-	    <!--  comment the next line and uncomment one or both of the other 2 lines for call authentication -->
-	    <param name="accept-blind-reg" value="true"/>
-	    
-	    <!--<param name="auth-calls" value="true"/>-->
-	    <!-- on authed calls, authenticate *all* the packets not just invite -->
-	    <!--<param name="auth-all-packets" value="true"/>-->
+            <!-- this lets anything register -->
+            <!--  comment the next line and uncomment one or both of the other 2 lines for call authentication -->
+            <param name="accept-blind-reg" value="true"/>
 
-	    <!-- optional ; -->
-	    <!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/>-->
-	    <!-- <param name="ext-rtp-ip" value="100.101.102.103"/> -->
-	    <!-- VAD choose one (out is a good choice); -->
-	    <!-- <param name="vad" value="in"/> -->
-	    <!-- <param name="vad" value="out"/> -->
-	    <!-- <param name="vad" value="both"/> -->
-	    <!--<param name="alias" value="sip:10.0.1.251:5555"/>-->
-	  </settings>
-	</profile>
+            <!--<param name="auth-calls" value="true"/>-->
+            <!-- on authed calls, authenticate *all* the packets not just invite -->
+            <!--<param name="auth-all-packets" value="true"/>-->
+
+            <!-- optional ; -->
+            <!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/>-->
+            <!-- <param name="ext-rtp-ip" value="100.101.102.103"/> -->
+            <!-- VAD choose one (out is a good choice); -->
+            <!-- <param name="vad" value="in"/> -->
+            <!-- <param name="vad" value="out"/> -->
+            <!-- <param name="vad" value="both"/> -->
+            <!--<param name="alias" value="sip:10.0.1.251:5555"/>-->
+          </settings>
+        </profile>
       </profiles>
     </configuration>
+
     <configuration name="syslog.conf" description="Syslog Logger">
       <!-- SYSLOG -->
       <!-- emerg   - system is unusable  -->
@@ -170,302 +172,294 @@
       <!-- info    - informational message  -->
       <!-- debug   - debug-level message -->
       <settings>
-	<param name="ident" value="freeswitch"/>
-	<param name="facility" value="user"/>
-	<param name="format" value="${time} - ${message}"/>
-	<param name="level" value="debug,info,warning-alert"/>
+        <param name="ident" value="freeswitch"/>
+        <param name="facility" value="user"/>
+        <param name="format" value="${time} - ${message}"/>
+        <param name="level" value="debug,info,warning-alert"/>
       </settings>
     </configuration>
-    
+
     <configuration name="woomera.conf" description="Woomera Endpoint">
       <settings>
-	<param name="debug" value="0"/>
+        <param name="debug" value="0"/>
       </settings>
       <interface>
-	<param name="host" value="localhost"/>
-	<param name="port" value="42420"/>
-	<param name="audio-ip" value="127.0.0.1"/>
-	<param name="dialplan" value="XML"/>
+        <param name="host" value="localhost"/>
+        <param name="port" value="42420"/>
+        <param name="audio-ip" value="127.0.0.1"/>
+        <param name="dialplan" value="XML"/>
       </interface>
     </configuration>
 
     <configuration name="wanpipe.conf" description="Sangoma Wanpipe Endpoint">
       <settings>
-	<param name="debug" value="1"/>
-	<param name="dialplan" value="XML"/>
-	<param name="mtu" value="320"/>
-	<param name="dtmf-on" value="800"/>
-	<param name="dtmf-off" value="100"/>
-	<param name="supress-dtmf-tone" value="yes"/>
+        <param name="debug" value="1"/>
+        <param name="dialplan" value="XML"/>
+        <param name="mtu" value="320"/>
+        <param name="dtmf-on" value="800"/>
+        <param name="dtmf-off" value="100"/>
+        <param name="supress-dtmf-tone" value="yes"/>
       </settings>
       <span>
-	<param name="span" value="1"/>
-	<param name="node" value="cpe"/>
-	<!-- <param name="switch" value="ni2"/> -->
-	<param name="switch" value="dms100"/>
-	<!-- <param name="switch" value="lucent5e"/> -->
-	<!-- <param name="switch" value="att4ess"/> -->
-	<!-- <param name="switch" value="euroisdn"/> -->
-	<!-- <param name="switch" value="gr303eoc"/> -->
-	<!-- <param name="switch" value="gr303tmc"/> -->
-	<param name="dp" value="national"/>
-	<!-- <param name="dp" value="international"/> -->
-	<!-- <param name="dp" value="local"/> -->
-	<!-- <param name="dp" value="private"/> -->
-	<!-- <param name="dp" value="unknown"/> -->
-	<param name="l1" value="ulaw"/>
-	<!-- <param name="l1" value="alaw"/> -->
-	<param name="bchan" value="1-23"/>
-	<param name="dchan" value="24"/>
-	<param name="dialplan" value="XML"/>
+        <param name="span" value="1"/>
+        <param name="node" value="cpe"/>
+        <!-- <param name="switch" value="ni2"/> -->
+        <param name="switch" value="dms100"/>
+        <!-- <param name="switch" value="lucent5e"/> -->
+        <!-- <param name="switch" value="att4ess"/> -->
+        <!-- <param name="switch" value="euroisdn"/> -->
+        <!-- <param name="switch" value="gr303eoc"/> -->
+        <!-- <param name="switch" value="gr303tmc"/> -->
+        <param name="dp" value="national"/>
+        <!-- <param name="dp" value="international"/> -->
+        <!-- <param name="dp" value="local"/> -->
+        <!-- <param name="dp" value="private"/> -->
+        <!-- <param name="dp" value="unknown"/> -->
+        <param name="l1" value="ulaw"/>
+        <!-- <param name="l1" value="alaw"/> -->
+        <param name="bchan" value="1-23"/>
+        <param name="dchan" value="24"/>
+        <param name="dialplan" value="XML"/>
       </span>
     </configuration>
-    
+
     <configuration name="portaudio.conf" description="Soundcard Endpoint">
       <settings>
-	<param name="debug" value="2"/>
-	<param name="dialplan" value="XML"/>
-	
-	<!-- partial string match on something in the name or the device # -->
-	<param name="indev" value="USB"/>
-	<param name="outdev" value="USB"/>
-	
-	<param name="cid-name" value="FreeSwitch"/>
-	<param name="cid-num" value="5555551212"/>
+        <param name="debug" value="2"/>
+        <param name="dialplan" value="XML"/>
+
+        <!-- partial string match on something in the name or the device # -->
+        <param name="indev" value="USB"/>
+        <param name="outdev" value="USB"/>
+
+        <param name="cid-name" value="FreeSwitch"/>
+        <param name="cid-num" value="5555551212"/>
       </settings>
     </configuration>
-    
+
     <configuration name="zeroconf.conf" description="Zeroconf Event Handler">
       <settings>
-	<param name="publish" value="yes"/>
-	<param name="browse" value="_sip._udp"/>
+        <param name="publish" value="yes"/>
+        <param name="browse" value="_sip._udp"/>
       </settings>
     </configuration>
-    
+
     <configuration name="xmpp_event.conf" description="XMPP Event Handler">
       <settings>
-	<param name="#debug" value="1"/>
-	<param name="jid" value="freeswitch@my.jabber.com/me"/>
-	<param name="passwd" value="mypass"/>
-	<param name="target-jid" value="freeswitch@reader.org/him"/>
+        <param name="#debug" value="1"/>
+        <param name="jid" value="freeswitch@my.jabber.com/me"/>
+        <param name="passwd" value="mypass"/>
+        <param name="target-jid" value="freeswitch@reader.org/him"/>
       </settings>
     </configuration>
-    
+
     <configuration name="dialplan_directory.conf" description="Dialplan Directory">
       <settings>
-	<param name="directory-name" value="ldap"/>
-	<param name="host" value="ldap.freeswitch.org"/>
-	<param name="dn" value="cn=Manager,dc=freeswitch,dc=org"/>
-	<param name="pass" value="test"/>
-	<param name="base" value="dc=freeswitch,dc=org"/>
+        <param name="directory-name" value="ldap"/>
+        <param name="host" value="ldap.freeswitch.org"/>
+        <param name="dn" value="cn=Manager,dc=freeswitch,dc=org"/>
+        <param name="pass" value="test"/>
+        <param name="base" value="dc=freeswitch,dc=org"/>
       </settings>
     </configuration>
-    
+
     <configuration name="dingaling.conf" description="XMPP Jingle Endpoint">
       <settings>
-	<param name="debug" value="0"/>
-	<param name="codec-prefs" value="PCMU"/>
+        <param name="debug" value="0"/>
+        <param name="codec-prefs" value="PCMU"/>
       </settings>
       <!-- *NOTE* your resource (after the /) MUST contain the string "talk" (upper or lower case is ok) -->
       <!-- *NOTE* as of May 2 2006 you must set"auto-login" to"true" if you want to be able to auto-login on startup"/> -->
       <interface>
-	<param name="name" value="jingle"/>
-	<param name="login" value="myjid@myserver.com/talk"/>
-	<param name="password" value="mypass"/>
-	<param name="dialplan" value="XML"/>
-	<param name="message" value="Jingle all the way"/>
-	<param name="rtp-ip" value="10.0.0.1"/>
-	<param name="auto-login" value="true"/>
-	<!-- SASL "plain" or "md5" -->
-	<param name="sasl" value="plain"/>
-	<!-- if the server where the jabber is hosted is not the same
-	     as the one in the jid -->
-	<!--<param name="server" value="alternate.server.com"/>-->
-	<!-- Enable TLS or not -->
-	<param name="tls" value="true"/>
-	<!-- disable to trade async for more calls -->
-	<param name="use-rtp-timer" value="true"/>
-	<!-- or -->
-	<!-- <param name="rtp-ip" value="my_lan_ip"/> -->
-	<!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/> -->
-	<!-- default extension (if one cannot be determined) -->
-	<param name="exten" value="888"/>
-	<!-- VAD choose one -->
-	<!-- <param name="vad" value="in"/> -->
-	<!-- <param name="vad" value="out"/> -->
-	<param name="vad" value="both"/>
+        <param name="name" value="jingle"/>
+        <param name="login" value="myjid@myserver.com/talk"/>
+        <param name="password" value="mypass"/>
+        <param name="dialplan" value="XML"/>
+        <param name="message" value="Jingle all the way"/>
+        <param name="rtp-ip" value="10.0.0.1"/>
+        <param name="auto-login" value="true"/>
+        <!-- SASL "plain" or "md5" -->
+        <param name="sasl" value="plain"/>
+        <!-- if the server where the jabber is hosted is not the same as the one in the jid -->
+        <!--<param name="server" value="alternate.server.com"/>-->
+        <!-- Enable TLS or not -->
+        <param name="tls" value="true"/>
+        <!-- disable to trade async for more calls -->
+        <param name="use-rtp-timer" value="true"/>
+        <!-- or -->
+        <!-- <param name="rtp-ip" value="my_lan_ip"/> -->
+        <!-- <param name="ext-rtp-ip" value="stun:stun.server.com"/> -->
+        <!-- default extension (if one cannot be determined) -->
+        <param name="exten" value="888"/>
+        <!-- VAD choose one -->
+        <!-- <param name="vad" value="in"/> -->
+        <!-- <param name="vad" value="out"/> -->
+        <param name="vad" value="both"/>
       </interface>
     </configuration>
+
     <configuration name="xml_rpc.conf" description="XML RPC">
       <settings>
-	<!-- The port where you want to run the http service (default 8080) -->
-	<param name="http-port" value="8080"/>
-	<!-- if all 3 of the following params exist all http traffic will require auth -->
-	<param name="auth-realm" value="freeswitch"/>
-	<param name="auth-user" value="freeswitch"/>
-	<param name="auth-pass" value="works"/>
-	<!-- The url to a gateway cgi that can generate xml similar to
-	     what's in this file only on-the-fly (leave it commented if you dont
-	     need it) -->
-	<!-- one or more |-delim of configuration|directory|dialplan -->
-	<!-- <param name="gateway-url" value="http://www.server.com/gateway.cgi" bindings="configuration"/> -->
+        <!-- The port where you want to run the http service (default 8080) -->
+        <param name="http-port" value="8080"/>
+        <!-- if all 3 of the following params exist all http traffic will require auth -->
+        <param name="auth-realm" value="freeswitch"/>
+        <param name="auth-user" value="freeswitch"/>
+        <param name="auth-pass" value="works"/>
+        <!-- The url to a gateway cgi that can generate xml similar to what's in -->
+        <!-- this file only on-the-fly (leave it commented if you dont need it)-->
+        <!-- one or more |-delim of configuration|directory|dialplan -->
+        <!-- <param name="gateway-url" value="http://www.server.com/gateway.cgi" bindings="configuration"/> -->
       </settings>
     </configuration>
 
     <configuration name="rss.conf" description="RSS Parser">
       <feeds>
-	<!-- Just download the files to wherever and refer to them here -->
-	<!-- <feed name="Slash Dot">/home/rss/rss.rss</feed> -->
-	<!-- <feed name="News Forge">/home/rss/newsforge.rss</feed> -->
+        <!-- Just download the files to wherever and refer to them here -->
+        <!-- <feed name="Slash Dot">/home/rss/rss.rss</feed> -->
+        <!-- <feed name="News Forge">/home/rss/newsforge.rss</feed> -->
       </feeds>
     </configuration>
 
-    <!-- None of these paths are real if you want any of these options
-	 you need to really set them up -->
+    <!-- None of these paths are real if you want any of these options you need to really set them up -->
     <configuration name="conference.conf" description="Audio Conference">
       <!-- Profiles are collections of settings you can reference by name. -->
 
       <profiles>
-	<profile name="default">
-	  <!-- Sample Rate-->
-	  <param name="rate" value="8000"/>
-	  <!-- Number of milliseconds per frame -->
-	  <param name="interval" value="20"/>
-	  <!-- Energy level required for audio to be sent to the other users -->
-	  <param name="energy-level" value="300"/>
-	  <!-- TTS Engine to use -->
-	  <!--<param name="tts-engine" value="cepstral"/>-->
-	  <!-- TTS Voice to use -->
-	  <!--<param name="tts-voice" value="david"/>-->
+        <profile name="default">
+          <!-- Sample Rate-->
+          <param name="rate" value="8000"/>
+          <!-- Number of milliseconds per frame -->
+          <param name="interval" value="20"/>
+          <!-- Energy level required for audio to be sent to the other users -->
+          <param name="energy-level" value="300"/>
+          <!-- TTS Engine to use -->
+          <!--<param name="tts-engine" value="cepstral"/>-->
+          <!-- TTS Voice to use -->
+          <!--<param name="tts-voice" value="david"/>-->
 
-	  <!-- If TTS is enabled all audio-file params not beginning with '/'
-	       will be considered text to say with TTS -->
+          <!-- If TTS is enabled all audio-file params not beginning with -->
+          <!-- '/' or with drive: (i.e. c:) will be considered text to say with TTS -->
 
-	  <!-- File to play to acknowledge succees -->
-	  <!--<param name="ack-sound" value="/soundfiles/beep.wav"/>-->
-	  <!-- File to play to acknowledge failure -->
-	  <!--<param name="nack-sound" value="/soundfiles/beeperr.wav"/>-->
-	  <!-- File to play to acknowledge muted -->
-	  <!--<param name="muted-sound" value="/soundfiles/muted.wav"/>-->
-	  <!-- File to play to acknowledge unmuted -->
-	  <!--<param name="unmuted-sound" value="/soundfiles/unmuted.wav"/>-->
-	  <!-- File to play if you are alone in the conference -->
-	  <!--<param name="alone-sound" value="/soundfiles/yactopitc.wav"/>-->
-	  <!-- File to play when you join the conference -->
-	  <!--<param name="enter-sound" value="/soundfiles/welcome.wav"/>-->
-	  <!-- File to play when you leave the conference -->
-	  <!--<param name="exit-sound" value="/soundfiles/exit.wav"/>-->
-	  <!-- File to play when you ae ejected from the conference -->
-	  <!--<param name="kicked-sound" value="/soundfiles/kicked.wav"/>-->
-	  <!-- File to play when the conference is locked -->
-	  <!--<param name="locked-sound" value="/soundfiles/locked.wav"/>-->
-	  <!-- File to play to prompt for a pin -->
-	  <!--<param name="pin-sound" value="/soundfiles/pin.wav"/>-->
-	  <!-- File to play to when the pin is invalid -->
-	  <!--<param name="bad-pin-sound" value="/soundfiles/invalid-pin.wav"/>-->
-	  <!-- Conference pin -->
-	  <!--<param name="pin" value="12345"/>-->
-	  <!-- Default Caller ID Name for outbound calls -->
-	  <param name="caller-id-name" value="FreeSWITCH"/>
-	  <!-- Default Caller ID Number for outbound calls -->
-	  <param name="caller-id-number" value="8777423583"/>
-	</profile>
+          <!-- File to play to acknowledge succees -->
+          <!--<param name="ack-sound" value="/soundfiles/beep.wav"/>-->
+          <!-- File to play to acknowledge failure -->
+          <!--<param name="nack-sound" value="/soundfiles/beeperr.wav"/>-->
+          <!-- File to play to acknowledge muted -->
+          <!--<param name="muted-sound" value="/soundfiles/muted.wav"/>-->
+          <!-- File to play to acknowledge unmuted -->
+          <!--<param name="unmuted-sound" value="/soundfiles/unmuted.wav"/>-->
+          <!-- File to play if you are alone in the conference -->
+          <!--<param name="alone-sound" value="/soundfiles/yactopitc.wav"/>-->
+          <!-- File to play when you join the conference -->
+          <!--<param name="enter-sound" value="/soundfiles/welcome.wav"/>-->
+          <!-- File to play when you leave the conference -->
+          <!--<param name="exit-sound" value="/soundfiles/exit.wav"/>-->
+          <!-- File to play when you ae ejected from the conference -->
+          <!--<param name="kicked-sound" value="/soundfiles/kicked.wav"/>-->
+          <!-- File to play when the conference is locked -->
+          <!--<param name="locked-sound" value="/soundfiles/locked.wav"/>-->
+          <!-- File to play to prompt for a pin -->
+          <!--<param name="pin-sound" value="/soundfiles/pin.wav"/>-->
+          <!-- File to play to when the pin is invalid -->
+          <!--<param name="bad-pin-sound" value="/soundfiles/invalid-pin.wav"/>-->
+          <!-- Conference pin -->
+          <!--<param name="pin" value="12345"/>-->
+          <!-- Default Caller ID Name for outbound calls -->
+          <param name="caller-id-name" value="FreeSWITCH"/>
+          <!-- Default Caller ID Number for outbound calls -->
+          <param name="caller-id-number" value="8777423583"/>
+        </profile>
       </profiles>
     </configuration>
   </section>
+  
   <section name="dialplan" description="Regex/XML Dialplan">
-    <!-- Valid fields in conditions:
-	 "dialplan, caller_id_name, ani, ani2, caller_id_number,
-	 network_addr, rdnis, destination_number, uuid, source,
-	 context, chan_name" -->
+    <!-- Valid fields in conditions: -->
+    <!-- "dialplan, caller_id_name, ani, ani2, caller_id_number, -->
+    <!-- rdnis, destination_number, uuid, source, context, chan_name" -->
 
     <!-- *NOTE* The special context name 'any' will match any context -->
     <context name="default">
       <extension name="tollfree">
-	<condition field="destination_number" expression="^(18(0{2}|8{2}|7{2}|6{2})\d{7})$">
-	  <action application="bridge" data="exosip/$1-freeswitch@voip.trxtel.com"/>
-	</condition>
+        <condition field="destination_number" expression="^(18(0{2}|8{2}|7{2}|6{2})\d{7})$">
+          <action application="bridge" data="sofia/test/$1-freeswitch@voip.trxtel.com"/>
+        </condition>
       </extension>
 
-      <!--<extension name="devconf">
-	  <condition field="destination_number" expression="^888$">
-	  <action application="bridge" data="exosip/888@66.250.68.194"/>
-	  </condition>
-	  </extension> -->
+      <!-- Call the FreeSWITCH conference via SIP -->
+        <!--<extension name="FreeSWITCH Conference SIP">-->
+          <!--<condition field="destination_number" expression="^888$">-->
+            <!--<action application="bridge" data="sofia/test/888@66.250.68.194"/>-->
+          <!--</condition>-->
+        <!--</extension> -->
+
+      <!-- Call the FreeSWITCH conference via IAX -->
+        <!--<extension name="FreeSWITCH Conference IAX">-->
+          <!--<condition field="destination_number" expression="^8888$">-->
+            <!--<action application="bridge" data="iax/guest@66.250.68.194/888"/>-->
+          <!--</condition>-->
+        <!--</extension>-->
 
       <extension name="testmusic">
-	<condition field="destination_number" expression="^1234$">
-	  <action application="bridge" data="exosip/1234@66.250.68.194"/>
-	</condition>
+        <condition field="destination_number" expression="^1234$">
+          <action application="bridge" data="sofia/test/1234@66.250.68.194"/>
+        </condition>
       </extension>
 
       <!-- Enter an existing conference -->
       <extension name="1000">
-	<condition field="destination_number" expression="^1000$">
-	  <action application="conference" data="freeswitch"/>
-	</condition>
+        <condition field="destination_number" expression="^1000$">
+          <action application="conference" data="freeswitch"/>
+        </condition>
       </extension>
 
       <!-- Start a dynamic conference and call someone at the same time -->
       <extension name="2000">
-	<condition field="destination_number" expression="^2000$">
-	  <action application="conference" data="bridge:mydynaconf:exosip/1234@66.250.68.194"/>
-	</condition>
+        <condition field="destination_number" expression="^2000$">
+          <action application="conference" data="bridge:mydynaconf:sofia/test/1234@66.250.68.194"/>
+        </condition>
       </extension>
 
-      <!-- if the destination is an exact match on the extension name
-	   you do not need any regex in the condition 
-	   <extension name="999">
-	   <condition><action application="bridge" data="exosip/888@66.250.68.194"/></condition>
-	   </extension>-->
-      <!-- extensions starting with 4, all the numbers after 4 form a numeric filename
-	   continue=true means keep looking for more extensions to match
-	   *NOTE* The entire dialplan is parsed ONCE when the call starts 
-	   so any call info acquired after the various actions cannot
-	   be taken into consideration. 
+      <!-- extensions starting with 4, all the numbers after 4 form a numeric filename -->
+      <!-- continue="true" means keep looking for more extensions to match -->
+      <!-- *NOTE* The entire dialplan is parsed ONCE when the call starts -->
+      <!-- so any call info acquired after the various actions cannot -->
+      <!-- be taken into consideration. -->
 
-The first match will play a beep and the second one plays
-the desired file.  This is for demo purposes both actions
-could have been under the same <extension> tag as well.
-      -->
+      <!-- The first match will play a beep and the second one plays -->
+      <!-- the desired file.  This is for demo purposes both actions -->
+      <!-- could have been under the same <extension> tag as well. -->
       <extension name="playsound1" continue="true">
-	<condition field="source" expression="mod_sofia"/>
-	<condition field="destination_number" expression="^4(\d+)">
-	  <action application="playback" data="/var/sounds/beep.gsm"/>
-	</condition>
+        <condition field="source" expression="mod_sofia"/>
+        <condition field="destination_number" expression="^4(\d+)">
+          <action application="playback" data="/var/sounds/beep.gsm"/>
+        </condition>
       </extension>
+
       <extension name="playsound2">
-	<condition field="source" expression="mod_sofia"/>
-	<condition field="destination_number" expression="^4(\d+)">
-	  <action application="playback" data="/root/$1.raw"/>
-	</condition>
+        <condition field="source" expression="mod_sofia"/>
+        <condition field="destination_number" expression="^4(\d+)">
+          <action application="playback" data="/root/$1.raw"/>
+        </condition>
       </extension>
+
       <!-- send everything with a certian RDNIS to Wanpipe ISDN -->
       <extension name="To PRI">
-	<condition field="rdnis" expression="8881231234"/>
-	<condition field="destination_number" expression="(.*)">
-	  <action application="bridge" data="wanpipe/a/a/$1"/>
-	</condition>
+        <condition field="rdnis" expression="8881231234"/>
+        <condition field="destination_number" expression="(.*)">
+          <action application="bridge" data="wanpipe/a/a/$1"/>
+        </condition>
       </extension>
+
       <!-- Call *MUST* originate from mod_iax and also be dialing ext 9999-->
       <extension name="9999">
-	<condition field="source" expression="mod_iax"/>
-	<condition field="destination_number" expression="9999">
-	  <action application="playback" data="/var/sounds/beep.gsm"/>
-	</condition>
+        <condition field="source" expression="mod_iax"/>
+        <condition field="destination_number" expression="9999">
+          <action application="playback" data="/var/sounds/beep.gsm"/>
+        </condition>
       </extension>
-      <!-- Call the FreeSWITCH conference via SIP -->
-      <extension name="FreeSWITCH Conference SIP">
-	<condition field="destination_number" expression="^888$">
-	  <action application="bridge" data="exosip/888@66.250.68.194"/>
-	</condition>
-      </extension>
-      <!-- Call the FreeSWITCH conference via IAX -->
-      <extension name="FreeSWITCH Conference IAX">
-	<condition field="destination_number" expression="^8888$">
-	  <action application="bridge" data="iax/guest@66.250.68.194/888"/>
-	</condition>
-      </extension>
+
     </context>
   </section>
 
@@ -474,10 +468,10 @@ could have been under the same <extension> tag as well.
     <domain name="mydomain.com">
       <!--the user id (the left hand side of the @ in the addr-->
       <user id="1000">
-	<!-- omit password for authless registration -->
-	<param name="password" value="mypass"/>
-	<!--various endpoints and application will look for user specific settings here -->
-	<param name="mypref" value="myval"/>
+        <!-- omit password for authless registration -->
+        <param name="password" value="mypass"/>
+        <!--various endpoints and application will look for user specific settings here -->
+        <param name="mypref" value="myval"/>
       </user>
     </domain>
   </section>
