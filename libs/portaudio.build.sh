@@ -11,32 +11,29 @@ patch <<__EOF__
  
    mingw* )
  
---- pa_unix_oss/pa_unix_oss.c.orig  Sat Sep 30 20:46:55 2006
-+++ pa_unix_oss/pa_unix_oss.c       Sat Sep 30 20:46:13 2006
+--- pa_unix_oss/pa_unix_oss.c.orig      Sun Oct  1 19:57:15 2006
++++ pa_unix_oss/pa_unix_oss.c   Sun Oct  1 20:00:01 2006
 @@ -95,7 +95,9 @@
- 
+
  #include <stdio.h>
  #include <stdlib.h>
-+#ifndef __FreeBSD__
++#if !defined(__FreeBSD__) && !defined(__OpenBSD__)
  #include <malloc.h>
 +#endif
  #include <memory.h>
  #include <math.h>
  #include <sys/ioctl.h>
-@@ -109,6 +111,8 @@
- 
+@@ -109,6 +111,10 @@
+
  #ifdef __linux__
  #include <linux/soundcard.h>
-+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) 
-+#ifdef __OpenBSD__
-+#include <soundcard.h>
-+#else
++#elif defined(__FreeBSD__) || defined(NetBSD)
 +#include <sys/soundcard.h>
-+#endif
++#elif defined(__OpenBSD__)
++#include <soundard.h>
  #else
  #include <machine/soundcard.h> /* JH20010905 */
  #endif
- 
 __EOF__
 
 arch=`uname -m`
