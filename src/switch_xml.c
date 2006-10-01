@@ -118,7 +118,7 @@ SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(char *str)
 
 	if (str) {
 		for(x = 0; x < strlen(str); x++) {
-			buf[x] = (char)tolower(str[x]);
+			buf[x] = (char)tolower((int)str[x]);
 		}
 		for(x = 0;;x++) {
 			if (!SECTIONS[x].name) {
@@ -296,7 +296,7 @@ static char *switch_xml_decode(char *s, char **ent, char t)
     }
     
     for (s = r; ; ) {
-        while (*s && *s != '&' && (*s != '%' || t != '%') && !isspace(*s)) s++;
+        while (*s && *s != '&' && (*s != '%' || t != '%') && !isspace((int)(*s))) s++;
 
         if (! *s) break;
         else if (t != 'c' && ! strncmp(s, "&#", 2)) { // character reference
@@ -331,7 +331,7 @@ static char *switch_xml_decode(char *s, char **ent, char t)
             }
             else s++; // not a known entity
         }
-        else if ((t == ' ' || t == '*') && isspace(*s)) *(s++) = ' ';
+        else if ((t == ' ' || t == '*') && isspace((int)(*s))) *(s++) = ' ';
         else s++; // no decoding needed
     }
 
@@ -616,12 +616,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
         attr = (char **)SWITCH_XML_NIL;
         d = ++s;
         
-        if (isalpha(*s) || *s == '_' || *s == ':' || (int8_t) *s < '\0') { // new tag
+        if (isalpha((int)(*s)) || *s == '_' || *s == ':' || (int8_t) *s < '\0') { // new tag
             if (! root->cur)
                 return switch_xml_err(root, d, "markup outside of root element");
 
             s += strcspn(s, SWITCH_XML_WS "/>");
-            while (isspace(*s)) *(s++) = '\0'; // null terminate tag name
+            while (isspace((int)(*s))) *(s++) = '\0'; // null terminate tag name
   
             if (*s && *s != '/' && *s != '>') // find tag in default attr list
                 for (i = 0; (a = root->attr[i]) && strcmp(a[0], d); i++);
@@ -637,7 +637,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
                 attr[l] = s; // set attribute name
 
                 s += strcspn(s, SWITCH_XML_WS "=/>");
-                if (*s == '=' || isspace(*s)) { 
+                if (*s == '=' || isspace((int)(*s))) { 
                     *(s++) = '\0'; // null terminate tag attribute name
                     q = *(s += strspn(s, SWITCH_XML_WS "="));
                     if (q == '"' || q == '\'') { // attribute value
@@ -656,7 +656,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
                             attr[l + 3][l / 2] = SWITCH_XML_TXTM; // value malloced
                     }
                 }
-                while (isspace(*s)) s++;
+                while (isspace((int)(*s))) s++;
             }
 
             if (*s == '/') { // self closing tag
@@ -683,7 +683,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
             if (! (q = *s) && e != '>') return switch_xml_err(root, d, "missing >");
             *s = '\0'; // temporarily null terminate tag name
             if (switch_xml_close_tag(root, d, s)) return &root->xml;
-            if (isspace(*s = q)) s += strspn(s, SWITCH_XML_WS);
+            if (isspace((int)(*s = q))) s += strspn(s, SWITCH_XML_WS);
         }
         else if (! strncmp(s, "!--", 3)) { // comment
             if (! (s = strstr(s + 3, "--")) || (*(s += 2) != '>' && *s) ||
