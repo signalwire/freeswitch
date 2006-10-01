@@ -30,7 +30,7 @@ patch <<__EOF__
 +#elif defined(__FreeBSD__) || defined(NetBSD)
 +#include <sys/soundcard.h>
 +#elif defined(__OpenBSD__)
-+#include <soundard.h>
++#include <soundcard.h>
  #else
  #include <machine/soundcard.h> /* JH20010905 */
  #endif
