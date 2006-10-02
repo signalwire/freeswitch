@@ -1,18 +1,97 @@
-dnl Process this file with autoconf to produce a configure script.
-AC_INIT(srtp)
+AC_PREREQ(2.59)
+AC_INIT(srtp, 1.4.2, mcgrew@cisco.com)
+AC_CONFIG_AUX_DIR(build)
+AM_INIT_AUTOMAKE(libsrtp,1.4.2)
 
-dnl Must come before AC_PROG_CC
-if test -z "$CFLAGS"; then
-   dnl Default value for CFLAGS if not specified.
-   CFLAGS="-Wall -O4 -fexpensive-optimizations -funroll-loops"
+#Set default language
+AC_LANG_C
+# Checks for programs.
+AC_PROG_CC
+AC_PROG_AWK
+AC_PROG_MAKE_SET
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+AX_COMPILER_VENDOR
+
+# Optimization
+AC_ARG_ENABLE(optimization,
+[AC_HELP_STRING([--enable-optimization],[Set if you want us to add max optimising compiler flags])],[enable_optimizer="$enableval"],[enable_optimizer="no"])
+
+if test "${enable_optimizer}" = "yes" ; then
+        AC_DEFINE([OPTIMZER],[],[Enable Optimization.])
+        AX_CC_MAXOPT
 fi
 
-dnl Checks for programs.
-AC_PROG_RANLIB
-AC_PROG_CC
-AC_PROG_INSTALL
+#  Enable debugging
+AC_ARG_ENABLE(debug,
+[AC_HELP_STRING([--enable-debug],[build with debug information])],[enable_debug="$enable_debug"],[enable_debug="yes"])
 
-AC_ARG_ENABLE(pic, [AS_HELP_STRING([--enable-pic],[build with PIC])],[CFLAGS="-fPIC $CFLAGS"])
+if test "${enable_debug}" = "yes"; then
+        AC_DEFINE([DEBUG],[],[Enable extra debugging.])
+        AX_CFLAGS_WARN_ALL_ANSI
+fi
+
+AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
+
+
+case "$host" in
+                *-solaris2*)
+                        if test "x${ax_cv_c_compiler_vendor}"  = "xsun" ; then
+                                SOLINK="-Bdynamic -dy -G"
+                                new_AM_CFLAGS="-KPIC -DPIC"
+                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
+                                FUNC_DEF=__func__
+                                IN_LINE=""
+                        elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
+                                SOLINK="-Bdynamic -dy -G"
+                                new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
+                                new_AM_LDFLAGS=""
+                                IN_LINE=inline
+                        fi
+                        DYNAMIC_LIB_EXTEN="so"
+                ;;
+                *-darwin*)
+                        if test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
+                                SOLINK="-dynamic -bundle -undefined-surpress -force-flat-namespace"
+                                new_AM_CFLAGS="-DMACOSX"
+                                new_AM_LDFLAGS=""
+                        fi
+                        DYNAMIC_LIB_EXTEN="dylib"
+                ;;
+                x86_64-*-linux-gnu)
+                        if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
+                                SOLINK="-Bdynamic -dy -G"
+                                new_AM_CFLAGS="-KPIC -DPIC"
+                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
+                                FUNC_DEF=__func__
+                        elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
+                               SOLINK="-shared -Xlinker -x"
+                                new_AM_CFLAGS="-fPIC -Wall -O4 -fexpensive-optimizations -funroll-loops"
+                                new_AM_LDFLAGS=""
+                        fi
+                        DYNAMIC_LIB_EXTEN="so"
+                ;;
+                i*6-*-linux-gnu)
+                        if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
+                                SOLINK="-Bdynamic -dy -G"
+                                new_AM_CFLAGS="-KPIC -DPIC"
+                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
+                                FUNC_DEF=__func__
+                        elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
+                                SOLINK="-shared -Xlinker -x"
+                                new_AM_CFLAGS="-fpic -Wall -O4 -fexpensive-optimizations -funroll-loops"
+                                new_AM_LDFLAGS=""
+                        fi
+                        DYNAMIC_LIB_EXTEN="so"
+                ;;
+esac
+AC_SUBST(new_AM_CFLAGS)
+AC_SUBST(new_AM_LDFLAGS)
+AC_SUBST(SOLINK)
+AC_SUBST(DYNAMIC_LIB_EXTEN)
+AC_DEFINE_UNQUOTED([__FUNCTION__],[$FUNC_DEF],[define it the right way ;)])
+AC_DEFINE_UNQUOTED([inline],[$IN_LINE],[sunpro is bad at inline])
+
 
 AC_ARG_ENABLE(kernel-linux,
   [AS_HELP_STRING([--enable-kernel-linux],
@@ -35,10 +114,10 @@ fi
 
 AC_MSG_CHECKING(which random device to use)
 if test "$enable_kernel_linux" = "yes"; then
-   RNG_OBJS=rand_linux_kernel.o
+   RNG_OBJS=rand_linux_kernel.c
    AC_MSG_RESULT([Linux kernel builtin])
 else
-   RNG_OBJS=rand_source.o
+RNG_OBJS=rand_source.c
    if test -n "$DEV_URANDOM"; then
       AC_DEFINE_UNQUOTED(DEV_URANDOM, "$DEV_URANDOM",[Path to random device])
       AC_MSG_RESULT([$DEV_URANDOM])
@@ -47,7 +126,7 @@ else
    fi
 fi
 AC_SUBST(RNG_OBJS)
-
+AM_CONDITIONAL(RNG_OBJS_LINUX, test x$enable_kernel_linux = xyes)
 
 dnl Checks for header files.
 AC_HEADER_STDC
@@ -99,7 +178,6 @@ fi
 dnl Check the byte order
 AC_C_BIGENDIAN
 
-AC_CANONICAL_HOST
 
 dnl check host_cpu type, set defines appropriately
 case $host_cpu in
@@ -187,10 +265,11 @@ if test "$enable_gdoi" = "yes"; then
    AC_SUBST(GDOI_OBJS)                              
 fi
 AC_MSG_RESULT($enable_gdoi)
+AM_CONDITIONAL([GDOI],[test "SRTP_GDOI" = "1"])
 
 AC_CONFIG_HEADER(crypto/include/config.h:config_in.h)
 
-AC_OUTPUT(Makefile crypto/Makefile doc/Makefile)
+AC_OUTPUT(Makefile crypto/Makefile doc/Makefile test/Makefile srtp-1.42.pc)
 
 # This is needed when building outside the source dir.
 AS_MKDIR_P(crypto/ae_xfm)

@@ -6,6 +6,9 @@
 /* Define if building for a RISC machine (assume slow byte access). */
 #undef CPU_RISC
 
+/* Enable extra debugging. */
+#undef DEBUG
+
 /* Path to random device */
 #undef DEV_URANDOM
 
@@ -26,6 +29,9 @@
 
 /* Define to 1 if you have the <byteswap.h> header file. */
 #undef HAVE_BYTESWAP_H
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
 
 /* Define to 1 if you have the `inet_aton' function. */
 #undef HAVE_INET_ATON
@@ -114,6 +120,12 @@
 /* Define to use X86 inlined assembly code */
 #undef HAVE_X86
 
+/* Enable Optimization. */
+#undef OPTIMZER
+
+/* Name of package */
+#undef PACKAGE
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -153,9 +165,15 @@
 /* Define to use syslog logging. */
 #undef USE_SYSLOG
 
+/* Version number of package */
+#undef VERSION
+
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
+
+/* define it the right way ;) */
+#undef __FUNCTION__
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const

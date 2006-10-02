@@ -1,0 +1,10 @@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+libdir = @libdir@
+includedir = @includedir@
+
+Name: srtp
+Description: Secure RTP (SRTP) and UST Reference Implementations
+Version: @VERSION@
+Libs: -L${libdir} -lsrtp.so
+Cflags: -I${includedir}/srtp
