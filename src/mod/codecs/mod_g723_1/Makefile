@@ -1,5 +1,12 @@
+ifeq ($(shell ls $(BASE)/libs/libg723_1),$(BASE)/libs/libg723_1)
+
 CFLAGS += -I$(PREFIX)/include/g723
 LDFLAGS +=-lg723
+
+else
+
+CFLAGS += -DG723_PASSTHROUGH
+endif
 
 all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
