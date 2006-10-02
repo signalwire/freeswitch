@@ -51,12 +51,12 @@ static char *pfile = PIDFILE;
 static HANDLE shutdown_event;
 #endif
 
-	static int handle_SIGHUP(int sig)
+static void handle_SIGHUP(int sig)
 {
 	uint32_t arg = 0;
 	if(sig);
 	switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
-	return 0;
+	return;
 }
 
 
@@ -228,8 +228,8 @@ int main(int argc, char *argv[])
 	if (bg) {
 		ppath = lfile;
 
-		signal(SIGHUP, (void *) handle_SIGHUP);
-		signal(SIGTERM, (void *) handle_SIGHUP);
+		signal(SIGHUP, handle_SIGHUP);
+		signal(SIGTERM, handle_SIGHUP);
 
 #ifdef WIN32
 		FreeConsole();

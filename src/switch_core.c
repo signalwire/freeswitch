@@ -3677,26 +3677,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	return SWITCH_STATUS_SUCCESS;
 }
 #ifdef SIGPIPE
-static int handle_SIGPIPE(int sig)
+static void handle_SIGPIPE(int sig)
 {
 	if(sig);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig Pipe!\n");
-	return 0;
+	return;
 }
 #endif
 #ifdef TRAP_BUS
-static int handle_SIGBUS(int sig)
+static void handle_SIGBUS(int sig)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig BUS!\n");
-	return 0;
+	return;
 }
 #endif
 
 /* no ctl-c mofo */
-static int handle_SIGINT(int sig)
+static void handle_SIGINT(int sig)
 {
 	if (sig);
-	return 0;
+	return;
 }
 SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, const char **err)
 {
@@ -3706,12 +3706,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, cons
 	}
 
 	/* set signal handlers */
-	signal(SIGINT, (void *) handle_SIGINT);
+	signal(SIGINT, handle_SIGINT);
 #ifdef SIGPIPE
-	signal(SIGPIPE, (void *) handle_SIGPIPE);
+	signal(SIGPIPE, handle_SIGPIPE);
 #endif
 #ifdef TRAP_BUS
-	signal(SIGBUS, (void *) handle_SIGBUS);
+	signal(SIGBUS, handle_SIGBUS);
 #endif
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
