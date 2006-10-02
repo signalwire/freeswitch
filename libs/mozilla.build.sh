@@ -1,5 +1,6 @@
 hosttype=`uname -s`
 ldflags=""
+cflags=""
 if [ $hosttype = "FreeBSD" ] ; then
 
 patch <<__EOF__ 
@@ -26,6 +27,8 @@ fi
 
 if [ $hosttype = "OpenBSD" ] ; then
 cp js/src/config/Linux_All.mk js/src/config/`uname -s``uname -r`.mk
+cflags="-DHAVE_VA_COPY -DVA_COPY=va_copy -D_PR_HAVE_GETPROTO_R -D_PR_HAVE_GETPROTO_R_INT"
+ldflags="-lpthread"
 fi
 
 if [ $hosttype = "NetBSD" ] ; then
@@ -37,9 +40,14 @@ arch=`uname -m`
 opts=""
 if [ $arch = "x86_64" ] ; then
 opts="--enable-64bit"
+cflags="$cflags  -fPIC"
+fi
+if [ $arch = "amd64" ] ; then
+opts="--enable-64bit"
+cflags="$cflags -fPIC"
 fi
 
-cd nsprpub && LDFLAGS=$ldflags ./configure $opts && $MAKE
+cd nsprpub && CFLAGS=$cflags LDFLAGS=$ldflags ./configure $opts && $MAKE
 
-cd ../js/src && LDFLAGS=$ldflags JS_THREADSAFE=1 JS_HAS_FILE_OBJECT=1 OTHER_LIBS="-L../../../mozilla/nsprpub/dist/lib" INCLUDES="-I../../../mozilla/nsprpub/dist/include/nspr"  $MAKE -f Makefile.ref `find . -name libjs.a`
+cd ../js/src && CFLAGS=$cflags  LDFLAGS=$ldflags JS_THREADSAFE=1 JS_HAS_FILE_OBJECT=1 OTHER_LIBS="-L../../../mozilla/nsprpub/dist/lib" INCLUDES="-I../../../mozilla/nsprpub/dist/include/nspr"  $MAKE -f Makefile.ref `find . -name libjs.a`
 
