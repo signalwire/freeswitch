@@ -1574,7 +1574,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	assert(session != NULL);
 	*frame = NULL;
 
-	while (switch_channel_test_flag(session->channel, CF_HOLD)) {
+	if (switch_channel_test_flag(session->channel, CF_HOLD)) {
 		status = SWITCH_STATUS_BREAK;
 		goto done;
 	}
@@ -2668,7 +2668,6 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					}
 				}
 				goto done;
-				break;
 			case CS_INIT:		/* Basic setup tasks */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State INIT\n", switch_channel_get_name(session->channel));
 				if (!driver_state_handler->on_init ||
