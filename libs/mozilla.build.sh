@@ -30,6 +30,10 @@ if [ $hosttype = "OpenBSD" ] ; then
 cp js/src/config/Linux_All.mk js/src/config/`uname -s``uname -r`.mk
 fi
 
+if [ $hosttype = "NetBSD" ] ; then
+cp js/src/config/Linux_All.mk js/src/config/`uname -s``uname -r`.mk
+fi
+
 arch=`uname -m`
 
 opts=""
