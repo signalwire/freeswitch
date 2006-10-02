@@ -1,5 +1,5 @@
-LDFLAGS += -I/usr/include/mysql -L/usr/lib64/mysql -lmysqlclient -lz -lcrypt -lnsl -lm -lssl -lcrypto
-CFLAGS += -I/usr/include/mysql -L/usr/lib64/mysql 
+LDFLAGS += -L/usr/lib64/mysql -L/usr/lib/mysql -L/usr/local/lib/mysql -lmysqlclient -lz -lcrypt -lnsl -lm -lssl -lcrypto
+CFLAGS += -I/usr/include/mysql -I/usr/local/include/mysql
 CPPCC = g++
 OBJS=cdrcontainer.o basecdr.o baseregistry.o mysqlcdr.o pddcdr.o csvcdr.o
 
