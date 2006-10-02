@@ -36,6 +36,8 @@
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef PACKAGE_BUGREPORT
+#undef VERSION
+#undef PACKAGE
 #include <datatypes.h>
 #include <srtp.h>
 
@@ -217,7 +219,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session)
 			elapsed = (unsigned int)((switch_time_now() - rtp_session->last_stun) / 1000);
 
 			if (elapsed > 30000) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No stun for a long time (PUNT!)\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, 3, "No stun for a long time (PUNT!)\n");
 				return SWITCH_STATUS_FALSE;
 			}
 		}
