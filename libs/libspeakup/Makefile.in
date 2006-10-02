@@ -41,12 +41,17 @@ DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
 	build/compile build/config.guess build/config.sub \
-	build/depcomp build/install-sh build/ltmain.sh build/missing \
-	compile config.guess config.sub depcomp install-sh ltmain.sh \
-	missing mkinstalldirs
+	build/depcomp build/install-sh build/ltmain.sh build/missing
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.in
+am__aclocal_m4_deps =  \
+	$(top_srcdir)/build/config/ax_compiler_vendor.m4 \
+	$(top_srcdir)/build/config/ax_cflags_warn_all_ansi.m4 \
+	$(top_srcdir)/build/config/ax_cc_maxopt.m4 \
+	$(top_srcdir)/build/config/ax_check_compiler_flags.m4 \
+	$(top_srcdir)/build/config/ac_gcc_archflag.m4 \
+	$(top_srcdir)/build/config/ac_gcc_x86_cpuid.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -150,6 +155,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PRTDIAG = @PRTDIAG@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -481,7 +487,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/build $(distdir)/src
+	$(mkdir_p) $(distdir)/build $(distdir)/build/config $(distdir)/src
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
