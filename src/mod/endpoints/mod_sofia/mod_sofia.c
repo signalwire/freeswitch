@@ -618,7 +618,7 @@ static void set_local_sdp(private_object_t *tech_pvt)
 	}
 	
 	if (tech_pvt->te > 96) {
-		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16", tech_pvt->te, tech_pvt->te);
+		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
 
 
@@ -1137,11 +1137,12 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		set_local_sdp(tech_pvt);
 		activate_rtp(tech_pvt);
 		if (tech_pvt->nh) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP:\n%s\n", tech_pvt->local_sdp_str);
 			nua_respond(tech_pvt->nh, SIP_200_OK, 
 						//SIPTAG_CONTACT(tech_pvt->contact),
-						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP:\n%s\n", tech_pvt->local_sdp_str);
+						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+						SOATAG_AUDIO_AUX("cn telephone-event"),
+						TAG_END());
 		}
 	}
 
@@ -1434,7 +1435,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "183 SDP:\n%s\n", tech_pvt->local_sdp_str);
 			nua_respond(tech_pvt->nh, SIP_183_SESSION_PROGRESS,
 						//SIPTAG_CONTACT(tech_pvt->contact),
-						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), TAG_END());
+						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+						SOATAG_AUDIO_AUX("cn telephone-event"),
+						TAG_END());
 	    }
 	}
 		break;
@@ -2243,7 +2246,9 @@ static void sip_r_register(int status,
 	
 	if (!oreg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No authentication available!\n");
-		nua_handle_destroy(nh); 
+		if (sofia_private->oreg) {
+			nua_handle_destroy(nh); 
+		}
 		return;
 	}
 	
@@ -2254,10 +2259,10 @@ static void sip_r_register(int status,
 	}
 
 	if (status == 200) {
-		if (!sofia_private->session) {
+		if (sofia_private->oreg) {
 			oreg->state = REG_STATE_REGISTER;
+			nua_handle_destroy(nh);
 		}
-		nua_handle_destroy(nh);
 	} else if (authenticate) {
 		char const *realm = (char const *) *authenticate->au_params;
 		char const *scheme = (char const *) authenticate->au_scheme;
