@@ -14,7 +14,7 @@ applications/mod_playback
 #codecs/mod_amr
 codecs/mod_g711
 #codecs/mod_g722
-#codecs/mod_g23_1
+#codecs/mod_g723_1
 #codecs/mod_g726
 #codecs/mod_g729
 codecs/mod_gsm
