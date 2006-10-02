@@ -1,10 +1,9 @@
 
-CFLAGS  += $(shell mysql_config --includes) 
-LDFLAGS += $(shell mysql_config --libs )
+CFLAGS  += $(shell mysql_config --include) 
+LDFLAGS += $(shell mysql_config --libs)
 
 CPPCC = g++
 OBJS=cdrcontainer.o basecdr.o baseregistry.o mysqlcdr.o pddcdr.o csvcdr.o
-
 
 all:	depends $(OBJS) $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
