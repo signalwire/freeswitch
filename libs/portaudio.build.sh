@@ -42,6 +42,9 @@ opts=""
 if [ $arch = "x86_64" ] ; then
 opts="-fPIC"
 fi
+if [ $arch = "amd64" ] ; then
+opts="-fPIC"
+fi
 
 CFLAGS=$opts ./configure $@
 $MAKE 
