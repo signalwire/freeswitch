@@ -27,7 +27,9 @@
 #include <assert.h>
 #ifndef _MSC_VER
 #include <inttypes.h>
+#ifdef HAVE_TGMATH_H
 #include <tgmath.h>
+#endif
 #endif
 
 #include "g7xx/g711.h"
