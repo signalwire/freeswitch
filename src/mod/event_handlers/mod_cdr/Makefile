@@ -1,5 +1,7 @@
-LDFLAGS += -L/usr/lib64/mysql -L/usr/lib/mysql -L/usr/local/lib/mysql -lmysqlclient -lz -lcrypt -lnsl -lm -lssl -lcrypto
-CFLAGS += -I/usr/include/mysql -I/usr/local/include/mysql
+
+CFLAGS  += $(shell mysql_config --includes) 
+LDFLAGS += $(shell mysql_config --libs )
+
 CPPCC = g++
 OBJS=cdrcontainer.o basecdr.o baseregistry.o mysqlcdr.o pddcdr.o csvcdr.o
 
