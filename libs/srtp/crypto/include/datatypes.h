@@ -399,16 +399,12 @@ octet_string_set_to_zero(uint8_t *s, int len);
 #  endif
 #  define be32_to_cpu(x)	ntohl((x))
 
-static inline uint64_t be64_to_cpu(uint64_t v) {
 # ifdef NO_64BIT_MATH
    /* use the make64 functions to do 64-bit math */
-   v = make64(htonl(low32(v)),htonl(high32(v)));
+#  define be64_to_cpu(v) (make64(htonl(low32(v)),htonl(high32(v))))
 # else
-   /* use the native 64-bit math */
-   v= (be32_to_cpu((uint32_t)(v >> 32))) | (((uint64_t)be32_to_cpu((uint32_t)v)) << 32);
+#  define be64_to_cpu(v) ((ntohl((uint32_t)(v >> 32))) | (((uint64_t)ntohl((uint32_t)v)) << 32))
 # endif
-   return v;
-}
 
 #endif /* ! SRTP_KERNEL_LINUX */
 
