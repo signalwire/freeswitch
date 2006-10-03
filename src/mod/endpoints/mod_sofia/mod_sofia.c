@@ -129,7 +129,8 @@ typedef enum {
 	TFLAG_VAD = ( 1 << 13),
 	TFLAG_TIMER = (1 << 14),
 	TFLAG_READY = (1 << 15),
-	TFLAG_REINVITE = (1 << 16)
+	TFLAG_REINVITE = (1 << 16),
+	TFLAG_REFER = (1 << 17)
 } TFLAGS;
 
 static struct {
@@ -310,6 +311,14 @@ static void sip_i_state(int status,
 						sofia_private_t *sofia_private,
                         sip_t const *sip,
                         tagi_t tags[]);
+
+
+static void sip_i_refer(nua_t *nua,
+						sofia_profile_t *profile,
+						nua_handle_t *nh,
+						sofia_private_t *sofia_private,
+						sip_t const *sip,
+						tagi_t tags[]);
 
 static void sip_i_invite(nua_t *nua,
                          sofia_profile_t *profile,
@@ -1794,11 +1803,24 @@ static void sip_i_state(int status,
 		break;
 	case nua_callstate_completed:
 		if (tech_pvt && r_sdp) {
+			sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
+			sdp_session_t *sdp;
+			uint8_t match = 0;
+
+			if (tech_pvt->num_codecs) {
+				if ((sdp = sdp_session(parser))) {
+					match = negotiate_sdp(session, sdp);
+				}
+			}
 			tech_choose_port(tech_pvt);
 			set_local_sdp(tech_pvt);
 			tech_set_codec(tech_pvt);
 			switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
+			activate_rtp(tech_pvt);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Reinvite\n");
+			if (parser) {
+				sdp_parser_free(parser);
+			}
 		}
 		break;
 	case nua_callstate_ready:
@@ -2130,6 +2152,107 @@ static uint8_t handle_register(nua_t *nua,
 
 
 
+/*---------------------------------------*/
+static void sip_i_refer(nua_t *nua,
+						sofia_profile_t *profile,
+						nua_handle_t *nh,
+						sofia_private_t *sofia_private,
+						sip_t const *sip,
+						tagi_t tags[])
+{
+	/* Incoming refer */
+	sip_from_t const *from;
+	sip_to_t const *to;
+	sip_refer_to_t const *refer_to;
+	char *refer_to_str;
+	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
+
+	if (session) {
+		private_object_t *tech_pvt = NULL;
+#ifdef this_was_done
+		char *dest;
+		private_object_t *ntech_pvt;
+		switch_core_session_t *nsession;
+		switch_channel_t *channel, *nchannel;
+		switch_caller_profile_t *caller_profile = NULL, *outbound_profile = NULL;
+#endif
+
+		tech_pvt = switch_core_session_get_private(session);
+		from = sip->sip_from;
+		to = sip->sip_to;
+		refer_to = sip->sip_refer_to;
+
+
+		if ((refer_to_str = sip_header_as_string(tech_pvt->home, (sip_header_t*)refer_to))) {
+			char *exten = switch_core_session_strdup(session, refer_to_str);
+			char *p;
+
+			if ((p = strchr(exten, ':'))) {
+				*p++ = '\0';
+				exten = p;
+			}
+
+			if ((p = strchr(exten, '@'))) {
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+				char *br;
+				
+				*p = '\0';
+				if ((br = switch_channel_get_variable(channel, "BRIDGETO"))) {
+					switch_core_session_t *bsession;
+					
+					if ((bsession = switch_core_session_locate(br))) {
+						switch_ivr_session_transfer(bsession, exten, profile->dialplan, profile->context);
+						switch_core_session_rwunlock(bsession);
+					}
+				}
+
+
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "refer to " URL_PRINT_FORMAT " from %s%s" URL_PRINT_FORMAT " to %s\n", 
+							  URL_PRINT_ARGS(from->a_url),
+							  from->a_display ? from->a_display : "", from->a_display ? " " : "",
+							  URL_PRINT_ARGS(from->a_url),
+							  refer_to_str
+							  );
+			
+			su_free(tech_pvt->home, refer_to_str);
+		}
+
+#ifdef this_was_done
+		if (!(nsession = switch_core_session_request(&sofia_endpoint_interface, NULL))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
+			goto done;
+		}
+
+		if (!(ntech_pvt = (struct private_object *) switch_core_session_alloc(nsession, sizeof(*ntech_pvt)))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Creating Session\n");
+			terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			goto done;
+		}
+		ntech_pvt->dest = switch_core_session_strdup(nsession, refer_to_str);
+		dest = ntech_pvt->dest + 4;
+		channel = switch_core_session_get_channel(session);
+		outbound_profile = switch_channel_get_caller_profile(channel);
+		nchannel = switch_core_session_get_channel(nsession);
+		attach_private(nsession, profile, ntech_pvt, dest);	
+		caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
+		caller_profile->destination_number = switch_core_session_strdup(nsession, dest);
+		switch_channel_set_caller_profile(nchannel, caller_profile);
+		switch_channel_set_flag(nchannel, CF_OUTBOUND);
+		switch_set_flag_locked(ntech_pvt, TFLAG_OUTBOUND);
+		switch_set_flag_locked(ntech_pvt, TFLAG_REFER);
+		switch_channel_set_state(nchannel, CS_INIT);
+		switch_channel_set_variable(channel, "endpoint_disposition", "OUTBOUND_REFER");
+		switch_core_session_thread_launch(nsession);
+#endif
+
+		//done:
+		return;
+	}
+
+}
+
 static void sip_i_invite(nua_t *nua, 
 						 sofia_profile_t *profile,
 						 nua_handle_t *nh, 
@@ -2138,6 +2261,7 @@ static void sip_i_invite(nua_t *nua,
 						 tagi_t tags[])
 {
 	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
+	//refer_handle_t *refer = sofia_private ? sofia_private->refer : NULL;
 	char key[128] = "";
 
 	if (!session) {
@@ -2155,7 +2279,7 @@ static void sip_i_invite(nua_t *nua,
 			sip_to_t const *to = sip->sip_to;
 			char *displayname;
 			char username[256];
-
+			char *url_user = (char *) from->a_url->url_user;
 
 			if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
@@ -2167,17 +2291,25 @@ static void sip_i_invite(nua_t *nua,
 				tech_pvt->key = switch_core_session_strdup(session, key);
 			}
 
-			displayname = switch_core_session_strdup(session, (char *) from->a_display);
-			if (*displayname == '"') {
-				char *p;
-				
-				displayname++;
-				if ((p = strchr(displayname, '"'))) {
-					*p = '\0';
-				}
+			if (switch_strlen_zero(url_user)) {
+				url_user = "service";
 			}
 			
-			snprintf(username, sizeof(username), "%s@%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host);
+			if (!switch_strlen_zero(from->a_display)) {
+				displayname = switch_core_session_strdup(session, (char *) from->a_display);
+				if (*displayname == '"') {
+					char *p;
+				
+					displayname++;
+					if ((p = strchr(displayname, '"'))) {
+						*p = '\0';
+					}
+				}
+			} else {
+				displayname = url_user;
+			}
+			
+			snprintf(username, sizeof(username), "%s@%s", url_user, (char *) from->a_url->url_host);
 			attach_private(session, profile, tech_pvt, username);
 
 			snprintf(username, sizeof(username), "sip:%s@%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host);
@@ -2231,6 +2363,7 @@ static void sip_r_register(int status,
 {
 	outbound_reg_t *oreg = NULL;
 	sip_www_authenticate_t const *authenticate = NULL;
+	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
 
 	if (sofia_private) {
 		if (sofia_private->oreg) {
@@ -2239,10 +2372,23 @@ static void sip_r_register(int status,
 			/* NOTE
 			   this is a linked list, when nua_identity comes 
 			   we need to actually pick the right one...
-			 */
+			*/
 			oreg = profile->registrations;
 		}
 	} 
+
+
+	if (session) {
+		private_object_t *tech_pvt;
+		if ((tech_pvt = switch_core_session_get_private(session)) && switch_test_flag(tech_pvt, TFLAG_REFER)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "received reply from refer\n");
+			
+			if (status == 200) {
+				//crap
+			}
+			return;
+		}
+	}
 	
 	if (!oreg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No authentication available!\n");
@@ -2303,6 +2449,7 @@ static void event_callback(nua_event_t event,
 	struct private_object *tech_pvt = NULL;
 	auth_res_t auth_res = AUTH_FORBIDDEN;
 	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
+	
 
 	if (session) {
 		if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
@@ -2312,10 +2459,9 @@ static void event_callback(nua_event_t event,
 		tech_pvt = switch_core_session_get_private(session);
 	}
 
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "event [%s] status [%d][%s] %s\n",
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "event [%s] status [%d][%s] session: %s\n",
 					  nua_event_name (event), status, phrase,
-					  session ? switch_channel_get_name(switch_core_session_get_channel(session)) : "no session"
+					  session ? switch_channel_get_name(switch_core_session_get_channel(session)) : "n/a"
 					  );
 
 	if ((profile->pflags & PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip) {
@@ -2410,7 +2556,7 @@ static void event_callback(nua_event_t event,
 		break;
 
 	case nua_i_refer:
-		//sip_i_refer(nua, profile, nh, sofia_private, sip, tags);
+		sip_i_refer(nua, profile, nh, sofia_private, sip, tags);
 		break;
      
 	case nua_r_subscribe:
@@ -2539,6 +2685,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 				   NUTAG_AUTOALERT(0),
 				   //NUTAG_AUTOTRYING(0),
 				   NUTAG_ALLOW("REGISTER"),
+				   NUTAG_ALLOW("REFER"),
 				   SIPTAG_SUPPORTED_STR("100rel, precondition"),
 				   TAG_END());
 				   
@@ -2770,7 +2917,7 @@ static switch_status_t config_sofia(int reload)
 				}
 
 				if (!profile->dialplan) {
-					profile->dialplan = switch_core_strdup(profile->pool, "default");
+					profile->dialplan = switch_core_strdup(profile->pool, "XML");
 				}
 
 				if (!profile->sipdomain) {

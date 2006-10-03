@@ -1372,6 +1372,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	msg.from = __FILE__;
 	switch_core_session_receive_message(session_a, &msg);
 
+	switch_channel_set_variable(chan_a, "BRIDGETO", NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
 
 	switch_channel_clear_flag(chan_a, CF_BRIDGED);
@@ -2110,6 +2111,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		switch_core_session_receive_message(session, &msg);
 
 		if (switch_core_session_read_lock(peer_session) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_set_variable(caller_channel, "BRIDGETO", switch_core_session_get_uuid(peer_session));
+			switch_channel_set_variable(peer_channel, "BRIDGETO", switch_core_session_get_uuid(session));
+
 			switch_channel_set_private(peer_channel, "_bridge_", other_audio_thread);
 			switch_channel_set_state(peer_channel, CS_LOOPBACK);
 			audio_bridge_thread(NULL, (void *) this_audio_thread);
