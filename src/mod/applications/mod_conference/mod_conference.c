@@ -413,7 +413,8 @@ static void conference_del_member(conference_obj_t *conference, conference_membe
 	conference->count--;
 	member->conference = NULL;
 
-	if (conference->min && switch_test_flag(conference, CFLAG_ENFORCE_MIN) && conference->count < conference->min) {
+	if ((conference->min && switch_test_flag(conference, CFLAG_ENFORCE_MIN) && conference->count < conference->min) 
+		|| (switch_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0) ) {
 		switch_set_flag(conference, CFLAG_DESTRUCT);
 	} else { 
 		if (conference->exit_sound) {
