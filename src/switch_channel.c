@@ -87,6 +87,8 @@ static struct switch_cause_table CAUSE_CHART[] = {
 	{ "SYSTEM_SHUTDOWN", SWITCH_CAUSE_SYSTEM_SHUTDOWN },
 	{ "LOSE_RACE", SWITCH_CAUSE_LOSE_RACE },
 	{ "MANAGER_REQUEST", SWITCH_CAUSE_MANAGER_REQUEST },
+	{ "BLIND_TRANSFER", SWITCH_CAUSE_BLIND_TRANSFER },
+	{ "ATTENDED_TRANSFER", SWITCH_CAUSE_ATTENDED_TRANSFER },
 	{ NULL, 0 }
 };
 
@@ -804,43 +806,59 @@ SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel_t *channel,
 	int x, index;
 
 	assert(channel != NULL);
+	switch_mutex_lock(channel->flag_mutex);
 	for (x = 0; x < SWITCH_MAX_STATE_HANDLERS; x++) {
 		if (channel->state_handlers[x] == state_handler) {
-			return x;
+			index = x;
+			goto end;
 		}
 	}
 	index = channel->state_handler_index++;
 
 	if (channel->state_handler_index >= SWITCH_MAX_STATE_HANDLERS) {
-		return -1;
+		index = -1;
+		goto end;
 	}
-
+	
 	channel->state_handlers[index] = state_handler;
+
+ end:
+	switch_mutex_unlock(channel->flag_mutex);
 	return index;
 }
 
 SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_handler(switch_channel_t *channel, int index)
 {
+	const switch_state_handler_table_t *h = NULL;
+
 	assert(channel != NULL);
 
 	if (index > SWITCH_MAX_STATE_HANDLERS || index > channel->state_handler_index) {
 		return NULL;
 	}
 
-	return channel->state_handlers[index];
+	switch_mutex_lock(channel->flag_mutex);
+	h = channel->state_handlers[index];
+	switch_mutex_unlock(channel->flag_mutex);
+
+	return h;
 }
 
 SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channel, const switch_state_handler_table_t *state_handler)
 {
-	int index, i = 0;
+	int index, i = channel->state_handler_index;
 	const switch_state_handler_table_t *new_handlers[SWITCH_MAX_STATE_HANDLERS] = {0};
 
+
+	switch_mutex_lock(channel->flag_mutex);
+
 	assert(channel != NULL);
+	channel->state_handler_index = 0;
 
 	if (state_handler) {
-		for (index = 0; index < channel->state_handler_index; index++) {
+		for (index = 0; index < i; index++) {
 			if (channel->state_handlers[index] != state_handler) {
-				new_handlers[i++] = channel->state_handlers[index];
+				new_handlers[channel->state_handler_index++] = channel->state_handlers[index];
 			}
 		}
 	}
@@ -849,12 +867,13 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
 	}
 
 	if (state_handler) {
-		for (index = 0; index < i; index++) {
-			channel->state_handlers[index] = new_handlers[i];
+		for (index = 0; index < channel->state_handler_index; index++) {
+			channel->state_handlers[index] = new_handlers[index];
 		}
 	}
 
-	channel->state_handler_index = i;
+	switch_mutex_unlock(channel->flag_mutex);
+
 }
 
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel,

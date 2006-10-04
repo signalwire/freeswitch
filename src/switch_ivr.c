@@ -1998,7 +1998,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
  done:
-	*cause = SWITCH_CAUSE_UNALLOCATED;
+	*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		if (caller_channel) {

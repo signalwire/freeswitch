@@ -247,6 +247,7 @@ struct private_object {
 	char *remote_sdp_str;
 	char *local_sdp_str;
 	char *dest;
+	char *source;
 	char *key;
 	unsigned long rm_rate;
 	switch_payload_t pt;
@@ -372,40 +373,52 @@ static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const
 	auth_res_t ret = AUTH_OK;
 	char *npassword = NULL;
 	nonce = uri = qop = cnonce = nc = response = NULL;
+	int cnt = 0;
 
-
-
-	for(index = 0; (cur=(char*)authorization->au_params[index]); index++) {
-		char *var, *val, *p, *work; 
-		var = val = work = NULL;
-		if ((work = strdup(cur))) {
-			var = work;
-			if ((val = strchr(var, '='))) {
-				*val++ = '\0';
-				while(*val == '"') {
+	if (authorization->au_params) {
+		for(index = 0; (cur=(char*)authorization->au_params[index]); index++) {
+			char *var, *val, *p, *work; 
+			var = val = work = NULL;
+			if ((work = strdup(cur))) {
+				var = work;
+				if ((val = strchr(var, '='))) {
 					*val++ = '\0';
-				}
-				if ((p = strchr(val, '"'))) {
-					*p = '\0';
-				}
+					while(*val == '"') {
+						*val++ = '\0';
+					}
+					if ((p = strchr(val, '"'))) {
+						*p = '\0';
+					}
 
-				if (!strcasecmp(var, "nonce")) {
-					nonce = strdup(val);
-				} else if (!strcasecmp(var, "uri")) {
-					uri = strdup(val);
-				} else if (!strcasecmp(var, "qop")) {
-					qop = strdup(val);
-				} else if (!strcasecmp(var, "cnonce")) {
-					cnonce = strdup(val);
-				} else if (!strcasecmp(var, "response")) {
-					response = strdup(val);
-				} else if (!strcasecmp(var, "nc")) {
-					nc = strdup(val);
+					if (!strcasecmp(var, "nonce")) {
+						nonce = strdup(val);
+						cnt++;
+					} else if (!strcasecmp(var, "uri")) {
+						uri = strdup(val);
+						cnt++;
+					} else if (!strcasecmp(var, "qop")) {
+						qop = strdup(val);
+						cnt++;
+					} else if (!strcasecmp(var, "cnonce")) {
+						cnonce = strdup(val);
+						cnt++;
+					} else if (!strcasecmp(var, "response")) {
+						response = strdup(val);
+						cnt++;
+					} else if (!strcasecmp(var, "nc")) {
+						nc = strdup(val);
+						cnt++;
+					}
 				}
-			}
 				
-			free(work);
+				free(work);
+			}
 		}
+	}
+
+	if (cnt != 6) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Authorization header!\n");
+		goto end;
 	}
 
 	if (switch_strlen_zero(np)) {
@@ -779,6 +792,8 @@ static void do_invite(switch_core_session_t *session)
 	tech_pvt->sofia_private.session = session;
 	nua_handle_bind(tech_pvt->nh, &tech_pvt->sofia_private);
 	nua_invite(tech_pvt->nh,
+			   SIPTAG_FROM_STR(tech_pvt->source),
+			   SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 			   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 			   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
@@ -1506,6 +1521,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *channel;
 	char *host;
+	char username[512];
 
 	*new_session = NULL;
 
@@ -1552,6 +1568,8 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 		snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
 	}
 
+	snprintf(username, sizeof(username), "sip:%s@%s:%d", (char *) outbound_profile->caller_id_number, profile->sipip, profile->sip_port);
+	tech_pvt->source = switch_core_session_strdup(nsession, username);
 	channel = switch_core_session_get_channel(nsession);
 	attach_private(nsession, profile, tech_pvt, dest);	
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
@@ -2143,7 +2161,9 @@ static uint8_t handle_register(nua_t *nua,
 					  );
 
 	if (regtype == REG_REGISTER) {
-		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(contact), TAG_END());
+		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(contact),
+					NUTAG_WITH_THIS(nua),
+					TAG_END());
 		return 1;
 	}
 
@@ -2164,11 +2184,12 @@ static void sip_i_refer(nua_t *nua,
 	sip_from_t const *from;
 	sip_to_t const *to;
 	sip_refer_to_t const *refer_to;
-	char *refer_to_str;
 	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
 
 	if (session) {
 		private_object_t *tech_pvt = NULL;
+		char *exten;
+		const char *tmp = NULL;
 #ifdef this_was_done
 		char *dest;
 		private_object_t *ntech_pvt;
@@ -2180,44 +2201,99 @@ static void sip_i_refer(nua_t *nua,
 		tech_pvt = switch_core_session_get_private(session);
 		from = sip->sip_from;
 		to = sip->sip_to;
-		refer_to = sip->sip_refer_to;
 
+		tl_gets(tags, 
+				SIPTAG_REFER_TO_STR_REF(tmp),
+				TAG_END()); 
 
-		if ((refer_to_str = sip_header_as_string(tech_pvt->home, (sip_header_t*)refer_to))) {
-			char *exten = switch_core_session_strdup(session, refer_to_str);
-			char *p;
+		if ((refer_to = sip->sip_refer_to)) {
+			exten = (char *) refer_to->r_url->url_user;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Process REFER to [%s@%s]\n", 
+							  exten, (char *) refer_to->r_url->url_host);
 
-			if ((p = strchr(exten, ':'))) {
-				*p++ = '\0';
-				exten = p;
-			}
+			if (refer_to->r_url->url_headers) {
+				sip_replaces_t *replaces;
+				nua_handle_t *bnh;
+				char *rep;
 
-			if ((p = strchr(exten, '@'))) {
-				switch_channel_t *channel = switch_core_session_get_channel(session);
-				char *br;
-				
-				*p = '\0';
-				if ((br = switch_channel_get_variable(channel, "BRIDGETO"))) {
-					switch_core_session_t *bsession;
-					
-					if ((bsession = switch_core_session_locate(br))) {
-						switch_ivr_session_transfer(bsession, exten, profile->dialplan, profile->context);
-						switch_core_session_rwunlock(bsession);
+				if ((rep = strchr(refer_to->r_url->url_headers, '='))) {
+					char *buf;
+					rep++;
+
+					if ((buf = switch_core_session_alloc(session, strlen(rep) + 1))) {
+						rep = url_unescape(buf, (const char *) rep); 
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Replaces: [%s]\n", rep);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+						return;
 					}
+					if ((replaces = sip_replaces_make(tech_pvt->home, rep)) && (bnh = nua_handle_by_replaces(nua, replaces))) {
+						sofia_private_t *b_private;
+						switch_channel_t *channel_a = NULL, *channel_b = NULL;
+
+						channel_a = switch_core_session_get_channel(session);
+							
+						if ((b_private = nua_handle_fetch(bnh))) {
+							char *br_a, *br_b;
+
+							channel_b = switch_core_session_get_channel(b_private->session);
+				
+							br_a = switch_channel_get_variable(channel_a, "BRIDGETO");
+							//br_a = switch_core_session_get_uuid(session);
+							br_b = switch_channel_get_variable(channel_b, "BRIDGETO");
+
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Attended Transfer [%s][%s]\n", br_a, br_b);
+
+							if (br_a && br_b) {
+								switch_ivr_uuid_bridge(br_a, br_b);
+								switch_channel_set_variable(channel_b, "endpoint_disposition", "ATTENDED_TRANSFER");
+								switch_channel_hangup(channel_b, SWITCH_CAUSE_ATTENDED_TRANSFER);
+								switch_channel_set_variable(channel_a, "endpoint_disposition", "ATTENDED_TRANSFER");
+								switch_channel_hangup(channel_a, SWITCH_CAUSE_ATTENDED_TRANSFER);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Transfer! [%s][%s]\n", br_a, br_b);
+								switch_channel_set_variable(channel_b, "endpoint_disposition", "ATTENDED_TRANSFER_ERROR");
+								switch_channel_hangup(channel_b, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+								switch_channel_set_variable(channel_a, "endpoint_disposition", "ATTENDED_TRANSFER_ERROR");
+								switch_channel_hangup(channel_a, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+							}
+						}
+					
+						nua_handle_unref(bnh);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find handle from Replaces!\n");
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot parse Replaces!\n");
 				}
-
-
+				return;
 			}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "refer to " URL_PRINT_FORMAT " from %s%s" URL_PRINT_FORMAT " to %s\n", 
-							  URL_PRINT_ARGS(from->a_url),
-							  from->a_display ? from->a_display : "", from->a_display ? " " : "",
-							  URL_PRINT_ARGS(from->a_url),
-							  refer_to_str
-							  );
-			
-			su_free(tech_pvt->home, refer_to_str);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Refer-To\n");
+			return;
 		}
+
+		if (exten) {
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			char *br;
+				
+			switch_channel_set_variable(channel, "endpoint_disposition", "BLIND_TRANSFER");
+			switch_channel_hangup(channel, SWITCH_CAUSE_BLIND_TRANSFER);
+
+			if ((br = switch_channel_get_variable(channel, "BRIDGETO"))) {
+				switch_core_session_t *bsession;
+					
+				if ((bsession = switch_core_session_locate(br))) {
+					channel = switch_core_session_get_channel(bsession);
+					switch_channel_set_variable(channel, "TRANSFER_FALLBACK", (char *) from->a_user);
+					switch_ivr_session_transfer(bsession, exten, profile->dialplan, profile->context);
+					switch_core_session_rwunlock(bsession);
+				} 
+			}
+				
+		}
+		
 
 #ifdef this_was_done
 		if (!(nsession = switch_core_session_request(&sofia_endpoint_interface, NULL))) {
@@ -2230,7 +2306,7 @@ static void sip_i_refer(nua_t *nua,
 			terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 			goto done;
 		}
-		ntech_pvt->dest = switch_core_session_strdup(nsession, refer_to_str);
+		ntech_pvt->dest = switch_core_session_strdup(nsession, exten);
 		dest = ntech_pvt->dest + 4;
 		channel = switch_core_session_get_channel(session);
 		outbound_profile = switch_channel_get_caller_profile(channel);
@@ -2427,12 +2503,10 @@ static void sip_r_register(int status,
 		
 		tl_gets(tags,
 				NUTAG_CALLSTATE_REF(ss_state),
-					SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
+				SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
 				TAG_END());
 		
 		nua_authenticate(nh, NUTAG_AUTH(authentication), TAG_END());
-		
-		
 	}
 }
 
