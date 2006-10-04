@@ -3,7 +3,7 @@ ldflags=""
 cflags=""
 if [ $hosttype = "FreeBSD" ] ; then
 
-patch <<__EOF__ 
+patch -p0 -u -f<<__EOF__ 
 --- nsprpub/pr/include/md/_freebsd.h.orig       Sat Sep 30 22:19:12 2006
 +++ nsprpub/pr/include/md/_freebsd.h    Sat Sep 30 22:23:16 2006
 @@ -106,6 +106,11 @@
