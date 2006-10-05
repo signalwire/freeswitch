@@ -193,7 +193,7 @@ static switch_status_t transfer_function(char *cmd, switch_core_session_t *isess
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	if (argc < 2 || argc > 4) {
-		stream->write_function(stream, "Invalid Parameters\n");
+		stream->write_function(stream, "USAGE: transfer <uuid> <dest-exten> [<dialplan>] [<context>]\n");
 	} else {
 		char *uuid = argv[0];
 		char *dest = argv[1];
@@ -255,7 +255,7 @@ static switch_status_t pause_function(char *cmd, switch_core_session_t *isession
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	if (argc < 2) {
-		stream->write_function(stream, "Invalid Parameters\n");
+		stream->write_function(stream, "USAGE: pause <uuid> <on|off>\n");
 	} else {
 		char *uuid = argv[0];
 		char *dest = argv[1];
