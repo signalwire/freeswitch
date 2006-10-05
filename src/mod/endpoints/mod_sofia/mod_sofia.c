@@ -3014,10 +3014,6 @@ static switch_status_t config_sofia(int reload)
 						char *name = (char *) switch_xml_attr_soft(registration, "name");
 						outbound_reg_t *oreg;
 
-						if (++reg_count > 1) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-											  "Sorry, only one registration per profile for now =(:::, ask the sofia team for NUTAG_IDENTITY!!!!\n");
-						}
 						if (switch_strlen_zero(name)) {
 							name = "anonymous";
 						}
