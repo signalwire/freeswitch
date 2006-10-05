@@ -243,6 +243,7 @@ struct private_object {
 	char *callid;
 	char *far_end_contact;
 	char *contact_url;
+	char *from_str;
 	char *rm_encoding;
 	char *remote_sdp_str;
 	char *local_sdp_str;
@@ -776,7 +777,6 @@ static void do_invite(switch_core_session_t *session)
 	private_object_t *tech_pvt;
     switch_channel_t *channel = NULL;
 	switch_caller_profile_t *caller_profile;
-	char *from_str;
 
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -784,40 +784,35 @@ static void do_invite(switch_core_session_t *session)
     tech_pvt = (private_object_t *) switch_core_session_get_private(session);
     assert(tech_pvt != NULL);
 
-	caller_profile = switch_channel_get_caller_profile(channel);
+	if ((tech_pvt->from_str = switch_core_db_mprintf("\"%s\" <sip:%s@%s>", 
+													 (char *) caller_profile->caller_id_name, 
+													 (char *) caller_profile->caller_id_number,
+													 tech_pvt->profile->sipip
+													 ))) {
 
-	
+		caller_profile = switch_channel_get_caller_profile(channel);
+		tech_choose_port(tech_pvt);
+		set_local_sdp(tech_pvt);
+		switch_set_flag_locked(tech_pvt, TFLAG_READY);
 
-	tech_choose_port(tech_pvt);
-	set_local_sdp(tech_pvt);
-	switch_set_flag_locked(tech_pvt, TFLAG_READY);
-	
-	tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL, SIPTAG_TO_STR(tech_pvt->dest), TAG_END());
-	tech_pvt->sofia_private.session = session;
-	nua_handle_bind(tech_pvt->nh, &tech_pvt->sofia_private);
+		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
+								  SIPTAG_TO_STR(tech_pvt->dest),
+								  SIPTAG_FROM_STR(tech_pvt->from_str),
+								  SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+								  TAG_END());
 
-	
-	if ((from_str = switch_core_db_mprintf("\"%s\" <sip:%s@%s>", 
-										   (char *) caller_profile->caller_id_name, 
-										   (char *) caller_profile->caller_id_number,
-										   tech_pvt->profile->sipip
-										   ))) {
-		 
+		tech_pvt->sofia_private.session = session;
+		nua_handle_bind(tech_pvt->nh, &tech_pvt->sofia_private);
 		
 		nua_invite(tech_pvt->nh,
-				   SIPTAG_FROM_STR(from_str),
-				   SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 				   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
 				   TAG_END());
-
-		switch_core_db_free(from_str);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 	}
 	
-
 }
 
 /* 
@@ -975,6 +970,10 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		}
 		nua_handle_destroy(tech_pvt->nh);
 		tech_pvt->nh = NULL;
+	}
+
+	if (tech_pvt->from_str) {
+		switch_core_db_free(tech_pvt->from_str);
 	}
 
 	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
