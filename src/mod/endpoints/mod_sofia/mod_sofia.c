@@ -371,8 +371,8 @@ static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const
 	char *nonce, *uri, *qop, *cnonce, *nc, *response, *input = NULL, *input2 = NULL;
 	auth_res_t ret = AUTH_OK;
 	char *npassword = NULL;
-	nonce = uri = qop = cnonce = nc = response = NULL;
 	int cnt = 0;
+	nonce = uri = qop = cnonce = nc = response = NULL;
 
 	if (authorization->au_params) {
 		for(index = 0; (cur=(char*)authorization->au_params[index]); index++) {
