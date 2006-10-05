@@ -2231,7 +2231,7 @@ static void sip_i_refer(nua_t *nua,
 
 	if (session) {
 		private_object_t *tech_pvt = NULL;
-		char *exten;
+		char *exten = NULL;
 
 		tech_pvt = switch_core_session_get_private(session);
 		from = sip->sip_from;
@@ -2253,7 +2253,7 @@ static void sip_i_refer(nua_t *nua,
 
 				if ((rep = strchr(refer_to->r_url->url_headers, '='))) {
 					switch_channel_t *channel_a = NULL, *channel_b = NULL;
-					char *br_a, *br_b;
+					char *br_a = NULL, *br_b = NULL;
 					char *buf;
 					rep++;
 
