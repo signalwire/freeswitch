@@ -1729,13 +1729,15 @@ static void sip_i_state(int status,
 	switch_channel_t *channel = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
-	
+	const char *replaces_str;
+
 	tl_gets(tags, 
 			NUTAG_CALLSTATE_REF(ss_state),
 			NUTAG_OFFER_RECV_REF(offer_recv),
 			NUTAG_ANSWER_RECV_REF(answer_recv),
 			NUTAG_OFFER_SENT_REF(offer_sent),
 			NUTAG_ANSWER_SENT_REF(answer_sent),
+			SIPTAG_REPLACES_STR_REF(replaces_str),
 			SOATAG_LOCAL_SDP_STR_REF(l_sdp),
 			SOATAG_REMOTE_SDP_STR_REF(r_sdp),
 			TAG_END()); 
@@ -1821,12 +1823,14 @@ static void sip_i_state(int status,
 
 				if (match) {
 					nua_handle_t *bnh;
-
+					sip_replaces_t *replaces;
+					
 					switch_channel_set_variable(channel, "endpoint_disposition", "RECEIVED");
 					switch_channel_set_state(channel, CS_INIT);
 					switch_set_flag_locked(tech_pvt, TFLAG_READY);
 					switch_core_session_thread_launch(session);
-					if (sip->sip_replaces && (bnh = nua_handle_by_replaces(nua, sip->sip_replaces))) {
+
+					if (replaces_str && (replaces = sip_replaces_make(tech_pvt->home, replaces_str)) && (bnh = nua_handle_by_replaces(nua, replaces))) {
 						sofia_private_t *b_private;
 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Attended Transfer\n");
