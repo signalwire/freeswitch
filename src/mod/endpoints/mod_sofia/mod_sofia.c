@@ -247,7 +247,6 @@ struct private_object {
 	char *remote_sdp_str;
 	char *local_sdp_str;
 	char *dest;
-	char *source;
 	char *key;
 	unsigned long rm_rate;
 	switch_payload_t pt;
@@ -776,13 +775,18 @@ static void do_invite(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt;
     switch_channel_t *channel = NULL;
-
+	switch_caller_profile_t *caller_profile;
+	char *from_str;
 
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
     tech_pvt = (private_object_t *) switch_core_session_get_private(session);
     assert(tech_pvt != NULL);
+
+	caller_profile = switch_channel_get_caller_profile(channel);
+
+	
 
 	tech_choose_port(tech_pvt);
 	set_local_sdp(tech_pvt);
@@ -791,13 +795,27 @@ static void do_invite(switch_core_session_t *session)
 	tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL, SIPTAG_TO_STR(tech_pvt->dest), TAG_END());
 	tech_pvt->sofia_private.session = session;
 	nua_handle_bind(tech_pvt->nh, &tech_pvt->sofia_private);
-	nua_invite(tech_pvt->nh,
-			   SIPTAG_FROM_STR(tech_pvt->source),
-			   SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-			   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
-			   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
-			   TAG_END());
+
+	
+	if ((from_str = switch_core_db_mprintf("\"%s\" <sip:%s@%s>", 
+										   (char *) caller_profile->caller_id_name, 
+										   (char *) caller_profile->caller_id_number,
+										   tech_pvt->profile->sipip
+										   ))) {
+		 
+		
+		nua_invite(tech_pvt->nh,
+				   SIPTAG_FROM_STR(from_str),
+				   SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
+				   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
+				   TAG_END());
+
+		switch_core_db_free(from_str);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+	}
 	
 
 }
@@ -1163,7 +1181,6 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		if (tech_pvt->nh) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local SDP:\n%s\n", tech_pvt->local_sdp_str);
 			nua_respond(tech_pvt->nh, SIP_200_OK, 
-						//SIPTAG_CONTACT(tech_pvt->contact),
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 						SOATAG_AUDIO_AUX("cn telephone-event"),
 						TAG_END());
@@ -1458,7 +1475,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			activate_rtp(tech_pvt);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "183 SDP:\n%s\n", tech_pvt->local_sdp_str);
 			nua_respond(tech_pvt->nh, SIP_183_SESSION_PROGRESS,
-						//SIPTAG_CONTACT(tech_pvt->contact),
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 						SOATAG_AUDIO_AUX("cn telephone-event"),
 						TAG_END());
@@ -1521,7 +1537,6 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *channel;
 	char *host;
-	char username[512];
 
 	*new_session = NULL;
 
@@ -1568,8 +1583,6 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 		snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
 	}
 
-	snprintf(username, sizeof(username), "sip:%s@%s:%d", (char *) outbound_profile->caller_id_number, profile->sipip, profile->sip_port);
-	tech_pvt->source = switch_core_session_strdup(nsession, username);
 	channel = switch_core_session_get_channel(nsession);
 	attach_private(nsession, profile, tech_pvt, dest);	
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
@@ -1773,7 +1786,6 @@ static void sip_i_state(int status,
 				}
 				switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
 				nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
-							//SIPTAG_CONTACT(tech_pvt->contact), 
 							TAG_END());
 			}
 		}
@@ -1811,7 +1823,6 @@ static void sip_i_state(int status,
 				}
 				switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
 				nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
-							//SIPTAG_CONTACT(tech_pvt->contact), 
 							TAG_END());
 			}
 		}
@@ -1870,7 +1881,6 @@ static void sip_i_state(int status,
 
 				switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
 				nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
-							//SIPTAG_CONTACT(tech_pvt->contact), 
 							TAG_END());
 			} else if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 				switch_set_flag_locked(tech_pvt, TFLAG_ANS);
@@ -2388,9 +2398,6 @@ static void sip_i_invite(nua_t *nua,
 			snprintf(username, sizeof(username), "%s@%s", url_user, (char *) from->a_url->url_host);
 			attach_private(session, profile, tech_pvt, username);
 
-			snprintf(username, sizeof(username), "sip:%s@%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host);
-			tech_pvt->contact = sip_contact_create(tech_pvt->home, URL_STRING_MAKE(username), NULL);
-			
 			channel = switch_core_session_get_channel(session);
 			switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
 			
@@ -2998,7 +3005,7 @@ static switch_status_t config_sofia(int reload)
 					profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
 				}
 
-				snprintf(url, sizeof(url), "sip:%s:%d", profile->sipip, profile->sip_port);
+				snprintf(url, sizeof(url), "sip:%s@%s:%d", profile->name, profile->sipip, profile->sip_port);
 				profile->url = switch_core_strdup(profile->pool, url);
 			}
 			if (profile) {
