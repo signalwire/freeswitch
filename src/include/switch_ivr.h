@@ -242,6 +242,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(char *originator_uuid, char *originatee_uuid);
 
+/*!
+  \brief Transfer variables from one session to another 
+  \param sessa the original session
+  \param sessb the new session
+  \param var the name of the variable to transfer (NULL for all)
+  \return SWITCH_STATUS_SUCCESS if all is well 
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session_t *sessa, switch_core_session_t *sessb, char *var);
+
 /** @} */
 
 SWITCH_END_EXTERN_C

@@ -2253,4 +2253,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	return SWITCH_STATUS_FALSE;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session_t *sessa, switch_core_session_t *sessb, char *var)
+{
+	switch_channel_t *chana = switch_core_session_get_channel(sessa);
+	switch_channel_t *chanb = switch_core_session_get_channel(sessb);
+	char *val = NULL;
 
+	if (var) {
+		if ((val = switch_channel_get_variable(chana, var))) {
+			switch_channel_set_variable(chanb, var, val);
+		}
+	} else {
+		switch_hash_index_t *hi;
+		void *vval;
+		const void *vvar;
+
+		for (hi = switch_channel_variable_first(chana, switch_core_session_get_pool(sessa)); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &vvar, NULL, &vval);
+			if (vvar && vval) {
+				switch_channel_set_variable(chanb, (char *) vvar, (char *) vval);
+			}
+		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
