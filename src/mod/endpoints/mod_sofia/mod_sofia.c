@@ -2413,6 +2413,7 @@ static void sip_i_invite(nua_t *nua,
 			char *displayname;
 			char *username, *to_username;
 			char *url_user = (char *) from->a_url->url_user;
+			char *to_user, *to_host;
 
 			if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
@@ -2422,6 +2423,25 @@ static void sip_i_invite(nua_t *nua,
 
 			if (!switch_strlen_zero(key)) {
 				tech_pvt->key = switch_core_session_strdup(session, key);
+			}
+
+			to_user = (char *) to->a_url->url_user;
+			to_host = (char *) to->a_url->url_host;
+			
+			if (switch_strlen_zero(to_user)) { /* if sofia doesnt parse the To: right, we'll have to do it */
+				if ((to_user = sip_header_as_string(tech_pvt->home, (sip_header_t *) to))) {
+					char *p;
+					if (*to_user == '<') {
+						to_user++;
+					}
+					if ((p = strchr((to_user += 4), '@'))) {
+						*p++ = '\0';
+						to_host = p;
+						if ((p = strchr(to_host, '>'))) {
+							*p = '\0';
+						}
+					}
+				}
 			}
 
 			if (switch_strlen_zero(url_user)) {
@@ -2446,7 +2466,7 @@ static void sip_i_invite(nua_t *nua,
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 				return;
 			}
-			if (!(to_username = switch_core_db_mprintf("%s@%s", (char *) to->a_url->url_user, (char *) to->a_url->url_host))) {
+			if (!(to_username = switch_core_db_mprintf("%s@%s", (char *) to_user, (char *) to_host))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 				switch_core_db_free(username);
 				return;
@@ -2470,7 +2490,7 @@ static void sip_i_invite(nua_t *nua,
 																	  (profile->context && !strcasecmp(profile->context, "_domain_")) ? 
 																	  (char *) from->a_url->url_host : profile->context,
 																	  (profile->pflags & PFLAG_FULL_ID) ? 
-																	  to_username : (char *) to->a_url->url_user
+																	  to_username : (char *) to_user
 																	  )) != 0) {
 				switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 				switch_core_db_free(username);
