@@ -784,13 +784,15 @@ static void do_invite(switch_core_session_t *session)
     tech_pvt = (private_object_t *) switch_core_session_get_private(session);
     assert(tech_pvt != NULL);
 
+	caller_profile = switch_channel_get_caller_profile(channel);
+
 	if ((tech_pvt->from_str = switch_core_db_mprintf("\"%s\" <sip:%s@%s>", 
 													 (char *) caller_profile->caller_id_name, 
 													 (char *) caller_profile->caller_id_number,
 													 tech_pvt->profile->sipip
 													 ))) {
 
-		caller_profile = switch_channel_get_caller_profile(channel);
+
 		tech_choose_port(tech_pvt);
 		set_local_sdp(tech_pvt);
 		switch_set_flag_locked(tech_pvt, TFLAG_READY);
