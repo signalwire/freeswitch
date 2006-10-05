@@ -3009,7 +3009,6 @@ static switch_status_t config_sofia(int reload)
 			}
 			if (profile) {
 				if ((registrations = switch_xml_child(xprofile, "registrations"))) {
-					uint32_t reg_count = 0;
 					for (registration = switch_xml_child(registrations, "registration"); registration; registration = registration->next) {
 						char *name = (char *) switch_xml_attr_soft(registration, "name");
 						outbound_reg_t *oreg;
