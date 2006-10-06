@@ -131,8 +131,8 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="../../pthreads-w32-2-7-0-release/"
 				PreprocessorDefinitions="__CLEANUP_C;WIN32;_DEBUG;_WINDOWS;_USRDLL;PTW32_BUILD;_CRT_SECURE_NO_DEPRECATE;PTW32_STATIC_LIB"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
+				MinimalRebuild="false"
+				BasicRuntimeChecks="0"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\./pthread.pch"
 				AssemblerListingLocation="$(IntDir)\"
@@ -178,7 +178,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug DLL|Win32"
-			OutputDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)Debug"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
@@ -239,7 +239,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile=".\pthreadVC2.dll"
+				OutputFile="$(OutDir)\pthreadVC2.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
@@ -278,7 +278,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release DLL|Win32"
-			OutputDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)Debug"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
@@ -339,7 +339,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ws2_32.lib"
-				OutputFile=".\pthreadVC2.dll"
+				OutputFile="$(OutDir)\pthreadVC2.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ImportLibrary=".\./pthreadVC2.lib"
