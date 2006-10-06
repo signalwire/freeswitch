@@ -329,6 +329,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		return SWITCH_STATUS_SOCKERR;
 	}
 
+	if (switch_socket_opt_set(rtp_session->sock, SWITCH_SO_REUSEADDR, 1) != SWITCH_STATUS_SUCCESS) {
+		*err = "Socket Error!";
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (switch_socket_bind(rtp_session->sock, rtp_session->local_addr) != SWITCH_STATUS_SUCCESS) {
 		*err = "Bind Error!";
 		return SWITCH_STATUS_FALSE;

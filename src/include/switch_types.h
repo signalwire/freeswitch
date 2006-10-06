@@ -72,6 +72,11 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_HTDOCS_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "htdocs"
 #endif
 
+#define SWITCH_R_SDP_VARIABLE "_switch_r_sdp_"
+#define SWITCH_L_SDP_VARIABLE "_switch_l_sdp_"
+#define SWITCH_BRIDGE_VARIABLE "BRIDGETO"
+#define SWITCH_SIGNAL_BRIDGE_VARIABLE "SIGNAL_BRIDGETO"
+
 #define SWITCH_BITS_PER_BYTE 8
 typedef uint8_t switch_byte_t;
 
@@ -232,7 +237,8 @@ typedef enum {
 	SWITCH_MESSAGE_TRANSMIT_TEXT      - A text message
 	SWITCH_MESSAGE_INDICATE_PROGRESS  - indicate progress 
 	SWITCH_MESSAGE_INDICATE_BRIDGE    - indicate a bridge starting
-	SWITCH_MESSAGE_INDICATE_UNBRIDGE    - indicate a bridge ending
+	SWITCH_MESSAGE_INDICATE_UNBRIDGE  - indicate a bridge ending
+	SWITCH_MESSAGE_INDICATE_TRANSFER  - indicate a transfer is taking place
 </pre>
  */
 typedef enum {
@@ -240,7 +246,8 @@ typedef enum {
 	SWITCH_MESSAGE_TRANSMIT_TEXT,
 	SWITCH_MESSAGE_INDICATE_PROGRESS,
 	SWITCH_MESSAGE_INDICATE_BRIDGE,
-	SWITCH_MESSAGE_INDICATE_UNBRIDGE
+	SWITCH_MESSAGE_INDICATE_UNBRIDGE,
+	SWITCH_MESSAGE_INDICATE_TRANSFER
 } switch_core_session_message_types_t;
 
 
@@ -392,6 +399,7 @@ CF_SERVICE		= (1 <<  9) - Channel has a service thread
 CF_TAGGED		= (1 << 10) - Channel is tagged
 CF_WINNER		= (1 << 11) - Channel is the winner
 CF_CONTROLLED	= (1 << 12) - Channel is under control
+CF_NOMEDIA		= (1 << 13) - Channel has no media
 </pre>
  */
 
@@ -408,7 +416,8 @@ typedef enum {
 	CF_SERVICE		= (1 <<  9),
 	CF_TAGGED		= (1 << 10),
 	CF_WINNER		= (1 << 11),
-	CF_CONTROLLED	= (1 << 12)
+	CF_CONTROLLED	= (1 << 12),
+	CF_NOMEDIA		= (1 << 13)
 } switch_channel_flag_t;
 
 

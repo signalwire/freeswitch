@@ -223,6 +223,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 																 void *session_data,
 																 void *peer_session_data);
 
+/*!
+  \brief Bridge Signalling from one session to another
+  \param session one session
+  \param peer_session the other session
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *session, switch_core_session_t *peer_session);
 
 /*!
   \brief Transfer an existing session to another location

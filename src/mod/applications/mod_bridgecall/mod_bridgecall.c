@@ -51,22 +51,31 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 		timelimit = atoi(var);
 	}
 
+	if ((var = switch_channel_get_variable(caller_channel, "no_media"))) {
+		switch_channel_set_flag(caller_channel, CF_NOMEDIA);		
+	}
+
 	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
 		/* Hangup the channel with the cause code from the failed originate.*/
 		switch_channel_hangup(caller_channel, cause);
 		return;
 	} else {
-		switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
+		if (switch_channel_test_flag(caller_channel, CF_NOMEDIA)) {
+			switch_ivr_signal_bridge(session, peer_session);			
+		} else {
+			switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
+		}
 	}
 }
 
-
 static const switch_application_interface_t bridge_application_interface = {
 	/*.interface_name */ "bridge",
-	/*.application_function */ audio_bridge_function
+	/*.application_function */ audio_bridge_function,
+	/* long_desc */ "Bridge the audio between two sessions",
+	/* short_desc */ "Bridge Audio",
+	/* syntax */ "<channel_url>",
 };
-
 
 static const switch_loadable_module_interface_t mod_bridgecall_module_interface = {
 	/*.module_name = */ modname,

@@ -2456,8 +2456,8 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", extension->current_application->application_name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", extension->current_application->application_data);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s", extension->current_application->application_name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", extension->current_application->application_data);
 			switch_event_fire(&event);
 		}
 		application_interface->application_function(session, extension->current_application->application_data);

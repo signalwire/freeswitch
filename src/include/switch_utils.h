@@ -193,6 +193,16 @@ if (vname) {free(vname); vname = NULL;}vname = strdup(string);}
 SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen);
 
 /*!
+  \brief Escape a string by prefixing a list of characters with an escape character
+  \param pool a memory pool to use
+  \param in the string
+  \param delim the list of characters to escape
+  \param esc the escape character
+  \return the escaped string
+*/
+SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, char *delim, char esc);
+
+/*!
   \brief Create a set of file descriptors to poll
   \param poll the polfd to create
   \param sock the socket to add

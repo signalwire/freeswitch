@@ -72,6 +72,45 @@ SWITCH_DECLARE(unsigned char) switch_char_to_rfc2833(char key)
     return '\0';
 }
 
+SWITCH_DECLARE(char *) switch_escape_char(switch_memory_pool_t *pool, char *in, char *delim, char esc)
+{
+    char *data, *p, *d;
+    int count = 1, i = 0;
+
+    p = in;
+    while(*p) {
+        d = delim;
+        while (*d) {
+            if (*p == *d) {
+                count++;
+            }
+            d++;
+        }
+        p++;
+    }
+
+	if (count == 1) {
+		return in;
+	}
+
+	data = switch_core_alloc(pool, strlen(in) + count);
+	
+    p = in;
+    while(*p) {
+        d = delim;
+        while (*d) {
+            if (*p == *d) {
+                data[i++] = esc;
+            }
+            d++;
+        }
+        data[i++] = *p;
+        p++;
+    }
+    return data;
+}
+
+
 SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char **array, int arraylen)
 {
 	int argc;

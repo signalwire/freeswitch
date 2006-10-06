@@ -88,7 +88,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 			ret = -1;
 		} else {
 			ret = 0;
-			snprintf(end, remaining, data);
+			snprintf(end, remaining, "%s", data);
 			handle->data_len = strlen(buf);
 			handle->end = (uint8_t *)(handle->data) + handle->data_len;
 		}
