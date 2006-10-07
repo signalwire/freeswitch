@@ -151,7 +151,7 @@ switch_mutex_unlock(obj->flag_mutex);
 
 
 /*!
-  \brief Free a pointer and set it to NULL unles it already is NULL
+  \brief Free a pointer and set it to NULL unless it already is NULL
   \param it the pointer
 */
 #define switch_safe_free(it) if (it) {free(it);it=NULL;}

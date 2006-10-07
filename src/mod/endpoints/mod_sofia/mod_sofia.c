@@ -1676,7 +1676,6 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	sofia_profile_t *profile;
 	switch_caller_profile_t *caller_profile = NULL;
 	private_object_t *tech_pvt = NULL;
-	switch_channel_t *channel;
 	switch_channel_t *nchannel;
 	char *host;
 
@@ -1725,7 +1724,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 		snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
 	}
 	attach_private(nsession, profile, tech_pvt, dest);
-	channel = switch_core_session_get_channel(session);
+
 	nchannel = switch_core_session_get_channel(nsession);
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
 	switch_channel_set_caller_profile(nchannel, caller_profile);
@@ -1737,6 +1736,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 	status = SWITCH_STATUS_SUCCESS;
 	if (session) {
 		char *val;
+		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_ivr_transfer_variable(session, nsession, SOFIA_REPLACES_HEADER);
 
 		if (switch_channel_test_flag(channel, CF_NOMEDIA) && (val = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE))) {
