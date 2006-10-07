@@ -1992,7 +1992,7 @@ static void sip_i_state(int status,
 								switch_yield(10000);
 							}
 
-							if ((b_private = nua_handle_fetch(bnh))) {
+							if ((b_private = nua_handle_magic(bnh))) {
 								char *br_b = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE);
 								char *br_a = switch_core_session_get_uuid(b_private->session);
 
@@ -2474,7 +2474,7 @@ static void sip_i_refer(nua_t *nua,
 						sofia_private_t *b_private;
 					
 						switch_channel_set_variable(channel_a, SOFIA_REPLACES_HEADER, rep);	
-						if ((b_private = nua_handle_fetch(bnh))) {
+						if ((b_private = nua_handle_magic(bnh))) {
 							channel_b = switch_core_session_get_channel(b_private->session);
 				
 							br_a = switch_channel_get_variable(channel_a, SWITCH_BRIDGE_VARIABLE);
