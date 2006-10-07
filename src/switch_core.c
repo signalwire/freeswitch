@@ -2435,6 +2435,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	}
 
 	while (switch_channel_get_state(session->channel) == CS_EXECUTE && extension->current_application) {
+		char *expanded;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Execute %s(%s)\n",
 							  extension->current_application->application_name,
 							  extension->current_application->application_data);
@@ -2454,13 +2455,25 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 			return;
 		}
 		
+		if ((expanded = switch_channel_expand_variables(session->channel, extension->current_application->application_data)) != 
+			extension->current_application->application_data) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Expanded String %s(%s)\n",
+							  extension->current_application->application_name,
+							  expanded);
+		}
+
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application", "%s", extension->current_application->application_name);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", extension->current_application->application_data);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data-Orig", "%s", extension->current_application->application_data);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", expanded);
 			switch_event_fire(&event);
 		}
-		application_interface->application_function(session, extension->current_application->application_data);
+		application_interface->application_function(session, expanded);
+
+		if (expanded != extension->current_application->application_data) {
+			free(expanded);
+		}
 		extension->current_application = extension->current_application->next;
 	}
 	

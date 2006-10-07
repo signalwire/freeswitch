@@ -174,17 +174,16 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 				char *cmd = switch_core_session_strdup(session, field + 1);
 				char *arg;
 				
+				SWITCH_STANDARD_STREAM(stream);
+				
 				if (cmd) {
 					if ((arg = strchr(cmd, ' '))) {
 						*arg++ = '\0';
 					}
-					stream.data = retbuf;
-					stream.end = stream.data;
-					stream.data_size = sizeof(retbuf);
-					stream.write_function = switch_console_stream_write;
 					if (switch_api_execute(cmd, arg, session, &stream) == SWITCH_STATUS_SUCCESS) {
 						field_data = retbuf;
 					}
+					free(stream.data);
 				}
 			} else {
 				field_data = switch_caller_get_field_by_name(caller_profile, field);

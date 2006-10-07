@@ -999,3 +999,125 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	return SWITCH_STATUS_FALSE;
 
 }
+
+SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, char *in)
+{
+	char *p, *c;
+	char *data, *indup;
+	int sp = 0, len = 0, olen = 0, vtype = 0, br = 0, vnamepos, vvalpos, cpos, ppos, block = 128;
+	char *sub_val = NULL, *func_val = NULL;
+
+	if (!strchr(in, '$') && !strchr(in, '&')) {
+		return in;
+	}
+
+	olen = strlen(in);
+	indup = strdup(in);
+
+	if ((data = malloc(olen))) {
+		memset(data, 0, olen);
+		c = data;
+		for(p = indup; *p; p++) {
+			vtype = 0;
+
+			if (*p == '$') {
+				vtype = 1;
+			}
+			if (*p == '&') {
+				vtype = 2;
+			}
+			
+			if (vtype) {
+				char *s = p, *e, *vname, *vval = NULL;
+				int nlen;
+				s++;
+				if (*s == '{') {
+					br = 1;
+					s++;
+				}
+
+				e = s;
+				vname = s;
+				while (*e) {
+					if (!br && *e == ' ') {
+						*e++ = '\0';
+						sp++;
+						break;
+					}
+					if (br == 1 && *e == '}') {
+						br = 0;
+						*e++ = '\0';
+						break;
+					}
+					if (vtype == 2) {
+						if (*e == '(') {
+							*e++ = '\0';
+							vval = e;
+							br = 2;
+						}
+						if (br == 2 && *e == ')') {
+							*e++ = '\0';
+							br = 0;
+							break;
+						}
+					}
+					e++;
+				}
+				p = e;
+				
+				if (vtype == 1) {
+					sub_val = switch_channel_get_variable(channel, vname);
+				} else {
+					switch_stream_handle_t stream = {0};
+
+					SWITCH_STANDARD_STREAM(stream);
+					
+					if (stream.data) {
+						if (switch_api_execute(vname, vval, channel->session, &stream) == SWITCH_STATUS_SUCCESS) {
+							func_val = stream.data;
+							sub_val = func_val;
+						} else {
+							free(stream.data);
+						}
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+						free(data);
+						free(indup);
+						return in;
+					}
+				}
+				nlen = strlen(sub_val);
+				if (len + nlen >= olen) {
+					olen += block;
+					cpos = c - data;
+					ppos = p - data;
+					vnamepos = vname - data;
+					vvalpos = vval - data;
+					data = realloc(data, olen);
+
+					c = data + cpos;
+					p = data + ppos;
+					vname = data + vnamepos;
+					vname = data + vvalpos;
+				}
+
+				len += nlen;
+				strcat(c, sub_val);
+				c += nlen;
+
+				if (func_val) {
+					free(func_val);
+					func_val = NULL;
+				}
+			}
+			if (sp) {
+				*c++ = ' ';
+				sp = 0;
+			}
+			*c++ = *p;
+			len++;
+		}
+	}
+	free(indup);
+	return data;
+}

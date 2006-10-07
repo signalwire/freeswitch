@@ -128,7 +128,7 @@ static switch_status_t switch_console_logger(const switch_log_node_t *node, swit
 		} 
 
 		if (!log_hash || (((all_level > - 1) || lookup) && level >= node->level)) {
-			fprintf(handle, node->data);
+			fprintf(handle, "%s", node->data);
 		}
 	} else {
 		fprintf(stderr, "HELP I HAVE NO CONSOLE TO LOG TO!\n");
