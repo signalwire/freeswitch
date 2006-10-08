@@ -161,6 +161,8 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "application");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", ptr->short_desc);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", ptr->syntax);
 				switch_event_fire(&event);
 			}
 			switch_core_hash_insert(loadable_modules.application_hash,
@@ -176,6 +178,8 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 			if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "api");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "description", "%s", ptr->desc);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "syntax", "%s", ptr->syntax);
 				switch_event_fire(&event);
 			}
 			switch_core_hash_insert(loadable_modules.api_hash, (char *) ptr->interface_name, (void *) ptr);

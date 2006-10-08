@@ -448,10 +448,12 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
     if (!cmd) {
         sprintf (sql, "select * from interfaces");
     }
-    else if ( !strcmp(cmd,"codec") || !strcmp(cmd,"application") || 
-              !strcmp(cmd,"api") || !strcmp(cmd,"dialplan") || 
+    else if ( !strcmp(cmd,"codec") || !strcmp(cmd,"dialplan") || 
               !strcmp(cmd,"file") || !strcmp(cmd,"timer") 
             ) {
+        sprintf (sql, "select type, name from interfaces where type = '%s'", cmd);
+    }
+    else if (!strcmp(cmd,"application") || !strcmp(cmd,"api")) {
         sprintf (sql, "select * from interfaces where type = '%s'", cmd);
     }
     else if ( !strcmp(cmd,"calls")) {
@@ -466,9 +468,9 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 		holder.print_title = 0;
 		if ((cmdname = strchr(cmd, ' ')) != 0) {
 			*cmdname++ = '\0';
-	        sprintf (sql, "select name from interfaces where type = 'api' and name = '%s'", cmdname);
+	        sprintf (sql, "select name, description, syntax from interfaces where type = 'api' and name = '%s'", cmdname);
 		} else {
-	        sprintf (sql, "select name from interfaces where type = 'api'");
+	        sprintf (sql, "select name, description, syntax from interfaces where type = 'api'");
 		}
     }
     else {
@@ -519,7 +521,7 @@ static switch_status_t help_function(char *cmd, switch_core_session_t *session, 
 		stream->write_function(stream, "\nValid Commands:\n\n");
 	show_function(showcmd, session, stream);
 	if (all)
-		stream->write_function(stream, "version\n" "help - umm yeah..\n" "shutdown - stop the program\n\n");
+		stream->write_function(stream, "version\n" "shutdown - stop the program\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 

@@ -3414,9 +3414,11 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_LOG:
 		return;
 	case SWITCH_EVENT_MODULE_LOAD:
-		sql = switch_core_db_mprintf("insert into interfaces (type,name) values('%q','%q')",
+		sql = switch_core_db_mprintf("insert into interfaces (type,name,description,syntax) values('%q','%q','%q','%q')",
 									 switch_event_get_header(event, "type"),
-									 switch_event_get_header(event, "name")
+									 switch_event_get_header(event, "name"),
+									 switch_event_get_header(event, "description"),
+									 switch_event_get_header(event, "syntax")
 									 );
 		break;
 	default:
@@ -3661,7 +3663,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 		char create_interfaces_sql[] =
 			"CREATE TABLE interfaces (\n"
 			"   type             VARCHAR(255),\n"
-			"   name             VARCHAR(255)\n"
+			"   name             VARCHAR(255),\n"
+			"   description      VARCHAR(255),\n"
+			"   syntax           VARCHAR(255)\n"
 			");\n";
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening DB\n");
