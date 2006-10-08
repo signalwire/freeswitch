@@ -114,7 +114,7 @@ static switch_status_t ctl_function(char *data, switch_core_session_t *session, 
 			arg = 0;
 			switch_core_session_ctl(SCSC_SHUTDOWN, &arg);
 		} else {
-			stream->write_function(stream, "INVALID COMMAND [%s]\n", argv[0]);
+			stream->write_function(stream, "INVALID COMMAND [%s]\nUSAGE: fsctl [hupall|pause|resume|shutdown]\n", argv[0]);
 			goto end;
 		} 
 
@@ -135,6 +135,10 @@ static switch_status_t load_function(char *mod, switch_core_session_t *session, 
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
+	}
+	if (switch_strlen_zero(mod)) {
+		stream->write_function(stream, "USAGE: load <mod_name>\n");
+		return SWITCH_STATUS_SUCCESS;
 	}
 	switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod);
 	stream->write_function(stream, "OK\n");
@@ -167,7 +171,9 @@ static switch_status_t kill_function(char *dest, switch_core_session_t *isession
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (dest && (session = switch_core_session_locate(dest))) {
+	if (!dest) {
+		stream->write_function(stream, "USAGE: killchan <uuid>\n");
+	} else if ((session = switch_core_session_locate(dest))) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 		switch_core_session_rwunlock(session);
@@ -232,9 +238,11 @@ static switch_status_t uuid_bridge_function(char *cmd, switch_core_session_t *is
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	if (argc != 2) {
-		stream->write_function(stream, "Invalid Parameters\nUsage: uuid_bridge <uuid> <other_uuid>\n");
+		stream->write_function(stream, "Invalid Parameters\nUSAGE: uuid_bridge <uuid> <other_uuid>\n");
 	} else {
-		switch_ivr_uuid_bridge(argv[0], argv[1]);
+		if (switch_ivr_uuid_bridge(argv[0], argv[1]) != SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "Invalid uuid\n");
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -293,8 +301,8 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (switch_strlen_zero(cmd)) {
-		stream->write_function(stream, "Usage: originate <call url> <exten> [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>]\n");
+	if (switch_strlen_zero(cmd) || argc < 2 || argc > 7) {
+		stream->write_function(stream, "USAGE: originate <call url> <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>]\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -446,7 +454,7 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
     }
     else {
         stream->write_function(stream, "Invalid interfaces type!\n");
-        stream->write_function(stream, "Example:\n");
+        stream->write_function(stream, "USAGE:\n");
         stream->write_function(stream, "show <blank>|codec|application|api|dialplan|file|timer|calls|channels\n");
         return SWITCH_STATUS_SUCCESS;
     }
