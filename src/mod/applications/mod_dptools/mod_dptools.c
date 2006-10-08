@@ -133,6 +133,7 @@ static switch_api_interface_t dptools_api_interface = {
 	/*.interface_name */ "strftime",
 	/*.desc */ "strftime",
 	/*.function */ strftime_api_function,
+	/*.syntax */ NULL,
 	/*.next */ NULL
 };
 

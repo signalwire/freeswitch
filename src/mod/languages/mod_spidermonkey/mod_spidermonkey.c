@@ -2696,6 +2696,7 @@ static switch_api_interface_t js_run_interface = {
 	/*.interface_name */ "jsrun",
 	/*.desc */ "run a script",
 	/*.function */ launch_async,
+	/*.syntax */ NULL,
 	/*.next */ NULL
 };
 

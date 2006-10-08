@@ -2665,7 +2665,8 @@ static const switch_application_interface_t conference_application_interface = {
 static switch_api_interface_t conf_api_interface = {
 	/*.interface_name */ "conference",
 	/*.desc */ "Conference",
-	/*.function */ conf_function
+	/*.function */ conf_function,
+	/*.syntax */ NULL,
 	/*.next */ 
 };
 

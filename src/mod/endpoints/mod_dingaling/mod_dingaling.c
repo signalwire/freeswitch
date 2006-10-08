@@ -1071,6 +1071,7 @@ static switch_api_interface_t logout_api_interface = {
 	/*.interface_name */ "dl_logout",
 	/*.desc */ "DingaLing Logout",
 	/*.function */ dl_logout,
+	/*.syntax */ NULL,
 	/*.next */ NULL
 };
 
@@ -1078,6 +1079,7 @@ static switch_api_interface_t login_api_interface = {
 	/*.interface_name */ "dl_login",
 	/*.desc */ "DingaLing Login",
 	/*.function */ dl_login,
+	/*.syntax */ NULL,
 	/*.next */ &logout_api_interface
 };
 

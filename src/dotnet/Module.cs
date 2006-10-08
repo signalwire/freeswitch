@@ -130,6 +130,7 @@ namespace FreeSwitch
             /* Allocate umanaged mem to to interface fields so GC doesn't disturb them */
             apiInterfaceMarshal.interface_name = Marshal.StringToHGlobalAnsi(apiInterface.Name);
             apiInterfaceMarshal.desc           = Marshal.StringToHGlobalAnsi(apiInterface.Description);
+            apiInterfaceMarshal.syntax         = Marshal.StringToHGlobalAnsi(apiInterface.Syntax);
             apiInterfaceMarshal.function       = new ApiFunction(apiInterface.ApiFunction);
             
             /* Set the handle of the managed object */

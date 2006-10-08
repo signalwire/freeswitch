@@ -440,6 +440,7 @@ static switch_api_interface_t send_dtmf_interface = {
 	/*.interface_name */ "padtmf",
 	/*.desc */ "PortAudio Dial DTMF",
 	/*.function */ send_dtmf,
+	/*.syntax */ NULL,
 	/*.next */ NULL
 };
 
@@ -447,6 +448,7 @@ static switch_api_interface_t answer_call_interface = {
 	/*.interface_name */ "paoffhook",
 	/*.desc */ "PortAudio Answer Call",
 	/*.function */ answer_call,
+	/*.syntax */ NULL,
 	/*.next */ &send_dtmf_interface
 };
 
@@ -454,6 +456,7 @@ static switch_api_interface_t channel_info_interface = {
 	/*.interface_name */ "painfo",
 	/*.desc */ "PortAudio Call Info",
 	/*.function */ call_info,
+	/*.syntax */ NULL,
 	/*.next */ &answer_call_interface
 };
 
@@ -461,6 +464,7 @@ static switch_api_interface_t channel_hup_interface = {
 	/*.interface_name */ "pahup",
 	/*.desc */ "PortAudio Hangup Call",
 	/*.function */ hup_call,
+	/*.syntax */ NULL,
 	/*.next */ &channel_info_interface
 };
 
@@ -468,6 +472,7 @@ static switch_api_interface_t channel_api_interface = {
 	/*.interface_name */ "pacall",
 	/*.desc */ "PortAudio Call",
 	/*.function */ place_call,
+	/*.syntax */ NULL,
 	/*.next */ &channel_hup_interface
 };
 

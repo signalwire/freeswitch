@@ -41,6 +41,7 @@ namespace FreeSwitch.Modules
     {
         private string name;
         private string description;
+        private string syntax;
         private ApiFunction apiFunction;
         public HandleRef handle;
 
@@ -54,6 +55,12 @@ namespace FreeSwitch.Modules
         {
             set { description = value; }
             get { return description; }
+        }
+
+        public string Syntax
+        {
+            set { syntax = value; }
+            get { return syntax; }
         }
 
         public ApiFunction ApiFunction

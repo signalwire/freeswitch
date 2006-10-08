@@ -537,6 +537,8 @@ struct switch_api_interface {
 	const char *desc;
 	/*! function the api call uses */
 	switch_api_function_t function;
+	/*! an example of the application syntax */
+	const char *syntax;
 	const struct switch_api_interface *next;
 };
 

@@ -43,6 +43,7 @@ namespace FreeSwitch.Marshaling.Types
         //[MarshalAs(UnmanagedType.LPStr)]
         internal IntPtr      desc;
         internal ApiFunction function;
+        internal IntPtr      syntax;
         internal IntPtr      next;
     }
 }
