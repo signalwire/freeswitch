@@ -69,6 +69,7 @@ static const char modname[] = "mod_spidermonkey";
 static int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval);
 static void session_destroy(JSContext *cx, JSObject *obj);
 static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
+static switch_api_interface_t js_run_interface;
 
 static struct {
 	size_t gStackChunkSize;
@@ -2675,12 +2676,12 @@ static switch_status_t launch_async(char *text, switch_core_session_t *session, 
 {
 
 	if (switch_strlen_zero(text)) {
-		stream->write_function(stream, "INVALID");
+		stream->write_function(stream, "USAGE: %s\n", js_run_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	js_thread_launch(text);
-	stream->write_function(stream, "OK");
+	stream->write_function(stream, "OK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -2696,7 +2697,7 @@ static switch_api_interface_t js_run_interface = {
 	/*.interface_name */ "jsrun",
 	/*.desc */ "run a script",
 	/*.function */ launch_async,
-	/*.syntax */ NULL,
+	/*.syntax */ "jsrun <script>",
 	/*.next */ NULL
 };
 

@@ -34,6 +34,16 @@
 #include <switch.h>
 
 static const char modname[] = "mod_commands";
+static switch_api_interface_t ctl_api_interface;
+static switch_api_interface_t uuid_bridge_api_interface;
+static switch_api_interface_t status_api_interface;
+static switch_api_interface_t show_api_interface;
+static switch_api_interface_t pause_api_interface;
+static switch_api_interface_t transfer_api_interface;
+static switch_api_interface_t load_api_interface;
+static switch_api_interface_t reload_api_interface;
+static switch_api_interface_t kill_api_interface;
+static switch_api_interface_t originate_api_interface;
 
 static switch_status_t status_function(char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
@@ -94,7 +104,7 @@ static switch_status_t ctl_function(char *data, switch_core_session_t *session, 
 	uint32_t arg = 0;
 
 	if (switch_strlen_zero(data)) {
-		stream->write_function(stream, "USAGE: fsctl [hupall|pause|resume|shutdown]\n");
+		stream->write_function(stream, "USAGE: %s\n", ctl_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -137,7 +147,7 @@ static switch_status_t load_function(char *mod, switch_core_session_t *session, 
 		return SWITCH_STATUS_FALSE;
 	}
 	if (switch_strlen_zero(mod)) {
-		stream->write_function(stream, "USAGE: load <mod_name>\n");
+		stream->write_function(stream, "USAGE: %s\n", load_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 	switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod);
@@ -172,7 +182,7 @@ static switch_status_t kill_function(char *dest, switch_core_session_t *isession
 	}
 
 	if (!dest) {
-		stream->write_function(stream, "USAGE: killchan <uuid>\n");
+		stream->write_function(stream, "USAGE: %s\n", kill_api_interface.syntax);
 	} else if ((session = switch_core_session_locate(dest))) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
@@ -199,7 +209,7 @@ static switch_status_t transfer_function(char *cmd, switch_core_session_t *isess
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	if (argc < 2 || argc > 4) {
-		stream->write_function(stream, "USAGE: transfer <uuid> <dest-exten> [<dialplan>] [<context>]\n");
+		stream->write_function(stream, "USAGE: %s\n", transfer_api_interface.syntax);
 	} else {
 		char *uuid = argv[0];
 		char *dest = argv[1];
@@ -238,7 +248,7 @@ static switch_status_t uuid_bridge_function(char *cmd, switch_core_session_t *is
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	if (argc != 2) {
-		stream->write_function(stream, "Invalid Parameters\nUSAGE: uuid_bridge <uuid> <other_uuid>\n");
+		stream->write_function(stream, "USAGE: %s\n", uuid_bridge_api_interface.syntax);
 	} else {
 		if (switch_ivr_uuid_bridge(argv[0], argv[1]) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "Invalid uuid\n");
@@ -263,7 +273,7 @@ static switch_status_t pause_function(char *cmd, switch_core_session_t *isession
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	if (argc < 2) {
-		stream->write_function(stream, "USAGE: pause <uuid> <on|off>\n");
+		stream->write_function(stream, "USAGE: %s\n", pause_api_interface.syntax);
 	} else {
 		char *uuid = argv[0];
 		char *dest = argv[1];
@@ -301,12 +311,12 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
 	if (switch_strlen_zero(cmd) || argc < 2 || argc > 7) {
-		stream->write_function(stream, "USAGE: originate <call url> <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>]\n");
+		stream->write_function(stream, "USAGE: %s\n", originate_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
-
-	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	for(x = 0; x < argc; x++) {
 		if (!strcasecmp(argv[x], "undef")) {
@@ -333,11 +343,6 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 		timeout = atoi(argv[6]);
 	}
 
-	if (!aleg || !exten) {
-		stream->write_function(stream, "Invalid Arguements\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, &noop_state_handler, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "Cannot Create Outgoing Channel! [%s]\n", aleg);
 		return SWITCH_STATUS_SUCCESS;
@@ -346,7 +351,6 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 	caller_channel = switch_core_session_get_channel(caller_session);
 	assert(caller_channel != NULL);
 	switch_channel_clear_state_handler(caller_channel, NULL);
-
 
 	if (*exten == '&') {
 		switch_caller_extension_t *extension = NULL;
@@ -453,9 +457,7 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
         sprintf (sql, "select * from channels");
     }
     else {
-        stream->write_function(stream, "Invalid interfaces type!\n");
-        stream->write_function(stream, "USAGE:\n");
-        stream->write_function(stream, "show <blank>|codec|application|api|dialplan|file|timer|calls|channels\n");
+		stream->write_function(stream, "USAGE: %s\n", show_api_interface.syntax);
         return SWITCH_STATUS_SUCCESS;
     }
     
@@ -491,7 +493,7 @@ static switch_api_interface_t ctl_api_interface = {
 	/*.interface_name */ "fsctl",
 	/*.desc */ "control messages",
 	/*.function */ ctl_function,
-	/*.syntax */ NULL,
+	/*.syntax */ "fsctl [hupall|pause|resume|shutdown]",
 	/*.next */ 
 };
 
@@ -499,7 +501,7 @@ static switch_api_interface_t uuid_bridge_api_interface = {
 	/*.interface_name */ "uuid_bridge",
 	/*.desc */ "uuid_bridge",
 	/*.function */ uuid_bridge_function,
-	/*.syntax */ NULL,
+	/*.syntax */ "uuid_bridge <uuid> <other_uuid>",
 	/*.next */ &ctl_api_interface
 };
 
@@ -507,7 +509,7 @@ static switch_api_interface_t status_api_interface = {
 	/*.interface_name */ "status",
 	/*.desc */ "status",
 	/*.function */ status_function,
-	/*.syntax */ NULL,
+	/*.syntax */ "status",
 	/*.next */ &uuid_bridge_api_interface
 };
 
@@ -515,7 +517,7 @@ static switch_api_interface_t show_api_interface = {
 	/*.interface_name */ "show",
 	/*.desc */ "Show",
 	/*.function */ show_function,
-	/*.syntax */ NULL,
+	/*.syntax */ "show <blank>|codec|application|api|dialplan|file|timer|calls|channels",
 	/*.next */ &status_api_interface
 };
 
@@ -523,7 +525,7 @@ static switch_api_interface_t pause_api_interface = {
 	/*.interface_name */ "pause",
 	/*.desc */ "Pause",
 	/*.function */ pause_function,
-	/*.syntax */ NULL,
+	/*.syntax */ "pause <uuid> <on|off>",
 	/*.next */ &show_api_interface
 };
 
@@ -531,7 +533,7 @@ static switch_api_interface_t transfer_api_interface = {
 	/*.interface_name */ "transfer",
 	/*.desc */ "Transfer",
 	/*.function */ transfer_function,
-	/*.syntax */ NULL,
+	/*.syntax */ "transfer <uuid> <dest-exten> [<dialplan>] [<context>]",
 	/*.next */ &pause_api_interface
 };
 
@@ -539,7 +541,7 @@ static switch_api_interface_t load_api_interface = {
 	/*.interface_name */ "load",
 	/*.desc */ "Load Module",
 	/*.function */ load_function,
-	/*.syntax */ NULL,
+	/*.syntax */ "load <mod_name>",
 	/*.next */ &transfer_api_interface
 };
 
@@ -547,16 +549,16 @@ static switch_api_interface_t reload_api_interface = {
 	/*.interface_name */ "reloadxml",
 	/*.desc */ "Reload XML",
 	/*.function */ reload_function,
-	/*.syntax */ NULL,
+	/*.syntax */ "reloadxml",
 	/*.next */ &load_api_interface,
 
 };
 
-static switch_api_interface_t commands_api_interface = {
+static switch_api_interface_t kill_api_interface = {
 	/*.interface_name */ "killchan",
 	/*.desc */ "Kill Channel",
 	/*.function */ kill_function,
-	/*.syntax */ NULL,
+	/*.syntax */ "killchan <uuid>",
 	/*.next */ &reload_api_interface
 };
 
@@ -564,8 +566,8 @@ static switch_api_interface_t originate_api_interface = {
 	/*.interface_name */ "originate",
 	/*.desc */ "Originate a Call",
 	/*.function */ originate_function,
-	/*.syntax */ NULL,
-	/*.next */ &commands_api_interface
+	/*.syntax */ "originate <call url> <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>]",
+	/*.next */ &kill_api_interface
 };
 
 

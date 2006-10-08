@@ -440,7 +440,7 @@ static switch_api_interface_t send_dtmf_interface = {
 	/*.interface_name */ "padtmf",
 	/*.desc */ "PortAudio Dial DTMF",
 	/*.function */ send_dtmf,
-	/*.syntax */ NULL,
+	/*.syntax */ "padtmf <callid> <dtmf_digits>",
 	/*.next */ NULL
 };
 
@@ -448,7 +448,7 @@ static switch_api_interface_t answer_call_interface = {
 	/*.interface_name */ "paoffhook",
 	/*.desc */ "PortAudio Answer Call",
 	/*.function */ answer_call,
-	/*.syntax */ NULL,
+	/*.syntax */ "paoffhook",
 	/*.next */ &send_dtmf_interface
 };
 
@@ -456,7 +456,7 @@ static switch_api_interface_t channel_info_interface = {
 	/*.interface_name */ "painfo",
 	/*.desc */ "PortAudio Call Info",
 	/*.function */ call_info,
-	/*.syntax */ NULL,
+	/*.syntax */ "painfo",
 	/*.next */ &answer_call_interface
 };
 
@@ -464,7 +464,7 @@ static switch_api_interface_t channel_hup_interface = {
 	/*.interface_name */ "pahup",
 	/*.desc */ "PortAudio Hangup Call",
 	/*.function */ hup_call,
-	/*.syntax */ NULL,
+	/*.syntax */ "pahup [call_number]",
 	/*.next */ &channel_info_interface
 };
 
@@ -472,7 +472,7 @@ static switch_api_interface_t channel_api_interface = {
 	/*.interface_name */ "pacall",
 	/*.desc */ "PortAudio Call",
 	/*.function */ place_call,
-	/*.syntax */ NULL,
+	/*.syntax */ "pacall <exten>",
 	/*.next */ &channel_hup_interface
 };
 
@@ -837,11 +837,9 @@ static switch_status_t place_call(char *dest, switch_core_session_t *isession, s
 	}
 
 	if (!dest) {
-		stream->write_function(stream, "Usage: pacall <exten>");
+		stream->write_function(stream, "Usage: %s\n", channel_api_interface.syntax);
 		return SWITCH_STATUS_FALSE;
 	}
-
-	stream->write_function(stream, "FAIL");
 	
 	if ((session = switch_core_session_request(&channel_endpoint_interface, NULL)) != 0) {
 		struct private_object *tech_pvt;
@@ -878,6 +876,8 @@ static switch_status_t place_call(char *dest, switch_core_session_t *isession, s
 			switch_channel_set_state(channel, CS_INIT);
 			switch_core_session_thread_launch(tech_pvt->session);
 			stream->write_function(stream, "SUCCESS:%s:%s", tech_pvt->call_id, switch_core_session_get_uuid(tech_pvt->session));
+		} else {
+			stream->write_function(stream, "FAIL\n");
 		}
 	}
 	return status;
@@ -936,16 +936,17 @@ static switch_status_t send_dtmf(char *callid, switch_core_session_t *session, s
 {
 	struct private_object *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
-	char *dtmf;
+	char *dtmf = NULL;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if ((dtmf = strchr(callid, ' ')) != 0) {
-		*dtmf++ = '\0';
+	if (switch_strlen_zero(callid) || (dtmf = strchr(callid, ' ')) == 0) {
+		stream->write_function(stream, "USAGE: %s\n", send_dtmf_interface.syntax);
+		return SWITCH_STATUS_SUCCESS;
 	} else {
-		dtmf = "";
+		*dtmf++ = '\0';
 	}
 
 	if ((tech_pvt = switch_core_hash_find(globals.call_hash, callid)) != 0) {

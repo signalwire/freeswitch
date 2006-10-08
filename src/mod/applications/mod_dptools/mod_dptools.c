@@ -33,7 +33,6 @@
 
 static const char modname[] = "mod_dptools";
 
-
 static void transfer_function(switch_core_session_t *session, char *data)
 {
 	int argc;
@@ -133,7 +132,7 @@ static switch_api_interface_t dptools_api_interface = {
 	/*.interface_name */ "strftime",
 	/*.desc */ "strftime",
 	/*.function */ strftime_api_function,
-	/*.syntax */ NULL,
+	/*.syntax */ "strftime <format_string>",
 	/*.next */ NULL
 };
 

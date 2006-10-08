@@ -1071,7 +1071,7 @@ static switch_api_interface_t logout_api_interface = {
 	/*.interface_name */ "dl_logout",
 	/*.desc */ "DingaLing Logout",
 	/*.function */ dl_logout,
-	/*.syntax */ NULL,
+	/*.syntax */ "dl_logout <profile_name>",
 	/*.next */ NULL
 };
 
@@ -1079,7 +1079,7 @@ static switch_api_interface_t login_api_interface = {
 	/*.interface_name */ "dl_login",
 	/*.desc */ "DingaLing Login",
 	/*.function */ dl_login,
-	/*.syntax */ NULL,
+	/*.syntax */ "dl_login <profile_name>",
 	/*.next */ &logout_api_interface
 };
 
@@ -1400,7 +1400,7 @@ static switch_status_t dl_logout(char *profile_name, switch_core_session_t *sess
 	}
 
 	if (!profile_name) {
-		stream->write_function(stream, "NO PROFILE NAME SPECIFIED\n");
+		stream->write_function(stream, "USAGE: %s\n", logout_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1426,14 +1426,14 @@ static switch_status_t dl_login(char *arg, switch_core_session_t *session, switc
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (switch_strlen_zero(arg)) {
-		stream->write_function(stream, "FAIL\n");
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	myarg = strdup(arg);
 
 	argc = switch_separate_string(myarg, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (switch_strlen_zero(arg) || argc != 1) {
+		stream->write_function(stream, "USAGE: %s\n", login_api_interface.syntax);
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	if (!strncasecmp(argv[0], "profile=", 8)) {
 		char *profile_name = argv[0] + 8;

@@ -34,6 +34,7 @@
 static const char modname[] = "mod_conference";
 static const char global_app_name[] = "conference";
 static char *global_cf_name = "conference.conf";
+static switch_api_interface_t conf_api_interface;
 
 /* Size to allocate for audio buffers */
 #define CONF_BUFFER_SIZE 1024 * 128 
@@ -1317,29 +1318,6 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 	char *lbuf = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *http = NULL;
-	char *topusage = "Available Commands:\n"
-		"--------------------------------------------------------------------------------\n"
-		"conference commands\n"
-		"conference list [delim <string>]\n"
-		"conference <confname> list [delim <string>]\n"
-		"conference <confname> energy <member_id> [<newval>]\n"
-		"conference <confname> volume_in <member_id> [<newval>]\n"
-		"conference <confname> volume_out <member_id> [<newval>]\n"
-		"conference <confname> play <file_path> [<member_id>]\n"
-		"conference <confname> say <text>\n"
-		"conference <confname> saymember <member_id><text>\n"
-		"conference <confname> stop <[current|all]> [<member_id>]\n"
-		"conference <confname> kick <member_id>\n"
-		"conference <confname> mute <member_id>\n"
-		"conference <confname> unmute <member_id>\n"
-		"conference <confname> deaf <member_id>\n"
-		"conference <confname> undef <member_id>\n"
-		"conference <confname> relate <member_id> <other_member_id> [nospeak|nohear]\n"
-		"conference <confname> lock\n"
-		"conference <confname> unlock\n"
-		"conference <confname> dial <endpoint_module_name>/<destination>\n"
-		"conference <confname> transfer <member_id> <conference_name>\n"
-		;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -1355,7 +1333,7 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 	}
 
 	if (!buf) {
-		stream->write_function(stream, topusage);
+		stream->write_function(stream, "%s", conf_api_interface.syntax);
 		return status;
 	}
 
@@ -1370,7 +1348,7 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 		/* Figure out what conference */
 		if (argc) {
 			if (!strcasecmp(argv[0], "commands")) {
-				stream->write_function(stream, topusage);
+				stream->write_function(stream, "%s", conf_api_interface.syntax);
 				goto done;
 			} else if (!strcasecmp(argv[0], "list")) {
 				switch_hash_index_t *hi;
@@ -2020,7 +1998,7 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 				goto done;
 			}
 		} else {
-			stream->write_function(stream, topusage);
+			stream->write_function(stream, "USAGE: %s\n", conf_api_interface.syntax);
 		}
 	} else {
 		stream->write_function(stream, "Memory Error!\n");
@@ -2666,7 +2644,27 @@ static switch_api_interface_t conf_api_interface = {
 	/*.interface_name */ "conference",
 	/*.desc */ "Conference",
 	/*.function */ conf_function,
-	/*.syntax */ NULL,
+	/*.syntax */ 
+		"conference commands\n"
+		"conference list [delim <string>]\n"
+		"conference <confname> list [delim <string>]\n"
+		"conference <confname> energy <member_id> [<newval>]\n"
+		"conference <confname> volume_in <member_id> [<newval>]\n"
+		"conference <confname> volume_out <member_id> [<newval>]\n"
+		"conference <confname> play <file_path> [<member_id>]\n"
+		"conference <confname> say <text>\n"
+		"conference <confname> saymember <member_id><text>\n"
+		"conference <confname> stop <[current|all]> [<member_id>]\n"
+		"conference <confname> kick <member_id>\n"
+		"conference <confname> mute <member_id>\n"
+		"conference <confname> unmute <member_id>\n"
+		"conference <confname> deaf <member_id>\n"
+		"conference <confname> undef <member_id>\n"
+		"conference <confname> relate <member_id> <other_member_id> [nospeak|nohear]\n"
+		"conference <confname> lock\n"
+		"conference <confname> unlock\n"
+		"conference <confname> dial <endpoint_module_name>/<destination>\n"
+		"conference <confname> transfer <member_id> <conference_name>\n",
 	/*.next */ 
 };
 
