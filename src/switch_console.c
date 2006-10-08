@@ -112,14 +112,6 @@ static int switch_console_process(char *cmd)
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "FreeSwitch Version %s\n", SWITCH_VERSION_FULL);
 		return 1;
 	}
-	if (!strcmp(cmd, "help")) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE,
-							  "\n"
-							  "Valid Commands:\n\n"
-							  "version\n" "help - umm yeah..\n" "shutdown - stop the program\n\n");
-		return 1;
-	}
-
 	if ((arg = strchr(cmd, '\r')) != 0  || (arg = strchr(cmd, '\n')) != 0 )  {
 		*arg = '\0';
 		arg = NULL;

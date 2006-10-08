@@ -384,6 +384,7 @@ struct holder {
 	switch_stream_handle_t *stream;
 	char *http;
 	uint32_t count;
+	int print_title;
 };
 
 static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
@@ -391,7 +392,7 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
 	int x;
 
 
-	if (holder->count == 0) {
+	if (holder->print_title && holder->count == 0) {
 		if (holder->http) {
 			holder->stream->write_function(holder->stream, "\n<tr>");
 		}
@@ -432,6 +433,7 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 	char *errmsg;
 	switch_core_db_t *db = switch_core_db_handle();
 	struct holder holder = {0};
+	int help = 0;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -440,6 +442,8 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 	if (stream->event) {
         holder.http = switch_event_get_header(stream->event, "http-host");
     } 
+
+	holder.print_title = 1;
 
     if (!cmd) {
         sprintf (sql, "select * from interfaces");
@@ -455,6 +459,17 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
     }
     else if ( !strcmp(cmd,"channels")) {
         sprintf (sql, "select * from channels");
+    }
+    else if (!strncasecmp(cmd, "help", 4)) {
+		char *cmdname = NULL;
+		help = 1;
+		holder.print_title = 0;
+		if ((cmdname = strchr(cmd, ' ')) != 0) {
+			*cmdname++ = '\0';
+	        sprintf (sql, "select name from interfaces where type = 'api' and name = '%s'", cmdname);
+		} else {
+	        sprintf (sql, "select name from interfaces where type = 'api'");
+		}
     }
     else {
 		stream->write_function(stream, "USAGE: %s\n", show_api_interface.syntax);
@@ -474,11 +489,13 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 		holder.stream->write_function(holder.stream, "</table>");
 	}
 
-
 	if (errmsg) {
 		stream->write_function(stream, "SQL ERR [%s]\n",errmsg);
 		switch_core_db_free(errmsg);
 		errmsg = NULL;
+	} else if (help) {
+		if (holder.count == 0)
+			stream->write_function(stream, "No such command.\n");
 	} else {
 		stream->write_function(stream, "\n%u total.\n", holder.count);
 	}
@@ -487,14 +504,39 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t help_function(char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+	char showcmd[1024];
+	int all = 0;
+	if (switch_strlen_zero(cmd)) {
+		sprintf (showcmd, "help");
+		all = 1;
+	} else {
+		sprintf (showcmd, "help %s", cmd);
+	}
 
+	if (all)
+		stream->write_function(stream, "\nValid Commands:\n\n");
+	show_function(showcmd, session, stream);
+	if (all)
+		stream->write_function(stream, "version\n" "help - umm yeah..\n" "shutdown - stop the program\n\n");
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_api_interface_t help_api_interface = {
+	/*.interface_name */ "help",
+	/*.desc */ "Show help for all the api commands",
+	/*.function */ help_function,
+	/*.syntax */ "help",
+	/*.next */ NULL
+};
 
 static switch_api_interface_t ctl_api_interface = {
 	/*.interface_name */ "fsctl",
 	/*.desc */ "control messages",
 	/*.function */ ctl_function,
 	/*.syntax */ "fsctl [hupall|pause|resume|shutdown]",
-	/*.next */ 
+	/*.next */ &help_api_interface
 };
 
 static switch_api_interface_t uuid_bridge_api_interface = {
