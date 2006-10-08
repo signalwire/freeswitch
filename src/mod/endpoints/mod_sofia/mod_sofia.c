@@ -1916,7 +1916,7 @@ static void sip_i_state(int status,
 		if (channel) {
 			if (r_sdp) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
-					switch_channel_pre_answer(channel);
+					switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 					return;
 				} else {
 					sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
@@ -1938,7 +1938,7 @@ static void sip_i_state(int status,
 						tech_choose_port(tech_pvt);
 						activate_rtp(tech_pvt);
 						switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
-						switch_channel_pre_answer(channel);
+						switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 						return;
 					}
 					switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
@@ -2067,7 +2067,7 @@ static void sip_i_state(int status,
 			if (r_sdp) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANS);
-					switch_channel_answer(channel);
+					switch_channel_set_flag(channel, CF_ANSWERED);
 					return;
 				} else {
 					sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
@@ -2090,7 +2090,7 @@ static void sip_i_state(int status,
 						switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 						tech_choose_port(tech_pvt);
 						activate_rtp(tech_pvt);
-						switch_channel_answer(channel);
+						switch_channel_set_flag(channel, CF_ANSWERED);
 						return;
 					}
 					
@@ -2100,7 +2100,7 @@ static void sip_i_state(int status,
 			} else if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 				switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 				switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
-				switch_channel_answer(channel);
+				switch_channel_set_flag(channel, CF_ANSWERED);
 				return;
 			} //else probably an ack
 		}
