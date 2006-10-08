@@ -2343,10 +2343,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(char *originator_uuid, ch
 			switch_channel_set_state(originator_channel, CS_TRANSMIT);
 			switch_channel_set_state(originatee_channel, CS_TRANSMIT);
 			
+			status = SWITCH_STATUS_SUCCESS;
 		} else {
 			switch_core_session_rwunlock(originator_session);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no channel for uuid %s\n", originatee_uuid);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no channel for originatee uuid %s\n", originatee_uuid);
 		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "no channel for originator uuid %s\n", originator_uuid);
 	}
 
 	return status;
