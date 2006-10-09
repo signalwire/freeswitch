@@ -115,8 +115,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 				}
 				if ((arg = strchr(data, '='))) {
 					*arg++ = '\0';
-					
-					printf("Codec arg %d [%s]=[%s]\n", x, data, arg);
+					//printf("Codec arg %d [%s]=[%s]\n", x, data, arg);
 				}
 
 			}
