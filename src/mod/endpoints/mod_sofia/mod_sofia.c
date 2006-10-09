@@ -1702,7 +1702,7 @@ static void logger(void *logarg, char const *fmt, va_list ap)
 	}
 	
 	if (data) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, (char*) "%s: %s", __FILE__, data);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, (char*) "%s", data);
 		free(data);
 	}
 }
@@ -1914,7 +1914,7 @@ static void sip_i_state(int status,
 	switch_channel_t *channel = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
-	const char *replaces_str;
+	const char *replaces_str = NULL;
 	char *uuid;
 	switch_core_session_t *other_session = NULL;
 	switch_channel_t *other_channel = NULL;
