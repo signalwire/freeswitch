@@ -32,7 +32,8 @@
  *
  */  
 #include "switch.h"
-#include "amr-nb/amr-nb.h"
+#include "amr/interf_enc.h"
+#include "amr/interf_dec.h"
 
 /*
  * Check section 8.1 of rfc3267 for possible sdp options.
@@ -173,7 +174,7 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	*encoded_data_len = Encoder_Interface_Encode( context->encoder_state, context->enc_mode, (int16_t *)decoded_data, (int8_t *) encoded_data, 0);
+	*encoded_data_len = Encoder_Interface_Encode( context->encoder_state, context->enc_mode, (int16_t *)decoded_data, (uint8_t *) encoded_data, 0);
 
 	return SWITCH_STATUS_SUCCESS;
 }
