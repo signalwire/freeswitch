@@ -1686,25 +1686,27 @@ static const switch_loadable_module_interface_t sofia_module_interface = {
 
 static void logger(void *logarg, char const *fmt, va_list ap)
 {
-	char *data;
-	int ret;
+	char *data = NULL;
 
 	if (fmt) {
 #ifdef HAVE_VASPRINTF
+		int ret;
 		ret = vasprintf(&data, fmt, ap);
-#else
-		data = (char *) malloc(2048);
-		vsnprintf(data, 2048, fmt, ap);
-#endif
-		if (ret == -1) {
+		if ((ret == -1) || !data) {
 			return;
 		}
+#else
+		data = (char *) malloc(2048);
+		if (data) {
+			vsnprintf(data, 2048, fmt, ap);
+		} else { 
+			return;
+		}
+#endif
 	}
 	
-	if (data) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, (char*) "%s", data);
-		free(data);
-	}
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, (char*) "%s", data);
+	free(data);
 }
 
 
