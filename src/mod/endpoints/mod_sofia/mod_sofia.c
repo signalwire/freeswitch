@@ -1308,6 +1308,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			nua_respond(tech_pvt->nh, SIP_200_OK, 
 						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 						SOATAG_AUDIO_AUX("cn telephone-event"),
+						NUTAG_INCLUDE_EXTRA_SDP(1),
 						TAG_END());
 		}
 	}
