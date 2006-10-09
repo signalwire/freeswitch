@@ -2944,7 +2944,7 @@ static void event_callback(nua_event_t event,
 			switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_END());
-			return;
+			goto done;
 		}
 	}
 	
@@ -3066,6 +3066,8 @@ static void event_callback(nua_event_t event,
 		break;
 
 	}
+
+ done:
 
 	if (session) {
 		switch_core_session_rwunlock(session);
