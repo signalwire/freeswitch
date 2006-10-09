@@ -10,7 +10,7 @@ endif
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(TARBALL) --prefix=$(PREFIX) --with-pic
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(TARBALL) --prefix=$(PREFIX) --with-pic --with-glib=no
 
 %.o:  %.c
 	$(CC) -fPIC $(CFLAGS) -c -o $@ $<
