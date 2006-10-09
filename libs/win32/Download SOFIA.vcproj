@@ -76,8 +76,8 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading SOFIA."
-					CommandLine="if not exist &quot;$(ProjectDir)..\sofia-sip-1.12.3.2&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sofia-sip-1.12.3.2.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\sofia-sip-1.12.3.2"
+					CommandLine="if not exist &quot;$(ProjectDir)..\sofia-sip-1.12.3.3&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sofia-sip-1.12.3.3.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\sofia-sip-1.12.3.3"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -86,8 +86,8 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading SOFIA."
-					CommandLine="if not exist &quot;$(ProjectDir)..\sofia-sip-1.12.3.2&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sofia-sip-1.12.3.2.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\sofia-sip-1.12.3.2"
+					CommandLine="if not exist &quot;$(ProjectDir)..\sofia-sip-1.12.3.3&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://svn.freeswitch.org/downloads/libs/sofia-sip-1.12.3.3.tar.gz &quot;$(ProjectDir)..&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\sofia-sip-1.12.3.3"
 				/>
 			</FileConfiguration>
 		</File>
