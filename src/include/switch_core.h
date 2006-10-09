@@ -832,13 +832,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
   \return SWITCH_STATUS_SUCCESS if the handle is allocated
 */
 SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, 
-													 char *codec_name, 
-													 uint32_t rate, 
-													 int ms, 
-													 int channels, 
-													 uint32_t flags,
-													 const switch_codec_settings_t *codec_settings, 
-													 switch_memory_pool_t *pool);
+													   char *codec_name, 
+													   char *fmtp,
+													   uint32_t rate, 
+													   int ms, 
+													   int channels, 
+													   uint32_t flags,
+													   const switch_codec_settings_t *codec_settings, 
+													   switch_memory_pool_t *pool);
 
 /*! 
   \brief Encode data using a codec handle

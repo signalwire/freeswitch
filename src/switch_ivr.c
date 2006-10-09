@@ -378,6 +378,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	codec_name = "L16";
 	if (switch_core_codec_init(&codec,
 							   codec_name,
+							   NULL,
 							   read_codec->implementation->samples_per_second,
 							   read_codec->implementation->microseconds_per_frame / 1000,
 							   read_codec->implementation->number_of_channels,
@@ -710,6 +711,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 		if (switch_core_codec_init(&codec,
 								   codec_name,
+								   NULL,
 								   fh->samplerate,
 								   interval,
 								   fh->channels,
@@ -1177,6 +1179,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 
 	if (switch_core_codec_init(&codec,
 							   codec_name,
+							   NULL,
 							   (int)rate,
 							   interval,
 							   1,
@@ -1239,7 +1242,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 {
 	switch_core_thread_session_t *his_thread, *data = obj;
 	int *stream_id_p;
-	int stream_id = 0, ans_a = 0, ans_b = 0;
+	int stream_id = 0, pre_b = 0, ans_a = 0, ans_b = 0, originator = 0;
 	switch_input_callback_function_t input_callback;
 	switch_core_session_message_t msg = {0};
 	void *user_data;
@@ -1265,9 +1268,12 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	chan_a = switch_core_session_get_channel(session_a);
 	chan_b = switch_core_session_get_channel(session_b);
 
-
 	ans_a = switch_channel_test_flag(chan_a, CF_ANSWERED);
-	ans_b = switch_channel_test_flag(chan_b, CF_ANSWERED);
+	if ((originator = switch_channel_test_flag(chan_a, CF_ORIGINATOR))) {
+		pre_b = switch_channel_test_flag(chan_a, CF_EARLY_MEDIA);
+		ans_b = switch_channel_test_flag(chan_b, CF_ANSWERED);
+	}
+
 
 	switch_channel_set_flag(chan_a, CF_BRIDGED);
 
@@ -1292,21 +1298,19 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 
 		if (!switch_channel_test_flag(chan_a, CF_HOLD)) {
-			/* If this call is running on early media and it answers for real, pass it along... */
-			if (!ans_b && switch_channel_test_flag(chan_a, CF_ANSWERED)) {
-				if (!switch_channel_test_flag(chan_b, CF_ANSWERED)) {
-					switch_channel_answer(chan_b);
+			
+			if (!ans_a && originator) {
+				if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
+					switch_channel_answer(chan_a);
+					ans_a++;
+				} else if (!pre_b && switch_channel_test_flag(chan_b, CF_EARLY_MEDIA)) {
+					switch_channel_pre_answer(chan_a);
+					pre_b++;
 				}
-				ans_b++;
+				switch_yield(10000);
+				continue;
 			}
 
-			if (!ans_a && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
-				if (!switch_channel_test_flag(chan_a, CF_ANSWERED)) {
-					switch_channel_answer(chan_a);
-				}
-				ans_a++;
-			}
-			
 			if (switch_core_session_dequeue_private_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
 				switch_channel_set_flag(chan_b, CF_HOLD);
 				switch_ivr_parse_event(session_a, event);
@@ -1931,17 +1935,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		}
 	endfor1:
-
+		
 		if (session && !switch_channel_test_flag(caller_channel, CF_NOMEDIA)) {
 			switch_codec_t *read_codec = NULL;
 
-			switch_channel_pre_answer(caller_channel);
 			read_codec = switch_core_session_get_read_codec(session);
-
 			assert(read_codec != NULL);
 			if (!(pass = (uint8_t)switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
 				if (switch_core_codec_init(&write_codec,
 										   "L16",
+										   NULL,
 										   read_codec->implementation->samples_per_second,
 										   read_codec->implementation->microseconds_per_frame / 1000,
 										   1,
@@ -1964,6 +1967,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		while ((!caller_channel || switch_channel_ready(caller_channel)) && 
 			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key) && ((time(NULL) - start) < (time_t)timelimit_sec)) {
+
 
 			/* read from the channel while we wait if the audio is up on it */
 			if (session && !switch_channel_test_flag(caller_channel, CF_NOMEDIA) && 
@@ -2007,13 +2011,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			goto done;
 		}
 
-		if (caller_channel && switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+		if (caller_channel) {
 			char *val;
-
 			if (switch_channel_test_flag(peer_channel, CF_NOMEDIA) && (val = switch_channel_get_variable(peer_channel, SWITCH_R_SDP_VARIABLE))) {
 				switch_channel_set_variable(caller_channel, SWITCH_L_SDP_VARIABLE, val);
 			}
-			switch_channel_answer(caller_channel);
+
+			if (switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
+				switch_channel_answer(caller_channel);
+			} else if (switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
+				switch_channel_pre_answer(caller_channel);
+			}
 		}
 
 		if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {

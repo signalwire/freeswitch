@@ -255,6 +255,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 	
 	if (switch_core_codec_init(&speech_codec,
 							   "L16",
+							   NULL,
 							   (int)rate,
 							   interval,
 							   1,

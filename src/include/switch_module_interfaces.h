@@ -442,6 +442,10 @@ struct switch_codec {
 	const switch_codec_interface_t *codec_interface;
 	/*! the specific implementation of the above codec */
 	const switch_codec_implementation_t *implementation;
+	/*! fmtp line from remote sdp */
+	char *fmtp_in;
+	/*! fmtp line for local sdp */
+	char *fmtp_out;
 	/*! codec settings for this handle */
 	switch_codec_settings_t codec_settings;
 	/*! flags to modify behaviour */
@@ -460,6 +464,8 @@ struct switch_codec_implementation {
 	switch_payload_t ianacode;
 	/*! the IANA code name */
 	char *iananame;
+	/*! default fmtp to send (can be overridden by the init function) */
+	char *fmtp;
 	/*! samples transferred per second */
 	uint32_t samples_per_second;
 	/*! bits transferred per second */

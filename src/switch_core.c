@@ -652,7 +652,7 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_write_codec(switch_core
 	return session->write_codec;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, char *codec_name, uint32_t rate, int ms,
+SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, char *codec_name, char *fmtp, uint32_t rate, int ms,
 													 int channels, uint32_t flags,
 													 const switch_codec_settings_t *codec_settings,
 													 switch_memory_pool_t *pool)
@@ -684,7 +684,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, ch
 		codec->codec_interface = codec_interface;
 		codec->implementation = implementation;
 		codec->flags = flags;
-
+		
 		if (pool) {
 			codec->memory_pool = pool;
 		} else {
@@ -692,6 +692,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, ch
 				return status;
 			}
 			switch_set_flag(codec, SWITCH_CODEC_FLAG_FREE_POOL);
+		}
+
+		if (fmtp) {
+			codec->fmtp_in = switch_core_strdup(codec->memory_pool, fmtp);
 		}
 
 		implementation->init(codec, flags, codec_settings);

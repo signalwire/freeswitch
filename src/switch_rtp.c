@@ -1317,6 +1317,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 	
 	if (switch_core_codec_init(&rtp_session->vad_data.vad_codec,
 							   codec->implementation->iananame,
+							   NULL,
 							   codec->implementation->samples_per_second,
 							   codec->implementation->microseconds_per_frame / 1000,
 							   codec->implementation->number_of_channels,

@@ -183,6 +183,7 @@ static const switch_codec_implementation_t g723_1_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 	/*.ianacode */ 4, 
 	/*.iananame */ "G723", 
+	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000, 
 	/*.bits_per_second */ 6300, 
 	/*.microseconds_per_frame */ 30000, 

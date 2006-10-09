@@ -171,6 +171,7 @@ static const switch_codec_implementation_t lpc10_implementation = {
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 	/*.ianacode */ 7, 
 	/*.iananame */ "LPC", 
+	/*.fmtp */ NULL,
 	/*.samples_per_second */ 8000,
 	/*.bits_per_second */ 240, 
 	/*.microseconds_per_frame */ 22500, 

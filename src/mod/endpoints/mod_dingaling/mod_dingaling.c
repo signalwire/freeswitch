@@ -304,6 +304,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   tech_pvt->codec_name,
+							   NULL,
 							   tech_pvt->codec_rate,
 							   ms,
 							   1,
@@ -321,6 +322,7 @@ static int activate_rtp(struct private_object *tech_pvt)
 	
 	if (switch_core_codec_init(&tech_pvt->write_codec,
 							   tech_pvt->codec_name,
+							   NULL,
 							   tech_pvt->codec_rate,
 							   ms,
 							   1,
@@ -1735,7 +1737,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							name = "ilbc";
 						}
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "compare %s %d to %s %d\n", payloads[x].name, payloads[x].id, name, tech_pvt->codecs[y]->ianacode);
-						if (tech_pvt->codecs[y]->ianacode > 96) {
+						if (tech_pvt->codecs[y]->ianacode > 95) {
 							match = strcasecmp(name, payloads[x].name) ? 0 : 1;
 						} else {
 							match = (payloads[x].id == tech_pvt->codecs[y]->ianacode) ? 1 : 0;

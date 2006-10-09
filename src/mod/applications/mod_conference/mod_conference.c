@@ -2343,6 +2343,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 	/* Setup a Signed Linear codec for reading audio. */
 	if (switch_core_codec_init(&member.read_codec,
 							   "L16",
+							   NULL,
 							   //conference->rate,
 							   read_codec->implementation->samples_per_second,
 							   //conference->interval,
@@ -2380,6 +2381,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 	/* Setup a Signed Linear codec for writing audio. */
 	if (switch_core_codec_init(&member.write_codec,
 							   "L16",
+							   NULL,
 							   conference->rate,
 							   //read_codec->implementation->samples_per_second,
 							   conference->interval,

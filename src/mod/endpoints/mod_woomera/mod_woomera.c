@@ -211,7 +211,7 @@ static switch_status_t woomerachan_on_init(switch_core_session_t *session)
 	tech_pvt->frame.data = tech_pvt->databuf;
 
 	if (switch_core_codec_init
-		(&tech_pvt->read_codec, "L16", rate, 30, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+		(&tech_pvt->read_codec, "L16", NULL, rate, 30, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Cannot set read codec\n", switch_channel_get_name(channel));
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -219,7 +219,7 @@ static switch_status_t woomerachan_on_init(switch_core_session_t *session)
 	}
 
 	if (switch_core_codec_init
-		(&tech_pvt->write_codec, "L16", rate, 30, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+		(&tech_pvt->write_codec, "L16", NULL, rate, 30, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 		 switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Cannot set read codec\n", switch_channel_get_name(channel));
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);

@@ -373,6 +373,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 	}
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   dname,
+							   NULL,
 							   srate,
 							   interval,
 							   1,
@@ -383,6 +384,7 @@ static switch_status_t iax_set_codec(struct private_object *tech_pvt, struct iax
 	} else {
 		if (switch_core_codec_init(&tech_pvt->write_codec,
 								   dname,
+								   NULL,
 								   srate,
 								   interval,
 								   1,

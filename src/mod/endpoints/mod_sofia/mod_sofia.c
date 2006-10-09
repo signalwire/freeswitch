@@ -250,6 +250,8 @@ struct private_object {
 	char *contact_url;
 	char *from_str;
 	char *rm_encoding;
+	char *rm_fmtp;
+	char *fmtp_out;
 	char *remote_sdp_str;
 	char *local_sdp_str;
 	char *dest;
@@ -632,7 +634,7 @@ static void set_local_sdp(private_object_t *tech_pvt)
 		}
 	}
 
-	if (tech_pvt->te > 96) {
+	if (tech_pvt->te > 95) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->te);
 	}
 
@@ -640,16 +642,26 @@ static void set_local_sdp(private_object_t *tech_pvt)
 
 	if (tech_pvt->rm_encoding) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%ld\n", tech_pvt->pt, tech_pvt->rm_encoding, tech_pvt->rm_rate);
+		if (tech_pvt->fmtp_out) {
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->pt, tech_pvt->fmtp_out);
+		}
+		if (tech_pvt->read_codec.implementation) {
+			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", tech_pvt->read_codec.implementation->microseconds_per_frame / 1000);
+		}
+
 	} else if (tech_pvt->num_codecs) {
 		int i;
 		for (i = 0; i < tech_pvt->num_codecs; i++) {
 			const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d %s/%d\n", imp->ianacode, imp->iananame, imp->samples_per_second);
+			if (imp->fmtp) {
+				snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", imp->ianacode, imp->fmtp);
+			}
 			snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", imp->microseconds_per_frame / 1000);
 		}
 	}
 	
-	if (tech_pvt->te > 96) {
+	if (tech_pvt->te > 95) {
 		snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=rtpmap:%d telephone-event/8000\na=fmtp:%d 0-16\n", tech_pvt->te, tech_pvt->te);
 	}
 
@@ -1126,6 +1138,7 @@ static switch_status_t tech_set_codec(private_object_t *tech_pvt)
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,  
 							   tech_pvt->rm_encoding,
+							   tech_pvt->rm_fmtp,
 							   tech_pvt->rm_rate,
 							   tech_pvt->codec_ms,
 							   1,
@@ -1138,6 +1151,7 @@ static switch_status_t tech_set_codec(private_object_t *tech_pvt)
 	} else {
 		if (switch_core_codec_init(&tech_pvt->write_codec,
 								   tech_pvt->rm_encoding,
+								   tech_pvt->rm_fmtp,
 								   tech_pvt->rm_rate,
 								   tech_pvt->codec_ms,
 								   1,
@@ -1158,6 +1172,7 @@ static switch_status_t tech_set_codec(private_object_t *tech_pvt)
 				
 			switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 			switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
+			tech_pvt->fmtp_out = switch_core_session_strdup(tech_pvt->session, tech_pvt->write_codec.fmtp_out);
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
@@ -1771,8 +1786,9 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 
 				for (i = 0; i < tech_pvt->num_codecs; i++) {
 					const switch_codec_implementation_t *imp = tech_pvt->codecs[i];
-								
-					if (map->rm_pt < 97) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec Compare [%s:%d]/[%s:%d]\n", 
+									  map->rm_encoding, map->rm_pt, imp->iananame, imp->ianacode);
+					if (map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
 						match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
@@ -1784,6 +1800,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 						tech_pvt->rm_rate = map->rm_rate;
 						tech_pvt->codec_ms = imp->microseconds_per_frame / 1000;
 						tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *)sdp->sdp_connection->c_address);
+						tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *)map->rm_fmtp);
 						tech_pvt->remote_sdp_audio_port = (switch_port_t)m->m_port;
 						break;
 					} else {
@@ -1872,6 +1889,9 @@ static void sip_i_state(int status,
 	private_object_t *tech_pvt = NULL;
 	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
 	const char *replaces_str;
+	char *uuid;
+	switch_core_session_t *other_session = NULL;
+	switch_channel_t *other_channel = NULL;
 
 	tl_gets(tags, 
 			NUTAG_CALLSTATE_REF(ss_state),
@@ -1917,6 +1937,12 @@ static void sip_i_state(int status,
 			if (r_sdp) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
+					switch_channel_set_flag(channel, CF_EARLY_MEDIA);
+					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+						other_channel = switch_core_session_get_channel(other_session);
+						switch_channel_pre_answer(other_channel);
+						switch_core_session_rwunlock(other_session);
+					}
 					return;
 				} else {
 					sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
@@ -1933,12 +1959,12 @@ static void sip_i_state(int status,
 						sdp_parser_free(parser);
 					}
 
-
 					if (match) {
 						tech_choose_port(tech_pvt);
 						activate_rtp(tech_pvt);
 						switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
 						switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
+						switch_channel_set_flag(channel, CF_EARLY_MEDIA);
 						return;
 					}
 					switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
@@ -1983,7 +2009,7 @@ static void sip_i_state(int status,
 						switch_channel_set_state(channel, CS_INIT);
 						switch_set_flag_locked(tech_pvt, TFLAG_READY);
 						switch_core_session_thread_launch(session);
-
+						
 						if (replaces_str && (replaces = sip_replaces_make(tech_pvt->home, replaces_str)) && (bnh = nua_handle_by_replaces(nua, replaces))) {
 							sofia_private_t *b_private;
 
@@ -2068,6 +2094,11 @@ static void sip_i_state(int status,
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 					switch_channel_set_flag(channel, CF_ANSWERED);
+					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+						other_channel = switch_core_session_get_channel(other_session);
+						switch_channel_answer(other_channel);
+						switch_core_session_rwunlock(other_session);
+					}
 					return;
 				} else {
 					sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);

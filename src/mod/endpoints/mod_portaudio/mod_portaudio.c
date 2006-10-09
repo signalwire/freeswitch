@@ -768,6 +768,7 @@ static switch_status_t engage_device(struct private_object *tech_pvt)
 
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   "L16",
+							   NULL,
 							   sample_rate,
 							   codec_ms,
 							   1,
@@ -778,6 +779,7 @@ static switch_status_t engage_device(struct private_object *tech_pvt)
 	} else {
 		if (switch_core_codec_init(&tech_pvt->write_codec,
 								   "L16",
+								   NULL,
 								   sample_rate,
 								   codec_ms,
 								   1,

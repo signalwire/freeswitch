@@ -136,6 +136,7 @@ static const switch_codec_implementation_t gsm_8k_implementation = {
 		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 3, 
 		/*.iananame */ "gsm", 
+		/*.fmtp */ NULL,
 		/*.samples_per_second */ 8000, 
 		/*.bits_per_second */ 13200, 
 		/*.microseconds_per_frame */ 20000, 
