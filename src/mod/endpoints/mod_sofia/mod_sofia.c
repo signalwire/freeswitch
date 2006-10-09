@@ -69,6 +69,7 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/sip_protos.h>
 #include <sofia-sip/auth_module.h>
 #include <sofia-sip/su_md5.h>
+#include <sofia-sip/su_log.h>
 
 static char reg_sql[] =
 "CREATE TABLE sip_registrations (\n"
@@ -1682,6 +1683,31 @@ static const switch_loadable_module_interface_t sofia_module_interface = {
 	/*.application_interface */ NULL
 };
 
+
+static void logger(void *logarg, char const *fmt, va_list ap)
+{
+	char *data;
+	int ret;
+
+	if (fmt) {
+#ifdef HAVE_VASPRINTF
+		ret = vasprintf(&data, fmt, ap);
+#else
+		data = (char *) malloc(2048);
+		vsnprintf(data, 2048, fmt, ap);
+#endif
+		if (ret == -1) {
+			return;
+		}
+	}
+	
+	if (data) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, (char*) "%s: %s", __FILE__, data);
+		free(data);
+	}
+}
+
+
 static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
 											  switch_core_session_t **new_session, switch_memory_pool_t *pool)
 {
@@ -3258,6 +3284,16 @@ static switch_status_t config_sofia(int reload)
 		goto done;
 	}
 
+	if ((settings = switch_xml_child(cfg, "global_settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			if (!strcasecmp(var, "log-level")) {
+				su_log_set_level(NULL, atoi(val));
+			}
+		}
+	}
+
 	if ((profiles = switch_xml_child(cfg, "profiles"))) {
 		for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
 			if (!(settings = switch_xml_child(xprofile, "settings"))) {
@@ -3564,12 +3600,13 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	}
 
 	su_init();
-
-
+	su_log_redirect(NULL, logger, NULL);
+	
 	switch_core_hash_init(&globals.profile_hash, module_pool);
 	switch_mutex_init(&globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
 
 	config_sofia(0);
+
 
 
 	/* connect my internal structure to the blank pointer passed to me */

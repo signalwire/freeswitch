@@ -88,13 +88,15 @@ enum
 		AMR_BITRATE_1220
 	};
 
-#define AMR_Mode  7
+#define AMR_Mode 7
 
 static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									  const switch_codec_settings_t *codec_settings) 
 {
 	struct amr_context *context = NULL;
 	int encoding, decoding;
+	int x, argc;
+	char *argv[10];
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -103,12 +105,31 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		return SWITCH_STATUS_FALSE;
 	} else {
 
+		if (codec->fmtp_in) {
+			argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+			for(x = 0; x < argc; x++) {
+				char *data = argv[x];
+				char *arg;
+				while(*data && *data == ' ') {
+					data++;
+				}
+				if ((arg = strchr(data, '='))) {
+					*arg++ = '\0';
+					
+					printf("Codec arg %d [%s]=[%s]\n", x, data, arg);
+				}
+
+			}
+		}
+
+		codec->fmtp_out = "octet-align=0; mode-set=7";
+		
 		context->enc_mode = AMR_Mode; /* start in mode 7 */
 		context->encoder_state = NULL;
 		context->decoder_state = NULL;
 
 		if (encoding) {
-			context->encoder_state = Encoder_Interface_init(0);
+			context->encoder_state = Encoder_Interface_init(1);
 		}
 
 		if (decoding) {
@@ -152,8 +173,8 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
-
-	*encoded_data_len = Encoder_Interface_Encode( context->encoder_state, context->enc_mode, (void *)decoded_data, encoded_data, 0 );
+	
+	*encoded_data_len = Encoder_Interface_Encode( context->encoder_state, context->enc_mode, (int16_t *)decoded_data, (int8_t *) encoded_data, 0);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -177,9 +198,8 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 	}
 
 	Decoder_Interface_Decode( context->decoder_state, (void *)encoded_data, (void *)decoded_data, 0 );
-
 	*decoded_data_len = codec->implementation->bytes_per_frame;
-
+	//printf("D %d/%d\n", encoded_data_len, *decoded_data_len);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -187,8 +207,9 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 
 static const switch_codec_implementation_t amr_implementation = { 
 	/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
-	/*.ianacode */ 118, 
+	/*.ianacode */ 96, 
 	/*.iananame */ "AMR", 
+	/*.fmtp */ "octet-align=0",
 	/*.samples_per_second */ 8000, 
 	/*.bits_per_second */ 0, 
 	/*.microseconds_per_frame */ 20000, 
