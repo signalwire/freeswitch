@@ -1570,6 +1570,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_io_event_hook_read_frame_t *ptr;
 	switch_status_t status;
 	int need_codec, perfect, do_bugs = 0;
+	unsigned int flag = 0;
  top:
 	
 	status = SWITCH_STATUS_FALSE;
@@ -1636,7 +1637,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		switch_frame_t *enc_frame, *read_frame = *frame;
 
 		if (read_frame->codec) {
-			unsigned int flag = 0;
 			session->raw_read_frame.datalen = session->raw_read_frame.buflen;
 			status = switch_core_codec_decode(read_frame->codec,
 											  session->read_codec,
@@ -1718,8 +1718,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			}
 
 			if (perfect || switch_buffer_inuse(session->raw_read_buffer) >= session->read_codec->implementation->bytes_per_frame) {
-				unsigned int flag = 0;
-
 				if (perfect) {
 					enc_frame = *frame;
 					session->raw_read_frame.rate = (*frame)->rate;
@@ -1773,6 +1771,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
  done:
 	if (!(*frame)) {
 		status = SWITCH_STATUS_FALSE;
+	} else {
+		if (flag & SFF_CNG) {
+			switch_set_flag((*frame), SFF_CNG);
+		}
 	}
 
 	return status;
@@ -1988,7 +1990,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					write_frame = NULL;
 					return status;
 				}
-
+				if (flag & SFF_CNG) {
+					switch_set_flag(write_frame, SFF_CNG);
+				}
 				status = perform_write(session, write_frame, timeout, io_flag, stream_id);
 				return status;
 			} else {
@@ -2062,6 +2066,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								write_frame->samples = session->read_resampler->to_len;
 								write_frame->datalen = session->read_resampler->to_len * 2;
 								write_frame->rate = session->read_resampler->to_rate;
+							}
+							if (flag & SFF_CNG) {
+								switch_set_flag(write_frame, SFF_CNG);
 							}
 							if ((status = perform_write(session, write_frame, timeout, io_flag, stream_id)) != SWITCH_STATUS_SUCCESS) {
 								break;

@@ -61,43 +61,64 @@
 
 static const char modname[] = "mod_amr";
 
+typedef enum {
+	AMR_OPT_OCTET_ALIGN = (1 << 0),
+	AMR_OPT_CRC = (1 << 1),
+	AMR_OPT_MODE_CHANGE_NEIGHBOR = (1 << 2),
+	AMR_OPT_ROBUST_SORTING = (1 << 3),
+	AMR_OPT_INTERLEAVING = (1 << 4)
+} amr_flag_t;
+
+
+typedef enum {
+	GENERIC_PARAMETER_AMR_MAXAL_SDUFRAMES = 0,
+	GENERIC_PARAMETER_AMR_BITRATE,
+	GENERIC_PARAMETER_AMR_GSMAMRCOMFORTNOISE,
+	GENERIC_PARAMETER_AMR_GSMEFRCOMFORTNOISE,
+	GENERIC_PARAMETER_AMR_IS_641COMFORTNOISE,
+	GENERIC_PARAMETER_AMR_PDCEFRCOMFORTNOISE
+} amr_param_t;
+
+typedef enum {
+	AMR_BITRATE_475 = 0,
+	AMR_BITRATE_515,
+	AMR_BITRATE_590,
+	AMR_BITRATE_670,
+	AMR_BITRATE_740,
+	AMR_BITRATE_795,
+	AMR_BITRATE_1020,
+	AMR_BITRATE_1220
+} amr_bitrate_t;
+
+
 struct amr_context {
 	void *encoder_state;
 	void *decoder_state;
-	int enc_mode;
+	switch_byte_t enc_modes;
+	switch_byte_t enc_mode;
+	uint32_t change_period;
+	switch_byte_t max_ptime;
+	switch_byte_t ptime;
+	switch_byte_t channels;
+	switch_byte_t flags;
 };
 
-enum
-	{
-		GENERIC_PARAMETER_AMR_MAXAL_SDUFRAMES = 0,
-		GENERIC_PARAMETER_AMR_BITRATE,
-		GENERIC_PARAMETER_AMR_GSMAMRCOMFORTNOISE,
-		GENERIC_PARAMETER_AMR_GSMEFRCOMFORTNOISE,
-		GENERIC_PARAMETER_AMR_IS_641COMFORTNOISE,
-		GENERIC_PARAMETER_AMR_PDCEFRCOMFORTNOISE
-	};
 
-enum
-	{
-		AMR_BITRATE_475 = 0,
-		AMR_BITRATE_515,
-		AMR_BITRATE_590,
-		AMR_BITRATE_670,
-		AMR_BITRATE_740,
-		AMR_BITRATE_795,
-		AMR_BITRATE_1020,
-		AMR_BITRATE_1220
-	};
+#define AMR_DEFAULT_BITRATE AMR_BITRATE_1220
 
-#define AMR_Mode 7
+static struct {
+	switch_byte_t default_bitrate;
+} globals;
+
 
 static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_t flags,
 									  const switch_codec_settings_t *codec_settings) 
 {
 	struct amr_context *context = NULL;
 	int encoding, decoding;
-	int x, argc;
+	int x, i, argc;
 	char *argv[10];
+	char fmtptmp[128];
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
 	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
@@ -117,14 +138,64 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 				if ((arg = strchr(data, '='))) {
 					*arg++ = '\0';
 					//printf("Codec arg %d [%s]=[%s]\n", x, data, arg);
+					if (!strcasecmp(data, "octet-align")) {
+						if (atoi(arg)) {
+							switch_set_flag(context, AMR_OPT_OCTET_ALIGN);
+						}
+					} else if (!strcasecmp(data, "mode-change-neighbor")) {
+						if (atoi(arg)) {
+							switch_set_flag(context, AMR_OPT_MODE_CHANGE_NEIGHBOR);
+						}
+					} else if (!strcasecmp(data, "crc")) {
+						if (atoi(arg)) {
+							switch_set_flag(context, AMR_OPT_CRC);
+						}
+					} else if (!strcasecmp(data, "robust-sorting")) {
+						if (atoi(arg)) {
+							switch_set_flag(context, AMR_OPT_ROBUST_SORTING);
+						}
+					} else if (!strcasecmp(data, "interveaving")) {
+						if (atoi(arg)) {
+							switch_set_flag(context, AMR_OPT_INTERLEAVING);
+						}
+					} else if (!strcasecmp(data, "mode-change-period")) {
+						context->change_period = atoi(arg);
+					} else if (!strcasecmp(data, "ptime")) {
+						context->ptime = atoi(arg);
+					} else if (!strcasecmp(data, "channels")) {
+						context->channels = atoi(arg);
+					} else if (!strcasecmp(data, "maxptime")) {
+						context->max_ptime = atoi(arg);
+					} else if (!strcasecmp(data, "mode-set")) {
+						int y, m_argc;
+						char *m_argv[7];
+						m_argc = switch_separate_string(arg, ',', m_argv, (sizeof(m_argv) / sizeof(m_argv[0])));
+						for(y = 0; y < m_argc; y++) {
+							context->enc_modes |= (1 << atoi(m_argv[y]));
+						}
+					}
 				}
 
 			}
 		}
 
-		codec->fmtp_out = "octet-align=0; mode-set=7";
+		if (context->enc_modes) {
+			for (i = 7; i > -1; i++) {
+				if (context->enc_modes & (1 << i)) {
+					context->enc_mode = i;
+					break;
+				}
+			}
+		}
+
+		if (!context->enc_mode) {
+			context->enc_mode = globals.default_bitrate;
+		}
 		
-		context->enc_mode = AMR_Mode; /* start in mode 7 */
+		snprintf(fmtptmp, sizeof(fmtptmp), "octet-align=0; mode-set=%d", context->enc_mode);
+		codec->fmtp_out = switch_core_strdup(codec->memory_pool, fmtptmp);
+		
+		context->enc_mode = AMR_DEFAULT_BITRATE;
 		context->encoder_state = NULL;
 		context->decoder_state = NULL;
 
@@ -174,7 +245,7 @@ static switch_status_t switch_amr_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	*encoded_data_len = Encoder_Interface_Encode( context->encoder_state, context->enc_mode, (int16_t *)decoded_data, (uint8_t *) encoded_data, 0);
+	*encoded_data_len = Encoder_Interface_Encode( context->encoder_state, context->enc_mode, (int16_t *)decoded_data, (switch_byte_t *) encoded_data, 0);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -197,9 +268,15 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	Decoder_Interface_Decode( context->decoder_state, (void *)encoded_data, (void *)decoded_data, 0 );
+	if (encoded_data_len == 1) {
+		memset(decoded_data, 255, codec->implementation->bytes_per_frame);
+		*flag |= SFF_CNG;
+	} else {
+		Decoder_Interface_Decode( context->decoder_state, (unsigned char *)encoded_data, (int16_t *)decoded_data, 0 );
+	}
+
 	*decoded_data_len = codec->implementation->bytes_per_frame;
-	//printf("D %d/%d\n", encoded_data_len, *decoded_data_len);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -242,6 +319,24 @@ static switch_loadable_module_interface_t amr_module_interface = {
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface,
 													 char *filename)
 {
+	char *cf = "amr.conf";
+	switch_xml_t cfg, xml, settings, param;
+
+	memset(&globals, 0, sizeof(globals));
+	globals.default_bitrate = AMR_DEFAULT_BITRATE;
+
+	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		if ((settings = switch_xml_child(cfg, "settings"))) {
+			for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+				if (!strcasecmp(var, "default-bitrate")) {
+					globals.default_bitrate = atoi(val);
+				}
+			}
+		}
+	}
+
 	/* connect my internal structure to the blank pointer passed to me */ 
 	*module_interface = &amr_module_interface;
 
