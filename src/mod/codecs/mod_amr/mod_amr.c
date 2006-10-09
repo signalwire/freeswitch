@@ -200,7 +200,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		context->decoder_state = NULL;
 
 		if (encoding) {
-			context->encoder_state = Encoder_Interface_init(1);
+			context->encoder_state = Encoder_Interface_init(0);
 		}
 
 		if (decoding) {
@@ -268,13 +268,7 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (encoded_data_len == 1) {
-		memset(decoded_data, 255, codec->implementation->bytes_per_frame);
-		*flag |= SFF_CNG;
-	} else {
-		Decoder_Interface_Decode( context->decoder_state, (unsigned char *)encoded_data, (int16_t *)decoded_data, 0 );
-	}
-
+	Decoder_Interface_Decode(context->decoder_state, (unsigned char *)encoded_data, (int16_t *)decoded_data, 0);
 	*decoded_data_len = codec->implementation->bytes_per_frame;
 
 	return SWITCH_STATUS_SUCCESS;
