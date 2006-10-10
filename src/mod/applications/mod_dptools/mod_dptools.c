@@ -132,7 +132,7 @@ static switch_api_interface_t dptools_api_interface = {
 	/*.interface_name */ "strftime",
 	/*.desc */ "strftime",
 	/*.function */ strftime_api_function,
-	/*.syntax */ "strftime <format_string>",
+	/*.syntax */ "<format_string>",
 	/*.next */ NULL
 };
 
@@ -140,7 +140,7 @@ static const switch_application_interface_t set_application_interface = {
 	/*.interface_name */ "set",
 	/*.application_function */ set_function,
 	/* long_desc */ "Set a channel varaible for the channel calling the application.",
-	/* short_desc */ "Set a channel varaible.",
+	/* short_desc */ "Set a channel varaible",
 	/* syntax */ "<varname>=[<value>|_UNDEF_]",
 	/*.next */ NULL
 };
@@ -149,7 +149,7 @@ static const switch_application_interface_t answer_application_interface = {
 	/*.interface_name */ "answer",
 	/*.application_function */ answer_function,
 	/* long_desc */ "Answer the call for a channel.",
-	/* short_desc */ "Answer the call.",
+	/* short_desc */ "Answer the call",
 	/* syntax */ "",
 	/*.next */ &set_application_interface
 

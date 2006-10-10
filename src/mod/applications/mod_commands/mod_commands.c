@@ -454,7 +454,7 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
         sprintf (sql, "select type, name from interfaces where type = '%s'", cmd);
     }
     else if (!strcmp(cmd,"application") || !strcmp(cmd,"api")) {
-        sprintf (sql, "select * from interfaces where type = '%s'", cmd);
+        sprintf (sql, "select name, description, syntax from interfaces where type = '%s'", cmd);
     }
     else if ( !strcmp(cmd,"calls")) {
         sprintf (sql, "select * from calls");
@@ -468,9 +468,9 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 		holder.print_title = 0;
 		if ((cmdname = strchr(cmd, ' ')) != 0) {
 			*cmdname++ = '\0';
-	        sprintf (sql, "select name, description, syntax from interfaces where type = 'api' and name = '%s'", cmdname);
+	        sprintf (sql, "select name, syntax, description from interfaces where type = 'api' and name = '%s'", cmdname);
 		} else {
-	        sprintf (sql, "select name, description, syntax from interfaces where type = 'api'");
+	        sprintf (sql, "select name, syntax, description from interfaces where type = 'api'");
 		}
     }
     else {
@@ -529,7 +529,7 @@ static switch_api_interface_t help_api_interface = {
 	/*.interface_name */ "help",
 	/*.desc */ "Show help for all the api commands",
 	/*.function */ help_function,
-	/*.syntax */ "help",
+	/*.syntax */ "",
 	/*.next */ NULL
 };
 
@@ -537,7 +537,7 @@ static switch_api_interface_t ctl_api_interface = {
 	/*.interface_name */ "fsctl",
 	/*.desc */ "control messages",
 	/*.function */ ctl_function,
-	/*.syntax */ "fsctl [hupall|pause|resume|shutdown]",
+	/*.syntax */ "[hupall|pause|resume|shutdown]",
 	/*.next */ &help_api_interface
 };
 
@@ -545,7 +545,7 @@ static switch_api_interface_t uuid_bridge_api_interface = {
 	/*.interface_name */ "uuid_bridge",
 	/*.desc */ "uuid_bridge",
 	/*.function */ uuid_bridge_function,
-	/*.syntax */ "uuid_bridge <uuid> <other_uuid>",
+	/*.syntax */ "<uuid> <other_uuid>",
 	/*.next */ &ctl_api_interface
 };
 
@@ -553,7 +553,7 @@ static switch_api_interface_t status_api_interface = {
 	/*.interface_name */ "status",
 	/*.desc */ "status",
 	/*.function */ status_function,
-	/*.syntax */ "status",
+	/*.syntax */ "",
 	/*.next */ &uuid_bridge_api_interface
 };
 
@@ -561,7 +561,7 @@ static switch_api_interface_t show_api_interface = {
 	/*.interface_name */ "show",
 	/*.desc */ "Show",
 	/*.function */ show_function,
-	/*.syntax */ "show <blank>|codec|application|api|dialplan|file|timer|calls|channels",
+	/*.syntax */ "<blank>|codec|application|api|dialplan|file|timer|calls|channels",
 	/*.next */ &status_api_interface
 };
 
@@ -569,7 +569,7 @@ static switch_api_interface_t pause_api_interface = {
 	/*.interface_name */ "pause",
 	/*.desc */ "Pause",
 	/*.function */ pause_function,
-	/*.syntax */ "pause <uuid> <on|off>",
+	/*.syntax */ "<uuid> <on|off>",
 	/*.next */ &show_api_interface
 };
 
@@ -577,7 +577,7 @@ static switch_api_interface_t transfer_api_interface = {
 	/*.interface_name */ "transfer",
 	/*.desc */ "Transfer",
 	/*.function */ transfer_function,
-	/*.syntax */ "transfer <uuid> <dest-exten> [<dialplan>] [<context>]",
+	/*.syntax */ "<uuid> <dest-exten> [<dialplan>] [<context>]",
 	/*.next */ &pause_api_interface
 };
 
@@ -585,7 +585,7 @@ static switch_api_interface_t load_api_interface = {
 	/*.interface_name */ "load",
 	/*.desc */ "Load Module",
 	/*.function */ load_function,
-	/*.syntax */ "load <mod_name>",
+	/*.syntax */ "<mod_name>",
 	/*.next */ &transfer_api_interface
 };
 
@@ -593,7 +593,7 @@ static switch_api_interface_t reload_api_interface = {
 	/*.interface_name */ "reloadxml",
 	/*.desc */ "Reload XML",
 	/*.function */ reload_function,
-	/*.syntax */ "reloadxml",
+	/*.syntax */ "",
 	/*.next */ &load_api_interface,
 
 };
@@ -602,7 +602,7 @@ static switch_api_interface_t kill_api_interface = {
 	/*.interface_name */ "killchan",
 	/*.desc */ "Kill Channel",
 	/*.function */ kill_function,
-	/*.syntax */ "killchan <uuid>",
+	/*.syntax */ "<uuid>",
 	/*.next */ &reload_api_interface
 };
 
@@ -610,7 +610,7 @@ static switch_api_interface_t originate_api_interface = {
 	/*.interface_name */ "originate",
 	/*.desc */ "Originate a Call",
 	/*.function */ originate_function,
-	/*.syntax */ "originate <call url> <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>]",
+	/*.syntax */ "<call url> <exten>|&<application_name>(<app_args>) [<dialplan>] [<context>] [<cid_name>] [<cid_num>] [<timeout_sec>]",
 	/*.next */ &kill_api_interface
 };
 

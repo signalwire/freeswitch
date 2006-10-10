@@ -2647,26 +2647,25 @@ static switch_api_interface_t conf_api_interface = {
 	/*.desc */ "Conference",
 	/*.function */ conf_function,
 	/*.syntax */ 
-		"conference commands\n"
-		"conference list [delim <string>]\n"
-		"conference <confname> list [delim <string>]\n"
-		"conference <confname> energy <member_id> [<newval>]\n"
-		"conference <confname> volume_in <member_id> [<newval>]\n"
-		"conference <confname> volume_out <member_id> [<newval>]\n"
-		"conference <confname> play <file_path> [<member_id>]\n"
-		"conference <confname> say <text>\n"
-		"conference <confname> saymember <member_id><text>\n"
-		"conference <confname> stop <[current|all]> [<member_id>]\n"
-		"conference <confname> kick <member_id>\n"
-		"conference <confname> mute <member_id>\n"
-		"conference <confname> unmute <member_id>\n"
-		"conference <confname> deaf <member_id>\n"
-		"conference <confname> undef <member_id>\n"
-		"conference <confname> relate <member_id> <other_member_id> [nospeak|nohear]\n"
-		"conference <confname> lock\n"
-		"conference <confname> unlock\n"
-		"conference <confname> dial <endpoint_module_name>/<destination>\n"
-		"conference <confname> transfer <member_id> <conference_name>\n",
+		"list [delim <string>]\n"
+		"<confname> list [delim <string>]\n"
+		"<confname> energy <member_id> [<newval>]\n"
+		"<confname> volume_in <member_id> [<newval>]\n"
+		"<confname> volume_out <member_id> [<newval>]\n"
+		"<confname> play <file_path> [<member_id>]\n"
+		"<confname> say <text>\n"
+		"<confname> saymember <member_id><text>\n"
+		"<confname> stop <[current|all]> [<member_id>]\n"
+		"<confname> kick <member_id>\n"
+		"<confname> mute <member_id>\n"
+		"<confname> unmute <member_id>\n"
+		"<confname> deaf <member_id>\n"
+		"<confname> undef <member_id>\n"
+		"<confname> relate <member_id> <other_member_id> [nospeak|nohear]\n"
+		"<confname> lock\n"
+		"<confname> unlock\n"
+		"<confname> dial <endpoint_module_name>/<destination>\n"
+		"<confname> transfer <member_id> <conference_name>",
 	/*.next */ 
 };
 
