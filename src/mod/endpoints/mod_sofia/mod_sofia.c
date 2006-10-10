@@ -61,6 +61,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_EXPIRE "sofia::expire"
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
+#define SOFIA_USER_AGENT "FreeSWITCH(mod_sofia)"
 
 
 #include <sofia-sip/nua.h>
@@ -3180,6 +3181,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 				   NUTAG_ALLOW("REGISTER"),
 				   NUTAG_ALLOW("REFER"),
 				   SIPTAG_SUPPORTED_STR("100rel, precondition"),
+				   SIPTAG_USER_AGENT_STR(SOFIA_USER_AGENT),
 				   TAG_END());
 				   
 
@@ -3191,11 +3193,13 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 							   TAG_END()); /* Last tag should always finish the sequence */
 
 		nua_set_params(node->nua,
-					   NUTAG_EARLY_MEDIA(1),
+				   NUTAG_EARLY_MEDIA(1),				   
 					   NUTAG_AUTOANSWER(0),
 					   NUTAG_AUTOALERT(0),
 					   NUTAG_ALLOW("REGISTER"),
+					   NUTAG_ALLOW("REFER"),
 					   SIPTAG_SUPPORTED_STR("100rel, precondition"),
+					   SIPTAG_USER_AGENT_STR(SOFIA_USER_AGENT),
 					   TAG_END());
 		
 	}
