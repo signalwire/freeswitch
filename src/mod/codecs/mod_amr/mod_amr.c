@@ -200,7 +200,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		context->decoder_state = NULL;
 
 		if (encoding) {
-			context->encoder_state = Encoder_Interface_init(0);
+			context->encoder_state = Encoder_Interface_init(1);
 		}
 
 		if (decoding) {
