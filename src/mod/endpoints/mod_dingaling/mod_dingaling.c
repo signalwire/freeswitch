@@ -68,6 +68,7 @@ typedef enum {
 	TFLAG_TIMER = ( 1 << 19),
 	TFLAG_TERM = ( 1 << 20),
 	TFLAG_TRANSPORT_ACCEPT = (1 << 21),
+	TFLAG_READY = (1 << 22),
 } TFLAGS;
 
 typedef enum {
@@ -188,31 +189,25 @@ static void terminate_session(switch_core_session_t **session, int line, switch_
  
 		tech_pvt = switch_core_session_get_private(*session);
 
-
-		if (state < CS_INIT || !switch_core_session_running(*session)) {
-			if (state > CS_INIT && state < CS_HANGUP) {
-				channel_on_hangup(*session);
-			}
-
-			if (tech_pvt && tech_pvt->dlsession) {
-				ldl_session_set_private(tech_pvt->dlsession, NULL);
-			}
+		if (!tech_pvt || !switch_test_flag(tech_pvt, TFLAG_READY)) {
 			switch_core_session_destroy(session);
-		} else if (tech_pvt){
-			if (switch_test_flag(tech_pvt, TFLAG_TERM)) {
-				/*once is enough*/
-				return;
-			}
-
-			if (tech_pvt->dlsession) {
-				if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
-					ldl_session_terminate(tech_pvt->dlsession);
-				}
-				ldl_session_destroy(&tech_pvt->dlsession);
-			}
-			switch_set_flag_locked(tech_pvt, TFLAG_TERM);
+			return;
 		}
 
+		if (switch_test_flag(tech_pvt, TFLAG_TERM)) {
+			/*once is enough*/
+			return;
+		}
+
+		if (tech_pvt->dlsession) {
+			if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
+				ldl_session_terminate(tech_pvt->dlsession);
+			}
+			ldl_session_destroy(&tech_pvt->dlsession);
+		}
+
+		switch_set_flag_locked(tech_pvt, TFLAG_TERM);
+	
 		if (state < CS_HANGUP) {
 			switch_channel_hangup(channel, cause);
 		}
@@ -525,21 +520,14 @@ static int do_describe(struct private_object *tech_pvt, int force)
 	return 1;
 }
 
-static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, void *obj)
+static switch_status_t negotiate_media(switch_core_session_t *session)
 {
-	switch_core_session_t *session = obj;
-
+	switch_status_t ret = SWITCH_STATUS_FALSE;
 	switch_channel_t *channel;
 	struct private_object *tech_pvt = NULL;
 	switch_time_t started;
 	switch_time_t now;
 	unsigned int elapsed;
-
-	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
-		/* too late */
-		return NULL;
-	}
-
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
@@ -592,7 +580,6 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, vo
 			goto done;
 		}
 		switch_yield(1000);
-		//printf("WAIT %s %d %d %d %d\n", switch_channel_get_name(channel), switch_test_flag(tech_pvt, TFLAG_TRANSPORT), switch_test_flag(tech_pvt, TFLAG_CODEC_READY), switch_test_flag(tech_pvt, TFLAG_RTP_READY), switch_test_flag(tech_pvt, TFLAG_ANSWER));
 	}
 	
 	if (switch_channel_get_state(channel) >= CS_HANGUP || switch_test_flag(tech_pvt, TFLAG_BYE)) {
@@ -608,35 +595,17 @@ static void *SWITCH_THREAD_FUNC negotiate_thread_run(switch_thread_t *thread, vo
 			goto out;
 		}
 		switch_channel_answer(channel);
-		//printf("***************************ANSWER\n");
-	} else {
-		switch_core_session_thread_launch(session);
-	}
-	switch_channel_set_state(channel, CS_INIT);
+	} 
+	ret = SWITCH_STATUS_SUCCESS;
+
 	goto done;
 	
  out:
 	terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
  done:
-	if (session) {
-		switch_core_session_rwunlock(session);
-	}
-	return NULL;
+
+	return ret;
 }
-
-
-static void negotiate_thread_launch(switch_core_session_t *session)
-{
-	switch_thread_t *thread;
-	switch_threadattr_t *thd_attr = NULL;
-	
-	switch_threadattr_create(&thd_attr, switch_core_session_get_pool(session));
-	switch_threadattr_detach_set(thd_attr, 1);
-	switch_thread_create(&thread, thd_attr, negotiate_thread_run, session, switch_core_session_get_pool(session));
-
-}
-
-
 
 /* 
    State methods they get called when the state changes to the specific state 
@@ -656,8 +625,12 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	tech_pvt->read_frame.buflen = SWITCH_RTP_MAX_BUF_LEN;
 
-	/* Move Channel's State Machine to RING */
-	switch_channel_set_state(channel, CS_RING);
+	switch_set_flag(tech_pvt, TFLAG_READY);
+
+	if (negotiate_media(session) == SWITCH_STATUS_SUCCESS) {
+		/* Move Channel's State Machine to RING */
+		switch_channel_set_state(channel, CS_RING);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -810,14 +783,11 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, char *d
 	assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF [%s]\n", dtmf);
-	//snprintf(digits, sizeof(digits), "+%s\n", dtmf);
-	//ldl_handle_send_msg(tech_pvt->profile->handle, tech_pvt->recip, NULL, digits);
 
 	return switch_rtp_queue_rfc2833(tech_pvt->rtp_session,
 									dtmf,
 									100 * (tech_pvt->read_codec.implementation->samples_per_second / 1000));
 
-	//return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
@@ -887,7 +857,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			tech_pvt->timestamp_recv += (int32_t) samples;
 			tech_pvt->read_frame.samples = (int) samples;
 			tech_pvt->last_read = tech_pvt->read_frame.datalen;
-			//printf("READ bytes=%d payload=%d frames=%d samples=%d ms=%d ts=%d sampcount=%d\n", (int)tech_pvt->read_frame.datalen, (int)payload, (int)frames, (int)samples, (int)ms, (int)tech_pvt->timestamp_recv, (int)tech_pvt->read_frame.samples);
 			break;
 		}
 
@@ -946,15 +915,13 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 
-	//printf("%s send %d bytes %d samples in %d frames ts=%d\n", switch_channel_get_name(channel), frame->datalen, samples, frames, tech_pvt->timestamp_send);
-
 	if (switch_rtp_write_frame(tech_pvt->rtp_session, frame, samples) < 0) {
 		return SWITCH_STATUS_FALSE;
 	}
 	tech_pvt->timestamp_send += (int) samples;
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_WRITING);
-	//switch_mutex_unlock(tech_pvt->rtp_lock);
+
 	return status;
 }
 
@@ -969,11 +936,6 @@ static switch_status_t channel_answer_channel(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	
-
-	//if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-
-	//}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1200,8 +1162,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
             return SWITCH_STATUS_GENERR;
 		}
-		//tech_pvt->desc_id = ldl_session_describe(dlsession, NULL, 0, LDL_DESCRIPTION_INITIATE);
-		negotiate_thread_launch(*new_session);
+		switch_channel_set_state(channel, CS_INIT);
 		return SWITCH_STATUS_SUCCESS;
 
 	}
@@ -1653,12 +1614,11 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				status = LDL_STATUS_FALSE;
 				goto done;
 			}
-
-
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating a session for %s\n", ldl_session_get_id(dlsession));
 			ldl_session_set_private(dlsession, session);
 			tech_pvt->dlsession = dlsession;
-			negotiate_thread_launch(session);
+			switch_channel_set_state(channel, CS_INIT);
+			switch_core_session_thread_launch(session);
 		} else {
 			status = LDL_STATUS_FALSE;
 			goto done;
