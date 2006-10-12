@@ -123,6 +123,8 @@ static char *EVENT_NAMES[] = {
 	"MODULE_LOAD",
 	"DTMF",
 	"MESSAGE",
+	"PRESENCE_IN",
+	"PRESENCE_OUT",
 	"CODEC",
 	"BACKGROUND_JOB",
 	"ALL"

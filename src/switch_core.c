@@ -50,6 +50,7 @@
 #endif
 
 #define SWITCH_EVENT_QUEUE_LEN 256
+#define SWITCH_MESSAGE_QUEUE_LEN 256
 #define SWITCH_SQL_QUEUE_LEN 2000
 
 #define SWITCH_BUFFER_BLOCK_FRAMES 25
@@ -105,6 +106,7 @@ struct switch_core_session {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	void *private_info;
 	switch_queue_t *event_queue;
+	switch_queue_t *message_queue;
 	switch_queue_t *private_event_queue;
 	switch_thread_rwlock_t *bug_rwlock;
 	switch_media_bug_t *bugs;
@@ -1413,8 +1415,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_answer_channel(switch_core_s
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_session_t *session,
-																  switch_core_session_message_t *message)
+SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_session_t *session, switch_core_session_message_t *message)
 {
 	switch_io_event_hook_receive_message_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -1429,11 +1430,44 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 				}
 			}
 		}
-	} 
+	}
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_session_t *session, switch_core_session_message_t *message)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	assert(session != NULL);
+
+	if (!session->message_queue) {
+		switch_queue_create(&session->message_queue, SWITCH_MESSAGE_QUEUE_LEN, session->pool);
+	}
+
+	if (session->message_queue) {
+		if (switch_queue_trypush(session->message_queue, message) == SWITCH_STATUS_SUCCESS) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	}
 
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_session_t *session, switch_core_session_message_t **message)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	void *pop;
+
+	assert(session != NULL);
+	
+	if (session->message_queue) {
+		if ((status = (switch_status_t) switch_queue_trypop(session->message_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
+			*message = (switch_core_session_message_t *) pop;
+		}
+	}
+
+	return status;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_session_t *session, switch_event_t **event)
 	 

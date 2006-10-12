@@ -1244,7 +1244,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	int *stream_id_p;
 	int stream_id = 0, pre_b = 0, ans_a = 0, ans_b = 0, originator = 0;
 	switch_input_callback_function_t input_callback;
-	switch_core_session_message_t msg = {0};
+	switch_core_session_message_t *message, msg = {0};
 	void *user_data;
 
 	switch_channel_t *chan_a, *chan_b;
@@ -1297,62 +1297,65 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			break;
 		}
 
-		if (!switch_channel_test_flag(chan_a, CF_HOLD)) {
-			
-			if (!ans_a && originator) {
-				if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
-					switch_channel_answer(chan_a);
-					ans_a++;
-				} else if (!pre_b && switch_channel_test_flag(chan_b, CF_EARLY_MEDIA)) {
-					switch_channel_pre_answer(chan_a);
-					pre_b++;
+		if (switch_core_session_dequeue_private_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_set_flag(chan_b, CF_HOLD);
+			switch_ivr_parse_event(session_a, event);
+			switch_channel_clear_flag(chan_b, CF_HOLD);
+			switch_event_destroy(&event);
+		}
+
+		/* if 1 channel has DTMF pass it to the other */
+		if (switch_channel_has_dtmf(chan_a)) {
+			char dtmf[128];
+			switch_channel_dequeue_dtmf(chan_a, dtmf, sizeof(dtmf));
+			switch_core_session_send_dtmf(session_b, dtmf);
+
+			if (input_callback) {
+				if (input_callback(session_a, dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
+					switch_mutex_lock(data->mutex);
+					data->running = -1;
+					switch_mutex_unlock(data->mutex);
+					break;
 				}
-				switch_yield(10000);
-				continue;
+			}
+		}
+
+		if (switch_core_session_dequeue_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
+			if (input_callback) {
+				status = input_callback(session_a, event, SWITCH_INPUT_TYPE_EVENT, user_data, 0);
 			}
 
-			if (switch_core_session_dequeue_private_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
-				switch_channel_set_flag(chan_b, CF_HOLD);
-				switch_ivr_parse_event(session_a, event);
-				switch_channel_clear_flag(chan_b, CF_HOLD);
+			if (switch_core_session_receive_event(session_b, &event) != SWITCH_STATUS_SUCCESS) {
 				switch_event_destroy(&event);
 			}
 
-			/* if 1 channel has DTMF pass it to the other */
-			if (switch_channel_has_dtmf(chan_a)) {
-				char dtmf[128];
-				switch_channel_dequeue_dtmf(chan_a, dtmf, sizeof(dtmf));
-				switch_core_session_send_dtmf(session_b, dtmf);
+		}
 
-				if (input_callback) {
-					if (input_callback(session_a, dtmf, SWITCH_INPUT_TYPE_DTMF, user_data, 0) != SWITCH_STATUS_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s ended call via DTMF\n", switch_channel_get_name(chan_a));
-						switch_mutex_lock(data->mutex);
-						data->running = -1;
-						switch_mutex_unlock(data->mutex);
-						break;
-					}
-				}
+		if (switch_core_session_dequeue_message(session_b, &message) == SWITCH_STATUS_SUCCESS) {
+			switch_core_session_receive_message(session_a, message);
+			if (switch_test_flag(message, SCSMF_DYNAMIC)) {
+				switch_safe_free(message);
 			}
-
-			if (switch_core_session_dequeue_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
-				if (input_callback) {
-					status = input_callback(session_a, event, SWITCH_INPUT_TYPE_EVENT, user_data, 0);
-				}
-
-				if (switch_core_session_receive_event(session_b, &event) != SWITCH_STATUS_SUCCESS) {
-					switch_event_destroy(&event);
-				}
-
-			}
+		}
  
+		if (!ans_a && originator) {
+			if (!ans_b && switch_channel_test_flag(chan_b, CF_ANSWERED)) {
+				switch_channel_answer(chan_a);
+				ans_a++;
+			} else if (!pre_b && switch_channel_test_flag(chan_b, CF_EARLY_MEDIA)) {
+				switch_channel_pre_answer(chan_a);
+				pre_b++;
+			}
+			switch_yield(10000);
+			continue;
 		}
 
 		/* read audio from 1 channel and write it to the other */
 		status = switch_core_session_read_frame(session_a, &read_frame, -1, stream_id);
 
 		if (SWITCH_READ_ACCEPTABLE(status)) {
-			if (status != SWITCH_STATUS_BREAK) {
+			if (status != SWITCH_STATUS_BREAK && !switch_channel_test_flag(chan_a, CF_HOLD)) {
 				if (switch_core_session_write_frame(session_b, read_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "write: %s Bad Frame....[%u] Bubye!\n",
 									  switch_channel_get_name(chan_b), read_frame->datalen);
@@ -1367,10 +1370,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			data->running = -1;
 			switch_mutex_unlock(data->mutex);
 		}
-
-		//switch_yield(1000);
 	}
-
 	
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	msg.from = __FILE__;
@@ -1968,6 +1968,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		while ((!caller_channel || switch_channel_ready(caller_channel)) && 
 			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key) && ((time(NULL) - start) < (time_t)timelimit_sec)) {
 
+			if (or_argc == 1 && and_argc == 1) { /* when there is only 1 channel to call and bridge */
+				switch_core_session_message_t *message = NULL;
+				if (switch_core_session_dequeue_message(peer_sessions[0], &message) == SWITCH_STATUS_SUCCESS) {
+					switch_core_session_receive_message(session, message);
+					if (switch_test_flag(message, SCSMF_DYNAMIC)) {
+						switch_safe_free(message);
+					}
+				}
+			}
 
 			/* read from the channel while we wait if the audio is up on it */
 			if (session && !switch_channel_test_flag(caller_channel, CF_NOMEDIA) && 

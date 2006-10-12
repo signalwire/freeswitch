@@ -445,11 +445,29 @@ static int on_presence(void *user_data, ikspak *pak)
 {
 	ldl_handle_t *handle = user_data;
 	char *from = iks_find_attrib(pak->x, "from");
+	char *type = iks_find_attrib(pak->x, "type");
+	char *show = iks_find_cdata(pak->x, "show");
+	char *status = iks_find_cdata(pak->x, "status");
 	char id[1024];
 	char *resource;
 	struct ldl_buffer *buffer;
 	size_t x;
+	ldl_signal_t signal;
+
+	if (type && !strcasecmp(type, "unavailable")) {
+		signal = LDL_SIGNAL_PRESENCE_OUT;
+	} else {
+		signal = LDL_SIGNAL_PRESENCE_IN;
+	}
+
+	if (!status) {
+		status = type;
+	}
 	
+	if (handle->session_callback) {
+        handle->session_callback(handle, NULL, signal, from, status ? status : "n/a", show ? show : "n/a");
+    }
+
 	if (!apr_hash_get(handle->sub_hash, from, APR_HASH_KEY_STRING)) {
 		iks *msg;
 		apr_hash_set(handle->sub_hash, 	apr_pstrdup(handle->pool, from), APR_HASH_KEY_STRING, &marker);

@@ -38,7 +38,6 @@
 
 #define DL_EVENT_LOGIN_SUCCESS "dingaling::login_success"
 #define DL_EVENT_LOGIN_FAILURE "dingaling::login_failure"
-#define DL_EVENT_MESSAGE "dingaling::message"
 #define DL_EVENT_CONNECTED "dingaling::connected"
 
 static const char modname[] = "mod_dingaling";
@@ -1191,11 +1190,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_event_reserve_subclass(DL_EVENT_MESSAGE) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!", DL_EVENT_MESSAGE);
-		return SWITCH_STATUS_GENERR;
-	}
-
 	if (switch_event_reserve_subclass(DL_EVENT_CONNECTED) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!", DL_EVENT_CONNECTED);
 		return SWITCH_STATUS_GENERR;
@@ -1533,12 +1527,30 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 	if (!dlsession) {
 		switch(signal) {
+		case LDL_SIGNAL_PRESENCE_IN:
+			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", from);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", subject);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "show", msg);
+				switch_event_fire(&event);
+			}
+			break;
+		case LDL_SIGNAL_PRESENCE_OUT:
+			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", from);
+				switch_event_fire(&event);
+			}
+			break;
 		case LDL_SIGNAL_MSG:
-			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", from);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", subject);
-				switch_event_add_body(event, msg);
+				if (msg) {
+					switch_event_add_body(event, msg);
+				}
 				switch_event_fire(&event);
 			}
 			break;
@@ -1639,12 +1651,13 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SESSION MSG [%s]\n", msg);
 		}
 
-		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", from);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", subject);
-			switch_event_add_body(event, msg);
-
+			if (msg) {
+				switch_event_add_body(event, msg);
+			}
 			if (switch_core_session_queue_event(tech_pvt->session, &event) != SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
 				switch_event_fire(&event);

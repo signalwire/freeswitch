@@ -83,6 +83,8 @@ struct switch_core_session_message {
 	void *pointer_reply;
 	/*! optional arbitrary pointer reply's size */
 	switch_size_t pointer_reply_size;
+	/*! message flags */
+	switch_core_session_message_flag_t flags;
 };
 
 /*! \brief A generic object to pass as a thread's session object to allow mutiple arguements and a pool */
@@ -420,6 +422,22 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause);
   \return the status returned by the message handler
 */
 SWITCH_DECLARE (switch_status_t) switch_core_session_message_send(char *uuid_str, switch_core_session_message_t *message);
+
+/*! 
+  \brief Queue a message on a session
+  \param session the session to queue the message to
+  \param message the message to queue
+  \return SWITCH_STATUS_SUCCESS if the message was queued
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_queue_message(switch_core_session_t *session, switch_core_session_message_t *message);
+
+/*! 
+  \brief DE-Queue an message on a given session
+  \param session the session to de-queue the message on
+  \param message the de-queued message
+  \return the  SWITCH_STATUS_SUCCESS if the message was de-queued
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(switch_core_session_t *session, switch_core_session_message_t **message);
 
 /*! 
   \brief Queue an event on another session using its uuid
