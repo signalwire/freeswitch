@@ -2281,13 +2281,15 @@ static void sip_i_state(int status,
 		break;
 	case nua_callstate_terminated: 
 		if (session) {
-			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
-			if (switch_test_flag(tech_pvt, TFLAG_NOHUP)) {
-				switch_clear_flag_locked(tech_pvt, TFLAG_NOHUP);
-				nua_handle_destroy(tech_pvt->nh);
-				tech_pvt->nh = NULL;
-			} else {
-				terminate_session(&session, sip_cause_to_freeswitch(status), __LINE__);
+			if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
+				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+				if (switch_test_flag(tech_pvt, TFLAG_NOHUP)) {
+					switch_clear_flag_locked(tech_pvt, TFLAG_NOHUP);
+					nua_handle_destroy(tech_pvt->nh);
+					tech_pvt->nh = NULL;
+				} else {
+					terminate_session(&session, sip_cause_to_freeswitch(status), __LINE__);
+				}
 			}
 		}
 		break;
