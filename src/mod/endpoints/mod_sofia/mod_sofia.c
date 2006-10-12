@@ -142,7 +142,8 @@ typedef enum {
 	TFLAG_REFER = (1 << 17),
 	TFLAG_NOHUP = (1 << 18),
 	TFLAG_XFER = (1 << 19),
-	TFLAG_NOMEDIA = (1 << 20)
+	TFLAG_NOMEDIA = (1 << 20),
+	TFLAG_BUGGY_2833 = (1 << 21)
 } TFLAGS;
 
 static struct {
@@ -275,6 +276,7 @@ struct private_object {
 	char *key;
 	char *xferto;
 	char *kick;
+	char *origin;
 	unsigned long rm_rate;
 	switch_payload_t pt;
 	switch_mutex_t *flag_mutex;
@@ -1226,6 +1228,10 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 
 	flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_DATAWAIT);
 
+	if (switch_test_flag(tech_pvt, TFLAG_BUGGY_2833)) {
+		flags |= SWITCH_RTP_FLAG_BUGGY_2833;
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "RTP [%s] %s:%d->%s:%d codec: %u ms: %d\n",
 					  switch_channel_get_name(channel),
 					  tech_pvt->local_sdp_audio_ip,
@@ -1822,6 +1828,13 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);                                                                                                                               
 	
+	if ((tech_pvt->origin = switch_core_session_strdup(session, (char *) sdp->sdp_origin->o_username))) {
+		if (strstr(tech_pvt->origin, "CiscoSystemsSIP-GW-UserAgent")) {
+			switch_set_flag_locked(tech_pvt, TFLAG_BUGGY_2833);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activate Buggy RFC2833 Mode!\n");
+		}
+	}
+
 	for (m = sdp->sdp_media; m ; m = m->m_next) {
 		if (m->m_type == sdp_media_audio) {
 			sdp_rtpmap_t *map;

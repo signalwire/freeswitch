@@ -732,7 +732,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 				switch_rtp_write_manual(rtp_session,
 										rtp_session->dtmf_data.out_digit_packet,
 										4,
-										1,
+ 										switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BUGGY_2833) ? 0 : 1,
 										rtp_session->te,
 										rtp_session->dtmf_data.timestamp_dtmf,
 										rtp_session->dtmf_data.out_digit_seq++,
