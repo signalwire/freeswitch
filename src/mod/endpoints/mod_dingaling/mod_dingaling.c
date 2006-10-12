@@ -95,6 +95,7 @@ struct mdl_profile {
     char *login;
     char *password;
     char *message;
+	char *auto_reply;
     char *dialplan;
     char *ip;
     char *extip;
@@ -1302,6 +1303,8 @@ static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
 	  	switch_set_flag(profile, TFLAG_TIMER);
 	} else if (!strcasecmp(var, "dialplan")) {
 		profile->dialplan = switch_core_strdup(module_pool, val);
+	} else if (!strcasecmp(var, "auto-reply")) {
+		profile->auto_reply = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "name")) {
 		profile->name = switch_core_strdup(module_pool, val);
 	} else if (!strcasecmp(var, "message")) {
@@ -1551,6 +1554,11 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				if (msg) {
 					switch_event_add_body(event, msg);
 				}
+
+				if (profile->auto_reply) {
+					ldl_handle_send_msg(handle, from, "", profile->auto_reply);
+				}
+
 				switch_event_fire(&event);
 			}
 			break;
