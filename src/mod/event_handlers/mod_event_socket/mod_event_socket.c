@@ -327,9 +327,9 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 
 					if (data) {
 						snprintf(buf, sizeof(buf), "Content-Type: log/data\nContent-Length: %"APR_SSIZE_T_FMT"\n\n", strlen(data));
-						len = strlen(buf) + 1;
+						len = strlen(buf);
 						switch_socket_send(listener->sock, buf, &len);
-						len = strlen(data) + 1;
+						len = strlen(data);
 						switch_socket_send(listener->sock, data, &len);
 					
 						free(data);
@@ -367,16 +367,16 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 						}
 					}
 			
-					len = strlen(packet) + 1;
+					len = strlen(packet);
 
 					snprintf(hbuf, sizeof(hbuf), "Content-Length: %"APR_SSIZE_T_FMT"\n" 
 							 "Content-Type: text/event-%s\n"
 							 "\n", len, etype);
 
-					len = strlen(hbuf) + 1;
+					len = strlen(hbuf);
 					switch_socket_send(listener->sock, hbuf, &len);
 
-					len = strlen(packet) + 1;
+					len = strlen(packet);
 					switch_socket_send(listener->sock, packet, &len);
 
 					if (xmlstr) {
@@ -430,11 +430,11 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 			} else {
 				switch_size_t len;
 				char buf[1024];
-				len = strlen(stream.data) + 1;			
+				len = strlen(stream.data);			
 				snprintf(buf, sizeof(buf), "Content-Type: api/response\nContent-Length: %"APR_SSIZE_T_FMT"\n\n", len);
-				len = strlen(buf) + 1;
+				len = strlen(buf);
 				switch_socket_send(acs->listener->sock, buf, &len);
-				len = strlen(stream.data) + 1;
+				len = strlen(stream.data);
 				switch_socket_send(acs->listener->sock, stream.data, &len);
 			}
 		}
@@ -781,7 +781,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	snprintf(buf, sizeof(buf), "Content-Type: auth/request\n\n");
 		
-	len = strlen(buf) + 1;
+	len = strlen(buf);
 	switch_socket_send(listener->sock, buf, &len);
 		
 
@@ -800,7 +800,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		}
 		if (!switch_strlen_zero(reply)) {
 			snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
-			len = strlen(buf) + 1;
+			len = strlen(buf);
 			switch_socket_send(listener->sock, buf, &len);
 		}
 		break;
@@ -830,7 +830,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 		if (!switch_strlen_zero(reply)) {
 			snprintf(buf, sizeof(buf), "Content-Type: command/reply\nReply-Text: %s\n\n", reply);
-			len = strlen(buf) + 1;
+			len = strlen(buf);
 			switch_socket_send(listener->sock, buf, &len);
 		}
 			
