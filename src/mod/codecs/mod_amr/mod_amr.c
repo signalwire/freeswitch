@@ -161,11 +161,11 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 					} else if (!strcasecmp(data, "mode-change-period")) {
 						context->change_period = atoi(arg);
 					} else if (!strcasecmp(data, "ptime")) {
-						context->ptime = atoi(arg);
+						context->ptime = (switch_byte_t)atoi(arg);
 					} else if (!strcasecmp(data, "channels")) {
-						context->channels = atoi(arg);
+						context->channels = (switch_byte_t)atoi(arg);
 					} else if (!strcasecmp(data, "maxptime")) {
-						context->max_ptime = atoi(arg);
+						context->max_ptime = (switch_byte_t)atoi(arg);
 					} else if (!strcasecmp(data, "mode-set")) {
 						int y, m_argc;
 						char *m_argv[7];
@@ -182,7 +182,7 @@ static switch_status_t switch_amr_init(switch_codec_t *codec, switch_codec_flag_
 		if (context->enc_modes) {
 			for (i = 7; i > -1; i++) {
 				if (context->enc_modes & (1 << i)) {
-					context->enc_mode = i;
+					context->enc_mode = (switch_byte_t)i;
 					break;
 				}
 			}
@@ -325,7 +325,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 				if (!strcasecmp(var, "default-bitrate")) {
-					globals.default_bitrate = atoi(val);
+					globals.default_bitrate = (switch_byte_t)atoi(val);
 				}
 			}
 		}
