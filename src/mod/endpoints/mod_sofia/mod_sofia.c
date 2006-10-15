@@ -77,6 +77,8 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/su_log.h>
 #include <sofia-sip/nea.h>
 
+extern su_log_t tport_log[];
+
 static char reg_sql[] =
 "CREATE TABLE sip_registrations (\n"
 "   user            VARCHAR(255),\n"
@@ -3741,6 +3743,8 @@ static switch_status_t config_sofia(int reload)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "log-level")) {
 				su_log_set_level(NULL, atoi(val));
+			} else if (!strcasecmp(var, "log-level-trace")) {
+				su_log_set_level(tport_log, atoi(val));
 			}
 		}
 	}
@@ -4183,7 +4187,7 @@ static void msg_event_handler(switch_event_t *event)
     for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
         switch_hash_this(hi, NULL, NULL, &val);
         profile = (sofia_profile_t *) val;
-        if (!(profile->pflags && PFLAG_PRESENCE)) {
+        if (!(profile->pflags & PFLAG_PRESENCE)) {
 			continue;
         }
 
@@ -4224,7 +4228,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	su_init();
 	su_log_redirect(NULL, logger, NULL);
-	
+	su_log_redirect(tport_log, logger, NULL);
+
 	switch_core_hash_init(&globals.profile_hash, module_pool);
 	switch_mutex_init(&globals.hash_mutex, SWITCH_MUTEX_NESTED, module_pool);
 
