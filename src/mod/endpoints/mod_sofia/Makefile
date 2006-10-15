@@ -1,6 +1,6 @@
 OS_ARCH         := $(subst /,_,$(shell uname -s | sed /\ /s//_/))
 VERSION = sofia-sip-1.12
-TARBALL = sofia-sip-1.12.3.3.tar.gz
+TARBALL = sofia-sip-1.12.3.4.tar.gz
 CFLAGS += -I. -I$(PREFIX)/include/$(VERSION)
 LDFLAGS += -lsofia-sip-ua
 LINKER=$(CC)

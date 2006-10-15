@@ -75,12 +75,29 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/auth_module.h>
 #include <sofia-sip/su_md5.h>
 #include <sofia-sip/su_log.h>
+#include <sofia-sip/nea.h>
 
 static char reg_sql[] =
 "CREATE TABLE sip_registrations (\n"
 "   user            VARCHAR(255),\n"
 "   host            VARCHAR(255),\n"
 "   contact         VARCHAR(255),\n"
+"   expires         INTEGER(8)"
+");\n";
+
+
+static char sub_sql[] =
+"CREATE TABLE sip_subscriptions (\n"
+"   proto           VARCHAR(255),\n"
+"   user            VARCHAR(255),\n"
+"   host            VARCHAR(255),\n"
+"   sub_to_user     VARCHAR(255),\n"
+"   sub_to_host     VARCHAR(255),\n"
+"   event           VARCHAR(255),\n"
+"   contact         VARCHAR(255),\n"
+"   call_id         VARCHAR(255),\n"
+"   full_from       VARCHAR(255),\n"
+"   full_via        VARCHAR(255),\n"
 "   expires         INTEGER(8)"
 ");\n";
 
@@ -574,9 +591,12 @@ static void check_expire(sofia_profile_t *profile, time_t now)
 	}
 	
 	snprintf(sql, sizeof(sql), "delete from sip_registrations where expires > 0 and expires < %ld", (long) now);
-	switch_core_db_persistant_execute(db, sql, 25);
+	switch_core_db_persistant_execute(db, sql, 1000);
 	snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires < %ld", (long) now);
-	switch_core_db_persistant_execute(db, sql, 25);
+	switch_core_db_persistant_execute(db, sql, 1000);
+	snprintf(sql, sizeof(sql), "delete from sip_subscriptions where expires > 0 and expires < %ld", (long) now);
+	switch_core_db_persistant_execute(db, sql, 1000);
+
 	switch_mutex_unlock(profile->ireg_mutex);
 
 	switch_core_db_close(db);
@@ -1955,6 +1975,9 @@ static void sip_i_message(int status,
 		const char *subject = "n/a";
 		char *msg = "";
 
+		if (strstr((char*)sip->sip_content_type->c_subtype, "composing")) {
+			return;
+		}
 
 		if (from) {
 			from_user = (char *) from->a_url->url_user;
@@ -1975,7 +1998,7 @@ static void sip_i_message(int status,
 		}
 
 		if (nh) {			
-			char *message = "hello world";
+			char *message = "<b>hello world</b>";
 			char buf[256] = "";
 
 			if (find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
@@ -1990,12 +2013,11 @@ static void sip_i_message(int status,
 
 
 				nua_message(msg_nh,
-							SIPTAG_CONTENT_TYPE_STR("text/plain"),
+							SIPTAG_CONTENT_TYPE_STR("text/html"),
 							TAG_IF(message,
 								   SIPTAG_PAYLOAD_STR(message)),
 							TAG_END());
 
-				nua_handle_destroy(msg_nh);
 			}
 			
 		} 
@@ -2397,15 +2419,23 @@ static uint8_t handle_register(nua_t *nua,
 	switch_event_t *s_event;
 	char *from_user = (char *) from->a_url->url_user;
 	char *from_host = (char *) from->a_url->url_host;
-	char *contact_user = (char *) contact->m_url->url_user;
-	char *contact_host = (char *) contact->m_url->url_host;
+	char contact_str[256] = "";
 	char buf[512];
 	char *passwd = NULL;
 	uint8_t stale = 0, ret = 0, forbidden = 0;
 	auth_res_t auth_res;
 	long exptime = 60;
 
-
+	if (sip->sip_contact) {
+		if (contact->m_url->url_params) {
+			snprintf(contact_str, sizeof(contact_str), "sip:%s@%s:%s;%s", 
+					 contact->m_url->url_user, contact->m_url->url_host, contact->m_url->url_port, contact->m_url->url_params);
+		} else {
+			snprintf(contact_str, sizeof(contact_str), "sip:%s@%s:%s", 
+					 contact->m_url->url_user, contact->m_url->url_host, contact->m_url->url_port);
+		}
+	}
+	
 	if (expires) {
 		exptime = expires->ex_delta;
 	} else if (contact->m_expires) {
@@ -2439,11 +2469,10 @@ static uint8_t handle_register(nua_t *nua,
 	} 
 
 	if (!authorization || stale) {
-		snprintf(params, sizeof(params), "from_user=%s&from_host=%s&contact_user=%s&contact_host=%s",
+		snprintf(params, sizeof(params), "from_user=%s&from_host=%s&contact=%s",
 				 from_user,
 				 from_host,
-				 contact_user,
-				 contact_host 
+				 contact_str
 				 );
 
 		
@@ -2534,17 +2563,15 @@ static uint8_t handle_register(nua_t *nua,
  reg:
 
 	if (!find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
-		sql = switch_core_db_mprintf("insert into sip_registrations values ('%q','%q','sip:%q@%q',%ld)", 
+		sql = switch_core_db_mprintf("insert into sip_registrations values ('%q','%q','%q',%ld)", 
 									 from_user,
 									 from_host,
-									 contact_user,
-									 contact_host,
+									 contact_str,
 									 (long) time(NULL) + (long)exptime);
 
 	} else {
-		sql = switch_core_db_mprintf("update sip_registrations set contact='sip:%q@%q', expires=%ld where user='%q' and host='%q'",
-									 contact_user,
-                                     contact_host,
+		sql = switch_core_db_mprintf("update sip_registrations set contact='%q', expires=%ld where user='%q' and host='%q'",
+                                     contact_str,
 									 (long) time(NULL) + (long)exptime,
 									 from_user,
 									 from_host);
@@ -2556,8 +2583,7 @@ static uint8_t handle_register(nua_t *nua,
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile-name", "%s", profile->name);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-user", "%s", from_user);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from-host", "%s", from_host);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact-user", "%s", contact_user);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact-host", "%s", contact_host);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s", contact_str);
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long)exptime);
 		switch_event_fire(&s_event);
 	}
@@ -2568,11 +2594,10 @@ static uint8_t handle_register(nua_t *nua,
 		sql = NULL;
 	}
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Register from [%s@%s] contact [%s@%s] expires %ld\n", 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Register from [%s@%s] contact [%s] expires %ld\n", 
 					  from_user, 
 					  from_host,
-					  contact_user,
-					  contact_host,
+					  contact_str,
 					  (long)exptime
 					  );
 
@@ -2596,8 +2621,130 @@ static void sip_i_subscribe(int status,
 						sip_t const *sip,
 						tagi_t tags[])
 {
-	nua_respond(nh, SIP_200_OK, 
-				TAG_END());
+		if (sip) {
+			long exp;
+			sip_to_t const *to = sip->sip_to;
+			sip_from_t const *from = sip->sip_from;
+			sip_contact_t const *contact = sip->sip_contact;
+			char *from_user = NULL;
+			char *from_host = NULL;
+			char *to_user = NULL;
+			char *to_host = NULL;
+			char *sql, *event = NULL;
+			char *proto = "sip";
+			char *d_user = NULL;
+			char *contact_str = "";
+			char *call_id = NULL;
+			char *to_str = NULL;
+			char *full_from = NULL;
+			char *full_via = NULL;
+
+			if (from) {
+				from_user = (char *) from->a_url->url_user;
+				from_host = (char *) from->a_url->url_host;
+			}
+
+			if (contact) {
+				if (contact->m_url->url_params) {
+					contact_str = switch_core_db_mprintf("sip:%s@%s:%s;%s", 
+														 contact->m_url->url_user,
+														 contact->m_url->url_host, contact->m_url->url_port, contact->m_url->url_params);
+				} else {
+					contact_str = switch_core_db_mprintf("sip:%s@%s:%s", 
+														 contact->m_url->url_user,
+														 contact->m_url->url_host, contact->m_url->url_port);
+				}
+			}
+			
+			if (to) {
+				to_str = switch_core_db_mprintf("sip:%s@%s", to->a_url->url_user, to->a_url->url_host);//, to->a_url->url_port);
+			}
+
+			if (to) {
+				to_user = (char *) to->a_url->url_user;
+				to_host = (char *) to->a_url->url_host;
+			}
+
+			if (strchr(to_user, '+')) {
+				if ((proto = (d_user = strdup(to_user)))) {
+					if ((to_user = strchr(d_user, '+'))) {
+						*to_user++ = '\0';
+						if ((to_host = strchr(to_user, '+'))) {
+							*to_host++ = '\0';
+						}
+					}
+				}
+
+				if (!(proto && to_user && to_host)) {
+					nua_respond(nh, SIP_404_NOT_FOUND, TAG_END());
+					goto end;
+				}
+			}
+
+			call_id = sip_header_as_string(profile->home, (void *)sip->sip_call_id);
+			event = sip_header_as_string(profile->home, (void *)sip->sip_event);
+			full_from = sip_header_as_string(profile->home, (void *)sip->sip_from);
+			full_via = sip_header_as_string(profile->home, (void *)sip->sip_via);
+
+
+			exp = (long) time(NULL) + (sip->sip_expires ? sip->sip_expires->ex_delta : 60);
+
+
+			if ((sql = switch_core_db_mprintf("delete from sip_subscriptions where "
+											  "proto='%q' and user='%q' and host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q';\n"
+											  "insert into sip_subscriptions values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld)",
+											  proto,
+											  from_user,
+											  from_host,
+											  to_user,
+											  to_host,
+											  event,
+											  proto,
+											  from_user,
+											  from_host,
+											  to_user,
+											  to_host,
+											  event,
+											  contact_str,
+											  call_id,
+											  full_from,
+											  full_via,
+											  exp
+											  ))) {
+				execute_sql(profile->dbname, sql, profile->ireg_mutex);
+				switch_core_db_free(sql);
+			}
+
+
+
+
+			nua_respond(nh, SIP_202_ACCEPTED,
+						SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=3600"),
+						SIPTAG_FROM(sip->sip_to),
+						SIPTAG_TO(sip->sip_from),
+						SIPTAG_CONTACT_STR(to_str),
+						TAG_END());
+
+
+		end:
+			
+			if (event) {
+				su_free(profile->home, event);
+			}
+			if (call_id) {
+				su_free(profile->home, call_id);
+			}
+			if (full_from) {
+				su_free(profile->home, full_from);
+			}
+			if (full_via) {
+				su_free(profile->home, full_via);
+			}
+
+			switch_safe_free(d_user);
+			switch_safe_free(to_str);
+			switch_safe_free(contact_str);
+		}
 }
 
 static void sip_r_subscribe(int status,
@@ -2871,6 +3018,91 @@ static void sip_i_refer(nua_t *nua,
 	}
 
 }
+
+
+static void sip_i_publish(nua_t *nua, 
+						  sofia_profile_t *profile,
+						  nua_handle_t *nh, 
+						  sofia_private_t *sofia_private,
+						  sip_t const *sip,
+						  tagi_t tags[])
+{
+	if (sip) {
+		sip_from_t const *from = sip->sip_from;
+		char *from_user = NULL;
+		char *from_host = NULL;
+		sip_payload_t *payload = sip->sip_payload;
+		char *event_type;
+
+		if (from) {
+			from_user = (char *) from->a_url->url_user;
+			from_host = (char *) from->a_url->url_host;
+		}
+
+		if (payload) {
+			switch_xml_t xml, note, person, tuple, status, basic;
+			switch_event_t *event;
+			uint8_t in = 0;
+
+			if ((xml = switch_xml_parse_str(payload->pl_data, strlen(payload->pl_data)))) {
+				char *status_txt = "", *note_txt = "";
+				
+				if ((tuple = switch_xml_child(xml, "tuple")) && (status = switch_xml_child(tuple, "status")) && (basic = switch_xml_child(status, "basic"))) {
+					status_txt = basic->txt;
+				}
+					
+				if ((person = switch_xml_child(xml, "dm:person")) && (note = switch_xml_child(person, "dm:note"))) {
+					note_txt = note->txt;
+				}
+
+				if (!strcasecmp(status_txt, "open")) {
+					if (switch_strlen_zero(note_txt)) {
+						note_txt = "Available";
+					}
+					in = 1;
+				} else if (!strcasecmp(status_txt, "closed")) {
+					if (switch_strlen_zero(note_txt)) {
+						note_txt = "Unavailable";
+					}
+				}
+				
+				event_type = sip_header_as_string(profile->home, (void *)sip->sip_event);
+
+				if (in) {
+					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", status_txt);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "show", "%s", note_txt);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "%s", event_type);
+						switch_event_fire(&event);
+					}
+				} else {
+					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "%s", event_type);
+						switch_event_fire(&event);
+					}
+				}
+
+				if (event_type) {
+					su_free(profile->home, event_type);
+				}				
+
+				switch_xml_free(xml);
+			}
+			
+		}
+		
+	}
+
+	nua_respond(nh, SIP_200_OK, TAG_END());
+
+}
+
 
 static void sip_i_invite(nua_t *nua, 
 						 sofia_profile_t *profile,
@@ -3178,6 +3410,10 @@ static void event_callback(nua_event_t event,
 		sip_i_invite(nua, profile, nh, sofia_private, sip, tags);
 		break;
 
+	case nua_i_publish:
+		sip_i_publish(nua, profile, nh, sofia_private, sip, tags);
+		break;
+
     case nua_i_register:
  		sip_i_register (nua, profile, nh, sofia_private, sip, tags);
         break;
@@ -3196,10 +3432,6 @@ static void event_callback(nua_event_t event,
 
 	case nua_i_bye:
 		//sip_i_bye(nua, profile, nh, sofia_private, sip, tags);
-		break;
-
-	case nua_r_message:
-		//sip_r_message(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 
 	case nua_i_message:
@@ -3221,6 +3453,7 @@ static void event_callback(nua_event_t event,
 	case nua_i_refer:
 		sip_i_refer(nua, profile, nh, sofia_private, sip, tags);
 		break;
+
      
 	case nua_r_subscribe:
 		sip_r_subscribe(status, phrase, nua, profile, nh, sofia_private, sip, tags);
@@ -3237,11 +3470,11 @@ static void event_callback(nua_event_t event,
 	case nua_r_publish:
 		//sip_r_publish(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
-    case nua_r_notifier:
-		nua_respond(nh, SIP_200_OK, TAG_END());
-		break;
+	case nua_r_message:
 	case nua_r_notify:
-		//sip_r_notify(status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		if (nh) {
+			nua_handle_destroy(nh);
+		}
 		break;
      
 	case nua_i_notify:
@@ -3268,7 +3501,6 @@ static void event_callback(nua_event_t event,
 		else
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: unknown event %d\n", nua_event_name (event), event);
 	
-		//tl_print(stdout, "", tags);
 		break;
 
 	}
@@ -3344,6 +3576,9 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 	switch_event_t *s_event;
 
 	profile->s_root = su_root_create(NULL);
+	profile->home = su_home_new(sizeof(*profile->home));
+	su_home_init(profile->home);
+
 	profile->nua = nua_create(profile->s_root, /* Event loop */
 							  event_callback, /* Callback for processing events */
 							  profile, /* Additional data to pass to callback */
@@ -3386,7 +3621,8 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 
 
 	if ((db = switch_core_db_open_file(profile->dbname))) {
-		switch_core_db_test_reactive(db, "select * from sip_registrations", reg_sql);
+		switch_core_db_test_reactive(db, "select contact from sip_registrations", reg_sql);
+		switch_core_db_test_reactive(db, "select contact from sip_subscriptions", sub_sql);
 		switch_core_db_test_reactive(db, "select * from sip_authentication", auth_sql);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
@@ -3424,25 +3660,12 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 			return NULL;
 		}
 
-		profile->presence->nh = nua_handle(profile->nua, NULL,
-										   TAG_END());
+		profile->presence->nh = nua_handle(profile->nua, NULL, SIPTAG_CONTACT_STR(profile->url), TAG_END());
+										   
 		profile->presence->sofia_private.presence = profile->presence;
 		nua_handle_bind(profile->presence->nh, &profile->presence->sofia_private);
 
-		nua_notifier(profile->presence->nh,
-					 NUTAG_URL(profile->url),
-					 SIPTAG_EXPIRES_STR("3600"),
-					 SIPTAG_FROM_STR(profile->url),
-					 //SIPTAG_EVENT_STR("presence"),
-					 SIPTAG_EVENT_STR("message-summary"),
-					 //SIPTAG_ALLOW_EVENTS_STR("message-summary"),
-					 SIPTAG_CONTENT_TYPE_STR("text/urllist"),
-					 //SIPTAG_CONTENT_TYPE_STR("application/pidf-partial+xml"),
-					 //SIPTAG_CONTENT_TYPE_STR("text/plain"),
-					 NUTAG_SUBSTATE(nua_substate_pending),
-					 TAG_END());
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Creating notifier for %s\n", profile->url);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Creating presence for %s\n", profile->url);
 	}
 
 	while(globals.running == 1) {
@@ -3459,13 +3682,9 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 		su_root_step(profile->s_root, 1000);
 	}
 
-	/*
-	if (profile->presence && profile->presence->nh) {
-		nua_handle_destroy(profile->presence->nh);
-		profile->presence->nh = NULL;
-	}
-	*/
+	su_home_deinit(profile->home);
 	
+
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "service", "_sip._udp");
 		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", profile->sip_port);
@@ -3774,8 +3993,7 @@ static void event_handler(switch_event_t *event)
 	if ((subclass = switch_event_get_header(event, "orig-event-subclass")) && !strcasecmp(subclass, MY_EVENT_REGISTER)) {
 		char *from_user = switch_event_get_header(event, "orig-from-user");
 		char *from_host = switch_event_get_header(event, "orig-from-host");
-		char *contact_user = switch_event_get_header(event, "orig-contact-user");
-		char *contact_host = switch_event_get_header(event, "orig-contact-host");
+		char *contact_str = switch_event_get_header(event, "orig-contact");
 		char *exp_str = switch_event_get_header(event, "orig-expires");
 		long expires = (long)time(NULL) + atol(exp_str);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
@@ -3789,16 +4007,14 @@ static void event_handler(switch_event_t *event)
 
 
 		if (!find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
-			sql = switch_core_db_mprintf("insert into sip_registrations values ('%q','%q','sip:%q@%q',%ld)", 
+			sql = switch_core_db_mprintf("insert into sip_registrations values ('%q','%q','%q',%ld)", 
 										 from_user,
 										 from_host,
-										 contact_user,
-										 contact_host,
+										 contact_str,
 										 expires);
 		} else {
-			sql = switch_core_db_mprintf("update sip_registrations set contact='sip:%q@%q', expires=%ld where user='%q' and host='%q'",
-										 contact_user,
-										 contact_host,
+			sql = switch_core_db_mprintf("update sip_registrations set contact='%q', expires=%ld where user='%q' and host='%q'",
+										 contact_str,
 										 expires,
 										 from_user,
 										 from_host);
@@ -3809,64 +4025,183 @@ static void event_handler(switch_event_t *event)
 			execute_sql(profile->dbname, sql, profile->ireg_mutex);
 			switch_core_db_free(sql);
 			sql = NULL;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s@%s\n", 
-							  from_user, from_host, contact_user, contact_host);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s\n", 
+							  from_user, from_host, contact_str);
 
 		}
 
 	}
 }
 
+static int sub_callback(void *pArg, int argc, char **argv, char **columnNames){
+	sofia_profile_t *profile = (sofia_profile_t *) pArg;
+	char *pl;
+	char *id, *note;
+	uint32_t in = atoi(argv[0]);
+	char *msg = argv[1];
+	char *proto = argv[2];
+	char *user = argv[3];
+	char *host = argv[4];
+	char *sub_to_user = argv[5];
+	char *sub_to_host = argv[6];
+	char *event = argv[7];
+	char *contact = argv[8];
+	char *callid = argv[9];
+	char *full_from = argv[10];
+	char *full_via = argv[11];
+	nua_handle_t *nh;
+	char *doing;
+	char *to;
+	char *open;
+	
+
+	if (in) {
+		note = switch_core_db_mprintf("<dm:note>%s</dm:note>", msg);
+		doing="available";
+		open = "open";
+	} else {
+		note = NULL;
+		doing="unavailable";
+		open = "closed";
+	}
+
+	if (strcasecmp(proto, "sip")) {
+		/*encapsulate*/
+		id = switch_core_db_mprintf("sip:%s+%s+%s@%s", proto, sub_to_user, sub_to_host, host);
+	} else {
+		id = switch_core_db_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
+	}
+
+	to = switch_core_db_mprintf("sip:%s@%s", user, host);
+	pl = switch_core_db_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
+								"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
+								"xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\r\n"
+								"xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid'\r\n"
+								"xmlns:c='urn:ietf:params:xml:ns:pidf:cipid'\r\n"
+								"entity='pres:%s'>\r\n"
+								"<tuple id='t6a5ed77e'>\r\n"
+								"<status>\r\n"
+								"<basic>%s</basic>\r\n"
+								"</status>\r\n"
+								"</tuple>\r\n"
+								"<dm:person id='p06360c4a'>\r\n"
+								"<rpid:activities>\r\n"
+								"<rpid:%s/>\r\n"
+								"<rpid:unknown/>\r\n"
+								"</rpid:activities>%s</dm:person>\r\n"
+								"</presence>", id, open, doing, note);
+
+	nh = nua_handle(profile->nua, NULL,	TAG_END());
+					
+		
+	nua_notify(nh,
+			   NUTAG_URL(contact),
+			   SIPTAG_TO_STR(full_from),
+			   SIPTAG_FROM_STR(to),
+			   SIPTAG_CONTACT_STR(profile->url),
+			   SIPTAG_CALL_ID_STR(callid),
+			   SIPTAG_VIA_STR(full_via),
+			   SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=3600"),
+			   SIPTAG_EVENT_STR(event),
+			   SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
+			   SIPTAG_PAYLOAD_STR(pl),
+			   TAG_END());
+
+	switch_safe_free(id);
+	switch_safe_free(note);
+	switch_safe_free(pl);
+	switch_safe_free(to);
+
+	return 0;
+}
+
 static void msg_event_handler(switch_event_t *event)
 {
-	switch_hash_index_t *hi;
-	void *val;
 	sofia_profile_t *profile;
-	int open = 0;
+	switch_hash_index_t *hi;
+    void *val;
 	char *from = switch_event_get_header(event, "from");
-	//char *status = switch_event_get_header(event, "status");
+	char *status= switch_event_get_header(event, "status");
+	char *show= switch_event_get_header(event, "show");
+	char *event_type = switch_event_get_header(event, "event_type");
+	char *sql = NULL;
+	char *user = NULL, *host = NULL;
+	char *errmsg;
+	char *resource;
+	switch_core_db_t *db;
+
+	if (status && !strcasecmp(status, "n/a")) {
+		status = show;
+		if (status && !strcasecmp(status, "n/a")) {
+			status = NULL;
+		}
+	}
+
+	if (switch_strlen_zero(event_type)) {
+		event_type="presence";
+	}
+
+	if ((user = strdup(from))) {
+		if ((host = strchr(user, '@'))) {
+			*host++ = '\0';
+		}
+		if ((resource = strchr(host, '/'))) {
+			*resource++ = '\0';
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+		return;
+	}
+
+
+
+	if (!host) {
+		switch_safe_free(user);
+		return;
+	}
 	
 	switch(event->event_id) {
 	case SWITCH_EVENT_PRESENCE_IN:
-		open = 1;
+		if (!status) {
+			status = "Available";
+		}
+
+		sql = switch_core_db_mprintf("select 1,'%q',* from sip_subscriptions where event='%q' and sub_to_user='%q' and sub_to_host='%q'", 
+									 status , event_type, user, host);
 		break;
 	case SWITCH_EVENT_PRESENCE_OUT:
-		open = 0;
+		if (!status) {
+			status = "Unavailable";
+		}
+		sql = switch_core_db_mprintf("select 0,'%q',* from sip_subscriptions where event='%q' and sub_to_user='%q' and sub_to_host='%q'", 
+									 status, event_type, user, host);
 		break;
 	default:
 		break;
 	}
 
-	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
-		profile = (sofia_profile_t *) val;
-		if (profile && profile->presence) {
-			char *url;
-			char *myfrom = strdup(from);
-			char *p;
-			for(p = myfrom; *p ; p++) {
-				if (*p == '@') {
-					*p = '!';
-				}
+    for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+        switch_hash_this(hi, NULL, NULL, &val);
+        profile = (sofia_profile_t *) val;
+        if (!(profile->pflags && PFLAG_PRESENCE)) {
+			continue;
+        }
+
+		if (sql) {
+			if (!(db = switch_core_db_open_file(profile->dbname))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+				continue;
 			}
-			
-			url = switch_core_db_mprintf("sip:%s", myfrom);
-
-			nua_publish(profile->presence->nh,
-						SIPTAG_EVENT_STR("presence"),
-						SIPTAG_CONTENT_TYPE_STR("text/urllist"),
-						SIPTAG_PAYLOAD_STR(url),
-						TAG_NULL());
-
-			switch_safe_free(url);
-			switch_safe_free(myfrom);
-			
+			switch_mutex_lock(profile->ireg_mutex);
+			switch_core_db_exec(db, sql, sub_callback, profile, &errmsg);
+			switch_mutex_unlock(profile->ireg_mutex);
+			switch_core_db_close(db);
 		}
-		
+
 	}
 
-	
-
+	switch_safe_free(user);
+	switch_safe_free(sql);
 }
 
 
