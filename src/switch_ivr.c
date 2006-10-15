@@ -1968,7 +1968,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		while ((!caller_channel || switch_channel_ready(caller_channel)) && 
 			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key) && ((time(NULL) - start) < (time_t)timelimit_sec)) {
 
-			if (or_argc == 1 && and_argc == 1) { /* when there is only 1 channel to call and bridge */
+			if (session && or_argc == 1 && and_argc == 1) { /* when there is only 1 channel to call and bridge */
 				switch_core_session_message_t *message = NULL;
 				if (switch_core_session_dequeue_message(peer_sessions[0], &message) == SWITCH_STATUS_SUCCESS) {
 					switch_core_session_receive_message(session, message);

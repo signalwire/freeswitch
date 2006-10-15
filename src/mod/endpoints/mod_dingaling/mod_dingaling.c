@@ -1532,25 +1532,28 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		switch(signal) {
 		case LDL_SIGNAL_PRESENCE_IN:
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", from);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", subject);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "show", msg);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", subject);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "show", "%s", msg);
 				switch_event_fire(&event);
 			}
 			break;
 		case LDL_SIGNAL_PRESENCE_OUT:
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", from);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
 				switch_event_fire(&event);
 			}
 			break;
 		case LDL_SIGNAL_MSG:
 			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", from);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", subject);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", "%s", subject);
 				if (msg) {
 					switch_event_add_body(event, msg);
 				}
@@ -1564,19 +1567,19 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			break;
 		case LDL_SIGNAL_LOGIN_SUCCESS:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_LOGIN_SUCCESS) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
 				switch_event_fire(&event);
 			}
 			break;
 		case LDL_SIGNAL_LOGIN_FAILURE:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_LOGIN_FAILURE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
 				switch_event_fire(&event);
 			}
 			break;
 		case LDL_SIGNAL_CONNECTED:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_CONNECTED) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
 				switch_event_fire(&event);
 			}
 			break;
@@ -1660,9 +1663,10 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		}
 
 		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", profile->login);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", from);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", subject);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", "%s", subject);
 			if (msg) {
 				switch_event_add_body(event, msg);
 			}
