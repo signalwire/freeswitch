@@ -47,7 +47,7 @@ static switch_status_t on_dtmf(switch_core_session_t *session, void *input, swit
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Digits %s\n", dtmf);
 		
 		if (*dtmf == '*') {
-			return SWITCH_STATUS_FALSE;
+			return SWITCH_STATUS_BREAK;
 		}
 	}
 		break;
@@ -101,6 +101,7 @@ static void playback_function(switch_core_session_t *session, char *data)
 	switch_channel_t *channel;
 	char *timer_name = NULL;
 	char *file_name = NULL;
+	switch_status_t status;
 
 	file_name = switch_core_session_strdup(session, data);
 
@@ -113,7 +114,9 @@ static void playback_function(switch_core_session_t *session, char *data)
 
 	switch_channel_pre_answer(channel);
 
-	if (switch_ivr_play_file(session, NULL, file_name, timer_name, on_dtmf, NULL, 0) != SWITCH_STATUS_SUCCESS) {
+	status = switch_ivr_play_file(session, NULL, file_name, timer_name, on_dtmf, NULL, 0);
+
+	if (!switch_channel_ready(channel) || (status != SWITCH_STATUS_SUCCESS && !SWITCH_STATUS_IS_BREAK(status))) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
 	
