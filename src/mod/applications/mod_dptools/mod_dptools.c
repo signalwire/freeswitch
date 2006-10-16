@@ -124,7 +124,7 @@ static void privacy_function(switch_core_session_t *session, char *data)
 		} else if (!strcasecmp(arg, "number")) {
 			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID privacy mode specified. Use a valid mode ASSHAT\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID privacy mode specified. Use a valid mode [no|yes|name|full|number].\n");
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Privacy to %s [%d]\n", arg, caller_profile->flags);
 	}
