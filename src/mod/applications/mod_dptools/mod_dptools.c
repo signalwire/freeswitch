@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
  *
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
@@ -90,6 +91,42 @@ static void set_function(switch_core_session_t *session, char *data)
 		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", var, val ? val : "UNDEF");
 		switch_channel_set_variable(channel, var, val);
+	}
+}
+
+static void privacy_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	switch_caller_profile_t *caller_profile;
+	char *arg;
+
+	channel = switch_core_session_get_channel(session);
+    	assert(channel != NULL);		
+	
+	caller_profile = switch_channel_get_caller_profile(channel);
+
+	if (switch_strlen_zero(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No privacy mode specified.\n");
+	} else {
+		arg = switch_core_session_strdup(session, data);
+
+		switch_set_flag(caller_profile, SWITCH_CPF_SCREEN);
+
+		if(!strcasecmp(arg, "no")) {
+			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NAME);
+			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
+		} else if (!strcasecmp(arg, "yes")) {
+			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+		} else if (!strcasecmp(arg, "full")) {
+			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+		} else if (!strcasecmp(arg, "name")) {
+			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NAME);
+		} else if (!strcasecmp(arg, "number")) {
+			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID privacy mode specified. Use a valid mode ASSHAT\n");
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Privacy to %s [%d]\n", arg, caller_profile->flags);
 	}
 }
 
@@ -183,13 +220,22 @@ static const switch_application_interface_t transfer_application_interface = {
 	/* next */ &sleep_application_interface
 };
 
+static const switch_application_interface_t privacy_application_interface = {
+	/*.interface_name */ "privacy",
+	/*.application_function */ privacy_function,
+	/* long_desc */ "Set caller privacy on calls.",
+	/* short_desc */ "Set privacy on calls",
+	/* syntax */ "off|on|name|full|number",
+	/*.next */ &transfer_application_interface
+};
+
 static const switch_loadable_module_interface_t mod_dptools_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
 	/*.dialplan_interface = */ NULL,
 	/*.codec_interface = */ NULL,
-	/*.application_interface */ &transfer_application_interface,
+	/*.application_interface */ &privacy_application_interface,
 	/*.api_interface */ &dptools_api_interface
 };
 
