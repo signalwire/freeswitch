@@ -86,6 +86,8 @@ struct switch_caller_profile {
 	char *uuid;
 	/*! context */
 	char *context;
+	/*! flags */
+	switch_caller_profile_flag_t flags;
 	struct switch_caller_profile *next;
 };
 

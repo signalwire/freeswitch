@@ -1335,7 +1335,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 																 caller_profile->source,
 																 caller_profile->context,
 																 caller_profile->destination_number);
-					
+					outgoing_profile->flags = caller_profile->flags;
 				}
 			}
 		}

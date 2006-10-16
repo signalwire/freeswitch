@@ -131,6 +131,11 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 #define SWITCH_FALSE 0
 #define SWITCH_CORE_QUEUE_LEN 100000
 
+typedef enum {
+	SWITCH_CPF_SCREEN = (1 << 0),
+	SWITCH_CPF_HIDE_NAME = (1 << 1),
+	SWITCH_CPF_HIDE_NUMBER = (1 << 2)
+} switch_caller_profile_flag_t;
 
 typedef enum {
 	SWITCH_AUDIO_COL_STR_TITLE                    = 0x01,

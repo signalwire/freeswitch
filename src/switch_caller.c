@@ -64,6 +64,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 		profile->source = switch_core_strdup(pool, source);
 		profile->context = switch_core_strdup(pool, context);
 		profile->destination_number = switch_core_strdup(pool, destination_number);
+		switch_set_flag(profile, SWITCH_CPF_SCREEN);
 	}
 
 	return profile;
@@ -88,6 +89,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
 		profile->source = switch_core_session_strdup(session, tocopy->source);
 		profile->context = switch_core_session_strdup(session, tocopy->context);
 		profile->chan_name = switch_core_session_strdup(session, tocopy->chan_name);
+		profile->flags = tocopy->flags;
 	}
 
 	return profile;
@@ -195,6 +197,17 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		snprintf(header_name, sizeof(header_name), "%s-Channel-Name", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->chan_name);
 	}
+
+	snprintf(header_name, sizeof(header_name), "%s-Screen-Bit", prefix);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_SCREEN) ? "yes" : "no");
+
+	snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Name", prefix);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME) ? "yes" : "no");
+
+	snprintf(header_name, sizeof(header_name), "%s-Privacy-Hide-Number", prefix);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER) ? "yes" : "no");
+
+
 
 }
 

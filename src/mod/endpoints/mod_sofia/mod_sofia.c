@@ -842,6 +842,7 @@ static switch_status_t tech_choose_port(private_object_t *tech_pvt)
 
 static void do_invite(switch_core_session_t *session)
 {
+	char rpid[1024];
 	private_object_t *tech_pvt;
     switch_channel_t *channel = NULL;
 	switch_caller_profile_t *caller_profile;
@@ -869,6 +870,23 @@ static void do_invite(switch_core_session_t *session)
 
 		switch_set_flag_locked(tech_pvt, TFLAG_READY);
 
+		// forge a RPID for now KHR  -- Should wrap this in an if statement so it can be turned on and off
+		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+			char *priv = "no";
+			
+			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
+				priv = "name";
+				if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+					priv = "yes";
+				}
+			} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+				priv = "yes";
+			}
+
+			snprintf(rpid, sizeof(rpid) - 1, "Remote-Party-ID: %s;party=calling;screen=yes;privacy=%s", tech_pvt->from_str, priv);
+								
+		}
+
 		if (!tech_pvt->nh) {
 			tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 									  SIPTAG_TO_STR(tech_pvt->dest),
@@ -882,6 +900,7 @@ static void do_invite(switch_core_session_t *session)
 		}
 
 		nua_invite(tech_pvt->nh,
+				   TAG_IF(rpid, SIPTAG_HEADER_STR(rpid)),
 				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 				   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
@@ -897,6 +916,7 @@ static void do_invite(switch_core_session_t *session)
 
 static void do_xfer_invite(switch_core_session_t *session)
 {
+	char rpid[1024];
 	private_object_t *tech_pvt;
     switch_channel_t *channel = NULL;
 	switch_caller_profile_t *caller_profile;
@@ -918,7 +938,6 @@ static void do_xfer_invite(switch_core_session_t *session)
 													 ))) {
 
 		char *rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
-		
 
 		tech_pvt->nh2 = nua_handle(tech_pvt->profile->nua, NULL,
 								  SIPTAG_TO_STR(tech_pvt->dest),
@@ -932,6 +951,7 @@ static void do_xfer_invite(switch_core_session_t *session)
 
 
 		nua_invite(tech_pvt->nh2,
+				   TAG_IF(rpid, SIPTAG_HEADER_STR(rpid)),
 				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 				   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
@@ -3115,6 +3135,7 @@ static void sip_i_invite(nua_t *nua,
 {
 	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
 	char key[128] = "";
+	sip_unknown_t *un;
 
 
 	if (!session) {
@@ -3212,10 +3233,62 @@ static void sip_i_invite(nua_t *nua,
 																	  (profile->pflags & PFLAG_FULL_ID) ? 
 																	  to_username : (char *) to_user
 																	  )) != 0) {
+
+				
+				for (un=sip->sip_unknown; un; un=un->un_next) {
+					// Loop thru Known Headers Here so we can do something with them
+					// John Doe <sip:+19018577141@209.247.16.1>;party=calling;screen=yes;privacy=off
+					if (!strncasecmp(un->un_name, "Remote-Party-ID", 15)) {
+						int argc, x, screen = 1;
+						char *mydata, *argv[10] = { 0 };
+						if (!switch_strlen_zero(un->un_value)) { 
+							if ((mydata = strdup(un->un_value))) {
+								argc = switch_separate_string(mydata, ';', argv, (sizeof(argv) / sizeof(argv[0]))); 
+
+								// Do We really need this at this time 
+								// clid_uri = argv[0];
+
+								for (x=1; x < argc && argv[x]; x++){
+									// we dont need to do anything with party yet we should only be seeing party=calling here anyway
+									// maybe thats a dangerous assumption bit oh well yell at me later
+									// if (!strncasecmp(argv[x], "party", 5)) {
+									//	party = argv[x];
+									// } else 
+									if (!strncasecmp(argv[x], "privacy=", 8)) {
+										char *arg = argv[x] + 9;
+
+										if(!strcasecmp(arg, "no")) {
+											switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
+											switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
+										} else if (!strcasecmp(arg, "yes")) {
+											switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+										} else if (!strcasecmp(arg, "full")) {
+											switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+										} else if (!strcasecmp(arg, "name")) {
+											switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
+										} else if (!strcasecmp(arg, "number")) {
+											switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
+										}
+									} else if (!strncasecmp(argv[x], "screen=", 7) && screen > 0) {
+										char *arg = argv[x] + 8;
+										if (!strcasecmp(arg, "no")) {
+											screen = 0;
+											switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_SCREEN);
+										}
+									}
+								}
+								free(mydata);
+							}
+						}
+						break;
+					}
+				}
+
 				switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 				switch_core_db_free(username);
 				switch_core_db_free(to_username);
 			}
+
 			switch_set_flag_locked(tech_pvt, TFLAG_INBOUND);
 			tech_pvt->sofia_private.session = session;
 			nua_handle_bind(nh, &tech_pvt->sofia_private);
