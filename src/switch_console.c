@@ -52,7 +52,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_stream_write(switch_stream_handle
 	ret = vasprintf(&data, fmt, ap);
 #else
 	if ((data = (char *) malloc(2048))) {
-		vsnprintf(data, 2048, fmt, ap);
+		ret = vsnprintf(data, 2048, fmt, ap);
 	}
 #endif
 	va_end(ap);
@@ -152,7 +152,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, char *
 	ret = vasprintf(&data, fmt, ap);
 #else
 	data = (char *) malloc(2048);
-	vsnprintf(data, 2048, fmt, ap);
+	ret = vsnprintf(data, 2048, fmt, ap);
 #endif
 	va_end(ap);
 	if (ret == -1) {

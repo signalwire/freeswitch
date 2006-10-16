@@ -479,7 +479,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_add_header(switch_event_t *event, s
 
 	va_list ap;
 	va_start(ap, fmt);
-	vsnprintf(data, sizeof(data), fmt, ap);
+	ret = vsnprintf(data, sizeof(data), fmt, ap);
 	va_end(ap);
 
 	if (ret == -1) {
@@ -604,7 +604,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		ret = vasprintf(&data, fmt, ap);
 #else
 		data = (char *) malloc(2048);
-		vsnprintf(data, 2048, fmt, ap);
+		return = vsnprintf(data, 2048, fmt, ap);
 #endif
 		va_end(ap);
 		if (ret == -1) {
@@ -674,7 +674,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, char *fm
 		ret = vasprintf(&data, fmt, ap);
 #else
 		data = (char *) malloc(2048);
-		vsnprintf(data, 2048, fmt, ap);
+		ret = vsnprintf(data, 2048, fmt, ap);
 #endif
 		va_end(ap);
 		if (ret == -1) {

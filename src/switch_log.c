@@ -196,7 +196,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, char *file
 	ret = vasprintf(&data, fmt, ap);
 #else
 	data = (char *) malloc(2048);
-	vsnprintf(data, 2048, fmt, ap);
+	ret = vsnprintf(data, 2048, fmt, ap);
 #endif
 	va_end(ap);
 	if (ret == -1) {
