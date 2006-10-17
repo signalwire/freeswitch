@@ -49,7 +49,7 @@ static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag
 {
 	struct ilbc_context *context;
 	int encoding, decoding;
-	uint8_t ms = codec->implementation->microseconds_per_frame / 1000;
+	uint8_t ms = (uint8_t)(codec->implementation->microseconds_per_frame / 1000);
 
 
 	if (ms != 20 && ms != 30) {
