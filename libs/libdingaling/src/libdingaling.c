@@ -395,7 +395,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 							session->candidates[index].address = apr_pstrdup(session->pool, key);
 						}
 						if ((key = iks_find_attrib(tag, "port"))) {
-							session->candidates[index].port = atoi(key);
+							session->candidates[index].port = (uint16_t)atoi(key);
 						}
 						if (globals.debug) {
 							globals.logger(DL_LOG_DEBUG, 
@@ -1185,7 +1185,7 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 
 {
 	iks *iq, *sess, *tag;
-	unsigned int x, id;
+	unsigned int x, id = 0;
 
 
 	for (x = 0; x < clen; x++) {
@@ -1408,7 +1408,7 @@ void ldl_global_set_log_stream(FILE *log_stream)
 
 int8_t ldl_handle_ready(ldl_handle_t *handle)
 {
-	return ldl_test_flag(handle, LDL_FLAG_READY);
+	return (int8_t)ldl_test_flag(handle, LDL_FLAG_READY);
 }
 
 ldl_status ldl_handle_init(ldl_handle_t **handle,
@@ -1454,7 +1454,7 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
 			new_handle->server = apr_pstrdup(pool, server);
 			if ((p = strchr(new_handle->server, ':'))) {
 				*p++ = '\0';
-				new_handle->port = atoi(p);
+				new_handle->port = (uint16_t)atoi(p);
 			}
 		}
 
