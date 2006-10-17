@@ -1211,7 +1211,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 
 	if ((session = switch_core_session_request(&wanpipe_endpoint_interface, NULL))) {
 		struct private_object *tech_pvt;
-		char ani2str[4] = "";
+		char aniiistr[4] = "";
 		//wanpipe_tdm_api_t tdm_api;
 
 		switch_core_session_add_stream(session, NULL);
@@ -1229,8 +1229,8 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 			return 0;
 		}
 
-		if (event->ring.ani2 >= 0) {
-			snprintf(ani2str, 5, "%.2d", event->ring.ani2);
+		if (event->ring.aniii >= 0) {
+			snprintf(aniiistr, 5, "%.2d", event->ring.aniii);
 		}
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
@@ -1239,7 +1239,7 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 																  "FreeSWITCH",
 																  event->ring.callingnum,
 																  event->ring.callingani,
-																  switch_strlen_zero(ani2str) ? NULL : ani2str,
+																  switch_strlen_zero(aniiistr) ? NULL : aniiistr,
 																  NULL,
 																  NULL,
 																  (char *)modname,

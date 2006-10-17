@@ -88,7 +88,7 @@ class MysqlCDR : public BaseCDR {
 		long unsigned int srcchannel_length;
 		long unsigned int dstchannel_length;
 		long unsigned int ani_length;
-		long unsigned int ani2_length;
+		long unsigned int aniii_length;
 		long unsigned int lastapp_length;
 		long unsigned int lastdata_length;
 		// Now a couple internal methods

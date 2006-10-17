@@ -273,12 +273,12 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing %s->%s!\n", caller_profile->caller_id_name,
 					  caller_profile->destination_number);
 	
-	snprintf(params, sizeof(params), "context=%s&dest=%s&cid_name=%s&cid_num=%s&netaddr=%s&ani=%s&ani2=%s&rdnis=%s&source=%s&chan_name=%s&uuid=%s", 
+	snprintf(params, sizeof(params), "context=%s&dest=%s&cid_name=%s&cid_num=%s&netaddr=%s&ani=%s&aniii=%s&rdnis=%s&source=%s&chan_name=%s&uuid=%s", 
 			caller_profile->context, caller_profile->destination_number,
 			caller_profile->caller_id_name, caller_profile->caller_id_number,
 			caller_profile->network_addr?caller_profile->network_addr:"", 
 			caller_profile->ani?caller_profile->ani:"", 
-			caller_profile->ani2?caller_profile->ani2:"",
+			caller_profile->aniii?caller_profile->aniii:"",
 			caller_profile->rdnis?caller_profile->rdnis:"", 
 			caller_profile->source, caller_profile->chan_name, caller_profile->uuid);
 

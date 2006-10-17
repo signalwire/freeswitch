@@ -39,7 +39,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 																	char *caller_id_number,
 																	char *network_addr,
 																	char *ani,
-																	char *ani2, 
+																	char *aniii, 
 																	char *rdnis,
 																	char *source,
 																	char *context,
@@ -59,7 +59,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 		profile->caller_id_number = switch_core_strdup(pool, caller_id_number);
 		profile->network_addr = switch_core_strdup(pool, network_addr);
 		profile->ani = switch_core_strdup(pool, ani);
-		profile->ani2 = switch_core_strdup(pool, ani2);
+		profile->aniii = switch_core_strdup(pool, aniii);
 		profile->rdnis = switch_core_strdup(pool, rdnis);
 		profile->source = switch_core_strdup(pool, source);
 		profile->context = switch_core_strdup(pool, context);
@@ -80,7 +80,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_clone(switch_cor
 		profile->dialplan = switch_core_session_strdup(session, tocopy->dialplan);
 		profile->caller_id_name = switch_core_session_strdup(session, tocopy->caller_id_name);
 		profile->ani = switch_core_session_strdup(session, tocopy->ani);
-		profile->ani2 = switch_core_session_strdup(session, tocopy->ani2);
+		profile->aniii = switch_core_session_strdup(session, tocopy->aniii);
 		profile->caller_id_number = switch_core_session_strdup(session, tocopy->caller_id_number);
 		profile->network_addr = switch_core_session_strdup(session, tocopy->network_addr);
 		profile->rdnis = switch_core_session_strdup(session, tocopy->rdnis);
@@ -109,8 +109,8 @@ SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *
 	if (!strcasecmp(name, "ani")) {
 		return caller_profile->ani;
 	}
-	if (!strcasecmp(name, "ani2")) {
-		return caller_profile->ani2;
+	if (!strcasecmp(name, "aniii")) {
+		return caller_profile->aniii;
 	}
 	if (!strcasecmp(name, "caller_id_number")) {
 		return caller_profile->caller_id_number;
@@ -169,9 +169,9 @@ SWITCH_DECLARE(void) switch_caller_profile_event_set_data(switch_caller_profile_
 		snprintf(header_name, sizeof(header_name), "%s-ANI", prefix);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->ani);
 	}
-	if (caller_profile->ani2) {
-		snprintf(header_name, sizeof(header_name), "%s-ANI2", prefix);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->ani2);
+	if (caller_profile->aniii) {
+		snprintf(header_name, sizeof(header_name), "%s-ANI-II", prefix);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, header_name, "%s", caller_profile->aniii);
 	}
 	if (caller_profile->destination_number) {
 		snprintf(header_name, sizeof(header_name), "%s-Destination-Number", prefix);

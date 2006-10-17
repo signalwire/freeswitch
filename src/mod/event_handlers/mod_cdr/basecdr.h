@@ -90,7 +90,7 @@ class BaseCDR {
 		char srcchannel[80];
 		char dstchannel[80];
 		char ani[80];
-		char ani2[80];
+		char aniii[80];
 		char network_addr[40];
 		char lastapp[80];
 		char lastdata[255]; 

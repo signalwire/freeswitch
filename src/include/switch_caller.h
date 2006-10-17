@@ -73,7 +73,7 @@ struct switch_caller_profile {
 	/*! ANI (when applicable) */
 	char *ani;
 	/*! ANI II (when applicable) */
-	char *ani2;
+	char *aniii;
 	/*! RDNIS */
 	char *rdnis;
 	/*! Destination Number */
@@ -159,7 +159,7 @@ SWITCH_DECLARE(char *) switch_caller_get_field_by_name(switch_caller_profile_t *
   \param caller_id_number caller ID number
   \param network_addr network address
   \param ani ANI information
-  \param ani2 ANI II information
+  \param aniii ANI II information
   \param rdnis RDNIS
   \param source the source 
   \param context a logical context
@@ -173,7 +173,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 																	char *caller_id_number,
 																	char *network_addr,
 																	char *ani,
-																	char *ani2,
+																	char *aniii,
 																	char *rdnis,
 																	char *source,
 																	char *context,

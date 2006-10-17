@@ -1235,7 +1235,7 @@ static JSBool js_fetchurl_file(JSContext *cx, JSObject *obj, uintN argc, jsval *
 /*********************************************************************************/
 enum session_tinyid {
 	SESSION_NAME, SESSION_STATE,
-	PROFILE_DIALPLAN, PROFILE_CID_NAME, PROFILE_CID_NUM, PROFILE_IP, PROFILE_ANI, PROFILE_ANI2, PROFILE_DEST
+	PROFILE_DIALPLAN, PROFILE_CID_NAME, PROFILE_CID_NUM, PROFILE_IP, PROFILE_ANI, PROFILE_ANI_II, PROFILE_DEST
 };
 
 static JSFunctionSpec session_methods[] = {
@@ -1266,7 +1266,7 @@ static JSPropertySpec session_props[] = {
 	{"caller_id_num", PROFILE_CID_NUM, JSPROP_READONLY|JSPROP_PERMANENT}, 
 	{"network_addr", PROFILE_IP, JSPROP_READONLY|JSPROP_PERMANENT}, 
 	{"ani", PROFILE_ANI, JSPROP_READONLY|JSPROP_PERMANENT}, 
-	{"ani2", PROFILE_ANI2, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"aniii", PROFILE_ANI_II, JSPROP_READONLY|JSPROP_PERMANENT}, 
 	{"destination", PROFILE_DEST, JSPROP_READONLY|JSPROP_PERMANENT}, 
 	{0}
 };
@@ -1325,9 +1325,9 @@ static JSBool session_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval 
 			*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, caller_profile->ani));
 		}
 		break;
-	case PROFILE_ANI2:
+	case PROFILE_ANI_II:
 		if (caller_profile) {
-			*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, caller_profile->ani2));
+			*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, caller_profile->aniii));
 		}
 		break;
 	case PROFILE_DEST:
@@ -1402,7 +1402,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 		char *cid_num = "";
 		char *network_addr = "";
 		char *ani = "";
-		char *ani2 = "";
+		char *aniii = "";
 		char *rdnis = "";
 		char *context = "";
 		char *username = NULL;
@@ -1442,7 +1442,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			ani = JS_GetStringBytes(JS_ValueToString(cx, argv[7]));
 		}
 		if (argc > 8) {
-			ani2 = JS_GetStringBytes(JS_ValueToString(cx, argv[8]));
+			aniii = JS_GetStringBytes(JS_ValueToString(cx, argv[8]));
 		}
 		if (argc > 9) {
 			rdnis = JS_GetStringBytes(JS_ValueToString(cx, argv[9]));
@@ -1467,7 +1467,7 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 												   cid_num,
 												   network_addr,
 												   ani,
-												   ani2,
+												   aniii,
 												   rdnis,
 												   (char *)modname,
 												   context,

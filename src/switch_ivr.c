@@ -1846,7 +1846,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 																   caller_profile_override->caller_id_number,
 																   caller_profile_override->network_addr, 
 																   caller_profile_override->ani,
-																   caller_profile_override->ani2,
+																   caller_profile_override->aniii,
 																   caller_profile_override->rdnis,
 																   caller_profile_override->source,
 																   caller_profile_override->context,

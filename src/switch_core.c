@@ -1330,7 +1330,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 																 ecaller_id_number ? ecaller_id_number : caller_profile->caller_id_number,
 																 caller_profile->network_addr,
 																 caller_profile->ani,
-																 caller_profile->ani2, 
+																 caller_profile->aniii, 
 																 caller_profile->rdnis,
 																 caller_profile->source,
 																 caller_profile->context,
