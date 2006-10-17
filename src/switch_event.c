@@ -604,7 +604,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		ret = vasprintf(&data, fmt, ap);
 #else
 		data = (char *) malloc(2048);
-		return = vsnprintf(data, 2048, fmt, ap);
+		ret = vsnprintf(data, 2048, fmt, ap);
 #endif
 		va_end(ap);
 		if (ret == -1) {
