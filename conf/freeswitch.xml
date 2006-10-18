@@ -116,7 +116,7 @@
       <profiles>
         <profile name="test">
           <registrations>
-            <registration name="asterlink">
+            <!-- <registration name="asterlink">
               <param name="register-scheme" value="Digest"/>
               <param name="register-realm" value=""/>
               <param name="register-username" value="1001"/>
@@ -125,7 +125,7 @@
               <param name="register-to" value="sip:1001@66.250.68.194"/>
               <param name="register-proxy" value="sip:66.250.68.194:5060"/>
               <param name="register-frequency" value="20"/>
-            </registration>
+            </registration> -->
           </registrations>
           <settings>
             <param name="debug" value="1"/>
