@@ -170,7 +170,7 @@ bool PddCDR::process_record()
 		outputfile << "\t\'srcchannel\' = \'" << srcchannel << "\'," << std::endl;
 		outputfile << "\t\'dstchannel\' = \'" << dstchannel << "\'," << std::endl;
 		outputfile << "\t\'ani\' = \'" << ani << "\'," << std::endl;
-		outputfile << "\t\'ani2\' = \'" << ani2 << "\'," << std::endl;
+		outputfile << "\t\'aniii\' = \'" << aniii << "\'," << std::endl;
 		outputfile << "\t\'network_addr\' = \'" << network_addr << "\'," << std::endl;
 		outputfile << "\t\'lastapp\' = \'" << lastapp << "\'," << std::endl;
 		outputfile << "\t\'lastdata\' = \'" << lastdata << "\'," << std::endl;

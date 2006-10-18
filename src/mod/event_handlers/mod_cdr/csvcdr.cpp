@@ -234,7 +234,7 @@ bool CsvCDR::process_record()
 	outputfile << srcchannel << "\",\"";
 	outputfile << dstchannel << "\",\"";
 	outputfile << ani << "\",\"";
-	outputfile << ani2 << "\",\"";
+	outputfile << aniii << "\",\"";
 	outputfile << network_addr << "\",\"";
 	outputfile << lastapp << "\",\"";
 	outputfile << lastdata << "\",\"";

@@ -73,7 +73,7 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 		memset(dstchannel,0,80);
 		memset(network_addr,0,40);
 		memset(ani,0,80);
-		memset(ani2,0,80);
+		memset(aniii,0,80);
 		memset(lastapp,0,80);
 		memset(lastdata,0,255);
 
@@ -95,8 +95,8 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 			// Get the ANI information if it's set
 			if(newchannel->callerprofile->ani != 0)
 				strncpy(ani,newchannel->callerprofile->ani,strlen(newchannel->callerprofile->ani));
-			if(newchannel->callerprofile->ani2 != 0)
-				strncpy(ani2,newchannel->callerprofile->ani2,strlen(newchannel->callerprofile->ani2));
+			if(newchannel->callerprofile->aniii != 0)
+				strncpy(aniii,newchannel->callerprofile->aniii,strlen(newchannel->callerprofile->aniii));
 		
 			if(newchannel->callerprofile->dialplan != 0)
 				strncpy(dialplan,newchannel->callerprofile->dialplan,strlen(newchannel->callerprofile->dialplan));
