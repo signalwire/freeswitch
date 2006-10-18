@@ -17,7 +17,7 @@ AM_CFLAGS  += $(shell $(APU_CONFIG) --includes)
 AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs )
 
 lib_LTLIBRARIES		= libdingaling.la
-libdingaling_la_SOURCES	= src/libdingaling.c
+libdingaling_la_SOURCES	= src/libdingaling.c src/sha1.c
 libdingaling_la_CFLAGS	= $(AM_CFLAGS)
 libdingaling_la_LDFLAGS	= 
 

@@ -1823,6 +1823,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 															   caller_caller_profile->source,
 															   caller_caller_profile->context,
 															   chan_data);
+				caller_profiles[i]->flags = caller_caller_profile->flags;
 				pool = NULL;
 			} else {
 				if (!cid_name_override) {

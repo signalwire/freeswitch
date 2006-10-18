@@ -97,6 +97,8 @@ struct switch_event {
 	void *bind_user_data;
 	/*! user data from the event sender */
 	void *event_user_data;
+	/*! unique key */
+	unsigned long key;
 	struct switch_event *next;
 };
 

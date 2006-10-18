@@ -841,6 +841,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
   \brief Initialize a codec handle
   \param codec the handle to initilize
   \param codec_name the name of the codec module to use
+  \param fmtp codec parameters to send
   \param rate the desired rate (0 for any)
   \param ms the desired number of milliseconds (0 for any)
   \param channels the desired number of channels (0 for any)

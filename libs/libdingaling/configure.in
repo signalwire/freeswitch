@@ -5,6 +5,7 @@
 AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 AM_INIT_AUTOMAKE(libdingaling,0.1)
 AC_CONFIG_SRCDIR([src])
+AC_CONFIG_HEADER([src/config.h])
 #AC_CONFIG_HEADER([])
 
 # Checks for programs.
@@ -31,6 +32,10 @@ AC_FUNC_MALLOC
 AC_TYPE_SIGNAL
 AC_FUNC_STRFTIME
 #AC_CHECK_FUNCS([gethostname gettimeofday localtime_r memmove memset socket strcasecmp strchr strdup strncasecmp strstr])
+
+AC_C_BIGENDIAN(AC_DEFINE([__BYTE_ORDER],__BIG_ENDIAN,[Big Endian]),AC_DEFINE([__BYTE_ORDER],__LITTLE_ENDIAN,[Little Endian]))
+AC_DEFINE([__LITTLE_ENDIAN],1234,[for the places where it is not defined])
+AC_DEFINE([__BIG_ENDIAN],4321,[for the places where it is not defined])
 
 AC_CONFIG_FILES([Makefile])
 

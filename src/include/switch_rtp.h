@@ -72,6 +72,7 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(void);
   \param ms_per_packet time in microseconds per packet
   \param flags flags to control behaviour
   \param crypto_key optional crypto key
+  \param timer_name timer interface to use
   \param err a pointer to resolve error messages
   \param pool a memory pool to use for the session
   \return the new RTP session or NULL on failure
@@ -98,6 +99,7 @@ SWITCH_DECLARE(switch_status_t)switch_rtp_create(switch_rtp_t **new_rtp_session,
   \param ms_per_packet time in microseconds per packet
   \param flags flags to control behaviour
   \param crypto_key optional crypto key
+  \param timer_name timer interface to use
   \param err a pointer to resolve error messages
   \param pool a memory pool to use for the session
   \return the new RTP session or NULL on failure

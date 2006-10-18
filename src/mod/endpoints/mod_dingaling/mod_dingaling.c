@@ -34,7 +34,7 @@
 
 #define DL_CAND_WAIT 10000000
 #define DL_CAND_INITIAL_WAIT 2000000
-
+#define JINGLE_KEY 1
 
 #define DL_EVENT_LOGIN_SUCCESS "dingaling::login_success"
 #define DL_EVENT_LOGIN_FAILURE "dingaling::login_failure"
@@ -43,6 +43,13 @@
 static const char modname[] = "mod_dingaling";
 
 static switch_memory_pool_t *module_pool = NULL;
+
+static char sub_sql[] =
+"CREATE TABLE subscriptions (\n"
+"   sub_from            VARCHAR(255),\n"
+"   sub_to          VARCHAR(255)\n"
+");\n";
+
 
 typedef enum {
 	TFLAG_IO = (1 << 0),
@@ -104,6 +111,8 @@ struct mdl_profile {
     char *exten;
     char *context;
 	char *timer_name;
+	char *dbname;
+	switch_mutex_t *mutex;
     ldl_handle_t *handle;
     uint32_t flags;
     uint32_t user_flags;
@@ -173,10 +182,206 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
 										   switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
-static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *from, char *subject, char *msg);
+static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *to, char *from, char *subject, char *msg);
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
 static switch_status_t load_config(void);
 
+
+static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct mdl_profile *profile = (struct mdl_profile *) pArg;
+
+	char *sub_from = argv[0];
+	char *sub_to = argv[1];
+	char *type = argv[2];
+	char *show = argv[3];
+
+	if (switch_strlen_zero(type)) {
+		type = NULL;
+	} else if (!strcasecmp(type, "unavailable")) {
+		show = NULL;
+	}
+
+
+	ldl_handle_send_presence(profile->handle, sub_to, sub_from, type, show);
+
+	return 0;
+}
+
+static int rost_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct mdl_profile *profile = (struct mdl_profile *) pArg;
+
+	char *sub_from = argv[0];
+	char *sub_to = argv[1];
+	char *show = argv[2];
+
+
+	ldl_handle_send_presence(profile->handle, sub_to, sub_from, NULL, show);
+
+	return 0;
+}
+
+static void pres_event_handler(switch_event_t *event)
+{
+	struct mdl_profile *profile = NULL;
+	switch_hash_index_t *hi;
+    void *val;
+	char *from = switch_event_get_header(event, "from");
+	char *status= switch_event_get_header(event, "status");
+	char *show= switch_event_get_header(event, "show");
+	char *type = NULL;
+	char *sql;
+	switch_core_db_t *db;
+	char *p;
+
+	if (event->key == JINGLE_KEY) {
+		return;
+	}
+
+	if (status && !strcasecmp(status, "n/a")) {
+		status = show;
+		if (status && !strcasecmp(status, "n/a")) {
+			status = NULL;
+		}
+	}
+
+
+
+	switch(event->event_id) {
+	case SWITCH_EVENT_PRESENCE_IN:
+		if (!status) {
+			status = "Available";
+		}
+		break;
+	case SWITCH_EVENT_PRESENCE_OUT:
+		type = "unavailable";
+		break;
+	default:
+		break;
+	}
+	
+
+
+	if ((p = strchr(from, '/'))) {
+		*p = '\0';
+	}
+	
+	sql = switch_core_db_mprintf("select *,'%q','%q' from subscriptions where sub_to='%q'", type ? type : "", status ? status : "unavailable", from);
+	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+        switch_hash_this(hi, NULL, NULL, &val);
+        profile = (struct mdl_profile *) val;
+		char *errmsg;
+
+        if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
+			continue;
+        }
+
+
+		if (sql) {
+			if (!(db = switch_core_db_open_file(profile->dbname))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+				continue;
+			}
+			switch_mutex_lock(profile->mutex);
+			switch_core_db_exec(db, sql, sub_callback, profile, &errmsg);
+			switch_mutex_unlock(profile->mutex);
+			switch_core_db_close(db);
+		}
+		
+
+	}
+
+	switch_safe_free(sql);
+}
+
+static void chat_event_handler(switch_event_t *event)
+{
+	char *from = switch_event_get_header(event, "from");
+	char *to = switch_event_get_header(event, "to");
+	char *body = switch_event_get_body(event);
+	char *user, *host, *f_user, *f_host = NULL;
+	struct mdl_profile *profile = NULL;
+
+	if (from && (f_user = strdup(from))) {
+		if ((f_host = strchr(f_user, '@'))) {
+			*f_host++ = '\0';
+		}
+	}
+
+	if (to && (user = strdup(to))) {
+		if ((host = strchr(user, '@'))) {
+			*host++ = '\0';
+		}
+
+		if (f_host && (profile = switch_core_hash_find(globals.profile_hash, f_host))) {
+			ldl_handle_send_msg(profile->handle, from, to, NULL, body);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", f_host ? f_host : "NULL");
+			return;
+		}
+
+		switch_safe_free(f_host);
+		free(user);
+	}
+
+}
+
+
+static void roster_event_handler(switch_event_t *event)
+{
+	char *status= switch_event_get_header(event, "status");
+	char *show= switch_event_get_header(event, "show");
+	char *event_type = switch_event_get_header(event, "event_type");
+	struct mdl_profile *profile = NULL;
+	switch_hash_index_t *hi;
+    void *val;
+	char *sql;
+	switch_core_db_t *db;
+
+	if (event->key == JINGLE_KEY) {
+		return;
+	}
+
+	if (status && !strcasecmp(status, "n/a")) {
+		status = show;
+		if (status && !strcasecmp(status, "n/a")) {
+			status = NULL;
+		}
+	}
+
+	if (switch_strlen_zero(event_type)) {
+		event_type="presence";
+	}
+
+	sql = switch_core_db_mprintf("select *,'%q' from subscriptions", show ? show : "unavilable");
+
+	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+        switch_hash_this(hi, NULL, NULL, &val);
+        profile = (struct mdl_profile *) val;
+		char *errmsg;
+
+        if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
+			continue;
+        }
+
+
+		if (sql) {
+			if (!(db = switch_core_db_open_file(profile->dbname))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+				continue;
+			}
+			switch_mutex_lock(profile->mutex);
+			switch_core_db_exec(db, sql, rost_callback, profile, &errmsg);
+			switch_mutex_unlock(profile->mutex);
+			switch_core_db_close(db);
+		}
+		
+	}
+
+	switch_safe_free(sql);
+
+}
 
 static void terminate_session(switch_core_session_t **session, int line, switch_call_cause_t cause)
 {
@@ -645,7 +850,7 @@ static switch_status_t channel_on_ring(switch_core_session_t *session)
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
-
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL RING\n", switch_channel_get_name(channel));
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1079,6 +1284,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		char sess_id[11] = "";
 		char *dnis = NULL;
 		char workspace[1024] = "";
+		char *p, *u, ubuf[512] = "", *user = NULL;;
 		
 		switch_copy_string(workspace, outbound_profile->destination_number, sizeof(workspace));
 		profile_name = workspace;
@@ -1094,13 +1300,23 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			*dnis++ = '\0';
 		}
 
+		if ((p = strchr(profile_name, '@'))) {
+			*p++ = '\0';
+			u = profile_name;
+			profile_name = p;
+			snprintf(ubuf, sizeof(ubuf), "%s@%s/talk", u, profile_name);
+			user = ubuf;
+		} else {
+			user = mdl_profile->login;
+		}
+
 		if ((mdl_profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
 			if (!ldl_handle_ready(mdl_profile->handle)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doh! we are not logged in yet!\n");
 				terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return SWITCH_STATUS_GENERR;
 			}
-			if (!(full_id = ldl_handle_probe(mdl_profile->handle, callto, idbuf, sizeof(idbuf)))) {
+			if (!(full_id = ldl_handle_probe(mdl_profile->handle, callto, user, idbuf, sizeof(idbuf)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown Recipient!\n");
 				terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 				return SWITCH_STATUS_GENERR;
@@ -1151,7 +1367,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		
 		switch_stun_random_string(sess_id, 10, "0123456789");
 
-		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, mdl_profile->login);
+		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, user);
 		tech_pvt->profile = mdl_profile;
 		ldl_session_set_private(dlsession, *new_session);
 		ldl_session_set_value(dlsession, "dnis", dnis);
@@ -1193,6 +1409,26 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	if (switch_event_reserve_subclass(DL_EVENT_CONNECTED) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!", DL_EVENT_CONNECTED);
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_IN, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_OUT, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_ROSTER, SWITCH_EVENT_SUBCLASS_ANY, roster_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_MESSAGE, SWITCH_EVENT_SUBCLASS_ANY, chat_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -1322,6 +1558,25 @@ static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
 	} else if (!strcasecmp(var, "tls")) {
 		if (switch_true(val)) {
 			profile->user_flags |= LDL_FLAG_TLS;
+		}
+	} else if (!strcasecmp(var, "component")) {
+		if (switch_true(val)) {
+			char dbname[256];
+			switch_core_db_t *db;
+
+			profile->user_flags |= LDL_FLAG_COMPONENT;
+			switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, module_pool);
+			snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
+			profile->dbname = switch_core_strdup(module_pool, dbname);
+
+			if ((db = switch_core_db_open_file(profile->dbname))) {
+				switch_core_db_test_reactive(db, "select * from subscriptions", sub_sql);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
+				return;
+			}
+			switch_core_db_close(db);
+			
 		}
 	} else if (!strcasecmp(var, "sasl")) {
 		if (!strcasecmp(val, "plain")) {
@@ -1510,8 +1765,29 @@ static switch_status_t load_config(void)
 }
 
 
+static void execute_sql(char *dbname, char *sql, switch_mutex_t *mutex)
+{
+	switch_core_db_t *db;
 
-static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *from, char *subject, char *msg)
+	if (mutex) {
+		switch_mutex_lock(mutex);
+	}
+
+	if (!(db = switch_core_db_open_file(dbname))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", dbname);
+		goto end;
+	}
+	
+	switch_core_db_persistant_execute(db, sql, 25);
+	switch_core_db_close(db);
+
+ end:
+	if (mutex) {
+		switch_mutex_unlock(mutex);
+	}
+}
+
+static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *to, char *from, char *subject, char *msg)
 {
 	struct mdl_profile *profile = NULL;
 	switch_core_session_t *session = NULL;
@@ -1519,7 +1795,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
     struct private_object *tech_pvt = NULL;
 	switch_event_t *event;
 	ldl_status status = LDL_STATUS_SUCCESS;
-	
+	char *sql;
+
 	assert(handle != NULL);
 
 	if (!(profile = ldl_handle_get_private(handle))) {
@@ -1530,6 +1807,32 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 	if (!dlsession) {
 		switch(signal) {
+		case LDL_SIGNAL_UNSUBSCRIBE:
+			if ((profile->user_flags & LDL_FLAG_COMPONENT)) {
+
+				if ((sql = switch_core_db_mprintf("delete from subscriptions where sub_from='%q' and sub_to='%q';", from, to))) {
+					execute_sql(profile->dbname, sql, profile->mutex);
+					switch_core_db_free(sql);
+				}
+			}
+			break;
+
+		case LDL_SIGNAL_SUBSCRIBE:
+			if ((profile->user_flags & LDL_FLAG_COMPONENT)) {
+
+				if ((sql = switch_core_db_mprintf("insert into subscriptions values('%q','%q')", from, to))) {
+					execute_sql(profile->dbname, sql, profile->mutex);
+					switch_core_db_free(sql);
+				}
+			}
+			break;
+		case LDL_SIGNAL_ROSTER:
+			if (switch_event_create(&event, SWITCH_EVENT_ROSTER) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
+				//event->key = JINGLE_KEY;
+				switch_event_fire(&event);
+			}
+			break;
 		case LDL_SIGNAL_PRESENCE_IN:
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
@@ -1537,14 +1840,17 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", subject);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "show", "%s", msg);
+				//event->key = JINGLE_KEY;
 				switch_event_fire(&event);
 			}
+
 			break;
 		case LDL_SIGNAL_PRESENCE_OUT:
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+				//event->key = JINGLE_KEY;
 				switch_event_fire(&event);
 			}
 			break;
@@ -1553,13 +1859,15 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", "%s", subject);
+				event->key = JINGLE_KEY;
 				if (msg) {
 					switch_event_add_body(event, msg);
 				}
 
 				if (profile->auto_reply) {
-					ldl_handle_send_msg(handle, from, "", profile->auto_reply);
+					ldl_handle_send_msg(handle, (profile->user_flags & LDL_FLAG_COMPONENT) ? to : profile->login, from, "", profile->auto_reply);
 				}
 
 				switch_event_fire(&event);
@@ -1666,6 +1974,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", "%s", subject);
 			if (msg) {
 				switch_event_add_body(event, msg);
@@ -1803,6 +2112,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						char *context;
 						char *cid_name;
 						char *cid_num;
+						char *t, *them = NULL;
 
 						memset(payloads, 0, sizeof(payloads));
 
@@ -1814,6 +2124,18 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 						if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {
 							exten = profile->exten;
+							if (!strcmp(exten, "_auto_")) {
+								if ((t = ldl_session_get_callee(dlsession))) {
+									if ((them = strdup(t))) {
+										char *p;
+										if ((p = strchr(them, '/'))) {
+											*p = '\0';
+										}
+										exten = them;
+									}
+								}
+								
+							}
 						}
 			
 						if (!(context = ldl_session_get_value(dlsession, "context"))) {
@@ -1851,6 +2173,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							}
 						}
 
+						switch_safe_free(them);
+						
 						if (lanaddr) {
 							switch_set_flag_locked(tech_pvt, TFLAG_LANADDR);
 						}

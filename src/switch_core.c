@@ -1315,19 +1315,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 
 	if (endpoint_interface->io_routines->outgoing_channel) {
 		if (session) {
-			char *ecaller_id_name = NULL, *ecaller_id_number = NULL;
 			channel = switch_core_session_get_channel(session);
+			if (caller_profile) {			
+				char *ecaller_id_name = NULL, *ecaller_id_number = NULL;
+
+				ecaller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name");
+				ecaller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number");
 			
-			ecaller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name");
-			ecaller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number");
-			
-			if (ecaller_id_name || ecaller_id_number) {
-				if (caller_profile) {
+				if (ecaller_id_name || ecaller_id_number) {
 					outgoing_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																 caller_profile->username,
 																 caller_profile->dialplan,
-																 ecaller_id_name ? ecaller_id_name : caller_profile->caller_id_name,
-																 ecaller_id_number ? ecaller_id_number : caller_profile->caller_id_number,
+																 ecaller_id_name,
+																 ecaller_id_number,
 																 caller_profile->network_addr,
 																 caller_profile->ani,
 																 caller_profile->aniii, 
@@ -1336,7 +1336,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 																 caller_profile->context,
 																 caller_profile->destination_number);
 					outgoing_profile->flags = caller_profile->flags;
-				}
+				} 
+			}
+			if (!outgoing_profile) {
+				outgoing_profile = switch_channel_get_caller_profile(channel);
 			}
 		}
 		
@@ -1361,14 +1364,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 
 	if (*new_session) {
 		switch_caller_profile_t *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
-		switch_channel_t *peer_channel = NULL;
 		switch_event_t *event;
-		switch_channel_t *new_channel = switch_core_session_get_channel(*new_session);
+		switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);
 
 		if (session && channel) {
 			profile = switch_channel_get_caller_profile(channel);
 		}
-		if ((peer_channel = switch_core_session_get_channel(*new_session)) != 0) {
+		if (peer_channel) {
 			peer_profile = switch_channel_get_caller_profile(peer_channel);
 		}
 
@@ -1386,7 +1388,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 		}
 
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_OUTGOING) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(new_channel, event);
+			switch_channel_event_set_data(peer_channel, event);
 			switch_event_fire(&event);
 		}
 	}

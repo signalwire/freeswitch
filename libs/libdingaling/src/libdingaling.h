@@ -50,6 +50,7 @@ extern "C" {
 #define LDL_MAX_CANDIDATES 10
 #define LDL_MAX_PAYLOADS 50
 #define LDL_RETRY 3
+#define IKS_NS_COMPONENT "jabber:component:accept"
 
 /*! \brief A structure to store a jingle candidate */
 struct ldl_candidate {
@@ -105,13 +106,14 @@ typedef enum {
 	LDL_FLAG_AUTHORIZED = (1 << 2),
 	LDL_FLAG_READY = (1 << 3),
 	LDL_FLAG_CONNECTED = (1 << 4),
-	LDL_FLAG_QUEUE_RUNNING = (1 << 5),
+	LDL_FLAG_QUEUE_RUNNING = (1 << 5)
 } ldl_flag_t;
 
 typedef enum {
 	LDL_FLAG_TLS = (1 << 10),
 	LDL_FLAG_SASL_PLAIN = (1 << 11),
-	LDL_FLAG_SASL_MD5 = (1 << 12)
+	LDL_FLAG_SASL_MD5 = (1 << 12),
+	LDL_FLAG_COMPONENT = (1 << 13),
 } ldl_user_flag_t;
 
 typedef enum {
@@ -121,6 +123,9 @@ typedef enum {
 	LDL_SIGNAL_MSG,
 	LDL_SIGNAL_PRESENCE_IN,
 	LDL_SIGNAL_PRESENCE_OUT,
+	LDL_SIGNAL_ROSTER,
+	LDL_SIGNAL_SUBSCRIBE,
+	LDL_SIGNAL_UNSUBSCRIBE,
 	LDL_SIGNAL_TERMINATE,
 	LDL_SIGNAL_ERROR,
 	LDL_SIGNAL_LOGIN_SUCCESS,
@@ -156,7 +161,7 @@ typedef enum {
 #define DL_LOG_EMERG DL_PRE, 0
 
 typedef ldl_status (*ldl_loop_callback_t)(ldl_handle_t *);
-typedef ldl_status (*ldl_session_callback_t)(ldl_handle_t *, ldl_session_t *, ldl_signal_t, char *, char *, char *);
+typedef ldl_status (*ldl_session_callback_t)(ldl_handle_t *, ldl_session_t *, ldl_signal_t, char *, char *, char *, char *);
 typedef ldl_status (*ldl_response_callback_t)(ldl_handle_t *, char *);
 typedef void (*ldl_logger_t)(char *file, const char *func, int line, int level, char *fmt, ...);
 
@@ -266,6 +271,13 @@ char *ldl_session_get_id(ldl_session_t *session);
 char *ldl_session_get_caller(ldl_session_t *session);
 
 /*!
+  \brief Get the callee name of a session
+  \param session the session to get the callee from
+  \return the callee name
+*/
+char *ldl_session_get_callee(ldl_session_t *session);
+
+/*!
   \brief Set the ip of a session
   \param session the session to set the ip on
   \param ip the ip
@@ -310,11 +322,23 @@ void ldl_global_set_logger(ldl_logger_t logger);
   \brief Perform a probe on a given id to resolve the proper Jingle Resource
   \param handle the connection handle to use.
   \param id the id to probe
+  \param from the from string
   \param buf a string to store the result
   \param len the size in bytes of the string
   \return a pointer to buf if a successful lookup was made otherwise NULL
 */
-char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *buf, unsigned int len);
+char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *from, char *buf, unsigned int len);
+
+/*!
+  \brief Perform a discovery on a given id to resolve the proper Jingle Resource
+  \param handle the connection handle to use.
+  \param id the id to probe
+  \param from the from string
+  \param buf a string to store the result
+  \param len the size in bytes of the string
+  \return a pointer to buf if a successful lookup was made otherwise NULL
+*/
+char *ldl_handle_disco(ldl_handle_t *handle, char *id, char *from, char *buf, unsigned int len);
 
 /*!
   \brief Signal a termination request on a given session
@@ -340,13 +364,24 @@ void *ldl_handle_get_private(ldl_handle_t *handle);
 void ldl_session_send_msg(ldl_session_t *session, char *subject, char *body);
 
 /*!
+  \brief Send a presence notification to a target
+  \param handle the handle to send with
+  \param from the from address
+  \param to the to address
+  \param type the type of presence
+  \param message a status message
+*/
+void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *message);
+
+/*!
   \brief Send a message
   \param handle the conection handle
+  \param from the message sender
   \param to the message recipiant
   \param subject optional subject
   \param body body of the message
 */
-void ldl_handle_send_msg(ldl_handle_t *handle, char *to, char *subject, char *body);
+void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subject, char *body);
 
 /*!
   \brief Offer candidates to a potential session

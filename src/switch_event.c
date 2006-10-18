@@ -125,6 +125,7 @@ static char *EVENT_NAMES[] = {
 	"MESSAGE",
 	"PRESENCE_IN",
 	"PRESENCE_OUT",
+	"ROSTER",
 	"CODEC",
 	"BACKGROUND_JOB",
 	"ALL"
@@ -586,6 +587,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 	if (todup->body) {
 		(*event)->body = DUP(todup->body);
 	}
+
+	(*event)->key = todup->key;
 
 	return SWITCH_STATUS_SUCCESS;
 }

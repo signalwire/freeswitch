@@ -39,9 +39,9 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = README $(am__configure_deps) $(library_include_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
-	compile config.guess config.sub depcomp install-sh ltmain.sh \
-	missing mkinstalldirs
+	$(top_srcdir)/configure $(top_srcdir)/src/config.h.in AUTHORS \
+	COPYING ChangeLog INSTALL NEWS compile config.guess config.sub \
+	depcomp install-sh ltmain.sh missing mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.in
@@ -50,6 +50,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+CONFIG_HEADER = $(top_builddir)/src/config.h
 CONFIG_CLEAN_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -62,9 +63,10 @@ am__installdirs = "$(DESTDIR)$(libdir)" \
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libdingaling_la_LIBADD =
-am_libdingaling_la_OBJECTS = libdingaling_la-libdingaling.lo
+am_libdingaling_la_OBJECTS = libdingaling_la-libdingaling.lo \
+	libdingaling_la-sha1.lo
 libdingaling_la_OBJECTS = $(am_libdingaling_la_OBJECTS)
-DEFAULT_INCLUDES = -I. -I$(srcdir)
+DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -210,7 +212,7 @@ AM_LDFLAGS = -liksemel -L$(PREFIX)/lib $(shell $(APR_CONFIG) --link-ld \
 APR_CONFIG = $(prefix)/bin/apr-1-config
 APU_CONFIG = $(prefix)/bin/apu-1-config
 lib_LTLIBRARIES = libdingaling.la
-libdingaling_la_SOURCES = src/libdingaling.c
+libdingaling_la_SOURCES = src/libdingaling.c src/sha1.c
 libdingaling_la_CFLAGS = $(AM_CFLAGS)
 libdingaling_la_LDFLAGS = 
 library_includedir = $(prefix)/include
@@ -252,6 +254,23 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+
+src/config.h: src/stamp-h1
+	@if test ! -f $@; then \
+	  rm -f src/stamp-h1; \
+	  $(MAKE) src/stamp-h1; \
+	else :; fi
+
+src/stamp-h1: $(top_srcdir)/src/config.h.in $(top_builddir)/config.status
+	@rm -f src/stamp-h1
+	cd $(top_builddir) && $(SHELL) ./config.status src/config.h
+$(top_srcdir)/src/config.h.in:  $(am__configure_deps) 
+	cd $(top_srcdir) && $(AUTOHEADER)
+	rm -f src/stamp-h1
+	touch $@
+
+distclean-hdr:
+	-rm -f src/config.h src/stamp-h1
 install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(libdir)" || $(mkdir_p) "$(DESTDIR)$(libdir)"
@@ -289,6 +308,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdingaling_la-libdingaling.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdingaling_la-sha1.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -317,6 +337,13 @@ libdingaling_la-libdingaling.lo: src/libdingaling.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/libdingaling.c' object='libdingaling_la-libdingaling.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdingaling_la_CFLAGS) $(CFLAGS) -c -o libdingaling_la-libdingaling.lo `test -f 'src/libdingaling.c' || echo '$(srcdir)/'`src/libdingaling.c
+
+libdingaling_la-sha1.lo: src/sha1.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdingaling_la_CFLAGS) $(CFLAGS) -MT libdingaling_la-sha1.lo -MD -MP -MF "$(DEPDIR)/libdingaling_la-sha1.Tpo" -c -o libdingaling_la-sha1.lo `test -f 'src/sha1.c' || echo '$(srcdir)/'`src/sha1.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdingaling_la-sha1.Tpo" "$(DEPDIR)/libdingaling_la-sha1.Plo"; else rm -f "$(DEPDIR)/libdingaling_la-sha1.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/sha1.c' object='libdingaling_la-sha1.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdingaling_la_CFLAGS) $(CFLAGS) -c -o libdingaling_la-sha1.lo `test -f 'src/sha1.c' || echo '$(srcdir)/'`src/sha1.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -661,7 +688,7 @@ distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-hdr distclean-libtool distclean-tags
 
 dvi: dvi-recursive
 
@@ -713,11 +740,11 @@ uninstall-info: uninstall-info-recursive
 	clean-libtool clean-recursive ctags ctags-recursive dist \
 	dist-all dist-bzip2 dist-gzip dist-shar dist-tarZ dist-zip \
 	distcheck distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-recursive distclean-tags \
-	distcleancheck distdir distuninstallcheck dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-libLTLIBRARIES \
+	distclean-hdr distclean-libtool distclean-recursive \
+	distclean-tags distcleancheck distdir distuninstallcheck dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-exec install-exec-am \
+	install-info install-info-am install-libLTLIBRARIES \
 	install-library_includeHEADERS install-man install-strip \
 	installcheck installcheck-am installdirs installdirs-am \
 	maintainer-clean maintainer-clean-generic \

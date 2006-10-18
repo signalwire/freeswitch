@@ -56,6 +56,12 @@ else
     fi
 fi
 
+if [ ! -f $root/.nothanks ] && [ $uncompressed/.complete -ot $uncompressed ] ; then 
+    echo remove stale .complete
+    rm $uncompressed/.complete
+    cd $uncompressed && $MAKE clean distclean
+fi
+
 if [ -f $uncompressed/.complete ] ; then
     echo $uncompressed already installed
     exit 0
