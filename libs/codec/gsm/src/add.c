@@ -161,9 +161,9 @@ longword gsm_L_asl P2((a,n), longword a, int n)
 word gsm_asl P2((a,n), word a, int n)
 {
 	if (n >= 16) return 0;
-	if (n <= -16) return -(a < 0);
+	if (n <= -16) return -(word)(a < 0);
 	if (n < 0) return gsm_asr(a, -n);
-	return a << n;
+	return (word)(a << n);
 }
 
 longword gsm_L_asr P2((a,n), longword a, int n)
@@ -182,12 +182,12 @@ longword gsm_L_asr P2((a,n), longword a, int n)
 
 word gsm_asr P2((a,n), word a, int n)
 {
-	if (n >= 16) return -(a < 0);
+	if (n >= 16) return -(word)(a < 0);
 	if (n <= -16) return 0;
-	if (n < 0) return a << -n;
+	if (n < 0) return (word)(a << -n);
 
 #	ifdef	SASR
-		return a >> n;
+		return (word)(a >> n);
 #	else
 		if (a >= 0) return a >> n;
 		else return -(word)( -(uword)a >> n );
