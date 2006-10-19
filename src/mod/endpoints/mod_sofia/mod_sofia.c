@@ -3520,7 +3520,6 @@ static void sip_i_invite(nua_t *nua,
 							switch_channel_set_variable(channel, "alert_info", (char *)un->un_value);
 						}
 					// Loop thru Known Headers Here so we can do something with them
-					// John Doe <sip:+19018577141@209.247.16.1>;party=calling;screen=yes;privacy=off
 					} else if (!strncasecmp(un->un_name, "Remote-Party-ID", 15)) {
 						int argc, x, screen = 1;
 						char *mydata, *argv[10] = { 0 };
