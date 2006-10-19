@@ -892,7 +892,9 @@ char *encode_name(char *s)
 
 static void do_invite(switch_core_session_t *session)
 {
-	char rpid[1024];
+	char rpid[1024] = { 0 };
+	char alert_info[1024] = { 0 };
+	char *alertbuf;
 	private_object_t *tech_pvt;
     switch_channel_t *channel = NULL;
 	switch_caller_profile_t *caller_profile;
@@ -921,7 +923,10 @@ static void do_invite(switch_core_session_t *session)
 													 ))) {
 
 		char *rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
-		
+
+		if ((alertbuf = switch_channel_get_variable(channel, "alert_info"))) {
+			snprintf(alert_info, sizeof(alert_info) - 1, "Alert-Info: %s", alertbuf);
+		}
 
 		tech_choose_port(tech_pvt);
 		set_local_sdp(tech_pvt);
@@ -976,6 +981,7 @@ static void do_invite(switch_core_session_t *session)
 
 		nua_invite(tech_pvt->nh,
 				   TAG_IF(rpid, SIPTAG_HEADER_STR(rpid)),
+					TAG_IF(alert_info, SIPTAG_HEADER_STR(alert_info)),
 				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 				   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
