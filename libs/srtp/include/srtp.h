@@ -52,6 +52,7 @@ extern "C" {
 
 #ifdef _MSC_VER
 #pragma pack(4)
+#pragma warning(disable:4214)
 #endif
 
 #include "crypto_kernel.h"

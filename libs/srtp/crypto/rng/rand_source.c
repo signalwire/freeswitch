@@ -97,7 +97,7 @@ rand_source_get_octet_string(void *dest, uint32_t len) {
 	  /* rand() returns 0-32767 (ugh) */
 	  /* Is this a good enough way to get random bytes?
 	     It is if it passes FIPS-140... */
-	  *dst++ = val & 0xff;
+	  *dst++ = (uint8_t)(val & 0xff);
 	  len--;
   }
 #endif

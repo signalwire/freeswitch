@@ -28,7 +28,7 @@ stat_test_monobit(uint8_t *data) {
 
   ones_count = 0;
   while (data < data_end) {
-    ones_count += octet_get_weight(*data);
+    ones_count = (uint16_t)(ones_count + octet_get_weight(*data));
     data++;
   }
 

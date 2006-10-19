@@ -48,6 +48,10 @@
 #include "null_auth.h" 
 #include "alloc.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable:4100)
+#endif
+
 /* null_auth uses the auth debug module */
 
 extern debug_module_t mod_auth;

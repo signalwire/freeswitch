@@ -42,6 +42,10 @@
  *
  */
 
+#ifdef _MSC_VER
+#pragma warning(disable:4100)
+#endif
+
 #include "err.h"
 
 #ifdef ERR_REPORTING_SYSLOG
