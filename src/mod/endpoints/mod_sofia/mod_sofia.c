@@ -957,7 +957,7 @@ static void do_invite(switch_core_session_t *session)
 		}
 
 
-		if ((e_dest = strdup(tech_pvt->e_dest))) {
+		if (tech_pvt->e_dest && (e_dest = strdup(tech_pvt->e_dest))) {
 			char *user = e_dest, *host = NULL;
 			char hash_key[256] = "";
 
