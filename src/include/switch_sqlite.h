@@ -1706,6 +1706,7 @@ DoxyDefine(int switch_core_db_value_type(sqlite3_value*);)
  */
 DoxyDefine(char *switch_core_db_mprintf(const char*,...);)
 #define switch_core_db_mprintf sqlite3_mprintf
+#define switch_mprintf sqlite3_mprintf
 
 /**
  * This routine is a variant of the "sprintf()" from the

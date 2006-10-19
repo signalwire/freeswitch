@@ -2127,14 +2127,17 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							if (!strcmp(exten, "_auto_")) {
 								if ((t = ldl_session_get_callee(dlsession))) {
 									if ((them = strdup(t))) {
-										char *p;
+										char *a, *b, *p;
 										if ((p = strchr(them, '/'))) {
 											*p = '\0';
+										}
+
+										if ((a = strchr(them, '+')) && (b = strrchr(them, '+')) && a != b) {
+											*b = '@';
 										}
 										exten = them;
 									}
 								}
-								
 							}
 						}
 			

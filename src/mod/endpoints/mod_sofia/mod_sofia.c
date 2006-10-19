@@ -486,14 +486,14 @@ static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const
 
 	npassword = np;
 
-	if ((input = switch_core_db_mprintf("%s:%q", regstr, uri))) {
+	if ((input = switch_mprintf("%s:%q", regstr, uri))) {
 		su_md5_init(&ctx);
 		su_md5_strupdate(&ctx, input);
 		su_md5_hexdigest(&ctx, uridigest);
 		su_md5_deinit(&ctx);
 	}
 
-	if ((input2 = switch_core_db_mprintf("%q:%q:%q:%q:%q:%q", npassword, nonce, nc, cnonce, qop, uridigest))) {
+	if ((input2 = switch_mprintf("%q:%q:%q:%q:%q:%q", npassword, nonce, nc, cnonce, qop, uridigest))) {
 		memset(&ctx, 0, sizeof(ctx));
 		su_md5_init(&ctx);
 		su_md5_strupdate(&ctx, input2);
@@ -509,10 +509,10 @@ static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const
 
  end:
 	if (input) {
-		switch_core_db_free(input);
+		switch_safe_free(input);
 	}
 	if (input2) {
-		switch_core_db_free(input2);
+		switch_safe_free(input2);
 	}
 	switch_safe_free(nonce);
 	switch_safe_free(uri);
@@ -595,7 +595,7 @@ static void check_expire(sofia_profile_t *profile, time_t now)
 
 	if (errmsg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s][%s]\n", sql, errmsg);
-		switch_core_db_free(errmsg);
+		switch_safe_free(errmsg);
 		errmsg = NULL;
 	}
 	
@@ -635,7 +635,7 @@ static char *find_reg_url(sofia_profile_t *profile, char *user, char *host, char
 
 	if (errmsg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SQL ERR [%s][%s]\n", val, errmsg);
-		switch_core_db_free(errmsg);
+		switch_safe_free(errmsg);
 		errmsg = NULL;
 	}
 
@@ -916,7 +916,7 @@ static void do_invite(switch_core_session_t *session)
 		cid_num = cid_num_p;
 	}
 
-	if ((tech_pvt->from_str = switch_core_db_mprintf("\"%s\" <sip:%s@%s>", 
+	if ((tech_pvt->from_str = switch_mprintf("\"%s\" <sip:%s@%s>", 
 													 cid_name,
 													 cid_num,
 													 tech_pvt->profile->sipip
@@ -1014,7 +1014,7 @@ static void do_xfer_invite(switch_core_session_t *session)
 
 	
 
-	if ((tech_pvt->from_str = switch_core_db_mprintf("\"%s\" <sip:%s@%s>", 
+	if ((tech_pvt->from_str = switch_mprintf("\"%s\" <sip:%s@%s>", 
 													 (char *) caller_profile->caller_id_name, 
 													 (char *) caller_profile->caller_id_number,
 													 tech_pvt->profile->sipip
@@ -1227,7 +1227,7 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	}
 
 	if (tech_pvt->from_str) {
-		switch_core_db_free(tech_pvt->from_str);
+		switch_safe_free(tech_pvt->from_str);
 	}
 
 	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
@@ -2230,10 +2230,10 @@ static void sip_i_message(int status,
 				}
 				
 			} else {
-				to_addr = switch_core_db_mprintf("%s@%s", to_user, to_host);
+				to_addr = switch_mprintf("%s@%s", to_user, to_host);
 			}
 
-			from_addr = switch_core_db_mprintf("%s+%s@%s", SOFIA_CHAT_NAME, from_user, from_host);
+			from_addr = switch_mprintf("%s+%s@%s", SOFIA_CHAT_NAME, from_user, from_host);
 
 			set_hash_key(hash_key, sizeof(hash_key), sip);
 			if ((tech_pvt = (private_object_t *) switch_core_hash_find(profile->chat_hash, hash_key))) {
@@ -2598,7 +2598,7 @@ static char *get_auth_data(char *dbname, char *nonce, char *npassword, size_t le
 		goto end;
 	}
 
-	sql = switch_core_db_mprintf("select passwd from sip_authentication where nonce='%q'", nonce);
+	sql = switch_mprintf("select passwd from sip_authentication where nonce='%q'", nonce);
 	
 	if(switch_core_db_prepare(db, sql, -1, &stmt, 0)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Statement Error!\n");
@@ -2638,7 +2638,7 @@ static char *get_auth_data(char *dbname, char *nonce, char *npassword, size_t le
 	}
 
 	if (sql) {
-		switch_core_db_free(sql);
+		switch_safe_free(sql);
 	}
 	
 	return ret;
@@ -2767,17 +2767,17 @@ static uint8_t handle_register(nua_t *nua,
 			char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1];
 			char *input;
 
-			input = switch_core_db_mprintf("%s:%s:%s", from_user, from_host, passwd);
+			input = switch_mprintf("%s:%s:%s", from_user, from_host, passwd);
 			su_md5_init(&ctx);
 			su_md5_strupdate(&ctx, input);
 			su_md5_hexdigest(&ctx, hexdigest);
 			su_md5_deinit(&ctx);
-			switch_core_db_free(input);
+			switch_safe_free(input);
 
 			switch_uuid_get(&uuid);
 			switch_uuid_format(uuid_str, &uuid);
 
-			sql = switch_core_db_mprintf("delete from sip_authentication where user='%q'and host='%q';\n"
+			sql = switch_mprintf("delete from sip_authentication where user='%q'and host='%q';\n"
 										 "insert into sip_authentication values('%q','%q','%q','%q', %ld)",
 										 from_user,
 										 from_host,
@@ -2787,7 +2787,7 @@ static uint8_t handle_register(nua_t *nua,
 										 uuid_str,
 										 time(NULL) + 60);
 
-			auth_str = switch_core_db_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, 
+			auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, 
 											  stale ? " stale=\"true\"," : "");
 
 
@@ -2804,8 +2804,8 @@ static uint8_t handle_register(nua_t *nua,
 			}
 
 			execute_sql(profile->dbname, sql, profile->ireg_mutex);
-			switch_core_db_free(sql);
-			switch_core_db_free(auth_str);
+			switch_safe_free(sql);
+			switch_safe_free(auth_str);
 			ret = 1;
 		} else {
 			ret = 0;
@@ -2820,14 +2820,14 @@ static uint8_t handle_register(nua_t *nua,
  reg:
 
 	if (!find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
-		sql = switch_core_db_mprintf("insert into sip_registrations values ('%q','%q','%q',%ld)", 
+		sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q',%ld)", 
 									 from_user,
 									 from_host,
 									 contact_str,
 									 (long) time(NULL) + (long)exptime);
 
 	} else {
-		sql = switch_core_db_mprintf("update sip_registrations set contact='%q', expires=%ld where user='%q' and host='%q'",
+		sql = switch_mprintf("update sip_registrations set contact='%q', expires=%ld where user='%q' and host='%q'",
                                      contact_str,
 									 (long) time(NULL) + (long)exptime,
 									 from_user,
@@ -2846,7 +2846,7 @@ static uint8_t handle_register(nua_t *nua,
 
 	if (sql) {
 		execute_sql(profile->dbname, sql, profile->ireg_mutex);
-		switch_core_db_free(sql);
+		switch_safe_free(sql);
 		sql = NULL;
 	}
 	
@@ -2939,18 +2939,18 @@ static void sip_i_subscribe(int status,
 				}
 
 				if (contact->m_url->url_params) {
-					contact_str = switch_core_db_mprintf("sip:%s@%s:%s;%s", 
+					contact_str = switch_mprintf("sip:%s@%s:%s;%s", 
 														 contact->m_url->url_user,
 														 contact->m_url->url_host, port, contact->m_url->url_params);
 				} else {
-					contact_str = switch_core_db_mprintf("sip:%s@%s:%s", 
+					contact_str = switch_mprintf("sip:%s@%s:%s", 
 														 contact->m_url->url_user,
 														 contact->m_url->url_host, port);
 				}
 			}
 			
 			if (to) {
-				to_str = switch_core_db_mprintf("sip:%s@%s", to->a_url->url_user, to->a_url->url_host);//, to->a_url->url_port);
+				to_str = switch_mprintf("sip:%s@%s", to->a_url->url_user, to->a_url->url_host);//, to->a_url->url_port);
 			}
 
 			if (to) {
@@ -2983,7 +2983,7 @@ static void sip_i_subscribe(int status,
 			exp = (long) time(NULL) + (sip->sip_expires ? sip->sip_expires->ex_delta : 60);
 
 
-			if ((sql = switch_core_db_mprintf("delete from sip_subscriptions where "
+			if ((sql = switch_mprintf("delete from sip_subscriptions where "
 											  "proto='%q' and user='%q' and host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q';\n"
 											  "insert into sip_subscriptions values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld)",
 											  proto,
@@ -3005,7 +3005,7 @@ static void sip_i_subscribe(int status,
 											  exp
 											  ))) {
 				execute_sql(profile->dbname, sql, profile->ireg_mutex);
-				switch_core_db_free(sql);
+				switch_safe_free(sql);
 			}
 
 			
@@ -3074,7 +3074,7 @@ static void sip_i_refer(nua_t *nua,
 		channel_a = switch_core_session_get_channel(session);
 
 		
-		if (!sip->sip_cseq || !(etmp = switch_core_db_mprintf("refer;id=%u", sip->sip_cseq->cs_seq))) {
+		if (!sip->sip_cseq || !(etmp = switch_mprintf("refer;id=%u", sip->sip_cseq->cs_seq))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 			goto done;
 		}
@@ -3093,7 +3093,7 @@ static void sip_i_refer(nua_t *nua,
 
 		if ((refer_to = sip->sip_refer_to)) {
 			if (profile->pflags & PFLAG_FULL_ID) {
-				exten = switch_core_db_mprintf("%s@%s", (char *) refer_to->r_url->url_user, (char *) refer_to->r_url->url_host);
+				exten = switch_mprintf("%s@%s", (char *) refer_to->r_url->url_user, (char *) refer_to->r_url->url_host);
 			} else {
 				exten = (char *) refer_to->r_url->url_user;
 			}
@@ -3200,7 +3200,7 @@ static void sip_i_refer(nua_t *nua,
 
 								channel = switch_core_session_get_channel(asession);
 
-								exten = switch_core_db_mprintf("sofia/%s/%s@%s:%s", 
+								exten = switch_mprintf("sofia/%s/%s@%s:%s", 
 															   profile->name,
 															   (char *) refer_to->r_url->url_user,
 															   (char *) refer_to->r_url->url_host,
@@ -3279,7 +3279,7 @@ static void sip_i_refer(nua_t *nua,
 						   SIPTAG_EVENT_STR(etmp),
 						   TAG_END());
 			} else {
-				exten = switch_core_db_mprintf("sip:%s@%s:%s", 
+				exten = switch_mprintf("sip:%s@%s:%s", 
 											   (char *) refer_to->r_url->url_user,
 											   (char *) refer_to->r_url->url_host,
 											   refer_to->r_url->url_port);
@@ -3301,10 +3301,10 @@ static void sip_i_refer(nua_t *nua,
 
 	done:
 		if (exten && strchr(exten, '@')) {
-			switch_core_db_free(exten);
+			switch_safe_free(exten);
 		}
 		if (etmp) {
-			switch_core_db_free(etmp);
+			switch_safe_free(etmp);
 		}
 	}
 
@@ -3423,10 +3423,10 @@ static void sip_i_invite(nua_t *nua,
 			sip_from_t const *from = sip->sip_from;
 			sip_to_t const *to = sip->sip_to;
 			char *displayname;
-			char *username, *to_username;
+			char *username, *to_username = NULL;
 			char *url_user = (char *) from->a_url->url_user;
 			char *to_user, *to_host;
-
+			char *a,*b;
 			if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
@@ -3474,16 +3474,22 @@ static void sip_i_invite(nua_t *nua,
 				displayname = url_user;
 			}
 			
-			if (!(username = switch_core_db_mprintf("%s@%s", url_user, (char *) from->a_url->url_host))) {
+			if (!(username = switch_mprintf("%s@%s", url_user, (char *) from->a_url->url_host))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-				return;
-			}
-			if (!(to_username = switch_core_db_mprintf("%s@%s", (char *) to_user, (char *) to_host))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-				switch_core_db_free(username);
 				return;
 			}
 
+			if (profile->pflags & PFLAG_FULL_ID)  {
+				if (!(to_username = switch_mprintf("%s@%s", (char *) to_user, (char *) to_host))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+					switch_safe_free(username);
+					return;
+				}
+			}
+
+			if ((a = strchr(to_user, '+')) && (b = strrchr(to_user, '+')) && a != b) {
+				*b = '@';
+			}
 
 			attach_private(session, profile, tech_pvt, username);
 
@@ -3504,10 +3510,9 @@ static void sip_i_invite(nua_t *nua,
 																	  (char *)modname,
 																	  (profile->context && !strcasecmp(profile->context, "_domain_")) ? 
 																	  (char *) from->a_url->url_host : profile->context,
-																	  (profile->pflags & PFLAG_FULL_ID) ? 
-																	  to_username : (char *) to_user
+																	  to_username ? to_username : (char *) to_user
 																	  )) != 0) {
-
+				
 				
 				for (un=sip->sip_unknown; un; un=un->un_next) {
 					// Loop thru Known Headers Here so we can do something with them
@@ -3559,8 +3564,8 @@ static void sip_i_invite(nua_t *nua,
 				}
 
 				switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
-				switch_core_db_free(username);
-				switch_core_db_free(to_username);
+				switch_safe_free(username);
+				switch_safe_free(to_username);
 			}
 
 			switch_set_flag_locked(tech_pvt, TFLAG_INBOUND);
@@ -4362,13 +4367,13 @@ static void event_handler(switch_event_t *event)
 
 
 		if (!find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
-			sql = switch_core_db_mprintf("insert into sip_registrations values ('%q','%q','%q',%ld)", 
+			sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q',%ld)", 
 										 from_user,
 										 from_host,
 										 contact_str,
 										 expires);
 		} else {
-			sql = switch_core_db_mprintf("update sip_registrations set contact='%q', expires=%ld where user='%q' and host='%q'",
+			sql = switch_mprintf("update sip_registrations set contact='%q', expires=%ld where user='%q' and host='%q'",
 										 contact_str,
 										 expires,
 										 from_user,
@@ -4378,7 +4383,7 @@ static void event_handler(switch_event_t *event)
 	
 		if (sql) {
 			execute_sql(profile->dbname, sql, profile->ireg_mutex);
-			switch_core_db_free(sql);
+			switch_safe_free(sql);
 			sql = NULL;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Propagating registration for %s@%s->%s\n", 
 							  from_user, from_host, contact_str);
@@ -4411,7 +4416,7 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames){
 	
 
 	if (in) {
-		note = switch_core_db_mprintf("<dm:note>%s</dm:note>", msg);
+		note = switch_mprintf("<dm:note>%s</dm:note>", msg);
 		doing="available";
 		open = "open";
 	} else {
@@ -4422,13 +4427,13 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames){
 
 	if (strcasecmp(proto, "sip")) {
 		/*encapsulate*/
-		id = switch_core_db_mprintf("sip:%s+%s+%s@%s", proto, sub_to_user, sub_to_host, host);
+		id = switch_mprintf("sip:%s+%s+%s@%s", proto, sub_to_user, sub_to_host, host);
 	} else {
-		id = switch_core_db_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
+		id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
 	}
 
-	to = switch_core_db_mprintf("sip:%s@%s", user, host);
-	pl = switch_core_db_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
+	to = switch_mprintf("sip:%s@%s", user, host);
+	pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
 								"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
 								"xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\r\n"
 								"xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid'\r\n"
@@ -4503,7 +4508,7 @@ static switch_status_t chat_send(char *from, char *to, char *subject, char *body
 				if (!p) {
 					p = from;
 				}
-				from_pp = switch_core_db_mprintf("\"%s\" <sip:%s@%s>", p, from_p, host);
+				from_pp = switch_mprintf("\"%s\" <sip:%s@%s>", p, from_p, host);
 				from = from_pp;
 			} else {
 				from = hint;
@@ -4552,7 +4557,7 @@ static void pres_event_handler(switch_event_t *event)
 
 
 	if (event->event_id == SWITCH_EVENT_ROSTER) {
-		sql = switch_core_db_mprintf("select 1,'%q',* from sip_subscriptions where event='presence'", status ? status : "Available");
+		sql = switch_mprintf("select 1,'%q',* from sip_subscriptions where event='presence'", status ? status : "Available");
 
 		for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
@@ -4615,14 +4620,14 @@ static void pres_event_handler(switch_event_t *event)
 			status = "Available";
 		}
 
-		sql = switch_core_db_mprintf("select 1,'%q',* from sip_subscriptions where event='%q' and sub_to_user='%q' and sub_to_host='%q'", 
+		sql = switch_mprintf("select 1,'%q',* from sip_subscriptions where event='%q' and sub_to_user='%q' and sub_to_host='%q'", 
 									 status , event_type, user, host);
 		break;
 	case SWITCH_EVENT_PRESENCE_OUT:
 		if (!status) {
 			status = "Unavailable";
 		}
-		sql = switch_core_db_mprintf("select 0,'%q',* from sip_subscriptions where event='%q' and sub_to_user='%q' and sub_to_host='%q'", 
+		sql = switch_mprintf("select 0,'%q',* from sip_subscriptions where event='%q' and sub_to_user='%q' and sub_to_host='%q'", 
 									 status, event_type, user, host);
 		break;
 	default:

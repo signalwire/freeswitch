@@ -1375,10 +1375,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 		}
 
 		if (channel && peer_channel) {
-			char *propagate_vars;
+			char *export_vars;
 			/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
-			if ((propagate_vars = switch_channel_get_variable(channel, "propagate_vars"))) {
-				char *cptmp = switch_core_session_strdup(session, propagate_vars);
+			if ((export_vars = switch_channel_get_variable(channel, "export_vars"))) {
+				char *cptmp = switch_core_session_strdup(session, export_vars);
 				int argc;
 				char *argv[256];
 

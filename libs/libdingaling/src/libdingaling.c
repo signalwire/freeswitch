@@ -1698,7 +1698,7 @@ char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *from, char *buf, un
 		elapsed = (unsigned int)((apr_time_now() - started) / 1000);
 		if (elapsed > 5000 && ! again) {
 			msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
-			iks_insert_attrib(pres, "from", from);
+			iks_insert_attrib(msg, "from", from);
 			apr_queue_push(handle->queue, msg);
 			again++;
 		}
