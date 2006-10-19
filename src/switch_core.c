@@ -1375,11 +1375,31 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 		}
 
 		if (channel && peer_channel) {
+			char *propagate_vars;
+			/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
+			if ((propagate_vars = switch_channel_get_variable(channel, "propagate_vars"))) {
+				char *cptmp = switch_core_session_strdup(session, propagate_vars);
+				int argc;
+				char *argv[256];
+
+				if ((argc = switch_separate_string(cptmp, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+					int x;
+
+					for (x = 0; x < argc; x++) {
+						char *val;
+						if ((val = switch_channel_get_variable(channel, argv[x]))) {
+							switch_channel_set_variable(peer_channel, argv[x], val);
+						}
+					}
+				}
+			}
+
 			if (profile) {
 				if ((cloned_profile = switch_caller_profile_clone(*new_session, profile)) != 0) {
 					switch_channel_set_originator_caller_profile(peer_channel, cloned_profile);
 				}
 			}
+
 			if (peer_profile) {
 				if (session && (cloned_profile = switch_caller_profile_clone(session, peer_profile)) != 0) {
 					switch_channel_set_originatee_caller_profile(channel, cloned_profile);

@@ -34,11 +34,11 @@
 
 #define DL_CAND_WAIT 10000000
 #define DL_CAND_INITIAL_WAIT 2000000
-#define JINGLE_KEY 1
 
 #define DL_EVENT_LOGIN_SUCCESS "dingaling::login_success"
 #define DL_EVENT_LOGIN_FAILURE "dingaling::login_failure"
 #define DL_EVENT_CONNECTED "dingaling::connected"
+#define MDL_CHAT_NAME "jingle"
 
 static const char modname[] = "mod_dingaling";
 
@@ -235,9 +235,6 @@ static void pres_event_handler(switch_event_t *event)
 	switch_core_db_t *db;
 	char *p;
 
-	if (event->key == JINGLE_KEY) {
-		return;
-	}
 
 	if (status && !strcasecmp(status, "n/a")) {
 		status = show;
@@ -295,11 +292,8 @@ static void pres_event_handler(switch_event_t *event)
 	switch_safe_free(sql);
 }
 
-static void chat_event_handler(switch_event_t *event)
+static switch_status_t chat_send(char *from, char *to, char *subject, char *body, char *hint)
 {
-	char *from = switch_event_get_header(event, "from");
-	char *to = switch_event_get_header(event, "to");
-	char *body = switch_event_get_body(event);
 	char *user, *host, *f_user, *f_host = NULL;
 	struct mdl_profile *profile = NULL;
 
@@ -318,13 +312,14 @@ static void chat_event_handler(switch_event_t *event)
 			ldl_handle_send_msg(profile->handle, from, to, NULL, body);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", f_host ? f_host : "NULL");
-			return;
+			return SWITCH_STATUS_FALSE;
 		}
 
 		switch_safe_free(f_host);
 		free(user);
 	}
 
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -339,9 +334,6 @@ static void roster_event_handler(switch_event_t *event)
 	char *sql;
 	switch_core_db_t *db;
 
-	if (event->key == JINGLE_KEY) {
-		return;
-	}
 
 	if (status && !strcasecmp(status, "n/a")) {
 		status = show;
@@ -1252,7 +1244,10 @@ static switch_api_interface_t login_api_interface = {
 	/*.next */ &logout_api_interface
 };
 
-
+static const switch_chat_interface_t channel_chat_interface = {
+	/*.name */ MDL_CHAT_NAME,
+	/*.chat_send */ chat_send,
+};
 
 static const switch_loadable_module_interface_t channel_module_interface = {
 	/*.module_name */ modname,
@@ -1261,7 +1256,12 @@ static const switch_loadable_module_interface_t channel_module_interface = {
 	/*.dialplan_interface */ NULL,
 	/*.codec_interface */ NULL,
 	/*.application_interface */ NULL,
-	/*.api_interface */ &login_api_interface
+	/*.api_interface */ &login_api_interface,
+	/*.file_interface */ NULL,
+    /*.speech_interface */ NULL,
+    /*.directory_interface */ NULL,
+    /*.chat_interface */ &channel_chat_interface
+
 };
 
 
@@ -1423,11 +1423,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	}
 
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_ROSTER, SWITCH_EVENT_SUBCLASS_ANY, roster_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_GENERR;
-	}
-
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_MESSAGE, SWITCH_EVENT_SUBCLASS_ANY, chat_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
@@ -1828,50 +1823,55 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			break;
 		case LDL_SIGNAL_ROSTER:
 			if (switch_event_create(&event, SWITCH_EVENT_ROSTER) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
-				//event->key = JINGLE_KEY;
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_NAME);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
 				switch_event_fire(&event);
 			}
 			break;
 		case LDL_SIGNAL_PRESENCE_IN:
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_NAME);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s",  from);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", subject);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "show", "%s", msg);
-				//event->key = JINGLE_KEY;
 				switch_event_fire(&event);
 			}
 
 			break;
 		case LDL_SIGNAL_PRESENCE_OUT:
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_NAME);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
-				//event->key = JINGLE_KEY;
 				switch_event_fire(&event);
 			}
 			break;
-		case LDL_SIGNAL_MSG:
-			if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", "%s", subject);
-				event->key = JINGLE_KEY;
-				if (msg) {
-					switch_event_add_body(event, msg);
-				}
+		case LDL_SIGNAL_MSG: {
+			switch_chat_interface_t *ci;
+			char *proto = MDL_CHAT_NAME;
+			char *pproto = NULL;
 
-				if (profile->auto_reply) {
-					ldl_handle_send_msg(handle, (profile->user_flags & LDL_FLAG_COMPONENT) ? to : profile->login, from, "", profile->auto_reply);
-				}
-
-				switch_event_fire(&event);
+			if (profile->auto_reply) {
+				ldl_handle_send_msg(handle, (profile->user_flags & LDL_FLAG_COMPONENT) ? to : profile->login, from, "", profile->auto_reply);
 			}
+
+			if (strchr(to, '+')) {
+				pproto = strdup(to);
+				if ((to = strchr(pproto, '+'))) {
+					*to++ = '\0';
+				}
+				proto = pproto;
+			}
+			
+			if ((ci = switch_loadable_module_get_chat_interface(proto))) {
+				ci->chat_send(from, to, subject, msg, "");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", proto);
+			}
+
+			switch_safe_free(pproto);
+		}
 			break;
 		case LDL_SIGNAL_LOGIN_SUCCESS:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_LOGIN_SUCCESS) == SWITCH_STATUS_SUCCESS) {
@@ -1971,7 +1971,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		}
 
 		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "jingle");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_NAME);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to);

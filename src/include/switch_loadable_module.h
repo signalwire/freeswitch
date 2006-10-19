@@ -73,6 +73,8 @@ struct switch_loadable_module_interface {
 	const switch_speech_interface_t *speech_interface;
 	/*! the table of directory interfaces the module has implmented */
 	const switch_directory_interface_t *directory_interface;
+	/*! the table of chat interfaces the module has implmented */
+	const switch_chat_interface_t *chat_interface;
 };
 
 /*!
@@ -162,6 +164,13 @@ SWITCH_DECLARE(switch_speech_interface_t *) switch_loadable_module_get_speech_in
   \return the desired directory interface
  */
 SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_directory_interface(char *name);
+
+/*!
+  \brief Retrieve the chat interface by it's registered name
+  \param name the name of the chat interface
+  \return the desired chat interface
+ */
+SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interface(char *name);
 
 
 /*!

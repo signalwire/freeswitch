@@ -67,7 +67,7 @@ typedef struct private_object private_object_t;
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
 #define SOFIA_USER_AGENT "FreeSWITCH(mod_sofia)"
-#define SIP_KEY 2
+#define SOFIA_CHAT_NAME "sip"
 
 #include <sofia-sip/nua.h>
 #include <sofia-sip/sip_status.h>
@@ -407,6 +407,7 @@ static void launch_profile_thread(sofia_profile_t *profile);
 
 static switch_status_t config_sofia(int reload);
 
+static switch_status_t chat_send(char *from, char *to, char *subject, char *body, char *hint);
 
 /* BODY OF THE MODULE */
 /*************************************************************************************************************************************************************/
@@ -853,7 +854,7 @@ char *encode_name(char *s)
 	char *at, *resource;
 	char *user;
 
-	if (!strchr(s, '/') && !strchr(s, '@')) {
+	if (!strchr(s, '/')) {
 		return NULL;
 	}
 
@@ -1820,7 +1821,6 @@ static switch_status_t sofia_receive_event(switch_core_session_t *session, switc
 							SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 							TAG_END());
 
-
 		nua_message(msg_nh,
 					SIPTAG_CONTENT_TYPE_STR("text/html"),
 					SIPTAG_PAYLOAD_STR(body),
@@ -1860,13 +1860,24 @@ static const switch_endpoint_interface_t sofia_endpoint_interface = {
 	/*.next */ NULL
 };
 
+static const switch_chat_interface_t sofia_chat_interface = {
+	/*.name */ SOFIA_CHAT_NAME,
+	/*.chat_send */ chat_send,
+	
+};
+
 static const switch_loadable_module_interface_t sofia_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ &sofia_endpoint_interface,
 	/*.timer_interface */ NULL,
 	/*.dialplan_interface */ NULL,
 	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
+	/*.application_interface */ NULL,
+	/*.api_interface */ NULL,
+	/*.file_interface */ NULL,
+	/*.speech_interface */ NULL,
+	/*.directory_interface */ NULL,
+	/*.chat_interface */ &sofia_chat_interface
 };
 
 
@@ -2197,10 +2208,17 @@ static void sip_i_message(int status,
 			char *to_addr;
 			char *from_addr;
 			char *p;
+			char *full_from;
+			char proto[512] = SOFIA_CHAT_NAME;
+			
+			full_from = sip_header_as_string(profile->home, (void *)sip->sip_from);
 
 			if ((p=strchr(to_user, '+'))) {
+				switch_copy_string(proto, to_user, sizeof(proto));
+				p = strchr(proto, '+');
+				*p++ = '\0';
 				
-				if ((to_addr = strdup(++p))) {
+				if ((to_addr = strdup(p))) {
 					p = strchr(to_addr, '+');
 					*p = '@';
 				}
@@ -2209,7 +2227,7 @@ static void sip_i_message(int status,
 				to_addr = switch_core_db_mprintf("%s@%s", to_user, to_host);
 			}
 
-			from_addr = switch_core_db_mprintf("%s@%s", from_user, from_host);
+			from_addr = switch_core_db_mprintf("%s+%s@%s", SOFIA_CHAT_NAME, from_user, from_host);
 
 			set_hash_key(hash_key, sizeof(hash_key), sip);
 			if ((tech_pvt = (private_object_t *) switch_core_hash_find(profile->chat_hash, hash_key))) {
@@ -2220,7 +2238,6 @@ static void sip_i_message(int status,
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", tech_pvt->hash_key);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to_addr);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
-					event->key = SIP_KEY;
 					if (msg) {
 						switch_event_add_body(event, msg);
 					}
@@ -2230,25 +2247,20 @@ static void sip_i_message(int status,
 					}
 				}
 			} else {
-
-				if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from_addr);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to_addr);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", "SIMPLE MESSAGE");
-					event->key = SIP_KEY;
-					if (msg) {
-						switch_event_add_body(event, msg);
-					}
-
-					switch_event_fire(&event);
-
+				switch_chat_interface_t *ci;
+				
+				if ((ci = switch_loadable_module_get_chat_interface(proto))) {
+					ci->chat_send(from_addr, to_addr, "", msg, full_from);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", proto);
 				}
-
+				
 			}
 			switch_safe_free(to_addr);
 			switch_safe_free(from_addr);
+			if (full_from) {
+				su_free(profile->home, full_from);
+			}
 		}
 
 	}
@@ -2843,7 +2855,7 @@ static uint8_t handle_register(nua_t *nua,
 
 	if (switch_event_create(&event, SWITCH_EVENT_ROSTER) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
-		event->key = SIP_KEY;
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
 		switch_event_fire(&event);
 	}
 
@@ -2851,8 +2863,8 @@ static uint8_t handle_register(nua_t *nua,
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
-		
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s+%s@%s", SOFIA_CHAT_NAME, from_user, from_host);
+			
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Registered");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "show", "Registered");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
@@ -2862,7 +2874,7 @@ static uint8_t handle_register(nua_t *nua,
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s+%s@%s", SOFIA_CHAT_NAME, from_user, from_host);
 		
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "unavailable");
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "show", "unavailable");
@@ -3345,7 +3357,7 @@ static void sip_i_publish(nua_t *nua,
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s+%s@%s", SOFIA_CHAT_NAME, from_user, from_host);
 						
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", note_txt);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "show", "%s", status_txt);
@@ -3356,7 +3368,7 @@ static void sip_i_publish(nua_t *nua,
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s+%s@%s", SOFIA_CHAT_NAME, from_user, from_host);
 
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "%s", event_type);
 						switch_event_fire(&event);
@@ -4452,37 +4464,45 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames){
 	return 0;
 }
 
-static void chat_event_handler(switch_event_t *event)
+static switch_status_t chat_send(char *from, char *to, char *subject, char *body, char *hint)
 {
-	char *from = switch_event_get_header(event, "from");
-	char *to = switch_event_get_header(event, "to");
-	char *body = switch_event_get_body(event);
 	char buf[256];
 	char *user, *host;
 	sofia_profile_t *profile;
-	char *from_p = NULL, *from_pp = NULL;
-
-	if (event->key == SIP_KEY) {
-		return;
-	}
-
+	char *from_p = NULL, *from_pp = NULL, *from_ppp = NULL;
+	
 	if (to && (user = strdup(to))) {
 		if ((host = strchr(user, '@'))) {
 			*host++ = '\0';
 		}
-
+		
 		if (!host || !(profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, host))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", host ? host : "NULL");
-			return;
+			return SWITCH_STATUS_FALSE;
 		}
 
 		if (find_reg_url(profile, user, host, buf, sizeof(buf))) {
 			nua_handle_t *msg_nh;
-
+			
 			if ((from_p = encode_name(from))) {
-				from_pp = switch_core_db_mprintf("\"%s\" <sip:%s@%s>", from, from_p, host);
+				char *p, *q = NULL;
+
+				from_ppp = strdup(from_p);
+				if ((p = strchr(from_ppp, '+'))) {
+					*p++ = '\0';
+					if ((q = strchr(p, '+'))) {
+						*q = '@';
+					}
+				}
+				if (!p) {
+					p = from;
+				}
+				from_pp = switch_core_db_mprintf("\"%s\" <sip:%s@%s>", p, from_p, host);
 				from = from_pp;
+			} else {
+				from = hint;
 			}
+
 
 			msg_nh = nua_handle(profile->nua, NULL,
 								SIPTAG_FROM_STR(from),
@@ -4491,19 +4511,22 @@ static void chat_event_handler(switch_event_t *event)
 								SIPTAG_CONTACT_STR(profile->url),
 								TAG_END());
 
-
 			nua_message(msg_nh,
 						SIPTAG_CONTENT_TYPE_STR("text/html"),
 						SIPTAG_PAYLOAD_STR(body),
 						TAG_END());
 				
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid chat dest");
 		}
+
 		switch_safe_free(from_p);
 		switch_safe_free(from_pp);
+		switch_safe_free(from_ppp);
 		free(user);
 	}
 		
-
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static void pres_event_handler(switch_event_t *event)
@@ -4521,9 +4544,6 @@ static void pres_event_handler(switch_event_t *event)
 	char *resource;
 	switch_core_db_t *db;
 
-	if (event->key == SIP_KEY) {
-		return;
-	}
 
 	if (event->event_id == SWITCH_EVENT_ROSTER) {
 		sql = switch_core_db_mprintf("select 1,'%q',* from sip_subscriptions where event='presence'", status ? status : "Available");
@@ -4654,10 +4674,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	config_sofia(0);
 
-	if (switch_event_bind((char *) modname, SWITCH_EVENT_MESSAGE, SWITCH_EVENT_SUBCLASS_ANY, chat_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_GENERR;
-	}
 
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_IN, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");

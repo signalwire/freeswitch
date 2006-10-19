@@ -366,6 +366,14 @@ struct switch_speech_handle {
 };
 
 
+/*! \brief Abstract interface to a chat module */
+struct switch_chat_interface {
+	/*! the name of the interface */
+	const char *interface_name;
+	/*! function to open the directory interface */
+	switch_status_t (*chat_send)(char *from, char *to, char *subject, char *body, char *hint);
+	const struct switch_chat_interface *next;
+};
 
 /*! \brief Abstract interface to a directory module */
 struct switch_directory_interface {

@@ -780,6 +780,7 @@ typedef struct switch_api_interface switch_api_interface_t;
 typedef struct switch_file_interface switch_file_interface_t;
 typedef struct switch_speech_interface switch_speech_interface_t;
 typedef struct switch_directory_interface switch_directory_interface_t;
+typedef struct switch_chat_interface switch_chat_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
 typedef void (*switch_media_bug_callback_t)(switch_media_bug_t *, void *, switch_abc_type_t);
