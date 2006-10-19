@@ -870,7 +870,7 @@ char *encode_name(char *s)
 		*resource++ = '\0';
 	}
 
-	len = strlen(user) + 25;
+	len = (uint32_t)strlen(user) + 25;
 
 	if (at) {
 		*at++ = '\0';

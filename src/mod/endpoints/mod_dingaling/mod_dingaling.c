@@ -269,9 +269,9 @@ static void pres_event_handler(switch_event_t *event)
 	
 	sql = switch_core_db_mprintf("select *,'%q','%q' from subscriptions where sub_to='%q'", type ? type : "", status ? status : "unavailable", from);
 	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		char *errmsg;
         switch_hash_this(hi, NULL, NULL, &val);
         profile = (struct mdl_profile *) val;
-		char *errmsg;
 
         if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
 			continue;
@@ -357,9 +357,9 @@ static void roster_event_handler(switch_event_t *event)
 	sql = switch_core_db_mprintf("select *,'%q' from subscriptions", show ? show : "unavilable");
 
 	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		char *errmsg;
         switch_hash_this(hi, NULL, NULL, &val);
         profile = (struct mdl_profile *) val;
-		char *errmsg;
 
         if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
 			continue;
