@@ -502,12 +502,16 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		switch_core_session_t *session;
 		char *uuid = cmd + 8;
 
-
 		if (uuid) {
 			while(*uuid == ' ') {
 				uuid++;
 			}
-			strip_cr(uuid);
+
+			if (*uuid == '\r' || *uuid == '\n') {
+				uuid = NULL;
+			} else {
+				strip_cr(uuid);
+			}
 		}
 
 		if (!uuid) {
