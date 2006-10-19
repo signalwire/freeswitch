@@ -593,10 +593,20 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 	} else if (!strncasecmp(cmd, "log", 3)) {
 
 		char *level_s;
+
+		//pull off the first newline/carriage return
 		strip_cr(cmd);
 		
-		level_s = cmd + 4;
+		//move past the command
+		level_s = cmd + 3;
 
+		//see if we got an argument
+		if(!switch_strlen_zero(level_s)) {
+			//if so move to the argument
+			level_s++;
+		}
+			
+		//see if we lined up on an argument or not
 		if (switch_strlen_zero(level_s)) {
 			level_s = "debug";
 		}
