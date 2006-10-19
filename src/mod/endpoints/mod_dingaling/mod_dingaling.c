@@ -264,7 +264,7 @@ static void pres_event_handler(switch_event_t *event)
 		*p = '\0';
 	}
 	
-	sql = switch_core_db_mprintf("select *,'%q','%q' from subscriptions where sub_to='%q'", type ? type : "", status ? status : "unavailable", from);
+	sql = switch_mprintf("select *,'%q','%q' from subscriptions where sub_to='%q'", type ? type : "", status ? status : "unavailable", from);
 	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		char *errmsg;
         switch_hash_this(hi, NULL, NULL, &val);
@@ -346,7 +346,7 @@ static void roster_event_handler(switch_event_t *event)
 		event_type="presence";
 	}
 
-	sql = switch_core_db_mprintf("select *,'%q' from subscriptions", show ? show : "unavilable");
+	sql = switch_mprintf("select *,'%q' from subscriptions", show ? show : "unavilable");
 
 	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		char *errmsg;
@@ -1805,7 +1805,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		case LDL_SIGNAL_UNSUBSCRIBE:
 			if ((profile->user_flags & LDL_FLAG_COMPONENT)) {
 
-				if ((sql = switch_core_db_mprintf("delete from subscriptions where sub_from='%q' and sub_to='%q';", from, to))) {
+				if ((sql = switch_mprintf("delete from subscriptions where sub_from='%q' and sub_to='%q';", from, to))) {
 					execute_sql(profile->dbname, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
@@ -1815,7 +1815,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		case LDL_SIGNAL_SUBSCRIBE:
 			if ((profile->user_flags & LDL_FLAG_COMPONENT)) {
 
-				if ((sql = switch_core_db_mprintf("insert into subscriptions values('%q','%q')", from, to))) {
+				if ((sql = switch_mprintf("insert into subscriptions values('%q','%q')", from, to))) {
 					execute_sql(profile->dbname, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}

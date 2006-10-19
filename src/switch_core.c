@@ -3402,10 +3402,10 @@ static void core_event_handler(switch_event_t *event)
 
 	switch (event->event_id) {
 	case SWITCH_EVENT_CHANNEL_DESTROY:
-		sql = switch_core_db_mprintf("delete from channels where uuid='%s'", switch_event_get_header(event, "unique-id"));
+		sql = switch_mprintf("delete from channels where uuid='%s'", switch_event_get_header(event, "unique-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_CREATE:
-		sql = switch_core_db_mprintf("insert into channels (uuid,created,name,state) values('%q','%q','%q','%q')",
+		sql = switch_mprintf("insert into channels (uuid,created,name,state) values('%q','%q','%q','%q')",
 									 switch_event_get_header(event, "unique-id"),
 									 switch_event_get_header(event, "event-date-local"),
 									 switch_event_get_header(event, "channel-name"),
@@ -3413,7 +3413,7 @@ static void core_event_handler(switch_event_t *event)
 									 );
 		break;
 	case SWITCH_EVENT_CODEC:
-		sql = switch_core_db_mprintf("update channels set read_codec='%q',read_rate='%q',write_codec='%q',write_rate='%q' where uuid='%q'",
+		sql = switch_mprintf("update channels set read_codec='%q',read_rate='%q',write_codec='%q',write_rate='%q' where uuid='%q'",
 									 switch_event_get_header(event, "channel-read-codec-name"),
 									 switch_event_get_header(event, "channel-read-codec-rate"),
 									 switch_event_get_header(event, "channel-write-codec-name"),
@@ -3421,7 +3421,7 @@ static void core_event_handler(switch_event_t *event)
 									 switch_event_get_header(event, "unique-id"));
 		break;
 	case SWITCH_EVENT_CHANNEL_EXECUTE:
-		sql = switch_core_db_mprintf("update channels set application='%q',application_data='%q' where uuid='%q'",
+		sql = switch_mprintf("update channels set application='%q',application_data='%q' where uuid='%q'",
 									 switch_event_get_header(event, "application"),
 									 switch_event_get_header(event, "application-data"),
 									 switch_event_get_header(event, "unique-id")
@@ -3437,7 +3437,7 @@ static void core_event_handler(switch_event_t *event)
 			case CS_DONE:
 				break;
 			case CS_RING:
-				sql = switch_core_db_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',ip_addr='%s',dest='%q'"
+				sql = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',ip_addr='%s',dest='%q'"
 											 "where uuid='%s'",
 											 switch_event_get_header(event, "channel-state"),
 											 switch_event_get_header(event, "caller-caller-id-name"),
@@ -3448,7 +3448,7 @@ static void core_event_handler(switch_event_t *event)
 											 );
 				break;
 			default:
-				sql = switch_core_db_mprintf("update channels set state='%s' where uuid='%s'", 
+				sql = switch_mprintf("update channels set state='%s' where uuid='%s'", 
 											 switch_event_get_header(event, "channel-state"),
 											 switch_event_get_header(event, "unique-id")
 											 );
@@ -3458,7 +3458,7 @@ static void core_event_handler(switch_event_t *event)
 		}
 		break;
 	case SWITCH_EVENT_CHANNEL_BRIDGE:
-		sql = switch_core_db_mprintf("insert into calls values ('%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s')",
+		sql = switch_mprintf("insert into calls values ('%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s')",
 									 switch_event_get_header(event, "event-calling-function"),
 									 switch_event_get_header(event, "caller-caller-id-name"),
 									 switch_event_get_header(event, "caller-caller-id-number"),
@@ -3473,15 +3473,15 @@ static void core_event_handler(switch_event_t *event)
 									 );
 		break;
 	case SWITCH_EVENT_CHANNEL_UNBRIDGE:
-		sql = switch_core_db_mprintf("delete from calls where caller_uuid='%s'", switch_event_get_header(event, "caller-unique-id"));
+		sql = switch_mprintf("delete from calls where caller_uuid='%s'", switch_event_get_header(event, "caller-unique-id"));
 		break;
 	case SWITCH_EVENT_SHUTDOWN:
-		sql = switch_core_db_mprintf("delete from channels;delete from interfaces;delete from calls");
+		sql = switch_mprintf("delete from channels;delete from interfaces;delete from calls");
 		break;
 	case SWITCH_EVENT_LOG:
 		return;
 	case SWITCH_EVENT_MODULE_LOAD:
-		sql = switch_core_db_mprintf("insert into interfaces (type,name,description,syntax) values('%q','%q','%q','%q')",
+		sql = switch_mprintf("insert into interfaces (type,name,description,syntax) values('%q','%q','%q','%q')",
 									 switch_event_get_header(event, "type"),
 									 switch_event_get_header(event, "name"),
 									 switch_event_get_header(event, "description"),
