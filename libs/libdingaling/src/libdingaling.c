@@ -62,6 +62,10 @@
 #include "libdingaling.h"
 #include "sha1.h"
 
+#ifdef _MSC_VER
+#pragma warning(disable:4127)
+#endif
+
 #define microsleep(x) apr_sleep(x * 1000)
 
 static int opt_timeout = 30;
@@ -953,7 +957,7 @@ static void sha1_hash(char *out, char *in)
 
 	SHA1Init(&sha);
 	
-	SHA1Update(&sha, (unsigned char *) in, strlen(in));
+	SHA1Update(&sha, (unsigned char *) in, (unsigned int)strlen(in));
 
 	SHA1Final(digest, &sha);
 

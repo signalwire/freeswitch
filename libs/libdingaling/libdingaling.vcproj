@@ -308,6 +308,10 @@
 				RelativePath=".\src\libdingaling.c"
 				>
 			</File>
+			<File
+				RelativePath=".\src\sha1.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
