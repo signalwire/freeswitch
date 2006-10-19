@@ -84,7 +84,8 @@ static char reg_sql[] =
 "CREATE TABLE sip_registrations (\n"
 "   user            VARCHAR(255),\n"
 "   host            VARCHAR(255),\n"
-"   contact         VARCHAR(255),\n"
+"   contact         VARCHAR(1024),\n"
+"   status          VARCHAR(255),\n"
 "   expires         INTEGER(8)"
 ");\n";
 
@@ -97,7 +98,7 @@ static char sub_sql[] =
 "   sub_to_user     VARCHAR(255),\n"
 "   sub_to_host     VARCHAR(255),\n"
 "   event           VARCHAR(255),\n"
-"   contact         VARCHAR(255),\n"
+"   contact         VARCHAR(1024),\n"
 "   call_id         VARCHAR(255),\n"
 "   full_from       VARCHAR(255),\n"
 "   full_via        VARCHAR(255),\n"
@@ -2668,7 +2669,7 @@ static uint8_t handle_register(nua_t *nua,
 	switch_event_t *s_event;
 	char *from_user = (char *) from->a_url->url_user;
 	char *from_host = (char *) from->a_url->url_host;
-	char contact_str[256] = "";
+	char *contact_str[256] = "";
 	char buf[512];
 	char *passwd = NULL;
 	uint8_t stale = 0, ret = 0, forbidden = 0;
@@ -2820,7 +2821,7 @@ static uint8_t handle_register(nua_t *nua,
  reg:
 
 	if (!find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
-		sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q',%ld)", 
+		sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q','Registered', %ld)", 
 									 from_user,
 									 from_host,
 									 contact_str,
@@ -2900,6 +2901,113 @@ static uint8_t handle_register(nua_t *nua,
 }
 
 
+static int sub_reg_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	sofia_profile_t *profile = (sofia_profile_t *) pArg;
+	char *from = argv[0];
+	char *status = argv[1];
+	switch_event_t *event;
+
+	if (switch_strlen_zero(status)) {
+		status = "Available";
+	}
+
+	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "sip");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", status);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "show", status);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_fire(&event);
+	}
+
+	return 0;
+}
+
+static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	sofia_profile_t *profile = (sofia_profile_t *) pArg;
+	char *pl;
+	char *id, *note;
+	uint32_t in = atoi(argv[0]);
+	char *msg = argv[1];
+	char *proto = argv[2];
+	char *user = argv[3];
+	char *host = argv[4];
+	char *sub_to_user = argv[5];
+	char *sub_to_host = argv[6];
+	char *event = argv[7];
+	char *contact = argv[8];
+	char *callid = argv[9];
+	char *full_from = argv[10];
+	char *full_via = argv[11];
+	nua_handle_t *nh;
+	char *doing;
+	char *to;
+	char *open;
+	
+
+	if (in) {
+		note = switch_mprintf("<dm:note>%s</dm:note>", msg);
+		doing="available";
+		open = "open";
+	} else {
+		note = NULL;
+		doing="unavailable";
+		open = "closed";
+	}
+
+	if (strcasecmp(proto, "sip")) {
+		/*encapsulate*/
+		id = switch_mprintf("sip:%s+%s+%s@%s", proto, sub_to_user, sub_to_host, host);
+	} else {
+		id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
+	}
+
+	to = switch_mprintf("sip:%s@%s", user, host);
+	pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
+								"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
+								"xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\r\n"
+								"xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid'\r\n"
+								"xmlns:c='urn:ietf:params:xml:ns:pidf:cipid'\r\n"
+								"entity='pres:%s'>\r\n"
+								"<tuple id='t6a5ed77e'>\r\n"
+								"<status>\r\n"
+								"<basic>%s</basic>\r\n"
+								"</status>\r\n"
+								"</tuple>\r\n"
+								"<dm:person id='p06360c4a'>\r\n"
+								"<rpid:activities>\r\n"
+								"<rpid:%s/>\r\n"
+								"<rpid:unknown/>\r\n"
+								"</rpid:activities>%s</dm:person>\r\n"
+								"</presence>", id, open, doing, note);
+
+	nh = nua_handle(profile->nua, NULL,	TAG_END());
+					
+		
+	nua_notify(nh,
+			   NUTAG_URL(contact),
+			   SIPTAG_TO_STR(full_from),
+			   SIPTAG_FROM_STR(to),
+			   SIPTAG_CONTACT_STR(profile->url),
+			   SIPTAG_CALL_ID_STR(callid),
+			   SIPTAG_VIA_STR(full_via),
+			   SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=3600"),
+			   SIPTAG_EVENT_STR(event),
+			   SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
+			   SIPTAG_PAYLOAD_STR(pl),
+			   TAG_END());
+
+	switch_safe_free(id);
+	switch_safe_free(note);
+	switch_safe_free(pl);
+	switch_safe_free(to);
+
+	return 0;
+}
+
 static void sip_i_subscribe(int status,
 						char const *phrase, 
 						nua_t *nua,
@@ -2926,6 +3034,9 @@ static void sip_i_subscribe(int status,
 			char *to_str = NULL;
 			char *full_from = NULL;
 			char *full_via = NULL;
+			switch_core_db_t *db;
+			char *errmsg;
+
 
 			if (from) {
 				from_user = (char *) from->a_url->url_user;
@@ -3016,6 +3127,18 @@ static void sip_i_subscribe(int status,
 						SIPTAG_CONTACT_STR(to_str),
 						TAG_END());
 
+
+			if (!(db = switch_core_db_open_file(profile->dbname))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+				goto end;
+			}
+			if ((sql = switch_mprintf("select 'sip+%q@%q',status from sip_registrations where user='%q' and host='%q'", to_user, to_host, to_user, to_host))) {
+				switch_mutex_lock(profile->ireg_mutex);
+				switch_core_db_exec(db, sql, sub_reg_callback, profile, &errmsg);
+				switch_mutex_unlock(profile->ireg_mutex);
+				switch_core_db_close(db);
+				switch_safe_free(sql);
+			}
 
 		end:
 			
@@ -3334,6 +3457,7 @@ static void sip_i_publish(nua_t *nua,
 			switch_xml_t xml, note, person, tuple, status, basic;
 			switch_event_t *event;
 			uint8_t in = 0;
+			char *sql;
 
 			if ((xml = switch_xml_parse_str(payload->pl_data, strlen(payload->pl_data)))) {
 				char *status_txt = "", *note_txt = "";
@@ -3355,6 +3479,11 @@ static void sip_i_publish(nua_t *nua,
 					if (switch_strlen_zero(note_txt)) {
 						note_txt = "Unavailable";
 					}
+				}
+				
+				if ((sql = switch_mprintf("update sip_registrations set status='%q' where user='%q' and host='%q'", note_txt, from_user, from_host))) {
+					execute_sql(profile->dbname, sql, profile->ireg_mutex);
+					switch_safe_free(sql);
 				}
 				
 				event_type = sip_header_as_string(profile->home, (void *)sip->sip_event);
@@ -4370,7 +4499,7 @@ static void event_handler(switch_event_t *event)
 
 
 		if (!find_reg_url(profile, from_user, from_host, buf, sizeof(buf))) {
-			sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q',%ld)", 
+			sql = switch_mprintf("insert into sip_registrations values ('%q','%q','%q','Regestered', %ld)", 
 										 from_user,
 										 from_host,
 										 contact_str,
@@ -4396,87 +4525,6 @@ static void event_handler(switch_event_t *event)
 	}
 }
 
-static int sub_callback(void *pArg, int argc, char **argv, char **columnNames){
-	sofia_profile_t *profile = (sofia_profile_t *) pArg;
-	char *pl;
-	char *id, *note;
-	uint32_t in = atoi(argv[0]);
-	char *msg = argv[1];
-	char *proto = argv[2];
-	char *user = argv[3];
-	char *host = argv[4];
-	char *sub_to_user = argv[5];
-	char *sub_to_host = argv[6];
-	char *event = argv[7];
-	char *contact = argv[8];
-	char *callid = argv[9];
-	char *full_from = argv[10];
-	char *full_via = argv[11];
-	nua_handle_t *nh;
-	char *doing;
-	char *to;
-	char *open;
-	
-
-	if (in) {
-		note = switch_mprintf("<dm:note>%s</dm:note>", msg);
-		doing="available";
-		open = "open";
-	} else {
-		note = NULL;
-		doing="unavailable";
-		open = "closed";
-	}
-
-	if (strcasecmp(proto, "sip")) {
-		/*encapsulate*/
-		id = switch_mprintf("sip:%s+%s+%s@%s", proto, sub_to_user, sub_to_host, host);
-	} else {
-		id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
-	}
-
-	to = switch_mprintf("sip:%s@%s", user, host);
-	pl = switch_mprintf("<?xml version='1.0' encoding='UTF-8'?>\r\n"
-								"<presence xmlns='urn:ietf:params:xml:ns:pidf'\r\n"
-								"xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model'\r\n"
-								"xmlns:rpid='urn:ietf:params:xml:ns:pidf:rpid'\r\n"
-								"xmlns:c='urn:ietf:params:xml:ns:pidf:cipid'\r\n"
-								"entity='pres:%s'>\r\n"
-								"<tuple id='t6a5ed77e'>\r\n"
-								"<status>\r\n"
-								"<basic>%s</basic>\r\n"
-								"</status>\r\n"
-								"</tuple>\r\n"
-								"<dm:person id='p06360c4a'>\r\n"
-								"<rpid:activities>\r\n"
-								"<rpid:%s/>\r\n"
-								"<rpid:unknown/>\r\n"
-								"</rpid:activities>%s</dm:person>\r\n"
-								"</presence>", id, open, doing, note);
-
-	nh = nua_handle(profile->nua, NULL,	TAG_END());
-					
-		
-	nua_notify(nh,
-			   NUTAG_URL(contact),
-			   SIPTAG_TO_STR(full_from),
-			   SIPTAG_FROM_STR(to),
-			   SIPTAG_CONTACT_STR(profile->url),
-			   SIPTAG_CALL_ID_STR(callid),
-			   SIPTAG_VIA_STR(full_via),
-			   SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=3600"),
-			   SIPTAG_EVENT_STR(event),
-			   SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
-			   SIPTAG_PAYLOAD_STR(pl),
-			   TAG_END());
-
-	switch_safe_free(id);
-	switch_safe_free(note);
-	switch_safe_free(pl);
-	switch_safe_free(to);
-
-	return 0;
-}
 
 static switch_status_t chat_send(char *from, char *to, char *subject, char *body, char *hint)
 {
@@ -4541,6 +4589,36 @@ static switch_status_t chat_send(char *from, char *to, char *subject, char *body
 	}
 		
 	return SWITCH_STATUS_SUCCESS;
+}
+
+static void cancel_presence(void) 
+{
+	char *sql, *errmsg = NULL;
+	switch_core_db_t *db;
+	sofia_profile_t *profile;
+	switch_hash_index_t *hi;
+    void *val;
+
+	if ((sql = switch_mprintf("select 0,'%q',* from sip_subscriptions where event='presence'"))) {
+		for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, NULL, NULL, &val);
+			profile = (sofia_profile_t *) val;
+			if (!(profile->pflags & PFLAG_PRESENCE)) {
+				continue;
+			}
+
+			if (!(db = switch_core_db_open_file(profile->dbname))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+				continue;
+			}
+			switch_mutex_lock(profile->ireg_mutex);
+			switch_core_db_exec(db, sql, sub_callback, profile, &errmsg);
+			switch_mutex_unlock(profile->ireg_mutex);
+			switch_core_db_close(db);
+		}
+		switch_safe_free(sql);
+	}
+
 }
 
 static void pres_event_handler(switch_event_t *event)
@@ -4652,13 +4730,19 @@ static void pres_event_handler(switch_event_t *event)
 			switch_mutex_lock(profile->ireg_mutex);
 			switch_core_db_exec(db, sql, sub_callback, profile, &errmsg);
 			switch_mutex_unlock(profile->ireg_mutex);
-			switch_core_db_close(db);
+			switch_safe_free(sql);
+		
+			if ((sql = switch_mprintf("select 'sip+%q@%q',status from sip_registrations where user='%q' and host='%q'", user, host, user, host))) {
+				switch_mutex_lock(profile->ireg_mutex);
+				switch_core_db_exec(db, sql, sub_reg_callback, profile, &errmsg);
+				switch_mutex_unlock(profile->ireg_mutex);
+				switch_core_db_close(db);
+				switch_safe_free(sql);
+			}
 		}
-
 	}
 
 	switch_safe_free(user);
-	switch_safe_free(sql);
 }
 
 
@@ -4714,6 +4798,8 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
+
+	cancel_presence();
 
 	switch_mutex_lock(globals.mutex);
 	if (globals.running == 1) {
