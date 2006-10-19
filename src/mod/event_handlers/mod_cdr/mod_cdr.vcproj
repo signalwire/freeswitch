@@ -396,6 +396,10 @@
 				RelativePath=".\pddcdr.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\xmlcdr.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -424,6 +428,10 @@
 			</File>
 			<File
 				RelativePath=".\pddcdr.h"
+				>
+			</File>
+			<File
+				RelativePath=".\xmlcdr.h"
 				>
 			</File>
 		</Filter>
