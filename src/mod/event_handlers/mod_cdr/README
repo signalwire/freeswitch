@@ -59,6 +59,21 @@ Configuration:	Section: <mysqlcdr>
 		<param name="chanvars_supp" value=""/> value is a comma separated list of supplemental channel variables to log.  Can be a wildcard (*) (optional)
 		<param name="chanvars_supp_repeat_fixed" value=""/> value is 0 for no, 1 for yes, and determines whether or not to repeat any of the fixed channel variables as key / value pairs in the chanvars table.
 
+Class:		OdbcCDR, located in odbccdr.h and odbccdr.cpp
+		This class logs the call detail record to an ODBC database using prepared
+		statements.  This class is similar to MysqlCDR in that the fixed channel variables are treated as additional columns on the main freeswitchcdr database table for improved normalization of the database.  As such, you need to specify the format of each fixed channel variable as well.  If you do not specify, it will default to a varchar column type, and will not execute if the table schema does not match.  Therefore it is very important to make sure that any fixed channel variables you log exist as columns on the table.  The supplemental channel variables are stored in a separate table using a key / value pair linking to the myuuid of the call.  Recommended to use at least one other logger in conjuction with this one just to be on the safe side, as failover handling of errors to write to the db are not yet implemented, and therefore there is a risk of data loss if the database connection is lost entirely (it will be limited to only those records created at the time of the loss of connection) or some other fatal error is encountered.  Additionally, since there is no uniform method to handling columns of type sequence/autoincrement/autonumber in the rdbms world, it should be noted that each row in the chanvars (supplemental channel variables) table will cost 36 bytes for the myuuid to be posted to it instead of 8 bytes for a bigint as in MysqlCDR.
+Configuration:  Section <odbccdr>
+		<param name="dsn" value=""/> - Not yet implemented, but meant for future use in ease of config
+		<param name="hostname" value=""/> - The hostname or IP of the backend server
+		<param name="username" value=""/> - The username used to authenticate to the backend server
+		<param name="password" value=""/> - The password used to authenticate to the backend server
+		<param name="dbname" value=""/> - The database to use for logging
+		<param name="main_db_table" value=""/> - Optional: the name of the main logging table (defaults to freeswitchcdr)
+		<param name="supp_chanvars_db_table" value=""/> - Optional: the name of the supplemental chanvars table (defaults to chanvars)
+		<param name="chanvars_fixed" value=""/> Is a comma separated list of key=type pairs.  Types are x for decimal, s for string (varchar), d for double, i for integer, t for tiny.  If no type is provided, it defaults that column to string (varchar).  It cannot accept wildcards (*).  (optional)
+		<param name="chanvars_supp" value=""/> value is a comma separated list of supplemental channel variables to log.  Can be a wildcard (*) (optional)
+		<param name="chanvars_supp_repeat_fixed" value=""/> value is 0 for no, 1 for yes, and determines whether or not to repeat any of the fixed channel variables as key / value pairs in the chanvars table.
+		
 FAQ:
 
 Q: Why C++?
@@ -69,6 +84,9 @@ A: There is a distinction so that a level of uniformity can be maintain on those
 
 Q: What would an example configuration look like?
 A: Here is an excerpt from the freeswitch XML configuration file:
+
+Q: What happened to the ani2 field?
+A: Oops, you caught us.  The real name for is it aniii.  You will need to update any database schemas or external handlers for this change.
 
 	<configuration name="mod_cdr.conf" description="CDR Configuration">
 		<pddcdr>

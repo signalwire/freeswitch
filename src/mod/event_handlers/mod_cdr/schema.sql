@@ -8,7 +8,7 @@ create table freeswitchcdr (
 	src varchar(80) NOT NULL,
 	dst varchar(80) NOT NULL,
 	ani varchar(80) default "",
-	ani2 varchar(80) default "",
+	aniii varchar(80) default "",
 	dialplan varchar(80) default "",
 	myuuid char(36) NOT NULL,
 	destuuid char(36) NOT NULL,
@@ -19,13 +19,7 @@ create table freeswitchcdr (
 	billusec bigint default 0,
 	disposition tinyint default 0, /* 0 = Busy or Unanswered, 1 = Answered */
 	hangupcause int default 0,
-	amaflags tinyint default 0,
-	/*
-	This section not needed, because it was an old asteriskism.  A chan_var table is to replace it perhaps.
-	accountcode varchar(80) default "",
-	uniqueid varchar(32) default "",
-	userfield varchar(255) default ""
-	*/
+	amaflags tinyint default 0
 );
 
 create index myuuid_index on freeswitchcdr (myuuid);

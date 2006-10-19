@@ -3,7 +3,7 @@ CFLAGS  += $(shell mysql_config --include)
 LDFLAGS += $(shell mysql_config --libs)
 
 CPPCC = g++
-OBJS=cdrcontainer.o basecdr.o baseregistry.o mysqlcdr.o pddcdr.o csvcdr.o
+OBJS=cdrcontainer.o basecdr.o baseregistry.o mysqlcdr.o pddcdr.o csvcdr.o xmlcdr.o
 
 all:	depends $(OBJS) $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
