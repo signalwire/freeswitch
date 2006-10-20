@@ -2669,7 +2669,7 @@ static uint8_t handle_register(nua_t *nua,
 	switch_event_t *s_event;
 	char *from_user = (char *) from->a_url->url_user;
 	char *from_host = (char *) from->a_url->url_host;
-	char *contact_str[256] = "";
+	char contact_str[1025] = "";
 	char buf[512];
 	char *passwd = NULL;
 	uint8_t stale = 0, ret = 0, forbidden = 0;
