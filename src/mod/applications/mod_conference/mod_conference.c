@@ -44,6 +44,7 @@ static switch_api_interface_t conf_api_interface;
 #define CONF_DBLOCK_SIZE CONF_BUFFER_SIZE
 #define CONF_DBUFFER_SIZE CONF_BUFFER_SIZE
 #define CONF_DBUFFER_MAX 0
+#define CONF_CHAT_PROTO "conf"
 
 typedef enum {
 	FILE_STOP_CURRENT,
@@ -128,6 +129,7 @@ struct conference_obj {
 	char *pin_sound;
 	char *bad_pin_sound;
 	char *profile_name;
+	char *domain;
 	uint32_t flags;
 	switch_call_cause_t bridge_hangup_cause;
 	switch_mutex_t *flag_mutex;
@@ -217,6 +219,7 @@ static switch_status_t conference_member_say(conference_obj_t *conference, confe
 static uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop);
 static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch_memory_pool_t *pool);
 static void switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol);
+static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint);
 
 /* Return a Distinct ID # */
 static uint32_t next_member_id(void)
@@ -358,6 +361,16 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	conference->members = member;
 	conference->count++;
 
+	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conference->name);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_fire(&event);
+	}
+
+
 	if (conference->enter_sound) {
 		conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN);
 	}
@@ -411,8 +424,18 @@ static void conference_del_member(conference_obj_t *conference, conference_membe
 		}
 		last = imember;
 	}
+
 	conference->count--;
 	member->conference = NULL;
+
+	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conference->name);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_fire(&event);
+	}
 
 	if ((conference->min && switch_test_flag(conference, CFLAG_ENFORCE_MIN) && conference->count < conference->min) 
 		|| (switch_test_flag(conference, CFLAG_DYNAMIC) && conference->count == 0) ) {
@@ -456,6 +479,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	uint32_t bytes = samples * 2;
 	uint8_t ready = 0;
 	switch_timer_t timer = {0};
+	switch_event_t *event;
 
 	if (switch_core_timer_init(&timer, conference->timer_name, conference->interval, samples, conference->pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "setup timer success interval: %u  samples: %u\n", conference->interval, samples);	
@@ -676,6 +700,16 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 	}
 
+	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conference->name);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Inactive");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		
+		switch_event_fire(&event);
+	}
 	globals.threads--;	
 	return NULL;
 }
@@ -729,8 +763,19 @@ static void conference_loop(conference_member_t *member)
 		switch_event_t *event;
 
 		if (switch_core_session_dequeue_event(member->session, &event) == SWITCH_STATUS_SUCCESS) {
+			char *p;
+			char *from = switch_event_get_header(event, "from");
+			char *to = switch_event_get_header(event, "to");
+			char *proto = switch_event_get_header(event, "proto");
+			char *subject = switch_event_get_header(event, "subject");
+			char *body = switch_event_get_body(event);
+			if ((p = strchr(to, '+'))) {
+				to = ++p;
+			}
+			chat_send(proto, from, to, subject, body, "");
 			switch_event_destroy(&event);
 		}
+
 #if 1
 		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			// test to see if outbound channel has answered
@@ -1308,6 +1353,26 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
 		}
 
 		stream->write_function(stream, "\n");
+	}
+	switch_mutex_unlock(conference->member_mutex);
+}
+
+
+static void conference_list_pretty(conference_obj_t *conference, switch_stream_handle_t *stream)
+{
+	conference_member_t *member = NULL;
+
+	switch_mutex_lock(conference->member_mutex);
+
+	for (member = conference->members; member; member = member->next) {
+		switch_channel_t *channel = switch_core_session_get_channel(member->session);
+		switch_caller_profile_t *profile = switch_channel_get_caller_profile(channel);
+
+		stream->write_function(stream, "Caller %s <%s>\n", 
+							   profile->caller_id_name,
+							   profile->caller_id_number
+							   );
+
 	}
 	switch_mutex_unlock(conference->member_mutex);
 }
@@ -2669,6 +2734,50 @@ static switch_api_interface_t conf_api_interface = {
 	/*.next */ 
 };
 
+static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
+{
+	char name[512] = "", *p;
+	switch_chat_interface_t *ci;
+	conference_obj_t *conference = NULL;
+	switch_stream_handle_t stream = {0};
+
+	if (!(ci = switch_loadable_module_get_chat_interface(proto))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", proto);
+	}
+
+	if ((p = strchr(to, '@'))) {
+		switch_copy_string(name, to, ++p-to);
+	} else {
+		switch_copy_string(name, to, sizeof(name));
+	}
+
+	if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, name))) {
+		ci->chat_send(CONF_CHAT_PROTO, to, from, "", "Sorry, We're Closed", "");
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	SWITCH_STANDARD_STREAM(stream);
+
+	if (strstr(body, "list")) {
+		conference_list_pretty(conference, &stream);
+	} else {
+		stream.write_function(&stream, "The only command we have is so far is 'list' Get coding or go press PayPal!!\n");
+	}
+
+	ci->chat_send(CONF_CHAT_PROTO, to, from, "", stream.data, "");
+	switch_safe_free(stream.data);
+
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static const switch_chat_interface_t conference_chat_interface = {
+	/*.name */ CONF_CHAT_PROTO,
+	/*.chat_send */ chat_send,
+	
+};
+
 static switch_loadable_module_interface_t conference_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
@@ -2679,7 +2788,8 @@ static switch_loadable_module_interface_t conference_module_interface = {
 	/*.api_interface */ &conf_api_interface,
 	/*.file_interface */ NULL,
 	/*.speech_interface */ NULL,
-	/*.directory_interface */ NULL
+	/*.directory_interface */ NULL,
+	/*.chat_interface */ &conference_chat_interface
 };
 
 /* create a new conferene with a specific profile */
@@ -2690,6 +2800,7 @@ static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch
 	char *rate_name = NULL;
 	char *interval_name = NULL;
 	char *timer_name = NULL;
+	char *domain = NULL;
 	char *tts_engine = NULL;
 	char *tts_voice = NULL;
 	char *enter_sound = NULL;
@@ -2734,6 +2845,8 @@ static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch
 		
 		if (!strcasecmp(var, "rate")) {
 			rate_name = val;
+		} else if (!strcasecmp(var, "domain")) {
+			domain = val;
 		} else if (!strcasecmp(var, "interval")) {
 			interval_name= val;
 		} else if (!strcasecmp(var, "timer-name")) {
@@ -2886,6 +2999,11 @@ static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch
 	}
 
 	conference->name = switch_core_strdup(conference->pool, name);
+	if (domain) {
+		conference->domain = switch_core_strdup(conference->pool, domain);
+	} else {
+		conference->domain = "cluecon.com";
+	}
 	conference->rate = rate;
 	conference->interval = interval;
 
@@ -2899,11 +3017,13 @@ static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch
 	return conference;
 }
 
+
 /* Called by FreeSWITCH when the module loads */
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+	switch_xml_t cfg, xml, param, ads;
+
 	memset(&globals, 0, sizeof(globals));
 
 	/* Connect my internal structure to the blank pointer passed to me */
@@ -2919,6 +3039,29 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no conference pool\n");
 		return SWITCH_STATUS_TERM;
 	}
+
+	if ((xml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
+		if ((ads = switch_xml_child(cfg, "advertise"))) {
+			switch_event_t *event;
+		
+			for (param = switch_xml_child(ads, "room"); param; param = param->next) {
+				char *status = (char *) switch_xml_attr_soft(param, "status");
+				char *name = (char *) switch_xml_attr_soft(param, "name");
+
+				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", name);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", name);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", status ? status : "Inactive");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+				
+					switch_event_fire(&event);
+				}			
+			}
+		}
+	}
+
 
 	/* Setup a hash to store conferences by name */
 	switch_core_hash_init(&globals.conference_hash, globals.conference_pool);
