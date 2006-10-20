@@ -855,6 +855,10 @@ char *encode_name(char *s)
 	char *at, *resource;
 	char *user;
 
+	if (!s) {
+		return NULL;
+	}
+
 	if (!strchr(s, '/')) {
 		return NULL;
 	}
