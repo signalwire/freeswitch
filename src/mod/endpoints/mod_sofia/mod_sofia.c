@@ -2769,7 +2769,7 @@ static uint8_t handle_register(nua_t *nua,
 			switch_uuid_get(&uuid);
 			switch_uuid_format(uuid_str, &uuid);
 
-			sql = switch_mprintf("delete from sip_authentication where user='%q'and host='%q';\n"
+			sql = switch_mprintf("delete from sip_authentication where user='%q' and host='%q';\n"
 										 "insert into sip_authentication values('%q','%q','%q','%q', %ld)",
 										 from_user,
 										 from_host,
