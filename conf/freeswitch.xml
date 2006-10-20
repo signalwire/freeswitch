@@ -113,7 +113,7 @@
     </configuration>
 
     <configuration name="sofia.conf" description="sofia Endpoint">
-      <profile>
+      <profiles>
         <profile name="mydomain1.com">
           <registrations>
             <!-- <registration name="asterlink">
