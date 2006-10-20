@@ -712,7 +712,7 @@ static int on_presence(void *user_data, ikspak *pak)
 	if (!type || (type && strcasecmp(type, "probe"))) {
 
 		if (handle->session_callback) {
-			handle->session_callback(handle, NULL, signal, to, from, status ? status : "n/a", show ? show : "n/a");
+			handle->session_callback(handle, NULL, signal, to, id, status ? status : "n/a", show ? show : "n/a");
 		}
 	}
 
@@ -720,7 +720,7 @@ static int on_presence(void *user_data, ikspak *pak)
 	return IKS_FILTER_EAT;
 }
 
-static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *message) 
+static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message) 
 {
 	iks *pres;
 	char buf[512];
@@ -743,21 +743,28 @@ static void do_presence(ldl_handle_t *handle, char *from, char *to, char *type, 
 			iks_insert_attrib(pres, "type", type);
 		}
 
-
-
-		if (message) {			
-			if ((tag = iks_insert (pres, "status"))) {
-				iks_insert_cdata(tag, message ? message : "", 0);
-				if ((tag = iks_insert(pres, "c"))) {
-					iks_insert_attrib(tag, "node", "http://www.freeswitch.org/xmpp/client/caps");
-					iks_insert_attrib(tag, "ver", "1.0.0.1");
-					iks_insert_attrib(tag, "ext", "sidebar voice-v1");
-					iks_insert_attrib(tag, "client", "libdingaling2");
-					iks_insert_attrib(tag, "xmlns", "http://jabber.org/protocol/caps");
-				}
+		if (rpid) {
+			if ((tag = iks_insert (pres, "show"))) {
+				iks_insert_cdata(tag, rpid, 0);
 			}
 		}
-	
+
+		if (message) {
+			if ((tag = iks_insert (pres, "status"))) {
+				iks_insert_cdata(tag, message, 0);
+			}
+		}
+
+		if (message || rpid) {
+			if ((tag = iks_insert(pres, "c"))) {
+				iks_insert_attrib(tag, "node", "http://www.freeswitch.org/xmpp/client/caps");
+				iks_insert_attrib(tag, "ver", "1.0.0.1");
+				iks_insert_attrib(tag, "ext", "sidebar voice-v1");
+				iks_insert_attrib(tag, "client", "libdingaling");
+				iks_insert_attrib(tag, "xmlns", "http://jabber.org/protocol/caps");
+			}
+		}
+
 		apr_queue_push(handle->queue, pres);
 	}
 }
@@ -1559,9 +1566,9 @@ void *ldl_handle_get_private(ldl_handle_t *handle)
 	return handle->private_info;
 }
 
-void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *message)
+void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message)
 {
-	do_presence(handle, from, to, type, message);
+	do_presence(handle, from, to, type, rpid, message);
 }
 
 void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subject, char *body)

@@ -369,9 +369,10 @@ void ldl_session_send_msg(ldl_session_t *session, char *subject, char *body);
   \param from the from address
   \param to the to address
   \param type the type of presence
+  \param rpid data for the icon
   \param message a status message
 */
-void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *message);
+void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message);
 
 /*!
   \brief Send a message

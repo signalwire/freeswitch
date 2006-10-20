@@ -113,8 +113,8 @@
     </configuration>
 
     <configuration name="sofia.conf" description="sofia Endpoint">
-      <profiles>
-        <profile name="test">
+      <profile>
+        <profile name="mydomain1.com">
           <registrations>
             <!-- <registration name="asterlink">
               <param name="register-scheme" value="Digest"/>
@@ -138,7 +138,7 @@
             <param name="use-rtp-timer" value="true"/>
             <param name="rtp-timer-name" value="soft"/>
             <param name="rtp-ip" value="192.168.1.20"/>
-            <param name="sip-ip" value="192.168.1.20"/>
+            <param name="sip-ip" value="mydomain1.com"/>
 
             <!-- this lets anything register -->
             <!--  comment the next line and uncomment one or both of the other 2 lines for call authentication -->
@@ -268,10 +268,12 @@
         <param name="debug" value="0"/>
         <param name="codec-prefs" value="PCMU"/>
       </settings>
-      <!-- *NOTE* your resource (after the /) MUST contain the string "talk" (upper or lower case is ok) -->
-      <!-- *NOTE* as of May 2 2006 you must set"auto-login" to"true" if you want to be able to auto-login on startup"/> -->
-      <interface>
-        <param name="name" value="jingle"/>
+
+      <!-- *NOTE* change <x-profile></x-profile> to <profile></profile> to enable -->
+
+      <!-- Client Profile (Original mode) -->
+      <x-profile type="client">
+        <param name="name" value="mydomain.com"/>
         <param name="login" value="myjid@myserver.com/talk"/>
         <param name="password" value="mypass"/>
         <param name="dialplan" value="XML"/>
@@ -296,7 +298,23 @@
         <!-- <param name="vad" value="in"/> -->
         <!-- <param name="vad" value="out"/> -->
         <param name="vad" value="both"/>
-      </interface>
+      </x-profile>
+
+      <!-- Component (Server to Server Login) -->
+      <x-profile type="component">
+	<!-- All traffic for *@sub.mydomain.com will come to you -->
+	<param name="name" value="sub.mydomain.com"/>
+        <param name="password" value="secret"/>
+	<param name="dialplan" value="XML"/>
+	<param name="rtp-ip" value="208.64.200.42"/>
+	<param name="server" value="jabber.server.org:5347"/>
+        <!-- disable to trade async for more calls -->
+        <param name="use-rtp-timer" value="true"/>
+	<!-- "_auto_" means the extension will be automaticly set to the called jid -->
+        <param name="exten" value="_auto_"/>
+        <!--<param name="vad" value="both"/>-->
+      </x-profile>
+
     </configuration>
 
     <configuration name="xml_rpc.conf" description="XML RPC">

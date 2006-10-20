@@ -94,6 +94,11 @@ static void perform_substitution(pcre *re, int match_count, char *data, char *fi
 	for (x = 0; x < (len-1) && x < strlen(data);) {
 		if (data[x] == '$') {
 			x++;
+			
+			if (!(data[x] > 47 && data[x] < 58)) {
+				substituted[y++] = data[x-1];
+				continue;
+			}
 
 			while (data[x] > 47 && data[x] < 58) {
 				index[z++] = data[x];

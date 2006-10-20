@@ -47,7 +47,9 @@ static switch_memory_pool_t *module_pool = NULL;
 static char sub_sql[] =
 "CREATE TABLE subscriptions (\n"
 "   sub_from            VARCHAR(255),\n"
-"   sub_to          VARCHAR(255)\n"
+"   sub_to          VARCHAR(255),\n"
+"   show          VARCHAR(255),\n"
+"   status          VARCHAR(255)\n"
 ");\n";
 
 
@@ -186,6 +188,38 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
 static switch_status_t load_config(void);
 
+static char *translate_rpid(char *in, char *ext)
+{
+	char *r = NULL;
+
+	if (in && (strstr(in, "null") || strstr(in, "NULL"))) {
+		in = NULL;
+	}
+
+	if (!in) {
+		in = ext;
+	}
+
+	if (!in) {
+		return NULL;
+	}
+	
+	if (!strcasecmp(in, "busy")) {
+		r = "dnd";
+	}
+
+	if (!strcasecmp(in, "unavailable")) {
+		r = "dnd";
+	}
+
+	if (ext && !strcasecmp(ext, "idle")) {
+		r = "away";
+	} else if (ext && !strcasecmp(ext, "away")) {
+		r = "away";
+	}
+	
+	return r;
+}
 
 static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
@@ -194,16 +228,17 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char *sub_from = argv[0];
 	char *sub_to = argv[1];
 	char *type = argv[2];
-	char *show = argv[3];
+	char *rpid = argv[3];
+	char *status = argv[4];
 
 	if (switch_strlen_zero(type)) {
 		type = NULL;
 	} else if (!strcasecmp(type, "unavailable")) {
-		show = NULL;
+		status = NULL;
 	}
-
-
-	ldl_handle_send_presence(profile->handle, sub_to, sub_from, type, show);
+	rpid = translate_rpid(rpid, status);
+	
+	ldl_handle_send_presence(profile->handle, sub_to, sub_from, type, rpid, status);
 
 	return 0;
 }
@@ -215,9 +250,17 @@ static int rost_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char *sub_from = argv[0];
 	char *sub_to = argv[1];
 	char *show = argv[2];
+	char *status = argv[3];
 
+	if (!strcasecmp(status, "n/a")) {
+		if (!strcasecmp(show, "dnd")) {
+			status = "Busy";
+		} else if (!strcasecmp(show, "away")) {
+			status = "Idle";
+		}
+	}
 
-	ldl_handle_send_presence(profile->handle, sub_to, sub_from, NULL, show);
+	ldl_handle_send_presence(profile->handle, sub_to, sub_from, NULL, show, status);
 
 	return 0;
 }
@@ -229,21 +272,16 @@ static void pres_event_handler(switch_event_t *event)
     void *val;
 	char *from = switch_event_get_header(event, "from");
 	char *status= switch_event_get_header(event, "status");
-	char *show= switch_event_get_header(event, "show");
-	char *type = NULL;
+	char *rpid = switch_event_get_header(event, "rpid");
+	char *type = switch_event_get_header(event, "event_subtype");
 	char *sql;
 	switch_core_db_t *db;
 	char *p;
 
 
 	if (status && !strcasecmp(status, "n/a")) {
-		status = show;
-		if (status && !strcasecmp(status, "n/a")) {
-			status = NULL;
-		}
+		status = NULL;
 	}
-
-
 
 	switch(event->event_id) {
 	case SWITCH_EVENT_PRESENCE_IN:
@@ -259,12 +297,12 @@ static void pres_event_handler(switch_event_t *event)
 	}
 	
 
-
 	if ((p = strchr(from, '/'))) {
 		*p = '\0';
 	}
 	
-	sql = switch_mprintf("select *,'%q','%q' from subscriptions where sub_to='%q'", type ? type : "", status ? status : "unavailable", from);
+	sql = switch_mprintf("select sub_from, sub_to,'%q','%q','%q' from subscriptions where sub_to='%q'", 
+						 type ? type : "", rpid, status ? status : "unavailable", from);
 	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		char *errmsg;
         switch_hash_this(hi, NULL, NULL, &val);
@@ -326,7 +364,7 @@ static switch_status_t chat_send(char *from, char *to, char *subject, char *body
 static void roster_event_handler(switch_event_t *event)
 {
 	char *status= switch_event_get_header(event, "status");
-	char *show= switch_event_get_header(event, "show");
+	char *from= switch_event_get_header(event, "from");
 	char *event_type = switch_event_get_header(event, "event_type");
 	struct mdl_profile *profile = NULL;
 	switch_hash_index_t *hi;
@@ -334,19 +372,19 @@ static void roster_event_handler(switch_event_t *event)
 	char *sql;
 	switch_core_db_t *db;
 
-
 	if (status && !strcasecmp(status, "n/a")) {
-		status = show;
-		if (status && !strcasecmp(status, "n/a")) {
-			status = NULL;
-		}
+		status = NULL;
 	}
 
 	if (switch_strlen_zero(event_type)) {
 		event_type="presence";
 	}
 
-	sql = switch_mprintf("select *,'%q' from subscriptions", show ? show : "unavilable");
+	if (from) {
+		sql = switch_mprintf("select *,'%q' from subscriptions where sub_from='%q'", status ? status : "", from);
+	} else {
+		sql = switch_mprintf("select *,'%q' from subscriptions", status ? status : "");
+	}
 
 	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		char *errmsg;
@@ -457,6 +495,12 @@ static void *SWITCH_THREAD_FUNC handle_thread_run(switch_thread_t *thread, void 
 {
 	ldl_handle_t *handle = obj;
 	struct mdl_profile *profile = NULL;
+	switch_event_t *event;
+
+	if (switch_event_create(&event, SWITCH_EVENT_ROSTER) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_NAME);
+		switch_event_fire(&event);
+	}
 
 	profile = ldl_handle_get_private(handle);
 	globals.handles++;
@@ -1307,7 +1351,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			snprintf(ubuf, sizeof(ubuf), "%s@%s/talk", u, profile_name);
 			user = ubuf;
 		} else {
-			user = mdl_profile->login;
+			user = (char *) modname;
 		}
 
 		if ((mdl_profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
@@ -1554,25 +1598,6 @@ static void set_profile_val(struct mdl_profile *profile, char *var, char *val)
 		if (switch_true(val)) {
 			profile->user_flags |= LDL_FLAG_TLS;
 		}
-	} else if (!strcasecmp(var, "component")) {
-		if (switch_true(val)) {
-			char dbname[256];
-			switch_core_db_t *db;
-
-			profile->user_flags |= LDL_FLAG_COMPONENT;
-			switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, module_pool);
-			snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
-			profile->dbname = switch_core_strdup(module_pool, dbname);
-
-			if ((db = switch_core_db_open_file(profile->dbname))) {
-				switch_core_db_test_reactive(db, "select * from subscriptions", sub_sql);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-				return;
-			}
-			switch_core_db_close(db);
-			
-		}
 	} else if (!strcasecmp(var, "sasl")) {
 		if (!strcasecmp(val, "plain")) {
 			profile->user_flags |= LDL_FLAG_SASL_PLAIN;
@@ -1669,6 +1694,7 @@ static switch_status_t dl_login(char *arg, switch_core_session_t *session, switc
 		}
 	}
 	
+
 	if (profile && init_profile(profile, 1) == SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "OK\n");
 	} else {
@@ -1715,7 +1741,14 @@ static switch_status_t load_config(void)
 		}
 	}
 	
-	for (xmlint = switch_xml_child(cfg, "interface"); xmlint; xmlint = xmlint->next) {
+	if (!(xmlint = switch_xml_child(cfg, "profile"))) {
+		if ((xmlint = switch_xml_child(cfg, "interface"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "!!!!!!! DEPRICATION WARNING 'interface' is now 'profile' !!!!!!!\n");
+		}
+	}
+
+	for (; xmlint; xmlint = xmlint->next) {
+		char *type = (char *) switch_xml_attr_soft(xmlint, "type");
 		for (param = switch_xml_child(xmlint, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -1730,6 +1763,31 @@ static switch_status_t load_config(void)
 				profile = switch_core_alloc(module_pool, sizeof(*profile));
 			}
 			set_profile_val(profile, var, val);
+		}
+
+
+		if (type && !strcasecmp(type, "component")) {
+			char dbname[256];
+			switch_core_db_t *db;
+
+			if (!profile->login && profile->name) {
+				profile->login = switch_core_strdup(module_pool, profile->name);
+			}
+
+			switch_set_flag(profile, TFLAG_AUTO);
+			profile->message = "";
+			profile->user_flags |= LDL_FLAG_COMPONENT;
+			switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, module_pool);
+			snprintf(dbname, sizeof(dbname), "dingaling_%s", profile->name);
+			profile->dbname = switch_core_strdup(module_pool, dbname);
+
+			if ((db = switch_core_db_open_file(profile->dbname))) {
+				switch_core_db_test_reactive(db, "select * from subscriptions", sub_sql);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
+				continue;
+			}
+			switch_core_db_close(db);
 		}
 
 		if (profile) {
@@ -1815,7 +1873,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		case LDL_SIGNAL_SUBSCRIBE:
 			if ((profile->user_flags & LDL_FLAG_COMPONENT)) {
 
-				if ((sql = switch_mprintf("insert into subscriptions values('%q','%q')", from, to))) {
+				if ((sql = switch_mprintf("insert into subscriptions values('%q','%q','%q','%q')", from, to, msg, subject))) {
 					execute_sql(profile->dbname, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
@@ -1829,17 +1887,30 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			}
 			break;
 		case LDL_SIGNAL_PRESENCE_IN:
+
+			if ((sql = switch_mprintf("update subscriptions set show='%q', status='%q' where sub_from='%q'", msg, subject, from))) {
+				execute_sql(profile->dbname, sql, profile->mutex);
+				switch_core_db_free(sql);
+			}
+
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_NAME);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s",  from);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", msg);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", subject);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "show", "%s", msg);
 				switch_event_fire(&event);
 			}
 
 			break;
+
 		case LDL_SIGNAL_PRESENCE_OUT:
+
+			if ((sql = switch_mprintf("update subscriptions set show='%q', status='%q' where sub_from='%q'", msg, subject, from))) {
+				execute_sql(profile->dbname, sql, profile->mutex);
+				switch_core_db_free(sql);
+			}
+
 			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_NAME);
 				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
