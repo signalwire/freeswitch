@@ -1,0 +1,5 @@
+- Support bgapi output
+- more example scripts
+- more documentation
+- sister component that uses this filter
+- reconnect handling
