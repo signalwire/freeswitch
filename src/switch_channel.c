@@ -307,8 +307,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel,
 
 SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, char *varname)
 {
+	char *v;
 	assert(channel != NULL);
-	return switch_core_hash_find(channel->variables, varname);
+
+	if (!(v=switch_core_hash_find(channel->variables, varname))) {
+		v = switch_caller_get_field_by_name(channel->caller_profile, varname);
+	}
+	
+	return v;
 }
 
 SWITCH_DECLARE(switch_hash_index_t *) switch_channel_variable_first(switch_channel_t *channel, switch_memory_pool_t *pool)
