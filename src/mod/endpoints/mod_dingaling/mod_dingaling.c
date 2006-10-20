@@ -1949,65 +1949,70 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 	}
 
 	if (!dlsession) {
-		switch(signal) {
-		case LDL_SIGNAL_UNSUBSCRIBE:
-			if ((profile->user_flags & LDL_FLAG_COMPONENT)) {
+		if (profile->user_flags & LDL_FLAG_COMPONENT) {
+			switch(signal) {
+			case LDL_SIGNAL_UNSUBSCRIBE:
 
 				if ((sql = switch_mprintf("delete from subscriptions where sub_from='%q' and sub_to='%q';", from, to))) {
 					execute_sql(profile->dbname, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
-			}
-			break;
 
-		case LDL_SIGNAL_SUBSCRIBE:
-			if ((profile->user_flags & LDL_FLAG_COMPONENT)) {
+				break;
 
+			case LDL_SIGNAL_SUBSCRIBE:
+				
 				if ((sql = switch_mprintf("insert into subscriptions values('%q','%q','%q','%q')", from, to, msg, subject))) {
 					execute_sql(profile->dbname, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
-			}
-			break;
-		case LDL_SIGNAL_ROSTER:
-			if (switch_event_create(&event, SWITCH_EVENT_ROSTER) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
-				switch_event_fire(&event);
-			}
-			break;
-		case LDL_SIGNAL_PRESENCE_IN:
+				
+				break;
+			case LDL_SIGNAL_ROSTER:
+				if (switch_event_create(&event, SWITCH_EVENT_ROSTER) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+					switch_event_fire(&event);
+				}
+				break;
+			case LDL_SIGNAL_PRESENCE_IN:
+				
+				if ((sql = switch_mprintf("update subscriptions set show='%q', status='%q' where sub_from='%q'", msg, subject, from))) {
+					execute_sql(profile->dbname, sql, profile->mutex);
+					switch_core_db_free(sql);
+				}
+				
+				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s",  from);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", msg);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", subject);
+					switch_event_fire(&event);
+				}
 
-			if ((sql = switch_mprintf("update subscriptions set show='%q', status='%q' where sub_from='%q'", msg, subject, from))) {
-				execute_sql(profile->dbname, sql, profile->mutex);
-				switch_core_db_free(sql);
+				break;
+
+			case LDL_SIGNAL_PRESENCE_OUT:
+				
+				if ((sql = switch_mprintf("update subscriptions set show='%q', status='%q' where sub_from='%q'", msg, subject, from))) {
+					execute_sql(profile->dbname, sql, profile->mutex);
+					switch_core_db_free(sql);
+				}
+
+				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
+					switch_event_fire(&event);
+				}
+				break;
+			default:
+				break;
 			}
+		} 
 
-			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s",  from);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", msg);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", subject);
-				switch_event_fire(&event);
-			}
-
-			break;
-
-		case LDL_SIGNAL_PRESENCE_OUT:
-
-			if ((sql = switch_mprintf("update subscriptions set show='%q', status='%q' where sub_from='%q'", msg, subject, from))) {
-				execute_sql(profile->dbname, sql, profile->mutex);
-				switch_core_db_free(sql);
-			}
-
-			if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
-				switch_event_fire(&event);
-			}
-			break;
+		switch(signal) {
 		case LDL_SIGNAL_MSG: {
 			switch_chat_interface_t *ci;
 			char *proto = MDL_CHAT_PROTO;
@@ -2063,7 +2068,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			}
 			break;
 		default:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR\n");
 			break;
 			
 		}
