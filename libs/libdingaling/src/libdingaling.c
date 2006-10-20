@@ -1247,7 +1247,7 @@ static void j_setup_filter(ldl_handle_t *handle)
 	
 }
 
-static void ldl_flush_queue(ldl_handle_t *handle)
+static void ldl_flush_queue(ldl_handle_t *handle, int done)
 {
 	iks *msg;
 	void *pop;
@@ -1280,7 +1280,7 @@ static void ldl_flush_queue(ldl_handle_t *handle)
 				packet_node->next = now + 5000000;
 			}
 		}
-		if (packet_node->retries == 0) {
+		if (packet_node->retries == 0 || done) {
 			if (globals.debug) {
 				globals.logger(DL_LOG_DEBUG, "Discarding packet %s\n", packet_node->id);
 			}
@@ -1302,7 +1302,7 @@ static void *APR_THREAD_FUNC queue_thread(apr_thread_t *thread, void *obj)
 	ldl_set_flag_locked(handle, LDL_FLAG_QUEUE_RUNNING);
 
 	while (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
-		ldl_flush_queue(handle);
+		ldl_flush_queue(handle, 0);
 
 		if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS) {
 			int fd;
@@ -1414,7 +1414,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 
 			
 			if (!ldl_test_flag(handle, LDL_FLAG_TLS) && ldl_test_flag(handle, LDL_FLAG_READY)) {
-				ldl_flush_queue(handle);
+				ldl_flush_queue(handle, 0);
 			}
 
 			if (!ldl_test_flag(handle, LDL_FLAG_CONNECTED)) {
@@ -2022,7 +2022,7 @@ ldl_status ldl_handle_destroy(ldl_handle_t **handle)
 {
 	apr_pool_t *pool = (*handle)->pool;
 
-	ldl_flush_queue(*handle);
+	ldl_flush_queue(*handle, 1);
 	
 
 	apr_pool_destroy(pool);

@@ -413,6 +413,59 @@ static void roster_event_handler(switch_event_t *event)
 
 }
 
+static int so_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct mdl_profile *profile = (struct mdl_profile *) pArg;
+
+	char *sub_from = argv[0];
+	char *sub_to = argv[1];
+
+
+	ldl_handle_send_presence(profile->handle, sub_to, sub_from, "unavailable", "dnd", "Bub-Bye");
+	
+	return 0;
+}
+
+static void sign_off(void)
+{
+	struct mdl_profile *profile = NULL;
+	switch_hash_index_t *hi;
+    void *val;
+	char *sql;
+	switch_core_db_t *db;
+
+
+	sql = switch_mprintf("select * from subscriptions");
+	
+
+	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		char *errmsg;
+        switch_hash_this(hi, NULL, NULL, &val);
+        profile = (struct mdl_profile *) val;
+
+        if (!(profile->user_flags & LDL_FLAG_COMPONENT)) {
+			continue;
+        }
+
+
+		if (sql) {
+			if (!(db = switch_core_db_open_file(profile->dbname))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+				continue;
+			}
+			switch_mutex_lock(profile->mutex);
+			switch_core_db_exec(db, sql, so_callback, profile, &errmsg);
+			switch_mutex_unlock(profile->mutex);
+			switch_core_db_close(db);
+		}
+		
+	}
+	
+	switch_yield(1000000);
+	switch_safe_free(sql);
+
+}
+
 static void terminate_session(switch_core_session_t **session, int line, switch_call_cause_t cause)
 {
 	if (*session) {
@@ -1549,6 +1602,8 @@ static switch_status_t init_profile(struct mdl_profile *profile, uint8_t login)
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
+	sign_off();
+
 	if (globals.running) {
 		int x = 0;
 		globals.running = 0;
