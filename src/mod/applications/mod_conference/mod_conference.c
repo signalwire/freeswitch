@@ -1467,7 +1467,7 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 					stream->write_function(stream, "OK %s unlocked\n", argv[0]);
 					if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "lock");
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "unlock");
 						switch_event_fire(&event);
 					}
 					goto done;
