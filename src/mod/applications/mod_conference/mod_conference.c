@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Neal Horman <neal at wanlink dot com>
  *
  *
  * mod_conference.c -- Software Conference Bridge
@@ -232,6 +233,11 @@ static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch
 static void switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol);
 static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint);
 static void launch_conference_record_thread(conference_obj_t *conference, char *path);
+
+static void conference_member_itterator(conference_obj_t *conference,
+	switch_stream_handle_t *stream,
+	int (*pfncallback)(conference_obj_t*, conference_member_t*, int, switch_stream_handle_t*, void*),
+	void *data);
 
 /* Return a Distinct ID # */
 static uint32_t next_member_id(void)
@@ -1479,6 +1485,20 @@ static switch_status_t conference_say(conference_obj_t *conference, char *text, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void conference_member_itterator(conference_obj_t *conference, switch_stream_handle_t *stream, int (*pfncallback)(conference_obj_t*, conference_member_t*, int, switch_stream_handle_t*, void*), void *data)
+{
+	conference_member_t *member = NULL;
+
+	if(conference != NULL && stream != NULL && pfncallback != NULL) {
+		switch_mutex_lock(conference->member_mutex);
+
+		for (member = conference->members; member; member = member->next) {
+			pfncallback(conference,member,member->id,stream,data);
+		}
+		switch_mutex_unlock(conference->member_mutex);
+	}
+}
+
 static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim)
 {
 	conference_member_t *member = NULL;
@@ -1550,6 +1570,147 @@ static void conference_list_pretty(conference_obj_t *conference, switch_stream_h
 
 	}
 	switch_mutex_unlock(conference->member_mutex);
+}
+
+static int conference_function_mute_member(conference_obj_t *conference, conference_member_t *member, int id, switch_stream_handle_t *stream, void *data)
+{
+	int err = 0;
+
+	if (member != NULL || (member = conference_member_get(conference, id))) {
+		switch_event_t *event;
+
+		switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
+		if (member->conference->muted_sound) {
+			conference_member_play_file(member, member->conference->muted_sound, 0);
+		}
+		stream->write_function(stream, "OK mute %u\n", id);
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_t *channel = switch_core_session_get_channel(member->session);
+			switch_channel_event_set_data(channel, event);
+			
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "mute-member");
+			switch_event_fire(&event);
+		}
+	} else {
+		stream->write_function(stream, "Non-Existant ID %u\n", id);
+		err = 1;
+	}
+
+	return err;
+}
+
+static int conference_function_unmute_member(conference_obj_t *conference, conference_member_t *member, int id, switch_stream_handle_t *stream, void *data)
+{
+	int err = 0;
+
+	if (member != NULL || (member = conference_member_get(conference, id))) {
+		switch_event_t *event;
+
+		switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
+		stream->write_function(stream, "OK unmute %u\n", id);
+		if (member->conference->unmuted_sound) {
+			conference_member_play_file(member, member->conference->unmuted_sound, 0);
+		}
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_t *channel = switch_core_session_get_channel(member->session);
+			switch_channel_event_set_data(channel, event);
+			
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "unmute-member");
+			switch_event_fire(&event);
+		}
+	} else {
+		stream->write_function(stream, "Non-Existant ID %u\n", id);
+		err = 1;
+	}
+
+	return err;
+}
+
+static int conference_function_deaf_member(conference_obj_t *conference, conference_member_t *member, int id, switch_stream_handle_t *stream, void *data)
+{
+	int err = 0;
+
+	if (member != NULL || (member = conference_member_get(conference, id))) {
+		switch_event_t *event;
+
+		switch_clear_flag_locked(member, MFLAG_CAN_HEAR);
+		stream->write_function(stream, "OK deaf %u\n", id);
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_t *channel = switch_core_session_get_channel(member->session);
+			switch_channel_event_set_data(channel, event);
+			
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "deaf-member");
+			switch_event_fire(&event);
+		}
+	} else {
+		stream->write_function(stream, "Non-Existant ID %u\n", id);
+		err = 1;
+	}
+
+	return err;
+}
+
+static int conference_function_undeaf_member(conference_obj_t *conference, conference_member_t *member, int id, switch_stream_handle_t *stream, void *data)
+{
+	int err = 0;
+
+	if (member != NULL || (member = conference_member_get(conference, id))) {
+		switch_event_t *event;
+
+		switch_set_flag_locked(member, MFLAG_CAN_HEAR);
+		stream->write_function(stream, "OK undeaf %u\n", id);
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_t *channel = switch_core_session_get_channel(member->session);
+			switch_channel_event_set_data(channel, event);
+			
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "undeaf-member");
+			switch_event_fire(&event);
+		}
+	} else {
+		stream->write_function(stream, "Non-Existant ID %u\n", id);
+		err = 1;
+	}
+
+	return err;
+}
+
+static int conference_function_kick_member(conference_obj_t *conference, conference_member_t *member, int id, switch_stream_handle_t *stream, void *data)
+{
+	int err = 0;
+
+	if (member != NULL || (member = conference_member_get(conference, id))) {
+		switch_event_t *event;
+
+		switch_mutex_lock(member->flag_mutex);
+		switch_clear_flag(member, MFLAG_RUNNING);
+		switch_set_flag(member, MFLAG_KICKED);
+		switch_mutex_unlock(member->flag_mutex);
+
+		stream->write_function(stream, "OK kicked %u\n", id);
+		
+		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_t *channel = switch_core_session_get_channel(member->session);
+			switch_channel_event_set_data(channel, event);
+			
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "kick-member");
+			switch_event_fire(&event);
+		}
+	} else {
+		stream->write_function(stream, "Non-Existant ID %u\n", id);
+		err = 1;
+	}
+
+	return err;
 }
 
 /* API Interface Function */
@@ -1671,7 +1832,7 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 						}
 					} else if (argc == 4) {
 						uint32_t id = atoi(argv[3]);
-                        conference_member_t *member;
+						conference_member_t *member;
 
 						if ((member = conference_member_get(conference, id))) {
 							if (conference_member_play_file(member, argv[2], 0) == SWITCH_STATUS_SUCCESS) {
@@ -1913,111 +2074,65 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 				} else if (!strcasecmp(argv[1], "mute")) {
 					if (argc > 2) {
 						uint32_t id = atoi(argv[2]);
-						conference_member_t *member;
+						int all = ( id == 0 && strcasecmp(argv[2], "all") == 0 );
 
-						if ((member = conference_member_get(conference, id))) {
-							switch_clear_flag_locked(member, MFLAG_CAN_SPEAK);
-							if (member->conference->muted_sound) {
-								conference_member_play_file(member, member->conference->muted_sound, 0);
-							}
-							stream->write_function(stream, "OK mute %u\n", id);
-							if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-								switch_channel_t *channel = switch_core_session_get_channel(member->session);
-								switch_channel_event_set_data(channel, event);
-								
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "mute-member");
-								switch_event_fire(&event);
-							}
+						if (!all) {
+							conference_function_mute_member(conference, NULL, id, stream, NULL);
 							goto done;
 						} else {
-							stream->write_function(stream, "Non-Existant ID %u\n", id);
+							conference_member_itterator(conference, stream, &conference_function_mute_member, NULL); 
 							goto done;
 						}
 					} else {
-						stream->write_function(stream, "usage mute <id>\n");
+						stream->write_function(stream, "usage mute <[id|all]>\n");
 						goto done;
 					}
 				} else if (!strcasecmp(argv[1], "unmute")) {
 					if (argc > 2) {
 						uint32_t id = atoi(argv[2]);
-						conference_member_t *member;
+						int all = ( id == 0 && strcasecmp(argv[2], "all") == 0 );
 
-						if ((member = conference_member_get(conference, id))) {
-							switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
-							stream->write_function(stream, "OK unmute %u\n", id);
-							if (member->conference->unmuted_sound) {
-								conference_member_play_file(member, member->conference->unmuted_sound, 0);
-							}
-							if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-								switch_channel_t *channel = switch_core_session_get_channel(member->session);
-								switch_channel_event_set_data(channel, event);
-								
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "unmute-member");
-								switch_event_fire(&event);
-							}
+						if (!all) {
+							conference_function_unmute_member(conference, NULL, id, stream, NULL);
 							goto done;
 						} else {
-							stream->write_function(stream, "Non-Existant ID %u\n", id);
+							conference_member_itterator(conference, stream, &conference_function_unmute_member, NULL); 
 							goto done;
 						}
 					} else {
-						stream->write_function(stream, "usage unmute <id>\n");
+						stream->write_function(stream, "usage unmute <[id|all]>\n");
 						goto done;
 					}
 				} else if (!strcasecmp(argv[1], "deaf")) {
 					if (argc > 2) {
 						uint32_t id = atoi(argv[2]);
-						conference_member_t *member;
+						int all = ( id == 0 && strcasecmp(argv[2], "all") == 0 );
 
-						if ((member = conference_member_get(conference, id))) {
-							switch_clear_flag_locked(member, MFLAG_CAN_HEAR);
-							stream->write_function(stream, "OK deaf %u\n", id);
-							if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-								switch_channel_t *channel = switch_core_session_get_channel(member->session);
-								switch_channel_event_set_data(channel, event);
-								
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "deaf-member");
-								switch_event_fire(&event);
-							}
+						if (!all) {
+							conference_function_deaf_member(conference, NULL, id, stream, NULL);
 							goto done;
 						} else {
-							stream->write_function(stream, "Non-Existant ID %u\n", id);
+							conference_member_itterator(conference, stream, &conference_function_deaf_member, NULL); 
 							goto done;
 						}
 					} else {
-						stream->write_function(stream, "usage deaf <id>\n");
+						stream->write_function(stream, "usage deaf <[id|all]>\n");
 						goto done;
 					}
 				} else if (!strcasecmp(argv[1], "undeaf")) {
 					if (argc > 2) {
 						uint32_t id = atoi(argv[2]);
-						conference_member_t *member;
+						int all = ( id == 0 && strcasecmp(argv[2], "all") == 0 );
 
-						if ((member = conference_member_get(conference, id))) {
-							switch_set_flag_locked(member, MFLAG_CAN_HEAR);
-							stream->write_function(stream, "OK undeaf %u\n", id);
-							if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-								switch_channel_t *channel = switch_core_session_get_channel(member->session);
-								switch_channel_event_set_data(channel, event);
-								
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "undeaf-member");
-								switch_event_fire(&event);
-							}
+						if (!all) {
+							conference_function_undeaf_member(conference, NULL, id, stream, NULL);
 							goto done;
 						} else {
-							stream->write_function(stream, "Non-Existant ID %u\n", id);
+							conference_member_itterator(conference, stream, &conference_function_undeaf_member, NULL); 
 							goto done;
 						}
 					} else {
-						stream->write_function(stream, "usage undeaf <id>\n");
+						stream->write_function(stream, "usage undeaf <[id|all]>\n");
 						goto done;
 					}
 
@@ -2032,32 +2147,18 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 				} else if (!strcasecmp(argv[1], "kick")) {
 					if (argc > 2) {
 						uint32_t id = atoi(argv[2]);
-						conference_member_t *member;
+						int all = ( id == 0 && strcasecmp(argv[2], "all") == 0 );
 
-						if ((member = conference_member_get(conference, id))) {
-							switch_mutex_lock(member->flag_mutex);
-							switch_clear_flag(member, MFLAG_RUNNING);
-							switch_set_flag(member, MFLAG_KICKED);
-							switch_mutex_unlock(member->flag_mutex);
-
-							stream->write_function(stream, "OK kicked %u\n", id);
-							
-							if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-								switch_channel_t *channel = switch_core_session_get_channel(member->session);
-								switch_channel_event_set_data(channel, event);
-								
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
-								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "kick-member");
-								switch_event_fire(&event);
-							}
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conference kick all %u\n",all);
+						if (!all) {
+							conference_function_kick_member(conference, NULL, id, stream, NULL);
 							goto done;
 						} else {
-							stream->write_function(stream, "Non-Existant ID %u\n", id);
+							conference_member_itterator(conference, stream, &conference_function_kick_member, NULL); 
 							goto done;
 						}
 					} else {
-						stream->write_function(stream, "usage kick <id>\n");
+						stream->write_function(stream, "usage kick <[id|all]>\n");
 						goto done;
 					}
 				} else if (!strcasecmp(argv[1], "transfer")) {
@@ -2935,11 +3036,11 @@ static switch_api_interface_t conf_api_interface = {
 		"<confname> say <text>\n"
 		"<confname> saymember <member_id><text>\n"
 		"<confname> stop <[current|all]> [<member_id>]\n"
-		"<confname> kick <member_id>\n"
-		"<confname> mute <member_id>\n"
-		"<confname> unmute <member_id>\n"
-		"<confname> deaf <member_id>\n"
-		"<confname> undef <member_id>\n"
+		"<confname> kick <[member_id|all]>\n"
+		"<confname> mute <[member_id|all]>\n"
+		"<confname> unmute <[member_id|all]>\n"
+		"<confname> deaf <[member_id|all]>\n"
+		"<confname> undef <[member_id|all]>\n"
 		"<confname> relate <member_id> <other_member_id> [nospeak|nohear]\n"
 		"<confname> lock\n"
 		"<confname> unlock\n"
