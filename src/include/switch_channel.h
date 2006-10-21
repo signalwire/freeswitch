@@ -137,6 +137,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel,
 								uint32_t flags);
 
 /*!
+  \brief Fire A presence event for the channel
+  \param channel the channel to initilize
+  \param rpid the rpid if for the icon to use
+  \param status the status message
+*/
+SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, char *rpid, char *status);
+
+/*!
   \brief Uninitalize a channel
   \param channel the channel to uninit
 */

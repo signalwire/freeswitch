@@ -305,6 +305,38 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel,
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, char *rpid, char *status)
+{
+	char *id = switch_channel_get_variable(channel, "presence_id");
+	switch_event_t *event;
+	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
+
+	if (!status) {
+		type = SWITCH_EVENT_PRESENCE_OUT;
+	}
+
+	if (!id) {
+		return;
+	}
+
+	if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", __FILE__);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", __FILE__);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", id);
+		if (type == SWITCH_EVENT_PRESENCE_IN) {
+			if (!rpid) {
+				rpid = "unknown";
+			}
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", rpid);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", status);
+		}
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+		switch_event_fire(&event);
+	}
+
+}
+
+
 SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, char *varname)
 {
 	char *v;
@@ -589,7 +621,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 
 	if (ok) {
-		
+		if (state > CS_RING) {
+			switch_channel_presence(channel, "unknown", (char*)state_names[state]);
+		}
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_DEBUG, "%s State Change %s -> %s\n", 
 						  channel->name,
 						  state_names[last_state], 
@@ -928,6 +962,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}
+
+		switch_channel_presence(channel, "unavailable", switch_channel_cause2str(channel->hangup_cause));
 
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
 		switch_core_session_signal_state_change(channel->session);

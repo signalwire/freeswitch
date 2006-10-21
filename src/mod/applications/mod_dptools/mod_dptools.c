@@ -60,6 +60,11 @@ static void sleep_function(switch_core_session_t *session, char *data)
 	}
 }
 
+static void eval_function(switch_core_session_t *session, char *data)
+{
+	return;
+}
+
 static void answer_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
@@ -165,12 +170,87 @@ static switch_status_t strftime_api_function(char *fmt, switch_core_session_t *s
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t presence_api_function(char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+	switch_event_t *event;
+	char *lbuf, *argv[4];
+	int argc = 0;
+	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
+
+	if ((lbuf = strdup(fmt)) && (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) > 0) {
+		if (!strcasecmp(argv[0], "out")) {
+			type = SWITCH_EVENT_PRESENCE_OUT;
+		} else if (argc != 4) {
+			stream->write_function(stream, "Invalid");
+			return SWITCH_STATUS_SUCCESS;
+		}
+		
+		if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", "dp");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", __FILE__);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", argv[1]);
+			if (type == SWITCH_EVENT_PRESENCE_IN) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "%s", argv[2]);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", argv[3]);
+			}
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_fire(&event);
+		}
+		stream->write_function(stream, "Event Sent");
+		switch_safe_free(lbuf);
+	} else {
+		stream->write_function(stream, "Invalid");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t chat_api_function(char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+	char *lbuf, *argv[4];
+	int argc = 0;
+
+	if ((lbuf = strdup(fmt)) && (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
+		switch_chat_interface_t *ci;
+		
+		if ((ci = switch_loadable_module_get_chat_interface(argv[0]))) {
+			ci->chat_send("dp", argv[1], argv[2], "", argv[3], "");
+			stream->write_function(stream, "Sent");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", argv[0]);
+		}
+	} else {
+		stream->write_function(stream, "Invalid");
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_api_interface_t chat_api_interface = {
+	/*.interface_name */ "chat",
+	/*.desc */ "chat",
+	/*.function */ chat_api_function,
+	/*.syntax */ "<proto>|<from>|<to>|<message>",
+	/*.next */ NULL
+};
+
 static switch_api_interface_t dptools_api_interface = {
 	/*.interface_name */ "strftime",
 	/*.desc */ "strftime",
 	/*.function */ strftime_api_function,
 	/*.syntax */ "<format_string>",
-	/*.next */ NULL
+	/*.next */ &chat_api_interface
+};
+
+
+static switch_api_interface_t presence_api_interface = {
+	/*.interface_name */ "presence",
+	/*.desc */ "presence",
+	/*.function */ presence_api_function,
+	/*.syntax */ "<user> <rpid> <message>",
+	/*.next */ &dptools_api_interface
 };
 
 static const switch_application_interface_t set_application_interface = {
@@ -192,13 +272,23 @@ static const switch_application_interface_t answer_application_interface = {
 
 };
 
+static const switch_application_interface_t eval_application_interface = {
+	/*.interface_name */ "eval",
+	/*.application_function */ eval_function,
+	/* long_desc */ "Do Nothing",
+	/* short_desc */ "Do Nothing",
+	/* syntax */ "",
+	/*.next */ &answer_application_interface
+
+};
+
 static const switch_application_interface_t strftime_application_interface = {
 	/*.interface_name */ "strftime",
 	/*.application_function */ strftime_function,
 	/* long_desc */ NULL,
 	/* short_desc */ NULL,
 	/* syntax */ NULL,
-	/*.next */ &answer_application_interface
+	/*.next */ &eval_application_interface
 
 };
 
@@ -236,7 +326,7 @@ static const switch_loadable_module_interface_t mod_dptools_module_interface = {
 	/*.dialplan_interface = */ NULL,
 	/*.codec_interface = */ NULL,
 	/*.application_interface */ &privacy_application_interface,
-	/*.api_interface */ &dptools_api_interface
+	/*.api_interface */ &presence_api_interface
 };
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)

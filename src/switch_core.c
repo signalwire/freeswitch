@@ -2536,6 +2536,16 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Application-Data", "%s", expanded);
 			switch_event_fire(&event);
 		}
+		
+
+		if (switch_channel_get_variable(session->channel, "presence_id")) {
+			char *arg = switch_mprintf("%s(%s)", extension->current_application->application_name, expanded);
+			if (arg) {
+				switch_channel_presence(session->channel, "unknown", arg);
+				switch_safe_free(arg);
+			}
+		}
+
 		application_interface->application_function(session, expanded);
 
 		if (expanded != extension->current_application->application_data) {
