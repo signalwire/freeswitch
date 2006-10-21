@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Neal Horman <neal at wanlink dot com>
  *
  *
  * mod_skel.c -- Framework Demo Module
@@ -59,16 +60,21 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 /*
   Called when the system shuts down
-  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
-  {
-  return SWITCH_STATUS_SUCCESS;
-  }
+SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
 */
 
 /*
   If it exists, this is called in it's own thread when the module-load completes
-  SWITCH_MOD_DECLARE(switch_status) switch_module_shutdown(void)
-  {
-  return SWITCH_STATUS_SUCCESS;
-  }
+  If it returns anything but SWITCH_STATUS_TERM it will be called again automaticly
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
+{
+	while(looping)
+	{
+		switch_yield(1000);
+	}
+	return SWITCH_STATUS_TERM;
+}
 */
