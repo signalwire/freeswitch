@@ -73,6 +73,8 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 	}
 
 	if (mode & SFM_WRITE) {
+		sf_count_t  frames = 0 ;
+
 		context->sfinfo.channels = handle->channels;
 		context->sfinfo.samplerate = handle->samplerate;
 		if (handle->samplerate == 8000 || handle->samplerate == 16000) {
@@ -82,6 +84,8 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, char *pat
 		} else if (handle->samplerate == 32000) {
 			context->sfinfo.format |= SF_FORMAT_PCM_32;
 		}
+
+        sf_command (context->handle, SFC_FILE_TRUNCATE, &frames, sizeof (frames)) ;
 
 		/* Could add more else if() but i am too lazy atm.. */
 		if (!strcasecmp(ext, "wav")) {
