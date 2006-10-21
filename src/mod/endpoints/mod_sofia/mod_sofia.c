@@ -3771,18 +3771,22 @@ static void sip_r_register(int status,
 		return;
 	}
 	
-	if (sip->sip_www_authenticate) {
-		authenticate = sip->sip_www_authenticate;
-	} else if (sip->sip_proxy_authenticate) {
-		authenticate = sip->sip_proxy_authenticate;
-	}
-
 	if (status == 200) {
 		if (sofia_private->oreg) {
 			oreg->state = REG_STATE_REGISTER;
 			nua_handle_destroy(nh);
 		}
-	} else if (authenticate) {
+	} else if (status == 401 || status == 407) {
+
+		if (sip->sip_www_authenticate) {
+			authenticate = sip->sip_www_authenticate;
+		} else if (sip->sip_proxy_authenticate) {
+			authenticate = sip->sip_proxy_authenticate;
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Missing Authenticate Header!\n");
+			return;
+		}
+
 		char const *realm = (char const *) *authenticate->au_params;
 		char const *scheme = (char const *) authenticate->au_scheme;
 		char authentication[256] = "";
