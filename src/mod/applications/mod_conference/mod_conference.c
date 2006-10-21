@@ -2731,7 +2731,7 @@ static switch_api_interface_t conf_api_interface = {
 		"<confname> lock\n"
 		"<confname> unlock\n"
 		"<confname> dial <endpoint_module_name>/<destination>\n"
-		"<confname> transfer <member_id> <conference_name>",
+		"<confname> transfer <member_id> <conference_name>\n",
 	/*.next */ 
 };
 

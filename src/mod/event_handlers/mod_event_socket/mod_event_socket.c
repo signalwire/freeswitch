@@ -555,7 +555,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 		acs.bg = 0;
 
 		api_exec(NULL, (void *) &acs);
-		snprintf(reply, reply_len, "+OK");
+		//snprintf(reply, reply_len, "+OK");
 
 		return SWITCH_STATUS_SUCCESS;
 	} else if (!strncasecmp(cmd, "bgapi ", 6)) {

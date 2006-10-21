@@ -225,7 +225,7 @@ sub handle_curses_input {
 		#see if we got connected at some point
 		if(defined($sockets{'localhost'})) {
 			#send the command
-			$sockets{'localhost'}->put($input);
+			$sockets{'localhost'}->put("api $input");
 		}
 	}
 }
