@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Neal Horman <neal at wanlink dot com>
  *
  *
  * mod_playback.c -- Raw Audio File Streaming Application Module
@@ -126,13 +127,15 @@ static void playback_function(switch_core_session_t *session, char *data)
 static void record_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
+	switch_status_t status;
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
-	if (switch_ivr_record_file(session, NULL, data, on_dtmf, NULL, 0) != SWITCH_STATUS_SUCCESS) {
+	status = switch_ivr_record_file(session, NULL, data, on_dtmf, NULL, 0);
+
+	if (!switch_channel_ready(channel) || (status != SWITCH_STATUS_SUCCESS && !SWITCH_STATUS_IS_BREAK(status))) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
-	
 }
 
 
