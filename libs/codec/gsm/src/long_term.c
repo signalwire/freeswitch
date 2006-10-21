@@ -194,7 +194,7 @@ static void Calculation_of_the_LTP_parameters P4((d,dp,bc_out,Nc_out),
 	/*  Initialization of a working array wt
 	 */
 
-	for (k = 0; k <= 39; k++) wt[k] = SASR( d[k], scal );
+	for (k = 0; k <= 39; k++) wt[k] = (word)SASR( d[k], scal );
 
 	/* Search for the maximum cross-correlation and coding of the LTP lag
 	 */
@@ -231,7 +231,7 @@ static void Calculation_of_the_LTP_parameters P4((d,dp,bc_out,Nc_out),
 
 		if (L_result > L_max) {
 
-			Nc    = lambda;
+			Nc    = (word)lambda;
 			L_max = L_result;
 		}
 	}

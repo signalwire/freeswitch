@@ -167,9 +167,9 @@ static void LARp_to_rp P1((LARp),
 
 		if (*LARp < 0) {
 			temp = *LARp == MIN_WORD ? MAX_WORD : -(*LARp);
-			*LARp = - ((temp < 11059) ? temp << 1
-				: ((temp < 20070) ? temp + 11059
-				:  (word) GSM_ADD( temp >> 2, 26112 )));
+			*LARp =(word)( - ((temp < 11059) ? (word)(temp << 1)
+				: ((temp < 20070) ? (word)(temp + 11059)
+				:  (word) GSM_ADD( temp >> 2, 26112 ))));
 		} else {
 			temp  = *LARp;
 			*LARp =    (temp < 11059) ? temp << 1

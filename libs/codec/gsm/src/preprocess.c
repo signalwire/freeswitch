@@ -40,7 +40,7 @@ void Gsm_Preprocess P3((S, s, so),
 
 	word       z1 = S->z1;
 	longword L_z2 = S->L_z2;
-	word 	   mp = S->mp;
+	word 	   mp = (word)S->mp;
 
 	word 	   	s1;
 	longword      L_s2;
@@ -59,7 +59,7 @@ void Gsm_Preprocess P3((S, s, so),
 
 	/*  4.2.1   Downscaling of the input signal
 	 */
-		SO = SASR( *s, 3 ) << 2;
+		SO = (word)SASR( *s, 3 ) << 2;
 		s++;
 
 		assert (SO >= -0x4000);	/* downscaled by     */

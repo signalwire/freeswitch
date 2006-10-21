@@ -232,7 +232,7 @@ static void APCM_quantization_xmaxc_to_exp_mant P3((xmaxc,exp_out,mant_out),
 	 */
 
 	exp = 0;
-	if (xmaxc > 15) exp = SASR(xmaxc, 3) - 1;
+	if (xmaxc > 15) exp = (word)SASR(xmaxc, 3) - 1;
 	mant = xmaxc - (exp << 3);
 
 	if (mant == 0) {
@@ -283,13 +283,13 @@ static void APCM_quantization P5((xM,xMc,mant_out,exp_out,xmaxc_out),
 	 */
 
 	exp   = 0;
-	temp  = SASR( xmax, 9 );
+	temp  = (word)SASR( xmax, 9 );
 	itest = 0;
 
 	for (i = 0; i <= 5; i++) {
 
 		itest |= (temp <= 0);
-		temp = SASR( temp, 1 );
+		temp = (word)SASR( temp, 1 );
 
 		assert(exp <= 5);
 		if (itest == 0) exp++;		/* exp = add (exp, 1) */
@@ -333,7 +333,7 @@ static void APCM_quantization P5((xM,xMc,mant_out,exp_out,xmaxc_out),
 
 		temp = xM[i] << temp1;
 		temp = (word) GSM_MULT( temp, temp2 );
-		temp = SASR(temp, 12);
+		temp = (word)SASR(temp, 12);
 		xMc[i] = temp + 4;		/* see note below */
 	}
 
