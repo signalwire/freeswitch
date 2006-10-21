@@ -1574,11 +1574,37 @@ void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *
 void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subject, char *body)
 {
 	iks *msg;
-
+	char *t, *e;
+	char *bdup = NULL;
+	int on = 0;
+	int len = 0;
 	assert(handle != NULL);
 	assert(body != NULL);
+	
+	if (strchr(body, '<')) {
+		len = (int) strlen(body);
+		if (!(bdup = malloc(len))) {
+			return;
+		}
 
-
+		memset(bdup, 0, len);
+		
+		e = bdup;
+		for(t = body; *t; t++) {
+			if (*t == '<') {
+				on = 1;
+			} else if (*t == '>') {
+				t++;
+				on = 0;
+			}
+			
+			if (!on) {
+				*e++ = *t;
+			}
+		}
+		body = bdup;
+	}
+	
 	msg = iks_make_msg(IKS_TYPE_NONE, to, body);
 	iks_insert_attrib(msg, "type", "chat");
 
@@ -1590,6 +1616,10 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subje
 
 	if (subject) {
 		iks_insert_attrib(msg, "subject", subject);
+	}
+
+	if (bdup) {	
+		free(bdup);
 	}
 
 	apr_queue_push(handle->queue, msg);
