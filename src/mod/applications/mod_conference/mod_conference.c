@@ -1363,12 +1363,13 @@ static void conference_list_pretty(conference_obj_t *conference, switch_stream_h
 	conference_member_t *member = NULL;
 
 	switch_mutex_lock(conference->member_mutex);
+	stream->write_function(stream, "<pre>Current Callers:\n");
 
 	for (member = conference->members; member; member = member->next) {
 		switch_channel_t *channel = switch_core_session_get_channel(member->session);
 		switch_caller_profile_t *profile = switch_channel_get_caller_profile(channel);
 
-		stream->write_function(stream, "Caller %s <%s>\n", 
+		stream->write_function(stream, "*) %s (%s)\n", 
 							   profile->caller_id_name,
 							   profile->caller_id_number
 							   );
@@ -2741,6 +2742,10 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	conference_obj_t *conference = NULL;
 	switch_stream_handle_t stream = {0};
 
+	if (!body) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
 	if (!(ci = switch_loadable_module_get_chat_interface(proto))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", proto);
 	}

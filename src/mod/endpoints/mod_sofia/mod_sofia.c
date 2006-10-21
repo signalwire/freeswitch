@@ -2127,8 +2127,10 @@ static void sip_i_message(int status,
 		const char *subject = "n/a";
 		char *msg = NULL;
 
-		if (strstr((char*)sip->sip_content_type->c_subtype, "composing")) {
-			return;
+		if (sip->sip_content_type) {
+			if (strstr((char*)sip->sip_content_type->c_subtype, "composing")) {
+				return;
+			}
 		}
 
 		if (from) {
