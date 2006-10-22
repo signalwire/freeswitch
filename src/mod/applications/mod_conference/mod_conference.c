@@ -325,15 +325,19 @@ static conference_member_t *conference_member_get(conference_obj_t *conference, 
 	return member;
 }
 
-static void conference_record_stop(conference_obj_t *conference, char *path)
+static int conference_record_stop(conference_obj_t *conference, char *path)
 {
 	conference_member_t *member = NULL;
+	int count = 0;
 
 	for(member = conference->members; member; member = member->next) {
 		if (switch_test_flag(member, MFLAG_NOCHANNEL) && (!path || !strcmp(path, member->rec_path))) {
 			switch_clear_flag_locked(member, MFLAG_RUNNING);
+			count++;
 		}
 	}
+
+	return count;
 }
 
 /* Add a custom relationship to a member */
@@ -614,9 +618,9 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		if (ready) {
 			/* Build a muxed frame for every member that contains the mixed audio of everyone else */
 			for (omember = conference->members; omember; omember = omember->next) {
+				omember->len = bytes;
 				if (conference->fnode) {
 					memcpy(omember->mux_frame, file_frame, file_sample_len * 2);
-					omember->len = bytes;
 				} else {
 					memset(omember->mux_frame, 255, bytes);
 				}
@@ -1151,7 +1155,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 
 	while(switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(rec->conference, CFLAG_RUNNING) && rec->conference->count) {
 		if ((mux_used = (uint32_t) switch_buffer_inuse(member->mux_buffer)) >= bytes) {
-			/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
+			/* Flush the output buffer and write all the data (presumably muxed) to the file */
 			switch_mutex_lock(member->audio_out_mutex);
 			write_frame.data = data;
 			while ((write_frame.datalen = (uint32_t)switch_buffer_read(member->mux_buffer, write_frame.data, mux_used))) {
@@ -1713,6 +1717,115 @@ static int conference_function_kick_member(conference_obj_t *conference, confere
 	return err;
 }
 
+static int conference_function_energy_member(conference_obj_t *conference, conference_member_t *member, int id, switch_stream_handle_t *stream, void *data)
+{
+	int err = 0;
+
+	if (member != NULL || (member = conference_member_get(conference, id))) {
+		switch_event_t *event;
+
+			if (data) {
+				switch_mutex_lock(member->flag_mutex);
+				member->energy_level = atoi((char *)data);
+				switch_mutex_unlock(member->flag_mutex);
+			}
+			
+			stream->write_function(stream, "Energy %u=%d\n", id, member->energy_level);
+
+			if (data) {
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_t *channel = switch_core_session_get_channel(member->session);
+					switch_channel_event_set_data(channel, event);
+				
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level-member");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
+				
+					switch_event_fire(&event);
+				}
+			}
+		} else {
+			stream->write_function(stream, "Non-Existant ID %u\n", id);
+			err = 1;
+		}
+
+	return err;
+}
+
+static int conference_function_volume_in_member(conference_obj_t *conference, conference_member_t *member, int id, switch_stream_handle_t *stream, void *data)
+{
+	int err = 0;
+
+	if (member != NULL || (member = conference_member_get(conference, id))) {
+		switch_event_t *event;
+
+		if (data) {
+			switch_mutex_lock(member->flag_mutex);
+			member->volume_in_level = atoi((char *)data);
+			normalize_volume(member->volume_in_level);
+			switch_mutex_unlock(member->flag_mutex);
+		}
+		
+		stream->write_function(stream, "Volume IN %u=%d\n", id, member->volume_in_level);
+		if (data) {
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_t *channel = switch_core_session_get_channel(member->session);
+				switch_channel_event_set_data(channel, event);
+			
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-in-member");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%u", member->volume_in_level);
+			
+				switch_event_fire(&event);
+			}
+		}
+	} else {
+		stream->write_function(stream, "Non-Existant ID %u\n", id);
+		err = 1;
+	}
+
+	return err;
+}
+
+static int conference_function_volume_out_member(conference_obj_t *conference, conference_member_t *member, int id, switch_stream_handle_t *stream, void *data)
+{
+	int err = 0;
+
+	if (member != NULL || (member = conference_member_get(conference, id))) {
+		switch_event_t *event;
+
+		if (data) {
+			switch_mutex_lock(member->flag_mutex);
+			member->volume_out_level = atoi((char *)data);
+			normalize_volume(member->volume_out_level);
+			switch_mutex_unlock(member->flag_mutex);
+		}
+		
+		stream->write_function(stream, "Volume OUT %u=%d\n", id, member->volume_out_level);
+
+		if (data) {
+			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_t *channel = switch_core_session_get_channel(member->session);
+				switch_channel_event_set_data(channel, event);
+			
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-out-member");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%u", member->volume_out_level);
+			
+				switch_event_fire(&event);
+			}
+		}
+	} else {
+		stream->write_function(stream, "Non-Existant ID %u\n", id);
+		err = 1;
+	}
+
+	return err;
+}
+
 /* API Interface Function */
 static switch_status_t conf_function(char *buf, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
@@ -1963,112 +2076,50 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 				} else if (!strcasecmp(argv[1], "energy")) {
 					if (argc > 2) {
 						uint32_t id = atoi(argv[2]);
-						conference_member_t *member;
+						int all = ( id == 0 && strcasecmp(argv[2], "all") == 0 );
 
-						if ((member = conference_member_get(conference, id))) {
-
-							if (argv[3]) {
-								switch_mutex_lock(member->flag_mutex);
-								member->energy_level = atoi(argv[3]);
-								switch_mutex_unlock(member->flag_mutex);
-							}
-							
-							stream->write_function(stream, "Energy %u=%d\n", id, member->energy_level);
-							if (argv[3]) {
-								if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-									switch_channel_t *channel = switch_core_session_get_channel(member->session);
-									switch_channel_event_set_data(channel, event);
-								
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level-member");
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Energy-Level", "%d", member->energy_level);
-								
-									switch_event_fire(&event);
-								}
-							}
+						if (!all) {
+							conference_function_energy_member(conference, NULL, id, stream, argv[3]);
 							goto done;
 						} else {
-							stream->write_function(stream, "Non-Existant ID %u\n", id);
+							conference_member_itterator(conference, stream, &conference_function_energy_member, argv[3]); 
 							goto done;
 						}
 					} else {
-						stream->write_function(stream, "usage energy <id> [<newval>]\n");
+						stream->write_function(stream, "usage energy <id|all> [<newval>]\n");
 						goto done;
 					}
 
 				} else if (!strcasecmp(argv[1], "volume_in")) {
 					if (argc > 2) {
 						uint32_t id = atoi(argv[2]);
-						conference_member_t *member;
+						int all = ( id == 0 && strcasecmp(argv[2], "all") == 0 );
 
-						if ((member = conference_member_get(conference, id))) {
-
-							if (argv[3]) {
-								switch_mutex_lock(member->flag_mutex);
-								member->volume_in_level = atoi(argv[3]);
-								normalize_volume(member->volume_in_level);
-								switch_mutex_unlock(member->flag_mutex);
-							}
-							
-							stream->write_function(stream, "Volume IN %u=%d\n", id, member->volume_in_level);
-							if (argv[3]) {
-								if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-									switch_channel_t *channel = switch_core_session_get_channel(member->session);
-									switch_channel_event_set_data(channel, event);
-								
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-in-member");
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%u", member->volume_in_level);
-								
-									switch_event_fire(&event);
-								}
-							}
+						if (!all) {
+							conference_function_volume_in_member(conference, NULL, id, stream, argv[3]);
 							goto done;
 						} else {
-							stream->write_function(stream, "Non-Existant ID %u\n", id);
+							conference_member_itterator(conference, stream, &conference_function_volume_in_member, argv[3]); 
 							goto done;
 						}
 					} else {
-						stream->write_function(stream, "usage volume_in <id> [<newval>]\n");
+						stream->write_function(stream, "usage volume_in <[id|all]> [<newval>]\n");
 						goto done;
 					}
 				} else if (!strcasecmp(argv[1], "volume_out")) {
 					if (argc > 2) {
 						uint32_t id = atoi(argv[2]);
-						conference_member_t *member;
+						int all = ( id == 0 && strcasecmp(argv[2], "all") == 0 );
 
-						if ((member = conference_member_get(conference, id))) {
-
-							if (argv[3]) {
-								switch_mutex_lock(member->flag_mutex);
-								member->volume_out_level = atoi(argv[3]);
-								normalize_volume(member->volume_out_level);
-								switch_mutex_unlock(member->flag_mutex);
-							}
-							
-							stream->write_function(stream, "Volume OUT %u=%d\n", id, member->volume_out_level);
-							if (argv[3]) {
-								if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-									switch_channel_t *channel = switch_core_session_get_channel(member->session);
-									switch_channel_event_set_data(channel, event);
-								
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", id);
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-out-member");
-									switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Volume-Level", "%u", member->volume_out_level);
-								
-									switch_event_fire(&event);
-								}
-							}
+						if (!all) {
+							conference_function_volume_out_member(conference, NULL, id, stream, argv[3]);
 							goto done;
 						} else {
-							stream->write_function(stream, "Non-Existant ID %u\n", id);
+							conference_member_itterator(conference, stream, &conference_function_volume_out_member, argv[3]); 
 							goto done;
 						}
 					} else {
-						stream->write_function(stream, "usage volume_out <id> [<newval>]\n");
+						stream->write_function(stream, "usage volume_out <[id|all> [<newval>]\n");
 						goto done;
 					}
 				} else if (!strcasecmp(argv[1], "mute")) {
@@ -2139,17 +2190,28 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 				} else if (!strcasecmp(argv[1], "record")) {
 					if (argc > 2) {
 						launch_conference_record_thread(conference, argv[2]);
+						goto done;
 					} else {
-						stream->write_function(stream, "-ERR No Path Specified!\n");
+						stream->write_function(stream, "usage record <filename>\n");
+						goto done;
 					}
 				} else if (!strcasecmp(argv[1], "norecord")) {
-					conference_record_stop(conference, argv[1]);
+					if (argc > 2) {
+						int all = (strcasecmp(argv[2], "all") == 0 );
+
+						if(!conference_record_stop(conference, all ? NULL : argv[2]) && !all) {
+							stream->write_function(stream, "non-existant recording '%s'\n", argv[2]);
+						}
+						goto done;
+					} else {
+						stream->write_function(stream, "usage norecord <[filename | all]>\n");
+						goto done;
+					}
 				} else if (!strcasecmp(argv[1], "kick")) {
 					if (argc > 2) {
 						uint32_t id = atoi(argv[2]);
 						int all = ( id == 0 && strcasecmp(argv[2], "all") == 0 );
 
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conference kick all %u\n",all);
 						if (!all) {
 							conference_function_kick_member(conference, NULL, id, stream, NULL);
 							goto done;
@@ -3028,24 +3090,26 @@ static switch_api_interface_t conf_api_interface = {
 	/*.function */ conf_function,
 	/*.syntax */ 
 		"list [delim <string>]\n"
-		"<confname> list [delim <string>]\n"
-		"<confname> energy <member_id> [<newval>]\n"
-		"<confname> volume_in <member_id> [<newval>]\n"
-		"<confname> volume_out <member_id> [<newval>]\n"
-		"<confname> play <file_path> [<member_id>]\n"
-		"<confname> say <text>\n"
-		"<confname> saymember <member_id><text>\n"
-		"<confname> stop <[current|all]> [<member_id>]\n"
-		"<confname> kick <[member_id|all]>\n"
-		"<confname> mute <[member_id|all]>\n"
-		"<confname> unmute <[member_id|all]>\n"
-		"<confname> deaf <[member_id|all]>\n"
-		"<confname> undef <[member_id|all]>\n"
-		"<confname> relate <member_id> <other_member_id> [nospeak|nohear]\n"
-		"<confname> lock\n"
-		"<confname> unlock\n"
-		"<confname> dial <endpoint_module_name>/<destination>\n"
-		"<confname> transfer <member_id> <conference_name>\n",
+		"\t<confname> list [delim <string>]\n"
+		"\t<confname> energy <member_id|all> [<newval>]\n"
+		"\t<confname> volume_in <member_id|all> [<newval>]\n"
+		"\t<confname> volume_out <member_id|all> [<newval>]\n"
+		"\t<confname> play <file_path> [<member_id>]\n"
+		"\t<confname> say <text>\n"
+		"\t<confname> saymember <member_id><text>\n"
+		"\t<confname> stop <[current|all]> [<member_id>]\n"
+		"\t<confname> kick <[member_id|all]>\n"
+		"\t<confname> mute <[member_id|all]>\n"
+		"\t<confname> unmute <[member_id|all]>\n"
+		"\t<confname> deaf <[member_id|all]>\n"
+		"\t<confname> undef <[member_id|all]>\n"
+		"\t<confname> relate <member_id> <other_member_id> [nospeak|nohear]\n"
+		"\t<confname> lock\n"
+		"\t<confname> unlock\n"
+		"\t<confname> dial <endpoint_module_name>/<destination>\n"
+		"\t<confname> transfer <member_id> <conference_name>\n"
+		"\t<confname> record <filename>\n"
+		"\t<confname> norecord <[filename|all]>\n",
 	/*.next */ 
 };
 
