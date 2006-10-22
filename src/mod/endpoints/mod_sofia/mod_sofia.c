@@ -3810,6 +3810,11 @@ static void sip_r_register(int status,
 			nua_handle_destroy(nh);
 		}
 	} else if (status == 401 || status == 407) {
+		char const *realm = (char const *) *authenticate->au_params;
+		char const *scheme = (char const *) authenticate->au_scheme;
+		char authentication[256] = "";
+		int ss_state;
+
 
 		if (sip->sip_www_authenticate) {
 			authenticate = sip->sip_www_authenticate;
@@ -3820,10 +3825,6 @@ static void sip_r_register(int status,
 			return;
 		}
 
-		char const *realm = (char const *) *authenticate->au_params;
-		char const *scheme = (char const *) authenticate->au_scheme;
-		char authentication[256] = "";
-		int ss_state;
 		
 		snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, strstr(realm, "=") + 1, 
 				 oreg->register_username,
