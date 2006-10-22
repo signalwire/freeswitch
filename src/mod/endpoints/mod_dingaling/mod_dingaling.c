@@ -1975,7 +1975,7 @@ static void execute_sql(char *dbname, char *sql, switch_mutex_t *mutex)
 static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 {
 	char *params = NULL, *real_to, *to_user, *xmlstr = NULL, *to_host = NULL;
-	switch_xml_t domain, xml, user, vcard;
+	switch_xml_t domain, xml = NULL, user, vcard;
 
 	if (!strncasecmp(to, "user+", 5)) {
 		real_to = to + 5;
