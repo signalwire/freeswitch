@@ -126,6 +126,7 @@ typedef enum {
 	LDL_SIGNAL_ROSTER,
 	LDL_SIGNAL_SUBSCRIBE,
 	LDL_SIGNAL_UNSUBSCRIBE,
+	LDL_SIGNAL_VCARD,
 	LDL_SIGNAL_TERMINATE,
 	LDL_SIGNAL_ERROR,
 	LDL_SIGNAL_LOGIN_SUCCESS,
@@ -373,6 +374,16 @@ void ldl_session_send_msg(ldl_session_t *session, char *subject, char *body);
   \param message a status message
 */
 void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message);
+
+/*!
+  \brief Send a vcard
+  \param handle the handle to send with
+  \param from the from address
+  \param to the to address
+  \param id the request id
+  \param vcard the text xml of the vcard
+*/
+void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id, char *vcard);
 
 /*!
   \brief Send a message

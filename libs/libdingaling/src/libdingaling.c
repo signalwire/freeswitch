@@ -461,6 +461,19 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 
 const char *marker = "TRUE";
 
+static int on_vcard(void *user_data, ikspak *pak)
+{
+	ldl_handle_t *handle = user_data;
+	char *from = iks_find_attrib(pak->x, "from");
+	char *to = iks_find_attrib(pak->x, "to");
+
+	if (handle->session_callback) {
+		handle->session_callback(handle, NULL, LDL_SIGNAL_VCARD, to, from, pak->id, NULL); 
+	}
+
+	return IKS_FILTER_EAT;
+}
+
 static int on_disco_info(void *user_data, ikspak *pak)
 {
 	ldl_handle_t *handle = user_data;
@@ -1240,6 +1253,8 @@ static void j_setup_filter(ldl_handle_t *handle)
 							IKS_RULE_SUBTYPE, IKS_TYPE_GET, IKS_RULE_NS, "jabber:iq:register", IKS_RULE_DONE);
 		iks_filter_add_rule(handle->filter, on_disco_reg_out, handle,
 							IKS_RULE_SUBTYPE, IKS_TYPE_SET, IKS_RULE_NS, "jabber:iq:register", IKS_RULE_DONE);
+		iks_filter_add_rule(handle->filter, on_vcard, handle,
+							IKS_RULE_SUBTYPE, IKS_TYPE_GET, IKS_RULE_NS, "vcard-temp", IKS_RULE_DONE);
 	} else {
 		iks_filter_add_rule(handle->filter, on_disco_info, handle, 
 							IKS_RULE_NS, "http://jabber.org/protocol/disco#info", IKS_RULE_DONE);
@@ -1569,6 +1584,34 @@ void *ldl_handle_get_private(ldl_handle_t *handle)
 void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message)
 {
 	do_presence(handle, from, to, type, rpid, message);
+}
+
+void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id, char *vcard)
+{
+	iks *vxml, *iq;
+	int e = 0;
+
+	if (!(vxml = iks_tree(vcard, 0, &e))) {
+		globals.logger(DL_LOG_ERR, "Parse returned error [%d]\n", e);
+		return;
+	}
+	
+	if (!(iq = iks_new("iq"))) {
+		globals.logger(DL_LOG_ERR, "Memory Error\n");
+		return;
+	}
+
+	iks_insert_attrib(iq, "to", to);
+	iks_insert_attrib(iq, "xmlns", "jabber:client");
+	iks_insert_attrib(iq,"from", from);
+	iks_insert_attrib(iq, "type", "result");
+	iks_insert_attrib(iq, "id", id);
+	iks_insert_node(iq, vxml);
+	
+	apr_queue_push(handle->queue, iq);
+
+	iks_free(vxml);
+
 }
 
 void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, char *subject, char *body)

@@ -3341,7 +3341,6 @@ static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_xml_t cfg, xml, param, ads;
 
 	memset(&globals, 0, sizeof(globals));
 
@@ -3357,28 +3356,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	if (switch_core_new_memory_pool(&globals.conference_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no conference pool\n");
 		return SWITCH_STATUS_TERM;
-	}
-
-	if ((xml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
-		if ((ads = switch_xml_child(cfg, "advertise"))) {
-			switch_event_t *event;
-		
-			for (param = switch_xml_child(ads, "room"); param; param = param->next) {
-				char *status = (char *) switch_xml_attr_soft(param, "status");
-				char *name = (char *) switch_xml_attr_soft(param, "name");
-
-				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", name);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", name);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", status ? status : "Inactive");
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-				
-					switch_event_fire(&event);
-				}			
-			}
-		}
 	}
 
 

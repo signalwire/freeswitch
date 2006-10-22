@@ -2614,7 +2614,7 @@ static uint8_t handle_register(nua_t *nua,
 	sip_expires_t const *expires = sip->sip_expires;
 	sip_authorization_t const *authorization = sip->sip_authorization;
 	sip_contact_t const *contact = sip->sip_contact;
-	switch_xml_t domain, xml, user, param;
+	switch_xml_t domain, xml, user, param, xparams;
 	char params[1024] = "";
 	char *sql;
 	switch_event_t *s_event;
@@ -2695,9 +2695,16 @@ static uint8_t handle_register(nua_t *nua,
 			switch_xml_free(xml);
 			return 1;
 		}
+
+		if ((xparams = switch_xml_child(user, "params"))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find params for user [%s@%s]\n", from_user, from_host);
+			nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
+			switch_xml_free(xml);
+			return 1;
+		}
 	
 
-		for (param = switch_xml_child(user, "param"); param; param = param->next) {
+		for (param = switch_xml_child(xparams, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 		
@@ -2889,10 +2896,15 @@ static int resub_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char *host = argv[1];
 	char *status = argv[2];
 	char *rpid = argv[3];
+	char *proto = argv[4];
 	switch_event_t *event;
 
+	if (switch_strlen_zero(proto)) {
+		proto = NULL;
+	}
+
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", proto ? proto : SOFIA_CHAT_PROTO);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->url);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", user, host);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", status);
@@ -3015,6 +3027,7 @@ static void sip_i_subscribe(int status,
 			switch_core_db_t *db;
 			char *errmsg;
 			char *sstr;
+			switch_event_t *sevent;
 
 			if (from) {
 				from_user = (char *) from->a_url->url_user;
@@ -3045,6 +3058,26 @@ static void sip_i_subscribe(int status,
 			if (to) {
 				to_user = (char *) to->a_url->url_user;
 				to_host = (char *) to->a_url->url_host;
+			}
+
+
+			if (strstr(to_user, "ext+") || strstr(to_user, "user+") || strstr(to_user, "conf+")) {
+				char proto[80];
+				char *p;
+
+				switch_copy_string(proto, to_user, sizeof(proto));
+				if ((p = strchr(proto, '+'))) {
+					*p = '\0';
+				}
+				
+				if (switch_event_create(&sevent, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+					switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "login", "%s", profile->name);
+					switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "from", "%s@%s",  to_user, to_host);
+					switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+					switch_event_add_header(sevent, SWITCH_STACK_BOTTOM, "status", "Click To Call");
+					switch_event_fire(&sevent);
+				}
 			}
 
 			if (strchr(to_user, '+')) {
@@ -3123,7 +3156,7 @@ static void sip_i_subscribe(int status,
 			}
 			switch_core_db_close(db);
 		end:
-			
+		
 			if (event) {
 				su_free(profile->home, event);
 			}
@@ -4629,7 +4662,15 @@ static void establish_presence(sofia_profile_t *profile)
 		return;
 	}
 
-	if ((sql = switch_mprintf("select user,host,'Registered','unavailable' from sip_registrations"))) {
+	if ((sql = switch_mprintf("select user,host,'Registered','unknown','' from sip_registrations"))) {
+		switch_mutex_lock(profile->ireg_mutex);
+		switch_core_db_exec(db, sql, resub_callback, profile, &errmsg);
+		switch_mutex_unlock(profile->ireg_mutex);
+		switch_safe_free(sql);
+	}
+
+	if ((sql = switch_mprintf("select sub_to_user,sub_to_host,'Online','unknown',proto from sip_subscriptions "
+							  "where proto='ext' or proto='user' or proto='conf'"))) {
 		switch_mutex_lock(profile->ireg_mutex);
 		switch_core_db_exec(db, sql, resub_callback, profile, &errmsg);
 		switch_mutex_unlock(profile->ireg_mutex);
@@ -4753,7 +4794,11 @@ static void pres_event_handler(switch_event_t *event)
 
 	if ((user = strdup(from))) {
 		if ((host = strchr(user, '@'))) {
+			char *p;
 			*host++ = '\0';
+			if ((p = strchr(host, '/'))) {
+				*p = '\0';
+			}
 		} else {
 			switch_safe_free(user);
 			return;
