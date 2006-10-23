@@ -1,4 +1,15 @@
 =========================
+2006-10-23 00:15:32 v0_06
+=========================
+
+  2006-10-23 00:15:32 (r6) by ptinsley
+
+    reworked the handling of Content-Length based replies to deal with replies
+      that don't have \n at the end of their data block
+    Updated the curses example (fsconsole.pl)
+     - Added command/reply output
+
+=========================
 2006-10-14 00:08:00 v0_05
 =========================
 

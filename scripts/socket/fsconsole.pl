@@ -270,12 +270,14 @@ sub handle_server_input {
 		if($input->{'Content-Type'} eq "auth/request") {
 			$heap->{'server'}->put("auth $server_secret");
 		} elsif ($input->{'Content-Type'} eq "api/response") {
-			new_message('destination_window' => 0, 'message' => 'Response: ');
+			new_message('destination_window' => 0, 'message' => 'API Response: ');
 			new_message('destination_window' => 0, 'message' => $input->{'__DATA__'});
 		} elsif ($input->{'Content-Type'} eq "log/data") {
 			new_message('destination_window' => 1, 'message' => $input->{'__DATA__'});
 		} elsif ($input->{'Content-Type'} eq "text/event-plain") {
 			new_message('destination_window' => 2, 'message' => Dumper $input);
+		} elsif ($input->{'Content-Type'} eq "command/reply") {
+			new_message('destination_window' => 0, 'message' => 'Command Response: ' . $input->{'Reply-Text'});
 		}
 	};
 

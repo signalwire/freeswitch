@@ -11,9 +11,6 @@ POE::Filter::FSSocket - a POE filter that parses FreeSWITCH events into hashes
   
   use POE qw(Component::Client::TCP Filter::FSSocket);
   use Data::Dumper;
-
-  my $auth_sent = 0;
-  my $password = "ClueCon";
   
   POE::Component::Client::TCP->new(
           'RemoteAddress' => '127.0.0.1',
@@ -24,6 +21,9 @@ POE::Filter::FSSocket - a POE filter that parses FreeSWITCH events into hashes
   
   POE::Kernel->run();
   exit;
+  
+  my $auth_sent = 0;
+  my $password = "ClueCon";
   
   sub handle_server_input {
           my ($heap,$input) = @_[HEAP,ARG0];
@@ -43,10 +43,6 @@ POE::Filter::FSSocket - a POE filter that parses FreeSWITCH events into hashes
                   }
           }
   }
-
-=head1 EXAMPLES
-
-See examples in the examples directory of the distribution.
 
 =head1 DESCRIPTION
 
@@ -110,19 +106,18 @@ use Carp qw(carp croak);
 use vars qw($VERSION);
 use base qw(POE::Filter);
 
-$VERSION = '0.05';
+$VERSION = '0.06';
 
-use POE::Filter::Line;
 use Data::Dumper;
 
 #self array
-sub LINE_FILTER()      {1}
-sub PARSER_STATE()     {2}
-sub PARSER_STATENEXT() {3}
-sub PARSED_RECORD()    {4}
-sub CURRENT_LENGTH()   {5}
-sub STRICT_PARSE()     {6}
-sub DEBUG_LEVEL()      {7}
+sub FRAMING_BUFFER()   {0}
+sub PARSER_STATE()     {1}
+sub PARSER_STATENEXT() {2}
+sub PARSED_RECORD()    {3}
+sub CURRENT_LENGTH()   {4}
+sub STRICT_PARSE()     {5}
+sub DEBUG_LEVEL()      {6}
 
 #states of the parser
 sub STATE_WAITING()     {1} #looking for new input
@@ -146,12 +141,8 @@ sub new {
 		$strict = $args{'strict'};
 	}
 
-	#our filter is line based, don't reinvent the wheel
-	my $line_filter = POE::Filter::Line->new();
-
 	my $self = bless [
-		"",            #not used by me but the baseclass clone wants it here
-		$line_filter,  #LINE_FILTER
+		"",            #framing buffer
 		STATE_WAITING, #PARSER_STATE
 		undef,         #PARSER_STATE
 		{},            #PARSED_RECORD
@@ -166,22 +157,40 @@ sub new {
 
 sub get_one_start {
 	my ($self, $stream) = @_;
-	$self->[LINE_FILTER]->get_one_start($stream);
+
+	#take all the chunks and put them in the buffer
+	$self->[FRAMING_BUFFER] .= join('', @{$stream});
 }
 
 sub get_one {
 	my $self = shift;
 
+	my $line;
+
 	while(1) {
-		#grab a line from the filter
-		my $line = $self->[LINE_FILTER]->get_one();
+		$line = "";
 
-		#quit if we can't get any lines
-		return [] unless @$line;
+		#see if we are in line based or length based mode
+		if($self->[PARSER_STATE] == STATE_TEXTRESPONSE) {
+			my $length = $self->[PARSED_RECORD]{'Content-Length'};
 
-		#get the actual line
-		$line = $line->[0];
-
+			if($self->[FRAMING_BUFFER] =~ s/^(.{$length})//s) {
+				$self->[PARSER_STATE] = STATE_FLUSH;
+				$self->[PARSED_RECORD]->{'__DATA__'} = $1;
+				return [ $self->[PARSED_RECORD] ];
+			} else {
+				#not engough in the buffer yet, come back later
+				return;
+			}
+		} else { #we are in normal line based mode
+			if($self->[FRAMING_BUFFER] =~ s/^(.*?)(\x0D\x0A?|\x0A\x0D?)//) {
+				$line = $1;
+			} else {
+				#not enough off of the socket yet, come back later
+				return [];
+			}
+		}
+		
 		if(($self->[PARSER_STATE] == STATE_WAITING) || ($self->[PARSER_STATE] == STATE_FLUSH)) {
 			#see if we need to wipe out the parsed_record info
 			if($self->[PARSER_STATE] == STATE_FLUSH) {
@@ -271,22 +280,6 @@ sub get_one {
 					}
 				}
 			}
-		} elsif ($self->[PARSER_STATE] == STATE_TEXTRESPONSE) {
-			if($self->[CURRENT_LENGTH] == -1) {
-				$self->[CURRENT_LENGTH] = 0;
-				next;
-			}
-
-			$self->[CURRENT_LENGTH] += (length($line) + 1);
-
-			if(($self->[CURRENT_LENGTH] - 1) == $self->[PARSED_RECORD]{'Content-Length'}) {
-				$self->[PARSER_STATE] = STATE_FLUSH;
-				$self->[PARSED_RECORD]{'__DATA__'} .= $line;
-
-				return [$self->[PARSED_RECORD]];
-			} else {
-				$self->[PARSED_RECORD]{'__DATA__'} .= $line . "\n";
-			}
 		}
 	}
 }
@@ -305,7 +298,7 @@ sub put {
 
 sub get_pending {
 	my $self = shift;
-	return $self->[LINE_FILTER]->get_pending();
+	return $self->[FRAMING_BUFFER];
 }
 
 sub get {
