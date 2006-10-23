@@ -2147,6 +2147,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			switch_chat_interface_t *ci;
 			char *proto = MDL_CHAT_PROTO;
 			char *pproto = NULL, *ffrom = NULL;
+			char *hint;
 
 			if (profile->auto_reply) {
 				ldl_handle_send_msg(handle, (profile->user_flags & LDL_FLAG_COMPONENT) ? to : profile->login, from, "", profile->auto_reply);
@@ -2159,18 +2160,19 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				}
 				proto = pproto;
 			}
-			
+
+			hint = from;
+
 			if (strchr(from, '/') && (ffrom = strdup(from))) {
 				char *p;
 				if ((p = strchr(ffrom, '/'))) {
 					*p = '\0';
 				}
 				from = ffrom;
-
 			}
 
 			if ((ci = switch_loadable_module_get_chat_interface(proto))) {
-				ci->chat_send(MDL_CHAT_PROTO, from, to, subject, msg, "");
+				ci->chat_send(MDL_CHAT_PROTO, from, to, subject, msg, hint);
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", proto);
 			}
@@ -2280,17 +2282,19 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		}
 
 		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
-			char *p, *freeme = NULL;
-			
+			char *hint = NULL, *p, *freeme = NULL;
+
+			hint = from;			
 			if (strchr(from, '/')) {
 				freeme = strdup(from);
 				p = strchr(freeme, '/');
 				*p = '\0';
-				from = freeme;
+				from = freeme;				
 			}
 
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "hint", "%s", hint);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "subject", "%s", subject);

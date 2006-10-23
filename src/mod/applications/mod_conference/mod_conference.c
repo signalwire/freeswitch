@@ -815,16 +815,22 @@ static void conference_loop(conference_member_t *member)
 		switch_event_t *event;
 
 		if (switch_core_session_dequeue_event(member->session, &event) == SWITCH_STATUS_SUCCESS) {
-			char *p;
 			char *from = switch_event_get_header(event, "from");
 			char *to = switch_event_get_header(event, "to");
 			char *proto = switch_event_get_header(event, "proto");
 			char *subject = switch_event_get_header(event, "subject");
+			char *hint = switch_event_get_header(event, "hint");
 			char *body = switch_event_get_body(event);
-			if ((p = strchr(to, '+'))) {
-				to = ++p;
+			char *p, *freeme = NULL;
+
+			if ((p = strchr(to, '+')) && 
+				strncmp(to, CONF_CHAT_PROTO, strlen(CONF_CHAT_PROTO))) {
+				freeme = switch_mprintf("%s+%s@%s", CONF_CHAT_PROTO, member->conference->name, member->conference->domain);
+				to = freeme;
 			}
-			chat_send(proto, from, to, subject, body, "");
+
+			chat_send(proto, from, to, subject, body, hint);
+			switch_safe_free(freeme);
 			switch_event_destroy(&event);
 		}
 
@@ -3100,6 +3106,10 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	conference_obj_t *conference = NULL;
 	switch_stream_handle_t stream = {0};
 
+	if ((p = strchr(to, '+'))) {
+		to = ++p;
+	}
+
 	if (!body) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -3108,6 +3118,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid Chat Interface [%s]!\n", proto);
 	}
 
+
 	if ((p = strchr(to, '@'))) {
 		switch_copy_string(name, to, ++p-to);
 	} else {
@@ -3115,7 +3126,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	}
 
 	if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, name))) {
-		ci->chat_send(CONF_CHAT_PROTO, to, from, "", "Sorry, We're Closed", "");
+		ci->chat_send(CONF_CHAT_PROTO, to, hint ? hint : from, "", "Sorry, We're Closed", NULL);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -3124,11 +3135,12 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	if (strstr(body, "list")) {
 		conference_list_pretty(conference, &stream);
 	} else {
-		stream.write_function(&stream, "The only command we have is so far is 'list' Get coding or go press PayPal!!\n");
+		stream.write_function(&stream, "The only command we have so far is 'list'.\nGet coding or go press PayPal!!\n");
 	}
 
-	ci->chat_send(CONF_CHAT_PROTO, to, from, "", stream.data, "");
+	ci->chat_send(CONF_CHAT_PROTO, to, from, "", stream.data, NULL);
 	switch_safe_free(stream.data);
+
 
 
 	return SWITCH_STATUS_SUCCESS;
