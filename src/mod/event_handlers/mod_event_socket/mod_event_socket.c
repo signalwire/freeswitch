@@ -495,6 +495,21 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t *event
 
 
 	if (!strncasecmp(cmd, "sendevent", 9)) {
+		char *ename;
+		strip_cr(cmd);
+
+		ename = cmd + 9;
+		if (*ename == '\r' || *ename == '\n') {
+			ename = NULL;
+		}
+		
+		if (ename) {
+			switch_event_types_t etype;
+			if (switch_name_event(ename, &etype) == SWITCH_STATUS_SUCCESS) {
+				event->event_id = etype;
+			}
+		}
+
 		switch_event_fire(&event);
 		snprintf(reply, reply_len, "+OK");
 		goto done;
