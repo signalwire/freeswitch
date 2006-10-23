@@ -224,8 +224,14 @@ sub handle_curses_input {
 	} else {
 		#see if we got connected at some point
 		if(defined($sockets{'localhost'})) {
-			#send the command
-			$sockets{'localhost'}->put("api $input");
+		  my $cmd;
+		  if ($input =~ /^log|^event/) {
+		    $cmd = $input;
+		  } else {
+		    $cmd = "api $input";
+		  }
+		  #send the command
+		  $sockets{'localhost'}->put($cmd);
 		}
 	}
 }
