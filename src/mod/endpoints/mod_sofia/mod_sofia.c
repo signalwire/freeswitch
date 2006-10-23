@@ -926,7 +926,7 @@ static void do_invite(switch_core_session_t *session)
 
 		nua_invite(tech_pvt->nh,
 				   TAG_IF(rpid, SIPTAG_HEADER_STR(rpid)),
-					TAG_IF(alert_info, SIPTAG_HEADER_STR(alert_info)),
+				   TAG_IF(alert_info, SIPTAG_HEADER_STR(alert_info)),
 				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 				   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
@@ -2937,7 +2937,7 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 	nua_handle_t *nh;
 	char *to;
 	char *open;
-	
+
 	if (!rpid) {
 		rpid = "unknown";
 	}
@@ -2975,8 +2975,10 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 								"</rpid:activities>%s</dm:person>\r\n"
 								"</presence>", id, open, rpid, note);
 
+	
+
 	nh = nua_handle(profile->nua, NULL,	TAG_END());
-					
+
 	nua_notify(nh,
 			   NUTAG_URL(contact),
 			   SIPTAG_TO_STR(full_from),
@@ -3093,7 +3095,7 @@ static void sip_i_subscribe(int status,
 				}
 
 				if (!(proto && to_user && to_host)) {
-					nua_respond(nh, SIP_404_NOT_FOUND, TAG_END());
+					nua_respond(nh, SIP_404_NOT_FOUND, NUTAG_WITH_THIS(nua), TAG_END());
 					goto end;
 				}
 			}
@@ -3135,11 +3137,14 @@ static void sip_i_subscribe(int status,
 			sstr = switch_mprintf("active;expires=%ld", exp_raw);
 
 			nua_respond(nh, SIP_202_ACCEPTED,
+						NUTAG_WITH_THIS(nua),
 						SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
 						SIPTAG_FROM(sip->sip_to),
 						SIPTAG_TO(sip->sip_from),
 						SIPTAG_CONTACT_STR(to_str),
 						TAG_END());
+
+
 
 			switch_safe_free(sstr);
 			
@@ -3547,7 +3552,7 @@ static void sip_i_publish(nua_t *nua,
 		
 	}
 
-	nua_respond(nh, SIP_200_OK, TAG_END());
+	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 
 }
 
@@ -4104,6 +4109,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 							  event_callback, /* Callback for processing events */
 							  profile, /* Additional data to pass to callback */
 							  NUTAG_URL(profile->url),
+							  NTATAG_UDP_MTU(65536),
 							  TAG_END()); /* Last tag should always finish the sequence */
 
 	nua_set_params(profile->nua,
@@ -4113,7 +4119,11 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 				   NUTAG_ALLOW("REGISTER"),
 				   NUTAG_ALLOW("REFER"),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("NOTIFY")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("SUBSCRIBE")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence")),
+				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   SIPTAG_SUPPORTED_STR("100rel, precondition"),
 				   SIPTAG_USER_AGENT_STR(SOFIA_USER_AGENT),
 				   TAG_END());

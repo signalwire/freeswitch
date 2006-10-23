@@ -3126,7 +3126,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	}
 
 	if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, name))) {
-		ci->chat_send(CONF_CHAT_PROTO, to, hint ? hint : from, "", "Sorry, We're Closed", NULL);
+		ci->chat_send(CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Sorry, We're Closed", NULL);
 		return SWITCH_STATUS_FALSE;
 	}
 
