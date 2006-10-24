@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
+ * Paul D. Tinsley <pdt at jackhammer.org>
  *
  *
  * mod_sofia.c -- SOFIA SIP Endpoint
@@ -368,6 +369,13 @@ static void sip_i_refer(nua_t *nua,
 						sofia_private_t *sofia_private,
 						sip_t const *sip,
 						tagi_t tags[]);
+
+static void sip_i_info(nua_t *nua,
+                       sofia_profile_t *profile,
+                       nua_handle_t *nh,
+                       switch_core_session_t *session,
+                       sip_t const *sip,
+                       tagi_t tags[]);
 
 static void sip_i_invite(nua_t *nua,
                          sofia_profile_t *profile,
@@ -3571,6 +3579,70 @@ static void sip_i_publish(nua_t *nua,
 
 }
 
+static void sip_i_info(nua_t *nua,
+                       sofia_profile_t *profile,
+                       nua_handle_t *nh,
+                       switch_core_session_t *session,
+                       sip_t const *sip,
+                       tagi_t tags[]) {
+
+	//placeholder for string searching
+	char *signal_ptr;
+
+	//Try and find signal information in the payload
+	signal_ptr = strstr(sip->sip_payload->pl_data, "Signal=");
+
+	//See if we found a match
+	if(signal_ptr) {
+		struct private_object *tech_pvt = NULL;
+		switch_channel_t *channel = NULL;
+		char *dtmf_digit;
+
+		//Get the channel
+		channel = switch_core_session_get_channel(session);
+
+		//Barf if we didn't get it
+		assert(channel != NULL);
+
+		//make sure we have our privates
+		tech_pvt = switch_core_session_get_private(session);
+
+		//Barf if we didn't get it
+		assert(tech_pvt != NULL);
+
+		//holder for the dtmf digit
+		dtmf_digit = malloc(sizeof(char) * 2);
+
+		//move signal_ptr where we need it (right past Signal=)
+		signal_ptr = signal_ptr + 7;
+
+		//put the digit somewhere we can muck with
+		strncpy(dtmf_digit, signal_ptr, 1);
+
+		//End the string
+		*(dtmf_digit + 1) = '\0';
+
+		//queue it up
+		switch_channel_queue_dtmf(channel, dtmf_digit);
+		
+		//print debug info
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "INFO DTMF(%s)\n", dtmf_digit);
+
+		//Give back the memory I borrowed
+		free(dtmf_digit);
+	} else { //unknown info type
+		sip_from_t const *from;
+
+		from = sip->sip_from;
+
+		//print in the logs if something comes through we don't understand
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown INFO Recieved: %s%s" URL_PRINT_FORMAT "[%s]\n",
+		                  from->a_display ? from->a_display : "", from->a_display ? " " : "",
+		                  URL_PRINT_ARGS(from->a_url), sip->sip_payload->pl_data);
+	}
+
+	return;
+}
 
 static void sip_i_invite(nua_t *nua, 
 						 sofia_profile_t *profile,
@@ -3985,7 +4057,7 @@ static void event_callback(nua_event_t event,
 		break;
 
 	case nua_i_info:
-		//sip_i_info(nua, profile, nh, sofia_private, sip, tags);
+		sip_i_info(nua, profile, nh, session, sip, tags);
 		break;
 
 	case nua_r_refer:
@@ -4135,6 +4207,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 				   NUTAG_AUTOALERT(0),
 				   NUTAG_ALLOW("REGISTER"),
 				   NUTAG_ALLOW("REFER"),
+				   NUTAG_ALLOW("INFO"),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("NOTIFY")),
 				   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("SUBSCRIBE")),
@@ -4159,6 +4232,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 					   NUTAG_AUTOALERT(0),
 					   NUTAG_ALLOW("REGISTER"),
 					   NUTAG_ALLOW("REFER"),
+					   NUTAG_ALLOW("INFO"),
 					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ALLOW("PUBLISH")),
 					   TAG_IF((profile->pflags & PFLAG_PRESENCE), NUTAG_ENABLEMESSAGE(1)),
 					   SIPTAG_SUPPORTED_STR("100rel, precondition"),
