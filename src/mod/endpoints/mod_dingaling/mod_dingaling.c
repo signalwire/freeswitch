@@ -141,6 +141,8 @@ struct private_object {
 	char local_user[17];
 	char local_pass[17];
 	char *remote_user;
+	char *us;
+	char *them;
 	unsigned int cand_id;
 	unsigned int desc_id;
 	unsigned int dc;
@@ -184,9 +186,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
 										   switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
+
 static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *to, char *from, char *subject, char *msg);
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
 static switch_status_t load_config(void);
+
+#define is_special(s) (strstr(s, "ext+") || strstr(s, "user+") || strstr(s, "conf+"))
 
 static char *translate_rpid(char *in, char *ext)
 {
@@ -474,7 +479,7 @@ static int sin_callback(void *pArg, int argc, char **argv, char **columnNames)
 	//char *sub_from = argv[0];
 	char *sub_to = argv[1];
 	
-	if (strstr(sub_to, "ext+") || strstr(sub_to, "user+") || strstr(sub_to, "conf+")) {
+	if (is_special(sub_to)) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
@@ -568,15 +573,6 @@ static void terminate_session(switch_core_session_t **session, int line, switch_
 			return;
 		}
 
-		if (tech_pvt->dlsession) {
-			if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
-				ldl_session_terminate(tech_pvt->dlsession);
-			}
-			ldl_session_destroy(&tech_pvt->dlsession);
-		}
-
-		switch_set_flag_locked(tech_pvt, TFLAG_TERM);
-	
 		if (state < CS_HANGUP) {
 			switch_channel_hangup(channel, cause);
 		}
@@ -1044,7 +1040,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	struct private_object *tech_pvt = NULL;
-
+	
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
@@ -1054,7 +1050,15 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
 	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
-	
+
+	/* Dunno why, but if googletalk calls us for the first time, as soon as the call ends
+	 they think we are offline for no reason so we send this presence packet to stop it from happening
+	 We should find out why.....
+	*/
+	if ((tech_pvt->profile->user_flags & LDL_FLAG_COMPONENT) && is_special(tech_pvt->them)) {	
+		ldl_handle_send_presence(tech_pvt->profile->handle,
+								 tech_pvt->them, tech_pvt->us, NULL, NULL, "Click To Call");
+	}
 	if (tech_pvt->dlsession) {
 		if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
 			ldl_session_terminate(tech_pvt->dlsession);
@@ -1540,7 +1544,8 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 		
 		switch_stun_random_string(sess_id, 10, "0123456789");
-
+		tech_pvt->us = switch_core_session_strdup(session, user);
+		tech_pvt->them = switch_core_session_strdup(session, full_id);
 		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, user);
 		tech_pvt->profile = mdl_profile;
 		ldl_session_set_private(dlsession, *new_session);
@@ -2077,7 +2082,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					execute_sql(profile->dbname, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
-				if (strstr(to, "ext+") || strstr(to, "user+") || strstr(to, "conf+") ) {
+				if (is_special(to)) {
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
@@ -2111,7 +2116,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					switch_event_fire(&event);
 				}
 
-				if (strstr(to, "ext+") || strstr(to, "user+") || strstr(to, "conf+")) {
+				if (is_special(to)) {
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
@@ -2486,6 +2491,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							context = profile->name;
 						}
 			
+						tech_pvt->them = switch_core_session_strdup(session, ldl_session_get_callee(dlsession));
+						tech_pvt->us = switch_core_session_strdup(session, ldl_session_get_caller(dlsession));
+						
 						if (!tech_pvt->caller_profile) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating an identity for %s %s <%s> %s\n", 
 											  ldl_session_get_id(dlsession), cid_name, cid_num, exten);
