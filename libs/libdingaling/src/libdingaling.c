@@ -796,7 +796,7 @@ static int on_unsubscribe(void *user_data, ikspak *pak)
 	char *to = iks_find_attrib(pak->x, "to");
 
 	if (handle->session_callback) {
-		handle->session_callback(handle, NULL, LDL_SIGNAL_SUBSCRIBE, to, from, NULL, NULL);
+		handle->session_callback(handle, NULL, LDL_SIGNAL_UNSUBSCRIBE, to, from, NULL, NULL);
 	}
 
 	return IKS_FILTER_EAT;

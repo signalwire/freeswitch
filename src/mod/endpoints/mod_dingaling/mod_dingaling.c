@@ -2078,7 +2078,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 			case LDL_SIGNAL_SUBSCRIBE:
 				
-				if ((sql = switch_mprintf("insert into subscriptions values('%q','%q','%q','%q')", from, to, msg, subject))) {
+				if ((sql = switch_mprintf("delete from subscriptions where sub_from='%q' and sub_to='%q';\n"
+										  "insert into subscriptions values('%q','%q','%q','%q');\n", from, to, from, to, msg, subject))) {
 					execute_sql(profile->dbname, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
