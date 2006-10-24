@@ -161,7 +161,8 @@ typedef enum {
 	TFLAG_NOHUP = (1 << 18),
 	TFLAG_XFER = (1 << 19),
 	TFLAG_NOMEDIA = (1 << 20),
-	TFLAG_BUGGY_2833 = (1 << 21)
+	TFLAG_BUGGY_2833 = (1 << 21),
+	TFLAG_SIP_HOLD = (1 << 22)
 } TFLAGS;
 
 static struct {
@@ -1203,12 +1204,15 @@ static void deactivate_rtp(private_object_t *tech_pvt)
 	}
 }
 
-static switch_status_t tech_set_codec(private_object_t *tech_pvt)
+static switch_status_t tech_set_codec(private_object_t *tech_pvt, int force)
 {
 	switch_channel_t *channel;
 	assert(tech_pvt->codecs[tech_pvt->codec_index] != NULL);
 
 	if (tech_pvt->read_codec.implementation) {
+		if (!force) {
+			return SWITCH_STATUS_SUCCESS;
+		}
 		if (strcasecmp(tech_pvt->read_codec.implementation->iananame, tech_pvt->rm_encoding) ||
 			tech_pvt->read_codec.implementation->samples_per_second != tech_pvt->rm_rate) {
 
@@ -1291,7 +1295,7 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((status = tech_set_codec(tech_pvt)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = tech_set_codec(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 	
@@ -1945,6 +1949,8 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 	uint8_t match = 0;
 	private_object_t *tech_pvt;
 	sdp_media_t *m;
+	sdp_attribute_t *a;
+
 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);                                                                                                                               
@@ -1953,6 +1959,14 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 		if (strstr(tech_pvt->origin, "CiscoSystemsSIP-GW-UserAgent")) {
 			switch_set_flag_locked(tech_pvt, TFLAG_BUGGY_2833);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activate Buggy RFC2833 Mode!\n");
+		}
+	}
+
+	for (a = sdp->sdp_attributes; a; a = a->a_next) {
+		if (!strcasecmp(a->a_name, "sendonly")) {
+			switch_set_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
+		} else if (!strcasecmp(a->a_name, "sendrecv")) {
+			switch_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 		}
 	}
 
@@ -1992,7 +2006,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 				}
 
 				if (match) {
-					if (tech_set_codec(tech_pvt) != SWITCH_STATUS_SUCCESS) {
+					if (tech_set_codec(tech_pvt, 1) != SWITCH_STATUS_SUCCESS) {
 						match = 0;
 					}
 					break;
@@ -2441,14 +2455,15 @@ static void sip_i_state(int status,
 							match = negotiate_sdp(session, sdp);
 						}
 					}
-					tech_choose_port(tech_pvt);
-					set_local_sdp(tech_pvt);
-					tech_set_codec(tech_pvt);
-					switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
-					activate_rtp(tech_pvt);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Reinvite\n");
-					if (parser) {
-						sdp_parser_free(parser);
+					if (match) {
+						tech_choose_port(tech_pvt);
+						set_local_sdp(tech_pvt);
+						switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
+						activate_rtp(tech_pvt);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Processing Reinvite\n");
+						if (parser) {
+							sdp_parser_free(parser);
+						}
 					}
 				}
 			}
