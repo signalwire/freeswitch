@@ -106,7 +106,7 @@ use Carp qw(carp croak);
 use vars qw($VERSION);
 use base qw(POE::Filter);
 
-$VERSION = '0.06';
+$VERSION = '0.07';
 
 use Data::Dumper;
 
@@ -149,7 +149,7 @@ sub new {
 		0,             #length tracking (for Content-Length when needed)
 		$strict,       #whether we should bail on a bad parse or try and save the session
 		$debug,        #debug level
-	], $class;
+	], ref($class) || $class;
 
 	return $self;
 }

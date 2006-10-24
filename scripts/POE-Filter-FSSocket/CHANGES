@@ -1,4 +1,13 @@
 =========================
+2006-10-23 00:19:14 v0_07
+=========================
+
+  2006-10-23 00:19:14 (r7) by ptinsley
+
+    Potential fix for default POE modules on debian with perl 5.8.4, but I
+        I can't be sure because we can't make the problem happen again.
+
+=========================
 2006-10-23 00:15:32 v0_06
 =========================
 
