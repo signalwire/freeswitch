@@ -216,14 +216,6 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 	
 	cepstral->tts_stream = NULL;
 
-	if (cepstral->audio_buffer) {
-		switch_byte_t data[1280];
-		memset(data, 255, sizeof(data));
-		switch_mutex_lock(cepstral->audio_lock);
-		switch_buffer_write(cepstral->audio_buffer, data, sizeof(data));
-		switch_mutex_unlock(cepstral->audio_lock);
-	}
-	
 	if (!strncasecmp(text, fp, len)) {
 		text += len;
 		if (switch_strlen_zero(text)) {
@@ -234,6 +226,8 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 		if (switch_strlen_zero(text)) {
 			return SWITCH_STATUS_FALSE;
 		}
+
+		swift_port_speak_text(cepstral->port, "<break time=\"600ms\"/>", 0, NULL, &cepstral->tts_stream, NULL); 
 		swift_port_speak_text(cepstral->port, text, 0, NULL, &cepstral->tts_stream, NULL); 
 	}
 
