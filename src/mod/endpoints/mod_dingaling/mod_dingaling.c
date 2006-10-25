@@ -1283,7 +1283,6 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		//terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1299,6 +1298,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
 
 	if (switch_rtp_write_frame(tech_pvt->rtp_session, frame, samples) < 0) {
+		terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}
 	tech_pvt->timestamp_send += (int) samples;
