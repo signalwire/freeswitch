@@ -3626,7 +3626,7 @@ static void sip_i_info(nua_t *nua,
 	if(signal_ptr) {
 		struct private_object *tech_pvt = NULL;
 		switch_channel_t *channel = NULL;
-		char *dtmf_digit;
+		char dtmf_digit[2] = {0,0};
 
 		//Get the channel
 		channel = switch_core_session_get_channel(session);
@@ -3640,17 +3640,11 @@ static void sip_i_info(nua_t *nua,
 		//Barf if we didn't get it
 		assert(tech_pvt != NULL);
 
-		//holder for the dtmf digit
-		dtmf_digit = malloc(sizeof(char) * 2);
-
 		//move signal_ptr where we need it (right past Signal=)
 		signal_ptr = signal_ptr + 7;
 
 		//put the digit somewhere we can muck with
 		strncpy(dtmf_digit, signal_ptr, 1);
-
-		//End the string
-		*(dtmf_digit + 1) = '\0';
 
 		//queue it up
 		switch_channel_queue_dtmf(channel, dtmf_digit);
@@ -3658,8 +3652,6 @@ static void sip_i_info(nua_t *nua,
 		//print debug info
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "INFO DTMF(%s)\n", dtmf_digit);
 
-		//Give back the memory I borrowed
-		free(dtmf_digit);
 	} else { //unknown info type
 		sip_from_t const *from;
 
