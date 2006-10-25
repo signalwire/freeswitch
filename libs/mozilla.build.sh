@@ -49,5 +49,5 @@ fi
 
 cd nsprpub && CFLAGS=$cflags LDFLAGS=$ldflags ./configure $opts && $MAKE
 
-cd ../js/src && CFLAGS=$cflags  LDFLAGS=$ldflags JS_THREADSAFE=1 JS_HAS_FILE_OBJECT=1 OTHER_LIBS="-L../../../mozilla/nsprpub/dist/lib" INCLUDES="-I../../../mozilla/nsprpub/dist/include/nspr"  $MAKE -f Makefile.ref `find . -name libjs.a`
+cd ../js/src && CFLAGS=$cflags BUILD_OPT=1  LDFLAGS=$ldflags JS_THREADSAFE=1 JS_HAS_FILE_OBJECT=1 OTHER_LIBS="-L../../../mozilla/nsprpub/dist/lib" INCLUDES="-I../../../mozilla/nsprpub/dist/include/nspr"  $MAKE -f Makefile.ref `find . -name libjs.a`
 

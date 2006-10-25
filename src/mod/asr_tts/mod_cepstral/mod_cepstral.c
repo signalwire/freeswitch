@@ -227,7 +227,7 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 			return SWITCH_STATUS_FALSE;
 		}
 
-		swift_port_speak_text(cepstral->port, "<break time=\"600ms\"/>", 0, NULL, &cepstral->tts_stream, NULL); 
+		swift_port_speak_text(cepstral->port, "<break time=\"400ms\"/>", 0, NULL, &cepstral->tts_stream, NULL); 
 		swift_port_speak_text(cepstral->port, text, 0, NULL, &cepstral->tts_stream, NULL); 
 	}
 

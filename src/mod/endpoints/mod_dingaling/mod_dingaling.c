@@ -577,6 +577,12 @@ static void terminate_session(switch_core_session_t **session, int line, switch_
 			switch_channel_hangup(channel, cause);
 		}
 		
+		switch_mutex_lock(tech_pvt->flag_mutex);
+		switch_set_flag(tech_pvt, TFLAG_TERM);
+		switch_set_flag(tech_pvt, TFLAG_BYE);
+		switch_clear_flag(tech_pvt, TFLAG_IO);
+		switch_mutex_unlock(tech_pvt->flag_mutex);
+
 		*session = NULL;
 	}
 
@@ -1186,6 +1192,12 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
+		//terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
+		return SWITCH_STATUS_FALSE;
+	}
+
+
 	tech_pvt->read_frame.datalen = 0;
 	switch_set_flag_locked(tech_pvt, TFLAG_READING);
 
@@ -1241,10 +1253,6 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 
-	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
-		return SWITCH_STATUS_FALSE;
-	}
 
 	*frame = &tech_pvt->read_frame;
 	return SWITCH_STATUS_SUCCESS;
@@ -1275,7 +1283,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 
 	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
+		//terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -2560,11 +2568,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		if (channel) {
 			switch_channel_state_t state = switch_channel_get_state(channel);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "hungup %s %u %d\n", switch_channel_get_name(channel), state, CS_INIT);
-			switch_mutex_lock(tech_pvt->flag_mutex);
-			switch_set_flag(tech_pvt, TFLAG_TERM);
-			switch_set_flag(tech_pvt, TFLAG_BYE);
-			switch_clear_flag(tech_pvt, TFLAG_IO);
-			switch_mutex_unlock(tech_pvt->flag_mutex);
 			terminate_session(&session,  __LINE__, SWITCH_CAUSE_NORMAL_CLEARING);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "End Call\n");
 			goto done;
