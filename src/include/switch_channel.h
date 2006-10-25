@@ -281,6 +281,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 #define switch_channel_answer(channel) switch_channel_perform_answer(channel, __FILE__, __FUNCTION__, __LINE__)
 
 
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_ringback(switch_channel_t *channel,
+																const char *file,
+																const char *func,
+																int line);
+/*!
+  \brief Send Ringing message to a channel
+  \param channel channel to ring
+  \return SWITCH_STATUS_SUCCESS if successful
+*/
+#define switch_channel_ringback(channel) switch_channel_perform_ringback(channel, __FILE__, __FUNCTION__, __LINE__)
+
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel_t *channel,
 																const char *file,

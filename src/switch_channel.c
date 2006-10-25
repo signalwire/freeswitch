@@ -87,6 +87,7 @@ static struct switch_cause_table CAUSE_CHART[] = {
 	{ "MANDATORY_IE_LENGTH_ERROR", SWITCH_CAUSE_MANDATORY_IE_LENGTH_ERROR },
 	{ "PROTOCOL_ERROR", SWITCH_CAUSE_PROTOCOL_ERROR },
 	{ "INTERWORKING", SWITCH_CAUSE_INTERWORKING },
+	{ "ORIGINATOR_CANCEL", SWITCH_CAUSE_ORIGINATOR_CANCEL },
 	{ "CRASH", SWITCH_CAUSE_CRASH },
 	{ "SYSTEM_SHUTDOWN", SWITCH_CAUSE_SYSTEM_SHUTDOWN },
 	{ "LOSE_RACE", SWITCH_CAUSE_LOSE_RACE },
@@ -1013,6 +1014,40 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_ringback(switch_channel_t *channel,
+																const char *file,
+																const char *func,
+																int line)
+{
+	switch_core_session_message_t msg;
+	char *uuid = switch_core_session_get_uuid(channel->session);
+	switch_status_t status;
+	
+	assert(channel != NULL);
+
+	if (channel->state >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	msg.message_id = SWITCH_MESSAGE_INDICATE_RINGING;
+	msg.from = channel->name;
+	status = switch_core_session_message_send(uuid, &msg);
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Ringback %s!\n", channel->name);
 	}
 
 	return status;

@@ -34,6 +34,15 @@
 
 static const char modname[] = "mod_dptools";
 
+
+static void ringback_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+	switch_channel_ringback(channel);
+}
+
 static void transfer_function(switch_core_session_t *session, char *data)
 {
 	int argc;
@@ -253,13 +262,24 @@ static switch_api_interface_t presence_api_interface = {
 	/*.next */ &dptools_api_interface
 };
 
+
+static const switch_application_interface_t ringback_application_interface = {
+	/*.interface_name */ "ringback",
+	/*.application_function */ ringback_function,
+	/* long_desc */ "Indicate Ringback on a channel.",
+	/* short_desc */ "Indicate Ringback",
+	/* syntax */ "",
+	/*.next */ NULL
+
+};
+
 static const switch_application_interface_t set_application_interface = {
 	/*.interface_name */ "set",
 	/*.application_function */ set_function,
 	/* long_desc */ "Set a channel varaible for the channel calling the application.",
 	/* short_desc */ "Set a channel varaible",
 	/* syntax */ "<varname>=[<value>|_UNDEF_]",
-	/*.next */ NULL
+	/*.next */ &ringback_application_interface
 };
 
 static const switch_application_interface_t answer_application_interface = {

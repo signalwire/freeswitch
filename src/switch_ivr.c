@@ -34,6 +34,11 @@
 
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 
+typedef enum {
+	IDX_CANCEL = -2,
+	IDX_NADA = -1
+} abort_t;
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms)
 {
 	switch_channel_t *channel;
@@ -1715,12 +1720,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_frame_t *read_frame = NULL;
 	switch_memory_pool_t *pool = NULL;
 	int r = 0, i, and_argc = 0, or_argc = 0;
-	int32_t idx = -1;
+	int32_t idx = IDX_NADA;
 	switch_codec_t write_codec = {0};
 	switch_frame_t write_frame = {0};
 	uint8_t err = 0, fdata[1024], pass = 0;
 	char *file = NULL, *key = NULL, *odata, *var;
-
+	switch_call_cause_t reason = SWITCH_CAUSE_UNALLOCATED;
+	uint8_t to = 0;
 	write_frame.data = fdata;
 	
 	*bleg = NULL;
@@ -1785,7 +1791,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		file = NULL;
 		key = NULL;
 		var = NULL;
-		
+		to = 0;
+
 		and_argc = switch_separate_string(pipe_names[r], '&', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
 	
 		for (i = 0; i < and_argc; i++) {
@@ -1924,6 +1931,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 		
 				if ((time(NULL) - start) > (time_t)timelimit_sec) {
+					to++;
 					break;
 				}
 				switch_yield(1000);
@@ -1965,9 +1973,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 		}
-
+		
 		while ((!caller_channel || switch_channel_ready(caller_channel)) && 
-			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key) && ((time(NULL) - start) < (time_t)timelimit_sec)) {
+			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key)) {
+
+			if ((to = ((time(NULL) - start) >= (time_t)timelimit_sec))) {
+				break;
+			}
 
 			if (session && or_argc == 1 && and_argc == 1) { /* when there is only 1 channel to call and bridge */
 				switch_core_session_message_t *message = NULL;
@@ -2000,7 +2012,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 
 		if (!switch_channel_ready(caller_channel)) {
-			idx = -2;
+			idx = IDX_CANCEL;
 		}
 
 		if (session && !switch_channel_test_flag(caller_channel, CF_NOMEDIA)) {
@@ -2012,12 +2024,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				continue;
 			}
 			if (i != idx) {
-				switch_channel_hangup(peer_channels[i], SWITCH_CAUSE_LOSE_RACE);
+				if (idx == IDX_CANCEL) {
+					reason = SWITCH_CAUSE_ORIGINATOR_CANCEL;
+				} else {
+					if (to) {
+						reason = SWITCH_CAUSE_NO_ANSWER;
+					} else if (and_argc > 1) {
+						reason = SWITCH_CAUSE_LOSE_RACE;
+					} else {
+						reason = SWITCH_CAUSE_NO_ANSWER;
+					}
+				}
+				
+				switch_channel_hangup(peer_channels[i], reason);
 			}
 		}
 
 
-		if (idx > -1) {
+		if (idx > IDX_NADA) {
 			peer_session = peer_sessions[idx];
 			peer_channel = peer_channels[idx];
 		} else {
@@ -2068,13 +2092,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			if (caller_channel) {
-				if (idx == -2) {
+				if (idx == IDX_CANCEL) {
 					*cause = switch_channel_get_cause(caller_channel);
 				} 
 				switch_channel_set_variable(caller_channel, "originate_disposition", switch_channel_cause2str(*cause));
 				
 			}
-			if (idx == -2) {
+			if (idx == IDX_CANCEL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Cancelled by originator termination Cause: %d [%s]\n",
 								  *cause, switch_channel_cause2str(*cause));
 			} else {

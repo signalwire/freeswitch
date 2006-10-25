@@ -1078,53 +1078,55 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 // map QSIG cause codes to SIP from RFC4497 section 8.4.1
 static int hangup_cause_to_sip(switch_call_cause_t cause) {
 	switch (cause) {
-		case SWITCH_CAUSE_UNALLOCATED: 
-		case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
-		case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
-			return 404;
-		case SWITCH_CAUSE_USER_BUSY:
-			return 486;
-		case SWITCH_CAUSE_NO_USER_RESPONSE:
-			return 408;
-		case SWITCH_CAUSE_NO_ANSWER:
-			return 480;
-		case SWITCH_CAUSE_SUBSCRIBER_ABSENT:
-			return 480;
-		case SWITCH_CAUSE_CALL_REJECTED:
-			return 603;
-		case SWITCH_CAUSE_NUMBER_CHANGED:
-		case SWITCH_CAUSE_REDIRECTION_TO_NEW_DESTINATION:
-			return 410;
-		case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
-			return 502;
-		case SWITCH_CAUSE_INVALID_NUMBER_FORMAT:
-			return 484;
-		case SWITCH_CAUSE_FACILITY_REJECTED:
-			return 501;
-		case SWITCH_CAUSE_NORMAL_UNSPECIFIED:
-			return 480;
-		case SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION:
-		case SWITCH_CAUSE_NETWORK_OUT_OF_ORDER:
-		case SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE:
-		case SWITCH_CAUSE_SWITCH_CONGESTION:
-			return 503;
-		case SWITCH_CAUSE_OUTGOING_CALL_BARRED:
-		case SWITCH_CAUSE_INCOMING_CALL_BARRED:
-		case SWITCH_CAUSE_BEARERCAPABILITY_NOTAUTH: 
-			return 403;
-		case SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL:
-			return 503;
-		case SWITCH_CAUSE_BEARERCAPABILITY_NOTIMPL:
-			return 488;
-		case SWITCH_CAUSE_FACILITY_NOT_IMPLEMENTED:
-		case SWITCH_CAUSE_SERVICE_NOT_IMPLEMENTED:
-			return 501;
-		case SWITCH_CAUSE_INCOMPATIBLE_DESTINATION:
-			return 503;
-		case SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE:
-			return 504;
-		default:
-			return 500;
+	case SWITCH_CAUSE_UNALLOCATED: 
+	case SWITCH_CAUSE_NO_ROUTE_TRANSIT_NET:
+	case SWITCH_CAUSE_NO_ROUTE_DESTINATION:
+		return 404;
+	case SWITCH_CAUSE_USER_BUSY:
+		return 486;
+	case SWITCH_CAUSE_NO_USER_RESPONSE:
+		return 408;
+	case SWITCH_CAUSE_NO_ANSWER:
+		return 480;
+	case SWITCH_CAUSE_SUBSCRIBER_ABSENT:
+		return 480;
+	case SWITCH_CAUSE_CALL_REJECTED:
+		return 603;
+	case SWITCH_CAUSE_NUMBER_CHANGED:
+	case SWITCH_CAUSE_REDIRECTION_TO_NEW_DESTINATION:
+		return 410;
+	case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
+		return 502;
+	case SWITCH_CAUSE_INVALID_NUMBER_FORMAT:
+		return 484;
+	case SWITCH_CAUSE_FACILITY_REJECTED:
+		return 501;
+	case SWITCH_CAUSE_NORMAL_UNSPECIFIED:
+		return 480;
+	case SWITCH_CAUSE_NORMAL_CIRCUIT_CONGESTION:
+	case SWITCH_CAUSE_NETWORK_OUT_OF_ORDER:
+	case SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE:
+	case SWITCH_CAUSE_SWITCH_CONGESTION:
+		return 503;
+	case SWITCH_CAUSE_OUTGOING_CALL_BARRED:
+	case SWITCH_CAUSE_INCOMING_CALL_BARRED:
+	case SWITCH_CAUSE_BEARERCAPABILITY_NOTAUTH: 
+		return 403;
+	case SWITCH_CAUSE_BEARERCAPABILITY_NOTAVAIL:
+		return 503;
+	case SWITCH_CAUSE_BEARERCAPABILITY_NOTIMPL:
+		return 488;
+	case SWITCH_CAUSE_FACILITY_NOT_IMPLEMENTED:
+	case SWITCH_CAUSE_SERVICE_NOT_IMPLEMENTED:
+		return 501;
+	case SWITCH_CAUSE_INCOMPATIBLE_DESTINATION:
+		return 503;
+	case SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE:
+		return 504;
+	case SWITCH_CAUSE_ORIGINATOR_CANCEL:
+		return 487;
+	default:
+		return 500;
 	}
 
 }
@@ -2033,60 +2035,64 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 // map sip responses to QSIG cause codes ala RFC4497 section 8.4.4
 static switch_call_cause_t sip_cause_to_freeswitch(int status) {
 	switch (status) {
-		case 200:
-			return SWITCH_CAUSE_NORMAL_CLEARING;
-		case 401:
-		case 402: 
-		case 403:
-		case 407:
-		case 603:
-			return SWITCH_CAUSE_CALL_REJECTED;
-		case 404:
-		case 485:
-		case 604:	
-			return SWITCH_CAUSE_UNALLOCATED;
-		case 408: 
-		case 504:
-			return SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE;
-		case 410: 
-			return SWITCH_CAUSE_NUMBER_CHANGED;
-		case 413: 
-		case 414:
-		case 416:
-		case 420:
-		case 421:
-		case 423:
-		case 505:
-		case 513:
-			return SWITCH_CAUSE_INTERWORKING;
-		case 480:
-			return SWITCH_CAUSE_NO_USER_RESPONSE;
-		case 400:
-		case 481:
-		case 500:
-		case 503:
-			return SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE;
-		case 486:
-		case 600:
-			return SWITCH_CAUSE_USER_BUSY;
-		case 484:
-			return SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
-		case 488:
-		case 606:
-			return SWITCH_CAUSE_BEARERCAPABILITY_NOTIMPL;
-		case 502:
-			return SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
-		case 405:
-			return SWITCH_CAUSE_SERVICE_UNAVAILABLE;
-		case 406:
-		case 415:
-		case 501:
-			return SWITCH_CAUSE_SERVICE_NOT_IMPLEMENTED;
-		case 482:
-		case 483:
-			return SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR;
-		default: 
-			return SWITCH_CAUSE_NORMAL_UNSPECIFIED;
+	case 200:
+		return SWITCH_CAUSE_NORMAL_CLEARING;
+	case 401:
+	case 402: 
+	case 403:
+	case 407:
+	case 603:
+		return SWITCH_CAUSE_CALL_REJECTED;
+	case 404:
+	case 485:
+	case 604:	
+		return SWITCH_CAUSE_UNALLOCATED;
+	case 408: 
+	case 504:
+		return SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE;
+	case 410: 
+		return SWITCH_CAUSE_NUMBER_CHANGED;
+	case 413: 
+	case 414:
+	case 416:
+	case 420:
+	case 421:
+	case 423:
+	case 505:
+	case 513:
+		return SWITCH_CAUSE_INTERWORKING;
+	case 480:
+		return SWITCH_CAUSE_NO_USER_RESPONSE;
+	case 400:
+	case 481:
+	case 500:
+	case 503:
+		return SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE;
+	case 486:
+	case 600:
+		return SWITCH_CAUSE_USER_BUSY;
+	case 484:
+		return SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
+	case 488:
+	case 606:
+		return SWITCH_CAUSE_BEARERCAPABILITY_NOTIMPL;
+	case 502:
+		return SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
+	case 405:
+		return SWITCH_CAUSE_SERVICE_UNAVAILABLE;
+	case 406:
+	case 415:
+	case 501:
+		return SWITCH_CAUSE_SERVICE_NOT_IMPLEMENTED;
+	case 482:
+	case 483:
+		return SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR;
+	case 487:
+		return SWITCH_CAUSE_ORIGINATOR_CANCEL;
+
+	default: 
+		return SWITCH_CAUSE_NORMAL_UNSPECIFIED;
+
 	}
 }
 
@@ -2280,7 +2286,9 @@ static void sip_i_state(int status,
 	char *uuid;
 	switch_core_session_t *other_session = NULL;
 	switch_channel_t *other_channel = NULL;
+	char st[80] = "";
 
+	
 	tl_gets(tags, 
 			NUTAG_CALLSTATE_REF(ss_state),
 			NUTAG_OFFER_RECV_REF(offer_recv),
@@ -2560,6 +2568,8 @@ static void sip_i_state(int status,
 					nua_handle_destroy(tech_pvt->nh);
 					tech_pvt->nh = NULL;
 				} else {
+					snprintf(st, sizeof(st), "%d", status);
+					switch_channel_set_variable(channel, "sip_term_status", st);
 					terminate_session(&session, sip_cause_to_freeswitch(status), __LINE__);
 				}
 			}
