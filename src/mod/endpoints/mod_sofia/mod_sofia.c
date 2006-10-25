@@ -1142,15 +1142,17 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	cause = switch_channel_get_cause(channel);
-	sip_cause = hangup_cause_to_sip(cause);
-
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	deactivate_rtp(tech_pvt);
+	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
-	su_home_deinit(tech_pvt->home);
+	cause = switch_channel_get_cause(channel);
+	sip_cause = hangup_cause_to_sip(cause);
+
+	deactivate_rtp(tech_pvt);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s hanging up, cause: %s\n", 
 			  switch_channel_get_name(channel), switch_channel_cause2str(cause), sip_cause);
@@ -1190,6 +1192,11 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+
+	if (tech_pvt->home) {
+		su_home_deinit(tech_pvt->home);
+		tech_pvt->home = NULL;
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
