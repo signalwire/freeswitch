@@ -3922,7 +3922,7 @@ static void sip_r_register(int status,
 		if (authenticate->au_params) {
 			for(index = 0; (cur=(char*)authenticate->au_params[index]); index++) {
 				if ((realm = strstr(cur, "realm="))) {
-					realm += 7;
+					realm += 6;
 					break;
 				}
 			}
