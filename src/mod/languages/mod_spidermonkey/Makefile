@@ -1,6 +1,10 @@
 # This is all used to make sure we use the right options during build and link.  
 
 OS_ARCH         := $(subst /,_,$(shell uname -s | sed /\ /s//_/))
+#VER=DBG
+#BO=0
+VER=OPT
+BO=1
 
 # Attempt to differentiate between SunOS 5.4 and x86 5.4
 OS_CPUARCH      := $(shell uname -m)
@@ -59,16 +63,16 @@ endif
 endif
 endif
 
-CFLAGS += -I$(BASE)/libs/mozilla/js/src -Wall -Wno-format -g -DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/js/src -I$(BASE)/libs/mozilla/js/src/$(OS_CONFIG)_DBG.OBJ -Wall -Wno-format -g -DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/nsprpub/dist/include/nspr -I$(OS_CONFIG)_DBG.OBJ
+CFLAGS += -I$(BASE)/libs/mozilla/js/src -Wall -Wno-format -g -DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/js/src -I$(BASE)/libs/mozilla/js/src/$(OS_CONFIG)_$(VER).OBJ -Wall -Wno-format -g -DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/nsprpub/dist/include/nspr -I$(OS_CONFIG)_$(VER).OBJ
 LDFLAGS +=-DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/nsprpub/dist/include/nspr -Wall -Wno-format -g -DXP_UNIX -DSVR4 -DSYSV -D_BSD_SOURCE -DPOSIX_SOURCE -DHAVE_LOCALTIME_R -DX86_LINUX  -DDEBUG -DDEBUG_root -DJS_THREADSAFE -I$(BASE)/libs/mozilla/nsprpub/dist/include/nspr -lteletone
-OBJS=$(BASE)/libs/mozilla/js/src/$(OS_CONFIG)_DBG.OBJ/libjs.a $(BASE)/libs/mozilla/nsprpub/dist/lib/libnspr4.a -lcurl -letpan
+OBJS=$(BASE)/libs/mozilla/js/src/$(OS_CONFIG)_$(VER).OBJ/libjs.a $(BASE)/libs/mozilla/nsprpub/dist/lib/libnspr4.a -lcurl -letpan
 LINKER=$(CC)
 
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) mozilla.tar.gz --prefix=$(PREFIX)
+	BUILD_OPT=$(BO) MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) mozilla.tar.gz --prefix=$(PREFIX)
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install curl-7.15.2.tar.gz --prefix=$(PREFIX) --without-libidn
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libetpan-0.45.tar.gz --prefix=$(PREFIX)
 
