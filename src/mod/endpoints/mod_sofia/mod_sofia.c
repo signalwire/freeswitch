@@ -3927,12 +3927,13 @@ static void sip_r_register(int status,
 				}
 			}
 		}
+
+		if (!(scheme && realm)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No scheme and realm!\n");
+			return;
+		}
 	}
 
-	if (!(scheme && realm)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No scheme and realm!\n");
-		return;
-	}
 
 	if (sofia_private) {
 		if (sofia_private->oreg) {
