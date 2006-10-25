@@ -3896,48 +3896,20 @@ static void sip_r_register(int status,
 	outbound_reg_t *oreg = NULL;
 	sip_www_authenticate_t const *authenticate = NULL;
 	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
-
-	if (sofia_private) {
-		if (sofia_private->oreg) {
-			oreg = sofia_private->oreg;
-		} else if (profile) {
-			/* NOTE
-			   this is a linked list, when nua_identity comes 
-			   we need to actually pick the right one...
-			*/
-			oreg = profile->registrations;
-		}
-	} 
-
-
+	char const *realm = NULL;
+	char const *scheme = NULL;
+	int index;
+	char *cur;
+	
 	if (session) {
 		private_object_t *tech_pvt;
 		if ((tech_pvt = switch_core_session_get_private(session)) && switch_test_flag(tech_pvt, TFLAG_REFER)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "received reply from refer\n");
-			
 			return;
 		}
 	}
-	
-	if (!oreg) {
-		if (sofia_private->oreg) {
-			nua_handle_destroy(nh); 
-		}
-		return;
-	}
-	
-	if (status == 200) {
-		if (sofia_private->oreg) {
-			oreg->state = REG_STATE_REGISTER;
-			nua_handle_destroy(nh);
-		}
-	} else if (status == 401 || status == 407) {
-		char const *realm;
-		char const *scheme;
-		char authentication[256] = "";
-		int ss_state;
 
-
+	if (status == 401 || status == 407) {
 		if (sip->sip_www_authenticate) {
 			authenticate = sip->sip_www_authenticate;
 		} else if (sip->sip_proxy_authenticate) {
@@ -3946,26 +3918,67 @@ static void sip_r_register(int status,
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Missing Authenticate Header!\n");
 			return;
 		}
-
-		realm = (char const *) *authenticate->au_params;
 		scheme = (char const *) authenticate->au_scheme;
+		if (authenticate->au_params) {
+			for(index = 0; (cur=(char*)authenticate->au_params[index]); index++) {
+				if ((realm = strstr(cur, "realm="))) {
+					realm += 7;
+					break;
+				}
+			}
+		}
+	}
+
+	if (!(scheme && realm)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No scheme and realm!\n");
+		return;
+	}
+
+	if (sofia_private) {
+		if (sofia_private->oreg) {
+			oreg = sofia_private->oreg;
+		} else if (profile) {
+			outbound_reg_t *oregp;
+			for (oregp = profile->registrations; oregp; oregp = oregp->next) {
+				if (!strcasecmp(oregp->register_scheme, scheme) && !strcasecmp(oregp->register_realm, realm)) {
+					oreg = oregp;
+					break;
+				}
+			}
+		}
+	}
+
+	if (!oreg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Register handle to associate!\n");
+		return;
+	}
+	
+	if (status == 200) {
+		oreg->state = REG_STATE_REGISTER;
+	} else if (authenticate) {
+		char authentication[256] = "";
+		int ss_state;
+
+		if (realm) {
+			snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, 
+					 oreg->register_username,
+					 oreg->register_password);
 		
-		snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, strstr(realm, "=") + 1, 
-				 oreg->register_username,
-				 oreg->register_password);
-		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
-						  profile->username, authentication);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
+							  profile->username, authentication);
 		
 		
-		ss_state = nua_callstate_authenticating;
+			ss_state = nua_callstate_authenticating;
 		
-		tl_gets(tags,
-				NUTAG_CALLSTATE_REF(ss_state),
-				SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
-				TAG_END());
+			tl_gets(tags,
+					NUTAG_CALLSTATE_REF(ss_state),
+					SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
+					TAG_END());
 		
-		nua_authenticate(nh, NUTAG_AUTH(authentication), TAG_END());
+
+
+			nua_authenticate(nh, SIPTAG_EXPIRES_STR(oreg->expires_str), NUTAG_AUTH(authentication), TAG_END());
+		}
 	}
 }
 
@@ -4157,6 +4170,15 @@ static void event_callback(nua_event_t event,
 	}
 }
 
+
+static void unreg(sofia_profile_t *profile)
+{
+	outbound_reg_t *oregp;
+    for (oregp = profile->registrations; oregp; oregp = oregp->next) {
+		nua_handle_destroy(oregp->nh);
+	}
+}
+
 static void check_oreg(sofia_profile_t *profile, time_t now)
 {
 	outbound_reg_t *oregp;
@@ -4180,6 +4202,7 @@ static void check_oreg(sofia_profile_t *profile, time_t now)
 
 				oregp->sofia_private.oreg = oregp;
 				nua_handle_bind(oregp->nh, &oregp->sofia_private);
+
 				nua_register(oregp->nh,
 							 SIPTAG_FROM_STR(oregp->register_from),
 							 SIPTAG_CONTACT_STR(oregp->register_from),
@@ -4329,6 +4352,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 		su_root_step(profile->s_root, 1000);
 	}
 
+	unreg(profile);
 	su_home_deinit(profile->home);
 	
 
@@ -4579,7 +4603,6 @@ static switch_status_t config_sofia(int reload)
 									oreg->register_proxy = switch_core_strdup(oreg->pool, val);
 								} else if (!strcmp(var, "register-frequency")) {
 									oreg->expires_str = switch_core_strdup(oreg->pool, val);
-									oreg->freq = atoi(val);
 								}
 							}
 							if (switch_strlen_zero(oreg->register_scheme)) {
@@ -4609,9 +4632,6 @@ static switch_status_t config_sofia(int reload)
 							}
 
 							oreg->freq = atoi(oreg->expires_str);
-							if (!oreg->freq) {
-								oreg->state = REG_STATE_REGED;
-							}
 							oreg->next = profile->registrations;
 							profile->registrations = oreg;
 
