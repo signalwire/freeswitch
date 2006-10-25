@@ -205,13 +205,13 @@ SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, i
 
 	if (newrate) {
 		int32_t tmp;
-		int x;
+		uint32_t x;
 		int16_t *fp = data;
 
 		for (x = 0; x < samples; x++) {
-			tmp = (double) div ? fp[x] / newrate : fp[x] * newrate;
+			tmp = (int32_t) (div ? fp[x] / newrate : fp[x] * newrate);
 			switch_normalize_to_16bit(tmp);
-			fp[x] = tmp;
+			fp[x] = (int16_t)tmp;
 		}
 	}
 }

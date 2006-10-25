@@ -1977,7 +1977,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		while ((!caller_channel || switch_channel_ready(caller_channel)) && 
 			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key)) {
 
-			if ((to = ((time(NULL) - start) >= (time_t)timelimit_sec))) {
+			if ((to = (uint8_t)((time(NULL) - start) >= (time_t)timelimit_sec))) {
 				break;
 			}
 
