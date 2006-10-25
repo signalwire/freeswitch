@@ -1075,7 +1075,7 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-// map QSIG cause codes to SIP ala RFC4497
+// map QSIG cause codes to SIP from RFC4497 section 8.4.1
 static int hangup_cause_to_sip(switch_call_cause_t cause) {
 	switch (cause) {
 		case SWITCH_CAUSE_UNALLOCATED: 
@@ -1088,9 +1088,12 @@ static int hangup_cause_to_sip(switch_call_cause_t cause) {
 			return 408;
 		case SWITCH_CAUSE_NO_ANSWER:
 			return 480;
+		case SWITCH_CAUSE_SUBSCRIBER_ABSENT:
+			return 480;
 		case SWITCH_CAUSE_CALL_REJECTED:
 			return 603;
 		case SWITCH_CAUSE_NUMBER_CHANGED:
+		case SWITCH_CAUSE_REDIRECTION_TO_NEW_DESTINATION:
 			return 410;
 		case SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER:
 			return 502;
@@ -1114,6 +1117,7 @@ static int hangup_cause_to_sip(switch_call_cause_t cause) {
 		case SWITCH_CAUSE_BEARERCAPABILITY_NOTIMPL:
 			return 488;
 		case SWITCH_CAUSE_FACILITY_NOT_IMPLEMENTED:
+		case SWITCH_CAUSE_SERVICE_NOT_IMPLEMENTED:
 			return 501;
 		case SWITCH_CAUSE_INCOMPATIBLE_DESTINATION:
 			return 503;
@@ -2026,7 +2030,7 @@ static uint8_t negotiate_sdp(switch_core_session_t *session, sdp_session_t *sdp)
 	return match;
 }
 
-// map sip responses to QSIG cause codes ala RFC4497
+// map sip responses to QSIG cause codes ala RFC4497 section 8.4.4
 static switch_call_cause_t sip_cause_to_freeswitch(int status) {
 	switch (status) {
 		case 200:
@@ -2072,6 +2076,15 @@ static switch_call_cause_t sip_cause_to_freeswitch(int status) {
 			return SWITCH_CAUSE_BEARERCAPABILITY_NOTIMPL;
 		case 502:
 			return SWITCH_CAUSE_NETWORK_OUT_OF_ORDER;
+		case 405:
+			return SWITCH_CAUSE_SERVICE_UNAVAILABLE;
+		case 406:
+		case 415:
+		case 501:
+			return SWITCH_CAUSE_SERVICE_NOT_IMPLEMENTED;
+		case 482:
+		case 483:
+			return SWITCH_CAUSE_EXCHANGE_ROUTING_ERROR;
 		default: 
 			return SWITCH_CAUSE_NORMAL_UNSPECIFIED;
 	}
