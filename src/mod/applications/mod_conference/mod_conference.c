@@ -31,7 +31,7 @@
  *
  */
 #include <switch.h>
-#define normalize_volume(x) if(x > 4) x = 4; if (x < -4) x = -4;
+
 static const char modname[] = "mod_conference";
 static const char global_app_name[] = "conference";
 static char *global_cf_name = "conference.conf";
@@ -229,7 +229,6 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 static switch_status_t conference_member_say(conference_obj_t *conference, conference_member_t *member, char *text, uint32_t leadin);
 static uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop);
 static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch_memory_pool_t *pool);
-static void switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol);
 static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint);
 static void launch_conference_record_thread(conference_obj_t *conference, char *path);
 
@@ -248,28 +247,6 @@ static uint32_t next_member_id(void)
 	switch_mutex_unlock(globals.id_mutex);
 
 	return id;
-}
-
-static void switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol)
-{
-	int16_t *p = data;
-	uint32_t x = 0;
-	int32_t v = vol * 10;
-	double mult = (((double)abs(v)) / 100) * 2;
-	int32_t b;
-
-	if (v > 0) {
-		mult += (.2 * abs(v));
-		mult = 4;
-	} else {
-		mult -= 1;
-	}
-
-	for (x = 0; x < samples; x++) {
-		b = (int32_t)((double)p[x] * mult);
-		switch_normalize_to_16bit(b);
-		p[x] = (int16_t) b;
-	}
 }
 
 /* if other_member has a relationship with member, produce it */
@@ -920,7 +897,7 @@ static void conference_loop(conference_member_t *member)
 				case '3':
 					switch_mutex_lock(member->flag_mutex);
 					member->volume_out_level++;
-					normalize_volume(member->volume_out_level);
+					switch_normalize_volume(member->volume_out_level);
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 					conference_member_say(member->conference, member, msg, 0);
@@ -935,7 +912,7 @@ static void conference_loop(conference_member_t *member)
 				case '1':
 					switch_mutex_lock(member->flag_mutex);
 					member->volume_out_level--;
-					normalize_volume(member->volume_out_level);
+					switch_normalize_volume(member->volume_out_level);
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 					conference_member_say(member->conference, member, msg, 0);
@@ -943,7 +920,7 @@ static void conference_loop(conference_member_t *member)
 				case '6':
 					switch_mutex_lock(member->flag_mutex);
 					member->volume_in_level++;
-					normalize_volume(member->volume_in_level);
+					switch_normalize_volume(member->volume_in_level);
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
 					conference_member_say(member->conference, member, msg, 0);
@@ -958,7 +935,7 @@ static void conference_loop(conference_member_t *member)
 				case '4':
 					switch_mutex_lock(member->flag_mutex);
 					member->volume_in_level--;
-					normalize_volume(member->volume_in_level);
+					switch_normalize_volume(member->volume_in_level);
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
 					conference_member_say(member->conference, member, msg, 0);
@@ -1756,7 +1733,7 @@ static int conference_function_volume_in_member(conference_obj_t *conference, co
 		if (data) {
 			switch_mutex_lock(member->flag_mutex);
 			member->volume_in_level = atoi((char *)data);
-			normalize_volume(member->volume_in_level);
+			switch_normalize_volume(member->volume_in_level);
 			switch_mutex_unlock(member->flag_mutex);
 		}
 
@@ -1792,7 +1769,7 @@ static int conference_function_volume_out_member(conference_obj_t *conference, c
 		if (data) {
 			switch_mutex_lock(member->flag_mutex);
 			member->volume_out_level = atoi((char *)data);
-			normalize_volume(member->volume_out_level);
+			switch_normalize_volume(member->volume_out_level);
 			switch_mutex_unlock(member->flag_mutex);
 		}
 
@@ -2458,6 +2435,17 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	char appdata[512];
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
+
+	if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (session) {
+		caller_channel = switch_core_session_get_channel(session);
+	
+	}
+
 	if (switch_ivr_originate(session,
 							 &peer_session,
 							 &cause,
@@ -2469,8 +2457,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 							 NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel, cause: %s\n",
 				  switch_channel_cause2str(cause));
-		if (session) {
-			caller_channel = switch_core_session_get_channel(session);
+		if (caller_channel) {
 			switch_channel_hangup(caller_channel, cause);
 		}
 		goto done;
@@ -2479,6 +2466,15 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 
 	peer_channel = switch_core_session_get_channel(peer_session);
 	assert(peer_channel != NULL);
+
+	if (!switch_test_flag(conference, CFLAG_RUNNING)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Conference is gone now, nevermind..\n");
+		if (caller_channel) {
+			switch_channel_hangup(caller_channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
+		}
+		switch_channel_hangup(peer_channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
+		goto done;
+	}
 
 	if (caller_channel && switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
 		switch_channel_answer(caller_channel);
@@ -2509,6 +2505,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	}
 
 done:
+	switch_thread_rwlock_unlock(conference->rwlock);
 	return status;
 }
 

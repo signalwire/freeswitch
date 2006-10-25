@@ -1999,6 +1999,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		
 		}
 
+		if (!switch_channel_ready(caller_channel)) {
+			idx = -2;
+		}
+
 		if (session && !switch_channel_test_flag(caller_channel, CF_NOMEDIA)) {
 			switch_core_session_reset(session);
 		}
@@ -2062,10 +2066,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					break;
 				}
 			}
+
 			if (caller_channel) {
+				if (idx == -2) {
+					*cause = switch_channel_get_cause(caller_channel);
+				} 
 				switch_channel_set_variable(caller_channel, "originate_disposition", switch_channel_cause2str(*cause));
+				
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Error Cause: %d [%s]\n", *cause, switch_channel_cause2str(*cause));
+			if (idx == -2) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Cancelled by originator termination Cause: %d [%s]\n",
+								  *cause, switch_channel_cause2str(*cause));
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Error Cause: %d [%s]\n",
+								  *cause, switch_channel_cause2str(*cause));
+			}
 		}
 
 		if (!pass && write_codec.implementation) {

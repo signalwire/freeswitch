@@ -182,3 +182,37 @@ SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len)
 		buf[i] = ((buf[i] >> 8) & 0x00ff) | ((buf[i] << 8) & 0xff00);
 	}
 }
+
+SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol)
+{
+    double newrate = 0;
+    int div = 0;
+
+	switch_normalize_volume(vol);
+
+	if (vol > 0) {
+		vol++;
+	} else if (vol < 0) {
+		vol--;
+	}
+
+	newrate = vol * 1.3;
+
+	if (vol < 0) {
+		newrate *= -1;
+		div++;
+	}
+
+	if (newrate) {
+		int32_t tmp;
+		int x;
+		int16_t *fp = data;
+
+		for (x = 0; x < samples; x++) {
+			tmp = (double) div ? fp[x] / newrate : fp[x] * newrate;
+			switch_normalize_to_16bit(tmp);
+			fp[x] = tmp;
+		}
+	}
+}
+

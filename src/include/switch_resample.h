@@ -38,6 +38,7 @@
 	way comes along some day. =D
 	
 */
+#define switch_normalize_volume(x) if(x > 4) x = 4; if (x < -4) x = -4;
 
 #ifndef SWITCH_RESAMPLE_H
 #define SWITCH_RESAMPLE_H
@@ -154,6 +155,13 @@ SWITCH_DECLARE(int) switch_short_to_float(short *s, float *f, int len);
  */
 SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len);
 
+/*!
+  \brief Change the volume of a signed linear audio frame
+  \param data the audio data
+  \param samples the number of 2 byte samples
+  \param vol the volume factor -4 -> 4
+ */
+SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol);
 ///\}
 
 SWITCH_END_EXTERN_C
