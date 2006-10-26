@@ -1927,7 +1927,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 		
 				if (caller_channel && !switch_channel_ready(caller_channel)) {
-					break;
+					goto notready;
 				}
 		
 				if ((time(NULL) - start) > (time_t)timelimit_sec) {
@@ -2010,6 +2010,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 		
 		}
+
+	notready:
 
 		if (!switch_channel_ready(caller_channel)) {
 			idx = IDX_CANCEL;
