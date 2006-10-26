@@ -2101,6 +2101,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			if (idx == IDX_CANCEL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Cancelled by originator termination Cause: %d [%s]\n",
 								  *cause, switch_channel_cause2str(*cause));
+				if (peer_channel) {
+					switch_channel_hangup(peer_channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+				}
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Error Cause: %d [%s]\n",
 								  *cause, switch_channel_cause2str(*cause));

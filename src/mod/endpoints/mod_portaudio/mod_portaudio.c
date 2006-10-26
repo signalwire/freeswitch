@@ -823,7 +823,11 @@ static switch_status_t engage_device(struct private_object *tech_pvt)
 	} else {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
 		switch_core_codec_destroy(&tech_pvt->write_codec);
-		switch_core_session_destroy(&tech_pvt->session);
+		if (switch_core_session_running(tech_pvt->session)) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		} else {
+			switch_core_session_destroy(&tech_pvt->session);
+		}
 	}
 
 	return SWITCH_STATUS_FALSE;
