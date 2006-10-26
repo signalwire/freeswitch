@@ -1145,17 +1145,13 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	if (switch_test_flag(tech_pvt, TFLAG_BYE)) {
-		return SWITCH_STATUS_SUCCESS;
-	}
-
 	cause = switch_channel_get_cause(channel);
 	sip_cause = hangup_cause_to_sip(cause);
 
 	deactivate_rtp(tech_pvt);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s hanging up, cause: %s\n", 
-			  switch_channel_get_name(channel), switch_channel_cause2str(cause), sip_cause);
+					  switch_channel_get_name(channel), switch_channel_cause2str(cause), sip_cause);
 
 	if (tech_pvt->hash_key) {
 		switch_core_hash_delete(tech_pvt->profile->chat_hash, tech_pvt->hash_key);
@@ -1181,16 +1177,14 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					nua_cancel(tech_pvt->nh, TAG_END());
 				}
 			}
+			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 		}
-		nua_handle_destroy(tech_pvt->nh);
-		tech_pvt->nh = NULL;
 	}
 
 	if (tech_pvt->from_str) {
 		switch_safe_free(tech_pvt->from_str);
 	}
 
-	switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 
 	if (tech_pvt->home) {
@@ -1432,7 +1426,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 						TAG_END());
 			
 		}
-	}
+	} 
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1877,7 +1871,7 @@ static void logger(void *logarg, char const *fmt, va_list ap)
 #endif
 	}
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, (char*) "%s", data);
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, (char*) "%s", data);
 	free(data);
 }
 
@@ -2435,6 +2429,7 @@ static void sip_i_state(int status,
 						switch_channel_set_variable(channel, "endpoint_disposition", "RECEIVED");
 						switch_channel_set_state(channel, CS_INIT);
 						switch_set_flag_locked(tech_pvt, TFLAG_READY);
+						//sofia_answer_channel(session);//XXX TMP
 						switch_core_session_thread_launch(session);
 						
 						if (replaces_str && (replaces = sip_replaces_make(tech_pvt->home, replaces_str)) && (bnh = nua_handle_by_replaces(nua, replaces))) {
@@ -2573,14 +2568,16 @@ static void sip_i_state(int status,
 				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 				if (switch_test_flag(tech_pvt, TFLAG_NOHUP)) {
 					switch_clear_flag_locked(tech_pvt, TFLAG_NOHUP);
-					nua_handle_destroy(tech_pvt->nh);
-					tech_pvt->nh = NULL;
 				} else {
 					snprintf(st, sizeof(st), "%d", status);
 					switch_channel_set_variable(channel, "sip_term_status", st);
 					terminate_session(&session, sip_cause_to_freeswitch(status), __LINE__);
 				}
 			}
+			tech_pvt->nh = NULL;
+		}
+		if (nh) {
+			nua_handle_destroy(nh);
 		}
 		break;
 	}
