@@ -1932,7 +1932,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		
 				if ((time(NULL) - start) > (time_t)timelimit_sec) {
 					to++;
-					break;
+					idx = IDX_CANCEL;
+					goto notready;
 				}
 				switch_yield(1000);
 			}
@@ -1978,7 +1979,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key)) {
 
 			if ((to = (uint8_t)((time(NULL) - start) >= (time_t)timelimit_sec))) {
-				break;
+				idx = IDX_CANCEL;
+				goto notready;
 			}
 
 			if (session && or_argc == 1 && and_argc == 1) { /* when there is only 1 channel to call and bridge */
