@@ -147,9 +147,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	last = switch_time_now() - waitsec;
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-		/* Turn on the device */
-		engage_device(tech_pvt);
-
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL INIT %d %d\n", switch_channel_get_name(channel),
 			switch_channel_get_state(channel), switch_test_flag(tech_pvt, TFLAG_ANSWER));
@@ -172,6 +169,11 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 				last = switch_time_now();
 			}
 			switch_yield(50000);
+		}
+		
+		if (switch_channel_ready(channel)) {
+			/* Turn on the device */
+			engage_device(tech_pvt);
 		}
 	}
 
