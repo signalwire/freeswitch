@@ -1229,8 +1229,8 @@ static int on_ring(struct sangoma_pri *spri, sangoma_pri_event_t event_type, pri
 			return 0;
 		}
 
-		if (event->ring.aniii >= 0) {
-			snprintf(aniiistr, 5, "%.2d", event->ring.aniii);
+		if (event->ring.ani2 >= 0) {
+			snprintf(aniiistr, 5, "%.2d", event->ring.ani2);
 		}
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
