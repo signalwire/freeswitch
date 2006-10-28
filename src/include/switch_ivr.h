@@ -152,6 +152,40 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 													 void *buf,
 													 unsigned int buflen);
 
+/*!
+ \brief Function to evaluate an expression against a string
+ \param target The string to find a match in
+ \param expression The regular expression to run against the string
+ \return Boolean if a match was found or not
+*/
+SWITCH_DECLARE(switch_status_t) switch_regex_match(char *target, char *expression);
+
+/*!
+  \brief Play a sound and gather digits with the number of retries specified if the user doesn't give digits in the set time
+  \param session the current session to play sound to and collect digits
+  \param min_digits the fewest digits allowed for the response to be valid
+  \param max_digits the max number of digits to accept
+  \param max_tries number of times to replay the sound and capture digits
+  \param timeout time to wait for input (this is per iteration, so total possible time = max_tries * (timeout + audio playback length)
+  \param valid_terminators for input that can include # or * (useful for variable length prompts)
+  \param audio_file file to play
+  \param bad_input_audio_file file to play if the input from the user was invalid
+  \param digit_buffer variable digits captured will be put back into (empty if capture failed)
+  \param digit_buffer_length length of the buffer for digits (should be the same or larger than max_digits)
+  \return switch status, used to note status of channel (will still return success if digit capture failed)
+  \note to test for digit capture failure look for \0 in the first position of the buffer
+*/
+SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t *session,
+                                                           unsigned int min_digits,
+                                                           unsigned int max_digits,
+                                                           unsigned int max_tries,
+                                                           unsigned int timeout,
+                                                           char* valid_terminators,
+                                                           char* audio_file,
+                                                           char* bad_input_audio_file,
+                                                           void* digit_buffer,
+                                                           unsigned int digit_buffer_length,
+                                                           char* digits_regex);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
                                                              switch_speech_handle_t *sh,
