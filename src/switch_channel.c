@@ -1171,7 +1171,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						return in;
 					}
 				}
-				nlen = strlen(sub_val);
+				nlen = sub_val ? strlen(sub_val) : 0;
 				if (len + nlen >= olen) {
 					olen += block;
 					cpos = c - data;
@@ -1186,10 +1186,11 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 					vname = data + vvalpos;
 				}
 
-				len += nlen;
-				strcat(c, sub_val);
-				c += nlen;
-
+				if (nlen) {
+					len += nlen;
+					strcat(c, sub_val);
+					c += nlen;
+				}
 				if (func_val) {
 					free(func_val);
 					func_val = NULL;

@@ -2449,7 +2449,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						char *context;
 						char *cid_name;
 						char *cid_num;
-						char *t, *them = NULL;
+						char *tmp, *t, *them = NULL;
 
 						memset(payloads, 0, sizeof(payloads));
 
@@ -2481,8 +2481,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 							}
 						}
 						
-
-						
 						if (!(context = ldl_session_get_value(dlsession, "context"))) {
 							context = profile->context;
 						}
@@ -2502,6 +2500,21 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			
 						tech_pvt->them = switch_core_session_strdup(session, ldl_session_get_callee(dlsession));
 						tech_pvt->us = switch_core_session_strdup(session, ldl_session_get_caller(dlsession));
+
+						if ((tmp = strdup(tech_pvt->us))) {
+							char *p, *q;
+
+							if ((p = strchr(tmp, '@'))) {
+								*p++ = '\0';
+								if ((q = strchr(p, '/'))) {
+									*q = '\0';
+								}
+								switch_channel_set_variable(channel, "dl_from_user", tmp);
+								switch_channel_set_variable(channel, "dl_from_host", p);
+							}
+
+							switch_safe_free(tmp);
+						}
 						
 						if (!tech_pvt->caller_profile) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating an identity for %s %s <%s> %s\n", 
