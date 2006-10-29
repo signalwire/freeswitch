@@ -186,7 +186,7 @@ static switch_status_t presence_api_function(char *fmt, switch_core_session_t *s
 	int argc = 0;
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
 
-	if ((lbuf = strdup(fmt)) && (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) > 0) {
+	if (fmt && (lbuf = strdup(fmt)) && (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) > 0) {
 		if (!strcasecmp(argv[0], "out")) {
 			type = SWITCH_EVENT_PRESENCE_OUT;
 		} else if (argc != 4) {
