@@ -3693,7 +3693,7 @@ static void sip_i_invite(nua_t *nua,
 			char *username, *to_username = NULL;
 			char *url_user = (char *) from->a_url->url_user;
 			char *to_user, *to_host;
-			char *a,*b;
+
 			if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
@@ -3754,18 +3754,19 @@ static void sip_i_invite(nua_t *nua,
 				}
 			}
 
-			if ((a = strchr(to_user, '+')) && (b = strrchr(to_user, '+')) && a != b) {
-				*b = '@';
-			}
-
 			attach_private(session, profile, tech_pvt, username);
 
 			channel = switch_core_session_get_channel(session);
 			switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
 			set_chat_hash(tech_pvt, sip);
 			
-			switch_channel_set_variable(channel, "sip_fromuser", (char *) from->a_url->url_user);
-			switch_channel_set_variable(channel, "sip_fromhost", (char *) from->a_url->url_host);
+			switch_channel_set_variable(channel, "sip_from_user", (char *) from->a_url->url_user);
+			if (from->a_url->url_user && *from->a_url->url_user == '+') {
+				switch_channel_set_variable(channel, "sip_from_user_stripped", (char *)(from->a_url->url_user+1));
+			} else {
+				switch_channel_set_variable(channel, "sip_from_user_stripped", (char *)from->a_url->url_user);
+			}
+			switch_channel_set_variable(channel, "sip_from_host", (char *) from->a_url->url_host);
 			if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																	  (char *) from->a_url->url_user,
 																	  profile->dialplan,

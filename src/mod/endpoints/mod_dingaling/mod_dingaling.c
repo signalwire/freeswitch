@@ -1497,6 +1497,12 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		}
 
 		if ((mdl_profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
+
+			if ((mdl_profile->user_flags & LDL_FLAG_COMPONENT) && strchr(outbound_profile->caller_id_number, '@')) {
+				snprintf(ubuf, sizeof(ubuf), "%s/talk", outbound_profile->caller_id_number);
+				user = ubuf;
+			}
+
 			if (!ldl_handle_ready(mdl_profile->handle)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Doh! we are not logged in yet!\n");
 				terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
