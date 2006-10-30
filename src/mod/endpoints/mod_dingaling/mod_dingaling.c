@@ -191,7 +191,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
 static switch_status_t load_config(void);
 
-#define is_special(s) (strstr(s, "ext+") || strstr(s, "user+") || strstr(s, "conf+"))
+#define is_special(s) (s && (strstr(s, "ext+") || strstr(s, "user+") || strstr(s, "conf+")))
 
 static char *translate_rpid(char *in, char *ext)
 {
