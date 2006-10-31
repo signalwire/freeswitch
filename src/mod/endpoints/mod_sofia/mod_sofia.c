@@ -77,7 +77,7 @@ typedef struct private_object private_object_t;
 
 extern su_log_t tport_log[];
 
-static switch_frame_t silence_frame = {};
+static switch_frame_t silence_frame = { 0 };
 static char silence_data[13] = "";
 
 
@@ -1051,7 +1051,9 @@ static void tech_absorb_sdp(private_object_t *tech_pvt)
 				for (m = sdp->sdp_media; m ; m = m->m_next) {
 					tech_pvt->proxy_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, (char *)sdp->sdp_connection->c_address);
 					tech_pvt->proxy_sdp_audio_port = (switch_port_t)m->m_port;
-					break;
+					if (tech_pvt->proxy_sdp_audio_ip && tech_pvt->proxy_sdp_audio_port) {
+						break;
+					}
 				}
 			}
 			sdp_parser_free(parser);
