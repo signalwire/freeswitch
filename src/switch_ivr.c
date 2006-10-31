@@ -2375,7 +2375,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold_uuid(char *uuid)
 SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, switch_media_flag_t flags)
 {
     switch_channel_t *channel;
-	uint8_t nomedia;
+	int nomedia;
 	switch_core_session_t *session;
 	switch_event_t *event;
 	switch_core_session_t *other_session;
