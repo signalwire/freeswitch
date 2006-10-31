@@ -58,8 +58,8 @@ static switch_status_t status_function(char *cmd, switch_core_session_t *session
 	switch_core_measure_time(switch_core_uptime(), &duration);
 
 	if (stream->event) {
-        http = switch_event_get_header(stream->event, "http-host");
-    }
+		http = switch_event_get_header(stream->event, "http-host");
+	}
 
 	if (http || (cmd && strstr(cmd, "html"))) {
 		html = 1;
@@ -139,22 +139,23 @@ static switch_status_t ctl_function(char *data, switch_core_session_t *session, 
 	
 }
 
-
 static switch_status_t load_function(char *mod, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
+
 	if (switch_strlen_zero(mod)) {
 		stream->write_function(stream, "USAGE: %s\n", load_api_interface.syntax);
 		return SWITCH_STATUS_SUCCESS;
 	}
+
 	switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) mod);
 	stream->write_function(stream, "OK\n");
+
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 static switch_status_t reload_function(char *mod, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
@@ -170,6 +171,7 @@ static switch_status_t reload_function(char *mod, switch_core_session_t *session
 	}
 	
 	stream->write_function(stream, "OK [%s]\n", err);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -194,7 +196,6 @@ static switch_status_t kill_function(char *dest, switch_core_session_t *isession
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 static switch_status_t transfer_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
@@ -234,8 +235,6 @@ static switch_status_t transfer_function(char *cmd, switch_core_session_t *isess
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-
 static switch_status_t uuid_bridge_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
 	char *argv[4] = {0};
@@ -257,8 +256,6 @@ static switch_status_t uuid_bridge_function(char *cmd, switch_core_session_t *is
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
-
 
 static switch_status_t pause_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
 {
@@ -419,9 +416,6 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames){
 			holder->stream->write_function(holder->stream, "%s%s", argv[x], x == (argc - 1) ? "\n" : ",");
 		}
 	}
-	
-
-
 
 	holder->count++;
 	return 0;
@@ -440,43 +434,38 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 	}
 
 	if (stream->event) {
-        holder.http = switch_event_get_header(stream->event, "http-host");
-    } 
+		holder.http = switch_event_get_header(stream->event, "http-host");
+	} 
 
 	holder.print_title = 1;
 
-    if (!cmd) {
-        sprintf (sql, "select * from interfaces");
-    }
-    else if ( !strcmp(cmd,"codec") || !strcmp(cmd,"dialplan") || 
-              !strcmp(cmd,"file") || !strcmp(cmd,"timer") 
-            ) {
-        sprintf (sql, "select type, name from interfaces where type = '%s'", cmd);
-    }
-    else if (!strcmp(cmd,"application") || !strcmp(cmd,"api")) {
-        sprintf (sql, "select name, description, syntax from interfaces where type = '%s'", cmd);
-    }
-    else if ( !strcmp(cmd,"calls")) {
-        sprintf (sql, "select * from calls");
-    }
-    else if ( !strcmp(cmd,"channels")) {
-        sprintf (sql, "select * from channels");
-    }
-    else if (!strncasecmp(cmd, "help", 4)) {
+	// If you changes the field qty or order of any of these select
+	// statmements, you must also change show_callback and friends to match!
+	if (!cmd) {
+		sprintf (sql, "select * from interfaces");
+	} else if ( !strcmp(cmd,"codec") || !strcmp(cmd,"dialplan") || !strcmp(cmd,"file") || !strcmp(cmd,"timer")) {
+		sprintf (sql, "select type, name from interfaces where type = '%s'", cmd);
+	} else if (!strcmp(cmd,"application") || !strcmp(cmd,"api")) {
+		sprintf (sql, "select name, description, syntax from interfaces where type = '%s'", cmd);
+	} else if ( !strcmp(cmd,"calls")) {
+		sprintf (sql, "select * from calls");
+	} else if ( !strcmp(cmd,"channels")) {
+		sprintf (sql, "select * from channels");
+	} else if (!strncasecmp(cmd, "help", 4)) {
 		char *cmdname = NULL;
+
 		help = 1;
 		holder.print_title = 0;
 		if ((cmdname = strchr(cmd, ' ')) != 0) {
 			*cmdname++ = '\0';
-	        sprintf (sql, "select name, syntax, description from interfaces where type = 'api' and name = '%s'", cmdname);
+			sprintf (sql, "select name, syntax, description from interfaces where type = 'api' and name = '%s'", cmdname);
 		} else {
-	        sprintf (sql, "select name, syntax, description from interfaces where type = 'api'");
+			sprintf (sql, "select name, syntax, description from interfaces where type = 'api'");
 		}
-    }
-    else {
+	} else {
 		stream->write_function(stream, "USAGE: %s\n", show_api_interface.syntax);
-        return SWITCH_STATUS_SUCCESS;
-    }
+		return SWITCH_STATUS_SUCCESS;
+	}
     
 	holder.stream = stream;
 	holder.count = 0;
@@ -517,11 +506,16 @@ static switch_status_t help_function(char *cmd, switch_core_session_t *session, 
 		sprintf (showcmd, "help %s", cmd);
 	}
 
-	if (all)
+	if (all) {
 		stream->write_function(stream, "\nValid Commands:\n\n");
+	}
+
 	show_function(showcmd, session, stream);
-	if (all)
+
+	if (all) {
 		stream->write_function(stream, "version\n" "shutdown - stop the program\n");
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -614,7 +608,6 @@ static switch_api_interface_t originate_api_interface = {
 	/*.next */ &kill_api_interface
 };
 
-
 static const switch_loadable_module_interface_t mod_commands_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
@@ -625,15 +618,11 @@ static const switch_loadable_module_interface_t mod_commands_module_interface = 
 	/*.api_interface */ &originate_api_interface
 };
 
-
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
-
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &mod_commands_module_interface;
-
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-
