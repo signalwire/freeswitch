@@ -1367,6 +1367,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 		switch_event_t *event;
 		switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);
 
+		
 		if (session && channel) {
 			profile = switch_channel_get_caller_profile(channel);
 		}
@@ -1375,7 +1376,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 		}
 
 		if (channel && peer_channel) {
-			char *export_vars;
+			char *export_vars, *val;
+
+			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));
+			
 			/* A comma (,) separated list of variable names that should ne propagated from originator to originatee */
 			if ((export_vars = switch_channel_get_variable(channel, "export_vars"))) {
 				char *cptmp = switch_core_session_strdup(session, export_vars);
@@ -1392,6 +1396,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_outgoing_channel(switch_core
 						}
 					}
 				}
+			}
+
+			if ((val = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE))) {
+				switch_channel_set_variable(peer_channel, SWITCH_B_SDP_VARIABLE, val);
+			}
+			
+			if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
+				switch_channel_set_flag(peer_channel, CF_NOMEDIA);
 			}
 
 			if (profile) {
@@ -1579,7 +1591,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_private_event(switch_c
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	assert(session != NULL);
-
+	
 	if (!session->private_event_queue) {
 		switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	}
@@ -1608,8 +1620,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_private_event(switch
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	void *pop;
+	switch_channel_t *channel;
 
 	assert(session != NULL);
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+	
+	if (switch_channel_test_flag(channel, CF_EVENT_PARSE)) {
+		return status;
+	}
+
 	
 	if (session->private_event_queue) {
 		if ((status = (switch_status_t) switch_queue_trypop(session->private_event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
@@ -1880,7 +1901,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	assert(session != NULL);
 	assert(frame != NULL);
-	assert(frame->codec != NULL);
+
 
 	if (switch_channel_test_flag(session->channel, CF_HOLD)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -1895,6 +1916,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	assert(frame->codec != NULL);
 
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		need_codec = TRUE;
@@ -2587,6 +2609,12 @@ static void switch_core_standard_on_hold(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HOLD\n");
 }
 
+static void switch_core_standard_on_hibernate(switch_core_session_t *session)
+{
+	assert(session != NULL);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Standard HIBERNATE\n");
+}
+
 SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session_t *session)
 {
 
@@ -2973,6 +3001,43 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					}
 					if (proceed) {
 						switch_core_standard_on_hold(session);
+					}
+				}
+				break;
+			case CS_HIBERNATE:	/* wait in limbo */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State HIBERNATE\n", switch_channel_get_name(session->channel));
+				if (!driver_state_handler->on_hibernate ||
+					(driver_state_handler->on_hibernate &&
+					 driver_state_handler->on_hibernate(session) == SWITCH_STATUS_SUCCESS &&
+					 midstate == switch_channel_get_state(session->channel))) {
+
+					while((application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) {
+						if (!application_state_handler || !application_state_handler->on_hibernate ||
+							(application_state_handler->on_hibernate &&
+							 application_state_handler->on_hibernate(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					index = 0;
+					while(proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) {
+						if (!application_state_handler || !application_state_handler->on_hibernate ||
+							(application_state_handler->on_hibernate &&
+							 application_state_handler->on_hibernate(session) == SWITCH_STATUS_SUCCESS &&
+							 midstate == switch_channel_get_state(session->channel))) {
+							proceed++;
+							continue;
+						} else {
+							proceed = 0;
+							break;
+						}
+					}
+					if (proceed) {
+						switch_core_standard_on_hibernate(session);
 					}
 				}
 				break;

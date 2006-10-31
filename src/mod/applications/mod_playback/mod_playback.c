@@ -88,7 +88,16 @@ static void speak_function(switch_core_session_t *session, char *data)
 	timer_name = argv[3];
 	
 	if (!(engine && voice && text)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params!\n");
+		if (!engine) {
+			engine = "NULL";
+		}
+		if (!voice) {
+			voice = "NULL";
+		}
+		if (!text) {
+			text = "NULL";
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params! [%s][%s][%s]\n", engine, voice, text);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
 

@@ -117,6 +117,8 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 	char *ptr;
 	int quot = 0;
 	char qc = '"';
+	char *e;
+	int x;
 
 	if (!buf || !array || !arraylen) {
 		return 0;
@@ -143,14 +145,17 @@ SWITCH_DECLARE(unsigned int) switch_separate_string(char *buf, char delim, char 
 	}
 
 	if (*ptr) {
-		char *e;
-		if (*ptr == qc) {
-			ptr++;
-		}
-		if ((e = strchr(ptr, qc))) {
-			*e = '\0';
-		}
 		array[argc++] = ptr;
+	}
+
+	/* strip quotes */
+	for(x = 0; x < argc; x++) {
+		if (*(array[x]) == qc) {
+			(array[x])++;
+			if ((e = strchr(array[x], qc))) {
+				*e = '\0';
+			}
+		}
 	}
 
 	return argc;

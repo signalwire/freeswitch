@@ -462,6 +462,7 @@ static const char *state_names[] = {
 	"CS_EXECUTE",
 	"CS_LOOPBACK",
 	"CS_HOLD",
+	"CS_HIBERNATE",
 	"CS_HANGUP",
 	"CS_DONE",
 	NULL
@@ -543,6 +544,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_RING:
 		case CS_EXECUTE:
 		case CS_HOLD:
+		case CS_HIBERNATE:
 			ok++;
 		default:
 			break;
@@ -555,6 +557,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_RING:
 		case CS_EXECUTE:
 		case CS_HOLD:
+		case CS_HIBERNATE:
 			ok++;
 		default:
 			break;
@@ -567,6 +570,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_RING:
 		case CS_EXECUTE:
 		case CS_HOLD:
+		case CS_HIBERNATE:
 			ok++;
 		default:
 			break;
@@ -579,6 +583,19 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_RING:
 		case CS_EXECUTE:
 		case CS_TRANSMIT:
+		case CS_HIBERNATE:
+			ok++;
+		default:
+			break;
+		}
+		break;
+	case CS_HIBERNATE:
+		switch (state) {
+		case CS_LOOPBACK:
+		case CS_RING:
+		case CS_EXECUTE:
+		case CS_TRANSMIT:
+		case CS_HOLD:
 			ok++;
 		default:
 			break;
@@ -592,6 +609,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_EXECUTE:
 		case CS_TRANSMIT:
 		case CS_HOLD:
+		case CS_HIBERNATE:
 			ok++;
 		default:
 			break;
@@ -604,6 +622,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		case CS_TRANSMIT:
 		case CS_RING:
 		case CS_HOLD:
+		case CS_HIBERNATE:
 			ok++;
 		default:
 			break;

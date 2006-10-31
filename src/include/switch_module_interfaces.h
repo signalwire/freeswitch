@@ -60,6 +60,8 @@ struct switch_state_handler_table {
 	switch_state_handler_t on_transmit;
 	/*! executed when the state changes to hold*/
 	switch_state_handler_t on_hold;
+	/*! executed when the state changes to hibernate*/
+	switch_state_handler_t on_hibernate;
 };
 
 struct switch_stream_handle {

@@ -74,11 +74,24 @@ SWITCH_BEGIN_EXTERN_C
 
 #define SWITCH_R_SDP_VARIABLE "_switch_r_sdp_"
 #define SWITCH_L_SDP_VARIABLE "_switch_l_sdp_"
-#define SWITCH_BRIDGE_VARIABLE "BRIDGETO"
-#define SWITCH_SIGNAL_BRIDGE_VARIABLE "SIGNAL_BRIDGETO"
+#define SWITCH_B_SDP_VARIABLE "_switch_m_sdp_"
+#define SWITCH_BRIDGE_VARIABLE "_bridge_to_"
+#define SWITCH_SIGNAL_BRIDGE_VARIABLE "_signal_bridge_to_"
+#define SWITCH_ORIGINATOR_VARIABLE "_originator_"
+#define SWITCH_LOCAL_MEDIA_IP_VARIABLE "_local_media_ip_"
+#define SWITCH_LOCAL_MEDIA_PORT_VARIABLE "_local_media_port_"
+#define SWITCH_REMOTE_MEDIA_IP_VARIABLE "_remote_media_ip_"
+#define SWITCH_REMOTE_MEDIA_PORT_VARIABLE "_remote_media_port_"
+
 
 #define SWITCH_BITS_PER_BYTE 8
 typedef uint8_t switch_byte_t;
+
+typedef enum {
+	SMF_NONE = 0,
+	SMF_REBRIDGE = (1 << 0),
+	SMF_ECHO_BRIDGED = (1 << 1)
+} switch_media_flag_t;
 
 typedef enum {
 	SWITCH_BITPACK_MODE_RFC3551,
@@ -246,6 +259,10 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_BRIDGE    - indicate a bridge starting
 	SWITCH_MESSAGE_INDICATE_UNBRIDGE  - indicate a bridge ending
 	SWITCH_MESSAGE_INDICATE_TRANSFER  - indicate a transfer is taking place
+	SWITCH_MESSAGE_INDICATE_MEDIA	  - indicate media is required
+	SWITCH_MESSAGE_INDICATE_NOMEDIA	  - indicate no-media is required
+	SWITCH_MESSAGE_INDICATE_HOLD      - indicate hold
+	SWITCH_MESSAGE_INDICATE_UNHOLD    - indicate unhold
 </pre>
  */
 typedef enum {
@@ -255,7 +272,11 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_BRIDGE,
 	SWITCH_MESSAGE_INDICATE_UNBRIDGE,
 	SWITCH_MESSAGE_INDICATE_TRANSFER,
-	SWITCH_MESSAGE_INDICATE_RINGING
+	SWITCH_MESSAGE_INDICATE_RINGING,
+	SWITCH_MESSAGE_INDICATE_MEDIA,
+	SWITCH_MESSAGE_INDICATE_NOMEDIA,
+	SWITCH_MESSAGE_INDICATE_HOLD,
+	SWITCH_MESSAGE_INDICATE_UNHOLD,
 } switch_core_session_message_types_t;
 
 
@@ -376,6 +397,7 @@ CS_TRANSMIT  - Channel is in a passive transmit state
 CS_EXECUTE   - Channel is executing it's dialplan 
 CS_LOOPBACK  - Channel is in loopback
 CS_HOLD		 - Channel is on hold
+CS_HIBERNATE - Channel is in a sleep state
 CS_HANGUP    - Channel is flagged for hangup and ready to end
 CS_DONE      - Channel is ready to be destroyed and out of the state machine
 </pre>
@@ -388,6 +410,7 @@ typedef enum {
 	CS_EXECUTE,
 	CS_LOOPBACK,
 	CS_HOLD,
+	CS_HIBERNATE,
 	CS_HANGUP,
 	CS_DONE 
 } switch_channel_state_t;
@@ -412,6 +435,8 @@ CF_TAGGED		= (1 << 10) - Channel is tagged
 CF_WINNER		= (1 << 11) - Channel is the winner
 CF_CONTROLLED	= (1 << 12) - Channel is under control
 CF_NOMEDIA		= (1 << 13) - Channel has no media
+CF_SUSPEND		= (1 << 14) - Suspend i/o
+CF_EVENT_PARSE  = (1 << 15) - Suspend control events
 </pre>
  */
 
@@ -429,7 +454,9 @@ typedef enum {
 	CF_TAGGED		= (1 << 10),
 	CF_WINNER		= (1 << 11),
 	CF_CONTROLLED	= (1 << 12),
-	CF_NOMEDIA		= (1 << 13)
+	CF_NOMEDIA		= (1 << 13),
+	CF_SUSPEND		= (1 << 14),
+	CF_EVENT_PARSE	= (1 << 15)
 } switch_channel_flag_t;
 
 

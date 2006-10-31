@@ -274,7 +274,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_t *session, char *extension, char *dialplan, char *context);
 
-
 /*!
   \brief Bridge two existing sessions
   \param originator_uuid the uuid of the originator
@@ -282,6 +281,59 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(char *originator_uuid, char *originatee_uuid);
+
+/*!
+  \brief Signal a session to request direct media access to it's remote end
+  \param uuid the uuid of the session to request
+  \param flags flags to influence behaviour (SMF_REBRIDGE to rebridge the call in media mode)
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_media(char *uuid, switch_media_flag_t flags);
+
+/*!
+  \brief Signal a session to request indirect media allowing it to exchange media directly with another device
+  \param uuid the uuid of the session to request
+  \param flags flags to influence behaviour (SMF_REBRIDGE to rebridge the call in no_media mode)
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(char *uuid, switch_media_flag_t flags);
+
+/*!
+  \brief Signal the session with a protocol specific hold message.
+  \param uuid the uuid of the session to hold
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_hold_uuid(char *uuid);
+
+/*!
+  \brief Signal the session with a protocol specific unhold message.
+  \param uuid the uuid of the session to hold
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_unhold_uuid(char *uuid);
+
+/*!
+  \brief Signal the session with a protocol specific hold message.
+  \param session the session to hold
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session);
+
+/*!
+  \brief Signal the session with a protocol specific unhold message.
+  \param uuid the uuid of the session to unhold
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session);
+
+/*!
+  \brief Signal the session to broadcast audio
+  \param uuid the uuid of the session to broadcast on
+  \param path the path data of the broadcast "/path/to/file.wav [<timer name>]" or "speak:<engine>|<voice>|<Text to say>"
+  \param flags flags to send to the request (SMF_ECHO_BRIDGED to send the broadcast to both sides of the call)
+  \return SWITCH_STATUS_SUCCESS if all is well
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, switch_media_flag_t flags);
 
 /*!
   \brief Transfer variables from one session to another 

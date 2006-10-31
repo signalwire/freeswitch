@@ -44,6 +44,9 @@ static switch_api_interface_t load_api_interface;
 static switch_api_interface_t reload_api_interface;
 static switch_api_interface_t kill_api_interface;
 static switch_api_interface_t originate_api_interface;
+static switch_api_interface_t media_api_interface;
+static switch_api_interface_t hold_api_interface;
+static switch_api_interface_t broadcast_api_interface;
 
 static switch_status_t status_function(char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
@@ -230,6 +233,97 @@ static switch_status_t transfer_function(char *cmd, switch_core_session_t *isess
 		} else {
 			stream->write_function(stream, "No Such Channel!\n");
 		}
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t uuid_media_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	char *argv[4] = {0};
+	int argc = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	if (isession) {
+		return status;
+	}
+	
+	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 1) {
+		stream->write_function(stream, "USAGE: %s\n", media_api_interface.syntax);
+	} else {
+		if (!strcmp(argv[0], "off")) {
+			status = switch_ivr_nomedia(argv[1], SMF_REBRIDGE);
+		} else {
+			status = switch_ivr_media(argv[0], SMF_REBRIDGE);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t uuid_broadcast_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	char *argv[4] = {0};
+	int argc = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (isession) {
+		return status;
+	}
+	
+	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 2) {
+		stream->write_function(stream, "USAGE: %s\n", broadcast_api_interface.syntax);
+	} else {
+		switch_media_flag_t flags = SMF_NONE;
+
+		if (argv[2] && !strcmp(argv[2], "both")) {
+			flags |= SMF_ECHO_BRIDGED;
+		}
+		
+		status = switch_ivr_broadcast(argv[0], argv[1], flags);
+		stream->write_function(stream, "+OK Message Sent\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t uuid_hold_function(char *cmd, switch_core_session_t *isession, switch_stream_handle_t *stream)
+{
+	char *argv[4] = {0};
+	int argc = 0;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	if (isession) {
+		return status;
+	}
+	
+	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 1) {
+		stream->write_function(stream, "USAGE: %s\n", hold_api_interface.syntax);
+	} else {
+		if (!strcmp(argv[0], "off")) {
+			status = switch_ivr_unhold_uuid(argv[1]);
+		} else {
+			status = switch_ivr_hold_uuid(argv[0]);
+		}
+	}
+
+	if (status == SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "+OK Success\n");
+	} else {
+		stream->write_function(stream, "-ERR Operation Failed\n");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -535,12 +629,36 @@ static switch_api_interface_t ctl_api_interface = {
 	/*.next */ &help_api_interface
 };
 
+static switch_api_interface_t media_api_interface = {
+	/*.interface_name */ "media",
+	/*.desc */ "media",
+	/*.function */ uuid_media_function,
+	/*.syntax */ "<uuid>",
+	/*.next */ &ctl_api_interface
+};
+
+static switch_api_interface_t hold_api_interface = {
+	/*.interface_name */ "hold",
+	/*.desc */ "hold",
+	/*.function */ uuid_hold_function,
+	/*.syntax */ "<uuid>",
+	/*.next */ &media_api_interface
+};
+
+static switch_api_interface_t broadcast_api_interface = {
+	/*.interface_name */ "broadcast",
+	/*.desc */ "broadcast",
+	/*.function */ uuid_broadcast_function,
+	/*.syntax */ "<uuid> <path> [both]",
+	/*.next */ &hold_api_interface
+};
+
 static switch_api_interface_t uuid_bridge_api_interface = {
 	/*.interface_name */ "uuid_bridge",
 	/*.desc */ "uuid_bridge",
 	/*.function */ uuid_bridge_function,
 	/*.syntax */ "<uuid> <other_uuid>",
-	/*.next */ &ctl_api_interface
+	/*.next */ &broadcast_api_interface
 };
 
 static switch_api_interface_t status_api_interface = {
