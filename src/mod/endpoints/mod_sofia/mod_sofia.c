@@ -967,7 +967,7 @@ static void do_invite(switch_core_session_t *session)
 		nua_invite(tech_pvt->nh,
 				   TAG_IF(rpid, SIPTAG_HEADER_STR(rpid)),
 				   TAG_IF(alert_info, SIPTAG_HEADER_STR(alert_info)),
-				   SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+				   //SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 				   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 				   SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 				   SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
