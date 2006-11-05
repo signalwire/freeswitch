@@ -403,6 +403,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			switch_channel_event_set_data(channel, event);
 
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "add-member");
 			switch_event_fire(&event);
 		}
@@ -471,6 +472,7 @@ static void conference_del_member(conference_obj_t *conference, conference_membe
 			switch_channel_event_set_data(channel, event);
 
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "del-member");
 			switch_event_fire(&event);
 		}
