@@ -138,54 +138,67 @@ void WINAPI ServiceCtrlHandler( DWORD control )
 	{
 	case SERVICE_CONTROL_SHUTDOWN:
 	case SERVICE_CONTROL_STOP:
-		// do shutdown stuff here
+		//Shutdown freeswitch
 		switch_core_destroy();
+		//set service status valuse
 		status.dwCurrentState = SERVICE_STOPPED;
 		status.dwWin32ExitCode = 0;
 		status.dwCheckPoint = 0;
 		status.dwWaitHint = 0;
 		break;
 	case SERVICE_CONTROL_INTERROGATE:
-		// just set the current state to whatever it is...
+		// we already set the service status every time it changes.
+		// if there are other times we change it and don't update, we should do so here
 		break;
 	}
 
 	SetServiceStatus( hStatus, &status );
 }
 
+//the main service entry point
 void WINAPI service_main( DWORD numArgs, char **args )
 {
-	const char *err = NULL;
+	const char *err = NULL;		//error value for return from freeswitch initialization
 	// we have to initialize the service-specific stuff
 	memset( &status, 0, sizeof(SERVICE_STATUS) );
 	status.dwServiceType = SERVICE_WIN32;
 	status.dwCurrentState = SERVICE_START_PENDING;
 	status.dwControlsAccepted = SERVICE_ACCEPT_STOP;
 
+	//register our handler for service control messages
 	hStatus = RegisterServiceCtrlHandler( SERVICENAME, &ServiceCtrlHandler );
 
+	//update the service status
 	SetServiceStatus( hStatus, &status );
+
+	//run freeswitch with elevated priority
 	set_high_priority();
+
+	//attempt to initialize freeswitch and load modules
 	if (switch_core_init_and_modload(lfile, &err) != SWITCH_STATUS_SUCCESS) {
+		//freeswitch did not start sucessfully
 		status.dwCurrentState = SERVICE_STOPPED;
 	} else {
+		//freeswitch started
 		status.dwCurrentState = SERVICE_RUNNING;
 	}
 
+	//update the service status
 	SetServiceStatus( hStatus, &status );
 }
 
 #endif
 
+//the main application entry point
 int main(int argc, char *argv[])
 {
-	char path[256] = "";
-	char *ppath = NULL;
-	const char *err = NULL;
-	int bg = 0;
-	FILE *f;
-	pid_t pid = 0;
-	int x, die = 0;
+	char pid_path[256] = "";	// full path to the pid file
+	const char *err = NULL;		// error value for return from freeswitch initialization
+	int bg = 0;					// TRUE if we are running in background mode
+	FILE *f;					// file handle to the pid file
+	pid_t pid = 0;				// 
+	int x;						//
+	int die = 0;				//
 
 #ifdef WIN32
 	SERVICE_TABLE_ENTRY dispatchTable[] =
@@ -259,7 +272,6 @@ int main(int argc, char *argv[])
 	}
 
 	if (bg) {
-		ppath = lfile;
 
 		signal(SIGHUP, handle_SIGHUP);
 		signal(SIGTERM, handle_SIGHUP);
@@ -274,14 +286,14 @@ int main(int argc, char *argv[])
 #endif
 	}
 
-	if (switch_core_init_and_modload(ppath, &err) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_init_and_modload(bg ? lfile : NULL, &err) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot Initilize [%s]\n", err);
 		return 255;
 	}
 
-	snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
-	if ((f = fopen(path, "w")) == 0) {
-		fprintf(stderr, "Cannot open pid file %s.\n", path);
+	snprintf(pid_path, sizeof(pid_path), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pfile);
+	if ((f = fopen(pid_path, "w")) == 0) {
+		fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
 		return 255;
 	}
 
