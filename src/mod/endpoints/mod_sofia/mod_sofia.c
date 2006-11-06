@@ -2906,7 +2906,7 @@ static uint8_t handle_register(nua_t *nua,
 			return 1;
 		}
 
-		if ((xparams = switch_xml_child(user, "params"))) {
+		if (!(xparams = switch_xml_child(user, "params"))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find params for user [%s@%s]\n", from_user, from_host);
 			nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
 			switch_xml_free(xml);
