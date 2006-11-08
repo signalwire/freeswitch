@@ -87,9 +87,8 @@ static switch_status_t switch_g722_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE; 
 	}
 
-
-	*encoded_data_len = g722_encode(&context->encoder_object, encoded_data, decoded_data, 160);
-
+	*encoded_data_len = g722_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -107,8 +106,8 @@ static switch_status_t switch_g722_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE; 
 	}
 
-	*decoded_data_len = (2 * g722_decode(&context->decoder_object, decoded_data, encoded_data, 160));
-
+	*decoded_data_len = (2 * g722_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -149,8 +148,8 @@ static const switch_codec_implementation_t g722_16k_implementation = {
 	/*.samples_per_second */ 16000,
 	/*.bits_per_second */ 64000,
 	/*.microseconds_per_frame */ 20000,
-	/*.samples_per_frame */ 160,
-	/*.bytes_per_frame */ 320,
+	/*.samples_per_frame */ 320,
+	/*.bytes_per_frame */ 640,
 	/*.encoded_bytes_per_frame */ 160,
 	/*.number_of_channels */ 1,
 	/*.pref_frames_per_packet */ 1,
