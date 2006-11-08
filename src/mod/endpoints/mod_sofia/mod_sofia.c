@@ -4090,7 +4090,7 @@ static void sip_r_register(int status,
 		} else if (profile) {
 			outbound_reg_t *oregp;
 			for (oregp = profile->registrations; oregp; oregp = oregp->next) {
-				if (!strcasecmp(oregp->register_scheme, scheme) && !strcasecmp(oregp->register_realm, realm)) {
+				if (scheme && realm && !strcasecmp(oregp->register_scheme, scheme) && !strcasecmp(oregp->register_realm, realm)) {
 					oreg = oregp;
 					break;
 				}
