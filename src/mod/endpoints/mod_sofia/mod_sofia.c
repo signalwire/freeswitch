@@ -2882,9 +2882,9 @@ static uint8_t handle_register(nua_t *nua,
 							  forbidden ? "forbidden" : "challange",
 							  from_user, from_host);
 			if (auth_res == AUTH_FORBIDDEN) {
-				nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
+				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
 			} else {
-				nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_END());
+				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
 			}
 			return 1;
 		}
@@ -2900,20 +2900,20 @@ static uint8_t handle_register(nua_t *nua,
 		
 		if (switch_xml_locate("directory", "domain", "name", from_host, &xml, &domain, params) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find domain for [%s@%s]\n", from_user, from_host);
-			nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
+			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), SIPTAG_CONTACT(contact), TAG_END());
 			return 1;
 		}
 
 		if (!(user = switch_xml_find_child(domain, "user", "id", from_user))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", from_user, from_host);
-			nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
+			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), SIPTAG_CONTACT(contact), TAG_END());
 			switch_xml_free(xml);
 			return 1;
 		}
 
 		if (!(xparams = switch_xml_child(user, "params"))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find params for user [%s@%s]\n", from_user, from_host);
-			nua_respond(nh, SIP_401_UNAUTHORIZED, SIPTAG_CONTACT(contact), TAG_END());
+			nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), SIPTAG_CONTACT(contact), TAG_END());
 			switch_xml_free(xml);
 			return 1;
 		}
@@ -2966,10 +2966,12 @@ static uint8_t handle_register(nua_t *nua,
 			if (regtype == REG_REGISTER) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "invalid for [%s@%s]\n", from_user, from_host);
 				nua_respond(nh, SIP_401_UNAUTHORIZED,
+							NUTAG_WITH_THIS(nua),
 							SIPTAG_WWW_AUTHENTICATE_STR(auth_str),
 							TAG_END());
 			} else if (regtype == REG_INVITE) {
 				nua_respond(nh, SIP_407_PROXY_AUTH_REQUIRED,
+							NUTAG_WITH_THIS(nua),
 							SIPTAG_PROXY_AUTHENTICATE_STR(auth_str),
 							TAG_END());
 
