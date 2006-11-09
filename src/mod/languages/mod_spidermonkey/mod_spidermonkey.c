@@ -2639,7 +2639,7 @@ static JSFunctionSpec fs_functions[] = {
 
 static int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval) 
 {
-	JSScript *script;
+	JSScript *script = NULL;
 	char *cptr;
 	char *path = NULL;
 	int res = 0;
