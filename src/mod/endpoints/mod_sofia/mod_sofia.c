@@ -2415,7 +2415,7 @@ static void pass_sdp(switch_channel_t *channel, char *sdp)
 			switch_channel_test_flag(other_channel, CF_NOMEDIA) && 
 			switch_channel_test_flag(channel, CF_OUTBOUND) && 
 			switch_channel_test_flag(channel, CF_NOMEDIA)) {
-			switch_ivr_nomedia(val, SMF_NONE);
+			switch_ivr_nomedia(val, SMF_FORCE);
 		}
 		
 		switch_core_session_rwunlock(other_session);

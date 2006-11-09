@@ -90,7 +90,8 @@ typedef uint8_t switch_byte_t;
 typedef enum {
 	SMF_NONE = 0,
 	SMF_REBRIDGE = (1 << 0),
-	SMF_ECHO_BRIDGED = (1 << 1)
+	SMF_ECHO_BRIDGED = (1 << 1),
+	SMF_FORCE = (1 << 2)
 } switch_media_flag_t;
 
 typedef enum {

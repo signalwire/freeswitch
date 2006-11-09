@@ -2489,7 +2489,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_nomedia(char *uuid, switch_media_flag
 		status = SWITCH_STATUS_SUCCESS;
 		channel = switch_core_session_get_channel(session);
 		assert(channel != NULL);
-		if (!switch_channel_test_flag(channel, CF_NOMEDIA)) {
+
+		if ((flags & SMF_FORCE) || !switch_channel_test_flag(channel, CF_NOMEDIA)) {
 			switch_channel_set_flag(channel, CF_NOMEDIA);
 			switch_core_session_receive_message(session, &msg);
 			if ((flags & SMF_REBRIDGE) && (other_uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) &&
