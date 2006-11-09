@@ -393,10 +393,12 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 	switch_channel_t *caller_channel;
 	switch_core_session_t *caller_session;
 	char *argv[7] = {0};
-	int x, argc = 0;
+	int i = 0, x, argc = 0;
 	char *aleg, *exten, *dp, *context, *cid_name, *cid_num;
 	uint32_t timeout = 60;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+	uint8_t machine = 1;
+
 	if (isession) {
 		stream->write_function(stream, "Illegal Usage\n");
 		return SWITCH_STATUS_SUCCESS;
@@ -414,13 +416,18 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 			argv[x] = NULL;
 		}
 	}
+	
+	if (!strcasecmp(argv[0], "machine")) {
+		machine = 1;
+		i++;
+	}
 
-	aleg = argv[0];
-	exten = argv[1];
-	dp = argv[2];
-	context = argv[3];
-	cid_name = argv[4];
-	cid_num = argv[5];
+	aleg = argv[i++];
+	exten = argv[i++];
+	dp = argv[i++];
+	context = argv[i++];
+	cid_name = argv[i++];
+	cid_num = argv[i++];
 	
 	if (!dp) {
 		dp = "XML";
@@ -435,7 +442,11 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 	}
 
 	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, &noop_state_handler, cid_name, cid_num, NULL) != SWITCH_STATUS_SUCCESS) {
-		stream->write_function(stream, "Cannot Create Outgoing Channel! [%s]\n", aleg);
+		if (machine) {
+			stream->write_function(stream, "fail: %s", switch_channel_cause2str(cause));
+		} else {
+			stream->write_function(stream, "Cannot Create Outgoing Channel! [%s] cause: %s\n", aleg, switch_channel_cause2str(cause));
+		}
 		return SWITCH_STATUS_SUCCESS;
 	} 
 
@@ -467,7 +478,13 @@ static switch_status_t originate_function(char *cmd, switch_core_session_t *ises
 	} else {
 		switch_ivr_session_transfer(caller_session, exten, dp, context);
 	}
-	stream->write_function(stream, "Created Session: %s\n", switch_core_session_get_uuid(caller_session));
+
+	if (machine) {
+		stream->write_function(stream, "success: %s\n", switch_core_session_get_uuid(caller_session));
+	} else {
+		stream->write_function(stream, "Created Session: %s\n", switch_core_session_get_uuid(caller_session));
+	}
+
 	return SWITCH_STATUS_SUCCESS;;
 }
 

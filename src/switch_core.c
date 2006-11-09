@@ -64,6 +64,7 @@ struct switch_media_bug {
 	switch_mutex_t *write_mutex;
 	switch_core_session_t *session;
 	void *user_data;
+	uint32_t flags;
 	struct switch_media_bug *next;
 };
 	
@@ -168,6 +169,11 @@ static void switch_core_media_bug_destroy(switch_media_bug_t *bug)
 	switch_buffer_destroy(&bug->raw_write_buffer);
 }
 
+SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *bug)
+{
+	return bug->user_data;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame)
 {
 	uint32_t bytes = 0;
@@ -175,21 +181,35 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	uint32_t datalen = 0;
 	int16_t *dp, *fp;
 	uint32_t x;
-	size_t rlen = switch_buffer_inuse(bug->raw_read_buffer);
-	size_t wlen = switch_buffer_inuse(bug->raw_write_buffer);
+	size_t rlen = 0;
+	size_t wlen = 0;
 	uint32_t blen;
 	size_t rdlen = 0;
 	uint32_t maxlen;
 
-	if (!rlen && !wlen) {
+
+	if (bug->raw_read_buffer) {
+		rlen = switch_buffer_inuse(bug->raw_read_buffer);
+	}
+
+	if (bug->raw_write_buffer) {
+		wlen = switch_buffer_inuse(bug->raw_write_buffer);
+	}
+
+	if ((bug->raw_read_buffer && bug->raw_write_buffer) && (!rlen && !wlen)) {
 		return SWITCH_STATUS_FALSE;
 	}
+
 
 	maxlen = sizeof(data) > frame->buflen ? frame->buflen :  sizeof(data);
 	if ((rdlen = rlen > wlen ? wlen : rlen) > maxlen) {
 		rdlen = maxlen;
 	}
-	
+
+	if (!rdlen) {
+		rdlen = maxlen;
+	}
+
 	frame->datalen = 0;
 
 	if (rlen) {
@@ -208,6 +228,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 												rdlen);
 		switch_mutex_unlock(bug->write_mutex);
 	}
+
 
 	bytes = (datalen > frame->datalen) ? datalen : frame->datalen;
 
@@ -233,6 +254,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		}
 
 		frame->datalen = bytes;
+
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -243,6 +266,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t *session,
 														  switch_media_bug_callback_t callback,
 														  void *user_data,
+														  switch_media_bug_flag_t flags,
 														  switch_media_bug_t **new_bug)
 
 {
@@ -256,13 +280,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	bug->callback = callback;
 	bug->user_data = user_data;
 	bug->session = session;
+	bug->flags = flags;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
 	bytes = session->read_codec->implementation->bytes_per_frame;
-	switch_buffer_create_dynamic(&bug->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
+
+	if (!bug->flags) {
+		bug->flags = (SMBF_READ_STREAM | SMBF_WRITE_STREAM);
+	}
+
+	if (switch_test_flag(bug, SMBF_READ_STREAM)) {
+		switch_buffer_create_dynamic(&bug->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
+		switch_mutex_init(&bug->read_mutex, SWITCH_MUTEX_NESTED, session->pool);
+	}
+
 	bytes = session->write_codec->implementation->bytes_per_frame;
-	switch_buffer_create_dynamic(&bug->raw_write_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
-	switch_mutex_init(&bug->read_mutex, SWITCH_MUTEX_NESTED, session->pool);
-	switch_mutex_init(&bug->write_mutex, SWITCH_MUTEX_NESTED, session->pool);
+
+	if (switch_test_flag(bug, SMBF_WRITE_STREAM)) {
+		switch_buffer_create_dynamic(&bug->raw_write_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
+		switch_mutex_init(&bug->write_mutex, SWITCH_MUTEX_NESTED, session->pool);
+	}
 
 	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	bug->next = session->bugs;
@@ -292,6 +328,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing BUG from %s\n", switch_channel_get_name(session->channel));
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
+		session->bugs = NULL;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -946,18 +983,108 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 	return sh->speech_interface->speech_open(sh, voice_name, rate, flags);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_asr(switch_speech_handle_t *sh, void *data, unsigned int *len, int rate, switch_speech_flag_t *flags)
+SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
+													 char *module_name,
+													 char *codec,
+													 int rate,
+													 char *dest,
+													 switch_asr_flag_t *flags,
+													 switch_memory_pool_t *pool)
 {
-	assert(sh != NULL);
+	switch_status_t status;
+
+	assert(ah != NULL);
+
+	if ((ah->asr_interface = switch_loadable_module_get_asr_interface(module_name)) == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid asr module [%s]!\n", module_name);
+		return SWITCH_STATUS_GENERR;
+	}
 	
-	return sh->speech_interface->speech_feed_asr(sh, data, len, rate, flags);
+	ah->flags = *flags;
+
+	if (pool) {
+		ah->memory_pool = pool;
+	} else {
+		if ((status = switch_core_new_memory_pool(&ah->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+		switch_set_flag(ah, SWITCH_ASR_FLAG_FREE_POOL);
+	}
+
+	ah->rate = rate;
+	ah->name = switch_core_strdup(ah->memory_pool, module_name);
+
+	return ah->asr_interface->asr_open(ah, codec, rate, dest, flags);
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_speech_interpret_asr(switch_speech_handle_t *sh, char *buf, unsigned int buflen, switch_speech_flag_t *flags)
+SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t *ah, char *grammar, char *path)
 {
-	assert(sh != NULL);
+	char *epath = NULL;
+	switch_status_t status;
+
+	assert(ah != NULL);
+
+	if (*path != '/') {
+		epath = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, path);
+		path = epath;
+	}
+
+	status = ah->asr_interface->asr_load_grammar(ah, grammar, path);
+	switch_safe_free(epath);
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, char *grammar)
+{
+	switch_status_t status;
+
+	assert(ah != NULL);
+	status = ah->asr_interface->asr_unload_grammar(ah, grammar);
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_pause(switch_asr_handle_t *ah)
+{
+	assert(ah != NULL);
+
+	return ah->asr_interface->asr_pause(ah);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_resume(switch_asr_handle_t *ah)
+{
+	assert(ah != NULL);
+
+	return ah->asr_interface->asr_resume(ah);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
+{
+	assert(ah != NULL);
+
+	return ah->asr_interface->asr_close(ah, flags);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags)
+{
+	assert(ah != NULL);
 	
-	return sh->speech_interface->speech_interpret_asr(sh, buf, buflen, flags);
+	return ah->asr_interface->asr_feed(ah, data, len, flags);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_check_results(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
+{
+	assert(ah != NULL);
+	
+	return ah->asr_interface->asr_check_results(ah, flags);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags)
+{
+	assert(ah != NULL);
+	
+	return ah->asr_interface->asr_get_results(ah, xmlstr, flags);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
@@ -1765,12 +1892,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			switch_media_bug_t *bp;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
-				switch_mutex_lock(bp->read_mutex);
-				switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
-				if (bp->callback) {
-					bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ);
+				if (switch_test_flag(bp, SMBF_READ_STREAM)) {
+					switch_mutex_lock(bp->read_mutex);
+					switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
+					if (bp->callback) {
+						bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ);
+					}
+					switch_mutex_unlock(bp->read_mutex);
 				}
-				switch_mutex_unlock(bp->read_mutex);
 			}
 			switch_thread_rwlock_unlock(session->bug_rwlock);
 		}
@@ -1999,11 +2128,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			switch_media_bug_t *bp;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
 			for (bp = session->bugs; bp; bp = bp->next) {
-				switch_mutex_lock(bp->write_mutex);
-				switch_buffer_write(bp->raw_write_buffer, write_frame->data, write_frame->datalen);
-				switch_mutex_unlock(bp->write_mutex);
-				if (bp->callback) {
-					bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE);
+				if (switch_test_flag(bp, SMBF_WRITE_STREAM)) {
+					switch_mutex_lock(bp->write_mutex);
+					switch_buffer_write(bp->raw_write_buffer, write_frame->data, write_frame->datalen);
+					switch_mutex_unlock(bp->write_mutex);
+					if (bp->callback) {
+						bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_WRITE);
+					}
 				}
 			}
 			switch_thread_rwlock_unlock(session->bug_rwlock);
@@ -3193,7 +3324,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 	switch_mutex_unlock(runtime.session_table_mutex);
 
 	switch_core_session_run(session);
-	
+	switch_core_media_bug_remove_all(session);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %u (%s) Locked, Waiting on external entities\n", session->id, switch_channel_get_name(session->channel));
 	switch_core_session_write_lock(session);
 	switch_core_session_rwunlock(session);
@@ -3609,6 +3740,9 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	if (!SWITCH_GLOBAL_dirs.htdocs_dir && (SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(BUFSIZE))) {
 		snprintf(SWITCH_GLOBAL_dirs.htdocs_dir, BUFSIZE, "%shtdocs", exePath);
 	}
+	if (!SWITCH_GLOBAL_dirs.htdocs_dir && (SWITCH_GLOBAL_dirs.grammar_dir = (char *) malloc(BUFSIZE))) {
+		snprintf(SWITCH_GLOBAL_dirs.grammar_dir, BUFSIZE, "%sgrammar", exePath);
+	}
 #else
 	SWITCH_GLOBAL_dirs.base_dir = SWITCH_PREFIX_DIR;
 	SWITCH_GLOBAL_dirs.mod_dir = SWITCH_MOD_DIR;
@@ -3617,6 +3751,7 @@ SWITCH_DECLARE(void) switch_core_set_globals(void)
 	SWITCH_GLOBAL_dirs.db_dir = SWITCH_DB_DIR;
 	SWITCH_GLOBAL_dirs.script_dir = SWITCH_SCRIPT_DIR;
 	SWITCH_GLOBAL_dirs.htdocs_dir = SWITCH_HTDOCS_DIR;
+	SWITCH_GLOBAL_dirs.grammar_dir = SWITCH_GRAMMAR_DIR;
 #endif
 #ifdef SWITCH_TEMP_DIR
 	SWITCH_GLOBAL_dirs.temp_dir = SWITCH_TEMP_DIR;
@@ -3987,6 +4122,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	free(SWITCH_GLOBAL_dirs.db_dir);
 	free(SWITCH_GLOBAL_dirs.script_dir);
 	free(SWITCH_GLOBAL_dirs.htdocs_dir);
+	free(SWITCH_GLOBAL_dirs.grammar_dir);
 	free(SWITCH_GLOBAL_dirs.temp_dir);
 #endif
 

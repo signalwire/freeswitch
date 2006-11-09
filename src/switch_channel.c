@@ -348,7 +348,11 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, ch
 	assert(channel != NULL);
 
 	if (!(v=switch_core_hash_find(channel->variables, varname))) {
-		v = switch_caller_get_field_by_name(channel->caller_profile, varname);
+		if (!(v = switch_caller_get_field_by_name(channel->caller_profile, varname))) {
+			if (!strcmp(varname, "base_dir")) {
+				return SWITCH_GLOBAL_dirs.base_dir;
+			}
+		}
 	}
 	
 	return v;
@@ -986,7 +990,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 			switch_channel_event_set_data(channel, event);
 			switch_event_fire(&event);
 		}
-
+		
+		switch_channel_set_variable(channel, "hangup_cause", switch_channel_cause2str(channel->hangup_cause));
 		switch_channel_presence(channel, "unavailable", switch_channel_cause2str(channel->hangup_cause));
 
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
@@ -1190,7 +1195,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						return in;
 					}
 				}
-				nlen = sub_val ? strlen(sub_val) : 0;
+				nlen = strlen(sub_val);
 				if (len + nlen >= olen) {
 					olen += block;
 					cpos = c - data;
@@ -1205,11 +1210,10 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 					vname = data + vvalpos;
 				}
 
-				if (nlen) {
-					len += nlen;
-					strcat(c, sub_val);
-					c += nlen;
-				}
+				len += nlen;
+				strcat(c, sub_val);
+				c += nlen;
+
 				if (func_val) {
 					free(func_val);
 					func_val = NULL;

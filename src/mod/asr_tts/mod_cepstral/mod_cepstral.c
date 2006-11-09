@@ -109,70 +109,65 @@ static swift_result_t write_audio(swift_event *event, swift_event_t type, void *
 
 static switch_status_t cepstral_speech_open(switch_speech_handle_t *sh, char *voice_name, int rate, switch_speech_flag_t *flags)
 {
-	if (*flags & SWITCH_SPEECH_FLAG_ASR) {
-		return SWITCH_STATUS_FALSE;
+	cepstral_t *cepstral = switch_core_alloc(sh->memory_pool, sizeof(*cepstral));
+	char srate[25];
+
+	if (!cepstral) {
+		return SWITCH_STATUS_MEMERR;
 	}
-	if (*flags & SWITCH_SPEECH_FLAG_TTS) {
-		cepstral_t *cepstral = switch_core_alloc(sh->memory_pool, sizeof(*cepstral));
-		char srate[25];
 
-		if (!cepstral) {
-			return SWITCH_STATUS_MEMERR;
-		}
-
-		if (switch_buffer_create_dynamic(&cepstral->audio_buffer, MY_BLOCK_SIZE, MY_BUF_LEN, 0) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write Buffer Failed!\n");
-			return SWITCH_STATUS_MEMERR;
-		}
+	if (switch_buffer_create_dynamic(&cepstral->audio_buffer, MY_BLOCK_SIZE, MY_BUF_LEN, 0) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Write Buffer Failed!\n");
+		return SWITCH_STATUS_MEMERR;
+	}
 
 
-		switch_mutex_init(&cepstral->audio_lock, SWITCH_MUTEX_NESTED, sh->memory_pool);
+	switch_mutex_init(&cepstral->audio_lock, SWITCH_MUTEX_NESTED, sh->memory_pool);
 
 
-		cepstral->params = swift_params_new(NULL);
-		swift_params_set_string(cepstral->params, "audio/encoding", "pcm16");
-		snprintf(srate, sizeof(srate), "%d", rate);
-		swift_params_set_string(cepstral->params, "audio/sampling-rate", srate);
+	cepstral->params = swift_params_new(NULL);
+	swift_params_set_string(cepstral->params, "audio/encoding", "pcm16");
+	snprintf(srate, sizeof(srate), "%d", rate);
+	swift_params_set_string(cepstral->params, "audio/sampling-rate", srate);
 
 
-		/* Open a Swift Port through which to make TTS calls */
-		if (SWIFT_FAILED(cepstral->port = swift_port_open(engine, cepstral->params))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open Swift Port.");
+	/* Open a Swift Port through which to make TTS calls */
+	if (SWIFT_FAILED(cepstral->port = swift_port_open(engine, cepstral->params))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open Swift Port.");
+		goto all_done;
+	}
+
+		
+	if (voice_name && SWIFT_FAILED(swift_port_set_voice_by_name(cepstral->port, voice_name))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid voice %s!\n", voice_name);
+		voice_name = NULL;
+	}
+
+	if (!voice_name) {
+		/* Find the first voice on the system */
+		if ((cepstral->voice = swift_port_find_first_voice(cepstral->port, NULL, NULL)) == NULL) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to find any voices!\n");
 			goto all_done;
 		}
 
-		
-		if (voice_name && SWIFT_FAILED(swift_port_set_voice_by_name(cepstral->port, voice_name))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid voice %s!\n", voice_name);
-			voice_name = NULL;
+		/* Set the voice found by find_first_voice() as the port's current voice */
+		if ( SWIFT_FAILED(swift_port_set_voice(cepstral->port, cepstral->voice)) ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set voice.\n");
+			goto all_done;
 		}
 
-		if (!voice_name) {
-			/* Find the first voice on the system */
-			if ((cepstral->voice = swift_port_find_first_voice(cepstral->port, NULL, NULL)) == NULL) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to find any voices!\n");
-				goto all_done;
-			}
-
-			/* Set the voice found by find_first_voice() as the port's current voice */
-			if ( SWIFT_FAILED(swift_port_set_voice(cepstral->port, cepstral->voice)) ) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to set voice.\n");
-				goto all_done;
-			}
-
-			voice_name = (char *) swift_voice_get_attribute(cepstral->voice, "name");
-		}
-
-		if (voice_name) {
-            switch_copy_string(sh->voice, voice_name, sizeof(sh->voice));
-        }
-
-		swift_port_set_callback(cepstral->port, &write_audio, SWIFT_EVENT_AUDIO, cepstral);
-
-		sh->private_info = cepstral;
-		return SWITCH_STATUS_SUCCESS;
+		voice_name = (char *) swift_voice_get_attribute(cepstral->voice, "name");
 	}
 
+	if (voice_name) {
+		switch_copy_string(sh->voice, voice_name, sizeof(sh->voice));
+	}
+
+	swift_port_set_callback(cepstral->port, &write_audio, SWIFT_EVENT_AUDIO, cepstral);
+
+	sh->private_info = cepstral;
+	return SWITCH_STATUS_SUCCESS;
+	
  all_done:
 	return SWITCH_STATUS_FALSE;
 }
@@ -227,7 +222,7 @@ static switch_status_t cepstral_speech_feed_tts(switch_speech_handle_t *sh, char
 			return SWITCH_STATUS_FALSE;
 		}
 
-		swift_port_speak_text(cepstral->port, "<break time=\"400ms\"/>", 0, NULL, &cepstral->tts_stream, NULL); 
+		swift_port_speak_text(cepstral->port, "<break time=\"500ms\"/>", 0, NULL, &cepstral->tts_stream, NULL); 
 		swift_port_speak_text(cepstral->port, text, 0, NULL, &cepstral->tts_stream, NULL); 
 	}
 
@@ -252,10 +247,10 @@ static void cepstral_speech_flush_tts(switch_speech_handle_t *sh)
 }
 
 static switch_status_t cepstral_speech_read_tts(switch_speech_handle_t *sh,
-											  void *data,
-											  size_t *datalen,
-											  uint32_t *rate,
-											  switch_speech_flag_t *flags) 
+												void *data,
+												size_t *datalen,
+												uint32_t *rate,
+												switch_speech_flag_t *flags) 
 {
 	cepstral_t *cepstral;
 	size_t desired = *datalen;
@@ -404,8 +399,6 @@ static const switch_speech_interface_t cepstral_speech_interface = {
 	/*.interface_name*/			"cepstral",
 	/*.speech_open*/			cepstral_speech_open,
 	/*.speech_close*/			cepstral_speech_close,
-	/*.speech_feed_asr*/		NULL,
-	/*.speech_interpret_asr*/	NULL,
 	/*.speech_feed_tts*/		cepstral_speech_feed_tts,
 	/*.speech_read_tts*/		cepstral_speech_read_tts,
 	/*.speech_flush_tts*/		cepstral_speech_flush_tts,

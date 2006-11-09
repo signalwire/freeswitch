@@ -119,14 +119,21 @@ struct switch_core_port_allocator;
   \param session the session to add the bug to
   \param callback a callback for events
   \param user_data arbitrary user data
+  \param flags flags to choose the stream
   \param new_bug pointer to assign new bug to
   \return SWITCH_STATUS_SUCCESS if the operation was a success
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t *session,
 														  switch_media_bug_callback_t callback,
 														  void *user_data,
+														  switch_media_bug_flag_t flags,
 														  switch_media_bug_t **new_bug);
-
+/*!
+  \brief Obtain private data from a media bug
+  \param session the session to obtain the private data from
+  \return the private data
+*/
+SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *bug);
 
 /*!
   \brief Remove a media bug from the session
@@ -1060,7 +1067,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
   \param module_name the speech module to use
   \param voice_name the desired voice name
   \param rate the sampling rate
-  \param flags asr/tts flags
+  \param flags tts flags
   \param pool the pool to use (NULL for new pool)
   \return SWITCH_STATUS_SUCCESS if the handle is opened
 */
@@ -1070,28 +1077,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 													  unsigned int rate,
 													  switch_speech_flag_t *flags,
 													  switch_memory_pool_t *pool);
-
-/*!
-  \brief Feed data to the ASR module
-  \param sh the speech handle to feed
-  \param data the buffer of audio data
-  \param len the in-use size of the buffer
-  \param rate the rate of the audio (in hz)
-  \param flags flags in/out for fine tuning
-  \return SWITCH_STATUS_SUCCESS with possible new flags on success
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_asr(switch_speech_handle_t *sh, void *data, unsigned int *len, int rate, switch_speech_flag_t *flags);
-
-/*! 
-  \brief Get text back from the ASR module
-  \param sh the speech handle to read
-  \param buf the buffer to insert the text into
-  \param buflen the max size of the buffer
-  \param flags flags in/out for fine tuning
-  \return SWITCH_STATUS_SUCCESS with possible new flags on success
-*/
-SWITCH_DECLARE(switch_status_t) switch_core_speech_interpret_asr(switch_speech_handle_t *sh, char *buf, unsigned int buflen, switch_speech_flag_t *flags);
-
 /*! 
   \brief Feed text to the TTS module
   \param sh the speech handle to feed
@@ -1152,6 +1137,92 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
   \return SWITCH_STATUS_SUCCESS if the file handle was closed
 */
 SWITCH_DECLARE(switch_status_t) switch_core_speech_close(switch_speech_handle_t *sh, switch_speech_flag_t *flags);
+
+
+/*! 
+  \brief Open an asr handle
+  \param ah the asr handle to open
+  \param module_name the name of the asr module
+  \param codec the preferred codec
+  \param rate the preferred rate
+  \param dest the destination address
+  \param flags flags to influence behaviour
+  \param pool the pool to use (NULL for new pool)
+  \return SWITCH_STATUS_SUCCESS if the asr handle was opened
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
+													 char *module_name,
+													 char *codec,
+													 int rate,
+													 char *dest,
+													 switch_asr_flag_t *flags,
+													 switch_memory_pool_t *pool);
+
+/*!
+  \brief Close an asr handle
+  \param ah the handle to close
+  \param flags flags to influence behaviour
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t *flags);
+
+/*!
+  \brief Feed audio data to an asr handle
+  \param ah the handle to feed data to
+  \param data a pointer to the data
+  \param len the size in bytes of the data
+  \param flags flags to influence behaviour
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_feed(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags);
+
+/*!
+  \brief Check an asr handle for results
+  \param ah the handle to check
+  \param flags flags to influence behaviour
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_check_results(switch_asr_handle_t *ah, switch_asr_flag_t *flags);
+
+/*!
+  \brief Get results from an asr handle
+  \param ah the handle to get results from
+  \param xmlstr a pointer to dynamically allocate an xml result string to
+  \param flags flags to influence behaviour
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_get_results(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags);
+
+/*!
+  \brief Load a grammar to an asr handle
+  \param ah the handle to load to
+  \param grammar the name of the grammar
+  \param path the path to the grammaar file
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t *ah, char *grammar, char *path);
+
+/*!
+  \brief Unload a grammar from an asr handle
+  \param ah the handle to unload the grammar from
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, char *grammar);
+
+/*!
+  \brief Pause detection on an asr handle
+  \param ah the handle to pause
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_pause(switch_asr_handle_t *ah);
+
+/*!
+  \brief Resume detection on an asr handle
+  \param ah the handle to resume
+  \return SWITCH_STATUS_SUCCESS
+*/
+SWITCH_DECLARE(switch_status_t) switch_core_asr_resume(switch_asr_handle_t *ah);
+
 ///\}
 
 

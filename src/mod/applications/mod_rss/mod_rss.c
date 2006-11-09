@@ -169,7 +169,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 	char *voice = TTS_DEFAULT_VOICE;
 	char *timer_name = NULL;
 	switch_speech_handle_t sh;
-    switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_TTS;
+    switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_core_thread_session_t thread_session;
 	uint32_t rate, interval = 20;
 	int stream_id = 0;

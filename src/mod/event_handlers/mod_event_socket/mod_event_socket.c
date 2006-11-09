@@ -77,6 +77,7 @@ static struct {
 	char *ip;
 	uint16_t port;
 	char *password;
+	int done;
 } prefs;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_ip, prefs.ip)
@@ -165,6 +166,8 @@ static void close_socket(switch_socket_t **sock) {
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
 	listener_t *l;
+
+	prefs.done = 1;
 
 	close_socket(&listen_list.sock);
 
@@ -1003,7 +1006,11 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 		}
 		
 		if ((rv = switch_socket_accept(&inbound_socket, listen_list.sock, listener_pool))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error\n");
+			if (prefs.done) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Shutting Down\n");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error\n");
+			}
 			break;
 		}
 		

@@ -315,6 +315,53 @@ struct switch_file_handle {
 	switch_buffer_t *audio_buffer;
 };
 
+/*! \brief Abstract interface to an asr module */
+struct switch_asr_interface {
+	/*! the name of the interface */
+	const char *interface_name;
+	/*! function to open the asr interface */
+	switch_status_t (*asr_open)(switch_asr_handle_t *ah,
+								char *codec,
+								int rate,
+								char *dest,
+								switch_asr_flag_t *flags);
+	/*! function to load a grammar to the asr interface */
+	switch_status_t (*asr_load_grammar)(switch_asr_handle_t *ah, char *grammar, char *path);
+	/*! function to unload a grammar to the asr interface */
+	switch_status_t (*asr_unload_grammar)(switch_asr_handle_t *ah, char *grammar);
+	/*! function to close the asr interface */
+	switch_status_t (*asr_close)(switch_asr_handle_t *ah, switch_asr_flag_t *flags);
+	/*! function to feed audio to the ASR*/
+	switch_status_t (*asr_feed)(switch_asr_handle_t *ah, void *data, unsigned int len, switch_asr_flag_t *flags);
+	/*! function to resume the ASR*/
+	switch_status_t (*asr_resume)(switch_asr_handle_t *ah);
+	/*! function to pause the ASR*/
+	switch_status_t (*asr_pause)(switch_asr_handle_t *ah);
+	/*! function to read results from the ASR*/
+	switch_status_t (*asr_check_results)(switch_asr_handle_t *ah, switch_asr_flag_t *flags);
+	/*! function to read results from the ASR*/
+	switch_status_t (*asr_get_results)(switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags);
+	const struct switch_asr_interface *next;
+};
+
+/*! an abstract representation of an asr speech interface. */
+struct switch_asr_handle {
+	/*! the interface of the module that implemented the current speech interface */
+	const switch_asr_interface_t *asr_interface;
+	/*! flags to control behaviour */
+	uint32_t flags;
+	/*! The Name*/
+	char *name;
+	/*! The Codec*/
+	char *codec;
+	/*! The Rate*/
+	uint32_t rate;
+	char *grammar;
+	/*! the handle's memory pool */
+	switch_memory_pool_t *memory_pool;
+	/*! private data for the format module to store handle specific info */
+	void *private_info;
+};
 
 /*! \brief Abstract interface to a speech module */
 struct switch_speech_interface {
@@ -328,10 +375,6 @@ struct switch_speech_interface {
 	/*! function to close the speech interface */
 	switch_status_t (*speech_close)(switch_speech_handle_t *, switch_speech_flag_t *flags);
 	/*! function to feed audio to the ASR*/
-	switch_status_t (*speech_feed_asr)(switch_speech_handle_t *sh, void *data, unsigned int *len, int rate, switch_speech_flag_t *flags);
-	/*! function to read text from the ASR*/
-	switch_status_t (*speech_interpret_asr)(switch_speech_handle_t *sh, char *buf, unsigned int buflen, switch_speech_flag_t *flags);
-	/*! function to feed text to the TTS*/
 	switch_status_t (*speech_feed_tts)(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags);
 	/*! function to read audio from the TTS*/
 	switch_status_t (*speech_read_tts)(switch_speech_handle_t *sh,

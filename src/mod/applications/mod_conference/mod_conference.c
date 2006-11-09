@@ -666,7 +666,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			switch_memory_pool_t *pool;
 
 			if (conference->fnode->type == NODE_TYPE_SPEECH) {
-				switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_TTS;
+				switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 				switch_core_speech_close(&conference->fnode->sh, &flags);
 			} else {
 				switch_core_file_close(&conference->fnode->fh);
@@ -957,7 +957,7 @@ static void conference_loop(conference_member_t *member)
 				switch_memory_pool_t *pool;
 
 				if (member->fnode->type == NODE_TYPE_SPEECH) {
-					switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_TTS;
+					switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 					switch_core_speech_close(&member->fnode->sh, &flags);
 				} else {
 					switch_core_file_close(&member->fnode->fh);
@@ -1340,7 +1340,7 @@ static switch_status_t conference_member_say(conference_obj_t *conference, confe
 {
 	confernce_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
-	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_TTS;
+	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 
 	if (!(conference->tts_engine && conference->tts_voice)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -1399,7 +1399,7 @@ static switch_status_t conference_say(conference_obj_t *conference, char *text, 
 {
 	confernce_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
-	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_TTS;
+	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	uint32_t count;
 
 	switch_mutex_lock(conference->mutex);

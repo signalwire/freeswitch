@@ -75,6 +75,8 @@ struct switch_loadable_module_interface {
 	const switch_directory_interface_t *directory_interface;
 	/*! the table of chat interfaces the module has implmented */
 	const switch_chat_interface_t *chat_interface;
+	/*! the table of asr interfaces the module has implmented */
+	const switch_asr_interface_t *asr_interface;
 };
 
 /*!
@@ -157,6 +159,13 @@ SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interf
   \return the desired speech interface
  */
 SWITCH_DECLARE(switch_speech_interface_t *) switch_loadable_module_get_speech_interface(char *name);
+
+/*!
+  \brief Retrieve the asr interface by it's registered name
+  \param name the name of the asr interface
+  \return the desired asr interface
+ */
+SWITCH_DECLARE(switch_asr_interface_t *) switch_loadable_module_get_asr_interface(char *name);
 
 /*!
   \brief Retrieve the directory interface by it's registered name

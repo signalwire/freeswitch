@@ -72,6 +72,10 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_HTDOCS_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "htdocs"
 #endif
 
+#ifndef SWITCH_GRAMMAR_DIR
+#define SWITCH_GRAMMAR_DIR SWITCH_PREFIX_DIR SWITCH_PATH_SEPARATOR "grammar"
+#endif
+
 #define SWITCH_R_SDP_VARIABLE "_switch_r_sdp_"
 #define SWITCH_L_SDP_VARIABLE "_switch_l_sdp_"
 #define SWITCH_B_SDP_VARIABLE "_switch_m_sdp_"
@@ -82,7 +86,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_LOCAL_MEDIA_PORT_VARIABLE "_local_media_port_"
 #define SWITCH_REMOTE_MEDIA_IP_VARIABLE "_remote_media_ip_"
 #define SWITCH_REMOTE_MEDIA_PORT_VARIABLE "_remote_media_port_"
-
+#define SWITCH_SPEECH_KEY "_speech_"
 
 #define SWITCH_BITS_PER_BYTE 8
 typedef uint8_t switch_byte_t;
@@ -132,6 +136,7 @@ struct switch_directories {
 	char *script_dir;
 	char *temp_dir;
 	char *htdocs_dir;
+	char *grammar_dir;
 };
 
 typedef struct switch_directories switch_directories;
@@ -313,6 +318,7 @@ typedef enum {
     SWITCH_STATUS_SOCKERR   - A socket error
 	SWITCH_STATUS_MORE_DATA - Need More Data
 	SWITCH_STATUS_NOTFOUND  - Not Found
+	SWITCH_STATUS_UNLOAD    - Unload
 </pre>
  */
 typedef enum {
@@ -330,7 +336,8 @@ typedef enum {
 	SWITCH_STATUS_BREAK,
 	SWITCH_STATUS_SOCKERR,
 	SWITCH_STATUS_MORE_DATA,
-	SWITCH_STATUS_NOTFOUND
+	SWITCH_STATUS_NOTFOUND,
+	SWITCH_STATUS_UNLOAD
 } switch_status_t;
 
 
@@ -522,26 +529,42 @@ typedef enum {
   \enum switch_speech_flag_t
   \brief Speech related flags
 <pre>
-SWITCH_SPEECH_FLAG_TTS =			(1 <<  0) - Interface can/should convert text to speech.
-SWITCH_SPEECH_FLAG_ASR =			(1 <<  1) - Interface can/should convert audio to text.
-SWITCH_SPEECH_FLAG_HASTEXT =		(1 <<  2) - Interface is has text to read.
-SWITCH_SPEECH_FLAG_PEEK =			(1 <<  3) - Read data but do not erase it.
-SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  4) - Free interface's pool on destruction.
-SWITCH_SPEECH_FLAG_BLOCKING =       (1 <<  5) - Indicate that a blocking call is desired 
-SWITCH_SPEECH_FLAG_PAUSE = 			(1 <<  6) - Pause toggle for playback
+SWITCH_SPEECH_FLAG_HASTEXT =		(1 <<  0) - Interface is has text to read.
+SWITCH_SPEECH_FLAG_PEEK =			(1 <<  1) - Read data but do not erase it.
+SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  2) - Free interface's pool on destruction.
+SWITCH_SPEECH_FLAG_BLOCKING =       (1 <<  3) - Indicate that a blocking call is desired 
+SWITCH_SPEECH_FLAG_PAUSE = 			(1 <<  4) - Pause toggle for playback
 </pre>
 */
 typedef enum {
-	SWITCH_SPEECH_FLAG_TTS =			(1 <<  0),
-	SWITCH_SPEECH_FLAG_ASR =			(1 <<  1),
-	SWITCH_SPEECH_FLAG_HASTEXT =		(1 <<  2),
-	SWITCH_SPEECH_FLAG_PEEK =			(1 <<  3),
-	SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  4),
-	SWITCH_SPEECH_FLAG_BLOCKING =		(1 <<  5),
-	SWITCH_SPEECH_FLAG_PAUSE =			(1 <<  6)
+	SWITCH_SPEECH_FLAG_NONE =			0,
+	SWITCH_SPEECH_FLAG_HASTEXT =		(1 <<  0),
+	SWITCH_SPEECH_FLAG_PEEK =			(1 <<  1),
+	SWITCH_SPEECH_FLAG_FREE_POOL =		(1 <<  2),
+	SWITCH_SPEECH_FLAG_BLOCKING =		(1 <<  3),
+	SWITCH_SPEECH_FLAG_PAUSE =			(1 <<  4)
 
 } switch_speech_flag_t;
 
+/*!
+  \enum switch_asr_flag_t
+  \brief Asr related flags
+<pre>
+SWITCH_ASR_FLAG_DATA =			(1 <<  0) - Interface has data
+SWITCH_ASR_FLAG_FREE_POOL =		(1 <<  1) - Pool needs to be freed
+SWITCH_ASR_FLAG_CLOSED = 		(1 <<  2) - Interface has been closed
+SWITCH_ASR_FLAG_FIRE_EVENTS =	(1 <<  3) - Fire all speech events
+SWITCH_ASR_FLAG_AUTO_RESUME =   (1 <<  4) - Auto Resume
+</pre>
+*/
+typedef enum {
+	SWITCH_ASR_FLAG_NONE =			0,
+	SWITCH_ASR_FLAG_DATA =			(1 <<  0),
+	SWITCH_ASR_FLAG_FREE_POOL =		(1 <<  1),
+	SWITCH_ASR_FLAG_CLOSED =		(1 <<  2),
+	SWITCH_ASR_FLAG_FIRE_EVENTS =	(1 <<  3),
+	SWITCH_ASR_FLAG_AUTO_RESUME = 	(1 <<  4)
+} switch_asr_flag_t;
 
 /*!
   \enum switch_directory_flag_t
@@ -583,6 +606,21 @@ SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0) - Free timer's pool on destruction
 typedef enum {
 		SWITCH_TIMER_FLAG_FREE_POOL =		(1 <<  0),
 } switch_timer_flag_t;
+
+
+/*!
+  \enum switch_timer_flag_t
+  \brief Timer related flags
+<pre>
+SMBF_READ_STREAM - Include the Read Stream
+SMBF_WRITE_STREAM - Include the Write Stream
+</pre>
+*/
+typedef enum {
+	SMBF_BOTH = 0,
+	SMBF_READ_STREAM = (1 << 0),
+	SMBF_WRITE_STREAM = (1 << 1)
+} switch_media_bug_flag_t;
 
 /*!
   \enum switch_file_flag_t
@@ -653,6 +691,7 @@ typedef enum {
 	SWITCH_EVENT_PRESENCE			- Presence Info
 	SWITCH_EVENT_CODEC				- Codec Change
 	SWITCH_EVENT_BACKGROUND_JOB		- Background Job
+	SWITCH_EVENT_DETECTED_SPEECH	- Detected Speech
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -690,6 +729,7 @@ typedef enum {
 	SWITCH_EVENT_ROSTER,
 	SWITCH_EVENT_CODEC,
 	SWITCH_EVENT_BACKGROUND_JOB,
+	SWITCH_EVENT_DETECTED_SPEECH,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
@@ -800,10 +840,9 @@ typedef struct switch_io_event_hook_waitfor_write switch_io_event_hook_waitfor_w
 typedef struct switch_io_event_hook_send_dtmf switch_io_event_hook_send_dtmf_t;
 typedef struct switch_io_routines switch_io_routines_t;
 typedef struct switch_io_event_hooks switch_io_event_hooks_t;
-
 typedef struct switch_speech_handle switch_speech_handle_t;
+typedef struct switch_asr_handle switch_asr_handle_t;
 typedef struct switch_directory_handle switch_directory_handle_t;
-
 typedef struct switch_loadable_module_interface switch_loadable_module_interface_t;
 typedef struct switch_endpoint_interface switch_endpoint_interface_t;
 typedef struct switch_timer_interface switch_timer_interface_t;
@@ -813,6 +852,7 @@ typedef struct switch_application_interface switch_application_interface_t;
 typedef struct switch_api_interface switch_api_interface_t;
 typedef struct switch_file_interface switch_file_interface_t;
 typedef struct switch_speech_interface switch_speech_interface_t;
+typedef struct switch_asr_interface switch_asr_interface_t;
 typedef struct switch_directory_interface switch_directory_interface_t;
 typedef struct switch_chat_interface switch_chat_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;

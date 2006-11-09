@@ -97,13 +97,18 @@ typedef enum {
 	S_HUP = (1 << 0)
 } session_flag_t;
 
-struct dtmf_callback_state {
+struct input_callback_state {
 	struct js_session *session_state;
 	char code_buffer[1024];
 	size_t code_buffer_len;
 	char ret_buffer[1024];
 	int ret_buffer_len;
 	int digit_count;
+	JSFunction *function;
+	jsval arg;
+	jsval ret;
+	JSContext *cx;
+	JSObject *obj;
 	void *extra;
 };
 
@@ -125,8 +130,9 @@ struct teletone_obj {
 	switch_memory_pool_t *pool;
 	switch_timer_t *timer;
 	switch_timer_t timer_base;
-	char code_buffer[1024];
-	char ret_val[1024];
+	JSFunction *function;
+	jsval arg;
+	jsval ret;
 	unsigned int flags;
 };
 
@@ -141,15 +147,21 @@ struct fileio_obj {
 };
 
 struct db_obj {
-	switch_memory_pool_t *pool;
-	switch_core_db_t *db;
-	switch_core_db_stmt_t *stmt;
-	char *dbname;
-	char code_buffer[2048];
-	JSContext *cx;
-	JSObject *obj;
+    switch_memory_pool_t *pool;
+    switch_core_db_t *db;
+    switch_core_db_stmt_t *stmt;
+    char *dbname;
+    char code_buffer[2048];
+    JSContext *cx;
+    JSObject *obj;
 };
 
+
+
+struct event_obj {
+	switch_event_t *event;
+	int freed;
+};
 
 /* Event Object */
 /*********************************************************************************/
@@ -157,36 +169,43 @@ static JSBool event_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 {
 	if (argc > 0) {
 		switch_event_t *event;
+		struct event_obj *eo;
 		switch_event_types_t etype;
 		char *ename = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 
-		if (switch_name_event(ename, &etype) != SWITCH_STATUS_SUCCESS) {
-			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		if ((eo = malloc(sizeof(*eo)))) {
+
+			if (switch_name_event(ename, &etype) != SWITCH_STATUS_SUCCESS) {
+				*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+				return JS_TRUE;
+			}
+
+			if (etype == SWITCH_EVENT_CUSTOM) {
+				char *subclass_name;
+				if (argc < 1) {
+					*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+					return JS_TRUE;
+				}
+				
+				subclass_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+				if (switch_event_create_subclass(&event, etype, subclass_name) != SWITCH_STATUS_SUCCESS) {
+					*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+					return JS_TRUE;
+				}
+
+			} else {
+				if (!switch_event_create(&event, etype) != SWITCH_STATUS_SUCCESS) {
+					*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+					return JS_TRUE;
+				}
+			}
+
+			eo->event = event;
+			eo->freed = 0;
+
+			JS_SetPrivate(cx, obj, eo);
 			return JS_TRUE;
 		}
-
-		if (etype == SWITCH_EVENT_CUSTOM) {
-			char *subclass_name;
-			if (argc < 1) {
-				*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
-				return JS_TRUE;
-			}
-			
-			subclass_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-			if (switch_event_create_subclass(&event, etype, subclass_name) != SWITCH_STATUS_SUCCESS) {
-				*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
-				return JS_TRUE;
-			}
-
-		} else {
-			if (!switch_event_create(&event, etype) != SWITCH_STATUS_SUCCESS) {
-				*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
-				return JS_TRUE;
-			}
-		}
-
-		JS_SetPrivate(cx, obj, event);
-		return JS_TRUE;
 	}
 
 	return JS_FALSE;
@@ -194,18 +213,21 @@ static JSBool event_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 
 static void event_destroy(JSContext *cx, JSObject *obj)
 {
-	switch_event_t *event = JS_GetPrivate(cx, obj);
+	struct event_obj *eo = JS_GetPrivate(cx, obj);
 
-	if (event) {
-		switch_event_destroy(&event);
+	if (eo) {
+		if (!eo->freed && eo->event) {
+			switch_event_destroy(&eo->event);
+		}
+		switch_safe_free(eo);
 	}
 }
 
 static JSBool event_add_header(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	switch_event_t *event = JS_GetPrivate(cx, obj);
+	struct event_obj *eo = JS_GetPrivate(cx, obj);
 
-	if (!event) {
+	if (!eo || eo->freed) {
 		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 		return JS_TRUE;
 	}
@@ -213,7 +235,7 @@ static JSBool event_add_header(JSContext *cx, JSObject *obj, uintN argc, jsval *
 	if (argc > 1) {
 		char *hname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *hval = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, hname, hval);
+		switch_event_add_header(eo->event, SWITCH_STACK_BOTTOM, hname, hval);
 		*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
 		return JS_TRUE;
 	}
@@ -224,16 +246,16 @@ static JSBool event_add_header(JSContext *cx, JSObject *obj, uintN argc, jsval *
 
 static JSBool event_get_header(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	switch_event_t *event = JS_GetPrivate(cx, obj);
+	struct event_obj *eo = JS_GetPrivate(cx, obj);
 
-	if (!event) {
+	if (!eo) {
 		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 		return JS_TRUE;
 	}
 
 	if (argc > 0) {
 		char *hname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		char *val = switch_event_get_header(event, hname);
+		char *val = switch_event_get_header(eo->event, hname);
 		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, val));
 		return JS_TRUE;
 	}
@@ -244,16 +266,16 @@ static JSBool event_get_header(JSContext *cx, JSObject *obj, uintN argc, jsval *
 
 static JSBool event_add_body(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	switch_event_t *event = JS_GetPrivate(cx, obj);
+	struct event_obj *eo = JS_GetPrivate(cx, obj);
 
-	if (!event) {
+	if (!eo || eo->freed) {
 		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 		return JS_TRUE;
 	}
 
 	if (argc > 0) {
 		char *body = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		switch_event_add_body(event, body);
+		switch_event_add_body(eo->event, body);
 		*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
 		return JS_TRUE;
 	}
@@ -264,25 +286,39 @@ static JSBool event_add_body(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 
 static JSBool event_get_body(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	switch_event_t *event = JS_GetPrivate(cx, obj);
+	struct event_obj *eo = JS_GetPrivate(cx, obj);
 
-	if (!event) {
+	if (!eo) {
 		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 		return JS_TRUE;
 	}
 
-	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, switch_event_get_body(event)));
+	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, switch_event_get_body(eo->event)));
 
+	return JS_TRUE;
+}
+
+static JSBool event_get_type(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct event_obj *eo = JS_GetPrivate(cx, obj);
+
+	if (!eo) {
+		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+		return JS_TRUE;
+	}
+
+	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, switch_event_name(eo->event->event_id)));
+	
 	return JS_TRUE;
 }
 
 static JSBool event_serialize(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	switch_event_t *event = JS_GetPrivate(cx, obj);
+	struct event_obj *eo = JS_GetPrivate(cx, obj);
 	char buf[1024];
 	uint8_t isxml = 0;
 
-	if (!event) {
+	if (!eo) {
 		*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 		return JS_TRUE;
 	}
@@ -297,7 +333,7 @@ static JSBool event_serialize(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 	if (isxml) {
 		switch_xml_t xml;
 		char *xmlstr;
-		if ((xml = switch_event_xmlize(event, NULL))) {
+		if ((xml = switch_event_xmlize(eo->event, NULL))) {
             xmlstr = switch_xml_toxml(xml);
 			*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, xmlstr));
 			switch_xml_free(xml);
@@ -306,7 +342,7 @@ static JSBool event_serialize(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 		}
 	} else {
-		switch_event_serialize(event, buf, sizeof(buf), NULL);
+		switch_event_serialize(eo->event, buf, sizeof(buf), NULL);
 		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, buf));
 	}
 
@@ -315,11 +351,12 @@ static JSBool event_serialize(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 
 static JSBool event_fire(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	switch_event_t *event = JS_GetPrivate(cx, obj);
+	struct event_obj *eo = JS_GetPrivate(cx, obj);
 
-	if (event) {
-		switch_event_fire(&event);
+	if (eo) {
+		switch_event_fire(&eo->event);
 		JS_SetPrivate(cx, obj, NULL);
+		switch_safe_free(eo);
 		*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
 		return JS_TRUE;
 	}
@@ -330,11 +367,14 @@ static JSBool event_fire(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 
 static JSBool event_destroy_(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	switch_event_t *event = JS_GetPrivate(cx, obj);
-
-	if (event) {
-		switch_event_destroy(&event);
+	struct event_obj *eo = JS_GetPrivate(cx, obj);
+	
+	if (eo) {
+		if (!eo->freed) {
+			switch_event_destroy(&eo->event);
+		}
 		JS_SetPrivate(cx, obj, NULL);
+		switch_safe_free(eo);
 		*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
 		return JS_TRUE;
 	}
@@ -354,6 +394,7 @@ static JSFunctionSpec event_methods[] = {
 	{"getHeader", event_get_header, 1},
 	{"addBody", event_add_body, 1},
 	{"getBody", event_get_body, 1},
+	{"getType", event_get_type, 1},
 	{"serialize", event_serialize, 0},
 	{"fire", event_fire, 0},
 	{"destroy", event_destroy_, 0},
@@ -410,7 +451,8 @@ JSClass event_class = {
 static void js_error(JSContext *cx, const char *message, JSErrorReport *report)
 {
 	if (message) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", message);
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *)report->filename, modname, report->lineno, SWITCH_LOG_ERROR,
+						  "%s %s%s\n", message, report->linebuf ? "near " : "", report->linebuf ? report->linebuf : "");
 	}
 	
 }
@@ -433,247 +475,204 @@ static switch_status_t init_js(void)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t js_stream_dtmf_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+JSObject *new_js_event(switch_event_t *event, char *name, JSContext *cx, JSObject *obj)
 {
-	switch (itype) {
-	case SWITCH_INPUT_TYPE_DTMF: {
-		char *dtmf = (char *) input;
-		char code[2048];
-		struct dtmf_callback_state *cb_state = buf;
-		struct js_session *jss = cb_state->session_state;
-		switch_file_handle_t *fh = cb_state->extra;
-		jsval rval;
-		char *ret;
-	
-		if (!jss) {
-			return SWITCH_STATUS_FALSE;
-		}
-	
-		if (cb_state->digit_count || (cb_state->code_buffer[0] > 47 && cb_state->code_buffer[0] < 58)) {
-			char *d;
-			if (!cb_state->digit_count) {
-				cb_state->digit_count = atoi(cb_state->code_buffer);
-			}
+	struct event_obj *eo;
+	JSObject *Event = NULL;
 
-			for(d = dtmf; *d; d++) {
-				cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
-				if ((cb_state->ret_buffer_len > cb_state->digit_count)||
-					(cb_state->ret_buffer_len > (int32_t) sizeof(cb_state->ret_buffer))||
-					(cb_state->ret_buffer_len >= cb_state->digit_count)
-					) {
-					return SWITCH_STATUS_FALSE;
-				}
-			}
-			return SWITCH_STATUS_SUCCESS;
-		} else {
-			snprintf(code, sizeof(code), "~%s(\"%s\")", cb_state->code_buffer, dtmf);
-			eval_some_js(code, jss->cx, jss->obj, &rval);
-			ret = JS_GetStringBytes(JS_ValueToString(jss->cx, rval));
-
-			if (!strncasecmp(ret, "speed", 4)) {
-				char *p;
-			
-				if ((p = strchr(ret, ':'))) {
-					p++;
-					if (*p == '+' || *p == '-') {
-						int step;
-						if (!(step = atoi(p))) {
-							step = 1;
-						}
-						fh->speed += step;
-					} else {
-						int speed = atoi(p);
-						fh->speed = speed;
-					}
-					return SWITCH_STATUS_SUCCESS;
-				}
-			
-				return SWITCH_STATUS_FALSE;
-			} else if (!strcasecmp(ret, "pause")) {
-				if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-					switch_clear_flag(fh, SWITCH_FILE_PAUSE);
-				} else {
-					switch_set_flag(fh, SWITCH_FILE_PAUSE);
-				}
-				return SWITCH_STATUS_SUCCESS;
-			} else if (!strcasecmp(ret, "restart")) {
-				unsigned int pos = 0;
-				fh->speed = 0;
-				switch_core_file_seek(fh, &pos, 0, SEEK_SET);
-				return SWITCH_STATUS_SUCCESS;
-			} else if (!strncasecmp(ret, "seek", 4)) {
-				switch_codec_t *codec;
-				unsigned int samps = 0;
-				unsigned int pos = 0;
-				char *p;
-				codec = switch_core_session_get_read_codec(jss->session);
-
-				if ((p = strchr(ret, ':'))) {
-					p++;
-					if (*p == '+' || *p == '-') {
-						int step;
-						if (!(step = atoi(p))) {
-							step = 1000;
-						}
-						if (step > 0) {
-							samps = step * (codec->implementation->samples_per_second / 1000);
-							switch_core_file_seek(fh, &pos, samps, SEEK_CUR);		
-						} else {
-							samps = step * (codec->implementation->samples_per_second / 1000);
-							switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
-						}
-					} else {
-						samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
-						switch_core_file_seek(fh, &pos, samps, SEEK_SET);
-					}
-				}
-
-				return SWITCH_STATUS_SUCCESS;
-			}
-
-			if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
-				return SWITCH_STATUS_SUCCESS;
-			}
-	
-			if (ret) {
-				switch_copy_string(cb_state->ret_buffer, ret, sizeof(cb_state->ret_buffer));
+	if ((eo = malloc(sizeof(*eo)))) {
+		eo->event = event;
+		eo->freed = 1;
+		if ((Event = JS_DefineObject(cx, obj, name, &event_class, NULL, 0))) {
+			if ((JS_SetPrivate(cx, Event, eo) &&
+				 JS_DefineProperties(cx, Event, event_props) &&
+				 JS_DefineFunctions(cx, Event, event_methods))) {
 			}
 		}
-
-		return SWITCH_STATUS_FALSE;
 	}
-		break;
-	default:
-		break;
-	}
-	return SWITCH_STATUS_SUCCESS;
-
+	return Event;
 }
 
-static switch_status_t js_record_dtmf_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+
+static switch_status_t js_common_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
-	switch (itype) {
-	case SWITCH_INPUT_TYPE_DTMF: {
-		char *dtmf = (char *) input;
-		char code[2048];
-		struct dtmf_callback_state *cb_state = buf;
-		struct js_session *jss = cb_state->session_state;
-		switch_file_handle_t *fh = cb_state->extra;
-		jsval rval;
-		char *ret;
-	
-		if (!jss) {
-			return SWITCH_STATUS_FALSE;
-		}
-	
-		if (cb_state->digit_count || (cb_state->code_buffer[0] > 47 && cb_state->code_buffer[0] < 58)) {
-			char *d;
-			if (!cb_state->digit_count) {
-				cb_state->digit_count = atoi(cb_state->code_buffer);
-			}
+	char *dtmf = NULL;
+	switch_event_t *event = NULL;
+	struct input_callback_state *cb_state = buf;
+	struct js_session *jss = cb_state->session_state;
+	uintN argc = 0;
+	jsval argv[4];
+	JSObject *Event = NULL;
 
-			for(d = dtmf; *d; d++) {
-				cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
-				if ((cb_state->ret_buffer_len > cb_state->digit_count)||
-					(cb_state->ret_buffer_len > (int32_t) sizeof(cb_state->ret_buffer))||
-					(cb_state->ret_buffer_len >= cb_state->digit_count)
-					) {
-					return SWITCH_STATUS_FALSE;
-				}
-			}
-			return SWITCH_STATUS_SUCCESS;
-		} else {
-			snprintf(code, sizeof(code), "~%s(\"%s\")", cb_state->code_buffer, dtmf);
-			eval_some_js(code, jss->cx, jss->obj, &rval);
-			ret = JS_GetStringBytes(JS_ValueToString(jss->cx, rval));
-
-			if (!strcasecmp(ret, "pause")) {
-				if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-					switch_clear_flag(fh, SWITCH_FILE_PAUSE);
-				} else {
-					switch_set_flag(fh, SWITCH_FILE_PAUSE);
-				}
-				return SWITCH_STATUS_SUCCESS;
-			} else if (!strcasecmp(ret, "restart")) {
-				unsigned int pos = 0;
-				fh->speed = 0;
-				switch_core_file_seek(fh, &pos, 0, SEEK_SET);
-				return SWITCH_STATUS_SUCCESS;
-			}
-
-			if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
-				return SWITCH_STATUS_SUCCESS;
-			}
-	
-			if (ret) {
-				switch_copy_string(cb_state->ret_buffer, ret, sizeof(cb_state->ret_buffer));
-			}
-		}
+	if (!jss) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	switch (itype) {
+	case SWITCH_INPUT_TYPE_EVENT:
+		if ((event = (switch_event_t *) input)) {
+			if ((Event = new_js_event(event, "_XX_EVENT_XX_", cb_state->cx, cb_state->obj))) {
+				argv[argc++] = STRING_TO_JSVAL (JS_NewStringCopyZ(cb_state->cx, "event"));
+				argv[argc++] = OBJECT_TO_JSVAL(Event);
+			}
+		}
+		if (!Event) {
+			return SWITCH_STATUS_FALSE;
+		}
 		break;
-	default:
+	case SWITCH_INPUT_TYPE_DTMF: 
+		dtmf = (char *) input;
+		argv[argc++] = STRING_TO_JSVAL (JS_NewStringCopyZ(cb_state->cx, "dtmf"));
+		argv[argc++] = STRING_TO_JSVAL (JS_NewStringCopyZ(cb_state->cx, dtmf));
 		break;
+	}
+
+	if (cb_state->arg) {
+		argv[argc++] = cb_state->arg;
+	}
+
+	JS_CallFunction(cb_state->cx, cb_state->obj, cb_state->function, argc, argv, &cb_state->ret);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t js_stream_input_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+	char *ret;
+	switch_status_t status;
+	struct input_callback_state *cb_state = buf;
+	switch_file_handle_t *fh = cb_state->extra;
+	struct js_session *jss = cb_state->session_state;
+
+	if ((status = js_common_callback(session, input, itype, buf, buflen)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+	
+	if ((ret = JS_GetStringBytes(JS_ValueToString(cb_state->cx, cb_state->ret)))) {
+		if (!strncasecmp(ret, "speed", 4)) {
+			char *p;
+			
+			if ((p = strchr(ret, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					if (!(step = atoi(p))) {
+						step = 1;
+					}
+					fh->speed += step;
+				} else {
+					int speed = atoi(p);
+					fh->speed = speed;
+				}
+				return SWITCH_STATUS_SUCCESS;
+			}
+			
+			return SWITCH_STATUS_FALSE;
+		} else if (!strcasecmp(ret, "pause")) {
+			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+				switch_clear_flag(fh, SWITCH_FILE_PAUSE);
+			} else {
+				switch_set_flag(fh, SWITCH_FILE_PAUSE);
+			}
+			return SWITCH_STATUS_SUCCESS;
+		} else if (!strcasecmp(ret, "restart")) {
+			unsigned int pos = 0;
+			fh->speed = 0;
+			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
+			return SWITCH_STATUS_SUCCESS;
+		} else if (!strncasecmp(ret, "seek", 4)) {
+			switch_codec_t *codec;
+			unsigned int samps = 0;
+			unsigned int pos = 0;
+			char *p;
+			codec = switch_core_session_get_read_codec(jss->session);
+
+			if ((p = strchr(ret, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					if (!(step = atoi(p))) {
+						step = 1000;
+					}
+					if (step > 0) {
+						samps = step * (codec->implementation->samples_per_second / 1000);
+						switch_core_file_seek(fh, &pos, samps, SEEK_CUR);		
+					} else {
+						samps = step * (codec->implementation->samples_per_second / 1000);
+						switch_core_file_seek(fh, &pos, fh->pos - samps, SEEK_SET);
+					}
+				} else {
+					samps = atoi(p) * (codec->implementation->samples_per_second / 1000);
+					switch_core_file_seek(fh, &pos, samps, SEEK_SET);
+				}
+			}
+
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		return SWITCH_STATUS_BREAK;
+	}
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t js_record_input_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+{
+	char *ret;
+	switch_status_t status;
+	struct input_callback_state *cb_state = buf;
+	switch_file_handle_t *fh = cb_state->extra;
+
+	if ((status = js_common_callback(session, input, itype, buf, buflen)) != SWITCH_STATUS_SUCCESS) {
+		return status;
+	}
+	
+	if ((ret = JS_GetStringBytes(JS_ValueToString(cb_state->cx, cb_state->ret)))) {
+		if (!strcasecmp(ret, "pause")) {
+			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+				switch_clear_flag(fh, SWITCH_FILE_PAUSE);
+			} else {
+				switch_set_flag(fh, SWITCH_FILE_PAUSE);
+			}
+			return SWITCH_STATUS_SUCCESS;
+		} else if (!strcasecmp(ret, "restart")) {
+			unsigned int pos = 0;
+			fh->speed = 0;
+			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	
+		return SWITCH_STATUS_BREAK;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-
-static switch_status_t js_speak_dtmf_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
+static switch_status_t js_collect_input_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
 {
-	switch (itype) {
-	case SWITCH_INPUT_TYPE_DTMF: {
-		char *dtmf = (char *) input;
-		char code[2048];
-		struct dtmf_callback_state *cb_state = buf;
-		struct js_session *jss = cb_state->session_state;
-		jsval rval;
-		char *ret;
-	
-		if (!jss) {
-			return SWITCH_STATUS_FALSE;
-		}
-	
-		if (cb_state->digit_count || (cb_state->code_buffer[0] > 47 && cb_state->code_buffer[0] < 58)) {
-			char *d;
-			if (!cb_state->digit_count) {
-				cb_state->digit_count = atoi(cb_state->code_buffer);
-			}
+	char *ret;
+	switch_status_t status;
+	struct input_callback_state *cb_state = buf;
 
-			for(d = dtmf; *d; d++) {
-				cb_state->ret_buffer[cb_state->ret_buffer_len++] = *d;
-				if ((cb_state->ret_buffer_len > cb_state->digit_count)||
-					(cb_state->ret_buffer_len > (int32_t) sizeof(cb_state->ret_buffer))||
-					(cb_state->ret_buffer_len >= cb_state->digit_count)
-					) {
-					return SWITCH_STATUS_FALSE;
-				}
-			}
-			return SWITCH_STATUS_SUCCESS;
-		} else {
-			snprintf(code, sizeof(code), "~%s(\"%s\")", cb_state->code_buffer, dtmf);
-			eval_some_js(code, jss->cx, jss->obj, &rval);
-			ret = JS_GetStringBytes(JS_ValueToString(jss->cx, rval));
-
-			if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
-				return SWITCH_STATUS_SUCCESS;
-			}
-	
-			if (ret) {
-				switch_copy_string(cb_state->ret_buffer, ret, sizeof(cb_state->ret_buffer));
-			}
-		}
-
-		return SWITCH_STATUS_FALSE;
+	if ((status = js_common_callback(session, input, itype, buf, buflen)) != SWITCH_STATUS_SUCCESS) {
+		return status;
 	}
-		break;
-	default:
-		break;
+
+	if ((ret = JS_GetStringBytes(JS_ValueToString(cb_state->cx, cb_state->ret)))) {
+		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+		return SWITCH_STATUS_BREAK;
 	}
 
 	return SWITCH_STATUS_SUCCESS;
-	
 }
 
 static JSBool session_flush_digits(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -713,12 +712,13 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_channel_t *channel;
 	char *file_name = NULL;
-	char *dtmf_callback = NULL;
+	char *input_callback = NULL;
 	void *bp = NULL;
 	int len = 0;
 	switch_input_callback_function_t dtmf_func = NULL;
-	struct dtmf_callback_state cb_state = {0};
+	struct input_callback_state cb_state = {0};
 	switch_file_handle_t fh;
+	JSFunction *function;
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -730,15 +730,18 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 		}
 	}
 	if (argc > 1) {
-		dtmf_callback = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		if (switch_strlen_zero(dtmf_callback)) {
-			dtmf_callback = NULL;
-		} else {
+		if ((function = JS_ValueToFunction(cx, argv[1]))) {
 			memset(&cb_state, 0, sizeof(cb_state));
-			switch_copy_string(cb_state.code_buffer, dtmf_callback, sizeof(cb_state.code_buffer));
-			cb_state.code_buffer_len = strlen(cb_state.code_buffer);
+			switch_copy_string(cb_state.code_buffer, input_callback, sizeof(cb_state.code_buffer));
 			cb_state.session_state = jss;
-			dtmf_func = js_record_dtmf_callback;
+			cb_state.function = function;
+			cb_state.cx = cx;
+            cb_state.obj = obj;
+			if (argc > 2) {
+                cb_state.arg = argv[2];
+            }
+
+			dtmf_func = js_record_input_callback;
 			bp = &cb_state;
 			len = sizeof(cb_state);
 		}
@@ -748,6 +751,49 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	cb_state.extra = &fh;
 
 	switch_ivr_record_file(jss->session, &fh, file_name, dtmf_func, bp, len);
+	*rval = cb_state.ret;
+
+	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
+}
+
+
+static JSBool session_collect_input(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+	switch_channel_t *channel;
+	void *bp = NULL;
+	int len = 0;
+	int32 to = 0;
+	switch_input_callback_function_t dtmf_func = NULL;
+	struct input_callback_state cb_state = {0};
+	JSFunction *function;
+
+	channel = switch_core_session_get_channel(jss->session);
+	assert(channel != NULL);
+	
+	if (argc > 0) {
+		if ((function = JS_ValueToFunction(cx, argv[0]))) {
+			memset(&cb_state, 0, sizeof(cb_state));
+			cb_state.function = function;
+
+			if (argc > 1) {
+                cb_state.arg = argv[1];
+            }
+			
+			cb_state.session_state = jss;
+			cb_state.cx = cx;
+            cb_state.obj = obj;
+			dtmf_func = js_collect_input_callback;
+			bp = &cb_state;
+			len = sizeof(cb_state);
+		}
+	}
+
+	if (argc > 2) {
+		JS_ValueToInt32(jss->cx, argv[2], &to);
+	}
+
+	switch_ivr_collect_digits_callback(jss->session, dtmf_func, bp, len, to);
 	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, cb_state.ret_buffer));
 
 	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
@@ -759,12 +805,13 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	switch_channel_t *channel;
 	char *file_name = NULL;
 	char *timer_name = NULL;
-	char *dtmf_callback = NULL;
+	//char *input_callback = NULL;
 	void *bp = NULL;
 	int len = 0;
 	switch_input_callback_function_t dtmf_func = NULL;
-	struct dtmf_callback_state cb_state = {0};
+	struct input_callback_state cb_state = {0};
 	switch_file_handle_t fh;
+	JSFunction *function;
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -782,15 +829,18 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 		}
 	}
 	if (argc > 2) {
-		dtmf_callback = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
-		if (switch_strlen_zero(dtmf_callback)) {
-			dtmf_callback = NULL;
-		} else {
+		if ((function = JS_ValueToFunction(cx, argv[2]))) {
 			memset(&cb_state, 0, sizeof(cb_state));
-			switch_copy_string(cb_state.code_buffer, dtmf_callback, sizeof(cb_state.code_buffer));
-			cb_state.code_buffer_len = strlen(cb_state.code_buffer);
+			cb_state.function = function;
+
+			if (argc > 3) {
+				cb_state.arg = argv[3];
+			}
+
 			cb_state.session_state = jss;
-			dtmf_func = js_stream_dtmf_callback;
+			cb_state.cx = cx;
+			cb_state.obj = obj;
+			dtmf_func = js_stream_input_callback;
 			bp = &cb_state;
 			len = sizeof(cb_state);
 		}
@@ -800,8 +850,8 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	cb_state.extra = &fh;
 
 	switch_ivr_play_file(jss->session, &fh, file_name, timer_name, dtmf_func, bp, len);
-	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, cb_state.ret_buffer));
-
+	*rval = cb_state.ret;
+	
 	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
 }
 
@@ -861,13 +911,13 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	char *tts_name = NULL;
 	char *voice_name = NULL;
 	char *text = NULL;
-	char *dtmf_callback = NULL;
 	char *timer_name = NULL;
 	switch_codec_t *codec;
 	void *bp = NULL;
 	int len = 0;
-	struct dtmf_callback_state cb_state = {0};
+	struct input_callback_state cb_state = {0};
 	switch_input_callback_function_t dtmf_func = NULL;
+	JSFunction *function;
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -882,15 +932,17 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 		text = JS_GetStringBytes(JS_ValueToString(cx, argv[2]));
 	}
 	if (argc > 3) {
-		dtmf_callback = JS_GetStringBytes(JS_ValueToString(cx, argv[3]));
-		if (switch_strlen_zero(dtmf_callback)) {
-			dtmf_callback = NULL;
-		} else {
+		if ((function = JS_ValueToFunction(cx, argv[3]))) {
 			memset(&cb_state, 0, sizeof(cb_state));
-			switch_copy_string(cb_state.code_buffer, dtmf_callback, sizeof(cb_state.code_buffer));
-			cb_state.code_buffer_len = strlen(cb_state.code_buffer);
+			cb_state.function = function;
+			if (argc > 4) {
+                cb_state.arg = argv[4];
+            }
+
+			cb_state.cx = cx;
+            cb_state.obj = obj;
 			cb_state.session_state = jss;
-			dtmf_func = js_speak_dtmf_callback;
+			dtmf_func = js_collect_input_callback;
 			bp = &cb_state;
 			len = sizeof(cb_state);
 		}
@@ -915,7 +967,7 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 						  bp,
 						  len);
 
-	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, cb_state.ret_buffer));
+	*rval = cb_state.ret;
 
 	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
 }
@@ -971,6 +1023,41 @@ static JSBool session_ready(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	return JS_TRUE;
 }
 
+
+
+static JSBool session_wait_for_media(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+	switch_channel_t *channel;
+	switch_time_t started;
+	unsigned int elapsed;
+	int32 timeout = 60;
+	channel = switch_core_session_get_channel(jss->session);
+	assert(channel != NULL);
+	started = switch_time_now();
+
+	if (argc > 0) {
+		JS_ValueToInt32(cx, argv[0], &timeout);
+	}
+
+	for(;;) {
+		if (((elapsed = (unsigned int)((switch_time_now() - started) / 1000)) > (switch_time_t)timeout) || switch_channel_get_state(channel) >= CS_HANGUP) {
+			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+            break;
+		}
+
+		if (switch_channel_ready(channel) && (switch_channel_test_flag(channel, CF_ANSWERED) || switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
+			*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
+			break;
+		}
+		
+		switch_yield(1000);
+	}
+	
+	return JS_TRUE;
+}
+
+
 static JSBool session_wait_for_answer(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
@@ -987,15 +1074,19 @@ static JSBool session_wait_for_answer(JSContext *cx, JSObject *obj, uintN argc, 
 	}
 
 	for(;;) {
-		elapsed = (unsigned int)((switch_time_now() - started) / 1000);
-		if ((int32)elapsed > timeout || switch_channel_test_flag(channel, CF_ANSWERED) ||
-			switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
+		if (((elapsed = (unsigned int)((switch_time_now() - started) / 1000)) > (switch_time_t)timeout) || switch_channel_get_state(channel) >= CS_HANGUP) {
+			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+            break;
+		}
+
+		if (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_ANSWERED)) {
+			*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
 			break;
 		}
 		
 		switch_yield(1000);
 	}
-
+	
 	return JS_TRUE;
 }
 
@@ -1027,12 +1118,19 @@ static JSBool session_get_event(JSContext *cx, JSObject *obj, uintN argc, jsval 
 
 	if (switch_core_session_dequeue_event(jss->session, &event) == SWITCH_STATUS_SUCCESS) {
 		JSObject *Event;
-		if ((Event = JS_DefineObject(cx, obj, "Event", &event_class, NULL, 0))) {
-			if ((JS_SetPrivate(cx, Event, event) &&
-				 JS_DefineProperties(cx, Event, event_props) &&
-				 JS_DefineFunctions(cx, Event, event_methods))) {
-				*rval = OBJECT_TO_JSVAL ( Event );
-				return JS_TRUE;
+		struct event_obj *eo;
+			
+		if ((eo = malloc(sizeof(*eo)))) {
+			eo->event = event;
+			eo->freed = 0;
+
+			if ((Event = JS_DefineObject(cx, obj, "__event__", &event_class, NULL, 0))) {
+				if ((JS_SetPrivate(cx, Event, eo) &&
+					 JS_DefineProperties(cx, Event, event_props) &&
+					 JS_DefineFunctions(cx, Event, event_methods))) {
+					*rval = OBJECT_TO_JSVAL ( Event );
+					return JS_TRUE;
+				}
 			}
 		}
 	}
@@ -1045,13 +1143,13 @@ static JSBool session_get_event(JSContext *cx, JSObject *obj, uintN argc, jsval 
 static JSBool session_send_event(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_event_t *event;
 	JSObject *Event;
+	struct event_obj *eo;
 
 	if (argc > 0) {
 		if (JS_ValueToObject(cx, argv[0], &Event)) {
-			if ((event = JS_GetPrivate(cx, Event))) {
-				if (switch_core_session_receive_event(jss->session, &event) != SWITCH_STATUS_SUCCESS) {
+			if ((eo = JS_GetPrivate(cx, Event))) {
+				if (switch_core_session_receive_event(jss->session, &eo->event) != SWITCH_STATUS_SUCCESS) {
 					*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 					return JS_TRUE;
 				}
@@ -1240,6 +1338,7 @@ enum session_tinyid {
 
 static JSFunctionSpec session_methods[] = {
 	{"streamFile", session_streamfile, 1}, 
+	{"collectInput", session_collect_input, 1}, 
 	{"recordFile", session_recordfile, 1}, 
 	{"flushEvents", session_flush_events, 1}, 
 	{"flushDigits", session_flush_digits, 1}, 
@@ -1250,6 +1349,7 @@ static JSFunctionSpec session_methods[] = {
 	{"answer", session_answer, 0}, 
 	{"ready", session_ready, 0}, 
 	{"waitForAnswer", session_wait_for_answer, 0}, 
+	{"waitForMedia", session_wait_for_media, 0}, 
 	{"getEvent", session_get_event, 0},
 	{"sendEvent", session_send_event, 0},
 	{"hangup", session_hangup, 0}, 
@@ -1279,6 +1379,10 @@ static JSBool session_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval 
 	switch_channel_t *channel;
 	switch_caller_profile_t *caller_profile;
 	char *name;
+	
+	if (!jss || !jss->session) {
+		return JS_FALSE;
+	}
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -1477,6 +1581,8 @@ static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot Create Outgoing Channel! [%s]\n", dest);
 			return JS_TRUE;
 		}
+
+		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, switch_channel_cause2str(cause)));
 
 		jss = switch_core_session_alloc(peer_session, sizeof(*jss));
 		jss->session = peer_session;
@@ -1772,6 +1878,7 @@ static int db_callback(void *pArg, int argc, char **argv, char **columnNames)
 		snprintf(code, sizeof(code), "~_Db_RoW_[\"%s\"] = \"%s\"", columnNames[x], argv[x]);
 		eval_some_js(code, dbo->cx, dbo->obj, &rval);
 	}
+
 	snprintf(code, sizeof(code), "~%s(_Db_RoW_)", dbo->code_buffer);
 	eval_some_js(code, dbo->cx, dbo->obj, &rval);
 
@@ -1783,32 +1890,33 @@ static int db_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 static JSBool db_exec(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	struct db_obj *dbo = JS_GetPrivate(cx, obj);
-	*rval = BOOLEAN_TO_JSVAL( JS_TRUE );	
+    struct db_obj *dbo = JS_GetPrivate(cx, obj);
+    *rval = BOOLEAN_TO_JSVAL( JS_TRUE );
 
-	if (argc > 0) {		
-		char *sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		char *err = NULL;
-		void *arg = NULL;
-		switch_core_db_callback_func_t cb_func = NULL;
+    if (argc > 0) {
+        char *sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+        char *err = NULL;
+        void *arg = NULL;
+        switch_core_db_callback_func_t cb_func = NULL;
 
-			
-		if (argc > 1) {
-			char *js_func = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-			switch_copy_string(dbo->code_buffer, js_func, sizeof(dbo->code_buffer));
-			cb_func = db_callback;
-			arg = dbo;
-		}
 
-		switch_core_db_exec(dbo->db, sql, cb_func, arg, &err);
-		if (err) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", err);
-			switch_core_db_free(err);
-			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
-		}
-	}
-	return JS_TRUE;
+        if (argc > 1) {
+            char *js_func = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
+            switch_copy_string(dbo->code_buffer, js_func, sizeof(dbo->code_buffer));
+            cb_func = db_callback;
+            arg = dbo;
+        }
+
+        switch_core_db_exec(dbo->db, sql, cb_func, arg, &err);
+        if (err) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", err);
+            switch_core_db_free(err);
+            *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        }
+    }
+    return JS_TRUE;
 }
+
 
 static JSBool db_next(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
@@ -2065,8 +2173,10 @@ static JSBool teletone_on_dtmf(JSContext *cx, JSObject *obj, uintN argc, jsval *
 {
 	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
 	if (argc > 0) {
-		char *func = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		switch_copy_string(tto->code_buffer, func, sizeof(tto->code_buffer));
+		tto->function = JS_ValueToFunction(cx, argv[0]);
+		if (argc > 1) {
+			tto->arg = argv[1];
+		}
 		switch_set_flag(tto, TTF_DTMF);
 	}
 	return JS_TRUE;
@@ -2126,17 +2236,18 @@ static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval 
 
 			if (switch_test_flag(tto, TTF_DTMF)) {
 				char dtmf[128];
-				char code[512];
 				char *ret;
-				jsval tt_rval;
+
 				if (switch_channel_has_dtmf(channel)) {
+					uintN aargc = 0;
+					jsval aargv[4];
+
 					switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-					snprintf(code, sizeof(code), "~%s(\"%s\")", tto->code_buffer, dtmf);
-					eval_some_js(code, cx, obj, &tt_rval);
-					ret = JS_GetStringBytes(JS_ValueToString(cx, tt_rval));
+					aargv[aargc++] = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, dtmf));
+					JS_CallFunction(cx, obj, tto->function, aargc, aargv, &tto->ret);
+					ret = JS_GetStringBytes(JS_ValueToString(cx, tto->ret));
 					if (strcmp(ret, "true") && strcmp(ret, "undefined")) {
-						switch_copy_string(tto->ret_val, ret, sizeof(tto->ret_val));
-						*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, tto->ret_val));
+						*rval = tto->ret;
 						return JS_TRUE;
 					}
 				}
@@ -2239,19 +2350,32 @@ static JSBool js_log(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsva
 {
 	char *level_str, *msg;
 	switch_log_level_t level = SWITCH_LOG_DEBUG;
+	JSScript *script = NULL;
+	const char *file = __FILE__;
+	int line = __LINE__;
+	JSStackFrame *caller;
 	
+	caller = JS_GetScriptedCaller(cx, NULL);
+	script = JS_GetFrameScript(cx, caller);
+
+	if (script) {
+		file = JS_GetScriptFilename(cx, script);
+		line = JS_GetScriptBaseLineNumber(cx, script);
+	}	
+
+
 	if (argc > 1) {
 		if ((level_str = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
 			level = switch_log_str2level(level_str);
 		}
 
 		if ((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[1])))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, level, "JS_LOG: %s", msg);
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char*) file, "console_log", line, level, "%s", msg);
 			return JS_TRUE;
 		} 
 	} else if (argc > 0) {
 		if ((msg = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, level, "JS_LOG: %s", msg);
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char*) file, "console_log", line, level, "%s", msg);
 			return JS_TRUE;
 		}
 	}
@@ -2323,6 +2447,11 @@ static JSBool js_bridge(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 {
 	struct js_session *jss_a = NULL, *jss_b = NULL;
 	JSObject *session_obj_a = NULL, *session_obj_b = NULL;
+	void *bp = NULL;
+	int len = 0;
+	switch_input_callback_function_t dtmf_func = NULL;
+	struct input_callback_state cb_state = {0};
+	JSFunction *function;
 
 	if (argc > 1) {
 		if (JS_ValueToObject(cx, argv[0], &session_obj_a)) {
@@ -2344,7 +2473,28 @@ static JSBool js_bridge(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 		return JS_FALSE;
 	}
 
-	switch_ivr_multi_threaded_bridge(jss_a->session, jss_b->session, NULL, NULL, NULL);
+
+	if (argc > 2) {
+		if ((function = JS_ValueToFunction(cx, argv[2]))) {
+			memset(&cb_state, 0, sizeof(cb_state));
+			cb_state.function = function;
+
+			if (argc > 3) {
+                cb_state.arg = argv[3];
+            }
+
+			cb_state.cx = cx;
+            cb_state.obj = obj;
+			
+			cb_state.session_state = jss_a;
+			dtmf_func = js_collect_input_callback;
+			bp = &cb_state;
+			len = sizeof(cb_state);
+		}
+	}
+
+	switch_ivr_multi_threaded_bridge(jss_a->session, jss_b->session, dtmf_func, bp, bp);
+
 	return JS_TRUE;
 }
 
@@ -2402,7 +2552,10 @@ static JSBool js_email(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, js
 				return JS_FALSE;
 			
 			if (file) {
-				snprintf(buf, B64BUFFLEN, "\n\n--%s\nContent-Type: application/octet-stream\nContent-Transfer-Encoding: base64\nContent-Description: Sound attachment.\nContent-Disposition: attachment; filename=\"%s\"\n\n", bound, file);
+				snprintf(buf, B64BUFFLEN, "\n\n--%s\nContent-Type: application/octet-stream\n"
+						 "Content-Transfer-Encoding: base64\n"
+						 "Content-Description: Sound attachment.\n"
+						 "Content-Disposition: attachment; filename=\"%s\"\n\n", bound, file);
 				if (!write_buf(fd, buf))
 					return JS_FALSE;
 				
@@ -2488,7 +2641,7 @@ static int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
 {
 	JSScript *script;
 	char *cptr;
-	char path[512];
+	char *path = NULL;
 	int res = 0;
 
 	JS_ClearPendingException(cx);
@@ -2497,11 +2650,11 @@ static int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
 		cptr = code + 1;
 		script = JS_CompileScript(cx, obj, cptr, strlen(cptr), "inline", 1);
 	} else {
-		if (code[0] == '/') {
+		if (*code == '/') {
 			script = JS_CompileFile(cx, obj, code);
-		} else {
-			snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR, code);
+		} else if ((path = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR, code))) {
 			script = JS_CompileFile(cx, obj, path);
+			switch_safe_free(path);
 		}
 	}
 

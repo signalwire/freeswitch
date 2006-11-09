@@ -34,6 +34,33 @@
 
 static const char modname[] = "mod_dptools";
 
+static const switch_application_interface_t detect_speech_application_interface;
+
+static void detect_speech_function(switch_core_session_t *session, char *data)
+{
+	char *argv[4];
+	int argc;
+	char *lbuf = NULL;
+
+	if ((lbuf = switch_core_session_strdup(session, data)) && (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		if (!strcasecmp(argv[0], "grammar") && argc >= 1) {
+			switch_ivr_detect_speech_load_grammar(session, argv[1], argv[2]);
+		} else if (!strcasecmp(argv[0], "nogrammar")) {
+			switch_ivr_detect_speech_unload_grammar(session, argv[1]);
+		} else if (!strcasecmp(argv[0], "pause")) {
+			switch_ivr_pause_detect_speech(session);
+		} else if (!strcasecmp(argv[0], "resume")) {
+			switch_ivr_resume_detect_speech(session);
+		} else if (!strcasecmp(argv[0], "stop")) {
+			switch_ivr_stop_detect_speech(session);
+		} else if (argc >= 3) {
+			switch_ivr_detect_speech(session, argv[0], argv[1], argv[2], argv[3], NULL);
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", detect_speech_application_interface.syntax);
+	}
+	
+}
 
 static void ringback_function(switch_core_session_t *session, char *data)
 {
@@ -253,7 +280,6 @@ static switch_api_interface_t dptools_api_interface = {
 	/*.next */ &chat_api_interface
 };
 
-
 static switch_api_interface_t presence_api_interface = {
 	/*.interface_name */ "presence",
 	/*.desc */ "presence",
@@ -262,6 +288,14 @@ static switch_api_interface_t presence_api_interface = {
 	/*.next */ &dptools_api_interface
 };
 
+static const switch_application_interface_t detect_speech_application_interface = {
+	/*.interface_name */ "detect_speech",
+	/*.application_function */ detect_speech_function,	
+	/* long_desc */ "Detect speech on a channel.",
+	/* short_desc */ "Detect speech",
+	/* syntax */ "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume",
+	/*.next */ NULL
+};
 
 static const switch_application_interface_t ringback_application_interface = {
 	/*.interface_name */ "ringback",
@@ -269,8 +303,7 @@ static const switch_application_interface_t ringback_application_interface = {
 	/* long_desc */ "Indicate Ringback on a channel.",
 	/* short_desc */ "Indicate Ringback",
 	/* syntax */ "",
-	/*.next */ NULL
-
+	/*.next */ &detect_speech_application_interface
 };
 
 static const switch_application_interface_t set_application_interface = {

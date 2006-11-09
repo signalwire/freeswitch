@@ -46,7 +46,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	switch_time_t start, now, done = switch_time_now() + (ms * 1000);
 	switch_frame_t *read_frame;
 	int32_t left, elapsed;
-
+	
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
@@ -174,13 +174,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session)
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session,
-																 switch_input_callback_function_t input_callback,
-																 void *buf,
-																 unsigned int buflen)
+																   switch_input_callback_function_t input_callback,
+																   void *buf,
+																   unsigned int buflen,
+																   unsigned int timeout)
 {
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
+	switch_time_t started = 0;
+	unsigned int elapsed;
+
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
@@ -188,12 +191,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (timeout) {
+		started = switch_time_now();
+	}
+
 	while(switch_channel_ready(channel)) {
 		switch_frame_t *read_frame;
 		switch_event_t *event;
-
 		char dtmf[128];
 
+		if (timeout) {
+			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
+			if (elapsed >= timeout) {
+				break;
+			}
+		}
 
 		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
 			switch_ivr_parse_event(session, event);
@@ -585,12 +597,306 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	if ((status = switch_core_media_bug_add(session,
 											record_callback,
 											fh,
+											SMBF_BOTH,
 											&bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_core_file_close(fh);
 		return status;
 	}
 
 	switch_channel_set_private(channel, file, bug);
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+struct speech_thread_handle {
+	switch_core_session_t *session;
+	switch_asr_handle_t *ah;
+	switch_media_bug_t *bug;
+	switch_mutex_t *mutex;
+	switch_thread_cond_t *cond;
+	switch_memory_pool_t *pool;
+};
+
+static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj)
+{
+	struct speech_thread_handle *sth = (struct speech_thread_handle *) obj;
+	switch_channel_t *channel = switch_core_session_get_channel(sth->session);
+	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
+	switch_status_t status;
+
+	switch_thread_cond_create(&sth->cond, sth->pool);
+	switch_mutex_init(&sth->mutex, SWITCH_MUTEX_NESTED, sth->pool);
+	
+
+	switch_core_session_read_lock(sth->session);
+	switch_mutex_lock(sth->mutex);
+	
+	while (switch_channel_ready(channel) && !switch_test_flag(sth->ah, SWITCH_ASR_FLAG_CLOSED)) {
+		char *xmlstr = NULL;
+		
+		switch_thread_cond_wait(sth->cond, sth->mutex);
+		if (switch_core_asr_check_results(sth->ah, &flags) == SWITCH_STATUS_SUCCESS) {
+			switch_event_t *event;
+
+			status = switch_core_asr_get_results(sth->ah, &xmlstr, &flags);
+		
+			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+				goto done;
+			}
+
+
+			if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
+				if (status == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Speech-Type", "detected-speech");
+					switch_event_add_body(event, xmlstr);
+				} else {
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Speech-Type", "begin-speaking");
+				}
+
+				if (switch_test_flag(sth->ah, SWITCH_ASR_FLAG_FIRE_EVENTS)) {
+					switch_event_t *dup;
+
+					if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
+						switch_event_fire(&dup);
+					}
+						
+				}
+				
+				if (switch_core_session_queue_event(sth->session, &event) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Event queue failed!\n");
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+					switch_event_fire(&event);
+				}
+			}
+			
+			switch_safe_free(xmlstr);
+		}
+	}
+ done:
+	
+	switch_mutex_unlock(sth->mutex);
+	switch_core_session_rwunlock(sth->session);
+
+	return NULL;
+}
+
+static void speech_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
+{
+	struct speech_thread_handle *sth = (struct speech_thread_handle *) user_data;
+	uint8_t data[SWITCH_RECCOMMENDED_BUFFER_SIZE];
+	switch_frame_t frame = {0};
+	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
+
+	frame.data = data;
+	frame.buflen = SWITCH_RECCOMMENDED_BUFFER_SIZE;
+	
+	switch(type) {
+	case SWITCH_ABC_TYPE_INIT: {
+		switch_thread_t *thread;
+		switch_threadattr_t *thd_attr = NULL;
+
+		switch_threadattr_create(&thd_attr, sth->pool);
+		switch_threadattr_detach_set(thd_attr, 1);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+        switch_thread_create(&thread, thd_attr, speech_thread, sth, sth->pool);
+		
+	}
+		break;
+	case SWITCH_ABC_TYPE_CLOSE:
+		switch_core_asr_close(sth->ah, &flags);
+		switch_mutex_lock(sth->mutex);
+		switch_thread_cond_signal(sth->cond);
+		switch_mutex_unlock(sth->mutex);
+	case SWITCH_ABC_TYPE_READ:
+		if (sth->ah) {
+			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
+				if (switch_core_asr_feed(sth->ah, frame.data, frame.datalen, &flags) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Feeding Data\n");
+					return;
+				}
+				if (switch_core_asr_check_results(sth->ah, &flags) == SWITCH_STATUS_SUCCESS) {
+					switch_mutex_lock(sth->mutex);
+					switch_thread_cond_signal(sth->cond);
+					switch_mutex_unlock(sth->mutex);
+				}
+			}
+		}
+		break;
+	case SWITCH_ABC_TYPE_WRITE:
+		break;
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_stop_detect_speech(switch_core_session_t *session) 
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	struct speech_thread_handle *sth;
+
+	assert(channel != NULL);
+	if ((sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {
+		switch_channel_set_private(channel, SWITCH_SPEECH_KEY, NULL);
+		switch_core_media_bug_remove(session, &sth->bug);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	return SWITCH_STATUS_FALSE;
+	
+}
+
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_pause_detect_speech(switch_core_session_t *session) 
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	struct speech_thread_handle *sth;
+
+	assert(channel != NULL);
+	if ((sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {
+		switch_core_asr_pause(sth->ah);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	return SWITCH_STATUS_FALSE;
+	
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_resume_detect_speech(switch_core_session_t *session) 
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	struct speech_thread_handle *sth;
+
+	assert(channel != NULL);
+	if ((sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {
+		switch_core_asr_resume(sth->ah);
+		return SWITCH_STATUS_SUCCESS;
+	}
+	
+	return SWITCH_STATUS_FALSE;
+	
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_load_grammar(switch_core_session_t *session, char *grammar, char *path) 
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
+	struct speech_thread_handle *sth;
+
+	assert(channel != NULL);
+	if ((sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {		
+		if (switch_core_asr_load_grammar(sth->ah, grammar, path) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error loading Grammar\n");
+			switch_core_asr_close(sth->ah, &flags);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech_unload_grammar(switch_core_session_t *session, char *grammar) 
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
+	struct speech_thread_handle *sth;
+
+	assert(channel != NULL);
+	if ((sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {		
+		if (switch_core_asr_unload_grammar(sth->ah, grammar) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error unloading Grammar\n");
+			switch_core_asr_close(sth->ah, &flags);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			return SWITCH_STATUS_FALSE;
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *session,
+														 char *mod_name,
+														 char *grammar,
+														 char *path,
+														 char *dest,
+														 switch_asr_handle_t *ah)
+{
+	switch_channel_t *channel;
+	switch_codec_t *read_codec;
+	switch_status_t status;
+	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
+	struct speech_thread_handle *sth;
+	char *val;
+
+	if (!ah) {
+		if (!(ah = switch_core_session_alloc(session, sizeof(*ah)))) {
+			return SWITCH_STATUS_MEMERR;
+		}
+	}
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+    read_codec = switch_core_session_get_read_codec(session);
+    assert(read_codec != NULL);
+
+
+	if ((val = switch_channel_get_variable(channel, "fire_asr_events"))) {
+		switch_set_flag(ah, SWITCH_ASR_FLAG_FIRE_EVENTS);
+	}
+
+	if ((sth = switch_channel_get_private(channel, SWITCH_SPEECH_KEY))) {
+		if (switch_core_asr_load_grammar(sth->ah, grammar, path) != SWITCH_STATUS_SUCCESS) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error loading Grammar\n");
+            switch_core_asr_close(sth->ah, &flags);
+            return SWITCH_STATUS_FALSE;
+        }
+
+        return SWITCH_STATUS_SUCCESS;
+	}
+	
+	if (switch_core_asr_open(ah, 
+							 mod_name,
+							 "L16",
+							 read_codec->implementation->samples_per_second,
+							 dest,
+							 &flags,
+							 switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+
+		if (switch_core_asr_load_grammar(ah, grammar, path) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error loading Grammar\n");
+			switch_core_asr_close(ah, &flags);
+			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			return SWITCH_STATUS_FALSE;
+		}
+	} else {
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		return SWITCH_STATUS_FALSE;
+	}
+
+
+	sth = switch_core_session_alloc(session, sizeof(*sth));
+	sth->pool = switch_core_session_get_pool(session);
+	sth->session = session;
+	sth->ah = ah;
+	
+	if ((status = switch_core_media_bug_add(session,
+											speech_callback,
+											sth,
+											SMBF_READ_STREAM,
+											&sth->bug)) != SWITCH_STATUS_SUCCESS) {
+		switch_core_asr_close(ah, &flags);
+		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		return status;
+	}
+
+	switch_channel_set_private(channel, SWITCH_SPEECH_KEY, sth);
 	
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1130,7 +1436,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	int done = 0;
 	int lead_in_out = 10;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_TTS;
+	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	uint32_t rate = 0, samples = 0;
 
 	channel = switch_core_session_get_channel(session);
@@ -1323,7 +1629,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	int stream_id;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_handle_t sh;
-	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_TTS;
+	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 
 
 	channel = switch_core_session_get_channel(session);
@@ -1502,7 +1808,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				status = input_callback(session_a, event, SWITCH_INPUT_TYPE_EVENT, user_data, 0);
 			}
 
-			if (switch_core_session_receive_event(session_b, &event) != SWITCH_STATUS_SUCCESS) {
+			if (event->event_id != SWITCH_EVENT_MESSAGE || switch_core_session_receive_event(session_b, &event) != SWITCH_STATUS_SUCCESS) {
 				switch_event_destroy(&event);
 			}
 

@@ -167,6 +167,123 @@ static void tts_function(switch_core_session_t *session, char *data)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Done\n");
 }
 
+#if 1
+static void asrtest_function(switch_core_session_t *session, char *data)
+{
+	switch_ivr_detect_speech(session,
+							 "lumenvox",
+							 "demo",
+							 data,
+							 "127.0.0.1",
+							 NULL);
+}
+
+#else 
+static void asrtest_function(switch_core_session_t *session, char *data)
+{
+	switch_asr_handle_t ah = {0};
+	switch_asr_flag_t flags = SWITCH_ASR_FLAG_NONE;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *codec_name = "L16";
+	switch_codec_t codec = {0}, *read_codec;
+	switch_frame_t write_frame = {0}, *write_frame_p = NULL;
+	char xdata[1024] = "";
+
+	read_codec = switch_core_session_get_read_codec(session);
+	assert(read_codec != NULL);
+	
+
+	if (switch_core_asr_open(&ah, "lumenvox",
+							 read_codec->implementation->iananame,
+							 8000,
+							 "127.0.0.1",
+							 &flags,
+							 switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+		if (strcmp(ah.codec, read_codec->implementation->iananame)) {
+			if (switch_core_codec_init(&codec,
+									   ah.codec,
+									   NULL,
+									   ah.rate,
+									   read_codec->implementation->microseconds_per_frame / 1000,
+									   read_codec->implementation->number_of_channels,
+									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+									   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
+				switch_core_session_set_read_codec(session, &codec);		
+				write_frame.data = xdata;
+				write_frame.buflen = sizeof(xdata);
+				write_frame.codec = &codec;
+				write_frame_p = &write_frame;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Activation Failed %s@%uhz %u channels %dms\n",
+								  codec_name, read_codec->implementation->samples_per_second, read_codec->implementation->number_of_channels,
+								  read_codec->implementation->microseconds_per_frame / 1000);
+				switch_core_session_reset(session);
+				return;
+			}
+		}
+		
+		
+		if (switch_core_asr_load_grammar(&ah, "demo", "/opt/lumenvox/engine_7.0/Lang/BuiltinGrammars/ABNFPhone.gram") != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error loading Grammar\n");
+			goto end;
+		}
+		
+		while(switch_channel_ready(channel)) {
+			switch_frame_t *read_frame;
+			switch_status_t status = switch_core_session_read_frame(session, &read_frame, -1, 0);
+			char *xmlstr = NULL;
+			switch_xml_t xml = NULL, result;
+ 
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				break;
+			}
+			
+			if (switch_test_flag(read_frame, SFF_CNG)) {
+				continue;
+			}
+
+			if (switch_core_asr_feed(&ah, read_frame->data, read_frame->datalen, &flags) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Feeding Data\n");
+				break;
+			}
+			
+			if (switch_core_asr_check_results(&ah, &flags) == SWITCH_STATUS_SUCCESS) {
+				if (switch_core_asr_get_results(&ah, &xmlstr, &flags) != SWITCH_STATUS_SUCCESS) {
+					break;
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RAW XML\n========\n%s\n", xmlstr);
+
+				if ((xml = switch_xml_parse_str(xmlstr, strlen(xmlstr))) && (result = switch_xml_child(xml, "result"))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Results [%s]\n", result->txt);
+					switch_xml_free(xml);
+				}
+				switch_safe_free(xmlstr);
+			}
+			
+			if (write_frame_p) {
+				write_frame.datalen = read_frame->datalen;
+				switch_core_session_write_frame(session, write_frame_p, -1, 0);
+			} else {
+				memset(read_frame->data, 0, read_frame->datalen);
+				switch_core_session_write_frame(session, read_frame, -1, 0);
+			}
+		}
+
+	end:
+		if (write_frame_p) {
+			switch_core_session_set_read_codec(session, read_codec);
+			switch_core_codec_destroy(&codec);
+		}
+
+		switch_core_asr_close(&ah, &flags);
+		switch_core_session_reset(session);
+	}
+
+}
+
+#endif
+
 static void ivrtest_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
@@ -272,13 +389,20 @@ static const switch_application_interface_t ivrtest_application_interface = {
 	/*.next*/ &dirtest_application_interface
 };
 
+static const switch_application_interface_t asrtest_application_interface = {
+	/*.interface_name */ "asrtest",
+	/*.application_function */ asrtest_function,
+	NULL, NULL, NULL,
+	/*.next*/ &ivrtest_application_interface
+};
+
 static const switch_loadable_module_interface_t mod_ivrtest_module_interface = {
 	/*.module_name = */ modname,
 	/*.endpoint_interface = */ NULL,
 	/*.timer_interface = */ NULL,
 	/*.dialplan_interface = */ NULL,
 	/*.codec_interface = */ NULL,
-	/*.application_interface */ &ivrtest_application_interface
+	/*.application_interface */ &asrtest_application_interface
 };
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)

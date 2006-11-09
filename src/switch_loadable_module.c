@@ -51,6 +51,7 @@ struct switch_loadable_module_container {
 	switch_hash_t *api_hash;
 	switch_hash_t *file_hash;
 	switch_hash_t *speech_hash;
+	switch_hash_t *asr_hash;
 	switch_hash_t *directory_hash;
 	switch_hash_t *chat_hash;
 	switch_memory_pool_t *pool;
@@ -215,6 +216,20 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				switch_event_fire(&event);
 			}
 			switch_core_hash_insert(loadable_modules.speech_hash, (char *) ptr->interface_name, (void *) ptr);
+		}
+	}
+
+	if (new_module->module_interface->asr_interface) {
+		const switch_asr_interface_t *ptr;
+
+		for (ptr = new_module->module_interface->asr_interface; ptr; ptr = ptr->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Asr interface '%s'\n", ptr->interface_name);
+			if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "asr");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+				switch_event_fire(&event);
+			}
+			switch_core_hash_insert(loadable_modules.asr_hash, (char *) ptr->interface_name, (void *) ptr);
 		}
 	}
 
@@ -490,6 +505,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_core_hash_init(&loadable_modules.api_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.file_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.speech_hash, loadable_modules.pool);
+	switch_core_hash_init(&loadable_modules.asr_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.directory_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.chat_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
@@ -582,12 +598,18 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	for (hi = switch_hash_first(loadable_modules.pool, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Checking %s\t", module->module_interface->module_name);
+
 		if (module->switch_module_shutdown) {
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "(yes)\n");
-			module->switch_module_shutdown();
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping: %s\n", module->module_interface->module_name);
+			if (module->switch_module_shutdown() == SWITCH_STATUS_UNLOAD) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s unloaded.\n", module->module_interface->module_name);
+				apr_dso_unload(module->lib);
+				module->lib = NULL;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s shutdown.\n", module->module_interface->module_name);
+			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "(no)\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s has no shutdown routine\n", module->module_interface->module_name);
 		}
 	}
 
@@ -646,6 +668,11 @@ SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interf
 SWITCH_DECLARE(switch_speech_interface_t *) switch_loadable_module_get_speech_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.speech_hash, name);
+}
+
+SWITCH_DECLARE(switch_asr_interface_t *) switch_loadable_module_get_asr_interface(char *name)
+{
+	return switch_core_hash_find(loadable_modules.asr_hash, name);
 }
 
 SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_directory_interface(char *name)

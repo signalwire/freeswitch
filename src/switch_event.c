@@ -128,6 +128,7 @@ static char *EVENT_NAMES[] = {
 	"ROSTER",
 	"CODEC",
 	"BACKGROUND_JOB",
+	"DETECTED_SPEECH",
 	"ALL"
 };
 
@@ -539,15 +540,17 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 	switch_event_t *ep = *event;
 	switch_event_header_t *hp, *this;
 
-	for (hp = ep->headers; hp;) {
-		this = hp;
-		hp = hp->next;
-		FREE(this->name);
-		FREE(this->value);
-		FREE(this);
+	if (ep) {
+		for (hp = ep->headers; hp;) {
+			this = hp;
+			hp = hp->next;
+			FREE(this->name);
+			FREE(this->value);
+			FREE(this);
+		}
+		FREE(ep->body);
+		FREE(ep);
 	}
-	FREE(ep->body);
-	FREE(ep);
 	*event = NULL;
 }
 
