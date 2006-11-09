@@ -35,7 +35,7 @@
 #define NORMFACT (float)0x8000
 #define MAXSAMPLE (float)0x7FFF
 #define MAXSAMPLEC (char)0x7F
-#define QUALITY 1
+#define QUALITY 0
 
 #ifndef MIN
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
