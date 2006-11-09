@@ -358,7 +358,6 @@ void *ldl_handle_get_private(ldl_handle_t *handle);
 /*!
   \brief Send a message to a session
   \param session the session handle
-  \param to the message recipiant
   \param subject optional subject
   \param body body of the message
 */
@@ -472,6 +471,8 @@ int8_t ldl_handle_ready(ldl_handle_t *handle);
   \param handle the Dingaling handle to initialize
   \param login the xmpp login
   \param password the password
+  \param server the server address
+  \param flags user flags
   \param status_msg status message to advertise
   \param loop_callback optional loop callback
   \param session_callback function to call on session signalling
