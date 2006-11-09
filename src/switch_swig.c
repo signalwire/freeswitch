@@ -206,13 +206,14 @@ int fs_ivr_play_file2(switch_core_session_t *session,
 
 
 int fs_switch_ivr_collect_digits_callback (switch_core_session_t *session,
-							switch_input_callback_function_t dtmf_callback,
-							void *buf,
-							unsigned int buflen)
+										   switch_input_callback_function_t dtmf_callback,
+										   void *buf,
+										   unsigned int buflen,
+										   unsigned int timeout)
 {
         switch_status_t status;
 
-        status = switch_ivr_collect_digits_callback(session, dtmf_callback, buf, buflen);
+        status = switch_ivr_collect_digits_callback(session, dtmf_callback, buf, buflen, timeout);
         return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
