@@ -169,7 +169,8 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, char *file
 	int ret = 0;
 	va_list ap;
 	FILE *handle;
-	char *filep = switch_cut_path(file);
+	char *filep = (file ? switch_cut_path(file): "");
+	const char *funcp = (func ? func : "");
 	char *content = NULL;
 	switch_time_t now = switch_time_now();
 	uint32_t len;
@@ -186,9 +187,9 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, char *file
 		switch_time_exp_lt(&tm, now);
 		switch_strftime(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 		
-		len = (uint32_t)(strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(func) + strlen(fmt));
+		len = (uint32_t)(strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(funcp) + strlen(fmt));
 		new_fmt = malloc(len+1);
-		snprintf(new_fmt, len, extra_fmt, date, LEVELS[level], filep, line, func, 128, fmt);
+		snprintf(new_fmt, len, extra_fmt, date, LEVELS[level], filep, line, funcp, 128, fmt);
 		fmt = new_fmt;
 	}
 
@@ -216,7 +217,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, char *file
 				if (switch_event_running() == SWITCH_STATUS_SUCCESS && switch_event_create(&event, SWITCH_EVENT_LOG) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Data", "%s", data);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-File", "%s", filep);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", func);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Function", "%s", funcp);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Line", "%d", line);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Log-Level", "%d", (int)level);
 					switch_event_fire(&event);
@@ -231,7 +232,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, char *file
 				if ((node = malloc(sizeof(*node)))) {
 					node->data = data;
 					node->file = strdup(filep);
-					node->func = strdup(func);
+					node->func = strdup(funcp);
 					node->line = line;
 					node->level = level;
 					node->content = content;

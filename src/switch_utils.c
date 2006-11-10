@@ -167,13 +167,17 @@ SWITCH_DECLARE(char *) switch_cut_path(char *in)
 	char delims[] = "/\\";
 	char *i;
 
-	for (i = delims; *i; i++) {
-		p = in;
-		while ((p = strchr(p, *i)) != 0) {
-			ret = ++p;
+	if (in) {
+		for (i = delims; *i; i++) {
+			p = in;
+			while ((p = strchr(p, *i)) != 0) {
+				ret = ++p;
+			}
 		}
+		return ret;
+	} else {
+		return NULL;
 	}
-	return ret;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t *poll, switch_socket_t *sock,
