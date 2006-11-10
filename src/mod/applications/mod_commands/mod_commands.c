@@ -287,8 +287,16 @@ static switch_status_t uuid_broadcast_function(char *cmd, switch_core_session_t 
 	} else {
 		switch_media_flag_t flags = SMF_NONE;
 
-		if (argv[2] && !strcmp(argv[2], "both")) {
-			flags |= SMF_ECHO_BRIDGED;
+		if (argv[2]) {
+			if (!strcmp(argv[2], "both")) {
+				flags |= (SMF_ECHO_ALEG | SMF_ECHO_BLEG);
+			} else if (!strcmp(argv[2], "aleg")) {
+				flags |= SMF_ECHO_ALEG;
+			} else if (!strcmp(argv[2], "bleg")) {
+				flags |= SMF_ECHO_BLEG;
+			}
+		} else {
+			flags |= SMF_ECHO_ALEG;
 		}
 		
 		status = switch_ivr_broadcast(argv[0], argv[1], flags);

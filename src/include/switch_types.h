@@ -87,15 +87,16 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_REMOTE_MEDIA_IP_VARIABLE "_remote_media_ip_"
 #define SWITCH_REMOTE_MEDIA_PORT_VARIABLE "_remote_media_port_"
 #define SWITCH_SPEECH_KEY "_speech_"
-
+#define SWITCH_UUID_BRIDGE "_uuid_bridge_"
 #define SWITCH_BITS_PER_BYTE 8
 typedef uint8_t switch_byte_t;
 
 typedef enum {
 	SMF_NONE = 0,
 	SMF_REBRIDGE = (1 << 0),
-	SMF_ECHO_BRIDGED = (1 << 1),
-	SMF_FORCE = (1 << 2)
+	SMF_ECHO_ALEG = (1 << 1),
+	SMF_ECHO_BLEG = (1 << 2),
+	SMF_FORCE = (1 << 3),
 } switch_media_flag_t;
 
 typedef enum {

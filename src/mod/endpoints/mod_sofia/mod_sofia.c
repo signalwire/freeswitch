@@ -146,7 +146,7 @@ typedef enum {
 
 typedef enum {
 	TFLAG_IO = (1 << 0),
-	TFLAG_USEME = (1 << 1),
+	TFLAG_CHANGE_MEDIA = (1 << 1),
 	TFLAG_OUTBOUND = (1 << 2),
 	TFLAG_READING = (1 << 3),
 	TFLAG_WRITING = (1 << 4),
@@ -1773,7 +1773,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (!tech_pvt->local_sdp_str) {
 			tech_absorb_sdp(tech_pvt);
 		}
-
 		do_invite(session);
 	}
 		break;
@@ -2403,11 +2402,15 @@ static void sip_i_message(int status,
 	}
 }
 
-static void pass_sdp(switch_channel_t *channel, char *sdp) 
+static void pass_sdp(private_object_t *tech_pvt, char *sdp) 
 {
 	char *val;
+	switch_channel_t *channel;
 	switch_core_session_t *other_session;
 	switch_channel_t *other_channel;
+	
+	channel = switch_core_session_get_channel(tech_pvt->session);
+	assert(channel != NULL);
 	
 	if ((val = switch_channel_get_variable(channel, SWITCH_ORIGINATOR_VARIABLE)) && (other_session = switch_core_session_locate(val))) {
 		other_channel = switch_core_session_get_channel(other_session);
@@ -2415,12 +2418,13 @@ static void pass_sdp(switch_channel_t *channel, char *sdp)
 		if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 			switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
 		}
-		if (
+		if (!switch_test_flag(tech_pvt, TFLAG_CHANGE_MEDIA) && (
 			switch_channel_test_flag(other_channel, CF_OUTBOUND) && 
 			switch_channel_test_flag(other_channel, CF_NOMEDIA) && 
 			switch_channel_test_flag(channel, CF_OUTBOUND) && 
-			switch_channel_test_flag(channel, CF_NOMEDIA)) {
+			switch_channel_test_flag(channel, CF_NOMEDIA))) {
 			switch_ivr_nomedia(val, SMF_FORCE);
+			switch_set_flag_locked(tech_pvt, TFLAG_CHANGE_MEDIA);
 		}
 		
 		switch_core_session_rwunlock(other_session);
@@ -2481,7 +2485,7 @@ static void sip_i_state(int status,
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);			
 			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, (char *)r_sdp);
 			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, (char *) r_sdp);
-			pass_sdp(channel, (char *) r_sdp);
+			pass_sdp(tech_pvt, (char *) r_sdp);
 
 		}
 	}
@@ -2639,7 +2643,6 @@ static void sip_i_state(int status,
 		if (tech_pvt && r_sdp) {
 			if (r_sdp) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "What should i do?\n%s\n", r_sdp);
 					return;
 				} else {
 					sdp_parser_t *parser = sdp_parse(tech_pvt->home, r_sdp, (int)strlen(r_sdp), 0);
