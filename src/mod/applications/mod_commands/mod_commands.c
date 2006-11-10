@@ -674,7 +674,7 @@ static switch_api_interface_t broadcast_api_interface = {
 	/*.interface_name */ "broadcast",
 	/*.desc */ "broadcast",
 	/*.function */ uuid_broadcast_function,
-	/*.syntax */ "<uuid> <path> [both]",
+	/*.syntax */ "<uuid> <path> [aleg|bleg|both]",
 	/*.next */ &hold_api_interface
 };
 
