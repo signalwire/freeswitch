@@ -675,9 +675,6 @@ static switch_status_t js_collect_input_callback(switch_core_session_t *session,
 	}
 
 	return SWITCH_STATUS_BREAK;
-
-
-	return SWITCH_STATUS_SUCCESS;
 }
 
 static JSBool session_flush_digits(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
