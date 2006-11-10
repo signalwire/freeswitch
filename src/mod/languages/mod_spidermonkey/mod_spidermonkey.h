@@ -1,0 +1,89 @@
+/* 
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthmct@yahoo.com>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * 
+ * Anthony Minessale II <anthmct@yahoo.com>
+ *
+ *
+ * mod_spidermonkey.h -- Javascript Module
+ *
+ */
+#ifndef SWITCH_MOD_SPIDERMONKEY_H
+#define SWITCH_MOD_SPIDERMONKEY_H
+
+
+#include <switch.h>
+#include "jstypes.h"
+#include "jsarena.h"
+#include "jsutil.h"
+#include "jsprf.h"
+#include "jsapi.h"
+#include "jsatom.h"
+#include "jscntxt.h"
+#include "jsdbgapi.h"
+#include "jsemit.h"
+#include "jsfun.h"
+#include "jsgc.h"
+#include "jslock.h"
+#include "jsobj.h"
+#include "jsparse.h"
+#include "jsscope.h"
+#include "jsscript.h"
+#include <libteletone.h>
+
+SWITCH_BEGIN_EXTERN_C
+
+#define JS_BUFFER_SIZE 1024 * 32
+#define JS_BLOCK_SIZE JS_BUFFER_SIZE
+#ifdef __ICC
+#pragma warning (disable:310 193 1418)
+#endif
+
+
+SWITCH_DECLARE(int) eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval);
+
+typedef switch_status_t(*spidermonkey_load_t)(JSContext *cx, JSObject *obj);
+
+struct sm_module_interface {
+	const char *name;
+	spidermonkey_load_t spidermonkey_load;
+	const struct sm_module_interface *next;
+};
+
+typedef struct sm_module_interface sm_module_interface_t;
+typedef switch_status_t(*spidermonkey_init_t)(const sm_module_interface_t **module_interface);
+
+struct js_session {
+	switch_core_session_t *session;
+	JSContext *cx;
+	JSObject *obj;
+	unsigned int flags;
+};
+
+
+
+SWITCH_END_EXTERN_C
+
+#endif
+

@@ -32,30 +32,8 @@
 #ifndef HAVE_CURL
 #define HAVE_CURL
 #endif
-#define JS_BUFFER_SIZE 1024 * 32
-#define JS_BLOCK_SIZE JS_BUFFER_SIZE
-#ifdef __ICC
-#pragma warning (disable:310 193 1418)
-#endif
-#include <switch.h>
+#include "mod_spidermonkey.h"
 
-#include "jstypes.h"
-#include "jsarena.h"
-#include "jsutil.h"
-#include "jsprf.h"
-#include "jsapi.h"
-#include "jsatom.h"
-#include "jscntxt.h"
-#include "jsdbgapi.h"
-#include "jsemit.h"
-#include "jsfun.h"
-#include "jsgc.h"
-#include "jslock.h"
-#include "jsobj.h"
-#include "jsparse.h"
-#include "jsscope.h"
-#include "jsscript.h"
-#include <libteletone.h>
 #ifdef HAVE_CURL
 #include <curl/curl.h>
 #endif
@@ -66,7 +44,7 @@
 
 static const char modname[] = "mod_spidermonkey";
 
-static int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval);
+
 static void session_destroy(JSContext *cx, JSObject *obj);
 static JSBool session_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval);
 static switch_api_interface_t js_run_interface;
@@ -89,9 +67,20 @@ static JSClass global_class = {
 	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  JS_FinalizeStub
 };
 
-typedef enum {
-	TTF_DTMF = (1 << 0)
-} teletone_flag_t;
+
+static struct {
+	switch_hash_t *mod_hash;
+	switch_hash_t *load_hash;
+    switch_memory_pool_t *pool;
+} module_manager;
+
+struct sm_loadable_module {
+	char *filename;
+	void *lib;
+	const sm_module_interface_t *module_interface;
+	spidermonkey_init_t spidermonkey_init;
+};
+typedef struct sm_loadable_module sm_loadable_module_t;
 
 typedef enum {
 	S_HUP = (1 << 0)
@@ -112,30 +101,6 @@ struct input_callback_state {
 	void *extra;
 };
 
-struct js_session {
-	switch_core_session_t *session;
-	JSContext *cx;
-	JSObject *obj;
-	unsigned int flags;
-};
-
-struct teletone_obj {
-	teletone_generation_session_t ts;
-	JSContext *cx;
-	JSObject *obj;
-	switch_core_session_t *session;
-	switch_codec_t codec;
-	switch_buffer_t *audio_buffer;
-	switch_buffer_t *loop_buffer;
-	switch_memory_pool_t *pool;
-	switch_timer_t *timer;
-	switch_timer_t timer_base;
-	JSFunction *function;
-	jsval arg;
-	jsval ret;
-	unsigned int flags;
-};
-
 struct fileio_obj {
 	char *path;
 	unsigned int flags;
@@ -145,18 +110,6 @@ struct fileio_obj {
 	switch_size_t buflen;
 	int32 bufsize;
 };
-
-struct db_obj {
-    switch_memory_pool_t *pool;
-    switch_core_db_t *db;
-    switch_core_db_stmt_t *stmt;
-    char *dbname;
-    char code_buffer[2048];
-    JSContext *cx;
-    JSObject *obj;
-};
-
-
 
 struct event_obj {
 	switch_event_t *event;
@@ -457,6 +410,164 @@ static void js_error(JSContext *cx, const char *message, JSErrorReport *report)
 	
 }
 
+
+static switch_status_t sm_load_file(char *filename, sm_loadable_module_t **new_module)
+{
+	sm_loadable_module_t *module = NULL;
+	apr_dso_handle_t *dso = NULL;
+	apr_status_t status = SWITCH_STATUS_SUCCESS;
+	apr_dso_handle_sym_t function_handle = NULL;
+	spidermonkey_init_t spidermonkey_init;
+	const sm_module_interface_t *module_interface, *mp;
+
+	int loading = 1;
+	const char *err = NULL;
+	char derr[512] = "";
+
+	assert(filename != NULL);
+
+	*new_module = NULL;
+	status = apr_dso_load(&dso, filename, module_manager.pool);
+
+	while (loading) {
+		if (status != APR_SUCCESS) {
+			apr_dso_error(dso, derr, sizeof(derr));
+			err = derr;
+			break;
+		}
+
+		status = apr_dso_sym(&function_handle, dso, "spidermonkey_init");
+		spidermonkey_init = (spidermonkey_init_t) function_handle;
+			
+		if (spidermonkey_init == NULL) {
+			err = "Cannot Load";
+			break;
+		}
+		
+		if (spidermonkey_init(&module_interface) != SWITCH_STATUS_SUCCESS) {
+			err = "Module load routine returned an error";
+			break;
+		}
+
+		if ((module = switch_core_permanent_alloc(sizeof(sm_loadable_module_t))) == 0) {
+			err = "Could not allocate memory\n";
+			break;
+		}
+
+		loading = 0;
+	}
+
+	if (err) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Error Loading module %s\n**%s**\n", filename, err);
+		return SWITCH_STATUS_GENERR;
+	}
+
+	module->filename = switch_core_permanent_strdup(filename);
+	module->spidermonkey_init = spidermonkey_init;
+	module->module_interface = module_interface;
+	
+	module->lib = dso;
+	*new_module = module;
+
+	switch_core_hash_insert(module_manager.mod_hash, (char *) module->filename, (void *) module);
+	
+	for (mp = module_interface; mp; mp = mp->next) {
+		switch_core_hash_insert(module_manager.load_hash, (char *)mp->name, (void *) mp);
+	}
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module->filename);
+	
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+static switch_status_t sm_load_module(char *dir, char *fname)
+{
+	switch_size_t len = 0;
+	char *path;
+	char *file;
+	sm_loadable_module_t *new_module = NULL;
+
+#ifdef WIN32
+	const char *ext = ".dll";
+#elif defined (MACOSX) || defined (DARWIN)
+	const char *ext = ".dylib";
+#else
+	const char *ext = ".so";
+#endif
+
+
+	if ((file = switch_core_strdup(module_manager.pool, fname)) == 0) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (*file == '/') {
+		path = switch_core_strdup(module_manager.pool, file);
+	} else {
+		if (strchr(file, '.')) {
+			len = strlen(dir);
+			len += strlen(file);
+			len += 4;
+			path = (char *) switch_core_alloc(module_manager.pool, len);
+			snprintf(path, len, "%s%s%s", dir, SWITCH_PATH_SEPARATOR, file);
+		} else {
+			len = strlen(dir);
+			len += strlen(file);
+			len += 8;
+			path = (char *) switch_core_alloc(module_manager.pool, len);
+			snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
+		}
+	}
+	
+	return sm_load_file(path, &new_module);
+}
+
+static switch_status_t load_modules(void)
+{
+	char *cf = "spidermonkey.conf";
+	switch_xml_t cfg, xml;
+	unsigned int count = 0;
+
+#ifdef WIN32
+	const char *ext = ".dll";
+	const char *EXT = ".DLL";
+#elif defined (MACOSX) || defined (DARWIN)
+	const char *ext = ".dylib";
+	const char *EXT = ".DYLIB";
+#else
+	const char *ext = ".so";
+	const char *EXT = ".SO";
+#endif
+
+	memset(&module_manager, 0, sizeof(module_manager));
+	switch_core_new_memory_pool(&module_manager.pool);
+
+	switch_core_hash_init(&module_manager.mod_hash, module_manager.pool);
+	switch_core_hash_init(&module_manager.load_hash, module_manager.pool);
+
+	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+		switch_xml_t mods, ld;
+
+		if ((mods = switch_xml_child(cfg, "modules"))) {
+			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
+				const char *val = switch_xml_attr_soft(ld, "module");
+				if (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
+					continue;
+				}
+				sm_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val);
+				count++;
+			}
+		}
+		switch_xml_free(xml);
+		
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "open of %s failed\n", cf);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t init_js(void)
 {
 	memset(&globals, 0, sizeof(globals));
@@ -469,6 +580,10 @@ static switch_status_t init_js(void)
 	globals.gOutFile = stdout;
 
 	if (!(globals.rt = JS_NewRuntime(64L * 1024L * 1024L))) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	if (load_modules() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1101,10 +1216,13 @@ static JSBool session_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 		char *app_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *app_arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		struct js_session *jss = JS_GetPrivate(cx, obj);
+		jsrefcount saveDepth;
 
 		if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 			if (application_interface->application_function) {
+				saveDepth = JS_SuspendRequest(cx);
 				application_interface->application_function(jss->session, app_arg);
+				JS_ResumeRequest(cx, saveDepth);
 				retval = JS_TRUE;
 			}
 		} 
@@ -1478,19 +1596,6 @@ static JSObject *new_js_session(JSContext *cx, JSObject *obj, switch_core_sessio
 	return NULL;
 }
 
-static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
-{
-	struct teletone_obj *tto = ts->user_data;
-	int wrote;
-
-	if (!tto) {
-		return -1;
-	}
-	wrote = teletone_mux_tones(ts, map);
-	switch_buffer_write(tto->audio_buffer, ts->buffer, wrote * 2);
-
-	return 0;
-}
 
 /* Session Object */
 /*********************************************************************************/
@@ -1821,527 +1926,6 @@ JSClass fileio_class = {
 };
 
 
-/* DB Object */
-/*********************************************************************************/
-static JSBool db_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-{
-	switch_memory_pool_t *pool;
-	switch_core_db_t *db;
-	struct db_obj *dbo;
-
-	if (argc > 0) {
-		char *dbname = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		switch_core_new_memory_pool(&pool);
-		if (! (db = switch_core_db_open_file(dbname))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Open DB!\n");
-			switch_core_destroy_memory_pool(&pool);
-			return JS_FALSE;
-		}
-		dbo = switch_core_alloc(pool, sizeof(*dbo));
-		dbo->pool = pool;
-		dbo->dbname = switch_core_strdup(pool, dbname);
-		dbo->cx = cx;
-		dbo->obj = obj;
-		dbo->db = db;
-		JS_SetPrivate(cx, obj, dbo);
-		return JS_TRUE;
-	}
-
-	return JS_FALSE;
-}
-
-static void db_destroy(JSContext *cx, JSObject *obj)
-{
-	struct db_obj *dbo = JS_GetPrivate(cx, obj);
-	
-	if (dbo) {
-		switch_memory_pool_t *pool = dbo->pool;
-		if (dbo->stmt) {
-			switch_core_db_finalize(dbo->stmt);
-			dbo->stmt = NULL;
-		}
-		switch_core_db_close(dbo->db);
-		switch_core_destroy_memory_pool(&pool);
-        pool = NULL;
-	}
-}
-
-
-static int db_callback(void *pArg, int argc, char **argv, char **columnNames)
-{
-	struct db_obj *dbo = pArg;
-	char code[1024];
-	jsval rval;
-	int x = 0;
-
-	snprintf(code, sizeof(code), "~var _Db_RoW_ = {}");
-	eval_some_js(code, dbo->cx, dbo->obj, &rval);
-
-	for(x=0; x < argc; x++) {
-		snprintf(code, sizeof(code), "~_Db_RoW_[\"%s\"] = \"%s\"", columnNames[x], argv[x]);
-		eval_some_js(code, dbo->cx, dbo->obj, &rval);
-	}
-
-	snprintf(code, sizeof(code), "~%s(_Db_RoW_)", dbo->code_buffer);
-	eval_some_js(code, dbo->cx, dbo->obj, &rval);
-
-	snprintf(code, sizeof(code), "~delete _Db_RoW_");
-	eval_some_js(code, dbo->cx, dbo->obj, &rval);
-	
-	return 0;
-}
-
-static JSBool db_exec(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-{
-    struct db_obj *dbo = JS_GetPrivate(cx, obj);
-    *rval = BOOLEAN_TO_JSVAL( JS_TRUE );
-
-    if (argc > 0) {
-        char *sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-        char *err = NULL;
-        void *arg = NULL;
-        switch_core_db_callback_func_t cb_func = NULL;
-
-
-        if (argc > 1) {
-            char *js_func = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-            switch_copy_string(dbo->code_buffer, js_func, sizeof(dbo->code_buffer));
-            cb_func = db_callback;
-            arg = dbo;
-        }
-
-        switch_core_db_exec(dbo->db, sql, cb_func, arg, &err);
-        if (err) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", err);
-            switch_core_db_free(err);
-            *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
-        }
-    }
-    return JS_TRUE;
-}
-
-
-static JSBool db_next(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-{
-	struct db_obj *dbo = JS_GetPrivate(cx, obj);
-	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
-	
-	if (dbo->stmt) {
-		int running = 1;
-
-		while (running < 5000) {
-			int result = switch_core_db_step(dbo->stmt);
-			if (result == SQLITE_ROW) {
-				*rval = BOOLEAN_TO_JSVAL( JS_TRUE );	
-				break;
-			} else if (result == SQLITE_BUSY) {
-				running++;
-				continue;
-			}
-			switch_core_db_finalize(dbo->stmt);
-			dbo->stmt = NULL;
-			break;
-		}
-	}
-
-	return JS_TRUE;
-}
-
-static JSBool db_fetch(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-{
-	struct db_obj *dbo = JS_GetPrivate(cx, obj);
-	int colcount = switch_core_db_column_count(dbo->stmt);
-	char code[1024];
-	int x;
-
-	snprintf(code, sizeof(code), "~var _dB_RoW_DaTa_ = {}");
-	eval_some_js(code, dbo->cx, dbo->obj, rval);
-	if (*rval == JS_FALSE) {
-		return JS_TRUE; 
-	}
-	for (x = 0; x < colcount; x++) {
-		snprintf(code, sizeof(code), "~_dB_RoW_DaTa_[\"%s\"] = \"%s\"", 
-				 (char *) switch_core_db_column_name(dbo->stmt, x),
-				 (char *) switch_core_db_column_text(dbo->stmt, x));
-
-		eval_some_js(code, dbo->cx, dbo->obj, rval);
-		if (*rval == JS_FALSE) {
-			return JS_TRUE; 
-		}
-	}
-
-	JS_GetProperty(cx, obj, "_dB_RoW_DaTa_", rval);
-
-	return JS_TRUE;
-}
-
-
-static JSBool db_prepare(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-{
-	struct db_obj *dbo = JS_GetPrivate(cx, obj);
-
-	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );	
-
-	if (dbo->stmt) {
-		switch_core_db_finalize(dbo->stmt);
-		dbo->stmt = NULL;
-	}
-
-	if (argc > 0) {		
-		char *sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-
-		if(switch_core_db_prepare(dbo->db, sql, 0, &dbo->stmt, 0)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", switch_core_db_errmsg(dbo->db));
-		} else {
-			*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
-		}
-	}
-	return JS_TRUE;
-}
-
-enum db_tinyid {
-	DB_NAME
-};
-
-static JSFunctionSpec db_methods[] = {
-	{"exec", db_exec, 1},
-	{"next", db_next, 0},
-	{"fetch", db_fetch, 1},
-	{"prepare", db_prepare, 0},
-	{0}
-};
-
-
-static JSPropertySpec db_props[] = {
-	{"path", DB_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
-	{0}
-};
-
-
-static JSBool db_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-{
-	JSBool res = JS_TRUE;
-	struct db_obj *dbo = JS_GetPrivate(cx, obj);
-	char *name;
-	int param = 0;
-	
-	name = JS_GetStringBytes(JS_ValueToString(cx, id));
-    /* numbers are our props anything else is a method */
-    if (name[0] >= 48 && name[0] <= 57) {
-        param = atoi(name);
-    } else {
-        return JS_TRUE;
-    }
-	
-	switch(param) {
-	case DB_NAME:
-		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, dbo->dbname));
-		break;
-	}
-
-	return res;
-}
-
-JSClass db_class = {
-	"DB", JSCLASS_HAS_PRIVATE, 
-	JS_PropertyStub,  JS_PropertyStub,	db_getProperty,  JS_PropertyStub, 
-	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  db_destroy, NULL, NULL, NULL,
-	db_construct
-};
-
-/* TeleTone Object */
-/*********************************************************************************/
-static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-{
-	int32 memory = 65535;
-	JSObject *session_obj;
-	struct teletone_obj *tto = NULL;
-	struct js_session *jss = NULL;
-	switch_codec_t *read_codec;
-	switch_memory_pool_t *pool;
-	char *timer_name = NULL;
-
-	if (argc > 0) {
-		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
-			if (!(jss = JS_GetPrivate(cx, session_obj))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Find Session [1]\n");
-				return JS_FALSE;
-			}
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Find Session [2]\n");
-			return JS_FALSE;
-		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Session Arg\n");
-		return JS_FALSE;
-	}
-	if (argc > 1) {
-		timer_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-	}
-
-	if (argc > 2) {
-		if (!JS_ValueToInt32(cx, argv[2], &memory)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Convert to INT\n");
-			return JS_FALSE;
-		}
-	} 
-	switch_core_new_memory_pool(&pool);
-
-	if (!(tto = switch_core_alloc(pool, sizeof(*tto)))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error\n");
-		return JS_FALSE;
-	}
-
-	read_codec = switch_core_session_get_read_codec(jss->session);
-
-	if (switch_core_codec_init(&tto->codec,
-							   "L16",
-							   NULL,
-							   read_codec->implementation->samples_per_second,
-							   read_codec->implementation->microseconds_per_frame / 1000,
-							   read_codec->implementation->number_of_channels,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
-							   NULL, pool) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed\n");
-		return JS_FALSE;
-	}
-
-	if (timer_name) {
-		unsigned int ms = read_codec->implementation->microseconds_per_frame / 1000;
-		if (switch_core_timer_init(&tto->timer_base,
-								   timer_name,
-								   ms,
-								   (read_codec->implementation->samples_per_second / 50) * read_codec->implementation->number_of_channels,
-								   pool) == SWITCH_STATUS_SUCCESS) {
-			tto->timer = &tto->timer_base;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timer INIT Success %u\n", ms);
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timer INIT Failed\n");
-		}
-	}
-
-	switch_buffer_create_dynamic(&tto->audio_buffer, JS_BLOCK_SIZE, JS_BUFFER_SIZE, 0);
-	tto->pool = pool;
-	tto->obj = obj;
-	tto->cx = cx;
-	tto->session = jss->session;
-	teletone_init_session(&tto->ts, memory, teletone_handler, tto);
-	JS_SetPrivate(cx, obj, tto);
-
-	return JS_TRUE;
-}
-
-static void teletone_destroy(JSContext *cx, JSObject *obj)
-{
-	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
-	switch_memory_pool_t *pool;
-	if (tto) {
-		if (tto->timer) {
-			switch_core_timer_destroy(tto->timer);
-		}
-		teletone_destroy_session(&tto->ts);
-		switch_buffer_destroy(&tto->audio_buffer);
-		switch_buffer_destroy(&tto->loop_buffer);
-		switch_core_codec_destroy(&tto->codec);
-		pool = tto->pool;
-		tto->pool = NULL;
-		if (pool) {
-			switch_core_destroy_memory_pool(&pool);
-		}
-	}
-}
-
-static JSBool teletone_add_tone(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-{
-	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
-	if (argc > 2) { 
-		int x;
-		char *fval;
-		char *map_str;
-		map_str = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-
-		for(x = 1; x < TELETONE_MAX_TONES; x++) {
-			fval = JS_GetStringBytes(JS_ValueToString(cx, argv[x]));
-			tto->ts.TONES[(int)*map_str].freqs[x-1] = strtod(fval, NULL);
-		}
-		return JS_TRUE;
-	}
-	
-	return JS_FALSE;
-}
-
-static JSBool teletone_on_dtmf(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-{
-	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
-	if (argc > 0) {
-		tto->function = JS_ValueToFunction(cx, argv[0]);
-		if (argc > 1) {
-			tto->arg = argv[1];
-		}
-		switch_set_flag(tto, TTF_DTMF);
-	}
-	return JS_TRUE;
-}
-
-static JSBool teletone_generate(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
-{
-	struct teletone_obj *tto = JS_GetPrivate(cx, obj);
-	int32 loops = 0;
-
-	if (argc > 0) {
-		char *script;
-		switch_core_session_t *session;
-		switch_frame_t write_frame = {0};
-		unsigned char *fdata[1024];
-		switch_frame_t *read_frame;
-		int stream_id;
-		switch_core_thread_session_t thread_session;
-		switch_channel_t *channel;
-
-		if (argc > 1) {
-			if (!JS_ValueToInt32(cx, argv[1], &loops)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Convert to INT\n");
-				return JS_FALSE;
-			}
-			loops--;
-			if (!tto->loop_buffer) {
-				switch_buffer_create_dynamic(&tto->loop_buffer, JS_BLOCK_SIZE, JS_BUFFER_SIZE, 0);
-			}
-		} 
-
-		if (tto->audio_buffer) {
-			switch_buffer_zero(tto->audio_buffer);
-		}
-		if (tto->loop_buffer) {
-			switch_buffer_zero(tto->loop_buffer);
-		}
-		tto->ts.debug = 1;
-		tto->ts.debug_stream = switch_core_get_console();
-
-		script = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		teletone_run(&tto->ts, script);
-
-		session = tto->session;
-		write_frame.codec = &tto->codec;
-		write_frame.data = fdata;
-
-		channel = switch_core_session_get_channel(session);
-		
-		if (tto->timer) {
-			for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
-				switch_core_service_session(session, &thread_session, stream_id);
-			}
-		}
-
-		for(;;) {
-
-			if (switch_test_flag(tto, TTF_DTMF)) {
-				char dtmf[128];
-				char *ret;
-
-				if (switch_channel_has_dtmf(channel)) {
-					uintN aargc = 0;
-					jsval aargv[4];
-
-					switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-					aargv[aargc++] = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, dtmf));
-					JS_CallFunction(cx, obj, tto->function, aargc, aargv, &tto->ret);
-					ret = JS_GetStringBytes(JS_ValueToString(cx, tto->ret));
-					if (strcmp(ret, "true") && strcmp(ret, "undefined")) {
-						*rval = tto->ret;
-						return JS_TRUE;
-					}
-				}
-			}
-			
-			if (tto->timer) {
-				if (switch_core_timer_next(tto->timer)< 0) {
-					break;
-				}
-
-			} else {
-				switch_status_t status;
-				status = switch_core_session_read_frame(session, &read_frame, -1, 0);
-				
-				if (!SWITCH_READ_ACCEPTABLE(status)) {
-					break;
-				}
-			}
-			if ((write_frame.datalen = (uint32_t)switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
-				if (loops) { 
-					switch_buffer_t *tmp;
-
-					/* Switcharoo*/
-					tmp = tto->audio_buffer;
-					tto->audio_buffer = tto->loop_buffer;
-					tto->loop_buffer = tmp;
-					loops--;
-					/* try again */
-					if ((write_frame.datalen = 
-						 (uint32_t)switch_buffer_read(tto->audio_buffer, fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
-						break;
-					}
-				} else {
-					break;
-				}
-			}
-
-			write_frame.samples = write_frame.datalen / 2;
-			for (stream_id = 0; stream_id < switch_core_session_get_stream_count(session); stream_id++) {
-				if (switch_core_session_write_frame(session, &write_frame, -1, stream_id) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bad Write\n");
-					break;
-				}
-			}
-			if (tto->loop_buffer && loops) {
-				switch_buffer_write(tto->loop_buffer, write_frame.data, write_frame.datalen);
-			}
-		}
-
-		if (tto->timer) {
-			switch_core_thread_session_end(&thread_session);
-		}
-		return JS_TRUE;
-	}
-	
-	return JS_FALSE;
-}
-
-enum teletone_tinyid {
-	TELETONE_NAME
-};
-
-static JSFunctionSpec teletone_methods[] = {
-	{"generate", teletone_generate, 1},
-	{"onDTMF", teletone_on_dtmf, 1},
-	{"addTone", teletone_add_tone, 10},	 
-	{0}
-};
-
-
-static JSPropertySpec teletone_props[] = {
-	{"name", TELETONE_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
-	{0}
-};
-
-
-static JSBool teletone_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
-{
-	JSBool res = JS_TRUE;
-
-	return res;
-}
-
-JSClass teletone_class = {
-	"TeleTone", JSCLASS_HAS_PRIVATE, 
-	JS_PropertyStub,  JS_PropertyStub,	teletone_getProperty,  JS_PropertyStub, 
-	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  teletone_destroy, NULL, NULL, NULL,
-	teletone_construct
-};
-
-
 /* Built-In*/
 /*********************************************************************************/
 static JSBool js_exit(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -2409,6 +1993,27 @@ static int write_buf(int fd, char *buf) {
 	}
 
 	return 1;
+}
+
+static JSBool js_api_use(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	char *mod_name = NULL;
+
+	if (argc > 0 && (mod_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
+		const sm_module_interface_t *mp;
+
+		if ((mp = switch_core_hash_find(module_manager.load_hash, mod_name))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading %s\n", mod_name);
+			mp->spidermonkey_load(cx, obj);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error loading %s\n", mod_name);
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Filename\n");
+	}
+
+	return JS_TRUE;
+	
 }
 
 static JSBool js_api_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -2632,6 +2237,7 @@ static JSFunctionSpec fs_functions[] = {
 	{"email", js_email, 2}, 
 	{"bridge", js_bridge, 2},
 	{"apiExecute", js_api_execute, 2},
+	{"use", js_api_use, 1},
 #ifdef HAVE_CURL
 	{"fetchURLHash", js_fetchurl_hash, 1}, 
 	{"fetchURLFile", js_fetchurl_file, 1}, 
@@ -2640,7 +2246,7 @@ static JSFunctionSpec fs_functions[] = {
 };
 
 
-static int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval) 
+SWITCH_DECLARE(int) eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
 {
 	JSScript *script = NULL;
 	char *cptr;
@@ -2676,17 +2282,6 @@ static int env_init(JSContext *cx, JSObject *javascript_object)
 
 	JS_InitStandardClasses(cx, javascript_object);
 				
-	JS_InitClass(cx,
-				 javascript_object,
-				 NULL,
-				 &teletone_class,
-				 teletone_construct,
-				 3,
-				 teletone_props,
-				 teletone_methods,
-				 teletone_props,
-				 teletone_methods
-				 );
 
 	JS_InitClass(cx,
 				 javascript_object,
@@ -2710,18 +2305,6 @@ static int env_init(JSContext *cx, JSObject *javascript_object)
 				 fileio_methods,
 				 fileio_props,
 				 fileio_methods
-				 );
-
-	JS_InitClass(cx,
-				 javascript_object,
-				 NULL,
-				 &db_class,
-				 db_construct,
-				 3,
-				 db_props,
-				 db_methods,
-				 db_props,
-				 db_methods
 				 );
 
 	JS_InitClass(cx,
@@ -2751,6 +2334,7 @@ static void js_parse_and_execute(switch_core_session_t *session, char *input_cod
 
 	
 	if ((cx = JS_NewContext(globals.rt, globals.gStackChunkSize))) {
+		JS_BeginRequest(cx);
 		JS_SetErrorReporter(cx, js_error);
 		javascript_global_object = JS_NewObject(cx, &global_class, NULL, NULL);
 		env_init(cx, javascript_global_object);
@@ -2878,7 +2462,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	if ((status = init_js()) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
-
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = &spidermonkey_module_interface;
 
