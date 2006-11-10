@@ -451,7 +451,7 @@ JSClass event_class = {
 static void js_error(JSContext *cx, const char *message, JSErrorReport *report)
 {
 	if (message) {
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *)report->filename, modname, report->lineno, SWITCH_LOG_ERROR,
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, report->filename ? (char *)report->filename : "mod_spidermonkey.c", modname, report->lineno, SWITCH_LOG_ERROR,
 						  "%s %s%s\n", message, report->linebuf ? "near " : "", report->linebuf ? report->linebuf : "");
 	}
 	
