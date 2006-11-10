@@ -155,19 +155,19 @@ function SpeechDetect(session, mod, ip) {
 			if (!_this.grammar_name) {
 				console_log("error", "No Grammar name!\n");
 				_this.session.hangup();
-				return;
+				return false;
 			}
 			var grammar_object = _this.grammar_hash[_this.grammar_name];
 			
 			if (!grammar_object) {
 				console_log("error", "Can't find grammar for " + _this.grammar_name + "\n");
 				_this.session.hangup();
-				return;
+				return false;
 			}
 
 			if (speech_type == "begin-speaking") {
 				if (grammar_object.halt) {
-					return;
+					return false;
 				}
 			} else {
 				var body = inputEvent.getBody();
@@ -176,29 +176,27 @@ function SpeechDetect(session, mod, ip) {
 				_this.lastDetect = body;
 				
 				if (_this.debug) {
-					console_log("debug", "----XML:\n" + body);
+					console_log("debug", "----XML:\n" + body + "\n");
 					console_log("debug", "----Heard [" + interp.input + "]\n");
-					console_log("debug", "----Hit score " + interp.@score + "\n");
+					console_log("debug", "----Hit score " + interp.@score + "/" + grammar_object.min_score + "/" + grammar_object.confirm_score + "\n");
 				}
-
-				if (interp.@score < grammar_object.min_score) {
-					delete interp;
-					rv.push("_no_idea_");
-					return rv;
-				} else {
+				
+				if (interp.@score >= grammar_object.min_score) {
 					if (interp.@score < grammar_object.confirm_score) {
 						rv.push("_confirm_");
 					}
 
 					eval("xo = interp." + grammar_object.obj_path + ";");
-					
 					for (x = 0; x < xo.length(); x++) {
 						rv.push(xo[x]);
 					}
-
-					delete interp;
-					return rv;
+				} else {
+					rv.push("_no_idea_");
 				}
+
+				console_log("debug", "dammit: " + rv + "\n");
+				delete interp;
+				return rv;
 			}
 		}
 	}
@@ -331,16 +329,27 @@ function SpeechObtainer(asr, req, wait_time) {
 	this.react = function(say_str, play_str) {
 		var rv;
 
-		this.asr.resume();
-		if (this.tts_eng && this.tts_voice) {
-			rv = this.speak(say_str);
-		} else {
-			rv = this.streamFile(play_str);
+
+		if (!rv) {
+			rv = this.asr.session.collectInput(this.asr.onInput, this.asr, 500);
 		}
+		if (!rv) {
+			this.asr.resume();
+			if (this.tts_eng && this.tts_voice) {
+				rv = this.speak(say_str);
+			} else {
+				rv = this.streamFile(play_str);
+			}
+		}
+
 		if (!rv) {
 			rv = this.asr.session.collectInput(this.asr.onInput, this.asr, 500);
 		}
 		
+		if (rv && !rv[0]) {
+			rv = false;
+		}
+
 		return rv;
 	}
 
@@ -374,8 +383,16 @@ function SpeechObtainer(asr, req, wait_time) {
 			}
 			hit = false;
 			if (rv) {
-				for (y = 0; y < rv.length; y++) {
-					if (rv[y] == "_confirm_") {
+				var items = rv;
+				rv = undefined;
+				for (y = 0; y < items.length; y++) {
+					if (items[y] == "_no_idea_") {
+						if (this.debug) {
+							console_log("debug", "----We don't understand this\n");
+						}
+						break;
+					}
+					if (items[y] == "_confirm_") {
 						this.needConfirm = true;
 						if (this.debug) {
 							console_log("debug", "----We need to confirm this one\n");
@@ -385,10 +402,10 @@ function SpeechObtainer(asr, req, wait_time) {
 					
 					for(x = 0 ; x < this.index; x++) {
 						if (this.debug) {
-							console_log("debug", "----Testing " + rv[y] + " =~ [" + this.items[x] + "]\n");
+							console_log("debug", "----Testing [" + y + "] [" + x + "] " + items[y] + " =~ [" + this.items[x] + "]\n");
 						}
 						var re = new RegExp(this.items[x]);
-						match = re.exec(rv[y]);
+						match = re.exec(items[y]);
 						if (match) {
 							for (i = 0; i < match.length; i++) {
 								dup = false;
@@ -419,7 +436,7 @@ function SpeechObtainer(asr, req, wait_time) {
 			}
 
 			if (!rv) {
-				rv = this.asr.session.collectInput(this.asr.onInput, this.asr, 500);
+				rv = this.asr.session.collectInput(this.asr.onInput, this.asr, 1000);
 			}
 
 			if (!rv && !hit && !dup) {

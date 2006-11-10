@@ -547,7 +547,8 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 	if ((status = js_common_callback(session, input, itype, buf, buflen)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
-	
+
+
 	if ((ret = JS_GetStringBytes(JS_ValueToString(cb_state->cx, cb_state->ret)))) {
 		if (!strncasecmp(ret, "speed", 4)) {
 			char *p;
@@ -611,10 +612,11 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 		}
 
 		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
-			return SWITCH_STATUS_SUCCESS;
-		}
+            return SWITCH_STATUS_SUCCESS;
+        }
 
 		return SWITCH_STATUS_BREAK;
+
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -646,10 +648,11 @@ static switch_status_t js_record_input_callback(switch_core_session_t *session, 
 		}
 
 		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
-			return SWITCH_STATUS_SUCCESS;
-		}
-	
+            return SWITCH_STATUS_SUCCESS;
+        }
+
 		return SWITCH_STATUS_BREAK;
+
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -669,8 +672,10 @@ static switch_status_t js_collect_input_callback(switch_core_session_t *session,
 		if (!strcmp(ret, "true") || !strcmp(ret, "undefined")) {
 			return SWITCH_STATUS_SUCCESS;
 		}
-		return SWITCH_STATUS_BREAK;
 	}
+
+	return SWITCH_STATUS_BREAK;
+
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -749,7 +754,7 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 
 	memset(&fh, 0, sizeof(fh));
 	cb_state.extra = &fh;
-
+	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
 	switch_ivr_record_file(jss->session, &fh, file_name, dtmf_func, bp, len);
 	*rval = cb_state.ret;
 
@@ -794,7 +799,7 @@ static JSBool session_collect_input(JSContext *cx, JSObject *obj, uintN argc, js
 	}
 
 	switch_ivr_collect_digits_callback(jss->session, dtmf_func, bp, len, to);
-	*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, cb_state.ret_buffer));
+	*rval = cb_state.ret;
 
 	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
 }
@@ -848,7 +853,7 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 
 	memset(&fh, 0, sizeof(fh));
 	cb_state.extra = &fh;
-
+	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
 	switch_ivr_play_file(jss->session, &fh, file_name, timer_name, dtmf_func, bp, len);
 	*rval = cb_state.ret;
 	
@@ -948,8 +953,8 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 		}
 	}
 
-	if (argc > 4) {
-		timer_name = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
+	if (argc > 5) {
+		timer_name = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
 	}
 
 	if (!tts_name && text) {
@@ -957,6 +962,7 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	}
 
 	codec = switch_core_session_get_read_codec(jss->session);
+	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
 	switch_ivr_speak_text(jss->session,
 						  tts_name,
 						  voice_name && strlen(voice_name) ? voice_name : NULL, 
