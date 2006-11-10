@@ -1786,7 +1786,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		}
 		set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
 		do_invite(session);
-		while (!switch_rtp_ready(tech_pvt->rtp_session)) {
+		while (!switch_rtp_ready(tech_pvt->rtp_session) && switch_channel_get_state(channel) < CS_HANGUP) {
 			switch_yield(1000);
 		}
 	}
