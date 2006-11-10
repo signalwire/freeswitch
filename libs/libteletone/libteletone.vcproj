@@ -17,7 +17,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)Debug"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="1"
@@ -66,6 +66,7 @@
 				OptimizeReferences="1"
 				EnableCOMDATFolding="1"
 				OptimizeForWindows98="1"
+				ImportLibrary="$(IntDir)/$(TargetName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -94,7 +95,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(ConfigurationName)"
+			OutputDirectory="$(SolutionDir)Release"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="1"
@@ -138,6 +139,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				ModuleDefinitionFile="$(InputDir)teletone.def"
+				ImportLibrary="$(IntDir)/$(TargetName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
