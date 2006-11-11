@@ -345,24 +345,18 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 				if (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 					char hbuf[512];
 					switch_event_t *event = (switch_event_t *) pop;
-					char *etype, *packet, *xmlstr = NULL;
-
-					if (!listener->ebuf) {
-						listener->ebuf = switch_core_alloc(listener->pool, CMD_BUFLEN);
-					}
+					char *etype;
 
 					do_sleep = 0;
 					if (listener->format == EVENT_FORMAT_PLAIN) {
 						etype = "plain";
-						switch_event_serialize(event, listener->ebuf, CMD_BUFLEN, NULL);
-						packet = listener->ebuf;
+						switch_event_serialize(event, &listener->ebuf);
 					} else {
 						switch_xml_t xml;
 						etype = "xml";
 
 						if ((xml = switch_event_xmlize(event, NULL))) {
-							xmlstr = switch_xml_toxml(xml);
-							packet = xmlstr;
+							listener->ebuf = switch_xml_toxml(xml);
 							switch_xml_free(xml);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "XML ERROR!\n");
@@ -370,7 +364,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 						}
 					}
 			
-					len = strlen(packet);
+					len = strlen(listener->ebuf);
 
 					snprintf(hbuf, sizeof(hbuf), "Content-Length: %"APR_SSIZE_T_FMT"\n" 
 							 "Content-Type: text/event-%s\n"
@@ -379,12 +373,10 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					len = strlen(hbuf);
 					switch_socket_send(listener->sock, hbuf, &len);
 
-					len = strlen(packet);
-					switch_socket_send(listener->sock, packet, &len);
+					len = strlen(listener->ebuf);
+					switch_socket_send(listener->sock, listener->ebuf, &len);
 
-					if (xmlstr) {
-						free(xmlstr);
-					}
+					switch_safe_free(listener->ebuf);
 				}
 			}
 		}
@@ -392,7 +384,9 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			switch_yield(1000);
 		}
 	}
-	
+
+
+
 	return status;
 
 }

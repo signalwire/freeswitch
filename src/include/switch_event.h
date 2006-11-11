@@ -238,13 +238,11 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(char *own
 /*!
   \brief Render a string representation of an event sutable for printing or network transport 
   \param event the event to render
-  \param buf a string buffer to write the data to
-  \param buflen the size in bytes of the buffer
-  \param fmt optional body of the event (varargs see standard sprintf family)
+  \param str a string pointer to point at the allocated data
   \return SWITCH_STATUS_SUCCESS if the operation was successful
-  \note the body supplied by this function will supersede an existing body the event may have
+  \note you must free the resulting string when you are finished with it
 */
-SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char *buf, switch_size_t buflen, char *fmt, ...);
+SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char **str);
 
 /*!
   \brief Render a XML representation of an event sutable for printing or network transport

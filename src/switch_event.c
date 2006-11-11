@@ -596,55 +596,59 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char *buf, switch_size_t buflen, char *fmt, ...)
+SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, char **str)
 {
 	switch_size_t len = 0;
 	switch_event_header_t *hp;
-	char *data = NULL, *body = NULL;
-	int ret = 0;
-	va_list ap;
+	switch_size_t llen = 0, dlen = 0, blocksize = 512;
+	char *buf;
+	
+	*str = NULL;
 
-	if (fmt) {
-		va_start(ap, fmt);
-#ifdef HAVE_VASPRINTF
-		ret = vasprintf(&data, fmt, ap);
-#else
-		data = (char *) malloc(2048);
-		ret = vsnprintf(data, 2048, fmt, ap);
-#endif
-		va_end(ap);
-		if (ret == -1) {
-			return SWITCH_STATUS_MEMERR;
-		}
+	if (!(buf = malloc(blocksize))) {
+		return SWITCH_STATUS_MEMERR;
 	}
+
+	dlen = blocksize;
 
 	for (hp = event->headers; hp; hp = hp->next) {
-		snprintf(buf + len, buflen - len, "%s: %s\n", hp->name, hp->value);
+		llen = strlen(hp->name) + strlen(hp->value) + 2;
+		
+		if ((len + llen) > dlen) {
+			dlen += (blocksize + (len + llen));
+			buf = realloc(buf, dlen);
+		}
+
+		snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, hp->value);
 		len = strlen(buf);
-
 	}
 
-	if (data) {
-		body = data;
-	} else if (event->body) {
-		body = event->body;
-	}
+	if (event->body) {
+		int blen = (int) strlen(event->body);
+		llen = blen;
 
-	if (body) {
-		int blen = (int) strlen(body);
 		if (blen) {
-			snprintf(buf + len, buflen - len, "Content-Length: %d\n\n%s", blen, body);
+			llen += 25;
 		} else {
-			snprintf(buf + len, buflen - len, "\n");
+			llen += 5;
+		}
+		
+		if ((len + llen) > dlen) {
+			dlen += (blocksize + (len + llen));
+			buf = realloc(buf, dlen);
+		}
+
+		if (blen) {
+			snprintf(buf + len, dlen - len, "Content-Length: %d\n\n%s", blen, event->body);
+		} else {
+			snprintf(buf + len, dlen - len, "\n");
 		}
 	} else {
-		snprintf(buf + len, buflen - len, "\n");
+		snprintf(buf + len, dlen - len, "\n");
 	}
 
-	if (data) {
-		free(data);
-	}
-
+	*str = buf;
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 

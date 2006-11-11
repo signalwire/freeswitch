@@ -60,7 +60,7 @@ static struct {
 
 static void event_handler(switch_event_t *event)
 {
-	char buf[1024];
+	char *buf;
 	iks *msg;
 	int loops = 0;
 
@@ -78,12 +78,13 @@ static void event_handler(switch_event_t *event)
 
 	switch (event->event_id) {
 	default:
-		switch_event_serialize(event, buf, sizeof(buf), NULL);
+		switch_event_serialize(event, &buf);
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT\n--------------------------------\n%s\n", buf);
 		msg = iks_make_msg(IKS_TYPE_NONE, globals.target_jid, buf);
 		iks_insert_attrib(msg, "subject", "Event");
 		iks_send(globals.session.parser, msg);
 		iks_delete(msg);
+		switch_safe_free(buf);
 		break;
 	}
 }

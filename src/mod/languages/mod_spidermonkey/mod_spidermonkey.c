@@ -264,7 +264,7 @@ static JSBool event_get_type(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 static JSBool event_serialize(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct event_obj *eo = JS_GetPrivate(cx, obj);
-	char buf[1024];
+	char *buf;
 	uint8_t isxml = 0;
 
 	if (!eo) {
@@ -291,8 +291,10 @@ static JSBool event_serialize(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 			*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
 		}
 	} else {
-		switch_event_serialize(eo->event, buf, sizeof(buf), NULL);
-		*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, buf));
+		if (switch_event_serialize(eo->event, &buf) == SWITCH_STATUS_SUCCESS) {
+			*rval = STRING_TO_JSVAL (JS_NewStringCopyZ(cx, buf));
+			switch_safe_free(buf);
+		}
 	}
 
 	return JS_TRUE;

@@ -158,17 +158,20 @@ static void event_handler(switch_event_t *event)
 
 	if (send) {
 		char *packet;
-		memcpy(buf, &globals.host_hash, sizeof(globals.host_hash));
-		packet = buf + sizeof(globals.host_hash);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", globals.hostname);
+		
 		switch (event->event_id) {
 		case SWITCH_EVENT_LOG:
 			return;
 		default:
-			switch_event_serialize(event, packet, sizeof(buf) - sizeof(globals.host_hash), NULL);
-			len = strlen(packet) + sizeof(globals.host_hash);;
-			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT\n--------------------------------\n%s\n", buf);
-			switch_socket_sendto(globals.udp_socket, globals.addr, 0, buf, &len);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Multicast-Sender", globals.hostname);
+			if (switch_event_serialize(event, &packet) == SWITCH_STATUS_SUCCESS) {
+				memcpy(buf, &globals.host_hash, sizeof(globals.host_hash));
+				switch_copy_string(buf + sizeof(globals.host_hash), packet, sizeof(buf) - sizeof(globals.host_hash));
+				len = strlen(packet) + sizeof(globals.host_hash);;
+				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "\nEVENT\n--------------------------------\n%s\n", buf);
+				switch_socket_sendto(globals.udp_socket, globals.addr, 0, buf, &len);
+				switch_safe_free(packet);
+			}
 			break;
 		}
 	}

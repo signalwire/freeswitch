@@ -3695,9 +3695,6 @@ static void core_event_handler(switch_event_t *event)
 									 );
 		break;
 	default:
-		//buf[0] = '\0';
-		//switch_event_serialize(event, buf, sizeof(buf), NULL);
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "\nCORE EVENT\n--------------------------------\n%s\n", buf);
 		break;
 	}
 
