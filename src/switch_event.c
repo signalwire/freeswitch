@@ -615,8 +615,14 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		llen = strlen(hp->name) + strlen(hp->value) + 2;
 		
 		if ((len + llen) > dlen) {
+			char *m;
 			dlen += (blocksize + (len + llen));
-			buf = realloc(buf, dlen);
+			if ((m = realloc(buf, dlen))) {
+				buf = m;
+			} else {
+				switch_safe_free(buf);
+				return SWITCH_STATUS_MEMERR;
+			}
 		}
 
 		snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, hp->value);
@@ -634,10 +640,16 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		}
 		
 		if ((len + llen) > dlen) {
+			char *m;
 			dlen += (blocksize + (len + llen));
-			buf = realloc(buf, dlen);
+			if ((m = realloc(buf, dlen))) {
+				buf = m;
+			} else {
+				switch_safe_free(buf);
+				return SWITCH_STATUS_MEMERR;
+			}
 		}
-
+		
 		if (blen) {
 			snprintf(buf + len, dlen - len, "Content-Length: %d\n\n%s", blen, event->body);
 		} else {
