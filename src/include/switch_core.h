@@ -130,7 +130,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 														  switch_media_bug_t **new_bug);
 /*!
   \brief Obtain private data from a media bug
-  \param session the session to obtain the private data from
+  \param bug the bug to get the data from
   \return the private data
 */
 SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *bug);
@@ -1205,6 +1205,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_load_grammar(switch_asr_handle_t
 /*!
   \brief Unload a grammar from an asr handle
   \param ah the handle to unload the grammar from
+  \param grammar the grammar to unload
   \return SWITCH_STATUS_SUCCESS
 */
 SWITCH_DECLARE(switch_status_t) switch_core_asr_unload_grammar(switch_asr_handle_t *ah, char *grammar);

@@ -229,8 +229,9 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(char *target, char *expressio
   \param bad_input_audio_file file to play if the input from the user was invalid
   \param digit_buffer variable digits captured will be put back into (empty if capture failed)
   \param digit_buffer_length length of the buffer for digits (should be the same or larger than max_digits)
+  \param digits_regex the qualifying regex
   \return switch status, used to note status of channel (will still return success if digit capture failed)
-  \note to test for digit capture failure look for \0 in the first position of the buffer
+  \note to test for digit capture failure look for \\0 in the first position of the buffer
 */
 SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t *session,
                                                            unsigned int min_digits,
@@ -378,7 +379,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_hold(switch_core_session_t *session);
 
 /*!
   \brief Signal the session with a protocol specific unhold message.
-  \param uuid the uuid of the session to unhold
+  \param session the session to unhold
   \return SWITCH_STATUS_SUCCESS if all is well
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session);
