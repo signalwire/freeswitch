@@ -56,12 +56,28 @@ SWITCH_BEGIN_EXTERN_C
 
 #define JS_BUFFER_SIZE 1024 * 32
 #define JS_BLOCK_SIZE JS_BUFFER_SIZE
+
 #ifdef __ICC
 #pragma warning (disable:310 193 1418)
 #endif
 
+#ifdef _MSC_VER
+#pragma warning(disable: 4311)
+#endif
 
-SWITCH_DECLARE(int) eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval);
+#ifdef WIN32
+#if defined(SWITCH_SM_DECLARE_STATIC)
+#define SWITCH_SM_DECLARE(type)		type __cdecl
+#elif defined(SM_EXPORTS)
+#define SWITCH_SM_DECLARE(type)		__declspec(dllexport) type __cdecl
+#else
+#define SWITCH_SM_DECLARE(type)		__declspec(dllimport) type __cdecl
+#endif
+#else //not win32
+#define SWITCH_SM_DECLARE(type) type
+#endif
+
+SWITCH_SM_DECLARE(int) eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval);
 
 typedef switch_status_t(*spidermonkey_load_t)(JSContext *cx, JSObject *obj);
 

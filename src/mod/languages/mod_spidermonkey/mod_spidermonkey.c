@@ -38,10 +38,6 @@
 #include <curl/curl.h>
 #endif
 
-#ifdef _MSC_VER
-#pragma warning(disable: 4311)
-#endif
-
 static const char modname[] = "mod_spidermonkey";
 
 
@@ -2246,7 +2242,7 @@ static JSFunctionSpec fs_functions[] = {
 };
 
 
-SWITCH_DECLARE(int) eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
+SWITCH_SM_DECLARE(int) eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
 {
 	JSScript *script = NULL;
 	char *cptr;

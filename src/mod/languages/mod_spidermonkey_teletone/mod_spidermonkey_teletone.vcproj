@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="mod_spidermonkey"
-	ProjectGUID="{1AD3F51E-BBB6-4090-BA39-9DFAB1EF1F5F}"
-	RootNamespace="mod_spidermonkey"
+	Name="mod_spidermonkey_teletone"
+	ProjectGUID="{8F992C49-6C51-412F-B2A3-34EAB708EB65}"
+	RootNamespace="mod_spidermonkey_teletone"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -42,8 +42,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js20051231\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;;&quot;$(InputDir)..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;DEBUG;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB;JS_THREADSAFE;SM_EXPORTS"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js20051231\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;;&quot;$(InputDir)..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\include&quot;;&quot;$(InputDir)..\mod_spidermonkey&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;DEBUG;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB;JS_THREADSAFE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -72,7 +72,7 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/mod_spidermonkey.lib"
+				ImportLibrary="$(OutDir)/mod_spidermonkey_teletone.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -126,8 +126,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js20051231\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;;&quot;$(InputDir)..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB;JS_THREADSAFE;SM_EXPORTS"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js20051231\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;;&quot;$(InputDir)..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\include&quot;;&quot;$(InputDir)..\mod_spidermonkey&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB;JS_THREADSAFE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -157,7 +157,7 @@
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				LinkTimeCodeGeneration="1"
-				ImportLibrary="$(OutDir)/mod_spidermonkey.lib"
+				ImportLibrary="$(OutDir)/mod_spidermonkey_teletone.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -195,7 +195,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\mod_spidermonkey.c"
+				RelativePath=".\mod_spidermonkey_teletone.c"
 				>
 			</File>
 		</Filter>
