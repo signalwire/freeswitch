@@ -444,7 +444,6 @@ typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
  *\param timeout A number of milliseconds to pause before looping.
  *\param max_failures Maximum number of failures to withstand before hangingup This resets everytime you enter the menu.
  *\param inlen The max len of the input (1 for 1 digit menu opts, 2 for 2 digit etc.)
- *\param flags Optional parameters to set to influence the menu behaviour.
  *\param pool memory pool (NULL to create one)
  *\return SWUTCH_STATUS_SUCCESS if the menu was created
  */
