@@ -3308,7 +3308,7 @@ static void switch_ivr_menu_stack(switch_ivr_menu_t **top, switch_ivr_menu_t *bo
 
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new,
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_menu,
 													 switch_ivr_menu_t *main,
 													 char *name, 
 													 char *greeting_sound, 
@@ -3385,7 +3385,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new,
 		menu->flags |= SWITCH_IVR_MENU_FLAG_STACK;
 	}
 	
-	*new = menu;
+	*new_menu = menu;
 	
 	return SWITCH_STATUS_SUCCESS;
 }

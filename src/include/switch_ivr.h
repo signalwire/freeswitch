@@ -436,7 +436,7 @@ typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
 
 /*!
  *\brief Create a new menu object.
- *\param new the pointer to the new menu
+ *\param new_menu the pointer to the new menu
  *\param main The top level menu, (NULL if this is the top level one).
  *\param name A pointer to the name of this menu.
  *\param greeting_sound Optional pointer to a main sound (press 1 for this 2 for that).
@@ -447,7 +447,7 @@ typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
  *\param pool memory pool (NULL to create one)
  *\return SWUTCH_STATUS_SUCCESS if the menu was created
  */
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new,
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_menu,
 													 switch_ivr_menu_t *main,
 													 char *name, 
 													 char *greeting_sound, 
