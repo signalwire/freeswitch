@@ -176,13 +176,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session)
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session,
 																   switch_input_callback_function_t input_callback,
 																   void *buf,
-																   unsigned int buflen,
-																   unsigned int timeout)
+																   uint32_t buflen,
+																   uint32_t timeout)
 {
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_time_t started = 0;
-	unsigned int elapsed;
+	uint32_t elapsed;
 
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -201,7 +201,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		char dtmf[128];
 
 		if (timeout) {
-			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
+			elapsed = (uint32_t)((switch_time_now() - started) / 1000);
 			if (elapsed >= timeout) {
 				break;
 			}
@@ -243,17 +243,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
 																char *buf,
-																unsigned int buflen,
-																unsigned int maxdigits,
+																uint32_t buflen,
+																uint32_t maxdigits,
 																const char *terminators,
 																char *terminator,
-																unsigned int timeout)
+																uint32_t timeout)
 {
-	unsigned int i = 0, x =  (unsigned int) strlen(buf);
+	uint32_t i = 0, x =  (uint32_t) strlen(buf);
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_time_t started = 0;
-	unsigned int elapsed;
+	uint32_t elapsed;
 
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -278,7 +278,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		switch_event_t *event;
 
 		if (timeout) {
-			elapsed = (unsigned int)((switch_time_now() - started) / 1000);
+			elapsed = (uint32_t)((switch_time_now() - started) / 1000);
 			if (elapsed >= timeout) {
 				break;
 			}
@@ -292,7 +292,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		if (switch_channel_has_dtmf(channel)) {
 			char dtmf[128];
 			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-			for(i =0 ; i < (unsigned int) strlen(dtmf); i++) {
+			for(i =0 ; i < (uint32_t) strlen(dtmf); i++) {
 
 				if (strchr(terminators, dtmf[i])) {
 					*terminator = dtmf[i];
@@ -327,7 +327,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 													 char *file,
 													 switch_input_callback_function_t input_callback,
 													 void *buf,
-													 unsigned int buflen)
+													 uint32_t buflen)
 {
 	switch_channel_t *channel;
     char dtmf[128];
@@ -911,7 +911,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 												   char *timer_name,
 												   switch_input_callback_function_t input_callback,
 												   void *buf,
-												   unsigned int buflen)
+												   uint32_t buflen)
 {
 	switch_channel_t *channel;
 	int16_t abuf[FILE_STARTSAMPLES];
@@ -1298,15 +1298,15 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(char *target, char *expressio
 }
 
 SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t *session,
-														   unsigned int min_digits,
-														   unsigned int max_digits,
-														   unsigned int max_tries,
-														   unsigned int timeout,
+														   uint32_t min_digits,
+														   uint32_t max_digits,
+														   uint32_t max_tries,
+														   uint32_t timeout,
 														   char* valid_terminators,
 														   char* prompt_audio_file,
 														   char* bad_input_audio_file,
 														   void* digit_buffer,
-														   unsigned int digit_buffer_length,
+														   uint32_t digit_buffer_length,
 														   char* digits_regex) 
 {
 
@@ -1423,7 +1423,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 															 switch_input_callback_function_t input_callback,
 															 char *text,
 															 void *buf,
-															 unsigned int buflen)
+															 uint32_t buflen)
 {
 	switch_channel_t *channel;
 	short abuf[960];
@@ -1614,7 +1614,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 													  switch_input_callback_function_t input_callback,
 													  char *text,
 													  void *buf,
-													  unsigned int buflen)
+													  uint32_t buflen)
 {
 	switch_channel_t *channel;
 	int interval = 0;
@@ -1640,7 +1640,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	if (switch_core_speech_open(&sh,
 								tts_name,
 								voice_name,
-								(unsigned int)rate,
+								(uint32_t)rate,
 								&flags,
 								switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
@@ -3247,7 +3247,7 @@ struct switch_ivr_menu {
 	int max_failures;
 	int timeout;
 	int inlen;
-	unsigned int flags;
+	uint32_t flags;
 	struct switch_ivr_menu_action *actions;
 	struct switch_ivr_menu *next;
 	switch_memory_pool_t *pool;
@@ -3286,29 +3286,6 @@ static void switch_ivr_menu_stack(switch_ivr_menu_t **top, switch_ivr_menu_t *bo
 
 }
 
-SWITCH_DECLARE(int) switch_ivr_menu_set_flag(switch_ivr_menu_t *menu, unsigned int flags) 
-{
-	if (flags) {
-		menu->flags |= flags;
-	}
-
-	return menu->flags;
-}
-
-SWITCH_DECLARE(int) switch_ivr_menu_clear_flag(switch_ivr_menu_t *menu, unsigned int flags) 
-{
-	if (flags) {
-		menu->flags &= ~flags;
-	}
-
-	return menu->flags;
-}
-
-SWITCH_DECLARE(int) switch_ivr_menu_test_flag(switch_ivr_menu_t *menu, unsigned int flags) 
-{
-	return (menu->flags & flags);
-}
-
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new,
 													 switch_ivr_menu_t *main,
 													 char *name, 
@@ -3318,7 +3295,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new,
 													 int timeout,
 													 int max_failures, 
 													 int inlen,
-													 unsigned int flags,
 													 switch_memory_pool_t *pool)
 {
 	switch_ivr_menu_t *menu;
@@ -3347,7 +3323,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new,
 	menu->invalid_sound = switch_core_strdup(menu->pool, invalid_sound);
 	menu->max_failures = max_failures;
 	menu->timeout = timeout;
-	menu->flags |= flags;
 	menu->actions = NULL;
 	menu->inlen = inlen;
 	if (newpool) {
@@ -3535,7 +3510,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						status = SWITCH_STATUS_SUCCESS;
 						break;
 					case SWITCH_IVR_ACTION_TOMAIN:
-						switch_ivr_menu_set_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN);
+						switch_set_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN);
 						status = SWITCH_STATUS_BREAK;
 						break;
 					default:
@@ -3547,8 +3522,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 
 			if (switch_test_flag(menu, SWITCH_IVR_MENU_FLAG_STACK)) { /* top level */ 
-				if (switch_ivr_menu_test_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN)) { /* catch the fallback and recover */
-					switch_ivr_menu_clear_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN);
+				if (switch_test_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN)) { /* catch the fallback and recover */
+					switch_clear_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN);
 					status = SWITCH_STATUS_SUCCESS;
 					running = 1;
 					continue;

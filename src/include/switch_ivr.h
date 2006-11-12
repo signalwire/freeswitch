@@ -75,8 +75,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session);
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session,
 																   switch_input_callback_function_t dtmf_callback,
 																   void *buf,
-																   unsigned int buflen,
-																   unsigned int timeout);
+																   uint32_t buflen,
+																   uint32_t timeout);
 
 /*!
   \brief Wait for specified number of DTMF digits, untile terminator is received or until the channel hangs up.
@@ -91,11 +91,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_session_t *session,
 																char *buf,
-																unsigned int buflen,
-																unsigned int maxdigits,
+																uint32_t buflen,
+																uint32_t maxdigits,
 																const char *terminators,
 																char *terminator,
-																unsigned int timeout);
+																uint32_t timeout);
 
 /*!
   \brief Engage background Speech detection on a session
@@ -187,7 +187,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 												   char *timer_name,
 												   switch_input_callback_function_t dtmf_callback,
 												   void *buf,
-												   unsigned int buflen);
+												   uint32_t buflen);
 
 
 
@@ -207,7 +207,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 													 char *file,
 													 switch_input_callback_function_t dtmf_callback,
 													 void *buf,
-													 unsigned int buflen);
+													 uint32_t buflen);
 
 /*!
  \brief Function to evaluate an expression against a string
@@ -234,15 +234,15 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(char *target, char *expressio
   \note to test for digit capture failure look for \\0 in the first position of the buffer
 */
 SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t *session,
-                                                           unsigned int min_digits,
-                                                           unsigned int max_digits,
-                                                           unsigned int max_tries,
-                                                           unsigned int timeout,
+                                                           uint32_t min_digits,
+                                                           uint32_t max_digits,
+                                                           uint32_t max_tries,
+                                                           uint32_t timeout,
                                                            char* valid_terminators,
                                                            char* audio_file,
                                                            char* bad_input_audio_file,
                                                            void* digit_buffer,
-                                                           unsigned int digit_buffer_length,
+                                                           uint32_t digit_buffer_length,
                                                            char* digits_regex);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
@@ -252,7 +252,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
                                                              switch_input_callback_function_t dtmf_callback,
                                                              char *text,
                                                              void *buf,
-                                                             unsigned int buflen);
+                                                             uint32_t buflen);
 
 /*!
   \brief Speak given text with given tts engine
@@ -275,7 +275,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 													  switch_input_callback_function_t dtmf_callback,
 													  char *text,
 													  void *buf,
-													  unsigned int buflen);
+													  uint32_t buflen);
 
 /*!
   \brief Make an outgoing call
@@ -457,7 +457,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new,
 													 int timeout,
 													 int max_failures, 
 													 int inlen,
-													 unsigned int flags,
 													 switch_memory_pool_t *pool);
 
 /*!
@@ -500,10 +499,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
  *\return SWITCH_STATUS_SUCCESS if the object was a top level menu and it was freed
  */
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_free_stack(switch_ivr_menu_t *stack);
-
-SWITCH_DECLARE(int) switch_ivr_menu_set_flag(switch_ivr_menu_t *menu, unsigned int flags);
-SWITCH_DECLARE(int) switch_ivr_menu_clear_flag(switch_ivr_menu_t *menu, unsigned int flags);
-SWITCH_DECLARE(int) switch_ivr_menu_test_flag(switch_ivr_menu_t *menu, unsigned int flags);
 
 /** @} */
 
