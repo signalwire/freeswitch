@@ -3268,7 +3268,7 @@ struct switch_ivr_menu {
 	char *ptr;
 	int max_failures;
 	int timeout;
-	int inlen;
+	uint32_t inlen;
 	uint32_t flags;
 	struct switch_ivr_menu_action *actions;
 	struct switch_ivr_menu *next;
@@ -3394,14 +3394,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new,
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *menu, switch_ivr_action_t ivr_action, char *arg, char *bind)
 {
 	switch_ivr_menu_action_t *action;
-	switch_size_t len;
+	uint32_t len;
 	if ((action = switch_core_alloc(menu->pool, sizeof(*action)))) {
 		action->bind = switch_core_strdup(menu->pool, bind);
 		action->next = menu->actions;
 		action->arg = switch_core_strdup(menu->pool, arg);
-		len = strlen(action->bind);
+		len = (uint32_t)strlen(action->bind);
 		if (len > menu->inlen) {
-			menu->inlen = (uint32_t)len;
+			menu->inlen = len;
 		}
 		action->ivr_action = ivr_action;
 		menu->actions = action;
@@ -3446,14 +3446,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_free_stack(switch_ivr_menu_t *st
 
 static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_menu_t *menu, char *sound, uint32_t need)
 {
-	memset(menu->buf, 0, menu->inlen);
-	menu->ptr = menu->buf;
 	char terminator;
 	uint32_t len;
 	char *ptr;
-
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	memset(menu->buf, 0, menu->inlen);
 	menu->ptr = menu->buf;
 
 	if (!need) {
