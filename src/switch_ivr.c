@@ -1264,9 +1264,9 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(char *target, char *expressio
 	pcre_prepared = pcre_compile(expression, 0, &error, &error_offset, NULL);
 
 	//See if there was an error in the expression
-	if(error != NULL) {
+	if (error != NULL) {
 		//Clean up after ourselves
-		if(pcre_prepared) {
+		if (pcre_prepared) {
 			pcre_free(pcre_prepared);
 			pcre_prepared = NULL;
 		}	       
@@ -1282,7 +1282,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(char *target, char *expressio
 	match_count = pcre_exec(pcre_prepared, NULL, target, (int) strlen(target), 0, 0, offset_vectors, sizeof(offset_vectors) / sizeof(offset_vectors[0]));
 
 	//Clean up
-	if(pcre_prepared) {
+	if (pcre_prepared) {
 		pcre_free(pcre_prepared);
 		pcre_prepared = NULL;
 	}
@@ -1290,7 +1290,7 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(char *target, char *expressio
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "number of matches: %d\n", match_count);
 
 	//Was it a match made in heaven?
-	if(match_count > 0) {
+	if (match_count > 0) {
 		return SWITCH_STATUS_SUCCESS;
 	} else {
 		return SWITCH_STATUS_FALSE;
@@ -1341,19 +1341,19 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		}
 
 		//we only get one digit out of playback, see if thats all we needed and what we got
-		if(max_digits == 1 && status == SWITCH_STATUS_BREAK) {
+		if (max_digits == 1 && status == SWITCH_STATUS_BREAK) {
 			//Check the digit if we have a regex
-			if(digits_regex != NULL) {
+			if (digits_regex != NULL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking regex [%s] on [%s]\n", digits_regex, digit_buffer);
 
 				//Make sure the digit is allowed
-				if(switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
+				if (switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Match found!\n");
 					//jobs done
 					break;
 				} else {
 					//See if a bad input prompt was specified, if so, play it
-					if(strlen(bad_input_audio_file) > 0) {
+					if (strlen(bad_input_audio_file) > 0) {
 						status = switch_ivr_play_file(session, NULL, bad_input_audio_file, NULL, NULL, NULL, 0);
 
 						//Make sure we made it out alive
@@ -1375,25 +1375,25 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &terminator, timeout);
 
 		//Make sure we made it out alive
-		if(status != SWITCH_STATUS_SUCCESS) {
+		if (status != SWITCH_STATUS_SUCCESS) {
 			//Bail
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			break;
 		}
 
 		//see if we got enough
-		if(min_digits <= strlen(digit_buffer)) {
+		if (min_digits <= strlen(digit_buffer)) {
 			//See if we need to test a regex
-			if(digits_regex != NULL) {
+			if (digits_regex != NULL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking regex [%s] on [%s]\n", digits_regex, digit_buffer);
 				//Test the regex
-				if(switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
+				if (switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Match found!\n");
 					//Jobs done
 					return switch_channel_get_state(channel);
 				} else {
 					//See if a bad input prompt was specified, if so, play it
-					if(strlen(bad_input_audio_file) > 0) {
+					if (strlen(bad_input_audio_file) > 0) {
 						status = switch_ivr_play_file(session, NULL, bad_input_audio_file, NULL, NULL, NULL, 0);
 
 						//Make sure we made it out alive
@@ -3235,3 +3235,343 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
+
+struct switch_ivr_menu_action;
+
+struct switch_ivr_menu {
+	char *name;
+	char *greeting_sound;
+	char *short_greeting_sound;
+	char *invalid_sound;
+	int max_failures;
+	int timeout;
+	int inlen;
+	unsigned int flags;
+	struct switch_ivr_menu_action *actions;
+	struct switch_ivr_menu *next;
+	switch_memory_pool_t *pool;
+};
+
+
+struct switch_ivr_menu_action {
+	switch_ivr_menu_action_function_t *function;
+	switch_ivr_action_t ivr_action;
+	char *arg;
+	char *bind;
+	struct switch_ivr_menu_action *next;
+};
+
+static switch_ivr_menu_t *switch_ivr_find_menu(switch_ivr_menu_t *stack, char *name) {
+	switch_ivr_menu_t *ret;
+	for(ret = stack; ret ; ret = ret->next) {
+		if (!name || !strcmp(ret->name, name))
+			break;
+	}
+	return ret;
+}
+
+
+static void switch_ivr_menu_stack(switch_ivr_menu_t **top, switch_ivr_menu_t *bottom) 
+{
+	switch_ivr_menu_t *ptr;
+
+	for(ptr = *top ; ptr && ptr->next ; ptr = ptr->next);
+
+	if (ptr) {
+		ptr->next = bottom;
+	} else {
+		*top = bottom;
+	}
+
+}
+
+SWITCH_DECLARE(int) switch_ivr_menu_set_flag(switch_ivr_menu_t *menu, unsigned int flags) 
+{
+	if (flags) {
+		menu->flags |= flags;
+	}
+
+	return menu->flags;
+}
+
+SWITCH_DECLARE(int) switch_ivr_menu_clear_flag(switch_ivr_menu_t *menu, unsigned int flags) 
+{
+	if (flags) {
+		menu->flags &= ~flags;
+	}
+
+	return menu->flags;
+}
+
+SWITCH_DECLARE(int) switch_ivr_menu_test_flag(switch_ivr_menu_t *menu, unsigned int flags) 
+{
+	return (menu->flags & flags);
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new,
+													 switch_ivr_menu_t *main,
+													 char *name, 
+													 char *greeting_sound, 
+													 char *short_greeting_sound,
+													 char *invalid_sound, 
+													 int timeout,
+													 int max_failures, 
+													 int inlen,
+													 unsigned int flags,
+													 switch_memory_pool_t *pool)
+{
+	switch_ivr_menu_t *menu;
+	uint8_t newpool = 0;
+
+	if (!pool) {
+		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
+			return SWITCH_STATUS_MEMERR;
+		}
+		newpool = 1;
+	}
+	
+	if (!(menu = switch_core_alloc(pool, sizeof(*menu)))) {
+		if (newpool) {
+			switch_core_destroy_memory_pool(&pool);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+			return SWITCH_STATUS_MEMERR;
+		}
+	}
+	menu->pool = pool;
+
+	menu->name = switch_core_strdup(menu->pool, name);
+	menu->greeting_sound = switch_core_strdup(menu->pool, greeting_sound);
+	menu->short_greeting_sound = switch_core_strdup(menu->pool, short_greeting_sound);
+	menu->invalid_sound = switch_core_strdup(menu->pool, invalid_sound);
+	menu->max_failures = max_failures;
+	menu->timeout = timeout;
+	menu->flags |= flags;
+	menu->actions = NULL;
+	menu->inlen = inlen;
+	if (newpool) {
+		menu->flags |= SWITCH_IVR_MENU_FLAG_FREEPOOL;
+	}
+
+	if (menu->timeout <= 0)
+		menu->timeout = 10000;
+	if (menu->inlen <= 0)
+		menu->inlen = 1;
+	
+	if (main) {
+		switch_ivr_menu_stack(&main, menu);
+	} else {
+		menu->flags |= SWITCH_IVR_MENU_FLAG_STACK;
+	}
+	
+	*new = menu;
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *menu, switch_ivr_action_t ivr_action, char *arg, char *bind)
+{
+	switch_ivr_menu_action_t *action;
+
+	if ((action = switch_core_alloc(menu->pool, sizeof(*action)))) {
+		action->bind = bind;
+		action->next = menu->actions;
+		action->arg = arg;
+		action->ivr_action = ivr_action;
+		menu->actions = action;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_MEMERR;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu, switch_ivr_menu_action_function_t *function, char *bind)
+{
+	switch_ivr_menu_action_t *action;
+
+
+	if ((action = switch_core_alloc(menu->pool, sizeof(*action)))) {
+		action->bind = bind;
+		action->function = function;
+		action->next = menu->actions;
+		menu->actions = action;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_MEMERR;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_free_stack(switch_ivr_menu_t *stack) 
+{
+	switch_memory_pool_t *pool;
+
+	if (!switch_test_flag(stack, SWITCH_IVR_MENU_FLAG_STACK) || switch_test_flag(stack, SWITCH_IVR_MENU_FLAG_FREEPOOL)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	pool = stack->pool;
+	switch_core_destroy_memory_pool(&pool);
+	pool = NULL;
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *session, switch_ivr_menu_t *stack, char *name, void *obj)
+{
+	int reps = 0, errs = 0, match = 0, running = 1;
+	char *greeting_sound = NULL, *aptr;
+	char *buf, arg[512];
+	switch_ivr_action_t todo = SWITCH_IVR_ACTION_DIE;
+	switch_ivr_menu_action_t *ap;
+	switch_ivr_menu_t *menu;
+	switch_channel_t *channel;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+
+	if (!(menu = switch_ivr_find_menu(stack, name))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Menu!\n");
+		return -1;
+	}
+	
+	if (!(buf = malloc(menu->inlen))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Memory!\n");
+		return -1;
+	}
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing IVR menu %s\n", menu->name);
+
+	for (reps = 0 ; (running && status == SWITCH_STATUS_SUCCESS && errs < menu->max_failures) ; reps++) {
+
+		if (!switch_channel_ready(channel)) {
+			break;
+		}
+
+
+		if (reps > 0 && menu->short_greeting_sound) {
+			greeting_sound = menu->short_greeting_sound;
+		} else {
+			greeting_sound = menu->greeting_sound;
+		}
+
+		match = 0;
+		aptr = NULL;
+		memset(buf, 0, menu->inlen);
+		memset(arg, 0, sizeof(arg));
+
+		if (switch_play_and_get_digits(session,
+									   menu->inlen,
+									   menu->inlen,
+									   1,
+									   menu->timeout, "#",
+									   greeting_sound,
+									   NULL,
+									   buf,
+									   menu->inlen,
+									   NULL) != SWITCH_STATUS_SUCCESS) {
+			break;
+		}
+		
+		if (!switch_strlen_zero(buf)) {
+			for(ap = menu->actions; ap ; ap = ap->next) {
+				if (!strcmp(buf, ap->bind)) {
+					char *membuf;
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu %s matched %s\n", menu->name, buf);
+					match++;
+					errs = 0;
+					if (ap->function) {
+						todo = ap->function(menu, arg, sizeof(arg), obj);
+						aptr = arg;
+					} else {
+						todo = ap->ivr_action;
+						aptr = ap->arg;
+					}
+
+					switch(todo) {
+					case SWITCH_IVR_ACTION_DIE:
+						status = SWITCH_STATUS_FALSE;
+						break;
+					case SWITCH_IVR_ACTION_PLAYSOUND:
+						status = switch_ivr_play_file(session, NULL, aptr, NULL, NULL, NULL, 0);
+						break;
+					case SWITCH_IVR_ACTION_TRANSFER:
+						switch_ivr_session_transfer(session, aptr, NULL, NULL);
+						running = 0;
+						break;
+					case SWITCH_IVR_ACTION_EXECMENU:
+						reps = -1;
+						status = switch_ivr_menu_execute(session, stack, aptr, obj);
+						break;
+					case SWITCH_IVR_ACTION_EXECAPP: {
+						const switch_application_interface_t *application_interface;
+						if ((membuf = strdup(aptr))) {
+							char *app_name = membuf;
+							char *app_arg = strchr(app_name, ' ');
+
+							if (app_arg) {
+								*app_arg = '\0';
+								app_arg++;
+							}
+						
+							if (app_name && app_arg) {
+								if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
+									if (application_interface->application_function) {
+										application_interface->application_function(session, app_arg);
+									}
+								}
+							}
+						}
+					}
+						break;
+					case SWITCH_IVR_ACTION_BACK:
+						running = 0;
+						status = SWITCH_STATUS_SUCCESS;
+						break;
+					case SWITCH_IVR_ACTION_TOMAIN:
+						switch_ivr_menu_set_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN);
+						status = SWITCH_STATUS_BREAK;
+						break;
+					default:
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid TODO!\n");
+						break;
+					}
+				}
+			}
+
+
+			if (switch_test_flag(menu, SWITCH_IVR_MENU_FLAG_STACK)) { /* top level */ 
+				if (switch_ivr_menu_test_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN)) { /* catch the fallback and recover */
+					switch_ivr_menu_clear_flag(stack, SWITCH_IVR_MENU_FLAG_FALLTOMAIN);
+					status = SWITCH_STATUS_SUCCESS;
+					running = 1;
+					continue;
+				}
+			}
+		}
+		if (!match) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu %s caught invalid input %s\n", menu->name, buf);
+
+			if (menu->invalid_sound) {
+				status = switch_ivr_play_file(session, NULL, aptr, NULL, NULL, NULL, 0);
+			}
+			errs++;
+
+			if (status == SWITCH_STATUS_SUCCESS) {
+				status = switch_ivr_sleep(session, 1000);
+			}
+		}
+		
+	}
+
+	switch_safe_free(buf);
+
+	return status;
+}
+

@@ -404,6 +404,109 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 
 /** @} */
 
+/**
+ * @defgroup switch_ivr_menu IVR Menu Library
+ * @ingroup switch_ivr
+ *	IVR menu functions
+ *	
+ * @{
+ */
+
+typedef enum {
+	SWITCH_IVR_MENU_FLAG_FALLTOMAIN = (1 << 0),
+	SWITCH_IVR_MENU_FLAG_FREEPOOL = (1 << 1),
+	SWITCH_IVR_MENU_FLAG_STACK = (1 << 2),
+} switch_ivr_menu_flags;
+/* Actions are either set in switch_ivr_menu_bind_function or returned by a callback */
+typedef enum {
+	SWITCH_IVR_ACTION_DIE, 		/* Exit the menu.                  */
+	SWITCH_IVR_ACTION_EXECMENU,	/* Goto another menu in the stack. */
+	SWITCH_IVR_ACTION_EXECAPP,		/* Execute an application.         */
+	SWITCH_IVR_ACTION_PLAYSOUND,	/* Play a sound.                   */
+	SWITCH_IVR_ACTION_BACK,		/* Go back 1 menu.                 */
+	SWITCH_IVR_ACTION_TOMAIN,		/* Go back to the top level menu.  */
+	SWITCH_IVR_ACTION_TRANSFER,	/* Transfer caller to another ext. */
+} switch_ivr_action_t;
+struct switch_ivr_menu;
+typedef switch_ivr_action_t switch_ivr_menu_action_function_t(struct switch_ivr_menu *, char *, size_t, void *);
+typedef struct switch_ivr_menu switch_ivr_menu_t;
+typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
+/******************************************************************************************************/
+
+/*!
+ *\brief Create a new menu object.
+ *\param new the pointer to the new menu
+ *\param main The top level menu, (NULL if this is the top level one).
+ *\param name A pointer to the name of this menu.
+ *\param greeting_sound Optional pointer to a main sound (press 1 for this 2 for that).
+ *\param short_greeting_sound Optional pointer to a shorter main sound for subsequent loops.
+ *\param invalid_sound Optional pointer to a sound to play after invalid input.
+ *\param timeout A number of milliseconds to pause before looping.
+ *\param max_failures Maximum number of failures to withstand before hangingup This resets everytime you enter the menu.
+ *\param inlen The max len of the input (1 for 1 digit menu opts, 2 for 2 digit etc.)
+ *\param flags Optional parameters to set to influence the menu behaviour.
+ *\param pool memory pool (NULL to create one)
+ *\return SWUTCH_STATUS_SUCCESS if the menu was created
+ */
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new,
+													 switch_ivr_menu_t *main,
+													 char *name, 
+													 char *greeting_sound, 
+													 char *short_greeting_sound,
+													 char *invalid_sound, 
+													 int timeout,
+													 int max_failures, 
+													 int inlen,
+													 unsigned int flags,
+													 switch_memory_pool_t *pool);
+
+/*!
+ *\brief switch_ivr_menu_bind_action: Bind a keystroke to an action.
+ *\param menu The menu obj you wish to bind to.
+ *\param ivr_action switch_ivr_action_t enum of what you want to do.
+ *\param arg Optional (sometimes necessary) string arguement.
+ *\param bind KeyStrokes to bind the action to.
+ *\return SWUTCH_STATUS_SUCCESS if the action was binded
+ */
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *menu, switch_ivr_action_t ivr_action, char *arg, char *bind);
+
+
+/*!
+ *\brief Bind a keystroke to a callback function.
+ *\param menu The menu obj you wish to bind to.
+ *\param function The function to call [int proto(struct switch_ivr_menu *, char *, size_t, void *)]
+ *\param bind KeyStrokes to bind the action to.
+ *\note The function is passed a buffer to fill in with any required argument data.
+ *\note The function is also passed an optional void pointer to an object set upon menu execution. (think threads)
+ *\note The function returns an switch_ivr_action_t enum of what you want to do. and looks to your buffer for args.
+ *\return SWUTCH_STATUS_SUCCESS if the function was binded
+ */
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu, switch_ivr_menu_action_function_t *function, char *bind);
+
+
+/*!
+ *\brief Execute a menu.
+ *\param session The session running the menu.
+ *\param stack The top-level menu object (the first one you created.)
+ *\param name A pointer to the name of the menu.
+ *\param obj A void pointer to an object you want to make avaliable to your callback functions that you may have binded with switch_ivr_menu_bind_function.
+ *\return SWITCH_STATUS_SUCCESS if all is well
+ */
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *session, switch_ivr_menu_t *stack, char *name, void *obj);
+
+/*!
+ *\brief free a stack of menu objects.
+ *\param stack The top level menu you wish to destroy.
+ *\return SWITCH_STATUS_SUCCESS if the object was a top level menu and it was freed
+ */
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_free_stack(switch_ivr_menu_t *stack);
+
+SWITCH_DECLARE(int) switch_ivr_menu_set_flag(switch_ivr_menu_t *menu, unsigned int flags);
+SWITCH_DECLARE(int) switch_ivr_menu_clear_flag(switch_ivr_menu_t *menu, unsigned int flags);
+SWITCH_DECLARE(int) switch_ivr_menu_test_flag(switch_ivr_menu_t *menu, unsigned int flags);
+
+/** @} */
+
 SWITCH_END_EXTERN_C
 
 #endif
