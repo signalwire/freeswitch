@@ -443,7 +443,6 @@ typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
  *\param invalid_sound Optional pointer to a sound to play after invalid input.
  *\param timeout A number of milliseconds to pause before looping.
  *\param max_failures Maximum number of failures to withstand before hangingup This resets everytime you enter the menu.
- *\param inlen The max len of the input (1 for 1 digit menu opts, 2 for 2 digit etc.)
  *\param pool memory pool (NULL to create one)
  *\return SWUTCH_STATUS_SUCCESS if the menu was created
  */
@@ -453,9 +452,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new,
 													 char *greeting_sound, 
 													 char *short_greeting_sound,
 													 char *invalid_sound, 
+													 char *tts_engine,
+													 char *tts_voice,
 													 int timeout,
 													 int max_failures, 
-													 int inlen,
 													 switch_memory_pool_t *pool);
 
 /*!

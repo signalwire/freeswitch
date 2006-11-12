@@ -81,6 +81,65 @@ static void xml_function(switch_core_session_t *session, char *data)
 }
 
 
+static void ivr_application_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *params = switch_core_session_strdup(session,data);
+
+	if (channel != NULL && params != NULL) {
+		switch_ivr_menu_t *menu = NULL, *sub_menu = NULL;
+		switch_status_t status;
+
+		// answer the channel if need be
+		switch_channel_answer(channel);
+
+		status = switch_ivr_menu_init(&menu,
+									  NULL,
+									  "main",
+									  "please enter some numbers so i can figure out if I have any bugs or not",
+									  "enter some numbers",
+									  "I have no idea what that is",
+									  "cepstral",
+									  "david",
+									  15000, 10, NULL);
+
+
+		status = switch_ivr_menu_init(&sub_menu,
+									  menu,
+									  "sub",
+									  "/ram/congrats.wav",
+									  "/ram/extension.wav",
+									  "/ram/invalid.wav",
+									  NULL,
+									  NULL,
+									  15000, 10, NULL);
+
+		if (status == SWITCH_STATUS_SUCCESS) {
+			// build the menu
+			switch_ivr_menu_bind_action(menu, SWITCH_IVR_ACTION_PLAYSOUND, "/ram/swimp.raw", "1");
+			switch_ivr_menu_bind_action(menu, SWITCH_IVR_ACTION_PLAYSOUND, "/ram/congrats.wav", "2");
+			switch_ivr_menu_bind_action(menu, SWITCH_IVR_ACTION_EXECMENU, "sub", "3");
+			//switch_ivr_menu_bind_action(menu, SWITCH_IVR_ACTION_PLAYSOUND, "/usr/local/freeswitch/sounds/3.wav", "3");
+
+			
+			switch_ivr_menu_bind_action(sub_menu, SWITCH_IVR_ACTION_PLAYSOUND, "/ram/swimp.raw", "1");
+			switch_ivr_menu_bind_action(sub_menu, SWITCH_IVR_ACTION_BACK, NULL, "2");
+			
+
+			// start the menu
+			status = switch_ivr_menu_execute(session, menu, "main", NULL);
+
+			// cleaup the menu
+			switch_ivr_menu_free_stack(menu);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to build menu %s\n",params);
+		}
+			
+
+		switch_ivr_play_file(session, NULL,"/ram/goodbye.wav",NULL,NULL,NULL,0);
+	}
+}
+
 static void dirtest_function(switch_core_session_t *session, char *data)
 {
 	char *var, *val;
@@ -354,11 +413,19 @@ static const switch_state_handler_table_t state_handlers = {
 };
 
 
+
+static const switch_application_interface_t ivr_application_interface = {
+	/*.interface_name */ "ivrmenu",
+	/*.application_function */ ivr_application_function,
+	NULL, NULL, NULL,
+	/*.next*/ NULL
+};
+
 static const switch_application_interface_t xml_application_interface = {
 	/*.interface_name */ "xml",
 	/*.application_function */ xml_function,
 	NULL, NULL, NULL,
-	/*.next*/ NULL
+	/*.next*/ &ivr_application_interface
 };
 
 static const switch_application_interface_t disast_application_interface = {
