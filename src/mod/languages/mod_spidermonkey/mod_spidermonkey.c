@@ -415,7 +415,7 @@ static switch_status_t sm_load_file(char *filename, sm_loadable_module_t **new_m
 	apr_dso_handle_t *dso = NULL;
 	apr_status_t status = SWITCH_STATUS_SUCCESS;
 	apr_dso_handle_sym_t function_handle = NULL;
-	spidermonkey_init_t spidermonkey_init;
+	spidermonkey_init_t spidermonkey_init = NULL;
 	const sm_module_interface_t *module_interface, *mp;
 
 	int loading = 1;
