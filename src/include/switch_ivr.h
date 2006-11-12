@@ -423,6 +423,7 @@ typedef enum {
 	SWITCH_IVR_ACTION_EXECMENU,	/* Goto another menu in the stack. */
 	SWITCH_IVR_ACTION_EXECAPP,		/* Execute an application.         */
 	SWITCH_IVR_ACTION_PLAYSOUND,	/* Play a sound.                   */
+	SWITCH_IVR_ACTION_SAYTEXT,	/* say text.                   */
 	SWITCH_IVR_ACTION_BACK,		/* Go back 1 menu.                 */
 	SWITCH_IVR_ACTION_TOMAIN,		/* Go back to the top level menu.  */
 	SWITCH_IVR_ACTION_TRANSFER,	/* Transfer caller to another ext. */

@@ -3464,10 +3464,12 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 		ptr = menu->ptr;
 	}
 
-	if (menu->tts_engine && menu->tts_voice) {
-		switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, NULL, 0, NULL, sound, ptr, len);
-	} else {
+	if (*sound == '/' || *sound == '\\') {
 		switch_ivr_play_file(session, NULL, sound, NULL, NULL, ptr, len);
+	} else {
+		if (menu->tts_engine && menu->tts_voice) {
+			switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, NULL, 0, NULL, sound, ptr, len);
+		}
 	}
 
 	if (need) {
@@ -3550,6 +3552,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						break;
 					case SWITCH_IVR_ACTION_PLAYSOUND:
 						status = switch_ivr_play_file(session, NULL, aptr, NULL, NULL, NULL, 0);
+						break;
+					case SWITCH_IVR_ACTION_SAYTEXT:
+						if (menu->tts_engine &&  menu->tts_voice) {
+							switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, NULL, 0, NULL, aptr, NULL, 0);
+						}
 						break;
 					case SWITCH_IVR_ACTION_TRANSFER:
 						switch_ivr_session_transfer(session, aptr, NULL, NULL);
