@@ -439,7 +439,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_
 SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_ivr_digit_stream_parser_t *parser, char *digits);
 
 /*!
-  \brief Create a digit stream parser object
+  \brief Feed digits collected into the stream for event match testing
   \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
   \param digit a digit to collect and test against the map of digit strings
   \return NULL if no match found or consumer data that was associated with a given digit string when matched
