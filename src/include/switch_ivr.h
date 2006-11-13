@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Neal Horman <neal at wanlink dot com>
  *
  *
  * switch_ivr.h -- IVR Library
@@ -402,6 +403,63 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session_t *sessa, switch_core_session_t *sessb, char *var);
 
+
+struct switch_ivr_digit_stream_parser;
+typedef struct switch_ivr_digit_stream_parser switch_ivr_digit_stream_parser_t;
+/*!
+  \brief Create a digit stream parser object
+  \param pool the pool to use for the new hash
+  \param parser a pointer to the object pointer
+  \return SWITCH_STATUS_SUCCESS if all is well 
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory_pool_t *pool, switch_ivr_digit_stream_parser_t **parser);
+
+/*!
+  \brief Destroy a digit stream parser object
+  \param parser a pointer to the object pointer
+  \return SWITCH_STATUS_SUCCESS if all is well 
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t **parser);
+
+/*!
+  \brief Set a digit string to action mapping
+  \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
+  \param digits a string of digits to associate with an action
+  \param data consumer data attached to this digit string
+  \return SWITCH_STATUS_SUCCESS if all is well 
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_event(switch_ivr_digit_stream_parser_t *parser, char *digits, void *data);
+
+/*!
+  \brief Delete a string to action mapping
+  \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
+  \param digits the digit string to be removed from the map
+  \return SWITCH_STATUS_SUCCESS if all is well 
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_ivr_digit_stream_parser_t *parser, char *digits);
+
+/*!
+  \brief Create a digit stream parser object
+  \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
+  \param digit a digit to collect and test against the map of digit strings
+  \return NULL if no match found or consumer data that was associated with a given digit string when matched
+*/
+SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t *parser, char digit);
+
+/*!
+  \brief Reset the collected digit stream to nothing
+  \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
+  \return SWITCH_STATUS_SUCCESS if all is well 
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_reset(switch_ivr_digit_stream_parser_t *parser);
+
+/*!
+  \brief Set a digit string terminator
+  \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
+  \return SWITCH_STATUS_SUCCESS if all is well 
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(switch_ivr_digit_stream_parser_t *parser, char digit);
+
 /** @} */
 
 /**
@@ -442,10 +500,12 @@ typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
  *\param greeting_sound Optional pointer to a main sound (press 1 for this 2 for that).
  *\param short_greeting_sound Optional pointer to a shorter main sound for subsequent loops.
  *\param invalid_sound Optional pointer to a sound to play after invalid input.
+ *\param tts_engine Text To Speech engine name
+ *\param tts_voice Text To Speech engine voice name
  *\param timeout A number of milliseconds to pause before looping.
  *\param max_failures Maximum number of failures to withstand before hangingup This resets everytime you enter the menu.
  *\param pool memory pool (NULL to create one)
- *\return SWUTCH_STATUS_SUCCESS if the menu was created
+ *\return SWITCH_STATUS_SUCCESS if the menu was created
  */
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_menu,
 													 switch_ivr_menu_t *main,
@@ -500,6 +560,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
  */
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_free_stack(switch_ivr_menu_t *stack);
 
+/*!
+ *\brief build a menu stack from an xml source
+ *\param menu_stack The menu stack object that will be created for you
+ *\param xml_menus The xml Menus source
+ *\param xml_menu The xml Menu source of the menu to be created
+ *\param pool memory pool (NULL to create one)
+ *\return SWITCH_STATUS_SUCCESS if all is well
+ */
+SWITCH_DECLARE(switch_status_t) switch_ivr_build_xml_menu_stack(switch_ivr_menu_t **menu_stack,
+										switch_xml_t xml_menus,
+										switch_xml_t xml_menu,
+										switch_memory_pool_t *pool);
 /** @} */
 
 SWITCH_END_EXTERN_C

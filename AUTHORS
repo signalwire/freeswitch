@@ -26,9 +26,9 @@ that much better:
  Yossi Neiman of Cartis Solutions, Inc. <freeswitch AT cartissolutions.com>  -  implementation of mod_cdr (perldd, mysql, csv)
  Stefan Knoblich - Various patches and support.  Thanks.
  Justin Unger - <justinunger at gmail dot com> Lots of help with patches and SIP testing. Thanks! 
- Paul D. Tinsley - Various patches and support. <pdt at jackhammer.org>
+ Paul D. Tinsley - Various patches and support. <pdt at jackhammer.org> 
  Ken Rice of Asteria Solutions Group, INC <ken AT asteriasgi.com> - xmlcdr, sofia improvements, load testing.
- Neal Horman <neal at wanlink dot com> - conference improvements and other tweaks.
+ Neal Horman <neal at wanlink dot com> - conference improvements, switch_ivr menu additions and other tweaks.
 
 A big THANK YOU goes to:
 

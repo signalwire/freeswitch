@@ -905,6 +905,8 @@ struct switch_channel;
 struct switch_core_session;
 /*! \brief An audio bug */
 struct switch_media_bug;
+/*! \brief A digit stream parser object */
+struct switch_ivr_digit_stream_parser;
 
 SWITCH_END_EXTERN_C
 
