@@ -792,6 +792,7 @@ static void attach_private(switch_core_session_t *session,
 
 	tech_set_codecs(tech_pvt);
 	snprintf(name, sizeof(name), "sofia/%s/%s", profile->name, channame);
+
 	switch_channel_set_name(channel, name);
 }
 
@@ -2057,15 +2058,27 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 		*host++ = '\0';
 		if (find_reg_url(profile, dest, host, buf, sizeof(buf))) {
 			tech_pvt->dest = switch_core_session_strdup(nsession, buf);
-			dest = tech_pvt->dest + 4;
+			
 		} else {
 			terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
 			goto done;
 		}
+	} else if (!strchr(dest, '@')) {
+		char buf[128];
+		tech_pvt->e_dest = switch_core_session_strdup(nsession, dest);
+		if (find_reg_url(profile, dest, profile_name, buf, sizeof(buf))) {
+            tech_pvt->dest = switch_core_session_strdup(nsession, buf);
+
+        } else {
+            terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+            goto done;
+        }
 	} else {
 		tech_pvt->dest = switch_core_session_alloc(nsession, strlen(dest) + 5);
 		snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
 	}
+
+	printf("WTF [%s]\n", dest);
 	attach_private(nsession, profile, tech_pvt, dest);
 
 	nchannel = switch_core_session_get_channel(nsession);
@@ -2846,18 +2859,33 @@ static uint8_t handle_register(nua_t *nua,
 	long exptime = 60;
 	switch_event_t *event;
 	char *rpid = "unknown";
+	const char *display = "\"user\"";
 
-	if (sip->sip_contact) {
+	if (contact) {
 		char *port = (char *) contact->m_url->url_port;
+		display = contact->m_display;
+
+		if (switch_strlen_zero(display)) {
+			if (from) {
+				display = from->a_display;
+				if (switch_strlen_zero(display)) {
+					display = "\"user\"";
+				}
+			}
+		} else {
+			display = "\"user\"";
+		}
+		
 		if (!port) {
 			port = "5060";
 		}
+
 		if (contact->m_url->url_params) {
-			snprintf(contact_str, sizeof(contact_str), "sip:%s@%s:%s;%s", 
-					 contact->m_url->url_user, contact->m_url->url_host, port, contact->m_url->url_params);
+			snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%s;%s>", 
+					 display, contact->m_url->url_user, contact->m_url->url_host, port, contact->m_url->url_params);
 		} else {
-			snprintf(contact_str, sizeof(contact_str), "sip:%s@%s:%s", 
-					 contact->m_url->url_user, contact->m_url->url_host, port);
+			snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%s>", 
+					 display, contact->m_url->url_user, contact->m_url->url_host, port);
 		}
 	}
 	
@@ -2967,7 +2995,7 @@ static uint8_t handle_register(nua_t *nua,
 
 
 			if (regtype == REG_REGISTER) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "invalid for [%s@%s]\n", from_user, from_host);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", from_user, from_host);
 				nua_respond(nh, SIP_401_UNAUTHORIZED,
 							NUTAG_WITH_THIS(nua),
 							SIPTAG_WWW_AUTHENTICATE_STR(auth_str),
@@ -3249,27 +3277,39 @@ static void sip_i_subscribe(int status,
 			switch_core_db_t *db;
 			char *errmsg;
 			char *sstr;
+			const char *display = "\"user\"";
 			switch_event_t *sevent;
-
-			if (from) {
-				from_user = (char *) from->a_url->url_user;
-				from_host = (char *) from->a_url->url_host;
-			}
 
 			if (contact) {
 				char *port = (char *) contact->m_url->url_port;
+
+				display = contact->m_display;
+				
+				if (switch_strlen_zero(display)) {
+					if (from) {
+						display = from->a_display;
+						if (switch_strlen_zero(display)) {
+							display = "\"user\"";
+						}
+					}
+				} else {
+					display = "\"user\"";
+				}
+
 				if (!port) {
 					port = "5060";
 				}
 
 				if (contact->m_url->url_params) {
-					contact_str = switch_mprintf("sip:%s@%s:%s;%s", 
-														 contact->m_url->url_user,
-														 contact->m_url->url_host, port, contact->m_url->url_params);
+					contact_str = switch_mprintf("%s <sip:%s@%s:%s;%s>", 
+												 display,
+												 contact->m_url->url_user,
+												 contact->m_url->url_host, port, contact->m_url->url_params);
 				} else {
-					contact_str = switch_mprintf("sip:%s@%s:%s", 
-														 contact->m_url->url_user,
-														 contact->m_url->url_host, port);
+					contact_str = switch_mprintf("%s <sip:%s@%s:%s>", 
+												 display,
+												 contact->m_url->url_user,
+												 contact->m_url->url_host, port);
 				}
 			}
 			
