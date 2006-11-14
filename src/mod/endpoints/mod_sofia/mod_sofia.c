@@ -2078,7 +2078,6 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 		snprintf(tech_pvt->dest, strlen(dest) + 5, "sip:%s", dest);
 	}
 
-	printf("WTF [%s]\n", dest);
 	attach_private(nsession, profile, tech_pvt, dest);
 
 	nchannel = switch_core_session_get_channel(nsession);
