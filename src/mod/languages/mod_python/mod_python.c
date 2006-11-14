@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Brian Fertig <brian.fertig@convergencetek.com>
+ * Johny Kadarisman <jkr888 at gmail.com>
  *
  * mod_python.c -- Python Module
  *
@@ -41,104 +42,24 @@
 
 #include <switch.h>
 
+void init_freeswitch(void);
+
 const char modname[] = "mod_python";
-static int numargs=0;
-
-static PyObject* emb_numargs(PyObject *self, PyObject *args)
-{
-    if(!PyArg_ParseTuple(args, ":numargs"))
-        return NULL;
-    return Py_BuildValue("i", numargs);
-}
-
-static PyMethodDef EmbMethods[] = {
-    {"numargs", emb_numargs, METH_VARARGS,
-     "Return the number of arguments received by the process."},
-    {NULL, NULL, 0, NULL}
-};
 
 static void python_function(switch_core_session_t *session, char *data)
 {
 	char *uuid = switch_core_session_get_uuid(session);
-	uint32_t ulen = strlen(uuid);
-	uint32_t len = strlen((char *) data) + ulen + 2;
-	char *mydata = switch_core_session_alloc(session, len);
-	int argc, i;
-	char *argv[5];
-	char python_code[1024]; 
-//	void*** tsrm_ls = NULL;
+    char *argv[1];
+    FILE* pythonfile;
 
-	PyObject *pName, *pModule, *pFunc;
-    	PyObject *pArgs, *pValue;
+    argv[0] = uuid;
+    pythonfile = fopen(data, "r");
 
-
-	snprintf(mydata, len, "%s %s", uuid, data);
-
-	argc = switch_separate_string(mydata, ' ',argv,(sizeof(argv) / sizeof(argv[0])));
-	
-	sprintf(python_code, "$uuid=\"%s\"; include(\"%s\");\n", argv[0], argv[1]);
-	//python_embed_init(argc, argv, &tsrm_ls);
-	//python_EMBED_START_BLOCK(argc, argv);
-	//zend_eval_string(python_code, NULL, "Embedded code" TSRMLS_CC);
-	//python_EMBED_END_BLOCK();
-	//python_embed_shutdown(tsrm_ls);
-
-	
     Py_Initialize();
-    numargs = argc;
-    Py_InitModule("emb", EmbMethods);
-    pName = PyString_FromString(data);
-    /* Error checking of pName left out */
-
-    pModule = PyImport_Import(pName);
-    Py_DECREF(pName);
-
-    if (pModule != NULL) {
-        pFunc = PyObject_GetAttrString(pModule, "main");
-        /* pFunc is a new reference */
-
-        if (pFunc && PyCallable_Check(pFunc)) {
-            pArgs = PyTuple_New(argc - 3);
-            for (i = 0; i < argc - 3; ++i) {
-                pValue = PyInt_FromLong(atoi(argv[i + 3]));
-                if (!pValue) {
-                    Py_DECREF(pArgs);
-                    Py_DECREF(pModule);
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot convert argument\n");
-                    
-                }
-                /* pValue reference stolen here: */
-                PyTuple_SetItem(pArgs, i, pValue);
-            }
-            pValue = PyObject_CallObject(pFunc, pArgs);
-            Py_DECREF(pArgs);
-            if (pValue != NULL) {
-                printf("Result of call: %ld\n", PyInt_AsLong(pValue));
-                Py_DECREF(pValue);
-            }
-            else {
-                Py_DECREF(pFunc);
-                Py_DECREF(pModule);
-                PyErr_Print();
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Call failed\n");
-                
-            }
-        }
-        else {
-            if (PyErr_Occurred())
-                PyErr_Print();
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find function \"%s\"\n", argv[2]);
-        }
-        Py_XDECREF(pFunc);
-        Py_DECREF(pModule);
-    }
-    else {
-        PyErr_Print();
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to load \"%s\"\n", argv[1]);
-        
-    }
+    PySys_SetArgv(1, argv);
+    init_freeswitch();
+    PyRun_SimpleFile(pythonfile, "");
     Py_Finalize();
-    
 
 }
 

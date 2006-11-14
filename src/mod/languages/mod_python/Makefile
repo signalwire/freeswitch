@@ -1,7 +1,7 @@
 LCFLAGS=-fPIC
 CFLAGS += -fPIC -I$(PREFIX)/include/python2.4/
 PYMOD=freeswitch
-LDFLAGS=-lpython2.4 -Xlinker -L$(PREFIX)/lib/python2.4/config/
+LDFLAGS=-lpython2.4 -Xlinker -export-dynamic -L$(PREFIX)/lib/python2.4/config/  -lutil
 SWIGCFILE=../../../switch_swig.c
 SWIGIFILE=../../../switch_swig.i
 
@@ -32,13 +32,13 @@ $(PYMOD).$(DYNAMIC_LIB_EXTEN): $(MODNAME).$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.
 	$(CC) $(SOLINK) -o py_$(PYMOD).$(DYNAMIC_LIB_EXTEN) switch_swig_wrap.o switch_swig.o $(LDFLAGS)
 
 
-$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c $(MODNAME).o $(OBJS) Makefile
-	$(CC) $(LCFLAGS) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
+$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c $(MODNAME).o $(OBJS) switch_swig_wrap.o switch_swig.o Makefile
+	$(CC) $(LCFLAGS) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o switch_swig_wrap.o switch_swig.o $(OBJS) $(LDFLAGS)
 
 clean:
 	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~
 
 install:
-	#cp -f py_$(PYMOD).$(DYNAMIC_LIB_EXTEN) $(MDIR)
+	# cp -f py_$(PYMOD).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
 	cp -f $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PREFIX)/mod
 
