@@ -426,6 +426,26 @@ typedef enum {
 	AUTH_STALE,
 } auth_res_t;
 
+
+static char *get_url_from_contact(char *buf, uint8_t dup)
+{
+	char *url = NULL, *e;
+
+
+	if ((url = strchr(buf, '<')) && (e = strchr(url, '>'))) {
+		url++;
+		if (dup) {
+			url = strdup(url);
+			e = strchr(url, '>');
+		}
+
+		*e = '\0';
+	}
+	
+	return url;
+}
+
+
 static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, char *regstr, char *np, size_t nplen)
 {
 	int index;
@@ -3184,6 +3204,7 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 	nua_handle_t *nh;
 	char *to;
 	char *open;
+	char *tmp;
 
 	if (!rpid) {
 		rpid = "unknown";
@@ -3225,6 +3246,8 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 	
 
 	nh = nua_handle(profile->nua, NULL,	TAG_END());
+	tmp = contact;
+	contact = get_url_from_contact(tmp, 0);
 
 	nua_notify(nh,
 			   NUTAG_URL(contact),
@@ -4915,6 +4938,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	sofia_profile_t *profile;
 	char *ffrom = NULL;
 	nua_handle_t *msg_nh;
+	char *contact;
 
 	if (to && (user = strdup(to))) {
 		if ((host = strchr(user, '@'))) {
@@ -4946,20 +4970,23 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 				*p = '+';
 			}
 			
-			ffrom = switch_mprintf("\"%s\"<sip:%s+%s@%s>", fu, proto, fp, profile->name);			
+			ffrom = switch_mprintf("\"%s\" <sip:%s+%s@%s>", fu, proto, fp, profile->name);			
 			from = ffrom;
 			switch_safe_free(fu);
 			switch_safe_free(fp);
 		}
 
-		
+		contact = get_url_from_contact(buf, 1);
 		msg_nh = nua_handle(profile->nua, NULL,
 							SIPTAG_FROM_STR(from),
-							NUTAG_URL(buf),
-							SIPTAG_TO_STR(buf),
+							NUTAG_URL(contact),
+							SIPTAG_TO_STR(buf), // if this cries, add contact here too, change the 1 to 0 and omit the safe_free
 							SIPTAG_CONTACT_STR(profile->url),
 							TAG_END());
-		
+
+		switch_safe_free(contact);
+
+
 		nua_message(msg_nh,
 					SIPTAG_CONTENT_TYPE_STR("text/html"),
 					SIPTAG_PAYLOAD_STR(body),
