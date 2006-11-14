@@ -419,7 +419,7 @@
 				Name="soa"
 				>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\soa.c"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\sofia-sip-1.12.3.10\soa_session.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\sofia-sip\soa_session.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\soa_static.c"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\soa_tag.c"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\soa_tag_ref.c"></File>
@@ -433,36 +433,36 @@
 				Name="su headers"
 				Filter="su*.h"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\htable.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\htable2.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\rbtree.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_addrinfo.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_alloc.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_alloc_stat.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_bm.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_config.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_debug.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_errno.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_localinfo.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_log.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_md5.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\htable.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\htable2.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\rbtree.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_addrinfo.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_alloc.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_alloc_stat.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_bm.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_config.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_debug.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_errno.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_localinfo.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_log.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_md5.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\su_module_debug.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_os_nw.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_os_nw.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\su_port.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_source.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_strlst.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_tag.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_tag_class.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_tag_inline.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_tag_io.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_tagarg.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_time.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_types.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_uniqueid.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_vector.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\su_wait.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip-1.12.3.10\tstdef.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_source.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_strlst.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_tag_class.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_tag_inline.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_tag_io.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_tagarg.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_time.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_types.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_uniqueid.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_vector.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\su_wait.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\su\sofia-sip\tstdef.h"></File>
 			</Filter>
 			<Filter
 				Name="win32 headers"
@@ -474,83 +474,83 @@
 			<Filter
 				Name="ipt headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\ipt\sofia-sip-1.12.3.10\base64.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\ipt\sofia-sip-1.12.3.10\rc4.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\ipt\sofia-sip-1.12.3.10\string0.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\ipt\sofia-sip-1.12.3.10\token64.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\ipt\sofia-sip\base64.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\ipt\sofia-sip\rc4.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\ipt\sofia-sip\string0.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\ipt\sofia-sip\token64.h"></File>
 			</Filter>
 			<Filter
 				Name="url headers"
 				Filter="url*.h"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\url\sofia-sip-1.12.3.10\url.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\url\sofia-sip-1.12.3.10\url_tag.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\url\sofia-sip-1.12.3.10\url_tag_class.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\url\sofia-sip\url.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\url\sofia-sip\url_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\url\sofia-sip\url_tag_class.h"></File>
 			</Filter>
 			<Filter
 				Name="features headers"
 				Filter="features*.h"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\features\sofia-sip-1.12.3.10\sofia_features.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\features\sofia-sip\sofia_features.h"></File>
 			</Filter>
 			<Filter
 				Name="bnf headers"
 				Filter="bnf*.h"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\bnf\sofia-sip-1.12.3.10\bnf.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\bnf\sofia-sip-1.12.3.10\hostdomain.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\bnf\sofia-sip\bnf.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\bnf\sofia-sip\hostdomain.h"></File>
 			</Filter>
 			<Filter
 				Name="msg headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_addr.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_addr.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\msg_bnf.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_buffer.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_date.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_header.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_buffer.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_date.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_header.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\msg_internal.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_mclass.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_mclass_hash.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_mime.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_mime_protos.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_parser.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_protos.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_tag_class.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip-1.12.3.10\msg_types.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_mclass.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_mclass_hash.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_mime.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_mime_protos.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_parser.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_protos.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_tag_class.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\msg\sofia-sip\msg_types.h"></File>
 			</Filter>
 			<Filter
 				Name="sip headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip-1.12.3.10\sip.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip\sip.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sip_extensions.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip-1.12.3.10\sip_hclasses.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip-1.12.3.10\sip_header.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip\sip_hclasses.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip\sip_header.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sip_internal.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip-1.12.3.10\sip_parser.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip-1.12.3.10\sip_protos.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip-1.12.3.10\sip_status.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip-1.12.3.10\sip_tag.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip-1.12.3.10\sip_tag_class.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip-1.12.3.10\sip_util.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip\sip_parser.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip\sip_protos.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip\sip_status.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip\sip_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip\sip_tag_class.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sip\sofia-sip\sip_util.h"></File>
 			</Filter>
 			<Filter
 				Name="http headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip-1.12.3.10\http.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip-1.12.3.10\http_hclasses.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip-1.12.3.10\http_header.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip-1.12.3.10\http_parser.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip-1.12.3.10\http_protos.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip-1.12.3.10\http_status.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip-1.12.3.10\http_tag.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip-1.12.3.10\http_tag_class.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip\http.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip\http_hclasses.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip\http_header.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip\http_parser.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip\http_protos.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip\http_status.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip\http_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\http\sofia-sip\http_tag_class.h"></File>
 			</Filter>
 			<Filter
 				Name="nth headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nth\sofia-sip-1.12.3.10\nth.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nth\sofia-sip-1.12.3.10\nth_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nth\sofia-sip\nth.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nth\sofia-sip\nth_tag.h"></File>
 			</Filter>
 			<Filter
 				Name="sresolv headers"
@@ -559,68 +559,68 @@
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sresolv\sofia-resolv\sres_async.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sresolv\sofia-resolv\sres_cache.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sresolv\sofia-resolv\sres_record.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sresolv\sofia-sip-1.12.3.10\sresolv.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sresolv\sofia-sip\sresolv.h"></File>
 			</Filter>
 			<Filter
 				Name="nea headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nea\sofia-sip-1.12.3.10\nea.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nea\sofia-sip\nea.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nea\nea_debug.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nea\sofia-sip-1.12.3.10\nea_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nea\sofia-sip\nea_tag.h"></File>
 			</Filter>
 			<Filter
 				Name="iptsec headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\iptsec\sofia-sip-1.12.3.10\auth_client.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\iptsec\sofia-sip-1.12.3.10\auth_digest.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\iptsec\sofia-sip-1.12.3.10\auth_module.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\iptsec\sofia-sip-1.12.3.10\auth_ntlm.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\iptsec\sofia-sip-1.12.3.10\auth_plugin.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\iptsec\sofia-sip\auth_client.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\iptsec\sofia-sip\auth_digest.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\iptsec\sofia-sip\auth_module.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\iptsec\sofia-sip\auth_ntlm.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\iptsec\sofia-sip\auth_plugin.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\iptsec\iptsec_debug.h"></File>
 			</Filter>
 			<Filter
 				Name="stun headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\stun\sofia-sip-1.12.3.10\stun.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\stun\sofia-sip-1.12.3.10\stun_common.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\stun\sofia-sip-1.12.3.10\stun_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\stun\sofia-sip\stun.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\stun\sofia-sip\stun_common.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\stun\sofia-sip\stun_tag.h"></File>
 			</Filter>
 			<Filter
 				Name="nua headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nua\sofia-sip-1.12.3.10\nua.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nua\sofia-sip-1.12.3.10\nua_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nua\sofia-sip\nua.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nua\sofia-sip\nua_tag.h"></File>
 			</Filter>
 			<Filter
 				Name="nta headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nta\sofia-sip-1.12.3.10\nta.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nta\sofia-sip\nta.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nta\nta_internal.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nta\sofia-sip-1.12.3.10\nta_stateless.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nta\sofia-sip-1.12.3.10\nta_tag.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nta\sofia-sip-1.12.3.10\nta_tport.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nta\sofia-sip-1.12.3.10\sl_utils.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nta\sofia-sip\nta_stateless.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nta\sofia-sip\nta_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nta\sofia-sip\nta_tport.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\nta\sofia-sip\sl_utils.h"></File>
 			</Filter>
 			<Filter
 				Name="tport headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\tport\sofia-sip-1.12.3.10\tport.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\tport\sofia-sip-1.12.3.10\tport_plugins.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\tport\sofia-sip-1.12.3.10\tport_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\tport\sofia-sip\tport.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\tport\sofia-sip\tport_plugins.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\tport\sofia-sip\tport_tag.h"></File>
 				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\tport\tport_tls.h"></File>
 			</Filter>
 			<Filter
 				Name="sdp headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sdp\sofia-sip-1.12.3.10\sdp.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sdp\sofia-sip-1.12.3.10\sdp_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sdp\sofia-sip\sdp.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\sdp\sofia-sip\sdp_tag.h"></File>
 			</Filter>
 			<Filter
 				Name="soa headers"
 				>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\sofia-sip-1.12.3.10\soa.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\sofia-sip-1.12.3.10\soa_add.h"></File>
-				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\sofia-sip-1.12.3.10\soa_tag.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\sofia-sip\soa.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\sofia-sip\soa_add.h"></File>
+				<File RelativePath="..\..\sofia-sip-1.12.3.10\libsofia-sip-ua\soa\sofia-sip\soa_tag.h"></File>
 			</Filter>
 		</Filter>
 	</Files>
