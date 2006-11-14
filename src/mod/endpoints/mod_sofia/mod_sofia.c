@@ -1891,22 +1891,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			activate_rtp(tech_pvt);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Ring SDP:\n%s\n", tech_pvt->local_sdp_str);
 
+			nua_respond(tech_pvt->nh,
+						SIP_183_SESSION_PROGRESS,
+						SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+						SOATAG_AUDIO_AUX("cn telephone-event"),
+						TAG_END());
 			
-			if (msg->message_id == SWITCH_MESSAGE_INDICATE_RINGING) {
-				nua_respond(tech_pvt->nh,
-							SIP_180_RINGING,
-							SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-							SOATAG_AUDIO_AUX("cn telephone-event"),
-							TAG_END());
-			} else {
-				nua_respond(tech_pvt->nh,
-							SIP_183_SESSION_PROGRESS,
-							SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-							SOATAG_AUDIO_AUX("cn telephone-event"),
-							TAG_END());
-			}
 	    }
 	}
 		break;
