@@ -1471,7 +1471,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		char *dnis = NULL;
 		char workspace[1024] = "";
 		char *p, *u, ubuf[512] = "", *user = NULL;;
-		
+
 		switch_copy_string(workspace, outbound_profile->destination_number, sizeof(workspace));
 		profile_name = workspace;
 		if ((callto = strchr(profile_name, '/'))) {
@@ -1481,32 +1481,29 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return SWITCH_STATUS_GENERR;
 		}
-		
+
 		if ((dnis = strchr(callto, ':'))) {
 			*dnis++ = '\0';
 		}
 
-		if ((mdl_profile->user_flags & LDL_FLAG_COMPONENT)) {
-			if ((p = strchr(profile_name, '@'))) {
-				*p++ = '\0';
-				u = profile_name;
-				profile_name = p;
-				snprintf(ubuf, sizeof(ubuf), "%s@%s/talk", u, profile_name);
-				user = ubuf;
-			} else {
-				terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-                return SWITCH_STATUS_GENERR;
-			}
-		} 
-
 		if ((mdl_profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
+			if ((mdl_profile->user_flags & LDL_FLAG_COMPONENT)) {
+				if ((p = strchr(profile_name, '@'))) {
+					*p++ = '\0';
+					u = profile_name;
+					profile_name = p;
+					snprintf(ubuf, sizeof(ubuf), "%s@%s/talk", u, profile_name);
+					user = ubuf;
+				} else {
+					terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					return SWITCH_STATUS_GENERR;
+				}
+			} 
 			
-			if ((mdl_profile->user_flags & LDL_FLAG_COMPONENT) && strchr(outbound_profile->caller_id_number, '@')) {
+			if (strchr(outbound_profile->caller_id_number, '@')) {
 				snprintf(ubuf, sizeof(ubuf), "%s/talk", outbound_profile->caller_id_number);
 				user = ubuf;
-			}
-
-			if (!user) {
+			} else {
 				user = mdl_profile->login;
 			}
 
