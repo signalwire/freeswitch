@@ -973,7 +973,7 @@ static void sha1_hash(char *out, char *in)
 	sha_context_t sha;
 	char *p;
 	int x;
-	unsigned char digest[20];
+	unsigned char digest[20] = "";
 
 	SHA1Init(&sha);
 	
@@ -995,9 +995,10 @@ static int on_stream_component(ldl_handle_t *handle, int type, iks *node)
 	switch (type) {
 	case IKS_NODE_START:
 		if (handle->state == CS_NEW) {
-			char secret[256];
-			char hash[256];
-			char handshake[512];
+			char secret[256] = "";
+			char hash[256] = "";
+			char handshake[512] = "";
+
 			snprintf(secret, sizeof(secret), "%s%s", pak->id, handle->password);
 			sha1_hash(hash, secret);
 			snprintf(handshake, sizeof(handshake), "<handshake>%s</handshake>", hash);

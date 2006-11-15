@@ -41,15 +41,40 @@ extern "C" {
 }
 #endif
 
+#undef inline
+#define inline __inline
+
+#ifndef uint32_t
+#ifdef WIN32
+typedef unsigned __int8		uint8_t;
+typedef unsigned __int16	uint16_t;
+typedef unsigned __int32	uint32_t;
+typedef unsigned __int64    uint64_t;
+typedef __int8		int8_t;
+typedef __int16		int16_t;
+typedef __int32		int32_t;
+typedef __int64		int64_t;
+typedef unsigned long	in_addr_t;
+#else
+#include <limits.h>
+#include <inttypes.h>
+#include <sys/types.h>
+#include <inttypes.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <time.h>
+#endif
+#endif
+
 typedef struct {
-    unsigned long state[5];
-    unsigned long count[2];
+    uint32_t state[5];
+    uint32_t count[2];
     unsigned char buffer[64];
 } sha_context_t;
 
-void SHA1Transform(unsigned long state[5], unsigned char buffer[64]);
+void SHA1Transform(uint32_t state[5], unsigned char buffer[64]);
 void SHA1Init(sha_context_t* context);
-void SHA1Update(sha_context_t* context, unsigned char* data, unsigned int len);
+void SHA1Update(sha_context_t* context, unsigned char* data, uint32_t len);
 void SHA1Final(unsigned char digest[20], sha_context_t* context);
 
 #ifdef __cplusplus

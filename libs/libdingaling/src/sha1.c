@@ -92,12 +92,12 @@ A million repetitions of "a"
 
 /* Hash a single 512-bit block. This is the core of the algorithm. */
 
-void SHA1Transform(unsigned long state[5], unsigned char buffer[64])
+void SHA1Transform(uint32_t state[5], unsigned char buffer[64])
 {
-unsigned long a, b, c, d, e;
+uint32_t a, b, c, d, e;
 typedef union {
     unsigned char c[64];
-    unsigned long l[16];
+    uint32_t l[16];
 } CHAR64LONG16;
 CHAR64LONG16* block;
 #ifdef SHA1HANDSOFF
@@ -161,9 +161,9 @@ void SHA1Init(sha_context_t* context)
 
 /* Run your data through this. */
 
-void SHA1Update(sha_context_t* context, unsigned char* data, unsigned int len)
+void SHA1Update(sha_context_t* context, unsigned char* data, uint32_t len)
 {
-unsigned int i, j;
+uint32_t i, j;
 
     j = (context->count[0] >> 3) & 63;
     if ((context->count[0] += len << 3) < (len << 3)) context->count[1]++;
@@ -185,7 +185,7 @@ unsigned int i, j;
 
 void SHA1Final(unsigned char digest[20], sha_context_t* context)
 {
-unsigned long i, j;
+uint32_t i, j;
 unsigned char finalcount[8];
 
     for (i = 0; i < 8; i++) {
