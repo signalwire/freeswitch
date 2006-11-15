@@ -649,7 +649,7 @@ DoxyDefine(apr_status_t switch_socket_sendto(switcj_socket_t *sock,
  * @param flags The flags to use
  * @param buf  The buffer to use
  * @param len  The length of the available buffer
- */
+ *
 
 DoxyDefine(apr_status_t switch_socket_recvfrom(switch_sockaddr_t *from, 
 									switch_socket_t *sock,
@@ -657,6 +657,7 @@ DoxyDefine(apr_status_t switch_socket_recvfrom(switch_sockaddr_t *from,
 									char *buf, 
 									apr_size_t *len);)
 #define switch_socket_recvfrom apr_socket_recvfrom
+*/
 
 /**
  * Send a file from an open file descriptor to a socket, along with 

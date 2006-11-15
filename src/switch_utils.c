@@ -34,6 +34,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+
 SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
 {
 	switch(priority) { /*lol*/
@@ -49,6 +50,40 @@ SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
 }
 
 static char RFC2833_CHARS[] = "0123456789*#ABCDF";
+
+
+
+SWITCH_DECLARE(char *) switch_get_addr(char *buf, switch_size_t len, switch_sockaddr_t *in)
+{
+	uint8_t x, *i;
+	char *p = buf;
+
+
+	i = (uint8_t *) &in->sa.sin.sin_addr;
+
+	memset(buf, 0, len);
+	for(x =0; x < 4; x++) {
+		sprintf(p, "%u%s", i[x], x == 3 ? "" : ".");
+		p = buf + strlen(buf);
+	}
+	return buf;
+}
+
+SWITCH_DECLARE(apr_status_t) switch_socket_recvfrom(apr_sockaddr_t *from, apr_socket_t *sock,
+									apr_int32_t flags, char *buf, 
+									apr_size_t *len)
+{
+	apr_status_t r;
+
+	if ((r = apr_socket_recvfrom(from, sock, flags, buf, len)) == APR_SUCCESS) {
+		from->port = ntohs(from->sa.sin.sin_port);
+		//from->ipaddr_ptr = &(from->sa.sin.sin_addr);
+		//from->ipaddr_ptr = inet_ntoa(from->sa.sin.sin_addr);
+	}
+
+	return r;
+
+}
 
 SWITCH_DECLARE(char) switch_rfc2833_to_char(int event)
 {

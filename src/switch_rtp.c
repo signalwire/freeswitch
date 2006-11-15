@@ -272,14 +272,18 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 		switch_stun_packet_t *rpacket;
 		char *remote_ip;
 		switch_size_t bytes;
-
+		char ipbuf[25];
+		
 		memset(buf, 0, sizeof(buf));
 		rpacket = switch_stun_packet_build_header(SWITCH_STUN_BINDING_RESPONSE, packet->header.id, buf);
 		switch_stun_packet_attribute_add_username(rpacket, username, 32);
-		switch_sockaddr_ip_get(&remote_ip, rtp_session->from_addr);
+		//switch_sockaddr_ip_get(&remote_ip, rtp_session->from_addr);
+
+		remote_ip = switch_get_addr(ipbuf, sizeof(ipbuf), rtp_session->from_addr);
+		
+
 		switch_stun_packet_attribute_add_binded_address(rpacket, remote_ip, rtp_session->from_addr->port);
 		bytes = switch_stun_packet_length(rpacket);
-
 		switch_socket_sendto(rtp_session->sock, rtp_session->from_addr, 0, (void*)rpacket, &bytes);
 	}
 }
@@ -866,9 +870,14 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					char *tx_host;
 					uint32_t old = rtp_session->remote_port;
 					char *old_host;
-				
-					switch_sockaddr_ip_get(&tx_host, rtp_session->from_addr);
-					switch_sockaddr_ip_get(&old_host, rtp_session->remote_addr);
+					char bufa[30], bufb[30];
+
+					//switch_sockaddr_ip_get(&tx_host, rtp_session->from_addr);
+					//switch_sockaddr_ip_get(&old_host, rtp_session->remote_addr);
+
+					tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
+					old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
+
 					if (!switch_strlen_zero(tx_host) && rtp_session->from_addr->port > 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Auto Changing port from %s:%u to %s:%u\n",
 										  old_host, old, tx_host, rtp_session->from_addr->port);
