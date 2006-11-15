@@ -149,6 +149,17 @@ struct ldl_session {
 };
 
 
+static void lowercase(char *str) 
+{
+	size_t x = 0;
+
+	if (str) {
+		for (x = 0; x < strlen(str); x++) {
+			str[x] = (char)tolower((int)str[x]);
+		}
+	}
+}
+
 static char *cut_path(char *in)
 {
 	char *p, *ret = in;
@@ -682,7 +693,6 @@ static int on_presence(void *user_data, ikspak *pak)
 	char id[1024];
 	char *resource;
 	struct ldl_buffer *buffer;
-	size_t x;
 	ldl_signal_t signal;
 
 	
@@ -696,8 +706,6 @@ static int on_presence(void *user_data, ikspak *pak)
 		status = type;
 	}
 	
-	
-
 	if (!apr_hash_get(handle->sub_hash, from, APR_HASH_KEY_STRING)) {
 		iks *msg;
 		apr_hash_set(handle->sub_hash, 	apr_pstrdup(handle->pool, from), APR_HASH_KEY_STRING, &marker);
@@ -706,16 +714,12 @@ static int on_presence(void *user_data, ikspak *pak)
 	}
 
 	apr_cpystrn(id, from, sizeof(id));
+	lowercase(id);
+
 	if ((resource = strchr(id, '/'))) {
 		*resource++ = '\0';
 	}
-
-	if (resource) {
-		for (x = 0; x < strlen(resource); x++) {
-			resource[x] = (char)tolower((int)resource[x]);
-		}
-	}
-
+	
 	if (resource && strstr(resource, "talk") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
 		apr_cpystrn(buffer->buf, from, buffer->len);
 		fflush(stderr);
@@ -861,8 +865,10 @@ static int on_commands(void *user_data, ikspak *pak)
 			if (!strcasecmp(iks_name(tag), "bind")) {
 				char *jid = iks_find_cdata(tag, "jid");
 				char *resource = strchr(jid, '/');
-				//iks *iq, *x;
-				handle->acc->resource = apr_pstrdup(handle->pool, resource);
+				if (resource) {
+					resource++;
+					handle->acc->resource = apr_pstrdup(handle->pool, resource);
+				}
 				handle->login = apr_pstrdup(handle->pool, jid);
 #if 0
 				if ((iq = iks_new("iq"))) {
@@ -1582,6 +1588,11 @@ void *ldl_handle_get_private(ldl_handle_t *handle)
 	return handle->private_info;
 }
 
+void *ldl_handle_get_login(ldl_handle_t *handle)
+{
+	return handle->login;
+}
+
 void ldl_handle_send_presence(ldl_handle_t *handle, char *from, char *to, char *type, char *rpid, char *message)
 {
 	do_presence(handle, from, to, type, rpid, message);
@@ -1747,7 +1758,7 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *from, char *buf, unsigned int len)
 {
 	iks *pres, *msg;
-	char *lid = NULL;
+	char *lid = NULL, *low_id = NULL;
 	struct ldl_buffer buffer;
 	apr_time_t started;
 	unsigned int elapsed;
@@ -1762,13 +1773,14 @@ char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *from, char *buf, un
 	iks_insert_attrib(pres, "type", "probe");
 	iks_insert_attrib(pres, "from", from);
 	iks_insert_attrib(pres, "to", id);
-
+	
 
 	apr_hash_set(handle->probe_hash, id, APR_HASH_KEY_STRING, &buffer);
 	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, notice); 
-	iks_insert_attrib(pres, "from", from);
+	iks_insert_attrib(msg, "from", from);
 	apr_queue_push(handle->queue, msg);
 	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, notice); 
+	iks_insert_attrib(msg, "from", from);
 	apr_queue_push(handle->queue, msg);
 	apr_queue_push(handle->queue, pres);
 
@@ -1793,7 +1805,12 @@ char *ldl_handle_probe(ldl_handle_t *handle, char *id, char *from, char *buf, un
 		ldl_yield(1000);
 	}
 
-	apr_hash_set(handle->probe_hash, id, APR_HASH_KEY_STRING, NULL);
+	if ((low_id = strdup(id))) {
+		lowercase(id);
+		apr_hash_set(handle->probe_hash, low_id, APR_HASH_KEY_STRING, NULL);
+		free(low_id);
+	}
+	
 	return lid;
 }
 

@@ -1504,7 +1504,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 				snprintf(ubuf, sizeof(ubuf), "%s/talk", outbound_profile->caller_id_number);
 				user = ubuf;
 			} else {
-				user = mdl_profile->login;
+				user = ldl_handle_get_login(mdl_profile->handle);
 			}
 
 			if (!ldl_handle_ready(mdl_profile->handle)) {
@@ -2174,7 +2174,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			char *hint;
 
 			if (profile->auto_reply) {
-				ldl_handle_send_msg(handle, (profile->user_flags & LDL_FLAG_COMPONENT) ? to : profile->login, from, "", profile->auto_reply);
+				ldl_handle_send_msg(handle,
+									(profile->user_flags & LDL_FLAG_COMPONENT) ? to : ldl_handle_get_login(profile->handle),
+									from, "", profile->auto_reply);
 			}
 
 			if (strchr(to, '+')) {
@@ -2207,7 +2209,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			break;
 		case LDL_SIGNAL_LOGIN_SUCCESS:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_LOGIN_SUCCESS) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", ldl_handle_get_login(profile->handle));
 				switch_event_fire(&event);
 			}
 			if (profile->user_flags & LDL_FLAG_COMPONENT) {
@@ -2217,13 +2219,13 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			break;
 		case LDL_SIGNAL_LOGIN_FAILURE:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_LOGIN_FAILURE) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", ldl_handle_get_login(profile->handle));
 				switch_event_fire(&event);
 			}
 			break;
 		case LDL_SIGNAL_CONNECTED:
 			if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, DL_EVENT_CONNECTED) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", ldl_handle_get_login(profile->handle));
 				switch_event_fire(&event);
 			}
 			break;
@@ -2317,7 +2319,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			}
 
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", ldl_handle_get_login(profile->handle));
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "hint", "%s", hint);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", from);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s", to);
@@ -2531,7 +2533,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 											  ldl_session_get_id(dlsession), cid_name, cid_num, exten);
 			
 							if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-																					  profile->login,
+																					  ldl_handle_get_login(profile->handle),
 																					  profile->dialplan,
 																					  cid_name,
 																					  cid_num,
