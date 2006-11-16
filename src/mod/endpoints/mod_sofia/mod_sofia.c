@@ -4271,6 +4271,10 @@ static void event_callback(nua_event_t event,
 		//sip_r_unregister(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
     
+	case nua_r_options:
+		//sip_r_options(status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		break;
+
 	case nua_i_options:
 		sip_i_options(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
@@ -4343,7 +4347,6 @@ static void event_callback(nua_event_t event,
 	case nua_r_publish:
 		//sip_r_publish(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
-	case nua_r_options:
 	case nua_r_message:
 	case nua_r_notify:
 		if (nh) {
