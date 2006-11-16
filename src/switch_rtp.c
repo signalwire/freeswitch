@@ -765,7 +765,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		rtp_session->last_time = switch_time_now();
 	}
 
-	for(;;) {
+	while(rtp_session->ready) {
 		bytes = sizeof(rtp_msg_t);	
 		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock, 0, (void *)&rtp_session->recv_msg, &bytes);
 

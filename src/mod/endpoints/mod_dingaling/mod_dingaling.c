@@ -248,7 +248,7 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 	}
 	rpid = translate_rpid(rpid, status);
 
-	ldl_handle_send_presence(profile->handle, sub_to, sub_from, "probe", rpid, status);
+	//ldl_handle_send_presence(profile->handle, sub_to, sub_from, "probe", rpid, status);
 	ldl_handle_send_presence(profile->handle, sub_to, sub_from, type, rpid, status);
 
 
@@ -333,7 +333,6 @@ static void pres_event_handler(switch_event_t *event)
 						 type, rpid, status, proto, from);
 	
 	
-
 	for (hi = switch_hash_first(apr_hash_pool_get(globals.profile_hash), globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		char *errmsg;
         switch_hash_this(hi, NULL, NULL, &val);
@@ -819,6 +818,7 @@ static int do_candidates(struct private_object *tech_pvt, int force)
 		cand[0].protocol = "udp";
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send Candidate %s:%d [%s]\n", cand[0].address, cand[0].port, cand[0].username);
 		tech_pvt->cand_id = ldl_session_candidates(tech_pvt->dlsession, cand, 1);
+		switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT);
 		switch_set_flag_locked(tech_pvt, TFLAG_RTP_READY);
 	}
 	switch_clear_flag_locked(tech_pvt, TFLAG_DO_CAND);
@@ -913,6 +913,7 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 	started = switch_time_now();
 
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+		tech_pvt->next_cand = switch_time_now() + DL_CAND_WAIT;
 		tech_pvt->next_desc = switch_time_now();
 	} else {
 		tech_pvt->next_cand = switch_time_now() + DL_CAND_WAIT;
@@ -1567,9 +1568,9 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, user);
 		tech_pvt->profile = mdl_profile;
 		ldl_session_set_private(dlsession, *new_session);
-		ldl_session_set_value(dlsession, "dnis", dnis);
-		ldl_session_set_value(dlsession, "caller_id_name", outbound_profile->caller_id_name);
-		ldl_session_set_value(dlsession, "caller_id_number", outbound_profile->caller_id_number);
+		//ldl_session_set_value(dlsession, "dnis", dnis);
+		//ldl_session_set_value(dlsession, "caller_id_name", outbound_profile->caller_id_name);
+		//ldl_session_set_value(dlsession, "caller_id_number", outbound_profile->caller_id_number);
 		tech_pvt->dlsession = dlsession;
 		if (!get_codecs(tech_pvt)) {
 			terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -2101,6 +2102,12 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					execute_sql(profile->dbname, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
+
+				if (is_special(to)) {
+					ldl_handle_send_presence(profile->handle, to, from, NULL, "unknown", "Click To Call");
+				}
+
+#if 0
 				if (is_special(to)) {
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
@@ -2111,6 +2118,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						switch_event_fire(&event);
 					}
 				}
+#endif
 				break;
 			case LDL_SIGNAL_ROSTER:
 				if (switch_event_create(&event, SWITCH_EVENT_ROSTER) == SWITCH_STATUS_SUCCESS) {
@@ -2135,6 +2143,11 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					switch_event_fire(&event);
 				}
 
+				
+				if (is_special(to)) {
+					ldl_handle_send_presence(profile->handle, to, from, NULL, "unknown", "Click To Call");
+				}
+#if 0
 				if (is_special(to)) {
 					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
@@ -2146,7 +2159,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					}
 				}
 				break;
-
+#endif
 			case LDL_SIGNAL_PRESENCE_OUT:
 				
 				if ((sql = switch_mprintf("update subscriptions set show='%q', status='%q' where sub_from='%q'", msg, subject, from))) {
@@ -2285,6 +2298,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating a session for %s\n", ldl_session_get_id(dlsession));
 			ldl_session_set_private(dlsession, session);
 			tech_pvt->dlsession = dlsession;
+			switch_channel_set_name(channel, "DingaLing/new");
 			switch_channel_set_state(channel, CS_INIT);
 			switch_core_session_thread_launch(session);
 		} else {
@@ -2414,176 +2428,178 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				}
 			}
 		}
-
 		
 		break;
 	case LDL_SIGNAL_CANDIDATES:
 		if (signal) {
 			ldl_candidate_t *candidates;
 			unsigned int len = 0;
+			unsigned int x;
 
-			if (ldl_session_get_candidates(dlsession, &candidates, &len) == LDL_STATUS_SUCCESS) {
-				unsigned int x;
+			if (ldl_session_get_candidates(dlsession, &candidates, &len) != LDL_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Candidate Error!\n");
+				switch_set_flag(tech_pvt, TFLAG_BYE);
+				switch_clear_flag(tech_pvt, TFLAG_IO);
+				status = LDL_STATUS_FALSE;
+				goto done;
+			}
 
 				
-				if (tech_pvt->remote_ip) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Already picked an IP [%s]\n", tech_pvt->remote_ip);
-					break;
-				}
+			if (tech_pvt->remote_ip) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Already picked an IP [%s]\n", tech_pvt->remote_ip);
+				break;
+			}
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%u candidates\n", len);
-				for(x = 0; x < len; x++) {
-					uint8_t lanaddr = 0;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%u candidates\n", len);
+			for(x = 0; x < len; x++) {
+				uint8_t lanaddr = 0;
 
-					if (profile->lanaddr) {
-						lanaddr = strncasecmp(candidates[x].address, profile->lanaddr, strlen(profile->lanaddr)) ? 0 : 1;
-					} 
+				if (profile->lanaddr) {
+					lanaddr = strncasecmp(candidates[x].address, profile->lanaddr, strlen(profile->lanaddr)) ? 0 : 1;
+				} 
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidates %s:%d\n", candidates[x].address, candidates[x].port);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "candidates %s:%d\n", candidates[x].address, candidates[x].port);
 					
-					if (!strcasecmp(candidates[x].protocol, "udp") && (!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun")) && 
-						((profile->lanaddr && lanaddr) ||
-						 (strncasecmp(candidates[x].address, "10.", 3) && 
-						  strncasecmp(candidates[x].address, "192.168.", 8) &&
-						  strncasecmp(candidates[x].address, "127.", 4) &&
-						  strncasecmp(candidates[x].address, "1.", 2) &&
-						  strncasecmp(candidates[x].address, "2.", 2) &&
-						  strncasecmp(candidates[x].address, "172.16.", 7) &&
-						  strncasecmp(candidates[x].address, "172.17.", 7) &&
-						  strncasecmp(candidates[x].address, "172.18.", 7) &&
-						  strncasecmp(candidates[x].address, "172.19.", 7) &&
-						  strncasecmp(candidates[x].address, "172.2", 5) &&
-						  strncasecmp(candidates[x].address, "172.30.", 7) &&
-						  strncasecmp(candidates[x].address, "172.31.", 7)
-						  ))) {
-						ldl_payload_t payloads[5];
-						char *exten;
-						char *context;
-						char *cid_name;
-						char *cid_num;
-						char *tmp, *t, *them = NULL;
+				if (!strcasecmp(candidates[x].protocol, "udp") && (!strcasecmp(candidates[x].type, "local") || !strcasecmp(candidates[x].type, "stun")) && 
+					((profile->lanaddr && lanaddr) ||
+					 (strncasecmp(candidates[x].address, "10.", 3) && 
+					  strncasecmp(candidates[x].address, "192.168.", 8) &&
+					  strncasecmp(candidates[x].address, "127.", 4) &&
+					  strncasecmp(candidates[x].address, "1.", 2) &&
+					  strncasecmp(candidates[x].address, "2.", 2) &&
+					  strncasecmp(candidates[x].address, "172.16.", 7) &&
+					  strncasecmp(candidates[x].address, "172.17.", 7) &&
+					  strncasecmp(candidates[x].address, "172.18.", 7) &&
+					  strncasecmp(candidates[x].address, "172.19.", 7) &&
+					  strncasecmp(candidates[x].address, "172.2", 5) &&
+					  strncasecmp(candidates[x].address, "172.30.", 7) &&
+					  strncasecmp(candidates[x].address, "172.31.", 7)
+					  ))) {
+					ldl_payload_t payloads[5];
+					char *exten;
+					char *context;
+					char *cid_name;
+					char *cid_num;
+					char *tmp, *t, *them = NULL;
 
-						memset(payloads, 0, sizeof(payloads));
+					memset(payloads, 0, sizeof(payloads));
 
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Acceptable Candidate %s:%d\n", candidates[x].address, candidates[x].port);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Acceptable Candidate %s:%d\n", candidates[x].address, candidates[x].port);
 
-						if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-							ldl_session_accept_candidate(dlsession, &candidates[x]);
-						}
+					if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+						switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
+						ldl_session_accept_candidate(dlsession, &candidates[x]);
+					}
 
-						if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {
-							exten = profile->exten;
-							/* if it's _auto_ set the extension to match the username portion of the called address */
-							if (!strcmp(exten, "_auto_")) {
-								if ((t = ldl_session_get_callee(dlsession))) {
-									if ((them = strdup(t))) {
-										char *a, *b, *p;
-										if ((p = strchr(them, '/'))) {
-											*p = '\0';
-										}
-
-										if ((a = strchr(them, '+')) && (b = strrchr(them, '+')) && a != b) {
-											*b++ = '\0';
-											switch_channel_set_variable(channel, "dl_user", them);
-											switch_channel_set_variable(channel, "dl_host", b);
-										}
-										exten = them;
+					if (!(exten = ldl_session_get_value(dlsession, "dnis"))) {
+						exten = profile->exten;
+						/* if it's _auto_ set the extension to match the username portion of the called address */
+						if (!strcmp(exten, "_auto_")) {
+							if ((t = ldl_session_get_callee(dlsession))) {
+								if ((them = strdup(t))) {
+									char *a, *b, *p;
+									if ((p = strchr(them, '/'))) {
+										*p = '\0';
 									}
+
+									if ((a = strchr(them, '+')) && (b = strrchr(them, '+')) && a != b) {
+										*b++ = '\0';
+										switch_channel_set_variable(channel, "dl_user", them);
+										switch_channel_set_variable(channel, "dl_host", b);
+									}
+									exten = them;
 								}
 							}
 						}
+					}
 						
-						if (!(context = ldl_session_get_value(dlsession, "context"))) {
-							context = profile->context;
-						}
+					if (!(context = ldl_session_get_value(dlsession, "context"))) {
+						context = profile->context;
+					}
 
-						if (!(cid_name = ldl_session_get_value(dlsession, "caller_id_name"))) {
-							cid_name = tech_pvt->recip;
-						}
+					if (!(cid_name = ldl_session_get_value(dlsession, "caller_id_name"))) {
+						cid_name = tech_pvt->recip;
+					}
 
-						if (!(cid_num = ldl_session_get_value(dlsession, "caller_id_number"))) {
-							cid_num = tech_pvt->recip;
-						}
+					if (!(cid_num = ldl_session_get_value(dlsession, "caller_id_number"))) {
+						cid_num = tech_pvt->recip;
+					}
 
-						/* context of "_auto_" means set it to the domain */
-						if (profile->context && !strcmp(profile->context, "_auto_")) {
-							context = profile->name;
-						}
+					/* context of "_auto_" means set it to the domain */
+					if (profile->context && !strcmp(profile->context, "_auto_")) {
+						context = profile->name;
+					}
 			
-						tech_pvt->them = switch_core_session_strdup(session, ldl_session_get_callee(dlsession));
-						tech_pvt->us = switch_core_session_strdup(session, ldl_session_get_caller(dlsession));
+					tech_pvt->them = switch_core_session_strdup(session, ldl_session_get_callee(dlsession));
+					tech_pvt->us = switch_core_session_strdup(session, ldl_session_get_caller(dlsession));
 
-						if ((tmp = strdup(tech_pvt->us))) {
-							char *p, *q;
+					if ((tmp = strdup(tech_pvt->us))) {
+						char *p, *q;
 
-							if ((p = strchr(tmp, '@'))) {
-								*p++ = '\0';
-								if ((q = strchr(p, '/'))) {
-									*q = '\0';
-								}
-								switch_channel_set_variable(channel, "dl_from_user", tmp);
-								switch_channel_set_variable(channel, "dl_from_host", p);
+						if ((p = strchr(tmp, '@'))) {
+							*p++ = '\0';
+							if ((q = strchr(p, '/'))) {
+								*q = '\0';
 							}
-
-							switch_safe_free(tmp);
+							switch_channel_set_variable(channel, "dl_from_user", tmp);
+							switch_channel_set_variable(channel, "dl_from_host", p);
 						}
+
+						switch_safe_free(tmp);
+					}
 						
-						if (!tech_pvt->caller_profile) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating an identity for %s %s <%s> %s\n", 
-											  ldl_session_get_id(dlsession), cid_name, cid_num, exten);
+					if (!tech_pvt->caller_profile) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating an identity for %s %s <%s> %s\n", 
+										  ldl_session_get_id(dlsession), cid_name, cid_num, exten);
 			
-							if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
-																					  ldl_handle_get_login(profile->handle),
-																					  profile->dialplan,
-																					  cid_name,
-																					  cid_num,
-																					  ldl_session_get_ip(dlsession),
-																					  ldl_session_get_value(dlsession, "ani"),
-																					  ldl_session_get_value(dlsession, "aniii"),
-																					  ldl_session_get_value(dlsession, "rdnis"),
-																					  (char *)modname,
-																					  context,
-																					  exten)) != 0) {
-								char name[128];
-								snprintf(name, sizeof(name), "DingaLing/%s", tech_pvt->caller_profile->destination_number);
-								switch_channel_set_name(channel, name);
-								switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
-							}
+						if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
+																				  ldl_handle_get_login(profile->handle),
+																				  profile->dialplan,
+																				  cid_name,
+																				  cid_num,
+																				  ldl_session_get_ip(dlsession),
+																				  ldl_session_get_value(dlsession, "ani"),
+																				  ldl_session_get_value(dlsession, "aniii"),
+																				  ldl_session_get_value(dlsession, "rdnis"),
+																				  (char *)modname,
+																				  context,
+																				  exten)) != 0) {
+							char name[128];
+							snprintf(name, sizeof(name), "DingaLing/%s", tech_pvt->caller_profile->destination_number);
+							switch_channel_set_name(channel, name);
+							switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 						}
+					}
 
-						switch_safe_free(them);
+					switch_safe_free(them);
 						
-						if (lanaddr) {
-							switch_set_flag_locked(tech_pvt, TFLAG_LANADDR);
-						}
+					if (lanaddr) {
+						switch_set_flag_locked(tech_pvt, TFLAG_LANADDR);
+					}
 
-						if (!get_codecs(tech_pvt)) {
+					if (!get_codecs(tech_pvt)) {
+						terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+						status = LDL_STATUS_FALSE;
+						goto done;
+					}
+
+						
+					tech_pvt->remote_ip = switch_core_session_strdup(session, candidates[x].address);
+					ldl_session_set_ip(dlsession, tech_pvt->remote_ip);
+					tech_pvt->remote_port = candidates[x].port;
+					tech_pvt->remote_user = switch_core_session_strdup(session, candidates[x].username);
+
+						
+					if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+						if (!do_candidates(tech_pvt, 0)) {
 							terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 							status = LDL_STATUS_FALSE;
 							goto done;
 						}
-
-						
-						tech_pvt->remote_ip = switch_core_session_strdup(session, candidates[x].address);
-						ldl_session_set_ip(dlsession, tech_pvt->remote_ip);
-						tech_pvt->remote_port = candidates[x].port;
-						tech_pvt->remote_user = switch_core_session_strdup(session, candidates[x].username);
-
-						
-						if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-							if (!do_candidates(tech_pvt, 0)) {
-								terminate_session(&session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-								status = LDL_STATUS_FALSE;
-								goto done;
-							}
-						}
-				
-						
-						switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT);
-						
-						status = LDL_STATUS_SUCCESS;
-						goto done;
 					}
+						
+					status = LDL_STATUS_SUCCESS;
+					goto done;
 				}
 			}
 		}

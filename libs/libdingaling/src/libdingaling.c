@@ -264,9 +264,9 @@ ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, c
 	session->id = apr_pstrdup(session->pool, id);
 	session->them = apr_pstrdup(session->pool, them);
 	
-	//if (me) {
-	//session->initiator = apr_pstrdup(session->pool, them);
-	//} 
+	if (me) {
+		session->initiator = apr_pstrdup(session->pool, me);
+	} 
 
 	if (ldl_test_flag(handle, LDL_FLAG_COMPONENT)) {
 		session->login = apr_pstrdup(session->pool, me);
@@ -1468,14 +1468,29 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 
 }
 
+static void add_elements(ldl_session_t *session, iks *tag)
+{
+	apr_hash_index_t *hi;
 
+	for (hi = apr_hash_first(session->pool, session->variables); hi; hi = apr_hash_next(hi)) {
+		void *val = NULL;
+		const void *key = NULL;
+
+		apr_hash_this(hi, &key, NULL, &val);
+		if (val) {
+			iks *var = iks_insert(tag, "info_element");
+			iks_insert_attrib(var, "xmlns", "http://www.freeswitch.org/jie");
+			iks_insert_attrib(var, "name", (char *) key);
+			iks_insert_attrib(var, "value", (char *) val);
+		}
+	}
+}
 
 static ldl_status new_session_iq(ldl_session_t *session, iks **iqp, iks **sessp, unsigned int *id, char *type)
 {
 	iks *iq, *sess;
 	unsigned int myid;
 	char idbuf[80];
-	apr_hash_index_t *hi;
 
 	myid = next_id();
 	snprintf(idbuf, sizeof(idbuf), "%u", myid);
@@ -1491,18 +1506,6 @@ static ldl_status new_session_iq(ldl_session_t *session, iks **iqp, iks **sessp,
 	iks_insert_attrib(sess, "type", type);
 	iks_insert_attrib(sess, "id", session->id);
 	iks_insert_attrib(sess, "initiator", session->initiator ? session->initiator : session->them);	
-	for (hi = apr_hash_first(session->pool, session->variables); hi; hi = apr_hash_next(hi)) {
-		void *val = NULL;
-		const void *key = NULL;
-
-		apr_hash_this(hi, &key, NULL, &val);
-		if (val) {
-			iks *var = iks_insert(sess, "info_element");
-			iks_insert_attrib(var, "xmlns", "http://www.freeswitch.org/jie");
-			iks_insert_attrib(var, "name", (char *) key);
-			iks_insert_attrib(var, "value", (char *) val);
-		}
-	}
 
 	*sessp = sess;
 	*iqp = iq;
@@ -1717,6 +1720,8 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 		new_session_iq(session, &iq, &sess, &id, "transport-info");
 		tag = iks_insert(sess, "transport");
 		iks_insert_attrib(tag, "xmlns", "http://www.google.com/transport/p2p");
+
+		add_elements(session, tag);
 		tag = iks_insert(tag, "candidate");
 
 		if (candidates[x].name) {
