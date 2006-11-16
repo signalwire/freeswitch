@@ -238,6 +238,8 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, char *file
 					node->content = content;
 					node->timestamp = now;
 					switch_queue_push(LOG_QUEUE, node);
+				} else {
+					free(data);
 				}
 			} 
 		}

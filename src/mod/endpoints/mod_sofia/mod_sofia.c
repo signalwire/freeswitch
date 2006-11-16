@@ -167,7 +167,8 @@ typedef enum {
 	TFLAG_XFER = (1 << 19),
 	TFLAG_NOMEDIA = (1 << 20),
 	TFLAG_BUGGY_2833 = (1 << 21),
-	TFLAG_SIP_HOLD = (1 << 22)
+	TFLAG_SIP_HOLD = (1 << 22),
+	TFLAG_RWLOCK = (1 << 23)
 } TFLAGS;
 
 static struct {
@@ -2754,7 +2755,12 @@ static void sip_i_state(int status,
 		break;
 	case nua_callstate_terminated: 
 		if (session) {
+			if (switch_test_flag(tech_pvt, TFLAG_RWLOCK)) {
+				switch_core_session_rwunlock(session);
+				switch_clear_flag(tech_pvt, TFLAG_RWLOCK);
+			}
 			if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
+
 				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 				if (switch_test_flag(tech_pvt, TFLAG_NOHUP)) {
 					switch_clear_flag_locked(tech_pvt, TFLAG_NOHUP);
@@ -3977,7 +3983,8 @@ static void sip_i_invite(nua_t *nua,
 			}
 
 			attach_private(session, profile, tech_pvt, username);
-
+			switch_core_session_read_lock(session);
+			switch_set_flag(tech_pvt, TFLAG_RWLOCK);
 			channel = switch_core_session_get_channel(session);
 			switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
 			set_chat_hash(tech_pvt, sip);
