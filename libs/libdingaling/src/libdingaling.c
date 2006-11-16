@@ -264,9 +264,9 @@ ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, c
 	session->id = apr_pstrdup(session->pool, id);
 	session->them = apr_pstrdup(session->pool, them);
 	
-	
-	session->initiator = apr_pstrdup(session->pool, (flags & LDL_FLAG_OUTBOUND) ? me : them);
-
+	if (flags & LDL_FLAG_OUTBOUND) {
+		session->initiator = apr_pstrdup(session->pool, me);
+	}
 
 	if (ldl_test_flag(handle, LDL_FLAG_COMPONENT)) {
 		session->login = apr_pstrdup(session->pool, me);
