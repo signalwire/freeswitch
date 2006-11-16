@@ -4070,7 +4070,7 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, uint32
 	return 0;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
+SWITCH_DECLARE(switch_status_t) switch_core_destroy(int vg)
 {
 	switch_event_t *event;
 	if (switch_event_create(&event, SWITCH_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
@@ -4097,7 +4097,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_core_db_close(runtime.db);
 	switch_core_db_close(runtime.event_db);
 	switch_xml_destroy();
-
+	if (vg) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Full destruction of the core disabled for memory debugging purposes.\n");
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Finalizing Shutdown.\n");
 	switch_log_shutdown();
 	
@@ -4108,7 +4110,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	if (runtime.memory_pool) {
 		apr_pool_destroy(runtime.memory_pool);
-		apr_terminate();
+		if (!vg) {
+			apr_terminate();
+		}
 	}
 
 #ifdef WIN32

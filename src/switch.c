@@ -195,6 +195,7 @@ int main(int argc, char *argv[])
 	char pid_path[256] = "";	// full path to the pid file
 	const char *err = NULL;		// error value for return from freeswitch initialization
 	int bg = 0;					// TRUE if we are running in background mode
+	int vg = 0;					// TRUE if we are running in vg mode
 	FILE *f;					// file handle to the pid file
 	pid_t pid = 0;				// 
 	int x;						//
@@ -265,6 +266,10 @@ int main(int argc, char *argv[])
 		if (argv[x] && !strcmp(argv[x], "-nc")) {
 			bg++;
 		}
+
+		if (argv[x] && !strcmp(argv[x], "-vg")) {
+			vg++;
+		}
 	}
 
 	if (die) {
@@ -302,5 +307,5 @@ int main(int argc, char *argv[])
 
 	switch_core_runtime_loop(bg);
 
-	return switch_core_destroy();
+	return switch_core_destroy(vg);
 }
