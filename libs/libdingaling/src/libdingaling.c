@@ -250,7 +250,7 @@ ldl_status ldl_session_destroy(ldl_session_t **session_p)
 }
 
 
-ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, char *id, char *them, char *me)
+ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, char *id, char *them, char *me, ldl_user_flag_t flags)
 {
 	ldl_session_t *session = NULL;
 	
@@ -264,9 +264,9 @@ ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, c
 	session->id = apr_pstrdup(session->pool, id);
 	session->them = apr_pstrdup(session->pool, them);
 	
-	if (me) {
-		session->initiator = apr_pstrdup(session->pool, me);
-	} 
+	
+	session->initiator = apr_pstrdup(session->pool, (flags & LDL_FLAG_OUTBOUND) ? me : them);
+
 
 	if (ldl_test_flag(handle, LDL_FLAG_COMPONENT)) {
 		session->login = apr_pstrdup(session->pool, me);
@@ -298,7 +298,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 	char *msg = NULL;
 
 	if (!(session = apr_hash_get(handle->sessions, id, APR_HASH_KEY_STRING))) {
-		ldl_session_create(&session, handle, id, from, to);
+		ldl_session_create(&session, handle, id, from, to, LDL_FLAG_NONE);
 		if (!session) {
 			return LDL_STATUS_MEMERR;
 		}

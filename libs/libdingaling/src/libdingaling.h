@@ -110,10 +110,12 @@ typedef enum {
 } ldl_flag_t;
 
 typedef enum {
+	LDL_FLAG_NONE = 0,
 	LDL_FLAG_TLS = (1 << 10),
 	LDL_FLAG_SASL_PLAIN = (1 << 11),
 	LDL_FLAG_SASL_MD5 = (1 << 12),
 	LDL_FLAG_COMPONENT = (1 << 13),
+	LDL_FLAG_OUTBOUND = (1 << 14)
 } ldl_user_flag_t;
 
 typedef enum {
@@ -253,9 +255,10 @@ void ldl_session_set_value(ldl_session_t *session, char *key, char *val);
   \param id the id to use for the session
   \param them the id of the other end of the call
   \param me the id of our end of the call
+  \param flags user flags
   \return SUCCESS OR FAILURE
 */
-ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, char *id, char *them, char *me);
+ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, char *id, char *them, char *me, ldl_user_flag_t flags);
 
 /*!
   \brief get the id of a session

@@ -1565,7 +1565,7 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 		switch_stun_random_string(sess_id, 10, "0123456789");
 		tech_pvt->us = switch_core_session_strdup(session, user);
 		tech_pvt->them = switch_core_session_strdup(session, full_id);
-		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, user);
+		ldl_session_create(&dlsession, mdl_profile->handle, sess_id, full_id, user, LDL_FLAG_OUTBOUND);
 		tech_pvt->profile = mdl_profile;
 		ldl_session_set_private(dlsession, *new_session);
 		//ldl_session_set_value(dlsession, "dnis", dnis);
