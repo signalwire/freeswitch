@@ -757,7 +757,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type, switch_frame_flag_t *flags)
 {
-	switch_size_t bytes;
+	switch_size_t bytes = 0;
 	switch_status_t status;
 	uint8_t check = 1;
 
