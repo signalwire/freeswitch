@@ -982,7 +982,7 @@ static void do_invite(switch_core_session_t *session)
 			tech_pvt->chat_to = tech_pvt->dest;
 			tech_pvt->hash_key = switch_core_session_strdup(tech_pvt->session, hash_key);
 			switch_core_hash_insert(tech_pvt->profile->chat_hash, tech_pvt->hash_key, tech_pvt);
-			
+			free(e_dest);			
 		}
 
 		holdstr = switch_test_flag(tech_pvt, TFLAG_SIP_HOLD) ? "*" : "";
@@ -4165,11 +4165,14 @@ static void sip_r_register(int status,
 					break;
 				}
 			}
+			if (!oreg) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, realm);
+			}
+
 		}
 	}
 
 	if (!oreg) {
-		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Register handle to associate!\n");
 		return;
 	}
 	
