@@ -4115,7 +4115,8 @@ static void sip_r_register(int status,
 	outbound_reg_t *oreg = NULL;
 	sip_www_authenticate_t const *authenticate = NULL;
 	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
-	char const *realm = NULL;
+	char const *realm = NULL; 
+	char *p = NULL, *qrealm = NULL;
 	char const *scheme = NULL;
 	int index;
 	char *cur;
@@ -4149,10 +4150,21 @@ static void sip_r_register(int status,
 
 		if (!(scheme && realm)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No scheme and realm!\n");
-			return;
 		}
 	}
 
+	if (!(scheme && realm)) {
+		return;
+	}
+
+	qrealm = strdup(realm);
+
+	while(*qrealm && *qrealm == '"') {
+		*qrealm++;
+	}
+	if ((p = strchr(qrealm, '"'))) {
+		*p = '\0';
+	}
 
 	if (sofia_private) {
 		if (sofia_private->oreg) {
@@ -4160,17 +4172,19 @@ static void sip_r_register(int status,
 		} else if (profile) {
 			outbound_reg_t *oregp;
 			for (oregp = profile->registrations; oregp; oregp = oregp->next) {
-				if (scheme && realm && !strcasecmp(oregp->register_scheme, scheme) && !strcasecmp(oregp->register_realm, realm)) {
+				if (scheme && qrealm && !strcasecmp(oregp->register_scheme, scheme) && !strcasecmp(oregp->register_realm, qrealm)) {
 					oreg = oregp;
 					break;
 				}
 			}
 			if (!oreg) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, realm);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, qrealm);
 			}
 
 		}
 	}
+
+	switch_safe_free(qrealm);
 
 	if (!oreg) {
 		return;
