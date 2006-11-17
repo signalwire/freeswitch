@@ -4413,13 +4413,12 @@ static void check_oreg(sofia_profile_t *profile, time_t now)
 			oregp->state = REG_STATE_REGED;
 			break;
 		case REG_STATE_UNREGED:
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,  "registering %s\n", oregp->name);
 			if ((oregp->nh = nua_handle(oregp->profile->nua, NULL,
 										NUTAG_URL(oregp->register_proxy),
 										SIPTAG_TO_STR(oregp->register_to),
 										NUTAG_CALLSTATE_REF(ss_state),
 										SIPTAG_FROM_STR(oregp->register_from), TAG_END()))) {
-
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,  "registering %s\n", oregp->name);	
 				oregp->sofia_private.oreg = oregp;
 				nua_handle_bind(oregp->nh, &oregp->sofia_private);
 
@@ -4431,6 +4430,9 @@ static void check_oreg(sofia_profile_t *profile, time_t now)
 							 TAG_NULL());
 				oregp->retry = now + 10;
 				oregp->state = REG_STATE_TRYING;
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,  "Error registering %s\n", oregp->name);
+				oregp->state = REG_STATE_FAILED;
 			}
 			break;
 
