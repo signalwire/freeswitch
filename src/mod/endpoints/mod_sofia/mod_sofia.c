@@ -2072,7 +2072,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
 			tech_pvt->dest = switch_core_session_strdup(nsession, buf);
 			
 		} else {
-			terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+			terminate_session(&nsession, SWITCH_CAUSE_NO_ROUTE_DESTINATION, __LINE__);
 			goto done;
 		}
 	} else if (!strchr(dest, '@')) {
@@ -2082,7 +2082,7 @@ static switch_status_t sofia_outgoing_channel(switch_core_session_t *session, sw
             tech_pvt->dest = switch_core_session_strdup(nsession, buf);
 
         } else {
-            terminate_session(&nsession, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
+            terminate_session(&nsession, SWITCH_CAUSE_NO_ROUTE_DESTINATION, __LINE__);
             goto done;
         }
 	} else {
