@@ -4160,7 +4160,7 @@ static void sip_r_register(int status,
 	duprealm = strdup(realm);
 	qrealm = duprealm;
 	
-	while(*qrealm && *qrealm == '"') {
+	while(qrealm && *qrealm && *qrealm == '"') {
 		qrealm++;
 	}
 	if ((p = strchr(qrealm, '"'))) {
