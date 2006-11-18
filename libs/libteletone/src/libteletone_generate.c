@@ -34,6 +34,9 @@
 #define SMIN -32768
 #define normalize_to_16bit(n) if (n > SMAX) n = SMAX; else if (n < SMIN) n = SMIN;
 
+#ifdef _MSC_VER
+#pragma warning(disable:4706)
+#endif
 
 
 int teletone_set_tone(teletone_generation_session_t *ts, int index, ...)
