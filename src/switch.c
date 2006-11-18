@@ -139,7 +139,7 @@ void WINAPI ServiceCtrlHandler( DWORD control )
 	case SERVICE_CONTROL_SHUTDOWN:
 	case SERVICE_CONTROL_STOP:
 		//Shutdown freeswitch
-		switch_core_destroy();
+		switch_core_destroy(0);
 		//set service status valuse
 		status.dwCurrentState = SERVICE_STOPPED;
 		status.dwWin32ExitCode = 0;
