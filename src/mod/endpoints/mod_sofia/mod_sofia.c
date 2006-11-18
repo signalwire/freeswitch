@@ -4161,7 +4161,7 @@ static void sip_r_register(int status,
 	qrealm = duprealm;
 	
 	while(*qrealm && *qrealm == '"') {
-		*qrealm++;
+		qrealm++;
 	}
 	if ((p = strchr(qrealm, '"'))) {
 		*p = '\0';
