@@ -4116,7 +4116,7 @@ static void sip_r_register(int status,
 	sip_www_authenticate_t const *authenticate = NULL;
 	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
 	char const *realm = NULL; 
-	char *p = NULL, *qrealm = NULL;
+	char *p = NULL, *duprealm = NULL, *qrealm = NULL;
 	char const *scheme = NULL;
 	int index;
 	char *cur;
@@ -4157,8 +4157,9 @@ static void sip_r_register(int status,
 		return;
 	}
 
-	qrealm = strdup(realm);
-
+	duprealm = strdup(realm);
+	qrealm = duprealm;
+	
 	while(*qrealm && *qrealm == '"') {
 		*qrealm++;
 	}
@@ -4184,7 +4185,7 @@ static void sip_r_register(int status,
 		}
 	}
 
-	switch_safe_free(qrealm);
+	switch_safe_free(duprealm);
 
 	if (!oreg) {
 		return;
