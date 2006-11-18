@@ -49,7 +49,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="..\..\nspr-4.6.1.winnt5.release\nspr-4.6.1\include"
-				PreprocessorDefinitions="NDEBUG;_X86_=1;_WINDOWS;WIN32;XP_WIN;JSFILE;EXPORT_JS_API;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
+				PreprocessorDefinitions="NDEBUG;_X86_=1;_WINDOWS;WIN32;XP_WIN;JSFILE;EXPORT_JS_API;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;JS_THREADSAFE"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
