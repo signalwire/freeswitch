@@ -2617,7 +2617,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 						}
 						write_frame.data = abuf;
-						write_frame.datalen = (uint32_t) ringback.asis ? olen : olen * 2;
+						write_frame.datalen = (uint32_t) (ringback.asis ? olen : olen * 2);
 						if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 							break;
 						}
