@@ -2510,9 +2510,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					memset(write_frame.data, 255, write_frame.datalen);
 
 					if (ringback_data) {
+						char *tmp_data = NULL;
 						switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
 						switch_buffer_create_dynamic(&ringback.loop_buffer, 512, 1024, 0);
-						char *tmp_data = NULL;
 
 						if (*ringback_data == '/') {
 							char *ext;
