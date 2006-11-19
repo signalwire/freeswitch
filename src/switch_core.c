@@ -120,6 +120,7 @@ struct switch_core_runtime {
 	uint32_t session_id;
 	apr_pool_t *memory_pool;
 	switch_hash_t *session_table;
+	switch_hash_t *global_vars;
 	switch_mutex_t *session_table_mutex;
 #ifdef CRASH_PROT
 	switch_hash_t *stack_table;
@@ -556,6 +557,11 @@ SWITCH_DECLARE(void) switch_core_session_rwunlock(switch_core_session_t *session
 
 	switch_thread_rwlock_unlock(session->rwlock);
 
+}
+
+SWITCH_DECLARE(char *) switch_core_get_variable(char *varname)
+{
+	return (char *) switch_core_hash_find(runtime.global_vars, varname);
 }
 
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_str)
@@ -3849,6 +3855,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 		return SWITCH_STATUS_MEMERR;
 	}
 
+	switch_core_hash_init(&runtime.global_vars, runtime.memory_pool);
+
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
 		return SWITCH_STATUS_MEMERR;
@@ -3866,6 +3874,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 				if (!strcasecmp(var, "max-sessions")) {
 					runtime.session_limit = atoi(val);
 				}
+			}
+		}
+
+		if ((settings = switch_xml_child(cfg, "variables"))) {
+			for (param = switch_xml_child(settings, "variable"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+				char *varr = NULL, *vall = NULL;
+
+				varr = switch_core_strdup(runtime.memory_pool, var);
+				vall = switch_core_strdup(runtime.memory_pool, val);
+				switch_core_hash_insert(runtime.global_vars, varr, vall);
 			}
 		}
 		switch_xml_free(xml);

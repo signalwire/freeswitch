@@ -8,6 +8,12 @@
         <!--Most channels to allow at once -->
         <param name="max-sessions" value="1000"/>
       </settings>
+      <!--Any variables defined here will be available in every channel, in the dialplan etc -->
+      <variables>
+	<variable name="uk-ring" value="%(400,200,400,450);%(400,2200,400,450)"/>
+	<variable name="us-ring" value="%(2000, 4000, 440.0, 480.0)"/>
+	<variable name="bong-ring" value="v=4000;>=0;+=2;#(60,0);v=2000;%(940,0,350,440)"/>
+      </variables>
     </configuration>
 
     <configuration name="modules.conf" description="Modules">
@@ -429,6 +435,9 @@
 
       <extension name="testmusic">
         <condition field="destination_number" expression="^1234$">
+	  <!-- Request a certain tone/file to be played while you wait for the call to be answered-->
+	  <action application="set" data="ringback=${us-ring}"/>
+	  <!--<action application="set" data="ringback=/home/ring.wav"/>-->
           <action application="bridge" data="sofia/test/1234@66.250.68.194"/>
         </condition>
       </extension>

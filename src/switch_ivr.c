@@ -32,6 +32,7 @@
  */
 #include <switch.h>
 #include <switch_ivr.h>
+#include <libteletone.h>
 
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 
@@ -2198,6 +2199,31 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 	
 }
 
+struct ringback {
+	switch_buffer_t *audio_buffer;
+    switch_buffer_t *loop_buffer;
+	teletone_generation_session_t ts;	
+	switch_file_handle_t fhb;
+	switch_file_handle_t *fh;
+	uint8_t asis;
+};
+
+typedef struct ringback ringback_t;
+
+static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map_t *map)
+{
+	ringback_t *tto = ts->user_data;
+	int wrote;
+
+	if (!tto) {
+		return -1;
+	}
+	wrote = teletone_mux_tones(ts, map);
+	switch_buffer_write(tto->audio_buffer, ts->buffer, wrote * 2);
+
+	return 0;
+}
+
 #define MAX_PEERS 256
 SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *session,
 													 switch_core_session_t **bleg,
@@ -2220,6 +2246,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_caller_profile_t *caller_profiles[MAX_PEERS] = {0}, *caller_caller_profile;
 	char *chan_type = NULL, *chan_data;
 	switch_channel_t *peer_channel = NULL, *peer_channels[MAX_PEERS] = {0};
+	ringback_t ringback = {0};
 	time_t start;
 	switch_frame_t *read_frame = NULL;
 	switch_memory_pool_t *pool = NULL;
@@ -2231,6 +2258,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char *file = NULL, *key = NULL, *odata, *var;
 	switch_call_cause_t reason = SWITCH_CAUSE_UNALLOCATED;
 	uint8_t to = 0;
+	char *ringback_data = NULL;
+	switch_codec_t *read_codec = NULL;
+
 	write_frame.data = fdata;
 	
 	*bleg = NULL;
@@ -2261,6 +2291,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		caller_channel = switch_core_session_get_channel(session);
 		assert(caller_channel != NULL);
 
+		ringback_data = switch_channel_get_variable(caller_channel, "ringback");
 		switch_channel_set_variable(caller_channel, "originate_disposition", "failure");
 
 		if ((var = switch_channel_get_variable(caller_channel, "group_confirm_key"))) {
@@ -2449,12 +2480,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		}
 	endfor1:
-		
-		if (session && !switch_channel_test_flag(caller_channel, CF_NOMEDIA)) {
-			switch_codec_t *read_codec = NULL;
 
+		if (ringback_data && !switch_channel_test_flag(caller_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+			switch_channel_pre_answer(caller_channel);
+		}
+
+		if (session && !switch_channel_test_flag(caller_channel, CF_NOMEDIA)) {
 			read_codec = switch_core_session_get_read_codec(session);
 			assert(read_codec != NULL);
+
 			if (!(pass = (uint8_t)switch_test_flag(read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH))) {
 				if (switch_core_codec_init(&write_codec,
 										   "L16",
@@ -2465,6 +2499,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 										   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 										   NULL,
 										   pool) == SWITCH_STATUS_SUCCESS) {
+					
+					
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
 									  read_codec->implementation->samples_per_second,
 									  read_codec->implementation->microseconds_per_frame / 1000);
@@ -2472,9 +2508,60 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					write_frame.datalen = read_codec->implementation->bytes_per_frame;
 					write_frame.samples = write_frame.datalen / 2;
 					memset(write_frame.data, 255, write_frame.datalen);
+
+					if (ringback_data) {
+						switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
+						switch_buffer_create_dynamic(&ringback.loop_buffer, 512, 1024, 0);
+						char *tmp_data = NULL;
+
+						if (*ringback_data == '/') {
+							char *ext;
+							
+							if ((ext = strrchr(ringback_data, '.'))) {
+								switch_core_session_set_read_codec(session, &write_codec);
+								ext++;
+							} else {
+								ringback.asis++;
+								write_frame.codec = read_codec;
+								ext = read_codec->implementation->iananame;
+								tmp_data = switch_mprintf("%s.%s", ringback_data, ext);
+								ringback_data = tmp_data;
+							}
+
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback File [%s]\n", ringback_data);
+
+							ringback.fhb.channels = read_codec->implementation->number_of_channels;
+							ringback.fhb.samplerate = read_codec->implementation->samples_per_second;
+							if (switch_core_file_open(&ringback.fhb,
+													  ringback_data,
+													  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
+													  switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing File\n");
+								switch_safe_free(tmp_data);
+								goto notready;
+							}
+							ringback.fh = &ringback.fhb;
+
+							
+						} else {
+							teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
+							//ringback.ts.debug = 1;
+							//ringback.ts.debug_stream = switch_core_get_console();
+							if (teletone_run(&ringback.ts, ringback_data)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing Tone\n");
+								teletone_destroy_session(&ringback.ts);
+								switch_buffer_destroy(&ringback.audio_buffer);
+								switch_buffer_destroy(&ringback.loop_buffer);
+								ringback_data = NULL;
+							}
+						}
+						switch_safe_free(tmp_data);
+					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error!");
 					switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_TEMPORARY_FAILURE);
+					read_codec = NULL;
 				}
 			}
 		}
@@ -2505,9 +2592,55 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				if (!SWITCH_READ_ACCEPTABLE(status)) {
 					break;
 				}
-				if (read_frame && !pass) {
+				if (read_frame && !pass && !switch_test_flag(read_frame, SFF_CNG) && read_frame->datalen > 1) {
+					if (ringback.fh) {
+						uint8_t abuf[1024];
+						switch_size_t mlen, olen;
+						unsigned int pos = 0;
+
+						if (ringback.asis) {
+							mlen = read_frame->datalen;
+						} else {
+							mlen = read_frame->datalen  / 2;
+						}
+
+						olen = mlen;
+						switch_core_file_read(ringback.fh, abuf, &olen);
+						
+						if (olen == 0) {
+							olen = mlen;
+							ringback.fh->speed = 0;
+							switch_core_file_seek(ringback.fh, &pos, 0, SEEK_SET);
+							switch_core_file_read(ringback.fh, abuf, &olen);
+							if (olen == 0) {
+								break;
+							}
+						}
+						write_frame.data = abuf;
+						write_frame.datalen = (uint32_t) ringback.asis ? olen : olen * 2;
+						if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
+							break;
+						}
+					} else if (ringback.audio_buffer) {
+						if ((write_frame.datalen = (uint32_t)switch_buffer_read(ringback.audio_buffer,
+																				write_frame.data,
+																				write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+							switch_buffer_t *tmp;
+							tmp = ringback.audio_buffer;
+							ringback.audio_buffer = ringback.loop_buffer;
+							ringback.loop_buffer = tmp;
+							if ((write_frame.datalen = (uint32_t)switch_buffer_read(ringback.audio_buffer,
+																					write_frame.data,
+																					write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+								break;
+							}
+						}
+					}	
 					if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 						break;
+					}
+					if (ringback.loop_buffer) {
+						switch_buffer_write(ringback.loop_buffer, write_frame.data, write_frame.datalen);
 					}
 				}
 
@@ -2615,6 +2748,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		if (!pass && write_codec.implementation) {
 			switch_core_codec_destroy(&write_codec);
+		}
+
+		if (ringback.fh) {
+			switch_core_file_close(ringback.fh);
+			ringback.fh = NULL;
+			if (read_codec && !ringback.asis) {
+				switch_core_session_set_read_codec(session, read_codec);
+				switch_core_session_reset(session);
+			}
+		} else if (ringback.audio_buffer) {
+			teletone_destroy_session(&ringback.ts);
+			switch_buffer_destroy(&ringback.audio_buffer);
+			switch_buffer_destroy(&ringback.loop_buffer);
 		}
 
 		for (i = 0; i < and_argc; i++) {

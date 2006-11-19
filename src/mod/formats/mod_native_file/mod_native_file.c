@@ -75,7 +75,7 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, char 
 	handle->channels = 1;
 	handle->format = 0;
 	handle->sections = 0;
-	handle->seekable = 0;
+	handle->seekable = 1;
 	handle->speed = 0;
 	handle->private_info = context;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
@@ -98,8 +98,10 @@ static switch_status_t native_file_file_close(switch_file_handle_t *handle)
 
 static switch_status_t native_file_file_seek(switch_file_handle_t *handle, unsigned int *cur_sample, int64_t samples, int whence)
 {
-	//native_file_context *context = handle->private_info;
-
+	native_file_context *context = handle->private_info;
+	
+	switch_file_seek(context->fd, whence, &samples);
+	
 	return SWITCH_STATUS_FALSE;
 
 }

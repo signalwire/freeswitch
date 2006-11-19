@@ -84,11 +84,14 @@ int teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_ha
 	ts->user_data = user_data;
 	ts->volume = 1500;
 	ts->decay_step = 0;
-	if ((ts->buffer = calloc(buflen, sizeof(teletone_audio_t))) == 0) {
-		return -1;
+	if (buflen) {
+		if ((ts->buffer = calloc(buflen, sizeof(teletone_audio_t))) == 0) {
+			return -1;
+		}
+		ts->datalen = buflen;
+	} else {
+		ts->dynamic = 1024;
 	}
-	ts->datalen = buflen;
-
 	/* Add Standard DTMF Tones */
 	teletone_set_tone(ts, '1', 697.0, 1209.0, 0.0);
 	teletone_set_tone(ts, '2', 697.0, 1336.0, 0.0);
@@ -120,8 +123,21 @@ int teletone_destroy_session(teletone_generation_session_t *ts)
 	return 0;
 }
 
-/** Generate a specified number of samples containing the three specified
- *  frequencies (in hertz) and dump to the file descriptor audio_fd. */
+static int ensure_buffer(teletone_generation_session_t *ts, int need)
+{
+	need += ts->samples;
+	need *= sizeof(teletone_audio_t);
+	need *= ts->channels;
+
+	if (need > ts->datalen) {
+		ts->datalen = need + ts->dynamic;
+		if (!(ts->buffer = realloc(ts->buffer, ts->datalen))) {
+			return -1;
+		}
+	}
+
+	return 0;
+}
 
 int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
@@ -159,6 +175,11 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 			duration *= ts->channels;
 		}
 
+		if (ts->dynamic) {
+			if (ensure_buffer(ts, duration)) {
+				return -1;
+			}
+		}
 		for (ts->samples = 0; ts->samples < ts->datalen && ts->samples < duration; ts->samples++) {
 			if (ts->decay_step && !(ts->samples % ts->decay_step) && ts->volume > 0 && ts->samples > decay) {
 				ts->volume += ts->decay_direction;
@@ -177,6 +198,11 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 				ts->samples++;
 			}
 			
+		}
+	}
+	if (ts->dynamic) {
+		if (ensure_buffer(ts, wait)) {
+			return -1;
 		}
 	}
 	for (c = 0; c < ts->channels; c++) {
@@ -211,19 +237,37 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 	return ts->samples;
 }
 
+/* don't ask */
+static char *my_strdup (const char *s)
+{
+	size_t len = strlen (s) + 1;
+	void *new = malloc (len);
+	
+	if (new == NULL) {
+		return NULL;
+	}
+
+	return (char *) memcpy (new, s, len);
+}
 
 int teletone_run(teletone_generation_session_t *ts, char *cmd)
 {
-	char *data, *cur, *end;
+	char *data = NULL, *cur = NULL, *end = NULL;
 	int var = 0, LOOPING = 0;
+	
+	if (!cmd) {
+		return -1;
+	}
 
 	do {
-		data = strdup(cmd);
+		if (!(data = my_strdup(cmd))) {
+			return -1;
+		}
+
 		cur = data;
-		
+
 		while (*cur) {
 			var = 0;
-
 			if (*cur == ' ' || *cur == '\r' || *cur == '\n') {
 				cur++;
 				continue;

@@ -75,7 +75,6 @@ static int teletone_handler(teletone_generation_session_t *ts, teletone_tone_map
 /*********************************************************************************/
 static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
-	int32 memory = 65535;
 	JSObject *session_obj;
 	struct teletone_obj *tto = NULL;
 	struct js_session *jss = NULL;
@@ -101,12 +100,6 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 		timer_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 	}
 
-	if (argc > 2) {
-		if (!JS_ValueToInt32(cx, argv[2], &memory)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Convert to INT\n");
-			return JS_FALSE;
-		}
-	} 
 	switch_core_new_memory_pool(&pool);
 
 	if (!(tto = switch_core_alloc(pool, sizeof(*tto)))) {
@@ -149,7 +142,7 @@ static JSBool teletone_construct(JSContext *cx, JSObject *obj, uintN argc, jsval
 	tto->obj = obj;
 	tto->cx = cx;
 	tto->session = jss->session;
-	teletone_init_session(&tto->ts, memory, teletone_handler, tto);
+	teletone_init_session(&tto->ts, 0, teletone_handler, tto);
 	JS_SetPrivate(cx, obj, tto);
 
 	return JS_TRUE;

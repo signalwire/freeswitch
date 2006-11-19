@@ -183,6 +183,7 @@ typedef apr_file_t switch_file_t;
  */
 DoxyDefine(apr_status_t switch_file_open(switch_file_t **newf, const char *fname, apr_int32_t flag, switch_fileperms_t perm, switch_pool_t *pool);)
 #define switch_file_open apr_file_open
+#define switch_file_seek apr_file_seek
 
 /**
  * Close the specified file.

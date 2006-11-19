@@ -56,7 +56,7 @@ extern "C" {
 	This module is responsible for tone generation specifics
 */
 
-typedef short teletone_audio_t;
+typedef int16_t teletone_audio_t;
 struct teletone_generation_session;
 typedef int (*tone_handler)(struct teletone_generation_session *ts, teletone_tone_map_t *map);
 
@@ -101,6 +101,7 @@ struct teletone_generation_session {
 	/*! In-Use size of the buffer */
 	int samples;
 	/*! Callback function called during generation */
+	int dynamic;
 	tone_handler handler;
 };
 

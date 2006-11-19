@@ -344,7 +344,7 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, char *rp
 
 SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, char *varname)
 {
-	char *v;
+	char *v = NULL;
 	assert(channel != NULL);
 
 	if (!(v=switch_core_hash_find(channel->variables, varname))) {
@@ -352,6 +352,7 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, ch
 			if (!strcmp(varname, "base_dir")) {
 				return SWITCH_GLOBAL_dirs.base_dir;
 			}
+			v = switch_core_get_variable(varname);
 		}
 	}
 	
@@ -1113,7 +1114,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 {
 	char *p, *c;
 	char *data, *indup;
-	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, vnamepos, vvalpos, cpos, ppos, block = 128;
+	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
 	char *sub_val = NULL, *func_val = NULL;
 
 	if (!strchr(in, '$') && !strchr(in, '&')) {
@@ -1195,36 +1196,35 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						return in;
 					}
 				}
-				nlen = strlen(sub_val);
+				nlen = sub_val ? strlen(sub_val) : 0;
+
 				if (len + nlen >= olen) {
-					olen += block;
+					olen = (olen + len + nlen + block);
 					cpos = c - data;
-					ppos = p - data;
-					vnamepos = vname - data;
-					vvalpos = vval - data;
 					data = realloc(data, olen);
-
 					c = data + cpos;
-					p = data + ppos;
-					vname = data + vnamepos;
-					vname = data + vvalpos;
+					memset(c, 0, olen - cpos);
 				}
-
-				len += nlen;
-				strcat(c, sub_val);
-				c += nlen;
-
-				if (func_val) {
-					free(func_val);
-					func_val = NULL;
+				if (nlen) {
+					len += nlen;
+					strcat(c, sub_val);
+					c += nlen;
 				}
+				
+				switch_safe_free(func_val);
 			}
 			if (sp) {
 				*c++ = ' ';
 				sp = 0;
+				len++;
 			}
-			*c++ = *p;
-			len++;
+
+			if (*p == '$' || *p == '&') {
+				p--;
+			} else {
+				*c++ = *p;
+				len++;
+			} 
 		}
 	}
 	free(indup);
