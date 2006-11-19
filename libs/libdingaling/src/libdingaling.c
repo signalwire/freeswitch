@@ -63,7 +63,7 @@
 #include "sha1.h"
 
 #ifdef _MSC_VER
-#pragma warning(disable:4127)
+#pragma warning(disable:4127 4706)
 #endif
 
 #define microsleep(x) apr_sleep(x * 1000)
