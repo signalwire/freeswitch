@@ -2625,11 +2625,26 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't get profile!\n");
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	} else {
+		char *dp[25];
+		int argc, x, count = 0;
+
 		if (!switch_strlen_zero(caller_profile->dialplan)) {
-			dialplan_interface = switch_loadable_module_get_dialplan_interface(caller_profile->dialplan);
+			argc = switch_separate_string(caller_profile->dialplan, ',', dp, (sizeof(dp) / sizeof(dp[0]))); 
+			for (x = 0; x < argc; x++) {
+				if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dp[x]))) {
+					continue;
+				}
+
+				count++;
+
+				if ((extension = dialplan_interface->hunt_function(session)) != 0) {
+					switch_channel_set_caller_extension(session->channel, extension);
+					break;
+				}
+			}
 		}
 
-		if (!dialplan_interface) {
+		if (!count) {
 			if (switch_channel_test_flag(session->channel, CF_OUTBOUND)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Dialplan, changing state to HOLD\n");
 				switch_channel_set_state(session->channel, CS_HOLD);
@@ -2638,12 +2653,9 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Dialplan, Aborting\n");
 				switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
-		} else {
-			if ((extension = dialplan_interface->hunt_function(session)) != 0) {
-				switch_channel_set_caller_extension(session->channel, extension);
-			}
 		}
 	}
+	
 }
 
 static void switch_core_standard_on_execute(switch_core_session_t *session)
