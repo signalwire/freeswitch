@@ -4150,42 +4150,43 @@ static void sip_r_register(int status,
 
 		if (!(scheme && realm)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No scheme and realm!\n");
+			return;
 		}
 	}
 
-	if (!(scheme && realm)) {
-		return;
-	}
-
-	duprealm = strdup(realm);
-	qrealm = duprealm;
-	
-	while(qrealm && *qrealm && *qrealm == '"') {
-		qrealm++;
-	}
-	if ((p = strchr(qrealm, '"'))) {
-		*p = '\0';
-	}
 
 	if (sofia_private) {
 		if (sofia_private->oreg) {
 			oreg = sofia_private->oreg;
 		} else if (profile) {
 			outbound_reg_t *oregp;
-			for (oregp = profile->registrations; oregp; oregp = oregp->next) {
-				if (scheme && qrealm && !strcasecmp(oregp->register_scheme, scheme) && !strcasecmp(oregp->register_realm, qrealm)) {
-					oreg = oregp;
-					break;
-				}
-			}
-			if (!oreg) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, qrealm);
-			}
 
+			if ((duprealm = strdup(realm))) {
+				qrealm = duprealm;
+	
+				while(*qrealm && *qrealm == '"') {
+					qrealm++;
+				}
+				if ((p = strchr(qrealm, '"'))) {
+					*p = '\0';
+				}
+
+				for (oregp = profile->registrations; oregp; oregp = oregp->next) {
+					if (scheme && qrealm && !strcasecmp(oregp->register_scheme, scheme) && !strcasecmp(oregp->register_realm, qrealm)) {
+						oreg = oregp;
+						break;
+					}
+				}
+				if (!oreg) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, qrealm);
+				}
+				switch_safe_free(duprealm);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+				return;
+			}
 		}
 	}
-
-	switch_safe_free(duprealm);
 
 	if (!oreg) {
 		return;
