@@ -4112,6 +4112,25 @@ static void sip_r_register(int status,
 						   sip_t const *sip,
 						   tagi_t tags[])
 {
+	if (sofia_private && sofia_private->oreg) {
+		if (status == 200) {
+			sofia_private->oreg->state = REG_STATE_REGISTER;
+		} else {
+			sofia_private->oreg->state = REG_STATE_FAILED;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "received %d on register!\n", status);
+		}
+	}
+}
+
+static void sip_r_challenge(int status,
+						   char const *phrase,
+						   nua_t *nua,
+						   sofia_profile_t *profile,
+						   nua_handle_t *nh,
+						   sofia_private_t *sofia_private,
+						   sip_t const *sip,
+						   tagi_t tags[])
+{
 	outbound_reg_t *oreg = NULL;
 	sip_www_authenticate_t const *authenticate = NULL;
 	switch_core_session_t *session = sofia_private ? sofia_private->session : NULL;
@@ -4131,86 +4150,77 @@ static void sip_r_register(int status,
 		}
 	}
 
-	if (sofia_private && sofia_private->oreg) {
-		oreg = sofia_private->oreg;
-		if (status == 200) {
-			oreg->state = REG_STATE_REGISTER;
-			return;
+
+	if (sip->sip_www_authenticate) {
+		authenticate = sip->sip_www_authenticate;
+	} else if (sip->sip_proxy_authenticate) {
+		authenticate = sip->sip_proxy_authenticate;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Missing Authenticate Header!\n");
+		return;
+	}
+	scheme = (char const *) authenticate->au_scheme;
+	if (authenticate->au_params) {
+		for(index = 0; (cur=(char*)authenticate->au_params[index]); index++) {
+			if ((realm = strstr(cur, "realm="))) {
+				realm += 6;
+				break;
+			}
 		}
 	}
 
+	if (!(scheme && realm)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No scheme and realm!\n");
+		return;
+	}
 
-	if (status == 401 || status == 407) {
-		if (sip->sip_www_authenticate) {
-			authenticate = sip->sip_www_authenticate;
-		} else if (sip->sip_proxy_authenticate) {
-			authenticate = sip->sip_proxy_authenticate;
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Missing Authenticate Header!\n");
-			return;
-		}
-		scheme = (char const *) authenticate->au_scheme;
-		if (authenticate->au_params) {
-			for(index = 0; (cur=(char*)authenticate->au_params[index]); index++) {
-				if ((realm = strstr(cur, "realm="))) {
-					realm += 6;
+	if (profile) {
+		outbound_reg_t *oregp;
+
+		if ((duprealm = strdup(realm))) {
+			qrealm = duprealm;
+	
+			while(*qrealm && *qrealm == '"') {
+				qrealm++;
+			}
+
+			if ((p = strchr(qrealm, '"'))) {
+				*p = '\0';
+			}
+
+			for (oregp = profile->registrations; oregp; oregp = oregp->next) {
+				if (scheme && qrealm && !strcasecmp(oregp->register_scheme, scheme) && !strcasecmp(oregp->register_realm, qrealm)) {
+					oreg = oregp;
 					break;
 				}
 			}
-		}
-
-		if (!(scheme && realm)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No scheme and realm!\n");
+			if (!oreg) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, qrealm);
+			}
+			switch_safe_free(duprealm);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 			return;
 		}
-
-		if (profile) {
-			outbound_reg_t *oregp;
-
-			if ((duprealm = strdup(realm))) {
-				qrealm = duprealm;
-	
-				while(*qrealm && *qrealm == '"') {
-					qrealm++;
-				}
-
-				if ((p = strchr(qrealm, '"'))) {
-					*p = '\0';
-				}
-
-				for (oregp = profile->registrations; oregp; oregp = oregp->next) {
-					if (scheme && qrealm && !strcasecmp(oregp->register_scheme, scheme) && !strcasecmp(oregp->register_realm, qrealm)) {
-						oreg = oregp;
-						break;
-					}
-				}
-				if (!oreg) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, qrealm);
-				}
-				switch_safe_free(duprealm);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
-				return;
-			}
-		}
-		
-		snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, 
-				 oreg->register_username,
-				 oreg->register_password);
-		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
-						  profile->username, authentication);
-		
-		
-		ss_state = nua_callstate_authenticating;
-		
-		tl_gets(tags,
-				NUTAG_CALLSTATE_REF(ss_state),
-				SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
-				TAG_END());
-		
-		nua_authenticate(nh, SIPTAG_EXPIRES_STR(oreg->expires_str), NUTAG_AUTH(authentication), TAG_END());
 	}
+		
+	snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, 
+			 oreg->register_username,
+			 oreg->register_password);
+		
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
+					  profile->username, authentication);
+		
+		
+	ss_state = nua_callstate_authenticating;
+		
+	tl_gets(tags,
+			NUTAG_CALLSTATE_REF(ss_state),
+			SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
+			TAG_END());
+		
+	nua_authenticate(nh, SIPTAG_EXPIRES_STR(oreg->expires_str), NUTAG_AUTH(authentication), TAG_END());
+	
 }
 
 static void event_callback(nua_event_t event,
@@ -4263,6 +4273,11 @@ static void event_callback(nua_event_t event,
 			goto done;
 		}
 	}
+
+	if (status == 401 || status == 407) {
+		sip_r_challenge(status, phrase, nua, profile, nh, sofia_private, sip, tags);
+		goto done;
+	}
 	
 	switch (event) {
 	case nua_r_shutdown:    
@@ -4274,6 +4289,8 @@ static void event_callback(nua_event_t event,
 		break;
 
 	case nua_r_invite:
+		break;
+
 	case nua_r_register:
 		sip_r_register(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
