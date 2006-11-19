@@ -4133,7 +4133,7 @@ static void sip_r_register(int status,
 
 	if (sofia_private && sofia_private->oreg) {
 		oreg = sofia_private->oreg;
-		if (oreg && status == 200) {
+		if (status == 200) {
 			oreg->state = REG_STATE_REGISTER;
 			return;
 		}
