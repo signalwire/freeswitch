@@ -4120,6 +4120,8 @@ static void sip_r_register(int status,
 	char const *scheme = NULL;
 	int index;
 	char *cur;
+	char authentication[256] = "";
+	int ss_state;
 	
 	if (session) {
 		private_object_t *tech_pvt;
@@ -4128,6 +4130,15 @@ static void sip_r_register(int status,
 			return;
 		}
 	}
+
+	if (sofia_private && sofia_private->oreg) {
+		oreg = sofia_private->oreg;
+		if (oreg && status == 200) {
+			oreg->state = REG_STATE_REGISTER;
+			return;
+		}
+	}
+
 
 	if (status == 401 || status == 407) {
 		if (sip->sip_www_authenticate) {
@@ -4152,13 +4163,8 @@ static void sip_r_register(int status,
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No scheme and realm!\n");
 			return;
 		}
-	}
 
-
-	if (sofia_private) {
-		if (sofia_private->oreg) {
-			oreg = sofia_private->oreg;
-		} else if (profile) {
+		if (profile) {
 			outbound_reg_t *oregp;
 
 			if ((duprealm = strdup(realm))) {
@@ -4167,6 +4173,7 @@ static void sip_r_register(int status,
 				while(*qrealm && *qrealm == '"') {
 					qrealm++;
 				}
+
 				if ((p = strchr(qrealm, '"'))) {
 					*p = '\0';
 				}
@@ -4186,38 +4193,23 @@ static void sip_r_register(int status,
 				return;
 			}
 		}
-	}
-
-	if (!oreg) {
-		return;
-	}
-	
-	if (status == 200) {
-		oreg->state = REG_STATE_REGISTER;
-	} else if (authenticate) {
-		char authentication[256] = "";
-		int ss_state;
-
-		if (realm) {
-			snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, 
-					 oreg->register_username,
-					 oreg->register_password);
 		
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
-							  profile->username, authentication);
+		snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, 
+				 oreg->register_username,
+				 oreg->register_password);
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n",
+						  profile->username, authentication);
 		
 		
-			ss_state = nua_callstate_authenticating;
+		ss_state = nua_callstate_authenticating;
 		
-			tl_gets(tags,
-					NUTAG_CALLSTATE_REF(ss_state),
-					SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
-					TAG_END());
+		tl_gets(tags,
+				NUTAG_CALLSTATE_REF(ss_state),
+				SIPTAG_WWW_AUTHENTICATE_REF(authenticate),
+				TAG_END());
 		
-
-
-			nua_authenticate(nh, SIPTAG_EXPIRES_STR(oreg->expires_str), NUTAG_AUTH(authentication), TAG_END());
-		}
+		nua_authenticate(nh, SIPTAG_EXPIRES_STR(oreg->expires_str), NUTAG_AUTH(authentication), TAG_END());
 	}
 }
 
