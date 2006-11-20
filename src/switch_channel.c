@@ -1117,7 +1117,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
 	char *sub_val = NULL, *func_val = NULL;
 
-	if (!strchr(in, '$') && !strchr(in, '&')) {
+	if (!strchr(in, '$') && !strchr(in, '^')) {
 		return in;
 	}
 
@@ -1133,7 +1133,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 			if (*p == '$') {
 				vtype = 1;
 			}
-			if (*p == '&') {
+			if (*p == '^') {
 				vtype = 2;
 			}
 			
@@ -1141,7 +1141,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				char *s = p, *e, *vname, *vval = NULL;
 				size_t nlen;
 				s++;
-				if (*s == '{') {
+				if (vtype == 1 && *s == '{') {
 					br = 1;
 					s++;
 				}
@@ -1219,7 +1219,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				len++;
 			}
 
-			if (*p == '$' || *p == '&') {
+			if (*p == '$' || *p == '^') {
 				p--;
 			} else {
 				*c++ = *p;
