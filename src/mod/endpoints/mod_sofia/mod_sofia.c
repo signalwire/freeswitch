@@ -4451,11 +4451,14 @@ static void check_oreg(sofia_profile_t *profile, time_t now)
 				nua_handle_bind(oregp->nh, &oregp->sofia_private);
 
 				nua_register(oregp->nh,
-							 SIPTAG_FROM_STR(oregp->register_from),
-							 SIPTAG_CONTACT_STR(oregp->register_from),
-							 SIPTAG_EXPIRES_STR(oregp->expires_str),
-							 NUTAG_REGISTRAR(oregp->register_proxy),
-							 TAG_NULL());
+							SIPTAG_FROM_STR(oregp->register_from),
+							SIPTAG_CONTACT_STR(oregp->register_from),
+							SIPTAG_EXPIRES_STR(oregp->expires_str),
+							NUTAG_REGISTRAR(oregp->register_proxy),
+							NUTAG_OUTBOUND("no-options-keepalive"),
+							NUTAG_OUTBOUND("no-validate"),
+							NUTAG_KEEPALIVE(0),
+							TAG_NULL());
 				oregp->retry = now + 10;
 				oregp->state = REG_STATE_TRYING;
 			} else {
