@@ -807,7 +807,6 @@ static void attach_private(switch_core_session_t *session,
 	tech_pvt->session = session;
 
 	tech_pvt->home = su_home_new(sizeof(*tech_pvt->home));
-	su_home_init(tech_pvt->home);
 
 	switch_core_session_set_private(session, tech_pvt);
 
@@ -1267,7 +1266,7 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 
 	if (tech_pvt->home) {
-		su_home_deinit(tech_pvt->home);
+		su_home_unref(tech_pvt->home);
 		tech_pvt->home = NULL;
 	}
 
@@ -4498,7 +4497,6 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 
 	profile->s_root = su_root_create(NULL);
 	profile->home = su_home_new(sizeof(*profile->home));
-	su_home_init(profile->home);
 
 	profile->nua = nua_create(profile->s_root, /* Event loop */
 							  event_callback, /* Callback for processing events */
@@ -4606,7 +4604,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 	}
 
 	unreg(profile);
-	su_home_deinit(profile->home);
+	su_home_unref(profile->home);
 	
 
 	if (switch_event_create(&s_event, SWITCH_EVENT_UNPUBLISH) == SWITCH_STATUS_SUCCESS) {
