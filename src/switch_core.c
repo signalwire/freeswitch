@@ -3999,6 +3999,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(char *console, const char **err
 	runtime.initiated = switch_time_now();
 	return SWITCH_STATUS_SUCCESS;
 }
+
 #ifdef SIGPIPE
 static void handle_SIGPIPE(int sig)
 {
@@ -4007,6 +4008,25 @@ static void handle_SIGPIPE(int sig)
 	return;
 }
 #endif
+
+#ifdef SIGPOLL
+static void handle_SIGPOLL(int sig)
+{
+	if(sig);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig Poll!\n");
+	return;
+}
+#endif
+
+#ifdef SIGIO
+static void handle_SIGIO(int sig)
+{
+	if(sig);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Sig I/O!\n");
+	return;
+}
+#endif
+
 #ifdef TRAP_BUS
 static void handle_SIGBUS(int sig)
 {
@@ -4032,6 +4052,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(char *console, cons
 	signal(SIGINT, handle_SIGINT);
 #ifdef SIGPIPE
 	signal(SIGPIPE, handle_SIGPIPE);
+#endif
+#ifdef SIGPOLL
+	signal(SIGPIPE, handle_SIGPOLL);
+#endif
+#ifdef SIGIO
+	signal(SIGPIPE, handle_SIGIO);
 #endif
 #ifdef TRAP_BUS
 	signal(SIGBUS, handle_SIGBUS);
