@@ -2260,6 +2260,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	uint8_t to = 0;
 	char *ringback_data = NULL;
 	switch_codec_t *read_codec = NULL;
+	uint8_t sent_ring = 0;
 
 	write_frame.data = fdata;
 	
@@ -2310,6 +2311,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	or_argc = switch_separate_string(data, '|', pipe_names, (sizeof(pipe_names) / sizeof(pipe_names[0])));
 
+	if (caller_channel && or_argc > 1 && !ringback_data) {
+		switch_channel_ringback(caller_channel);
+		sent_ring = 1;
+	}
+
 	for (r = 0; r < or_argc; r++) {
 		memset(peer_names, 0, sizeof(peer_names));
 		peer_session = NULL;
@@ -2330,6 +2336,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		and_argc = switch_separate_string(pipe_names[r], '&', peer_names, (sizeof(peer_names) / sizeof(peer_names[0])));
 	
+		if (caller_channel && !sent_ring && and_argc > 1 && !ringback_data) {
+			switch_channel_ringback(caller_channel);
+			sent_ring = 1;
+		}
+
 		for (i = 0; i < and_argc; i++) {
 		
 			chan_type = peer_names[i];
