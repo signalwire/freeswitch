@@ -1487,25 +1487,28 @@ static switch_status_t channel_outgoing_channel(switch_core_session_t *session, 
 			*dnis++ = '\0';
 		}
 
-		if ((mdl_profile->user_flags & LDL_FLAG_COMPONENT)) {
-			if ((p = strchr(profile_name, '@'))) {
-				*p++ = '\0';
-				u = profile_name;
-				profile_name = p;
-				snprintf(ubuf, sizeof(ubuf), "%s@%s/talk", u, profile_name);
-				user = ubuf;
-			} else {
-				terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-				return SWITCH_STATUS_GENERR;
-			}
-		} 
+
+		if ((p = strchr(profile_name, '@'))) {
+			*p++ = '\0';
+			u = profile_name;
+			profile_name = p;
+			snprintf(ubuf, sizeof(ubuf), "%s@%s/talk", u, profile_name);
+			user = ubuf;
+		}
 
 		if ((mdl_profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
-			if (strchr(outbound_profile->caller_id_number, '@')) {
-				snprintf(ubuf, sizeof(ubuf), "%s/talk", outbound_profile->caller_id_number);
-				user = ubuf;
-			} else {
+			if (!(mdl_profile->user_flags & LDL_FLAG_COMPONENT)) {
 				user = ldl_handle_get_login(mdl_profile->handle);
+			} else {
+				if (!user) {
+					if (strchr(outbound_profile->caller_id_number, '@')) {
+						snprintf(ubuf, sizeof(ubuf), "%s/talk", outbound_profile->caller_id_number);
+						user = ubuf;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Invalid User!\n");
+						terminate_session(new_session,  __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					}
+				}
 			}
 
 			if (!ldl_handle_ready(mdl_profile->handle)) {
