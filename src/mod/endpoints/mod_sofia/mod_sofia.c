@@ -4195,6 +4195,7 @@ static void sip_r_challenge(int status,
 			}
 			if (!oreg) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Match for Scheme [%s] Realm [%s]\n", scheme, qrealm);
+				return;
 			}
 			switch_safe_free(duprealm);
 		} else {
