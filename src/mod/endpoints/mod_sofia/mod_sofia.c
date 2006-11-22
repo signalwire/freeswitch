@@ -2591,6 +2591,11 @@ static void sip_i_state(int status,
 		nua_ack(nh, TAG_END());
 		break;
 	case nua_callstate_received: 
+		if (session && switch_core_session_running(session)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Re-Entering Call State Received!\n");
+			return;
+		}
+
 		if (channel) {
 			if (r_sdp) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
