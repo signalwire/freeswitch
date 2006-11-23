@@ -2153,7 +2153,8 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 									uint32_t len,
 									int32_t *idx,
 									char *file,
-									char *key)
+									char *key,
+									char *ringback_data)
 {
 
 	uint32_t i;
@@ -2166,7 +2167,8 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 		}
 		if (switch_channel_get_state(peer_channels[i]) >= CS_HANGUP) {
 			hups++;
-		} else if ((switch_channel_test_flag(peer_channels[i], CF_ANSWERED) || (len == 1 && switch_channel_test_flag(peer_channels[0], CF_EARLY_MEDIA))) && 
+		} else if ((switch_channel_test_flag(peer_channels[i], CF_ANSWERED) || 
+					(!ringback_data && len == 1 && switch_channel_test_flag(peer_channels[0], CF_EARLY_MEDIA))) && 
 				   !switch_channel_test_flag(peer_channels[i], CF_TAGGED)) {
 
 			if (key) {
@@ -2581,7 +2583,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 		
 		while ((!caller_channel || switch_channel_ready(caller_channel)) && 
-			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key)) {
+			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key, ringback_data)) {
 
 			if ((to = (uint8_t)((time(NULL) - start) >= (time_t)timelimit_sec))) {
 				idx = IDX_CANCEL;
