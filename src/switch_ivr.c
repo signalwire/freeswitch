@@ -1838,6 +1838,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_core_session_receive_message(session_a, message);
 			if (switch_test_flag(message, SCSMF_DYNAMIC)) {
 				switch_safe_free(message);
+			} else {
+				message = NULL;
 			}
 		}
  
@@ -2261,6 +2263,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char *ringback_data = NULL;
 	switch_codec_t *read_codec = NULL;
 	uint8_t sent_ring = 0;
+	switch_core_session_message_t *message = NULL;
 
 	write_frame.data = fdata;
 	
@@ -2585,13 +2588,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				goto notready;
 			}
 
-			if (session && or_argc == 1 && and_argc == 1) { /* when there is only 1 channel to call and bridge */
-				switch_core_session_message_t *message = NULL;
-				if (switch_core_session_dequeue_message(peer_sessions[0], &message) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_session_dequeue_message(peer_sessions[0], &message) == SWITCH_STATUS_SUCCESS) {
+				if (session && !ringback_data && or_argc == 1 && and_argc == 1) { /* when there is only 1 channel to call and bridge and no ringback */
 					switch_core_session_receive_message(session, message);
-					if (switch_test_flag(message, SCSMF_DYNAMIC)) {
-						switch_safe_free(message);
-					}
+				}
+				
+				if (switch_test_flag(message, SCSMF_DYNAMIC)) {
+					switch_safe_free(message);
+				} else {
+					message = NULL;
 				}
 			}
 
