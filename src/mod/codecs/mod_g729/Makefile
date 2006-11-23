@@ -1,13 +1,9 @@
-ifeq ($(shell ls $(BASE)/libs/libg729),$(BASE)/libs/libg729)
 
-CFLAGS += -I$(PREFIX)/include/g729
+
+CFLAGS += -I$(PREFIX)/include/libg729
 LDFLAGS +=-lg729
 
-else
 
-CFLAGS += -DG729_PASSTHROUGH
-
-endif
 
 all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
