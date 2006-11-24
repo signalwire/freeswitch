@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
+ * Michael Murdock <mike at mmurdock dot org>
  *
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
@@ -132,6 +133,17 @@ static void set_function(switch_core_session_t *session, char *data)
 		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SET [%s]=[%s]\n", var, val ? val : "UNDEF");
 		switch_channel_set_variable(channel, var, val);
+	}
+}
+
+static void log_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+	if (!switch_strlen_zero(data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", data);
 	}
 }
 
@@ -315,13 +327,22 @@ static const switch_application_interface_t set_application_interface = {
 	/*.next */ &ringback_application_interface
 };
 
+static const switch_application_interface_t log_application_interface = {
+	/*.interface_name */ "log",
+	/*.application_function */ log_function,
+	/* long_desc */ "Logs a channel varaible for the channel calling the application.",
+	/* short_desc */ "Logs a channel varaible",
+	/* syntax */ "<varname>",
+	/*.next */ &set_application_interface
+};
+
 static const switch_application_interface_t answer_application_interface = {
 	/*.interface_name */ "answer",
 	/*.application_function */ answer_function,
 	/* long_desc */ "Answer the call for a channel.",
 	/* short_desc */ "Answer the call",
 	/* syntax */ "",
-	/*.next */ &set_application_interface
+	/*.next */ &log_application_interface
 
 };
 

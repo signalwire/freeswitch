@@ -30,6 +30,8 @@ that much better:
  Ken Rice of Asteria Solutions Group, INC <ken AT asteriasgi.com> - xmlcdr, sofia improvements, load testing.
  Neal Horman <neal at wanlink dot com> - conference improvements, switch_ivr menu additions and other tweaks.
  Johny Kadarisman <jkr888 at gmail.com> - mod_python fixups.
+ Michael Murdock <mike at mmurdock dot org> - testing, documentation, bug finding and usability enhancements.
+
 
 A big THANK YOU goes to:
 
