@@ -3930,8 +3930,8 @@ static void sip_i_invite(nua_t *nua,
 			char *displayname;
 			char *username, *to_username = NULL;
 			char *url_user = (char *) from->a_url->url_user;
-			char *to_user, *to_host;
-
+			char *to_user, *to_host, *to_port;
+			
 			if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
@@ -3944,6 +3944,9 @@ static void sip_i_invite(nua_t *nua,
 
 			to_user = (char *) to->a_url->url_user;
 			to_host = (char *) to->a_url->url_host;
+			if (!(to_port = (char *) to->a_url->url_port)) {
+				to_port = "5060";
+			}
 			
 			if (switch_strlen_zero(to_user)) { /* if sofia doesnt parse the To: right, we'll have to do it */
 				if ((to_user = sip_header_as_string(tech_pvt->home, (sip_header_t *) to))) {
@@ -3985,7 +3988,7 @@ static void sip_i_invite(nua_t *nua,
 			}
 
 			if (profile->pflags & PFLAG_FULL_ID)  {
-				if (!(to_username = switch_mprintf("%s@%s", (char *) to_user, (char *) to_host))) {
+				if (!(to_username = switch_mprintf("%s@%s:%s", (char *) to_user, (char *) to_host, to_port))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 					switch_safe_free(username);
 					return;
@@ -4006,6 +4009,11 @@ static void sip_i_invite(nua_t *nua,
 				switch_channel_set_variable(channel, "sip_from_user_stripped", (char *)from->a_url->url_user);
 			}
 			switch_channel_set_variable(channel, "sip_from_host", (char *) from->a_url->url_host);
+			switch_channel_set_variable(channel, "sip_from_port", (char *) from->a_url->url_port);
+
+			switch_channel_set_variable(channel, "sip_to_user", (char *) to_user);
+			switch_channel_set_variable(channel, "sip_to_host", to_host);
+			switch_channel_set_variable(channel, "sip_to_port", (char *) to_port);
 			if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																	  (char *) from->a_url->url_user,
 																	  profile->dialplan,
