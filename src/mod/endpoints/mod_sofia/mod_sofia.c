@@ -4275,6 +4275,9 @@ static void event_callback(nua_event_t event,
 	if ((profile->pflags & PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip) {
 		sip_authorization_t const *authorization = NULL;
 
+		switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
+		assert(channel != NULL);
+
 		if (sip->sip_authorization) {
 			authorization = sip->sip_authorization;
 		} else if (sip->sip_proxy_authorization) {
@@ -4286,10 +4289,13 @@ static void event_callback(nua_event_t event,
 		}
 
 		if (auth_res != AUTH_OK) {
-			switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			nua_respond(nh, SIP_401_UNAUTHORIZED, TAG_END());
 			goto done;
+		}
+
+		if (session) {
+			switch_channel_set_variable(channel, "sip_authorized", "true");
 		}
 	}
 
