@@ -1196,19 +1196,19 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 						return in;
 					}
 				}
-				nlen = sub_val ? strlen(sub_val) : 0;
+				if ((nlen = sub_val ? strlen(sub_val) : 0)) {
+					if (len + nlen >= olen) {
+						olen = (olen + len + nlen + block);
+						cpos = c - data;
+						data = realloc(data, olen);
+						c = data + cpos;
+						memset(c, 0, olen - cpos);
+					}
 
-				if (len + nlen >= olen) {
-					olen = (olen + len + nlen + block);
-					cpos = c - data;
-					data = realloc(data, olen);
-					c = data + cpos;
-					memset(c, 0, olen - cpos);
-				}
-				if (nlen) {
 					len += nlen;
 					strcat(c, sub_val);
 					c += nlen;
+
 				}
 				
 				switch_safe_free(func_val);
