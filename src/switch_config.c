@@ -205,3 +205,14 @@ SWITCH_DECLARE(int) switch_config_next_pair(switch_config_t *cfg, char **var, ch
 	return ret;
 
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

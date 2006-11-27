@@ -214,3 +214,14 @@ void PddCDR::disconnect()
 }
 
 AUTO_REGISTER_BASECDR(PddCDR);
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

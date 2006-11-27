@@ -439,3 +439,14 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "disconnecting client %d\n", RUNNING);
 	return RUNNING ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_TERM;
 }
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

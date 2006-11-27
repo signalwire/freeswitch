@@ -401,3 +401,13 @@ int teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
     return  max;
 }
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

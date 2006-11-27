@@ -625,3 +625,14 @@ void MysqlCDR::set_mysql_time(switch_time_exp_t& param, MYSQL_TIME& destination)
 }
 
 AUTO_REGISTER_BASECDR(MysqlCDR);
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

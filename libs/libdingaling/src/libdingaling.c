@@ -2134,4 +2134,13 @@ void ldl_handle_set_log_stream(ldl_handle_t *handle, FILE *log_stream)
 	handle->log_stream = log_stream;
 }
 
-
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

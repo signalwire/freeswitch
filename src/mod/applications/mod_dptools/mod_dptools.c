@@ -420,3 +420,14 @@ if it returns anything but SWITCH_STATUS_TERM it will be called again automaticl
 
 
 //switch_status_t switch_module_runtime(void)
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:nil
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */
