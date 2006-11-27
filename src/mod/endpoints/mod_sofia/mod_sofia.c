@@ -2548,12 +2548,6 @@ static void sip_i_state(int status,
 				}
 			}
 			if (r_sdp) {
-				if (switch_channel_test_flag(channel, CF_NO_EARLY)) {
-					//ignore 183 but how do we say we dont want it and not end the call
-					//nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
-					return;
-				}
-
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 					switch_channel_set_flag(channel, CF_EARLY_MEDIA);

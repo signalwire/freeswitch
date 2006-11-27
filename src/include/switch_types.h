@@ -465,8 +465,7 @@ typedef enum {
 	CF_CONTROLLED	= (1 << 12),
 	CF_NOMEDIA		= (1 << 13),
 	CF_SUSPEND		= (1 << 14),
-	CF_EVENT_PARSE	= (1 << 15),
-	CF_NO_EARLY	= (1 << 16)
+	CF_EVENT_PARSE	= (1 << 15)
 } switch_channel_flag_t;
 
 

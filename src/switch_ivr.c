@@ -2436,13 +2436,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				peer_sessions[i] = NULL;
 				continue;
 			}
-			//switch_channel_set_flag(peer_channels[i], CF_NO_EARLY);
+			
 			switch_core_session_read_lock(peer_sessions[i]);
 			pool = NULL;
 	
 			peer_channels[i] = switch_core_session_get_channel(peer_sessions[i]);
 			assert(peer_channels[i] != NULL);
-		
+
 			if (table == &noop_state_handler) {
 				table = NULL;
 			} else if (!table) {
