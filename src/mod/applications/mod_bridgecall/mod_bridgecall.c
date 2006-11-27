@@ -42,6 +42,7 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 	switch_core_session_t *peer_session;
 	unsigned int timelimit = 60;
 	char *var;
+	uint8_t no_media_bridge = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
 	caller_channel = switch_core_session_get_channel(session);
@@ -50,9 +51,14 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 	if ((var = switch_channel_get_variable(caller_channel, "call_timeout"))) {
 		timelimit = atoi(var);
 	}
-
-	if ((var = switch_channel_get_variable(caller_channel, "no_media"))) {
-		switch_channel_set_flag(caller_channel, CF_NOMEDIA);		
+	
+	if ((var = switch_channel_get_variable(caller_channel, "no_media")) && switch_true(var)) {
+		if (!switch_channel_test_flag(caller_channel, CF_ANSWERED) && !switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)) {
+			switch_channel_set_flag(caller_channel, CF_NOMEDIA);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying point-to-point mode 'till both legs are up.\n");
+			no_media_bridge = 1;
+		}
 	}
 
 	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
@@ -61,10 +67,17 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 		switch_channel_hangup(caller_channel, cause);
 		return;
 	} else {
-		if (switch_channel_test_flag(caller_channel, CF_NOMEDIA)) {
-			switch_ivr_signal_bridge(session, peer_session);			
+		if (no_media_bridge) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirecting media to point-to-point mode.\n");
+			switch_ivr_nomedia(switch_core_session_get_uuid(session), SMF_FORCE);
+			switch_ivr_nomedia(switch_core_session_get_uuid(peer_session), SMF_FORCE);
+			switch_ivr_signal_bridge(session, peer_session);
 		} else {
-			switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
+			if (switch_channel_test_flag(caller_channel, CF_NOMEDIA)) {
+				switch_ivr_signal_bridge(session, peer_session);
+			} else {
+				switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
+			}
 		}
 	}
 }

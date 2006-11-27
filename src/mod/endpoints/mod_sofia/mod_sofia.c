@@ -2441,9 +2441,10 @@ static void pass_sdp(private_object_t *tech_pvt, char *sdp)
 		if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 			switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, sdp);
 		}
+
 		if (!switch_test_flag(tech_pvt, TFLAG_CHANGE_MEDIA) && (
 			switch_channel_test_flag(other_channel, CF_OUTBOUND) && 
-			switch_channel_test_flag(other_channel, CF_NOMEDIA) && 
+			//switch_channel_test_flag(other_channel, CF_NOMEDIA) && 
 			switch_channel_test_flag(channel, CF_OUTBOUND) && 
 			switch_channel_test_flag(channel, CF_NOMEDIA))) {
 			switch_ivr_nomedia(val, SMF_FORCE);
@@ -2526,7 +2527,7 @@ static void sip_i_state(int status,
 		break;
 	case nua_callstate_proceeding:
 		if (channel) {
-			if (status == 180) {
+			if (status == 180 && !(switch_channel_test_flag(channel, CF_NO_INDICATE))) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						switch_core_session_message_t msg;

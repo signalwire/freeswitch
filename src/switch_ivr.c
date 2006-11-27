@@ -2443,6 +2443,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			peer_channels[i] = switch_core_session_get_channel(peer_sessions[i]);
 			assert(peer_channels[i] != NULL);
 
+			//switch_channel_set_flag(peer_channels[i], CF_NO_INDICATE);
+
 			if (table == &noop_state_handler) {
 				table = NULL;
 			} else if (!table) {
@@ -2501,7 +2503,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			switch_channel_pre_answer(caller_channel);
 		}
 
-		if (session && !switch_channel_test_flag(caller_channel, CF_NOMEDIA)) {
+		if (session && (ringback_data || !switch_channel_test_flag(caller_channel, CF_NOMEDIA))) {
 			read_codec = switch_core_session_get_read_codec(session);
 			assert(read_codec != NULL);
 
@@ -2527,6 +2529,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					if (ringback_data) {
 						char *tmp_data = NULL;
+						
 						switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
 						switch_buffer_create_dynamic(&ringback.loop_buffer, 512, 1024, 0);
 
@@ -2581,7 +2584,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 		}
-		
+
 		while ((!caller_channel || switch_channel_ready(caller_channel)) && 
 			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key, ringback_data)) {
 
@@ -2603,13 +2606,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			/* read from the channel while we wait if the audio is up on it */
-			if (session && !switch_channel_test_flag(caller_channel, CF_NOMEDIA) && 
+			if (session && (ringback_data || !switch_channel_test_flag(caller_channel, CF_NOMEDIA)) && 
 				(switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA))) {
 				switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
 			
 				if (!SWITCH_READ_ACCEPTABLE(status)) {
 					break;
 				}
+
 				if (read_frame && !pass && !switch_test_flag(read_frame, SFF_CNG) && read_frame->datalen > 1) {
 					if (ringback.fh) {
 						uint8_t abuf[1024];
@@ -2653,7 +2657,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								break;
 							}
 						}
-					}	
+					}
+
 					if (switch_core_session_write_frame(session, &write_frame, 1000, 0) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}
@@ -2674,7 +2679,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			idx = IDX_CANCEL;
 		}
 
-		if (session && !switch_channel_test_flag(caller_channel, CF_NOMEDIA)) {
+		if (session && (ringback_data || !switch_channel_test_flag(caller_channel, CF_NOMEDIA))) {
 			switch_core_session_reset(session);
 		}
 
