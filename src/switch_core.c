@@ -2673,7 +2673,8 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	}
 
 	while (switch_channel_get_state(session->channel) == CS_EXECUTE && extension->current_application) {
-		char *expanded;
+		char *expanded = NULL;
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Execute %s(%s)\n",
 							  extension->current_application->application_name,
 							  extension->current_application->application_data);
@@ -2720,7 +2721,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 		application_interface->application_function(session, expanded);
 
 		if (expanded != extension->current_application->application_data) {
-			free(expanded);
+			switch_safe_free(expanded);
 		}
 		extension->current_application = extension->current_application->next;
 	}

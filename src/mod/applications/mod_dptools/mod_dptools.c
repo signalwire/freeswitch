@@ -139,12 +139,43 @@ static void set_function(switch_core_session_t *session, char *data)
 static void log_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
+    char *level, *log_str;
+
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
-	if (!switch_strlen_zero(data)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s\n", data);
-	}
+    if ((level = strdup(data))) {
+        switch_event_types_t etype = SWITCH_LOG_DEBUG;
+        
+        if ((log_str = strchr(level, ' '))) {
+            *log_str++ = '\0';
+            switch_name_event(level, &etype);
+        } else {
+            log_str = level;
+        }
+
+        switch_log_printf(SWITCH_CHANNEL_LOG, etype, "%s\n", log_str);
+        switch_safe_free(level);
+    }
+}
+
+
+static void info_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+    switch_event_t *event;
+    char *buf;
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+    if (switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+        switch_channel_event_set_data(channel, event);
+        switch_event_serialize(event, &buf);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "CHANNEL_DATA:\n%s\n", buf);
+        switch_event_destroy(&event);
+    }
+    
 }
 
 static void privacy_function(switch_core_session_t *session, char *data)
@@ -327,13 +358,22 @@ static const switch_application_interface_t set_application_interface = {
 	/*.next */ &ringback_application_interface
 };
 
+static const switch_application_interface_t info_application_interface = {
+	/*.interface_name */ "info",
+	/*.application_function */ info_function,
+	/* long_desc */ "Display Call Info",
+	/* short_desc */ "Display Call Info",
+	/* syntax */ "",
+	/*.next */ &set_application_interface
+};
+
 static const switch_application_interface_t log_application_interface = {
 	/*.interface_name */ "log",
 	/*.application_function */ log_function,
 	/* long_desc */ "Logs a channel varaible for the channel calling the application.",
 	/* short_desc */ "Logs a channel varaible",
 	/* syntax */ "<varname>",
-	/*.next */ &set_application_interface
+	/*.next */ &info_application_interface
 };
 
 static const switch_application_interface_t answer_application_interface = {

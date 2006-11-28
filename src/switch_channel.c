@@ -1198,11 +1198,14 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				}
 				if ((nlen = sub_val ? strlen(sub_val) : 0)) {
 					if (len + nlen >= olen) {
-						olen = (olen + len + nlen + block);
+						char *dp;
+						olen += (len + nlen + block);
 						cpos = c - data;
-						data = realloc(data, olen);
-						c = data + cpos;
-						memset(c, 0, olen - cpos);
+						if ((dp = realloc(data, olen))) {
+							data = dp;
+							c = data + cpos;
+							memset(c, 0, olen - cpos);
+						}
 					}
 
 					len += nlen;
