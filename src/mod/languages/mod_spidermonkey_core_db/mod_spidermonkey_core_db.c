@@ -31,7 +31,7 @@
  */
 #include "mod_spidermonkey.h"
 
-static const char modname[] = "CoreDB";
+static const char modname[] = "coreDB";
 
 struct db_obj {
     switch_memory_pool_t *pool;
