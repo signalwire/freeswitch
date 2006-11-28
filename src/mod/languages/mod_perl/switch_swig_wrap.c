@@ -43,7 +43,6 @@
  ************************************************************************/
 
 #include <string.h>
-#include <switch.h>
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
 #  if defined(_MSC_VER) || defined(__GNUC__)
@@ -808,7 +807,7 @@ extern void fs_channel_set_variable(switch_core_session_t *,char *,char *);
 extern void fs_channel_get_variable(switch_core_session_t *,char *);
 extern void fs_channel_set_state(switch_core_session_t *,char *);
 extern int fs_ivr_play_file(switch_core_session_t *,char *,char *,switch_input_callback_function_t,void *,unsigned int);
-extern int fs_switch_ivr_record_file(switch_core_session_t *,switch_file_handle_t *,char *,switch_input_callback_function_t,void *,unsigned int);
+extern int fs_switch_ivr_record_file(switch_core_session_t *,switch_file_handle_t *,char *,switch_input_callback_function_t,void *,unsigned int,unsigned int);
 extern int fs_switch_ivr_sleep(switch_core_session_t *,uint32_t);
 extern int fs_ivr_play_file2(switch_core_session_t *,char *);
 extern int fs_switch_ivr_collect_digits_callback(switch_core_session_t *,switch_input_callback_function_t,void *,unsigned int,unsigned int);
@@ -1263,12 +1262,13 @@ XS(_wrap_fs_switch_ivr_record_file) {
         switch_input_callback_function_t arg4 ;
         void *arg5 = (void *) 0 ;
         unsigned int arg6 ;
+        unsigned int arg7 ;
         int result;
         int argvi = 0;
         dXSARGS;
         
-        if ((items < 6) || (items > 6)) {
-            SWIG_croak("Usage: fs_switch_ivr_record_file(session,fh,file,dtmf_callback,buf,buflen);");
+        if ((items < 7) || (items > 7)) {
+            SWIG_croak("Usage: fs_switch_ivr_record_file(session,fh,file,dtmf_callback,buf,buflen,limit);");
         }
         {
             if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t,0) < 0) {
@@ -1295,7 +1295,8 @@ XS(_wrap_fs_switch_ivr_record_file) {
             }
         }
         arg6 = (unsigned int) SvUV(ST(5));
-        result = (int)fs_switch_ivr_record_file(arg1,arg2,arg3,arg4,arg5,arg6);
+        arg7 = (unsigned int) SvUV(ST(6));
+        result = (int)fs_switch_ivr_record_file(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
         
         ST(argvi) = sv_newmortal();
         sv_setiv(ST(argvi++), (IV) result);

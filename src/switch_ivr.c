@@ -325,11 +325,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *session, 
-													 switch_file_handle_t *fh,
-													 char *file,
-													 switch_input_callback_function_t input_callback,
-													 void *buf,
-													 uint32_t buflen)
+                                                       switch_file_handle_t *fh,
+                                                       char *file,
+                                                       switch_input_callback_function_t input_callback,
+                                                       void *buf,
+                                                       uint32_t buflen,
+                                                       uint32_t limit)
 {
 	switch_channel_t *channel;
     char dtmf[128];
@@ -340,6 +341,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *p;
 	const char *vval;
+    time_t start = 0;
 
 	if (!fh) {
 		fh = &lfh;
@@ -422,16 +424,22 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		return SWITCH_STATUS_GENERR;
 	}
 	
+    if (limit) {
+        start = time(NULL);
+    }
 
 	while(switch_channel_ready(channel)) {
 		switch_size_t len;
 		switch_event_t *event;
 
-
-		if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+        if (switch_core_session_dequeue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
 			switch_ivr_parse_event(session, event);
 			switch_event_destroy(&event);
 		}
+
+        if (start && (time(NULL) - start) > limit) {
+            break;
+        }
 
 		if (input_callback || buf || buflen) {
 			/*

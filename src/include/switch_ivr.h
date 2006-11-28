@@ -200,15 +200,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
   \param dtmf_callback code to execute if any dtmf is dialed during the recording
   \param buf an object to maintain across calls
   \param buflen the size of buf
+  \param limit max limit to record for (0 for infinite)
   \return SWITCH_STATUS_SUCCESS if all is well
   \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop recording.
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *session,
-													 switch_file_handle_t *fh,
-													 char *file,
-													 switch_input_callback_function_t dtmf_callback,
-													 void *buf,
-													 uint32_t buflen);
+                                                       switch_file_handle_t *fh,
+                                                       char *file,
+                                                       switch_input_callback_function_t dtmf_callback,
+                                                       void *buf,
+                                                       uint32_t buflen,
+                                                       uint32_t limit);
 
 /*!
  \brief Function to evaluate an expression against a string

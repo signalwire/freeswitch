@@ -628,7 +628,7 @@ extern void fs_channel_set_variable(switch_core_session_t *,char *,char *);
 extern void fs_channel_get_variable(switch_core_session_t *,char *);
 extern void fs_channel_set_state(switch_core_session_t *,char *);
 extern int fs_ivr_play_file(switch_core_session_t *,char *,char *,switch_input_callback_function_t,void *,unsigned int);
-extern int fs_switch_ivr_record_file(switch_core_session_t *,switch_file_handle_t *,char *,switch_input_callback_function_t,void *,unsigned int);
+extern int fs_switch_ivr_record_file(switch_core_session_t *,switch_file_handle_t *,char *,switch_input_callback_function_t,void *,unsigned int,unsigned int);
 extern int fs_switch_ivr_sleep(switch_core_session_t *,uint32_t);
 extern int fs_ivr_play_file2(switch_core_session_t *,char *);
 extern int fs_switch_ivr_collect_digits_callback(switch_core_session_t *,switch_input_callback_function_t,void *,unsigned int,unsigned int);
@@ -893,11 +893,12 @@ _wrap_fs_switch_ivr_record_file(int argc, VALUE *argv, VALUE self) {
     switch_input_callback_function_t arg4 ;
     void *arg5 = (void *) 0 ;
     unsigned int arg6 ;
+    unsigned int arg7 ;
     int result;
     VALUE vresult = Qnil;
     
-    if ((argc < 6) || (argc > 6))
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 6)",argc);
+    if ((argc < 7) || (argc > 7))
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 7)",argc);
     SWIG_ConvertPtr(argv[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 1);
     SWIG_ConvertPtr(argv[1], (void **) &arg2, SWIGTYPE_p_switch_file_handle_t, 1);
     arg3 = StringValuePtr(argv[2]);
@@ -908,7 +909,8 @@ _wrap_fs_switch_ivr_record_file(int argc, VALUE *argv, VALUE self) {
     }
     SWIG_ConvertPtr(argv[4], (void **) &arg5, 0, 1);
     arg6 = NUM2UINT(argv[5]);
-    result = (int)fs_switch_ivr_record_file(arg1,arg2,arg3,arg4,arg5,arg6);
+    arg7 = NUM2UINT(argv[6]);
+    result = (int)fs_switch_ivr_record_file(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
     
     vresult = INT2NUM(result);
     return vresult;

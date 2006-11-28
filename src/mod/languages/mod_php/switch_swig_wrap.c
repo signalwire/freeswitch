@@ -577,7 +577,7 @@ extern void fs_channel_set_variable(switch_core_session_t *,char *,char *);
 extern void fs_channel_get_variable(switch_core_session_t *,char *);
 extern void fs_channel_set_state(switch_core_session_t *,char *);
 extern int fs_ivr_play_file(switch_core_session_t *,char *,char *,switch_input_callback_function_t,void *,unsigned int);
-extern int fs_switch_ivr_record_file(switch_core_session_t *,switch_file_handle_t *,char *,switch_input_callback_function_t,void *,unsigned int);
+extern int fs_switch_ivr_record_file(switch_core_session_t *,switch_file_handle_t *,char *,switch_input_callback_function_t,void *,unsigned int,unsigned int);
 extern int fs_switch_ivr_sleep(switch_core_session_t *,uint32_t);
 extern int fs_ivr_play_file2(switch_core_session_t *,char *);
 extern int fs_switch_ivr_collect_digits_callback(switch_core_session_t *,switch_input_callback_function_t,void *,unsigned int,unsigned int);
@@ -1143,15 +1143,16 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_record_file) {
     switch_input_callback_function_t arg4 ;
     void *arg5 = (void *) 0 ;
     unsigned int arg6 ;
+    unsigned int arg7 ;
     int result;
-    zval **args[7];
+    zval **args[8];
     int argbase=0 ;
     
     if (this_ptr && this_ptr->type==IS_OBJECT) {
         /* fake this_ptr as first arg (till we can work out how to do it better */
         argbase++;
     }
-    if(((ZEND_NUM_ARGS() + argbase )!= 6) || (zend_get_parameters_array_ex(6-argbase, args)!= SUCCESS)) {
+    if(((ZEND_NUM_ARGS() + argbase )!= 7) || (zend_get_parameters_array_ex(7-argbase, args)!= SUCCESS)) {
         WRONG_PARAM_COUNT;
     }
     
@@ -1187,7 +1188,11 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_record_file) {
     convert_to_long_ex(args[5-argbase]);
     arg6 = (unsigned int) Z_LVAL_PP(args[5-argbase]);
     
-    result = (int)fs_switch_ivr_record_file(arg1,arg2,arg3,arg4,arg5,arg6);
+    
+    convert_to_long_ex(args[6-argbase]);
+    arg7 = (unsigned int) Z_LVAL_PP(args[6-argbase]);
+    
+    result = (int)fs_switch_ivr_record_file(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
     
     
     ZVAL_LONG(return_value,result);

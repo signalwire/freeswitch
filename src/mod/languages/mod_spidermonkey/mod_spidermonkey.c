@@ -831,6 +831,7 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	struct input_callback_state cb_state = {0};
 	switch_file_handle_t fh;
 	JSFunction *function;
+    int32 limit = 0;
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -857,12 +858,16 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 			bp = &cb_state;
 			len = sizeof(cb_state);
 		}
+
+        if (argc > 3) {
+            JS_ValueToInt32(cx, argv[4], &limit);
+        }
 	}
 
 	memset(&fh, 0, sizeof(fh));
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
-	switch_ivr_record_file(jss->session, &fh, file_name, dtmf_func, bp, len);
+	switch_ivr_record_file(jss->session, &fh, file_name, dtmf_func, bp, len, limit);
 	*rval = cb_state.ret;
 
 	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;

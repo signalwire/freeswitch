@@ -716,7 +716,7 @@ extern void fs_channel_set_variable(switch_core_session_t *,char *,char *);
 extern void fs_channel_get_variable(switch_core_session_t *,char *);
 extern void fs_channel_set_state(switch_core_session_t *,char *);
 extern int fs_ivr_play_file(switch_core_session_t *,char *,char *,switch_input_callback_function_t,void *,unsigned int);
-extern int fs_switch_ivr_record_file(switch_core_session_t *,switch_file_handle_t *,char *,switch_input_callback_function_t,void *,unsigned int);
+extern int fs_switch_ivr_record_file(switch_core_session_t *,switch_file_handle_t *,char *,switch_input_callback_function_t,void *,unsigned int,unsigned int);
 extern int fs_switch_ivr_sleep(switch_core_session_t *,uint32_t);
 extern int fs_ivr_play_file2(switch_core_session_t *,char *);
 extern int fs_switch_ivr_collect_digits_callback(switch_core_session_t *,switch_input_callback_function_t,void *,unsigned int,unsigned int);
@@ -1000,6 +1000,7 @@ static PyObject *_wrap_fs_switch_ivr_record_file(PyObject *self, PyObject *args)
     switch_input_callback_function_t arg4 ;
     void *arg5 = (void *) 0 ;
     unsigned int arg6 ;
+    unsigned int arg7 ;
     int result;
     switch_input_callback_function_t *argp4 ;
     PyObject * obj0 = 0 ;
@@ -1007,8 +1008,9 @@ static PyObject *_wrap_fs_switch_ivr_record_file(PyObject *self, PyObject *args)
     PyObject * obj3 = 0 ;
     PyObject * obj4 = 0 ;
     PyObject * obj5 = 0 ;
+    PyObject * obj6 = 0 ;
     
-    if(!PyArg_ParseTuple(args,(char *)"OOsOOO:fs_switch_ivr_record_file",&obj0,&obj1,&arg3,&obj3,&obj4,&obj5)) goto fail;
+    if(!PyArg_ParseTuple(args,(char *)"OOsOOOO:fs_switch_ivr_record_file",&obj0,&obj1,&arg3,&obj3,&obj4,&obj5,&obj6)) goto fail;
     if ((SWIG_ConvertPtr(obj0,(void **) &arg1, SWIGTYPE_p_switch_core_session_t,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
     if ((SWIG_ConvertPtr(obj1,(void **) &arg2, SWIGTYPE_p_switch_file_handle_t,SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
     if ((SWIG_ConvertPtr(obj3,(void **) &argp4, SWIGTYPE_p_switch_input_callback_function_t,SWIG_POINTER_EXCEPTION) == -1)) SWIG_fail;
@@ -1016,7 +1018,9 @@ static PyObject *_wrap_fs_switch_ivr_record_file(PyObject *self, PyObject *args)
     if ((SWIG_ConvertPtr(obj4,(void **) &arg5, 0, SWIG_POINTER_EXCEPTION | 0 )) == -1) SWIG_fail;
     arg6 = (unsigned int) PyInt_AsLong(obj5);
     if (PyErr_Occurred()) SWIG_fail;
-    result = (int)fs_switch_ivr_record_file(arg1,arg2,arg3,arg4,arg5,arg6);
+    arg7 = (unsigned int) PyInt_AsLong(obj6);
+    if (PyErr_Occurred()) SWIG_fail;
+    result = (int)fs_switch_ivr_record_file(arg1,arg2,arg3,arg4,arg5,arg6,arg7);
     
     resultobj = PyInt_FromLong((long)result);
     return resultobj;

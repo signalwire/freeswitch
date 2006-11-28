@@ -88,17 +88,17 @@ int fs_console_loop(void)
 
 void fs_consol_log(char *level_str, char *msg)
 {
-        switch_log_level_t level = SWITCH_LOG_DEBUG;
-        if (level_str) {
-                level = switch_log_str2level(level_str);
+    switch_log_level_t level = SWITCH_LOG_DEBUG;
+    if (level_str) {
+        level = switch_log_str2level(level_str);
 	}
       
-        switch_log_printf(SWITCH_CHANNEL_LOG, level, msg);
+    switch_log_printf(SWITCH_CHANNEL_LOG, level, msg);
 }
 	
 void fs_consol_clean(char *msg)
 {
-        switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, msg);
+    switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, msg);
 }
 
 switch_core_session_t *fs_core_session_locate(char *uuid)
@@ -154,7 +154,7 @@ void fs_channel_set_state(switch_core_session_t *session, char *state)
 
 
 /*
-IVR Routines!  You can do IVR in PHP NOW!
+  IVR Routines!  You can do IVR in PHP NOW!
 */
 
 int fs_ivr_play_file(switch_core_session_t *session,
@@ -174,20 +174,22 @@ int fs_ivr_play_file(switch_core_session_t *session,
 }
 
 int fs_switch_ivr_record_file(switch_core_session_t *session,
-						switch_file_handle_t *fh,
-						char *file,
-						switch_input_callback_function_t dtmf_callback,
-						void *buf,
-						unsigned int buflen)
+                              switch_file_handle_t *fh,
+                              char *file,
+                              switch_input_callback_function_t dtmf_callback,
+                              void *buf,
+                              unsigned int buflen,
+                              unsigned int limit
+                              )
 {  
 	switch_status_t status;
 	
-        status = switch_ivr_record_file(session, fh, file, dtmf_callback, buf, buflen);
-        return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+    status = switch_ivr_record_file(session, fh, file, dtmf_callback, buf, buflen, limit);
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
 int fs_switch_ivr_sleep(switch_core_session_t *session,
-					uint32_t ms)
+                        uint32_t ms)
 {
 	switch_status_t status;
 	status = switch_ivr_sleep(session, ms);
@@ -211,98 +213,98 @@ int fs_switch_ivr_collect_digits_callback (switch_core_session_t *session,
 										   unsigned int buflen,
 										   unsigned int timeout)
 {
-        switch_status_t status;
+    switch_status_t status;
 
-        status = switch_ivr_collect_digits_callback(session, dtmf_callback, buf, buflen, timeout);
-        return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+    status = switch_ivr_collect_digits_callback(session, dtmf_callback, buf, buflen, timeout);
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
 int fs_switch_ivr_collect_digits_count  	(switch_core_session_t *session,
-					char *buf,
-					unsigned int buflen,
-					unsigned int maxdigits,
-					const char *terminators,
-					char *terminator,
-					unsigned int timeout)  
+                                             char *buf,
+                                             unsigned int buflen,
+                                             unsigned int maxdigits,
+                                             const char *terminators,
+                                             char *terminator,
+                                             unsigned int timeout)  
 {
-        switch_status_t status;
+    switch_status_t status;
 
-        status = switch_ivr_collect_digits_count(session, buf, buflen, maxdigits, terminators, terminator, timeout);
-        return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+    status = switch_ivr_collect_digits_count(session, buf, buflen, maxdigits, terminators, terminator, timeout);
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
 /*int fs_switch_ivr_multi_threaded_bridge   (switch_core_session_t *session,
-					switch_core_session_t *peer_session,
-					switch_input_callback_function_t dtmf_callback,
-					void *session_data,
-					void *peer_session_data)  
-{
-        switch_status_t status;
+  switch_core_session_t *peer_session,
+  switch_input_callback_function_t dtmf_callback,
+  void *session_data,
+  void *peer_session_data)  
+  {
+  switch_status_t status;
 
-        status = switch_ivr_multi_threaded_bridge(session, peer_session, dtmf_callback, session_data, peer_session_data);
-        return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
-}
+  status = switch_ivr_multi_threaded_bridge(session, peer_session, dtmf_callback, session_data, peer_session_data);
+  return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+  }
 */
 
 int fs_switch_ivr_originate       (switch_core_session_t *session,
-				switch_core_session_t **bleg,
-				char *  	bridgeto,
-				uint32_t  	timelimit_sec)
-				/*const switch_state_handler_table_t *table,
-				char *  	cid_name_override,
-				char *  	cid_num_override,
-				switch_caller_profile_t *caller_profile_override)  */
+                                   switch_core_session_t **bleg,
+                                   char *  	bridgeto,
+                                   uint32_t  	timelimit_sec)
+/*const switch_state_handler_table_t *table,
+  char *  	cid_name_override,
+  char *  	cid_num_override,
+  switch_caller_profile_t *caller_profile_override)  */
 {
 
-        switch_channel_t *caller_channel;
-        switch_core_session_t *peer_session;
-        unsigned int timelimit = 60;
-        char *var;
-		switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+    switch_channel_t *caller_channel;
+    switch_core_session_t *peer_session;
+    unsigned int timelimit = 60;
+    char *var;
+    switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
-        caller_channel = switch_core_session_get_channel(session);
-        assert(caller_channel != NULL);
+    caller_channel = switch_core_session_get_channel(session);
+    assert(caller_channel != NULL);
 
-        if ((var = switch_channel_get_variable(caller_channel, "call_timeout"))) {
-                timelimit = atoi(var);
-        }
+    if ((var = switch_channel_get_variable(caller_channel, "call_timeout"))) {
+        timelimit = atoi(var);
+    }
         
-        if (switch_ivr_originate(session, &peer_session, &cause, bridgeto, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
-                switch_channel_hangup(caller_channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
-                return;
-        } else {
-                switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
-        }
+    if (switch_ivr_originate(session, &peer_session, &cause, bridgeto, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
+        switch_channel_hangup(caller_channel, SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL);
+        return;
+    } else {
+        switch_ivr_multi_threaded_bridge(session, peer_session, NULL, NULL, NULL);
+    }
 
 
 }
 
 int fs_switch_ivr_session_transfer(switch_core_session_t *session,
-				char *extension,
-				char *dialplan,
-				char *context)  
+                                   char *extension,
+                                   char *dialplan,
+                                   char *context)  
 {
-        switch_status_t status;
+    switch_status_t status;
 
-        status = switch_ivr_session_transfer(session,extension,dialplan,context);
-        return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+    status = switch_ivr_session_transfer(session,extension,dialplan,context);
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
 int fs_switch_ivr_speak_text      (switch_core_session_t *session,
-				char *tts_name,
-				char *voice_name,
-				char *timer_name,
-				uint32_t  	rate,
-				switch_input_callback_function_t dtmf_callback,
-				char *text,
-				void *buf,
-				unsigned int buflen)  
+                                   char *tts_name,
+                                   char *voice_name,
+                                   char *timer_name,
+                                   uint32_t  	rate,
+                                   switch_input_callback_function_t dtmf_callback,
+                                   char *text,
+                                   void *buf,
+                                   unsigned int buflen)  
 {
-        switch_status_t status;
+    switch_status_t status;
 
-        status = switch_ivr_speak_text(session,tts_name,voice_name,timer_name,rate,dtmf_callback,text,buf,buflen);
-        return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+    status = switch_ivr_speak_text(session,tts_name,voice_name,timer_name,rate,dtmf_callback,text,buf,buflen);
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
 
@@ -320,10 +322,10 @@ char* fs_switch_channel_get_variable(switch_channel_t *channel, char *varname)
 
 int fs_switch_channel_set_variable(switch_channel_t *channel, char *varname, char *value)
 {
-        switch_status_t status;
+    switch_status_t status;
 
-        status = switch_channel_set_variable(channel, varname, value);
-        return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
+    status = switch_channel_set_variable(channel, varname, value);
+    return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }  
 
 /* For Emacs:

@@ -132,10 +132,20 @@ static void record_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
 	switch_status_t status;
+    uint32_t limit = 0;
+    char *path;
+    char *p;
+
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
-	status = switch_ivr_record_file(session, NULL, data, on_dtmf, NULL, 0);
+    path = switch_core_session_strdup(session, data);
+    if ((p = strchr(path, '+'))) {
+        *p++ = '\0';
+        limit = atoi(p);
+    }
+
+	status = switch_ivr_record_file(session, NULL, path, on_dtmf, NULL, 0, limit);
 
 	if (!switch_channel_ready(channel) || (status != SWITCH_STATUS_SUCCESS && !SWITCH_STATUS_IS_BREAK(status))) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
