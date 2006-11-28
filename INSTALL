@@ -1,3 +1,9 @@
+**************************************** NOTICE *******************************
+You MUST own the destination path of /usr/local/freeswitch for the project to 
+build properly!  The alternative is to pick a different prefix with ./configure
+--prefix=/my/special/place .
+*******************************************************************************
+
 UNIX:
 	You will need 'wget' installed in your path so the build system
 	can download the dependancies.
