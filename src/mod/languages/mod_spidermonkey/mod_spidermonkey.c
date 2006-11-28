@@ -824,7 +824,6 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_channel_t *channel;
 	char *file_name = NULL;
-	char *input_callback = NULL;
 	void *bp = NULL;
 	int len = 0;
 	switch_input_callback_function_t dtmf_func = NULL;
@@ -845,7 +844,6 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	if (argc > 1) {
 		if ((function = JS_ValueToFunction(cx, argv[1]))) {
 			memset(&cb_state, 0, sizeof(cb_state));
-			switch_copy_string(cb_state.code_buffer, input_callback, sizeof(cb_state.code_buffer));
 			cb_state.session_state = jss;
 			cb_state.function = function;
 			cb_state.cx = cx;
