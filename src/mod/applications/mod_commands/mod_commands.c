@@ -26,12 +26,14 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
  * Johny Kadarisman <jkr888@gmail.com>
+ * Paul Tinsley <jackhammer@gmail.com>
  *
  * 
  * mod_commands.c -- Misc. Command Module
  *
  */
 #include <switch.h>
+#include <switch_version.h>
 
 static const char modname[] = "mod_commands";
 static switch_api_interface_t ctl_api_interface;
@@ -614,6 +616,15 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t version_function(char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+	char version_string[1024];
+	snprintf(version_string, sizeof(version_string) - 1,  "FreeSwitch Version %s\n", SWITCH_VERSION_FULL);
+
+	stream->write_function(stream, version_string);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t help_function(char *cmd, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	char showcmd[1024];
@@ -631,19 +642,23 @@ static switch_status_t help_function(char *cmd, switch_core_session_t *session, 
 
 	show_function(showcmd, session, stream);
 
-	if (all) {
-		stream->write_function(stream, "version\n" "shutdown - stop the program\n");
-	}
-
 	return SWITCH_STATUS_SUCCESS;
 }
+
+static switch_api_interface_t version_api_interface = {
+	/*.interface_name */ "version",
+	/*.desc */ "Show version of the switch",
+	/*.function */ version_function,
+	/*.syntax */ "",
+	/*.next */ NULL
+};
 
 static switch_api_interface_t help_api_interface = {
 	/*.interface_name */ "help",
 	/*.desc */ "Show help for all the api commands",
 	/*.function */ help_function,
 	/*.syntax */ "",
-	/*.next */ NULL
+	/*.next */ &version_api_interface,
 };
 
 static switch_api_interface_t ctl_api_interface = {
