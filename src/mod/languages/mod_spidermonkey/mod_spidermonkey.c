@@ -409,7 +409,7 @@ static void js_error(JSContext *cx, const char *message, JSErrorReport *report)
 }
 
 
-static switch_status_t sm_load_file(char *filename, sm_loadable_module_t **new_module)
+static switch_status_t sm_load_file(char *filename)
 {
 	sm_loadable_module_t *module = NULL;
 	apr_dso_handle_t *dso = NULL;
@@ -424,7 +424,6 @@ static switch_status_t sm_load_file(char *filename, sm_loadable_module_t **new_m
 
 	assert(filename != NULL);
 
-	*new_module = NULL;
 	status = apr_dso_load(&dso, filename, module_manager.pool);
 
 	while (loading) {
@@ -447,7 +446,7 @@ static switch_status_t sm_load_file(char *filename, sm_loadable_module_t **new_m
 			break;
 		}
 
-		if ((module = switch_core_permanent_alloc(sizeof(sm_loadable_module_t))) == 0) {
+		if (!(module = (sm_loadable_module_t *) switch_core_permanent_alloc(sizeof(*module)))) {
 			err = "Could not allocate memory\n";
 			break;
 		}
@@ -465,11 +464,10 @@ static switch_status_t sm_load_file(char *filename, sm_loadable_module_t **new_m
 	module->module_interface = module_interface;
 	
 	module->lib = dso;
-	*new_module = module;
 
 	switch_core_hash_insert(module_manager.mod_hash, (char *) module->filename, (void *) module);
 	
-	for (mp = module_interface; mp; mp = mp->next) {
+	for (mp = module->module_interface; mp; mp = mp->next) {
 		switch_core_hash_insert(module_manager.load_hash, (char *)mp->name, (void *) mp);
 	}
 	
@@ -484,7 +482,6 @@ static switch_status_t sm_load_module(char *dir, char *fname)
 	switch_size_t len = 0;
 	char *path;
 	char *file;
-	sm_loadable_module_t *new_module = NULL;
 
 #ifdef WIN32
 	const char *ext = ".dll";
@@ -517,7 +514,7 @@ static switch_status_t sm_load_module(char *dir, char *fname)
 		}
 	}
 	
-	return sm_load_file(path, &new_module);
+	return sm_load_file(path);
 }
 
 static switch_status_t load_modules(void)
@@ -961,6 +958,13 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 		}
 	}
 
+    if (argc > 4) {
+        int32 samps;
+        uint32_t pos = 0;
+        JS_ValueToInt32(cx, argv[4], &samps);
+        switch_core_file_seek(&fh, &pos, samps, SEEK_CUR);
+    }
+
 	memset(&fh, 0, sizeof(fh));
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
@@ -1214,13 +1218,13 @@ static JSBool session_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 		char *app_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *app_arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		struct js_session *jss = JS_GetPrivate(cx, obj);
-		jsrefcount saveDepth;
+		//jsrefcount saveDepth;
 
 		if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 			if (application_interface->application_function) {
-				saveDepth = JS_SuspendRequest(cx);
+				//saveDepth = JS_SuspendRequest(cx);
 				application_interface->application_function(jss->session, app_arg);
-				JS_ResumeRequest(cx, saveDepth);
+				//JS_ResumeRequest(cx, saveDepth);
 				retval = JS_TRUE;
 			}
 		} 

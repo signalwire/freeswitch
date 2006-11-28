@@ -31,7 +31,7 @@
  */
 #include "mod_spidermonkey.h"
 
-static const char modname[] = "DB";
+static const char modname[] = "CoreDB";
 
 struct db_obj {
     switch_memory_pool_t *pool;
@@ -148,10 +148,9 @@ static JSBool db_next(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsv
 {
 	struct db_obj *dbo = JS_GetPrivate(cx, obj);
 	*rval = BOOLEAN_TO_JSVAL( JS_FALSE );
-	
-	if (dbo->stmt) {
-		int running = 1;
 
+    if (dbo->stmt) {
+		int running = 1;
 		while (running < 5000) {
 			int result = switch_core_db_step(dbo->stmt);
 			if (result == SQLITE_ROW) {
@@ -210,10 +209,9 @@ static JSBool db_prepare(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, 
 		dbo->stmt = NULL;
 	}
 
-	if (argc > 0) {		
+	if (argc > 0) {
 		char *sql = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-
-		if(switch_core_db_prepare(dbo->db, sql, 0, &dbo->stmt, 0)) {
+		if(switch_core_db_prepare(dbo->db, sql, -1, &dbo->stmt, 0)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error %s\n", switch_core_db_errmsg(dbo->db));
 		} else {
 			*rval = BOOLEAN_TO_JSVAL( JS_TRUE );
@@ -266,18 +264,14 @@ static JSBool db_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 }
 
 JSClass db_class = {
-	"DB", JSCLASS_HAS_PRIVATE, 
+	modname, JSCLASS_HAS_PRIVATE, 
 	JS_PropertyStub,  JS_PropertyStub,	db_getProperty,  JS_PropertyStub, 
 	JS_EnumerateStub, JS_ResolveStub,	JS_ConvertStub,	  db_destroy, NULL, NULL, NULL,
 	db_construct
 };
 
 
-
-
-
-
-switch_status_t spidermonkey_load(JSContext *cx, JSObject *obj)
+switch_status_t db_load(JSContext *cx, JSObject *obj)
 {
 
 	JS_InitClass(cx,
@@ -291,14 +285,13 @@ switch_status_t spidermonkey_load(JSContext *cx, JSObject *obj)
 				 db_props,
 				 db_methods
 				 );
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
 
 const sm_module_interface_t DB_module_interface = {
 	/*.name = */ modname,
-	/*.spidermonkey_load*/ spidermonkey_load,
+	/*.spidermonkey_load*/ db_load,
 	/*.next*/ NULL
 };
 

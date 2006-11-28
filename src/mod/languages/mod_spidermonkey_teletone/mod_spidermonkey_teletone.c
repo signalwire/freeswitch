@@ -357,7 +357,7 @@ JSClass teletone_class = {
 };
 
 
-switch_status_t spidermonkey_load(JSContext *cx, JSObject *obj)
+switch_status_t teletone_load(JSContext *cx, JSObject *obj)
 {
 	JS_InitClass(cx,
 				 obj,
@@ -376,7 +376,7 @@ switch_status_t spidermonkey_load(JSContext *cx, JSObject *obj)
 
 const sm_module_interface_t teletone_module_interface = {
 	/*.name = */ modname,
-	/*.spidermonkey_load*/ spidermonkey_load,
+	/*.spidermonkey_load*/ teletone_load,
 	/*.next*/ NULL
 };
 
