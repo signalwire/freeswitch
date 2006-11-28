@@ -2344,7 +2344,7 @@ static void sip_i_message(int status,
 			to_host = (char *) to->a_url->url_host;
 		}
 
-
+        
 		if (!to_user) {
 			return;
 		}
@@ -3926,7 +3926,9 @@ static void sip_i_invite(nua_t *nua,
 			char *username, *to_username = NULL;
 			char *url_user = (char *) from->a_url->url_user;
 			char *to_user, *to_host, *to_port;
-			
+            char *req_user, *req_host, *req_port;
+            char uri[1024];
+
 			if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 				terminate_session(&session, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER, __LINE__);
@@ -4006,9 +4008,31 @@ static void sip_i_invite(nua_t *nua,
 			switch_channel_set_variable(channel, "sip_from_host", (char *) from->a_url->url_host);
 			switch_channel_set_variable(channel, "sip_from_port", (char *) from->a_url->url_port);
 
-			switch_channel_set_variable(channel, "sip_to_user", (char *) to_user);
+
+            snprintf(uri, sizeof(uri), "%s@%s:%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host, (char *) from->a_url->url_port);
+            switch_channel_set_variable(channel, "sip_from_uri", uri);
+            
+            
+			switch_channel_set_variable(channel, "sip_to_user", to_user);
 			switch_channel_set_variable(channel, "sip_to_host", to_host);
-			switch_channel_set_variable(channel, "sip_to_port", (char *) to_port);
+			switch_channel_set_variable(channel, "sip_to_port", to_port);
+
+            snprintf(uri, sizeof(uri), "%s@%s:%s", to_user, to_host, to_port);
+            switch_channel_set_variable(channel, "sip_to_uri", uri);
+
+
+            req_user = (char *) sip->sip_request->rq_url->url_user;
+            req_host = (char *) sip->sip_request->rq_url->url_host;
+            req_port = (char *) sip->sip_request->rq_url->url_port;
+            
+			switch_channel_set_variable(channel, "sip_req_user", req_user);
+			switch_channel_set_variable(channel, "sip_req_host", req_host);
+			switch_channel_set_variable(channel, "sip_req_port", req_port);
+            
+            snprintf(uri, sizeof(uri), "%s@%s:%s", req_user, req_host, req_port);
+            switch_channel_set_variable(channel, "sip_req_uri", uri);
+            
+
 			if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																	  (char *) from->a_url->url_user,
 																	  profile->dialplan,
