@@ -579,9 +579,9 @@ static switch_status_t show_function(char *cmd, switch_core_session_t *session, 
 		holder.print_title = 0;
 		if ((cmdname = strchr(cmd, ' ')) != 0) {
 			*cmdname++ = '\0';
-			sprintf (sql, "select name, syntax, description from interfaces where type = 'api' and name = '%s'", cmdname);
+			snprintf (sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api' and name = '%s'", cmdname);
 		} else {
-			sprintf (sql, "select name, syntax, description from interfaces where type = 'api'");
+			snprintf (sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api'");
 		}
 	} else {
 		stream->write_function(stream, "USAGE: %s\n", show_api_interface.syntax);
@@ -633,7 +633,7 @@ static switch_status_t help_function(char *cmd, switch_core_session_t *session, 
 		sprintf (showcmd, "help");
 		all = 1;
 	} else {
-		sprintf (showcmd, "help %s", cmd);
+		snprintf(showcmd, sizeof(showcmd) -1, "help %s", cmd);
 	}
 
 	if (all) {
