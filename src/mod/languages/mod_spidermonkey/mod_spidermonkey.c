@@ -858,7 +858,7 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 		}
 
         if (argc > 3) {
-            JS_ValueToInt32(cx, argv[4], &limit);
+            JS_ValueToInt32(cx, argv[3], &limit);
         }
 	}
 
