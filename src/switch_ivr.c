@@ -428,6 +428,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
         start = time(NULL);
     }
 
+    if (fh->thresh) {
+        if (!fh->silence_hits) {
+            fh->silence_hits = 20;
+        }
+    }
+
 	while(switch_channel_ready(channel)) {
 		switch_size_t len;
 		switch_event_t *event;
@@ -477,6 +483,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			break;
 		}
+
+        if (fh->thresh) {
+            int16_t *fdata = (int16_t *) read_frame->data;
+            uint32_t samples = read_frame->datalen / sizeof(*fdata);
+            uint32_t score, count = 0, j = 0;
+            double energy = 0;
+
+            for (count = 0; count < samples; count++) {
+                energy += abs(fdata[j]);
+                j += read_codec->implementation->number_of_channels;
+            }
+		
+            score = energy / samples;
+            if (score < fh->thresh) {
+                if (!--fh->silence_hits) {
+                    break;
+                }
+            }
+        }
+
 		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
 			len = (switch_size_t) read_frame->datalen / 2;
 			switch_core_file_write(fh, read_frame->data, &len);
@@ -983,6 +1009,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	write_frame.data = abuf;
 	write_frame.buflen = sizeof(abuf);
 
+    if (fh->samples) {
+        uint32_t pos = 0;
+        switch_core_file_seek(fh, &pos, fh->samples, SEEK_CUR);
+    }
 	
 	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_TITLE, &p) == SWITCH_STATUS_SUCCESS) {
 		title = (char *) switch_core_session_strdup(session, (char *)p);

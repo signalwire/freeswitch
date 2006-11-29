@@ -313,6 +313,8 @@ struct switch_file_handle {
 	void *private_info;
 	int64_t pos;
 	switch_buffer_t *audio_buffer;
+    uint32_t thresh;
+    uint32_t silence_hits;
 };
 
 /*! \brief Abstract interface to an asr module */

@@ -606,7 +606,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 	
 	*str = NULL;
 
-	if (!(buf = malloc(blocksize))) {
+	dlen = blocksize * 2;
+
+	if (!(buf = malloc(dlen))) {
 		return SWITCH_STATUS_MEMERR;
 	}
 
@@ -615,9 +617,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
         return SWITCH_STATUS_MEMERR;
     }
 
-	dlen = blocksize;
-
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialze!.\n");
+    //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialze!.\n");
 	for (hp = event->headers; hp; hp = hp->next) {
         /*
          * grab enough memory to store 3x the string (url encode takes one char and turns it into %XX)
@@ -628,7 +628,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
          */
         if(encode_len < ((strlen(hp->value) * 3) + 1)) {
             char* tmp;
-	        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocing %d was %d.\n", ((strlen(hp->value) * 3) + 1), encode_len);
+	        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocing %d was %d.\n", ((strlen(hp->value) * 3) + 1), encode_len);
             /* we can use realloc for initial alloc as well, if encode_buf is zero it treats it as a malloc */
             if(!(tmp = realloc(encode_buf, ((strlen(hp->value) * 3) + 1)))) {
                 /* oh boy, ram's gone, give back what little we grabbed and bail */

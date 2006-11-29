@@ -828,7 +828,7 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	int len = 0;
 	switch_input_callback_function_t dtmf_func = NULL;
 	struct input_callback_state cb_state = {0};
-	switch_file_handle_t fh;
+	switch_file_handle_t fh = {0};
 	JSFunction *function;
     int32 limit = 0;
 
@@ -860,9 +860,21 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
         if (argc > 3) {
             JS_ValueToInt32(cx, argv[3], &limit);
         }
+
+        if (argc > 4) {
+            int32_t thresh;
+            JS_ValueToInt32(cx, argv[4], &thresh);
+            fh.thresh = thresh;
+        }
+
+        if (argc > 5) {
+            int32_t silence_hits;
+            JS_ValueToInt32(cx, argv[5], &silence_hits);
+            fh.silence_hits = silence_hits;
+        }
 	}
 
-	memset(&fh, 0, sizeof(fh));
+    
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
 	switch_ivr_record_file(jss->session, &fh, file_name, dtmf_func, bp, len, limit);
@@ -925,7 +937,7 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	int len = 0;
 	switch_input_callback_function_t dtmf_func = NULL;
 	struct input_callback_state cb_state = {0};
-	switch_file_handle_t fh;
+	switch_file_handle_t fh = {0};
 	JSFunction *function;
 
 	channel = switch_core_session_get_channel(jss->session);
@@ -963,12 +975,10 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 
     if (argc > 4) {
         int32 samps;
-        uint32_t pos = 0;
         JS_ValueToInt32(cx, argv[4], &samps);
-        switch_core_file_seek(&fh, &pos, samps, SEEK_CUR);
+        fh.samples = samps;
     }
 
-	memset(&fh, 0, sizeof(fh));
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
 	switch_ivr_play_file(jss->session, &fh, file_name, timer_name, dtmf_func, bp, len);
