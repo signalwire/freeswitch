@@ -297,7 +297,7 @@ SWITCH_DECLARE(size_t) switch_url_encode(char *url, char *buf, size_t len)
 {
     char *p;
     size_t x = 0;
-    const char urlunsafe[] = "\r\n %\"#%&+:;<=>?@[\\]^`{|}";
+    const char urlunsafe[] = "\r\n \"#%&+:;<=>?@[\\]^`{|}";
     const char hex[] = "0123456789ABCDEF";
 
     memset(buf, 0, len);
