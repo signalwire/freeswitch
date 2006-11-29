@@ -600,8 +600,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 {
 	switch_size_t len = 0;
 	switch_event_header_t *hp;
-	switch_size_t llen = 0, dlen = 0, blocksize = 512;
+	switch_size_t llen = 0, dlen = 0, blocksize = 512, encode_len = 1024;
 	char *buf;
+    char *encode_buf = NULL; /* used for url encoding of variables to make sure unsafe things stay out of the serialzed copy */
 	
 	*str = NULL;
 
@@ -609,10 +610,42 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 		return SWITCH_STATUS_MEMERR;
 	}
 
+    /* go ahead and give ourselves some space to work with, should save a few reallocs */
+    if(!(encode_buf = malloc(encode_len))) {
+        return SWITCH_STATUS_MEMERR;
+    }
+
 	dlen = blocksize;
 
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "hit serialze!.\n");
 	for (hp = event->headers; hp; hp = hp->next) {
-		llen = strlen(hp->name) + strlen(hp->value) + 2;
+        /*
+         * grab enough memory to store 3x the string (url encode takes one char and turns it into %XX)
+         * so we could end up with a string that is 3 times the original's length, unlikely but rather
+         * be safe than destroy the string, also add one for the null.  And try to be smart about using 
+         * the memory, allocate and only reallocate if we need more.  This avoids an alloc, free CPU
+         * destroying loop.
+         */
+        if(encode_len < ((strlen(hp->value) * 3) + 1)) {
+            char* tmp;
+	        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocing %d was %d.\n", ((strlen(hp->value) * 3) + 1), encode_len);
+            /* we can use realloc for initial alloc as well, if encode_buf is zero it treats it as a malloc */
+            if(!(tmp = realloc(encode_buf, ((strlen(hp->value) * 3) + 1)))) {
+                /* oh boy, ram's gone, give back what little we grabbed and bail */
+                switch_safe_free(buf);
+                return SWITCH_STATUS_MEMERR;
+            }
+
+            /* keep track of the size of our allocation */
+            encode_len = (strlen(hp->value) * 3) + 1;
+
+            encode_buf = tmp;
+        }
+
+        /* handle any bad things in the string like newlines : etc that screw up the serialized format */
+        switch_url_encode(hp->value, encode_buf, encode_len - 1);
+
+		llen = strlen(hp->name) + strlen(encode_buf) + 2;
 		
 		if ((len + llen) > dlen) {
 			char *m;
@@ -620,14 +653,20 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 			if ((m = realloc(buf, dlen))) {
 				buf = m;
 			} else {
+                /* we seem to be out of memory trying to resize the serialize string, give back what we already have and give up */
 				switch_safe_free(buf);
+                switch_safe_free(encode_buf);
 				return SWITCH_STATUS_MEMERR;
 			}
 		}
 
-		snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, hp->value);
+		snprintf(buf + len, dlen - len, "%s: %s\n", hp->name, encode_buf);
 		len = strlen(buf);
+
 	}
+
+    /* we are done with the memory we used for encoding, give it back */
+    switch_safe_free(encode_buf);
 
 	if (event->body) {
 		int blen = (int) strlen(event->body);
