@@ -54,7 +54,7 @@ MysqlCDR::MysqlCDR(switch_mod_cdr_newchannel_t *newchannel) : BaseCDR(newchannel
 		src_length = (long unsigned int)strlen(src);
 		dst_length = (long unsigned int)strlen(dst);
 		ani_length = (long unsigned int)strlen(ani);
-		ani2_length = (long unsigned int)strlen(ani2);
+		aniii_length = (long unsigned int)strlen(aniii);
 		dialplan_length = (long unsigned int)strlen(dialplan);
 		myuuid_length = (long unsigned int)strlen(myuuid);
 		destuuid_length = (long unsigned int)strlen(destuuid);
@@ -181,7 +181,7 @@ void MysqlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setti
 		
 		if(activated)
 		{
-			tmp_sql_query = "INSERT INTO freeswitchcdr  (callstartdate,callanswerdate,callenddate,originated,clid,src,dst,ani,ani2,dialplan,myuuid,destuuid,srcchannel,dstchannel,lastapp,lastdata,billusec,disposition,hangupcause,amaflags";
+			tmp_sql_query = "INSERT INTO freeswitchcdr  (callstartdate,callanswerdate,callenddate,originated,clid,src,dst,ani,aniii,dialplan,myuuid,destuuid,srcchannel,dstchannel,lastapp,lastdata,billusec,disposition,hangupcause,amaflags";
 			
 			int items_appended = 0;
 			
@@ -324,7 +324,7 @@ bool MysqlCDR::process_record()
 	add_string_parameter(src,src_length,MYSQL_TYPE_VAR_STRING,0);
 	add_string_parameter(dst,dst_length,MYSQL_TYPE_VAR_STRING,0);
 	add_string_parameter(ani,ani_length,MYSQL_TYPE_VAR_STRING,0);
-	add_string_parameter(ani2,ani2_length,MYSQL_TYPE_VAR_STRING,0);
+	add_string_parameter(aniii,aniii_length,MYSQL_TYPE_VAR_STRING,0);
 	add_string_parameter(dialplan,dialplan_length,MYSQL_TYPE_VAR_STRING,0);
 	add_string_parameter(myuuid,myuuid_length,MYSQL_TYPE_VAR_STRING,0);
 	add_string_parameter(destuuid,destuuid_length,MYSQL_TYPE_VAR_STRING,0);
