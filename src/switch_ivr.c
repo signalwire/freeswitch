@@ -26,6 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Neal Horman <neal at wanlink dot com>
+ * Matt Klein <mklein@nmedia.net>
  *
  * switch_ivr_api.c -- IVR Library
  *
@@ -956,7 +957,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_channel_t *channel;
 	int16_t abuf[FILE_STARTSAMPLES];
 	char dtmf[128];
-	uint32_t interval = 0, samples = 0, framelen;
+	uint32_t interval = 0, samples = 0, framelen, sample_start = 0;
 	uint32_t ilen = 0;
 	switch_size_t olen = 0;
 	switch_frame_t write_frame = {0};
@@ -974,6 +975,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	uint8_t asis = 0;
 	char *ext;
 	
+	if (fh->samples > 0) {
+		sample_start = fh->samples;
+		fh->samples = 0;
+	}
+
 	if (file) {
 		if ((ext = strrchr(file, '.'))) {
 			ext++;
@@ -1009,9 +1015,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	write_frame.data = abuf;
 	write_frame.buflen = sizeof(abuf);
 
-    if (fh->samples) {
+    if (sample_start > 0) {
         uint32_t pos = 0;
-        switch_core_file_seek(fh, &pos, fh->samples, SEEK_CUR);
+        switch_core_file_seek(fh, &pos, sample_start, SEEK_CUR);
     }
 	
 	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_TITLE, &p) == SWITCH_STATUS_SUCCESS) {
