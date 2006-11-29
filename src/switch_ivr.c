@@ -496,7 +496,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
                 j += read_codec->implementation->number_of_channels;
             }
 		
-            score = energy / samples;
+            score = (uint32_t)(energy / samples);
             if (score < fh->thresh) {
                 if (!--fh->silence_hits) {
                     break;
