@@ -23,6 +23,7 @@ __EOF__
 cp js/src/config/Linux_All.mk js/src/config/`uname -s``uname -r`.mk
 
 ldflags="-lpthread"
+other_libs="-lpthread"
 fi
 
 if [ $hosttype = "OpenBSD" ] ; then
@@ -49,5 +50,6 @@ fi
 
 cd nsprpub && CFLAGS=$cflags LDFLAGS=$ldflags ./configure $opts && $MAKE
 
-cd ../js/src && CFLAGS=$cflags BUILD_OPT=$BUILD_OPT LDFLAGS=$ldflags JS_THREADSAFE=1 JS_HAS_FILE_OBJECT=1 OTHER_LIBS="-L../../../mozilla/nsprpub/dist/lib" INCLUDES="-I../../../mozilla/nsprpub/dist/include/nspr"  $MAKE -f Makefile.ref `find . -name libjs.a`
+cd ../js/src && CFLAGS=$cflags BUILD_OPT=$BUILD_OPT LDFLAGS=$ldflags JS_THREADSAFE=1 JS_HAS_FILE_OBJECT=1 OTHER_LIBS="$other_libs -L../../../mozilla/nsprpub/dist/lib" INCLUDES="-I../../../mozilla/nsprpub/dist/include/nspr"  $MAKE -f Makefile.ref `find . -name libjs.a`
+
 
