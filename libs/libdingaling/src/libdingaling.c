@@ -497,17 +497,20 @@ static int on_disco_info(void *user_data, ikspak *pak)
 			struct ldl_buffer *buffer;
 			size_t x;
 
-			if (!apr_hash_get(handle->sub_hash, from, APR_HASH_KEY_STRING)) {
-				iks *msg;
-				apr_hash_set(handle->sub_hash, 	apr_pstrdup(handle->pool, from), APR_HASH_KEY_STRING, &marker);
-				msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "Ding A Ling...."); 
-				apr_queue_push(handle->queue, msg);
-			}
 
 			apr_cpystrn(id, from, sizeof(id));
 			if ((resource = strchr(id, '/'))) {
 				*resource++ = '\0';
 			}
+
+			if (!apr_hash_get(handle->sub_hash, from, APR_HASH_KEY_STRING)) {
+				iks *msg;
+				apr_hash_set(handle->sub_hash, 	apr_pstrdup(handle->pool, from), APR_HASH_KEY_STRING, &marker);
+				msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, "Ding A Ling...."); 
+				apr_queue_push(handle->queue, msg);
+			}
+
+			
 
 			if (resource) {
 				for (x = 0; x < strlen(resource); x++) {
@@ -705,13 +708,7 @@ static int on_presence(void *user_data, ikspak *pak)
 	if (!status) {
 		status = type;
 	}
-	
-	if (!apr_hash_get(handle->sub_hash, from, APR_HASH_KEY_STRING)) {
-		iks *msg;
-		apr_hash_set(handle->sub_hash, 	apr_pstrdup(handle->pool, from), APR_HASH_KEY_STRING, &marker);
-		msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "Ding A Ling...."); 
-		apr_queue_push(handle->queue, msg);
-	}
+
 
 	apr_cpystrn(id, from, sizeof(id));
 	lowercase(id);
@@ -719,6 +716,15 @@ static int on_presence(void *user_data, ikspak *pak)
 	if ((resource = strchr(id, '/'))) {
 		*resource++ = '\0';
 	}
+	
+	if (!apr_hash_get(handle->sub_hash, from, APR_HASH_KEY_STRING)) {
+		iks *msg;
+		apr_hash_set(handle->sub_hash, 	apr_pstrdup(handle->pool, from), APR_HASH_KEY_STRING, &marker);
+		msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, "Ding A Ling...."); 
+		apr_queue_push(handle->queue, msg);
+	}
+
+
 	
 	if (resource && strstr(resource, "talk") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
 		apr_cpystrn(buffer->buf, from, buffer->len);
@@ -811,14 +817,25 @@ static int on_subscribe(void *user_data, ikspak *pak)
 	ldl_handle_t *handle = user_data;
 	char *from = iks_find_attrib(pak->x, "from");
 	char *to = iks_find_attrib(pak->x, "to");
-	iks *msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, from, "Ding A Ling...."); 
+	iks *msg = NULL;
+	char *id = strdup(from);
+	char *r;
 
+	if (!id) {
+		return -1;
+	}
+	if ((r = strchr(from, '/'))) {
+		*r++;
+	}
+
+	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, "Ding A Ling....");
+	
 	if (to && ldl_test_flag(handle, LDL_FLAG_COMPONENT)) {
 		iks_insert_attrib(msg, "from", to);
 	}
 
 	apr_queue_push(handle->queue, msg);
-	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, from, "Ding A Ling...."); 
+	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBE, id, "Ding A Ling...."); 
 
 	if (to && ldl_test_flag(handle, LDL_FLAG_COMPONENT)) {
 		iks_insert_attrib(msg, "from", to);
