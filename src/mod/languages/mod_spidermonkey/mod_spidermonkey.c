@@ -863,13 +863,13 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 
         if (argc > 4) {
             int32_t thresh;
-            JS_ValueToInt32(cx, argv[4], &thresh);
+            JS_ValueToInt32(cx, argv[4], &(int32)thresh);
             fh.thresh = thresh;
         }
 
         if (argc > 5) {
             int32_t silence_hits;
-            JS_ValueToInt32(cx, argv[5], &silence_hits);
+            JS_ValueToInt32(cx, argv[5], &(int32)silence_hits);
             fh.silence_hits = silence_hits;
         }
 	}
