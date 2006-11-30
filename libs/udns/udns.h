@@ -237,11 +237,11 @@ static __inline unsigned dns_get32(dnscc_t *s) {
         | ((unsigned)s[2]<<8) | s[3];
 }
 static __inline dnsc_t *dns_put16(dnsc_t *d, unsigned n) {
-  *d++ = (n >> 8) & 255; *d++ = n & 255; return d;
+  *d++ = (dnsc_t)((n >> 8) & 255); *d++ = (dnsc_t)(n & 255); return d;
 }
 static __inline dnsc_t *dns_put32(dnsc_t *d, unsigned n) {
-  *d++ = (n >> 24) & 255; *d++ = (n >> 16) & 255;
-  *d++ = (n >>  8) & 255; *d++ = n & 255;
+  *d++ = (dnsc_t)((n >> 24) & 255); *d++ = (dnsc_t)((n >> 16) & 255);
+  *d++ = (dnsc_t)((n >>  8) & 255); *d++ = (dnsc_t)(n & 255);
   return d;
 }
 

@@ -440,12 +440,6 @@ dns_set_tmcbck(struct dns_ctx *ctx, dns_utm_fn *fn, void *data) {
   ctx->dnsc_utmctx = data;
 }
 
-static void dns_firstid(struct dns_ctx *ctx) {
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  ctx->dnsc_nextid = (tv.tv_usec ^ getpid()) & 0xffff;
-}
-
 #ifdef WIN32
 
 typedef DWORD (WINAPI *GetAdaptersAddressesFunc)(
@@ -530,6 +524,20 @@ static int dns_init_internal(struct dns_ctx *ctx) {
   return 0;
 }
 
+#ifdef _MSC_VER
+#pragma warning(disable:4100)
+
+#include "windows.h"
+
+void gettimeofday(struct timeval *tv, void *tz)
+{
+    long int l = GetTickCount();
+ 
+    tv->tv_sec = l / 1000;
+    tv->tv_usec = (l % 1000) * 1000;
+    return;
+} 
+#endif
 #else /* !WIN32 */
 
 static int dns_init_internal(struct dns_ctx *ctx) {
@@ -596,6 +604,12 @@ static int dns_init_internal(struct dns_ctx *ctx) {
 }
 
 #endif /* dns_init_internal() for !WIN32 */
+
+static void dns_firstid(struct dns_ctx *ctx) {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  ctx->dnsc_nextid = (tv.tv_usec ^ getpid()) & 0xffff;
+}
 
 int dns_init(int do_open) {
   struct dns_ctx *ctx = &dns_defctx;

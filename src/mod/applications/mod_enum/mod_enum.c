@@ -453,7 +453,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 		goto done;
 	}
 
-	dns_ptodn(name, strlen(name), query.dn, sizeof(query.dn), &abs);
+	dns_ptodn(name, (unsigned int)strlen(name), query.dn, sizeof(query.dn), &abs);
 	query.name = name;
 	query.number = num;
 	query.qtyp = l_qtyp;
@@ -470,7 +470,14 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 	now = 0;
 
 	while((i = dns_timeouts(nctx, -1, now)) > 0) {
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4389 4127)
+#endif
 		FD_SET(fd, &fds);
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 		tv.tv_sec = i;
 		tv.tv_usec = 0;
 		i = select(fd+1, &fds, 0, 0, &tv);
