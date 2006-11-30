@@ -39,6 +39,7 @@
 #define SWITCH_UTILS_H
 
 #include <switch.h>
+#include <pcre.h>
 
 SWITCH_BEGIN_EXTERN_C
 
@@ -231,8 +232,15 @@ SWITCH_DECLARE(int) switch_socket_waitfor(switch_pollfd_t *poll, int ms);
 */
 SWITCH_DECLARE(char *) switch_cut_path(char *in);
 
+#define switch_clean_re(re)	if (re) {\
+				pcre_free(re);\
+				re = NULL;\
+			}
+
 SWITCH_DECLARE(char *) switch_string_replace(const char *string, const char *search, const char *replace);
 SWITCH_DECLARE(switch_status_t) switch_string_match(const char *string, size_t string_len, const char *search, size_t search_len);
+SWITCH_DECLARE(int) switch_perform_regex(char *field, char *expression, pcre **new_re, int *ovector, uint32_t olen);
+SWITCH_DECLARE(void) switch_perform_substitution(pcre *re, int match_count, char *data, char *field_data, char *substituted, uint32_t len, int *ovector);
 
 #define SWITCH_READ_ACCEPTABLE(status) status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK
 SWITCH_DECLARE(size_t) switch_url_encode(char *url, char *buf, size_t len);

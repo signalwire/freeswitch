@@ -135,7 +135,7 @@ static switch_status_t switch_gsm_decode(switch_codec_t *codec, switch_codec_t *
 static const switch_codec_implementation_t gsm_8k_implementation = { 
 		/*.codec_type */ SWITCH_CODEC_TYPE_AUDIO, 
 		/*.ianacode */ 3, 
-		/*.iananame */ "gsm", 
+		/*.iananame */ "GSM", 
 		/*.fmtp */ NULL,
 		/*.samples_per_second */ 8000, 
 		/*.bits_per_second */ 13200, 

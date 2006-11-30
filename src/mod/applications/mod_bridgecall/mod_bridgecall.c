@@ -45,6 +45,10 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 	uint8_t no_media_bridge = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
+    if (switch_strlen_zero(data)) {
+        return;
+    }
+
 	caller_channel = switch_core_session_get_channel(session);
 	assert(caller_channel != NULL);
 

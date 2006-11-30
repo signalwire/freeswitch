@@ -22,6 +22,10 @@
         <load module="mod_console"/>
         <!-- <load module="mod_syslog"/> -->
 
+        <!-- Multi-Faceted -->
+	<!-- mod_enum is a dialplan interface, an application interface and an api command interface -->
+        <load module="mod_enum"/>
+
         <!-- XML Interfaces -->
         <!-- <load module="mod_xml_rpc"/> -->
 
@@ -77,7 +81,6 @@
         <!-- ASR /TTS -->
         <!-- <load module="mod_cepstral"/> -->
         <!-- <load module="mod_rss"/> -->
-
       </modules>
     </configuration>
 
@@ -404,6 +407,19 @@
         </profile>
       </profiles>
     </configuration>
+
+    <configuration name="enum.conf" description="ENUM Module">
+      <settings>
+	<param name="default-root" value="e164.org"/>
+      </settings>
+
+      <routes>
+	<route service="E2U+SIP" regex="sip:(.*)" replace="sofia/test/$1"/>
+	<route service="E2U+IAX2" regex="iax2:(.*)" replace="iax/$1"/>
+	<route service="E2U+XMPP" regex="XMPP:(.*)" replace="dingaling/jingle/$1"/>
+      </routes>
+    </configuration>
+
   </section>
   
   <section name="dialplan" description="Regex/XML Dialplan">
@@ -415,7 +431,8 @@
     <context name="default">
       <extension name="tollfree">
         <condition field="destination_number" expression="^(18(0{2}|8{2}|7{2}|6{2})\d{7})$">
-          <action application="bridge" data="sofia/test/$1-freeswitch@voip.trxtel.com"/>
+	  <action application="enum" data="$1"/>
+	  <action application="bridge" data="${enum_auto_route}"/>
         </condition>
       </extension>
 

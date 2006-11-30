@@ -35,6 +35,92 @@
 #include <stdlib.h>
 
 
+
+SWITCH_DECLARE(int) switch_perform_regex(char *field, char *expression, pcre **new_re, int *ovector, uint32_t olen)
+{
+	const char *error = NULL;
+	int erroffset = 0;
+	pcre *re = NULL;
+	int match_count = 0;
+	
+	if (!(field && expression)) {
+		return 0;
+	}
+
+	re = pcre_compile(expression, /* the pattern */
+					  0,		  /* default options */
+					  &error,	  /* for error message */
+					  &erroffset, /* for error offset */
+					  NULL);	  /* use default character tables */
+	if (error) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "COMPILE ERROR: %d [%s]\n", erroffset, error);
+		switch_clean_re(re);
+		return 0;
+	}
+
+	match_count = pcre_exec(re,	/* result of pcre_compile() */
+							NULL,	/* we didn't study the pattern */
+							field,	/* the subject string */
+							(int) strlen(field), /* the length of the subject string */
+							0,	/* start at offset 0 in the subject */
+							0,	/* default options */
+							ovector,	/* vector of integers for substring information */
+							olen); /* number of elements (NOT size in bytes) */
+
+	if (match_count <= 0) {
+		switch_clean_re(re);
+		match_count = 0;
+	}
+
+	*new_re = re;
+
+	return match_count;
+}
+
+
+SWITCH_DECLARE(void) switch_perform_substitution(pcre *re, int match_count, char *data, char *field_data, char *substituted, uint32_t len, int *ovector)
+{
+	char index[10] = "";
+	char replace[1024] = "";
+	uint32_t x, y = 0, z = 0, num = 0;
+
+	for (x = 0; x < (len-1) && x < strlen(data);) {
+		if (data[x] == '$') {
+			x++;
+			
+			if (!(data[x] > 47 && data[x] < 58)) {
+				substituted[y++] = data[x-1];
+				continue;
+			}
+
+			while (data[x] > 47 && data[x] < 58) {
+				index[z++] = data[x];
+				x++;
+			}
+			index[z++] = '\0';
+			z = 0;
+			num = atoi(index);
+			
+			if (pcre_copy_substring(field_data,
+									ovector,
+									match_count,
+									num,
+									replace,
+									sizeof(replace)) > 0) {
+				unsigned int r;
+				for (r = 0; r < strlen(replace); r++) {
+					substituted[y++] = replace[r];
+				}
+			}
+		} else {
+			substituted[y++] = data[x];
+			x++;
+		}
+	}
+	substituted[y++] = '\0';
+}
+
+
 SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
 {
 	switch(priority) { /*lol*/

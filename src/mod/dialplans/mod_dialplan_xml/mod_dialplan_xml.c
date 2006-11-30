@@ -37,95 +37,7 @@
 
 static const char modname[] = "mod_dialplan_xml";
 
-#define cleanre(re)	if (re) {\
-				pcre_free(re);\
-				re = NULL;\
-			}
 
-
-static int perform_regex(switch_channel_t *channel, char *field, char *expression, pcre **new_re, int *ovector, uint32_t olen)
-{
-	const char *error = NULL;
-	int erroffset = 0;
-	pcre *re = NULL;
-	int match_count = 0;
-	
-	if (!(field && expression)) {
-		return 0;
-	}
-
-	re = pcre_compile(expression, /* the pattern */
-					  0,		  /* default options */
-					  &error,	  /* for error message */
-					  &erroffset, /* for error offset */
-					  NULL);	  /* use default character tables */
-	if (error) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "COMPILE ERROR: %d [%s]\n", erroffset, error);
-		cleanre(re);
-		return 0;
-	}
-
-	match_count = pcre_exec(re,	/* result of pcre_compile() */
-							NULL,	/* we didn't study the pattern */
-							field,	/* the subject string */
-							(int) strlen(field), /* the length of the subject string */
-							0,	/* start at offset 0 in the subject */
-							0,	/* default options */
-							ovector,	/* vector of integers for substring information */
-							olen); /* number of elements (NOT size in bytes) */
-
-	if (match_count <= 0) {
-		cleanre(re);
-		match_count = 0;
-	}
-
-	*new_re = re;
-
-	return match_count;
-}
-
-
-static void perform_substitution(pcre *re, int match_count, char *data, char *field_data, char *substituted, uint32_t len, int *ovector)
-{
-	char index[10] = "";
-	char replace[1024] = "";
-	uint32_t x, y = 0, z = 0, num = 0;
-
-	for (x = 0; x < (len-1) && x < strlen(data);) {
-		if (data[x] == '$') {
-			x++;
-			
-			if (!(data[x] > 47 && data[x] < 58)) {
-				substituted[y++] = data[x-1];
-				continue;
-			}
-
-			while (data[x] > 47 && data[x] < 58) {
-				index[z++] = data[x];
-				x++;
-			}
-			index[z++] = '\0';
-			z = 0;
-			num = atoi(index);
-			
-			if (pcre_copy_substring(field_data,
-									ovector,
-									match_count,
-									num,
-									replace,
-									sizeof(replace)) > 0) {
-				unsigned int r;
-				for (r = 0; r < strlen(replace); r++) {
-					substituted[y++] = replace[r];
-				}
-			}
-		} else {
-			substituted[y++] = data[x];
-			x++;
-		}
-	}
-	substituted[y++] = '\0';
-}
 
 typedef enum {
 	BREAK_ON_TRUE,
@@ -197,7 +109,7 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 				field_data = "";
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "test conditions %s(%s) =~ /%s/\n", field, field_data, expression);
-			if (!(proceed = perform_regex(channel, field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+			if (!(proceed = switch_perform_regex(field_data, expression, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Regex mismatch\n");
 
 				for (xaction = switch_xml_child(xcond, "anti-action"); xaction; xaction = xaction->next) {
@@ -232,7 +144,7 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 			char *app_data = NULL;
 
 			if (field && strchr(expression, '(')) {
-				perform_substitution(re, proceed, data, field_data, substituted, sizeof(substituted), ovector);
+				switch_perform_substitution(re, proceed, data, field_data, substituted, sizeof(substituted), ovector);
 				app_data = substituted;
 			} else {
 				app_data = data;
@@ -249,7 +161,7 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 			switch_caller_extension_add_application(session, *extension, application, app_data);
 		}
 
-		cleanre(re);
+		switch_clean_re(re);
 
 		if (do_break_i == BREAK_ON_TRUE || do_break_i == BREAK_ALWAYS) {
 			break;
