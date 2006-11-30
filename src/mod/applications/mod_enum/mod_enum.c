@@ -1,0 +1,708 @@
+/* 
+ * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
+ *
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
+ *
+ * The Initial Developer of the Original Code is
+ * Anthony Minessale II <anthmct@yahoo.com>
+ * Portions created by the Initial Developer are Copyright (C)
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * 
+ * Anthony Minessale II <anthmct@yahoo.com>
+ *
+ * mod_enum.c -- ENUM
+ *
+ */
+
+#include <switch.h>
+#include <udns.h>
+
+static const char modname[] = "mod_enum";
+
+struct enum_record {
+	int order;
+	int preference;
+	char *service;
+	char *route;
+	struct enum_record *next;
+};
+typedef struct enum_record enum_record_t;
+
+struct query {
+	const char *name;		/* original query string */
+	char *number;
+	unsigned char dn[DNS_MAXDN];
+	enum dns_type qtyp;		/* type of the query */
+	enum_record_t *results;
+};
+typedef struct query enum_query_t;
+
+struct route {
+	char *service;
+	char *regex;
+	char *replace;
+	struct route *next;
+};
+typedef struct route enum_route_t;
+
+static enum dns_class qcls = DNS_C_IN;
+
+
+static struct {
+	char *root;
+	switch_hash_t *routes;
+	enum_route_t *route_order;
+	switch_memory_pool_t *pool;
+} globals;
+
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_root, globals.root)
+
+
+static void add_route(char *service, char *regex, char *replace)
+{
+	enum_route_t *route, *rp;
+
+	if (!(route = malloc(sizeof(*route)))) {
+		return;
+	}
+
+	memset(route, 0, sizeof(*route));
+	
+	route->service = strdup(service);
+	route->regex = strdup(regex);
+	route->replace = strdup(replace);
+	
+	if (!globals.route_order) {
+		globals.route_order = route;
+	} else {
+		for (rp = globals.route_order; rp && rp->next; rp = rp->next);
+		rp->next = route;
+	}
+
+	if (!(rp = switch_core_hash_find(globals.routes, service))) {
+		switch_core_hash_insert(globals.routes, route->service, route);
+	}
+}
+
+
+static switch_status_t load_config(void)
+{
+	char *cf = "enum.conf";
+    switch_xml_t cfg, xml = NULL, param, settings, route, routes;
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	memset(&globals, 0, sizeof(globals));
+	if (switch_core_new_memory_pool(&globals.pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "OH OH no pool\n");
+		status = SWITCH_STATUS_TERM;
+		goto done;
+	}
+
+	switch_core_hash_init(&globals.routes, globals.pool);
+
+    if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+        status = SWITCH_STATUS_FALSE;
+        goto done;
+    }
+
+    if ((settings = switch_xml_child(cfg, "settings"))) {
+        for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+            char *var = (char *) switch_xml_attr_soft(param, "name");
+            char *val = (char *) switch_xml_attr_soft(param, "value");
+            if (!strcasecmp(var, "default-root")) {
+				set_global_root(val);
+            } else if (!strcasecmp(var, "log-level-trace")) {
+				
+            }
+        }
+    }
+
+    if ((routes = switch_xml_child(cfg, "routes"))) {
+        for (route = switch_xml_child(routes, "route"); route; route = route->next) {
+            char *service = (char *) switch_xml_attr_soft(route, "service");
+            char *regex = (char *) switch_xml_attr_soft(route, "regex");
+            char *replace = (char *) switch_xml_attr_soft(route, "replace");
+
+			if (service && regex && replace) {
+				add_route(service, regex, replace);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Route!\n");
+			}
+        }
+    }
+	
+ done:
+
+	if (xml) {
+		switch_xml_free(xml);
+	}
+
+	if (!globals.root) {
+		set_global_root("e164.org");
+	}
+
+	return status;
+
+}
+
+
+static char *reverse_number(char *in, char *root)
+{
+    switch_size_t len;
+    char *out = NULL;
+    char *y,*z;
+
+    if (!(in && root)) {
+        return NULL;
+    }
+
+    len = (strlen(in) * 2) + strlen(root) + 1;
+    if ((out = malloc(len))) {
+        memset(out, 0, len);
+
+        z = out;
+        for(y = in + (strlen(in) - 1); y; y--) {
+			if (*y > 47 && *y < 58) {
+				*z++ = *y;
+				*z++ = '.';
+			}
+			if (y == in) {
+				break;
+			}
+        }
+        strcat(z, root);
+    }
+
+	return out;
+}
+
+static void dnserror(enum_query_t *q, int errnum) {
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unable to lookup %s record for %s: %s\n",
+					  dns_typename(q->qtyp), dns_dntosp(q->dn), dns_strerror(errnum));
+}
+
+
+static void add_result(enum_query_t *q, int order, int preference, char *service, char *route)
+{
+	enum_record_t *new_result, *rp, *prev = NULL;
+
+
+	if (!(new_result = malloc(sizeof(*new_result)))) {
+		return;
+	}
+
+	memset(new_result, 0, sizeof(*new_result));
+	
+	new_result->order = order;
+	new_result->preference = preference;
+	new_result->service = strdup(service);
+	new_result->route = strdup(route);
+	
+
+	if (!q->results) {
+		q->results = new_result;
+		return;
+	}
+
+	rp = q->results;
+
+	while(rp && strcmp(rp->service, new_result->service)) {
+		prev = rp;
+		rp = rp->next;
+	}
+
+	while(rp && !strcmp(rp->service, new_result->service) && new_result->order > rp->order) {
+		prev = rp;
+		rp = rp->next;
+	}
+
+	while (rp && !strcmp(rp->service, new_result->service) && new_result->preference > rp->preference) {
+		prev = rp;
+		rp = rp->next;
+	}
+	
+	if (prev) {
+		new_result->next = rp;
+		prev->next = new_result;
+	} else {
+		new_result->next = rp;
+		q->results = new_result;
+	}
+}
+
+
+static void free_results(enum_record_t **results) 
+{
+	enum_record_t *fp, *rp;
+
+	for(rp = *results; rp;) {
+		fp = rp;
+		switch_safe_free(fp->service);
+		switch_safe_free(fp->route);
+		switch_safe_free(fp);
+		rp = rp->next;
+	}
+	*results = NULL;
+}
+
+static void parse_rr(const struct dns_parse *p, enum_query_t *q, struct dns_rr *rr) {
+	const unsigned char *pkt = p->dnsp_pkt;
+	const unsigned char *end = p->dnsp_end;
+	const unsigned char *dptr = rr->dnsrr_dptr;
+	const unsigned char *dend = rr->dnsrr_dend;
+	unsigned char *dn = rr->dnsrr_dn;
+	const unsigned char *c;
+	char *ptr;
+	char flags;
+	int order;
+	int preference;
+	char *nme;
+	char *service = NULL;
+	char *regex = NULL;
+	char *replace = NULL;
+	int argc = 0;
+	char *argv[4] = {0};
+	int leap;
+
+	switch(rr->dnsrr_typ) {
+
+	case DNS_T_NAPTR:	/* prio weight port targetDN */
+		c = dptr;
+		c += 2 + 2 + 2;
+		if (dns_getdn(pkt, &c, end, dn, DNS_MAXDN) <= 0 || c != dend) goto xperr;
+		c = dptr;
+		
+		leap = *dn;
+		nme = (char *)dn+1;
+
+		order = dns_get16(c+0);
+		preference = dns_get16(c+2);
+		flags = (char) dns_get16(c+4);		
+
+		if ((ptr = nme+leap)) {
+			service = nme;
+			*ptr++ = '\0';
+			argc = switch_separate_string(ptr, '!', argv, (sizeof(argv) / sizeof(argv[0])));
+			regex = argv[1];
+			replace = argv[2];
+		}
+
+		for(ptr = replace; ptr && *ptr; ptr++) {
+			if (*ptr == '\\') {
+				*ptr = '$';
+			}
+		}
+
+		if (flags && service && regex && replace) {
+			pcre *re = NULL;
+			int proceed = 0, ovector[30];
+			char substituted[1024] = "";
+			char rbuf[1024] = "";
+			char *uri;
+			enum_route_t *route;
+
+			switch_clean_re(re);
+
+			if ((proceed = switch_perform_regex(q->number, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+				if (strchr(regex, '(')) {
+					switch_perform_substitution(re, proceed, replace, q->number, substituted, sizeof(substituted), ovector);
+					uri = substituted;
+				} else {
+					uri = replace;
+				}
+
+				if ((route = (enum_route_t *) switch_core_hash_find(globals.routes, service))){
+					switch_clean_re(re);
+					if ((proceed = switch_perform_regex(uri, route->regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+						if (strchr(route->regex, '(')) {
+							switch_perform_substitution(re, proceed, route->replace, uri, rbuf, sizeof(rbuf), ovector);
+							uri = rbuf;
+						} else {
+							uri = route->replace;
+						}
+					}
+				}
+				
+				add_result(q, order, preference, service, uri);
+			}
+
+			switch_clean_re(re);
+		}
+
+		break;
+
+	default:
+		break;
+	}
+
+	return;
+
+ xperr:
+	//printf("<parse error>\n");
+	return;
+}
+
+static void dnscb(struct dns_ctx *ctx, void *result, void *data) {
+	int r = dns_status(ctx);
+	enum_query_t *q = data;
+	struct dns_parse p;
+	struct dns_rr rr;
+	unsigned nrr;
+	unsigned char dn[DNS_MAXDN];
+	const unsigned char *pkt, *cur, *end, *qdn;
+	if (!result) {
+		dnserror(q, r);
+		return;
+	}
+	pkt = result; end = pkt + r; cur = dns_payload(pkt);
+	dns_getdn(pkt, &cur, end, dn, sizeof(dn));
+	dns_initparse(&p, NULL, pkt, cur, end);
+	p.dnsp_qcls = p.dnsp_qtyp = 0;
+	qdn = dn;
+	nrr = 0;
+	while((r = dns_nextrr(&p, &rr)) > 0) {
+		if (!dns_dnequal(qdn, rr.dnsrr_dn)) continue;
+		if ((qcls == DNS_C_ANY || qcls == rr.dnsrr_cls) &&
+			(q->qtyp == DNS_T_ANY || q->qtyp == rr.dnsrr_typ))
+			++nrr;
+		else if (rr.dnsrr_typ == DNS_T_CNAME && !nrr) {
+			if (dns_getdn(pkt, &rr.dnsrr_dptr, end,
+						  p.dnsp_dnbuf, sizeof(p.dnsp_dnbuf)) <= 0 ||
+				rr.dnsrr_dptr != rr.dnsrr_dend) {
+				r = DNS_E_PROTOCOL;
+				break;
+			}
+			else {
+				qdn = p.dnsp_dnbuf;
+			}
+		}
+	}
+	if (!r && !nrr)
+		r = DNS_E_NODATA;
+	if (r < 0) {
+		dnserror(q, r);
+		free(result);
+		return;
+	}
+
+	dns_rewind(&p, NULL);
+	p.dnsp_qtyp = q->qtyp;
+	p.dnsp_qcls = qcls;
+	while(dns_nextrr(&p, &rr)) {
+		parse_rr(&p, q, &rr);
+	}
+  
+	free(result);
+}
+
+
+static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results)
+{
+	switch_status_t sstatus  = SWITCH_STATUS_SUCCESS;
+	char *name = NULL;
+	enum_query_t query = {0};
+	enum dns_type l_qtyp = DNS_T_NAPTR;
+	int i = 0, fd = -1, abs = 0;
+	fd_set fds;
+	struct timeval tv = {0};
+	time_t now = 0;
+	struct dns_ctx *nctx = NULL;
+	char *num, *mnum = NULL;
+	
+	if (*in != '+') {
+		mnum = switch_mprintf("+%s", in);
+		num = mnum;
+	} else {
+		num = in;
+	}
+
+	if (!(name = reverse_number(num, root))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Parse Error!\n");
+		sstatus = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
+	if (!(nctx = dns_new(NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Memory Error!\n");
+		sstatus = SWITCH_STATUS_MEMERR;
+		goto done;
+	}
+
+	fd = dns_open(nctx);
+
+	if (fd < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "FD Error!\n");
+		sstatus = SWITCH_STATUS_FALSE;
+		goto done;
+	}
+
+	dns_ptodn(name, strlen(name), query.dn, sizeof(query.dn), &abs);
+	query.name = name;
+	query.number = num;
+	query.qtyp = l_qtyp;
+
+	if (abs) {
+		abs = DNS_NOSRCH;
+	}
+	
+	if (!dns_submit_dn(nctx, query.dn, qcls, l_qtyp, abs, 0, dnscb, &query)) {
+		dnserror(&query, dns_status(nctx));
+	}
+
+	FD_ZERO(&fds);
+	now = 0;
+
+	while((i = dns_timeouts(nctx, -1, now)) > 0) {
+		FD_SET(fd, &fds);
+		tv.tv_sec = i;
+		tv.tv_usec = 0;
+		i = select(fd+1, &fds, 0, 0, &tv);
+		now = time(NULL);
+		if (i > 0) dns_ioevent(nctx, now);
+	}
+
+	if (!query.results) {
+		sstatus = SWITCH_STATUS_FALSE;
+	}
+
+	*results = query.results;
+	query.results = NULL;
+
+ done:
+
+	if (fd > -1) {
+		close(fd);
+		fd = -1;
+	}
+
+	if (nctx) {
+		dns_free(nctx);
+	}
+	
+	switch_safe_free(name);
+	switch_safe_free(mnum);
+
+	return sstatus;
+}
+
+
+static switch_caller_extension_t *enum_dialplan_hunt(switch_core_session_t *session)
+{
+	switch_caller_extension_t *extension = NULL;
+	switch_caller_profile_t *caller_profile;
+	enum_record_t *results, *rp;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	enum_route_t *rtp;
+
+    assert(channel != NULL);
+
+	caller_profile = switch_channel_get_caller_profile(channel);
+	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ENUM Lookup on %s\n", caller_profile->destination_number);
+
+	if (enum_lookup(globals.root, caller_profile->destination_number, &results) == SWITCH_STATUS_SUCCESS) {
+		if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+			free_results(&results);	
+			return NULL;
+		}
+		switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
+		
+		for(rtp = globals.route_order; rtp; rtp = rtp->next) {
+			for(rp = results; rp; rp = rp->next) {
+				if (!strcmp(rtp->service, rp->service)) {
+					switch_caller_extension_add_application(session, extension, "bridge", rp->route);					
+				}
+			}
+		}
+
+		free_results(&results);	
+	}
+
+	if (extension) {
+        switch_channel_set_state(channel, CS_EXECUTE);
+    } else {
+        switch_channel_hangup(channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
+    }
+
+
+	return extension;
+
+}
+
+static void enum_app_function(switch_core_session_t *session, char *data)
+{
+	int argc = 0;
+    char *argv[4] = {0};
+	char *mydata = NULL;
+	char *dest = NULL, *root = NULL;
+	enum_record_t *results, *rp;
+	enum_route_t *rtp;
+	char rbuf[1024] = "";
+	char vbuf[1024] = "";
+	char *rbp = rbuf;
+	switch_size_t l = 0, rbl = sizeof(rbuf);
+	uint32_t cnt = 0;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	assert(channel != NULL);
+
+	if (!(mydata = switch_core_session_strdup(session, data))) {
+        return;
+    }
+
+    if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		dest = argv[0];
+        root = argv[1] ? argv[1] : globals.root;
+		if (enum_lookup(root, data, &results) == SWITCH_STATUS_SUCCESS) {
+			for(rtp = globals.route_order; rtp; rtp = rtp->next) {
+				for(rp = results; rp; rp = rp->next) {
+					if (!strcmp(rtp->service, rp->service)) {
+						snprintf(vbuf, sizeof(vbuf), "enum_route_%d", ++cnt);
+						switch_channel_set_variable(channel, vbuf, rp->route);
+
+						snprintf(rbp, rbl, "%s|", rp->route);
+						l = strlen(rp->route) + 1;
+						rbp += l;
+						rbl -= l;
+					}
+				}
+			}
+			*(rbuf+strlen(rbuf)-1) = '\0';
+			switch_channel_set_variable(channel, "enum_auto_route", rbuf);
+			free_results(&results);	
+		}
+	}
+	
+}
+
+static switch_status_t enum_function(char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+
+	int argc = 0;
+	char *argv[4] = {0};
+	enum_record_t *results, *rp;
+	char *mydata = NULL;
+	char *dest = NULL, *root = NULL;
+	enum_route_t *rtp;
+
+	if (session) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function cannot be called from the dialplan.\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!(mydata = strdup(data))) {
+		stream->write_function(stream, "Error!\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		dest = argv[0];
+		root = argv[1] ? argv[1] : globals.root;
+		
+		if (!enum_lookup(root, data, &results) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "No Match!\n");
+			return SWITCH_STATUS_SUCCESS;
+		}
+		
+		stream->write_function(stream,
+							   "\nOffered Routes:\n"
+							   "Order\tPref\tService   \tRoute\n"
+							   "==============================================================================\n");
+
+		for(rp = results; rp; rp = rp->next) {
+			stream->write_function(stream, "%d\t%d\t%-10s\t%s\n", rp->order, rp->preference, rp->service, rp->route);
+		}
+	
+
+		stream->write_function(stream,
+							   "\nSupported Routes:\n"
+							   "Order\tPref\tService   \tRoute\n"
+							   "==============================================================================\n");
+
+		for(rtp = globals.route_order; rtp; rtp = rtp->next) {
+			for(rp = results; rp; rp = rp->next) {
+				if (!strcmp(rtp->service, rp->service)) {
+					stream->write_function(stream, "%d\t%d\t%-10s\t%s\n", rp->order, rp->preference, rp->service, rp->route);
+				}
+			}
+		}
+		
+		free_results(&results);
+	} else {
+		stream->write_function(stream, "Invalid Input!\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static const switch_dialplan_interface_t enum_dialplan_interface = {
+    /*.interface_name = */ "enum",
+    /*.hunt_function = */ enum_dialplan_hunt
+    /*.next = NULL */
+};
+
+static const switch_application_interface_t enum_application_interface = {
+	/*.interface_name */ "enum",
+	/*.application_function */ enum_app_function,	
+	/* long_desc */ "Perform an ENUM lookup",
+	/* short_desc */ "Perform an ENUM lookup",
+	/* syntax */ "<number> [<root>]",
+	/*.next */ NULL
+};
+
+static switch_api_interface_t enum_api_interface = {
+	/*.interface_name */ "enum",
+	/*.desc */ "ENUM",
+	/*.function */ enum_function,
+	/*.syntax */ "",
+	/*.next */ NULL
+};
+
+static switch_loadable_module_interface_t enum_module_interface = {
+	/*.module_name */ modname,
+	/*.endpoint_interface */ NULL,
+	/*.timer_interface */ NULL,
+	/*.dialplan_interface */ &enum_dialplan_interface,
+	/*.codec_interface */ NULL,
+	/*.application_interface */ &enum_application_interface,
+	/*.api_interface */ &enum_api_interface,
+	/*.file_interface */ NULL,
+	/*.speech_interface */ NULL,
+	/*.directory_interface */ NULL
+};
+
+SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
+{
+
+	if (dns_init(0) < 0) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	load_config();
+
+	/* connect my internal structure to the blank pointer passed to me */
+	*module_interface = &enum_module_interface;
+
+	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
+}
+
