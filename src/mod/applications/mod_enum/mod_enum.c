@@ -32,6 +32,10 @@
 #include <switch.h>
 #include <udns.h>
 
+#ifndef WIN32
+#define closesocket close
+#endif
+
 static const char modname[] = "mod_enum";
 
 struct enum_record {
@@ -495,7 +499,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
  done:
 
 	if (fd > -1) {
-		close(fd);
+		closesocket(fd);
 		fd = -1;
 	}
 
