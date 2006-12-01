@@ -570,7 +570,7 @@ static void enum_app_function(switch_core_session_t *session, char *data)
 	char vbuf[1024] = "";
 	char *rbp = rbuf;
 	switch_size_t l = 0, rbl = sizeof(rbuf);
-	uint32_t cnt = 0;
+	uint32_t cnt = 1;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	assert(channel != NULL);
@@ -583,10 +583,21 @@ static void enum_app_function(switch_core_session_t *session, char *data)
 		dest = argv[0];
         root = argv[1] ? argv[1] : globals.root;
 		if (enum_lookup(root, data, &results) == SWITCH_STATUS_SUCCESS) {
+			switch_hash_index_t *hi;
+			void *vval;
+			const void *vvar;
+
+			for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, &vvar, NULL, &vval);
+				if (vvar && !strncmp(vvar, "enum_", 5)) {
+					switch_channel_set_variable(channel, (char *) vvar, NULL);
+				}
+			}
+
 			for(rtp = globals.route_order; rtp; rtp = rtp->next) {
 				for(rp = results; rp; rp = rp->next) {
 					if (!strcmp(rtp->service, rp->service)) {
-						snprintf(vbuf, sizeof(vbuf), "enum_route_%d", ++cnt);
+						snprintf(vbuf, sizeof(vbuf), "enum_route_%d", cnt++);
 						switch_channel_set_variable(channel, vbuf, rp->route);
 
 						snprintf(rbp, rbl, "%s|", rp->route);
@@ -596,6 +607,8 @@ static void enum_app_function(switch_core_session_t *session, char *data)
 					}
 				}
 			}
+			snprintf(vbuf, sizeof(vbuf), "%d", cnt);
+			switch_channel_set_variable(channel, "enum_route_count", vbuf);
 			*(rbuf+strlen(rbuf)-1) = '\0';
 			switch_channel_set_variable(channel, "enum_auto_route", rbuf);
 			free_results(&results);	

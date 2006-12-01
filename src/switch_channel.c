@@ -108,20 +108,12 @@ struct switch_channel {
 	uint32_t flags;
 	uint32_t state_flags;
 	switch_caller_profile_t *caller_profile;
-	switch_caller_profile_t *originator_caller_profile;
-	switch_caller_profile_t *originatee_caller_profile;
 	switch_caller_extension_t *caller_extension;
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
 	switch_hash_t *variables;
 	switch_hash_t *private_hash;
-	switch_channel_timetable_t *times;
 	switch_call_cause_t hangup_cause;
-	int freq;
-	int bits;
-	int channels;
-	int ms;
-	int kbps;
 };
 
 
@@ -160,8 +152,16 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *c
 
 SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch_channel_t *channel)
 {
+    switch_channel_timetable_t *times = NULL;
+
 	assert(channel != NULL);
-	return channel->times;
+    if (channel->caller_profile) {
+        switch_mutex_lock(channel->profile_mutex);
+        times = channel->caller_profile->times;
+        switch_mutex_unlock(channel->profile_mutex);
+    }
+
+	return times;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t *pool)
@@ -183,46 +183,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
-SWITCH_DECLARE(switch_status_t) switch_channel_set_raw_mode(switch_channel_t *channel, int freq, int bits, int channels,
-														  int ms, int kbps)
-{
-
-	assert(channel != NULL);
-
-	channel->freq = freq;
-	channel->bits = bits;
-	channel->channels = channels;
-	channel->ms = ms;
-	channel->kbps = kbps;
-
-
-	return SWITCH_STATUS_SUCCESS;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_channel_get_raw_mode(switch_channel_t *channel, int *freq, int *bits, int *channels,
-														  int *ms, int *kbps)
-{
-	if (freq) {
-		*freq = channel->freq;
-	}
-	if (bits) {
-		*bits = channel->bits;
-	}
-	if (channels) {
-		*channels = channel->channels;
-	}
-	if (ms) {
-		*ms = channel->ms;
-	}
-	if (kbps) {
-		*kbps = channel->kbps;
-	}
-
-	return SWITCH_STATUS_SUCCESS;
-
-}
-
 
 SWITCH_DECLARE(switch_size_t) switch_channel_has_dtmf(switch_channel_t *channel)
 {
@@ -306,7 +266,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel,
 	channel->state = state;
 	channel->flags = flags;
 	channel->session = session;
-	switch_channel_set_raw_mode(channel, 8000, 16, 1, 20, 8);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -348,7 +307,7 @@ SWITCH_DECLARE(char *) switch_channel_get_variable(switch_channel_t *channel, ch
 	assert(channel != NULL);
 
 	if (!(v=switch_core_hash_find(channel->variables, varname))) {
-		if (!(v = switch_caller_get_field_by_name(channel->caller_profile, varname))) {
+		if (!channel->caller_profile || !(v = switch_caller_get_field_by_name(channel->caller_profile, varname))) {
 			if (!strcmp(varname, "base_dir")) {
 				return SWITCH_GLOBAL_dirs.base_dir;
 			}
@@ -710,16 +669,17 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, switch_event_t *event)
 {
-	switch_caller_profile_t *caller_profile, *originator_caller_profile, *originatee_caller_profile;
+	switch_caller_profile_t *caller_profile, *originator_caller_profile = NULL, *originatee_caller_profile = NULL;
 	switch_hash_index_t *hi;
 	switch_codec_t *codec;
 	void *val;
 	const void *var;
 	char state_num[25];
 
-	caller_profile = switch_channel_get_caller_profile(channel);
-	originator_caller_profile = switch_channel_get_originator_caller_profile(channel);
-	originatee_caller_profile = switch_channel_get_originatee_caller_profile(channel);
+	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
+        originator_caller_profile = caller_profile->originator_caller_profile;
+        originatee_caller_profile = caller_profile->originatee_caller_profile;
+    }
 
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State", (char *) switch_channel_state_name(channel->state));
 	snprintf(state_num, sizeof(state_num), "%d", channel->state);
@@ -767,11 +727,10 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 
 SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
 {
-	switch_channel_timetable_t *times;
-
 	assert(channel != NULL);
 	assert(channel->session != NULL);
 	switch_mutex_lock(channel->profile_mutex);
+	assert(caller_profile != NULL);
 
 	if (!caller_profile->uuid) {
 		caller_profile->uuid = switch_core_session_strdup(channel->session, switch_core_session_get_uuid(channel->session));
@@ -793,12 +752,14 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 			switch_event_fire(&event);
 		}
 	} 
-	
-	if ((times = (switch_channel_timetable_t *) switch_core_session_alloc(channel->session, sizeof(*times)))) {
-		times->next = channel->times;
-		channel->times = times;
-	}
-	channel->times->created = switch_time_now();
+    
+    caller_profile->times = (switch_channel_timetable_t *) switch_core_session_alloc(channel->session, sizeof(*caller_profile->times));
+	caller_profile->times->created = switch_time_now();
+
+    if (channel->caller_profile && channel->caller_profile->times) {
+        channel->caller_profile->times->transferred = switch_time_now();
+        caller_profile->times->answered = channel->caller_profile->times->answered;
+    }
 
 	caller_profile->next = channel->caller_profile;
 	channel->caller_profile = caller_profile;
@@ -822,30 +783,50 @@ SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel
 																  switch_caller_profile_t *caller_profile)
 {
 	assert(channel != NULL);
-	switch_mutex_lock(channel->profile_mutex);
-	caller_profile->next = channel->originator_caller_profile;
-	channel->originator_caller_profile = caller_profile;
-	switch_mutex_unlock(channel->profile_mutex);
+    if (channel->caller_profile) {
+        switch_mutex_lock(channel->profile_mutex);
+        caller_profile->next = channel->caller_profile->originator_caller_profile;
+        channel->caller_profile->originator_caller_profile = caller_profile;
+        switch_mutex_unlock(channel->profile_mutex);
+    }
 }
 
 SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel_t *channel,
 																  switch_caller_profile_t *caller_profile)
 {
 	assert(channel != NULL);
-	switch_mutex_lock(channel->profile_mutex);
-	caller_profile->next = channel->originatee_caller_profile;
-	channel->originatee_caller_profile = caller_profile;
-	switch_mutex_unlock(channel->profile_mutex);
+    if (channel->caller_profile) {
+        switch_mutex_lock(channel->profile_mutex);
+        caller_profile->next = channel->caller_profile->originatee_caller_profile;
+        channel->caller_profile->originatee_caller_profile = caller_profile;
+        switch_mutex_unlock(channel->profile_mutex);
+    }
 }
 
 SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originator_caller_profile(switch_channel_t *channel)
 {
-	switch_caller_profile_t *profile;
+	switch_caller_profile_t *profile = NULL;
 	assert(channel != NULL);
 
-	switch_mutex_lock(channel->profile_mutex);
-	profile = channel->originator_caller_profile;
-	switch_mutex_unlock(channel->profile_mutex);
+    if (channel->caller_profile) {
+        switch_mutex_lock(channel->profile_mutex);
+        profile = channel->caller_profile->originator_caller_profile;
+        switch_mutex_unlock(channel->profile_mutex);
+    }
+
+	return profile;
+}
+
+SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originatee_caller_profile(switch_channel_t *channel)
+{
+	switch_caller_profile_t *profile = NULL;
+	assert(channel != NULL);
+
+    if (channel->caller_profile) {
+        switch_mutex_lock(channel->profile_mutex);
+        profile = channel->caller_profile->originatee_caller_profile;
+        switch_mutex_unlock(channel->profile_mutex);
+    }
 
 	return profile;
 }
@@ -855,18 +836,6 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel)
 	assert(channel != NULL);
 	assert(channel->session != NULL);
 	return switch_core_session_get_uuid(channel->session);
-}
-
-SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_originatee_caller_profile(switch_channel_t *channel)
-{
-	switch_caller_profile_t *profile;
-	assert(channel != NULL);
-
-	switch_mutex_lock(channel->profile_mutex);
-	profile = channel->originatee_caller_profile;
-	switch_mutex_unlock(channel->profile_mutex);
-
-	return profile;
 }
 
 SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel_t *channel,
@@ -974,8 +943,10 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	assert(channel != NULL);
 	switch_mutex_lock(channel->flag_mutex);
 
-	if (channel->times && !channel->times->hungup) {
-		channel->times->hungup = switch_time_now();
+	if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->hungup) {
+        switch_mutex_lock(channel->profile_mutex);
+		channel->caller_profile->times->hungup = switch_time_now();
+        switch_mutex_unlock(channel->profile_mutex);
 	}
 
 	if (channel->state < CS_HANGUP) {
@@ -1096,7 +1067,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	if (switch_core_session_answer_channel(channel->session) == SWITCH_STATUS_SUCCESS) {
 		switch_event_t *event;
 
-		channel->times->answered = switch_time_now();
+        if (channel->caller_profile && channel->caller_profile->times) {
+            switch_mutex_lock(channel->profile_mutex);
+            channel->caller_profile->times->answered = switch_time_now();
+            switch_mutex_unlock(channel->profile_mutex);
+        }
+
 		switch_channel_set_flag(channel, CF_ANSWERED);
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Answer %s!\n", channel->name);
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {

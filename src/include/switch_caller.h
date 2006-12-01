@@ -88,6 +88,9 @@ struct switch_caller_profile {
 	char *context;
 	/*! flags */
 	switch_caller_profile_flag_t flags;
+	struct switch_caller_profile *originator_caller_profile;
+	struct switch_caller_profile *originatee_caller_profile;
+	struct switch_channel_timetable *times;
 	struct switch_caller_profile *next;
 };
 

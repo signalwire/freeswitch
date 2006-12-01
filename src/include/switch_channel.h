@@ -46,6 +46,7 @@ struct switch_channel_timetable {
 	switch_time_t created;
 	switch_time_t answered;
 	switch_time_t hungup;
+	switch_time_t transferred;
 	struct switch_channel_timetable *next;
 };
 
@@ -428,9 +429,6 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 */
 SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, char *in);
 
-// These may go away
-SWITCH_DECLARE(switch_status_t) switch_channel_set_raw_mode (switch_channel_t *channel, int freq, int bits, int channels, int ms, int kbps);
-SWITCH_DECLARE(switch_status_t) switch_channel_get_raw_mode (switch_channel_t *channel, int *freq, int *bits, int *channels, int *ms, int *kbps);
 /** @} */
 
 SWITCH_END_EXTERN_C
