@@ -34,6 +34,20 @@
 
 static const char modname[] = "etpan";
 
+#define B64BUFFLEN 1024
+static const char c64[65] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static int write_buf(int fd, char *buf) {
+
+	int len = (int)strlen(buf);
+	if (fd && write(fd, buf, len) != len) {
+		close(fd);
+		return 0;
+	}
+
+	return 1;
+}
+
 /* etpan Object */
 /*********************************************************************************/
 static JSBool etpan_construct(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -54,14 +68,137 @@ enum etpan_tinyid {
 	etpan_NAME
 };
 
+static JSBool js_email(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+	char *to = NULL, *from = NULL, *headers, *body = NULL, *file = NULL;
+	char *bound = "XXXX_boundary_XXXX";
+	char filename[80], buf[B64BUFFLEN];
+	int fd = 0, ifd = 0;
+	int x=0, y=0, bytes=0, ilen=0;
+	unsigned int b=0, l=0;
+	unsigned char in[B64BUFFLEN];
+	unsigned char out[B64BUFFLEN+512];
+	char *path = NULL;
+
+	
+	if ( 
+		argc > 3 && 
+		(from = JS_GetStringBytes(JS_ValueToString(cx, argv[0]))) &&
+		(to = JS_GetStringBytes(JS_ValueToString(cx, argv[1]))) &&
+		(headers = JS_GetStringBytes(JS_ValueToString(cx, argv[2]))) &&
+		(body = JS_GetStringBytes(JS_ValueToString(cx, argv[3]))) 
+		) {
+		if ( argc > 4) {
+			file = JS_GetStringBytes(JS_ValueToString(cx, argv[4]));
+		}
+		snprintf(filename, 80, "%smail.%ld%04x", SWITCH_GLOBAL_dirs.temp_dir, time(NULL), rand() & 0xffff);
+
+		if ((fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0644))) {
+			if (file) {
+				path = file;
+				if ((ifd = open(path, O_RDONLY)) < 1) {
+					return JS_FALSE;
+				}
+
+				snprintf(buf, B64BUFFLEN, "MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=\"%s\"\n", bound);
+				if (!write_buf(fd, buf)) {
+					return JS_FALSE;
+				}
+			}
+			
+			if (!write_buf(fd, headers))
+				return JS_FALSE;
+
+			if (!write_buf(fd, "\n\n"))
+				return JS_FALSE;
+			
+			if (file) {
+				snprintf(buf, B64BUFFLEN, "--%s\nContent-Type: text/plain\n\n", bound);
+				if (!write_buf(fd, buf))
+					return JS_FALSE;
+			}
+			
+			if (!write_buf(fd, body))
+				return JS_FALSE;
+			
+			if (file) {
+				snprintf(buf, B64BUFFLEN, "\n\n--%s\nContent-Type: application/octet-stream\n"
+						 "Content-Transfer-Encoding: base64\n"
+						 "Content-Description: Sound attachment.\n"
+						 "Content-Disposition: attachment; filename=\"%s\"\n\n", bound, file);
+				if (!write_buf(fd, buf))
+					return JS_FALSE;
+				
+				while((ilen=read(ifd, in, B64BUFFLEN))) {
+					for (x=0;x<ilen;x++) {
+						b = (b<<8) + in[x];
+						l += 8;
+						while (l >= 6) {
+							out[bytes++] = c64[(b>>(l-=6))%64];
+							if (++y!=72)
+								continue;
+							out[bytes++] = '\n';
+							y=0;
+						}
+					}
+					if (write(fd, &out, bytes) != bytes) { 
+						return -1;
+					} else 
+						bytes=0;
+					
+				}
+				
+				if (l > 0) {
+					out[bytes++] = c64[((b%16)<<(6-l))%64];
+				}
+				if (l != 0) while (l < 6) {
+					out[bytes++] = '=', l += 2;
+				}
+				if (write(fd, &out, bytes) != bytes) { 
+					return -1;
+				}
+
+			}
+			
+
+			
+			if (file) {
+				snprintf(buf, B64BUFFLEN, "\n\n--%s--\n.\n", bound);
+				if (!write_buf(fd, buf))
+					return JS_FALSE;
+			}
+		}
+
+		if (fd) {
+			close(fd);
+		}
+		if (ifd) {
+			close(ifd);
+		}
+		snprintf(buf, B64BUFFLEN, "/bin/cat %s | /usr/sbin/sendmail -tf \"%s\" %s", filename, from, to);
+		system(buf);
+		unlink(filename);
+
+
+		if (file) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Emailed file [%s] to [%s]\n", filename, to);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Emailed data to [%s]\n", to);
+		}
+		return JS_TRUE;
+	}
+	
+
+	return JS_FALSE;
+}
+
 static JSFunctionSpec etpan_methods[] = {
-	{"myMethod", etpan_my_method, 1},
+//	{"myMethod", odbc_my_method, 1},
 	{0}
 };
 
-
 static JSPropertySpec etpan_props[] = {
-	{"name", etpan_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
+//	{"name", etpan_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
 	{0}
 };
 
@@ -81,8 +218,15 @@ JSClass etpan_class = {
 };
 
 
+static JSFunctionSpec etpan_functions[] = {
+	{"email", js_email, 2}, 
+	{0}
+};
+
 switch_status_t spidermonkey_load(JSContext *cx, JSObject *obj)
 {
+	JS_DefineFunctions(cx, obj, etpan_functions);
+
 	JS_InitClass(cx,
 				 obj,
 				 NULL,

@@ -65,13 +65,13 @@ enum odbc_tinyid {
 };
 
 static JSFunctionSpec odbc_methods[] = {
-	{"myMethod", odbc_my_method, 1},
+//	{"myMethod", odbc_my_method, 1},
 	{0}
 };
 
 
 static JSPropertySpec odbc_props[] = {
-	{"name", odbc_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
+//	{"name", odbc_NAME, JSPROP_READONLY|JSPROP_PERMANENT}, 
 	{0}
 };
 
