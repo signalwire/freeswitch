@@ -380,7 +380,12 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 			snprintf(path, len, "%s%s%s%s", dir, SWITCH_PATH_SEPARATOR, file, ext);
 		}
 	}
-	
+
+    if (switch_core_hash_find(loadable_modules.module_hash, file)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Module %s Already Loaded!\n", file);
+        return SWITCH_STATUS_FALSE;
+    }
+
 	if ((status = switch_loadable_module_load_file(path, &new_module) == SWITCH_STATUS_SUCCESS)) {
 		return switch_loadable_module_process((char *) file, new_module);
 	} else {
