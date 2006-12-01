@@ -3927,6 +3927,8 @@ static void sip_i_invite(nua_t *nua,
 			char *url_user = (char *) from->a_url->url_user;
 			char *to_user, *to_host, *to_port;
             char *req_user, *req_host, *req_port;
+            char *contact_user, *contact_host, *contact_port;
+            char *via_rport, *via_host, *via_port;
             char uri[1024];
 
 			if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
@@ -4028,6 +4030,23 @@ static void sip_i_invite(nua_t *nua,
 			switch_channel_set_variable(channel, "sip_req_user", req_user);
 			switch_channel_set_variable(channel, "sip_req_host", req_host);
 			switch_channel_set_variable(channel, "sip_req_port", req_port);
+
+            contact_user = (char *) sip->sip_contact->m_url->url_user;
+            contact_host = (char *) sip->sip_contact->m_url->url_host;
+            contact_port = (char *) sip->sip_contact->m_url->url_port;
+            
+			switch_channel_set_variable(channel, "sip_contact_user", contact_user);
+			switch_channel_set_variable(channel, "sip_contact_host", contact_host);
+			switch_channel_set_variable(channel, "sip_contact_port", contact_port);
+
+            via_host = (char *) sip->sip_via->v_host;
+            via_port = (char *) sip->sip_via->v_port;
+            via_rport = (char *) sip->sip_via->v_rport;
+            
+			switch_channel_set_variable(channel, "sip_via_host", via_host);
+			switch_channel_set_variable(channel, "sip_via_port", via_port);
+			switch_channel_set_variable(channel, "sip_via_rport", via_rport);
+
             
             snprintf(uri, sizeof(uri), "%s@%s:%s", req_user, req_host, req_port);
             switch_channel_set_variable(channel, "sip_req_uri", uri);
