@@ -258,10 +258,10 @@ static void free_results(enum_record_t **results)
 
 	for(rp = *results; rp;) {
 		fp = rp;
+		rp = rp->next;
 		switch_safe_free(fp->service);
 		switch_safe_free(fp->route);
 		switch_safe_free(fp);
-		rp = rp->next;
 	}
 	*results = NULL;
 }
