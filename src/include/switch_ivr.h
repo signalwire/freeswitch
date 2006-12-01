@@ -458,6 +458,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_reset(switch_ivr_
 /*!
   \brief Set a digit string terminator
   \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
+  \param digit the terminator digit
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(switch_ivr_digit_stream_parser_t *parser, char digit);
