@@ -30,6 +30,7 @@
  *
  */
 #include "mod_spidermonkey.h"
+#include <libteletone.h>
 
 static const char modname[] = "TeleTone";
 

@@ -50,7 +50,6 @@
 #include "jsparse.h"
 #include "jsscope.h"
 #include "jsscript.h"
-#include <libteletone.h>
 
 SWITCH_BEGIN_EXTERN_C
 

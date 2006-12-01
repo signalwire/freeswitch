@@ -1,13 +1,13 @@
-include sm.mak
-OBJS=$(BASE)/libs/mozilla/js/src/$(OS_CONFIG)_$(VER).OBJ/libjs.a $(BASE)/libs/mozilla/nsprpub/dist/lib/libnspr4.a -lcurl
+include ../mod_spidermonkey/sm.mak
+
+OBJS=#$(BASE)/libs/mozilla/js/src/$(OS_CONFIG)_$(VER).OBJ/libjs.a $(BASE)/libs/mozilla/nsprpub/dist/lib/libnspr4.a -lunixodbc
 LINKER=$(CC)
 
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	BUILD_OPT=$(BO) MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) mozilla.tar.gz --prefix=$(PREFIX)
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install curl-7.15.2.tar.gz --prefix=$(PREFIX) --without-libidn
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install unixODBC-2.2.12.tar.gz --prefix=$(PREFIX)
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
