@@ -43,5 +43,6 @@ formats/mod_sndfile
 #languages/mod_spidermonkey
 #languages/mod_spidermonkey_teletone
 #languages/mod_spidermonkey_core_db
+#languages/mod_spidermonkey_odbc
 timers/mod_softtimer
 #xml_int/mod_xml_rpc
