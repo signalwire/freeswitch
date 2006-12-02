@@ -94,6 +94,7 @@ struct input_callback_state {
 	jsval ret;
 	JSContext *cx;
 	JSObject *obj;
+    jsrefcount saveDepth;
 	void *extra;
 };
 
@@ -641,7 +642,9 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 		argv[argc++] = cb_state->arg;
 	}
 
+    JS_ResumeRequest(cb_state->cx, cb_state->saveDepth);
 	JS_CallFunction(cb_state->cx, cb_state->obj, cb_state->function, argc, argv, &cb_state->ret);
+    cb_state->saveDepth = JS_SuspendRequest(cb_state->cx);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -877,7 +880,9 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
     
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
+    cb_state.saveDepth = JS_SuspendRequest(cx);
 	switch_ivr_record_file(jss->session, &fh, file_name, dtmf_func, bp, len, limit);
+    JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
 	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
@@ -920,7 +925,10 @@ static JSBool session_collect_input(JSContext *cx, JSObject *obj, uintN argc, js
 		JS_ValueToInt32(jss->cx, argv[2], &to);
 	}
 
+    cb_state.saveDepth = JS_SuspendRequest(cx);
 	switch_ivr_collect_digits_callback(jss->session, dtmf_func, bp, len, to);
+    JS_ResumeRequest(cx, cb_state.saveDepth);
+
 	*rval = cb_state.ret;
 
 	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
@@ -981,7 +989,9 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
+    cb_state.saveDepth = JS_SuspendRequest(cx);
 	switch_ivr_play_file(jss->session, &fh, file_name, timer_name, dtmf_func, bp, len);
+    JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 	
 	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
@@ -1090,6 +1100,7 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 
 	codec = switch_core_session_get_read_codec(jss->session);
 	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
+    cb_state.saveDepth = JS_SuspendRequest(cx);
 	switch_ivr_speak_text(jss->session,
 						  tts_name,
 						  voice_name && strlen(voice_name) ? voice_name : NULL, 
@@ -1099,7 +1110,7 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 						  text,
 						  bp,
 						  len);
-
+    JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
 	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
@@ -1231,13 +1242,13 @@ static JSBool session_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *a
 		char *app_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		char *app_arg = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
 		struct js_session *jss = JS_GetPrivate(cx, obj);
-		//jsrefcount saveDepth;
+		jsrefcount saveDepth;
 
 		if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 			if (application_interface->application_function) {
-				//saveDepth = JS_SuspendRequest(cx);
+				saveDepth = JS_SuspendRequest(cx);
 				application_interface->application_function(jss->session, app_arg);
-				//JS_ResumeRequest(cx, saveDepth);
+				JS_ResumeRequest(cx, saveDepth);
 				retval = JS_TRUE;
 			}
 		} 
@@ -2102,7 +2113,10 @@ static JSBool js_bridge(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 		}
 	}
 
+    cb_state.saveDepth = JS_SuspendRequest(cx);
 	switch_ivr_multi_threaded_bridge(jss_a->session, jss_b->session, dtmf_func, bp, bp);
+    JS_ResumeRequest(cx, cb_state.saveDepth);
+
 
 	return JS_TRUE;
 }
