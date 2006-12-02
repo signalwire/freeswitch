@@ -825,7 +825,7 @@ static int on_subscribe(void *user_data, ikspak *pak)
 		return -1;
 	}
 	if ((r = strchr(from, '/'))) {
-		*r++;
+		*r++ = '\0';
 	}
 
 	msg = iks_make_s10n (IKS_TYPE_SUBSCRIBED, id, "Ding A Ling....");
