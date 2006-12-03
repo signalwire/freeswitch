@@ -2634,7 +2634,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				goto notready;
 			}
 
-			if (switch_core_session_dequeue_message(peer_sessions[0], &message) == SWITCH_STATUS_SUCCESS) {
+			if (peer_sessions[0] && switch_core_session_dequeue_message(peer_sessions[0], &message) == SWITCH_STATUS_SUCCESS) {
 				if (session && !ringback_data && or_argc == 1 && and_argc == 1) { /* when there is only 1 channel to call and bridge and no ringback */
 					switch_core_session_receive_message(session, message);
 				}
