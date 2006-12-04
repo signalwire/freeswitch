@@ -2209,7 +2209,7 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 		if (switch_channel_get_state(peer_channels[i]) >= CS_HANGUP) {
 			hups++;
 		} else if ((switch_channel_test_flag(peer_channels[i], CF_ANSWERED) || 
-					(!ringback_data && len == 1 && switch_channel_test_flag(peer_channels[0], CF_EARLY_MEDIA))) && 
+					(!ringback_data && len == 1 && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA))) && 
 				   !switch_channel_test_flag(peer_channels[i], CF_TAGGED)) {
 
 			if (key) {
