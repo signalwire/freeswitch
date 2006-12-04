@@ -791,6 +791,8 @@ SWIGEXPORT(void) SWIG_init (pTHXo_ CV* cv);
 SWIGEXPORT(void) SWIG_init (CV *cv, CPerlObj *);
 #endif
 
+#include <switch.h>
+
 extern void fs_core_set_globals(void);
 extern int fs_core_init(char *);
 extern int fs_core_destroy(void);
@@ -818,7 +820,6 @@ extern int fs_switch_ivr_speak_text(switch_core_session_t *,char *,char *,char *
 extern char *fs_switch_channel_get_variable(switch_channel_t *,char *);
 extern int fs_switch_channel_set_variable(switch_channel_t *,char *,char *);
 
-#include "switch.h"
 
 #ifdef PERL_OBJECT
 #define MAGIC_CLASS _wrap_fs_perl_var::
