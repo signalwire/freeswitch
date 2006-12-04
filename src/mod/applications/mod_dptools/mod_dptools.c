@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
  * Michael Murdock <mike at mmurdock dot org>
- *
+ * Neal Horman <neal at wanlink dot com>
  *
  * mod_dptools.c -- Raw Audio File Streaming Application Module
  *
@@ -306,6 +306,62 @@ static switch_status_t chat_api_function(char *fmt, switch_core_session_t *sessi
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static char *ivr_cf_name = "ivr.conf";
+
+#ifdef _TEST_CALLBACK_
+static switch_ivr_action_t menu_handler(switch_ivr_menu_t *menu, char *param, char *buf, size_t buflen, void *obj)
+{
+	switch_ivr_action_t action = SWITCH_IVR_ACTION_NOOP;
+
+	if (param != NULL) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "menu_handler '%s'\n",param);
+	}
+
+	return action;
+}
+#endif
+
+static void ivr_application_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *params = switch_core_session_strdup(session,data);
+
+	if (channel != NULL && params != NULL) {
+		switch_xml_t cxml = NULL, cfg = NULL, xml_menus = NULL, xml_menu = NULL;
+
+		// Open the config from the xml registry
+		if ((cxml = switch_xml_open_cfg(ivr_cf_name, &cfg, NULL)) != NULL) {
+			switch_xml_free(cxml);
+			if ((xml_menus = switch_xml_child(cfg, "menus"))) {
+				xml_menu = switch_xml_find_child(xml_menus, "menu", "name", params);
+
+				// if the menu was found
+				if (xml_menu != NULL) {
+					switch_ivr_menu_xml_ctx_t *xml_ctx = NULL;
+					switch_ivr_menu_t *menu_stack = NULL;
+
+					// build a menu tree and execute it
+					if (switch_ivr_menu_stack_xml_init(&xml_ctx,NULL) == SWITCH_STATUS_SUCCESS
+#ifdef _TEST_CALLBACK_
+						&& switch_ivr_menu_stack_xml_add_custom(xml_ctx, "custom", &menu_handler) == SWITCH_STATUS_SUCCESS
+#endif
+						&& switch_ivr_menu_stack_xml_build(xml_ctx,&menu_stack,xml_menus,xml_menu,NULL) == SWITCH_STATUS_SUCCESS)
+					{
+						switch_channel_answer(channel);
+						switch_ivr_menu_execute(session,menu_stack,params,NULL);
+						switch_ivr_menu_stack_free(menu_stack);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create menu '%s'\n", params);
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find menu '%s'\n", params);
+				}
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", ivr_cf_name);
+		}
+	}
+}
 
 static switch_api_interface_t chat_api_interface = {
 	/*.interface_name */ "chat",
@@ -329,6 +385,15 @@ static switch_api_interface_t presence_api_interface = {
 	/*.function */ presence_api_function,
 	/*.syntax */ "<user> <rpid> <message>",
 	/*.next */ &dptools_api_interface
+};
+
+static const switch_application_interface_t ivr_application_interface = {
+	/*.interface_name */ "ivr",
+	/*.application_function */ ivr_application_function,	
+	/* long_desc */ "Run an ivr menu.",
+	/* short_desc */ "Run an ivr menu",
+	/* syntax */ "<menu_name>",
+	/*.next */ NULL
 };
 
 static const switch_application_interface_t detect_speech_application_interface = {
