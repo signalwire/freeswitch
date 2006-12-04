@@ -482,15 +482,16 @@ typedef enum {
 typedef enum {
 	SWITCH_IVR_ACTION_DIE, 		/* Exit the menu.                  */
 	SWITCH_IVR_ACTION_EXECMENU,	/* Goto another menu in the stack. */
-	SWITCH_IVR_ACTION_EXECAPP,		/* Execute an application.         */
+	SWITCH_IVR_ACTION_EXECAPP,	/* Execute an application.         */
 	SWITCH_IVR_ACTION_PLAYSOUND,	/* Play a sound.                   */
-	SWITCH_IVR_ACTION_SAYTEXT,	/* say text.                   */
+	SWITCH_IVR_ACTION_SAYTEXT,	/* say text.                       */
 	SWITCH_IVR_ACTION_BACK,		/* Go back 1 menu.                 */
-	SWITCH_IVR_ACTION_TOMAIN,		/* Go back to the top level menu.  */
+	SWITCH_IVR_ACTION_TOMAIN,	/* Go back to the top level menu.  */
 	SWITCH_IVR_ACTION_TRANSFER,	/* Transfer caller to another ext. */
+	SWITCH_IVR_ACTION_NOOP,		/* No operation                    */
 } switch_ivr_action_t;
 struct switch_ivr_menu;
-typedef switch_ivr_action_t switch_ivr_menu_action_function_t(struct switch_ivr_menu *, char *, size_t, void *);
+typedef switch_ivr_action_t switch_ivr_menu_action_function_t(struct switch_ivr_menu *, char *, char *, size_t, void *);
 typedef struct switch_ivr_menu switch_ivr_menu_t;
 typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
 /******************************************************************************************************/
@@ -502,11 +503,13 @@ typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
  *\param name A pointer to the name of this menu.
  *\param greeting_sound Optional pointer to a main sound (press 1 for this 2 for that).
  *\param short_greeting_sound Optional pointer to a shorter main sound for subsequent loops.
+ *\param exit_sound Optional pointer to a sound to play upon exiting the menu
  *\param invalid_sound Optional pointer to a sound to play after invalid input.
  *\param tts_engine Text To Speech engine name
  *\param tts_voice Text To Speech engine voice name
  *\param timeout A number of milliseconds to pause before looping.
  *\param max_failures Maximum number of failures to withstand before hangingup This resets everytime you enter the menu.
+ *\param timer_name A pointer to a timer name
  *\param pool memory pool (NULL to create one)
  *\return SWITCH_STATUS_SUCCESS if the menu was created
  */
@@ -515,11 +518,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_men
 													 char *name, 
 													 char *greeting_sound, 
 													 char *short_greeting_sound,
+													 char *exit_sound,
 													 char *invalid_sound, 
 													 char *tts_engine,
 													 char *tts_voice,
 													 int timeout,
 													 int max_failures, 
+													 char *timer_name,
 													 switch_memory_pool_t *pool);
 
 /*!
@@ -537,13 +542,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *m
  *\brief Bind a keystroke to a callback function.
  *\param menu The menu obj you wish to bind to.
  *\param function The function to call [int proto(struct switch_ivr_menu *, char *, size_t, void *)]
+ *\param arg Optional (sometimes necessary) string arguement.
  *\param bind KeyStrokes to bind the action to.
  *\note The function is passed a buffer to fill in with any required argument data.
  *\note The function is also passed an optional void pointer to an object set upon menu execution. (think threads)
  *\note The function returns an switch_ivr_action_t enum of what you want to do. and looks to your buffer for args.
  *\return SWUTCH_STATUS_SUCCESS if the function was binded
  */
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu, switch_ivr_menu_action_function_t *function, char *bind);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu, switch_ivr_menu_action_function_t *function, char *arg, char *bind);
 
 
 /*!
@@ -561,20 +567,42 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
  *\param stack The top level menu you wish to destroy.
  *\return SWITCH_STATUS_SUCCESS if the object was a top level menu and it was freed
  */
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_free_stack(switch_ivr_menu_t *stack);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t *stack);
 
+struct switch_ivr_menu_xml_ctx;
+typedef struct switch_ivr_menu_xml_ctx switch_ivr_menu_xml_ctx_t;
 /*!
- *\brief build a menu stack from an xml source
+ *\brief Build a menu stack from an xml source
+ *\param xml_menu_ctx The XML menu parser context previously created by switch_ivr_menu_stack_xml_init
  *\param menu_stack The menu stack object that will be created for you
  *\param xml_menus The xml Menus source
  *\param xml_menu The xml Menu source of the menu to be created
+ *\param timer_name The name of a timer that should be used - in almost all cases this should be NULL
+ *\return SWITCH_STATUS_SUCCESS if all is well
+ */
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_xml_ctx_t *xml_menu_ctx,
+										switch_ivr_menu_t **menu_stack,
+										switch_xml_t xml_menus,
+										switch_xml_t xml_menu,
+										char *timer_name);
+
+/*!
+ *\param xml_menu_ctx The XML menu parser context previously created by switch_ivr_menu_stack_xml_init
+ *\param name The xml tag name to add to the parser engine
+ *\param function The menu function callback that will be executed when menu digits are bound to this name
+ *\return SWITCH_STATUS_SUCCESS if all is well
+ */
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_menu_xml_ctx_t *xml_menu_ctx,
+										char *name,
+										switch_ivr_menu_action_function_t *function);
+
+/*!
+ *\param xml_menu_ctx A pointer of a XML menu parser context to be created
  *\param pool memory pool (NULL to create one)
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
-SWITCH_DECLARE(switch_status_t) switch_ivr_build_xml_menu_stack(switch_ivr_menu_t **menu_stack,
-										switch_xml_t xml_menus,
-										switch_xml_t xml_menu,
-										switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t **xml_menu_ctx, switch_memory_pool_t *pool);
+
 /** @} */
 
 SWITCH_END_EXTERN_C
