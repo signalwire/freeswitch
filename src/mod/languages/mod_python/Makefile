@@ -19,7 +19,6 @@ mod_python.c:
 reswig: 
 	rm -f switch_swig_wrap.c config.m4 CREDITS *${PYMOD}*
 	swig -o switch_swig_wrap.c -l$(SWIGIFILE) -ignoremissing -DMULTIPLICITY -python -module $(PYMOD) $(SWIGCFILE)
-	patch -p0 -i fix.diff
 
 switch_swig_wrap.o: switch_swig_wrap.c Makefile
 	$(CC)  -w $(CFLAGS) -c $< -o $@
