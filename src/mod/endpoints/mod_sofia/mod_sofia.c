@@ -264,7 +264,6 @@ struct private_object {
 	int num_codecs;
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
-	uint32_t codec_index;
 	uint32_t codec_ms;
 	switch_caller_profile_t *caller_profile;
 	int32_t timestamp_send;
@@ -1311,7 +1310,6 @@ static void deactivate_rtp(private_object_t *tech_pvt)
 static switch_status_t tech_set_codec(private_object_t *tech_pvt, int force)
 {
 	switch_channel_t *channel;
-	assert(tech_pvt->codecs[tech_pvt->codec_index] != NULL);
 
 	if (tech_pvt->read_codec.implementation) {
 		if (!force) {
@@ -1366,7 +1364,7 @@ static switch_status_t tech_set_codec(private_object_t *tech_pvt, int force)
 			ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Set Codec %s %s/%d %d ms\n",
 							  switch_channel_get_name(channel),
-							  tech_pvt->codecs[tech_pvt->codec_index]->iananame, tech_pvt->rm_rate, tech_pvt->codec_ms);
+							  tech_pvt->rm_encoding, tech_pvt->rm_rate, tech_pvt->codec_ms);
 			tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 				
 			switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
