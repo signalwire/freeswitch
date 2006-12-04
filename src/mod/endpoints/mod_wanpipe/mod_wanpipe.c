@@ -1013,18 +1013,28 @@ static switch_status_t wanpipe_outgoing_channel(switch_core_session_t *session, 
 }
 
 
-
+#ifdef WIN32
+static void s_pri_error(char *s)
+#else
 static void s_pri_error(struct pri *pri, char *s)
+#endif
 {
 	if (globals.debug) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, s);
 	}
 }
 
+#ifdef WIN32
+static void s_pri_message(char *s)
+{
+	s_pri_error(s);
+}
+#else
 static void s_pri_message(struct pri *pri, char *s)
 {
 	s_pri_error(pri, s);
 }
+#endif
 
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **interface, char *filename)
 {
