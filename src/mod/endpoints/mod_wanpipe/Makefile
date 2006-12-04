@@ -1,5 +1,5 @@
 CFLAGS +=-I/usr/local/include -I/usr/src/libpri -I/usr/src/linux/include -I. -I/usr/include
-CFLAGS +=-D__LINUX__ -D_REENTRANT -D_GNU_SOURCE -DAFT_A104
+CFLAGS +=-D__LINUX__ -D_REENTRANT -D_GNU_SOURCE -DAFT_A104 -DWANPIPE_TDM_API
 LDFLAGS += -lsangoma
 
 
