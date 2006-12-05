@@ -106,7 +106,7 @@ A: Oops, you caught us.  The real name for is it aniii.  You will need to update
 			<param name="username" value="test"/>
 			<param name="password" value="test"/>
 			<param name="dbname" value="testing"/>
-			<param name="chanvars_fixed" value="username=s,The_Kow=t"/>
+			<!-- <param name="chanvars_fixed" value="username=s,The_Kow=t"/> -->
 			<!-- This previous line logs username as a varchar, and The_Kow as a tiny -->
 			<param name="chanvars_supp" value="*"/>
 			<param name="chanvars_supp_repeat_fixed" value="0"/>
