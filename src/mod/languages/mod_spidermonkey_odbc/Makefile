@@ -2,7 +2,7 @@ include ../mod_spidermonkey/sm.mak
 
 OBJS=#$(BASE)/libs/mozilla/js/src/$(OS_CONFIG)_$(VER).OBJ/libjs.a $(BASE)/libs/mozilla/nsprpub/dist/lib/libnspr4.a 
 LINKER=$(CC)
-LDFLAGS=-lodbc
+LDFLAGS+=-lodbc
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
