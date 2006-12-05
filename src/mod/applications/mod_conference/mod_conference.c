@@ -47,6 +47,13 @@ static switch_api_interface_t conf_api_interface;
 #define CONF_DBUFFER_MAX 0
 #define CONF_CHAT_PROTO "conf"
 
+#ifndef MIN
+#define MIN(a,b) ((a)<(b)?(a):(b))
+#endif
+
+/* this doesn't work correctly yet, don't bother trying! */
+//#define OPTION_IVR_MENU_SUPPORT */
+
 typedef enum {
 	FILE_STOP_CURRENT,
 	FILE_STOP_ALL
@@ -64,9 +71,8 @@ static struct {
 	uint32_t threads;
 } globals;
 
+/* forward declaration for conference_obj and caller_control */
 struct conference_member;
-struct conference_obj;
-typedef struct conference_obj conference_obj_t;
 typedef struct conference_member conference_member_t;
 
 typedef enum {
@@ -77,7 +83,6 @@ typedef enum {
 	MFLAG_ITHREAD = (1 << 4),
 	MFLAG_NOCHANNEL = (1 << 5)
 } member_flag_t;
-
 
 typedef enum {
 	CFLAG_RUNNING = (1 << 0),
@@ -98,7 +103,7 @@ typedef enum {
 	NODE_TYPE_SPEECH
 } node_type_t;
 
-struct confernce_file_node {
+typedef struct confernce_file_node {
 	switch_file_handle_t fh;
 	switch_speech_handle_t sh;
 	node_type_t type;
@@ -106,12 +111,10 @@ struct confernce_file_node {
 	switch_memory_pool_t *pool;
 	uint32_t leadin;
 	struct confernce_file_node *next;
-};
-
-typedef struct confernce_file_node confernce_file_node_t;
+} confernce_file_node_t;
 
 /* Conference Object */
-struct conference_obj {
+typedef struct conference_obj {
 	char *name;
 	char *timer_name;
 	char *tts_engine;
@@ -146,15 +149,14 @@ struct conference_obj {
 	uint32_t count;
 	int32_t energy_level;
 	uint8_t min;
-};
+} conference_obj_t;
 
 /* Relationship with another member */
-struct conference_relationship {
+typedef struct conference_relationship {
 	uint32_t id;
 	uint32_t flags;
 	struct conference_relationship *next;
-};
-typedef struct conference_relationship conference_relationship_t;
+} conference_relationship_t;
 
 /* Conference Member Object */
 struct conference_member {
@@ -190,12 +192,11 @@ struct conference_member {
 };
 
 /* Record Node */
-struct conference_record {
+typedef struct conference_record {
 	conference_obj_t *conference;
 	char *path;
 	switch_memory_pool_t *pool;
-};
-typedef struct conference_record conference_record_t;
+} conference_record_t;
 
 /* Function Prototypes */
 static uint32_t next_member_id(void);
@@ -282,6 +283,7 @@ static conference_relationship_t *member_get_relationship(conference_member_t *m
 	return rel;
 }
 
+/* traverse the conference member list for the specified member id and return it's pointer */
 static conference_member_t *conference_member_get(conference_obj_t *conference, uint32_t id)
 {
 	conference_member_t *member = NULL;
@@ -300,6 +302,7 @@ static conference_member_t *conference_member_get(conference_obj_t *conference, 
 	return member;
 }
 
+/* stop the specified recording */
 static int conference_record_stop(conference_obj_t *conference, char *path)
 {
 	conference_member_t *member = NULL;
@@ -696,12 +699,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 			if (!switch_test_flag(imember, MFLAG_NOCHANNEL)) {
 				channel = switch_core_session_get_channel(imember->session);
 
-				// add this little bit to preserve the bridge cause code in case of an early media call that
-				// never answers
+				/* add this little bit to preserve the bridge cause code in case of an early media call that */
+				/* never answers */
 				if (switch_test_flag(conference, CFLAG_ANSWERED)) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);	
 				} else 	{
-					// put actual cause code from outbound channel hangup here
+					/* put actual cause code from outbound channel hangup here */
 					switch_channel_hangup(channel, conference->bridge_hangup_cause);
 				}
 			}
@@ -784,6 +787,8 @@ static void conference_loop(conference_member_t *member)
 	/* Start a thread to read data and feed it into the buffer and use this thread to generate output */
 	launch_input_thread(member, switch_core_session_get_pool(member->session));
 
+	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be proccessed,		*/
+	/* you better not block this thread loop for more than the duration of member->conference->timer_name!	*/
 	while(switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(member, MFLAG_ITHREAD) && switch_channel_ready(channel)) {
 		char dtmf[128] = "";
 		uint8_t file_frame[CONF_BUFFER_SIZE] = {0};
@@ -814,7 +819,7 @@ static void conference_loop(conference_member_t *member)
 		}
 
 		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
-			// test to see if outbound channel has answered
+			/* test to see if outbound channel has answered */
 			if (switch_channel_test_flag(channel, CF_ANSWERED) && !switch_test_flag(member->conference, CFLAG_ANSWERED)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Outbound conference channel answered, setting CFLAG_ANSWERED");
 				switch_set_flag(member->conference, CFLAG_ANSWERED);
@@ -826,6 +831,7 @@ static void conference_loop(conference_member_t *member)
 			}
 		}
 
+		/* if we have caller digits, feed them to the parser to find an action */
 		if (switch_channel_has_dtmf(channel)) {
 			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
 
@@ -951,7 +957,9 @@ static void conference_loop(conference_member_t *member)
 			}
 		}
 
+		/* handle file and TTS frames */
 		if (member->fnode) {
+			/* if we are done, clean it up */
 			if (member->fnode->done) {
 				confernce_file_node_t *fnode;
 				switch_memory_pool_t *pool;
@@ -973,9 +981,10 @@ static void conference_loop(conference_member_t *member)
 				switch_core_destroy_memory_pool(&pool);
 
 			} else {
+				/* skip this frame until leadin time has expired */
 				if (member->fnode->leadin) {
 					member->fnode->leadin--;
-				} else {
+				} else {	/* send the node frame instead of the conference frame to the call leg */
 					if (member->fnode->type == NODE_TYPE_SPEECH) {
 						switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
 						uint32_t rate = member->conference->rate;
@@ -1014,10 +1023,9 @@ static void conference_loop(conference_member_t *member)
 					switch_core_timer_next(&timer);
 				}
 			}
-		} else {
+		} else {	/* send the conferecne frame to the call leg */
 			switch_buffer_t *use_buffer = NULL;
 			uint32_t mux_used = (uint32_t)switch_buffer_inuse(member->mux_buffer);
-			//uint32_t res_used = member->mux_resampler ? switch_buffer_inuse(member->resample_buffer) : 0;
 
 			if (mux_used) {
 				/* Flush the output buffer and write all the data (presumably muxed) back to the channel */
@@ -1051,7 +1059,7 @@ static void conference_loop(conference_member_t *member)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel leaving conference, cause: %s\n",
 			switch_channel_cause2str(switch_channel_get_cause(channel)));
 
-	// if it's an outbound channel, store the release cause in the conference struct, we might need it
+	/* if it's an outbound channel, store the release cause in the conference struct, we might need it */
 	if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		member->conference->bridge_hangup_cause = switch_channel_get_cause(channel);
 	}
@@ -1194,6 +1202,7 @@ static uint32_t conference_stop_file(conference_obj_t *conference, file_stop_t s
 	return count;
 }
 
+/* stop playing a file for the member of the conference */
 static uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop)
 {
 	confernce_file_node_t *nptr;
@@ -1218,7 +1227,7 @@ static uint32_t conference_member_stop_file(conference_member_t *member, file_st
 	return count;
 }
 
-/* Play a file in the conference rooom */
+/* Play a file in the conference room */
 static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel)
 {
 	confernce_file_node_t *fnode, *nptr;
@@ -1238,12 +1247,12 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 		return SWITCH_STATUS_FALSE;
 	}
 
-    if (channel) {
-        if ((expanded = switch_channel_expand_variables(channel, file)) != file) {
-            file = expanded;
-            frexp = 1;
-        }
-    }
+	if (channel) {
+		if ((expanded = switch_channel_expand_variables(channel, file)) != file) {
+			file = expanded;
+			frexp = 1;
+		}
+	}
 
 
 #ifdef WIN32
@@ -1252,14 +1261,14 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	if (*file != '/') {
 #endif
 		status = conference_say(conference, file, leadin);
-        goto done;
+		goto done;
 	}
 
 	/* Setup a memory pool to use. */
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
 		status = SWITCH_STATUS_MEMERR;
-        goto done;
+		goto done;
 	}
 
 	/* Create a node object*/
@@ -1267,7 +1276,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Alloc Failure\n");
 		switch_core_destroy_memory_pool(&pool);
 		status = SWITCH_STATUS_MEMERR;
-        goto done;
+		goto done;
 	}
 
 	fnode->type = NODE_TYPE_FILE;
@@ -1280,7 +1289,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 							  pool) != SWITCH_STATUS_SUCCESS) {
 		switch_core_destroy_memory_pool(&pool);
 		status = SWITCH_STATUS_NOTFOUND;
-        goto done;
+		goto done;
 	}
 
 	fnode->pool = pool;
@@ -1305,7 +1314,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	return status;
 }
 
-/* Play a file in the conference rooom to a member */
+/* Play a file in the conference room to a member */
 static switch_status_t conference_member_play_file(conference_member_t *member, char *file, uint32_t leadin)
 {
 	confernce_file_node_t *fnode, *nptr;
@@ -1343,6 +1352,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	fnode->pool = pool;
 
 	/* Queue the node */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "queueing file '%s' for play\n",file);
 	switch_mutex_lock(member->flag_mutex);
 	for (nptr = member->fnode; nptr && nptr->next; nptr = nptr->next);
 
@@ -1356,7 +1366,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* Say some thing with TTS in the conference rooom */
+/* Say some thing with TTS in the conference room */
 static switch_status_t conference_member_say(conference_obj_t *conference, conference_member_t *member, char *text, uint32_t leadin)
 {
 	confernce_file_node_t *fnode, *nptr;
@@ -1415,7 +1425,7 @@ static switch_status_t conference_member_say(conference_obj_t *conference, confe
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* Say some thing with TTS in the conference rooom */
+/* Say some thing with TTS in the conference room */
 static switch_status_t conference_say(conference_obj_t *conference, char *text, uint32_t leadin)
 {
 	confernce_file_node_t *fnode, *nptr;
@@ -2419,6 +2429,7 @@ done:
 
 }
 
+/* outbound call bridge progress call state callback handler */
 static switch_status_t audio_bridge_on_ring(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
@@ -2443,6 +2454,7 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 	/*.on_hold */ NULL,
 };
 
+/* generate an outbound call from the conference */
 static switch_status_t conference_outcall(conference_obj_t *conference,
 										  switch_core_session_t *session,
 										  char *bridgeto,
@@ -2469,6 +2481,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	
 	}
 
+	/* establish an outbound call leg */
 	if (switch_ivr_originate(session,
 							 &peer_session,
 							 &cause,
@@ -2490,6 +2503,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 	peer_channel = switch_core_session_get_channel(peer_session);
 	assert(peer_channel != NULL);
 
+	/* make sure the conference still exists */
 	if (!switch_test_flag(conference, CFLAG_RUNNING)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Conference is gone now, nevermind..\n");
 		if (caller_channel) {
@@ -2503,8 +2517,11 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 		switch_channel_answer(caller_channel);
 	}
 
+	/* if the outbound call leg is ready */
 	if (switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA)) {
 		switch_caller_extension_t *extension = NULL;
+
+		/* build an extension name object */
 		if ((extension = switch_caller_extension_new(peer_session, conference->name, conference->name)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 			status = SWITCH_STATUS_MEMERR;
@@ -2538,6 +2555,7 @@ static switch_status_t conference_local_play_file(switch_core_session_t *session
 	uint32_t x = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	/* generate some space infront of the file to be played */
 	for (x = 0; x < leadin; x++) {
 		switch_frame_t *read_frame;
 		switch_status_t status = switch_core_session_read_frame(session, &read_frame, 1000, 0);
@@ -2547,6 +2565,7 @@ static switch_status_t conference_local_play_file(switch_core_session_t *session
 		}
 	}
 
+	/* if all is well, really play the file */
 	if (status == SWITCH_STATUS_SUCCESS) {
 		status = switch_ivr_play_file(session, NULL, path, NULL, NULL, NULL, 0);
 	}
@@ -2590,7 +2609,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 		return;
 	}
 
-
+	/* Start the conference muted or deaf ? */
 	if ((flags_str=strstr(mydata, flags_prefix))) {
 		char *p;
 
@@ -2607,6 +2626,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 		}
 	}
 
+	/* is this a bridging conference ? */
 	if (!strncasecmp(mydata, bridge_prefix, strlen(bridge_prefix))) {
 		isbr = 1;
 		mydata += strlen(bridge_prefix);
@@ -2620,10 +2640,12 @@ static void conference_function(switch_core_session_t *session, char *data)
 
 	conf_name = mydata;
 
+	/* is there a conference pin ? */
 	if ((dpin = strchr(conf_name, '+'))) {
 		*dpin++ = '\0';
 	}
 
+	/* is there profile specification ? */
 	if ((profile_name = strchr(conf_name, '@'))) {
 		*profile_name++ = '\0';
 
@@ -2638,6 +2660,8 @@ static void conference_function(switch_core_session_t *session, char *data)
 		}
 	} 
 
+	/* if this is a bridging call, and it's not a duplicate, build a */
+	/* conference object, and skip pin handling, and locked checking */
 	if (isbr) {
 		char *uuid = switch_core_session_get_uuid(session);
 
@@ -2661,6 +2685,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 		/* Set the minimum number of members (once you go above it you cannot go below it) */
 		conference->min = 2;
 
+		/* if the dialplan specified a pin, override the profile's value */
 		if (dpin) {
 			conference->pin = switch_core_strdup(conference->pool, dpin);
 		}
@@ -2672,19 +2697,19 @@ static void conference_function(switch_core_session_t *session, char *data)
 		launch_conference_thread(conference);
 
 	} else {
-		/* Figure out what conference to call. */
+		/* if the conference exists, get the pointer to it */
 		if ((conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
 			freepool = pool;
+		/* couldn't find the conference, create one */
 		} else {
-			/* Create the conference object. */
 			conference = conference_new(conf_name, profile, pool);
-
 
 			if (!conference) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 				goto done;
 			}
 
+			/* if the dialplan specified a pin, override the profile's value */
 			if (dpin) {
 				conference->pin = switch_core_strdup(conference->pool, dpin);
 			}
@@ -2697,7 +2722,6 @@ static void conference_function(switch_core_session_t *session, char *data)
 
 			/* Start the conference thread for this conference */
 			launch_conference_thread(conference);
-
 		}
 
 		if (conference->pin) {
@@ -2746,13 +2770,14 @@ static void conference_function(switch_core_session_t *session, char *data)
 		cxml = NULL;
 	}
 
+	/* if we're using "bridge:" make an outbound call and bridge it in */
 	if (!switch_strlen_zero(bridgeto) && strcasecmp(bridgeto, "none")) {
 		if (conference_outcall(conference, session, bridgeto, 60, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 			goto done;
 		}
 	} else {	
-		// if we're not using "bridge:" set the conference answered flag
-		// and this isn't an outbound channel, answer the call
+		/* if we're not using "bridge:" set the conference answered flag */
+		/* and this isn't an outbound channel, answer the call */
 		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) 
 			switch_set_flag(conference, CFLAG_ANSWERED);
 	}
@@ -2765,9 +2790,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 	if (switch_core_codec_init(&member.read_codec,
 							   "L16",
 							   NULL,
-							   //conference->rate,
 							   read_codec->implementation->samples_per_second,
-							   //conference->interval,
 							   read_codec->implementation->microseconds_per_frame / 1000,
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
@@ -2804,9 +2827,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 							   "L16",
 							   NULL,
 							   conference->rate,
-							   //read_codec->implementation->samples_per_second,
 							   conference->interval,
-							   //read_codec->implementation->microseconds_per_frame / 1000,
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL,
@@ -3215,7 +3236,7 @@ static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch
 	uint32_t rate = 8000, interval = 20;
 	switch_status_t status;
 
-	/* Conference Name */
+	/* Validate the conference name */
 	if (switch_strlen_zero(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Record! no name.\n");
 		return NULL;
@@ -3331,7 +3352,7 @@ static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch
 		return NULL;
 	}
 
-	/* Initilize the object with some settings */
+	/* initialize the conference object with settings from the specified profile */
 	conference->pool = pool;
 	conference->timer_name = switch_core_strdup(conference->pool, timer_name);
 	conference->tts_engine = switch_core_strdup(conference->pool, tts_engine);
@@ -3421,6 +3442,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	/* Connect my internal structure to the blank pointer passed to me */
 	*module_interface = &conference_module_interface;
 
+	/* create/register custom event message type */
 	if (switch_event_reserve_subclass(CONF_EVENT_MAINT) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!", CONF_EVENT_MAINT);
 		return SWITCH_STATUS_TERM;
@@ -3448,7 +3470,9 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 
 
 	if (globals.running) {
+		/* signal all threads to shutdown */
 		globals.running = 0;
+		/* wait for all threads */
 		while (globals.threads) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for %d threads\n", globals.threads);
 			switch_yield(100000);
