@@ -1252,10 +1252,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	if (*file != '/') {
 #endif
 		status = conference_say(conference, file, leadin);
-        if (frexp) {
-            switch_safe_free(expanded);
-        }
-        return status;
+        goto done;
 	}
 
 	/* Setup a memory pool to use. */
