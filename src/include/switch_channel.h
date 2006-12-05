@@ -274,6 +274,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 																const char *file,
 																const char *func,
 																int line);
+
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_channel_t *channel,
+                                                                   const char *file,
+                                                                   const char *func,
+                                                                   int line);
+
 /*!
   \brief Answer a channel (initiate/acknowledge a successful connection)
   \param channel channel to answer
@@ -281,6 +287,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 */
 #define switch_channel_answer(channel) switch_channel_perform_answer(channel, __FILE__, __FUNCTION__, __LINE__)
 
+/*!
+  \brief Mark a channel answered with no indication (for outbound calls)
+  \param channel channel to mark answered
+  \return SWITCH_STATUS_SUCCESS if channel was answered successfully
+*/
+#define switch_channel_mark_answered(channel) switch_channel_perform_mark_answered(channel, __FILE__, __FUNCTION__, __LINE__)
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_ringback(switch_channel_t *channel,
 																const char *file,

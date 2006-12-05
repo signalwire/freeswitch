@@ -2721,7 +2721,7 @@ static void sip_i_state(int status,
 			if (r_sdp) {
 				if (switch_test_flag(tech_pvt, TFLAG_NOMEDIA)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANS);
-					switch_channel_set_flag(channel, CF_ANSWERED);
+                    switch_channel_mark_answered(channel);
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
 						other_channel = switch_core_session_get_channel(other_session);
 						switch_channel_answer(other_channel);
@@ -2749,7 +2749,7 @@ static void sip_i_state(int status,
 						switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
 						tech_choose_port(tech_pvt);
 						activate_rtp(tech_pvt);
-						switch_channel_set_flag(channel, CF_ANSWERED);
+                        switch_channel_mark_answered(channel);
 						return;
 					}
 					
@@ -2759,7 +2759,7 @@ static void sip_i_state(int status,
 			} else if (switch_test_flag(tech_pvt, TFLAG_EARLY_MEDIA)) {
 				switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 				switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
-				switch_channel_set_flag(channel, CF_ANSWERED);
+                switch_channel_mark_answered(channel);
 				return;
 			} //else probably an ack
 		}

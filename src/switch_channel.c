@@ -1049,6 +1049,41 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ringback(switch_channel_t
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_channel_t *channel,
+                                                                   const char *file,
+                                                                   const char *func,
+                                                                   int line)
+{
+    switch_event_t *event;
+
+    assert(channel != NULL);
+
+	if (channel->state >= CS_HANGUP) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (switch_channel_test_flag(channel, CF_ANSWERED)) {
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+    if (channel->caller_profile && channel->caller_profile->times) {
+        switch_mutex_lock(channel->profile_mutex);
+        channel->caller_profile->times->answered = switch_time_now();
+        switch_mutex_unlock(channel->profile_mutex);
+    }
+    
+    switch_channel_set_flag(channel, CF_ANSWERED);
+    
+    if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
+        switch_channel_event_set_data(channel, event);
+        switch_event_fire(&event);
+    }
+
+    switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Channel [%s] has been answered\n", channel->name);
+    
+    return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel,
 																const char *file,
 																const char *func,
@@ -1065,21 +1100,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 	}
 
 	if (switch_core_session_answer_channel(channel->session) == SWITCH_STATUS_SUCCESS) {
-		switch_event_t *event;
-
-        if (channel->caller_profile && channel->caller_profile->times) {
-            switch_mutex_lock(channel->profile_mutex);
-            channel->caller_profile->times->answered = switch_time_now();
-            switch_mutex_unlock(channel->profile_mutex);
-        }
-
-		switch_channel_set_flag(channel, CF_ANSWERED);
-		switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_NOTICE, "Answer %s!\n", channel->name);
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_ANSWER) == SWITCH_STATUS_SUCCESS) {
-			switch_channel_event_set_data(channel, event);
-			switch_event_fire(&event);
-		}
-		return SWITCH_STATUS_SUCCESS;
+        return switch_channel_perform_mark_answered(channel, file, func, line);
 	}
 
 	return SWITCH_STATUS_FALSE;
