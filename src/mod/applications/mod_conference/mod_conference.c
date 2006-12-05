@@ -208,7 +208,7 @@ static void conference_del_member(conference_obj_t *conference, conference_membe
 static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *obj);
 static void conference_loop(conference_member_t *member);
 static uint32_t conference_stop_file(conference_obj_t *conference, file_stop_t stop);
-static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin);
+static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel);
 static switch_status_t conference_say(conference_obj_t *conference, char *text, uint32_t leadin);
 static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
 static switch_status_t conf_function(char *buf, switch_core_session_t *session, switch_stream_handle_t *stream);
@@ -387,11 +387,11 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 
 		if (conference->enter_sound) {
-			conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN);
+			conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session));
 		}
 
 		if (conference->count == 1 && conference->alone_sound) {
-			conference_play_file(conference, conference->alone_sound, 0);
+			conference_play_file(conference, conference->alone_sound, 0, switch_core_session_get_channel(member->session));
 		}
 
 		if (conference->min && conference->count >= conference->min) {
@@ -460,10 +460,10 @@ static void conference_del_member(conference_obj_t *conference, conference_membe
 				switch_set_flag(conference, CFLAG_DESTRUCT);
 		} else { 
 			if (conference->exit_sound) {
-				conference_play_file(conference, conference->exit_sound, 0);
+				conference_play_file(conference, conference->exit_sound, 0, switch_core_session_get_channel(member->session));
 			}
 			if (conference->count == 1 && conference->alone_sound) {
-				conference_play_file(conference, conference->alone_sound, 0);
+				conference_play_file(conference, conference->alone_sound, 0, switch_core_session_get_channel(member->session));
 			} 
 		}
 
@@ -1219,11 +1219,14 @@ static uint32_t conference_member_stop_file(conference_member_t *member, file_st
 }
 
 /* Play a file in the conference rooom */
-static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin)
+static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel)
 {
 	confernce_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
 	uint32_t count;
+    char *expanded = NULL;
+    uint8_t frexp = 0;
+    switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(conference->member_mutex);
@@ -1235,25 +1238,39 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 		return SWITCH_STATUS_FALSE;
 	}
 
+    if (channel) {
+        if ((expanded = switch_channel_expand_variables(channel, file)) != file) {
+            file = expanded;
+            frexp = 1;
+        }
+    }
+
+
 #ifdef WIN32
 	if (*(file +1) != ':' && *file != '/') {
 #else
 	if (*file != '/') {
 #endif
-		return conference_say(conference, file, leadin);
+		status = conference_say(conference, file, leadin);
+        if (frexp) {
+            switch_safe_free(expanded);
+        }
+        return status;
 	}
 
 	/* Setup a memory pool to use. */
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
-		return SWITCH_STATUS_MEMERR;
+		status = SWITCH_STATUS_MEMERR;
+        goto done;
 	}
 
 	/* Create a node object*/
 	if (!(fnode = switch_core_alloc(pool, sizeof(*fnode)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Alloc Failure\n");
 		switch_core_destroy_memory_pool(&pool);
-		return SWITCH_STATUS_MEMERR;
+		status = SWITCH_STATUS_MEMERR;
+        goto done;
 	}
 
 	fnode->type = NODE_TYPE_FILE;
@@ -1265,7 +1282,8 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  pool) != SWITCH_STATUS_SUCCESS) {
 		switch_core_destroy_memory_pool(&pool);
-		return SWITCH_STATUS_NOTFOUND;
+		status = SWITCH_STATUS_NOTFOUND;
+        goto done;
 	}
 
 	fnode->pool = pool;
@@ -1281,7 +1299,13 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	}
 	switch_mutex_unlock(conference->mutex);
 
-	return SWITCH_STATUS_SUCCESS;
+    done:
+
+    if (frexp) {
+        switch_safe_free(expanded);
+    }
+
+	return status;
 }
 
 /* Play a file in the conference rooom to a member */
@@ -1902,7 +1926,7 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 					}
 				} else if (!strcasecmp(argv[1], "play")) {
 					if (argc == 3) {
-						if (conference_play_file(conference, argv[2], 0) == SWITCH_STATUS_SUCCESS) {
+						if (conference_play_file(conference, argv[2], 0, NULL) == SWITCH_STATUS_SUCCESS) {
 							stream->write_function(stream, "(play) Playing file %s\n", argv[2]);
 							if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", conference->name);
