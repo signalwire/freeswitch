@@ -71,9 +71,43 @@ static struct {
 	uint32_t threads;
 } globals;
 
+typedef enum {
+	CALLER_CONTROL_MUTE,
+	CALLER_CONTROL_DEAF_MUTE,
+	CALLER_CONTROL_ENERGY_UP,
+	CALLER_CONTROL_ENERGY_EQU_CONF,
+	CALLER_CONTROL_ENERGEY_DN,
+	CALLER_CONTROL_VOL_TALK_UP,
+	CALLER_CONTROL_VOL_TALK_ZERO,
+	CALLER_CONTROL_VOL_TALK_DN,
+	CALLER_CONTROL_VOL_LISTEN_UP,
+	CALLER_CONTROL_VOL_LISTEN_ZERO,
+	CALLER_CONTROL_VOL_LISTEN_DN,
+	CALLER_CONTROL_HANGUP,
+	CALLER_CONTROL_MENU,
+	CALLER_CONTROL_DIAL,
+} caller_control_t;
+
 /* forward declaration for conference_obj and caller_control */
 struct conference_member;
 typedef struct conference_member conference_member_t;
+
+typedef struct caller_control_fn_table {
+	char *key;
+	char *digits;
+	caller_control_t action;
+	void (*handler)(conference_member_t *, void *);
+} caller_control_fn_table_t;
+
+typedef struct caller_control_actions {
+	caller_control_fn_table_t *fndesc;
+	void *data;
+} caller_control_action_t;
+
+typedef struct caller_control_menu_info {
+	switch_ivr_menu_t *stack;
+	char *name;
+} caller_control_menu_info_t;
 
 typedef enum {
 	MFLAG_RUNNING = (1 << 0),
@@ -130,6 +164,7 @@ typedef struct conference_obj {
 	char *kicked_sound;
 	char *caller_id_name;
 	char *caller_id_number;
+	switch_ivr_digit_stream_parser_t *dtmf_parser;
 	char *pin;
 	char *pin_sound;
 	char *bad_pin_sound;
@@ -198,6 +233,14 @@ typedef struct conference_record {
 	switch_memory_pool_t *pool;
 } conference_record_t;
 
+/* API command parser */
+typedef struct api_command {
+	char *pname;
+	void *pfnapicmd;
+	int  fntype;
+	char *psyntax;
+} api_command_t;
+
 /* Function Prototypes */
 static uint32_t next_member_id(void);
 static conference_relationship_t *member_get_relationship(conference_member_t *member, conference_member_t *other_member);
@@ -232,6 +275,10 @@ static uint32_t conference_member_stop_file(conference_member_t *member, file_st
 static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch_memory_pool_t *pool);
 static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint);
 static void launch_conference_record_thread(conference_obj_t *conference, char *path);
+
+typedef int (*conf_api_args_cmd_t)(conference_obj_t*, switch_stream_handle_t*, int, char**);
+typedef int (*conf_api_member_cmd_t)(conference_member_t*, switch_stream_handle_t*, void*);
+typedef int (*conf_api_text_cmd_t)(conference_obj_t*, switch_stream_handle_t*, char*);
 
 static void conference_member_itterator(conference_obj_t *conference,
 										switch_stream_handle_t *stream,
