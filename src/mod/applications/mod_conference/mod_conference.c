@@ -2771,36 +2771,54 @@ static void conference_function(switch_core_session_t *session, char *data)
 			launch_conference_thread(conference);
 		}
 
-		if (conference->pin) {
-			char term = '\0';
-			char pin[80] = "";
-			char *buf;
+		/* if this is not an outbound call, deal with conference pins */
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND) && conference->pin) {
+			char pin_buf[80] = "";
+			int  pin_retries = 3;	/* XXX - this should be configurable - i'm too lazy to do it right now... */
+			int  pin_valid = 0;
+			switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 			/* Answer the channel */
 			switch_channel_answer(channel);
 
-			if (conference->pin_sound) {
-				conference_local_play_file(session, conference->pin_sound, 20, pin, sizeof(pin));
-			} 
+			while(!pin_valid && pin_retries && status == SWITCH_STATUS_SUCCESS) {
 
-			if (strlen(pin) < strlen(conference->pin)) {
-				buf = pin + strlen(pin);
-				switch_ivr_collect_digits_count(session,
+				/* be friendly */
+				if (conference->pin_sound) {
+					conference_local_play_file(session, conference->pin_sound, 20, pin_buf, sizeof(pin_buf));
+				} 
+				/* wait for them if neccessary */
+				if (strlen(pin_buf) < strlen(conference->pin)) {
+					char *buf = pin_buf + strlen(pin_buf);
+					char term = '\0';
+
+					status = switch_ivr_collect_digits_count(session,
 												buf,
-												sizeof(pin) - (unsigned int)strlen(pin),
-												(unsigned int)strlen(conference->pin) - (unsigned int)strlen(pin),
+												sizeof(pin_buf) - (unsigned int)strlen(pin_buf),
+												(unsigned int)strlen(conference->pin) - (unsigned int)strlen(pin_buf),
 												"#", &term, 10000);
+				}
+
+				pin_valid = (status == SWITCH_STATUS_SUCCESS && strcmp(pin_buf, conference->pin) == 0);
+				if (!pin_valid) {
+					/* zero the collected pin */
+					memset(pin_buf,0,sizeof(pin_buf));
+
+					/* more friendliness */
+					if (conference->bad_pin_sound) {
+						conference_local_play_file(session, conference->bad_pin_sound, 20, pin_buf, sizeof(pin_buf));
+					}
+				}
+				pin_retries --;
 			}
 
-			if (strcmp(pin, conference->pin)) {
-				if (conference->bad_pin_sound) {
-					conference_local_play_file(session, conference->bad_pin_sound, 20, NULL, 0);
-				}
+			if (!pin_valid) {
 				goto done;
 			}
 		}
 
-		if (switch_test_flag(conference, CFLAG_LOCKED)) {
+		/* don't allow more callers if the conference is locked, unless we invited them */
+		if (switch_test_flag(conference, CFLAG_LOCKED) && !switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Conference %s is locked.\n", conf_name);
 			if (conference->locked_sound) {
 				/* Answer the channel */
