@@ -66,9 +66,12 @@ static void audio_bridge_function(switch_core_session_t *session, char *data)
 	}
 
 	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel!\n");
-		/* Hangup the channel with the cause code from the failed originate.*/
-		switch_channel_hangup(caller_channel, cause);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
+        if (cause != SWITCH_CAUSE_NO_ANSWER) {
+            /* All Causes besides NO_ANSWER terminate the originating session.  We will pass that cause on when we hangup.*/
+            switch_channel_hangup(caller_channel, cause);
+        }
+        /* Otherwise.. nobody answered.  Go back to the dialplan instructions in case there was more to do. */
 		return;
 	} else {
 		if (no_media_bridge) {
