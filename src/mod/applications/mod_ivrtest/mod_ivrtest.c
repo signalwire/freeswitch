@@ -132,7 +132,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 			status = switch_ivr_menu_execute(session, menu, "main", NULL);
 
 			// cleaup the menu
-			//switch_ivr_menu_free_stack(menu);
+			switch_ivr_menu_stack_free(menu);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to build menu %s\n",params);
 		}
