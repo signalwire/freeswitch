@@ -2651,7 +2651,7 @@ static void switch_core_standard_on_ring(switch_core_session_t *session)
 				return;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Dialplan, Aborting\n");
-				switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+				switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
 			}
 		}
 	}

@@ -1214,7 +1214,7 @@ static int hangup_cause_to_sip(switch_call_cause_t cause) {
 	case SWITCH_CAUSE_ORIGINATOR_CANCEL:
 		return 487;
 	default:
-		return 500;
+		return 480;
 	}
 
 }
@@ -3938,6 +3938,7 @@ static void sip_i_invite(nua_t *nua,
             char *req_user, *req_host, *req_port;
             char *contact_user, *contact_host, *contact_port;
             char *via_rport, *via_host, *via_port;
+            char *from_port;
             char uri[1024];
 
 			if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
@@ -4017,10 +4018,16 @@ static void sip_i_invite(nua_t *nua,
 				switch_channel_set_variable(channel, "sip_from_user_stripped", (char *)from->a_url->url_user);
 			}
 			switch_channel_set_variable(channel, "sip_from_host", (char *) from->a_url->url_host);
-			switch_channel_set_variable(channel, "sip_from_port", (char *) from->a_url->url_port);
+
+            
+            if (!(from_port = (char *) from->a_url->url_port)) {
+                from_port = "5060";
+            }
+
+			switch_channel_set_variable(channel, "sip_from_port", from_port);
 
 
-            snprintf(uri, sizeof(uri), "%s@%s:%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host, (char *) from->a_url->url_port);
+            snprintf(uri, sizeof(uri), "%s@%s:%s", (char *) from->a_url->url_user, (char *) from->a_url->url_host, from_port);
             switch_channel_set_variable(channel, "sip_from_uri", uri);
             
             
