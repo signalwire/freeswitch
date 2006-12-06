@@ -4034,7 +4034,9 @@ static void sip_i_invite(nua_t *nua,
 
             req_user = (char *) sip->sip_request->rq_url->url_user;
             req_host = (char *) sip->sip_request->rq_url->url_host;
-            req_port = (char *) sip->sip_request->rq_url->url_port;
+            if (!(req_port = (char *) sip->sip_request->rq_url->url_port)) {
+                req_port = "5060";
+            }
             
 			switch_channel_set_variable(channel, "sip_req_user", req_user);
 			switch_channel_set_variable(channel, "sip_req_host", req_host);
@@ -4042,15 +4044,21 @@ static void sip_i_invite(nua_t *nua,
 
             contact_user = (char *) sip->sip_contact->m_url->url_user;
             contact_host = (char *) sip->sip_contact->m_url->url_host;
-            contact_port = (char *) sip->sip_contact->m_url->url_port;
+            if (!(contact_port = (char *) sip->sip_contact->m_url->url_port)) {
+                contact_port = "5060";
+            }
             
 			switch_channel_set_variable(channel, "sip_contact_user", contact_user);
 			switch_channel_set_variable(channel, "sip_contact_host", contact_host);
 			switch_channel_set_variable(channel, "sip_contact_port", contact_port);
 
             via_host = (char *) sip->sip_via->v_host;
-            via_port = (char *) sip->sip_via->v_port;
-            via_rport = (char *) sip->sip_via->v_rport;
+            if (!(via_port = (char *) sip->sip_via->v_port)) {
+                via_port = "5060";
+            }
+            if (!(via_rport = (char *) sip->sip_via->v_rport)) {
+                via_rport = "5060";
+            }
             
 			switch_channel_set_variable(channel, "sip_via_host", via_host);
 			switch_channel_set_variable(channel, "sip_via_port", via_port);
