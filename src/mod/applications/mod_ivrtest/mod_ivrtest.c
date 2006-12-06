@@ -98,10 +98,11 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 									  "main",
 									  "please enter some numbers so i can figure out if I have any bugs or not",
 									  "enter some numbers",
+									  NULL,
 									  "I have no idea what that is",
 									  "cepstral",
 									  "david",
-									  15000, 10, NULL);
+									  15000, 10, NULL, NULL);
 
 
 		status = switch_ivr_menu_init(&sub_menu,
@@ -109,10 +110,11 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 									  "sub",
 									  "/ram/congrats.wav",
 									  "/ram/extension.wav",
+									  NULL,
 									  "/ram/invalid.wav",
 									  NULL,
 									  NULL,
-									  15000, 10, NULL);
+									  15000, 10, NULL, NULL);
 
 		if (status == SWITCH_STATUS_SUCCESS) {
 			// build the menu
@@ -130,7 +132,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 			status = switch_ivr_menu_execute(session, menu, "main", NULL);
 
 			// cleaup the menu
-			switch_ivr_menu_free_stack(menu);
+			//switch_ivr_menu_free_stack(menu);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "unable to build menu %s\n",params);
 		}
