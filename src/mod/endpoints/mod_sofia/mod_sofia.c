@@ -950,7 +950,7 @@ static void do_invite(switch_core_session_t *session)
 
 		// forge a RPID for now KHR  -- Should wrap this in an if statement so it can be turned on and off
 		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-			char *priv = "no";
+			char *priv = "off";
 			char *screen = "no";
 			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
 				priv = "name";
@@ -4120,10 +4120,7 @@ static void sip_i_invite(nua_t *nua,
 									if (!strncasecmp(argv[x], "privacy=", 8)) {
 										char *arg = argv[x] + 9;
 
-										if (!strcasecmp(arg, "no")) {
-											switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
-											switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
-										} else if (!strcasecmp(arg, "yes")) {
+										if (!strcasecmp(arg, "yes")) {
 											switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 										} else if (!strcasecmp(arg, "full")) {
 											switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
@@ -4131,7 +4128,11 @@ static void sip_i_invite(nua_t *nua,
 											switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
 										} else if (!strcasecmp(arg, "number")) {
 											switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
+										} else {
+											switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
+											switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
 										}
+
 									} else if (!strncasecmp(argv[x], "screen=", 7) && screen > 0) {
 										char *arg = argv[x] + 8;
 										if (!strcasecmp(arg, "no")) {
