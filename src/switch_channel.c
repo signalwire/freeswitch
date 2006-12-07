@@ -1107,6 +1107,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 
 }
 
+#define resize(l) {\
+char *dp;\
+olen += (len + l + block);\
+cpos = c - data;\
+if ((dp = realloc(data, olen))) {\
+    data = dp;\
+    c = data + cpos;\
+    memset(c, 0, olen - cpos);\
+ }}                           \
+
 SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel, char *in)
 {
 	char *p, *c;
@@ -1129,15 +1139,17 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 
 			if (*p == '$') {
 				vtype = 1;
+                if (*(p+1) != '{') {
+                    vtype = 2;
+                }
 			}
-			if (*(p+1) != '{') {
-				vtype = 2;
-			}
-			
+
 			if (vtype) {
 				char *s = p, *e, *vname, *vval = NULL;
 				size_t nlen;
+
 				s++;
+
 				if (vtype == 1 && *s == '{') {
 					br = 1;
 					s++;
@@ -1195,24 +1207,23 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 				}
 				if ((nlen = sub_val ? strlen(sub_val) : 0)) {
 					if (len + nlen >= olen) {
-						char *dp;
-						olen += (len + nlen + block);
-						cpos = c - data;
-						if ((dp = realloc(data, olen))) {
-							data = dp;
-							c = data + cpos;
-							memset(c, 0, olen - cpos);
-						}
+                        resize(nlen);
 					}
 
 					len += nlen;
 					strcat(c, sub_val);
 					c += nlen;
-
 				}
 				
 				switch_safe_free(func_val);
+                sub_val = NULL;
+                vname = NULL;
+                vtype = 0;
 			}
+            if (len + 1 >= olen) {
+                resize(1);
+            }
+
 			if (sp) {
 				*c++ = ' ';
 				sp = 0;
