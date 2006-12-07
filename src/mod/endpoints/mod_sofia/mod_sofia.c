@@ -951,7 +951,7 @@ static void do_invite(switch_core_session_t *session)
 		// forge a RPID for now KHR  -- Should wrap this in an if statement so it can be turned on and off
 		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
 			char *priv = "no";
-			
+			char *screen = "no";
 			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
 				priv = "name";
 				if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
@@ -960,8 +960,11 @@ static void do_invite(switch_core_session_t *session)
 			} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
 				priv = "yes";
 			}
+			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+				screen = "yes";
+			}
 
-			snprintf(rpid, sizeof(rpid) - 1, "Remote-Party-ID: %s;party=calling;screen=yes;privacy=%s", tech_pvt->from_str, priv);
+			snprintf(rpid, sizeof(rpid) - 1, "Remote-Party-ID: %s;party=calling;screen=%s;privacy=%s", tech_pvt->from_str, screen, priv);
 								
 		}
 
