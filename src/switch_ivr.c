@@ -2365,6 +2365,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	for (r = 0; r < or_argc; r++) {
+        reason = SWITCH_CAUSE_UNALLOCATED;
 		memset(peer_names, 0, sizeof(peer_names));
 		peer_session = NULL;
 		memset(peer_sessions, 0, sizeof(peer_sessions));
@@ -2732,7 +2733,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 			if (i != idx) {
 				if (idx == IDX_CANCEL) {
-					reason = SWITCH_CAUSE_ORIGINATOR_CANCEL;
+					if (to) {
+						reason = SWITCH_CAUSE_NO_ANSWER;
+                    } else {
+                        reason = SWITCH_CAUSE_ORIGINATOR_CANCEL;
+                    }
 				} else {
 					if (to) {
 						reason = SWITCH_CAUSE_NO_ANSWER;
@@ -2742,6 +2747,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						reason = SWITCH_CAUSE_NO_ANSWER;
 					}
 				}
+
 				
 				switch_channel_hangup(peer_channels[i], reason);
 			}
@@ -2793,24 +2799,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 
-			if (caller_channel) {
-				if (idx == IDX_CANCEL) {
-					*cause = switch_channel_get_cause(caller_channel);
-				} 
-				switch_channel_set_variable(caller_channel, "originate_disposition", switch_channel_cause2str(*cause));
-				
-			}
+            if (reason != SWITCH_CAUSE_UNALLOCATED) {
+                *cause = reason;
+            } else if (caller_channel) {
+                *cause = switch_channel_get_cause(caller_channel);
+            } else {
+                *cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+            }
+
 			if (idx == IDX_CANCEL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Cancelled by originator termination Cause: %d [%s]\n",
 								  *cause, switch_channel_cause2str(*cause));
-				if (peer_channel) {
-					switch_channel_hangup(peer_channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
-				}
+                
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Error Cause: %d [%s]\n",
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Originate Resulted in Error Cause: %d [%s]\n",
 								  *cause, switch_channel_cause2str(*cause));
 			}
 		}
+        
+        if (caller_channel) {
+            switch_channel_set_variable(caller_channel, "originate_disposition", switch_channel_cause2str(*cause));
+        }
 
 		if (!pass && write_codec.implementation) {
 			switch_core_codec_destroy(&write_codec);
