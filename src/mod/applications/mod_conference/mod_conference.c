@@ -473,6 +473,11 @@ static void conference_del_member(conference_obj_t *conference, conference_membe
 	conference_member_t *imember, *last = NULL;
 	switch_event_t *event;
 
+	if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
+		return;
+	}
+
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(conference->member_mutex);
 	switch_mutex_lock(member->audio_in_mutex);
