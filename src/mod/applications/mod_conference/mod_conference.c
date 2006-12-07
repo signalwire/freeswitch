@@ -734,8 +734,22 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_mutex_unlock(conference->mutex);
 	} /* Rinse ... Repeat */
 
-	switch_core_timer_destroy(&timer);
 
+
+	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conference->name);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Inactive");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+
+		switch_event_fire(&event);
+	}
+
+    
+	switch_core_timer_destroy(&timer);
+    
 	if (switch_test_flag(conference, CFLAG_DESTRUCT)) {
 
 		switch_mutex_lock(conference->mutex);
@@ -771,23 +785,13 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_mutex_lock(globals.hash_mutex);		
 		switch_core_hash_delete(globals.conference_hash, conference->name);
 		switch_mutex_unlock(globals.hash_mutex);
-
+        
 		if (conference->pool) {
 			switch_memory_pool_t *pool = conference->pool;
 			switch_core_destroy_memory_pool(&pool);
 		}
 	}
 
-	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conference->name);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Inactive");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
-
-		switch_event_fire(&event);
-	}
 	switch_mutex_lock(globals.hash_mutex);
 	globals.threads--;	
 	switch_mutex_unlock(globals.hash_mutex);
