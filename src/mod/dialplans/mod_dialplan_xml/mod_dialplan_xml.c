@@ -177,7 +177,12 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 	switch_channel_t *channel;
 	switch_xml_t cfg, xml, xcontext, xexten;
 	char *context = NULL;
-	char params[1024];
+    switch_stream_handle_t stream = {0};
+    switch_size_t encode_len = 1024, new_len = 0;
+    char *encode_buf = NULL;
+    char *prof[11] = {0}, *prof_names[11] = {0}, *e = NULL;
+    switch_hash_index_t *hi;
+    uint32_t x = 0;
 
 	channel = switch_core_session_get_channel(session);
 	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
@@ -189,22 +194,95 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Processing %s->%s!\n", caller_profile->caller_id_name,
 					  caller_profile->destination_number);
-	
-	snprintf(params, sizeof(params), "context=%s&dest=%s&cid_name=%s&cid_num=%s&netaddr=%s&ani=%s&aniii=%s&rdnis=%s&source=%s&chan_name=%s&uuid=%s", 
-			caller_profile->context, caller_profile->destination_number,
-			caller_profile->caller_id_name, caller_profile->caller_id_number,
-			caller_profile->network_addr?caller_profile->network_addr:"", 
-			caller_profile->ani?caller_profile->ani:"", 
-			caller_profile->aniii?caller_profile->aniii:"",
-			caller_profile->rdnis?caller_profile->rdnis:"", 
-			caller_profile->source, caller_profile->chan_name, caller_profile->uuid);
 
-	if (switch_xml_locate("dialplan", NULL, NULL, NULL, &xml, &cfg, params) != SWITCH_STATUS_SUCCESS) {
+    SWITCH_STANDARD_STREAM(stream);
+    
+    if (!(encode_buf = malloc(encode_len))) {
+        return NULL;
+    }
+    
+    prof[0] = caller_profile->context;
+    prof[1] = caller_profile->destination_number;
+    prof[2] = caller_profile->caller_id_name;
+    prof[3] = caller_profile->caller_id_number;
+    prof[4] = caller_profile->network_addr;
+    prof[5] = caller_profile->ani;
+    prof[6] = caller_profile->aniii;
+    prof[7] = caller_profile->rdnis;
+    prof[8] = caller_profile->source;
+    prof[9] = caller_profile->chan_name;
+    prof[10] = caller_profile->uuid;
+
+    prof_names[0] = "context";
+    prof_names[1] = "destination_number";
+    prof_names[2] = "caller_id_name";
+    prof_names[3] = "caller_id_number";
+    prof_names[4] = "network_addr";
+    prof_names[5] = "ani";
+    prof_names[6] = "aniii";
+    prof_names[7] = "rdnis";
+    prof_names[8] = "source";
+    prof_names[9] = "chan_name";
+    prof_names[10] = "uuid";
+
+    for (x = 0; prof[x]; x++) {
+        new_len = (strlen(prof[x]) * 3) + 1;
+        if (encode_len < new_len) {
+            char *tmp;
+            
+            encode_len = new_len;
+
+            if (!(tmp = realloc(encode_buf, encode_len))) {
+                switch_safe_free(encode_buf);
+                return NULL;
+            }
+
+            encode_buf = tmp;
+        }
+        switch_url_encode(prof[x], encode_buf, encode_len - 1);
+        stream.write_function(&stream, "%s=%s&", prof_names[x], encode_buf);
+    }
+
+
+	for (hi = switch_channel_variable_first(channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
+        void *val;
+        const void *var;
+		switch_hash_this(hi, &var, NULL, &val);
+        
+        new_len = (strlen((char *) var) * 3) + 1;
+        if (encode_len < new_len) {
+            char *tmp;
+            
+            encode_len = new_len;
+
+            if (!(tmp = realloc(encode_buf, encode_len))) {
+                switch_safe_free(encode_buf);
+                return NULL;
+            }
+
+            encode_buf = tmp;
+        }
+
+        switch_url_encode((char *) val, encode_buf, encode_len - 1);
+        stream.write_function(&stream, "%s=%s&", (char *) var, encode_buf);
+        
+	}
+    
+    e = (char *)stream.data + (strlen((char *)stream.data) - 1);
+
+    if (e && *e == '&') {
+        *e = '\0';
+    }
+        
+	if (switch_xml_locate("dialplan", NULL, NULL, NULL, &xml, &cfg, stream.data) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return NULL;
 	}
 	
+    switch_safe_free(stream.data);
+    switch_safe_free(encode_buf);
+    
 	if (!(xcontext = switch_xml_find_child(cfg, "context", "name", context))) {
 		if (!(xcontext = switch_xml_find_child(cfg, "context", "name", "global"))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "context %s not found\n", context);

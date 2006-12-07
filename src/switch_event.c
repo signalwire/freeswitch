@@ -600,7 +600,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 {
 	switch_size_t len = 0;
 	switch_event_header_t *hp;
-	switch_size_t llen = 0, dlen = 0, blocksize = 512, encode_len = 1024;
+	switch_size_t llen = 0, dlen = 0, blocksize = 512, encode_len = 1024, new_len = 0;
 	char *buf;
     char *encode_buf = NULL; /* used for url encoding of variables to make sure unsafe things stay out of the serialzed copy */
 	
@@ -626,19 +626,24 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
          * the memory, allocate and only reallocate if we need more.  This avoids an alloc, free CPU
          * destroying loop.
          */
-        if(encode_len < ((strlen(hp->value) * 3) + 1)) {
+
+        new_len = (strlen(hp->value) * 3) + 1;
+
+        if(encode_len < new_len) {
             char* tmp;
 	        //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Allocing %d was %d.\n", ((strlen(hp->value) * 3) + 1), encode_len);
             /* we can use realloc for initial alloc as well, if encode_buf is zero it treats it as a malloc */
-            if(!(tmp = realloc(encode_buf, ((strlen(hp->value) * 3) + 1)))) {
-                /* oh boy, ram's gone, give back what little we grabbed and bail */
-                switch_safe_free(buf);
-                return SWITCH_STATUS_MEMERR;
-            }
 
             /* keep track of the size of our allocation */
-            encode_len = (strlen(hp->value) * 3) + 1;
-
+            encode_len = new_len;
+            
+            if(!(tmp = realloc(encode_buf, encode_len))) {
+                /* oh boy, ram's gone, give back what little we grabbed and bail */
+                switch_safe_free(buf);
+                switch_safe_free(encode_buf);
+                return SWITCH_STATUS_MEMERR;
+            }
+            
             encode_buf = tmp;
         }
 

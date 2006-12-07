@@ -82,30 +82,36 @@ static switch_xml_t xml_url_fetch(char *section,
 								  char *key_value,
 								  char *params)
 {
-	char url[1024] = "", filename[1024] = "";
+	char filename[1024] = "";
 	CURL *curl_handle = NULL;
 	struct config_data config_data;
 	switch_xml_t xml = NULL;
-	
-	snprintf(url, sizeof(url), "%s?section=%s&tag_name=%s&key_name=%s&&key_value=%s%s%s\n", 
-			 globals.url,
-			 section,
-			 tag_name ? tag_name : "",
-			 key_name ? key_name : "",
-			 key_value ? key_value : "",
-			 params ? "&" : "", params ? params : "");
+    char *data = NULL;
 
-	srand((unsigned int)(time(NULL) + strlen(url)));
+    if (!(data = switch_mprintf("section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s\n", 
+                                section,
+                                tag_name ? tag_name : "",
+                                key_name ? key_name : "",
+                                key_value ? key_value : "",
+                                params ? "&" : "", params ? params : ""))) {
+
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+        return NULL;
+    }
+
+	srand((unsigned int)(time(NULL) + strlen(globals.url)));
 	snprintf(filename, sizeof(filename), "%s%04x.tmp", SWITCH_GLOBAL_dirs.temp_dir, (rand() & 0xffff));
 	curl_handle = curl_easy_init();
-	if (!strncasecmp(url, "https", 5)) {
+	if (!strncasecmp(globals.url, "https", 5)) {
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 		
 	config_data.name = filename;
 	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC)) > -1) {
-		curl_easy_setopt(curl_handle, CURLOPT_URL, url);
+        curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
+        curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
+		curl_easy_setopt(curl_handle, CURLOPT_URL, globals.url);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&config_data);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
@@ -115,6 +121,8 @@ static switch_xml_t xml_url_fetch(char *section,
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
 	}
+
+    switch_safe_free(data);
 
 	if (!(xml = switch_xml_parse_file(filename))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
