@@ -1,0 +1,3 @@
+ALTER TABLE freeswitchcdr DROP callid;
+ALTER TABLE chanvars DROP callid;
+ALTER TABLE chanvars ADD myuuid char(36) NOT NULL FIRST;

@@ -76,13 +76,18 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 		memset(aniii,0,80);
 		memset(lastapp,0,80);
 		memset(lastdata,0,255);
-
+		
+		// switch_channel_timetable_t *timetable = switch_channel_get_timetable(newchannel->channel->caller_profile);
+		
 		coresession = newchannel->session;
-		callstartdate= newchannel->timetable->created;
-		callanswerdate = newchannel->timetable->answered;
-		callenddate = newchannel->timetable->hungup;
 	
-		if (newchannel->callerprofile) {
+		if (newchannel->callerprofile)
+		{
+			callstartdate= newchannel->callerprofile->times->created;
+			callanswerdate = newchannel->callerprofile->times->answered;
+			calltransferdate = newchannel->callerprofile->times->transferred;
+			callenddate = newchannel->callerprofile->times->hungup;
+
 			if(newchannel->callerprofile->caller_id_name != 0)
 			{
 				strncpy(clid,newchannel->callerprofile->caller_id_name,strlen(newchannel->callerprofile->caller_id_name));
@@ -104,34 +109,39 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 			if(newchannel->callerprofile->network_addr != 0)
 				strncpy(network_addr,newchannel->callerprofile->network_addr,strlen(newchannel->callerprofile->network_addr));
 		}
-
-		originated = newchannel->originate;
-	
-		if(newchannel->originateprofile && newchannel->originateprofile->uuid != 0)
-			strncpy(destuuid,newchannel->originateprofile->uuid,strlen(newchannel->originateprofile->uuid));
-	
-		// We still need to check if this is originated or not
-		if(originated == 0)
+		
+		//switch_caller_profile_t *originateprofile = switch_channel_get_originator_caller_profile(newchannel->channel->callerprofile);
+		
+		// Were we the receiver of the call?
+		if(newchannel->callerprofile->originator_caller_profile)
 		{
-			if (newchannel->callerprofile) {
-				if(newchannel->callerprofile->destination_number != 0)
+			originated = 0;
+			if(newchannel->callerprofile->originator_caller_profile->uuid != 0)
+				strncpy(destuuid,newchannel->callerprofile->originator_caller_profile->uuid,strlen(newchannel->callerprofile->originator_caller_profile->uuid));
+			if(newchannel->callerprofile)
+			{
+				if(newchannel->callerprofile->destination_number)
 					strncpy(src,newchannel->callerprofile->destination_number,strlen(newchannel->callerprofile->destination_number));
 				if(newchannel->callerprofile->caller_id_number != 0)
 					strncpy(dst,newchannel->callerprofile->caller_id_number,strlen(newchannel->callerprofile->caller_id_number));
 			}
-			if(newchannel->originateprofile && newchannel->originateprofile->chan_name != 0)
-				strncpy(dstchannel,newchannel->originateprofile->chan_name,strlen(newchannel->originateprofile->chan_name));
 		}
 		else
 		{
-			if (newchannel->callerprofile) {
-				if(newchannel->callerprofile->caller_id_number != 0)
-					strncpy(src,newchannel->callerprofile->caller_id_number,strlen(newchannel->callerprofile->caller_id_number));
-				if(newchannel->callerprofile->destination_number != 0)
-					strncpy(dst,newchannel->callerprofile->destination_number,strlen(newchannel->callerprofile->destination_number));
+			//originateprofile = switch_channel_get_originatee_profile(newchannel->channel->callerprofile);
+			// Or were we maybe we were the caller?
+			if(newchannel->callerprofile->originatee_caller_profile)
+			{
+				originated = 1;
+				if (newchannel->callerprofile) {
+					if(newchannel->callerprofile->caller_id_number != 0)
+						strncpy(src,newchannel->callerprofile->caller_id_number,strlen(newchannel->callerprofile->caller_id_number));
+					if(newchannel->callerprofile->destination_number != 0)
+						strncpy(dst,newchannel->callerprofile->destination_number,strlen(newchannel->callerprofile->destination_number));
+				}
+				if(newchannel->callerprofile->originatee_caller_profile->chan_name != 0)
+					strncpy(dstchannel,newchannel->callerprofile->originatee_caller_profile->chan_name,strlen(newchannel->callerprofile->originatee_caller_profile->chan_name));
 			}
-			if(newchannel->originateprofile && newchannel->originateprofile->chan_name != 0)
-				strncpy(dstchannel,newchannel->originateprofile->chan_name,strlen(newchannel->originateprofile->chan_name));
 		}
 		
 		strncpy(myuuid,newchannel->callerprofile->uuid,strlen(newchannel->callerprofile->uuid));
@@ -140,7 +150,15 @@ BaseCDR::BaseCDR(switch_mod_cdr_newchannel_t *newchannel)
 		if(switch_channel_test_flag(newchannel->channel,CF_ANSWERED))
 		{
 			disposition=1;
-			billusec = newchannel->timetable->hungup - newchannel->timetable->answered;
+			if(callstartdate)
+				billusec = callenddate - callanswerdate;
+			else
+				billusec = callenddate - calltransferdate;
+		}
+		else if(switch_channel_test_flag(newchannel->channel,CF_TRANSFER))
+		{
+			disposition=1;
+			billusec = callenddate - calltransferdate;
 		}
 		else
 		{
@@ -361,7 +379,7 @@ void BaseCDR::process_channel_variables(const std::list<std::string>& stringlist
 
 /* For Emacs:
  * Local Variables:
- * mode:c
+ * mode:c++
  * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4

@@ -58,10 +58,20 @@ class CDRContainer {
 		~CDRContainer();
 		void add_cdr(switch_core_session_t *session);
 		void process_records();
+#ifdef SWITCH_QUEUE_ENHANCED
+		void reload(switch_stream_handle_t *stream);
+		void queue_pause(switch_stream_handle_t *stream);
+		void queue_resume(switch_stream_handle_t *stream);
+#endif
+		void active(switch_stream_handle_t *stream);
+		void available(switch_stream_handle_t *stream);
 	protected:
 	private:
+		switch_xml_t cfg, xml, settings, param;
 		switch_queue_t *cdrqueue;
 		std::string tempfilepath;
+		char configfile[13];
+		bool queue_paused;
 };
 
 #ifdef __cplusplus
@@ -72,7 +82,7 @@ class CDRContainer {
 
 /* For Emacs:
  * Local Variables:
- * mode:c
+ * mode:c++
  * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4

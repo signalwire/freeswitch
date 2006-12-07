@@ -25,28 +25,39 @@
  * 
  * Yossi Neiman <freeswitch AT cartissolutions.com>
  *
- * Description: This C++ header file describes the MysqlCDR class which handles formatting a CDR out to
- * a MySQL 4.1.x or greater server using prepared statements.
+ * Description: This C++ header file describes the OdbcCDR class which handles formatting a CDR out to
+ * an ODBC backend using prepared statements.
  *
- * mysqlcdr.h
+ * odbccdr.h
  *
  */
 
 #include "baseregistry.h"
+#include <switch.h>
+#include <iostream>
 #include <list>
 #include <sstream>
-#include <mysql.h>
-#include <errmsg.h>
 
-#ifndef MYSQLCDR
-#define MYSQLCDR
+#ifndef __CYGWIN__
+#include <sql.h>
+#include <sqlext.h>
+#include <sqltypes.h>
+#else
+#include <windows.h>
+#include <w32api/sql.h>
+#include <w32api/sqlext.h>
+#include <w32api/sqltypes.h>
+#endif
 
-class MysqlCDR : public BaseCDR {
+#ifndef ODBCCDR
+#define ODBCCDR
+
+class OdbcCDR : public BaseCDR {
 	public:
-		MysqlCDR();
-		MysqlCDR(switch_mod_cdr_newchannel_t *newchannel);
-		//MysqlCDR(const MysqlCDR& copyFrom);
-		virtual ~MysqlCDR();
+		OdbcCDR();
+		OdbcCDR(switch_mod_cdr_newchannel_t *newchannel);
+		//OdbcCDR(const MysqlCDR& copyFrom);
+		virtual ~OdbcCDR();
 		virtual bool process_record();
 		virtual void connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param);
 		virtual void disconnect();
@@ -58,47 +69,35 @@ class MysqlCDR : public BaseCDR {
 	private:
 		static bool activated;
 		static char sql_query[1024];
+		static modcdr_time_convert_t convert_time;
+		static std::string display_name;
 		static std::string tmp_sql_query; // Object must exist to bind the statement, this used for generating the sql
-		static char sql_query_chanvars[100];
-		static MYSQL *conn;
-		static MYSQL_STMT *stmt;
-		static MYSQL_STMT *stmt_chanvars;
+		static char sql_query_chanvars[355];
+		static char sql_query_ping[10];
 		static bool connectionstate;
 		static bool logchanvars;
+		static SQLHENV ODBC_env;     /* global ODBC Environment */
+		static SQLHDBC ODBC_con;     /* global ODBC Connection Handle */
+		static SQLHSTMT ODBC_stmt;
+		static SQLHSTMT ODBC_stmt_chanvars;
+		static SQLHSTMT ODBC_stmt_ping;
 		static std::list<std::string> chanvars_fixed_list;
 		static std::vector<switch_mod_cdr_sql_types_t> chanvars_fixed_types;
 		static std::list<std::string> chanvars_supp_list; // The supplemental list
 		static bool repeat_fixed_in_supp;
+		static char dsn[255];
 		static char hostname[255];
 		static char username[255];
 		static char dbname[255];
 		static char password[255];
-		static modcdr_time_convert_t convert_time;
-		static std::string display_name;
+		static char tablename[255];
+		static char tablename_chanvars[255];
 		//static fstream tmpfile;
-		std::vector<MYSQL_BIND> bindme;
-		//MYSQL_BIND *bindme;
-		MYSQL_TIME my_callstartdate;
-		MYSQL_TIME my_callanswerdate;
-		MYSQL_TIME my_calltransferdate;
-		MYSQL_TIME my_callenddate;
-		// Why all these long unsigned int's?  MySQL's prep statement API expects these to actually exist and not just be params passed to the function calls.  The are to measure the length of actual data in the char* arrays.
-		long unsigned int clid_length;
-		long unsigned int dialplan_length;
-		long unsigned int myuuid_length;
-		long unsigned int destuuid_length;
-		long unsigned int src_length;
-		long unsigned int dst_length;
-		long unsigned int srcchannel_length;
-		long unsigned int dstchannel_length;
-		long unsigned int ani_length;
-		long unsigned int aniii_length;
-		long unsigned int lastapp_length;
-		long unsigned int lastdata_length;
-		// Now a couple internal methods
-		template <typename T> void add_parameter(T& param, enum_field_types type, bool *is_null=0);
-		void add_string_parameter(char* param, long unsigned int& param_length, enum_field_types type, bool* is_null=0);
-		void set_mysql_time(switch_time_exp_t& param, MYSQL_TIME& destination);
+		char odbc_callstartdate[128];
+		char odbc_callanswerdate[128];
+		char odbc_calltransferdate[128];
+		char odbc_callenddate[128];
+		void disconnect_stage_1();
 		void connect_to_database();
 };
 

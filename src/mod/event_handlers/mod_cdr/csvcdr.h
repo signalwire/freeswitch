@@ -56,17 +56,21 @@ class CsvCDR : public BaseCDR {
 		virtual bool is_activated();
 		virtual void tempdump_record();
 		virtual void reread_tempdumped_records();
+		virtual std::string get_display_name();
 
 	private:
 		static bool activated; // Is this module activated?
 		static bool connectionstate; // What is the status of the connection?
 		static bool logchanvars;
+		static modcdr_time_convert_t convert_time;
 		static bool repeat_fixed_in_supp; // Repeat the fixed chanvars in the supplemental?
 		static std::string outputfile_path; // The directory we'll dump these into
 		static std::list<std::string> chanvars_fixed_list; // Normally this would be used, but not in this class
 		static std::list<std::string> chanvars_supp_list; // This will hold the list for all chanvars here
+		static std::string display_name;
 		char formattedcallstartdate[100];
 		char formattedcallanswerdate[100];
+		char formattedcalltransferdate[100];
 		char formattedcallenddate[100];
 		static std::ofstream outputfile;
 		static std::ofstream::pos_type filesize_limit;
@@ -78,7 +82,7 @@ class CsvCDR : public BaseCDR {
 
 /* For Emacs:
  * Local Variables:
- * mode:c
+ * mode:c++
  * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4

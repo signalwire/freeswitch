@@ -51,19 +51,22 @@ XmlCDR::XmlCDR(switch_mod_cdr_newchannel_t *newchannel) : BaseCDR(newchannel)
 	
 	if(newchannel != 0)
 	{
-		switch_time_exp_t tempcallstart, tempcallanswer, tempcallend;
+		switch_time_exp_t tempcallstart, tempcallanswer, tempcalltransfer, tempcallend;
 		memset(&tempcallstart,0,sizeof(tempcallstart));
 		memset(&tempcallanswer,0,sizeof(tempcallanswer));
 		memset(&tempcallend,0,sizeof(tempcallend));
-		switch_time_exp_lt(&tempcallstart, callstartdate);
-		switch_time_exp_lt(&tempcallanswer, callanswerdate);
-		switch_time_exp_lt(&tempcallend, callenddate);
+		memset(&tempcalltransfer,0,sizeof(tempcalltransfer));
+		convert_time(&tempcallstart, callstartdate);
+		convert_time(&tempcallanswer, callanswerdate);
+		convert_time(&tempcalltransfer, calltransferdate);
+		convert_time(&tempcallend, callenddate);
 		
 		// Format the times
-		size_t retsizecsd, retsizecad, retsizeced; //csd == callstartdate, cad == callanswerdate, ced == callenddate, ceff == callenddate_forfile
-		char format[] = "%Y-%m-%d-%H-%M-%S";
+		size_t retsizecsd, retsizecad, retsizectd, retsizeced; //csd == callstartdate, cad == callanswerdate, ced == callenddate, ceff == callenddate_forfile
+		char format[] = "%Y-%m-%d %H:%M:%S";
 		switch_strftime(formattedcallstartdate,&retsizecsd,sizeof(formattedcallstartdate),format,&tempcallstart);
 		switch_strftime(formattedcallanswerdate,&retsizecad,sizeof(formattedcallanswerdate),format,&tempcallanswer);
+		switch_strftime(formattedcalltransferdate,&retsizectd,sizeof(formattedcalltransferdate),format,&tempcalltransfer);
 		switch_strftime(formattedcallenddate,&retsizeced,sizeof(formattedcallenddate),format,&tempcallend);
 
 		std::ostringstream ostring;
@@ -76,9 +79,7 @@ XmlCDR::XmlCDR(switch_mod_cdr_newchannel_t *newchannel) : BaseCDR(newchannel)
 		outputfile_name.append(".");
 		outputfile_name.append(myuuid);  // The goal is to have a resulting filename of "/path/to/myuuid"
 		outputfile_name.append(".xml");  // .xml - "XML Data Dumper"
-	
-		outputfile.open(outputfile_name.c_str());
-	
+		
 		bool repeat = 1;
 		process_channel_variables(chanvars_supp_list,chanvars_fixed_list,newchannel->channel,repeat);
 	}
@@ -92,9 +93,11 @@ XmlCDR::~XmlCDR()
 bool XmlCDR::activated=0;
 bool XmlCDR::logchanvars=0;
 bool XmlCDR::connectionstate=0;
+modcdr_time_convert_t XmlCDR::convert_time = switch_time_exp_lt;
 std::string XmlCDR::outputfile_path;
 std::list<std::string> XmlCDR::chanvars_fixed_list;
 std::list<std::string> XmlCDR::chanvars_supp_list;
+std::string XmlCDR::display_name = "XmlCDR - The rough implementation of XML CDR logger";
 
 void XmlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param)
 {
@@ -138,6 +141,18 @@ void XmlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 			{
 				switch_console_printf(SWITCH_CHANNEL_LOG,"XmlCDR has no need for a fixed or supplemental list of channel variables due to the nature of the format.  Please use the setting parameter of \"chanvars\" instead and try again.\n");
 			}
+			else if(!strcmp(var,"timezone"))
+			{
+				if(!strcmp(val,"utc"))
+					convert_time = switch_time_exp_gmt;
+				else if(!strcmp(val,"local"))
+					convert_time = switch_time_exp_lt;
+				else
+				{
+					switch_console_printf(SWITCH_CHANNEL_LOG,"Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n",val);
+					convert_time = switch_time_exp_lt;
+				}
+			}
 		}
 		
 		if(count_config_params > 0)
@@ -150,6 +165,8 @@ void XmlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 bool XmlCDR::process_record()
 {
 	bool retval = 0;
+	outputfile.open(outputfile_name.c_str());
+	
 	if(!outputfile)
 		switch_console_printf(SWITCH_CHANNEL_LOG, "XmlCDR::process_record():  Unable to open file  %s to commit the call record to.  Invalid path name, invalid permissions, or no space available?\n",outputfile_name.c_str());
 	else
@@ -159,8 +176,13 @@ bool XmlCDR::process_record()
 		outputfile << "<?xml version=\"1.0\"?>" << std::endl;
 		outputfile << "<document type=\"freeswitch-cdr/xml\">" << std::endl;
 		outputfile << "\t<callstartdate data=\"" << callstartdate << "\" />" << std::endl;
+		outputfile << "\t<formattedcallstartdate data=\"" << formattedcallstartdate << "\" />" << std::endl;
 		outputfile << "\t<callanswerdate data=\"" << callanswerdate << "\" />" << std::endl;
+		outputfile << "\t<formattedcallanswerdate data=\"" << formattedcallanswerdate << "\" />" << std::endl;
+		outputfile << "\t<calltransferdate data=\"" << calltransferdate << "\" />" << std::endl;
+		outputfile << "\t<formattedcalltransferdate data=\"" << formattedcalltransferdate << "\" />" << std::endl;
 		outputfile << "\t<callenddate data=\"" << callenddate << "\" />" << std::endl;
+		outputfile << "\t<formattedcallenddate data=\"" << formattedcallenddate << "\" />" << std::endl;
 		outputfile << "\t<hangupcause data=\"" << hangupcause_text << "\" />" << std::endl;
 		outputfile << "\t<hangupcausecode data=\"" << hangupcause << "\" />" << std::endl;
 		outputfile << "\t<clid data=\"" << clid << "\" />" << std::endl;
@@ -213,8 +235,18 @@ void XmlCDR::reread_tempdumped_records()
 
 }
 
+std::string XmlCDR::get_display_name()
+{
+	return display_name;
+}
+
 void XmlCDR::disconnect()
 {
+	activated = 0;
+	connectionstate = 0;
+	logchanvars = 0;
+	outputfile_path.clear();
+	chanvars_supp_list.clear();
 	switch_console_printf(SWITCH_CHANNEL_LOG,"Shutting down XmlCDR...  Done!");	
 }
 
@@ -222,7 +254,7 @@ AUTO_REGISTER_BASECDR(XmlCDR);
 
 /* For Emacs:
  * Local Variables:
- * mode:c
+ * mode:c++
  * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4

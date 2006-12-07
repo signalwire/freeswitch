@@ -79,7 +79,7 @@ class BaseRegistration
 
 /* For Emacs:
  * Local Variables:
- * mode:c
+ * mode:c++
  * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4

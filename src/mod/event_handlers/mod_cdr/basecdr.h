@@ -50,14 +50,22 @@ struct switch_mod_cdr_newchannel_t
 {
 	switch_core_session_t *session;
 	switch_channel_t *channel;
-	switch_channel_timetable_t *timetable;
+	//switch_channel_timetable_t *timetable;
 	switch_caller_extension_t *callerextension;
 	switch_caller_profile_t *callerprofile;
-	switch_caller_profile_t *originateprofile;
-	bool originate;
+	//switch_caller_profile_t *originateprofile;
+	//bool originate;
 };
 
 enum switch_mod_cdr_sql_types_t { CDR_INTEGER,CDR_STRING,CDR_DECIMAL,CDR_DOUBLE,CDR_TINY };
+
+#ifdef WIN32
+#define STDCALL __stdcall
+#else
+#define STDCALL
+#endif
+
+typedef apr_status_t (STDCALL *modcdr_time_convert_t)(apr_time_exp_t*,apr_time_t);
 
 class BaseCDR {
 	public:
@@ -70,6 +78,7 @@ class BaseCDR {
 		virtual bool is_activated() = 0;
 		virtual void tempdump_record() = 0;
 		virtual void reread_tempdumped_records() = 0;
+		virtual std::string get_display_name() = 0; // Get the module name
 	protected:
 		void parse_channel_variables_xconfig(std::string& unparsed,std::list<std::string>& chanvarslist,bool fixed);
 		void parse_channel_variables_xconfig(std::string& unparsed,std::list<std::string>& chanvarslist,std::vector<switch_mod_cdr_sql_types_t>& chanvars_fixed_types);  // Typically used for SQL types
@@ -78,6 +87,7 @@ class BaseCDR {
 		switch_time_t callstartdate;
 		switch_time_t callanswerdate;
 		switch_time_t callenddate;
+		switch_time_t calltransferdate;
 		switch_call_cause_t hangupcause;
 		char *hangupcause_text;
 		char clid[80];
@@ -108,7 +118,7 @@ class BaseCDR {
 
 /* For Emacs:
  * Local Variables:
- * mode:c
+ * mode:c++
  * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4

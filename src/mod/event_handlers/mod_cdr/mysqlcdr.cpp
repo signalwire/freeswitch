@@ -93,6 +93,8 @@ char MysqlCDR::hostname[255] = "";
 char MysqlCDR::username[255] ="";
 char MysqlCDR::dbname[255] = "";
 char MysqlCDR::password[255] = "";
+modcdr_time_convert_t MysqlCDR::convert_time = switch_time_exp_lt;
+std::string MysqlCDR::display_name = "MysqlCDR - The MySQL 4.1+ CDR logger using prepared statements";
 //fstream MysqlCDR::tmpfile;
 
 void MysqlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param)
@@ -172,6 +174,18 @@ void MysqlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setti
 						repeat_fixed_in_supp = 1;
 				}
 			}
+			else if(!strcmp(var,"timezone"))
+			{
+				if(!strcmp(val,"utc"))
+					convert_time = switch_time_exp_gmt;
+				else if(!strcmp(val,"local"))
+					convert_time = switch_time_exp_lt;
+				else
+				{
+					switch_console_printf(SWITCH_CHANNEL_LOG,"Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n",val);
+					convert_time = switch_time_exp_lt;
+				}
+			}
 		}
 		
 		if (count_config_params==4)
@@ -181,7 +195,7 @@ void MysqlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setti
 		
 		if(activated)
 		{
-			tmp_sql_query = "INSERT INTO freeswitchcdr  (callstartdate,callanswerdate,callenddate,originated,clid,src,dst,ani,aniii,dialplan,myuuid,destuuid,srcchannel,dstchannel,lastapp,lastdata,billusec,disposition,hangupcause,amaflags";
+			tmp_sql_query = "INSERT INTO freeswitchcdr  (callstartdate,callanswerdate,calltransferdate,callenddate,originated,clid,src,dst,ani,aniii,dialplan,myuuid,destuuid,srcchannel,dstchannel,lastapp,lastdata,billusec,disposition,hangupcause,amaflags";
 			
 			int items_appended = 0;
 			
@@ -199,7 +213,7 @@ void MysqlCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setti
 				}
 			}
 			
-			tmp_sql_query.append(") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?");
+			tmp_sql_query.append(") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?");
 			
 			if(chanvars_fixed_list.size() > 0 )
 			{
@@ -299,25 +313,34 @@ void MysqlCDR::reread_tempdumped_records()
 
 }
 
+std::string MysqlCDR::get_display_name()
+{
+	return display_name;
+}
 
 bool MysqlCDR::process_record()
 {
-	switch_time_exp_t tm1,tm2,tm3; // One for call start
+	switch_time_exp_t tm1,tm2,tm3,tm4; // One for call start, answer, transfer, and end
 	memset(&tm1,0,sizeof(tm1));
 	memset(&tm2,0,sizeof(tm2));
 	memset(&tm3,0,sizeof(tm3));
+	memset(&tm4,0,sizeof(tm4));
 	
-	switch_time_exp_lt(&tm1,callstartdate);
-	switch_time_exp_lt(&tm2,callanswerdate);
-	switch_time_exp_lt(&tm3,callenddate);
+	convert_time(&tm1,callstartdate);
+	convert_time(&tm2,callanswerdate);
+	convert_time(&tm3,calltransferdate);
+	convert_time(&tm4,callenddate);
 	
 	set_mysql_time(tm1,my_callstartdate);
 	set_mysql_time(tm2,my_callanswerdate);
-	set_mysql_time(tm3,my_callenddate);
+	set_mysql_time(tm3,my_calltransferdate);
+	set_mysql_time(tm4,my_calltransferdate);
 	
+	// Why is this out of order?  I don't know, it doesn't make sense.
 	add_parameter(my_callstartdate,MYSQL_TYPE_DATETIME);
 	add_parameter(my_callanswerdate,MYSQL_TYPE_DATETIME);
 	add_parameter(my_callenddate,MYSQL_TYPE_DATETIME);
+	add_parameter(my_calltransferdate,MYSQL_TYPE_DATETIME);
 	
 	add_parameter(originated,MYSQL_TYPE_TINY);
 	add_string_parameter(clid,clid_length,MYSQL_TYPE_VAR_STRING,0);
@@ -583,6 +606,11 @@ void MysqlCDR::disconnect()
 	chanvars_supp_list.clear();
 	chanvars_fixed_types.clear();
 	connectionstate = 0;
+	memset(hostname,0,255);
+	memset(username,0,255);
+	memset(password,0,255);
+	memset(dbname,0,255);
+	memset(sql_query,0,1024);
 	tmp_sql_query.clear();
 }
 
@@ -628,7 +656,7 @@ AUTO_REGISTER_BASECDR(MysqlCDR);
 
 /* For Emacs:
  * Local Variables:
- * mode:c
+ * mode:c++
  * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4

@@ -2,6 +2,7 @@ create table freeswitchcdr (
 	callid bigint unsigned default 0 primary key, /* This will need to be handled specially for auto increment, as that might not be standard */
 	callstartdate datetime NOT NULL,
 	callanswerdate datetime NOT NULL,
+	calltransferdate datetime NOT NULL,
 	callenddate datetime NOT NULL,
 	originated tinyint default 0,
 	clid varchar(80) default "Freeswitch - Unknown",

@@ -45,8 +45,9 @@ CDRContainer::CDRContainer(switch_memory_pool_t *module_pool)
 	// Create the APR threadsafe queue, though I don't know if this is the current memory pool.
 	switch_queue_create(&cdrqueue,5224288, module_pool);
 	
-	char *configfile = "mod_cdr.conf";
-	switch_xml_t cfg, xml, settings, param;
+	queue_paused = 0;
+	
+	strcpy(configfile,"mod_cdr.conf");
 	
 	switch_mod_cdr_newchannel_t *newchannel; // = new switch_mod_cdr_newchannel_t;
 	newchannel = 0;
@@ -91,6 +92,119 @@ CDRContainer::~CDRContainer()
 	switch_console_printf(SWITCH_CHANNEL_LOG,"mod_cdr shutdown gracefully.");
 }
 
+#ifdef SWITCH_QUEUE_ENHANCED
+void CDRContainer::reload(switch_stream_handle_t *stream)
+{
+	// The queue can't be paused otherwise it will never be able to reload safely.
+	if(queue_paused)
+	{
+		stream->write_function(stream,"The queue is currently paused, resuming it.\n");
+		queue_resume(stream);
+	}
+	// Something tells me I still need to figure out what to do if there are items still in queue after reload that are no longer active in the configuration.
+	switch_queue_isempty(cdrqueue); // Waits for the queue to be empty
+	
+	switch_mod_cdr_newchannel_t *newchannel; // = new switch_mod_cdr_newchannel_t;
+	newchannel = 0;
+	
+	const char *err;
+	switch_xml_t xml_root;
+	
+	if ((xml_root = switch_xml_open_root(1, &err))) {
+		switch_console_printf(SWITCH_CHANNEL_LOG,"Reloading the XML file...\n");
+		switch_xml_free(xml_root);
+	}
+	
+	if (!(xml = switch_xml_open_cfg(configfile, &cfg, NULL))) 
+		switch_console_printf(SWITCH_CHANNEL_LOG,"open of %s failed\n", configfile);
+	else
+	{
+		BaseRegistry& registry(BaseRegistry::get());
+		for(BaseRegistry::iterator it = registry.active_begin(); it != registry.active_end(); ++it)
+		{
+			basecdr_creator func = *it;
+			BaseCDR* _ptr = func(newchannel);
+			std::auto_ptr<BaseCDR> ptr(_ptr);
+			ptr->disconnect();
+		}
+		
+		registry.reset_active();
+		
+		for(BaseRegistry::iterator it = registry.begin(); it != registry.end(); ++it)
+		{
+			basecdr_creator func = *it;
+			BaseCDR* _ptr = func(newchannel);
+			std::auto_ptr<BaseCDR> ptr(_ptr);
+			ptr->connect(cfg,xml,settings,param);
+			
+			if(ptr->is_activated())
+				registry.add_active(it);
+		}
+	}
+	
+	switch_xml_free(xml);
+	switch_queue_unblockpop(cdrqueue);
+	switch_console_printf(SWITCH_CHANNEL_LOG,"mod_cdr configuration reloaded.");
+}
+
+void CDRContainer::queue_pause(switch_stream_handle_t *stream)
+{
+	if(queue_paused)
+		stream->write_function(stream,"Queue is already paused.\n");
+	else
+	{
+		queue_paused = 1;
+		switch_queue_blockpop(cdrqueue);
+		stream->write_function(stream,"CDR queue is now paused.  Beware that this can waste resources the longer you keep it paused.\n");
+	}
+}
+
+void CDRContainer::queue_resume(switch_stream_handle_t *stream)
+{
+	if(!queue_paused)
+		stream->write_function(stream,"Queue is currently running, no need to resume it.\n");
+	else
+	{
+		queue_paused = 0;
+		switch_queue_unblockpop(cdrqueue);
+		stream->write_function(stream,"CDR queue has now resumed processing CDR records.\n");
+	}
+
+}
+#endif
+
+void CDRContainer::active(switch_stream_handle_t *stream)
+{
+	switch_mod_cdr_newchannel_t *newchannel; // = new switch_mod_cdr_newchannel_t;
+	newchannel = 0;
+	
+	stream->write_function(stream,"The following mod_cdr logging backends are currently marked as active:\n");
+	BaseRegistry& registry(BaseRegistry::get());
+	for(BaseRegistry::iterator it = registry.active_begin(); it != registry.active_end(); ++it)
+	{
+		basecdr_creator func = *it;
+		BaseCDR* _ptr = func(newchannel);
+		std::auto_ptr<BaseCDR> ptr(_ptr);
+		stream->write_function(stream,"%s\n",ptr->get_display_name().c_str());
+	}
+}
+
+void CDRContainer::available(switch_stream_handle_t *stream)
+{
+	switch_mod_cdr_newchannel_t *newchannel; // = new switch_mod_cdr_newchannel_t;
+	newchannel = 0;
+	
+	stream->write_function(stream,"The following mod_cdr logging backends are currently avaible for use (providing you configure them):\n");
+	BaseRegistry& registry(BaseRegistry::get());
+	for(BaseRegistry::iterator it = registry.begin(); it != registry.end(); ++it)
+	{
+		basecdr_creator func = *it;
+		BaseCDR* _ptr = func(newchannel);
+		std::auto_ptr<BaseCDR> ptr(_ptr);
+		stream->write_function(stream,"%s\n",ptr->get_display_name().c_str());
+	}
+}
+
 void CDRContainer::add_cdr(switch_core_session_t *session)
 {
 	switch_mod_cdr_newchannel_t *newchannel = new switch_mod_cdr_newchannel_t;
@@ -100,56 +214,25 @@ void CDRContainer::add_cdr(switch_core_session_t *session)
 	assert(newchannel->channel != 0);
 
 	newchannel->session = session;
-	newchannel->timetable = switch_channel_get_timetable(newchannel->channel);
 	newchannel->callerextension = switch_channel_get_caller_extension(newchannel->channel);
 	newchannel->callerprofile = switch_channel_get_caller_profile(newchannel->channel);
-	newchannel->originateprofile = switch_channel_get_originator_caller_profile(newchannel->channel);	
 	
-	BaseRegistry& registry(BaseRegistry::get());
-	for(BaseRegistry::iterator it = registry.active_begin(); it != registry.active_end(); ++it)
+	while (newchannel->callerprofile)
 	{
-		/* 
-		   First time it might be originator profile, or originatee.  Second and 
-		   after is always going to be originatee profile.
-		*/
-		
-		basecdr_creator func = *it;
-		
-		if(newchannel->originateprofile != 0 )
+		BaseRegistry& registry(BaseRegistry::get());
+		for(BaseRegistry::iterator it = registry.active_begin(); it != registry.active_end(); ++it)
 		{
-			BaseCDR* newloggerobject = func(newchannel);
-			switch_console_printf(SWITCH_CHANNEL_LOG,"Adding a new logger object to the queue.\n");
-			switch_queue_push(cdrqueue,newloggerobject);
-			
-			if(newchannel->timetable->next != 0)
-			{
-				newchannel->originateprofile = switch_channel_get_originatee_caller_profile(newchannel->channel);
-				newchannel->originate = 1;
-			}	
-		}
-		else
-		{
-			newchannel->originateprofile = switch_channel_get_originatee_caller_profile(newchannel->channel);
-			newchannel->originate = 1;
+			basecdr_creator func = *it;
 			
 			BaseCDR* newloggerobject = func(newchannel);
 			switch_console_printf(SWITCH_CHANNEL_LOG,"Adding a new logger object to the queue.\n");
 			switch_queue_push(cdrqueue,newloggerobject);
 		}
-		
-		while (newchannel->timetable->next != 0 && newchannel->callerextension->next != 0 && newchannel->callerprofile->next != 0 && newchannel->originateprofile->next != 0 ) 
-		{			
-			newchannel->timetable = newchannel->timetable->next;
-			newchannel->callerprofile = newchannel->callerprofile->next;
+		newchannel->callerprofile = newchannel->callerprofile->next;
+		if(newchannel->callerextension)
 			newchannel->callerextension = newchannel->callerextension->next;
-			newchannel->originateprofile = newchannel->originateprofile->next;
-			
-			BaseCDR* newloggerobject = func(newchannel);
-			switch_console_printf(SWITCH_CHANNEL_LOG,"Adding a new logger object to the queue.\n");
-			switch_queue_push(cdrqueue,newloggerobject);
-		}
 	}
-	
+		
 	delete newchannel;
 }
 
@@ -166,7 +249,7 @@ void CDRContainer::process_records()
 
 /* For Emacs:
  * Local Variables:
- * mode:c
+ * mode:c++
  * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4

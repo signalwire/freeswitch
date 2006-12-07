@@ -44,6 +44,12 @@ static int RUNNING = 0;
 static CDRContainer *newcdrcontainer;
 static switch_memory_pool_t *module_pool;
 static switch_status_t my_on_hangup(switch_core_session_t *session);
+static switch_status_t modcdr_reload(char *dest, switch_core_session_t *isession, switch_stream_handle_t *stream);
+static switch_status_t modcdr_queue_pause(char *dest, switch_core_session_t *isession, switch_stream_handle_t *stream);
+static switch_status_t modcdr_queue_resume(char *dest, switch_core_session_t *isession, switch_stream_handle_t *stream);
+static switch_status_t modcdr_show_active(char *dest, switch_core_session_t *isession, switch_stream_handle_t *stream);
+static switch_status_t modcdr_show_available(char *dest, switch_core_session_t *isession, switch_stream_handle_t *stream);
+static switch_thread_rwlock_t *cdr_rwlock;
 
 /* Now begins the glue that will tie this into the system.
 */
@@ -57,18 +63,61 @@ static const switch_state_handler_table_t state_handlers = {
 	/*.on_transmit */ NULL
 };
 
+static switch_api_interface_t modcdr_show_available_api = {
+	/*.interface_name */ "modcdr_show_available",
+	/*.desc */ "Displays the currently compiled-in mod_cdr backend loggers.",
+	/*.function */ modcdr_show_available,
+	/*.syntax */ "modcdr_queue_show_available",
+	/*.next */ 0
+};
+
+static switch_api_interface_t modcdr_show_active_api = {
+	/*.interface_name */ "modcdr_show_active",
+	/*.desc */ "Displays the currently active mod_cdr backend loggers.",
+	/*.function */ modcdr_show_active,
+	/*.syntax */ "modcdr_queue_show_active",
+	/*.next */ &modcdr_show_available_api
+};
+
+static switch_api_interface_t modcdr_queue_resume_api = {
+	/*.interface_name */ "modcdr_queue_resume",
+	/*.desc */ "Manually resumes the popping of objects from the queue.",
+	/*.function */ modcdr_queue_resume,
+	/*.syntax */ "modcdr_queue_resume",
+	/*.next */ &modcdr_show_active_api
+};
+
+static switch_api_interface_t modcdr_queue_pause_api = {
+	/*.interface_name */ "modcdr_queue_pause",
+	/*.desc */ "Manually pauses the popping of objects from the queue. (DANGER: Can suck your memory away rather quickly.)",
+	/*.function */ modcdr_queue_pause,
+	/*.syntax */ "modcdr_queue_pause",
+	/*.next */ &modcdr_queue_resume_api
+};
+
+static switch_api_interface_t modcdr_reload_interface_api = {
+	/*.interface_name */ "modcdr_reload",
+	/*.desc */ "Reload mod_cdr's configuration",
+	/*.function */ modcdr_reload,
+	/*.syntax */ "modcdr_reload",
+	/*.next */ &modcdr_queue_pause_api
+};
+
 static const switch_loadable_module_interface_t cdr_module_interface = {
 	/*.module_name */ modname,
 	/*.endpoint_interface */ NULL,
 	/*.timer_interface */ NULL,
 	/*.dialplan_interface */ NULL,
 	/*.codec_interface */ NULL,
-	/*.application_interface */ NULL
+	/*.application_interface */ NULL,
+	/* api_interface */ &modcdr_reload_interface_api
 };
 
 static switch_status_t my_on_hangup(switch_core_session_t *session)
 {
+	switch_thread_rwlock_rdlock(cdr_rwlock);
 	newcdrcontainer->add_cdr(session);
+	switch_thread_rwlock_unlock(cdr_rwlock);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -85,6 +134,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 		return SWITCH_STATUS_TERM;
 	}
 
+	switch_thread_rwlock_create(&cdr_rwlock,module_pool);
 	newcdrcontainer = new CDRContainer(module_pool);  // Instantiates the new object, automatically loads config
 	
 	/* indicate that the module should continue to be loaded */
@@ -100,15 +150,61 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 	return RUNNING ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_TERM;
 }
 
+static switch_status_t modcdr_reload(char *dest=0, switch_core_session_t *isession=0, switch_stream_handle_t *stream=0)
+{
+#ifdef SWITCH_QUEUE_ENHANCED
+	switch_thread_rwlock_wrlock(cdr_rwlock);
+	newcdrcontainer->reload(stream);
+	switch_thread_rwlock_unlock(cdr_rwlock);
+	stream->write_function(stream, "XML Reloaded and mod_cdr reloaded.\n");
+#else
+	stream->write_function(stream,"modcdr_reload is only supported with the apr_queue_t enhancements and SWITCH_QUEUE_ENHANCED defined.\n");
+#endif
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t modcdr_queue_pause(char *dest=0, switch_core_session_t *isession=0, switch_stream_handle_t *stream=0)
+{
+#ifdef SWITCH_QUEUE_ENHANCED
+	newcdrcontainer->queue_pause(stream);
+#else
+	stream->write_function(stream,"modcdr_queue_pause is only supported with the apr_queue_t enhancements and SWITCH_QUEUE_ENHANCED defined.\n");
+#endif
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t modcdr_queue_resume(char *dest=0, switch_core_session_t *isession=0, switch_stream_handle_t *stream=0)
+{
+#ifdef SWITCH_QUEUE_ENHANCED
+	newcdrcontainer->queue_resume(stream);
+#else
+	stream->write_function(stream,"modcdr_queue_pause is only supported with the apr_queue_t enhancements and SWITCH_QUEUE_ENHANCED defined.\n");
+#endif
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t modcdr_show_active(char *dest=0, switch_core_session_t *isession=0, switch_stream_handle_t *stream=0)
+{
+	newcdrcontainer->active(stream);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t modcdr_show_available(char *dest=0, switch_core_session_t *isession=0, switch_stream_handle_t *stream=0)
+{
+	newcdrcontainer->available(stream);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
 	delete newcdrcontainer;
+	switch_thread_rwlock_destroy(cdr_rwlock);
 	return SWITCH_STATUS_SUCCESS;
 }
 
 /* For Emacs:
  * Local Variables:
- * mode:c
+ * mode:c++
  * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4

@@ -51,23 +51,27 @@ CsvCDR::CsvCDR(switch_mod_cdr_newchannel_t *newchannel) : BaseCDR(newchannel)
 {
 	memset(formattedcallstartdate,0,100);
 	memset(formattedcallanswerdate,0,100);
+	memset(formattedcalltransferdate,0,100);
 	memset(formattedcallenddate,0,100);
 	
 	if(newchannel != 0)
 	{
-		switch_time_exp_t tempcallstart, tempcallanswer, tempcallend;
+		switch_time_exp_t tempcallstart, tempcallanswer, tempcalltransfer, tempcallend;
 		memset(&tempcallstart,0,sizeof(tempcallstart));
+		memset(&tempcalltransfer,0,sizeof(tempcalltransfer));
 		memset(&tempcallanswer,0,sizeof(tempcallanswer));
 		memset(&tempcallend,0,sizeof(tempcallend));
-		switch_time_exp_lt(&tempcallstart, callstartdate);
-		switch_time_exp_lt(&tempcallanswer, callanswerdate);
-		switch_time_exp_lt(&tempcallend, callenddate);
+		convert_time(&tempcallstart, callstartdate);
+		convert_time(&tempcallanswer, callanswerdate);
+		convert_time(&tempcalltransfer, calltransferdate);
+		convert_time(&tempcallend, callenddate);
 		
 		// Format the times
-		apr_size_t retsizecsd, retsizecad, retsizeced;  //csd == callstartdate, cad == callanswerdate, ced == callenddate, ceff == callenddate_forfile
-		char format[] = "%Y-%m-%d-%H-%M-%S";
+		apr_size_t retsizecsd, retsizecad, retsizectd, retsizeced;  //csd == callstartdate, cad == callanswerdate, ced == callenddate, ceff == callenddate_forfile
+		char format[] = "%Y-%m-%d %H:%M:%S";
 		switch_strftime(formattedcallstartdate,&retsizecsd,sizeof(formattedcallstartdate),format,&tempcallstart);
 		switch_strftime(formattedcallanswerdate,&retsizecad,sizeof(formattedcallanswerdate),format,&tempcallanswer);
+		switch_strftime(formattedcalltransferdate,&retsizectd,sizeof(formattedcalltransferdate),format,&tempcalltransfer);
 		switch_strftime(formattedcallenddate,&retsizeced,sizeof(formattedcallenddate),format,&tempcallend);
 
 		process_channel_variables(chanvars_fixed_list,newchannel->channel);
@@ -84,11 +88,13 @@ bool CsvCDR::activated=0;
 bool CsvCDR::logchanvars=0;
 bool CsvCDR::connectionstate=0;
 bool CsvCDR::repeat_fixed_in_supp=0;
+modcdr_time_convert_t CsvCDR::convert_time = switch_time_exp_lt;
 std::string CsvCDR::outputfile_path;
 std::ofstream CsvCDR::outputfile;
 std::ofstream::pos_type CsvCDR::filesize_limit = (10 * 1024 * 1024); // Default file size is 10MB
 std::list<std::string> CsvCDR::chanvars_fixed_list;
 std::list<std::string> CsvCDR::chanvars_supp_list;
+std::string CsvCDR::display_name = "CsvCDR - The simple comma separated values CDR logger";
 
 void CsvCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& settings, switch_xml_t& param)
 {
@@ -151,6 +157,18 @@ void CsvCDR::connect(switch_xml_t& cfg, switch_xml_t& xml, switch_xml_t& setting
 				{
 					filesize_limit = atoi(val) * 1024 * 1024; // Value is in MB
 					std::cout << "File size limit from config file is " << filesize_limit << " byte(s)." << std::endl;
+				}
+			}
+			else if(!strcmp(var,"timezone"))
+			{
+				if(!strcmp(val,"utc"))
+					convert_time = switch_time_exp_gmt;
+				else if(!strcmp(val,"local"))
+					convert_time = switch_time_exp_lt;
+				else
+				{
+					switch_console_printf(SWITCH_CHANNEL_LOG,"Invalid configuration parameter for timezone.  Possible values are utc and local.  You entered: %s\nDefaulting to local.\n",val);
+					convert_time = switch_time_exp_lt;
 				}
 			}
 		}
@@ -220,8 +238,13 @@ bool CsvCDR::process_record()
 	
 	// Format the call record and proceed from here...
 	outputfile << "\"" << callstartdate << "\",\"";
+	outputfile << formattedcallstartdate << "\",\"";
 	outputfile << callanswerdate << "\",\"";
+	outputfile << formattedcallanswerdate << "\",\"";
+	outputfile << calltransferdate << "\",\"";
+	outputfile << formattedcalltransferdate << "\",\"";
 	outputfile << callenddate << "\",\"";
+	outputfile << formattedcallenddate << "\",\"";
 	outputfile << hangupcause_text << "\",\"";
 	outputfile << hangupcause << "\",\"";
 	outputfile << clid << "\",\"";
@@ -277,9 +300,21 @@ void CsvCDR::reread_tempdumped_records()
 
 }
 
+std::string CsvCDR::get_display_name()
+{
+	return display_name;
+}
+
 void CsvCDR::disconnect()
 {
 	outputfile.close();
+	activated = 0;
+	logchanvars = 0;
+	repeat_fixed_in_supp = 0;
+	outputfile_path.clear();
+	chanvars_fixed_list.clear();
+	chanvars_supp_list.clear();
+	connectionstate = 0;
 	switch_console_printf(SWITCH_CHANNEL_LOG,"Shutting down CsvCDR...  Done!");	
 }
 
@@ -287,7 +322,7 @@ AUTO_REGISTER_BASECDR(CsvCDR);
 
 /* For Emacs:
  * Local Variables:
- * mode:c
+ * mode:c++
  * indent-tabs-mode:nil
  * tab-width:4
  * c-basic-offset:4
