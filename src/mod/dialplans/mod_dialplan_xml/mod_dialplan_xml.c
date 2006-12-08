@@ -53,6 +53,7 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 	switch_channel_t *channel;
 	char *exten_name = (char *) switch_xml_attr_soft(xexten, "name");
 	int proceed = 0;
+    switch_stream_handle_t stream = {0};
 
 	channel = switch_core_session_get_channel(session);
 	caller_profile = switch_channel_get_caller_profile(channel);
@@ -62,7 +63,6 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 		char *do_break_a = NULL;
 		char *expression = NULL;
 		char *field_data = NULL;
-		char retbuf[1024] = "";
 		pcre *re = NULL;
 		int ovector[30];
 		break_t do_break_i = BREAK_ON_FALSE;
@@ -85,24 +85,33 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 
 		if (field) {
 			if (*field == '$') {
-				field_data = switch_channel_get_variable(channel, field + 1);
-			} else if (*field == '%') {
-				switch_stream_handle_t stream = {0};
 				char *cmd = switch_core_session_strdup(session, field + 1);
-				char *arg;
-				
-				SWITCH_STANDARD_STREAM(stream);
-				
-				if (cmd) {
-					if ((arg = strchr(cmd, ' '))) {
-						*arg++ = '\0';
-					}
-					if (switch_api_execute(cmd, arg, session, &stream) == SWITCH_STATUS_SUCCESS) {
-						field_data = retbuf;
-					}
-					free(stream.data);
-				}
-			} else {
+				char *e, *arg;                
+                field = cmd;
+                field_data = "";
+
+                if (*field == '{') {
+                    field++;
+                    if ((e = strchr(field, '}'))) {
+                        *e = '\0';
+                        field_data = switch_channel_get_variable(channel, field);
+                    }
+                } else {
+                    switch_safe_free(stream.data);
+                    memset(&stream, 0, sizeof(stream));
+                    SWITCH_STANDARD_STREAM(stream);
+
+                    if ((arg = strchr(cmd, '('))) {
+                        *arg++ = '\0';
+                        if ((e = strchr(arg, ')'))) {
+                            *e = '\0';
+                            if (switch_api_execute(cmd, arg, session, &stream) == SWITCH_STATUS_SUCCESS) {
+                                field_data = stream.data;
+                            }
+                        }
+                    }
+                }
+            } else {
 				field_data = switch_caller_get_field_by_name(caller_profile, field);
 			}
 			if (!field_data) {
@@ -120,7 +129,8 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 						if ((*extension =
 							 switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
-							return 0;
+                            proceed = 0;
+                            goto done;
 						}
 					}
 					
@@ -154,19 +164,23 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 				if ((*extension =
 					 switch_caller_extension_new(session, exten_name, caller_profile->destination_number)) == 0) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
-					return 0;
+                    proceed = 0;
+                    goto done;
 				}
 			}
 
 			switch_caller_extension_add_application(session, *extension, application, app_data);
 		}
-
+        
 		switch_clean_re(re);
 
 		if (do_break_i == BREAK_ON_TRUE || do_break_i == BREAK_ALWAYS) {
 			break;
 		}
 	}
+
+ done:
+    switch_safe_free(stream.data);
 	return proceed;
 }
 
