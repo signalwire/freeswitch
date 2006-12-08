@@ -408,11 +408,6 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 {
 	switch_event_t *event;
 
-	if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(conference->member_mutex);
 	switch_mutex_lock(member->audio_in_mutex);
@@ -472,11 +467,6 @@ static void conference_del_member(conference_obj_t *conference, conference_membe
 {
 	conference_member_t *imember, *last = NULL;
 	switch_event_t *event;
-
-	if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
-		return;
-	}
 
 	switch_mutex_lock(conference->mutex);
 	switch_mutex_lock(conference->member_mutex);
@@ -538,9 +528,6 @@ static void conference_del_member(conference_obj_t *conference, conference_membe
 	switch_mutex_unlock(conference->member_mutex);
 	switch_mutex_unlock(conference->mutex);
 
-
-	switch_thread_rwlock_unlock(conference->rwlock);
-
 }
 
 /* Main monitor thread (1 per distinct conference room) */
@@ -573,7 +560,6 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 		/* Sync the conference to a single timing source */
 		switch_core_timer_next(&timer);
-
 		switch_mutex_lock(conference->mutex);
 		ready = 0;
 
@@ -780,6 +766,10 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 
 		switch_mutex_unlock(conference->mutex);
 
+		switch_mutex_lock(globals.hash_mutex);		
+		switch_core_hash_delete(globals.conference_hash, conference->name);
+		switch_mutex_unlock(globals.hash_mutex);
+
 		/* Wait till everybody is out */
 		switch_clear_flag_locked(conference, CFLAG_RUNNING);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Lock ON\n");
@@ -787,11 +777,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_thread_rwlock_unlock(conference->rwlock);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write Lock OFF\n");
 
-		switch_mutex_lock(globals.hash_mutex);		
-		switch_core_hash_delete(globals.conference_hash, conference->name);
-		switch_mutex_unlock(globals.hash_mutex);
-        
-		if (conference->pool) {
+        if (conference->pool) {
 			switch_memory_pool_t *pool = conference->pool;
 			switch_core_destroy_memory_pool(&pool);
 		}
@@ -1076,7 +1062,6 @@ static void conference_loop(conference_member_t *member)
 						switch_buffer_zero(member->mux_buffer);
 						switch_mutex_unlock(member->audio_out_mutex);
 					}
-					switch_core_timer_next(&timer);
 				}
 			}
 		} else {	/* send the conferecne frame to the call leg */
@@ -1097,16 +1082,15 @@ static void conference_loop(conference_member_t *member)
 						if (member->volume_out_level) {
 							switch_change_sln_volume(write_frame.data, write_frame.samples, member->volume_out_level);
 						}
-
 						switch_core_session_write_frame(member->session, &write_frame, -1, 0);
 					}
 				}
 
 				switch_mutex_unlock(member->audio_out_mutex);
-			} else {
-				switch_core_timer_next(&timer);
 			}
-		}
+        }
+
+        switch_core_timer_next(&timer);
 	} /* Rinse ... Repeat */
 
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
@@ -1139,6 +1123,11 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	uint32_t bytes = samples * 2;
 	uint32_t mux_used;
 	char *vval;
+
+	if (switch_thread_rwlock_tryrdlock(rec->conference->rwlock) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
+		return NULL;
+	}
 
 	switch_mutex_lock(globals.hash_mutex);
 	globals.threads++;
@@ -1230,6 +1219,7 @@ end:
 	globals.threads--;
 	switch_mutex_unlock(globals.hash_mutex);
 
+	switch_thread_rwlock_unlock(rec->conference->rwlock);
 	return NULL;
 }
 
@@ -2648,7 +2638,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 	char *flags_str;
 	member_flag_t uflags = MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR;
 	switch_core_session_message_t msg = {0};
-	uint8_t isbr = 0;
+	uint8_t rl = 0, isbr = 0;
 	char *dpin = NULL;
 
 	channel = switch_core_session_get_channel(session);
@@ -2780,6 +2770,13 @@ static void conference_function(switch_core_session_t *session, char *data)
 			launch_conference_thread(conference);
 		}
 
+        /* acquire a read lock on the thread so it can't leave without us */
+        if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
+            goto done;
+        }
+        rl++;
+        
 		/* if this is not an outbound call, deal with conference pins */
 		if (!switch_channel_test_flag(channel, CF_OUTBOUND) && conference->pin) {
 			char pin_buf[80] = "";
@@ -2927,6 +2924,7 @@ static void conference_function(switch_core_session_t *session, char *data)
 		goto codec_done1;
 	}
 
+
 	/* Prepare MUTEXS */
 	member.id = next_member_id();
 	member.pool = pool;
@@ -2989,6 +2987,10 @@ done:
 
 	switch_core_session_reset(session);
 
+    /* release the readlock */
+    if (rl) {
+        switch_thread_rwlock_unlock(conference->rwlock);
+    }
 }
 
 /* Create a thread for the conference and launch it */
