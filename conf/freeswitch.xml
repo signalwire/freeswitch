@@ -139,8 +139,8 @@
               <param name="register-username" value="1001"/>
               <param name="register-password" value="nhy65tgb"/>
               <param name="register-from" value="sip:1001@208.64.200.40"/>
-              <param name="register-to" value="sip:1001@66.250.68.194"/>
-              <param name="register-proxy" value="sip:66.250.68.194:5060"/>
+              <param name="register-to" value="sip:1001@conference.freeswitch.org"/>
+              <param name="register-proxy" value="sip:conference.freeswitch.org:5060"/>
               <param name="register-frequency" value="20"/>
             </registration> -->
           </registrations>
@@ -464,14 +464,14 @@
       <!-- Call the FreeSWITCH conference via SIP -->
         <!--<extension name="FreeSWITCH Conference SIP">-->
           <!--<condition field="destination_number" expression="^888$">-->
-            <!--<action application="bridge" data="sofia/test/888@66.250.68.194"/>-->
+            <!--<action application="bridge" data="sofia/test/888@conference.freeswitch.org"/>-->
           <!--</condition>-->
         <!--</extension> -->
 
       <!-- Call the FreeSWITCH conference via IAX -->
         <!--<extension name="FreeSWITCH Conference IAX">-->
           <!--<condition field="destination_number" expression="^8888$">-->
-            <!--<action application="bridge" data="iax/guest@66.250.68.194/888"/>-->
+            <!--<action application="bridge" data="iax/guest@conference.freeswitch.org/888"/>-->
           <!--</condition>-->
         <!--</extension>-->
 
@@ -480,7 +480,7 @@
 	  <!-- Request a certain tone/file to be played while you wait for the call to be answered-->
 	  <action application="set" data="ringback=${us-ring}"/>
 	  <!--<action application="set" data="ringback=/home/ring.wav"/>-->
-          <action application="bridge" data="sofia/test/1234@66.250.68.194"/>
+          <action application="bridge" data="sofia/test/1234@conference.freeswitch.org"/>
         </condition>
       </extension>
 
@@ -494,7 +494,7 @@
       <!-- Start a dynamic conference and call someone at the same time -->
       <extension name="2000">
         <condition field="destination_number" expression="^2000$">
-          <action application="conference" data="bridge:mydynaconf:sofia/test/1234@66.250.68.194"/>
+          <action application="conference" data="bridge:mydynaconf:sofia/test/1234@conference.freeswitch.org"/>
         </condition>
       </extension>
 
