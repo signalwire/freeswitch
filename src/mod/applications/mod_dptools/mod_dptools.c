@@ -43,7 +43,7 @@ static void detect_speech_function(switch_core_session_t *session, char *data)
 	int argc;
 	char *lbuf = NULL;
 
-	if ((lbuf = switch_core_session_strdup(session, data)) && (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (data && (lbuf = switch_core_session_strdup(session, data)) && (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (!strcasecmp(argv[0], "grammar") && argc >= 1) {
 			switch_ivr_detect_speech_load_grammar(session, argv[1], argv[2]);
 		} else if (!strcasecmp(argv[0], "nogrammar")) {
@@ -77,7 +77,7 @@ static void transfer_function(switch_core_session_t *session, char *data)
 	char *argv[4] = {0};
 	char *mydata;
 
-	if ((mydata = switch_core_session_strdup(session, data))) {
+	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
 			switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
 		} else {
@@ -144,7 +144,7 @@ static void log_function(switch_core_session_t *session, char *data)
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
-    if ((level = strdup(data))) {
+    if (data && (level = strdup(data))) {
         switch_event_types_t etype = SWITCH_LOG_DEBUG;
         
         if ((log_str = strchr(level, ' '))) {
@@ -220,7 +220,7 @@ static void strftime_function(switch_core_session_t *session, char *data)
 	int argc;
 	char *lbuf;
 
-	if ((lbuf = switch_core_session_strdup(session, data))&&(argc = switch_separate_string(lbuf, '=', argv, (sizeof(argv) / sizeof(argv[0])))) > 1) {
+	if (data && (lbuf = switch_core_session_strdup(session, data)) && (argc = switch_separate_string(lbuf, '=', argv, (sizeof(argv) / sizeof(argv[0])))) > 1) {
 		switch_size_t retsize;
 		switch_time_exp_t tm;
 		char date[80] = "";
@@ -238,12 +238,13 @@ static void strftime_function(switch_core_session_t *session, char *data)
 
 static switch_status_t strftime_api_function(char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
+	
 	switch_size_t retsize;
 	switch_time_exp_t tm;
 	char date[80] = "";
 	
 	switch_time_exp_lt(&tm, switch_time_now());
-	switch_strftime(date, &retsize, sizeof(date), fmt, &tm);
+	switch_strftime(date, &retsize, sizeof(date), fmt ? fmt : "%Y-%m-%d %T", &tm);
 	stream->write_function(stream, date);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -290,7 +291,7 @@ static switch_status_t chat_api_function(char *fmt, switch_core_session_t *sessi
 	char *lbuf, *argv[4];
 	int argc = 0;
 
-	if ((lbuf = strdup(fmt)) && (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
+	if (fmt && (lbuf = strdup(fmt)) && (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
 		switch_chat_interface_t *ci;
 		
 		if ((ci = switch_loadable_module_get_chat_interface(argv[0]))) {
@@ -324,9 +325,9 @@ static switch_ivr_action_t menu_handler(switch_ivr_menu_t *menu, char *param, ch
 static void ivr_application_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	char *params = switch_core_session_strdup(session,data);
+	char *params;
 
-	if (channel != NULL && params != NULL) {
+	if (channel && data && (params = switch_core_session_strdup(session,data))) {
 		switch_xml_t cxml = NULL, cfg = NULL, xml_menus = NULL, xml_menu = NULL;
 
 		// Open the config from the xml registry

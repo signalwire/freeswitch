@@ -162,7 +162,7 @@ static switch_status_t load_function(char *mod, switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t reload_function(char *mod, switch_core_session_t *session, switch_stream_handle_t *stream)
+static switch_status_t reload_function(char *args, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	const char *err;
 	switch_xml_t xml_root;
@@ -214,7 +214,7 @@ static switch_status_t transfer_function(char *cmd, switch_core_session_t *isess
 	
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argc < 2 || argc > 4) {
+	if (switch_strlen_zero(cmd) || argc < 2 || argc > 4) {
 		stream->write_function(stream, "USAGE: %s\n", transfer_api_interface.syntax);
 	} else {
 		char *uuid = argv[0];
@@ -252,7 +252,7 @@ static switch_status_t uuid_media_function(char *cmd, switch_core_session_t *ise
 	
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argc < 1) {
+	if (switch_strlen_zero(cmd) || argc < 1) {
 		stream->write_function(stream, "USAGE: %s\n", media_api_interface.syntax);
 	} else {
 		if (!strcmp(argv[0], "off")) {
@@ -284,7 +284,7 @@ static switch_status_t uuid_broadcast_function(char *cmd, switch_core_session_t 
 	
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argc < 2) {
+	if (switch_strlen_zero(cmd) || argc < 2) {
 		stream->write_function(stream, "USAGE: %s\n", broadcast_api_interface.syntax);
 	} else {
 		switch_media_flag_t flags = SMF_NONE;
@@ -320,7 +320,7 @@ static switch_status_t uuid_hold_function(char *cmd, switch_core_session_t *ises
 	
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argc < 1) {
+	if (switch_strlen_zero(cmd) || argc < 1) {
 		stream->write_function(stream, "USAGE: %s\n", hold_api_interface.syntax);
 	} else {
 		if (!strcmp(argv[0], "off")) {
@@ -350,7 +350,7 @@ static switch_status_t uuid_bridge_function(char *cmd, switch_core_session_t *is
 	
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argc != 2) {
+	if (switch_strlen_zero(cmd) || argc != 2) {
 		stream->write_function(stream, "USAGE: %s\n", uuid_bridge_api_interface.syntax);
 	} else {
 		if (switch_ivr_uuid_bridge(argv[0], argv[1]) != SWITCH_STATUS_SUCCESS) {
@@ -373,7 +373,7 @@ static switch_status_t pause_function(char *cmd, switch_core_session_t *isession
 	
 	argc = switch_separate_string(cmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argc < 2) {
+	if (switch_strlen_zero(cmd) || argc < 2) {
 		stream->write_function(stream, "USAGE: %s\n", pause_api_interface.syntax);
 	} else {
 		char *uuid = argv[0];
