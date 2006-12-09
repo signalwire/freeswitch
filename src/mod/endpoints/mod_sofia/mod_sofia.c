@@ -3705,14 +3705,13 @@ static void sip_i_refer(nua_t *nua,
 				switch_core_session_t *bsession;
 				
 				if ((bsession = switch_core_session_locate(br))) {
-					channel = switch_core_session_get_channel(bsession);
 					switch_channel_set_variable(channel, "TRANSFER_FALLBACK", (char *) from->a_user);
 					switch_ivr_session_transfer(bsession, exten, profile->dialplan, profile->context);
 					switch_core_session_rwunlock(bsession);
 				} 
-				
+
 				switch_channel_set_variable(channel, "endpoint_disposition", "BLIND_TRANSFER");
-				
+                
 				nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 						   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"),
 						   SIPTAG_EVENT_STR(etmp),
@@ -4008,8 +4007,8 @@ static void sip_i_invite(nua_t *nua,
 			}
 
 			attach_private(session, profile, tech_pvt, username);
-			switch_core_session_read_lock(session);
-			switch_set_flag(tech_pvt, TFLAG_RWLOCK);
+			//switch_core_session_read_lock(session);
+			//switch_set_flag(tech_pvt, TFLAG_RWLOCK);
 			channel = switch_core_session_get_channel(session);
 			switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
 			set_chat_hash(tech_pvt, sip);
