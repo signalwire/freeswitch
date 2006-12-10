@@ -403,7 +403,7 @@ static const switch_application_interface_t detect_speech_application_interface 
 	/* long_desc */ "Detect speech on a channel.",
 	/* short_desc */ "Detect speech",
 	/* syntax */ "<mod_name> <gram_name> <gram_path> [<addr>] OR grammar <gram_name> [<path>] OR pause OR resume",
-	/*.next */ NULL
+	/*.next */ &ivr_application_interface
 };
 
 static const switch_application_interface_t ringback_application_interface = {
