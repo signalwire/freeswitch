@@ -1,9 +1,9 @@
-LDFLAGS += -lxmlrpc -lxmlrpc_abyss -lxmlrpc_server -lxmlrpc_server_abyss -lxmlrpc_xmlparse
+LDFLAGS += -lcurl
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install xmlrpc-c-1.03.14.tgz --prefix=$(PREFIX) --disable-cplusplus --disable-wininet-client --disable-libwww-client
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install curl-7.15.2.tar.gz --prefix=$(PREFIX)
 
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c

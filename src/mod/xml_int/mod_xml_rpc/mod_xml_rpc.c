@@ -37,103 +37,8 @@
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
-#include <curl/curl.h>
-
-
 
 static const char modname[] = "mod_xml_rpc";
-
-
-
-static struct {
-	uint16_t port;
-	uint8_t running;
-	char *url;
-	char *bindings;
-	char *realm;
-	char *user;
-	char *pass;
-} globals;
-
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_url, globals.url);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user);
-SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass);
-
-struct config_data {
-	char *name;
-	int fd;
-};
-
-static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
-{
-	register unsigned int realsize = (unsigned int)(size * nmemb);
-	struct config_data *config_data = data;
-
-	write(config_data->fd, ptr, realsize);
-	return realsize;
-}
-
-
-static switch_xml_t xml_url_fetch(char *section,
-								  char *tag_name,
-								  char *key_name,
-								  char *key_value,
-								  char *params)
-{
-	char filename[1024] = "";
-	CURL *curl_handle = NULL;
-	struct config_data config_data;
-	switch_xml_t xml = NULL;
-    char *data = NULL;
-
-    if (!(data = switch_mprintf("section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s\n", 
-                                section,
-                                tag_name ? tag_name : "",
-                                key_name ? key_name : "",
-                                key_value ? key_value : "",
-                                params ? "&" : "", params ? params : ""))) {
-
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-        return NULL;
-    }
-
-	srand((unsigned int)(time(NULL) + strlen(globals.url)));
-	snprintf(filename, sizeof(filename), "%s%04x.tmp", SWITCH_GLOBAL_dirs.temp_dir, (rand() & 0xffff));
-	curl_handle = curl_easy_init();
-	if (!strncasecmp(globals.url, "https", 5)) {
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
-	}
-		
-	config_data.name = filename;
-	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC)) > -1) {
-        curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
-        curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
-		curl_easy_setopt(curl_handle, CURLOPT_URL, globals.url);
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
-		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&config_data);
-		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
-		curl_easy_perform(curl_handle);
-		curl_easy_cleanup(curl_handle);
-		close(config_data.fd);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error!\n");
-	}
-
-    switch_safe_free(data);
-
-	if (!(xml = switch_xml_parse_file(filename))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
-	}
-
-	unlink(filename);
-	
-	return xml;
-}
-
-
 
 static switch_loadable_module_interface_t xml_rpc_module_interface = {
 	/*.module_name */ modname,
@@ -147,6 +52,18 @@ static switch_loadable_module_interface_t xml_rpc_module_interface = {
 	/*.speech_interface */ NULL,
 	/*.directory_interface */ NULL
 };
+
+static struct {
+	uint16_t port;
+	uint8_t running;
+	char *realm;
+	char *user;
+	char *pass;
+} globals;
+
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_realm, globals.realm);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_user, globals.user);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_pass, globals.pass);
 
 static switch_status_t do_config(void) 
 {
@@ -171,10 +88,6 @@ static switch_status_t do_config(void)
 				user = val;
 			} else if (!strcasecmp(var, "auth-pass")) {
 				pass = val;
-			} else if (!strcasecmp(var, "gateway-url")) {
-				char *bindings = (char *) switch_xml_attr_soft(param, "bindings");
-				set_global_bindings(bindings);
-				set_global_url(val);
 			} else if (!strcasecmp(var, "http-port")) {
 				globals.port = (uint16_t)atoi(val);
 			}
@@ -191,7 +104,7 @@ static switch_status_t do_config(void)
 	}
 	switch_xml_free(xml);
 
-	return globals.url ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -202,12 +115,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 	memset(&globals, 0, sizeof(globals));
 
-	if (do_config() == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Binding XML Fetch Function [%s] [%s]\n", globals.url, globals.bindings ? globals.bindings : "all");
-		switch_xml_bind_search_function(xml_url_fetch, switch_xml_parse_section_string(globals.bindings));
-	}
-
-	curl_global_init(CURL_GLOBAL_ALL);
+    do_config();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -353,7 +261,6 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_runtime(void)
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_shutdown(void)
 {
 	globals.running = 0;
-	curl_global_cleanup();
 	return SWITCH_STATUS_SUCCESS;
 }
 
