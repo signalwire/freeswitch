@@ -406,8 +406,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(char *uuid, char *path, swi
 SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session_t *sessa, switch_core_session_t *sessb, char *var);
 
 
+/******************************************************************************************************/
+
 struct switch_ivr_digit_stream_parser;
 typedef struct switch_ivr_digit_stream_parser switch_ivr_digit_stream_parser_t;
+struct switch_ivr_digit_stream;
+typedef struct switch_ivr_digit_stream switch_ivr_digit_stream_t;
 /*!
   \brief Create a digit stream parser object
   \param pool the pool to use for the new hash
@@ -418,10 +422,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory
 
 /*!
   \brief Destroy a digit stream parser object
-  \param parser a pointer to the object pointer
+  \param parser a pointer to the parser object
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t **parser);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t *parser);
+
+/*!
+  \brief Create a new digit stream object
+  \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
+  \param stream a pointer to the stream object pointer
+  \return NULL if no match found or consumer data that was associated with a given digit string when matched
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_stream_parser_t *parser, switch_ivr_digit_stream_t **stream);
+
+/*!
+  \brief Destroys a digit stream object
+  \param stream a pointer to the stream object
+  \return NULL if no match found or consumer data that was associated with a given digit string when matched
+*/
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit_stream_t *stream);
 
 /*!
   \brief Set a digit string to action mapping
@@ -446,14 +465,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_
   \param digit a digit to collect and test against the map of digit strings
   \return NULL if no match found or consumer data that was associated with a given digit string when matched
 */
-SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t *parser, char digit);
+SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t *parser, switch_ivr_digit_stream_t *stream, char digit);
 
 /*!
   \brief Reset the collected digit stream to nothing
-  \param parser a pointer to the parser object created by switch_ivr_digit_stream_parser_new
+  \param stream a pointer to the parser stream object created by switch_ivr_digit_stream_new
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_reset(switch_ivr_digit_stream_parser_t *parser);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_stream_t *stream);
 
 /*!
   \brief Set a digit string terminator
@@ -462,6 +481,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_reset(switch_ivr_
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(switch_ivr_digit_stream_parser_t *parser, char digit);
+
+
+/******************************************************************************************************/
+
 
 /** @} */
 

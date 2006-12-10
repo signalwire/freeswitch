@@ -3495,11 +3495,14 @@ struct switch_ivr_digit_stream_parser {
 	int pool_auto_created;
 	switch_memory_pool_t *pool;
 	switch_hash_t *hash;
-	char *digits;
-	char terminator;
 	switch_size_t maxlen;
 	switch_size_t minlen;
+	char terminator;
 	unsigned int digit_timeout_ms;
+};
+
+struct switch_ivr_digit_stream {
+	char *digits;
 	switch_time_t last_digit_time;
 };
 
@@ -3544,20 +3547,45 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_new(switch_memory
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t **parser)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_destroy(switch_ivr_digit_stream_parser_t *parser)
 {	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (parser != NULL && *parser != NULL) {
-		if ((*parser)->hash != NULL) {
-			switch_core_hash_destroy((*parser)->hash);
-			(*parser)->hash = NULL;
+	if (parser != NULL) {
+		if (parser->hash != NULL) {
+			switch_core_hash_destroy(parser->hash);
+			parser->hash = NULL;
 		}
 		// free the memory pool if we created it
-		if ((*parser)->pool_auto_created && (*parser)->pool != NULL) {
-			status = switch_core_destroy_memory_pool(&(*parser)->pool);
+		if (parser->pool_auto_created && parser->pool != NULL) {
+			status = switch_core_destroy_memory_pool(&parser->pool);
 		}
-		// clean up for the caller
-		*parser = NULL;
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_stream_parser_t *parser, switch_ivr_digit_stream_t **stream)
+{	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	// if we have a paser object memory pool and a stream object pointer that is null
+	if (parser != NULL && parser->pool && stream != NULL && *stream == NULL) {
+		*stream = (switch_ivr_digit_stream_t *)switch_core_alloc(parser->pool,sizeof(switch_ivr_digit_stream_t));
+		if (*stream != NULL) {
+			memset(*stream,0,sizeof(switch_ivr_digit_stream_t));
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	return status;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit_stream_t *stream)
+{	switch_status_t status = SWITCH_STATUS_FALSE;
+
+	if (stream == NULL && stream->digits != NULL) {
+		free(stream->digits);
+		stream->digits = NULL;
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
 	return status;
@@ -3613,11 +3641,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_
 	return status;
 }
 
-SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t *parser, char digit)
+SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t *parser, switch_ivr_digit_stream_t *stream, char digit)
 {	void *result = NULL;
 
-	if (parser != NULL) {
-		switch_size_t len = (parser->digits != NULL ? strlen(parser->digits) : 0);
+	if (parser != NULL && stream != NULL) {
+		switch_size_t len = (stream->digits != NULL ? strlen(stream->digits) : 0);
 
 		// handle new digit arrivals
 		if(digit != '\0') {
@@ -3627,37 +3655,37 @@ SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stre
 				// if collected digits length >= the max length of the keys
 				// in the hash table, then left shift the digit string
 				if (len > 0 && parser->maxlen != 0 && len >= parser->maxlen) {
-					char *src = parser->digits + 1;
-					char *dst = parser->digits;
+					char *src = stream->digits + 1;
+					char *dst = stream->digits;
 
 					while (*src) {
 						*(dst++) = *(src++);
 					}
 					*dst = digit;
 				} else {
-					parser->digits = realloc(parser->digits,len+2);
-					*(parser->digits+(len++)) = digit;
-					*(parser->digits+len) = '\0';
-					parser->last_digit_time = switch_time_now() / 1000;
+					stream->digits = realloc(stream->digits,len+2);
+					*(stream->digits+(len++)) = digit;
+					*(stream->digits+len) = '\0';
+					stream->last_digit_time = switch_time_now() / 1000;
 				}
 			}
 		}
 
 		// don't allow collected digit string testing if there are varying sized keys until timeout
 		if ( parser->maxlen - parser->minlen > 0
-			&& (switch_time_now() / 1000) - parser->last_digit_time < parser->digit_timeout_ms
+			&& (switch_time_now() / 1000) - stream->last_digit_time < parser->digit_timeout_ms
 		) {
 			len = 0;
 		}
 
 		// if we have digits to test
 		if (len) {
-			result = switch_core_hash_find(parser->hash,parser->digits);
+			result = switch_core_hash_find(parser->hash, stream->digits);
 			// if we matched the digit string, or this digit is the terminator
 			// reset the collected digits for next digit string
 			if (result != NULL || parser->terminator == digit) {
-				free(parser->digits);
-				parser->digits = NULL;
+				free(stream->digits);
+				stream->digits = NULL;
 			}
 		}
 }
@@ -3665,12 +3693,13 @@ SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stre
 	return result;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_reset(switch_ivr_digit_stream_parser_t *parser)
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_reset(switch_ivr_digit_stream_t *stream)
 {	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (parser != NULL && parser->digits != NULL) {
-		free(parser->digits);
-		parser->digits = NULL;
+	if (stream != NULL && stream->digits != NULL) {
+		free(stream->digits);
+		stream->digits = NULL;
+		stream->last_digit_time = 0;
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
