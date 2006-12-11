@@ -149,7 +149,11 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL INIT %d %d\n", switch_channel_get_name(channel),
-			switch_channel_get_state(channel), switch_test_flag(tech_pvt, TFLAG_ANSWER));
+                          switch_channel_get_state(channel), switch_test_flag(tech_pvt, TFLAG_ANSWER));
+        
+
+
+        engage_device(tech_pvt);
 
 		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 			if (switch_time_now() - last >= waitsec) {
@@ -159,8 +163,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 				snprintf(buf, sizeof(buf), "BRRRRING! BRRRRING! call %s\n", tech_pvt->call_id);
 
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, MY_EVENT_RINGING) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_info", buf);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call_id", tech_pvt->call_id);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_info", "%s", buf);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "call_id", "%s", tech_pvt->call_id);
 					switch_channel_event_set_data(channel, event);
 					switch_event_fire(&event);
 				}
@@ -171,10 +175,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			switch_yield(50000);
 		}
 		
-		if (switch_channel_ready(channel)) {
-			/* Turn on the device */
-			engage_device(tech_pvt);
-		}
 	}
 
 
