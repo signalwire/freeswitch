@@ -20,6 +20,11 @@ if [ -z "$MAKE" ] ; then
     fi
 fi
 
+GZCAT=`which gzcat 2>/dev/null`
+if [ -z "$GZCAT" ] ; then
+    GZCAT=zcat
+fi
+
 install=
 base=http://svn.freeswitch.org/downloads/libs
 
@@ -52,14 +57,17 @@ else
 	fi
     fi
     if [ ! -d $uncompressed ] ; then
-	tar -zxvf $tar
+	$GZCAT $tar | tar xf -
     fi
 fi
-
-if [ ! -f $root/.nothanks ] && [ $uncompressed/.complete -ot $uncompressed ] ; then 
+if [ -f $uncompressed/.complete ] ; then 
+if [ ! -n "$(find $uncompressed/.complete -prune -newer $uncompressed)" ]; then
+if [ ! -f $root/.nothanks ] ; then 
     echo remove stale .complete
     rm $uncompressed/.complete
     sh -c "cd $uncompressed && $MAKE clean distclean"
+fi
+fi
 fi
 
 if [ -f $uncompressed/.complete ] ; then
@@ -88,6 +96,7 @@ else
 fi
 
 if [ $? = 0 ] ; then
+    touch .complete
     touch .complete
 else 
     echo ERROR
