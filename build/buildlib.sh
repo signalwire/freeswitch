@@ -97,6 +97,7 @@ fi
 
 if [ $? = 0 ] ; then
     touch .complete
+    sleep 1
     touch .complete
 else 
     echo ERROR
