@@ -1074,7 +1074,7 @@ static void conference_loop(conference_member_t *member)
 				write_frame.data = data;
 				use_buffer = member->mux_buffer;
 
-				while ((write_frame.datalen = (uint32_t)switch_buffer_read(use_buffer, write_frame.data, bytes))) {
+				if ((write_frame.datalen = (uint32_t)switch_buffer_read(use_buffer, write_frame.data, bytes))) {
 					if (write_frame.datalen && switch_test_flag(member, MFLAG_CAN_HEAR)) {
 						write_frame.samples = write_frame.datalen / 2;
 
@@ -1087,6 +1087,7 @@ static void conference_loop(conference_member_t *member)
 				}
 
 				switch_mutex_unlock(member->audio_out_mutex);
+                continue;
 			}
         }
 
