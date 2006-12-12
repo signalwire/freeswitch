@@ -701,6 +701,8 @@ static int on_presence(void *user_data, ikspak *pak)
 	
 	if (type && !strcasecmp(type, "unavailable")) {
 		signal = LDL_SIGNAL_PRESENCE_OUT;
+    } else if (type && !strcasecmp(type, "probe")) {
+		signal = LDL_SIGNAL_PRESENCE_PROBE;
 	} else {
 		signal = LDL_SIGNAL_PRESENCE_IN;
 	}
@@ -725,20 +727,15 @@ static int on_presence(void *user_data, ikspak *pak)
 	}
 
 
-	
 	if (resource && strstr(resource, "talk") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
 		apr_cpystrn(buffer->buf, from, buffer->len);
 		fflush(stderr);
 		buffer->hit = 1;
 	}
 	
-	if (!type || (type && strcasecmp(type, "probe"))) {
-
-		if (handle->session_callback) {
-			handle->session_callback(handle, NULL, signal, to, id, status ? status : "n/a", show ? show : "n/a");
-		}
-	}
-
+    if (handle->session_callback) {
+        handle->session_callback(handle, NULL, signal, to, id, status ? status : "n/a", show ? show : "n/a");
+    }
 
 	return IKS_FILTER_EAT;
 }

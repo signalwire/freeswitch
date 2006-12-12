@@ -2107,7 +2107,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				}
 
 				if (is_special(to)) {
-					ldl_handle_send_presence(profile->handle, to, from, NULL, "unknown", "Click To Call");
+					ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call");
 				}
 
 #if 0
@@ -2116,7 +2116,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s",  to);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+						//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Click To Call");
 						switch_event_fire(&event);
 					}
@@ -2130,6 +2130,11 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					switch_event_fire(&event);
 				}
 				break;
+			case LDL_SIGNAL_PRESENCE_PROBE:
+				if (is_special(to)) {
+                    ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call");
+                }
+                break;
 			case LDL_SIGNAL_PRESENCE_IN:
 				
 				if ((sql = switch_mprintf("update subscriptions set show='%q', status='%q' where sub_from='%q'", msg, subject, from))) {
@@ -2148,7 +2153,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 				
 				if (is_special(to)) {
-					ldl_handle_send_presence(profile->handle, to, from, NULL, "unknown", "Click To Call");
+					ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call");
 				}
 #if 0
 				if (is_special(to)) {
@@ -2156,13 +2161,14 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s",  to);
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
+						//switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "unknown");
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Click To Call");
 						switch_event_fire(&event);
 					}
 				}
 				break;
 #endif
+
 			case LDL_SIGNAL_PRESENCE_OUT:
 				
 				if ((sql = switch_mprintf("update subscriptions set show='%q', status='%q' where sub_from='%q'", msg, subject, from))) {
