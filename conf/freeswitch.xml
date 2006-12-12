@@ -366,10 +366,16 @@
 
     <!-- None of these paths are real if you want any of these options you need to really set them up -->
     <configuration name="conference.conf" description="Audio Conference">
-      <!-- Profiles are collections of settings you can reference by name. -->
+      <!-- Advertise certian presence on startup . -->
+      <advertise>
+	<room name="888@sub.mydomain.com" status="FreeSWITCH"/>
+      </advertise>
 
+      <!-- Profiles are collections of settings you can reference by name. -->
       <profiles>
 	<profile name="default">
+	  <!-- Domain (for presence) -->
+	  <param name="domain" value="sub.mydomain.com"/>
 	  <!-- Sample Rate-->
 	  <param name="rate" value="8000"/>
 	  <!-- Number of milliseconds per frame -->
