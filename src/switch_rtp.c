@@ -865,18 +865,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (rtp_session->recv_msg.header.version) {
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && rtp_session->from_addr->port) {
-				if ((rtp_session->from_addr->port != rtp_session->remote_port)) {
+                char *tx_host;
+                char *old_host;
+                char bufa[30], bufb[30];
+                tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
+                old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
+
+				if ((rtp_session->from_addr->port != rtp_session->remote_port) || strcmp(tx_host, old_host)) {
 					const char *err;
-					char *tx_host;
 					uint32_t old = rtp_session->remote_port;
-					char *old_host;
-					char bufa[30], bufb[30];
-
-					//switch_sockaddr_ip_get(&tx_host, rtp_session->from_addr);
-					//switch_sockaddr_ip_get(&old_host, rtp_session->remote_addr);
-
-					tx_host = switch_get_addr(bufa, sizeof(bufa), rtp_session->from_addr);
-					old_host = switch_get_addr(bufb, sizeof(bufb), rtp_session->remote_addr);
 
 					if (!switch_strlen_zero(tx_host) && rtp_session->from_addr->port > 0) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Auto Changing port from %s:%u to %s:%u\n",
