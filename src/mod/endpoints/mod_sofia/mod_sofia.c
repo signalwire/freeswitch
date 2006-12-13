@@ -1468,6 +1468,9 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 		if ((vad_in && inb) || (vad_out && !inb)) {
 			switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING);
 			switch_set_flag_locked(tech_pvt, TFLAG_VAD);
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP Engage VAD for %s ( %s %s )\n", 
+                              switch_channel_get_name(switch_core_session_get_channel(tech_pvt->session)),
+                              vad_in ? "in" : "", vad_out ? "out" : "");
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP REPORTS ERROR: [%s]\n", err);
@@ -4367,7 +4370,7 @@ static void event_callback(nua_event_t event,
 		}
 	}
 
-	if (status == 401 || status == 407) {
+	if (sip && (status == 401 || status == 407)) {
 		sip_r_challenge(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		goto done;
 	}

@@ -1160,7 +1160,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->send_msg.header.pt == 97) {
 		rtp_session->recv_msg.header.pt = 102;
 	}
-	
+
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_VAD) && 
 		rtp_session->recv_msg.header.pt == rtp_session->vad_data.read_codec->implementation->ianacode &&
 		((datalen == rtp_session->vad_data.read_codec->implementation->encoded_bytes_per_frame) || 
@@ -1171,7 +1171,8 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		uint32_t len = sizeof(decoded);
 		time_t now = time(NULL);
 		send = 0;
-		
+
+        
 		if (rtp_session->vad_data.scan_freq && rtp_session->vad_data.next_scan <= now) {
 			rtp_session->vad_data.bg_count = rtp_session->vad_data.bg_level = 0;
 			rtp_session->vad_data.next_scan = now + rtp_session->vad_data.scan_freq;
@@ -1191,7 +1192,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 			uint32_t energy = 0;
 			uint32_t x, y = 0, z = len / sizeof(int16_t);
 			uint32_t score = 0;
-			
+
 			if (z) {
 				for (x = 0; x < z; x++) {
 					energy += abs(decoded[y]);
