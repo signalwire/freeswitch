@@ -454,7 +454,7 @@ static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const
 	char uridigest[2 * SU_MD5_DIGEST_SIZE + 1];
 	char bigdigest[2 * SU_MD5_DIGEST_SIZE + 1];
 	char *nonce, *uri, *qop, *cnonce, *nc, *response, *input = NULL, *input2 = NULL;
-	auth_res_t ret = AUTH_OK;
+	auth_res_t ret = AUTH_FORBIDDEN;
 	char *npassword = NULL;
 	int cnt = 0;
 	nonce = uri = qop = cnonce = nc = response = NULL;
@@ -527,7 +527,7 @@ static auth_res_t parse_auth(sofia_profile_t *profile, sip_authorization_t const
 		su_md5_strupdate(&ctx, input2);
 		su_md5_hexdigest(&ctx, bigdigest);
 		su_md5_deinit(&ctx);
-		
+
 		if (!strcasecmp(bigdigest, response)) {
 			ret = AUTH_OK;
 		} else {
@@ -2815,7 +2815,6 @@ static char *get_auth_data(char *dbname, char *nonce, char *npassword, size_t le
 	}
 
 	sql = switch_mprintf("select passwd from sip_authentication where nonce='%q'", nonce);
-	
 	if (switch_core_db_prepare(db, sql, -1, &stmt, 0)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Statement Error!\n");
 		goto fail;
@@ -2939,9 +2938,11 @@ static uint8_t handle_register(nua_t *nua,
 	}
 
 	if (authorization) {
-		auth_res = parse_auth(profile, authorization, (char *)sip->sip_request->rq_method_name, key, keylen);
+		if ((auth_res = parse_auth(profile, authorization, (char *)sip->sip_request->rq_method_name, key, keylen)) == AUTH_STALE) {
+            stale = 1;
+        }
 
-		if (auth_res != AUTH_OK && auth_res != AUTH_STALE) {
+		if (auth_res != AUTH_OK && !stale) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "send %s for [%s@%s]\n",
 							  forbidden ? "forbidden" : "challange",
 							  from_user, from_host);
@@ -3014,15 +3015,14 @@ static uint8_t handle_register(nua_t *nua,
 			switch_uuid_format(uuid_str, &uuid);
 
 			sql = switch_mprintf("delete from sip_authentication where user='%q' and host='%q';\n"
-										 "insert into sip_authentication values('%q','%q','%q','%q', %ld)",
-										 from_user,
-										 from_host,
-										 from_user,
-										 from_host,
-										 hexdigest,
-										 uuid_str,
-										 time(NULL) + 60);
-
+                                 "insert into sip_authentication values('%q','%q','%q','%q', %ld)",
+                                 from_user,
+                                 from_host,
+                                 from_user,
+                                 from_host,
+                                 hexdigest,
+                                 uuid_str,
+                                 time(NULL) + 60);
 			auth_str = switch_mprintf("Digest realm=\"%q\", nonce=\"%q\",%s algorithm=MD5, qop=\"auth\"", from_host, uuid_str, 
 											  stale ? " stale=\"true\"," : "");
 
@@ -4165,7 +4165,8 @@ static void sip_i_register(nua_t *nua,
 						   sip_t const *sip,
 						   tagi_t tags[])
 {
-	handle_register(nua, profile, nh, sip, REG_REGISTER, NULL, 0);
+    char key[128] = "";
+	handle_register(nua, profile, nh, sip, REG_REGISTER, key, sizeof(key));
 }
 
 
