@@ -1437,6 +1437,8 @@ static switch_status_t activate_rtp(private_object_t *tech_pvt)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP CHANGING DEST TO: [%s:%d]\n", 
 							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
+            /* Reactivate the NAT buster flag. */
+            switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
 		}
 		return SWITCH_STATUS_SUCCESS;
 	}
