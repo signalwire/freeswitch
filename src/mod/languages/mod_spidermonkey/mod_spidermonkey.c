@@ -793,12 +793,18 @@ static switch_status_t js_collect_input_callback(switch_core_session_t *session,
 static JSBool session_flush_digits(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
-	switch_channel_t *channel;
 	char buf[256];
 	switch_size_t has;
+	switch_channel_t *channel;
 
 	channel = switch_core_session_get_channel(jss->session);
     assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
 
 	if ((has = switch_channel_has_dtmf(channel))) {
 		switch_channel_dequeue_dtmf(channel, buf, has);
@@ -812,6 +818,16 @@ static JSBool session_flush_events(JSContext *cx, JSObject *obj, uintN argc, jsv
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_event_t *event;
+    switch_channel_t *channel;
+
+    channel = switch_core_session_get_channel(jss->session);
+    assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
 
 	while (switch_core_session_dequeue_event(jss->session, &event) == SWITCH_STATUS_SUCCESS) {
 		switch_event_destroy(&event);
@@ -837,6 +853,13 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
 	
 	if (argc > 0) {
 		file_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -885,7 +908,7 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
     JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
-	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
+	return JS_TRUE;
 }
 
 
@@ -902,6 +925,13 @@ static JSBool session_collect_input(JSContext *cx, JSObject *obj, uintN argc, js
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
 	
 	if (argc > 0) {
 		if ((function = JS_ValueToFunction(cx, argv[0]))) {
@@ -931,7 +961,7 @@ static JSBool session_collect_input(JSContext *cx, JSObject *obj, uintN argc, js
 
 	*rval = cb_state.ret;
 
-	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
+	return JS_TRUE;
 }
 
 static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -950,6 +980,13 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
 	
 	if (argc > 0) {
 		file_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -994,7 +1031,7 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
     JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 	
-	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
+	return JS_TRUE;
 }
 
 static JSBool session_set_variable(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -1004,6 +1041,13 @@ static JSBool session_set_variable(JSContext *cx, JSObject *obj, uintN argc, jsv
 
 	channel = switch_core_session_get_channel(jss->session);
     assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
 
 	if (argc > 1) {
 		char *var, *val;
@@ -1026,6 +1070,13 @@ static JSBool session_get_variable(JSContext *cx, JSObject *obj, uintN argc, jsv
 
 	channel = switch_core_session_get_channel(jss->session);
     assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
 
 	if (argc > 0) {
 		char *var, *val;
@@ -1063,6 +1114,13 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
 	
 	if (argc > 0) {
 		tts_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -1113,7 +1171,7 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
     JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
-	return (switch_channel_ready(channel)) ? JS_TRUE : JS_FALSE;
+	return JS_TRUE;
 }
 
 static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
@@ -1123,6 +1181,17 @@ static JSBool session_get_digits(JSContext *cx, JSObject *obj, uintN argc, jsval
 	char *buf;
 	int digits;
 	int32 timeout = 5000;
+	switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(jss->session);
+    assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
 	
 	if (argc > 0) {
 		char term;
@@ -1151,6 +1220,13 @@ static JSBool session_answer(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
+
 	switch_channel_answer(channel);
 	return JS_TRUE;
 }
@@ -1162,6 +1238,7 @@ static JSBool session_ready(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
+
 	*rval = BOOLEAN_TO_JSVAL( switch_channel_ready(channel) ? JS_TRUE : JS_FALSE );
 
 	return JS_TRUE;
@@ -1176,8 +1253,16 @@ static JSBool session_wait_for_media(JSContext *cx, JSObject *obj, uintN argc, j
 	switch_time_t started;
 	unsigned int elapsed;
 	int32 timeout = 60;
+
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
 	started = switch_time_now();
 
 	if (argc > 0) {
@@ -1209,8 +1294,16 @@ static JSBool session_wait_for_answer(JSContext *cx, JSObject *obj, uintN argc, 
 	switch_time_t started;
 	unsigned int elapsed;
 	int32 timeout = 60;
+
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
 	started = switch_time_now();
 
 	if (argc > 0) {
@@ -1237,6 +1330,19 @@ static JSBool session_wait_for_answer(JSContext *cx, JSObject *obj, uintN argc, 
 static JSBool session_execute(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	JSBool retval = JS_FALSE;
+	switch_channel_t *channel;
+    struct js_session *jss = JS_GetPrivate(cx, obj);
+
+	channel = switch_core_session_get_channel(jss->session);
+    assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
+
 	if (argc > 1) {
 		const switch_application_interface_t *application_interface;
 		char *app_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
@@ -1262,6 +1368,17 @@ static JSBool session_get_event(JSContext *cx, JSObject *obj, uintN argc, jsval 
 {
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_event_t *event;
+	switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(jss->session);
+    assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
 
 	if (switch_core_session_dequeue_event(jss->session, &event) == SWITCH_STATUS_SUCCESS) {
 		JSObject *Event;
@@ -1319,13 +1436,20 @@ static JSBool session_hangup(JSContext *cx, JSObject *obj, uintN argc, jsval *ar
 	char *cause_name = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
+	channel = switch_core_session_get_channel(jss->session);
+	assert(channel != NULL);
+
+    if (!switch_channel_ready(channel)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
+        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+        return JS_TRUE;
+    }
+
 	if (argc > 1) {
 		cause_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		cause = switch_channel_str2cause(cause_name);
 	}
 
-	channel = switch_core_session_get_channel(jss->session);
-	assert(channel != NULL);
 
 	switch_channel_hangup(channel, cause);
 	switch_core_session_kill_channel(jss->session, SWITCH_SIG_KILL);
