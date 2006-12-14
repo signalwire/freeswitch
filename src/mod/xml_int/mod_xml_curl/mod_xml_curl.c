@@ -36,10 +36,12 @@ static const char modname[] = "mod_xml_curl";
 static struct {
 	char *url;
 	char *bindings;
+    char *cred;
 } globals;
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_url, globals.url);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_bindings, globals.bindings);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_cred, globals.cred);
 
 struct config_data {
 	char *name;
@@ -93,6 +95,10 @@ static switch_xml_t xml_url_fetch(char *section,
 		
 	config_data.name = filename;
 	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC)) > -1) {
+        if (!switch_strlen_zero(globals.cred)) {
+            curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+            curl_easy_setopt(curl_handle, CURLOPT_USERPWD, globals.cred);
+        }
         curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
         curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
 		curl_easy_setopt(curl_handle, CURLOPT_URL, globals.url);
@@ -150,7 +156,9 @@ static switch_status_t do_config(void)
 				char *bindings = (char *) switch_xml_attr_soft(param, "bindings");
 				set_global_bindings(bindings);
 				set_global_url(val);
-			}
+			} else if (!strcasecmp(var, "gateway-credentials")) {
+                set_global_cred(val);
+            }
 		}
 	}
 
