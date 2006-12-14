@@ -342,6 +342,8 @@
 	     need it) -->
 	<!-- one or more |-delim of configuration|directory|dialplan -->
 	<!--<param name="gateway-url" value="http://www.mydomain.com/test.cgi" bindings="dialplan"/>-->
+	<!-- set this to provide authentication credentials to the server -->
+	<!--<param name="gateway-credentials" value="muser:mypass"/>-->
       </settings>
     </configuration>
 
