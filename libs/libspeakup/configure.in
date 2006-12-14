@@ -56,7 +56,7 @@ case "$host" in
                 ;;
                 *-darwin*)
                         if test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
-                                SOLINK="-dynamic -bundle -undefined-surpress -force-flat-namespace"
+                                SOLINK="-dynamic -bundle -force-flat-namespace"
                                 new_AM_CFLAGS="-DMACOSX"
                                 new_AM_LDFLAGS=""
                         fi
