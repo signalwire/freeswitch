@@ -1714,8 +1714,13 @@ static void conference_list(conference_obj_t *conference, switch_stream_handle_t
 			count++;
 		}
 
-		stream->write_function(stream, "\n");
-	}
+        stream->write_function(stream, "%s%d%s%d%s%d\n",
+                               delim,
+                               member->volume_in_level, delim,
+                               member->volume_out_level, delim,
+                               member->energy_level);
+    }
+                               
 	switch_mutex_unlock(conference->member_mutex);
 }
 
