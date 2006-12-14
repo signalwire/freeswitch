@@ -863,7 +863,7 @@ static void conference_loop(conference_member_t *member)
 		if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			/* test to see if outbound channel has answered */
 			if (switch_channel_test_flag(channel, CF_ANSWERED) && !switch_test_flag(member->conference, CFLAG_ANSWERED)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Outbound conference channel answered, setting CFLAG_ANSWERED");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Outbound conference channel answered, setting CFLAG_ANSWERED\n");
 				switch_set_flag(member->conference, CFLAG_ANSWERED);
 			}
 		} else {
@@ -2577,7 +2577,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 			goto done;
 		}
 		/* add them to the conference */
-		if (flags) {
+		if (flags && strcasecmp(flags, "none")) {
 			snprintf(appdata, sizeof(appdata), "%s +flags{%s}", conference->name, flags);
 			switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, appdata);
 		} else {
