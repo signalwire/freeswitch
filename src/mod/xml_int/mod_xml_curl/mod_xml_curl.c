@@ -72,7 +72,7 @@ static switch_xml_t xml_url_fetch(char *section,
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 
-    if (!(data = switch_mprintf("section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s\n", 
+    if (!(data = switch_mprintf("section=%s&tag_name=%s&key_name=%s&key_value=%s%s%s", 
                                 section,
                                 tag_name ? tag_name : "",
                                 key_name ? key_name : "",
