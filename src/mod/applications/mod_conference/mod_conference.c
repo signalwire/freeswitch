@@ -2274,88 +2274,90 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 						goto done;
 					}
 				} else if (!strcasecmp(argv[1], "transfer")) {
-					char *transfer_usage = "Usage transfer <id> <confname>\n";
+					char *transfer_usage = "Usage transfer <confname> <id> [..<idN>]\n";
 					if (argc > 3) {
-						conference_member_t *member = NULL;
-						uint32_t id = atoi(argv[2]);
-						conference_obj_t *new_conference = NULL;
-						switch_channel_t *channel;
-						switch_event_t *event;
-						char *profile_name;
-						switch_xml_t cxml = NULL, cfg = NULL, profile = NULL, profiles = NULL;
+                        int x = 0;
+                        for(x = 3; x < argc; x++) {
+                            conference_member_t *member = NULL;
+                            uint32_t id = atoi(argv[x]);
+                            conference_obj_t *new_conference = NULL;
+                            switch_channel_t *channel;
+                            switch_event_t *event;
+                            char *profile_name;
+                            switch_xml_t cxml = NULL, cfg = NULL, profile = NULL, profiles = NULL;
 
-						if (!(member = conference_member_get(conference, id))) {								
-							stream->write_function(stream, "No Member %u in conference %s.\n", id, conference->name);
-							goto done;
-						}
+                            if (!(member = conference_member_get(conference, id))) {								
+                                stream->write_function(stream, "No Member %u in conference %s.\n", id, conference->name);
+                                continue;
+                            }
 
-						channel = switch_core_session_get_channel(member->session);
+                            channel = switch_core_session_get_channel(member->session);
 
-						if (!(new_conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, argv[3]))) {
-							switch_memory_pool_t *pool;
-							char *conf_name;
+                            if (!(new_conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, argv[2]))) {
+                                switch_memory_pool_t *pool;
+                                char *conf_name;
 
-							/* Setup a memory pool to use. */
-							if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
-								goto done;
-							}
+                                /* Setup a memory pool to use. */
+                                if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+                                    goto done;
+                                }
 
-							conf_name = switch_core_strdup(pool, argv[3]);
+                                conf_name = switch_core_strdup(pool, argv[2]);
 
-							if ((profile_name = strchr(conf_name, '@'))) {
-								*profile_name++ = '\0';
+                                if ((profile_name = strchr(conf_name, '@'))) {
+                                    *profile_name++ = '\0';
 
-								/* Open the config from the xml registry */
-								if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
-									goto done;
-								}
+                                    /* Open the config from the xml registry */
+                                    if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
+                                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
+                                        goto done;
+                                    }
 
-								if ((profiles = switch_xml_child(cfg, "profiles"))) {
-									profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
-								}
-							} 
-
-
-							/* Release the config registry handle */
-							if (cxml) {
-								switch_xml_free(cxml);
-								cxml = NULL;
-							}
-
-							/* Create the conference object. */
-							new_conference = conference_new(conf_name, profile, pool);
+                                    if ((profiles = switch_xml_child(cfg, "profiles"))) {
+                                        profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
+                                    }
+                                } 
 
 
-							if (!new_conference) {
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-								goto done;
-							}
+                                /* Release the config registry handle */
+                                if (cxml) {
+                                    switch_xml_free(cxml);
+                                    cxml = NULL;
+                                }
 
-							/* Set the minimum number of members (once you go above it you cannot go below it) */
-							new_conference->min = 1;
+                                /* Create the conference object. */
+                                new_conference = conference_new(conf_name, profile, pool);
 
-							/* Indicate the conference is dynamic */
-							switch_set_flag_locked(new_conference, CFLAG_DYNAMIC);
 
-							/* Start the conference thread for this conference */
-							launch_conference_thread(new_conference);
-						}
+                                if (!new_conference) {
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+                                    goto done;
+                                }
 
-						conference_del_member(member->last_conference, member);
-						conference_add_member(new_conference, member);
-						stream->write_function(stream, "OK Member %u sent to conference %s.\n", id, argv[3]);
+                                /* Set the minimum number of members (once you go above it you cannot go below it) */
+                                new_conference->min = 1;
+                                
+                                /* Indicate the conference is dynamic */
+                                switch_set_flag_locked(new_conference, CFLAG_DYNAMIC);
 
-						if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
-							switch_channel_event_set_data(channel, event);
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-Conference-Name", conference->name);
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[3]);
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
-							switch_event_fire(&event);
-						}
+                                /* Start the conference thread for this conference */
+                                launch_conference_thread(new_conference);
+                            }
 
+                            conference_del_member(member->last_conference, member);
+                            conference_add_member(new_conference, member);
+                            stream->write_function(stream, "OK Member %u sent to conference %s.\n", id, argv[3]);
+
+                            if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                                switch_channel_event_set_data(channel, event);
+                                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-Conference-Name", conference->name);
+                                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[3]);
+                                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
+                                switch_event_fire(&event);
+                            }
+                        }
 					} else {
 						stream->write_function(stream, transfer_usage);
 						goto done;
@@ -3211,7 +3213,7 @@ static switch_api_interface_t conf_api_interface = {
 		"\t<confname> lock\n"
 		"\t<confname> unlock\n"
 		"\t<confname> dial <endpoint_module_name>/<destination>\n"
-		"\t<confname> transfer <member_id> <conference_name>\n"
+		"\t<confname> transfer <conference_name> <member_id_1> [...<member_id_N>]\n"
 		"\t<confname> record <filename>\n"
 		"\t<confname> norecord <[filename|all]>\n",
 	/*.next */ 
