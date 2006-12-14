@@ -1257,12 +1257,6 @@ static JSBool session_wait_for_media(JSContext *cx, JSObject *obj, uintN argc, j
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
 
-    if (!switch_channel_ready(channel)) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
-        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
-        return JS_TRUE;
-    }
-
 	started = switch_time_now();
 
 	if (argc > 0) {
@@ -1297,12 +1291,6 @@ static JSBool session_wait_for_answer(JSContext *cx, JSObject *obj, uintN argc, 
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
-
-    if (!switch_channel_ready(channel)) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Session is not active!\n");
-        *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
-        return JS_TRUE;
-    }
 
 	started = switch_time_now();
 
