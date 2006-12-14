@@ -892,13 +892,13 @@ static void conference_loop(conference_member_t *member)
                                 conference_member_say(member->conference, member, msg, 0);
                             }
                         } else {
+                            action = "unmute-member";
                             switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
                             if (member->conference->unmuted_sound) {
                                 conference_member_play_file(member, member->conference->unmuted_sound, 0);
                             } else {
                                 snprintf(msg, sizeof(msg), "Un-Muted");
                                 conference_member_say(member->conference, member, msg, 0);
-                                action = "unmute-member";
                             }
                         }
                         if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
@@ -924,13 +924,13 @@ static void conference_loop(conference_member_t *member)
                                 conference_member_say(member->conference, member, msg, 0);
                             }
                         } else {
+                            action = "unmute-deaf-member";
                             switch_set_flag_locked(member, MFLAG_CAN_SPEAK|MFLAG_CAN_HEAR);
                             if (member->conference->unmuted_sound) {
                                 conference_member_play_file(member, member->conference->unmuted_sound, 0);
                             } else {
                                 snprintf(msg, sizeof(msg), "UN-Muted");
                                 conference_member_say(member->conference, member, msg, 0);
-                                action = "unmute-deaf-member";
                             }
                         }
 
