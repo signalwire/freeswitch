@@ -29,6 +29,10 @@
  *
  */
 
+#ifndef  _MSC_VER
+#include <config.h>
+#endif
+
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

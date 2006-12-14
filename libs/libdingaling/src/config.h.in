@@ -1,5 +1,8 @@
 /* src/config.h.in.  Generated from configure.in by autoheader.  */
 
+/* Enable extra debugging. */
+#undef DEBUG
+
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
@@ -52,6 +55,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Enable Optimization. */
+#undef OPTIMZER
+
 /* Name of package */
 #undef PACKAGE
 
@@ -91,8 +97,14 @@
 /* Little Endian */
 #undef __BYTE_ORDER
 
+/* define it the right way ;) */
+#undef __FUNCTION__
+
 /* for the places where it is not defined */
 #undef __LITTLE_ENDIAN
+
+/* sunpro is bad at inline */
+#undef __inline__
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const

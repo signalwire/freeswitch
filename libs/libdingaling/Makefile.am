@@ -3,10 +3,10 @@ SUBDIRS =
 AUTOMAKE_OPTS= gnu
 NAME=dingaling
 PREFIX=$(prefix)
-AM_CC=gcc
-AM_CFLAGS	= -Wall -Werror -I./src -I$(prefix)/include
+
+AM_CFLAGS   = $(new_AM_CFLAGS) -I./src -I$(prefix)/include
 AM_CPPFLAGS = $(AM_CFLAGS)
-AM_LDFLAGS = -liksemel
+AM_LDFLAGS  = $(new_AM_LDFLAGS) -liksemel
 
 APR_CONFIG=$(prefix)/bin/apr-1-config
 APU_CONFIG=$(prefix)/bin/apu-1-config
