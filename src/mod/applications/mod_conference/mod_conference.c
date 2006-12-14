@@ -2467,13 +2467,13 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 
                             conference_del_member(member->last_conference, member);
                             conference_add_member(new_conference, member);
-                            stream->write_function(stream, "OK Member %u sent to conference %s.\n", id, argv[3]);
+                            stream->write_function(stream, "OK Members sent to conference %s.\n", id, argv[2]);
 
                             if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
                                 switch_channel_event_set_data(channel, event);
                                 switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
                                 switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Old-Conference-Name", conference->name);
-                                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[3]);
+                                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Conference-Name", argv[2]);
                                 switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
                                 switch_event_fire(&event);
                             }
