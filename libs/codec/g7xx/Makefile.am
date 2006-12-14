@@ -1,6 +1,10 @@
-AM_CFLAGS	= -I./src/include -fPIC -O3 -Dsingle -funroll-loops -fomit-frame-pointer
 AUTOMAKE_OPTS	= gnu
 NAME		= libg7xx
+
+AM_CFLAGS   = $(new_AM_CFLAGS) -I./src/include
+AM_CPPFLAGS = $(AM_CFLAGS)
+AM_LDFLAGS  = $(new_AM_LDFLAGS) -lm
+
 lib_LTLIBRARIES		= libg7xx.la
 libg7xx_la_SOURCES	= src/g711.c src/g722_decode.c src/g722_encode.c src/g726.c
 
