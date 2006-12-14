@@ -283,31 +283,10 @@ void iax_disable_debug(void)
 }
 
 /* This is a little strange, but to debug you call DEBU(G "Hello World!\n"); */ 
-#ifdef	WIN32
-#define G __FILE__, __LINE__,
-#else
-#ifdef __GNUC__
-#define G __FILE__, __LINE__, __PRETTY_FUNCTION__, 
-#else
-#define G __FILE__, __LINE__, __func__,  
-#endif
-#endif
+#define G __FILE__, __LINE__, __FUNCTION__, 
 
 #define DEBU __debug 
-#ifdef	WIN32
-static int __debug(char *file, int lineno, char *fmt, ...) 
-{
-	va_list args;
-	va_start(args, fmt);
-	if (debug) {
-		fprintf(stderr, "%s line %d: ", file, lineno);
-		vfprintf(stderr, fmt, args);
-	}
-	va_end(args);
-	return 0;
-}
-#else
-static int __debug(char *file, int lineno, char *func, char *fmt, ...) 
+static int __debug(char *file, int lineno, const char *func, char *fmt, ...) 
 {
 	va_list args;
 	va_start(args, fmt);
@@ -318,7 +297,7 @@ static int __debug(char *file, int lineno, char *func, char *fmt, ...)
 	va_end(args);
 	return 0;
 }
-#endif
+
 #else /* No debug support */
 
 #ifdef	WIN32
@@ -1094,7 +1073,7 @@ static int iax_send(struct iax_session *pvt, struct ast_frame *f, time_in_ms_t t
 		fr->iseqno = pvt->iseqno;
 		fh = (struct ast_iax2_full_hdr *)(((char *)fr->af.data) - sizeof(struct ast_iax2_full_hdr));
 		fh->scallno = htons(fr->callno | IAX_FLAG_FULL);
-		fh->ts = htonl((u_long)(fr->ts));
+		fh->ts = htonl((long)(fr->ts));
 		fh->oseqno = fr->oseqno;
 		if (transfer) {
 			fh->iseqno = 0;
@@ -1135,7 +1114,7 @@ static int iax_send(struct iax_session *pvt, struct ast_frame *f, time_in_ms_t t
 		/* Mini frame will do */
 		mh = (struct ast_iax2_mini_hdr *)(((char *)fr->af.data) - sizeof(struct ast_iax2_mini_hdr));
 		mh->callno = htons(fr->callno);
-		mh->ts = htons((u_short)(fr->ts & 0xFFFF));
+		mh->ts = htons((short)(fr->ts & 0xFFFF));
 		fr->datalen = fr->af.datalen + sizeof(struct ast_iax2_mini_hdr);
 		fr->data = mh;
 		fr->retries = -1;
