@@ -3,9 +3,9 @@ SUBDIRS =
 AUTOMAKE_OPTS= gnu
 NAME=libilbc
 
-AM_CC=gcc
-AM_CFLAGS	= -Wall -O3 -funroll-loops
+AM_CFLAGS   = $(new_AM_CFLAGS) -I./src/include
 AM_CPPFLAGS = $(AM_CFLAGS)
+AM_LDFLAGS  = $(new_AM_LDFLAGS) -lm
 
 lib_LTLIBRARIES		= libilbc.la
 libilbc_la_SOURCES	= src/anaFilter.c\
