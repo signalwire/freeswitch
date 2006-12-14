@@ -880,42 +880,71 @@ static void conference_loop(conference_member_t *member)
 			for (digit = dtmf; *digit; digit++) {
 				switch(*digit) {
 				case '0':
-					if (switch_test_flag(member, MFLAG_CAN_SPEAK)) {
-						switch_clear_flag_locked(member, MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR);
-						if (member->conference->muted_sound) {
-							conference_member_play_file(member, member->conference->muted_sound, 0);
-						} else {
-							snprintf(msg, sizeof(msg), "Muted");
-							conference_member_say(member->conference, member, msg, 0);
-						}
-					} else {
-						switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
-						if (member->conference->unmuted_sound) {
-							conference_member_play_file(member, member->conference->unmuted_sound, 0);
-						} else {
-							snprintf(msg, sizeof(msg), "Un-Muted");
-							conference_member_say(member->conference, member, msg, 0);
-						}
-					}
-					break;
-				case '*':
-					if (switch_test_flag(member, MFLAG_CAN_SPEAK)) {
-						switch_clear_flag_locked(member, MFLAG_CAN_SPEAK|MFLAG_CAN_HEAR);
-						if (member->conference->muted_sound) {
-							conference_member_play_file(member, member->conference->muted_sound, 0);
-						} else {
-							snprintf(msg, sizeof(msg), "Muted");
-							conference_member_say(member->conference, member, msg, 0);
-						}
-					} else {
-						switch_set_flag_locked(member, MFLAG_CAN_SPEAK|MFLAG_CAN_HEAR);
-						if (member->conference->unmuted_sound) {
-							conference_member_play_file(member, member->conference->unmuted_sound, 0);
-						} else {
-							snprintf(msg, sizeof(msg), "UN-Muted");
-							conference_member_say(member->conference, member, msg, 0);
-						}
-					}
+                    {
+                        char *action = "mute-member";
+
+                        if (switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+                            switch_clear_flag_locked(member, MFLAG_CAN_SPEAK | MFLAG_CAN_HEAR);
+                            if (member->conference->muted_sound) {
+                                conference_member_play_file(member, member->conference->muted_sound, 0);
+                            } else {
+                                snprintf(msg, sizeof(msg), "Muted");
+                                conference_member_say(member->conference, member, msg, 0);
+                            }
+                        } else {
+                            switch_set_flag_locked(member, MFLAG_CAN_SPEAK);
+                            if (member->conference->unmuted_sound) {
+                                conference_member_play_file(member, member->conference->unmuted_sound, 0);
+                            } else {
+                                snprintf(msg, sizeof(msg), "Un-Muted");
+                                conference_member_say(member->conference, member, msg, 0);
+                                action = "unmute-member";
+                            }
+                        }
+                        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                            switch_channel_t *channel = switch_core_session_get_channel(member->session);
+                            switch_channel_event_set_data(channel, event);
+                            
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", action);
+                            switch_event_fire(&event);
+                        }
+                    }
+                    break;
+				case '*': 
+                    {
+                        char *action = "mute-deaf-member";
+                        if (switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+                            switch_clear_flag_locked(member, MFLAG_CAN_SPEAK|MFLAG_CAN_HEAR);
+                            if (member->conference->muted_sound) {
+                                conference_member_play_file(member, member->conference->muted_sound, 0);
+                            } else {
+                                snprintf(msg, sizeof(msg), "Muted");
+                                conference_member_say(member->conference, member, msg, 0);
+                            }
+                        } else {
+                            switch_set_flag_locked(member, MFLAG_CAN_SPEAK|MFLAG_CAN_HEAR);
+                            if (member->conference->unmuted_sound) {
+                                conference_member_play_file(member, member->conference->unmuted_sound, 0);
+                            } else {
+                                snprintf(msg, sizeof(msg), "UN-Muted");
+                                conference_member_say(member->conference, member, msg, 0);
+                                action = "unmute-deaf-member";
+                            }
+                        }
+
+                        if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                            switch_channel_t *channel = switch_core_session_get_channel(member->session);
+                            switch_channel_event_set_data(channel, event);
+                            
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", action);
+                            switch_event_fire(&event);
+                        }
+                    }
+
 					break;
 				case '9':
 					switch_mutex_lock(member->flag_mutex);
@@ -926,6 +955,17 @@ static void conference_loop(conference_member_t *member)
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
 					conference_member_say(member->conference, member, msg, 0);
+
+                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                        switch_channel_t *channel = switch_core_session_get_channel(member->session);
+                        switch_channel_event_set_data(channel, event);
+                        
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->energy_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
+                        switch_event_fire(&event);
+                    }
 					break;
 				case '8':
 					switch_mutex_lock(member->flag_mutex);
@@ -933,6 +973,16 @@ static void conference_loop(conference_member_t *member)
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
 					conference_member_say(member->conference, member, msg, 0);
+                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                        switch_channel_t *channel = switch_core_session_get_channel(member->session);
+                        switch_channel_event_set_data(channel, event);
+                        
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->energy_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
+                        switch_event_fire(&event);
+                    }
 					break;
 				case '7':
 					switch_mutex_lock(member->flag_mutex);
@@ -943,6 +993,16 @@ static void conference_loop(conference_member_t *member)
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
 					conference_member_say(member->conference, member, msg, 0);
+                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                        switch_channel_t *channel = switch_core_session_get_channel(member->session);
+                        switch_channel_event_set_data(channel, event);
+                        
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->energy_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
+                        switch_event_fire(&event);
+                    }
 					break;
 				case '3':
 					switch_mutex_lock(member->flag_mutex);
@@ -951,6 +1011,16 @@ static void conference_loop(conference_member_t *member)
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 					conference_member_say(member->conference, member, msg, 0);
+                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                        switch_channel_t *channel = switch_core_session_get_channel(member->session);
+                        switch_channel_event_set_data(channel, event);
+                        
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_out_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
+                        switch_event_fire(&event);
+                    }
 					break;
 				case '2':
 					switch_mutex_lock(member->flag_mutex);
@@ -958,6 +1028,16 @@ static void conference_loop(conference_member_t *member)
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 					conference_member_say(member->conference, member, msg, 0);
+                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                        switch_channel_t *channel = switch_core_session_get_channel(member->session);
+                        switch_channel_event_set_data(channel, event);
+                        
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_out_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
+                        switch_event_fire(&event);
+                    }
 					break;
 				case '1':
 					switch_mutex_lock(member->flag_mutex);
@@ -966,6 +1046,16 @@ static void conference_loop(conference_member_t *member)
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Volume level %d", member->volume_out_level);
 					conference_member_say(member->conference, member, msg, 0);
+                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                        switch_channel_t *channel = switch_core_session_get_channel(member->session);
+                        switch_channel_event_set_data(channel, event);
+                        
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_out_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
+                        switch_event_fire(&event);
+                    }
 					break;
 				case '6':
 					switch_mutex_lock(member->flag_mutex);
@@ -974,6 +1064,16 @@ static void conference_loop(conference_member_t *member)
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
 					conference_member_say(member->conference, member, msg, 0);
+                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                        switch_channel_t *channel = switch_core_session_get_channel(member->session);
+                        switch_channel_event_set_data(channel, event);
+                        
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_in_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
+                        switch_event_fire(&event);
+                    }
 					break;
 				case '5':
 					switch_mutex_lock(member->flag_mutex);
@@ -981,6 +1081,16 @@ static void conference_loop(conference_member_t *member)
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
 					conference_member_say(member->conference, member, msg, 0);
+                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                        switch_channel_t *channel = switch_core_session_get_channel(member->session);
+                        switch_channel_event_set_data(channel, event);
+                        
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_in_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
+                        switch_event_fire(&event);
+                    }
 					break;
 				case '4':
 					switch_mutex_lock(member->flag_mutex);
@@ -989,6 +1099,16 @@ static void conference_loop(conference_member_t *member)
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Gain level %d", member->volume_in_level);
 					conference_member_say(member->conference, member, msg, 0);
+                    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+                        switch_channel_t *channel = switch_core_session_get_channel(member->session);
+                        switch_channel_event_set_data(channel, event);
+                        
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_in_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
+                        switch_event_fire(&event);
+                    }
 					break;
 				case '#':
 					switch_clear_flag_locked(member, MFLAG_RUNNING);
