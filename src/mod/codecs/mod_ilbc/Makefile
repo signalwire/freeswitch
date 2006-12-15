@@ -3,7 +3,7 @@ LDFLAGS +=-lilbc
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install codec/ilbc --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install codec/ilbc --prefix=$(PREFIX) --disable-shared
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o
