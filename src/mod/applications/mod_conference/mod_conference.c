@@ -3256,14 +3256,15 @@ static void *SWITCH_THREAD_FUNC input_thread_run(switch_thread_t *thread, void *
 			int16_t *data;
 
 			data = read_frame->data;
-			samples = read_frame->datalen / sizeof(*data);
+			if ((samples = read_frame->datalen / sizeof(*data))) {
 
-			for (i = 0; i < samples; i++) {
-				energy += abs(data[j]);
-				j += read_codec->implementation->number_of_channels;
-			}
+                for (i = 0; i < samples; i++) {
+                    energy += abs(data[j]);
+                    j += read_codec->implementation->number_of_channels;
+                }
 
-			score = energy / samples;
+                score = energy / samples;
+            }
 
 			if (score > energy_level) {
 				uint32_t diff = score - energy_level;
