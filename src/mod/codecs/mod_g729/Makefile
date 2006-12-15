@@ -1,6 +1,6 @@
-ifeq ($(shell ls $(BASE)/libs/libg729),$(BASE)/libs/libg729)
+ifeq ($(shell ls -d $(BASE)/libs/libg729),$(BASE)/libs/libg729)
 
-CFLAGS += -I$(PREFIX)/include/g729
+CFLAGS += -I$(PREFIX)/include/libg729
 LDFLAGS +=-lg729
 
 else
@@ -12,7 +12,6 @@ endif
 all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install codec/libg729 --prefix=$(PREFIX)
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o
