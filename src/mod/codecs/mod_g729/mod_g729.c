@@ -61,6 +61,9 @@ static switch_status_t switch_g729_init(switch_codec_t *codec, switch_codec_flag
 	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(struct g729_context))))) {
 		return SWITCH_STATUS_FALSE;
 	} else {
+        if (codec->fmtp_in) {
+            codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->fmtp_in);
+        }
 
 		if (encoding) {
 			g729_init_coder(&context->encoder_object, 0);
