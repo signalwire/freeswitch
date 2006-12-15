@@ -137,15 +137,15 @@ typedef enum {
 	NODE_TYPE_SPEECH
 } node_type_t;
 
-typedef struct confernce_file_node {
+typedef struct conference_file_node {
 	switch_file_handle_t fh;
 	switch_speech_handle_t sh;
 	node_type_t type;
 	uint8_t done;
 	switch_memory_pool_t *pool;
 	uint32_t leadin;
-	struct confernce_file_node *next;
-} confernce_file_node_t;
+	struct conference_file_node *next;
+} conference_file_node_t;
 
 /* Conference Object */
 typedef struct conference_obj {
@@ -178,7 +178,7 @@ typedef struct conference_obj {
 	switch_mutex_t *mutex;
 	conference_member_t *members;
 	switch_mutex_t *member_mutex;
-	confernce_file_node_t *fnode;
+	conference_file_node_t *fnode;
 	switch_memory_pool_t *pool;
 	switch_thread_rwlock_t *rwlock;
 	uint32_t count;
@@ -221,7 +221,7 @@ struct conference_member {
 	uint32_t native_rate;
 	switch_audio_resampler_t *mux_resampler;
 	switch_audio_resampler_t *read_resampler;
-	confernce_file_node_t *fnode;
+	conference_file_node_t *fnode;
 	conference_relationship_t *relationships;
 	struct conference_member *next;
 };
@@ -488,7 +488,7 @@ static void conference_del_member(conference_obj_t *conference, conference_membe
 
 
     if (member->fnode) { /* Close Unused Handles */
-        confernce_file_node_t *fnode, *cur;
+        conference_file_node_t *fnode, *cur;
         switch_memory_pool_t *pool;
         
         fnode = member->fnode;
@@ -726,7 +726,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		}
 
 		if (conference->fnode && conference->fnode->done) {
-			confernce_file_node_t *fnode;
+			conference_file_node_t *fnode;
 			switch_memory_pool_t *pool;
 
 			if (conference->fnode->type == NODE_TYPE_SPEECH) {
@@ -769,7 +769,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_mutex_lock(conference->mutex);
 
 		if (conference->fnode) { /* Close Unused Handles */
-			confernce_file_node_t *fnode, *cur;
+			conference_file_node_t *fnode, *cur;
 			switch_memory_pool_t *pool;
 
             fnode = conference->fnode;
@@ -1168,7 +1168,7 @@ static void conference_loop(conference_member_t *member)
 		if (member->fnode) {
 			/* if we are done, clean it up */
 			if (member->fnode->done) {
-				confernce_file_node_t *fnode;
+				conference_file_node_t *fnode;
 				switch_memory_pool_t *pool;
 
 				if (member->fnode->type == NODE_TYPE_SPEECH) {
@@ -1392,7 +1392,7 @@ end:
 /* Make files stop playing in a conference either the current one or all of them */
 static uint32_t conference_stop_file(conference_obj_t *conference, file_stop_t stop)
 {
-	confernce_file_node_t *nptr;
+	conference_file_node_t *nptr;
 	uint32_t count = 0;
 
 	switch_mutex_lock(conference->mutex);
@@ -1417,7 +1417,7 @@ static uint32_t conference_stop_file(conference_obj_t *conference, file_stop_t s
 /* stop playing a file for the member of the conference */
 static uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop)
 {
-	confernce_file_node_t *nptr;
+	conference_file_node_t *nptr;
 	uint32_t count = 0;
 
 	switch_mutex_lock(member->flag_mutex);
@@ -1442,7 +1442,7 @@ static uint32_t conference_member_stop_file(conference_member_t *member, file_st
 /* Play a file in the conference room */
 static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel)
 {
-	confernce_file_node_t *fnode, *nptr;
+	conference_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
 	uint32_t count;
     char *expanded = NULL;
@@ -1529,7 +1529,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 /* Play a file in the conference room to a member */
 static switch_status_t conference_member_play_file(conference_member_t *member, char *file, uint32_t leadin)
 {
-	confernce_file_node_t *fnode, *nptr;
+	conference_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
 
 	if (*file != '/') {
@@ -1581,7 +1581,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 /* Say some thing with TTS in the conference room */
 static switch_status_t conference_member_say(conference_obj_t *conference, conference_member_t *member, char *text, uint32_t leadin)
 {
-	confernce_file_node_t *fnode, *nptr;
+	conference_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 
@@ -1640,7 +1640,7 @@ static switch_status_t conference_member_say(conference_obj_t *conference, confe
 /* Say some thing with TTS in the conference room */
 static switch_status_t conference_say(conference_obj_t *conference, char *text, uint32_t leadin)
 {
-	confernce_file_node_t *fnode, *nptr;
+	conference_file_node_t *fnode, *nptr;
 	switch_memory_pool_t *pool;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	uint32_t count;
