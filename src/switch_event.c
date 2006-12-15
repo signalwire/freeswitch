@@ -600,7 +600,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 {
 	switch_size_t len = 0;
 	switch_event_header_t *hp;
-	switch_size_t llen = 0, dlen = 0, blocksize = 512, encode_len = 1024, new_len = 0;
+	switch_size_t llen = 0, dlen = 0, blocksize = 512, encode_len = 1536, new_len = 0;
 	char *buf;
     char *encode_buf = NULL; /* used for url encoding of variables to make sure unsafe things stay out of the serialzed copy */
 	
@@ -650,7 +650,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
         /* handle any bad things in the string like newlines : etc that screw up the serialized format */
         switch_url_encode(hp->value, encode_buf, encode_len - 1);
 
-		llen = strlen(hp->name) + strlen(encode_buf) + 2;
+		llen = strlen(hp->name) + strlen(encode_buf) + 8;
 		
 		if ((len + llen) > dlen) {
 			char *m;
