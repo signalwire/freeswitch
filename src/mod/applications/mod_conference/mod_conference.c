@@ -475,7 +475,7 @@ static void conference_del_member(conference_obj_t *conference, conference_membe
 	switch_mutex_lock(member->flag_mutex);
 
 	for (imember = conference->members; imember; imember = imember->next) {
-		if (imember == member ) {
+		if (imember == member) {
 			if (last) {
 				last->next = imember->next;
 			} else {
@@ -486,6 +486,29 @@ static void conference_del_member(conference_obj_t *conference, conference_membe
 		last = imember;
 	}
 
+
+    if (member->fnode) { /* Close Unused Handles */
+        confernce_file_node_t *fnode, *cur;
+        switch_memory_pool_t *pool;
+        
+        fnode = member->fnode;
+        while(fnode) {
+            cur = fnode;
+            fnode = fnode->next;
+
+            if (cur->type == NODE_TYPE_SPEECH) {
+                switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+                switch_core_speech_close(&cur->sh, &flags);
+            } else {
+                switch_core_file_close(&cur->fh);
+            }
+            
+            pool = cur->pool;
+            switch_core_destroy_memory_pool(&pool);
+        }
+
+        member->fnode = NULL;
+    }
 
 	member->conference = NULL;
 
@@ -744,6 +767,28 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	if (switch_test_flag(conference, CFLAG_DESTRUCT)) {
 
 		switch_mutex_lock(conference->mutex);
+
+		if (conference->fnode) { /* Close Unused Handles */
+			confernce_file_node_t *fnode, *cur;
+			switch_memory_pool_t *pool;
+
+            fnode = conference->fnode;
+            while (fnode) {
+                cur = fnode;
+                fnode = fnode->next;
+
+                if (cur->type == NODE_TYPE_SPEECH) {
+                    switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
+                    switch_core_speech_close(&cur->sh, &flags);
+                } else {
+                    switch_core_file_close(&cur->fh);
+                }
+
+                pool = cur->pool;
+                switch_core_destroy_memory_pool(&pool);
+            }
+            conference->fnode = NULL;
+		}
 
 		for(imember = conference->members; imember; imember = imember->next) {
 			switch_channel_t *channel;
@@ -1583,11 +1628,11 @@ static switch_status_t conference_member_say(conference_obj_t *conference, confe
 	} else {
 		member->fnode = fnode;
 	}
-	switch_mutex_unlock(member->flag_mutex);
 
 	/* Begin Generation */
 	switch_sleep(200000);
 	switch_core_speech_feed_tts(&fnode->sh, text, &flags);
+	switch_mutex_unlock(member->flag_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1651,11 +1696,11 @@ static switch_status_t conference_say(conference_obj_t *conference, char *text, 
 	} else {
 		conference->fnode = fnode;
 	}
-	switch_mutex_unlock(conference->mutex);
 
 	/* Begin Generation */
 	switch_sleep(200000);
 	switch_core_speech_feed_tts(&fnode->sh, text, &flags);
+	switch_mutex_unlock(conference->mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
