@@ -2052,6 +2052,7 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 	char *lbuf = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *http = NULL;
+    switch_memory_pool_t *pool = NULL;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -2445,6 +2446,10 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 					}
 				} else if (!strcasecmp(argv[1], "transfer")) {
 					char *transfer_usage = "Usage transfer <confname> <id> [..<idN>]\n";
+                    if (switch_strlen_zero(argv[2])) {
+                        stream->write_function(stream, transfer_usage);
+                        goto done;
+                    }
 					if (argc > 3) {
                         int x = 0;
                         for(x = 3; x < argc; x++) {
@@ -2464,7 +2469,6 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
                             channel = switch_core_session_get_channel(member->session);
 
                             if (!(new_conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, argv[2]))) {
-                                switch_memory_pool_t *pool;
                                 char *conf_name;
 
                                 /* Setup a memory pool to use. */
@@ -2511,6 +2515,7 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
                                 /* Indicate the conference is dynamic */
                                 switch_set_flag_locked(new_conference, CFLAG_DYNAMIC);
 
+                                pool = NULL;
                                 /* Start the conference thread for this conference */
                                 launch_conference_thread(new_conference);
                             }
@@ -2638,12 +2643,12 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 		stream->write_function(stream, "Memory Error!\n");
 	}
 
-done:
+ done:
 
-	if (lbuf) {
-		free(lbuf);
+    switch_safe_free(lbuf);
+	if (pool) {
+		switch_core_destroy_memory_pool(&pool);
 	}
-
 	return status;
 
 }
