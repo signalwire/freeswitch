@@ -1007,7 +1007,7 @@ static void conference_loop(conference_member_t *member)
                         
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->energy_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
                         switch_event_fire(&event);
                     }
@@ -1024,7 +1024,7 @@ static void conference_loop(conference_member_t *member)
                         
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->energy_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
                         switch_event_fire(&event);
                     }
@@ -1044,7 +1044,7 @@ static void conference_loop(conference_member_t *member)
                         
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->energy_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->energy_level);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "energy-level");
                         switch_event_fire(&event);
                     }
@@ -1062,7 +1062,7 @@ static void conference_loop(conference_member_t *member)
                         
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_out_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
                         switch_event_fire(&event);
                     }
@@ -1079,7 +1079,7 @@ static void conference_loop(conference_member_t *member)
                         
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_out_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
                         switch_event_fire(&event);
                     }
@@ -1097,7 +1097,7 @@ static void conference_loop(conference_member_t *member)
                         
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_out_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_out_level);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "volume-level");
                         switch_event_fire(&event);
                     }
@@ -1115,7 +1115,7 @@ static void conference_loop(conference_member_t *member)
                         
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_in_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
                         switch_event_fire(&event);
                     }
@@ -1132,7 +1132,7 @@ static void conference_loop(conference_member_t *member)
                         
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_in_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
                         switch_event_fire(&event);
                     }
@@ -1150,7 +1150,7 @@ static void conference_loop(conference_member_t *member)
                         
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
-                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%u", member->volume_in_level);
+                        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "New-Level", "%d", member->volume_in_level);
                         switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "gain-level");
                         switch_event_fire(&event);
                     }
@@ -3789,7 +3789,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	switch_mutex_init(&globals.conference_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 	switch_mutex_init(&globals.id_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 	switch_mutex_init(&globals.hash_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
-
+    
     /* Get presence request events */
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
