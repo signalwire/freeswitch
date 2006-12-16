@@ -5,40 +5,26 @@ SUBDIRS =
 AUTOMAKE_OPTS = gnu foreign
 NAME=freeswitch
 PREFIX=$(prefix)
+
+AM_CFLAGS       = $(new_AM_CFLAGS)
+AM_CPPFLAGS = $(AM_CFLAGS)
+AM_LDFLAGS = $(new_AM_LDFLAGS)
+
 APR_CONFIG=$(prefix)/bin/apr-1-config
 APU_CONFIG=$(prefix)/bin/apu-1-config
-AM_CFLAGS  = -I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags --cppflags --includes) -I${prefix}/include/srtp
-AM_LDFLAGS = -L$(PREFIX)/lib
+AM_CFLAGS  += -I$(PREFIX)/include $(shell $(APR_CONFIG) --cflags --cppflags --includes) -I${prefix}/include/srtp
+AM_LDFLAGS += -L$(PREFIX)/lib
 AM_LDFLAGS += $(shell $(APR_CONFIG) --link-ld --libs )
 AM_CFLAGS  += $(shell $(APU_CONFIG) --includes) 
 AM_LDFLAGS += $(shell $(APU_CONFIG) --link-ld --libs )
-AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib 
+AM_LDFLAGS += -lm -L/usr/local/lib/db42 -L/usr/local/lib
+AM_LDFLAGS += -lsqlite3 -lpcre
 OSARCH=$(shell uname -s)
-if ISLINUX
-AM_LDFLAGS += -Wl,-E
-endif
 
 if CRASHPROT
 AM_CFLAGS += -DCRASH_PROT
 endif
 
-AM_CFGARGS =
-if IS64BITLINUX
-AM_CFLAGS += -m64 -march=k8 -fPIC -D_64BIT_MACHINE_
-AM_CFGARGS += --enable-64bit
-endif
-
-#put elsif win here
-if ISMAC
-SOLINK=-dynamic -bundle -undefined suppress -force_flat_namespace
-AM_CFLAGS += -DMACOSX
-DYNAMIC_LIB_EXTEN=dylib
-else
-SOLINK=-shared -Xlinker -x
-DYNAMIC_LIB_EXTEN=so
-endif
-
-AM_CFLAGS  += -fPIC -Wall
 AM_CFLAGS  +=-I$(PWD)/src/sqlite -I$(PWD) -I$(PWD)/src/include -I$(PREFIX)/include
 AM_CFLAGS 	+= -DSWITCH_MOD_DIR=\"$(PREFIX)/mod\"
 AM_CFLAGS	+= -DSWITCH_PREFIX_DIR=\"$(PREFIX)\"
@@ -127,7 +113,7 @@ CLEANFILES = src/include/switch_version.h scripts/fsxs
 
 
 lib_LTLIBRARIES		= libfreeswitch.la
-libfreeswitch_la_CFLAGS	= $(AM_CFLAGS) -Wall -Werror -Wstrict-prototypes -Wmissing-prototypes -g -std=c99 
+libfreeswitch_la_CFLAGS	= $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS	= -version-info 1:0:0
 libfreeswitch_la_LIBADD  = -lteletone -lresample -lsrtp -lsqlite3 -lspeakup -lpcre
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
@@ -187,7 +173,7 @@ modules: $(NAME)
 	@./build/addenv.sh build/freeswitch.env DYNAMIC_LIB_EXTEN "$(DYNAMIC_LIB_EXTEN)"
 	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
 	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
-	@./build/addenv.sh build/freeswitch.env CFLAGS "-Werror $(AM_CFLAGS)"
+	@./build/addenv.sh build/freeswitch.env CFLAGS "$(AM_CFLAGS)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
 	@./build/addenv.sh build/freeswitch.env CFGARGS "$(AM_CFGARGS)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making $$i ; $(PWD)/build/modmake.sh $(MAKE) $(PWD) $$i || exit 1; done
@@ -228,7 +214,7 @@ install_mod: modules
 	@./build/addenv.sh build/freeswitch.env OSARCH "$(OSARCH)"
 	@./build/addenv.sh build/freeswitch.env SOLINK "$(SOLINK)"
 	@./build/addenv.sh build/freeswitch.env LDFLAGS "$(AM_LDFLAGS) -lfreeswitch"
-	@./build/addenv.sh build/freeswitch.env CFLAGS "-Werror $(AM_CFLAGS)"
+	@./build/addenv.sh build/freeswitch.env CFLAGS "$(AM_CFLAGS)"
 	@./build/addenv.sh build/freeswitch.env CC "$(CC)"
 	@cd src/mod && for i in `cat ../../modules.conf | grep -v \#` ; do echo making install $$i ; $(PWD)/build/modmake.sh $(MAKE) $(PWD) $$i install || exit 1; done
 	@rm -f build/freeswitch.env
@@ -251,7 +237,7 @@ scripts/fsxs: scripts/fsxs.in
 	    -e "s,@INSTALL\@,$(INSTALL)," \
 	    -e "s,@MKINSTALLDIRS\@,$(mkdir_p)," \
 	    \
-	    -e "s|@CFLAGS\@|$(CFLAGS) -fPIC $(shell $(APR_CONFIG) --cflags --cppflags)|" \
+	    -e "s|@CFLAGS\@|$(CFLAGS) $(shell $(APR_CONFIG) --cflags --cppflags)|" \
 	    -e "s|@INCLUDES\@|-I$(PREFIX)/include $(shell $(APR_CONFIG) --includes) $(shell $(APU_CONFIG) --includes)|" \
 	    -e "s|@SOLINK\@|$(SOLINK)|" \
 	    -e "s|@LDFLAGS\@|-L$(PREFIX)/lib|" \

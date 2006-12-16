@@ -2,7 +2,7 @@ CFLAGS += -I$(BASE)/libs/codec/g7xx/src/include
 all:	$(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o
+	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o
 	$(CC) $(SOLINK) $(MODNAME).o -o $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(LDFLAGS)
 
 
