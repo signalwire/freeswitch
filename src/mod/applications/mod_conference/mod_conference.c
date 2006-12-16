@@ -3682,6 +3682,86 @@ static conference_obj_t *conference_new(char *name, switch_xml_t profile, switch
 	return conference;
 }
 
+static void pres_event_handler(switch_event_t *event)
+{
+    char *to = switch_event_get_header(event, "to");
+    char *dup_to = NULL, *conf_name, *e;
+    conference_obj_t *conference;
+
+    if (!to || strncasecmp(to, "conf+", 5)) {
+        return;
+    }
+    
+    if (!(dup_to = strdup(to))) {
+        return;
+    }
+    
+    conf_name = dup_to + 5;
+
+    if ((e = strchr(conf_name, '@'))) {
+        *e = '\0';
+    }
+    
+    if ((conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
+        switch_event_t *event;
+
+        if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conference->name);
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
+            switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+            switch_event_fire(&event);
+        }
+    } else if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", conf_name);
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", to);
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "Idle");
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+        switch_event_fire(&event);
+    }
+
+    switch_safe_free(dup_to);
+}
+
+static void send_presence(switch_event_types_t id)
+{
+    switch_xml_t cxml, cfg, advertise, room;
+
+    /* Open the config from the xml registry */
+    if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, NULL))) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", global_cf_name);
+        goto done;
+    }
+
+    if ((advertise = switch_xml_child(cfg, "advertise"))) {
+        for (room = switch_xml_child(advertise, "room"); room; room = room->next) {
+            char *name = (char *) switch_xml_attr_soft(room, "name");
+            char *status = (char *) switch_xml_attr_soft(room, "status");
+            switch_event_t *event;
+
+            if (name && switch_event_create(&event, id) == SWITCH_STATUS_SUCCESS) {
+                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", name);
+                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s", name);
+                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "status", "%s", status ? status : "Available");
+                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rpid", "idle");
+                switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+                switch_event_fire(&event);
+            }
+        }
+    }
+    
+ done:
+    /* Release the config registry handle */
+    if (cxml) {
+        switch_xml_free(cxml);
+        cxml = NULL;
+    }
+}
+
 /* Called by FreeSWITCH when the module loads */
 SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_module_interface_t **module_interface, char *filename)
 {
@@ -3709,6 +3789,14 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	switch_mutex_init(&globals.conference_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 	switch_mutex_init(&globals.id_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 	switch_mutex_init(&globals.hash_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
+
+    /* Get presence request events */
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+
+	}
+    send_presence(SWITCH_EVENT_PRESENCE_IN);
 
 	globals.running = 1;
 	/* indicate that the module should continue to be loaded */

@@ -191,7 +191,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
 static switch_status_t load_config(void);
 
-#define is_special(s) (s && (strstr(s, "ext+") || strstr(s, "user+") || strstr(s, "conf+")))
+#define is_special(s) (s && (strstr(s, "ext+") || strstr(s, "user+")))
 
 static char *translate_rpid(char *in, char *ext)
 {
@@ -2133,6 +2133,14 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			case LDL_SIGNAL_PRESENCE_PROBE:
 				if (is_special(to)) {
                     ldl_handle_send_presence(profile->handle, to, from, NULL, NULL, "Click To Call");
+                } else {
+					if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s",  from);
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "to", "%s",  to);
+						switch_event_fire(&event);
+					}
                 }
                 break;
 			case LDL_SIGNAL_PRESENCE_IN:
