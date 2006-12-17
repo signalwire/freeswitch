@@ -40,7 +40,7 @@
 /*************************************************************************************************************************************************************/
 #define HAVE_APR
 #include <switch.h>
-
+static const switch_state_handler_table_t noop_state_handler = {0};
 struct outbound_reg;
 typedef struct outbound_reg outbound_reg_t;
 

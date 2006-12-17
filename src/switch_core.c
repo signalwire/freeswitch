@@ -2307,10 +2307,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_core_session_t *session, 
-																	   const char *file, 
-																	   const char *func, 
-																	   int line, 
-																	   switch_signal_t sig)
+                                                                         const char *file, 
+                                                                         char *func, 
+                                                                         int line, 
+                                                                         switch_signal_t sig)
 {
 	switch_io_event_hook_kill_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;

@@ -76,10 +76,10 @@ SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel);
 
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
-																	  const char *file,
-																	  const char *func,
-																	  int line,
-																	  switch_channel_state_t state);
+                                                                        const char *file,
+                                                                        char *func,
+                                                                        int line,
+                                                                        switch_channel_state_t state);
 
 /*!
   \brief Set the current state of a channel
@@ -87,7 +87,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
   \param state new state
   \return current state of channel after application of new state
 */	
-#define switch_channel_set_state(channel, state) switch_channel_perform_set_state(channel, __FILE__, __FUNCTION__, __LINE__, state)
+#define switch_channel_set_state(channel, state) switch_channel_perform_set_state(channel, __FILE__, (char *)__FUNCTION__, __LINE__, state)
 
 /*!
   \brief return a cause code for a given string
@@ -271,51 +271,51 @@ SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, sw
 SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flags);
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel,
-																const char *file,
-																const char *func,
-																int line);
+                                                              const char *file,
+                                                              char *func,
+                                                              int line);
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_channel_t *channel,
-                                                                   const char *file,
-                                                                   const char *func,
-                                                                   int line);
+                                                                     const char *file,
+                                                                     char *func,
+                                                                     int line);
 
 /*!
   \brief Answer a channel (initiate/acknowledge a successful connection)
   \param channel channel to answer
   \return SWITCH_STATUS_SUCCESS if channel was answered successfully
 */
-#define switch_channel_answer(channel) switch_channel_perform_answer(channel, __FILE__, __FUNCTION__, __LINE__)
+#define switch_channel_answer(channel) switch_channel_perform_answer(channel, __FILE__, (char *) __FUNCTION__, __LINE__)
 
 /*!
   \brief Mark a channel answered with no indication (for outbound calls)
   \param channel channel to mark answered
   \return SWITCH_STATUS_SUCCESS if channel was answered successfully
 */
-#define switch_channel_mark_answered(channel) switch_channel_perform_mark_answered(channel, __FILE__, __FUNCTION__, __LINE__)
+#define switch_channel_mark_answered(channel) switch_channel_perform_mark_answered(channel, __FILE__, (char *) __FUNCTION__, __LINE__)
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_ringback(switch_channel_t *channel,
 																const char *file,
-																const char *func,
+																char *func,
 																int line);
 /*!
   \brief Send Ringing message to a channel
   \param channel channel to ring
   \return SWITCH_STATUS_SUCCESS if successful
 */
-#define switch_channel_ringback(channel) switch_channel_perform_ringback(channel, __FILE__, __FUNCTION__, __LINE__)
+#define switch_channel_ringback(channel) switch_channel_perform_ringback(channel, __FILE__, (char *) __FUNCTION__, __LINE__)
 
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel_t *channel,
-																const char *file,
-																const char *func,
-																int line);
+                                                                  const char *file,
+                                                                  char *func,
+                                                                  int line);
 /*!
   \brief Indicate progress on a channel to attempt early media
   \param channel channel to pre-answer
   \return SWITCH_STATUS_SUCCESS
 */								
-#define switch_channel_pre_answer(channel) switch_channel_perform_pre_answer(channel, __FILE__, __FUNCTION__, __LINE__)
+#define switch_channel_pre_answer(channel) switch_channel_perform_pre_answer(channel, __FILE__, (char *) __FUNCTION__, __LINE__)
 
 /*!
   \brief add a state handler table to a given channel
@@ -374,10 +374,10 @@ SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel);
 
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_channel_t *channel, 
-																   const char *file,
-																   const char *func,
-																   int line,
-																   switch_call_cause_t hangup_cause);
+                                                                     const char *file,
+                                                                     char *func,
+                                                                     int line,
+                                                                     switch_call_cause_t hangup_cause);
 
 /*!
   \brief Hangup a channel flagging it's state machine to end
@@ -385,7 +385,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
   \param hangup_cause the appropriate hangup cause
   \return the resulting channel state.
 */
-#define switch_channel_hangup(channel, hangup_cause) switch_channel_perform_hangup(channel, __FILE__, __FUNCTION__, __LINE__, hangup_cause)
+#define switch_channel_hangup(channel, hangup_cause) switch_channel_perform_hangup(channel, __FILE__, (char *)__FUNCTION__, __LINE__, hangup_cause)
 
 /*!
   \brief Test for presence of DTMF on a given channel

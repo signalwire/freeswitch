@@ -94,7 +94,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void);
   \param ... variable args
   \note there are channel macros to supply the first 4 parameters
 */
-SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, char *file, const char *func, int line, switch_log_level_t level, char *fmt, ...);
+SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, char *file, char *func, int line, switch_log_level_t level, char *fmt, ...);
 
 /*! 
   \brief Shut down  the logging engine

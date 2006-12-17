@@ -35,6 +35,7 @@
 #include <switch.h>
 #include <switch_version.h>
 
+static const switch_state_handler_table_t noop_state_handler = {0};
 static const char modname[] = "mod_commands";
 static switch_api_interface_t ctl_api_interface;
 static switch_api_interface_t uuid_bridge_api_interface;

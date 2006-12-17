@@ -43,7 +43,7 @@
 
 SWITCH_BEGIN_EXTERN_C
 
-static const switch_state_handler_table_t noop_state_handler = {0};
+
 
 /**
  * @defgroup switch_ivr IVR Library

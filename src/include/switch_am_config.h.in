@@ -100,6 +100,9 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
+/* Little Endian */
+#undef SWITCH_BYTE_ORDER
+
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
 
@@ -109,17 +112,8 @@
 /* Version number of package */
 #undef VERSION
 
-/* for the places where it is not defined */
-#undef __BIG_ENDIAN
-
-/* Little Endian */
-#undef __BYTE_ORDER
-
 /* define it the right way ;) */
 #undef __FUNCTION__
-
-/* for the places where it is not defined */
-#undef __LITTLE_ENDIAN
 
 /* sunpro is bad at inline */
 #undef __inline__

@@ -35,6 +35,8 @@
 #include <switch_ivr.h>
 #include <libteletone.h>
 
+static const switch_state_handler_table_t noop_state_handler = {0};
+
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 
 typedef enum {
@@ -1800,7 +1802,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	session_b = data->objs[1];
 
 	stream_id_p = data->objs[2];
-	input_callback = (switch_input_callback_function_t) data->objs[3];
+	input_callback = data->input_callback;
 	user_data = data->objs[4];
 	his_thread = data->objs[5];
 
@@ -3220,7 +3222,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	other_audio_thread->objs[0] = session;
 	other_audio_thread->objs[1] = peer_session;
 	other_audio_thread->objs[2] = &stream_id;
-	other_audio_thread->objs[3] = (void *) input_callback;
+	other_audio_thread->input_callback = input_callback;
 	other_audio_thread->objs[4] = session_data;
 	other_audio_thread->objs[5] = this_audio_thread;
 	other_audio_thread->running = 5;
@@ -3229,7 +3231,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	this_audio_thread->objs[0] = peer_session;
 	this_audio_thread->objs[1] = session;
 	this_audio_thread->objs[2] = &stream_id;
-	this_audio_thread->objs[3] = (void *) input_callback;
+	this_audio_thread->input_callback = input_callback;
 	this_audio_thread->objs[4] = peer_session_data;
 	this_audio_thread->objs[5] = other_audio_thread;
 	this_audio_thread->running = 2;
@@ -3302,7 +3304,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			this_audio_thread->objs[0] = NULL;
 			this_audio_thread->objs[1] = NULL;
 			this_audio_thread->objs[2] = NULL;
-			this_audio_thread->objs[3] = NULL;
+			this_audio_thread->input_callback = NULL;
 			this_audio_thread->objs[4] = NULL;
 			this_audio_thread->objs[5] = NULL;
 			switch_mutex_lock(this_audio_thread->mutex);

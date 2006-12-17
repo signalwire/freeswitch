@@ -96,6 +96,7 @@ struct switch_core_thread_session {
 	/*! array of void pointers to pass mutiple data objects */
 	void *objs[SWITCH_MAX_CORE_THREAD_SESSION_OBJS];
 	/*! a pointer to a memory pool if the thread has it's own pool */
+    switch_input_callback_function_t input_callback;
 	switch_memory_pool_t *pool;
 };
 
@@ -637,17 +638,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_core_session_t *session, 
-																	   const char *file, 
-																	   const char *func, 
-																	   int line, 
-																	   switch_signal_t sig);
+                                                                         const char *file, 
+                                                                         char *func, 
+                                                                         int line, 
+                                                                         switch_signal_t sig);
 /*! 
   \brief Send a signal to a channel
   \param session session to send signal to
   \param sig signal to send
   \return status returned by the session's signal handler
 */
-#define switch_core_session_kill_channel(session, sig) switch_core_session_perform_kill_channel(session, __FILE__, __FUNCTION__, __LINE__, sig)
+#define switch_core_session_kill_channel(session, sig) switch_core_session_perform_kill_channel(session, __FILE__, (char*)__FUNCTION__, __LINE__, sig)
 
 /*! 
   \brief Wait for a session to be ready for input

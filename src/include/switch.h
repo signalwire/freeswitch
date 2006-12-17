@@ -43,14 +43,11 @@
 #define SWITCH_END_EXTERN_C
 #endif
 
-
-//Need to include this before any other includes (MSVC Bug)
-#include <switch_platform.h>
-
 #ifndef WIN32
 #include <switch_am_config.h>
 #endif
 
+#include <switch_platform.h>
 #include <assert.h>
 #include <setjmp.h>
 #include <switch_apr.h>

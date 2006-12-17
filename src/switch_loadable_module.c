@@ -271,7 +271,6 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 	switch_loadable_module_t *module = NULL;
 	apr_dso_handle_t *dso = NULL;
 	apr_status_t status = SWITCH_STATUS_SUCCESS;
-	apr_dso_handle_sym_t function_handle = NULL;
 	switch_module_load_t load_func_ptr = NULL;
 	int loading = 1;
 	const char *err = NULL;
@@ -290,8 +289,7 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 			break;
 		}
 
-		status = apr_dso_sym(&function_handle, dso, "switch_module_load");
-		load_func_ptr = (switch_module_load_t) function_handle;
+		status = apr_dso_sym((apr_dso_handle_sym_t *)&load_func_ptr, dso, "switch_module_load");
 
 		if (load_func_ptr == NULL) {
 			err = "Cannot Load";
@@ -321,13 +319,8 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 	module->module_interface = module_interface;
 	module->switch_module_load = load_func_ptr;
 
-	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_shutdown")) == APR_SUCCESS) {
-		module->switch_module_shutdown = (switch_module_shutdown_t) function_handle;
-	}
-
-	if ((status = apr_dso_sym(&function_handle, dso, "switch_module_runtime")) == APR_SUCCESS) {
-		module->switch_module_runtime = (switch_module_runtime_t) function_handle;
-	}
+	apr_dso_sym((apr_dso_handle_sym_t *)&module->switch_module_shutdown, dso, "switch_module_shutdown");
+	apr_dso_sym((apr_dso_handle_sym_t *)&module->switch_module_runtime, dso, "switch_module_runtime");
 
 	module->lib = dso;
 

@@ -60,16 +60,6 @@ SWITCH_BEGIN_EXTERN_C
  */
 #pragma warning(disable:4152 4054 4100 4142 4200 4204 4706 4055 4214 4819 4132 4510 4512 4610)
 
-#ifndef __LITTLE_ENDIAN
-#define __LITTLE_ENDIAN 1234
-#endif
-#ifndef __BIG_ENDIAN
-#define __BIG_ENDIAN 4321
-#endif
-#ifndef __BYTE_ORDER
-#define __BYTE_ORDER __LITTLE_ENDIAN
-#endif
-
 #if (_MSC_VER >= 1400) // VC8+
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE
@@ -115,6 +105,19 @@ typedef unsigned long	in_addr_t;
 #include <time.h>
 #endif // _MSC_VER
 
+#ifndef __LITTLE_ENDIAN
+#define __LITTLE_ENDIAN 1234
+#endif
+#ifndef __BIG_ENDIAN
+#define __BIG_ENDIAN 4321
+#endif
+#ifndef __BYTE_ORDER
+#ifdef SWITCH_BYTE_ORDER
+#define __BYTE_ORDER SWITCH_BYTE_ORDER
+#else
+#define __BYTE_ORDER __LITTLE_ENDIAN
+#endif
+#endif
 
 #ifdef WIN32
 #if defined(SWITCH_CORE_DECLARE_STATIC)
