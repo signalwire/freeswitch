@@ -262,13 +262,14 @@ static const switch_codec_implementation_t g729_8k_implementation = {
 	&g729_10ms_8k_implementation
 };
 
-static const switch_codec_interface_t g729_codec_interface = { 
-	/*.interface_name */ "g729", 
-	/*.implementations */ &g729_8k_implementation, 
+static const switch_codec_interface_t g729_codec_interface = {
+	/*.interface_name */ "g729",
+	/*.implementations */ &g729_8k_implementation,
+	/*.next */ NULL
 };
 
 static switch_loadable_module_interface_t g729_module_interface = { 
-	/*.module_name */ modname, 
+	/*.module_name */ "g729",
 	/*.endpoint_interface */ NULL, 
 	/*.timer_interface */ NULL, 
 	/*.dialplan_interface */ NULL, 

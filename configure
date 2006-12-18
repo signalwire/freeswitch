@@ -20678,7 +20678,7 @@ esac
 
 
 cat >>confdefs.h <<_ACEOF
-#define __FUNCTION__ $FUNC_DEF
+#define __AUTO_FUNCTION__ $FUNC_DEF
 _ACEOF
 
 

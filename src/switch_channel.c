@@ -452,7 +452,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_name_state(char *name)
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_channel_t *channel,
                                                                         const char *file,
-                                                                        char *func,
+                                                                        const char *func,
                                                                         int line,
                                                                         switch_channel_state_t state)
 {
@@ -936,7 +936,7 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_caller_extension(
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_channel_t *channel, 
                                                                      const char *file,
-                                                                     char *func,
+                                                                     const char *func,
                                                                      int line,
                                                                      switch_call_cause_t hangup_cause)
 {
@@ -976,7 +976,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel_t *channel,
                                                                   const char *file,
-                                                                  char *func,
+                                                                  const char *func,
                                                                   int line)
 {
 	switch_core_session_message_t msg;
@@ -1017,7 +1017,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_ringback(switch_channel_t *channel,
 																const char *file,
-																char *func,
+																const char *func,
 																int line)
 {
 	switch_core_session_message_t msg;
@@ -1051,7 +1051,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ringback(switch_channel_t
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_channel_t *channel,
                                                                      const char *file,
-                                                                     char *func,
+                                                                     const char *func,
                                                                      int line)
 {
     switch_event_t *event;
@@ -1086,7 +1086,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel,
                                                               const char *file,
-                                                              char *func,
+                                                              const char *func,
                                                               int line)
 {
 	assert(channel != NULL);
