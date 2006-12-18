@@ -76,7 +76,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SM_DECLARE(type) type
 #endif
 
-static int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
+int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
 {
 	JSScript *script = NULL;
 	char *cptr;
