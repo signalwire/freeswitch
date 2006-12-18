@@ -3,7 +3,7 @@
 #   Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
 #   2000, 2001, 2002, 2003 Free Software Foundation, Inc.
 
-timestamp='2003-02-22'
+timestamp='2003-06-17'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@ trap "rm -f \$tmpfiles 2>/dev/null; rmdir \$tmp 2>/dev/null; exit 1" 1 2 13 15 ;
 : ${TMPDIR=/tmp} ;
  { tmp=`(umask 077 && mktemp -d -q "$TMPDIR/cgXXXXXX") 2>/dev/null` && test -n "$tmp" && test -d "$tmp" ; } ||
  { test -n "$RANDOM" && tmp=$TMPDIR/cg$$-$RANDOM && (umask 077 && mkdir $tmp) ; } ||
+ { tmp=$TMPDIR/cg-$$ && (umask 077 && mkdir $tmp) && echo "Warning: creating insecure temp directory" >&2 ; } ||
  { echo "$me: cannot create a temporary directory in $TMPDIR" >&2 ; exit 1 ; } ;
 dummy=$tmp/dummy ;
 tmpfiles="$dummy.c $dummy.o $dummy.rel $dummy" ;
@@ -134,6 +135,13 @@ UNAME_MACHINE=`(uname -m) 2>/dev/null` || UNAME_MACHINE=unknown
 UNAME_RELEASE=`(uname -r) 2>/dev/null` || UNAME_RELEASE=unknown
 UNAME_SYSTEM=`(uname -s) 2>/dev/null`  || UNAME_SYSTEM=unknown
 UNAME_VERSION=`(uname -v) 2>/dev/null` || UNAME_VERSION=unknown
+
+## for Red Hat Linux
+if test -f /etc/redhat-release ; then
+    VENDOR=redhat ;
+else
+    VENDOR= ;
+fi
 
 # Note: order is significant - the case branches are not exclusive.
 
@@ -282,6 +290,9 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	# 1.2 uses "1.2" for uname -r.
 	echo ${UNAME_MACHINE}-dec-osf`echo ${UNAME_RELEASE} | sed -e 's/^[VTX]//' | tr 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
 	exit 0 ;;
+    Alpha*:OpenVMS:*:*)
+	echo alpha-hp-vms
+	exit 0 ;;
     Alpha\ *:Windows_NT*:*)
 	# How do we know it's Interix rather than the generic POSIX subsystem?
 	# Should we change UNAME_MACHINE based on the output of uname instead
@@ -319,6 +330,9 @@ case "${UNAME_MACHINE}:${UNAME_SYSTEM}:${UNAME_RELEASE}:${UNAME_VERSION}" in
 	exit 0 ;;
     NILE*:*:*:dcosx)
 	echo pyramid-pyramid-svr4
+	exit 0 ;;
+    DRS?6000:unix:4.0:6*)
+	echo sparc-icl-nx6
 	exit 0 ;;
     DRS?6000:UNIX_SV:4.2*:7*)
 	case `/usr/bin/uname -p` in
@@ -744,7 +758,7 @@ EOF
     *:BSD/OS:*:*)
 	echo ${UNAME_MACHINE}-unknown-bsdi${UNAME_RELEASE}
 	exit 0 ;;
-    *:FreeBSD:*:*)
+    *:FreeBSD:*:*|*:GNU/FreeBSD:*:*)
 	# Determine whether the default compiler uses glibc.
 	eval $set_cc_for_build
 	sed 's/^	//' << EOF >$dummy.c
@@ -767,8 +781,8 @@ EOF
     i*:PW*:*)
 	echo ${UNAME_MACHINE}-pc-pw32
 	exit 0 ;;
-    x86:Interix*:3*)
-	echo i586-pc-interix3
+    x86:Interix*:[34]*)
+	echo i586-pc-interix${UNAME_RELEASE}|sed -e 's/\..*//'
 	exit 0 ;;
     [345]86:Windows_95:* | [345]86:Windows_98:* | [345]86:Windows_NT:*)
 	echo i${UNAME_MACHINE}-pc-mks
@@ -797,8 +811,11 @@ EOF
     arm*:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit 0 ;;
+    cris:Linux:*:*)
+	echo cris-axis-linux-gnu
+	exit 0 ;;
     ia64:Linux:*:*)
-	echo ${UNAME_MACHINE}-unknown-linux-gnu
+	echo ${UNAME_MACHINE}-${VENDOR:-unknown}-linux-gnu
 	exit 0 ;;
     m68*:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
@@ -842,10 +859,10 @@ EOF
 	test x"${CPU}" != x && echo "${CPU}-unknown-linux-gnu" && exit 0
 	;;
     ppc:Linux:*:*)
-	echo powerpc-unknown-linux-gnu
+	echo powerpc-${VENDOR:-unknown}-linux-gnu
 	exit 0 ;;
     ppc64:Linux:*:*)
-	echo powerpc64-unknown-linux-gnu
+	echo powerpc64-${VENDOR:-unknown}-linux-gnu
 	exit 0 ;;
     alpha:Linux:*:*)
 	case `sed -n '/^cpu model/s/^.*: \(.*\)/\1/p' < /proc/cpuinfo` in
@@ -873,7 +890,10 @@ EOF
 	echo hppa64-unknown-linux-gnu
 	exit 0 ;;
     s390:Linux:*:* | s390x:Linux:*:*)
-	echo ${UNAME_MACHINE}-ibm-linux
+	echo ${UNAME_MACHINE}-${VENDOR:-ibm}-linux-gnu
+	exit 0 ;;
+    sh64*:Linux:*:*)
+    	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit 0 ;;
     sh*:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
@@ -882,7 +902,7 @@ EOF
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit 0 ;;
     x86_64:Linux:*:*)
-	echo x86_64-unknown-linux-gnu
+	echo x86_64-${VENDOR:-unknown}-linux-gnu
 	exit 0 ;;
     i*86:Linux:*:*)
 	# The BFD linker knows what the default object file format is, so
@@ -934,7 +954,7 @@ EOF
 	#endif
 EOF
 	eval `$CC_FOR_BUILD -E $dummy.c 2>/dev/null | grep ^LIBC=`
-	test x"${LIBC}" != x && echo "${UNAME_MACHINE}-pc-linux-${LIBC}" && exit 0
+	test x"${LIBC}" != x && echo "${UNAME_MACHINE}-${VENDOR:-pc}-linux-${LIBC}" && exit 0
 	test x"${TENTATIVE}" != x && echo "${TENTATIVE}" && exit 0
 	;;
     i*86:DYNIX/ptx:4*:*)
@@ -1033,7 +1053,7 @@ EOF
 	exit 0 ;;
     M68*:*:R3V[567]*:*)
 	test -r /sysV68 && echo 'm68k-motorola-sysv' && exit 0 ;;
-    3[34]??:*:4.0:3.0 | 3[34]??A:*:4.0:3.0 | 3[34]??,*:*:4.0:3.0 | 3[34]??/*:*:4.0:3.0 | 4400:*:4.0:3.0 | 4850:*:4.0:3.0 | SKA40:*:4.0:3.0 | SDS2:*:4.0:3.0)
+    3[34]??:*:4.0:3.0 | 3[34]??A:*:4.0:3.0 | 3[34]??,*:*:4.0:3.0 | 3[34]??/*:*:4.0:3.0 | 4400:*:4.0:3.0 | 4850:*:4.0:3.0 | SKA40:*:4.0:3.0 | SDS2:*:4.0:3.0 | SHG2:*:4.0:3.0)
 	OS_REL=''
 	test -r /etc/.relid \
 	&& OS_REL=.`sed -n 's/[^ ]* [^ ]* \([0-9][0-9]\).*/\1/p' < /etc/.relid`
@@ -1188,6 +1208,9 @@ EOF
 	exit 0 ;;
     *:ITS:*:*)
 	echo pdp10-unknown-its
+	exit 0 ;;
+    SEI:*:*:SEIUX)
+        echo mips-sei-seiux${UNAME_RELEASE}
 	exit 0 ;;
 esac
 

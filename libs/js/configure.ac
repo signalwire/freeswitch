@@ -167,6 +167,7 @@ AC_CACHE_CHECK([whether to build with NSPR], [ac_cv_with_nspr], [ac_cv_with_nspr
 if test ".$ac_cv_with_nspr" = ".yes"; then
     sinclude(nsprpub/config/nspr.m4)
     CPPFLAGS="$CPPFLAGS -DJS_THREADSAFE -Insprpub/dist/include/nspr"
+    LDFLAGS="$LDFLAGS -L$prefix/lib -lnspr4"
 fi
 
 AC_SUBST(CLI_CFLAGS)
