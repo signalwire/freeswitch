@@ -3326,7 +3326,7 @@ EOF
             ;;
     esac
     DSO_CFLAGS=-fPIC
-    DSO_LDOPTS='-dynamiclib -compatibility_version 1 -current_version 1 -all_load -install_name @executable_path/$@ -headerpad_max_install_names'
+    DSO_LDOPTS='-dynamiclib -compatibility_version 1 -current_version 1 -all_load -install_name $dist_libdir/$@ -headerpad_max_install_names'
     # Use the standard preprocessor (cpp)
     CFLAGS="$CFLAGS -no-cpp-precomp"
     MKSHLIB='$(CC) $(DSO_LDOPTS) -o $@'
@@ -3896,23 +3896,11 @@ EOF
         PR_MD_ASFILES=os_Linux_ia64.s
         ;;
     x86_64)
-        if test -n "$USE_64"; then
             PR_MD_ASFILES=os_Linux_x86_64.s
-        else
-            cat >> confdefs.h <<\EOF
-#define i386 1
-EOF
-
-            PR_MD_ASFILES=os_Linux_x86.s
-            CC="$CC -m32"
-            CXX="$CXX -m32"
-        fi
         ;;
     powerpc64)
-        if test -n "$USE_64"; then
             CC="$CC -m64"
             CXX="$CXX -m64"
-        fi
         ;;
     m68k)
         CFLAGS="$CFLAGS -m68020-60"
