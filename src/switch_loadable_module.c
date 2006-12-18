@@ -292,7 +292,7 @@ static switch_status_t switch_loadable_module_load_file(char *filename, switch_l
 		status = apr_dso_sym((apr_dso_handle_sym_t *)&load_func_ptr, dso, "switch_module_load");
 
 		if (load_func_ptr == NULL) {
-			err = "Cannot Load";
+			err = "Cannot locate symbol 'switch_module_load' please make sure this is a vaild module.";
 			break;
 		}
 
