@@ -1,4 +1,4 @@
-dnl ##
+##
 dnl ##  OSSP js - JavaScript Engine
 dnl ##  Copyright (c) 1998-2006 Mozilla <http://www.mozilla.org/>
 dnl ##
@@ -26,7 +26,7 @@ dnl ##
 dnl ##  configure.ac: GNU Autoconf source script
 dnl ##
 
-AC_PREREQ(2.60)
+AC_PREREQ(2.59)
 AC_INIT
 JS_VERSION=`./shtool version -l txt -d short VERSION`
 $ac_confdir/shtool echo -e \
@@ -160,6 +160,15 @@ if test ".$ac_cv_with_utf8" = ".yes"; then
     CPPFLAGS="$CPPFLAGS -DJS_C_STRINGS_ARE_UTF8"
 fi
 
+AC_ARG_WITH(nspr,
+	AS_HELP_STRING([--with-nspr], [build with NSPR for thread safety]),
+	[ac_cv_with_nspr=$withval], [ac_cv_with_nspr=no])
+AC_CACHE_CHECK([whether to build with NSPR], [ac_cv_with_nspr], [ac_cv_with_nspr=no])
+if test ".$ac_cv_with_nspr" = ".yes"; then
+    sinclude(nsprpub/config/nspr.m4)
+    CPPFLAGS="$CPPFLAGS -DJS_THREADSAFE -Insprpub/dist/include/nspr"
+fi
+
 AC_SUBST(CLI_CFLAGS)
 AC_SUBST(CLI_CPPFLAGS)
 AC_SUBST(CLI_LDFLAGS)
@@ -168,6 +177,7 @@ AC_SUBST(CLI_OBJS)
 
 with_tags=""
 sinclude(libtool.m4)
+
 AC_PROG_LIBTOOL
 
 AC_CONFIG_HEADERS(config.h)

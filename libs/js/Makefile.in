@@ -129,6 +129,7 @@ LIB_OBJS     = src/jsapi.lo                \
                src/fdlibm/w_log.lo         \
                src/fdlibm/w_pow.lo         \
                src/fdlibm/w_sqrt.lo
+
 LIB_NAME     = libjs.la
 
 CLI_OBJS     = src/js.o @CLI_OBJS@
