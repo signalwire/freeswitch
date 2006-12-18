@@ -1,17 +1,15 @@
 include sm.mak
-OBJS=$(BASE)/libs/mozilla/js/src/$(OS_CONFIG)_$(VER).OBJ/libjs.a $(BASE)/libs/mozilla/nsprpub/dist/lib/libnspr4.a -lcurl
-LINKER=$(CC)
-
 
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	BUILD_OPT=$(BO) MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) mozilla.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install js/nsprpub --prefix=$(PREFIX) --with-pic
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install js --prefix=$(PREFIX) --with-pic --with-nspr=yes
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install curl-7.15.2.tar.gz --prefix=$(PREFIX) --without-libidn
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
-	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 
-	$(LINKER) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
+	$(CC) $(CFLAGS) -c $(MODNAME).c -o $(MODNAME).o 
+	$(CC) $(SOLINK) -o $(MODNAME).$(DYNAMIC_LIB_EXTEN)  $(MODNAME).o $(OBJS) $(LDFLAGS)
 
 clean:
 	rm -fr *.$(DYNAMIC_LIB_EXTEN) *.o *~

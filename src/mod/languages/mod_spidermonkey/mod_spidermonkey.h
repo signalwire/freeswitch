@@ -76,7 +76,35 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SM_DECLARE(type) type
 #endif
 
-SWITCH_SM_DECLARE(int) eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval);
+static int eval_some_js(char *code, JSContext *cx, JSObject *obj, jsval *rval)
+{
+	JSScript *script = NULL;
+	char *cptr;
+	char *path = NULL;
+	int res = 0;
+
+	JS_ClearPendingException(cx);
+
+	if (code[0] == '~') {
+		cptr = code + 1;
+		script = JS_CompileScript(cx, obj, cptr, strlen(cptr), "inline", 1);
+	} else {
+		if (*code == '/') {
+			script = JS_CompileFile(cx, obj, code);
+		} else if ((path = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR, code))) {
+			script = JS_CompileFile(cx, obj, path);
+			switch_safe_free(path);
+		}
+	}
+
+	if (script) {
+		res = JS_ExecuteScript(cx, obj, script, rval) == JS_TRUE ? 1 : 0;
+		JS_DestroyScript(cx, script);
+	}
+
+	return res;
+}
+
 
 typedef switch_status_t(*spidermonkey_load_t)(JSContext *cx, JSObject *obj);
 
