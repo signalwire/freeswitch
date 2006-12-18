@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: OSSP js
+Description: Mozilla JavaScript Engine
+Version: @JS_VERSION@
+Libs: -L${libdir} -ljs @LIBS@
+Cflags: -DOSSP -DXP_UNIX -I${includedir}/js

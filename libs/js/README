@@ -1,0 +1,73 @@
+   _        ___  ____ ____  ____     _      
+  |_|_ _   / _ \/ ___/ ___||  _ \   (_)___  
+  _|_||_| | | | \___ \___ \| |_) |  | / __| 
+ |_||_|_| | |_| |___) |__) |  __/   | \__ \ 
+  |_|_|_|  \___/|____/____/|_|     _/ |___/ 
+                                  |__/      
+
+  OSSP js - Mozilla JavaScript Engine
+  Version 1.6.20060820 (20-Aug-2006)
+
+  ABSTRACT
+
+  OSSP js is a stand-alone distribution of the JavaScript (JS)
+  programming language reference implementation from Mozilla -- aka
+  "JSRef" or "SpiderMonkey". This distribution provides a smart,
+  stand-alone and portable distribution of Mozilla JavaScript through a
+  build environment based on GNU autoconf, GNU libtool and GNU shtool,
+  including support for easy JavaScript build-time feature set selection
+  (ECMA-3, JS-1.5, JS-1.6), optional CLI line editing support, optional
+  "stdio" based File object support and JS/Perl bindings. Additionally,
+  the C API in "libjs" contains both the JavaScript engine and the
+  required Sun math library ("fdlibm") and with all internal symbols
+  carefully protected under the "js" namespace. Finally, a js-config(1)
+  utility and a pkg-config(1) specification is provided to allow
+  applications to easily build with the JavaScript C API.
+
+  JUSTIFICATION
+
+  OSSP js was created because for OSSP and similar pedantic C coding
+  projects a smart, stand-alone, portable, clean, powerful and
+  robust scripting language engine is required. JavaScript is a
+  great programming language and Mozilla JavaScript "SpiderMonkey"
+  definitely is an acceptable clean, powerful and robust implementation.
+  Unfortunately there is just a stand-alone distribution released from
+  time to time by Mozilla and it is far away from really being smart,
+  stand-alone and portable. At least for OSSP it was not acceptable
+  having to tell the community that for small and stand-alone C
+  components like the OSSP components they either have to install the
+  great but large Mozilla Firefox application (where Mozilla JavaScript
+  is included) or have to fiddle around theirself with an older
+  stand-alone JavaScript distribution and its weak build environment.
+  OSSP js combines the best from two worlds: the 1:1 repackaged
+  JavaScript code base from Mozilla and the usual amount of GNU
+  autoconf, GNU libtool and GNU shtool wrappers as always used by OSSP.
+  Additionally, stand-alone ("stdio" instead of NSPR based) File object
+  support was required.
+
+  VERSIONING
+
+  The version of OSSP js is M.N.YYYYMMDD where M.N is the JavaScript
+  branch and YYYYMMDD is the date where the JavaScript code was
+  extracted from the Mozilla CVS repository.
+
+  COPYRIGHT AND LICENSE
+
+  Copyright (c) 1998-2006 Mozilla <http://www.mozilla.org/>
+
+  This file is part of OSSP js, a repackaging of the Mozilla JavaScript
+  reference implementation, which can found at http://www.ossp.org/pkg/lib/js/
+
+  The content of this distribution is licensed under the Mozilla
+  Public License (MPL) 1.1 (see http://www.mozilla.org/MPL/) or
+  alternatively the GNU General Public License (GPL) 2.0 (see
+  http://www.gnu.org/licenses/gpl.html) or the GNU Lesser General Public
+  License (LGPL) 2.1 (see http://www.gnu.org/licenses/lgpl.html).
+
+  HOME
+
+  The latest release can be found on
+
+  o http://www.ossp.org/pkg/lib/js/
+  o  ftp://ftp.ossp.org/pkg/lib/js/
+

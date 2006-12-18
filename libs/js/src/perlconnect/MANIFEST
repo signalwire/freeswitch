@@ -1,0 +1,11 @@
+MANIFEST
+.cvsignore
+JS.pm
+JS.xs
+jsperl.c
+jsperl.h
+jsperlpvt.h
+Makefile.PL
+Makefile.PL.in
+PerlConnect.pm
+typemap

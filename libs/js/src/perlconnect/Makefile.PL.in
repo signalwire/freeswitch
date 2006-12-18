@@ -1,0 +1,11 @@
+
+use ExtUtils::MakeMaker;
+
+WriteMakefile(
+    NAME         => 'JS',
+	DEFINE       => '-DOSSP -DXP_UNIX',
+	INC          => "-I..",
+	LIBS         => "-L../../.libs -ljs @LIBS@",
+	VERSION_FROM => 'JS.pm',
+);
+

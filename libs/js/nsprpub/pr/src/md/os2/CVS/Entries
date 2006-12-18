@@ -1,0 +1,18 @@
+/.cvsignore/1.2/Sat May 12 06:11:46 2001//
+/Makefile.in/1.16/Sun Apr 25 15:00:59 2004//
+/objs.mk/1.7/Sun Apr 25 15:00:59 2004//
+/os2_errors.c/3.9/Sun Apr 25 15:00:59 2004//
+/os2cv.c/3.14/Sun Apr 25 15:00:59 2004//
+/os2emx.s/1.3/Mon Jan  9 17:43:52 2006//
+/os2gc.c/3.7/Sun Apr 25 15:00:59 2004//
+/os2inrval.c/3.10/Tue Jan 25 22:24:12 2005//
+/os2io.c/3.17/Fri Apr 22 21:14:03 2005//
+/os2misc.c/3.24/Mon Nov 22 21:06:12 2004//
+/os2poll.c/3.14/Sun Apr 25 15:00:59 2004//
+/os2rng.c/1.6/Sun Apr 25 15:00:59 2004//
+/os2sem.c/3.6/Sun Apr 25 15:00:59 2004//
+/os2sock.c/3.17/Fri Apr 22 21:14:03 2005//
+/os2thred.c/3.17/Sun Apr 25 15:00:59 2004//
+/os2vaclegacy.s/3.1/Tue Sep 16 01:57:42 2003//
+/os2vacpp.asm/1.7/Mon Jan  9 17:43:52 2006//
+D

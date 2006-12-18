@@ -1,0 +1,19 @@
+/.cvsignore/1.2/Sat May 12 04:14:49 2001//
+/Makefile.in/1.13/Sun Apr 25 15:00:58 2004//
+/prdir.c/3.7/Sun Apr 25 15:00:58 2004//
+/prfdcach.c/3.12/Sun Apr 25 15:00:58 2004//
+/prfile.c/3.44/Tue Feb  7 01:21:00 2006//
+/prio.c/3.19/Fri Oct 21 18:21:42 2005//
+/priometh.c/3.19/Sun Apr 25 15:00:58 2004//
+/pripv6.c/3.12/Tue Jan 25 19:44:07 2005//
+/prlayer.c/3.19/Sun Apr 25 15:00:58 2004//
+/prlog.c/3.34/Mon Mar 14 21:40:15 2005//
+/prmapopt.c/3.18/Sun Apr 25 15:00:58 2004//
+/prmmap.c/3.7/Sun Apr 25 15:00:58 2004//
+/prmwait.c/3.18/Tue Mar  8 22:40:15 2005//
+/prpolevt.c/3.15/Sun Apr 25 15:00:58 2004//
+/prprf.c/3.18/Fri Jul  1 21:01:40 2005//
+/prscanf.c/3.11/Fri Aug  5 22:44:06 2005//
+/prsocket.c/3.58/Fri Oct 21 18:21:42 2005//
+/prstdio.c/3.6/Sun Apr 25 15:00:58 2004//
+D

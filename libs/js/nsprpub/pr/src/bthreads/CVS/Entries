@@ -1,0 +1,11 @@
+/.cvsignore/1.2/Sat May 12 06:00:27 2001//
+/Makefile.in/1.10/Sun Apr 25 15:00:57 2004//
+/bsrcs.mk/3.6/Sun Apr 25 15:00:57 2004//
+/btcvar.c/3.9/Wed Feb 23 17:43:13 2005//
+/btlocks.c/3.7/Wed Feb 23 17:43:13 2005//
+/btmisc.c/3.5/Sun Apr 25 15:00:57 2004//
+/btmon.c/3.6/Sun Apr 25 15:00:57 2004//
+/btsem.c/3.7/Wed Feb 23 17:43:13 2005//
+/btthread.c/3.9/Mon Nov  7 22:39:00 2005//
+/objs.mk/3.6/Sun Apr 25 15:00:57 2004//
+D

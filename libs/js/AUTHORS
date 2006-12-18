@@ -1,0 +1,17 @@
+   _        ___  ____ ____  ____     _      
+  |_|_ _   / _ \/ ___/ ___||  _ \   (_)___  
+  _|_||_| | | | \___ \___ \| |_) |  | / __| 
+ |_||_|_| | |_| |___) |__) |  __/   | \__ \ 
+  |_|_|_|  \___/|____/____/|_|     _/ |___/ 
+                                  |__/      
+
+  OSSP js - Mozilla JavaScript Engine
+
+  LINKS
+
+  Brendan Eich <brendan@mozilla.org> et al
+      - Mozilla JavaScript implementation
+
+  Ralf S. Engelschall <rse@engelschall.com>
+      - OSSP js distribution of Mozilla JavaScript
+
