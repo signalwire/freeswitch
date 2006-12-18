@@ -898,12 +898,12 @@ srtp_install_event_handler(srtp_event_handler_func_t func);
 #ifndef WORDS_BIGENDIAN
 
 typedef struct {
-  uint8_t cc:4;	/* CSRC count             */
-  uint8_t x:1;		/* header extension flag  */
-  uint8_t p:1;		/* padding flag           */
-  uint8_t version:2;	/* protocol version       */
-  uint8_t pt:7;	/* payload type           */
-  uint8_t m:1;		/* marker bit             */
+  unsigned cc:4;	/* CSRC count             */
+  unsigned x:1;		/* header extension flag  */
+  unsigned p:1;		/* padding flag           */
+  unsigned version:2;	/* protocol version       */
+  unsigned pt:7;	/* payload type           */
+  unsigned m:1;		/* marker bit             */
   uint16_t seq;		/* sequence number        */
   uint32_t ts;		/* timestamp              */
   uint32_t ssrc;	/* synchronization source */
@@ -941,10 +941,10 @@ typedef struct {
 #ifndef WORDS_BIGENDIAN
 
 typedef struct {
-  unsigned char rc:5;		/* reception report count */
-  unsigned char p:1;		/* padding flag           */
-  unsigned char version:2;	/* protocol version       */
-  unsigned char pt:8;		/* payload type           */
+  unsigned rc:5;		/* reception report count */
+  unsigned p:1;		/* padding flag           */
+  unsigned version:2;	/* protocol version       */
+  unsigned pt:8;		/* payload type           */
   uint16_t len;			/* length                 */
   uint32_t ssrc;	       	/* synchronization source */
 } srtcp_hdr_t;
@@ -960,10 +960,10 @@ typedef struct {
 #else /*  BIG_ENDIAN */
 
 typedef struct {
-  unsigned char version:2;	/* protocol version       */
-  unsigned char p:1;		/* padding flag           */
-  unsigned char rc:5;		/* reception report count */
-  unsigned char pt:8;		/* payload type           */
+  unsigned version:2;	/* protocol version       */
+  unsigned p:1;		/* padding flag           */
+  unsigned rc:5;		/* reception report count */
+  unsigned pt:8;		/* payload type           */
   uint16_t len;			/* length                 */
   uint32_t ssrc;	       	/* synchronization source */
 } srtcp_hdr_t;
