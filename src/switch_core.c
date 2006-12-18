@@ -2308,7 +2308,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_core_session_t *session, 
                                                                          const char *file, 
-                                                                         char *func, 
+                                                                         const char *func, 
                                                                          int line, 
                                                                          switch_signal_t sig)
 {
