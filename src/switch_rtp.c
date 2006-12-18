@@ -776,7 +776,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
-			return 0;
+
+            memset(&rtp_session->recv_msg, 0, SWITCH_RTP_CNG_PAYLOAD);
+            rtp_session->recv_msg.header.pt = SWITCH_RTP_CNG_PAYLOAD;
+            *flags |= SFF_CNG;
+            /* Return a CNG frame */
+            *payload_type = SWITCH_RTP_CNG_PAYLOAD;
+            return SWITCH_RTP_CNG_PAYLOAD;
 		}
 
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
@@ -857,7 +863,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		
 		if (status == SWITCH_STATUS_BREAK || bytes == 0) {
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_DATAWAIT)) {
-				switch_yield(rtp_session->ms_per_packet);
+				switch_yield(rtp_session->ms_per_packet/2);
 				continue;
 			}
 			return 0;

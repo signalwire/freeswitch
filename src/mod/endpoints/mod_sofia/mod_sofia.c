@@ -267,10 +267,10 @@ struct private_object {
 	uint32_t codec_ms;
 	switch_caller_profile_t *caller_profile;
 	int32_t timestamp_send;
-	int32_t timestamp_recv;
+	//int32_t timestamp_recv;
 	switch_rtp_t *rtp_session;
 	int ssrc;
-	switch_time_t last_read;
+	//switch_time_t last_read;
 	sofia_profile_t *profile;
 	char *local_sdp_audio_ip;
 	switch_port_t local_sdp_audio_port;
@@ -1531,7 +1531,6 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 										switch_io_flag_t flags, int stream_id)
 {
 	private_object_t *tech_pvt = NULL;
-	size_t bytes = 0, samples = 0, frames = 0, ms = 0;
 	switch_channel_t *channel = NULL;
 	int payload = 0;
 	
@@ -1557,19 +1556,15 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	tech_pvt->read_frame.datalen = 0;
 	switch_set_flag_locked(tech_pvt, TFLAG_READING);
 
-
-	bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-	samples = tech_pvt->read_codec.implementation->samples_per_frame;
-	ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
-	
+#if 0	
 	if (tech_pvt->last_read) {
-#if 0
 		elapsed = (unsigned int)((switch_time_now() - tech_pvt->last_read) / 1000);
 		if (elapsed > 60000) {
 			return SWITCH_STATUS_TIMEOUT;
 		}
-#endif
 	}
+#endif
+
 
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		switch_status_t status;
@@ -1616,23 +1611,16 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 
 			if (tech_pvt->read_frame.datalen > 0) {
-				tech_pvt->last_read = switch_time_now();
-
-				if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
-					bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-					frames = (tech_pvt->read_frame.datalen / bytes);
-				} else
-					frames = 1;
-
-				samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
-				ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
-				tech_pvt->timestamp_recv += (int32_t) samples;
-				tech_pvt->read_frame.samples = (int) samples;
+                size_t bytes = 0;
+                int frames = 0;
+				//tech_pvt->last_read = switch_time_now();
+                bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+                frames = (tech_pvt->read_frame.datalen / bytes);
+				tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_frame);
 				break;
 			}
 		}
-
-	} 
+	}
 	
 	switch_clear_flag_locked(tech_pvt, TFLAG_READING);
 
@@ -1724,12 +1712,21 @@ static switch_status_t sofia_kill_channel(switch_core_session_t *session, int si
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-	switch_set_flag_locked(tech_pvt, TFLAG_HUP);
 
-	if (switch_rtp_ready(tech_pvt->rtp_session)) {
-		switch_rtp_kill_socket(tech_pvt->rtp_session);
-	}
+    switch(sig) {
+    case SWITCH_SIG_BREAK:
+        switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
+        break;
+    case SWITCH_SIG_KILL:
+    default:
+        switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+        switch_set_flag_locked(tech_pvt, TFLAG_HUP);
+
+        if (switch_rtp_ready(tech_pvt->rtp_session)) {
+            switch_rtp_kill_socket(tech_pvt->rtp_session);
+        }
+        break;
+    }
 
 	return SWITCH_STATUS_SUCCESS;
 

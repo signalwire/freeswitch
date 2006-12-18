@@ -500,7 +500,8 @@ SWITCH_SIG_XFER - Stop the current io but leave it viable
 typedef enum {
 	SWITCH_SIG_NONE,
 	SWITCH_SIG_KILL,
-	SWITCH_SIG_XFER
+	SWITCH_SIG_XFER,
+    SWITCH_SIG_BREAK
 } switch_signal_t;
 
 /*!

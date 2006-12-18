@@ -1917,9 +1917,9 @@ static int conference_function_kick_member(conference_obj_t *conference, confere
 		switch_clear_flag(member, MFLAG_RUNNING);
 		switch_set_flag(member, MFLAG_KICKED);
 		switch_mutex_unlock(member->flag_mutex);
-
+        switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
 		stream->write_function(stream, "OK kicked %u\n", id);
-
+        
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_t *channel = switch_core_session_get_channel(member->session);
 			switch_channel_event_set_data(channel, event);
