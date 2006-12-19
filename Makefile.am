@@ -1,5 +1,3 @@
-
-
 EXTRA_DIST =
 SUBDIRS = 
 AUTOMAKE_OPTS = gnu foreign
@@ -115,7 +113,7 @@ CLEANFILES = src/include/switch_version.h scripts/fsxs
 lib_LTLIBRARIES		= libfreeswitch.la
 libfreeswitch_la_CFLAGS	= $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS	= -version-info 1:0:0
-libfreeswitch_la_LIBADD  = -lteletone -lresample -lsrtp -lsqlite3 -lspeakup -lpcre
+libfreeswitch_la_LIBADD  = -lteletone -lresample -lsrtp -lsqlite3 -lpcre
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h
 
 bin_PROGRAMS =	freeswitch
@@ -149,14 +147,14 @@ depends:
 	@./build/addenv.sh build/freeswitch.env PREFIX $(PREFIX)
 	@./build/addenv.sh build/freeswitch.env MAKE $(MAKE)
 	mkdir -p $(PREFIX)
-	./build/buildlib.sh . install sqlite-3.3.6.tar.gz --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
-	./build/buildlib.sh . install apr-1.2.7.tar.gz --prefix=$(PREFIX)
-	./build/buildlib.sh . install apr-util-1.2.7.tar.gz --with-apr=../apr-1.2.7 --prefix=$(PREFIX)
+	./build/buildlib.sh . install sqlite --prefix=$(PREFIX) --disable-tcl --enable-threadsafe
+	./build/buildlib.sh . install apr --prefix=$(PREFIX)
+	./build/buildlib.sh . install apr-util --with-apr=../apr --prefix=$(PREFIX)
 	./build/buildlib.sh . install libresample --prefix=$(PREFIX)
 	./build/buildlib.sh . install libteletone --prefix=$(PREFIX)
 	./build/buildlib.sh . install srtp --prefix=$(PREFIX)
-	./build/buildlib.sh . install libspeakup --prefix=$(PREFIX)
-	./build/buildlib.sh . install pcre-6.7.tar.gz --prefix=$(PREFIX)
+#	./build/buildlib.sh . install libspeakup --prefix=$(PREFIX)
+	./build/buildlib.sh . install pcre --prefix=$(PREFIX)
 	rm build/freeswitch.env
 
 
