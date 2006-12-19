@@ -41,8 +41,12 @@ SWITCH_BEGIN_EXTERN_C
 #endif
 
 #include <stdio.h>
-#ifndef __FUNCTION__
-#define __FUNCTION__ (const char *)__AUTO_FUNCTION__
+
+/* OMG */
+#ifdef WIN32
+#define __SWITCH_FUNC__ __FUNCTION__
+#else
+#define __SWITCH_FUNC__ (const char *)__func__
 #endif
 
 #ifdef _MSC_VER

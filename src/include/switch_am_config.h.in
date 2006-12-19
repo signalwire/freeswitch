@@ -112,9 +112,6 @@
 /* Version number of package */
 #undef VERSION
 
-/* define it the right way ;) */
-#undef __AUTO_FUNCTION__
-
 /* sunpro is bad at inline */
 #undef __inline__
 

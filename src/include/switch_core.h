@@ -648,7 +648,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(switch_
   \param sig signal to send
   \return status returned by the session's signal handler
 */
-#define switch_core_session_kill_channel(session, sig) switch_core_session_perform_kill_channel(session, __FILE__, __FUNCTION__, __LINE__, sig)
+#define switch_core_session_kill_channel(session, sig) switch_core_session_perform_kill_channel(session, __FILE__, __SWITCH_FUNC__, __LINE__, sig)
 
 /*! 
   \brief Wait for a session to be ready for input

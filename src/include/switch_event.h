@@ -298,7 +298,7 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event);
   \return SWITCH_STATUS_SUCCESS if the operation was successful
   \note the body supplied by this function will supersede an existing body the event may have
 */
-#define switch_event_fire(event) switch_event_fire_detailed(__FILE__, (char * )__FUNCTION__, __LINE__, event, NULL)
+#define switch_event_fire(event) switch_event_fire_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, event, NULL)
 
 /*!
   \brief Fire an event filling in most of the arguements with obvious values and allowing user_data to be sent
@@ -307,7 +307,7 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event);
   \return SWITCH_STATUS_SUCCESS if the operation was successful
   \note the body supplied by this function will supersede an existing body the event may have
 */
-#define switch_event_fire_data(event, data) switch_event_fire_detailed(__FILE__, (char * )__FUNCTION__, __LINE__, event, data)
+#define switch_event_fire_data(event, data) switch_event_fire_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, event, data)
 ///\}
 
 SWITCH_END_EXTERN_C
