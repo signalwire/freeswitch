@@ -1,0 +1,67 @@
+VPATH = @srcdir@
+INCLUDES = @API_INCLUDES@ @APR_INCLUDES@
+
+CHARSETS_ISO8859 = iso-8859-1.la iso-8859-2.la iso-8859-4.la iso-8859-5.la \
+                   iso-8859-15.la
+CHARSETS_PC =      cp775.la cp850.la cp852.la cp855.la cp866.la
+CHARSETS_KOI =     koi8-r.la koi8-u.la
+CHARSETS_SB =      $(CHARSETS_ISO8859) $(CHARSETS_PC) $(CHARSETS_CJK) \
+                   $(CHARSETS_KOI) us-ascii.la
+CHARSETS_CJK =     big5.la cns11643-plane1.la cns11643-plane2.la \
+                   cns11643-plane14.la gb_2312-80.la jis_x0201.la \
+                   jis_x0208-1983.la jis_x0212-1990.la ksx1001.la shift_jis.la
+CHARSETS_ALL =     ${CHARSETS_SB} ${CHARSETS_CJK}
+EXTRA_ISO8859 =    iso-8859-3.la iso-8859-6.la iso-8859-7.la iso-8859-8.la \
+                   iso-8859-9.la iso-8859-10.la iso-8859-13.la iso-8859-14.la
+EXTRA_KOI =        koi8-ru.la 
+EXTRA_MISC =       gb12345.la johab.la adobe-stdenc.la adobe-symbol.la \
+                   adobe-zdingbats.la mac-ce.la mac-croatian.la mac-cyrillic.la \
+                   mac-dingbats.la mac-greek.la mac-iceland.la mac-japan.la \
+                   mac-roman.la mac-romania.la mac-thai.la mac-turkish.la \
+                   mac-ukraine.la
+EXTRA_PC =         cp424.la cp500.la cp856.la cp1006.la cp437.la cp737.la cp857.la \
+                   cp860.la cp861.la cp862.la cp863.la cp864.la cp865.la cp869.la \
+                   cp874.la cp932.la cp936.la cp949.la cp950.la \
+                   windows-1250.la windows-1251.la windows-1252.la windows-1253.la \
+                   windows-1254.la windows-1255.la windows-1256.la windows-1257.la \
+                   windows-1258.la cp037.la cp875.la cp1026.la \
+                   cp10000.la cp10006.la cp10007.la cp10029.la cp10079.la cp10081.la
+EXTRA_ALL =        ${EXTRA_ISO8859} ${EXTRA_KOI} ${EXTRA_MISC} ${EXTRA_PC}
+RFC1345_PC =       cp851.la cp868.la cp038.la cp273.la cp274.la cp275.la cp277.la \
+                   cp278.la cp280.la cp281.la cp284.la cp285.la cp290.la cp297.la \
+                   cp420.la cp423.la cp870.la cp871.la cp880.la cp891.la \
+                   cp903.la cp904.la cp905.la cp918.la
+RFC1345_EBCDIC =   ebcdic-at-de.la ebcdic-at-de-a.la ebcdic-ca-fr.la \
+                   ebcdic-dk-no.la ebcdic-dk-no-a.la ebcdic-es.la ebcdic-es-a.la \
+                   ebcdic-es-s.la ebcdic-fi-se.la ebcdic-fi-se-a.la ebcdic-fr.la \
+                   ebcdic-it.la ebcdic-pt.la ebcdic-uk.la ebcdic-us.la \
+		   osd_ebcdic_df04_1.la osd_ebcdic_df04_15.la
+RFC1345_IR =       iso-ir-2.la iso-ir-4.la iso-ir-8-1.la iso-ir-8-2.la \
+                   iso-ir-9-1.la iso-ir-9-2.la iso-ir-10.la iso-ir-11.la \
+                   iso-ir-13.la iso-ir-14.la iso-ir-15.la iso-ir-16.la \
+                   iso-ir-17.la iso-ir-18.la iso-ir-19.la iso-ir-21.la \
+                   iso-ir-25.la iso-ir-27.la iso-ir-37.la iso-ir-47.la \
+                   iso-ir-49.la iso-ir-50.la iso-ir-51.la iso-ir-54.la \
+                   iso-ir-55.la iso-ir-57.la iso-ir-60.la iso-ir-61.la \
+                   iso-ir-69.la iso-ir-70.la iso-ir-84.la iso-ir-85.la \
+                   iso-ir-86.la iso-ir-88.la iso-ir-89.la iso-ir-90.la \
+                   iso-ir-91.la iso-ir-92.la iso-ir-93.la iso-ir-94.la \
+                   iso-ir-95.la iso-ir-96.la iso-ir-98.la iso-ir-99.la \
+                   iso-ir-102.la iso-ir-103.la iso-ir-111.la iso-ir-121.la \
+                   iso-ir-122.la iso-ir-123.la iso-ir-128.la iso-ir-139.la \
+                   iso-ir-141.la iso-ir-142.la iso-ir-143.la iso-ir-146.la \
+                   iso-ir-147.la iso-ir-150.la iso-ir-151.la iso-ir-152.la \
+                   iso-ir-153.la iso-ir-154.la iso-ir-155.la iso-ir-158.la
+RFC1345_MISC =     dec-mcs.la hp-roman8.la iso646-dk.la iso646-kr.la macintosh.la
+RFC1345_ALL =      ${RFC1345_PC} ${RFC1345_EBCDIC} ${RFC1345_IR} ${RFC1345_MISC}
+
+TARGETS =          ${CHARSETS_ALL} ${EXTRA_ALL} ${RFC1345_ALL}
+
+# bring in rules.mk for standard functionality
+@INCLUDE_RULES@
+
+.SUFFIXES:
+.SUFFIXES: .c .lo .o .la
+
+.lo.la:
+	$(LIBTOOL) --mode=link $(COMPILE) -module -avoid-version -rpath @iconv_libdir@ $(LT_LDFLAGS) $(ALL_LDFLAGS) -o $@ $<
