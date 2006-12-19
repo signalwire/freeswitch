@@ -20664,6 +20664,19 @@ case "$host" in
                         IN_LINE=inline
                         DYNAMIC_LIB_EXTEN="so"
                 ;;
+	        *)
+                        if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
+                                SOLINK="-Bdynamic -dy -G"
+                                new_AM_CFLAGS="-KPIC -DPIC"
+                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
+                        elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
+                                SOLINK="-shared -Xlinker -x"
+                                new_AM_CFLAGS="-fPIC"
+                                new_AM_LDFLAGS=""
+                        fi
+                        DYNAMIC_LIB_EXTEN="so"
+                        IN_LINE=inline
+			;;
 esac
 
 
