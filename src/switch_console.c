@@ -224,11 +224,14 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 		FD_ZERO(&efds);
 		FD_SET(fileno(stdin), &rfds);
 		FD_SET(fileno(stdin), &efds);
-		activity = select(fileno(stdin)+1, &rfds, NULL, &efds, &tv);
+		if ((activity = select(fileno(stdin)+1, &rfds, NULL, &efds, &tv)) < 0) {
+            break;
+        }
 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
 		if (activity == 0) {
 			fflush(stdout);
 			continue;
@@ -236,7 +239,15 @@ SWITCH_DECLARE(void) switch_console_loop(void)
 
 		memset(&cmd, 0, sizeof(cmd));
 		for (x = 0; x < (sizeof(cmd)-1); x++) {
-			cmd[x] = (char) getchar();
+            int c = getchar();
+            if (c < 0) {
+                int y = read(fileno(stdin), cmd, sizeof(cmd));
+                cmd[y-1] = '\0';
+                break;
+            }
+
+			cmd[x] = (char) c;
+
 			if (cmd[x] == '\n') {
 				cmd[x] = '\0';
 				break;
