@@ -283,7 +283,11 @@ void iax_disable_debug(void)
 }
 
 /* This is a little strange, but to debug you call DEBU(G "Hello World!\n"); */ 
+#ifdef WIN32
 #define G __FILE__, __LINE__, __FUNCTION__, 
+#else
+#define G __FILE__, __LINE__, (const char *)__func__, 
+#endif
 
 #define DEBU __debug 
 static int __debug(char *file, int lineno, const char *func, char *fmt, ...) 
