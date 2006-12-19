@@ -3449,6 +3449,7 @@ EOF
 *-freebsd*)
     if test -z "$USE_NSPR_THREADS"; then
         USE_PTHREADS=1
+        LDFLAGS="$LDFLAGS -lpthread"
     fi
     cat >> confdefs.h <<\EOF
 #define XP_UNIX 1
