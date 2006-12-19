@@ -97,7 +97,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre-6.7\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -183,7 +183,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre-6.7\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -254,7 +254,7 @@
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ModuleDefinitionFile="$(InputDir)..\..\pcre-6.7\pcre.def"
+				ModuleDefinitionFile="$(InputDir)..\..\pcre\pcre.def"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(IntDir)\$(ProjectName).pdb"
 				ImportLibrary="$(IntDir)\$(ProjectName).lib"
@@ -285,7 +285,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre-6.7\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -356,7 +356,7 @@
 				OutputFile="$(OutDir)\$(ProjectName).dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ModuleDefinitionFile="$(InputDir)..\..\pcre-6.7\pcre.def"
+				ModuleDefinitionFile="$(InputDir)..\..\pcre\pcre.def"
 				ProgramDatabaseFile="$(IntDir)\$(ProjectName).pdb"
 				ImportLibrary="$(IntDir)\$(ProjectName).lib"
 				TargetMachine="1"
@@ -386,7 +386,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre-6.7\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\pcre\pcre.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -402,51 +402,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_compile.c"
+				RelativePath="..\..\pcre\pcre_compile.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_config.c"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release DLL|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\pcre-6.7\pcre_dfa_exec.c"
+				RelativePath="..\..\pcre\pcre_config.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -486,7 +446,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_exec.c"
+				RelativePath="..\..\pcre\pcre_dfa_exec.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -526,7 +486,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_fullinfo.c"
+				RelativePath="..\..\pcre\pcre_exec.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -566,7 +526,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_get.c"
+				RelativePath="..\..\pcre\pcre_fullinfo.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -606,7 +566,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_globals.c"
+				RelativePath="..\..\pcre\pcre_get.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -646,7 +606,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_info.c"
+				RelativePath="..\..\pcre\pcre_globals.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -686,7 +646,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_maketables.c"
+				RelativePath="..\..\pcre\pcre_info.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -726,7 +686,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_ord2utf8.c"
+				RelativePath="..\..\pcre\pcre_maketables.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -766,7 +726,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_refcount.c"
+				RelativePath="..\..\pcre\pcre_ord2utf8.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -806,7 +766,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_study.c"
+				RelativePath="..\..\pcre\pcre_refcount.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -846,7 +806,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_tables.c"
+				RelativePath="..\..\pcre\pcre_study.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -886,7 +846,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_try_flipped.c"
+				RelativePath="..\..\pcre\pcre_tables.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -926,11 +886,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_ucp_searchfuncs.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\pcre-6.7\pcre_valid_utf8.c"
+				RelativePath="..\..\pcre\pcre_try_flipped.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -970,7 +926,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_version.c"
+				RelativePath="..\..\pcre\pcre_ucp_searchfuncs.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pcre\pcre_valid_utf8.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1010,7 +970,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_xclass.c"
+				RelativePath="..\..\pcre\pcre_version.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1050,7 +1010,47 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcreposix.c"
+				RelativePath="..\..\pcre\pcre_xclass.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug DLL|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions="_WIN32;WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release DLL|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions="_WIN32;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBPCRE_EXPORTS;SUPPORT_UTF8;SUPPORT_UCP;POSIX_MALLOC_THRESHOLD=10;NO_RECURSE;$(NoInherit)"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\pcre\pcreposix.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1099,7 +1099,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\internal.h"
+				RelativePath="..\..\pcre\internal.h"
 				>
 			</File>
 			<File
@@ -1107,11 +1107,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcre_internal.h"
+				RelativePath="..\..\pcre\pcre_internal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\pcre-6.7\pcreposix.h"
+				RelativePath="..\..\pcre\pcreposix.h"
 				>
 			</File>
 		</Filter>

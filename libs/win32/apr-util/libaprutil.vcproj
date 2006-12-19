@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apr_ldap.h&quot; type &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apr_ldap.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apr_ldap.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu.h&quot; type &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_config.h&quot; type &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_config.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_select_dbm.h&quot; type &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_select_dbm.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_select_dbm.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_want.h&quot; type &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_want.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_want.h&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util\include\apr_ldap.h&quot; type &quot;$(ProjectDir)..\..\apr-util\include\apr_ldap.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\include\apr_ldap.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util\include\apu.h&quot; type &quot;$(ProjectDir)..\..\apr-util\include\apu.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\include\apu.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util\include\apu_config.h&quot; type &quot;$(ProjectDir)..\..\apr-util\include\apu_config.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\include\apu_config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h&quot; type &quot;$(ProjectDir)..\..\apr-util\include\apu_select_dbm.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util\include\apu_want.h&quot; type &quot;$(ProjectDir)..\..\apr-util\include\apu_want.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\include\apu_want.h&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr-util\include\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -49,7 +49,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc "
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\apr-util-1.2.7\include,..\..\apr-util-1.2.7\include/private,..\..\apr-util-1.2.7\dbm/sdbm,..\..\apr-iconv-1.1.1\include,..\..\apr-1.2.7\include"
+				AdditionalIncludeDirectories="..\..\apr-util\include,..\..\apr-util\include/private,..\..\apr-util\dbm/sdbm,..\..\apr-iconv-1.1.1\include,..\..\apr-1.2.7\include"
 				PreprocessorDefinitions="_DEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\Debug/libaprutil.pch"
@@ -67,7 +67,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG,APU_VERSION_ONLY"
 				Culture="1033"
-				AdditionalIncludeDirectories="..\..\apr-util-1.2.7\include,..\..\apr-util-1.2.7\include/private,..\..\apr-util-1.2.7\dbm/sdbm,..\..\apr-iconv-1.1.1\include,..\..\apr-1.2.7\include"
+				AdditionalIncludeDirectories="..\..\apr-util\include,..\..\apr-util\include/private,..\..\apr-util\dbm/sdbm,..\..\apr-iconv-1.1.1\include,..\..\apr-1.2.7\include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -125,7 +125,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apr_ldap.h&quot; type &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apr_ldap.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apr_ldap.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu.h&quot; type &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_config.h&quot; type &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_config.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_select_dbm.h&quot; type &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_select_dbm.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_select_dbm.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_want.h&quot; type &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_want.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\apu_want.h&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr-util-1.2.7\include\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util\include\apr_ldap.h&quot; type &quot;$(ProjectDir)..\..\apr-util\include\apr_ldap.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\include\apr_ldap.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util\include\apu.h&quot; type &quot;$(ProjectDir)..\..\apr-util\include\apu.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\include\apu.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util\include\apu_config.h&quot; type &quot;$(ProjectDir)..\..\apr-util\include\apu_config.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\include\apu_config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h&quot; type &quot;$(ProjectDir)..\..\apr-util\include\apu_select_dbm.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\include\apu_select_dbm.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-util\include\apu_want.h&quot; type &quot;$(ProjectDir)..\..\apr-util\include\apu_want.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-util\include\apu_want.h&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr-util\include\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -149,7 +149,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\apr-util-1.2.7\include,..\..\apr-util-1.2.7\include/private,..\..\apr-util-1.2.7\dbm/sdbm,..\..\apr-iconv-1.1.1\include,..\..\apr-1.2.7\include"
+				AdditionalIncludeDirectories="..\..\apr-util\include,..\..\apr-util\include/private,..\..\apr-util\dbm/sdbm,..\..\apr-iconv-1.1.1\include,..\..\apr-1.2.7\include"
 				PreprocessorDefinitions="NDEBUG;APU_DECLARE_EXPORT;APU_USE_SDBM;WIN32;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -169,7 +169,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG,APU_VERSION_ONLY"
 				Culture="1033"
-				AdditionalIncludeDirectories="..\..\apr-util-1.2.7\include,..\..\apr-util-1.2.7\include/private,..\..\apr-util-1.2.7\dbm/sdbm,..\..\apr-iconv-1.1.1\include,..\..\apr-1.2.7\include"
+				AdditionalIncludeDirectories="..\..\apr-util\include,..\..\apr-util\include/private,..\..\apr-util\dbm/sdbm,..\..\apr-iconv-1.1.1\include,..\..\apr-1.2.7\include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -228,7 +228,7 @@
 				Name="buckets"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_brigade.c"
+					RelativePath="..\..\apr-util\buckets\apr_brigade.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -250,7 +250,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -272,7 +272,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets_alloc.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets_alloc.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -294,7 +294,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets_eos.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets_eos.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -316,7 +316,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets_file.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets_file.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -338,7 +338,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets_flush.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets_flush.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -360,7 +360,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets_heap.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets_heap.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -382,7 +382,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets_mmap.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets_mmap.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -404,7 +404,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets_pipe.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets_pipe.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -426,7 +426,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets_pool.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets_pool.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -448,7 +448,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets_refcount.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets_refcount.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -470,7 +470,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets_simple.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets_simple.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -492,7 +492,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\buckets\apr_buckets_socket.c"
+					RelativePath="..\..\apr-util\buckets\apr_buckets_socket.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -518,7 +518,7 @@
 				Name="crypto"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\crypto\apr_md4.c"
+					RelativePath="..\..\apr-util\crypto\apr_md4.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -540,7 +540,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\crypto\apr_md5.c"
+					RelativePath="..\..\apr-util\crypto\apr_md5.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -562,7 +562,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\crypto\apr_sha1.c"
+					RelativePath="..\..\apr-util\crypto\apr_sha1.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -584,7 +584,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\crypto\getuuid.c"
+					RelativePath="..\..\apr-util\crypto\getuuid.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -606,7 +606,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\crypto\uuid.c"
+					RelativePath="..\..\apr-util\crypto\uuid.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -632,7 +632,7 @@
 				Name="dbd"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbd\apr_dbd.c"
+					RelativePath="..\..\apr-util\dbd\apr_dbd.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -654,7 +654,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbd\apr_dbd_pgsql.c"
+					RelativePath="..\..\apr-util\dbd\apr_dbd_pgsql.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -676,7 +676,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbd\apr_dbd_sqlite2.c"
+					RelativePath="..\..\apr-util\dbd\apr_dbd_sqlite2.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -698,7 +698,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbd\apr_dbd_sqlite3.c"
+					RelativePath="..\..\apr-util\dbd\apr_dbd_sqlite3.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -724,7 +724,7 @@
 				Name="dbm"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbm\apr_dbm.c"
+					RelativePath="..\..\apr-util\dbm\apr_dbm.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -746,7 +746,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbm\apr_dbm_berkeleydb.c"
+					RelativePath="..\..\apr-util\dbm\apr_dbm_berkeleydb.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -768,7 +768,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbm\apr_dbm_gdbm.c"
+					RelativePath="..\..\apr-util\dbm\apr_dbm_gdbm.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -790,7 +790,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbm\apr_dbm_sdbm.c"
+					RelativePath="..\..\apr-util\dbm\apr_dbm_sdbm.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -816,7 +816,7 @@
 				Name="encoding"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\encoding\apr_base64.c"
+					RelativePath="..\..\apr-util\encoding\apr_base64.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -842,7 +842,7 @@
 				Name="hooks"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\hooks\apr_hooks.c"
+					RelativePath="..\..\apr-util\hooks\apr_hooks.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -868,7 +868,7 @@
 				Name="ldap"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\ldap\apr_ldap_init.c"
+					RelativePath="..\..\apr-util\ldap\apr_ldap_init.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -890,7 +890,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\ldap\apr_ldap_option.c"
+					RelativePath="..\..\apr-util\ldap\apr_ldap_option.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -912,7 +912,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\ldap\apr_ldap_url.c"
+					RelativePath="..\..\apr-util\ldap\apr_ldap_url.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -938,7 +938,7 @@
 				Name="misc"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\misc\apr_date.c"
+					RelativePath="..\..\apr-util\misc\apr_date.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -960,7 +960,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\misc\apr_queue.c"
+					RelativePath="..\..\apr-util\misc\apr_queue.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -982,7 +982,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\misc\apr_reslist.c"
+					RelativePath="..\..\apr-util\misc\apr_reslist.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1004,7 +1004,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\misc\apr_rmm.c"
+					RelativePath="..\..\apr-util\misc\apr_rmm.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1030,7 +1030,7 @@
 				Name="sdbm"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbm\sdbm\sdbm.c"
+					RelativePath="..\..\apr-util\dbm\sdbm\sdbm.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1052,7 +1052,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbm\sdbm\sdbm_hash.c"
+					RelativePath="..\..\apr-util\dbm\sdbm\sdbm_hash.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1074,7 +1074,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbm\sdbm\sdbm_lock.c"
+					RelativePath="..\..\apr-util\dbm\sdbm\sdbm_lock.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1096,7 +1096,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbm\sdbm\sdbm_pair.c"
+					RelativePath="..\..\apr-util\dbm\sdbm\sdbm_pair.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1118,15 +1118,15 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbm\sdbm\sdbm_pair.h"
+					RelativePath="..\..\apr-util\dbm\sdbm\sdbm_pair.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbm\sdbm\sdbm_private.h"
+					RelativePath="..\..\apr-util\dbm\sdbm\sdbm_private.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\dbm\sdbm\sdbm_tune.h"
+					RelativePath="..\..\apr-util\dbm\sdbm\sdbm_tune.h"
 					>
 				</File>
 			</Filter>
@@ -1134,7 +1134,7 @@
 				Name="strmatch"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\strmatch\apr_strmatch.c"
+					RelativePath="..\..\apr-util\strmatch\apr_strmatch.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1160,7 +1160,7 @@
 				Name="uri"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\uri\apr_uri.c"
+					RelativePath="..\..\apr-util\uri\apr_uri.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1186,7 +1186,7 @@
 				Name="xlate"
 				>
 				<File
-					RelativePath="..\..\apr-util-1.2.7\xlate\xlate.c"
+					RelativePath="..\..\apr-util\xlate\xlate.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1213,15 +1213,15 @@
 			Name="Generated Files"
 			>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_ldap.h.in"
+				RelativePath="..\..\apr-util\include\apr_ldap.h.in"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_ldap.hnw"
+				RelativePath="..\..\apr-util\include\apr_ldap.hnw"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_ldap.hw"
+				RelativePath="..\..\apr-util\include\apr_ldap.hw"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1229,8 +1229,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apr_ldap.h from apr_ldap.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\apr_ldap.h type ..\..\apr-util-1.2.7\include\apr_ldap.hw &gt; ..\..\apr-util-1.2.7\include\apr_ldap.h&#x0D;&#x0A;"
-						Outputs="..\..\apr-util-1.2.7\include\apr_ldap.h"
+						CommandLine="if not exist ..\..\apr-util\include\apr_ldap.h type ..\..\apr-util\include\apr_ldap.hw &gt; ..\..\apr-util\include\apr_ldap.h&#x0D;&#x0A;"
+						Outputs="..\..\apr-util\include\apr_ldap.h"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -1239,21 +1239,21 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apr_ldap.h from apr_ldap.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\apr_ldap.h type ..\..\apr-util-1.2.7\include\apr_ldap.hw &gt; ..\..\apr-util-1.2.7\include\apr_ldap.h&#x0D;&#x0A;"
-						Outputs="..\..\apr-util-1.2.7\include\apr_ldap.h"
+						CommandLine="if not exist ..\..\apr-util\include\apr_ldap.h type ..\..\apr-util\include\apr_ldap.hw &gt; ..\..\apr-util\include\apr_ldap.h&#x0D;&#x0A;"
+						Outputs="..\..\apr-util\include\apr_ldap.h"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apu.h.in"
+				RelativePath="..\..\apr-util\include\apu.h.in"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apu.hnw"
+				RelativePath="..\..\apr-util\include\apu.hnw"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apu.hw"
+				RelativePath="..\..\apr-util\include\apu.hw"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1261,8 +1261,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu.h from apu.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\apu.h type ..\..\apr-util-1.2.7\include\apu.hw &gt; ..\..\apr-util-1.2.7\include\apu.h&#x0D;&#x0A;"
-						Outputs="..\..\apr-util-1.2.7\include\apu.h"
+						CommandLine="if not exist ..\..\apr-util\include\apu.h type ..\..\apr-util\include\apu.hw &gt; ..\..\apr-util\include\apu.h&#x0D;&#x0A;"
+						Outputs="..\..\apr-util\include\apu.h"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -1271,17 +1271,17 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu.h from apu.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\apu.h type ..\..\apr-util-1.2.7\include\apu.hw &gt; ..\..\apr-util-1.2.7\include\apu.h&#x0D;&#x0A;"
-						Outputs="..\..\apr-util-1.2.7\include\apu.h"
+						CommandLine="if not exist ..\..\apr-util\include\apu.h type ..\..\apr-util\include\apu.hw &gt; ..\..\apr-util\include\apu.h&#x0D;&#x0A;"
+						Outputs="..\..\apr-util\include\apu.h"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\private\apu_config.h.in"
+				RelativePath="..\..\apr-util\include\private\apu_config.h.in"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\private\apu_config.hw"
+				RelativePath="..\..\apr-util\include\private\apu_config.hw"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1289,8 +1289,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu_config.h from apu_config.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\private\apu_config.h type ..\..\apr-util-1.2.7\include\private\apu_config.hw &gt; ..\..\apr-util-1.2.7\include\private\apu_config.h&#x0D;&#x0A;"
-						Outputs="..\..\apr-util-1.2.7\include\private\apu_config.h"
+						CommandLine="if not exist ..\..\apr-util\include\private\apu_config.h type ..\..\apr-util\include\private\apu_config.hw &gt; ..\..\apr-util\include\private\apu_config.h&#x0D;&#x0A;"
+						Outputs="..\..\apr-util\include\private\apu_config.h"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -1299,17 +1299,17 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu_config.h from apu_config.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\private\apu_config.h type ..\..\apr-util-1.2.7\include\private\apu_config.hw &gt; ..\..\apr-util-1.2.7\include\private\apu_config.h&#x0D;&#x0A;"
-						Outputs="..\..\apr-util-1.2.7\include\private\apu_config.h"
+						CommandLine="if not exist ..\..\apr-util\include\private\apu_config.h type ..\..\apr-util\include\private\apu_config.hw &gt; ..\..\apr-util\include\private\apu_config.h&#x0D;&#x0A;"
+						Outputs="..\..\apr-util\include\private\apu_config.h"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\private\apu_select_dbm.h.in"
+				RelativePath="..\..\apr-util\include\private\apu_select_dbm.h.in"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\private\apu_select_dbm.hw"
+				RelativePath="..\..\apr-util\include\private\apu_select_dbm.hw"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1317,8 +1317,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu_select_dbm.h from apu_select_dbm.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\private\apu_select_dbm.h type ..\..\apr-util-1.2.7\include\private\apu_select_dbm.hw &gt; ..\..\apr-util-1.2.7\include\private\apu_select_dbm.h&#x0D;&#x0A;"
-						Outputs="..\..\apr-util-1.2.7\include\private\apu_select_dbm.h"
+						CommandLine="if not exist ..\..\apr-util\include\private\apu_select_dbm.h type ..\..\apr-util\include\private\apu_select_dbm.hw &gt; ..\..\apr-util\include\private\apu_select_dbm.h&#x0D;&#x0A;"
+						Outputs="..\..\apr-util\include\private\apu_select_dbm.h"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -1327,21 +1327,21 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu_select_dbm.h from apu_select_dbm.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\private\apu_select_dbm.h type ..\..\apr-util-1.2.7\include\private\apu_select_dbm.hw &gt; ..\..\apr-util-1.2.7\include\private\apu_select_dbm.h&#x0D;&#x0A;"
-						Outputs="..\..\apr-util-1.2.7\include\private\apu_select_dbm.h"
+						CommandLine="if not exist ..\..\apr-util\include\private\apu_select_dbm.h type ..\..\apr-util\include\private\apu_select_dbm.hw &gt; ..\..\apr-util\include\private\apu_select_dbm.h&#x0D;&#x0A;"
+						Outputs="..\..\apr-util\include\private\apu_select_dbm.h"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apu_want.h.in"
+				RelativePath="..\..\apr-util\include\apu_want.h.in"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apu_want.hnw"
+				RelativePath="..\..\apr-util\include\apu_want.hnw"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apu_want.hw"
+				RelativePath="..\..\apr-util\include\apu_want.hw"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -1349,8 +1349,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu_want.h from apu_want.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\apu_want.h type ..\..\apr-util-1.2.7\include\apu_want.hw &gt; ..\..\apr-util-1.2.7\include\apu_want.h&#x0D;&#x0A;"
-						Outputs="..\..\apr-util-1.2.7\include\apu_want.h"
+						CommandLine="if not exist ..\..\apr-util\include\apu_want.h type ..\..\apr-util\include\apu_want.hw &gt; ..\..\apr-util\include\apu_want.h&#x0D;&#x0A;"
+						Outputs="..\..\apr-util\include\apu_want.h"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -1359,8 +1359,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating apu_want.h from apu_want.hw"
-						CommandLine="if not exist ..\..\apr-util-1.2.7\include\apu_want.h type ..\..\apr-util-1.2.7\include\apu_want.hw &gt; ..\..\apr-util-1.2.7\include\apu_want.h&#x0D;&#x0A;"
-						Outputs="..\..\apr-util-1.2.7\include\apu_want.h"
+						CommandLine="if not exist ..\..\apr-util\include\apu_want.h type ..\..\apr-util\include\apu_want.hw &gt; ..\..\apr-util\include\apu_want.h&#x0D;&#x0A;"
+						Outputs="..\..\apr-util\include\apu_want.h"
 					/>
 				</FileConfiguration>
 			</File>
@@ -1369,96 +1369,96 @@
 			Name="Public Header Files"
 			>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_anylock.h"
+				RelativePath="..\..\apr-util\include\apr_anylock.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_base64.h"
+				RelativePath="..\..\apr-util\include\apr_base64.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_buckets.h"
+				RelativePath="..\..\apr-util\include\apr_buckets.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_date.h"
+				RelativePath="..\..\apr-util\include\apr_date.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_dbm.h"
+				RelativePath="..\..\apr-util\include\apr_dbm.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_hooks.h"
+				RelativePath="..\..\apr-util\include\apr_hooks.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_ldap_url.h"
+				RelativePath="..\..\apr-util\include\apr_ldap_url.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_md4.h"
+				RelativePath="..\..\apr-util\include\apr_md4.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_md5.h"
+				RelativePath="..\..\apr-util\include\apr_md5.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_optional.h"
+				RelativePath="..\..\apr-util\include\apr_optional.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_optional_hooks.h"
+				RelativePath="..\..\apr-util\include\apr_optional_hooks.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_queue.h"
+				RelativePath="..\..\apr-util\include\apr_queue.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_reslist.h"
+				RelativePath="..\..\apr-util\include\apr_reslist.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_rmm.h"
+				RelativePath="..\..\apr-util\include\apr_rmm.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_sdbm.h"
+				RelativePath="..\..\apr-util\include\apr_sdbm.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_sha1.h"
+				RelativePath="..\..\apr-util\include\apr_sha1.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_strmatch.h"
+				RelativePath="..\..\apr-util\include\apr_strmatch.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_uri.h"
+				RelativePath="..\..\apr-util\include\apr_uri.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_uuid.h"
+				RelativePath="..\..\apr-util\include\apr_uuid.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_xlate.h"
+				RelativePath="..\..\apr-util\include\apr_xlate.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apr_xml.h"
+				RelativePath="..\..\apr-util\include\apr_xml.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\include\apu_version.h"
+				RelativePath="..\..\apr-util\include\apu_version.h"
 				>
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\..\apr-util-1.2.7\libaprutil.rc"
+			RelativePath="..\..\apr-util\libaprutil.rc"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"

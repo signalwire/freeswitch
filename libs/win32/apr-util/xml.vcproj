@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="$(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\"
+				AdditionalIncludeDirectories="$(ProjectDir)..\..\apr-util\xml\expat\lib\"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;VERSION=\&quot;expat_1.95.2\&quot;"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -118,7 +118,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc "
 				Optimization="0"
-				AdditionalIncludeDirectories="$(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\"
+				AdditionalIncludeDirectories="$(ProjectDir)..\..\apr-util\xml\expat\lib\"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;VERSION=\&quot;expat_1.95.2\&quot;"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\LibD/xml.pch"
@@ -171,7 +171,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\xmlparse.c"
+				RelativePath="..\..\apr-util\xml\expat\lib\xmlparse.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -193,7 +193,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\xmlrole.c"
+				RelativePath="..\..\apr-util\xml\expat\lib\xmlrole.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -215,7 +215,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\xmltok.c"
+				RelativePath="..\..\apr-util\xml\expat\lib\xmltok.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -237,7 +237,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\xmltok_impl.c"
+				RelativePath="..\..\apr-util\xml\expat\lib\xmltok_impl.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -261,7 +261,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\xmltok_ns.c"
+				RelativePath="..\..\apr-util\xml\expat\lib\xmltok_ns.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -290,47 +290,47 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\ascii.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\ascii.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\asciitab.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\asciitab.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\config.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\config.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\expat.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\expat.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\iasciitab.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\iasciitab.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\latin1tab.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\latin1tab.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\nametab.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\nametab.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\utf8tab.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\utf8tab.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\xmlrole.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\xmlrole.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\xmltok.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\xmltok.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\xmltok_impl.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\xmltok_impl.h"
 				>
 			</File>
 		</Filter>
@@ -338,7 +338,7 @@
 			Name="Generated Header Files"
 			>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\expat.h.in"
+				RelativePath="..\..\apr-util\xml\expat\lib\expat.h.in"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -346,8 +346,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating expat.h from expat.h.in"
-						CommandLine="if not exist $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\expat.h type $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\expat.h.in &gt; $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\expat.h&#x0D;&#x0A;"
-						Outputs="$(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\expat.h"
+						CommandLine="if not exist $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h type $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h.in &gt; $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h&#x0D;&#x0A;"
+						Outputs="$(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -356,13 +356,13 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating expat.h from expat.h.in"
-						CommandLine="if not exist $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\expat.h type $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\expat.h.in &gt; $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\expat.h&#x0D;&#x0A;"
-						Outputs="$(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\expat.h"
+						CommandLine="if not exist $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h type $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h.in &gt; $(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h&#x0D;&#x0A;"
+						Outputs="$(ProjectDir)..\..\apr-util\xml\expat\lib\expat.h"
 					/>
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\winconfig.h"
+				RelativePath="..\..\apr-util\xml\expat\lib\winconfig.h"
 				>
 				<FileConfiguration
 					Name="Release|Win32"
@@ -370,8 +370,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating config.h from winconfig.h"
-						CommandLine="if not exist $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h type $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\winconfig.h &gt; $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h&#x0D;&#x0A;"
-						Outputs="$(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h"
+						CommandLine="if not exist $(ProjectDir)..\..\apr-util\xml\expat\lib\config.h type $(ProjectDir)..\..\apr-util\xml\expat\lib\winconfig.h &gt; $(ProjectDir)..\..\apr-util\xml\expat\lib\config.h&#x0D;&#x0A;"
+						Outputs="$(ProjectDir)..\..\apr-util\xml\expat\lib\config.h"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -380,14 +380,14 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Creating config.h from winconfig.h"
-						CommandLine="if not exist $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h type $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\winconfig.h &gt; $(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h&#x0D;&#x0A;"
-						Outputs="$(ProjectDir)..\..\apr-util-1.2.7\xml\expat\lib\config.h"
+						CommandLine="if not exist $(ProjectDir)..\..\apr-util\xml\expat\lib\config.h type $(ProjectDir)..\..\apr-util\xml\expat\lib\winconfig.h &gt; $(ProjectDir)..\..\apr-util\xml\expat\lib\config.h&#x0D;&#x0A;"
+						Outputs="$(ProjectDir)..\..\apr-util\xml\expat\lib\config.h"
 					/>
 				</FileConfiguration>
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\..\apr-util-1.2.7\xml\expat\lib\ReadMe.txt"
+			RelativePath="..\..\apr-util\xml\expat\lib\ReadMe.txt"
 			>
 		</File>
 	</Files>

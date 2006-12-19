@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-1.2.7\include\apr.h&quot; type &quot;$(ProjectDir)apr.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-1.2.7\include\apr.h&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr-1.2.7\include\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr\include\apr.h&quot; type &quot;$(ProjectDir)apr.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr\include\apr.h&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr\include\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -49,7 +49,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/EHsc "
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;..\..\apr-1.2.7\include&quot;;&quot;..\..\apr-1.2.7\include/arch&quot;;&quot;..\..\apr-1.2.7\include/arch/win32&quot;;&quot;..\..\apr-1.2.7\include/arch/unix&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\apr\include&quot;;&quot;..\..\apr\include/arch&quot;;&quot;..\..\apr\include/arch/win32&quot;;&quot;..\..\apr\include/arch/unix&quot;"
 				PreprocessorDefinitions="_DEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\Debug/libapr.pch"
@@ -67,7 +67,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG,APR_VERSION_ONLY"
 				Culture="1033"
-				AdditionalIncludeDirectories="..\..\apr-1.2.7\include"
+				AdditionalIncludeDirectories="..\..\apr\include"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -124,7 +124,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr-1.2.7\include\apr.h&quot; type &quot;$(ProjectDir)apr.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr-1.2.7\include\apr.h&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr-1.2.7\include\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\apr\include\apr.h&quot; type &quot;$(ProjectDir)apr.hw&quot; &gt; &quot;$(ProjectDir)..\..\apr\include\apr.h&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\apr\include\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -148,7 +148,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;..\..\apr-1.2.7\include&quot;;&quot;..\..\apr-1.2.7\include/arch&quot;;&quot;..\..\apr-1.2.7\include/arch/win32&quot;;&quot;..\..\apr-1.2.7\include/arch/unix&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\apr\include&quot;;&quot;..\..\apr\include/arch&quot;;&quot;..\..\apr\include/arch/win32&quot;;&quot;..\..\apr\include/arch/unix&quot;"
 				PreprocessorDefinitions="NDEBUG;APR_DECLARE_EXPORT;WIN32;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -168,7 +168,7 @@
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG,APR_VERSION_ONLY"
 				Culture="1033"
-				AdditionalIncludeDirectories="..\..\apr-1.2.7\"
+				AdditionalIncludeDirectories="..\..\apr\"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
@@ -227,7 +227,7 @@
 				Name="atomic"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\atomic\win32\apr_atomic.c"
+					RelativePath="..\..\apr\atomic\win32\apr_atomic.c"
 					>
 				</File>
 			</Filter>
@@ -235,7 +235,7 @@
 				Name="dso"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\dso\win32\dso.c"
+					RelativePath="..\..\apr\dso\win32\dso.c"
 					>
 				</File>
 			</Filter>
@@ -243,67 +243,67 @@
 				Name="file_io"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\unix\copy.c"
+					RelativePath="..\..\apr\file_io\unix\copy.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\win32\dir.c"
+					RelativePath="..\..\apr\file_io\win32\dir.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\unix\fileacc.c"
+					RelativePath="..\..\apr\file_io\unix\fileacc.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\win32\filedup.c"
+					RelativePath="..\..\apr\file_io\win32\filedup.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\win32\filepath.c"
+					RelativePath="..\..\apr\file_io\win32\filepath.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\unix\filepath_util.c"
+					RelativePath="..\..\apr\file_io\unix\filepath_util.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\win32\filestat.c"
+					RelativePath="..\..\apr\file_io\win32\filestat.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\win32\filesys.c"
+					RelativePath="..\..\apr\file_io\win32\filesys.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\win32\flock.c"
+					RelativePath="..\..\apr\file_io\win32\flock.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\unix\fullrw.c"
+					RelativePath="..\..\apr\file_io\unix\fullrw.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\unix\mktemp.c"
+					RelativePath="..\..\apr\file_io\unix\mktemp.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\win32\open.c"
+					RelativePath="..\..\apr\file_io\win32\open.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\win32\pipe.c"
+					RelativePath="..\..\apr\file_io\win32\pipe.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\win32\readwrite.c"
+					RelativePath="..\..\apr\file_io\win32\readwrite.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\win32\seek.c"
+					RelativePath="..\..\apr\file_io\win32\seek.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\file_io\unix\tempdir.c"
+					RelativePath="..\..\apr\file_io\unix\tempdir.c"
 					>
 				</File>
 			</Filter>
@@ -311,19 +311,19 @@
 				Name="locks"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\locks\win32\proc_mutex.c"
+					RelativePath="..\..\apr\locks\win32\proc_mutex.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\locks\win32\thread_cond.c"
+					RelativePath="..\..\apr\locks\win32\thread_cond.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\locks\win32\thread_mutex.c"
+					RelativePath="..\..\apr\locks\win32\thread_mutex.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\locks\win32\thread_rwlock.c"
+					RelativePath="..\..\apr\locks\win32\thread_rwlock.c"
 					>
 				</File>
 			</Filter>
@@ -331,7 +331,7 @@
 				Name="memory"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\memory\unix\apr_pools.c"
+					RelativePath="..\..\apr\memory\unix\apr_pools.c"
 					>
 				</File>
 			</Filter>
@@ -339,47 +339,47 @@
 				Name="misc"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\misc\win32\charset.c"
+					RelativePath="..\..\apr\misc\win32\charset.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\misc\win32\env.c"
+					RelativePath="..\..\apr\misc\win32\env.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\misc\unix\errorcodes.c"
+					RelativePath="..\..\apr\misc\unix\errorcodes.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\misc\unix\getopt.c"
+					RelativePath="..\..\apr\misc\unix\getopt.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\misc\win32\internal.c"
+					RelativePath="..\..\apr\misc\win32\internal.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\misc\win32\misc.c"
+					RelativePath="..\..\apr\misc\win32\misc.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\misc\unix\otherchild.c"
+					RelativePath="..\..\apr\misc\unix\otherchild.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\misc\win32\rand.c"
+					RelativePath="..\..\apr\misc\win32\rand.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\misc\win32\start.c"
+					RelativePath="..\..\apr\misc\win32\start.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\misc\win32\utf8.c"
+					RelativePath="..\..\apr\misc\win32\utf8.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\misc\unix\version.c"
+					RelativePath="..\..\apr\misc\unix\version.c"
 					>
 				</File>
 			</Filter>
@@ -387,11 +387,11 @@
 				Name="mmap"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\mmap\unix\common.c"
+					RelativePath="..\..\apr\mmap\unix\common.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\mmap\win32\mmap.c"
+					RelativePath="..\..\apr\mmap\win32\mmap.c"
 					>
 				</File>
 			</Filter>
@@ -399,35 +399,35 @@
 				Name="network_io"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\network_io\unix\inet_ntop.c"
+					RelativePath="..\..\apr\network_io\unix\inet_ntop.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\network_io\unix\inet_pton.c"
+					RelativePath="..\..\apr\network_io\unix\inet_pton.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\network_io\unix\multicast.c"
+					RelativePath="..\..\apr\network_io\unix\multicast.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\poll\unix\select.c"
+					RelativePath="..\..\apr\poll\unix\select.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\network_io\win32\sendrecv.c"
+					RelativePath="..\..\apr\network_io\win32\sendrecv.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\network_io\unix\sockaddr.c"
+					RelativePath="..\..\apr\network_io\unix\sockaddr.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\network_io\win32\sockets.c"
+					RelativePath="..\..\apr\network_io\win32\sockets.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\network_io\win32\sockopt.c"
+					RelativePath="..\..\apr\network_io\win32\sockopt.c"
 					>
 				</File>
 			</Filter>
@@ -435,7 +435,7 @@
 				Name="passwd"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\passwd\apr_getpass.c"
+					RelativePath="..\..\apr\passwd\apr_getpass.c"
 					>
 				</File>
 			</Filter>
@@ -443,15 +443,15 @@
 				Name="random"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\random\unix\apr_random.c"
+					RelativePath="..\..\apr\random\unix\apr_random.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\random\unix\sha2.c"
+					RelativePath="..\..\apr\random\unix\sha2.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\random\unix\sha2_glue.c"
+					RelativePath="..\..\apr\random\unix\sha2_glue.c"
 					>
 				</File>
 			</Filter>
@@ -459,7 +459,7 @@
 				Name="shmem"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\shmem\win32\shm.c"
+					RelativePath="..\..\apr\shmem\win32\shm.c"
 					>
 				</File>
 			</Filter>
@@ -467,27 +467,27 @@
 				Name="strings"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\strings\apr_cpystrn.c"
+					RelativePath="..\..\apr\strings\apr_cpystrn.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\strings\apr_fnmatch.c"
+					RelativePath="..\..\apr\strings\apr_fnmatch.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\strings\apr_snprintf.c"
+					RelativePath="..\..\apr\strings\apr_snprintf.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\strings\apr_strings.c"
+					RelativePath="..\..\apr\strings\apr_strings.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\strings\apr_strnatcmp.c"
+					RelativePath="..\..\apr\strings\apr_strnatcmp.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\strings\apr_strtok.c"
+					RelativePath="..\..\apr\strings\apr_strtok.c"
 					>
 				</File>
 			</Filter>
@@ -495,11 +495,11 @@
 				Name="tables"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\tables\apr_hash.c"
+					RelativePath="..\..\apr\tables\apr_hash.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\tables\apr_tables.c"
+					RelativePath="..\..\apr\tables\apr_tables.c"
 					>
 				</File>
 			</Filter>
@@ -507,19 +507,19 @@
 				Name="threadproc"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\threadproc\win32\proc.c"
+					RelativePath="..\..\apr\threadproc\win32\proc.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\threadproc\win32\signals.c"
+					RelativePath="..\..\apr\threadproc\win32\signals.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\threadproc\win32\thread.c"
+					RelativePath="..\..\apr\threadproc\win32\thread.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\threadproc\win32\threadpriv.c"
+					RelativePath="..\..\apr\threadproc\win32\threadpriv.c"
 					>
 				</File>
 			</Filter>
@@ -527,15 +527,15 @@
 				Name="time"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\time\win32\access.c"
+					RelativePath="..\..\apr\time\win32\access.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\time\win32\time.c"
+					RelativePath="..\..\apr\time\win32\time.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\time\win32\timestr.c"
+					RelativePath="..\..\apr\time\win32\timestr.c"
 					>
 				</File>
 			</Filter>
@@ -543,11 +543,11 @@
 				Name="user"
 				>
 				<File
-					RelativePath="..\..\apr-1.2.7\user\win32\groupinfo.c"
+					RelativePath="..\..\apr\user\win32\groupinfo.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\apr-1.2.7\user\win32\userinfo.c"
+					RelativePath="..\..\apr\user\win32\userinfo.c"
 					>
 				</File>
 			</Filter>
@@ -556,51 +556,51 @@
 			Name="Private Header Files"
 			>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\win32\apr_arch_atime.h"
+				RelativePath="..\..\apr\include\arch\win32\apr_arch_atime.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\win32\apr_arch_dso.h"
+				RelativePath="..\..\apr\include\arch\win32\apr_arch_dso.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\win32\apr_arch_file_io.h"
+				RelativePath="..\..\apr\include\arch\win32\apr_arch_file_io.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\win32\apr_arch_inherit.h"
+				RelativePath="..\..\apr\include\arch\win32\apr_arch_inherit.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\win32\apr_arch_misc.h"
+				RelativePath="..\..\apr\include\arch\win32\apr_arch_misc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\win32\apr_arch_networkio.h"
+				RelativePath="..\..\apr\include\arch\win32\apr_arch_networkio.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\win32\apr_arch_thread_mutex.h"
+				RelativePath="..\..\apr\include\arch\win32\apr_arch_thread_mutex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\win32\apr_arch_thread_rwlock.h"
+				RelativePath="..\..\apr\include\arch\win32\apr_arch_thread_rwlock.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\win32\apr_arch_threadproc.h"
+				RelativePath="..\..\apr\include\arch\win32\apr_arch_threadproc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\win32\apr_arch_utf8.h"
+				RelativePath="..\..\apr\include\arch\win32\apr_arch_utf8.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\win32\apr_private.h"
+				RelativePath="..\..\apr\include\arch\win32\apr_private.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\arch\apr_private_common.h"
+				RelativePath="..\..\apr\include\arch\apr_private_common.h"
 				>
 			</File>
 		</Filter>
@@ -608,151 +608,151 @@
 			Name="Public Header Files"
 			>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_allocator.h"
+				RelativePath="..\..\apr\include\apr_allocator.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_atomic.h"
+				RelativePath="..\..\apr\include\apr_atomic.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_dso.h"
+				RelativePath="..\..\apr\include\apr_dso.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_env.h"
+				RelativePath="..\..\apr\include\apr_env.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_errno.h"
+				RelativePath="..\..\apr\include\apr_errno.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_file_info.h"
+				RelativePath="..\..\apr\include\apr_file_info.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_file_io.h"
+				RelativePath="..\..\apr\include\apr_file_io.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_fnmatch.h"
+				RelativePath="..\..\apr\include\apr_fnmatch.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_general.h"
+				RelativePath="..\..\apr\include\apr_general.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_getopt.h"
+				RelativePath="..\..\apr\include\apr_getopt.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_global_mutex.h"
+				RelativePath="..\..\apr\include\apr_global_mutex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_hash.h"
+				RelativePath="..\..\apr\include\apr_hash.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_inherit.h"
+				RelativePath="..\..\apr\include\apr_inherit.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_lib.h"
+				RelativePath="..\..\apr\include\apr_lib.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_mmap.h"
+				RelativePath="..\..\apr\include\apr_mmap.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_network_io.h"
+				RelativePath="..\..\apr\include\apr_network_io.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_poll.h"
+				RelativePath="..\..\apr\include\apr_poll.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_pools.h"
+				RelativePath="..\..\apr\include\apr_pools.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_portable.h"
+				RelativePath="..\..\apr\include\apr_portable.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_proc_mutex.h"
+				RelativePath="..\..\apr\include\apr_proc_mutex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_ring.h"
+				RelativePath="..\..\apr\include\apr_ring.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_shm.h"
+				RelativePath="..\..\apr\include\apr_shm.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_signal.h"
+				RelativePath="..\..\apr\include\apr_signal.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_strings.h"
+				RelativePath="..\..\apr\include\apr_strings.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_support.h"
+				RelativePath="..\..\apr\include\apr_support.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_tables.h"
+				RelativePath="..\..\apr\include\apr_tables.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_thread_cond.h"
+				RelativePath="..\..\apr\include\apr_thread_cond.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_thread_mutex.h"
+				RelativePath="..\..\apr\include\apr_thread_mutex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_thread_proc.h"
+				RelativePath="..\..\apr\include\apr_thread_proc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_thread_rwlock.h"
+				RelativePath="..\..\apr\include\apr_thread_rwlock.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_time.h"
+				RelativePath="..\..\apr\include\apr_time.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_user.h"
+				RelativePath="..\..\apr\include\apr_user.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_version.h"
+				RelativePath="..\..\apr\include\apr_version.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\apr-1.2.7\include\apr_want.h"
+				RelativePath="..\..\apr\include\apr_want.h"
 				>
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\..\apr-1.2.7\libapr.rc"
+			RelativePath="..\..\apr\libapr.rc"
 			>
 			<FileConfiguration
 				Name="Release|Win32"
 				>
 				<Tool
 					Name="VCResourceCompilerTool"
-					AdditionalIncludeDirectories="..\..\apr-1.2.7\include"
+					AdditionalIncludeDirectories="..\..\apr\include"
 				/>
 			</FileConfiguration>
 		</File>
