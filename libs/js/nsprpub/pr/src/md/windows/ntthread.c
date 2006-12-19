@@ -42,7 +42,7 @@
 PRLock                       *_pr_schedLock = NULL;
 _PRInterruptTable             _pr_interruptTable[] = { { 0 } };
 
-BOOL _pr_use_static_tls = TRUE;
+BOOL _pr_use_static_tls = FALSE;
 __declspec(thread) PRThread  *_pr_current_fiber;
 __declspec(thread) PRThread  *_pr_fiber_last_run;
 __declspec(thread) _PRCPU    *_pr_current_cpu;
