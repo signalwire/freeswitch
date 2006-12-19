@@ -698,6 +698,10 @@ static int activate_rtp(struct private_object *tech_pvt)
 		return 1;
 	}
 
+    if (!(tech_pvt->remote_ip && tech_pvt->remote_port)) {
+        return 0;
+    }
+
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   tech_pvt->codec_name,
 							   NULL,
