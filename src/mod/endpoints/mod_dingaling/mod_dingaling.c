@@ -306,7 +306,8 @@ static void pres_event_handler(switch_event_t *event)
 	}
 
 	switch(event->event_id) {
-	case SWITCH_EVENT_PRESENCE_PROBE: {
+	case SWITCH_EVENT_PRESENCE_PROBE: 
+        if (proto && !strcasecmp(proto, MDL_CHAT_PROTO)) {
         	char *sql;
             switch_core_db_t *db;
             char *errmsg;
@@ -323,7 +324,7 @@ static void pres_event_handler(switch_event_t *event)
                 switch_core_db_close(db);
                 switch_safe_free(sql);
             }
-    }
+        }
         return;
 	case SWITCH_EVENT_PRESENCE_IN:
 		if (!status) {

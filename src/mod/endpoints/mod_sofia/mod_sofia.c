@@ -5326,34 +5326,35 @@ static void pres_event_handler(switch_event_t *event)
 
 
 	switch(event->event_id) {
-    case SWITCH_EVENT_PRESENCE_PROBE: {
-        switch_core_db_t *db;
-        char *to = switch_event_get_header(event, "to");
-        char *user, *host;
+    case SWITCH_EVENT_PRESENCE_PROBE: 
+        if (proto && !strcasecmp(proto, SOFIA_CHAT_PROTO)) {
+            switch_core_db_t *db;
+            char *to = switch_event_get_header(event, "to");
+            char *user, *host;
 
-        if (!to || !(user = strdup(to))) {
-            return;
-        }
+            if (!to || !(user = strdup(to))) {
+                return;
+            }
 
-        if (!(db = switch_core_db_open_file(profile->dbname))) {
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+            if (!(db = switch_core_db_open_file(profile->dbname))) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+                switch_safe_free(user);
+                return;
+            }
+
+            if ((host = strchr(user, '@'))) {
+                *host++ = '\0';
+            }
+            if (user && host && 
+                (sql = switch_mprintf("select user,host,'Registered','unknown','' from sip_registrations where user='%q' and host='%q'", user, host))) {
+                switch_mutex_lock(profile->ireg_mutex);
+                switch_core_db_exec(db, sql, resub_callback, profile, &errmsg);
+                switch_mutex_unlock(profile->ireg_mutex);
+                switch_safe_free(sql);
+            }
             switch_safe_free(user);
-            return;
+            switch_core_db_close(db);
         }
-
-        if ((host = strchr(user, '@'))) {
-            *host++ = '\0';
-        }
-        if (user && host && 
-            (sql = switch_mprintf("select user,host,'Registered','unknown','' from sip_registrations where user='%q' and host='%q'", user, host))) {
-            switch_mutex_lock(profile->ireg_mutex);
-            switch_core_db_exec(db, sql, resub_callback, profile, &errmsg);
-            switch_mutex_unlock(profile->ireg_mutex);
-            switch_safe_free(sql);
-        }
-        switch_safe_free(user);
-        switch_core_db_close(db);
-    }
         return;
 	case SWITCH_EVENT_PRESENCE_IN:
 		sql = switch_mprintf("select 1,'%q','%q',* from sip_subscriptions where proto='%q' and event='%q' and sub_to_user='%q' and sub_to_host='%q'", 
