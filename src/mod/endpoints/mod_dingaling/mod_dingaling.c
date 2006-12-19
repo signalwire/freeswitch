@@ -307,7 +307,7 @@ static void pres_event_handler(switch_event_t *event)
 
 	switch(event->event_id) {
 	case SWITCH_EVENT_PRESENCE_PROBE: 
-        if (proto && !strcasecmp(proto, MDL_CHAT_PROTO)) {
+        if (proto) {
         	char *sql;
             switch_core_db_t *db;
             char *errmsg;

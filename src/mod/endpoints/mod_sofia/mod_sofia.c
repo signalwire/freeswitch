@@ -5327,26 +5327,33 @@ static void pres_event_handler(switch_event_t *event)
 
 	switch(event->event_id) {
     case SWITCH_EVENT_PRESENCE_PROBE: 
-        if (proto && !strcasecmp(proto, SOFIA_CHAT_PROTO)) {
+        if (proto) {
             switch_core_db_t *db;
             char *to = switch_event_get_header(event, "to");
-            char *user, *host;
+            char *user, *euser, *host, *p;
 
             if (!to || !(user = strdup(to))) {
-                return;
-            }
-
-            if (!(db = switch_core_db_open_file(profile->dbname))) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-                switch_safe_free(user);
                 return;
             }
 
             if ((host = strchr(user, '@'))) {
                 *host++ = '\0';
             }
-            if (user && host && 
-                (sql = switch_mprintf("select user,host,status,rpid,'' from sip_registrations where user='%q' and host='%q'", user, host))) {
+            euser = user;
+            if ((p = strchr(euser, '+'))) {
+                euser = (p+1);
+            }
+
+            if (euser && host && 
+                (sql = switch_mprintf("select user,host,status,rpid,'' from sip_registrations where user='%q' and host='%q'", euser, host)) &&
+                (profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, host))) {
+                if (!(db = switch_core_db_open_file(profile->dbname))) {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+                    switch_safe_free(user);
+                    switch_safe_free(sql);
+                    return;
+                }
+
                 switch_mutex_lock(profile->ireg_mutex);
                 switch_core_db_exec(db, sql, resub_callback, profile, &errmsg);
                 switch_mutex_unlock(profile->ireg_mutex);
