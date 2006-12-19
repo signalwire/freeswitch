@@ -1,0 +1,39 @@
+Pending symbol renames for APR [for some discussion yet]
+
+apr_file_info_t                  from apr_finfo_t 
+apr_file_attrs_t                 from apr_fileattrs_t
+apr_file_seek_where_t            from apr_seek_where_t
+
+#apr_filepath_name_get           from apr_filename_of_pathname
+ 
+apr_lock_mech_e                  from apr_lockmech_e
+
+#apr_gid_get                     from apr_get_groupid
+#apr_gid_name_get                from apr_get_groupname
+#apr_gid_name_get                from apr_group_name_get
+#apr_gid_compare                 from apr_compare_groups
+
+#apr_socket_shutdown              from apr_shutdown
+#apr_socket_bind                  from apr_bind
+#apr_socket_listen                from apr_listen
+#apr_socket_accept                from apr_accept
+#apr_socket_connect               from apr_connect
+#apr_socket_send                  from apr_send
+#apr_socket_sendv                 from apr_sendv
+#apr_socket_sendto                from apr_sendto
+#apr_socket_recvfrom              from apr_recvfrom
+#apr_socket_sendfile              from apr_sendfile
+#apr_socket_recv                  from apr_recv
+#apr_socket_inherit_set           from apr_socket_set_inherit
+#apr_socket_inherit_unset         from apr_socket_unset_inherit
+
+
+#apr_time_exp_gmt_get            from apr_implode_gmt
+apr_time_interval_t              from apr_interval_time_t
+apr_time_interval_short_t        from apr_short_interval_time_t
+
+#apr_uid_homepath_get            from apr_get_home_directory
+#apr_uid_get                     from apr_get_userid
+#apr_uid_current                 from apr_current_userid
+#apr_uid_compare                 from apr_compare_users
+#apr_uid_name_get                from apr_get_username

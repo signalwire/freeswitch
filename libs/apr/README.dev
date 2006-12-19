@@ -1,0 +1,30 @@
+Apache Portable Runtime
+=======================
+
+If you are building APR from SVN, you need to use a slightly non-standard
+build process.  You must have autoconf and libtool installed for this to
+work.  There are three steps:
+
+1) ./buildconf
+2) ./configure
+3) make
+
+If you are building APR from a distribution tarball, buildconf will have
+already been run for you, and you therefore do not need to have either
+autoconf or libtool installed, and you do not need to run buildconf.  Skip
+step one above and just run configure then make.
+
+Generating Test Coverage information
+====================================
+
+If you want to generate test coverage data, use the following steps:
+
+1) ./buildconf
+2) CFLAGS="-fprofile-arcs -ftest-coverage" ./configure
+3) make
+4) cd test
+5) make
+6) ./testall
+7) cd ..
+8) make gcov
+

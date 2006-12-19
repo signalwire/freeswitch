@@ -1,0 +1,94 @@
+#
+# Declare the sub-directories to be built here
+#
+
+SUBDIRS = \
+	$(EOLIST) 
+
+#
+# Get the 'head' of the build environment.  This includes default targets and
+# paths to tools
+#
+
+include $(APR_WORK)\build\NWGNUhead.inc
+
+#
+# build this level's files
+
+FILES_prebuild_headers = \
+	$(APR)/include/apr.h \
+	$(APRUTIL)/include/apu.h \
+	$(APRUTIL)/include/apu_want.h \
+	$(APRUTIL)/include/apr_ldap.h \
+	$(APRUTIL)/include/private/apu_config.h \
+	$(APRUTIL)/include/private/apu_select_dbm.h \
+	$(APRUTIL)/xml/expat/lib/expat.h \
+	$(APRUTIL)/xml/expat/lib/config.h \
+	$(EOLIST) 
+    
+nlms :: $(APR)/aprlib.imp
+
+$(APR)/aprlib.imp : make_nw_export.awk nw_export.i
+	@echo Generating $(subst /,\,$@)
+	awk -f make_nw_export.awk nw_export.i | sort >$(APR)/aprlib.imp
+    
+nw_export.i : nw_export.inc $(FILES_prebuild_headers) $(NLM_NAME)_cc.opt
+	@echo Generating $(subst /,\,$@)
+	$(CC) $< @$(NLM_NAME)_cc.opt
+
+$(NLM_NAME)_cc.opt : NWGNUmakefile $(APR_WORK)\build\NWGNUenvironment.inc $(APR_WORK)\build\NWGNUhead.inc $(APR_WORK)\build\NWGNUtail.inc $(CUSTOM_INI)
+	$(CHK) $@ $(DEL) $@
+	@echo -P >> $@
+	@echo -EP >> $@
+	@echo -nosyspath >> $@
+	@echo -w nocmdline >> $@
+	@echo $(DEFINES) -DGENEXPORTS >> $@
+	@echo -I$(APR)\include >> $@
+	@echo -I$(APR)\include\arch\netware >> $@
+	@echo -I$(APR)\include\arch\unix >> $@
+	@echo -I$(APRUTIL)\include >> $@
+	@echo -ir $(NOVELLLIBC) >> $@
+ifneq "$(LDAPSDK)" ""
+	@echo -ir $(LDAPSDK) >> $@
+endif
+
+$(APR)/include/%.h: $(subst /,\,$(APR))\include\%.hnw
+	@echo Creating $(subst /,\,$@)
+	copy $< $(subst /,\,$(APR))\include\$(@F)
+
+$(APRUTIL)/include/%.h: $(subst /,\,$(APRUTIL))\include\%.hnw
+	@echo Creating $(subst /,\,$@)
+	copy $< $(subst /,\,$(APRUTIL))\include\$(@F)
+
+$(APRUTIL)/include/private/%.h: $(subst /,\,$(APRUTIL))\include\private\%.hw
+	@echo Creating $(subst /,\,$@)
+	copy $< $(subst /,\,$(APRUTIL))\include\private\$(@F)
+
+$(APRUTIL)/xml/expat/lib/%.h: $(subst /,\,$(APRUTIL))\xml\expat\lib\%.hnw
+	@echo Creating $(subst /,\,$@)
+	copy $< $(subst /,\,$(APRUTIL))\xml\expat\lib\$(@F)
+
+$(APRUTIL)/xml/expat/lib/%.h: $(subst /,\,$(APRUTIL))\xml\expat\lib\%.h.in
+	@echo Creating $(subst /,\,$@)
+	copy $< $(subst /,\,$(APRUTIL))\xml\expat\lib\$(@F)
+
+#
+# You can use this target if all that is needed is to copy files to the
+# installation area
+#
+install :: nlms FORCE
+	
+
+clean ::
+	$(CHK) nw_export.i                                              $(DEL) nw_export.i
+	$(CHK) $(NLM_NAME)_cc.opt                                       $(DEL) $(NLM_NAME)_cc.opt
+	$(CHK) NWGNUversion.inc                                         $(DEL) NWGNUversion.inc	
+	$(CHK) $(subst /,\,$(APR))\include\apr.h                        $(DEL) $(subst /,\,$(APR))\include\apr.h
+	$(CHK) $(subst /,\,$(APRUTIL))\include\apu.h                    $(DEL) $(subst /,\,$(APRUTIL))\include\apu.h
+	$(CHK) $(subst /,\,$(APRUTIL))\include\apr_ldap.h               $(DEL) $(subst /,\,$(APRUTIL))\include\apr_ldap.h
+	$(CHK) $(subst /,\,$(APRUTIL))\include\private\apu_config.h     $(DEL) $(subst /,\,$(APRUTIL))\include\private\apu_config.h
+	$(CHK) $(subst /,\,$(APRUTIL))\include\private\apu_select_dbm.h $(DEL) $(subst /,\,$(APRUTIL))\include\private\apu_select_dbm.h
+	$(CHK) $(subst /,\,$(APRUTIL))\xml\expat\lib\expat.h            $(DEL) $(subst /,\,$(APRUTIL))\xml\expat\lib\expat.h
+	$(CHK) $(subst /,\,$(APRUTIL))\xml\expat\lib\config.h           $(DEL) $(subst /,\,$(APRUTIL))\xml\expat\lib\config.h
+	$(CHK) $(subst /,\,$(APR))\aprlib.imp                           $(DEL) $(subst /,\,$(APR))\aprlib.imp
+    
