@@ -5328,7 +5328,7 @@ static void pres_event_handler(switch_event_t *event)
 	switch(event->event_id) {
     case SWITCH_EVENT_PRESENCE_PROBE: 
         if (proto) {
-            switch_core_db_t *db;
+            switch_core_db_t *db = NULL;
             char *to = switch_event_get_header(event, "to");
             char *user, *euser, *host, *p;
 
