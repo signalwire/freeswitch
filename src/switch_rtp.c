@@ -897,7 +897,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				rtp_session->recv_msg.header.pt = 97;
 			}
 			rtp_session->rseq = ntohs(rtp_session->recv_msg.header.seq);
-			rtp_session->rpayload = rtp_session->recv_msg.header.pt;
+			rtp_session->rpayload = (switch_payload_t)rtp_session->recv_msg.header.pt;
 		} else {
 			if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
 				handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
@@ -945,7 +945,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 	}
 
 	rtp_session->last_read = switch_time_now();
-	*payload_type = rtp_session->recv_msg.header.pt;
+	*payload_type = (switch_payload_t)rtp_session->recv_msg.header.pt;
 
 
 	if (*payload_type == SWITCH_RTP_CNG_PAYLOAD) {
@@ -1295,7 +1295,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 
 		if (!rtp_session->mini && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
 			rtp_session->mini++;
-			rtp_session->rpayload = send_msg->header.pt;
+			rtp_session->rpayload = (switch_payload_t)send_msg->header.pt;
 			rtp_session->rseq = ntohs(send_msg->header.seq);
 		}
 
