@@ -190,6 +190,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t dl_signal, char *to, char *from, char *subject, char *msg);
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
 static switch_status_t load_config(void);
+static int sin_callback(void *pArg, int argc, char **argv, char **columnNames);
 
 #define is_special(s) (s && (strstr(s, "ext+") || strstr(s, "user+")))
 
@@ -305,6 +306,25 @@ static void pres_event_handler(switch_event_t *event)
 	}
 
 	switch(event->event_id) {
+	case SWITCH_EVENT_PRESENCE_PROBE: {
+        	char *sql;
+            switch_core_db_t *db;
+            char *errmsg;
+            char *to = switch_event_get_header(event, "to");
+
+            if (to && (sql = switch_mprintf("select * from subscriptions where sub_to='%q'", to))) {
+                if (!(db = switch_core_db_open_file(profile->dbname))) {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+                    return;
+                }
+                switch_mutex_lock(profile->mutex);
+                switch_core_db_exec(db, sql, sin_callback, profile, &errmsg);
+                switch_mutex_unlock(profile->mutex);
+                switch_core_db_close(db);
+                switch_safe_free(sql);
+            }
+    }
+        return;
 	case SWITCH_EVENT_PRESENCE_IN:
 		if (!status) {
 			status = "Available";
@@ -1614,6 +1634,11 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	}
 	
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_IN, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}

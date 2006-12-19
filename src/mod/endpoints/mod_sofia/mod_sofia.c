@@ -5326,6 +5326,35 @@ static void pres_event_handler(switch_event_t *event)
 
 
 	switch(event->event_id) {
+    case SWITCH_EVENT_PRESENCE_PROBE: {
+        switch_core_db_t *db;
+        char *to = switch_event_get_header(event, "to");
+        char *user, *host;
+
+        if (!to || !(user = strdup(to))) {
+            return;
+        }
+
+        if (!(db = switch_core_db_open_file(profile->dbname))) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+            switch_safe_free(user);
+            return;
+        }
+
+        if ((host = strchr(user, '@'))) {
+            *host++ = '\0';
+        }
+        if (user && host && 
+            (sql = switch_mprintf("select user,host,'Registered','unknown','' from sip_registrations where user='%q' and host='%q'", user, host))) {
+            switch_mutex_lock(profile->ireg_mutex);
+            switch_core_db_exec(db, sql, resub_callback, profile, &errmsg);
+            switch_mutex_unlock(profile->ireg_mutex);
+            switch_safe_free(sql);
+        }
+        switch_safe_free(user);
+        switch_core_db_close(db);
+    }
+        return;
 	case SWITCH_EVENT_PRESENCE_IN:
 		sql = switch_mprintf("select 1,'%q','%q',* from sip_subscriptions where proto='%q' and event='%q' and sub_to_user='%q' and sub_to_host='%q'", 
 							 status , rpid, proto, event_type, euser, host);
@@ -5402,6 +5431,11 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	}
 
 	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_OUT, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_bind((char *) modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}
