@@ -5226,8 +5226,8 @@ darwin*)
     ;;
 *)
     
-echo $ac_n "checking for pthread_create in -lpthreads""... $ac_c" 1>&6
-echo "configure:5243: checking for pthread_create in -lpthreads" >&5
+echo $ac_n "checking for pthread_create in -lpthread""... $ac_c" 1>&6
+echo "configure:5243: checking for pthread_create in -lpthread" >&5
 echo "
     #include <pthread.h> 
     void *foo(void *v) { return v; } 
@@ -5238,13 +5238,13 @@ echo "
         }
         return 0;
     }" > dummy.c ;
-    echo "${CC-cc} -o dummy${ac_exeext} dummy.c $CFLAGS $CPPFLAGS -lpthreads $LDFLAGS $LIBS" 1>&5;
-    ${CC-cc} -o dummy${ac_exeext} dummy.c $CFLAGS $CPPFLAGS -lpthreads $LDFLAGS $LIBS 2>&5;
+    echo "${CC-cc} -o dummy${ac_exeext} dummy.c $CFLAGS $CPPFLAGS -lpthread $LDFLAGS $LIBS" 1>&5;
+    ${CC-cc} -o dummy${ac_exeext} dummy.c $CFLAGS $CPPFLAGS -lpthread $LDFLAGS $LIBS 2>&5;
     _res=$? ;
     rm -f dummy.c dummy${ac_exeext} ;
     if test "$_res" = "0"; then
         echo "$ac_t""yes" 1>&6
-        _HAVE_PTHREADS=1 _PTHREAD_LDFLAGS="-lpthreads"
+        _HAVE_PTHREADS=1 _PTHREAD_LDFLAGS="-lpthread"
     else
         echo "$ac_t""no" 1>&6
         
