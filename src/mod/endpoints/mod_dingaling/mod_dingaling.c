@@ -2217,8 +2217,6 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					execute_sql(profile->dbname, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
-                printf("XXXXXXXXXXXXXXXXXXXXXXXXXXNO FUCKING WAY!!! %d %d\n", dl_signal, LDL_SIGNAL_PRESENCE_OUT);
-                abort();
 				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
