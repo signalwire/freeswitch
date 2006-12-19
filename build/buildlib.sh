@@ -61,7 +61,7 @@ else
     fi
 fi
 if [ -f $uncompressed/.complete ] ; then 
-if [ ! -n "$(find $uncompressed/.complete -prune -newer $uncompressed)" ]; then
+if [ $uncompressed/.complete -ot $uncompressed ]; then
 if [ ! -f $root/.nothanks ] ; then 
     echo remove stale .complete
     rm $uncompressed/.complete
@@ -105,3 +105,4 @@ else
 fi
 
 exit 0
+
