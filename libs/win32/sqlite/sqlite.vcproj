@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; type &quot;$(ProjectDir)sqlite3.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; type &quot;$(ProjectDir)parse.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; type &quot;$(ProjectDir)parse.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; type &quot;$(ProjectDir)opcodes.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; type &quot;$(ProjectDir)opcodes.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; type &quot;$(ProjectDir)keywordhash.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -77,7 +77,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite\src\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -90,7 +90,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; type &quot;$(ProjectDir)sqlite3.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; type &quot;$(ProjectDir)parse.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; type &quot;$(ProjectDir)parse.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; type &quot;$(ProjectDir)opcodes.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; type &quot;$(ProjectDir)opcodes.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; type &quot;$(ProjectDir)keywordhash.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -140,7 +140,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite\src\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -153,7 +153,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; type &quot;$(ProjectDir)sqlite3.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; type &quot;$(ProjectDir)parse.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; type &quot;$(ProjectDir)parse.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; type &quot;$(ProjectDir)opcodes.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; type &quot;$(ProjectDir)opcodes.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; type &quot;$(ProjectDir)keywordhash.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -191,7 +191,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="1"
-				ModuleDefinitionFile="../../sqlite-source-3_3_6/sqlite3.def"
+				ModuleDefinitionFile="sqlite3.def"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(IntDir)\$(ProjectName).pdb"
 				SubSystem="2"
@@ -221,7 +221,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite\src\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -234,7 +234,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot; type &quot;$(ProjectDir)sqlite3.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\sqlite3.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot; type &quot;$(ProjectDir)parse.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot; type &quot;$(ProjectDir)parse.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\parse.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot; type &quot;$(ProjectDir)opcodes.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot; type &quot;$(ProjectDir)opcodes.c&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\opcodes.c&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot; type &quot;$(ProjectDir)keywordhash.h&quot; &gt; &quot;$(ProjectDir)..\..\sqlite\src\keywordhash.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -269,7 +269,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkIncremental="1"
-				ModuleDefinitionFile="../../sqlite-source-3_3_6/sqlite3.def"
+				ModuleDefinitionFile="sqlite3.def"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
 			/>
 			<Tool
@@ -295,7 +295,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite-source-3_3_6\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\include\&quot; md  &quot;$(ProjectDir)..\..\include\&quot;&#x0D;&#x0A;xcopy &quot;$(ProjectDir)..\..\sqlite\src\*.h&quot; &quot;$(ProjectDir)..\..\include\&quot; /C /D /Y&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -308,167 +308,175 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\alter.c"
+				RelativePath="..\..\sqlite\src\alter.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\analyze.c"
+				RelativePath="..\..\sqlite\src\analyze.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\attach.c"
+				RelativePath="..\..\sqlite\src\attach.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\auth.c"
+				RelativePath="..\..\sqlite\src\auth.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\btree.c"
+				RelativePath="..\..\sqlite\src\btree.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\build.c"
+				RelativePath="..\..\sqlite\src\build.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\callback.c"
+				RelativePath="..\..\sqlite\src\callback.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\complete.c"
+				RelativePath="..\..\sqlite\src\complete.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\date.c"
+				RelativePath="..\..\sqlite\src\date.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\delete.c"
+				RelativePath="..\..\sqlite\src\delete.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\expr.c"
+				RelativePath="..\..\sqlite\src\expr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\func.c"
+				RelativePath="..\..\sqlite\src\func.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\hash.c"
+				RelativePath="..\..\sqlite\src\hash.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\insert.c"
+				RelativePath="..\..\sqlite\src\insert.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\legacy.c"
+				RelativePath="..\..\sqlite\src\legacy.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\main.c"
+				RelativePath="..\..\sqlite\src\loadext.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\opcodes.c"
+				RelativePath="..\..\sqlite\src\main.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\os.c"
+				RelativePath="..\..\sqlite\src\opcodes.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\os_unix.c"
+				RelativePath="..\..\sqlite\src\os.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\os_win.c"
+				RelativePath="..\..\sqlite\src\os_unix.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\pager.c"
+				RelativePath="..\..\sqlite\src\os_win.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\parse.c"
+				RelativePath="..\..\sqlite\src\pager.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\pragma.c"
+				RelativePath="..\..\sqlite\src\parse.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\prepare.c"
+				RelativePath="..\..\sqlite\src\pragma.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\printf.c"
+				RelativePath="..\..\sqlite\src\prepare.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\random.c"
+				RelativePath="..\..\sqlite\src\printf.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\select.c"
+				RelativePath="..\..\sqlite\src\random.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\shell.c"
+				RelativePath="..\..\sqlite\src\select.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\table.c"
+				RelativePath="..\..\sqlite\src\shell.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\tokenize.c"
+				RelativePath="..\..\sqlite\src\table.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\trigger.c"
+				RelativePath="..\..\sqlite\src\tokenize.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\update.c"
+				RelativePath="..\..\sqlite\src\trigger.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\utf.c"
+				RelativePath="..\..\sqlite\src\update.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\util.c"
+				RelativePath="..\..\sqlite\src\utf.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\vacuum.c"
+				RelativePath="..\..\sqlite\src\util.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\vdbe.c"
+				RelativePath="..\..\sqlite\src\vacuum.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\vdbeapi.c"
+				RelativePath="..\..\sqlite\src\vdbe.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\vdbeaux.c"
+				RelativePath="..\..\sqlite\src\vdbeapi.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\vdbefifo.c"
+				RelativePath="..\..\sqlite\src\vdbeaux.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\vdbemem.c"
+				RelativePath="..\..\sqlite\src\vdbefifo.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\where.c"
+				RelativePath="..\..\sqlite\src\vdbemem.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sqlite\src\vtab.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\sqlite\src\where.c"
 				>
 			</File>
 		</Filter>
@@ -478,51 +486,51 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\btree.h"
+				RelativePath="..\..\sqlite\src\btree.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\hash.h"
+				RelativePath="..\..\sqlite\src\hash.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\keywordhash.h"
+				RelativePath="..\..\sqlite\src\keywordhash.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\opcodes.h"
+				RelativePath="..\..\sqlite\src\opcodes.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\os.h"
+				RelativePath="..\..\sqlite\src\os.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\os_common.h"
+				RelativePath="..\..\sqlite\src\os_common.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\pager.h"
+				RelativePath="..\..\sqlite\src\pager.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\parse.h"
+				RelativePath="..\..\sqlite\src\parse.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\sqlite3.h"
+				RelativePath="..\..\sqlite\src\sqlite3.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\sqliteInt.h"
+				RelativePath="..\..\sqlite\src\sqliteInt.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\vdbe.h"
+				RelativePath="..\..\sqlite\src\vdbe.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\sqlite-source-3_3_6\vdbeInt.h"
+				RelativePath="..\..\sqlite\src\vdbeInt.h"
 				>
 			</File>
 		</Filter>
