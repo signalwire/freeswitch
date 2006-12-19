@@ -187,7 +187,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 										   switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
 
-static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *to, char *from, char *subject, char *msg);
+static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t dl_signal, char *to, char *from, char *subject, char *msg);
 static ldl_status handle_response(ldl_handle_t *handle, char *id);
 static switch_status_t load_config(void);
 
@@ -2065,7 +2065,7 @@ static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 	switch_safe_free(xmlstr);
 }
 
-static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t signal, char *to, char *from, char *subject, char *msg)
+static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsession, ldl_signal_t dl_signal, char *to, char *from, char *subject, char *msg)
 {
 	struct mdl_profile *profile = NULL;
 	switch_core_session_t *session = NULL;
@@ -2085,7 +2085,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 	if (!dlsession) {
 		if (profile->user_flags & LDL_FLAG_COMPONENT) {
-			switch(signal) {
+			switch(dl_signal) {
 			case LDL_SIGNAL_VCARD:
 				do_vcard(handle, to, from, subject);
 				break;
@@ -2174,8 +2174,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 						switch_event_fire(&event);
 					}
 				}
-				break;
 #endif
+				break;
 
 			case LDL_SIGNAL_PRESENCE_OUT:
 				
@@ -2183,7 +2183,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					execute_sql(profile->dbname, sql, profile->mutex);
 					switch_core_db_free(sql);
 				}
-
+                printf("XXXXXXXXXXXXXXXXXXXXXXXXXXNO FUCKING WAY!!! %d %d\n", dl_signal, LDL_SIGNAL_PRESENCE_OUT);
+                abort();
 				if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_OUT) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "proto", MDL_CHAT_PROTO);
 					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "login", "%s", profile->login);
@@ -2196,7 +2197,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			}
 		} 
 
-		switch(signal) {
+		switch(dl_signal) {
 		case LDL_SIGNAL_MSG: {
 			switch_chat_interface_t *ci;
 			char *proto = MDL_CHAT_PROTO;
@@ -2284,7 +2285,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		}
 
 	} else {
-		if (signal != LDL_SIGNAL_INITIATE) {
+		if (dl_signal != LDL_SIGNAL_INITIATE) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session is already dead\n");
 			status = LDL_STATUS_FALSE;
 			goto done;
@@ -2325,7 +2326,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 	}
 
-	switch(signal) {
+	switch(dl_signal) {
 	case LDL_SIGNAL_MSG:
 		if (msg) { 
 			if (*msg == '+') {
@@ -2370,7 +2371,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
 		break;
 	case LDL_SIGNAL_INITIATE:
-		if (signal) {
+		if (dl_signal) {
 			ldl_payload_t *payloads;
 			unsigned int len = 0;
 			int match = 0;
@@ -2448,7 +2449,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 		
 		break;
 	case LDL_SIGNAL_CANDIDATES:
-		if (signal) {
+		if (dl_signal) {
 			ldl_candidate_t *candidates;
 			unsigned int len = 0;
 			unsigned int x;

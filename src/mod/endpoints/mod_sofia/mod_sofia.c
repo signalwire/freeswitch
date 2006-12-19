@@ -3234,7 +3234,10 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 		open = "closed";
 	}
 
-	if (strcasecmp(proto, SOFIA_CHAT_PROTO)) {
+    if (!strcasecmp(sub_to_host, host)) {
+        /* same host */
+		id = switch_mprintf("sip:%s+%s@%s", proto, sub_to_user, sub_to_host);
+	} else if (strcasecmp(proto, SOFIA_CHAT_PROTO)) {
 		/*encapsulate*/
 		id = switch_mprintf("sip:%s+%s+%s@%s", proto, sub_to_user, sub_to_host, host);
 	} else {
@@ -3268,7 +3271,7 @@ static int sub_callback(void *pArg, int argc, char **argv, char **columnNames)
 	nua_notify(nh,
 			   NUTAG_URL(contact),
 			   SIPTAG_TO_STR(full_from),
-			   SIPTAG_FROM_STR(to),
+			   SIPTAG_FROM_STR(id),
 			   SIPTAG_CONTACT_STR(profile->url),
 			   SIPTAG_CALL_ID_STR(callid),
 			   SIPTAG_VIA_STR(full_via),
@@ -3406,6 +3409,13 @@ static void sip_i_subscribe(int status,
 			exp_raw = (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
 			exp = (long) time(NULL) + exp_raw;
 			
+            if (sip && sip->sip_from) {
+                from_user = (char *) sip->sip_from->a_url->url_user;
+                from_host = (char *) sip->sip_from->a_url->url_host;
+            } else {
+                from_user = "n/a";
+                from_host = "n/a";
+            }
 
 			if ((sql = switch_mprintf("delete from sip_subscriptions where "
 											  "proto='%q' and user='%q' and host='%q' and sub_to_user='%q' and sub_to_host='%q' and event='%q';\n"

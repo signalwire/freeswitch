@@ -297,7 +297,7 @@ ldl_status ldl_session_create(ldl_session_t **session_p, ldl_handle_t *handle, c
 static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from, char *to, iks *xml, char *xtype)
 {
 	ldl_session_t *session = NULL;
-	ldl_signal_t signal = LDL_SIGNAL_NONE;
+	ldl_signal_t dl_signal = LDL_SIGNAL_NONE;
 	char *initiator = iks_find_attrib(xml, "initiator");
 	char *msg = NULL;
 
@@ -327,7 +327,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 			
 			if (!strcasecmp(type, "initiate") || !strcasecmp(type, "accept")) {
 
-				signal = LDL_SIGNAL_INITIATE;
+				dl_signal = LDL_SIGNAL_INITIATE;
 				if (!strcasecmp(type, "accept")) {
 					msg = "accept";
 				}
@@ -363,10 +363,10 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 					tag = iks_next_tag(tag);
 				}
 			} else if (!strcasecmp(type, "transport-accept")) {
-				signal = LDL_SIGNAL_TRANSPORT_ACCEPT;
+				dl_signal = LDL_SIGNAL_TRANSPORT_ACCEPT;
 			} else if (!strcasecmp(type, "transport-info")) {
 				char *tid = iks_find_attrib(xml, "id");
-				signal = LDL_SIGNAL_CANDIDATES;
+				dl_signal = LDL_SIGNAL_CANDIDATES;
 				tag = iks_child (xml);
 				
 				if (tag && !strcasecmp(iks_name(tag), "transport")) {
@@ -458,17 +458,17 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 					tag = iks_next_tag(tag);
 				}
 			} else if (!strcasecmp(type, "terminate")) {
-				signal = LDL_SIGNAL_TERMINATE;
+				dl_signal = LDL_SIGNAL_TERMINATE;
 			} else if (!strcasecmp(type, "error")) {
-				signal = LDL_SIGNAL_ERROR;
+				dl_signal = LDL_SIGNAL_ERROR;
 			}
 		}
 		
 		xml = iks_child(xml);
 	}
 
-	if (handle->session_callback && signal) {
-		handle->session_callback(handle, session, signal, to, from, id, msg); 
+	if (handle->session_callback && dl_signal) {
+		handle->session_callback(handle, session, dl_signal, to, from, id, msg); 
 	}
 
 	return LDL_STATUS_SUCCESS;
@@ -700,20 +700,22 @@ static int on_presence(void *user_data, ikspak *pak)
 	char id[1024];
 	char *resource;
 	struct ldl_buffer *buffer;
-	ldl_signal_t signal;
+	ldl_signal_t dl_signal = LDL_SIGNAL_PRESENCE_IN;
 
-	
-	if (type && !strcasecmp(type, "unavailable")) {
-		signal = LDL_SIGNAL_PRESENCE_OUT;
-    } else if (type && !strcasecmp(type, "probe")) {
-		signal = LDL_SIGNAL_PRESENCE_PROBE;
-	} else {
-		signal = LDL_SIGNAL_PRESENCE_IN;
-	}
-
-	if (!status) {
-		status = type;
-	}
+    if (type && *type) {
+        if (!strcasecmp(type, "unavailable")) {
+            dl_signal = LDL_SIGNAL_PRESENCE_OUT;
+        } else if (!strcasecmp(type, "probe")) {
+            dl_signal = LDL_SIGNAL_PRESENCE_PROBE;
+        }
+        if (!status) {
+            status = type;
+        }
+    } else {
+        if (!status) {
+            status = "Available";
+        }
+    }
 
 
 	apr_cpystrn(id, from, sizeof(id));
@@ -738,7 +740,7 @@ static int on_presence(void *user_data, ikspak *pak)
 	}
 	
     if (handle->session_callback) {
-        handle->session_callback(handle, NULL, signal, to, id, status ? status : "n/a", show ? show : "n/a");
+        handle->session_callback(handle, NULL, dl_signal, to, id, status ? status : "n/a", show ? show : "n/a");
     }
 
 	return IKS_FILTER_EAT;
