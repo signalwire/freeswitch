@@ -97,9 +97,6 @@
 /* Little Endian */
 #undef __BYTE_ORDER
 
-/* define it the right way ;) */
-#undef __FUNCTION__
-
 /* for the places where it is not defined */
 #undef __LITTLE_ENDIAN
 

@@ -51,7 +51,6 @@ case "$host" in
                                 new_AM_CFLAGS="-fPIC"
                                 new_AM_LDFLAGS=""
                                 IN_LINE=inline
-                                FUNC_DEF=__FUNCTION__
                         fi
                         DYNAMIC_LIB_EXTEN="so"
                 ;;
@@ -63,7 +62,6 @@ case "$host" in
                         fi
                         DYNAMIC_LIB_EXTEN="dylib"
                         IN_LINE=inline
-                        FUNC_DEF=__FUNCTION__
                 ;;
                 x86_64-*-linux-gnu)
                         if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
@@ -75,7 +73,6 @@ case "$host" in
                                 SOLINK="-shared -Xlinker -x"
                                 new_AM_CFLAGS="-fPIC"
                                 new_AM_LDFLAGS=""
-                                FUNC_DEF=__FUNCTION__
                         fi
                         DYNAMIC_LIB_EXTEN="so"
                         IN_LINE=inline
@@ -90,17 +87,28 @@ case "$host" in
                                 SOLINK="-shared -Xlinker -x"
                                 new_AM_CFLAGS="-fpic"
                                 new_AM_LDFLAGS=""
-                                FUNC_DEF=__FUNCTION__
                         fi
                         DYNAMIC_LIB_EXTEN="so"
                         IN_LINE=inline
                 ;;
+                *)
+                        if test "x${ax_cv_c_compiler_vendor}" = "xsun" ; then
+                                SOLINK="-Bdynamic -dy -G"
+                                new_AM_CFLAGS="-KPIC -DPIC"
+                                new_AM_LDFLAGS="-L${prefix}/lib -R${prefix}/lib"
+                                FUNC_DEF=__func__
+                        elif test "x${ax_cv_c_compiler_vendor}"="xgnu" ; then
+                                SOLINK="-shared -Xlinker -x"
+                                new_AM_CFLAGS="-fPIC"
+                                new_AM_LDFLAGS=""
+                        fi
+                        DYNAMIC_LIB_EXTEN="so"
+                        IN_LINE=inline
 esac
 AC_SUBST(new_AM_CFLAGS)
 AC_SUBST(new_AM_LDFLAGS)
 AC_SUBST(SOLINK)
 AC_SUBST(DYNAMIC_LIB_EXTEN)
-AC_DEFINE_UNQUOTED([__FUNCTION__],[$FUNC_DEF],[define it the right way ;)])
 AC_DEFINE_UNQUOTED([__inline__],[$IN_LINE],[sunpro is bad at inline])
 
 # Checks for header files.

@@ -37,6 +37,13 @@
   \ingroup LIBDINGALING
   \{
 */
+/* OMG */
+#ifdef WIN32
+#define __LDL_FUNC__ __FUNCTION__
+#else
+#define __LDL_FUNC__ (const char *)__func__
+#endif
+
 #ifndef LIBDINGALING_H
 #define LIBDINGALING_H
 #ifdef __cplusplus
@@ -154,7 +161,7 @@ typedef enum {
 	LDL_DESCRIPTION_ACCEPT
 } ldl_description_t;
 
-#define DL_PRE __FILE__, __FUNCTION__, __LINE__
+#define DL_PRE __FILE__, __LDL_FUNC__, __LINE__
 #define DL_LOG_DEBUG DL_PRE, 7
 #define DL_LOG_INFO DL_PRE, 6
 #define DL_LOG_NOTICE DL_PRE, 5
