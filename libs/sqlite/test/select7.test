@@ -1,0 +1,75 @@
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing compute SELECT statements and nested
+# views.
+#
+# $Id: select7.test,v 1.7 2005/03/29 03:11:00 danielk1977 Exp $
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable compound {
+
+# A 3-way INTERSECT.  Ticket #875
+ifcapable tempdb {
+  do_test select7-1.1 {
+    execsql {
+      create temp table t1(x);
+      insert into t1 values('amx');
+      insert into t1 values('anx');
+      insert into t1 values('amy');
+      insert into t1 values('bmy');
+      select * from t1 where x like 'a__'
+        intersect select * from t1 where x like '_m_'
+        intersect select * from t1 where x like '__x';
+    }
+  } {amx}
+}
+
+
+# Nested views do not handle * properly.  Ticket #826.
+#
+ifcapable view {
+do_test select7-2.1 {
+  execsql {
+    CREATE TABLE x(id integer primary key, a TEXT NULL);
+    INSERT INTO x (a) VALUES ('first');
+    CREATE TABLE tempx(id integer primary key, a TEXT NULL);
+    INSERT INTO tempx (a) VALUES ('t-first');
+    CREATE VIEW tv1 AS SELECT x.id, tx.id FROM x JOIN tempx tx ON tx.id=x.id;
+    CREATE VIEW tv1b AS SELECT x.id, tx.id FROM x JOIN tempx tx on tx.id=x.id;
+    CREATE VIEW tv2 AS SELECT * FROM tv1 UNION SELECT * FROM tv1b;
+    SELECT * FROM tv2;
+  }
+} {1 1}
+} ;# ifcapable view
+
+} ;# ifcapable compound
+
+# Do not allow GROUP BY without an aggregate. Ticket #1039.
+#
+# Change: force any query with a GROUP BY clause to be processed as
+# an aggregate query, whether it contains aggregates or not.
+#
+ifcapable subquery {
+  # do_test select7-3.1 {
+  #   catchsql {
+  #     SELECT * FROM (SELECT * FROM sqlite_master) GROUP BY name
+  #   }
+  # } {1 {GROUP BY may only be used on aggregate queries}}
+  do_test select7-3.1 {
+    catchsql {
+      SELECT * FROM (SELECT * FROM sqlite_master) GROUP BY name
+    }
+  } [list 0 [execsql {SELECT * FROM sqlite_master ORDER BY name}]]
+}
+finish_test
+

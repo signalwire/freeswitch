@@ -1,0 +1,242 @@
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the sqlite_*_printf() interface.
+#
+# $Id: printf.test,v 1.21 2006/03/19 13:00:25 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+set n 1
+foreach v {1 2 5 10 99 100 1000000 999999999 0 -1 -2 -5 -10 -99 -100 -9999999} {
+  set v32 [expr {$v&0xffffffff}]
+  do_test printf-1.$n.1 [subst {
+    sqlite3_mprintf_int {Three integers: %d %x %o} $v $v $v
+  }] [format {Three integers: %d %x %o} $v $v32 $v32]
+  do_test printf-1.$n.2 [subst {
+    sqlite3_mprintf_int {Three integers: (%6d) (%6x) (%6o)} $v $v $v
+  }] [format {Three integers: (%6d) (%6x) (%6o)} $v $v32 $v32]
+  do_test printf-1.$n.3 [subst {
+    sqlite3_mprintf_int {Three integers: (%-6d) (%-6x) (%-6o)} $v $v $v
+  }] [format {Three integers: (%-6d) (%-6x) (%-6o)} $v $v32 $v32]
+  do_test printf-1.$n.4 [subst {
+    sqlite3_mprintf_int {Three integers: (%+6d) (%+6x) (%+6o)} $v $v $v
+  }] [format {Three integers: (%+6d) (%+6x) (%+6o)} $v $v32 $v32]
+  do_test printf-1.$n.5 [subst {
+    sqlite3_mprintf_int {Three integers: (%06d) (%06x) (%06o)} $v $v $v
+  }] [format {Three integers: (%06d) (%06x) (%06o)} $v $v32 $v32]
+  do_test printf-1.$n.6 [subst {
+    sqlite3_mprintf_int {Three integers: (% 6d) (% 6x) (% 6o)} $v $v $v
+  }] [format {Three integers: (% 6d) (% 6x) (% 6o)} $v $v32 $v32]
+  do_test printf-1.$n.7 [subst {
+    sqlite3_mprintf_int {Three integers: (%#6d) (%#6x) (%#6o)} $v $v $v
+  }] [format {Three integers: (%#6d) (%#6x) (%#6o)} $v $v32 $v32]
+  incr n
+}
+
+
+if {$::tcl_platform(platform)!="windows"} {
+
+set m 1
+foreach {a b} {1 1 5 5 10 10 10 5} {
+  set n 1
+  foreach x {0.001 1.0e-20 1.0 0.0 100.0 9.99999 -0.00543 -1.0 -99.99999} {
+    do_test printf-2.$m.$n.1 [subst {
+      sqlite3_mprintf_double {A double: %*.*f} $a $b $x
+    }] [format {A double: %*.*f} $a $b $x]
+    do_test printf-2.$m.$n.2 [subst {
+      sqlite3_mprintf_double {A double: %*.*e} $a $b $x
+    }] [format {A double: %*.*e} $a $b $x]
+    do_test printf-2.$m.$n.3 [subst {
+      sqlite3_mprintf_double {A double: %*.*g} $a $b $x
+    }] [format {A double: %*.*g} $a $b $x]
+    do_test printf-2.$m.$n.4 [subst {
+      sqlite3_mprintf_double {A double: %d %d %g} $a $b $x
+    }] [format {A double: %d %d %g} $a $b $x]
+    do_test printf-2.$m.$n.5 [subst {
+      sqlite3_mprintf_double {A double: %d %d %#g} $a $b $x
+    }] [format {A double: %d %d %#g} $a $b $x]
+    do_test printf-2.$m.$n.6 [subst {
+      sqlite3_mprintf_double {A double: %d %d %010g} $a $b $x
+    }] [format {A double: %d %d %010g} $a $b $x]
+    incr n
+  }
+  incr m
+}
+
+}  ;# endif not windows
+
+do_test printf-3.1 {
+  sqlite3_mprintf_str {A String: (%*.*s)} 10 10 {This is the string}
+} [format {A String: (%*.*s)} 10 10 {This is the string}]
+do_test printf-3.2 {
+  sqlite3_mprintf_str {A String: (%*.*s)} 10 5 {This is the string}
+} [format {A String: (%*.*s)} 10 5 {This is the string}]
+do_test printf-3.3 {
+  sqlite3_mprintf_str {A String: (%*.*s)} -10 5 {This is the string}
+} [format {A String: (%*.*s)} -10 5 {This is the string}]
+do_test printf-3.4 {
+  sqlite3_mprintf_str {%d %d A String: (%s)} 1 2 {This is the string}
+} [format {%d %d A String: (%s)} 1 2 {This is the string}]
+do_test printf-3.5 {
+  sqlite3_mprintf_str {%d %d A String: (%30s)} 1 2 {This is the string}
+} [format {%d %d A String: (%30s)} 1 2 {This is the string}]
+do_test printf-3.6 {
+  sqlite3_mprintf_str {%d %d A String: (%-30s)} 1 2 {This is the string}
+} [format {%d %d A String: (%-30s)} 1 2 {This is the string}]
+
+do_test printf-4.1 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi Y''all'}
+do_test printf-4.2 {
+  sqlite3_mprintf_str {%d %d A NULL pointer in %%q: '%q'} 1 2
+} {1 2 A NULL pointer in %q: '(NULL)'}
+do_test printf-4.3 {
+  sqlite3_mprintf_str {%d %d A quoted string: %Q} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi Y''all'}
+do_test printf-4.4 {
+  sqlite3_mprintf_str {%d %d A NULL pointer in %%Q: %Q} 1 2
+} {1 2 A NULL pointer in %Q: NULL}
+
+do_test printf-5.1 {
+  set x [sqlite3_mprintf_str {%d %d %100000s} 0 0 {Hello}]
+  string length $x
+} {344}
+do_test printf-5.2 {
+  sqlite3_mprintf_str {%d %d (%-10.10s) %} -9 -10 {HelloHelloHello}
+} {-9 -10 (HelloHello) %}
+
+do_test printf-6.1 {
+  sqlite3_mprintf_z_test , one two three four five six
+} {,one,two,three,four,five,six}
+
+
+do_test printf-7.1 {
+  sqlite3_mprintf_scaled {A double: %g} 1.0e307 1.0
+} {A double: 1e+307}
+do_test printf-7.2 {
+  sqlite3_mprintf_scaled {A double: %g} 1.0e307 10.0
+} {A double: 1e+308}
+do_test printf-7.3 {
+  sqlite3_mprintf_scaled {A double: %g} 1.0e307 100.0
+} {A double: NaN}
+
+do_test printf-8.1 {
+  sqlite3_mprintf_int {%u %u %u} 0x7fffffff 0x80000000 0xffffffff
+} {2147483647 2147483648 4294967295}
+do_test printf-8.2 {
+  sqlite3_mprintf_int {%lu %lu %lu} 0x7fffffff 0x80000000 0xffffffff
+} {2147483647 2147483648 4294967295}
+do_test printf-8.3 {
+  sqlite3_mprintf_int64 {%llu %llu %llu} 2147483647 2147483648 4294967296
+} {2147483647 2147483648 4294967296}
+do_test printf-8.4 {
+  sqlite3_mprintf_int64 {%lld %lld %lld} 2147483647 2147483648 4294967296
+} {2147483647 2147483648 4294967296}
+do_test printf-8.5 {
+  sqlite3_mprintf_int64 {%llx %llx %llx} 2147483647 2147483648 4294967296
+} {7fffffff 80000000 100000000}
+do_test printf-8.6 {
+  sqlite3_mprintf_int64 {%llx %llo %lld} -1 -1 -1
+} {ffffffffffffffff 1777777777777777777777 -1}
+
+do_test printf-9.1 {
+  sqlite3_mprintf_int {%*.*c} 4 4 65
+} {AAAA}
+do_test printf-9.2 {
+  sqlite3_mprintf_int {%*.*c} -4 1 66
+} {B   }
+do_test printf-9.3 {
+  sqlite3_mprintf_int {%*.*c} 4 1 67
+} {   C}
+do_test printf-9.4 {
+  sqlite3_mprintf_int {%d %d %c} 4 1 67
+} {4 1 C}
+set ten {          }
+set fifty $ten$ten$ten$ten$ten
+do_test printf-9.5 {
+  sqlite3_mprintf_int {%d %*c} 1 -201 67
+} "1 C$fifty$fifty$fifty$fifty"
+do_test printf-9.6 {
+  sqlite3_mprintf_int {hi%12345.12346yhello} 0 0 0
+} {hi}
+
+# Ticket #812
+#
+do_test printf-10.1 {
+  sqlite3_mprintf_stronly %s {}
+} {}
+
+# Ticket #831
+#
+do_test printf-10.2 {
+  sqlite3_mprintf_stronly %q {}
+} {}
+
+# Ticket #1340:  Test for loss of precision on large positive exponents
+#
+do_test printf-10.3 {
+  sqlite3_mprintf_double {%d %d %f} 1 1 1e300
+} {1 1 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.000000}
+
+# The non-standard '!' flag on a 'g' conversion forces a decimal point
+# and at least one digit on either side of the decimal point.
+#
+do_test printf-11.1 {
+  sqlite3_mprintf_double {%d %d %!g} 1 1 1
+} {1 1 1.0}
+do_test printf-11.2 {
+  sqlite3_mprintf_double {%d %d %!g} 1 1 123
+} {1 1 123.0}
+do_test printf-11.3 {
+  sqlite3_mprintf_double {%d %d %!g} 1 1 12.3
+} {1 1 12.3}
+do_test printf-11.4 {
+  sqlite3_mprintf_double {%d %d %!g} 1 1 0.123
+} {1 1 0.123}
+do_test printf-11.5 {
+  sqlite3_mprintf_double {%d %d %!.15g} 1 1 1
+} {1 1 1.0}
+do_test printf-11.6 {
+  sqlite3_mprintf_double {%d %d %!.15g} 1 1 1e10
+} {1 1 10000000000.0}
+do_test printf-11.7 {
+  sqlite3_mprintf_double {%d %d %!.15g} 1 1 1e300
+} {1 1 1.0e+300}
+
+# Additional tests for coverage
+#
+do_test printf-12.1 {
+  sqlite3_mprintf_double {%d %d %.2000g} 1 1 1.0
+} {1 1 1}
+
+# Floating point boundary cases
+#
+do_test printf-13.1 {
+  sqlite3_mprintf_hexdouble %.20f 4024000000000000
+} {10.00000000000000000000}
+do_test printf-13.2 {
+  sqlite3_mprintf_hexdouble %.20f 4197d78400000000
+} {100000000.00000000000000000000}
+do_test printf-13.3 {
+  sqlite3_mprintf_hexdouble %.20f 4693b8b5b5056e17
+} {100000000000000000000000000000000.00000000000000000000}
+
+do_test printf-14.1 {
+  sqlite3_mprintf_str {abc-%y-123} 0 0 {not used}
+} {abc-}
+do_test printf-14.2 {
+  sqlite3_mprintf_n_test {xyzzy}
+} 5
+
+
+finish_test
