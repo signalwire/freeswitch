@@ -5346,7 +5346,7 @@ static void pres_event_handler(switch_event_t *event)
                 *host++ = '\0';
             }
             if (user && host && 
-                (sql = switch_mprintf("select user,host,'Registered','unknown','' from sip_registrations where user='%q' and host='%q'", user, host))) {
+                (sql = switch_mprintf("select user,host,status,rpid,'' from sip_registrations where user='%q' and host='%q'", user, host))) {
                 switch_mutex_lock(profile->ireg_mutex);
                 switch_core_db_exec(db, sql, resub_callback, profile, &errmsg);
                 switch_mutex_unlock(profile->ireg_mutex);

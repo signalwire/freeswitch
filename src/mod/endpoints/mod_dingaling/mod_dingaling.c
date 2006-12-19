@@ -312,17 +312,25 @@ static void pres_event_handler(switch_event_t *event)
             switch_core_db_t *db;
             char *errmsg;
             char *to = switch_event_get_header(event, "to");
-
-            if (to && (sql = switch_mprintf("select * from subscriptions where sub_to='%q'", to))) {
-                if (!(db = switch_core_db_open_file(profile->dbname))) {
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
-                    return;
+            char *f_host = NULL;
+            if (to) {
+                if ((f_host = strchr(to, '@'))) {
+                    f_host++;
                 }
-                switch_mutex_lock(profile->mutex);
-                switch_core_db_exec(db, sql, sin_callback, profile, &errmsg);
-                switch_mutex_unlock(profile->mutex);
-                switch_core_db_close(db);
-                switch_safe_free(sql);
+            }
+
+            if (f_host && (profile = switch_core_hash_find(globals.profile_hash, f_host))) {
+                if (to && (sql = switch_mprintf("select * from subscriptions where sub_to='%q'", to))) {
+                    if (!(db = switch_core_db_open_file(profile->dbname))) {
+                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
+                        return;
+                    }
+                    switch_mutex_lock(profile->mutex);
+                    switch_core_db_exec(db, sql, sin_callback, profile, &errmsg);
+                    switch_mutex_unlock(profile->mutex);
+                    switch_core_db_close(db);
+                    switch_safe_free(sql);
+                }
             }
         }
         return;
