@@ -1,0 +1,131 @@
+# -*- Makefile -*-
+!IF "$(OS)" == "Windows_NT"
+NULL=
+rmdir=rd /s /q
+!ELSE
+NULL=nul
+rmdir=deltree /y
+!ENDIF
+
+SILENT=@
+
+# Default build and bind modes
+BUILD_MODE = release
+BIND_MODE  = shared
+
+!IF "$(BUILD_MODE)" == "release" || "$(BUILD_MODE)" == "Release"
+!IF "$(BIND_MODE)" == "shared"
+# release shared
+APR_LIB_PFX = $(APR_SOURCE)\Release\lib
+APU_LIB_PFX = $(APU_SOURCE)\Release\lib
+API_LIB_PFX = $(API_SOURCE)\Release\lib
+CFG_CFLAGS  = /MD /O2
+CFG_DEFINES = /D "NDEBUG"
+CFG_OUTPUT  = Release
+
+!ELSE
+!IF "$(BIND_MODE)" == "static"
+# release static
+APR_LIB_PFX = $(APR_SOURCE)\LibR\	# no line continuation
+APU_LIB_PFX = $(APU_SOURCE)\LibR\	# no line continuation
+API_LIB_PFX = $(API_SOURCE)\LibR\	# no line continuation
+CFG_CFLAGS  = /MD /O2
+CFG_DEFINES = /D "NDEBUG" /D "APR_DECLARE_STATIC" \
+		/D "APU_DECLARE_STATIC" /D "API_DECLARE_STATIC"
+CFG_API_LIB = $(API_LIB_PFX)apriconv-1.lib
+CFG_OUTPUT  = LibR
+
+!ELSE
+!ERROR Unknown bind mode "$(BIND_MODE)"
+!ENDIF
+!ENDIF
+
+!ELSE
+!IF "$(BUILD_MODE)" == "debug" || "$(BUILD_MODE)" == "Debug"
+!IF "$(BIND_MODE)" == "shared"
+# debug shared
+APR_LIB_PFX = $(APR_SOURCE)\Debug\lib
+APU_LIB_PFX = $(APU_SOURCE)\Debug\lib
+API_LIB_PFX = $(API_SOURCE)\Debug\lib
+CFG_CFLAGS  = /MDd /Zi /Od
+CFG_DEFINES = /D "_DEBUG"
+CFG_LDFLAGS = /DEBUG
+CFG_OUTPUT  = Debug
+
+!ELSE
+!IF "$(BIND_MODE)" == "static"
+# debug static
+APR_LIB_PFX = $(APR_SOURCE)\LibD\	# no line continuation
+APU_LIB_PFX = $(APU_SOURCE)\LibD\	# no line continuation
+API_LIB_PFX = $(API_SOURCE)\LibD\	# no line continuation
+CFG_CFLAGS  = /MDd /Zi /Od
+CFG_DEFINES = /D "_DEBUG" /D "APR_DECLARE_STATIC" \
+		/D "APU_DECLARE_STATIC" /D "API_DECLARE_STATIC"
+CFG_LDFLAGS = /DEBUG
+CFG_API_LIB = $(API_LIB_PFX)apriconv-1.lib
+CFG_OUTPUT  = LibD
+
+!ELSE
+!ERROR Unknown bind mode "$(BIND_MODE)"
+!ENDIF
+!ENDIF
+
+!ELSE
+!ERROR Unknown build mode "$(BUILD_MODE)"
+!ENDIF
+!ENDIF
+
+
+APR_SOURCE   = ..\..\apr
+APU_SOURCE   = ..
+API_SOURCE   = ..\..\apr-iconv
+OUTPUT_DIR   = .\$(CFG_OUTPUT)
+
+INT_CFLAGS   = /nologo $(CFG_CFLAGS) /Fp"$(OUTPUT_DIR)\iconv.pch" /YX"iconv.h"
+INT_INCLUDES = /I "$(APU_SOURCE)\include" /I "$(APR_SOURCE)\include"
+#		/I "$(API_SOURCE)\include"
+INT_DEFINES  = /D "WIN32" /D "_CONSOLE" /D "_MBCS" $(CFG_DEFINES)
+INT_LDFLAGS  = /nologo /incremental:no /subsystem:console $(CFG_LDFLAGS)
+
+CFLAGS       = /W3
+ALL_CFLAGS   = $(INT_CFLAGS) $(INT_INCLUDES) $(INT_DEFINES) $(CFLAGS)
+
+LDFLAGS      = /WARN:0
+ALL_LDFLAGS  = $(INT_LDFLAGS) $(LDFLAGS)
+
+.c{$(OUTPUT_DIR)}.exe:
+	-$(SILENT)if not exist "$(OUTPUT_DIR)\$(NULL)" mkdir "$(OUTPUT_DIR)"
+	$(SILENT)echo Compiling and linking $@...
+	$(SILENT)cl $(ALL_CFLAGS) /Fo"$*.obj" /Fd"$*" $< \
+		/link $(ALL_LDFLAGS) /out:$@ \
+		"$(APU_LIB_PFX)aprutil-1.lib" \
+		"$(APR_LIB_PFX)apr-1.lib" \
+		"$(CFG_API)" \
+		kernel32.lib advapi32.lib ws2_32.lib mswsock.lib
+
+
+##!ALL_TARGETS = 	$(OUTPUT_DIR)\testdate.exe \
+##!		$(OUTPUT_DIR)\testdbm.exe \
+##!		$(OUTPUT_DIR)\testmd4.exe \
+##!		$(OUTPUT_DIR)\testmd5.exe \
+##!		$(OUTPUT_DIR)\testqueue.exe \
+##!		$(OUTPUT_DIR)\testreslist.exe \
+##!		$(OUTPUT_DIR)\testrmm.exe \
+##!		$(OUTPUT_DIR)\teststrmatch.exe \
+##!		$(OUTPUT_DIR)\testuri.exe \
+##!		$(OUTPUT_DIR)\testuuid.exe \
+##!		$(OUTPUT_DIR)\testxlate.exe \
+##!		$(OUTPUT_DIR)\testxml.exe
+
+ALL_TARGETS = 	$(OUTPUT_DIR)\testxlate.exe \
+		$(OUTPUT_DIR)\testdbm.exe \
+		$(OUTPUT_DIR)\testqueue.exe \
+		$(OUTPUT_DIR)\testrmm.exe \
+		$(OUTPUT_DIR)\testmd4.exe \
+		$(OUTPUT_DIR)\testmd5.exe \
+		$(OUTPUT_DIR)\testxml.exe
+                
+all: $(ALL_TARGETS)
+
+clean:
+	-$(SILENT)if exist "$(OUTPUT_DIR)/$(NULL)" $(rmdir) $(OUTPUT_DIR)
