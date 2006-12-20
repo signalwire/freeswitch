@@ -2111,7 +2111,7 @@ static switch_status_t conf_function(char *buf, switch_core_session_t *session, 
 					switch_hash_this(hi, NULL, NULL, &val);
 					conference = (conference_obj_t *) val;
 
-					stream->write_function(stream, "Conference %s (%u members)\n", conference->name, conference->count);
+					stream->write_function(stream, "Conference %s (%u member%s)\n", conference->name, conference->count, conference->count == 1 ? "" : "s");
 					conference_list(conference, stream, d);
 					stream->write_function(stream, "\n");
 				}
