@@ -1,0 +1,25 @@
+autogen definitions benchmark.tpl;
+
+data_type = { 
+	type_name		= short ;
+	multiplier		= "32700.0" ;
+	};
+
+data_type = { 
+	type_name		= int ;
+	multiplier		= "32700.0 * (1<<16)" ;
+	};
+
+data_type = { 
+	type_name		= float ;
+	multiplier		= "1.0" ;
+	};
+
+/*
+** Do not edit or modify anything in this comment block.
+** The arch-tag line is a file identity tag for the GNU Arch 
+** revision control system.
+**
+** arch-tag: 5cadd2d0-dd74-4067-9d75-781a36d6bf15
+*/
+

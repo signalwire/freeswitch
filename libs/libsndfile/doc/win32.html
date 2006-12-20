@@ -1,0 +1,141 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+
+<HEAD>
+	<TITLE>
+	Building libsndfile on Win32
+	</TITLE>
+	<META NAME="Author"      CONTENT="Erik de Castro Lopo (erikd AT mega-nerd DOT com)">
+	<LINK REL=StyleSheet HREF="libsndfile.css" TYPE="text/css" MEDIA="all">
+</HEAD>
+
+<BODY>
+<!-- pepper -->
+<H1><BR>Building libsndfile on Win32</H1>
+
+<P><B>
+Note : For pre-compiled binaries for windows, see the main web page.
+</B></P>
+
+<P>
+There are currently two ways of building libsndfile under Win32:
+</P>
+<UL>
+	<LI> Using the free <A HREF="#MinGW">MinGW</A> tools.
+	<LI> Using Cygwin (this is the full Cygwin without the -mno-cygwin option).
+</UL>
+
+<P><B>
+Building libsndfile using the microsoft compiler does not currently work.
+Microsoft's compiler is a C++ compiler and does not compile a number of ISO 
+C99 Standard constructs.
+If you insist on compiling libsndfile with the microsoft compiler you are 
+on your own.
+</B></P>
+<P><B>
+However, even though the libsndfile source code cannot be compiled with
+the microsoft compiler, the pre-compiled windows DLL distributed on the
+main web page can be used with C++ projects compiled with the microsoft
+compiler.
+</B></P>
+
+<P>
+The free MinGW tools are the preferred option because they are a free (as in
+beer and speech), easily obtainable and much closer to the Linux/GCC
+environment on which libsndfile is developed.
+</P>
+
+<A NAME="MinGW"></A>
+<H2><BR>Building libsndfile using MinGW.</H2>
+<P>
+The MinGW tools are available from <A HREF="http://www.mingw.org/">
+http://www.mingw.org/</A>.
+The files you will need will be named something like:
+</P>
+<UL>
+	<LI> msysDTK-1.0.1.exe
+	<LI> MSYS-1.0.10.exe
+	<LI> gcc-core-3.4.2-20040916-1.tar.gz
+	<LI> gcc-g++-3.4.2-20040916-1.tar.gz
+	<LI> binutils-2.15.91-20040901-1.tar.gz
+	<LI> mingw-runtime-3.9.tar.gz
+	<LI> w32api-3.6.tar.gz
+	<LI> mingw-utils-0.3.tar.gz
+</UL>
+
+<P>
+They should be installed using the directions on the MinGW site.
+I know the instructions aren't great, but I don't have the time or expertise
+to write better ones.
+</P>
+
+<P>
+Once you have the tools installed you will get an icon named <B>MSYS</B> on
+your desktop.
+Clicking on that icon will bring up something that looks a little like an
+xterm.
+</P>
+
+<P>
+Assuming that you have downloaded the <B>.tar.gz</B> file into the
+<B>C:\temp\</B> directory you should now be able to execute the following
+commands:
+</P>
+
+<PRE>
+		tar zxf /c/temp/libsndfile.X.Y.Z.tar.gz
+		cd libsndfile-X.Y.Z
+		./configure
+		make
+		make check
+</PRE>
+
+<P>
+If there is a failure during compiling or the "make check" stage, you should
+check that you are using the current stable version of the MinGW tools, and
+the latest version of libsndfile before sending the author a bug report.
+</P>
+
+<P>
+Once this is done, anyone interested in using libsndfile in other projects
+will be interested in the following files:
+</P>
+<UL>
+	<LI> libsndfile.dll
+	<LI> libsndfile.lib
+	<LI> libsndfile.def
+	<LI> src/sndfile.h
+	<LI> doc/*.html
+</UL>
+
+<!--===========================================================================-->
+
+<!-- pepper -->
+<H2><BR>Compile Problems</H2>
+<!-- pepper -->
+<P>
+Compile problems using the above method of building the libsndfile DLL on Win32 should
+be emailed to
+	<A HREF="m&#97;ilt&#111;:&#101;rikd&#64;&#109;eg&#97;-&#110;erd.&#99;om">
+		Erik de Castro Lopo</a>.
+</P>
+<!-- pepper -->
+<P>
+If you are using some other method to compile the libsndfile DLL you are on your own.
+</P>
+<BR>
+<!-- pepper -->
+<!-- pepper -->
+<!-- pepper -->
+<!-- pepper -->
+
+</BODY>
+</HTML>
+
+<!--
+  Do not edit or modify anything in this comment block.
+  The arch-tag line is a file identity tag for the GNU Arch
+  revision control system.
+
+  arch-tag: b32ddb11-eb51-425f-9d39-b8b66284f129
+-->

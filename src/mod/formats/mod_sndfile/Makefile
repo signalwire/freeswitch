@@ -3,7 +3,7 @@ LDFLAGS += -lsndfile -L/usr/local/lib
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libsndfile-1.0.16.tar.gz --prefix=$(PREFIX) --disable-sqlite
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install libsndfile --prefix=$(PREFIX) --disable-sqlite
 
 $(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).c
 	$(CC) $(CFLAGS) -fPIC -c $(MODNAME).c -o $(MODNAME).o 

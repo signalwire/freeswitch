@@ -1,0 +1,48 @@
+autogen definitions scale_clip_test.tpl;
+
+float_type = {
+	type_name	= "float" ;
+	short_name	= "flt" ;
+	upper_name	= "FLOAT" ;
+	} ;
+
+float_type = {
+	type_name	= "double" ;
+	short_name	= "dbl" ;
+	upper_name	= "DOUBLE" ;
+	} ;
+
+
+
+data_type = {
+	name		= "16" ;
+	bit_count	= 16 ;
+	error_val	= "1.0 / 0x8000" ;
+	} ;
+
+data_type = {
+	name		= "24" ;
+	bit_count	= 24 ;
+	error_val	= "1.0 / 0x800000" ;
+	} ;
+
+data_type = {
+	name		= "32" ;
+	bit_count	= 32 ;
+	error_val	= "1.0 / 0x80000000" ;
+	} ;
+
+data_type = {
+	name		= "08" ;
+	bit_count	= 8 ;
+	error_val	= "1.0 / 0x80" ;
+	} ;
+
+/*
+** Do not edit or modify anything in this comment block.
+** The arch-tag line is a file identity tag for the GNU Arch 
+** revision control system.
+**
+** arch-tag: 4938e5b6-6f4c-4c69-8b92-f6c6d7a6b0ec
+*/
+

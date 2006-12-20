@@ -1,0 +1,30 @@
+autogen definitions header_test.tpl;
+
+data_type = {
+	name	= "short" ;
+	format	= "SF_FORMAT_PCM_16" ;
+	} ;
+
+data_type = {
+	name	= "int" ;
+	format	= "SF_FORMAT_PCM_32" ;
+	} ;
+
+data_type = {
+	name	= "float" ;
+	format	= "SF_FORMAT_FLOAT" ;
+	} ;
+
+data_type = {
+	name	= "double" ;
+	format	= "SF_FORMAT_DOUBLE" ;
+	} ;
+
+/*
+** Do not edit or modify anything in this comment block.
+** The arch-tag line is a file identity tag for the GNU Arch
+** revision control system.
+**
+** arch-tag: 436e1f37-a274-4377-b8fa-b2e2fc29f85b
+*/
+

@@ -1,0 +1,28 @@
+autogen definitions test_endswap.tpl;
+
+int_type = {
+	name		= short ;
+	value		= 0x3210 ;
+	format		= FMT_SHORT ;
+	} ;
+
+int_type = {
+	name		= int ;
+	value		= 0x76543210 ;
+	format		= FMT_INT ;
+	} ;
+
+int_type = {
+	name		= int64_t ;
+	value		= "0x0807050540302010LL" ;
+	format		= FMT_INT64 ;
+	} ;
+
+/*
+** Do not edit or modify anything in this comment block.
+** The arch-tag line is a file identity tag for the GNU Arch
+** revision control system.
+**
+** arch-tag: 098c07e0-2d3f-4f62-ad93-f3f4b91c5211
+*/
+

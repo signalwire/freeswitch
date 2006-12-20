@@ -1,0 +1,40 @@
+autogen definitions floating_point_test.tpl;
+
+endian_type = {
+	end_name		= little ;
+	end_type		= SF_ENDIAN_LITTLE ;
+	} ;
+
+endian_type = {
+	end_name		= big ;
+	end_type		= SF_ENDIAN_BIG ;
+	} ;
+
+float_type = {
+	float_name		= float ;
+	minor_type		= SF_FORMAT_FLOAT ;
+	} ;
+
+float_type = {
+	float_name		= double ;
+	minor_type		= SF_FORMAT_DOUBLE ;
+	} ;
+
+int_type = {
+	int_name		= short ;
+	int_max			= 0x7FFF ;
+	} ;
+
+int_type = {
+	int_name		= int ;
+	int_max			= 0x7FFFFFFF ;
+	} ;
+
+/*
+** Do not edit or modify anything in this comment block.
+** The arch-tag line is a file identity tag for the GNU Arch
+** revision control system.
+**
+** arch-tag: 053997cb-74d9-424e-aabf-3ad7622e3eee
+*/
+
