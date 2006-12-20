@@ -4439,7 +4439,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
     }
 
     while(language) {
-        if ((lname = switch_xml_attr(language, "name")) && !strcasecmp(lname, lang)) {
+        if ((lname = (char *) switch_xml_attr(language, "name")) && !strcasecmp(lname, lang)) {
             break;
         }
         language = language->next;
@@ -4450,9 +4450,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
         goto done;
     }
 
-    sound_path = switch_xml_attr_soft(language, "sound_path");
-    tts_engine = switch_xml_attr_soft(language, "tts_engine");
-    tts_voice = switch_xml_attr_soft(language, "tts_voice");
+    sound_path = (char *) switch_xml_attr_soft(language, "sound_path");
+    tts_engine = (char *) switch_xml_attr_soft(language, "tts_engine");
+    tts_voice = (char *) switch_xml_attr_soft(language, "tts_voice");
 
     old_sound_prefix = switch_channel_get_variable(channel, "sound_prefix");    
     switch_channel_set_variable(channel, "sound_prefix", sound_path);
@@ -4463,7 +4463,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
     }
     
     while(macro) {
-        if ((mname = switch_xml_attr(macro, "name")) && !strcasecmp(mname, macro_name)) {
+        if ((mname = (char *) switch_xml_attr(macro, "name")) && !strcasecmp(mname, macro_name)) {
             break;
         }
         macro = macro->next;
@@ -4482,7 +4482,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
     switch_channel_pre_answer(channel);
 
     while(input) {
-        char *pattern = switch_xml_attr(input, "pattern");
+        char *pattern = (char *) switch_xml_attr(input, "pattern");
 
         if (pattern) {
             pcre *re = NULL;
