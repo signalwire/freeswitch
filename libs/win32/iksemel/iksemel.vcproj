@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\iksemel-1.2\include;."
+				AdditionalIncludeDirectories="..\..\iksemel\include;."
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -103,7 +103,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\iksemel-1.2\include;."
+				AdditionalIncludeDirectories="..\..\iksemel\include;."
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HAVE_CONFIG_H;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -149,51 +149,51 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\base64.c"
+				RelativePath="..\..\iksemel\src\base64.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\dom.c"
+				RelativePath="..\..\iksemel\src\dom.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\filter.c"
+				RelativePath="..\..\iksemel\src\filter.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\iks.c"
+				RelativePath="..\..\iksemel\src\iks.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\ikstack.c"
+				RelativePath="..\..\iksemel\src\ikstack.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\io-posix.c"
+				RelativePath="..\..\iksemel\src\io-posix.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\jabber.c"
+				RelativePath="..\..\iksemel\src\jabber.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\md5.c"
+				RelativePath="..\..\iksemel\src\md5.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\sax.c"
+				RelativePath="..\..\iksemel\src\sax.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\sha.c"
+				RelativePath="..\..\iksemel\src\sha.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\stream.c"
+				RelativePath="..\..\iksemel\src\stream.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\src\utility.c"
+				RelativePath="..\..\iksemel\src\utility.c"
 				>
 			</File>
 		</Filter>
@@ -203,19 +203,19 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\iksemel-1.2\include\common.h"
+				RelativePath="..\..\iksemel\include\common.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\include\config.h"
+				RelativePath="..\..\iksemel\include\config.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\include\finetune.h"
+				RelativePath="..\..\iksemel\include\finetune.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\iksemel-1.2\include\iksemel.h"
+				RelativePath="..\..\iksemel\include\iksemel.h"
 				>
 			</File>
 		</Filter>
