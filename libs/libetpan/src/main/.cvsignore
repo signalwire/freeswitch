@@ -1,0 +1,4 @@
+libetpan_version.h
+.libs
+*.la
+*.lo

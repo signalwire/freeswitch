@@ -1,0 +1,629 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Tools and datatypes</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="PREVIOUS"
+TITLE="Introduction"
+HREF="c13.htm"><LINK
+REL="NEXT"
+TITLE="List"
+HREF="x88.htm"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c13.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x88.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="AEN16"
+></A
+>Chapter 2. Tools and datatypes</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="c16.htm#AEN19"
+>Array</A
+></DT
+><DT
+><A
+HREF="x88.htm"
+>List</A
+></DT
+><DT
+><A
+HREF="x161.htm"
+>Hash table</A
+></DT
+><DT
+><A
+HREF="x229.htm"
+>Buffered I/O</A
+></DT
+><DT
+><A
+HREF="x289.htm"
+>non-buffered I/O</A
+></DT
+><DT
+><A
+HREF="x312.htm"
+>strings</A
+></DT
+></DL
+></DIV
+><P
+>      libEtPan! include a collection of datatypes such as lists,
+      arrays, hash tables and tools such as buffered I/O.
+    </P
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN19"
+>Array</A
+></H1
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+typedef struct carray_s carray;
+      </PRE
+><P
+>        <B
+CLASS="COMMAND"
+>carray</B
+> is an array of pointers that will
+        resize automatically in case a new element is added.
+      </P
+><P
+>      
+        The <B
+CLASS="COMMAND"
+>carray</B
+> is implemented with an array
+        <B
+CLASS="COMMAND"
+>(void **)</B
+> that can be resized. An array has a
+        size: this is the number of elements that can be added before
+        the table is resized. It also has a count of elements: this is
+        the elements that exist in the array.
+      </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CARRAY-NEW"
+>carray_new and carray_free</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>carray * carray_new(unsigned int initsize);
+
+void carray_free(carray * array);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>carray_new()</B
+> creates a new array with an
+          initial size. The array is not resized until the number of
+          element reach the initial size. It returns
+          <B
+CLASS="COMMAND"
+>NULL</B
+> in case of failure.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>carray_free()</B
+> releases memory used by the
+          given array.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN35"
+></A
+><P
+><B
+>Example 2-1. carray creation</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;stdlib.h&gt;
+
+#define SIZE 50
+
+int main(void)
+{
+  carray * a;
+
+  a = carray_new(SIZE);
+  if (a == NULL)
+    exit(EXIT_FAILURE);
+  
+  /* do things here */
+  
+  carray_free(a);
+  
+  exit(EXIT_SUCESS);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CARRAY-SET-SIZE"
+>carray_set_size</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int carray_set_size(carray * array, uint32_t new_size);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>carray_set_size()</B
+> sets the size of the
+          array. It returns <B
+CLASS="COMMAND"
+>0</B
+> in case of success,
+          <B
+CLASS="COMMAND"
+>-1</B
+> in case of failure.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN45"
+></A
+><P
+><B
+>Example 2-2. preallocating carray</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;stdlib.h&gt;
+
+#define SIZE 50
+#define NEWSIZE 200
+
+int main(void)
+{
+  carray * a;
+  unsigned int i;
+  char p[500];
+  
+  a = carray_new(SIZE);
+  if (a == NULL)
+    goto err;
+  
+  r = carray_set_size(NEWSIZE);
+  if (r &lt; 0)
+    goto free;
+  
+  for(i = 0 ; i &lt; NEWSIZE ; i ++)
+    carray_set(a, i, &amp;p[i]);
+  
+  /* do things here */
+  
+  carray_free(a);
+  
+  exit(EXIT_SUCESS);
+  
+ free:
+  carray_free(a);
+ err:
+  exit(EXIT_FAILURE);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CARRAY-COUNT"
+>carray_count, carray_add, carray_get and carray_set</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int carray_count(carray);
+
+int carray_add(carray * array, void * data, unsigned int * index);
+
+void * carray_get(carray * array, unsigned int indx);
+
+void carray_set(carray * array, unsigned int indx, void * value);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>carray_count()</B
+> returns the number of
+          elements in the <B
+CLASS="COMMAND"
+>carray</B
+>.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>carray_add()</B
+>adds an element at the end of
+          the array. The <B
+CLASS="COMMAND"
+>index</B
+> of the element is
+          returns in <B
+CLASS="COMMAND"
+>(* index)</B
+> if
+          <B
+CLASS="COMMAND"
+>index</B
+> is not <B
+CLASS="COMMAND"
+>NULL</B
+>. It
+          returns <B
+CLASS="COMMAND"
+>0</B
+> in case of success,
+          <B
+CLASS="COMMAND"
+>-1</B
+> in case of failure.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>carray_get()</B
+> returns the elements contained
+          at the given cell of the table.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>carray_set()</B
+> replace the element at the
+          given index of table table with the given value.
+          Complexity is O(1).
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN66"
+></A
+><P
+><B
+>Example 2-3. carray access</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;string.h&gt;
+
+#define SIZE 50
+
+int main(void)
+{
+  carray * a;
+  int r;
+  
+  a = carray_new(SIZE);
+  if (a == NULL)
+    goto err;
+    
+  r = carray_add(a, "foo-bar-1", NULL);
+  if (r &lt; 0)
+    goto free;
+    
+  carray_add(a, "foo-bar-2", NULL);
+  if (r &lt; 0)
+    goto free;
+
+  carray_add(a, "foo-bar-3", NULL);
+  if (r &lt; 0)
+    goto free;
+  
+  for(i = 0 ; i &lt; carray_count(a) ; i ++) {
+    char * str;
+    
+    str = carray_get(a, i);
+    if (strcmp("foo-bar-2", str) == 0)
+      carray_set(a, i, "foo-bar-2-replacement");
+    
+    printf("%s\n", str);
+  }
+  
+  carray_free(a);
+  
+  exit(EXIT_SUCESS);
+
+ free:
+  carray_free(a);
+ err:
+  exit(EXIT_FAILURE);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CARRAY-DELETE"
+>carray_delete</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int carray_delete(carray * array, uint32_t indx);
+
+int carray_delete_slow(carray * array, uint32_t indx);
+
+int carray_delete_fast(carray * array, uint32_t indx);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>carray_delete()</B
+> removes an element of the
+          table. Order will not be garanteed. The returned result can
+          be ignored.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>carray_delete_slow()</B
+> removes an element of
+          the table. Order will be garanteed. The returned result can
+          be ignored.
+          Complexity is O(n).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>carray_delete_fast()</B
+> the element will just
+          be replaced with <B
+CLASS="COMMAND"
+>NULL</B
+>. Order will be kept
+          but the number of elements will remains the same. The
+          returned result can be ignored.
+          Complexity is O(1).
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN79"
+></A
+><P
+><B
+>Example 2-4. deletion in carray</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+#define SIZE 50
+
+carray * build_array(void)
+{
+  carray * a;
+
+  a = carray_new(SIZE);
+  if (a == NULL)
+    goto err;
+  
+  r = carray_add(a, "foo-bar-1", NULL);
+  if (r &lt; 0)
+    goto free;
+    
+  carray_add(a, "foo-bar-2", NULL);
+  if (r &lt; 0)
+    goto free;
+
+  carray_add(a, "foo-bar-3", NULL);
+  if (r &lt; 0)
+    goto free;
+  
+  return a;
+
+ free:
+  carray_free(a);
+ err:
+  exit(EXIT_FAILURE);
+}
+
+void delete(carray * a)
+{
+  /* deleting foo-bar-1 */
+  carray_delete(a, 0);
+  /* resulting size is 2, order of elements is undefined */
+}
+
+void delete_slow(carray * a)
+{
+  /* deleting foo-bar-1 */
+  carray_delete_slow(a, 0);
+  /* resulting size is 2, order of elements is the same */
+}
+
+void delete_fast(carray * a)
+{
+  /* deleting foo-bar-1 */
+  carray_delete_slow(a, 0);
+  /* 
+     resulting size is 3,
+     order of elements is { NULL, foo-bar-2, foo-bar-3 }
+  */
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CARRAY-DATA"
+>carray_data</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>void ** carray_data(carray);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>carray_data</B
+>returns the table used for
+          implementation :
+          <B
+CLASS="COMMAND"
+>(void **)</B
+>.
+        </P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c13.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x88.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Introduction</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>List</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

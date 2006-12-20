@@ -1,0 +1,1683 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Parser functions</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Internet Message Format"
+HREF="c385.htm"><LINK
+REL="PREVIOUS"
+TITLE="Data types"
+HREF="x425.htm"><LINK
+REL="NEXT"
+TITLE="Creation functions"
+HREF="x1381.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x425.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 3. Internet Message Format</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1381.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN1094"
+>Parser functions</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-ADDRESS-LIST-PARSE"
+>mailimf_address_list_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int
+mailimf_address_list_parse(char * message, size_t length,
+    size_t * index,
+    struct mailimf_address_list ** result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_address_list_parse()</B
+> parse a list
+          of addresses  in RFC 2822 form.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> this is a string containing
+              the list of addresses.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> this is the size of the given string
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> this is a pointer to the
+              start of the list of 
+              addresses in the given string,
+              <B
+CLASS="COMMAND"
+>(* index)</B
+> is modified to point
+              at the end of the parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+> the result of the parse
+              operation is stored in
+              <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x425.htm#MAILIMF-ADDRESS-LIST"
+>the Section called <I
+>mailimf_address_list - list of addresses</I
+></A
+>).
+            </P
+></LI
+></UL
+><P
+>          return <B
+CLASS="COMMAND"
+>MAILIMF_NO_ERROR</B
+> on success,
+          <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_XXX</B
+> on error.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1120"
+></A
+><P
+><B
+>Example 3-33. parsing a list of addresses</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;  
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &#62;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &#62;= 0) {     
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_address_list * addr_list;
+	size_t current_index;        
+	
+	current_index = 0;
+	r = mailimf_address_list_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;addr_list);
+	if (r == MAILIMF_NO_ERROR) {
+	    display_address_list(addr_list);
+	  /* do the things */
+	  status = EXIT_SUCCESS;
+	  mailimf_address_list_free(addr_list);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-ADDRESS-PARSE"
+>mailimf_address_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int
+mailimf_address_parse(char * message, size_t length,
+    size_t * index,
+    struct mailimf_address ** result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_address_parse()</B
+> parse an address
+          in RFC 2822 form.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> this is a string containing the
+              address.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> this is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> index this is a pointer to the
+              start of the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+> the result of the parse operation
+              is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x425.htm#MAILIMF-ADDRESS"
+>the Section called <I
+>mailimf_address - address</I
+></A
+>).
+            </P
+></LI
+></UL
+><P
+>          return <B
+CLASS="COMMAND"
+>MAILIMF_NO_ERROR</B
+> on success,
+          <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_XXX</B
+> on error.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1147"
+></A
+><P
+><B
+>Example 3-34. parsing an address</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;  
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &#62;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &#62;= 0) {     
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_address * addr;
+	size_t current_index;        
+	
+	current_index = 0;
+	r = mailimf_address_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;addr);
+	if (r == MAILIMF_NO_ERROR) {
+	    display_address(addr);
+	  /* do the things */
+	  status = EXIT_SUCCESS;
+	  mailimf_address_free(addr);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-BODY-PARSE"
+>mailimf_body_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailimf_body_parse(char * message, size_t length,
+		       size_t * index,
+		       struct mailimf_body ** result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_body_parse()</B
+> parse text body of a
+          message.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> this is a string containing
+              the message body part.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> this is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> this is a pointer to the start
+              of the message text part in
+              the given string, <B
+CLASS="COMMAND"
+>(* index)</B
+> is
+              modified to point at the end
+              of the parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+> the result of the parse
+              operation is stored in 
+              <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x425.htm#MAILIMF-BODY"
+>the Section called <I
+>mailimf_body - message body without headers</I
+></A
+>).
+            </P
+></LI
+></UL
+><P
+>          return <B
+CLASS="COMMAND"
+>MAILIMF_NO_ERROR</B
+> on success,
+          <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_XXX</B
+> on error.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1174"
+></A
+><P
+><B
+>Example 3-35. parsing a message body</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;  
+  int r;
+
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &#62;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &#62;= 0) {     
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_body * b;
+        struct mailimf_fields * f;
+	size_t current_index;        
+	size_t size;
+	
+	size = stat_info.st_size;
+	current_index = 0;
+	r = mailimf_fields_parse(mem, size, &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {	
+	  r = mailimf_crlf_parse(mem, size, &amp;current_index);
+	  /* ignore parse error of crlf */
+	  
+	  r = mailimf_body_parse(mem, size, &amp;current_index, &amp;b);
+	  if (r == MAILIMF_NO_ERROR) {
+	    
+	    display_body(b);
+	    /* do the things */
+	    status = EXIT_SUCCESS;
+	    mailimf_body_free(b);
+	  }
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-ENVELOPE-AND-OPTIONAL-FIELDS-PARSE"
+>mailimf_envelope_and_optional_fields_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int
+mailimf_envelope_and_optional_fields_parse(char * message, size_t length,
+    size_t * index,
+    struct mailimf_fields ** result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_envelope_and_optional_fields_parse()</B
+>
+          returns a list of most useful headers (parsed). The other
+          headers will be placed in the list in a non-parsed form.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> this is a string containing the header.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> this is the size of the given string
+            </P
+></LI
+><LI
+><P
+>          <B
+CLASS="COMMAND"
+>index</B
+> index this is a pointer to the
+              start of the header in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end 
+              of the parsed data
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+> the result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x425.htm#MAILIMF-FIELDS"
+>the Section called <I
+>mailimf_fields - list of header fields</I
+></A
+>).
+            </P
+></LI
+></UL
+><P
+>          return <B
+CLASS="COMMAND"
+>MAILIMF_NO_ERROR</B
+> on success,
+          <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_XXX</B
+> on error.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1201"
+></A
+><P
+><B
+>Example 3-36. parsing commonly used fields and return other fields
+          in a non-parsed form</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;  
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &#62;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &#62;= 0) {     
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;        
+	
+	current_index = 0;
+	r = mailimf_envelope_and_optional_fields_parse(mem, stat_info.st_size,
+            &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+	    display_fields(m);
+	  /* do the things */
+	  status = EXIT_SUCCESS;
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-ENVELOPE-FIELDS-PARSE"
+>mailimf_envelope_fields_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailimf_envelope_fields_parse(char * message, size_t length,
+    size_t * index,
+    struct mailimf_fields ** result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_envelope_fields_parse()</B
+> return a
+          list of most useful headers (parsed).
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> this is a string containing the header
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> this is the size of the given string
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> index this is a pointer to the
+              start of the header in 
+              the given string, <B
+CLASS="COMMAND"
+>(* index)</B
+> is
+              modified to point at the end 
+              of the parsed data
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+> the result of the parse
+              operation is stored in
+              <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x425.htm#MAILIMF-FIELDS"
+>the Section called <I
+>mailimf_fields - list of header fields</I
+></A
+>).
+            </P
+></LI
+></UL
+><P
+>          return <B
+CLASS="COMMAND"
+>MAILIMF_NO_ERROR</B
+> on success,
+          <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_XXX</B
+> on error.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1228"
+></A
+><P
+><B
+>Example 3-37. parsing commonly used fields</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;  
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &#62;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &#62;= 0) {     
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;        
+	
+	current_index = 0;
+	r = mailimf_envelope_fields_parse(mem, stat_info.st_size,
+            &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+	    display_fields(m);
+	  /* do the things */
+	  status = EXIT_SUCCESS;
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-OPTIONAL-FIELDS-PARSE"
+>mailimf_optional_fields_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int
+mailimf_optional_fields_parse(char * message, size_t length,
+    size_t * index,
+    struct mailimf_fields ** result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_optional_fields_parse</B
+> return a
+          list of non-parsed headers.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> this is a string containing the header
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> this is the size of the given string
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> index this is a pointer to the
+              start of the header in 
+              the given string, <B
+CLASS="COMMAND"
+>(* index)</B
+> is
+              modified to point at the end 
+              of the parsed data
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+> the result of the parse
+              operation is stored in
+              <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x425.htm#MAILIMF-FIELDS"
+>the Section called <I
+>mailimf_fields - list of header fields</I
+></A
+>).
+            </P
+></LI
+></UL
+><P
+>          return <B
+CLASS="COMMAND"
+>MAILIMF_NO_ERROR</B
+> on success,
+          <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_XXX</B
+> on error.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1255"
+></A
+><P
+><B
+>Example 3-38. parsing optional fields</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;  
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &#62;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &#62;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;        
+	
+	current_index = 0;
+	r = mailimf_optional_fields_parse(mem, stat_info.st_size,
+            &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+	    display_fields(m);
+	  /* do the things */
+	  status = EXIT_SUCCESS;
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-FIELDS-PARSE"
+>mailimf_fields_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailimf_fields_parse(char * message, size_t length,
+    size_t * index,
+    struct mailimf_fields ** result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_fields_parse()</B
+> parse headers of a
+          message.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> this is a string containing the header
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> this is the size of the given string
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> index this is a pointer to the
+              start of the header in 
+              the given string, <B
+CLASS="COMMAND"
+>(* index)</B
+> is
+              modified to point at the end 
+              of the parsed data
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+> the result of the parse
+              operation is stored in
+              <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x425.htm#MAILIMF-FIELDS"
+>the Section called <I
+>mailimf_fields - list of header fields</I
+></A
+>).
+            </P
+></LI
+></UL
+><P
+>          return <B
+CLASS="COMMAND"
+>MAILIMF_NO_ERROR</B
+> on success,
+          <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_XXX</B
+> on error.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1282"
+></A
+><P
+><B
+>Example 3-39. parsing header fields</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;  
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &#62;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &#62;= 0) {     
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;        
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+	    display_fields(f);
+	  /* do the things */
+	  status = EXIT_SUCCESS;
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+            </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-IGNORE-FIELD-PARSE"
+>mailimf_ignore_field_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailimf_ignore_field_parse(char * message, size_t length,
+    size_t * index);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_ignore_field_parse()</B
+> skip the
+          next header.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> this is a string containing the header
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> this is the size of the given string
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> index this is a pointer to the
+              start of the field to skip in 
+              the given string, <B
+CLASS="COMMAND"
+>(* index)</B
+> is
+              modified to point at the end 
+              of the parsed data
+            </P
+></LI
+></UL
+><P
+>          return <B
+CLASS="COMMAND"
+>MAILIMF_NO_ERROR</B
+> on success,
+          <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_XXX</B
+> on error.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1304"
+></A
+><P
+><B
+>Example 3-40. skipping fields</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;  
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &#62;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &#62;= 0) {     
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+	size_t current_index;        
+	
+	current_index = 0;
+	r = mailimf_ignore_field_parse(mem, stat_info.st_size,
+            &amp;current_index);
+	if (r == MAILIMF_NO_ERROR) {
+	  /* do the things */
+	  status = EXIT_SUCCESS;
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-MAILBOX-LIST-PARSE"
+>mailimf_mailbox_list_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int
+mailimf_mailbox_list_parse(char * message, size_t length,
+    size_t * index,
+    struct mailimf_mailbox_list ** result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_mailbox_list_parse()</B
+> parse a list
+          of mailboxes in RFC 2822 form.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> this is a string containing the
+              list of mailboxes.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> this is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>          <B
+CLASS="COMMAND"
+>index</B
+> index this is a pointer to the
+              start of the list of
+              mailboxes in the given string,
+              <B
+CLASS="COMMAND"
+>(* index)</B
+> is modified to point 
+              at the end of the parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+> the result of the parse
+              operation is stored in 
+              <B
+CLASS="COMMAND"
+>(* result)</B
+>.
+              (see <A
+HREF="x425.htm#MAILIMF-MAILBOX-LIST"
+>the Section called <I
+>mailimf_mailbox_list - list of mailboxes</I
+></A
+>)
+            </P
+></LI
+></UL
+><P
+>          return MAILIMF_NO_ERROR on success, MAILIMF_ERROR_XXX on
+          error.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1329"
+></A
+><P
+><B
+>Example 3-41. parsing a list of mailboxes</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;  
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &#62;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &#62;= 0) {     
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_mailbox_list * mb_list;
+	size_t current_index;        
+	
+	current_index = 0;
+	r = mailimf_mailbox_list_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;mb_list);
+	if (r == MAILIMF_NO_ERROR) {
+	    display_mailbox_list(mb_list);
+	  /* do the things */
+	  status = EXIT_SUCCESS;
+	  mailimf_mailbox_list_free(mb_list);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-MAILBOX-PARSE"
+>mailimf_mailbox_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>        
+#include &lt;libetpan/libetpan.h&gt;
+
+int mailimf_mailbox_parse(char * message, size_t length,
+    size_t * index,
+    struct mailimf_mailbox ** result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_mailbox_parse</B
+> parse a mailbox in
+          RFC 2822 form.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> this is a string containing the
+              mailbox.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> this is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>          <B
+CLASS="COMMAND"
+>index</B
+> index this is a pointer to the
+              start of the mailbox in the given string,
+              <B
+CLASS="COMMAND"
+>(* index)</B
+> is modified to point 
+              at the end of the parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+> the result of the parse
+              operation is stored in 
+              <B
+CLASS="COMMAND"
+>(* result)</B
+>.
+              (see <A
+HREF="x425.htm#MAILIMF-MAILBOX"
+>the Section called <I
+>mailimf_mailbox - mailbox</I
+></A
+>)
+            </P
+></LI
+></UL
+><P
+>          return MAILIMF_NO_ERROR on success, MAILIMF_ERROR_XXX on
+          error.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1354"
+></A
+><P
+><B
+>Example 3-42. parsing a mailbox</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;  
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &#62;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &#62;= 0) {     
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_mailbox_list * mb_list;
+	size_t current_index;        
+	
+	current_index = 0;
+	r = mailimf_mailbox_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;mb_list);
+	if (r == MAILIMF_NO_ERROR) {
+	    display_mailbox_list(mb_list);
+	  /* do the things */
+	  status = EXIT_SUCCESS;
+	  mailimf_mailbox_free(mb_list);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-MESSAGE-PARSE"
+>mailimf_message_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailimf_message_parse(char * message, size_t length,
+			  size_t * index,
+			  struct mailimf_message ** result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_message_parse</B
+> parse message
+          (headers and body).
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> this is a string containing
+              the message content.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>param</B
+> length this is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>param</B
+> index this is a pointer to the
+              start of the message in
+              the given string, <B
+CLASS="COMMAND"
+>(* index)</B
+> is
+              modified to point at the end 
+              of the parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>param</B
+> result the result of the parse
+              operation is stored in
+              <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x425.htm#MAILIMF-MESSAGE"
+>the Section called <I
+>mailimf_message - parsed message</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1378"
+></A
+><P
+><B
+>Example 3-43. parsing a message</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;  
+  int r;
+
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &#62;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &#62;= 0) {     
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_message * m;
+	size_t current_index;        
+	
+	current_index = 0;
+	r = mailimf_message_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;m);
+	if (r == MAILIMF_NO_ERROR) {
+	    display_message(m);
+	  /* do the things */
+	  status = EXIT_SUCCESS;
+	  mailimf_message_free(m);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x425.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1381.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Data types</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c385.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Creation functions</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

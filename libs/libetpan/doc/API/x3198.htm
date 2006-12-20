@@ -1,0 +1,1785 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Message</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Storages, folders, messages"
+HREF="c2988.htm"><LINK
+REL="PREVIOUS"
+TITLE="Folder"
+HREF="x3082.htm"><LINK
+REL="NEXT"
+TITLE="Session"
+HREF="x3472.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x3082.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 5. Storages, folders, messages</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x3472.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN3198"
+>Message</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-DRIVER"
+>Message driver</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailmessage_driver {
+  char * msg_name;
+
+  int (* msg_initialize)(mailmessage * msg_info);
+  
+  void (* msg_uninitialize)(mailmessage * msg_info);
+  
+  void (* msg_flush)(mailmessage * msg_info);
+
+  void (* msg_check)(mailmessage * msg_info);
+
+  void (* msg_fetch_result_free)(mailmessage * msg_info,
+			     char * msg);
+
+  int (* msg_fetch)(mailmessage * msg_info,
+		char ** result,
+		size_t * result_len);
+       
+  int (* msg_fetch_header)(mailmessage * msg_info,
+		       char ** result,
+		       size_t * result_len);
+  
+  int (* msg_fetch_body)(mailmessage * msg_info,
+		     char ** result, size_t * result_len);
+
+  int (* msg_fetch_size)(mailmessage * msg_info,
+		     size_t * result);
+  
+  int (* msg_get_bodystructure)(mailmessage * msg_info,
+			    struct mailmime ** result);
+  
+  int (* msg_fetch_section)(mailmessage * msg_info,
+			struct mailmime * mime,
+			char ** result, size_t * result_len);
+  
+  int (* msg_fetch_section_header)(mailmessage * msg_info,
+			       struct mailmime * mime,
+			       char ** result,
+			       size_t * result_len);
+  
+  int (* msg_fetch_section_mime)(mailmessage * msg_info,
+			     struct mailmime * mime,
+			     char ** result,
+			     size_t * result_len);
+  
+  int (* msg_fetch_section_body)(mailmessage * msg_info,
+			     struct mailmime * mime,
+			     char ** result,
+			     size_t * result_len);
+
+  int (* msg_fetch_envelope)(mailmessage * msg_info,
+			 struct mailimf_fields ** result);
+
+  int (* msg_get_flags)(mailmessage * msg_info,
+		    struct mail_flags ** result);
+};
+        </PRE
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_name</B
+> is the name of the driver.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_initialize()</B
+> will initialize the
+              internal message state (field
+              <B
+CLASS="COMMAND"
+>msg_data</B
+> of
+              <B
+CLASS="COMMAND"
+>mailmessage</B
+> structure (see <A
+HREF="x3198.htm#MAILMESSAGE"
+>the Section called <I
+>Message</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_uninitialize()</B
+> will free the
+              internal message state.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_flush()</B
+> will release memory used
+              by the MIME structure of the message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_check()</B
+> will store the flags of
+              the message into the session, so that the message can be
+              released without the flags are lost.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_fetch_result_free()</B
+> will free a
+              string returned by any fetch_XXX() function.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_fetch()</B
+> will fetch a message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_fetch_header()</B
+> will fetch the
+              header fields of a message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_fetch_body()</B
+> will fetch a message
+              without its main header.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_fetch_size()</B
+> will return the size
+              of a message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_get_bodystructure</B
+> will retrieve
+              the MIME structure of the message. The returned
+              structure must <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>NOT</I
+></SPAN
+> be freed.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_fetch_section()</B
+> will fetch the
+              content of the section of the message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_fetch_section_header()</B
+> will fetch
+              the header of a section of the message if the content of
+              the section is a message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_fetch_section_mime()</B
+> will fetch
+              the MIME header of a section of the message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_fetch_section_body()</B
+> will fetch
+              the body of a section (without the headers) of the
+              message if the content of the section is a message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_fetch_envelope()</B
+> will return
+              a given number of parsed header fields.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_get_flags()</B
+> will return the
+              flags of the message.
+              The returned structure must <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>NOT</I
+></SPAN
+> be
+              freed.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE"
+>Message</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailmessage {
+  mailsession * msg_session;
+  mailmessage_driver * msg_driver;
+  uint32_t msg_index;
+  char * msg_uid;
+
+  size_t msg_size;
+  struct mailimf_fields * msg_fields;
+  struct mail_flags * msg_flags;
+
+  int msg_resolved;
+  struct mailimf_single_fields msg_single_fields;
+  struct mailmime * msg_mime;
+
+  /* internal data */
+
+  int msg_cached;
+  void * msg_data;
+  
+ /*
+   msg_folder field :
+   used to reference the mailfolder, this is a workaround due
+   to the problem with initial conception, where folder notion
+   did not exist.
+ */
+  void * msg_folder;
+  /* user data */
+  void * msg_user_data;
+};
+        </PRE
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_session</B
+> is the session related to
+              the message
+              (see <A
+HREF="x3472.htm#MAILSESSION"
+>the Section called <I
+>Session</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_driver</B
+> is the driver used for the
+              message
+              (see <A
+HREF="x3198.htm#MAILMESSAGE-DRIVER"
+>the Section called <I
+>Message driver</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_index</B
+> is an index to indentify
+              the message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_uid</B
+> is the unique identifier of
+              the message, valid accross disconnections.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_size</B
+> is the size of the message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_fields</B
+> is the list of parsed
+              header fields of the message. This can be
+              <B
+CLASS="COMMAND"
+>NULL</B
+>
+              (see <A
+HREF="x425.htm#MAILIMF-FIELDS"
+>the Section called <I
+>mailimf_fields - list of header fields</I
+> in Chapter 3</A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_flags</B
+> is the flags of the
+              message. This can be <B
+CLASS="COMMAND"
+>NULL</B
+>
+              (see <A
+HREF="x3198.htm#MAIL-FLAGS"
+>the Section called <I
+>Message flags</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_resolved</B
+> will tell if the field
+              <B
+CLASS="COMMAND"
+>msg_single_fields</B
+> has been initialized.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_single_fields</B
+> will be filled
+              using <B
+CLASS="COMMAND"
+>msg_fields</B
+>
+              (see <A
+HREF="x425.htm#MAILIMF-SINGLE-FIELDS"
+>the Section called <I
+>mailimf_single_fields - simplified fields</I
+> in Chapter 3</A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_mime</B
+> is the MIME structure of the 
+              message. It is intialized at least when
+              <B
+CLASS="COMMAND"
+>get_bodystructure()</B
+> is called once.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_cached</B
+> is 1 when the message was
+              cached. This is used internally.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_data</B
+> is the internal state of the
+              message. The content depends on the driver.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_folder</B
+> is used to reference the
+              mailfolder, this is a workaround due to the problem with
+              initial conception, where folder notion did not exist.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_user_data</B
+> is a field for free
+              use. The user can store any data in that field.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-NEW"
+>mailmessage_new</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+mailmessage * mailmessage_new(void);
+
+void mailmessage_free(mailmessage * info);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmessage_new()</B
+> will create a new
+          message (without driver). This is used internally by
+          drivers.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmessage_free()</B
+> will free the memory
+          used by the given message.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-INIT"
+>mailmessage_init</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_init(mailmessage * msg_info,
+		     mailsession * session,
+		     mailmessage_driver * driver,
+		     uint32_t index, size_t size);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmessage_init()</B
+> will initialize a
+          message with a driver.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_info</B
+> is the message to initialize
+              (see <A
+HREF="x3198.htm#MAILMESSAGE"
+>the Section called <I
+>Message</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>session</B
+> is the session related to the
+              message
+              (see <A
+HREF="x3472.htm#MAILSESSION"
+>the Section called <I
+>Session</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>driver</B
+> is the driver to use for the
+              message
+              (see <A
+HREF="x3198.htm#MAILMESSAGE-DRIVER"
+>the Section called <I
+>Message driver</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is the index of the message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>size</B
+> is the size of the message.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-FLUSH"
+>mailmessage_flush</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_flush(mailmessage * info);
+        </PRE
+><P
+>          This function will release the memory used by the MIME
+          structure of the message.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-CHECK"
+>mailmessage_check</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_check(mailmessage * info);
+        </PRE
+><P
+>          After you set some flags, if you want to notify them to the
+          session before destroying the message, you can use this function.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-FETCH-RESULT-FREE"
+>mailmessage_fetch_result_free</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_fetch_result_free(mailmessage * msg_info,
+				  char * msg);
+        </PRE
+><P
+>          This function will free a string returned by any
+          mailmessage_fetch_XXX() function.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-FETCH"
+>mailmessage_fetch</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_fetch(mailmessage * msg_info,
+		      char ** result,
+		      size_t * result_len);
+        </PRE
+><P
+>          This function returns the content of the message (headers
+          and text).
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-FETCH-HEADER"
+>mailmessage_fetch_header</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_fetch_header(mailmessage * msg_info,
+			     char ** result,
+			     size_t * result_len);
+        </PRE
+><P
+>          This function returns the header of the message as a string.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-FETCH-BODY"
+>mailmessage_fetch_body</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_fetch_body(mailmessage * msg_info,
+			   char ** result, size_t * result_len);
+        </PRE
+><P
+>          This function returns the content of the message (without
+          headers).
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-FETCH-SIZE"
+>mailmessage_fetch_size</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_fetch_size(mailmessage * msg_info,
+			   size_t * result);
+        </PRE
+><P
+>          This function returns the size of the message content.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-GET-BODYSTRUCTURE"
+>mailmessage_get_bodystructure</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_get_bodystructure(mailmessage * msg_info,
+				  struct mailmime ** result);
+        </PRE
+><P
+>          This functions returns the MIME structure of the message.
+          The returned information <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>MUST</I
+></SPAN
+> not be
+          freed by hand. It is freed by
+          <B
+CLASS="COMMAND"
+>mailmessage_flush()</B
+> or
+          <B
+CLASS="COMMAND"
+>mailmessage_free()</B
+>
+          (see <A
+HREF="x1614.htm#MAILMIME"
+>the Section called <I
+>mailmime - MIME part</I
+> in Chapter 4</A
+>).
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-FETCH-SECTION"
+>mailmessage_fetch_section</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_fetch_section(mailmessage * msg_info,
+			      struct mailmime * mime,
+			      char ** result, size_t * result_len);
+        </PRE
+><P
+>          This function returns the content of a MIME part.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-FETCH-SECTION-HEADER"
+>mailmessage_fetch_section_header</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_fetch_section_header(mailmessage * msg_info,
+				     struct mailmime * mime,
+				     char ** result,
+				     size_t * result_len);
+        </PRE
+><P
+>          This function returns the header of the message contained
+          in the given MIME part.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-FETCH-SECTION-MIME"
+>mailmessage_fetch_section_mime</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_fetch_section_mime(mailmessage * msg_info,
+				   struct mailmime * mime,
+				   char ** result,
+				   size_t * result_len);
+        </PRE
+><P
+>          This function returns the MIME header of the given MIME
+          part.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-FETCH-SECTION-BODY"
+>mailmessage_fetch_section_body</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_fetch_section_body(mailmessage * msg_info,
+				   struct mailmime * mime,
+				   char ** result,
+				   size_t * result_len);
+        </PRE
+><P
+>          This function returns the text part of the message contained
+          in the given MIME part.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-FETCH-ENVELOPE"
+>mailmessage_fetch_envelope</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_fetch_envelope(mailmessage * msg_info,
+			       struct mailimf_fields ** result);
+        </PRE
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-GET-FLAGS"
+>mailmessage_get_flags</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmessage_get_flags(mailmessage * msg_info,
+			  struct mail_flags ** result);
+        </PRE
+><P
+>          This function returns the flags related to the message.
+          The returned information MUST not be freed by hand. It is freed by
+          <B
+CLASS="COMMAND"
+>mailmessage_free()</B
+>.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-RESOLVE-SINGLE-FIELDS"
+>mailmessage_resolve_single_fields</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+void mailmessage_resolve_single_fields(mailmessage * msg_info);
+        </PRE
+><P
+>          This function will use the fields information to fill
+          the single_fields structure in the mailmessage structure.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-LIST"
+>Message list</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailmessage_list {
+  carray * msg_tab; /* elements are (mailmessage *) */
+};
+
+struct mailmessage_list * mailmessage_list_new(carray * msg_tab);
+
+void mailmessage_list_free(struct mailmessage_list * env_list);
+        </PRE
+><P
+>          This is a list of messages.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>msg_tab</B
+> is an array containing the
+          messages (see linkend="carray").
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmessage_list_new()</B
+> will initialize a
+          list of messages, using a given array of messages.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmessage_list_free()</B
+> will free the
+          memory used by the list of messages. This will also free the
+          messages.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMESSAGE-TREE"
+>Message tree</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailmessage_tree {
+  struct mailmessage_tree * node_parent;
+  char * node_msgid;
+  time_t node_date;
+  mailmessage * node_msg;
+  carray * node_children; /* array of (struct mailmessage_tree *) */
+
+  /* private, used for threading */
+  int node_is_reply;
+  char * node_base_subject;
+};
+
+
+struct mailmessage_tree *
+mailmessage_tree_new(char * node_msgid, time_t node_date,
+    mailmessage * node_msg);
+
+void mailmessage_tree_free(struct mailmessage_tree * tree);
+
+void mailmessage_tree_free_recursive(struct mailmessage_tree * tree);
+        </PRE
+><P
+>          This is a node of a tree of messages.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>node_parent</B
+> is the parent of this
+              node.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>node_msgid</B
+> is the content of the
+              field <B
+CLASS="COMMAND"
+>Message-ID</B
+> of the message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>node_date</B
+> is the date in UNIX
+              format.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>node_msg</B
+> is the message of the node.
+              The message should have the <B
+CLASS="COMMAND"
+>msg_fields</B
+>
+              field initialized.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>node_children</B
+> is the list of
+              children of this node.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>node_is_reply</B
+> is set to 1 if the
+              message is a reply.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>node_base_subject</B
+> is the base subject
+              of the message (base subject is defined in definition of
+              IMAP thread draft). 
+            </P
+></LI
+></UL
+><P
+>          <B
+CLASS="COMMAND"
+>mailmessage_tree_new()</B
+> will initialize a
+          message node.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmessage_tree_free()</B
+> will release
+          memory used by the node. This will <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>NOT</I
+></SPAN
+>
+          free the message.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAIL-FLAGS"
+>Message flags</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+enum {
+  MAIL_FLAG_NEW       = 1 &lt;&lt; 0,
+  MAIL_FLAG_SEEN      = 1 &lt;&lt; 1,
+  MAIL_FLAG_FLAGGED   = 1 &lt;&lt; 2,
+  MAIL_FLAG_DELETED   = 1 &lt;&lt; 3,
+  MAIL_FLAG_ANSWERED  = 1 &lt;&lt; 4,
+  MAIL_FLAG_FORWARDED = 1 &lt;&lt; 5,
+  MAIL_FLAG_CANCELLED = 1 &lt;&lt; 6,
+};
+
+struct mail_flags {
+  uint32_t fl_flags;
+  clist * fl_extension; /* elements are (char *) */
+};
+
+struct mail_flags * mail_flags_new(uint32_t fl_flags, clist * fl_ext);
+
+void mail_flags_free(struct mail_flags * flags);
+
+int mail_flags_add_extension(struct mail_flags * flags,
+			     char * ext_flag);
+
+int mail_flags_remove_extension(struct mail_flags * flags,
+				char * ext_flag);
+
+int mail_flags_has_extension(struct mail_flags * flags,
+			     char * ext_flag);
+        </PRE
+><P
+>          This is the structure containing the message flags.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>fl_flags</B
+> will contain the standards
+              flags. The value will be a combinaison (with or binary
+              operation) of <B
+CLASS="COMMAND"
+>MAIL_FLAG_XXX</B
+> values.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>fl_extension</B
+> will be a list (see
+              <A
+HREF="x88.htm"
+>the Section called <I
+>List</I
+> in Chapter 2</A
+>) of strings representing the
+              non-standard flags.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3467"
+>Example</A
+></H2
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN3469"
+></A
+><P
+><B
+>Example 5-3. use of message</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+#define DEST_CHARSET "iso-8859-1"
+
+enum {
+  NO_ERROR,
+  ERROR_FILE,
+  ERROR_MEMORY,
+  ERROR_INVAL,
+  ERROR_FETCH,
+};
+
+/* returns TRUE is given MIME part is a text part */
+
+int etpan_mime_is_text(struct mailmime * build_info)
+{
+  if (build_info-&gt;mm_type == MAILMIME_SINGLE) {
+    if (build_info-&gt;mm_content_type != NULL) {
+      if (build_info-&gt;mm_content_type-&gt;ct_type-&gt;tp_type ==
+          MAILMIME_TYPE_DISCRETE_TYPE) {
+        if (build_info-&gt;mm_content_type-&gt;ct_type-&gt;tp_data.tp_discrete_type-&gt;dt_type ==
+            MAILMIME_DISCRETE_TYPE_TEXT)
+          return 1;
+      }
+    }
+    else
+      return 1;
+  }
+
+  return 0;
+}
+
+
+/* display content type */
+
+int show_part_info(FILE * f,
+    struct mailmime_single_fields * mime_fields,
+    struct mailmime_content * content)
+{
+  char * description;
+  char * filename;
+  int col;
+  int r;
+
+  description = mime_fields-&gt;fld_description;
+  filename = mime_fields-&gt;fld_disposition_filename;
+
+  col = 0;
+
+  r = fprintf(f, " [ Part ");
+  if (r &lt; 0)
+    goto err;
+
+  if (content != NULL) {
+    r = mailmime_content_type_write(f, &amp;col, content);
+    if (r != MAILIMF_NO_ERROR)
+      goto err;
+  }
+
+  if (filename != NULL) {
+    r = fprintf(f, " (%s)", filename);
+    if (r &lt; 0)
+      goto err;
+  }
+
+  if (description != NULL) {
+    r = fprintf(f, " : %s", description);
+    if (r &lt; 0)
+      goto err;
+  }
+
+  r = fprintf(f, " ]\n\n");
+  if (r &lt; 0)
+    goto err;
+
+  return NO_ERROR;
+  
+ err:
+  return ERROR_FILE;
+}
+
+/* fetch message and decode if it is base64 or quoted-printable */
+
+int etpan_fetch_message(mailmessage * msg_info,
+    struct mailmime * mime_part,
+    struct mailmime_single_fields * fields,
+    char ** result, size_t * result_len)
+{
+  char * data;
+  size_t len;
+  int r;
+  int encoding;
+  char * decoded;
+  size_t decoded_len;
+  size_t cur_token;
+  int res;
+  int encoded;
+
+  encoded = 0;
+
+  r = mailmessage_fetch_section(msg_info,
+      mime_part, &amp;data, &amp;len);
+  if (r != MAIL_NO_ERROR) {
+    res = ERROR_FETCH;
+    goto err;
+  }
+
+  encoded = 1;
+
+  /* decode message */
+
+  if (encoded) {
+    if (fields-&gt;fld_encoding != NULL)
+      encoding = fields-&gt;fld_encoding-&gt;enc_type;
+    else 
+      encoding = MAILMIME_MECHANISM_8BIT;
+  }
+  else {
+    encoding = MAILMIME_MECHANISM_8BIT;
+  }
+
+  cur_token = 0;
+  r = mailmime_part_parse(data, len, &amp;cur_token,
+			  encoding, &amp;decoded, &amp;decoded_len);
+  if (r != MAILIMF_NO_ERROR) {
+    res = ERROR_FETCH;
+    goto free; 
+  }
+
+  mailmessage_fetch_result_free(msg_info, data);
+  
+  * result = decoded;
+  * result_len = decoded_len;
+  
+  return NO_ERROR;
+  
+ free:
+  mailmessage_fetch_result_free(msg_info, data);
+ err:
+  return res;
+}
+
+/* fetch fields */
+
+struct mailimf_fields * fetch_fields(mailmessage * msg_info,
+    struct mailmime * mime)
+{
+  char * data;
+  size_t len;
+  int r;
+  size_t cur_token;
+  struct mailimf_fields * fields;
+
+  r = mailmessage_fetch_section_header(msg_info, mime,
+    &amp;data, &amp;len);
+  if (r != MAIL_NO_ERROR)
+    return NULL;
+
+  cur_token = 0;
+  r = mailimf_envelopes_fields_parse(data, len,
+    &amp;cur_token, &amp;fields);
+  if (r != MAILIMF_NO_ERROR) {
+    mailmessage_fetch_result_free(msg_info, data);
+    return NULL;
+  }
+
+  mailmessage_fetch_result_free(msg_info, data);
+
+  return fields;
+}
+
+/* render message */
+
+static int etpan_render_mime(FILE * f, mailmessage * msg_info,
+    struct mailmime * mime)
+{
+  int r;
+  clistiter * cur;
+  int col;
+  int text;
+  int show;
+  struct mailmime_single_fields fields;
+  int res;
+
+  mailmime_single_fields_init(&amp;fields, mime-&gt;mm_mime_fields,
+      mime-&gt;mm_content_type);
+  
+  text = etpan_mime_is_text(mime);
+  
+  r = show_part_info(f, &amp;fields, mime-&gt;mm_content_type);
+  if (r != NO_ERROR) {
+    res = r;
+    goto err;
+  }
+
+  switch(mime-&gt;mm_type) {
+  case MAILMIME_SINGLE:
+    show = 0;
+    if (text)
+      show = 1;
+    
+    if (show) {
+      char * data;
+      size_t len;
+      char * converted;
+      size_t converted_len;
+      char * source_charset;
+      size_t write_len;
+
+      /* viewable part */
+          
+      r = etpan_fetch_message(msg_info, mime,
+          &amp;fields, &amp;data, &amp;len);
+      if (r != NO_ERROR) {
+        res = r;
+        goto err;
+      }
+          
+      source_charset = fields.fld_content_charset;
+      if (source_charset == NULL)
+        source_charset = DEST_CHARSET;
+      
+      r = charconv_buffer(source_charset, DEST_CHARSET,
+          data, len, &amp;converted, &amp;converted_len);
+      if (r != MAIL_CHARCONV_NO_ERROR) {
+        
+        r = fprintf(f, "[ error converting charset from %s to %s ]\n",
+            source_charset, DEST_CHARSET);
+          if (r &lt; 0) {
+            res = ERROR_FILE;
+            goto err;
+          }
+          
+          write_len = fwrite(data, 1, len, f);
+          if (write_len != len) {
+            mailmime_decoded_part_free(data);
+            res = r;
+            goto err;
+          }
+        }
+        else {
+          write_len = fwrite(converted, 1, converted_len, f);
+          if (write_len != len) {
+            charconv_buffer_free(converted);
+            mailmime_decoded_part_free(data);
+            res = r;
+            goto err;
+          }
+              
+          charconv_buffer_free(converted);
+        }
+            
+        write_len = fwrite("\r\n\r\n", 1, 4, f);
+        if (write_len &lt; 4) {
+          mailmime_decoded_part_free(data);
+          res = ERROR_FILE;
+          goto err;
+        }
+          
+      mailmime_decoded_part_free(data);
+    }
+    else {
+      /* not viewable part */
+
+      r = fprintf(f, "   (not shown)\n\n");
+      if (r &lt; 0) {
+        res = ERROR_FILE;
+        goto err;
+      }
+    }
+
+    break;
+    
+  case MAILMIME_MULTIPLE:
+
+    if (strcasecmp(mime-&gt;mm_content_type-&gt;ct_subtype,
+      "alternative") == 0) {
+      struct mailmime * prefered_body;
+      int prefered_score;
+
+      /* case of multiple/alternative */
+
+      /*
+        we choose the better part,
+        alternative preference :
+
+	text/plain =&gt; score 3
+	text/xxx   =&gt; score 2
+	other      =&gt; score 1
+      */
+
+      prefered_body = NULL;
+      prefered_score = 0;
+
+      for(cur = clist_begin(mime-&gt;mm_data.mm_multipart.mm_mp_list) ;
+          cur != NULL ; cur = clist_next(cur)) {
+	struct mailmime * submime;
+	int score;
+
+	score = 1;
+	submime = clist_content(cur);
+        if (etpan_mime_is_text(submime))
+          score = 2;
+
+	if (submime-&gt;mm_content_type != NULL) {
+          if (strcasecmp(submime-&gt;mm_content_type-&gt;ct_subtype,
+            "plain") == 0)
+            score = 3;
+	}
+
+	if (score &gt; prefered_score) {
+	  prefered_score = score;
+	  prefered_body = submime;
+	}
+      }
+
+      if (prefered_body != NULL) {
+	r = etpan_render_mime(f, msg_info, prefered_body);
+	if (r != NO_ERROR) {
+	  res = r;
+          goto err;
+        }
+      }
+    }
+    else {
+      for(cur = clist_begin(mime-&gt;mm_data.mm_multipart.mm_mp_list) ;
+          cur != NULL ; cur = clist_next(cur)) {
+        
+        r = etpan_render_mime(f, msg_info, clist_content(cur));
+        if (r != NO_ERROR) {
+          res = r;
+          goto err;
+        }
+      }
+    }
+
+    break;
+      
+  case MAILMIME_MESSAGE:
+
+    if (mime-&gt;mm_data.mm_message.mm_fields != NULL) {
+      struct mailimf_fields * fields;
+      
+      if (msg_info != NULL) {
+        fields = fetch_fields(msg_info, mime);
+        if (fields == NULL) {
+          res = ERROR_FETCH;
+          goto err;
+        }
+        
+        col = 0;
+        r = mailimf_fields_write(f, &amp;col, fields);
+        if (r != NO_ERROR) {
+          mailimf_fields_free(fields);
+          res = r;
+          goto err;
+        }
+        
+        mailimf_fields_free(fields);
+      }
+      else {
+        col = 0;
+        r = fields_write(f, &amp;col, mime-&gt;mm_data.mm_message.mm_fields);
+        if (r != NO_ERROR) {
+          res = r;
+          goto err;
+        }
+      }
+      
+      r = fprintf(f, "\r\n");
+      if (r &lt; 0) {
+        res = ERROR_FILE;
+        goto err;
+      }
+    }
+    
+    if (mime-&gt;mm_data.mm_message.mm_msg_mime != NULL) {
+      r = etpan_render_mime(f, msg_info,
+        mime-&gt;mm_data.mm_message.mm_msg_mime);
+      if (r != NO_ERROR) {
+        res = r;
+        goto err;
+      }
+    }
+
+    break;
+  }
+
+  return NO_ERROR;
+
+ err:
+  return res;
+}
+
+
+
+int main(void)
+{
+  struct mailstorage * storage;
+  int r;
+
+  storage = mailstorage_new(NULL);
+  
+  imap_mailstorage_init(storage, "imap.my-servers.org", 0,
+    NULL, CONNECTION_TYPE_TRY_STARTTLS, IMAP_AUTH_TYPE_PLAIN,
+    "my-login", "my-password", 1, "/home/login/.libetpan/cache");
+
+  r = mailstorage_connect(storage);
+  if (r == MAIL_NO_ERROR) {
+    struct mailfolder * folder;
+
+    folder = mailfolder_new(storage, "INBOX", NULL);
+    
+    r = mailfolder_connect(folder);
+    if (r == MAIL_NO_ERROR) {
+      struct mailmessage_list * msg_list;
+      mailmessage * msg;
+      
+      mailfolder_get_messages_list(folder, &amp;msg_list);
+      
+      if (carray_count(msg_list-&gt;msg_tab) &gt; 0) {
+        struct mailmime * mime;
+      
+        msg = carray_get(msg_list-&gt;msg_tab, 0);
+        
+        mailmessage_get_bodystructure(msg, &amp;mime);
+        
+        recursive_fetch(msg, mime);
+        
+        /* do the things */
+        
+        mailmessage_flush(msg);
+      }
+      mailmessage_list_free(msg_list);
+      
+      mailfolder_disconnect(folder);
+    }
+    
+    mailstorage_disconnect(storage);
+  }
+  
+  mailstorage_free(storage);
+}
+          </PRE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x3082.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x3472.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Folder</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c2988.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Session</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

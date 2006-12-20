@@ -1,0 +1,12 @@
+- define a EP_parserstate_s
+- remove clist usage
+- add a errorcode to string function
+- error codes are EP_errornr_s
+- prefix everything with EP_
+- mailimf_dot_atom_text_free
+- mailimf_address_XX -> _new(void) _init(&addr, ...) _free(addr)
+- in fact that data structure should then also contain a
+     'dynamically' allocated flag
+
+- RFC 822 : test the examples
+- RFC 2822 : obsolete syntax

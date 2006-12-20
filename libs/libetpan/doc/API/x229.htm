@@ -1,0 +1,407 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Buffered I/O</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Tools and datatypes"
+HREF="c16.htm"><LINK
+REL="PREVIOUS"
+TITLE="Hash table"
+HREF="x161.htm"><LINK
+REL="NEXT"
+TITLE="non-buffered I/O"
+HREF="x289.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x161.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. Tools and datatypes</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x289.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN229"
+>Buffered I/O</A
+></H1
+><PRE
+CLASS="PROGRAMLISTING"
+>      
+#include &lt;libetpan/libetpan.h&gt;
+
+typedef struct _mailstream mailstream;
+      </PRE
+><P
+>        streams are objects where we can read data from and write data
+        to. They are not seekable. That can be for example a pipe or a
+        network stream.
+      </P
+><PRE
+CLASS="PROGRAMLISTING"
+>mailstream * mailstream_new(mailstream_low * low, size_t buffer_size);
+
+int mailstream_close(mailstream * s);
+      </PRE
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_new()</B
+> creates a new stream
+        stream with the low-level (see <A
+HREF="x289.htm"
+>the Section called <I
+>non-buffered I/O</I
+></A
+>) 
+        stream and a given buffer size.
+      </P
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_close()</B
+> closes the stream.
+        This function will be in charge to free the
+        <B
+CLASS="COMMAND"
+>mailstream_low</B
+> structure.
+      </P
+><PRE
+CLASS="PROGRAMLISTING"
+>      
+ssize_t mailstream_write(mailstream * s, void * buf, size_t count);
+
+int mailstream_flush(mailstream * s);
+
+ssize_t mailstream_read(mailstream * s, void * buf, size_t count);
+
+ssize_t mailstream_feed_read_buffer(mailstream * s);
+      </PRE
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_write()</B
+> writes a buffer to the
+        given stream. This write operation will be buffered.
+      </P
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_flush()</B
+> will force a write of
+        all buffered data for a given stream.
+      </P
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_read()</B
+> reads data from the
+        stream to the given buffer.
+      </P
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_feed_read_buffer()</B
+> this function
+        will just fill the buffer for reading.
+      </P
+><PRE
+CLASS="PROGRAMLISTING"
+>      
+mailstream_low * mailstream_get_low(mailstream * s);
+
+void mailstream_set_low(mailstream * s, mailstream_low * low);
+      </PRE
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_get_low()</B
+> returns the low-level
+        stream of the given stream.
+      </P
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_set_low()</B
+> changes the low-level
+        of the given stream. Useful, for 
+        example, when a stream change from clear stream to SSL
+        stream.
+      </P
+><PRE
+CLASS="PROGRAMLISTING"
+>char * mailstream_read_line(mailstream * stream, MMAPString * line);
+
+char * mailstream_read_line_append(mailstream * stream, MMAPString * line);
+
+char * mailstream_read_line_remove_eol(mailstream * stream, MMAPString * line);
+
+char * mailstream_read_multiline(mailstream * s, size_t size,
+    MMAPString * stream_buffer,
+    MMAPString * multiline_buffer,
+    size_t progr_rate,
+    progress_function * progr_fun);
+      </PRE
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_read_line()</B
+> reads an entire line
+        from the buffer and store it into the 
+        given string. returns <B
+CLASS="COMMAND"
+>NULL</B
+> on error, the
+        corresponding array 
+        of <B
+CLASS="COMMAND"
+>char</B
+> is returned otherwise.
+      </P
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_read_line_append()</B
+> reads an entire
+        line from the buffer and appends it to the 
+        given string. returns <B
+CLASS="COMMAND"
+>NULL</B
+> on error, the
+        array of char corresponding to the entire buffer is returned
+        otherwise.
+      </P
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_read_line_remove_eol()</B
+> reads an
+        entire line from the buffer and store it into the 
+        given string. All CR LF are removed.
+        returns <B
+CLASS="COMMAND"
+>NULL</B
+> on error, the corresponding
+        array of <B
+CLASS="COMMAND"
+>char</B
+> is returned otherwise.
+      </P
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_read_multiline()</B
+> reads a
+        multiline data (several lines, the data are ended with 
+        a single period '.')
+        from the given stream and store it into the given
+        multiline buffer (multiline_buffer). progr_rate should be 0
+        and progr_fun <B
+CLASS="COMMAND"
+>NULL</B
+> (deprecated things).
+        <B
+CLASS="COMMAND"
+>stream_buffer</B
+> is a buffer used for internal
+        work of the function.
+        size should be 0 (deprecated things).
+      </P
+><PRE
+CLASS="PROGRAMLISTING"
+>      
+int mailstream_is_end_multiline(char * line);
+      </PRE
+><P
+>        returns 1 if the line is an end of multiline data (a single
+        period '.', eventually with CR and/or LF). 0 is returned
+        otherwise.
+      </P
+><PRE
+CLASS="PROGRAMLISTING"
+>      
+int mailstream_send_data(mailstream * s, char * message,
+    size_t size,
+    size_t progr_rate,
+    progress_function * progr_fun);
+      </PRE
+><P
+>        sends multiline data to the given stream.
+        <B
+CLASS="COMMAND"
+>size</B
+> is the size of the data.
+        <B
+CLASS="COMMAND"
+>progr_rate</B
+> and <B
+CLASS="COMMAND"
+>progr_fun</B
+>
+        are deprecated. <B
+CLASS="COMMAND"
+>progr_rate</B
+> must be 0,
+        <B
+CLASS="COMMAND"
+>progr_fun</B
+> must be NULL.
+      </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILSTREAM-SOCKET"
+>socket stream</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>mailstream * mailstream_socket_open(int fd);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailstream_socket_open()</B
+> will open a
+          clear-text socket.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILSTREAM-SSL"
+>TLS stream</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>mailstream * mailstream_ssl_open(int fd);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailstream_ssl_open()</B
+> will open a
+          TLS/SSL socket.
+        </P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x161.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x289.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Hash table</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c16.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>non-buffered I/O</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,529 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Rendering of MIME parts</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="MIME"
+HREF="c1586.htm"><LINK
+REL="PREVIOUS"
+TITLE="Parser functions"
+HREF="x2180.htm"><LINK
+REL="NEXT"
+TITLE="Creation functions"
+HREF="x2669.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x2180.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 4. MIME</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x2669.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN2583"
+>Rendering of MIME parts</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-FIELDS-WRITE"
+>mailmime_fields_write, mailmime_content_write and
+        mailmime_content_type_write</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_fields_write(FILE * f, int * col,
+			  struct mailmime_fields * fields);
+
+int mailmime_content_write(FILE * f, int * col,
+			   struct mailmime_content * content);
+
+int mailmime_content_type_write(FILE * f, int * col,
+				struct mailmime_content * content);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_fields_write</B
+> render the MIME
+          header fields.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_content_write</B
+> render the MIME
+          content type header field.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_content_write</B
+> render the
+          content of the MIME content type header field.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>col</B
+> current column is given for wrapping
+              purpose in <B
+CLASS="COMMAND"
+>(* col)</B
+>,
+              the resulting columns will be returned..
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>f</B
+> is the file descriptor. It can be
+              stdout for example.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>fields</B
+> is the header fields
+              (see <A
+HREF="x1614.htm#MAILMIME-FIELDS"
+>the Section called <I
+>mailmime_fields - header fields</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>content</B
+> is the header fields
+              (see <A
+HREF="x1614.htm#MAILMIME-CONTENT"
+>the Section called <I
+>mailmime_content - MIME content type (Content-Type)</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2610"
+></A
+><P
+><B
+>Example 4-33. rendering MIME header fields</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  struct mailmime_mime * mime_fields;
+  int col;
+
+  /* look at the example in mailmime_fields to see how to
+     build a mailmime_fields */
+  mime_fields = build_mime_fields();
+
+  col = 0;
+  mailmime_fields_write(stdout, &amp;col, mime_fields);
+
+  mailmime_fields_free(mime_fields);
+}
+
+int main(int argc, char ** argv)
+{
+  struct mailmime_content * content;
+  int col;
+
+  /* look at the example in mailmime_content to see how to
+     build a mailmime_fields */
+  content = build_mime_content();
+
+  col = 0;
+  mailmime_content_write(stdout, &amp;col, mime_fields);
+
+  mailmime_content_free(content);
+}
+
+int main(int argc, char ** argv)
+{
+  struct mailmime_content * content;
+  int col;
+
+  /* look at the example in mailmime_content to see how to
+     build a mailmime_fields */
+  content = build_mime_content();
+
+  col = 0;
+  mailmime_content_type_write(stdout, &amp;col, mime_fields);
+
+  mailmime_content_free(content);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-WRITE"
+>mailmime_write</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_write(FILE * f, int * col,
+		   struct mailmime * build_info);
+        </PRE
+><P
+>          This function will render a MIME message.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>col</B
+> current column is given for wrapping
+              purpose in <B
+CLASS="COMMAND"
+>(* col)</B
+>,
+              the resulting columns will be returned..
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>f</B
+> is the file descriptor. It can be
+              stdout for example.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>build_info</B
+> is the MIME message to
+              render.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-QUOTED-PRINTABLE-WRITE"
+>mailmime_quoted_printable_write
+        and mailmime_base64_write</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_quoted_printable_write(FILE * f, int * col, int istext,
+    const char * text, size_t size);
+
+int mailmime_base64_write(FILE * f, int * col,
+    const char * text, size_t size);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_quoted_printable_write()</B
+> will
+          render a string to quoted printable.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_base64_write()</B
+> will
+          render a string to base64.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>col</B
+> current column is given for wrapping
+              purpose in <B
+CLASS="COMMAND"
+>(* col)</B
+>,
+              the resulting columns will be returned..
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>f</B
+> is the file descriptor. It can be
+              stdout for example.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>text</B
+> is the string to render.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>size</B
+> is the size of the string to
+              render.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2649"
+></A
+><P
+><B
+>Example 4-34. render base64 or quoted printable</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int col;
+
+  col = 0;
+  mailmime_quoted_printable_write(stdout, &amp;col,
+    "this is a test", 14);
+}
+
+#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int col;
+
+  col = 0;
+  mailmime_base64_write(stdout, &amp;col, "this is a test", 14);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-DATA-WRITE"
+>mailmime_data_write</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_data_write(FILE * f, int * col,
+    struct mailmime_data * data,
+    int istext);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_data_write</B
+> will
+          render MIME data.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>col</B
+> current column is given for wrapping
+              purpose in <B
+CLASS="COMMAND"
+>(* col)</B
+>,
+              the resulting columns will be returned..
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>f</B
+> is the file descriptor. It can be
+              stdout for example.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>data</B
+> is the data to render
+              (see <A
+HREF="x1614.htm#MAILMIME-DATA"
+>the Section called <I
+>mailmime_data - Content of MIME part</I
+></A
+>).
+            </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x2180.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x2669.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Parser functions</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1586.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Creation functions</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

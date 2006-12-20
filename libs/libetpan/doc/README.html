@@ -1,0 +1,780 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>libEtPan!</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"></HEAD
+><BODY
+CLASS="BOOK"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="BOOK"
+><A
+NAME="LIBETPAN-README"
+></A
+><DIV
+CLASS="TITLEPAGE"
+><H1
+CLASS="TITLE"
+><A
+NAME="AEN2"
+>libEtPan!</A
+></H1
+><H3
+CLASS="AUTHOR"
+><A
+NAME="AEN6"
+></A
+>Viet Hoa DINH</H3
+><P
+CLASS="COPYRIGHT"
+>Copyright &copy; 2003 DINH Viet Hoa</P
+><HR></DIV
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+>1. <A
+HREF="#INTRODUCTION"
+>Introduction</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="#DESCRIPTION"
+>Description</A
+></DT
+><DT
+><A
+HREF="#AUTHOR"
+>Author</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="#MAIN-AUTH"
+>Main author</A
+></DT
+><DT
+><A
+HREF="#CONTRIB"
+>Contributors</A
+></DT
+></DL
+></DD
+></DL
+></DD
+><DT
+>2. <A
+HREF="#INSTALLATION"
+>Installation</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="#DEPENDENCIES"
+>Dependencies</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="#DEPEND-USERS"
+>Dependencies for users</A
+></DT
+><DT
+><A
+HREF="#DEPEND-DEVELOPERS"
+>Dependencies for developers</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="#PACKAGES"
+>Existing packages</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="#PACKAGE-FREEBSD"
+>FreeBSD</A
+></DT
+><DT
+><A
+HREF="#PACKAGE-DEBIAN"
+>Debian</A
+></DT
+><DT
+><A
+HREF="#PACKAGE-MANDRAKE"
+>Mandrake Linux</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="#COMPILATION"
+>Compilation</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="#COMPILE-FREEBSD"
+>FreeBSD</A
+></DT
+><DT
+><A
+HREF="#COMPILE-MACOSX"
+>Mac OS X</A
+></DT
+><DT
+><A
+HREF="#LINUX"
+>Linux</A
+></DT
+><DT
+><A
+HREF="#CONFIGURE"
+>configure</A
+></DT
+><DT
+><A
+HREF="#INSTALL"
+>Compile and install</A
+></DT
+></DL
+></DD
+></DL
+></DD
+><DT
+>3. <A
+HREF="#USE"
+>Use of libEtPan!</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="#HOTMAIL"
+>How to open an Hotmail mailbox</A
+></DT
+></DL
+></DD
+></DL
+></DIV
+><DIV
+CLASS="CHAPTER"
+><HR><H1
+><A
+NAME="INTRODUCTION"
+></A
+>Chapter 1. Introduction</H1
+><DIV
+CLASS="SECT1"
+><H2
+CLASS="SECT1"
+><A
+NAME="DESCRIPTION"
+>Description</A
+></H2
+><P
+>        The purpose of this mail library is to provide a portable,
+        efficient middleware for different kinds of mail access
+        (IMAPrev4, POP3, NNTP, mbox, MH, Maildir).
+      </P
+><P
+>        You have two kinds of mailbox access, either using low-level
+        functions with a different interface for each kind of access
+        or using higher-level functions, using a driver to wrap the
+        higher-level API. The API will be the same for each kind of
+        mail access using the higher-level API.
+      </P
+></DIV
+><DIV
+CLASS="SECT1"
+><HR><H2
+CLASS="SECT1"
+><A
+NAME="AUTHOR"
+>Author</A
+></H2
+><DIV
+CLASS="SECT2"
+><H3
+CLASS="SECT2"
+><A
+NAME="MAIN-AUTH"
+>Main author</A
+></H3
+><P
+>          DINH Viet Hoa <CODE
+CLASS="EMAIL"
+>&#60;<A
+HREF="mailto:hoa@users.sourceforge.net"
+>hoa@users.sourceforge.net</A
+>&#62;</CODE
+>
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="CONTRIB"
+>Contributors</A
+></H3
+><P
+>          <P
+></P
+><UL
+><LI
+><P
+>                Wim Delvaux 
+              </P
+></LI
+><LI
+><P
+>                Melvin Hadasht 
+              </P
+></LI
+><LI
+><P
+>                David Woodhouse 
+              </P
+></LI
+><LI
+><P
+>                Juergen Graf 
+              </P
+></LI
+><LI
+><P
+>                Zsolt VARGA 
+              </P
+></LI
+><LI
+><P
+>                Gael Roualland 
+              </P
+></LI
+><LI
+><P
+>                Toni Willberg 
+              </P
+></LI
+><LI
+><P
+>			    Rajko Albrecht 
+			  </P
+></LI
+><LI
+><P
+>			    Nikita V. Youshchenko 
+			  </P
+></LI
+><LI
+><P
+>			    Frederic Devernay 
+			  </P
+></LI
+><LI
+><P
+>			    Michael Leupold 
+			  </P
+></LI
+><LI
+><P
+>			    Colin Leroy 
+			  </P
+></LI
+></UL
+>
+        </P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="CHAPTER"
+><HR><H1
+><A
+NAME="INSTALLATION"
+></A
+>Chapter 2. Installation</H1
+><DIV
+CLASS="SECT1"
+><H2
+CLASS="SECT1"
+><A
+NAME="DEPENDENCIES"
+>Dependencies</A
+></H2
+><DIV
+CLASS="SECT2"
+><H3
+CLASS="SECT2"
+><A
+NAME="DEPEND-USERS"
+>Dependencies for users</A
+></H3
+><P
+></P
+><UL
+><LI
+><P
+>              <A
+HREF="http://www.openssl.org"
+TARGET="_top"
+>OpenSSL</A
+>
+              (optional but recommended)
+            </P
+></LI
+><LI
+><P
+>              <A
+HREF="http://www.sleepycat.com"
+TARGET="_top"
+>Berkeley
+              DB</A
+> (optional but recommended)
+            </P
+></LI
+><LI
+><P
+>              POSIX Thread (required)
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="DEPEND-DEVELOPERS"
+>Dependencies for developers</A
+></H3
+><P
+></P
+><UL
+><LI
+><P
+>              <A
+HREF="http://www.gnu.org/software/autoconf"
+TARGET="_top"
+>                autoconf
+              </A
+>
+              2.13
+            </P
+></LI
+><LI
+><P
+>              <A
+HREF="http://www.gnu.org/software/automake"
+TARGET="_top"
+>                automake
+              </A
+>
+              1.4
+            </P
+></LI
+><LI
+><P
+>              <A
+HREF="http://www.gnu.org/software/libtool/libtool.html"
+TARGET="_top"
+>                libtool
+              </A
+>
+              1.4.3
+            </P
+></LI
+><LI
+><P
+>              jade and some SGML tools will be required
+            </P
+></LI
+></UL
+></DIV
+></DIV
+><DIV
+CLASS="SECT1"
+><HR><H2
+CLASS="SECT1"
+><A
+NAME="PACKAGES"
+>Existing packages</A
+></H2
+><P
+>        Before you try to compile it, you have to know that packages 
+        exist for some systems.
+      </P
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="PACKAGE-FREEBSD"
+>FreeBSD</A
+></H3
+><P
+>          you can find it in ports/mail/libetpan.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="PACKAGE-DEBIAN"
+>Debian</A
+></H3
+><P
+>		  This is in the package collection.
+		</P
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="PACKAGE-MANDRAKE"
+>Mandrake Linux</A
+></H3
+><P
+>          This is in the package collection.
+        </P
+></DIV
+></DIV
+><DIV
+CLASS="SECT1"
+><HR><H2
+CLASS="SECT1"
+><A
+NAME="COMPILATION"
+>Compilation</A
+></H2
+><P
+>        Generic installation instructions are in the
+        <TT
+CLASS="FILENAME"
+>INSTALL</TT
+> file
+        You can pass the following extra options to configure :
+      </P
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="COMPILE-FREEBSD"
+>FreeBSD</A
+></H3
+><P
+></P
+><UL
+><LI
+><P
+>              make sure libiconv is installed from the ports collection (see
+              <B
+CLASS="COMMAND"
+>pkg_info</B
+>).
+            </P
+></LI
+><LI
+><P
+>              issue configure with the following parameter:
+              <PRE
+CLASS="SCREEN"
+><SAMP
+CLASS="PROMPT"
+>$</SAMP
+> <KBD
+CLASS="USERINPUT"
+>./configure --with-libiconv-prefix=/usr/local</KBD
+>
+              </PRE
+>
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="COMPILE-MACOSX"
+>Mac OS X</A
+></H3
+><P
+></P
+><UL
+><LI
+><P
+>              in tests/option-parser.c, change the inclusion
+              of <TT
+CLASS="FILENAME"
+>getopt.h</TT
+> to
+              <TT
+CLASS="FILENAME"
+>gnugetopt/getopt.h</TT
+>
+            </P
+></LI
+><LI
+><P
+>              in <TT
+CLASS="FILENAME"
+>tests/Makefile</TT
+>, add
+              <B
+CLASS="COMMAND"
+>-I/sw/include</B
+> for the
+              <B
+CLASS="COMMAND"
+>CFLAGS</B
+> and
+                -L/sw/lib -lgnugetopt for the LDFLAGS.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="LINUX"
+>Linux</A
+></H3
+><P
+></P
+><UL
+><LI
+><DIV
+CLASS="WARNING"
+><P
+></P
+><TABLE
+CLASS="WARNING"
+BORDER="1"
+WIDTH="90%"
+><TR
+><TD
+ALIGN="CENTER"
+><B
+>Warning</B
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+><P
+>                Since libEtPan! is making high usage of
+                <B
+CLASS="COMMAND"
+>mmap()</B
+> even for
+                writing, when your mailboxes are on
+                <B
+CLASS="COMMAND"
+>NFS</B
+> filesystem with
+                a Linux server, it is advised to use option
+                <B
+CLASS="COMMAND"
+>no_subtree_check</B
+> in
+                <TT
+CLASS="FILENAME"
+>/etc/exports</TT
+>.
+                This should avoid corruption of data.
+              </P
+><P
+>                The problem exist in Linux 2.4.22 and earlier versions.
+              </P
+></TD
+></TR
+></TABLE
+></DIV
+></LI
+><LI
+><P
+>              On RedHat systems, you have to configure using the
+              following command line :
+              <B
+CLASS="COMMAND"
+>./configure --with-openssl=/usr/kerberos</B
+>
+            </P
+></LI
+><LI
+><P
+>              On Debian systems, if the <B
+CLASS="COMMAND"
+>./autogen</B
+>
+              script fails on missing <B
+CLASS="COMMAND"
+>AM_ICONV</B
+>, you
+              have to install <B
+CLASS="COMMAND"
+>gettext</B
+> package.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="CONFIGURE"
+>configure</A
+></H3
+><P
+>          You can use the following options :
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>--enable-debug</B
+>    Compiles with
+              debugging turned on
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>--enable-optim</B
+>    Turns on some
+              optimizations flags for gcc
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>--without-openssl</B
+> Disables OpenSSL (do
+              not look for it)
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><HR><H3
+CLASS="SECT2"
+><A
+NAME="INSTALL"
+>Compile and install</A
+></H3
+><P
+>          Download the package and do the following :
+        </P
+><PRE
+CLASS="PROGRAMLISTING"
+>$ tar xzvf libetpan-XX.XX.tar.gz      # to decompress the package
+
+$ cd libetpan-XX.XX
+
+$ ./configure --help                 # to get options of configure
+
+$ ./configure                        # you can specify your own options
+
+$ make                               # to compile the package
+
+$ su
+
+# make install
+
+# logout
+        </PRE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="CHAPTER"
+><HR><H1
+><A
+NAME="USE"
+></A
+>Chapter 3. Use of libEtPan!</H1
+><DIV
+CLASS="SECT1"
+><H2
+CLASS="SECT1"
+><A
+NAME="HOTMAIL"
+>How to open an Hotmail mailbox</A
+></H2
+><P
+>        If you wish to access hotmail using libEtPan!, you can, by
+        using <A
+HREF="http://hotwayd.sf.net"
+TARGET="_top"
+>hotwayd</A
+>.
+        Then, create a POP3 storage with the given parameters :
+        command as clear text for connection type
+        (<B
+CLASS="COMMAND"
+>CONNECTION_TYPE_COMMAND</B
+>),
+        <B
+CLASS="COMMAND"
+>"/usr/bin/hotwayd"</B
+>
+        as command, plain text authentication
+        (<B
+CLASS="COMMAND"
+>ePOP3_AUTH_TYPE_PLAIN</B
+>),
+        full hotmail address as login
+        (<B
+CLASS="COMMAND"
+>foobar@hotmail.com</B
+> or
+        <B
+CLASS="COMMAND"
+>foobar@hotmail.com/mailbox_name</B
+> if you want
+        to access a specific mailbox) and give your password.
+      </P
+></DIV
+></DIV
+></DIV
+></BODY
+></HTML
+>

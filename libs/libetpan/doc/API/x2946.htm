@@ -1,0 +1,431 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Helper functions</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="MIME"
+HREF="c1586.htm"><LINK
+REL="PREVIOUS"
+TITLE="Creation functions"
+HREF="x2669.htm"><LINK
+REL="NEXT"
+TITLE="Storages, folders, messages"
+HREF="c2988.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x2669.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 4. MIME</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c2988.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN2946"
+>Helper functions</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-TRANSFER-ENCODING-GET"
+>mailmime_transfer_encoding_get</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_transfer_encoding_get(struct mailmime_fields * fields);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_transfer_encoding_get()</B
+> will
+          return the standard MIME encoding mechanism.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>fields</B
+> is the list of MIME header
+              fields.
+            </P
+></LI
+><LI
+><P
+>              An integer representing the MIME encoding mechanism will
+              be returned
+              (see <A
+HREF="x1614.htm#MAILMIME-MECHANISM"
+>the Section called <I
+>mailmime_mechanism - MIME transfer encoding mechanism (Content-Transfer-Encoding)</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2960"
+></A
+><P
+><B
+>Example 4-46. extracting MIME encoding mechanism</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+          struct mailmime_fields * mime_fields;
+
+	  r = mailmime_fields_parse(f, &amp;mime_fields);
+          if (r == MAILIMF_NO_ERROR) {
+            int encoding;
+            
+            encoding = mailmime_transfer_encoding_get(mime_fields);
+            
+            /* do the things */
+            
+	    mailmime_fields_free(mime_fields);
+	    status = EXIT_SUCCESS;
+          }
+
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-CONTENT-CHARSET-GET"
+>mailmime_content_charset_get and
+        mailmime_content_param_get</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+char * mailmime_content_charset_get(struct mailmime_content * content);
+
+char * mailmime_content_param_get(struct mailmime_content * content,
+				  char * name);
+
+char * mailmime_extract_boundary(struct mailmime_content * content_type);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_content_charset_get()</B
+> will
+          return the <B
+CLASS="COMMAND"
+>charset</B
+> parameter of
+          MIME content type.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_content_param_get()</B
+> will
+          return the value of a given parameter of
+          MIME content type.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_extract_boundary()</B
+> will
+          return the <B
+CLASS="COMMAND"
+>charset</B
+> parameter of
+          MIME content type.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+> 
+              <B
+CLASS="COMMAND"
+>content</B
+> is the MIME content type.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>name</B
+> is the name of the parameter to
+              extract.
+            </P
+></LI
+><LI
+><P
+>              With <B
+CLASS="COMMAND"
+>mailmime_extract_boundary()</B
+>, the
+              returned value must be freed with
+              <B
+CLASS="COMMAND"
+>free()</B
+>.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2985"
+></A
+><P
+><B
+>Example 4-47. extracting information from MIME content type</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+          clistiter * cur;
+        
+          for(cur = clist_begin(f-&gt;fld_list) ; cur != NULL ; cur =
+            clist_next(cur)) {
+            struct mailmime_field * mime_field;
+            struct mailimf_field * field;
+            
+            field = clist_content(cur);
+            
+            if (field-&gt;fld_type == MAILIMF_FIELD_OPTIONAL_FIELD) {
+              if (strcasecmp(field-&gt;fld_data.fld_optional_field-&gt;fld_name,
+                "Content-Type") == 0) {
+                struct mailmime_content * content_type;
+                size_t current_index;
+
+                current_index = 0;
+	        r = mailmime_content_parse(field-&gt;fld_data.fld_optional_field-&gt;fld_value,
+                  strlen(field-&gt;fld_data.fld_optional_field-&gt;fld_value),
+                  &amp;current_index, &amp;content_type);
+	        if (r == MAILIMF_NO_ERROR) {
+                  char * charset;
+                  char * name;
+                  char * boundary;                  
+
+                  charset = mailmime_content_charset_get(content_type);
+                  name = mailmime_content_param_get(content_type, "name");
+                  boundary = mailmime_extract_boundary(content_type);
+                  
+	          /* do the things */
+                  
+                  free(boundary);
+                  
+	          status = EXIT_SUCCESS;
+	          mailmime_content_free(content_type);
+	        }
+              }
+            }
+          }
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x2669.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c2988.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Creation functions</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1586.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Storages, folders, messages</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

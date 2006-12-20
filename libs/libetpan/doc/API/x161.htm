@@ -1,0 +1,557 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Hash table</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Tools and datatypes"
+HREF="c16.htm"><LINK
+REL="PREVIOUS"
+TITLE="List"
+HREF="x88.htm"><LINK
+REL="NEXT"
+TITLE="Buffered I/O"
+HREF="x229.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x88.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. Tools and datatypes</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x229.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN161"
+>Hash table</A
+></H1
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+typedef struct chash chash;
+
+typedef struct chashcell chashiter;
+
+typedef struct {
+  char * data;
+  int len;
+} chashdatum;
+      </PRE
+><P
+>      
+        <B
+CLASS="COMMAND"
+>chash</B
+> is a hash table.
+        <B
+CLASS="COMMAND"
+>chashiter</B
+> is a pointer to an element of the
+        hash table.
+        <B
+CLASS="COMMAND"
+>chashdatum</B
+> is an element to be placed in
+        the hash table as a key or a value. It consists in 
+        data and a corresponding length.
+      </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CHASH-NEW"
+>chash_new and chash_free</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#define CHASH_COPYNONE    0
+#define CHASH_COPYKEY     1
+#define CHASH_COPYVALUE   2
+#define CHASH_COPYALL     (CHASH_COPYKEY | CHASH_COPYVALUE)
+
+chash * chash_new(int size, int flags);
+
+void chash_free(chash * hash);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>chash_new()</B
+> returns a new empty hash table
+          or <B
+CLASS="COMMAND"
+>NULL</B
+> if this
+          failed. <B
+CLASS="COMMAND"
+>size</B
+> is the initial size of the
+          table used for implementation. <B
+CLASS="COMMAND"
+>flags</B
+> can
+          be a combinaison of <B
+CLASS="COMMAND"
+>CHASH_COPYKEY</B
+> and
+          <B
+CLASS="COMMAND"
+>CHASH_COPYVALUE</B
+>.
+          <B
+CLASS="COMMAND"
+>CHASH_COPYKEY</B
+> enables copy of key, so
+          that the initial value used for <B
+CLASS="COMMAND"
+>chash_set()</B
+>
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>chash_free()</B
+> releases memory used by the
+          hash table.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CHASH-GET"
+>chash_set and chash_get</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int chash_set(chash * hash,
+    chashdatum * key, chashdatum * value, chashdatum * oldvalue);
+
+int chash_get(chash * hash,
+    chashdatum * key, chashdatum * result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>chash_set()</B
+> adds a new element into the
+          hash table. If a previous element had the same key, it is
+          returns into oldvalue if <B
+CLASS="COMMAND"
+>oldvalue</B
+> is
+          different of NULL.
+          Medium complexity is O(1).
+        </P
+><P
+>          returns -1 if it fails, 0 on success.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>chash_get()</B
+>returns the corresponding value
+          of the given key. If there is no corresponding value, -1 is
+          returned. 0 on success.
+          Medium complexity is O(1).
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN191"
+></A
+><P
+><B
+>Example 2-9. chash insert and lookup</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>int main(void)
+{
+  chash * hash;
+  int r;
+  chashdatum key;
+  chashdatum value;
+  char * str1 = "my-data";
+  char * str2 = "my-data";
+
+  hash = chash_new(CHASH_DEFAULTSIZE, CHASH_COPYNONE);
+
+  key.data = "foo";
+  key.len = strlen("foo");  
+  value.data = str1;
+  value.data = strlen(str1) + 1;
+  /* + 1 is needed to get the terminal zero in the returned string */
+  r = chash_set(hash, &amp;key, &amp;value, NULL);
+  if (r &lt; 0)
+    goto free_hash;
+
+  key.data = "bar";
+  key.len = strlen("bar");  
+  value.data = str2;
+  value.data = strlen(str2) + 1;
+  if (r &lt; 0)
+    goto free_hash;
+  
+  key.data = "foo";
+  key.len = strlen("foo");  
+  r = chash_get(hash, &amp;key, &amp;value);
+  if (r &lt; 0) {
+    printf("element not found\n");
+  }
+  else {
+    char * str;
+
+    str = value.data;
+    printf("found : %s", str);
+  }
+  
+  chash_free(hash);
+
+  exit(EXIT_SUCCESS);
+
+ free_hash:
+  chash_free(hash);
+ err:
+  exit(EXIT_FAILURE);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CHASH-DELETE"
+>chash_delete</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int chash_delete(chash * hash,
+    chashdatum * key, chashdatum * oldvalue);
+        </PRE
+><P
+>          deletes the key/value pair given the corresponding key.
+          The value is returned in old_value.
+          If there is no corresponding value, -1 is returned. 0 on success.
+          Medium complexity is O(1).
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN198"
+></A
+><P
+><B
+>Example 2-10. key deletion in a chash</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>int main(void)
+{
+  chash * hash;
+  int r;
+  chashdatum key;
+  chashdatum value;
+  char * str1 = "my-data";
+  char * str2 = "my-data";
+
+  hash = build_hash();
+  
+  key.data = "foo";
+  key.len = strlen("foo");  
+  chash_delete(hash, &amp;key, &amp;value);
+
+  /* it will never be possible to lookup "foo" */
+  key.data = "foo";
+  key.len = strlen("foo");
+  r = chash_get(hash, &amp;key, &amp;value);
+  if (r &lt; 0) {
+    printf("element not found\n");
+  }
+  else {
+    char * str;
+
+    str = value.data;
+    printf("found : %s", str);
+  }
+  
+  chash_free(hash);
+
+  exit(EXIT_SUCCESS);
+
+ free_hash:
+  chash_free(hash);
+ err:
+  exit(EXIT_FAILURE);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CHASH-RESIZE"
+>chash_resize</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int chash_resize(chash * hash, int size);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>chash_resize()</B
+> changes the size of the
+          table used for implementation of the hash table.
+          returns 0 on success, -1 on failure.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CHASH-BEGIN"
+>running through the chash</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>chashiter * chash_begin(chash * hash);
+
+chashiter * chash_next(chash * hash, chashiter * iter);
+
+void chash_key(chashiter * iter, chashdatum * result);
+
+void chash_value(chashiter iter, chashdatum * result);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>chash_begin()</B
+> returns a pointer to the
+          first element of the hash table. Returns
+          <B
+CLASS="COMMAND"
+>NULL</B
+> if there is no elements in the hash
+          table.
+          Complexity is O(n).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>chash_next()</B
+> returns a pointer to the next
+          element of the hash table. Returns <B
+CLASS="COMMAND"
+>NULL</B
+>
+          if there is no next element.
+          Complexity is O(n) but n calls to chash_next() also has 
+          a complexity of O(n).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>chash_key()</B
+> returns the key of the given
+          element of the hash table.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>chash_value</B
+> returns the value of the
+          given element of the hash table.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN219"
+></A
+><P
+><B
+>Example 2-11. running through a chash</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>int main(void)
+{
+  chash * hash;
+  int r;
+  chashiter * iter;
+
+  hash = build_hash();
+
+  /* this will display all the values stored in the hash */
+  for(iter = chash_begin(hash) ; iter != NULL ; iter =
+    chash_next(hash, iter)) {
+    chashdatum key;
+    chashdatum value;
+    char * str;
+
+    chash_value(iter, &amp;value);
+    str = value.data;
+    printf("%s\n", str);
+  }
+
+  chash_free(hash);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CHASH-COUNT"
+>chash_size and chash_count</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int chash_size(chash * hash);
+
+int chash_count(chash * hash);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>chash_size()</B
+> returns the size of the table
+          used for implementation of the hash table.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>chash_count()</B
+> returns the number of
+          elements in the hash table.
+          Complexity is O(1).
+        </P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x88.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x229.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>List</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c16.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Buffered I/O</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

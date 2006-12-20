@@ -1,0 +1,955 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Creation functions</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Internet Message Format"
+HREF="c385.htm"><LINK
+REL="PREVIOUS"
+TITLE="Parser functions"
+HREF="x1094.htm"><LINK
+REL="NEXT"
+TITLE="Rendering of messages"
+HREF="x1556.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1094.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 3. Internet Message Format</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1556.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN1381"
+>Creation functions</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-MAILBOX-LIST-ADD"
+>mailimf_mailbox_list</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailimf_mailbox_list *
+mailimf_mailbox_list_new_empty();
+
+int mailimf_mailbox_list_add(struct mailimf_mailbox_list * mailbox_list,
+			     struct mailimf_mailbox * mb);
+
+int mailimf_mailbox_list_add_parse(struct mailimf_mailbox_list * mailbox_list,
+				   char * mb_str);
+
+int mailimf_mailbox_list_add_mb(struct mailimf_mailbox_list * mailbox_list,
+				char * display_name, char * address);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_mailbox_list_new_empty()</B
+> creates a
+          new empty list of mailboxes.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_mailbox_list_add</B
+> adds a mailbox
+          to the list of mailboxes.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_mailbox_list_add_parse</B
+> adds a
+          mailbox given in form of a string to the list of mailboxes.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_mailbox_list_add_mb</B
+> adds a
+          mailbox given in form of a couple : display name, mailbox
+          address.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>mailbox_list</B
+> is the list of mailboxes.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>mb</B
+> is a mailbox
+              (see <A
+HREF="x425.htm#MAILIMF-MAILBOX"
+>the Section called <I
+>mailimf_mailbox - mailbox</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>mb_str</B
+> is a mailbox given in the form
+              of a string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>display_name</B
+> is the display name.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>address</B
+> is the mailbox address.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1411"
+></A
+><P
+><B
+>Example 3-44. creating a list of mailboxes</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  struct mailimf_mailbox_list * mb_list;
+  struct mailimf_mailbox * mb;
+
+  mb_list = mailimf_mailbox_list_new_empty();
+
+  mb = mailimf_mailbox_new(strdup("DINH Viet Hoa"),
+    strdup("dinh.viet.hoa@free.fr"));
+  mailimf_mailbox_list_add(mb_list, mb);
+
+  mailimf_mailbox_list_add_parse(mb_list, "foo bar &lt;foo@bar.org&gt;");
+
+  mailimf_mailbox_list_add_mb(mb_list, strdup("bar foo"), strdup("bar@foo.com"));
+
+  mailimf_mailbox_list_free(mb_list);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-ADDRESS-LIST-ADD"
+>mailimf_address_list</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailimf_address_list * mailimf_address_list_new_empty();
+
+int mailimf_address_list_add(struct mailimf_address_list * address_list,
+			     struct mailimf_address * addr);
+
+int mailimf_address_list_add_parse(struct mailimf_address_list * address_list,
+				   char * addr_str);
+
+int mailimf_address_list_add_mb(struct mailimf_address_list * address_list,
+				char * display_name, char * address);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_address_list_new_empty()</B
+> creates a
+          new empty list of addresses.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_address_list_add</B
+> adds an address
+          to the list of addresses.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_address_list_add_parse</B
+> adds an
+          address given in form of a string to the list of addresses.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_address_list_add_mb</B
+> adds a
+          mailbox given in form of a couple : display name, mailbox
+          address.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>address_list</B
+> is the list of mailboxes.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>addr</B
+> is an address.
+              (see <A
+HREF="x425.htm#MAILIMF-ADDRESS"
+>the Section called <I
+>mailimf_address - address</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>addr_str</B
+> is an address given in the form of a
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>display_name</B
+> is the display name.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>address</B
+> is the mailbox address.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-FIELDS-ADD"
+>mailimf_fields</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailimf_fields *
+mailimf_fields_new_empty(void);
+
+struct mailimf_field * mailimf_field_new_custom(char * name, char * value);
+
+int mailimf_fields_add(struct mailimf_fields * fields,
+		       struct mailimf_field * field);
+
+int mailimf_fields_add_data(struct mailimf_fields * fields,
+			    struct mailimf_date_time * date,
+			    struct mailimf_mailbox_list * from,
+			    struct mailimf_mailbox * sender,
+			    struct mailimf_address_list * reply_to,
+			    struct mailimf_address_list * to,
+			    struct mailimf_address_list * cc,
+			    struct mailimf_address_list * bcc,
+			    char * msg_id,
+			    clist * in_reply_to,
+			    clist * references,
+			    char * subject);
+
+struct mailimf_fields *
+mailimf_fields_new_with_data_all(struct mailimf_date_time * date,
+				 struct mailimf_mailbox_list * from,
+				 struct mailimf_mailbox * sender,
+				 struct mailimf_address_list * reply_to,
+				 struct mailimf_address_list * to,
+				 struct mailimf_address_list * cc,
+				 struct mailimf_address_list * bcc,
+				 char * message_id,
+				 clist * in_reply_to,
+				 clist * references,
+				 char * subject);
+
+struct mailimf_fields *
+mailimf_fields_new_with_data(struct mailimf_mailbox_list * from,
+			     struct mailimf_mailbox * sender,
+			     struct mailimf_address_list * reply_to,
+			     struct mailimf_address_list * to,
+			     struct mailimf_address_list * cc,
+			     struct mailimf_address_list * bcc,
+			     clist * in_reply_to,
+			     clist * references,
+			     char * subject);
+
+char * mailimf_get_message_id(void);
+
+struct mailimf_date_time * mailimf_get_current_date(void);
+
+int
+mailimf_resent_fields_add_data(struct mailimf_fields * fields,
+    struct mailimf_date_time * resent_date,
+    struct mailimf_mailbox_list * resent_from,
+    struct mailimf_mailbox * resent_sender,
+    struct mailimf_address_list * resent_to,
+    struct mailimf_address_list * resent_cc,
+    struct mailimf_address_list * resent_bcc,
+    char * resent_msg_id);
+
+struct mailimf_fields *
+mailimf_resent_fields_new_with_data_all(struct mailimf_date_time *
+    resent_date, struct mailimf_mailbox_list * resent_from,
+    struct mailimf_mailbox * resent_sender,
+    struct mailimf_address_list * resent_to,
+    struct mailimf_address_list * resent_cc,
+    struct mailimf_address_list * resent_bcc,
+    char * resent_msg_id);
+
+struct mailimf_fields *
+mailimf_resent_fields_new_with_data(struct mailimf_mailbox_list * from,
+    struct mailimf_mailbox * resent_sender,
+    struct mailimf_address_list * resent_to,
+    struct mailimf_address_list * resent_cc,
+    struct mailimf_address_list * resent_bcc);
+        </PRE
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>from</B
+> is the parsed content of the
+              From field
+              (see <A
+HREF="x425.htm#MAILIMF-FROM"
+>the Section called <I
+>mailimf_from - parsed content of From header</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sender</B
+> is the parsed content of the
+              Sender field
+              (see <A
+HREF="x425.htm#MAILIMF-SENDER"
+>the Section called <I
+>mailimf_sender - parsed content of Sender header</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>reply_to</B
+> is the parsed content of the
+              <B
+CLASS="COMMAND"
+>Reply-To</B
+> field 
+              (see <A
+HREF="x425.htm#MAILIMF-REPLY-TO"
+>the Section called <I
+>mailimf_reply_to - parsed content of Reply-To header</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>to</B
+> is the parsed content of the
+              <B
+CLASS="COMMAND"
+>To</B
+> field 
+              (see <A
+HREF="x425.htm#MAILIMF-TO"
+>the Section called <I
+>mailimf_to - parsed content of To header</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>cc</B
+> is the parsed content of the
+              <B
+CLASS="COMMAND"
+>Cc</B
+> field 
+              (see <A
+HREF="x425.htm#MAILIMF-CC"
+>the Section called <I
+>mailimf_cc - parsed content of Cc</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>bcc</B
+> is the parsed content of the
+              <B
+CLASS="COMMAND"
+>Bcc</B
+> field 
+              (see <A
+HREF="x425.htm#MAILIMF-BCC"
+>the Section called <I
+>mailimf_bcc - parsed content of Bcc field</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message_id</B
+> is the parsed content of
+              the <B
+CLASS="COMMAND"
+>Message-ID</B
+> field 
+              (see <A
+HREF="x425.htm#MAILIMF-MESSAGE-ID"
+>the Section called <I
+>mailimf_message_id - parsed content of Message-ID header</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>in_reply_to</B
+> is the parsed content of
+              the <B
+CLASS="COMMAND"
+>In-Reply-To</B
+> field 
+              (see <A
+HREF="x425.htm#MAILIMF-IN-REPLY-TO"
+>the Section called <I
+>mailimf_in_reply_to - parsed content of In-Reply-To
+        field</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>references</B
+> is the parsed content of
+              the <B
+CLASS="COMMAND"
+>References</B
+> field 
+              (see <A
+HREF="x425.htm#MAILIMF-REFERENCES"
+>the Section called <I
+>mailimf_references - parsed content of References field</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>subject</B
+> is the content of the
+              <B
+CLASS="COMMAND"
+>Subject</B
+> field
+              (see <A
+HREF="x425.htm#MAILIMF-SUBJECT"
+>the Section called <I
+>mailimf_subject - parsed content of Subject field</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>resent_date</B
+> is the parsed content of
+              the <B
+CLASS="COMMAND"
+>Resent-Date</B
+> field
+              (see <A
+HREF="x425.htm#MAILIMF-ORIG-DATE"
+>the Section called <I
+>mailimf_orig_date - parsed content of date header</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>resent_from</B
+> is the parsed content of
+              the <B
+CLASS="COMMAND"
+>Resent-From</B
+> field 
+              (see <A
+HREF="x425.htm#MAILIMF-FROM"
+>the Section called <I
+>mailimf_from - parsed content of From header</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>resent_sender</B
+> is the parsed content of the
+              <B
+CLASS="COMMAND"
+>Resent-Sender</B
+> field
+              (see <A
+HREF="x425.htm#MAILIMF-SENDER"
+>the Section called <I
+>mailimf_sender - parsed content of Sender header</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>resent_to</B
+> is the parsed content of
+              the <B
+CLASS="COMMAND"
+>Resent-To</B
+> field
+              (see <A
+HREF="x425.htm#MAILIMF-TO"
+>the Section called <I
+>mailimf_to - parsed content of To header</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>resent_cc</B
+> is the parsed content of
+              the <B
+CLASS="COMMAND"
+>Resent-Cc</B
+> field
+              (see <A
+HREF="x425.htm#MAILIMF-CC"
+>the Section called <I
+>mailimf_cc - parsed content of Cc</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>resent_bcc</B
+> is the parsed content of the
+              <B
+CLASS="COMMAND"
+>Resent-Bcc</B
+> field
+              (see <A
+HREF="x425.htm#MAILIMF-BCC"
+>the Section called <I
+>mailimf_bcc - parsed content of Bcc field</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>resent_msg_id</B
+> is the parsed content of the
+              <B
+CLASS="COMMAND"
+>Resent-Message-ID</B
+> field
+              (see <A
+HREF="x425.htm#MAILIMF-MESSAGE-ID"
+>the Section called <I
+>mailimf_message_id - parsed content of Message-ID header</I
+></A
+>).
+            </P
+></LI
+></UL
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_fields_new_empty()</B
+> creates a new
+          empty set of headers.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_field_new_custom()</B
+> creates a new
+          custom header.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_fields_add()</B
+> adds a header to the
+          set of headers.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_fields_add_data()</B
+> adds some headers
+          to the set of headers.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_fields_new_with_data_all()</B
+> creates
+          a set of headers with some headers (including Date and
+          Message-ID).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_fields_new_with_data()</B
+> creates a
+          set of headers with some headers (Date and Message-ID will
+          be generated).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_get_message_id()</B
+> generates a
+          Message-ID. The result must be freed using
+          <B
+CLASS="COMMAND"
+>free()</B
+>.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_get_current_date()</B
+> generates a
+          Date. The result must be freed using 
+          <B
+CLASS="COMMAND"
+>mailimf_date_time_free</B
+>.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_resent_fields_add_data()</B
+> adds some
+          resent headers to the set of headers.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_resent_fields_new_with_data_all()</B
+>
+          creates a set of headers with some resent headers (including
+          Resent-Date and Resent-Message-ID).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_resent_fields_new_with_data()</B
+>
+          creates a set of headers with some resent headers
+          (Resent-Date and Resent-Message-ID will be generated)
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1553"
+></A
+><P
+><B
+>Example 3-45. creation of header fields</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  struct mailimf_fields * fields;
+  struct mailimf_field * field;
+  struct mailimf_date_time * date;
+  char * msg_id;
+  struct mailimf_mailbox_list * from;
+  struct mailimf_address_list * to;
+
+  fields = mailimf_fields_new_empty();
+  field = mailimf_field_new_custom(strdup("X-Mailer"), strdup("my-mailer"));
+  mailimf_fields_add(fields, field);
+
+  from = mailimf_mailbox_list_new_empty();
+  mailimf_mailbox_list_add_mb(from, strdup("DINH Viet Hoa"), strdup("dinh.viet.hoa@free.fr");
+  date = mailimf_get_current_date();
+  msg_id = mailimf_get_message_id();
+  to = mailimf_address_list_new_empty();
+  mailimf_address_list_add_mb(to, strdup("FOO Bar"), strdup("foo@bar.org");
+
+  mailimf_fields_add_data(fields, date, from, NULL, NULL, to, NULL, NULL,
+    msg_id, NULL, NULL, strdup("hello"));
+
+  /* do the things */
+
+  mailimf_fields_free(fields);
+}
+
+#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  struct mailimf_fields * fields;
+  struct mailimf_mailbox_list * from;
+  struct mailimf_address_list * to;
+  struct mailimf_date_time * date;
+  char * msg_id;
+
+  from = mailimf_mailbox_list_new_empty();
+  mailimf_mailbox_list_add_mb(from, strdup("DINH Viet Hoa"), strdup("dinh.viet.hoa@free.fr");
+  to = mailimf_address_list_new_empty();
+  mailimf_address_list_add_mb(to, strdup("FOO Bar"), strdup("foo@bar.org");
+  date = mailimf_get_current_date();
+  msg_id = mailimf_get_message_id();
+
+  fields = mailimf_fields_new_with_all_data(date, from, NULL, NULL, to, NULL, NULL,
+    msg_id, NULL, NULL, strdup("hello"));
+
+  /* do the things */
+
+  mailimf_fields_free(fields);
+}
+
+#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  struct mailimf_fields * fields;
+  struct mailimf_mailbox_list * from;
+  struct mailimf_address_list * to;
+
+  from = mailimf_mailbox_list_new_empty();
+  mailimf_mailbox_list_add_mb(from, strdup("DINH Viet Hoa"), strdup("dinh.viet.hoa@free.fr");
+  to = mailimf_address_list_new_empty();
+  mailimf_address_list_add_mb(to, strdup("FOO Bar"), strdup("foo@bar.org");
+
+  fields = mailimf_fields_new_with_data(from, NULL, NULL, to, NULL, NULL,
+    NULL, NULL, strdup("hello"));
+
+  /* do the things */
+
+  mailimf_fields_free(fields);
+}
+          </PRE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1094.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1556.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Parser functions</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c385.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Rendering of messages</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

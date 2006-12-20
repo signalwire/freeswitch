@@ -1,0 +1,303 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>MIME</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="PREVIOUS"
+TITLE="Rendering of messages"
+HREF="x1556.htm"><LINK
+REL="NEXT"
+TITLE="Data types"
+HREF="x1614.htm"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1556.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x1614.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="AEN1586"
+></A
+>Chapter 4. MIME</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="c1586.htm#AEN1598"
+>Quick start</A
+></DT
+><DT
+><A
+HREF="x1614.htm"
+>Data types</A
+></DT
+><DT
+><A
+HREF="x2180.htm"
+>Parser functions</A
+></DT
+><DT
+><A
+HREF="x2583.htm"
+>Rendering of MIME parts</A
+></DT
+><DT
+><A
+HREF="x2669.htm"
+>Creation functions</A
+></DT
+><DT
+><A
+HREF="x2946.htm"
+>Helper functions</A
+></DT
+></DL
+></DIV
+><P
+>      libEtPan! implements a MIME message parser (also known as
+      messages with attachments or 
+      multipart messages). This also allows to generate MIME messages.
+    </P
+><DIV
+CLASS="WARNING"
+><P
+></P
+><TABLE
+CLASS="WARNING"
+BORDER="1"
+WIDTH="100%"
+><TR
+><TD
+ALIGN="CENTER"
+><B
+>Warning</B
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+><P
+>        All allocation functions will take as argument allocated data
+        and will store these data in the structure they will allocate.
+        Data should be persistant during all the use of the structure
+        and will be freed by the free function of the structure
+      </P
+><P
+>        allocation functions will return <B
+CLASS="COMMAND"
+>NULL</B
+> on failure
+
+        functions returning integer will be returning one of the
+        following error code:
+        <B
+CLASS="COMMAND"
+>MAILIMF_NO_ERROR</B
+>,
+        <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_PARSE</B
+>,
+        <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_MEMORY</B
+>,
+        <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_INVAL</B
+>,
+        or <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_FILE</B
+>.
+      </P
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN1598"
+>Quick start</A
+></H1
+><P
+>        You will need this module when you want to parse a MIME
+        message.
+      </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1601"
+>Parse MIME message</A
+></H2
+><P
+>          You will use the following function :
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>mailmime_parse</B
+>
+              (<A
+HREF="x1094.htm#MAILIMF-ENVELOPE-AND-OPTIONAL-FIELDS-PARSE"
+>the Section called <I
+>mailimf_envelope_and_optional_fields_parse</I
+> in Chapter 3</A
+>)
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN1609"
+>Render the MIME message</A
+></H2
+><P
+>        Build your MIME message, then use
+        <B
+CLASS="COMMAND"
+>mailmime_write</B
+>
+        (<A
+HREF="x2583.htm#MAILMIME-WRITE"
+>the Section called <I
+>mailmime_write</I
+></A
+>)
+        to render a MIME message.
+      </P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1556.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x1614.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Rendering of messages</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Data types</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

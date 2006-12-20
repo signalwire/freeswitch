@@ -1,0 +1,342 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Internet Message Format</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="PREVIOUS"
+TITLE="strings"
+HREF="x312.htm"><LINK
+REL="NEXT"
+TITLE="Data types"
+HREF="x425.htm"></HEAD
+><BODY
+CLASS="CHAPTER"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x312.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x425.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="CHAPTER"
+><H1
+><A
+NAME="IMF"
+></A
+>Chapter 3. Internet Message Format</H1
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="c385.htm#AEN397"
+>Quick start</A
+></DT
+><DT
+><A
+HREF="x425.htm"
+>Data types</A
+></DT
+><DT
+><A
+HREF="x1094.htm"
+>Parser functions</A
+></DT
+><DT
+><A
+HREF="x1381.htm"
+>Creation functions</A
+></DT
+><DT
+><A
+HREF="x1556.htm"
+>Rendering of messages</A
+></DT
+></DL
+></DIV
+><P
+>      libEtPan! implements Internet Message parser. Currently, format
+      is RFC 2822.
+      This module also allows to generate messages.
+    </P
+><DIV
+CLASS="WARNING"
+><P
+></P
+><TABLE
+CLASS="WARNING"
+BORDER="1"
+WIDTH="100%"
+><TR
+><TD
+ALIGN="CENTER"
+><B
+>Warning</B
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+><P
+>        All allocation functions will take as argument allocated data
+        and will store these data in the structure they will allocate.
+        Data should be persistant during all the use of the structure
+        and will be freed by the free function of the structure
+      </P
+><P
+>        allocation functions will return <B
+CLASS="COMMAND"
+>NULL</B
+> on failure
+
+        functions returning integer will be returning one of the
+        following error code:
+        <B
+CLASS="COMMAND"
+>MAILIMF_NO_ERROR</B
+>,
+        <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_PARSE</B
+>,
+        <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_MEMORY</B
+>,
+        <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_INVAL</B
+>,
+        or <B
+CLASS="COMMAND"
+>MAILIMF_ERROR_FILE</B
+>.
+      </P
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN397"
+>Quick start</A
+></H1
+><P
+>        You will need this module when you want to parse headers
+        of messages or when you want to build message headers
+        conformant to standards.
+      </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN400"
+>Parse message headers</A
+></H2
+><P
+>          You will use one of the four following functions, depending
+          on your needs :
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>mailimf_envelope_and_optional_fields_parse</B
+>
+              (<A
+HREF="x1094.htm#MAILIMF-ENVELOPE-AND-OPTIONAL-FIELDS-PARSE"
+>the Section called <I
+>mailimf_envelope_and_optional_fields_parse</I
+></A
+>),
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>mailimf_envelope_fields_parse</B
+>
+              (<A
+HREF="x1094.htm#MAILIMF-ENVELOPE-FIELDS-PARSE"
+>the Section called <I
+>mailimf_envelope_fields_parse</I
+></A
+>),
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>mailimf_optional_fields_parse</B
+>
+              (<A
+HREF="x1094.htm#MAILIMF-OPTIONAL-FIELDS-PARSE"
+>the Section called <I
+>mailimf_optional_fields_parse</I
+></A
+>),
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>mailimf_fields_parse</B
+>
+              (<A
+HREF="x1094.htm#MAILIMF-FIELDS-PARSE"
+>the Section called <I
+>mailimf_fields_parse</I
+></A
+>).
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN420"
+>Render the message headers</A
+></H2
+><P
+>          Build your message headers, then use
+          <B
+CLASS="COMMAND"
+>mailimf_fields_write</B
+>
+          (<A
+HREF="x1556.htm#MAILIMF-FIELDS-WRITE"
+>the Section called <I
+>Header fields</I
+></A
+>)
+          to render the headers.
+        </P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x312.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x425.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>strings</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Data types</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

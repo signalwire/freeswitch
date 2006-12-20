@@ -1,0 +1,394 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Compilation</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan!"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Installation"
+HREF="c53.htm"><LINK
+REL="PREVIOUS"
+TITLE="Existing packages"
+HREF="x82.htm"><LINK
+REL="NEXT"
+TITLE="Use of libEtPan!"
+HREF="c157.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan!</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x82.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. Installation</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c157.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="COMPILATION"
+>Compilation</A
+></H1
+><P
+>        Generic installation instructions are in the
+        <TT
+CLASS="FILENAME"
+>INSTALL</TT
+> file
+        You can pass the following extra options to configure :
+      </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="COMPILE-FREEBSD"
+>FreeBSD</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>              make sure libiconv is installed from the ports collection (see
+              <B
+CLASS="COMMAND"
+>pkg_info</B
+>).
+            </P
+></LI
+><LI
+><P
+>              issue configure with the following parameter:
+              <PRE
+CLASS="SCREEN"
+><SAMP
+CLASS="PROMPT"
+>$</SAMP
+> <KBD
+CLASS="USERINPUT"
+>./configure --with-libiconv-prefix=/usr/local</KBD
+>
+              </PRE
+>
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="COMPILE-MACOSX"
+>Mac OS X</A
+></H2
+><P
+></P
+><UL
+><LI
+><P
+>              in tests/option-parser.c, change the inclusion
+              of <TT
+CLASS="FILENAME"
+>getopt.h</TT
+> to
+              <TT
+CLASS="FILENAME"
+>gnugetopt/getopt.h</TT
+>
+            </P
+></LI
+><LI
+><P
+>              in <TT
+CLASS="FILENAME"
+>tests/Makefile</TT
+>, add
+              <B
+CLASS="COMMAND"
+>-I/sw/include</B
+> for the
+              <B
+CLASS="COMMAND"
+>CFLAGS</B
+> and
+                -L/sw/lib -lgnugetopt for the LDFLAGS.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="LINUX"
+>Linux</A
+></H2
+><P
+></P
+><UL
+><LI
+><DIV
+CLASS="WARNING"
+><P
+></P
+><TABLE
+CLASS="WARNING"
+BORDER="1"
+WIDTH="90%"
+><TR
+><TD
+ALIGN="CENTER"
+><B
+>Warning</B
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+><P
+>                Since libEtPan! is making high usage of
+                <B
+CLASS="COMMAND"
+>mmap()</B
+> even for
+                writing, when your mailboxes are on
+                <B
+CLASS="COMMAND"
+>NFS</B
+> filesystem with
+                a Linux server, it is advised to use option
+                <B
+CLASS="COMMAND"
+>no_subtree_check</B
+> in
+                <TT
+CLASS="FILENAME"
+>/etc/exports</TT
+>.
+                This should avoid corruption of data.
+              </P
+><P
+>                The problem exist in Linux 2.4.22 and earlier versions.
+              </P
+></TD
+></TR
+></TABLE
+></DIV
+></LI
+><LI
+><P
+>              On RedHat systems, you have to configure using the
+              following command line :
+              <B
+CLASS="COMMAND"
+>./configure --with-openssl=/usr/kerberos</B
+>
+            </P
+></LI
+><LI
+><P
+>              On Debian systems, if the <B
+CLASS="COMMAND"
+>./autogen</B
+>
+              script fails on missing <B
+CLASS="COMMAND"
+>AM_ICONV</B
+>, you
+              have to install <B
+CLASS="COMMAND"
+>gettext</B
+> package.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CONFIGURE"
+>configure</A
+></H2
+><P
+>          You can use the following options :
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>--enable-debug</B
+>    Compiles with
+              debugging turned on
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>--enable-optim</B
+>    Turns on some
+              optimizations flags for gcc
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>--without-openssl</B
+> Disables OpenSSL (do
+              not look for it)
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="INSTALL"
+>Compile and install</A
+></H2
+><P
+>          Download the package and do the following :
+        </P
+><PRE
+CLASS="PROGRAMLISTING"
+>$ tar xzvf libetpan-XX.XX.tar.gz      # to decompress the package
+
+$ cd libetpan-XX.XX
+
+$ ./configure --help                 # to get options of configure
+
+$ ./configure                        # you can specify your own options
+
+$ make                               # to compile the package
+
+$ su
+
+# make install
+
+# logout
+        </PRE
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x82.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c157.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Existing packages</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c53.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Use of libEtPan!</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

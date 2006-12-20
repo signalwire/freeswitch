@@ -1,0 +1,600 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>List</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Tools and datatypes"
+HREF="c16.htm"><LINK
+REL="PREVIOUS"
+TITLE="Tools and datatypes"
+HREF="c16.htm"><LINK
+REL="NEXT"
+TITLE="Hash table"
+HREF="x161.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c16.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. Tools and datatypes</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x161.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="CLIST"
+>List</A
+></H1
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+typedef struct clist_s clist;
+
+typedef clistcell clistiter;
+      </PRE
+><P
+>        <B
+CLASS="COMMAND"
+>clist()</B
+> is a list of cells.
+        Each cell of the list contains one element. This element is a
+        pointer. An iterator (<B
+CLASS="COMMAND"
+>clistiter</B
+>) is a
+        pointer to an element of the list. With an iterator, we can
+        get the previous element of the list, the next element of the
+        list and the content of the element.
+      </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CLIST-NEW"
+>clist_new and clist_free</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>clist * clist_new(void);
+
+void clist_free(clist *);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>clist_new()</B
+> allocates a new empty list and
+          returns it.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_free()</B
+> frees the entire list with
+          its cells.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN101"
+></A
+><P
+><B
+>Example 2-5. clist creation</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(void)
+{
+  clist * list;
+
+  list = clist_new();
+  if (list == NULL)
+    goto err;
+
+  r = clist_append(list, "foo-bar");
+  if (r &lt; 0)
+
+  clist_free(list);
+
+  exit(EXIT_SUCCESS);
+
+ free:
+  clist_free(list);
+ err:
+  exit(EXIT_FAILURE);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CLIST-COUNT"
+>clist_isempty and clist_count</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int clist_isempty(clist *);
+
+int clist_count(clist *);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>clist_isempty()</B
+> returns 1 if the list is
+          empty, else it is 0.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_count()</B
+> returns the number of
+          elements in the list.
+          Complexity is O(1).
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CLIST-BEGIN"
+>running through clist</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>clistiter * clist_begin(clist *);
+
+clistiter * clist_end(clist *);
+
+clistiter * clist_next(clistiter *);
+
+clistiter * clist_previous(clistiter *);
+
+void * clist_content(clistiter *);
+
+void * clist_nth_data(clist * lst, int index);
+
+clistiter * clist_nth(clist * lst, int index);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>clist_begin()</B
+> returns an iterator to the
+          first element of the list.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_end()</B
+> returns an iterator to the last
+          element of the list.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_next()</B
+> returns an iterator to the
+          next element of the list.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_previous()</B
+> returns an iterator to the
+          previous element of the list.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_content()</B
+> returns the element
+          contained in the cell pointed by the iterator in the list.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_nth()</B
+> returns an iterator on the
+          <B
+CLASS="COMMAND"
+>index</B
+>-th element of the list.
+          Complexity is O(n).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_nth_data()</B
+> returns the index-th
+          element of the list.
+          Complexity is O(n).
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN129"
+></A
+><P
+><B
+>Example 2-6. displaying content of clist</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(void)
+{
+  clist * list;
+  clistiter * iter;
+
+  list = build_string_list();
+  if (list == NULL)
+    goto err;
+
+  for(iter = clist_begin(list) ; iter != NULL ; iter =
+     clist_next(iter)) {
+    char * str;
+
+    str = clist_content(iter);
+    printf("%s\n", str);
+  }
+
+  clist_free(list);
+
+  exit(EXIT_SUCCESS);
+
+ free:
+  clist_free(list);
+ err:
+  exit(EXIT_FAILURE);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CLIST-APPEND"
+>clist modification</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int clist_prepend(clist *, void *);
+
+int clist_append(clist *, void *);
+
+int clist_insert_before(clist *, clistiter *, void *);
+
+int clist_insert_after(clist *, clistiter *, void *);
+
+clistiter * clist_delete(clist *, clistiter *);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>clist_prepend()</B
+> adds an element at the
+          beginning of the list. Returns 0 on sucess, -1 on error.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_append()</B
+> adds an element at the end
+          of the list. Returns 0 on sucess, -1 on error.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_insert_before()</B
+> adds an element
+          before the element pointed by the given iterator in the
+          list. Returns 0 on sucess, -1 on error.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_insert_after()</B
+> adds an element after
+          the element pointed by the given iterator in the list.
+          Returns 0 on sucess, -1 on error.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>clist_delete()</B
+> the elements pointed by
+          the given iterator in the list and returns an iterator to
+          the next element of the list.
+          Complexity is O(1).
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN145"
+></A
+><P
+><B
+>Example 2-7. deleting elements in a clist</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+voir print_content(void * content, void * user_data)
+{
+  char * str;
+
+  str = content;
+
+  printf("%s\n", str);
+}
+
+int main(void)
+{
+  clist * list;
+  clistiter * iter;
+
+  list = build_string_list();
+  if (list == NULL)
+    goto err;
+
+  iter = = clist_begin(list);
+  while (iter != NULL)
+    char * str;
+
+    str = clist_content(iter);
+    if (strcmp(str, "foo-bar") == 0)
+      iter = clist_delete(list, cur);
+    else
+      iter = clist_next(iter);
+  }
+
+  clist_foreach(list, print_content, NULL);
+  printf("\n");
+
+  clist_free(list);
+
+  exit(EXIT_SUCCESS);
+
+ free:
+  clist_free(list);
+ err:
+  exit(EXIT_FAILURE);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CLIST-FOREACH"
+>clist_foreach</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>typedef void (* clist_func)(void *, void *);
+
+void clist_foreach(clist * lst, clist_func func, void * data);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>clist_foreach()</B
+> apply a fonction to each
+          element of the list.
+          Complexity is O(n).
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="CLIST-CONCAT"
+>clist_concat</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>void clist_concat(clist * dest, clist * src);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>clist_concat()</B
+> adds all the elements of src
+          at the end of dest. Elements are added in the same
+          order. src is an empty list when the operation is finished.
+          Complexity is O(1).
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN158"
+></A
+><P
+><B
+>Example 2-8. merging two clists</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(void)
+{
+  clist * list;
+  clist * list_2;
+  clistiter * iter;
+
+  list = build_string_list();
+  if (list == NULL)
+    goto err;
+
+  list_2 = build_string_list_2();
+  if (list == NULL)
+    goto free_list;
+
+  clist_concat(list, list_2);
+  clist_free(list_2);
+
+  for(iter = clist_begin(list) ; iter != NULL ; iter =
+     clist_next(iter)) {
+    char * str;
+
+    str = clist_content(iter);
+    printf("%s\n", str);
+  }
+
+  clist_free(list);
+
+  exit(EXIT_SUCCESS);
+
+ free_list:
+  clist_free(list);
+ err:
+  exit(EXIT_FAILURE);
+}
+          </PRE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c16.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x161.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Tools and datatypes</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c16.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Hash table</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

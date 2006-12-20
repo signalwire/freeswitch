@@ -1,0 +1,4 @@
+- literal data send progress
+- implement draft-16 (rfc 2822 things)
+- more efficient parser
+

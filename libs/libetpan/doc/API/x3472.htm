@@ -1,0 +1,1361 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Session</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Storages, folders, messages"
+HREF="c2988.htm"><LINK
+REL="PREVIOUS"
+TITLE="Message"
+HREF="x3198.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x3198.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 5. Storages, folders, messages</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+>&nbsp;</TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN3472"
+>Session</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILSESSION-DRIVER"
+>Session driver</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailsession_driver {
+  char * sess_name;
+
+  int (* sess_initialize)(mailsession * session);
+  void (* sess_uninitialize)(mailsession * session);
+
+  int (* sess_parameters)(mailsession * session,
+      int id, void * value);
+
+  int (* sess_connect_stream)(mailsession * session, mailstream * s);
+  int (* sess_connect_path)(mailsession * session, char * path);
+
+  int (* sess_starttls)(mailsession * session);
+
+  int (* sess_login)(mailsession * session, char * userid, char * password);
+  int (* sess_logout)(mailsession * session);
+  int (* sess_noop)(mailsession * session);
+
+  /* folders operations */
+
+  int (* sess_build_folder_name)(mailsession * session, char * mb,
+      char * name, char ** result);
+
+  int (* sess_create_folder)(mailsession * session, char * mb);
+  int (* sess_delete_folder)(mailsession * session, char * mb);
+  int (* sess_rename_folder)(mailsession * session, char * mb,
+      char * new_name);
+  int (* sess_check_folder)(mailsession * session);
+  int (* sess_examine_folder)(mailsession * session, char * mb);
+  int (* sess_select_folder)(mailsession * session, char * mb);
+  int (* sess_expunge_folder)(mailsession * session);
+  int (* sess_status_folder)(mailsession * session, char * mb,
+      uint32_t * result_num, uint32_t * result_recent,
+      uint32_t * result_unseen);
+  int (* sess_messages_number)(mailsession * session, char * mb,
+      uint32_t * result);
+  int (* sess_recent_number)(mailsession * session, char * mb,
+      uint32_t * result);
+  int (* sess_unseen_number)(mailsession * session, char * mb,
+      uint32_t * result);
+
+  int (* sess_list_folders)(mailsession * session, char * mb,
+      struct mail_list ** result);
+  int (* sess_lsub_folders)(mailsession * session, char * mb,
+      struct mail_list ** result);
+
+  int (* sess_subscribe_folder)(mailsession * session, char * mb);
+  int (* sess_unsubscribe_folder)(mailsession * session, char * mb);
+
+  /* messages operations */
+
+  int (* sess_append_message)(mailsession * session,
+      char * message, size_t size);
+  int (* sess_copy_message)(mailsession * session,
+      uint32_t num, char * mb);
+  int (* sess_move_message)(mailsession * session,
+      uint32_t num, char * mb);
+
+  int (* sess_get_message)(mailsession * session,
+      uint32_t num, mailmessage ** result);
+
+  int (* sess_get_message_by_uid)(mailsession * session,
+      const char * uid, mailmessage ** result);
+  
+  int (* sess_get_messages_list)(mailsession * session,
+      struct mailmessage_list ** result);
+  int (* sess_get_envelopes_list)(mailsession * session,
+      struct mailmessage_list * env_list);
+  int (* sess_remove_message)(mailsession * session, uint32_t num);
+};
+        </PRE
+><P
+>          This is a driver for a session.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_name</B
+> is the name of the driver.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_initialize()</B
+> is the function
+              that will initializes a data structure (field
+              <B
+CLASS="COMMAND"
+>sess_data</B
+> in the session) specific to
+              the driver.
+              The field data (field <B
+CLASS="COMMAND"
+>sess_data</B
+> in
+              the session) is the state of the session,
+              the internal data structure used by the driver.
+              It is called when creating the
+              <B
+CLASS="COMMAND"
+>mailsession</B
+> structure with
+              <B
+CLASS="COMMAND"
+>mailsession_new()</B
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_uninitialize()</B
+> frees the structure
+              created with <B
+CLASS="COMMAND"
+>sess_initialize()</B
+>
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_parameters()</B
+> implements
+              functions specific to the given mail access.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_connect_stream()</B
+> connects a
+              stream to the session.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_connect_path()</B
+> notify a main
+              path to the session.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_starttls()</B
+> changes the current
+              stream to a TLS stream
+              (see <A
+HREF="x229.htm#MAILSTREAM-SSL"
+>the Section called <I
+>TLS stream</I
+> in Chapter 2</A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_login()</B
+> notifies the user and
+              the password to authenticate to the session.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_logout()</B
+> exits the session and
+              closes the stream.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_noop()</B
+> does no operation on the
+              session, but it can be used to poll for the status of
+              the connection.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_build_folder_name()</B
+> will return an
+              allocated string with that contains the complete path of
+              the folder to create.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_create_folder()</B
+> creates the
+              folder that corresponds to the given name.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_delete_folder()</B
+> deletes the folder
+              that corresponds to the given name.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_rename_folder()</B
+> change the name
+              of the folder.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_check_folder()</B
+> makes a
+              checkpoint of the session.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_examine_folder()</B
+> selects a mailbox as
+              readonly.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_select_folder()</B
+> selects a mailbox.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_expunge_folder()</B
+> deletes all
+              messages marked \Deleted.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_status_folder()</B
+> queries the
+              status of the folder (number of messages, number of
+              recent messages, number of unseen messages).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_messages_number()</B
+> queries the
+              number of messages in the folder.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_recent_number()</B
+> queries the
+              number of recent messages in the folder.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_unseen_number()</B
+> queries the number of
+              unseen messages in the folder.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_list_folders()</B
+> returns the list of
+              all sub-mailboxes of the given mailbox.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_lsub_folders()</B
+> returns the list of
+              subscribed sub-mailboxes of the given mailbox.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_subscribe_folder()</B
+> subscribes to
+              the given mailbox.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_unsubscribe_folder()</B
+> unsubscribes to
+              the given mailbox.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_append_message()</B
+> adds a RFC 2822
+              message to the current given mailbox.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_copy_message()</B
+> copies a message
+              whose number is given to a given mailbox. The mailbox
+              must be accessible from the same session.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+          </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_move_message()</B
+> moves a message whose
+              number is given to
+              a given mailbox. The mailbox must be accessible from the
+              same session.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_get_messages_list()</B
+> returns the list
+              of message numbers
+              of the current mailbox
+              (see <A
+HREF="x3198.htm#MAILMESSAGE-LIST"
+>the Section called <I
+>Message list</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_get_envelopes_list()</B
+> fills the parsed
+              fields in the <B
+CLASS="COMMAND"
+>mailmessage</B
+> structures
+              (see <A
+HREF="x3198.htm#MAILMESSAGE"
+>the Section called <I
+>Message</I
+></A
+>)
+              of the <B
+CLASS="COMMAND"
+>mailmessage_list</B
+>
+              (see <A
+HREF="x3198.htm#MAILMESSAGE-LIST"
+>the Section called <I
+>Message list</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_remove_message()</B
+> removes the given
+              message from the mailbox.
+              The message is permanently deleted.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_get_message()</B
+> returns a
+              mailmessage structure
+              (see <A
+HREF="x3198.htm#MAILMESSAGE"
+>the Section called <I
+>Message</I
+></A
+>)
+              that corresponds
+              to the given message number.
+              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>Use of this method is deprecated</I
+></SPAN
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_get_message_by_uid()</B
+> returns a
+              mailmessage structure
+              (see <A
+HREF="x3198.htm#MAILMESSAGE"
+>the Section called <I
+>Message</I
+></A
+>)
+              that corresponds 
+              to the given message unique identifier.
+            </P
+></LI
+></UL
+><P
+>          mandatory functions are the following :
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_connect_stream()</B
+> or
+              <B
+CLASS="COMMAND"
+>connect_path()</B
+>
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_logout()</B
+>
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_get_messages_list()</B
+>
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_get_envelopes_list()</B
+>
+            </P
+></LI
+></UL
+><P
+>          we advise you to implement these functions :
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_select_folder()</B
+> (in case a session
+              can access several folders).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_noop()</B
+> (to check if the server is
+              responding)
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_check_folder()</B
+> (to make a checkpoint
+              of the session)
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_status_folder()</B
+>,
+              <B
+CLASS="COMMAND"
+>sess_messages_number()</B
+>,
+              <B
+CLASS="COMMAND"
+>sess_recent_number()</B
+>,
+              <B
+CLASS="COMMAND"
+>sess_unseen_number()</B
+>
+              (to get stat of the folder)
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_append_message()</B
+> (but can't be done
+              in the case of POP3 at least).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_login()</B
+> in a case of an
+              authenticated driver.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_starttls()</B
+> in a case of a stream
+              driver, if the procotol supports STARTTLS.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_get_message_by_uid()</B
+> so that the
+              application can remember the messages 
+              by UID and build its own list of messages.
+            </P
+></LI
+><LI
+><P
+>              Everything that is specific to the driver will be
+              implemented in <B
+CLASS="COMMAND"
+>sess_parameters()</B
+>.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILSESSION"
+>Session</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailsession {
+  void * sess_data;
+  mailsession_driver * sess_driver;
+};
+
+mailsession * mailsession_new(mailsession_driver * sess_driver);
+
+void mailsession_free(mailsession * session);
+        </PRE
+><P
+>          This is a session. This is an abstraction used to access the
+          storage, using the network or the filesystem.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_data</B
+> is the state of the
+              session. This is specific to the driver.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sess_driver</B
+> is the driver of the
+              session.
+            </P
+></LI
+></UL
+><P
+>          <B
+CLASS="COMMAND"
+>mailsession_new()</B
+> will create a new session
+          using the given driver (<B
+CLASS="COMMAND"
+>sess_driver</B
+>).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailsession_free()</B
+> will release the memory
+          used by the session.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3670"
+>mailsession_parameters</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_parameters(mailsession * session,
+			   int id, void * value);
+        </PRE
+><P
+>          This function make calls specific to the driver
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3674"
+>mailsession_connect_stream</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_connect_stream(mailsession * session, mailstream * s);
+        </PRE
+><P
+>          There are drivers of two kinds : stream drivers (driver that
+          connects to servers through TCP or other means of connection)
+          and file drivers (driver that are based on filesystem)
+
+          This function can only be used by stream drivers and
+          this connects a stream to the session
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3678"
+>mailsession_connect_path</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_connect_path(mailsession * session, char * path);
+        </PRE
+><P
+>          This function can only be used by file drivers and
+          selects the main path of the session.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3682"
+>mailsession_starttls</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_starttls(mailsession * session);
+        </PRE
+><P
+>          This switches the current connection to TLS (secure layer).
+          This will only work with stream drivers.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3686"
+>mailsession_login</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_login(mailsession * session,
+		      char * userid, char * password);
+        </PRE
+><P
+>          This notifies the login and the password to authenticate
+          to the session.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3690"
+>mailsession_logout</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_logout(mailsession * session);
+        </PRE
+><P
+>          This function disconnects the session and closes the stream.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3694"
+>mailsession_noop</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_noop(mailsession * session);
+        </PRE
+><P
+>          This function does no operation on the session, but it can be
+          used to poll for the status of the connection.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3698"
+>mailsession_check_folder</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_check_folder(mailsession * session);
+        </PRE
+><P
+>          This function makes a checkpoint of the session.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3702"
+>mailsession_select_folder</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_select_folder(mailsession * session, char * mb);
+        </PRE
+><P
+>          This function selects a mailbox.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3706"
+>mailsession_expunge_folder</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_expunge_folder(mailsession * session);
+        </PRE
+><P
+>          This function deletes all messages marked for deletion.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3710"
+>mailsession_status_folder</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_status_folder(mailsession * session, char * mb,
+    uint32_t * result_messages, uint32_t * result_recent,
+    uint32_t * result_unseen);
+        </PRE
+><P
+>          This function queries the status of the folder
+          (number of messages, number of recent messages, number of
+          unseen messages).
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3714"
+>mailsession_messages_number</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_messages_number(mailsession * session, char * mb,
+				uint32_t * result);
+        </PRE
+><P
+>          This function queries the number of messages in the folder.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3718"
+>mailsession_recent_number</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_recent_number(mailsession * session,
+			      char * mb, uint32_t * result);
+        </PRE
+><P
+>          This function queries the number of recent messages in the
+          folder.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3722"
+>mailsession_unseen_number</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_unseen_number(mailsession * session, char * mb,
+			      uint32_t * result);
+        </PRE
+><P
+>          This function queries the number of unseen messages in the
+          folder.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3726"
+>mailsession_append_message</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_append_message(mailsession * session,
+			       char * message, size_t size);
+        </PRE
+><P
+>          This adds a RFC 2822 message to the current mailbox.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3730"
+>mailsession_get_messages_list</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_get_messages_list(mailsession * session,
+				  struct mailmessage_list ** result);
+        </PRE
+><P
+>          This function returns the list of messages
+          of the current mailbox.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3734"
+>mailsession_get_envelopes_list</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_get_envelopes_list(mailsession * session,
+				   struct mailmessage_list * result);
+        </PRE
+><P
+>          This function fills the parsed fields in the
+          <B
+CLASS="COMMAND"
+>mailmessage</B
+> structures
+          (see <A
+HREF="x3198.htm#MAILMESSAGE"
+>the Section called <I
+>Message</I
+></A
+>)
+          of the mailmessage_list
+          (see <A
+HREF="x3198.htm#MAILMESSAGE-LIST"
+>the Section called <I
+>Message list</I
+></A
+>).
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3741"
+>mailsession_get_message</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_get_message(mailsession * session,
+			    uint32_t num, mailmessage ** result);
+        </PRE
+><P
+>          This function returns a <B
+CLASS="COMMAND"
+>mailmessage</B
+>
+          (see <A
+HREF="x3198.htm#MAILMESSAGE"
+>the Section called <I
+>Message</I
+></A
+>) structure that
+          corresponds to the given message number.
+        </P
+><DIV
+CLASS="WARNING"
+><P
+></P
+><TABLE
+CLASS="WARNING"
+BORDER="1"
+WIDTH="100%"
+><TR
+><TD
+ALIGN="CENTER"
+><B
+>Warning</B
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+><P
+>            <B
+CLASS="COMMAND"
+>mailsession_get_message_by_uid()</B
+> should
+            be used instead.
+          </P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3750"
+>mailsession_get_message_by_uid</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailsession_get_message_by_uid(mailsession * session,
+    const char * uid, mailmessage ** result);
+        </PRE
+><P
+>          This function returns a mailmessage structure
+          that corresponds to the given message unique identifier.
+          This is currently implemented only for cached drivers.
+        </P
+><DIV
+CLASS="WARNING"
+><P
+></P
+><TABLE
+CLASS="WARNING"
+BORDER="1"
+WIDTH="100%"
+><TR
+><TD
+ALIGN="CENTER"
+><B
+>Warning</B
+></TD
+></TR
+><TR
+><TD
+ALIGN="LEFT"
+><P
+>            That deprecates the use of
+            <B
+CLASS="COMMAND"
+>mailsession_get_message()</B
+>.
+          </P
+></TD
+></TR
+></TABLE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x3198.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Message</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c2988.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

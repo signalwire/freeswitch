@@ -1,0 +1,1656 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Creation functions</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="MIME"
+HREF="c1586.htm"><LINK
+REL="PREVIOUS"
+TITLE="Rendering of MIME parts"
+HREF="x2583.htm"><LINK
+REL="NEXT"
+TITLE="Helper functions"
+HREF="x2946.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x2583.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 4. MIME</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x2946.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN2669"
+>Creation functions</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-DISPOSITION-NEW-FILENAME"
+>mailmime_disposition_new_filename and
+        mailmime_disposition_new_with_data</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+enum {
+  MAILMIME_DISPOSITION_TYPE_ERROR,
+  MAILMIME_DISPOSITION_TYPE_INLINE,
+  MAILMIME_DISPOSITION_TYPE_ATTACHMENT,
+  MAILMIME_DISPOSITION_TYPE_EXTENSION
+};
+
+struct mailmime_disposition *
+mailmime_disposition_new_filename(int type, char * filename);
+
+struct mailmime_disposition *
+mailmime_disposition_new_with_data(int type,
+    char * filename, char * creation_date, char * modification_date,
+    char * read_date, size_t size);
+        </PRE
+><P
+>          These functions will create a MIME content disposition
+          information.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>type</B
+> a standard MIME disposition :
+              <B
+CLASS="COMMAND"
+>MAILMIME_DISPOSITION_TYPE_INLINE</B
+> or
+              <B
+CLASS="COMMAND"
+>MAILMIME_DISPOSITION_TYPE_ATTACHMENT</B
+>.
+            </P
+><P
+>              <B
+CLASS="COMMAND"
+>filename</B
+> is the filename.
+            </P
+><P
+>              <B
+CLASS="COMMAND"
+>creation_date</B
+> is the creation date.
+            </P
+><P
+>              <B
+CLASS="COMMAND"
+>modification_date</B
+> is the modification
+              date.
+            </P
+><P
+>              <B
+CLASS="COMMAND"
+>read_date</B
+> is the last read date.
+            </P
+><P
+>              <B
+CLASS="COMMAND"
+>size</B
+> is the size of the file.
+            </P
+></LI
+><LI
+><P
+>              This will return a MIME content disposition
+              (see <A
+HREF="x1614.htm#MAILMIME-DISPOSITION"
+>the Section called <I
+>mailmime_disposition - MIME disposition information (Content-Disposition)</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2694"
+></A
+><P
+><B
+>Example 4-35. creating a MIME content disposition</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>        
+#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  struct mailmime_disposition * disposition;
+
+  disposition =
+    mailmime_disposition_new_filename(MAILMIME_DISPOSITION_TYPE_ATTACHMENT,
+      strdup("foo-bar.txt"));
+
+  /* do the things */
+  
+  mailmime_disposition_free(disposition);
+}
+        </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-FIELDS-NEW-EMPTY"
+>mailmime_fields_new_empty and mailmime_fields_add</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailmime_fields * mailmime_fields_new_empty(void);
+
+int mailmime_fields_add(struct mailmime_fields * fields,
+			struct mailmime_field * field);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_fields_new_empty()</B
+> will
+          create a new empty MIME header fields list.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_fields_add()</B
+> will add
+          MIME header fields to the MIME header fields list.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>fields</B
+>. The MIME header field will
+              be added to this MIME header fields list
+              (see <A
+HREF="x1614.htm#MAILMIME-FIELDS"
+>the Section called <I
+>mailmime_fields - header fields</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>field</B
+> is the MIME header field to add
+              (see <A
+HREF="x1614.htm#MAILMIME-FIELD"
+>the Section called <I
+>mailmime_field - MIME header field</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2713"
+></A
+><P
+><B
+>Example 4-36. creating a MIME header fields list</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  struct mailmime_fields * fields;
+  struct mailmime_field * field;
+
+  fields = mailmime_fields_new_empty();
+  field = build_mime_field();
+  
+  /* do the things */
+
+  mailmime_fields_add(fields, field);
+  
+  mailmime_fields_free(fields);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-FIELDS-NEW-WITH-DATA"
+>mailmime_fields_new_with_data and
+        mailmime_fields_new_with_version</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailmime_fields *
+mailmime_fields_new_with_data(struct mailmime_mechanism * encoding,
+			      char * id,
+			      char * description,
+			      struct mailmime_disposition * disposition,
+			      struct mailmime_language * language);
+
+struct mailmime_fields *
+mailmime_fields_new_with_version(struct mailmime_mechanism * encoding,
+				 char * id,
+				 char * description,
+				 struct mailmime_disposition * disposition,
+				 struct mailmime_language * language);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_fields_new_with_data()</B
+> will
+          create a MIME header fields list with all the given fields
+          (<B
+CLASS="COMMAND"
+>NULL</B
+> can be used for the value if the
+          field must not be present).
+          <B
+CLASS="COMMAND"
+>MIME-Version</B
+> header field will
+          <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>not</I
+></SPAN
+> be added.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_fields_new_with_version()</B
+> will
+          create a MIME header fields list with all the given fields
+          (<B
+CLASS="COMMAND"
+>NULL</B
+> can be used for the value if the
+          field must not be present).
+          <B
+CLASS="COMMAND"
+>MIME-Version</B
+> header field will be added.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2728"
+></A
+><P
+><B
+>Example 4-37. creating new fields</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  struct mailmime_disposition * disposition;
+  struct mailmime_fields * mime_fields;
+  struct mailmime_mechanism * encoding;
+  
+  encoding = mailmime_mechanism_new(MAILMIME_MECHANISM_BASE64, NULL);
+  
+  disposition =
+    mailmime_disposition_new_filename(MAILMIME_DISPOSITION_TYPE_ATTACHMENT,
+      strdup("foo-bar.txt"));
+  
+  mime_fields = mailmime_fields_new_with_version(encoding, NULL,
+    NULL, disposition, NULL);
+  
+  /* do the things */
+  
+  mailmime_fields_free(mime_fields);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-GET-CONTENT-MESSAGE"
+>mailmime_get_content_message</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailmime_content * mailmime_get_content_message(void);
+
+struct mailmime_content * mailmime_get_content_text(void);
+
+struct mailmime_content * mailmime_content_new_with_str(const char * str);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_get_content_message()</B
+> will
+          create a MIME content type
+          <B
+CLASS="COMMAND"
+>message/rfc822</B
+>.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_get_content_text()</B
+> will
+          create a MIME content type
+          <B
+CLASS="COMMAND"
+>plain/text</B
+>.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_get_content_new_with_str()</B
+> will
+          create a MIME content type given by the string
+          <B
+CLASS="COMMAND"
+>plain/text</B
+>.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>str</B
+>. This string will 
+          <B
+CLASS="COMMAND"
+>NOT</B
+> be referenced by any structure.
+          This string will only be parsed to create the structure.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2746"
+></A
+><P
+><B
+>Example 4-38. Creating a MIME content type</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  struct mailmime_content * content;
+  
+  content = mailmime_get_content_message();
+  
+  /* do the things */
+  
+  mailmime_content_free(content);
+}
+
+int main(int argc, char ** argv)
+{
+  struct mailmime_content * content;
+  
+  content = mailmime_get_content_text();
+  
+  /* do the things */
+  
+  mailmime_content_free(content);
+}
+
+int main(int argc, char ** argv)
+{
+  struct mailmime_content * content;
+  
+  content = mailmime_get_content_new_with_str("multipart/mixed");
+  
+  /* do the things */
+  
+  mailmime_content_free(content);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-DATA-NEW-DATA"
+>mailmime_data_new_data and mailmime_data_new_file</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+enum {
+  MAILMIME_MECHANISM_ERROR,
+  MAILMIME_MECHANISM_7BIT,
+  MAILMIME_MECHANISM_8BIT,
+  MAILMIME_MECHANISM_BINARY,
+  MAILMIME_MECHANISM_QUOTED_PRINTABLE,
+  MAILMIME_MECHANISM_BASE64,
+  MAILMIME_MECHANISM_TOKEN
+};
+
+struct mailmime_data *
+mailmime_data_new_data(int encoding, int encoded,
+		       const char * data, size_t length);
+
+struct mailmime_data *
+mailmime_data_new_file(int encoding, int encoded,
+		       char * filename);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_data_new_data()</B
+> will create a
+          new MIME content, using a string in memory.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_data_new_file()</B
+> will create a
+          new MIME content, using a file.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>encoding</B
+> is the MIME encoding 
+              mechanism used to encode this part. The value can be
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_7BIT</B
+>,
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_8BIT</B
+>,
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_BINARY</B
+>,
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_QUOTED_PRINTABLE</B
+> or
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_BASE64</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-MECHANISM"
+>the Section called <I
+>mailmime_mechanism - MIME transfer encoding mechanism (Content-Transfer-Encoding)</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>encoded</B
+> is set to 1 if the part is 
+              already encoded with the mechanism given in
+              <B
+CLASS="COMMAND"
+>encoding</B
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>data</B
+> is a pointer to the
+              content of the part.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the length of the data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>filename</B
+> is the name of the file.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2779"
+></A
+><P
+><B
+>Example 4-39. creating MIME content</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+#define DATA_STR "my data"
+
+int main(int argc, char ** argv)
+{
+  struct mailmime_data * data;
+  
+  data = mailmime_data_new_data(MAILMIME_MECHANISM_BASE64, 0,
+		                DATA_STR, sizeof(DATA_STR) - 1);
+
+  /* do the things */
+  
+  mailmime_data_free(data);
+}
+
+int main(int argc, char ** argv)
+{
+  struct mailmime_data * data;
+  
+  data = mailmime_data_new_file(MAILMIME_MECHANISM_BASE64, 0,
+		                strdup("foo-bar.txt"));
+
+  /* do the things */
+  
+  mailmime_data_free(data);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-NEW-MESSAGE-DATA"
+>mailmime_new_message_data, mailmime_new_empty and
+        mailmime_new_with_content</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailmime *
+mailmime_new_message_data(struct mailmime * msg_mime);
+
+struct mailmime *
+mailmime_new_empty(struct mailmime_content * content,
+		   struct mailmime_fields * mime_fields);
+
+int
+mailmime_new_with_content(const char * content_type,
+			  struct mailmime_fields * mime_fields,
+			  struct mailmime ** result);
+
+struct mailmime * mailmime_multiple_new(const char * type);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_new_message_data()</B
+> will create a
+          new MIME message with the given subpart.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_new_empty()</B
+> will create a
+          new MIME part with the given content type and MIME fields
+          but with no content.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_new_with_content()</B
+> will create a
+          new MIME part with a content type given by a string and a
+          given MIME fields list.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_multiple_new()</B
+> will create a
+          new MIME multipart with a content type given by a string.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>msg_mime</B
+> is the sub part to add to the
+              MIME message when creating it
+              (see <A
+HREF="x1614.htm#MAILMIME"
+>the Section called <I
+>mailmime - MIME part</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>content</B
+> is the content type of the part
+              to create
+              (see <A
+HREF="x1614.htm#MAILMIME-CONTENT"
+>the Section called <I
+>mailmime_content - MIME content type (Content-Type)</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>content_type</B
+> is the content type of
+              the part to create given by a string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>mime_fields</B
+> is the list of MIME
+              header fields
+              (see <A
+HREF="x1614.htm#MAILMIME-FIELDS"
+>the Section called <I
+>mailmime_fields - header fields</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2809"
+></A
+><P
+><B
+>Example 4-40. creating a MIME part</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+#define DATA_STR "my data"
+
+int main(int argc, char ** argv)
+{
+  struct mailmime * mime;
+  struct mailmime * single_part;
+  
+  mime_fields =
+    mailmime_fields_new_encoding(MAILMIME_MECHANISM_QUOTED_PRINTABLE);
+  mailmime_new_with_content("plain/text", mime_fields, &amp;single_part);
+
+  mailmime_set_body_text(single_part, DATA_STR, sizeof(DATA_STR) - 1);
+
+  mime = mailmime_new_message_data(single_part);
+
+  /* do the things */
+  
+  mailmime_free(mime);
+}
+
+int main(int argc, char ** argv)
+{
+  struct mailmime * mime;
+  struct mailmime * single_part;
+  struct mailmime_content * content;
+  
+  mime_fields =
+    mailmime_fields_new_encoding(MAILMIME_MECHANISM_QUOTED_PRINTABLE);
+  content = mailmime_get_content_text();
+  single_part = mailmime_new_empty(content, mime_fields);
+
+  mailmime_set_body_text(single_part, DATA_STR, sizeof(DATA_STR) - 1);
+
+  mime = mailmime_new_message_data(single_part);
+
+  /* do the things */
+  
+  mailmime_free(mime);
+}
+
+int main(int argc, char ** argv)
+{
+  struct mailmime * mime;
+  
+  mime = mailmime_multiple_new("multipart/mixed");
+
+  /* do the things */
+  
+  mailmime_free(mime);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-SET-PREAMBLE-FILE"
+>mailmime_set_preamble_file, mailmime_set_epilogue_file,
+        mailmime_set_preamble_text and mailmime_set_epilogue_text</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_set_preamble_file(struct mailmime * build_info,
+			       char * filename);
+
+int mailmime_set_epilogue_file(struct mailmime * build_info,
+			       char * filename);
+
+int mailmime_set_preamble_text(struct mailmime * build_info,
+			       char * data_str, size_t length);
+
+int mailmime_set_epilogue_text(struct mailmime * build_info,
+			       char * data_str, size_t length);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_set_preamble_file()</B
+> will define
+          the preamble of a multipart.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_set_preamble_text()</B
+> will define
+          the preamble of a multipart.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_set_epilogue_file()</B
+> will define
+          the epilogue of a multipart.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_set_preamble_text()</B
+> will define
+          the preamble of a multipart.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>build_info</B
+> is the MIME part to modify
+              (see <A
+HREF="x1614.htm#MAILMIME"
+>the Section called <I
+>mailmime - MIME part</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>data_str</B
+> is the string to define
+              as epilogue or prologue.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the length of the string to
+              define as epilogue or prologue.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>filename</B
+> is the name of the file
+              which content will be defined as epilogue or prologue.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2837"
+></A
+><P
+><B
+>Example 4-41. setting preamble and epilogue</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+#define DATA_STR "test foo bar"
+
+int main(int argc, char ** argv)
+{
+  struct mailmime * mime;
+
+  mime = mailmime_multiple_new("multipart/mixed");  
+
+  mailmime_set_preamble_file(mime, strdup("foo-bar.txt"));
+
+  mailmime_set_epilogue_data(mime, DATA_STR, sizeof(DATA_STR) - 1);
+
+  /* do the things */
+
+  mailmime_free(mime);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-SET-BODY-FILE"
+>mailmime_set_body_file and mailmime_set_body_text</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_set_body_file(struct mailmime * build_info,
+			   char * filename);
+
+int mailmime_set_body_text(struct mailmime * build_info,
+			   char * data_str, size_t length);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_set_body_file()</B
+> will define
+          the body of a single part.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_set_body_text()</B
+> will define
+          the body of a single part.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>build_info</B
+> is the MIME part to modify
+              (see <A
+HREF="x1614.htm#MAILMIME"
+>the Section called <I
+>mailmime - MIME part</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>data_str</B
+> is the string to define
+              as the body of the part.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the length of the string to
+              define as the body of the part.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>filename</B
+> is the name of the file
+              which content will be defined as the body of the part.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2861"
+></A
+><P
+><B
+>Example 4-42. creating a MIME part</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+#define DATA_STR "my data"
+
+int main(int argc, char ** argv)
+{
+  struct mailmime * mime;
+  
+  mime_fields =
+    mailmime_fields_new_encoding(MAILMIME_MECHANISM_QUOTED_PRINTABLE);
+  mailmime_new_with_content("plain/text", mime_fields, &amp;mime);
+
+  mailmime_set_body_text(mime, DATA_STR, sizeof(DATA_STR) - 1);
+
+  
+
+  /* do the things */
+  
+  mailmime_free(mime);
+}
+        </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-ADD-PART"
+>mailmime_add_part, mailmime_remove_part,
+        mailmime_smart_add_part and mailmime_smart_remove_part</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_add_part(struct mailmime * build_info,
+		      struct mailmime * part);
+
+void mailmime_remove_part(struct mailmime * mime);
+
+int mailmime_smart_add_part(struct mailmime * mime,
+    struct mailmime * mime_sub);
+
+int mailmime_smart_remove_part(struct mailmime * mime);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_add_part()</B
+> will add a sub MIME
+          part.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_remove_part()</B
+> will detach the
+          given sub part from its parent.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_smart_add_part()</B
+> will add a sub
+          MIME part. If the parent part is a message and no child
+          exist, the part is set as the child. If the parent part is a
+          message and a child already exists, if the child is
+          multipart, the part to add is added as child of this
+          multipart, else a multipart is added and the part is added
+          as child of the multipart.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_smart_remove_part()</B
+> will detach
+          the given sub part from its parent. The sub part will be
+          freed.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>build_info</B
+> is the parent MIME part
+              (see <A
+HREF="x1614.htm#MAILMIME"
+>the Section called <I
+>mailmime - MIME part</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>part</B
+> is the part to add
+              (see <A
+HREF="x1614.htm#MAILMIME"
+>the Section called <I
+>mailmime - MIME part</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>mime</B
+> is the parent MIME part
+              (see <A
+HREF="x1614.htm#MAILMIME"
+>the Section called <I
+>mailmime - MIME part</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>mime_sub</B
+> is the part to add or to
+              detach
+              (see <A
+HREF="x1614.htm#MAILMIME"
+>the Section called <I
+>mailmime - MIME part</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2892"
+></A
+><P
+><B
+>Example 4-43. modifying MIME structure</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(int argc, char ** argv)
+{
+  struct mailmime * sub_mime;
+  struct mailmime_fields * mime_fields;
+  struct mailmime_content * content;
+
+  content = mailmime_get_content_text();
+  
+  mime_fields = mailmime_fields_new_encoding(MAILMIME_MECHANISM_BASE64);
+  
+  sub_mime = mailmime_new_empty(content, mime_fields);
+
+  mime = mailmime_new_message_data(NULL);
+
+  mailmime_add_part(mime, sub_mime);
+  
+  /* do the things */
+
+  mailmime_free(mime);
+
+int main(int argc, char ** argv)
+{
+  struct mailmime * sub_mime;
+  struct mailmime * other_sub_mime;
+  struct mailmime_fields * mime_fields;
+  struct mailmime_content * content;
+
+  content = mailmime_get_content_text();
+  mime_fields = mailmime_fields_new_encoding(MAILMIME_MECHANISM_BASE64);
+  sub_mime = mailmime_new_empty(content, mime_fields);
+
+  content = mailmime_get_content_text();
+  mime_fields =
+    mailmime_fields_new_encoding(MAILMIME_MECHANISM_QUOTED_PRINTABLE);
+  other_sub_mime = mailmime_new_empty(content, mime_fields);
+
+  mime = mailmime_new_message_data(NULL);
+
+  mailmime_smart_add_part(mime, sub_mime);
+  mailmime_smart_add_part(mime, other_sub_mime);
+  
+  /* do the things */
+
+  mailmime_free(mime);
+
+int main(int argc, char ** argv)
+{
+  struct mailmime * sub_mime;
+  struct mailmime_fields * mime_fields;
+  struct mailmime_content * content;
+
+  content = mailmime_get_content_text();
+  
+  mime_fields = mailmime_fields_new_encoding(MAILMIME_MECHANISM_BASE64);
+  
+  sub_mime = mailmime_new_empty(content, mime_fields);
+
+  mime = mailmime_new_message_data(NULL);
+
+  mailmime_add_part(mime, sub_mime);
+
+  mailmime_remove_part(sub_mime);
+  
+  /* do the things */
+
+  mailmime_free(sub_mime);
+  mailmime_free(mime);
+
+int main(int argc, char ** argv)
+{
+  struct mailmime * sub_mime;
+  struct mailmime_fields * mime_fields;
+  struct mailmime_content * content;
+
+  content = mailmime_get_content_text();
+  
+  mime_fields = mailmime_fields_new_encoding(MAILMIME_MECHANISM_BASE64);
+  
+  sub_mime = mailmime_new_empty(content, mime_fields);
+
+  mime = mailmime_new_message_data(NULL);
+
+  mailmime_add_part(mime, sub_mime);
+
+  mailmime_smart_remove_part(sub_mime);
+  
+  /* do the things */
+
+  mailmime_free(mime);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-SET-IMF-FIELDS"
+>mailmime_set_imf_fields</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+void mailmime_set_imf_fields(struct mailmime * build_info,
+    struct mailimf_fields * fields);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_set_imf_fields()</B
+> will set the
+          fields of the given MIME message.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>build_info</B
+> is the MIME message to
+              modify
+              (see <A
+HREF="x1614.htm#MAILMIME"
+>the Section called <I
+>mailmime - MIME part</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>fields</B
+> is the header fields to set
+              for the message
+              (see <A
+HREF="x425.htm#MAILIMF-FIELDS"
+>the Section called <I
+>mailimf_fields - list of header fields</I
+> in Chapter 3</A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2909"
+></A
+><P
+><B
+>Example 4-44. modifying MIME structure</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+#define DATA_STR "test foo bar"
+
+int main(int argc, char ** argv)
+{
+  struct mailmime * mime;
+  struct mailmime_fields * mime_fields;
+  struct mailimf_fields * imf_fields;
+
+  mime_fields = mailmime_fields_new_encoding(MAILMIME_MECHANISM_8BIT);
+
+  mailmime_new_with_content("text/plain", mime_fields, &amp;mime);
+
+  mailmime_set_body_text(mime, DATA_STR, sizeof(DATA_STR) - 1);
+
+  /* look at the example in mailimf_fields to see how to
+     build a mailimf_fields */
+  imf_fields = build_fields();
+
+  mailmime_set_imf_fields(mime, imf_fields);
+
+  /* do the things */
+
+  mailmime_free(mime);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-FIELDS-NEW-ENCODING"
+>mailmime_fields_new_encoding and
+        mailmime_fields_new_filename</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+enum {
+  MAILMIME_MECHANISM_ERROR,
+  MAILMIME_MECHANISM_7BIT,
+  MAILMIME_MECHANISM_8BIT,
+  MAILMIME_MECHANISM_BINARY,
+  MAILMIME_MECHANISM_QUOTED_PRINTABLE,
+  MAILMIME_MECHANISM_BASE64,
+  MAILMIME_MECHANISM_TOKEN
+};
+
+enum {
+  MAILMIME_DISPOSITION_TYPE_ERROR,
+  MAILMIME_DISPOSITION_TYPE_INLINE,
+  MAILMIME_DISPOSITION_TYPE_ATTACHMENT,
+  MAILMIME_DISPOSITION_TYPE_EXTENSION
+};
+
+struct mailmime_fields * mailmime_fields_new_encoding(int encoding_type);
+
+struct mailmime_fields * mailmime_fields_new_filename(int dsp_type,
+    char * filename, int encoding_type);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_fields_new_encoding()</B
+> will
+          create a list of MIME header fields with only
+          <B
+CLASS="COMMAND"
+>Content-Transfer-Encoding</B
+>.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailmime_fields_new_filename()</B
+> will
+          create a list of MIME header fields with
+          <B
+CLASS="COMMAND"
+>Content-Transfer-Encoding</B
+> and
+          <B
+CLASS="COMMAND"
+>Content-Disposition</B
+>.
+        </P
+><P
+>          The result will be a list of MIME header fields
+          (see <A
+HREF="x1614.htm#MAILMIME-FIELDS"
+>the Section called <I
+>mailmime_fields - header fields</I
+></A
+>).
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>encoding_type</B
+> is the MIME encoding
+              mechanism. The value can be 
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_7BIT</B
+>,
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_8BIT</B
+>,
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_BINARY</B
+>,
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_QUOTED_PRINTABLE</B
+> or
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_BASE64</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-MECHANISM"
+>the Section called <I
+>mailmime_mechanism - MIME transfer encoding mechanism (Content-Transfer-Encoding)</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>dsp_type</B
+> is the disposition type.
+              The value can be 
+              <B
+CLASS="COMMAND"
+>MAILMIME_DISPOSITION_TYPE_INLINE</B
+> or
+              <B
+CLASS="COMMAND"
+>MAILMIME_DISPOSITION_TYPE_ATTACHMENT</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-DISPOSITION-TYPE"
+>the Section called <I
+>mailmime_disposition_type - Type of MIME disposition</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>filename</B
+> is the filename for MIME
+              content disposition.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2943"
+></A
+><P
+><B
+>Example 4-45. creating MIME fields with only Content-Transfer-Encoding</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int main(void)
+{
+  struct mailmime_fields * fields;
+
+  fields = mailmime_fields_new_encoding(MAILMIME_MECHANISM_BASE64);
+  
+  /* do the things */
+  
+  mailmime_fields_free(fields);
+}
+
+int main(void)
+{
+  struct mailmime_fields * fields;
+
+  fields =
+  mailmime_fields_new_filename(MAILMIME_DISPOSITION_TYPE_ATTACHMENT,
+    strdup("foo-bar.txt"), MAILMIME_MECHANISM_BASE64);
+  
+  /* do the things */
+  
+  mailmime_fields_free(fields);
+}
+          </PRE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x2583.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x2946.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Rendering of MIME parts</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1586.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Helper functions</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

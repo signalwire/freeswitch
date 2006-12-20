@@ -1,0 +1,433 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Storage</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Storages, folders, messages"
+HREF="c2988.htm"><LINK
+REL="PREVIOUS"
+TITLE="Error codes"
+HREF="x3011.htm"><LINK
+REL="NEXT"
+TITLE="Folder"
+HREF="x3082.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x3011.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 5. Storages, folders, messages</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x3082.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN3015"
+>Storage</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILSTORAGE-DRIVER"
+>Storage driver</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+typedef struct mailstorage_driver mailstorage_driver;
+
+struct mailstorage_driver {
+  char * sto_name;
+  int (* sto_connect)(struct mailstorage * storage);
+  int (* sto_get_folder_session)(struct mailstorage * storage,
+      char * pathname, mailsession ** result);
+  void (* sto_uninitialize)(struct mailstorage * storage);
+};
+        </PRE
+><P
+>          This is the driver for a storage.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sto_name</B
+> is the name of the driver.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sto_connect()</B
+> connects the storage to
+              the remote access or to the path in the local filesystem.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sto_get_folder_session()</B
+> can have two
+              kinds of behaviour. Either it creates a new session and
+              independant from the session used by the storage and
+              select the given mailbox or it selects the given mailbox
+              in the current session. It depends on the efficiency of
+              the mail access.
+            </P
+><P
+>              <SPAN
+CLASS="emphasis"
+><I
+CLASS="EMPHASIS"
+>XXX - in the future, this will be moved to the
+              folder driver</I
+></SPAN
+>
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sto_uninitialize()</B
+> frees the data
+              created with mailstorage constructor.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILSTORAGE"
+>Storage</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailstorage {
+  char * sto_id;
+  void * sto_data;
+  mailsession * sto_session;
+  mailstorage_driver * sto_driver;
+  clist * sto_shared_folders; /* list of (struct mailfolder *) */
+  
+  void * sto_user_data;
+};
+        </PRE
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sto_id</B
+> is an identifier for the
+              storage. This can be <B
+CLASS="COMMAND"
+>NULL</B
+>.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sto_data</B
+> is the internal data
+              of the storage. This can only be changed by the driver.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sto_session</B
+> is the session used by
+              the storage. The session can be used to send commands.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sto_driver</B
+> is the driver of the
+              storage.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sto_shared_folders</B
+> is the list of
+              folders that share the session with the storage.
+              This is used internally.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>sto_user_data</B
+> is a field for free
+              use. The user can store any data in that field.
+            </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILSTORAGE-NEW"
+>mailstorage_new and mailstorage_free</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+struct mailstorage * mailstorage_new(char * sto_id);
+
+void mailstorage_free(struct mailstorage * storage);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailstorage_new()</B
+> initializes a storage
+          structure with an identifier (<B
+CLASS="COMMAND"
+>sto_id</B
+>) and
+          with no driver.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailstorage_free()</B
+> free the memory used
+          by a storage.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILSTORAGE-CONNECT"
+>mailstorage_connect and mailstorage_disconnect</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailstorage_connect(struct mailstorage * storage);
+
+void mailstorage_disconnect(struct mailstorage * storage);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mailstorage_connect()</B
+> connects the storage.
+          This function can also be used to confirm that a storage
+          connection is valid when the storage is already connected.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailstorage_disconnect()</B
+> disconnects the 
+          storage.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3074"
+>IMAP storage</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int imap_mailstorage_init(struct mailstorage * storage,
+    char * imap_servername, uint16_t imap_port,
+    char * imap_command,
+    int imap_connection_type, int imap_auth_type,
+    char * imap_login, char * imap_password,
+    int imap_cached, char * imap_cache_directory);
+        </PRE
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="AEN3077"
+>Example</A
+></H2
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN3079"
+></A
+><P
+><B
+>Example 5-1. use of storage</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>int main(void)
+{
+  struct mailstorage * storage;
+  int r;
+
+  storage = mailstorage_new(NULL);
+  
+  imap_mailstorage_init(storage, "imap.my-servers.org", 0,
+    NULL, CONNECTION_TYPE_TRY_STARTTLS, IMAP_AUTH_TYPE_PLAIN,
+    "my-login", "my-password", 1, "/home/login/.libetpan/cache");
+
+  r = mailstorage_connect(storage);
+  if (r == MAIL_NO_ERROR) {
+    mailstorage_disconnect(storage);
+  }
+  
+  mailstorage_free(storage);
+}
+          </PRE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x3011.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x3082.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Error codes</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c2988.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Folder</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

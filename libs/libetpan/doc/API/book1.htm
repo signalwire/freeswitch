@@ -1,0 +1,1841 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>libEtPan! API</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="NEXT"
+TITLE="Introduction"
+HREF="c13.htm"></HEAD
+><BODY
+CLASS="BOOK"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="BOOK"
+><A
+NAME="LIBETPAN-API"
+></A
+><DIV
+CLASS="TITLEPAGE"
+><H1
+CLASS="TITLE"
+><A
+NAME="AEN2"
+>libEtPan! API</A
+></H1
+><H3
+CLASS="AUTHOR"
+><A
+NAME="AEN6"
+></A
+>Viet Hoa DINH</H3
+><P
+CLASS="COPYRIGHT"
+>Copyright &copy; 2003 DINH Viet Hoa</P
+><HR></DIV
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+>1. <A
+HREF="c13.htm"
+>Introduction</A
+></DT
+><DT
+>2. <A
+HREF="c16.htm"
+>Tools and datatypes</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="c16.htm#AEN19"
+>Array</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="c16.htm#CARRAY-NEW"
+>carray_new and carray_free</A
+></DT
+><DT
+><A
+HREF="c16.htm#CARRAY-SET-SIZE"
+>carray_set_size</A
+></DT
+><DT
+><A
+HREF="c16.htm#CARRAY-COUNT"
+>carray_count, carray_add, carray_get and carray_set</A
+></DT
+><DT
+><A
+HREF="c16.htm#CARRAY-DELETE"
+>carray_delete</A
+></DT
+><DT
+><A
+HREF="c16.htm#CARRAY-DATA"
+>carray_data</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x88.htm"
+>List</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x88.htm#CLIST-NEW"
+>clist_new and clist_free</A
+></DT
+><DT
+><A
+HREF="x88.htm#CLIST-COUNT"
+>clist_isempty and clist_count</A
+></DT
+><DT
+><A
+HREF="x88.htm#CLIST-BEGIN"
+>running through clist</A
+></DT
+><DT
+><A
+HREF="x88.htm#CLIST-APPEND"
+>clist modification</A
+></DT
+><DT
+><A
+HREF="x88.htm#CLIST-FOREACH"
+>clist_foreach</A
+></DT
+><DT
+><A
+HREF="x88.htm#CLIST-CONCAT"
+>clist_concat</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x161.htm"
+>Hash table</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x161.htm#CHASH-NEW"
+>chash_new and chash_free</A
+></DT
+><DT
+><A
+HREF="x161.htm#CHASH-GET"
+>chash_set and chash_get</A
+></DT
+><DT
+><A
+HREF="x161.htm#CHASH-DELETE"
+>chash_delete</A
+></DT
+><DT
+><A
+HREF="x161.htm#CHASH-RESIZE"
+>chash_resize</A
+></DT
+><DT
+><A
+HREF="x161.htm#CHASH-BEGIN"
+>running through the chash</A
+></DT
+><DT
+><A
+HREF="x161.htm#CHASH-COUNT"
+>chash_size and chash_count</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x229.htm"
+>Buffered I/O</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x229.htm#MAILSTREAM-SOCKET"
+>socket stream</A
+></DT
+><DT
+><A
+HREF="x229.htm#MAILSTREAM-SSL"
+>TLS stream</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x289.htm"
+>non-buffered I/O</A
+></DT
+><DT
+><A
+HREF="x312.htm"
+>strings</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x312.htm#MMAP-STRING-NEW"
+>constructor and destructor</A
+></DT
+><DT
+><A
+HREF="x312.htm#MMAP-STRING-ASSIGN"
+>string value modification</A
+></DT
+><DT
+><A
+HREF="x312.htm#MMAP-STRING-APPEND"
+>insertion in string, deletion in string</A
+></DT
+><DT
+><A
+HREF="x312.htm#MMAP-STRING-REF"
+>referencing string</A
+></DT
+></DL
+></DD
+></DL
+></DD
+><DT
+>3. <A
+HREF="c385.htm"
+>Internet Message Format</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="c385.htm#AEN397"
+>Quick start</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="c385.htm#AEN400"
+>Parse message headers</A
+></DT
+><DT
+><A
+HREF="c385.htm#AEN420"
+>Render the message headers</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x425.htm"
+>Data types</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x425.htm#MAILIMF-MAILBOX"
+>mailimf_mailbox - mailbox</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-ADDRESS"
+>mailimf_address - address</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-MAILBOX-LIST"
+>mailimf_mailbox_list - list of mailboxes</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-ADDRESS-LIST"
+>mailimf_address_list - list of addresses</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-GROUP"
+>mailimf_group - named group of mailboxes</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-DATE-TIME"
+>mailimf_date_time - date of a message</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-ORIG-DATE"
+>mailimf_orig_date - parsed content of date header</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-FROM"
+>mailimf_from - parsed content of From header</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-SENDER"
+>mailimf_sender - parsed content of Sender header</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-REPLY-TO"
+>mailimf_reply_to - parsed content of Reply-To header</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-TO"
+>mailimf_to - parsed content of To header</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-CC"
+>mailimf_cc - parsed content of Cc</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-BCC"
+>mailimf_bcc - parsed content of Bcc field</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-MESSAGE-ID"
+>mailimf_message_id - parsed content of Message-ID header</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-IN-REPLY-TO"
+>mailimf_in_reply_to - parsed content of In-Reply-To
+        field</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-REFERENCES"
+>mailimf_references - parsed content of References field</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-SUBJECT"
+>mailimf_subject - parsed content of Subject field</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-COMMENTS"
+>mailimf_comments - parsed content of Comments field</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-KEYWORDS"
+>mailimf_keywords - parsed content of Keywords field</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-RETURN"
+>mailimf_return - parsed content of Return-Path field</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-PATH"
+>mailimf_path - address in Return-Path field</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-OPTIONAL-FIELD"
+>mailimf_optional_field - non-standard header</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-FIELD"
+>mailimf_field - header field</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-FIELDS"
+>mailimf_fields - list of header fields</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-BODY"
+>mailimf_body - message body without headers</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-MESSAGE"
+>mailimf_message - parsed message</A
+></DT
+><DT
+><A
+HREF="x425.htm#MAILIMF-SINGLE-FIELDS"
+>mailimf_single_fields - simplified fields</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x1094.htm"
+>Parser functions</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x1094.htm#MAILIMF-ADDRESS-LIST-PARSE"
+>mailimf_address_list_parse</A
+></DT
+><DT
+><A
+HREF="x1094.htm#MAILIMF-ADDRESS-PARSE"
+>mailimf_address_parse</A
+></DT
+><DT
+><A
+HREF="x1094.htm#MAILIMF-BODY-PARSE"
+>mailimf_body_parse</A
+></DT
+><DT
+><A
+HREF="x1094.htm#MAILIMF-ENVELOPE-AND-OPTIONAL-FIELDS-PARSE"
+>mailimf_envelope_and_optional_fields_parse</A
+></DT
+><DT
+><A
+HREF="x1094.htm#MAILIMF-ENVELOPE-FIELDS-PARSE"
+>mailimf_envelope_fields_parse</A
+></DT
+><DT
+><A
+HREF="x1094.htm#MAILIMF-OPTIONAL-FIELDS-PARSE"
+>mailimf_optional_fields_parse</A
+></DT
+><DT
+><A
+HREF="x1094.htm#MAILIMF-FIELDS-PARSE"
+>mailimf_fields_parse</A
+></DT
+><DT
+><A
+HREF="x1094.htm#MAILIMF-IGNORE-FIELD-PARSE"
+>mailimf_ignore_field_parse</A
+></DT
+><DT
+><A
+HREF="x1094.htm#MAILIMF-MAILBOX-LIST-PARSE"
+>mailimf_mailbox_list_parse</A
+></DT
+><DT
+><A
+HREF="x1094.htm#MAILIMF-MAILBOX-PARSE"
+>mailimf_mailbox_parse</A
+></DT
+><DT
+><A
+HREF="x1094.htm#MAILIMF-MESSAGE-PARSE"
+>mailimf_message_parse</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x1381.htm"
+>Creation functions</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x1381.htm#MAILIMF-MAILBOX-LIST-ADD"
+>mailimf_mailbox_list</A
+></DT
+><DT
+><A
+HREF="x1381.htm#MAILIMF-ADDRESS-LIST-ADD"
+>mailimf_address_list</A
+></DT
+><DT
+><A
+HREF="x1381.htm#MAILIMF-FIELDS-ADD"
+>mailimf_fields</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x1556.htm"
+>Rendering of messages</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x1556.htm#MAILIMF-FIELDS-WRITE"
+>Header fields</A
+></DT
+></DL
+></DD
+></DL
+></DD
+><DT
+>4. <A
+HREF="c1586.htm"
+>MIME</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="c1586.htm#AEN1598"
+>Quick start</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="c1586.htm#AEN1601"
+>Parse MIME message</A
+></DT
+><DT
+><A
+HREF="c1586.htm#AEN1609"
+>Render the MIME message</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x1614.htm"
+>Data types</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x1614.htm#MAILMIME-COMPOSITE-TYPE"
+>mailmime_composite_type - Composite MIME type</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-CONTENT"
+>mailmime_content - MIME content type (Content-Type)</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-DISCRETE-TYPE"
+>mailmime_discrete_type - MIME discrete type</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-FIELD"
+>mailmime_field - MIME header field</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-MECHANISM"
+>mailmime_mechanism - MIME transfer encoding mechanism (Content-Transfer-Encoding)</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-FIELDS"
+>mailmime_fields - header fields</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-PARAMETER"
+>mailmime_parameter - MIME type parameter</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-TYPE"
+>mailmime_type - MIME main type</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-LANGUAGE"
+>mailmime_language - Language of MIME part</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-DATA"
+>mailmime_data - Content of MIME part</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME"
+>mailmime - MIME part</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-DISPOSITION"
+>mailmime_disposition - MIME disposition information (Content-Disposition)</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-DISPOSITION-TYPE"
+>mailmime_disposition_type - Type of MIME disposition</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-DISPOSITION-PARM"
+>mailmime_disposition_parm - MIME disposition parameter</A
+></DT
+><DT
+><A
+HREF="x1614.htm#MAILMIME-SINGLE-FIELDS"
+>mailmime_single_fields - MIME headers</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x2180.htm"
+>Parser functions</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x2180.htm#MAILMIME-CONTENT-PARSE"
+>mailmime_content_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-DESCRIPTION-PARSE"
+>mailmime_description_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-ENCODING-PARSE"
+>mailmime_encoding_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-FIELD-PARSE"
+>mailmime_field_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-ID-PARSE"
+>mailmime_id_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-FIELDS-PARSE"
+>mailmime_fields_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-VERSION-PARSE"
+>mailmime_version_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-PARAMETER-PARSE"
+>mailmime_parameter_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-LANGUAGE-PARSE"
+>mailmime_language_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-DISPOSITION-PARSE"
+>mailmime_disposition_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-DISPOSITION-TYPE-PARSE"
+>mailmime_disposition_type_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-ENCODED-PHRASE-PARSE"
+>mailmime_encoded_phrase_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-PARSE"
+>mailmime_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-BASE64-BODY-PARSE"
+>mailmime_base64_body_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-QUOTED-PRINTABLE-BODY-PARSE"
+>mailmime_quoted_printable_body_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-BINARY-BODY-PARSE"
+>mailmime_binary_body_parse</A
+></DT
+><DT
+><A
+HREF="x2180.htm#MAILMIME-PART-PARSE"
+>mailmime_part_parse</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x2583.htm"
+>Rendering of MIME parts</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x2583.htm#MAILMIME-FIELDS-WRITE"
+>mailmime_fields_write, mailmime_content_write and
+        mailmime_content_type_write</A
+></DT
+><DT
+><A
+HREF="x2583.htm#MAILMIME-WRITE"
+>mailmime_write</A
+></DT
+><DT
+><A
+HREF="x2583.htm#MAILMIME-QUOTED-PRINTABLE-WRITE"
+>mailmime_quoted_printable_write
+        and mailmime_base64_write</A
+></DT
+><DT
+><A
+HREF="x2583.htm#MAILMIME-DATA-WRITE"
+>mailmime_data_write</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x2669.htm"
+>Creation functions</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x2669.htm#MAILMIME-DISPOSITION-NEW-FILENAME"
+>mailmime_disposition_new_filename and
+        mailmime_disposition_new_with_data</A
+></DT
+><DT
+><A
+HREF="x2669.htm#MAILMIME-FIELDS-NEW-EMPTY"
+>mailmime_fields_new_empty and mailmime_fields_add</A
+></DT
+><DT
+><A
+HREF="x2669.htm#MAILMIME-FIELDS-NEW-WITH-DATA"
+>mailmime_fields_new_with_data and
+        mailmime_fields_new_with_version</A
+></DT
+><DT
+><A
+HREF="x2669.htm#MAILMIME-GET-CONTENT-MESSAGE"
+>mailmime_get_content_message</A
+></DT
+><DT
+><A
+HREF="x2669.htm#MAILMIME-DATA-NEW-DATA"
+>mailmime_data_new_data and mailmime_data_new_file</A
+></DT
+><DT
+><A
+HREF="x2669.htm#MAILMIME-NEW-MESSAGE-DATA"
+>mailmime_new_message_data, mailmime_new_empty and
+        mailmime_new_with_content</A
+></DT
+><DT
+><A
+HREF="x2669.htm#MAILMIME-SET-PREAMBLE-FILE"
+>mailmime_set_preamble_file, mailmime_set_epilogue_file,
+        mailmime_set_preamble_text and mailmime_set_epilogue_text</A
+></DT
+><DT
+><A
+HREF="x2669.htm#MAILMIME-SET-BODY-FILE"
+>mailmime_set_body_file and mailmime_set_body_text</A
+></DT
+><DT
+><A
+HREF="x2669.htm#MAILMIME-ADD-PART"
+>mailmime_add_part, mailmime_remove_part,
+        mailmime_smart_add_part and mailmime_smart_remove_part</A
+></DT
+><DT
+><A
+HREF="x2669.htm#MAILMIME-SET-IMF-FIELDS"
+>mailmime_set_imf_fields</A
+></DT
+><DT
+><A
+HREF="x2669.htm#MAILMIME-FIELDS-NEW-ENCODING"
+>mailmime_fields_new_encoding and
+        mailmime_fields_new_filename</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x2946.htm"
+>Helper functions</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x2946.htm#MAILMIME-TRANSFER-ENCODING-GET"
+>mailmime_transfer_encoding_get</A
+></DT
+><DT
+><A
+HREF="x2946.htm#MAILMIME-CONTENT-CHARSET-GET"
+>mailmime_content_charset_get and
+        mailmime_content_param_get</A
+></DT
+></DL
+></DD
+></DL
+></DD
+><DT
+>5. <A
+HREF="c2988.htm"
+>Storages, folders, messages</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="c2988.htm#AEN2990"
+>Introduction</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="c2988.htm#AEN2993"
+>Message</A
+></DT
+><DT
+><A
+HREF="c2988.htm#AEN2996"
+>MIME part</A
+></DT
+><DT
+><A
+HREF="c2988.htm#AEN2999"
+>Mailbox</A
+></DT
+><DT
+><A
+HREF="c2988.htm#AEN3002"
+>Storage</A
+></DT
+><DT
+><A
+HREF="c2988.htm#AEN3005"
+>Folder</A
+></DT
+><DT
+><A
+HREF="c2988.htm#AEN3008"
+>Session</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x3011.htm"
+>Error codes</A
+></DT
+><DT
+><A
+HREF="x3015.htm"
+>Storage</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x3015.htm#MAILSTORAGE-DRIVER"
+>Storage driver</A
+></DT
+><DT
+><A
+HREF="x3015.htm#MAILSTORAGE"
+>Storage</A
+></DT
+><DT
+><A
+HREF="x3015.htm#MAILSTORAGE-NEW"
+>mailstorage_new and mailstorage_free</A
+></DT
+><DT
+><A
+HREF="x3015.htm#MAILSTORAGE-CONNECT"
+>mailstorage_connect and mailstorage_disconnect</A
+></DT
+><DT
+><A
+HREF="x3015.htm#AEN3074"
+>IMAP storage</A
+></DT
+><DT
+><A
+HREF="x3015.htm#AEN3077"
+>Example</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x3082.htm"
+>Folder</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-DRIVER"
+>Folder driver</A
+></DT
+><DT
+><A
+HREF="x3082.htm#AEN3095"
+>Folder</A
+></DT
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-NEW"
+>mailfolder_new and mail_folder_free</A
+></DT
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-CONNECT"
+>mailfolder_connect and mailfolder_disconnect</A
+></DT
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-NOOP"
+>mailfolder_noop</A
+></DT
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-CHECK"
+>mailfolder_check</A
+></DT
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-EXPUNGE"
+>mailfolder_expunge</A
+></DT
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-STATUS"
+>mailfolder_status</A
+></DT
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-APPEND-MESSAGE"
+>mailfolder_append_message</A
+></DT
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-GET-MESSAGES-LIST"
+>mailfolder_get_messages_list</A
+></DT
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-GET-ENVELOPES-LIST"
+>mailfolder_get_envelopes_list</A
+></DT
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-GET-MESSAGE"
+>mailfolder_get_message</A
+></DT
+><DT
+><A
+HREF="x3082.htm#MAILFOLDER-GET-MESSAGE-BY-UID"
+>mailfolder_get_message_by_uid</A
+></DT
+><DT
+><A
+HREF="x3082.htm#AEN3193"
+>Example</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x3198.htm"
+>Message</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-DRIVER"
+>Message driver</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE"
+>Message</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-NEW"
+>mailmessage_new</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-INIT"
+>mailmessage_init</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-FLUSH"
+>mailmessage_flush</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-CHECK"
+>mailmessage_check</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-FETCH-RESULT-FREE"
+>mailmessage_fetch_result_free</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-FETCH"
+>mailmessage_fetch</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-FETCH-HEADER"
+>mailmessage_fetch_header</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-FETCH-BODY"
+>mailmessage_fetch_body</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-FETCH-SIZE"
+>mailmessage_fetch_size</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-GET-BODYSTRUCTURE"
+>mailmessage_get_bodystructure</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-FETCH-SECTION"
+>mailmessage_fetch_section</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-FETCH-SECTION-HEADER"
+>mailmessage_fetch_section_header</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-FETCH-SECTION-MIME"
+>mailmessage_fetch_section_mime</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-FETCH-SECTION-BODY"
+>mailmessage_fetch_section_body</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-FETCH-ENVELOPE"
+>mailmessage_fetch_envelope</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-GET-FLAGS"
+>mailmessage_get_flags</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-RESOLVE-SINGLE-FIELDS"
+>mailmessage_resolve_single_fields</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-LIST"
+>Message list</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAILMESSAGE-TREE"
+>Message tree</A
+></DT
+><DT
+><A
+HREF="x3198.htm#MAIL-FLAGS"
+>Message flags</A
+></DT
+><DT
+><A
+HREF="x3198.htm#AEN3467"
+>Example</A
+></DT
+></DL
+></DD
+><DT
+><A
+HREF="x3472.htm"
+>Session</A
+></DT
+><DD
+><DL
+><DT
+><A
+HREF="x3472.htm#MAILSESSION-DRIVER"
+>Session driver</A
+></DT
+><DT
+><A
+HREF="x3472.htm#MAILSESSION"
+>Session</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3670"
+>mailsession_parameters</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3674"
+>mailsession_connect_stream</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3678"
+>mailsession_connect_path</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3682"
+>mailsession_starttls</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3686"
+>mailsession_login</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3690"
+>mailsession_logout</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3694"
+>mailsession_noop</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3698"
+>mailsession_check_folder</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3702"
+>mailsession_select_folder</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3706"
+>mailsession_expunge_folder</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3710"
+>mailsession_status_folder</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3714"
+>mailsession_messages_number</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3718"
+>mailsession_recent_number</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3722"
+>mailsession_unseen_number</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3726"
+>mailsession_append_message</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3730"
+>mailsession_get_messages_list</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3734"
+>mailsession_get_envelopes_list</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3741"
+>mailsession_get_message</A
+></DT
+><DT
+><A
+HREF="x3472.htm#AEN3750"
+>mailsession_get_message_by_uid</A
+></DT
+></DL
+></DD
+></DL
+></DD
+></DL
+></DIV
+><DIV
+CLASS="LOT"
+><DL
+CLASS="LOT"
+><DT
+><B
+>List of Examples</B
+></DT
+><DT
+>2-1. <A
+HREF="c16.htm#AEN35"
+>carray creation</A
+></DT
+><DT
+>2-2. <A
+HREF="c16.htm#AEN45"
+>preallocating carray</A
+></DT
+><DT
+>2-3. <A
+HREF="c16.htm#AEN66"
+>carray access</A
+></DT
+><DT
+>2-4. <A
+HREF="c16.htm#AEN79"
+>deletion in carray</A
+></DT
+><DT
+>2-5. <A
+HREF="x88.htm#AEN101"
+>clist creation</A
+></DT
+><DT
+>2-6. <A
+HREF="x88.htm#AEN129"
+>displaying content of clist</A
+></DT
+><DT
+>2-7. <A
+HREF="x88.htm#AEN145"
+>deleting elements in a clist</A
+></DT
+><DT
+>2-8. <A
+HREF="x88.htm#AEN158"
+>merging two clists</A
+></DT
+><DT
+>2-9. <A
+HREF="x161.htm#AEN191"
+>chash insert and lookup</A
+></DT
+><DT
+>2-10. <A
+HREF="x161.htm#AEN198"
+>key deletion in a chash</A
+></DT
+><DT
+>2-11. <A
+HREF="x161.htm#AEN219"
+>running through a chash</A
+></DT
+><DT
+>3-1. <A
+HREF="x425.htm#AEN431"
+>example of mailbox</A
+></DT
+><DT
+>3-2. <A
+HREF="x425.htm#AEN438"
+>mailbox creation and display</A
+></DT
+><DT
+>3-3. <A
+HREF="x425.htm#AEN465"
+>address creation and display</A
+></DT
+><DT
+>3-4. <A
+HREF="x425.htm#AEN480"
+>Creation and display of mailimf_mailbox_list</A
+></DT
+><DT
+>3-5. <A
+HREF="x425.htm#AEN495"
+>creation and display of list of addresses</A
+></DT
+><DT
+>3-6. <A
+HREF="x425.htm#AEN502"
+>example of group</A
+></DT
+><DT
+>3-7. <A
+HREF="x425.htm#AEN515"
+>creation and display of a group</A
+></DT
+><DT
+>3-8. <A
+HREF="x425.htm#AEN522"
+>example of date</A
+></DT
+><DT
+>3-9. <A
+HREF="x425.htm#AEN553"
+>creation and display of date</A
+></DT
+><DT
+>3-10. <A
+HREF="x425.htm#AEN569"
+>creation and display of Date field</A
+></DT
+><DT
+>3-11. <A
+HREF="x425.htm#AEN585"
+>creation and display of a From header</A
+></DT
+><DT
+>3-12. <A
+HREF="x425.htm#AEN601"
+>creation and display of Sender field</A
+></DT
+><DT
+>3-13. <A
+HREF="x425.htm#AEN616"
+>creation and display of Reply-To field</A
+></DT
+><DT
+>3-14. <A
+HREF="x425.htm#AEN632"
+>creation and display of To field</A
+></DT
+><DT
+>3-15. <A
+HREF="x425.htm#AEN648"
+>creation and display of Cc field</A
+></DT
+><DT
+>3-16. <A
+HREF="x425.htm#AEN664"
+>creation and display of Bcc field</A
+></DT
+><DT
+>3-17. <A
+HREF="x425.htm#AEN673"
+>example of Message-ID</A
+></DT
+><DT
+>3-18. <A
+HREF="x425.htm#AEN684"
+>creation and display of Message-ID field</A
+></DT
+><DT
+>3-19. <A
+HREF="x425.htm#AEN702"
+>creation and display of In-Reply-To field</A
+></DT
+><DT
+>3-20. <A
+HREF="x425.htm#AEN720"
+>creation and display of References field</A
+></DT
+><DT
+>3-21. <A
+HREF="x425.htm#AEN734"
+>creation and display of Subject field</A
+></DT
+><DT
+>3-22. <A
+HREF="x425.htm#AEN748"
+>creation and display of Comment field</A
+></DT
+><DT
+>3-23. <A
+HREF="x425.htm#AEN763"
+>creation and display of Keywords field</A
+></DT
+><DT
+>3-24. <A
+HREF="x425.htm#AEN778"
+>creation and display of Return-Path field</A
+></DT
+><DT
+>3-25. <A
+HREF="x425.htm#AEN794"
+>Creation and display of return path</A
+></DT
+><DT
+>3-26. <A
+HREF="x425.htm#AEN814"
+>creation and display of non-standard fields</A
+></DT
+><DT
+>3-27. <A
+HREF="x425.htm#AEN961"
+>creation and display of field</A
+></DT
+><DT
+>3-28. <A
+HREF="x425.htm#AEN977"
+>creation and display of header fields</A
+></DT
+><DT
+>3-29. <A
+HREF="x425.htm#AEN997"
+>creation and display of message body</A
+></DT
+><DT
+>3-30. <A
+HREF="x425.htm#AEN1017"
+>creation and display of message</A
+></DT
+><DT
+>3-31. <A
+HREF="x425.htm#AEN1088"
+>using mailimf_single_fields</A
+></DT
+><DT
+>3-32. <A
+HREF="x425.htm#AEN1091"
+>using mailimf_single_fields without memory allocation</A
+></DT
+><DT
+>3-33. <A
+HREF="x1094.htm#AEN1120"
+>parsing a list of addresses</A
+></DT
+><DT
+>3-34. <A
+HREF="x1094.htm#AEN1147"
+>parsing an address</A
+></DT
+><DT
+>3-35. <A
+HREF="x1094.htm#AEN1174"
+>parsing a message body</A
+></DT
+><DT
+>3-36. <A
+HREF="x1094.htm#AEN1201"
+>parsing commonly used fields and return other fields
+          in a non-parsed form</A
+></DT
+><DT
+>3-37. <A
+HREF="x1094.htm#AEN1228"
+>parsing commonly used fields</A
+></DT
+><DT
+>3-38. <A
+HREF="x1094.htm#AEN1255"
+>parsing optional fields</A
+></DT
+><DT
+>3-39. <A
+HREF="x1094.htm#AEN1282"
+>parsing header fields</A
+></DT
+><DT
+>3-40. <A
+HREF="x1094.htm#AEN1304"
+>skipping fields</A
+></DT
+><DT
+>3-41. <A
+HREF="x1094.htm#AEN1329"
+>parsing a list of mailboxes</A
+></DT
+><DT
+>3-42. <A
+HREF="x1094.htm#AEN1354"
+>parsing a mailbox</A
+></DT
+><DT
+>3-43. <A
+HREF="x1094.htm#AEN1378"
+>parsing a message</A
+></DT
+><DT
+>3-44. <A
+HREF="x1381.htm#AEN1411"
+>creating a list of mailboxes</A
+></DT
+><DT
+>3-45. <A
+HREF="x1381.htm#AEN1553"
+>creation of header fields</A
+></DT
+><DT
+>3-46. <A
+HREF="x1556.htm#AEN1583"
+>rendering of fields</A
+></DT
+><DT
+>4-1. <A
+HREF="x1614.htm#AEN1635"
+>create and display MIME composite type</A
+></DT
+><DT
+>4-2. <A
+HREF="x1614.htm#AEN1667"
+>Creation and display of MIME content type</A
+></DT
+><DT
+>4-3. <A
+HREF="x1614.htm#AEN1691"
+>Creation and display of MIME discrete type</A
+></DT
+><DT
+>4-4. <A
+HREF="x1614.htm#AEN1757"
+>Creation and display of MIME header field</A
+></DT
+><DT
+>4-5. <A
+HREF="x1614.htm#AEN1784"
+>Creation and display of MIME transfer encoding mechanism</A
+></DT
+><DT
+>4-6. <A
+HREF="x1614.htm#AEN1799"
+>Creation and display of MIME fields</A
+></DT
+><DT
+>4-7. <A
+HREF="x1614.htm#AEN1821"
+>Creation and display of MIME type parameter</A
+></DT
+><DT
+>4-8. <A
+HREF="x1614.htm#AEN1851"
+>Creation and display of MIME main type</A
+></DT
+><DT
+>4-9. <A
+HREF="x1614.htm#AEN1864"
+>Creation and display of language of MIME part</A
+></DT
+><DT
+>4-10. <A
+HREF="x1614.htm#AEN1906"
+>Creation and display of MIME part content</A
+></DT
+><DT
+>4-11. <A
+HREF="x1614.htm#AEN2007"
+>Creation and display of MIME part</A
+></DT
+><DT
+>4-12. <A
+HREF="x1614.htm#AEN2026"
+>Creation and display of MIME disposition information</A
+></DT
+><DT
+>4-13. <A
+HREF="x1614.htm#AEN2041"
+>Creation and display of MIME disposition type</A
+></DT
+><DT
+>4-14. <A
+HREF="x1614.htm#AEN2090"
+>Creation and display of MIME disposition
+          parameter</A
+></DT
+><DT
+>4-15. <A
+HREF="x1614.htm#AEN2177"
+>Creation and display of single fields</A
+></DT
+><DT
+>4-16. <A
+HREF="x2180.htm#AEN2203"
+>Parsing MIME content type</A
+></DT
+><DT
+>4-17. <A
+HREF="x2180.htm#AEN2227"
+>Parsing MIME description</A
+></DT
+><DT
+>4-18. <A
+HREF="x2180.htm#AEN2251"
+>parsing MIME encoding mechanism</A
+></DT
+><DT
+>4-19. <A
+HREF="x2180.htm#AEN2267"
+>parsing MIME header field</A
+></DT
+><DT
+>4-20. <A
+HREF="x2180.htm#AEN2291"
+>Parsing MIME content identifier</A
+></DT
+><DT
+>4-21. <A
+HREF="x2180.htm#AEN2307"
+>parsing MIME header fields</A
+></DT
+><DT
+>4-22. <A
+HREF="x2180.htm#AEN2331"
+>parsing MIME version</A
+></DT
+><DT
+>4-23. <A
+HREF="x2180.htm#AEN2356"
+>parsing a MIME parameter</A
+></DT
+><DT
+>4-24. <A
+HREF="x2180.htm#AEN2380"
+>Parsing the MIME content langage</A
+></DT
+><DT
+>4-25. <A
+HREF="x2180.htm#AEN2404"
+>Parsing the MIME content disposition</A
+></DT
+><DT
+>4-26. <A
+HREF="x2180.htm#AEN2427"
+>parsing a MIME content disposition type</A
+></DT
+><DT
+>4-27. <A
+HREF="x2180.htm#AEN2455"
+>decoding a MIME encoded header string</A
+></DT
+><DT
+>4-28. <A
+HREF="x2180.htm#AEN2478"
+>parsing a MIME message</A
+></DT
+><DT
+>4-29. <A
+HREF="x2180.htm#AEN2501"
+>Parsing a base64 encoded part</A
+></DT
+><DT
+>4-30. <A
+HREF="x2180.htm#AEN2524"
+>Parsing a quoted printable encoded part</A
+></DT
+><DT
+>4-31. <A
+HREF="x2180.htm#AEN2547"
+>Parsing a binary encoded part</A
+></DT
+><DT
+>4-32. <A
+HREF="x2180.htm#AEN2580"
+>Parsing a MIME encoded part</A
+></DT
+><DT
+>4-33. <A
+HREF="x2583.htm#AEN2610"
+>rendering MIME header fields</A
+></DT
+><DT
+>4-34. <A
+HREF="x2583.htm#AEN2649"
+>render base64 or quoted printable</A
+></DT
+><DT
+>4-35. <A
+HREF="x2669.htm#AEN2694"
+>creating a MIME content disposition</A
+></DT
+><DT
+>4-36. <A
+HREF="x2669.htm#AEN2713"
+>creating a MIME header fields list</A
+></DT
+><DT
+>4-37. <A
+HREF="x2669.htm#AEN2728"
+>creating new fields</A
+></DT
+><DT
+>4-38. <A
+HREF="x2669.htm#AEN2746"
+>Creating a MIME content type</A
+></DT
+><DT
+>4-39. <A
+HREF="x2669.htm#AEN2779"
+>creating MIME content</A
+></DT
+><DT
+>4-40. <A
+HREF="x2669.htm#AEN2809"
+>creating a MIME part</A
+></DT
+><DT
+>4-41. <A
+HREF="x2669.htm#AEN2837"
+>setting preamble and epilogue</A
+></DT
+><DT
+>4-42. <A
+HREF="x2669.htm#AEN2861"
+>creating a MIME part</A
+></DT
+><DT
+>4-43. <A
+HREF="x2669.htm#AEN2892"
+>modifying MIME structure</A
+></DT
+><DT
+>4-44. <A
+HREF="x2669.htm#AEN2909"
+>modifying MIME structure</A
+></DT
+><DT
+>4-45. <A
+HREF="x2669.htm#AEN2943"
+>creating MIME fields with only Content-Transfer-Encoding</A
+></DT
+><DT
+>4-46. <A
+HREF="x2946.htm#AEN2960"
+>extracting MIME encoding mechanism</A
+></DT
+><DT
+>4-47. <A
+HREF="x2946.htm#AEN2985"
+>extracting information from MIME content type</A
+></DT
+><DT
+>5-1. <A
+HREF="x3015.htm#AEN3079"
+>use of storage</A
+></DT
+><DT
+>5-2. <A
+HREF="x3082.htm#AEN3195"
+>use of folder</A
+></DT
+><DT
+>5-3. <A
+HREF="x3198.htm#AEN3469"
+>use of message</A
+></DT
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c13.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Introduction</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

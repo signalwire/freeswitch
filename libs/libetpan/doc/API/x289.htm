@@ -1,0 +1,245 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>non-buffered I/O</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Tools and datatypes"
+HREF="c16.htm"><LINK
+REL="PREVIOUS"
+TITLE="Buffered I/O"
+HREF="x229.htm"><LINK
+REL="NEXT"
+TITLE="strings"
+HREF="x312.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x229.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. Tools and datatypes</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x312.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="MAILSTREAM-LOW"
+>non-buffered I/O</A
+></H1
+><PRE
+CLASS="PROGRAMLISTING"
+>      
+#include &lt;libetpan/libetpan.h&gt;
+
+struct mailstream_low_driver {
+  ssize_t (* mailstream_read)(mailstream_low *, void *, size_t);
+  ssize_t (* mailstream_write)(mailstream_low *, void *, size_t);
+  int (* mailstream_close)(mailstream_low *);
+  int (* mailstream_get_fd)(mailstream_low *);
+  void (* mailstream_free)(mailstream_low *);
+};
+
+typedef struct mailstream_low_driver mailstream_low_driver;
+
+struct _mailstream_low {
+  void * data;
+  mailstream_low_driver * driver;
+};
+        </PRE
+><P
+>        <B
+CLASS="COMMAND"
+>mailstream_low</B
+> is a non-buffered stream.
+      </P
+><P
+>        The <B
+CLASS="COMMAND"
+>mailstream_low_driver</B
+> is a set of
+        functions used to access the stream.
+      </P
+><P
+></P
+><UL
+><LI
+><P
+>            <B
+CLASS="COMMAND"
+>mailstream_read/write/close()</B
+> is the same
+            interface as <B
+CLASS="COMMAND"
+>read/write/close()</B
+>
+            system calls, except that the file descriptor is replaced with the
+            <B
+CLASS="COMMAND"
+>mailstream_low</B
+> structure.
+          </P
+></LI
+><LI
+><P
+>            <B
+CLASS="COMMAND"
+>mailstream_get_fd()</B
+> returns the file
+            descriptor used for this non-buffered stream.
+          </P
+></LI
+><LI
+><P
+>            <B
+CLASS="COMMAND"
+>mailstream_free()</B
+> is in charge to free
+            the internal structure of the mailstream_low and the
+            mailstream_low itself.
+          </P
+></LI
+></UL
+><PRE
+CLASS="PROGRAMLISTING"
+>      
+mailstream_low * mailstream_low_new(void * data,
+    mailstream_low_driver * driver);
+      </PRE
+><P
+>        mailstream_low_new() creates a low-level mailstream with the
+        given internal structure (data) and using the given set of
+        functions (driver).
+      </P
+><PRE
+CLASS="PROGRAMLISTING"
+>      
+ssize_t mailstream_low_write(mailstream_low * s, void * buf, size_t count);
+
+ssize_t mailstream_low_read(mailstream_low * s, void * buf, size_t count);
+
+int mailstream_low_close(mailstream_low * s);
+
+int mailstream_low_get_fd(mailstream_low * s);
+
+void mailstream_low_free(mailstream_low * s);
+      </PRE
+><P
+>        Each of these calls will call the corresponding function defined
+        in the driver.
+      </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x229.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x312.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Buffered I/O</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c16.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>strings</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

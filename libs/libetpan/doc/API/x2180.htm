@@ -1,0 +1,2536 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Parser functions</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="MIME"
+HREF="c1586.htm"><LINK
+REL="PREVIOUS"
+TITLE="Data types"
+HREF="x1614.htm"><LINK
+REL="NEXT"
+TITLE="Rendering of MIME parts"
+HREF="x2583.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1614.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 4. MIME</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x2583.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN2180"
+>Parser functions</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-CONTENT-PARSE"
+>mailmime_content_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_content_parse(const char * message, size_t length,
+			   size_t * index,
+			   struct mailmime_content ** result);
+        </PRE
+><P
+>          This function will parse the content of a
+          <B
+CLASS="COMMAND"
+>Content-Type</B
+> header field.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string containing
+              the MIME content type.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-CONTENT"
+>the Section called <I
+>mailmime_content - MIME content type (Content-Type)</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2203"
+></A
+><P
+><B
+>Example 4-16. Parsing MIME content type</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+          clistiter * cur;
+        
+          for(cur = clist_begin(f-&gt;fld_list) ; cur != NULL ; cur =
+            clist_next(cur)) {
+            struct mailmime_field * mime_field;
+            struct mailimf_field * field;
+            
+            field = clist_content(cur);
+            
+            if (field-&gt;fld_type == MAILIMF_FIELD_OPTIONAL_FIELD) {
+              if (strcasecmp(field-&gt;fld_data.fld_optional_field-&gt;fld_name,
+                "Content-Type") == 0) {
+                struct mailmime_content * content_type;
+                size_t current_index;
+
+                current_index = 0;
+	        r = mailmime_content_parse(field-&gt;fld_data.fld_optional_field-&gt;fld_value,
+                  strlen(field-&gt;fld_data.fld_optional_field-&gt;fld_value),
+                  &amp;current_index, &amp;content_type);
+	        if (r == MAILIMF_NO_ERROR) {
+	          display_mime_content(content_type);
+	          /* do the things */
+	          status = EXIT_SUCCESS;
+	          mailmime_content_free(content_type);
+	        }
+              }
+            }
+          }
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-DESCRIPTION-PARSE"
+>mailmime_description_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &gt;libetpan/libetpan.h&lt;
+
+int mailmime_description_parse(const char * message, size_t length,
+			       size_t * index,
+			       char ** result);
+        </PRE
+><P
+>          This will parse the content of
+          <B
+CLASS="COMMAND"
+>Content-Description</B
+> MIME header field.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string containing
+              the MIME content description.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>.
+              The result string must be freed with
+              <B
+CLASS="COMMAND"
+>free()</B
+>.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2227"
+></A
+><P
+><B
+>Example 4-17. Parsing MIME description</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+          clistiter * cur;
+        
+          for(cur = clist_begin(f-&gt;fld_list) ; cur != NULL ; cur =
+            clist_next(cur)) {
+            struct mailmime_field * mime_field;
+            struct mailimf_field * field;
+            
+            field = clist_content(cur);
+            
+            if (field-&gt;fld_type == MAILIMF_FIELD_OPTIONAL_FIELD) {
+              if (strcasecmp(field-&gt;fld_data.fld_optional_field-&gt;fld_name,
+                "Content-Description") == 0) {
+                char * description;
+                size_t current_index;
+
+                current_index = 0;
+                r = mailmime_description_parse(field-&gt;fld_data.fld_optional_field-&gt;fld_value,
+                  strlen(field-&gt;fld_data.fld_optional_field-&gt;fld_value),
+                  &amp;current_index, &amp;description);
+	        if (r == MAILIMF_NO_ERROR) {
+	          printf("%s\n", description);
+	          /* do the things */
+	          status = EXIT_SUCCESS;
+	          free(description);
+	        }
+              }
+            }
+          }
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-ENCODING-PARSE"
+>mailmime_encoding_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &gt;libetpan/libetpan.h&lt;
+
+int mailmime_encoding_parse(const char * message, size_t length,
+			    size_t * index,
+			    struct mailmime_mechanism ** result);
+        </PRE
+><P
+>          This function will parse the content of
+          <B
+CLASS="COMMAND"
+>Content-Transfer-Encoding</B
+> header field.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string containing
+              the MIME encoding mechanism.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-MECHANISM"
+>the Section called <I
+>mailmime_mechanism - MIME transfer encoding mechanism (Content-Transfer-Encoding)</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2251"
+></A
+><P
+><B
+>Example 4-18. parsing MIME encoding mechanism</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+          clistiter * cur;
+        
+          for(cur = clist_begin(f-&gt;fld_list) ; cur != NULL ; cur =
+            clist_next(cur)) {
+            struct mailmime_field * mime_field;
+            struct mailimf_field * field;
+            
+            field = clist_content(cur);
+            
+            if (field-&gt;fld_type == MAILIMF_FIELD_OPTIONAL_FIELD) {
+              if (strcasecmp(field-&gt;fld_data.fld_optional_field-&gt;fld_name,
+                "Content-Transfer-Encoding") == 0) {
+                struct mailmime_content * encoding;
+                size_t current_index;
+
+                current_index = 0;
+                r = mailmime_encoding_parse(field-&gt;fld_data.fld_optional_field-&gt;fld_value,
+                  strlen(field-&gt;fld_data.fld_optional_field-&gt;fld_value),
+                  &amp;current_index, &amp;encoding);
+	        if (r == MAILIMF_NO_ERROR) {
+                  display_mime_mechanism(encoding);
+	          /* do the things */
+	          status = EXIT_SUCCESS;
+                  mailmime_mechanism_free(encoding);
+	        }
+              }
+            }
+          }
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-FIELD-PARSE"
+>mailmime_field_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int
+mailmime_field_parse(struct mailimf_optional_field * field,
+		     struct mailmime_field ** result);
+        </PRE
+><P
+>          This function will parse a MIME header field.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>field</B
+> is a non-parsed field
+              (see <A
+HREF="x425.htm#MAILIMF-OPTIONAL-FIELD"
+>the Section called <I
+>mailimf_optional_field - non-standard header</I
+> in Chapter 3</A
+>).
+            </P
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-FIELD"
+>the Section called <I
+>mailmime_field - MIME header field</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2267"
+></A
+><P
+><B
+>Example 4-19. parsing MIME header field</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+          clistiter * cur;
+        
+          for(cur = clist_begin(f-&gt;fld_list) ; cur != NULL ; cur =
+            clist_next(cur)) {
+            struct mailmime_field * mime_field;
+            struct mailimf_field * field;
+            
+            field = clist_content(cur);
+            
+            if (field-&gt;fld_type == MAILIMF_FIELD_OPTIONAL_FIELD) {
+              r = mailmime_field_parse(field-&gt;fld_data.fld_optional_field,
+                &amp;mime_fields);
+              if (r == MAILIMF_NO_ERROR) {
+                display_mime_field(mime_field);
+	        mailmime_field_free(mime_field);
+	        status = EXIT_SUCCESS;
+              }
+            }
+          }
+
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-ID-PARSE"
+>mailmime_id_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &gt;libetpan/libetpan.h&lt;
+
+int mailmime_id_parse(const char * message, size_t length,
+		      size_t * index, char ** result);
+        </PRE
+><P
+>          This will parse the content of
+          <B
+CLASS="COMMAND"
+>Content-ID</B
+> MIME header field.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string containing
+              the MIME content identifier.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>.
+              The result string must be freed with
+              <B
+CLASS="COMMAND"
+>free()</B
+>.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2291"
+></A
+><P
+><B
+>Example 4-20. Parsing MIME content identifier</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+          clistiter * cur;
+        
+          for(cur = clist_begin(f-&gt;fld_list) ; cur != NULL ; cur =
+            clist_next(cur)) {
+            struct mailmime_field * mime_field;
+            struct mailimf_field * field;
+            
+            field = clist_content(cur);
+            
+            if (field-&gt;fld_type == MAILIMF_FIELD_OPTIONAL_FIELD) {
+              if (strcasecmp(field-&gt;fld_data.fld_optional_field-&gt;fld_name,
+                "Content-ID") == 0) {
+                char * id;
+                size_t current_index;
+
+                current_index = 0;
+                r = mailmime_id_parse(field-&gt;fld_data.fld_optional_field-&gt;fld_value,
+                  strlen(field-&gt;fld_data.fld_optional_field-&gt;fld_value),
+                  &amp;current_index, &amp;id);
+	        if (r == MAILIMF_NO_ERROR) {
+	          printf("%s\n", id);
+	          /* do the things */
+	          status = EXIT_SUCCESS;
+	          free(id);
+	        }
+              }
+            }
+          }
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-FIELDS-PARSE"
+>mailmime_fields_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int
+mailmime_fields_parse(struct mailimf_fields * fields,
+		      struct mailmime_fields ** result);
+        </PRE
+><P
+>          This function will parse a MIME header fields.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>fields</B
+> is a list of RFC 2822 fields
+              (see <A
+HREF="x425.htm#MAILIMF-FIELDS"
+>the Section called <I
+>mailimf_fields - list of header fields</I
+> in Chapter 3</A
+>).
+            </P
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-FIELDS"
+>the Section called <I
+>mailmime_fields - header fields</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2307"
+></A
+><P
+><B
+>Example 4-21. parsing MIME header fields</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+          struct mailmime_fields * mime_fields;
+
+	  r = mailmime_fields_parse(f, &amp;mime_fields);
+          if (r == MAILIMF_NO_ERROR) {
+	    display_mime_fields(mime_fields);
+	    mailmime_fields_free(mime_fields);
+	    status = EXIT_SUCCESS;
+          }
+
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-VERSION-PARSE"
+>mailmime_version_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_version_parse(const char * message, size_t length,
+			   size_t * index,
+			   uint32_t * result);
+        </PRE
+><P
+>          This will parse the content of
+          <B
+CLASS="COMMAND"
+>MIME-Version</B
+> MIME header field.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string containing
+              the MIME version.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-FIELD"
+>the Section called <I
+>mailmime_field - MIME header field</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2331"
+></A
+><P
+><B
+>Example 4-22. parsing MIME version</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+          clistiter * cur;
+        
+          for(cur = clist_begin(f-&gt;fld_list) ; cur != NULL ; cur =
+            clist_next(cur)) {
+            struct mailmime_field * mime_field;
+            struct mailimf_field * field;
+            
+            field = clist_content(cur);
+            
+            if (field-&gt;fld_type == MAILIMF_FIELD_OPTIONAL_FIELD) {
+              if (strcasecmp(field-&gt;fld_data.fld_optional_field-&gt;fld_name,
+                "MIME-Version") == 0) {
+                uint32_t version;
+                size_t current_index;
+
+                current_index = 0;
+                r = mailmime_version_parse(field-&gt;fld_data.fld_optional_field-&gt;fld_value,
+                  strlen(field-&gt;fld_data.fld_optional_field-&gt;fld_value),
+                  &amp;current_index, &amp;version);
+	        if (r == MAILIMF_NO_ERROR) {
+	          printf("%i.%i\n", version &gt;&gt; 16, version &amp; 0xFFFF);
+	          /* do the things */
+	          status = EXIT_SUCCESS;
+	          free(description);
+	        }
+              }
+            }
+          }
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-PARAMETER-PARSE"
+>mailmime_parameter_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_parameter_parse(const char * message, size_t length,
+			     size_t * index,
+			     struct mailmime_parameter ** result);
+        </PRE
+><P
+>          This will parse a MIME parameter (parameter of
+          <B
+CLASS="COMMAND"
+>Content-Type</B
+> or parameter of
+          <B
+CLASS="COMMAND"
+>Content-Disposition</B
+>).
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string containing
+              the MIME parameter.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-PARAMETER"
+>the Section called <I
+>mailmime_parameter - MIME type parameter</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2356"
+></A
+><P
+><B
+>Example 4-23. parsing a MIME parameter</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+#define PARAM_STR "foo=bar"
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  size_t current_index;
+  struct mailmime_parameter * param;
+  int status;
+
+  status = EXIT_FAILURE;
+  
+  current_index = 0;
+  r = mailmime_parameter_parse(PARAM_STR, sizeof(PARAM_STR) - 1,
+    &amp;current_index, &amp;param);
+  if (r == MAILIMF_NO_ERROR) {
+    display_mime_parameter(param);
+    /* do the things */
+    mailmime_parameter_free(param);
+    status = EXIT_SUCCESS;
+  }
+
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-LANGUAGE-PARSE"
+>mailmime_language_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_language_parse(const char * message, size_t length,
+			    size_t * index,
+			    struct mailmime_language ** result);
+        </PRE
+><P
+>          This function will parse the content of a
+          <B
+CLASS="COMMAND"
+>Content-Language</B
+> header.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string containing
+              the MIME content language.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-LANGUAGE"
+>the Section called <I
+>mailmime_language - Language of MIME part</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2380"
+></A
+><P
+><B
+>Example 4-24. Parsing the MIME content langage</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+          clistiter * cur;
+        
+          for(cur = clist_begin(f-&gt;fld_list) ; cur != NULL ; cur =
+            clist_next(cur)) {
+            struct mailmime_field * mime_field;
+            struct mailimf_field * field;
+            
+            field = clist_content(cur);
+            
+            if (field-&gt;fld_type == MAILIMF_FIELD_OPTIONAL_FIELD) {
+              if (strcasecmp(field-&gt;fld_data.fld_optional_field-&gt;fld_name,
+                "Content-Language") == 0) {
+                struct mailmime_language * lang;
+                size_t current_index;
+
+                current_index = 0;
+                r = mailmime_id_parse(field-&gt;fld_data.fld_optional_field-&gt;fld_value,
+                  strlen(field-&gt;fld_data.fld_optional_field-&gt;fld_value),
+                  &amp;current_index, &amp;lang);
+	        if (r == MAILIMF_NO_ERROR) {
+	          display_mime_language(lang);
+	          /* do the things */
+	          status = EXIT_SUCCESS;
+	          free(id);
+	        }
+              }
+            }
+          }
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-DISPOSITION-PARSE"
+>mailmime_disposition_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_disposition_parse(const char * message, size_t length,
+			       size_t * index,
+			       struct mailmime_disposition ** result);
+        </PRE
+><P
+>          This function will parse the content of a
+          <B
+CLASS="COMMAND"
+>Content-Disposition</B
+> MIME header field.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string containing
+              the MIME content disposition.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-DISPOSITION"
+>the Section called <I
+>mailmime_disposition - MIME disposition information (Content-Disposition)</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2404"
+></A
+><P
+><B
+>Example 4-25. Parsing the MIME content disposition</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailimf_fields_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;f);
+	if (r == MAILIMF_NO_ERROR) {
+          clistiter * cur;
+        
+          for(cur = clist_begin(f-&gt;fld_list) ; cur != NULL ; cur =
+            clist_next(cur)) {
+            struct mailmime_field * mime_field;
+            struct mailimf_field * field;
+            
+            field = clist_content(cur);
+            
+            if (field-&gt;fld_type == MAILIMF_FIELD_OPTIONAL_FIELD) {
+              if (strcasecmp(field-&gt;fld_data.fld_optional_field-&gt;fld_name,
+                "Content-Disposition") == 0) {
+                struct mailmime_disposition * dsp;
+                size_t current_index;
+
+                current_index = 0;
+                r = mailmime_id_parse(field-&gt;fld_data.fld_optional_field-&gt;fld_value,
+                  strlen(field-&gt;fld_data.fld_optional_field-&gt;fld_value),
+                  &amp;current_index, &amp;dsp);
+	        if (r == MAILIMF_NO_ERROR) {
+	          display_mime_disposition(dsp);
+	          /* do the things */
+	          status = EXIT_SUCCESS;
+	          free(id);
+	        }
+              }
+            }
+          }
+	  mailimf_fields_free(f);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-DISPOSITION-TYPE-PARSE"
+>mailmime_disposition_type_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int
+mailmime_disposition_type_parse(const char * message, size_t length,
+				size_t * index,
+				struct mailmime_disposition_type **
+                                result);
+        </PRE
+><P
+>          This function will parse the type of MIME content
+          disposition.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string containing
+              the MIME content disposition type.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-DISPOSITION-TYPE"
+>the Section called <I
+>mailmime_disposition_type - Type of MIME disposition</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2427"
+></A
+><P
+><B
+>Example 4-26. parsing a MIME content disposition type</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+#define DSP_TYPE_STR "attachment"
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  size_t current_index;
+  struct mailmime_disposition_type * dsp_type;
+  int status;
+  
+  status = EXIT_FAILURE;
+  
+  current_index = 0;
+  r = mailmime_disposition_type_parse(DSP_TYPE_STR, sizeof(DSP_TYPE_STR) - 1,
+    &amp;current_index, &amp;dsp_type);
+  if (r == MAILIMF_NO_ERROR) {
+    display_mime_disposition_type(dsp_type);
+    /* do the things */
+    mailmime_disposition_type_free(dsp_type);
+    status = EXIT_SUCCESS;
+  }
+
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-ENCODED-PHRASE-PARSE"
+>mailmime_encoded_phrase_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_encoded_phrase_parse(const char * default_fromcode,
+    const char * message, size_t length,
+    size_t * index, const char * tocode,
+    char ** result);
+        </PRE
+><P
+>          This function will decode a MIME encoded header string,
+          encoded with RFC 2047.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>default_fromcode</B
+> is the default
+              code to use for parts of string that are not marked
+              with charset.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is the string to decode.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>tocode</B
+> is the destination charset
+              for decoding.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2455"
+></A
+><P
+><B
+>Example 4-27. decoding a MIME encoded header string</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+#define TEST_STRING "=?iso-8859-1?ab?= =?iso-8859-15?cd?="
+
+int main(int argc, char ** argv)
+{
+  size_t cur_token;
+  char * decoded_subject;
+
+  cur_token = 0;
+  mailmime_encoded_phrase_parse("iso-8859-1",
+    TEST_STRING, sizeof(TEST_STRING),
+    &amp;cur_token, "iso-8859-1", &amp;decoded_subject);
+
+  printf("%s\n", decoded_subject);
+  
+  /* do the things */
+
+  free(decoded_subject);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-PARSE"
+>mailmime_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_parse(const char * message, size_t length,
+		   size_t * index, struct mailmime ** result);
+        </PRE
+><P
+>          This will parse a MIME message.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string containing
+              the MIME message.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME"
+>the Section called <I
+>mailmime - MIME part</I
+></A
+>).
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2478"
+></A
+><P
+><B
+>Example 4-28. parsing a MIME message</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailmime * mime;
+	size_t current_index;
+	
+	current_index = 0;
+	r = mailmime_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;mime);
+	if (r == MAILIMF_NO_ERROR) {
+	    display_mime(mime);
+	  /* do the things */
+	  status = EXIT_SUCCESS;
+	  mailmime_free(mime);
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-BASE64-BODY-PARSE"
+>mailmime_base64_body_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_base64_body_parse(const char * message, size_t length,
+			       size_t * index, char ** result,
+			       size_t * result_len);
+        </PRE
+><P
+>          This function will parse a body part encoded using base64.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string encoded using
+              base64.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              The result must be freed with
+              <B
+CLASS="COMMAND"
+>mmap_string_unref()</B
+>.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2501"
+></A
+><P
+><B
+>Example 4-29. Parsing a base64 encoded part</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	char * result;
+	size_t result_len;
+	
+	current_index = 0;
+	r = mailmime_base64_body_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;result, &amp;result_len);
+	if (r == MAILIMF_NO_ERROR) {
+	  
+	  /* do the things */
+	  
+	  mailmime_decoded_part_free(mem);
+	  status = EXIT_SUCCESS;
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-QUOTED-PRINTABLE-BODY-PARSE"
+>mailmime_quoted_printable_body_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_quoted_printable_body_parse(const char * message, size_t length,
+					 size_t * index, char ** result,
+					 size_t * result_len, int in_header);
+        </PRE
+><P
+>          This function will parse a body part encoded using quoted
+          printable.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string encoded using
+              quoted printable.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              The result must be freed with
+              <B
+CLASS="COMMAND"
+>mmap_string_unref()</B
+>.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2524"
+></A
+><P
+><B
+>Example 4-30. Parsing a quoted printable encoded part</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	char * result;
+	size_t result_len;
+	
+	current_index = 0;
+	r = mailmime_quoted_printable_body_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;result, &amp;result_len);
+	if (r == MAILIMF_NO_ERROR) {
+	  
+	  /* do the things */
+	  
+	  mailmime_decoded_part_free(mem);
+	  status = EXIT_SUCCESS;
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-BINARY-BODY-PARSE"
+>mailmime_binary_body_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailmime_binary_body_parse(const char * message, size_t length,
+			       size_t * index, char ** result,
+			       size_t * result_len);
+        </PRE
+><P
+>          This function will parse a body part encoded using binary
+          (no encoding).
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string encoded using
+              binary.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              The result must be freed with
+              <B
+CLASS="COMMAND"
+>mmap_string_unref()</B
+>.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2547"
+></A
+><P
+><B
+>Example 4-31. Parsing a binary encoded part</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	char * result;
+	size_t result_len;
+	
+	current_index = 0;
+	r = mailmime_binary_body_parse(mem, stat_info.st_size,
+          &amp;current_index, &amp;result, &amp;result_len);
+	if (r == MAILIMF_NO_ERROR) {
+	  
+	  /* do the things */
+	  
+	  mailmime_decoded_part_free(mem);
+	  status = EXIT_SUCCESS;
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILMIME-PART-PARSE"
+>mailmime_part_parse</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+enum {
+  MAILMIME_MECHANISM_ERROR,
+  MAILMIME_MECHANISM_7BIT,
+  MAILMIME_MECHANISM_8BIT,
+  MAILMIME_MECHANISM_BINARY,
+  MAILMIME_MECHANISM_QUOTED_PRINTABLE,
+  MAILMIME_MECHANISM_BASE64,
+  MAILMIME_MECHANISM_TOKEN
+};
+
+int mailmime_part_parse(const char * message, size_t length,
+			size_t * index,
+			int encoding, char ** result, size_t * result_len);
+        </PRE
+><P
+>          This function will parse a body part encoded using a
+          given MIME encoding mechanism.
+        </P
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>message</B
+> is a string encoded using
+              binary.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>length</B
+> is the size of the given
+              string.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>index</B
+> is a pointer to the start of
+              the address in the given string, <B
+CLASS="COMMAND"
+>(*
+              index)</B
+> is modified to point at the end of the
+              parsed data.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>encoding</B
+> is a MIME encoding
+              mechanism. The value can be
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_7BIT</B
+>,
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_8BIT</B
+>,
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_BINARY</B
+>,
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_QUOTED_PRINTABLE</B
+>,
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_BASE64</B
+> or
+              <B
+CLASS="COMMAND"
+>MAILMIME_MECHANISM_TOKEN</B
+>
+              (see <A
+HREF="x1614.htm#MAILMIME-MECHANISM"
+>the Section called <I
+>mailmime_mechanism - MIME transfer encoding mechanism (Content-Transfer-Encoding)</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>result</B
+>. The result of the parse
+              operation is stored in <B
+CLASS="COMMAND"
+>(* result)</B
+>
+              The result must be freed with
+              <B
+CLASS="COMMAND"
+>mmap_string_unref()</B
+>.
+            </P
+></LI
+></UL
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN2580"
+></A
+><P
+><B
+>Example 4-32. Parsing a MIME encoded part</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;sys/mman.h&gt;
+
+int main(int argc, char ** argv)
+{
+  int fd;
+  int r;
+  
+  status = EXIT_FAILURE;
+  
+  fd = open("message.rfc2822", O_RDONLY);
+  if (fd &gt;= 0) {
+    void * mem;
+    struct stat stat_info;
+    
+    r = fstat(fd, &amp;stat_info);
+    if (r &gt;= 0) {
+      mem = mmap(NULL, stat_info.st_size, PROT_READ, MAP_PRIVATE);
+      if (mem != MAP_FAILED) {
+        struct mailimf_fields * f;
+	size_t current_index;
+	char * result;
+	size_t result_len;
+	
+	current_index = 0;
+	r = mailmime_part_parse(mem, stat_info.st_size, &amp;current_index,
+	  MAILMIME_MECHANISM_QUOTED_PRINTABLE, &amp;result, &amp;result_len);
+	if (r == MAILIMF_NO_ERROR) {
+	  
+	  /* do the things */
+	  
+	  mailmime_decoded_part_free(mem);
+	  status = EXIT_SUCCESS;
+	}
+      }
+      munmap(mem, stat_info.st_size);
+    }
+    
+    close(fd);
+  }
+  
+  exit(status);
+}
+          </PRE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1614.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x2583.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Data types</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c1586.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Rendering of MIME parts</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

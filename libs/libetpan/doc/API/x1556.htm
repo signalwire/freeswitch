@@ -1,0 +1,295 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Rendering of messages</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Internet Message Format"
+HREF="c385.htm"><LINK
+REL="PREVIOUS"
+TITLE="Creation functions"
+HREF="x1381.htm"><LINK
+REL="NEXT"
+TITLE="MIME"
+HREF="c1586.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x1381.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 3. Internet Message Format</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c1586.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN1556"
+>Rendering of messages</A
+></H1
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MAILIMF-FIELDS-WRITE"
+>Header fields</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>#include &lt;libetpan/libetpan.h&gt;
+
+int mailimf_fields_write(FILE * f, int * col,
+    struct mailimf_fields * fields);
+
+int mailimf_envelope_fields_write(FILE * f, int * col,
+    struct mailimf_fields * fields);
+
+int mailimf_field_write(FILE * f, int * col,
+    struct mailimf_field * field);
+        </PRE
+><P
+></P
+><UL
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>col</B
+> current column is given for wrapping
+              purpose in <B
+CLASS="COMMAND"
+>(* col)</B
+>,
+              the resulting columns will be returned..
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>f</B
+> is the file descriptor. It can be
+              stdout for example.
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>fields</B
+> is the header fields
+              (see <A
+HREF="x425.htm#MAILIMF-FIELDS"
+>the Section called <I
+>mailimf_fields - list of header fields</I
+></A
+>).
+            </P
+></LI
+><LI
+><P
+>              <B
+CLASS="COMMAND"
+>field</B
+> is a field
+              (see <A
+HREF="x425.htm#MAILIMF-FIELD"
+>the Section called <I
+>mailimf_field - header field</I
+></A
+>).
+            </P
+></LI
+></UL
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_fields_write</B
+> outputs the set of
+          header fields.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_envelope_fields_write</B
+> outputs the
+          set of header fields except the optional fields.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mailimf_field_write</B
+> outputs a header.
+        </P
+><DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1583"
+></A
+><P
+><B
+>Example 3-46. rendering of fields</B
+></P
+><PRE
+CLASS="PROGRAMLISTING"
+>int main(int argc, char ** argv)
+{
+  struct mailimf_fields * fields;
+  int col;
+
+  /* look at the example in mailimf_fields to see how to
+     build a mailimf_fields */
+  fields = build_imf_fields();
+
+  col = 0;
+  mailimf_fields_write(stdout, &amp;col, fields);
+
+  mailimf_fields_free(fields);
+}
+
+int main(int argc, char ** argv)
+{
+  struct mailimf_fields * fields;
+  int col;
+
+  /* look at the example in mailimf_fields to see how to
+     build a mailimf_fields */
+  fields = build_imf_fields();
+
+  col = 0;
+  mailimf_envelope_fields_write(stdout, &amp;col, fields);
+
+  mailimf_fields_free(fields);
+}
+
+int main(int argc, char ** argv)
+{
+  struct mailimf_field * field;
+  int col;
+
+  field = mailimf_field_new_custom(strdup("X-Mailer"), strdup("my mailer"));
+
+  col = 0;
+  mailimf_field_write(stdout, &amp;col, field);
+
+  mailimf_field_free(field);
+}
+          </PRE
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x1381.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c1586.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Creation functions</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c385.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>MIME</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,477 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>strings</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="libEtPan! API"
+HREF="book1.htm"><LINK
+REL="UP"
+TITLE="Tools and datatypes"
+HREF="c16.htm"><LINK
+REL="PREVIOUS"
+TITLE="non-buffered I/O"
+HREF="x289.htm"><LINK
+REL="NEXT"
+TITLE="Internet Message Format"
+HREF="c385.htm"></HEAD
+><BODY
+CLASS="SECT1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>libEtPan! API</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x289.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. Tools and datatypes</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c385.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="AEN312"
+>strings</A
+></H1
+><PRE
+CLASS="PROGRAMLISTING"
+>      
+#include &lt;libetpan/libetpan.h&gt;
+
+struct _MMAPString
+{
+  char * str;
+  size_t len;    
+  size_t allocated_len;
+  int fd;
+  size_t mmapped_size;
+};
+
+typedef struct _MMAPString MMAPString;
+      </PRE
+><P
+>        MMAPString is a string which size that can increase automatically.
+      </P
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MMAP-STRING-NEW"
+>constructor and destructor</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>MMAPString * mmap_string_new(const char * init);
+
+MMAPString * mmap_string_new_len(const char * init, size_t len);   
+
+MMAPString * mmap_string_sized_new(size_t dfl_size);
+
+void mmap_string_free(MMAPString * string);
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_new()</B
+> allocates a new
+          string. init is the intial value of the string.
+          <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_new_len()</B
+> allocates a new
+          string. init is the intial value of the 
+          string, len is the length of the initial string.
+          <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_sized_new()</B
+> allocates a new
+          string. dfl_size is the initial allocation of 
+          the string. <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_free()</B
+> release the memory used
+          by the string.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MMAP-STRING-ASSIGN"
+>string value modification</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>MMAPString * mmap_string_assign(MMAPString * string, const char * rval);
+
+MMAPString * mmap_string_truncate(MMAPString *string, size_t len);    
+        </PRE
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_assign()</B
+> sets a new value for
+          the given string.
+          <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_truncate()</B
+> sets a length for
+          the string.
+          <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+        </P
+><PRE
+CLASS="PROGRAMLISTING"
+>MMAPString * mmap_string_set_size (MMAPString * string, size_t len);
+        </PRE
+><P
+>          sets the allocation of the string.
+          <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MMAP-STRING-APPEND"
+>insertion in string, deletion in string</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>MMAPString * mmap_string_insert_len(MMAPString * string, size_t pos,   
+    const char * val, size_t len);  
+
+MMAPString * mmap_string_append(MMAPString * string, const char * val);
+
+MMAPString * mmap_string_append_len(MMAPString * string,
+  const char * val, size_t len);  
+
+MMAPString * mmap_string_append_c(MMAPString * string, char c);
+
+MMAPString * mmap_string_prepend(MMAPString * string, const char * val);
+
+MMAPString * mmap_string_prepend_c(MMAPString * string, char c);
+
+MMAPString * mmap_string_prepend_len(MMAPString * string, const char * val,
+  size_t len);  
+
+MMAPString * mmap_string_insert(MMAPString * string, size_t pos,
+  const char * val);
+
+MMAPString * mmap_string_insert_c(MMAPString *string, size_t pos,
+  char c);
+
+MMAPString * mmap_string_erase(MMAPString * string, size_t pos,    
+  size_t len);
+        </PRE
+><P
+>          For complexity here, n is the size of the given MMAPString,
+          and len is the size of the string to insert.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_insert_len()</B
+> inserts the given
+          string value of given length in the string at the given
+          position. <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+          Complexity is O(n + len).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_append()</B
+> appends the given
+          string value at the end of the string.
+          <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+          Complexity is O(len).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_append_len()</B
+> appends the
+          given string value of given length at the end of the
+          string. <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+          Complexity is O(len).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_append_c()</B
+> appends the given
+          character at the end of the string.
+          <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+          Complexity is O(1).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_prepend()</B
+> insert the given
+          string value at the beginning of the string.
+          <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+          Complexity is O(n + len).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_prepend_c()</B
+> insert the given
+          character at the beginning of the string.
+          <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+          Complexity is O(n).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_prepend_len()</B
+> insert the given
+          string value of given length at the beginning of the string.
+          <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+          Complexity is O(n + len).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_insert()</B
+> inserts the given
+          string value in the string at the given position.
+          NULL will be returned on error.
+          Complexity is O(n + len).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_insert_c()</B
+> inserts the given
+          character in the string at the given position.
+          NULL will be returned on error.
+          Complexity is O(n).
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_erase()</B
+> removes the given
+          count of characters (len) at the given position of the
+          string. <B
+CLASS="COMMAND"
+>NULL</B
+> will be returned on error.
+          Complexity is O(n).
+        </P
+></DIV
+><DIV
+CLASS="SECT2"
+><H2
+CLASS="SECT2"
+><A
+NAME="MMAP-STRING-REF"
+>referencing string</A
+></H2
+><PRE
+CLASS="PROGRAMLISTING"
+>int mmap_string_ref(MMAPString * string);
+
+int mmap_string_unref(char * str);
+        </PRE
+><P
+>          MMAPString provides a mechanism that let you use MMAPString
+          like normal strings. You have first to use
+          <B
+CLASS="COMMAND"
+>mmap_string_ref()</B
+>, so that you notify
+          that the string will be used as a normal string, then, you
+          use <B
+CLASS="COMMAND"
+>mmapstr-&gt;str</B
+> to refer to the
+          string. When you have finished and you want to free a string
+          corresponding to a <B
+CLASS="COMMAND"
+>MMAPString</B
+>, you will
+          use <B
+CLASS="COMMAND"
+>mmap_string_unref</B
+>.
+        </P
+><P
+>          <B
+CLASS="COMMAND"
+>mmap_string_ref()</B
+> references the string
+          so that the array of characters can be used as a normal
+          string then released with
+          <B
+CLASS="COMMAND"
+>mmap_string_unref()</B
+>.
+          The array of characters will be obtained with string-&gt;str.
+          returns -1 on error, 0 on success.
+        </P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x289.htm"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="book1.htm"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c385.htm"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>non-buffered I/O</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c16.htm"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Internet Message Format</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

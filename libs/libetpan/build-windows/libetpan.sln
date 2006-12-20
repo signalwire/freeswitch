@@ -1,0 +1,38 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libetpan", "libetpan\libetpan.vcproj", "{BA4DED3C-E56F-4484-BFC3-9C13E461A1BE}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "readmsg", "readmsg\readmsg.vcproj", "{5FEA913A-5CE4-4DEB-B6BE-B8EA1BF6F653}"
+	ProjectSection(ProjectDependencies) = postProject
+		{BA4DED3C-E56F-4484-BFC3-9C13E461A1BE} = {BA4DED3C-E56F-4484-BFC3-9C13E461A1BE}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "smtpsend", "smtpsend\smtpsend.vcproj", "{FF9F45C9-74A0-4B4E-99E9-6ADE0EB6D8AC}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{BA4DED3C-E56F-4484-BFC3-9C13E461A1BE}.Debug.ActiveCfg = Debug|Win32
+		{BA4DED3C-E56F-4484-BFC3-9C13E461A1BE}.Debug.Build.0 = Debug|Win32
+		{BA4DED3C-E56F-4484-BFC3-9C13E461A1BE}.Release.ActiveCfg = Release|Win32
+		{BA4DED3C-E56F-4484-BFC3-9C13E461A1BE}.Release.Build.0 = Release|Win32
+		{5FEA913A-5CE4-4DEB-B6BE-B8EA1BF6F653}.Debug.ActiveCfg = Debug|Win32
+		{5FEA913A-5CE4-4DEB-B6BE-B8EA1BF6F653}.Debug.Build.0 = Debug|Win32
+		{5FEA913A-5CE4-4DEB-B6BE-B8EA1BF6F653}.Release.ActiveCfg = Release|Win32
+		{5FEA913A-5CE4-4DEB-B6BE-B8EA1BF6F653}.Release.Build.0 = Release|Win32
+		{FF9F45C9-74A0-4B4E-99E9-6ADE0EB6D8AC}.Debug.ActiveCfg = Debug|Win32
+		{FF9F45C9-74A0-4B4E-99E9-6ADE0EB6D8AC}.Debug.Build.0 = Debug|Win32
+		{FF9F45C9-74A0-4B4E-99E9-6ADE0EB6D8AC}.Release.ActiveCfg = Release|Win32
+		{FF9F45C9-74A0-4B4E-99E9-6ADE0EB6D8AC}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

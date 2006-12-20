@@ -1,0 +1,9 @@
+- get_message_list() will disconnect and reconnect POP3 box
+- add UID to non-cached drivers, help clients to recognize messages
+- move IMAP UID cache to non-cached driver
+- fix message size (put it in cache)
+- XXX : fetch body in nntp do not use generic_fetch_body
+- add flags prototype to add or remove flags
+- cache bodystructures
+- search is not implemented
+- list of folder new implementation
