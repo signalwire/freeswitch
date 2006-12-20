@@ -6,7 +6,10 @@
 extern "C" {
 #endif
 
+#ifndef _MSC_VER
 #include <inttypes.h>
+#endif
+
 #include "mailimap_types.h"
 
 enum {

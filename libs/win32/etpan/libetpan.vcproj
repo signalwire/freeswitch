@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				InlineFunctionExpansion="0"
-				AdditionalIncludeDirectories="../../libetpan-0.46/build-windows/include;../../libetpan-0.46/build-windows/include/libetpan"
+				AdditionalIncludeDirectories="../../libetpan/build-windows/include;../../libetpan/build-windows/include/libetpan"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBETPAN_DLL;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -52,7 +52,7 @@
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="4"
 				CompileAs="1"
-				ForcedIncludeFiles="$(ProjectDir)../../libetpan-0.46/build-windows/StdAfx.h"
+				ForcedIncludeFiles="$(ProjectDir)../../libetpan/build-windows/StdAfx.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -129,7 +129,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../../libetpan-0.46/build-windows/include;../../libetpan-0.46/build-windows/include/libetpan"
+				AdditionalIncludeDirectories="../../libetpan/build-windows/include;../../libetpan/build-windows/include/libetpan"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBETPAN_DLL;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -137,7 +137,7 @@
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="0"
 				CompileAs="1"
-				ForcedIncludeFiles="$(ProjectDir)../../libetpan-0.46/build-windows/StdAfx.h"
+				ForcedIncludeFiles="$(ProjectDir)../../libetpan/build-windows/StdAfx.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -197,14 +197,14 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\build_headers.list"
+				RelativePath="..\..\libetpan\build-windows\build_headers.list"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="cd ..\..\libetpan-0.46\build-windows&#x0D;&#x0A;build_headers.bat&#x0D;&#x0A;"
+						CommandLine="cd ..\..\libetpan\build-windows&#x0D;&#x0A;build_headers.bat&#x0D;&#x0A;"
 						Outputs="$(InputDir)\_headers_depends"
 					/>
 				</FileConfiguration>
@@ -213,7 +213,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="cd ..\..\libetpan-0.46\build-windows&#x0D;&#x0A;build_headers.bat&#x0D;&#x0A;"
+						CommandLine="cd ..\..\libetpan\build-windows&#x0D;&#x0A;build_headers.bat&#x0D;&#x0A;"
 						Outputs="$(InputDir)\_headers_depends"
 					/>
 				</FileConfiguration>
@@ -222,7 +222,7 @@
 				Name="engine"
 				>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\engine\mailengine.c"
+					RelativePath="..\..\libetpan\src\engine\mailengine.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -242,7 +242,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\engine\mailprivacy.c"
+					RelativePath="..\..\libetpan\src\engine\mailprivacy.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -262,7 +262,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\engine\mailprivacy_gnupg.c"
+					RelativePath="..\..\libetpan\src\engine\mailprivacy_gnupg.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -282,7 +282,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\engine\mailprivacy_smime.c"
+					RelativePath="..\..\libetpan\src\engine\mailprivacy_smime.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -302,7 +302,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\engine\mailprivacy_tools.c"
+					RelativePath="..\..\libetpan\src\engine\mailprivacy_tools.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -326,83 +326,43 @@
 				Name="datatypes"
 				>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\base64.c"
+					RelativePath="..\..\libetpan\src\data-types\base64.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\carray.c"
+					RelativePath="..\..\libetpan\src\data-types\carray.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\charconv.c"
+					RelativePath="..\..\libetpan\src\data-types\charconv.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\chash.c"
+					RelativePath="..\..\libetpan\src\data-types\chash.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\cinthash.c"
+					RelativePath="..\..\libetpan\src\data-types\cinthash.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\clist.c"
+					RelativePath="..\..\libetpan\src\data-types\clist.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\connect.c"
+					RelativePath="..\..\libetpan\src\data-types\connect.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\mail_cache_db.c"
+					RelativePath="..\..\libetpan\src\data-types\mail_cache_db.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\maillock.c"
+					RelativePath="..\..\libetpan\src\data-types\maillock.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\mailsem.c"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\mailstream.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\mailstream_helper.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\mailstream_low.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\mailstream_socket.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\mailstream_ssl.c"
-					>
-				</File>
-				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\mapping.c"
+					RelativePath="..\..\libetpan\src\data-types\mailsem.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -422,11 +382,51 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\md5.c"
+					RelativePath="..\..\libetpan\src\data-types\mailstream.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\data-types\mmapstring.c"
+					RelativePath="..\..\libetpan\src\data-types\mailstream_helper.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\libetpan\src\data-types\mailstream_low.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\libetpan\src\data-types\mailstream_socket.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\libetpan\src\data-types\mailstream_ssl.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\libetpan\src\data-types\mapping.c"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						ExcludedFromBuild="true"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\libetpan\src\data-types\md5.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\libetpan\src\data-types\mmapstring.c"
 					>
 				</File>
 			</Filter>
@@ -437,79 +437,95 @@
 					Name="imap"
 					>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\acl.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\acl.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\acl_parser.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\acl_parser.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\acl_sender.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\acl_sender.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\acl_types.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\acl_types.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\annotatemore.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\annotatemore.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\annotatemore_parser.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\annotatemore_parser.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\annotatemore_sender.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\annotatemore_sender.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\annotatemore_types.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\annotatemore_types.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\mailimap.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\mailimap.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\mailimap_extension.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\mailimap_extension.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\mailimap_helper.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\mailimap_helper.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\mailimap_keywords.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\mailimap_keywords.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\mailimap_parser.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\mailimap_parser.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\mailimap_print.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\mailimap_print.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\mailimap_sender.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\mailimap_sender.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\mailimap_socket.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\mailimap_socket.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\mailimap_ssl.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\mailimap_ssl.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\mailimap_types.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\mailimap_types.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imap\mailimap_types_helper.c"
+						RelativePath="..\..\libetpan\src\low-level\imap\mailimap_types_helper.c"
+						>
+					</File>
+					<File
+						RelativePath="..\..\libetpan\src\low-level\imap\uidplus.c"
+						>
+					</File>
+					<File
+						RelativePath="..\..\libetpan\src\low-level\imap\uidplus_parser.c"
+						>
+					</File>
+					<File
+						RelativePath="..\..\libetpan\src\low-level\imap\uidplus_sender.c"
+						>
+					</File>
+					<File
+						RelativePath="..\..\libetpan\src\low-level\imap\uidplus_types.c"
 						>
 					</File>
 				</Filter>
@@ -517,19 +533,19 @@
 					Name="pop3"
 					>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\pop3\mailpop3.c"
+						RelativePath="..\..\libetpan\src\low-level\pop3\mailpop3.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\pop3\mailpop3_helper.c"
+						RelativePath="..\..\libetpan\src\low-level\pop3\mailpop3_helper.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\pop3\mailpop3_socket.c"
+						RelativePath="..\..\libetpan\src\low-level\pop3\mailpop3_socket.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\pop3\mailpop3_ssl.c"
+						RelativePath="..\..\libetpan\src\low-level\pop3\mailpop3_ssl.c"
 						>
 					</File>
 				</Filter>
@@ -537,31 +553,31 @@
 					Name="mime"
 					>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mime\mailmime.c"
+						RelativePath="..\..\libetpan\src\low-level\mime\mailmime.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mime\mailmime_content.c"
+						RelativePath="..\..\libetpan\src\low-level\mime\mailmime_content.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mime\mailmime_decode.c"
+						RelativePath="..\..\libetpan\src\low-level\mime\mailmime_decode.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mime\mailmime_disposition.c"
+						RelativePath="..\..\libetpan\src\low-level\mime\mailmime_disposition.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mime\mailmime_types.c"
+						RelativePath="..\..\libetpan\src\low-level\mime\mailmime_types.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mime\mailmime_types_helper.c"
+						RelativePath="..\..\libetpan\src\low-level\mime\mailmime_types_helper.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mime\mailmime_write.c"
+						RelativePath="..\..\libetpan\src\low-level\mime\mailmime_write.c"
 						>
 						<FileConfiguration
 							Name="Debug|Win32"
@@ -581,15 +597,15 @@
 						</FileConfiguration>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mime\mailmime_write_file.c"
+						RelativePath="..\..\libetpan\src\low-level\mime\mailmime_write_file.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mime\mailmime_write_generic.c"
+						RelativePath="..\..\libetpan\src\low-level\mime\mailmime_write_generic.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mime\mailmime_write_mem.c"
+						RelativePath="..\..\libetpan\src\low-level\mime\mailmime_write_mem.c"
 						>
 					</File>
 				</Filter>
@@ -597,19 +613,19 @@
 					Name="imf"
 					>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imf\mailimf.c"
+						RelativePath="..\..\libetpan\src\low-level\imf\mailimf.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imf\mailimf_types.c"
+						RelativePath="..\..\libetpan\src\low-level\imf\mailimf_types.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imf\mailimf_types_helper.c"
+						RelativePath="..\..\libetpan\src\low-level\imf\mailimf_types_helper.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imf\mailimf_write.c"
+						RelativePath="..\..\libetpan\src\low-level\imf\mailimf_write.c"
 						>
 						<FileConfiguration
 							Name="Debug|Win32"
@@ -629,15 +645,15 @@
 						</FileConfiguration>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imf\mailimf_write_file.c"
+						RelativePath="..\..\libetpan\src\low-level\imf\mailimf_write_file.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imf\mailimf_write_generic.c"
+						RelativePath="..\..\libetpan\src\low-level\imf\mailimf_write_generic.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\imf\mailimf_write_mem.c"
+						RelativePath="..\..\libetpan\src\low-level\imf\mailimf_write_mem.c"
 						>
 					</File>
 				</Filter>
@@ -645,7 +661,7 @@
 					Name="maildir"
 					>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\maildir\maildir.c"
+						RelativePath="..\..\libetpan\src\low-level\maildir\maildir.c"
 						>
 					</File>
 				</Filter>
@@ -653,15 +669,15 @@
 					Name="mbox"
 					>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mbox\mailmbox.c"
+						RelativePath="..\..\libetpan\src\low-level\mbox\mailmbox.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mbox\mailmbox_parse.c"
+						RelativePath="..\..\libetpan\src\low-level\mbox\mailmbox_parse.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mbox\mailmbox_types.c"
+						RelativePath="..\..\libetpan\src\low-level\mbox\mailmbox_types.c"
 						>
 					</File>
 				</Filter>
@@ -669,7 +685,7 @@
 					Name="mh"
 					>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\mh\mailmh.c"
+						RelativePath="..\..\libetpan\src\low-level\mh\mailmh.c"
 						>
 					</File>
 				</Filter>
@@ -677,15 +693,15 @@
 					Name="nntp"
 					>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\nntp\newsnntp.c"
+						RelativePath="..\..\libetpan\src\low-level\nntp\newsnntp.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\nntp\newsnntp_socket.c"
+						RelativePath="..\..\libetpan\src\low-level\nntp\newsnntp_socket.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\nntp\newsnntp_ssl.c"
+						RelativePath="..\..\libetpan\src\low-level\nntp\newsnntp_ssl.c"
 						>
 					</File>
 				</Filter>
@@ -693,19 +709,19 @@
 					Name="smtp"
 					>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\smtp\mailsmtp.c"
+						RelativePath="..\..\libetpan\src\low-level\smtp\mailsmtp.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\smtp\mailsmtp_helper.c"
+						RelativePath="..\..\libetpan\src\low-level\smtp\mailsmtp_helper.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\smtp\mailsmtp_socket.c"
+						RelativePath="..\..\libetpan\src\low-level\smtp\mailsmtp_socket.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\low-level\smtp\mailsmtp_ssl.c"
+						RelativePath="..\..\libetpan\src\low-level\smtp\mailsmtp_ssl.c"
 						>
 					</File>
 				</Filter>
@@ -717,43 +733,43 @@
 					Name="interface"
 					>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\interface\maildriver.c"
+						RelativePath="..\..\libetpan\src\driver\interface\maildriver.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\interface\maildriver_tools.c"
+						RelativePath="..\..\libetpan\src\driver\interface\maildriver_tools.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\interface\maildriver_types.c"
+						RelativePath="..\..\libetpan\src\driver\interface\maildriver_types.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\interface\maildriver_types_helper.c"
+						RelativePath="..\..\libetpan\src\driver\interface\maildriver_types_helper.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\interface\mailfolder.c"
+						RelativePath="..\..\libetpan\src\driver\interface\mailfolder.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\interface\mailmessage.c"
+						RelativePath="..\..\libetpan\src\driver\interface\mailmessage.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\interface\mailmessage_tools.c"
+						RelativePath="..\..\libetpan\src\driver\interface\mailmessage_tools.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\interface\mailmessage_types.c"
+						RelativePath="..\..\libetpan\src\driver\interface\mailmessage_types.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\interface\mailstorage.c"
+						RelativePath="..\..\libetpan\src\driver\interface\mailstorage.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\interface\mailstorage_tools.c"
+						RelativePath="..\..\libetpan\src\driver\interface\mailstorage_tools.c"
 						>
 					</File>
 				</Filter>
@@ -764,7 +780,7 @@
 						Name="data-message"
 						>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\data-message\data_message_driver.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\data-message\data_message_driver.c"
 							>
 						</File>
 					</Filter>
@@ -772,7 +788,7 @@
 						Name="db"
 						>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\db\dbdriver.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\db\dbdriver.c"
 							>
 							<FileConfiguration
 								Name="Debug|Win32"
@@ -792,7 +808,7 @@
 							</FileConfiguration>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\db\dbdriver_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\db\dbdriver_message.c"
 							>
 							<FileConfiguration
 								Name="Debug|Win32"
@@ -812,7 +828,7 @@
 							</FileConfiguration>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\db\dbstorage.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\db\dbstorage.c"
 							>
 							<FileConfiguration
 								Name="Debug|Win32"
@@ -836,7 +852,7 @@
 						Name="hotmail"
 						>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\hotmail\hotmailstorage.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\hotmail\hotmailstorage.c"
 							>
 						</File>
 					</Filter>
@@ -844,27 +860,27 @@
 						Name="imap"
 						>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\imap\imapdriver.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\imap\imapdriver.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\imap\imapdriver_cached.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\imap\imapdriver_cached.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\imap\imapdriver_cached_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\imap\imapdriver_cached_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\imap\imapdriver_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\imap\imapdriver_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\imap\imapdriver_tools.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\imap\imapdriver_tools.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\imap\imapstorage.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\imap\imapstorage.c"
 							>
 						</File>
 					</Filter>
@@ -872,27 +888,27 @@
 						Name="maildir"
 						>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\maildir\maildirdriver.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\maildir\maildirdriver.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\maildir\maildirdriver_cached.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\maildir\maildirdriver_cached.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\maildir\maildirdriver_cached_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\maildir\maildirdriver_cached_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\maildir\maildirdriver_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\maildir\maildirdriver_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\maildir\maildirdriver_tools.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\maildir\maildirdriver_tools.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\maildir\maildirstorage.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\maildir\maildirstorage.c"
 							>
 						</File>
 					</Filter>
@@ -900,27 +916,27 @@
 						Name="mbox"
 						>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mbox\mboxdriver.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mbox\mboxdriver.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mbox\mboxdriver_cached.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mbox\mboxdriver_cached.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mbox\mboxdriver_cached_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mbox\mboxdriver_cached_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mbox\mboxdriver_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mbox\mboxdriver_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mbox\mboxdriver_tools.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mbox\mboxdriver_tools.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mbox\mboxstorage.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mbox\mboxstorage.c"
 							>
 						</File>
 					</Filter>
@@ -928,27 +944,27 @@
 						Name="mh"
 						>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mh\mhdriver.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mh\mhdriver.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mh\mhdriver_cached.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mh\mhdriver_cached.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mh\mhdriver_cached_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mh\mhdriver_cached_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mh\mhdriver_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mh\mhdriver_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mh\mhdriver_tools.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mh\mhdriver_tools.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mh\mhstorage.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mh\mhstorage.c"
 							>
 						</File>
 					</Filter>
@@ -956,7 +972,7 @@
 						Name="mime-message"
 						>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\mime-message\mime_message_driver.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\mime-message\mime_message_driver.c"
 							>
 						</File>
 					</Filter>
@@ -964,27 +980,27 @@
 						Name="nntp"
 						>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\nntp\nntpdriver.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\nntp\nntpdriver.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\nntp\nntpdriver_cached.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\nntp\nntpdriver_cached.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\nntp\nntpdriver_cached_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\nntp\nntpdriver_cached_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\nntp\nntpdriver_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\nntp\nntpdriver_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\nntp\nntpdriver_tools.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\nntp\nntpdriver_tools.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\nntp\nntpstorage.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\nntp\nntpstorage.c"
 							>
 						</File>
 					</Filter>
@@ -992,27 +1008,27 @@
 						Name="pop3"
 						>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\pop3\pop3driver.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\pop3\pop3driver.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\pop3\pop3driver_cached.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\pop3\pop3driver_cached.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\pop3\pop3driver_cached_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\pop3\pop3driver_cached_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\pop3\pop3driver_message.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\pop3\pop3driver_message.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\pop3\pop3driver_tools.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\pop3\pop3driver_tools.c"
 							>
 						</File>
 						<File
-							RelativePath="..\..\libetpan-0.46\src\driver\implementation\pop3\pop3storage.c"
+							RelativePath="..\..\libetpan\src\driver\implementation\pop3\pop3storage.c"
 							>
 						</File>
 					</Filter>
@@ -1021,19 +1037,19 @@
 					Name="tools"
 					>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\tools\generic_cache.c"
+						RelativePath="..\..\libetpan\src\driver\tools\generic_cache.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\tools\imfcache.c"
+						RelativePath="..\..\libetpan\src\driver\tools\imfcache.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\tools\mailthread.c"
+						RelativePath="..\..\libetpan\src\driver\tools\mailthread.c"
 						>
 					</File>
 					<File
-						RelativePath="..\..\libetpan-0.46\src\driver\tools\mailthread_types.c"
+						RelativePath="..\..\libetpan\src\driver\tools\mailthread_types.c"
 						>
 					</File>
 				</Filter>
@@ -1042,23 +1058,23 @@
 				Name="Windows"
 				>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\windows\dirent.c"
+					RelativePath="..\..\libetpan\src\windows\dirent.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\windows\misc.c"
+					RelativePath="..\..\libetpan\src\windows\misc.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\windows\mmap.c"
+					RelativePath="..\..\libetpan\src\windows\mmap.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\windows\time_r.c"
+					RelativePath="..\..\libetpan\src\windows\time_r.c"
 					>
 				</File>
 				<File
-					RelativePath="..\..\libetpan-0.46\src\windows\wsocket.cpp"
+					RelativePath="..\..\libetpan\src\windows\wsocket.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"

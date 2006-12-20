@@ -116,6 +116,8 @@ libetpan_version.h
 ..\src\low-level\imap\acl_parser.h
 ..\src\low-level\imap\acl_types.h
 ..\src\low-level\imap\acl_sender.h
+..\src\low-level\imap\uidplus.h
+..\src\low-level\imap\uidplus_types.h
 ..\src\low-level\imf\mailimf.h
 ..\src\low-level\imf\mailimf_types.h
 ..\src\low-level\imf\mailimf_types_helper.h
