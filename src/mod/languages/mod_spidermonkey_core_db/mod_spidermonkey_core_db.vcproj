@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js20051231\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;;&quot;$(InputDir)..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\include&quot;;&quot;$(InputDir)..\mod_spidermonkey&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\src&quot;;&quot;$(InputDir)..\..\..\..\libs\js\nsprpub\pr\include&quot;;&quot;$(InputDir)..\mod_spidermonkey&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;DEBUG;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB;JS_THREADSAFE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -65,7 +65,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="true"
-				AdditionalDependencies="ws2_32.lib winmm.lib libnspr4.lib libplc4.lib libplds4.lib"
+				AdditionalDependencies="ws2_32.lib winmm.lib"
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\lib&quot;"
@@ -126,7 +126,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js20051231\src&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;;&quot;$(InputDir)..\..\..\..\libs\libteletone\src&quot;;&quot;$(InputDir)..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\include&quot;;&quot;$(InputDir)..\mod_spidermonkey&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\js\src&quot;;&quot;$(InputDir)..\..\..\..\libs\js\nsprpub\pr\include&quot;;&quot;$(InputDir)..\mod_spidermonkey&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;XP_WIN;_X86_=1;JSFILE;EXPORT_JS_API;HAVE_CURL;CURL_STATICLIB;JS_THREADSAFE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
@@ -147,7 +147,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				LinkLibraryDependencies="true"
-				AdditionalDependencies="ws2_32.lib winmm.lib libnspr4.lib libplc4.lib libplds4.lib"
+				AdditionalDependencies="ws2_32.lib winmm.lib"
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;..\..\..\..\libs\nspr-4.6.1.winnt5.$(OutDir)\nspr-4.6.1\lib&quot;"
