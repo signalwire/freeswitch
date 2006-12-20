@@ -4412,9 +4412,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                                                         uint32_t buflen)
 {
 	switch_xml_t cfg, xml = NULL, language, macros, macro, input, action;
-    char *lname = NULL, *mname = NULL, hint_data[1024] = "", enc_hint[1024] = "";
+    const char *lname = NULL, *mname = NULL;
+    char hint_data[1024] = "", enc_hint[1024] = "";
     switch_status_t status = SWITCH_STATUS_GENERR;
-    char *old_sound_prefix, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
+    const char *old_sound_prefix, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
     switch_channel_t *channel;
 
     channel = switch_core_session_get_channel(session);
