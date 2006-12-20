@@ -549,10 +549,7 @@ static switch_caller_extension_t *enum_dialplan_hunt(switch_core_session_t *sess
 
 	if (extension) {
         switch_channel_set_state(channel, CS_EXECUTE);
-    } else {
-        switch_channel_hangup(channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
     }
-
 
 	return extension;
 

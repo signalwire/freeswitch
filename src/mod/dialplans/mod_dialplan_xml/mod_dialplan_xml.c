@@ -290,7 +290,6 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
         
 	if (switch_xml_locate("dialplan", NULL, NULL, NULL, &xml, &cfg, stream.data) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of dialplan failed\n");
-		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		return NULL;
 	}
 	
@@ -300,7 +299,6 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 	if (!(xcontext = switch_xml_find_child(cfg, "context", "name", context))) {
 		if (!(xcontext = switch_xml_find_child(cfg, "context", "name", "global"))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "context %s not found\n", context);
-			switch_channel_hangup(channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
 			switch_xml_free(xml);
 			return NULL;
 		}
@@ -328,8 +326,6 @@ static switch_caller_extension_t *dialplan_hunt(switch_core_session_t *session)
 
 	if (extension) {
 		switch_channel_set_state(channel, CS_EXECUTE);
-	} else {
-		switch_channel_hangup(channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
 	}
 
 	return extension;
