@@ -4412,10 +4412,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                                                         uint32_t buflen)
 {
 	switch_xml_t cfg, xml = NULL, language, macros, macro, input, action;
-    const char *lname = NULL, *mname = NULL;
-    char hint_data[1024] = "", enc_hint[1024] = "";
+    char *lname = NULL, *mname = NULL, hint_data[1024] = "", enc_hint[1024] = "";
     switch_status_t status = SWITCH_STATUS_GENERR;
-    const char *old_sound_prefix, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
+    char *old_sound_prefix, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
     switch_channel_t *channel;
 
     channel = switch_core_session_get_channel(session);
@@ -4493,8 +4492,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
             if ((proceed = switch_perform_regex(data, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
                 for (action = switch_xml_child(input, "action"); action; action = action->next) {
-                    char *adata = switch_xml_attr_soft(action, "data");
-                    char *func = switch_xml_attr_soft(action, "function");
+                    char *adata = (char *) switch_xml_attr_soft(action, "data");
+                    char *func = (char *) switch_xml_attr_soft(action, "function");
 
                     if (strchr(pattern, '(') && strchr(adata, '$')) {
                         switch_perform_substitution(re, proceed, adata, data, substituted, sizeof(substituted), ovector);
@@ -4532,8 +4531,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                     } else if (!strcasecmp(func, "say")) {
                         switch_say_interface_t *si;
                         if ((si = switch_loadable_module_get_say_interface(lang))) {
-                            char *say_type = switch_xml_attr_soft(action, "type");
-                            char *say_method = switch_xml_attr_soft(action, "method");
+                            char *say_type = (char *) switch_xml_attr_soft(action, "type");
+                            char *say_method = (char *) switch_xml_attr_soft(action, "method");
                             
                             si->say_function(session, odata, get_say_type_by_name(say_type), get_say_method_by_name(say_method), input_callback, buf, buflen);
                         } else {
