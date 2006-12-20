@@ -54,6 +54,7 @@ struct switch_loadable_module_container {
 	switch_hash_t *asr_hash;
 	switch_hash_t *directory_hash;
 	switch_hash_t *chat_hash;
+	switch_hash_t *say_hash;
 	switch_memory_pool_t *pool;
 };
 
@@ -258,6 +259,20 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 				switch_event_fire(&event);
 			}
 			switch_core_hash_insert(loadable_modules.chat_hash, (char *) ptr->interface_name, (void *) ptr);
+		}
+	}
+
+	if (new_module->module_interface->say_interface) {
+		const switch_say_interface_t *ptr;
+
+		for (ptr = new_module->module_interface->say_interface; ptr; ptr = ptr->next) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding Say interface '%s'\n", ptr->interface_name);
+			if (switch_event_create(&event, SWITCH_EVENT_MODULE_LOAD) == SWITCH_STATUS_SUCCESS) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "type", "say");
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "name", "%s", ptr->interface_name);
+				switch_event_fire(&event);
+			}
+			switch_core_hash_insert(loadable_modules.say_hash, (char *) ptr->interface_name, (void *) ptr);
 		}
 	}
 	
@@ -506,6 +521,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	switch_core_hash_init(&loadable_modules.asr_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.directory_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.chat_hash, loadable_modules.pool);
+	switch_core_hash_init(&loadable_modules.say_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
 
 	if ((xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -681,6 +697,11 @@ SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_direct
 SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interface(char *name)
 {
 	return switch_core_hash_find(loadable_modules.chat_hash, name);
+}
+
+SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(char *name)
+{
+	return switch_core_hash_find(loadable_modules.say_hash, name);
 }
 
 SWITCH_DECLARE(int) switch_loadable_module_get_codecs(switch_memory_pool_t *pool, const switch_codec_implementation_t **array,

@@ -94,6 +94,33 @@ SWITCH_BEGIN_EXTERN_C
 typedef uint8_t switch_byte_t;
 
 typedef enum {
+	SSM_NA,
+	SSM_PRONOUNCED,
+	SSM_ITERATED
+} switch_say_method_t;
+
+typedef enum {
+	SST_NUMBER,
+	SST_ITEMS,
+	SST_PERSONS,
+	SST_MESSAGES,
+	SST_CURRENCY,
+	SST_TIME_MEASUREMENT,
+	SST_CURRENT_DATE,
+	SST_CURRENT_TIME,
+	SST_CURRENT_DATE_TIME,
+	SST_TELEPHONE_NUMBER,
+	SST_TELEPHONE_EXTENSION,
+	SST_URL,
+	SST_EMAIL_ADDRESS,
+	SST_POSTAL_ADDRESS,
+	SST_ACCOUNT_NUMBER,
+	SST_NAME_SPELLED,
+	SST_NAME_PHONETIC,
+} switch_say_type_t;
+
+
+typedef enum {
 	SMF_NONE = 0,
 	SMF_REBRIDGE = (1 << 0),
 	SMF_ECHO_ALEG = (1 << 1),
@@ -172,7 +199,8 @@ typedef enum {
 	SWITCH_XML_SECTION_RESULT = 0,
 	SWITCH_XML_SECTION_CONFIG = (1 << 0),
 	SWITCH_XML_SECTION_DIRECTORY = (1 << 1),
-	SWITCH_XML_SECTION_DIALPLAN = (1 << 2)
+	SWITCH_XML_SECTION_DIALPLAN = (1 << 2),
+	SWITCH_XML_SECTION_PHRASES = (1 << 3)
 } switch_xml_section_t;
 
 /*!
@@ -863,6 +891,7 @@ typedef struct switch_speech_interface switch_speech_interface_t;
 typedef struct switch_asr_interface switch_asr_interface_t;
 typedef struct switch_directory_interface switch_directory_interface_t;
 typedef struct switch_chat_interface switch_chat_interface_t;
+typedef struct switch_say_interface switch_say_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
 typedef void (*switch_media_bug_callback_t)(switch_media_bug_t *, void *, switch_abc_type_t);

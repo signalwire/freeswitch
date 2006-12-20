@@ -102,6 +102,32 @@ static void eval_function(switch_core_session_t *session, char *data)
 	return;
 }
 
+static void phrase_function(switch_core_session_t *session, char *data)
+{
+    switch_channel_t *channel;
+    char *mydata = NULL;
+
+    channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+    
+    if ((mydata = switch_core_session_strdup(session, data))) {
+        char *lang;
+        char *macro = mydata;
+        char *mdata = NULL;
+
+        if ((mdata = strchr(macro, ','))) {
+            *mdata++ = '\0';
+        }
+        if (!(lang = switch_channel_get_variable(channel, "language"))) {
+            lang = "en";
+        }
+        
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, mdata, lang);
+        switch_ivr_phrase_macro(session, macro, mdata, lang, NULL, NULL, 0);
+    }
+
+}
+
 static void answer_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
@@ -462,13 +488,23 @@ static const switch_application_interface_t eval_application_interface = {
 
 };
 
+static const switch_application_interface_t phrase_application_interface = {
+	/*.interface_name */ "phrase",
+	/*.application_function */ phrase_function,
+	/* long_desc */ "Say a Phrase",
+	/* short_desc */ "Say a Phrase",
+	/* syntax */ "<macro_name>,<data>",
+	/*.next */ &eval_application_interface
+
+};
+
 static const switch_application_interface_t strftime_application_interface = {
 	/*.interface_name */ "strftime",
 	/*.application_function */ strftime_function,
 	/* long_desc */ NULL,
 	/* short_desc */ NULL,
 	/* syntax */ NULL,
-	/*.next */ &eval_application_interface
+	/*.next */ &phrase_application_interface
 
 };
 

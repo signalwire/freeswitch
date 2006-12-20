@@ -977,8 +977,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	char *title = "", *copyright = "", *software = "", *artist = "", *comment = "", *date = "";
 	uint8_t asis = 0;
 	char *ext;
+    char *prefix;
+
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+
+    prefix = switch_channel_get_variable(channel, "sound_prefix");
 	
 	if (file) {
+        if (prefix && *file != '/' && *file != '\\' && *(file+1) != ':') {
+            char *new_file;
+            uint32_t len;
+            len = (uint32_t)strlen(file) + (uint32_t)strlen(prefix) + 10;
+            new_file = switch_core_session_alloc(session, len);
+            snprintf(new_file, len, "%s/%s", prefix, file);
+            file = new_file;
+        }
+
 		if ((ext = strrchr(file, '.'))) {
 			ext++;
 		} else {
@@ -1003,10 +1018,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		sample_start = fh->samples;
 		fh->samples = 0;
 	}
-
-
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
 
 	if (switch_core_file_open(fh,
 							  file,
@@ -1054,7 +1065,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		date = (char *) switch_core_session_strdup(session, (char *)p);
 		switch_channel_set_variable(channel, "RECORD_DATE", (char *)p);
 	}
-	
+#if 0
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
 					  "OPEN FILE %s %uhz %u channels\n"
 					  "TITLE=%s\n"
@@ -1069,6 +1080,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					  artist,
 					  comment,
 					  date);
+#endif
 
 	assert(read_codec != NULL);
 	interval = read_codec->implementation->microseconds_per_frame / 1000;
@@ -4335,6 +4347,230 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 
 	return status;
 }
+
+
+static char *SAY_METHOD_NAMES[] = {
+    "N/A",
+    "PRONOUNCED",
+    "ITERATED",
+    NULL
+};
+
+static char *SAY_TYPE_NAMES[] = {
+	"NUMBER",
+	"ITEMS",
+	"PERSONS",
+	"MESSAGES",
+	"CURRENCY",
+	"TIME_MEASUREMENT",
+	"CURRENT_DATE",
+	"CURRENT_TIME",
+	"CURRENT_DATE_TIME",
+	"TELEPHONE_NUMBER",
+	"TELEPHONE_EXTENSION",
+	"URL",
+	"EMAIL_ADDRESS",
+	"POSTAL_ADDRESS",
+	"ACCOUNT_NUMBER",
+	"NAME_SPELLED",
+	"NAME_PHONETIC",
+    NULL
+};
+
+
+static switch_say_method_t get_say_method_by_name(char *name)
+{
+    int x = 0;
+    for (x = 0; SAY_METHOD_NAMES[x]; x++) {
+        if (!strcasecmp(SAY_METHOD_NAMES[x], name)) {
+            break;
+        }
+    }
+
+    return (switch_say_method_t) x;
+}
+
+static switch_say_method_t get_say_type_by_name(char *name)
+{
+    int x = 0;
+    for (x = 0; SAY_TYPE_NAMES[x]; x++) {
+        if (!strcasecmp(SAY_TYPE_NAMES[x], name)) {
+            break;
+        }
+    }
+    
+    return (switch_say_method_t) x;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session,
+                                                        char *macro_name,
+                                                        char *data,
+                                                        char *lang,
+                                                        switch_input_callback_function_t input_callback,
+                                                        void *buf,
+                                                        uint32_t buflen)
+{
+	switch_xml_t cfg, xml = NULL, language, macros, macro, input, action;
+    char *lname = NULL, *mname = NULL, hint_data[1024] = "", enc_hint[1024] = "";
+    switch_status_t status = SWITCH_STATUS_GENERR;
+    char *old_sound_prefix, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
+    switch_channel_t *channel;
+
+    channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+    switch_url_encode(data, enc_hint, sizeof(enc_hint));
+    snprintf(hint_data, sizeof(hint_data), "macro_name=%s&lang=%s&data=%s", macro_name, lang, enc_hint);
+    
+	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of phrases failed.\n");
+        goto done;
+	}
+
+    if (!(macros = switch_xml_child(cfg, "macros"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find macros tag.\n");
+        goto done;
+    }
+
+    if (!(language = switch_xml_child(macros, "language"))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find language tag.\n");
+        goto done;
+    }
+
+    while(language) {
+        if ((lname = switch_xml_attr(language, "name")) && !strcasecmp(lname, lang)) {
+            break;
+        }
+        language = language->next;
+    }
+
+    if (!language) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find language %s.\n", lang);
+        goto done;
+    }
+
+    sound_path = switch_xml_attr_soft(language, "sound_path");
+    tts_engine = switch_xml_attr_soft(language, "tts_engine");
+    tts_voice = switch_xml_attr_soft(language, "tts_voice");
+
+    old_sound_prefix = switch_channel_get_variable(channel, "sound_prefix");    
+    switch_channel_set_variable(channel, "sound_prefix", sound_path);
+
+    if (!(macro = switch_xml_child(language, "macro"))) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find any macro tags.\n");
+        goto done;
+    }
+    
+    while(macro) {
+        if ((mname = switch_xml_attr(macro, "name")) && !strcasecmp(mname, macro_name)) {
+            break;
+        }
+        macro = macro->next;
+    }
+    
+    if (!macro) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find macro %s.\n", macro_name);
+        goto done;
+    }
+
+    if (!(input = switch_xml_child(macro, "input"))) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find any input tags.\n");
+        goto done;
+    }
+
+    switch_channel_pre_answer(channel);
+
+    while(input) {
+        char *pattern = switch_xml_attr(input, "pattern");
+
+        if (pattern) {
+            pcre *re = NULL;
+            int proceed = 0, ovector[30];
+            char substituted[1024] = "";
+            char *odata = NULL;
+
+            if ((proceed = switch_perform_regex(data, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+                for (action = switch_xml_child(input, "action"); action; action = action->next) {
+                    char *adata = switch_xml_attr_soft(action, "data");
+                    char *func = switch_xml_attr_soft(action, "function");
+
+                    if (strchr(pattern, '(') && strchr(adata, '$')) {
+                        switch_perform_substitution(re, proceed, adata, data, substituted, sizeof(substituted), ovector);
+                        odata = substituted;
+                    } else {
+                        odata = adata;
+                    }
+
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle %s:[%s] (%s)\n", func, odata, lang);
+
+                    if (!strcasecmp(func, "play-file")) {
+                        switch_ivr_play_file(session, NULL, odata, NULL, input_callback, buf, buflen);
+                    } else if (!strcasecmp(func, "execute")) {
+                        const switch_application_interface_t *application_interface;
+                        char *app_name = NULL;
+                        char *app_arg = NULL;
+
+                        if ((app_name = strdup(odata))) {
+                            char *e = NULL;
+                            if ((app_arg = strchr(app_name, '('))) {
+                                *app_arg++ = '\0';
+                                if ((e = strchr(app_arg, ')'))) {
+                                    *e = '\0';
+                                }
+                                if (app_name && app_arg && e && (application_interface = switch_loadable_module_get_application_interface(app_name))) {
+                                    if (application_interface->application_function) {
+                                        application_interface->application_function(session, app_arg);
+                                    }
+                                } else {
+                                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application!\n");
+                                }
+                            }
+                            switch_safe_free(app_name);
+                        } 
+                    } else if (!strcasecmp(func, "say")) {
+                        switch_say_interface_t *si;
+                        if ((si = switch_loadable_module_get_say_interface(lang))) {
+                            char *say_type = switch_xml_attr_soft(action, "type");
+                            char *say_method = switch_xml_attr_soft(action, "method");
+                            
+                            si->say_function(session, odata, get_say_type_by_name(say_type), get_say_method_by_name(say_method), input_callback, buf, buflen);
+                        } else {
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid SAY Interface [%s]!\n", lang);
+                        }
+                    } else if (!strcasecmp(func, "speak-text")) {
+                        switch_codec_t *read_codec;
+                        if ((read_codec = switch_core_session_get_read_codec(session))) {
+                            switch_ivr_speak_text(session,
+                                                  tts_engine,
+                                                  tts_voice,
+                                                  NULL,
+                                                  read_codec->implementation->samples_per_second,
+                                                  input_callback,
+                                                  odata,
+                                                  buf,
+                                                  buflen);
+                        }
+                    }
+                }
+            }
+
+            switch_clean_re(re);
+        }
+
+        input = input->next;
+    }
+
+ done:
+
+	switch_channel_set_variable(channel, "sound_prefix", old_sound_prefix);
+
+    if (xml) {
+        switch_xml_free(xml);
+    }
+    return status;
+}
+
 
 /* For Emacs:
  * Local Variables:

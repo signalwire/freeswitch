@@ -626,6 +626,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_
  */
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t **xml_menu_ctx, switch_memory_pool_t *pool);
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session,
+                                                        char *macro_name,
+                                                        char *data,
+                                                        char *lang,
+                                                        switch_input_callback_function_t input_callback,
+                                                        void *buf,
+                                                        uint32_t buflen);
 /** @} */
 
 SWITCH_END_EXTERN_C

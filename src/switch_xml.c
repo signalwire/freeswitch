@@ -107,6 +107,7 @@ static struct xml_section_t SECTIONS[] = {
 	{ "config", SWITCH_XML_SECTION_CONFIG},
 	{ "directory", SWITCH_XML_SECTION_DIRECTORY},
 	{ "dialplan", SWITCH_XML_SECTION_DIALPLAN},
+	{ "phrases", SWITCH_XML_SECTION_PHRASES},
 	{ NULL, 0}
 };
 

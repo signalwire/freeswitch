@@ -632,6 +632,43 @@
       </user>
     </domain>
   </section>
+
+  <!-- phrases section (under development still) -->
+  <section name="phrases" description="Speech Phrase Management">
+    <macros>
+      <language name="en" sound_path="/snds" tts_engine="cepstral" tts_voice="david">
+	<macro name="msgcount">
+	  <input pattern="(.*)">
+	    <action function="execute" data="sleep(1000)"/>
+	    <action function="play-file" data="vm-youhave.wav"/>
+	    <action function="say" data="$1" method="pronounced" type="items"/>
+	    <action function="play-file" data="vm-messages.wav"/>
+	    <!-- or -->
+	    <!--<action function="speak-text" data="you have $1 messages"/>-->
+	  </input>
+	</macro>
+	<macro name="timeleft">
+	  <input pattern="(\d+):(\d+)">
+	    <action function="speak-text" data="You have $1 minutes, $2 seconds remaining"/>
+	  </input>
+	</macro>
+      </language>
+      <language name="fr" sound_path="/var/sounds/lang/fr/jean" tts_engine="cepstral" tts_voice="jean-pierre">
+	<macro name="msgcount">
+	  <input pattern="(.*)">
+	    <action function="play-file" data="tuas.wav"/>
+	    <action function="say" data="$1" method="pronounced" type="items"/>
+	    <action function="play-file" data="messages.wav"/>
+	  </input>
+	</macro>
+	<macro name="timeleft">
+	  <input pattern="(\d+):(\d+)">
+	    <action function="speak-text" data="il y a $1 minutes et de $2 secondes de restant"/>
+	  </input>
+	</macro>
+      </language>
+    </macros>
+  </section>
 </document>
 
 

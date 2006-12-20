@@ -75,6 +75,8 @@ struct switch_loadable_module_interface {
 	const switch_directory_interface_t *directory_interface;
 	/*! the table of chat interfaces the module has implmented */
 	const switch_chat_interface_t *chat_interface;
+	/*! the table of say interfaces the module has implmented */
+	const switch_say_interface_t *say_interface;
 	/*! the table of asr interfaces the module has implmented */
 	const switch_asr_interface_t *asr_interface;
 };
@@ -180,6 +182,13 @@ SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_direct
   \return the desired chat interface
  */
 SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interface(char *name);
+
+/*!
+  \brief Retrieve the say interface by it's registered name
+  \param name the name of the say interface
+  \return the desired say interface
+ */
+SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(char *name);
 
 
 /*!
