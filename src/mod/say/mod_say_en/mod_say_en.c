@@ -60,7 +60,7 @@ static switch_status_t en_say(switch_core_session_t *session,
 			in = atoi(tosay);
 
 			for(x = 6; x >= 0; x--) {
-				int num = pow(10, x);
+				int num = (int)pow(10, x);
 				if ((places[x] = in / num)) {
 					in -= places[x] * num;
 				}
@@ -146,7 +146,7 @@ static switch_status_t en_say(switch_core_session_t *session,
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static const switch_chat_interface_t en_say_interface= {
+static const switch_say_interface_t en_say_interface= {
 	/*.name */ "en",
 	/*.say_function */ en_say,
 };
