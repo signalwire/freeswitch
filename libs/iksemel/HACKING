@@ -1,0 +1,71 @@
+
+License:
+========
+
+iksemel is developed and released under GNU Lesser General Public License.
+A copy of the license can be found in the file COPYING. You should read it
+before sending patches to the iksemel, since it is implicitly assumed that
+your patches are also submitted under the LGPL license.
+
+
+Roadmap:
+========
+
+Main goal of the iksemel is removing complexity from programs using the
+library and the library itself. This is the reason why only a subset of XML
+is supported. Some things like UTF16, entity definitons, DTDs will be eventually
+implemented when we found ways to implement them without adding
+too much complexity to the iksemel code. Somewhat external standarts
+(XPath, XQuery, XSLT, vs) will probably not make it into the iksemel.
+
+* validation
+
+I think easiest way to add this feature is writing another parser based on the
+sax parser which parses a dtd (either from sax parser's markup callback which
+needs to be implemented or from an external source via iks_vsax_set_dtd() call)
+and checks the arguments of sax callbacks. Using it via dom or stream parsers
+can require some clever tricks. there are also xml schemas. they are easy to parse
+(it is xml anyway) but can be hard to apply.
+
+* utf16
+
+There are two sides of this. Improving parser to accept utf16 can be relatively
+easy. But on the client side things can get confusing. What will be the default
+character set used by iks_new(), iks_insert_cdata() and similar functions? and
+how they will allow other charsets to be used. Supporting more than utf8 and
+utf16 is more difficult. Hopefully there is no immediate need for this. Jabber
+uses only utf8 and you can use iconv if you are using another charset in your
+application. Btw, there is also byte order issue which is silly. Inventor of BOM
+crap must be killed.
+
+* jabber roster
+
+Roster handling generally depends on the UI system used. But I think a generic
+roster handler which parses roster result, pushes, presence changes and
+allows application to access and display this data can be useful. Challenge
+here is making it UI independent and extensible by the application.
+
+
+File Layout:
+============
+
+doc/
+* iksemel.texi                Documentation in texinfo format.
+include/
+* common.h                    Internal header for some common definitions.
+* iksemel.h                   Library API
+* finetune.h                  Default memory allocation sizes.
+src/
+* ikstack.c                   Memory management functions.
+* utility.c                   Small string utility functions.
+* iks.c                       XML tree management.
+* sax.c                       SAX parser.
+* dom.c                       DOM parser.
+* stream.c                    Stream parser.
+* sha.c                       SHA1 hash functions.
+* jabber.c                    Jabber utilities.
+* filter.c                    Packet filter for Jabber.
+test/
+(self test programs)
+tools/
+(varius utility programs)

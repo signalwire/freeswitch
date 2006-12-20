@@ -1,0 +1,1602 @@
+This is iksemel, produced by makeinfo version 4.6 from iksemel.texi.
+
+
+File: iksemel,  Node: Top,  Up: (dir)
+
+iksemel Programmers Manual
+**************************
+
+Copyright (C) 2001-2003 Gu"rer O"zen
+
+   This is a free document; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the
+Free Software Foundation; either version 2, or (at your option) any
+later version.You may obtain a copy of the GNU General Public License
+from the Free Software Foundation by visiting their Web site or by
+writing to the Free Software Foundation, Inc., 59 Temple Place - Suite
+330, Boston, MA 02111-1307, USA.
+
+* Menu:
+
+* Introduction::
+
+* Tutorials::
+
+* Development::
+
+* Datatype Index::
+
+* Function Index::
+
+
+File: iksemel,  Node: Introduction,  Next: Tutorials,  Up: Top
+
+Introduction
+************
+
+iksemel is an XML (eXtensible Markup Language) parser library designed
+for Jabber applications. It is coded in ANSI C for POSIX compatible
+environments, thus highly portable. It is free software released under
+the GNU Lesser General Public License.
+
+   The purprose of this manual is to tell you how to use the facilities
+of the iksemel library. Manual is written with the assumption that you
+are familiar with the C programming language, basic programming
+concepts, XML and Jabber protocol.
+
+Compiling the Library
+=====================
+
+You need to install MinGW (<http://mingw.org>) under Windows to be able
+to compile iksemel. Although not tested by the author, Cygwin should
+work equally well.
+
+   Library can be built with:
+
+     ./configure
+     make
+
+   If you want to make a self test:
+
+     make test
+
+   Now you can install it with:
+
+     make install
+
+Using iksemel in Applications
+=============================
+
+You need to include `iksemel.h' file in your source to access library
+API.  You can do this with:
+
+   `#include "iksemel.h"'
+
+   Now you can use iksemel functions and compile your source. In able
+to link your compiled object files and generate your executable
+program, you have to link with iksemel library. This can be done with:
+
+     gcc -o myprg src1.o src2.o src3.o -liksemel
+
+   iksemel registers itself with pkg-config while installing, so if you
+are using autotools in your program, you can simply check the
+availability of iksemel and configure your build process accordingly
+with:
+
+     PKG_CHECK_MODULES(IKSEMEL,iksemel,,exit)
+
+   This would result in IKSEMEL_LIBS and IKSEMEL_CFLAGS substitution
+variables set to correct values.
+
+
+File: iksemel,  Node: Tutorials,  Next: Development,  Prev: Introduction,  Up: Top
+
+Tutorials
+*********
+
+* Menu:
+
+* Parsing an XML Document::
+
+* Working with XML Trees::
+
+* XML Streams::
+
+* Writing a Jabber Client::
+
+* Utility Functions::
+
+
+File: iksemel,  Node: Parsing an XML Document,  Next: Working with XML Trees,  Up: Tutorials
+
+Parsing an XML Document
+=======================
+
+iksemel parser sequentally processes the XML document. Each encountered
+XML element (i.e. tags, character data, comments, processing
+instructions, etc.)  is reported to your application by calling the
+hook functions you have provided.  This type of interface is called SAX
+(serial access) interface.
+
+   Parser stores its state in a small structure. This structure is
+referenced by `iksparser' type, and managed with following functions:
+
+ - Function: iksparser* iks_sax_new (void* USER_DATA, iksTagHook*
+          TAGHOOK, iksCDataHook* CDATAHOOK);
+     This function allocates and initializes a parser structure. If
+     allocation fails, NULL value is returned. USER_DATA is passed
+     directly to hook functions.
+
+ - Typedef: iksTagHook
+     int iksTagHook (void* USER_DATA, char* NAME, char** ATTS, int
+     TYPE);
+
+     This function is called when a tag parsed. NAME is the name of the
+     tag. If tag has no attributes ATTS is NULL, otherwise it contains
+     a null terminated list of pointers to tag's attributes and their
+     values. If return value isn't `IKS_OK', it is passed immediately
+     to the caller of the `iks_parse'.
+
+     TYPE is one of the following:
+    `IKS_OPEN'
+          Opening tag, i.e. <tag attr='value'>
+
+    `IKS_CLOSE'
+          Closing tag, i.e. </tag>
+
+    `IKS_SINGLE'
+          Standalone tag, i.e. <tag attr='value'/>
+
+ - Typedef: iksCDataHook
+     int iksCDataHook (void* USER_DATA, char* DATA, size_t LEN);
+
+     DATA is a pointer to the character data. Encoding is UTF-8 and it
+     isn't terminated with a null character. Size of the data is given
+     with LEN in bytes. This function can be called several times with
+     smaller sized data for a single string. If return value isn't
+     `IKS_OK', it is passed immediately to the caller of the
+     `iks_parse'.
+
+ - Function: int iks_parse (iksparser* PRS, char *DATA, size_t LEN, int
+          FÝNÝSH);
+     You give XML document to the parser with this function. DATA is a
+     LEN bytes string. If LEN is zero, data must be a null terminated
+     string.
+
+     If FÝNÝSH value is zero, parser waits for more data later. If you
+     want to finish parsing without giving data, call it like:
+          iks_parse (my_parser, NULL, 0, 1);
+
+     You should check the return value for following conditions:
+    `IKS_OK'
+          There isn't any problem.
+
+    `IKS_NOMEM'
+          Not enough memory.
+
+    `IKS_BADXML'
+          Document is not well-formed.
+
+    `IKS_HOOK'
+          Your hook decided that there is an error.
+
+ - Function: void iks_parser_delete (iksparser* PRS);
+     This function frees parser structure and associated data.
+
+   Now we have learned how to create and use a sax parser. Lets parse a
+simple XML document. Write following code into a `test.c' file.
+
+     #include <stdio.h>
+     #include <iksemel.h>
+     
+     int pr_tag (void *udata, char *name, char **atts, int type)
+     {
+         switch (type) {
+             case IKS_OPEN:
+                 printf ("TAG <%s>\n", name);
+                 break;
+             case IKS_CLOSE:
+                 printf ("TAG </%s>\n", name);
+                 break;
+             case IKS_SINGLE:
+                 printf ("TAG <%s/>\n", name);
+                 break;
+         }
+         if (atts) {
+             int i = 0;
+             while (atts[i]) {
+                 printf ("  ATTRIB %s='%s'\n", atts[i], atts[i+1]);
+                 i += 2;
+             }
+         }
+         return IKS_OK;
+     }
+     
+     enum ikserror pr_cdata (void *udata, char *data, size_t len)
+     {
+         int i;
+         printf ("CDATA [");
+         for (i = 0; i < len; i++)
+             putchar (data[i]);
+         printf ("]\n");
+         return IKS_OK;
+     }
+     
+     int main (int argc, char *argv[])
+     {
+         iksparser *p;
+         p = iks_sax_new (NULL, pr_tag, pr_cdata);
+         switch (iks_parse (p, argv[1], 0, 1)) {
+             case IKS_OK:
+                 puts ("OK");
+                 break;
+             case IKS_NOMEM:
+                 puts ("Not enough memory");
+                 exit (1);
+             case IKS_BADXML:
+                 puts ("XML document is not well-formed");
+                 exit (2);
+             case IKS_HOOK:
+                 puts ("Our hooks didn't like something");
+                 exit (2);
+         }
+         iks_parser_delete (p);
+         return 0;
+     }
+
+   Now compile and test it with:
+
+     gcc -o test test.c -liksemel
+     ./test "<test>Hello<br/>World!</test>"
+     ./test "<lala a='12' b='42'/>"
+
+Error Handling
+==============
+
+XML standart states that once an error is detected, the processor must
+not continue normal processing (i.e. it must not pass character data or
+markup information to the application). So iksemel stops processing
+immediately when it encounters a syntax error, or one of your hook
+functions return any one value than `IKS_OK', and `iks_parse' function
+returns with the error code.
+
+   Since it is useful for debugging, iksemel provides functions to get
+position of the error. Position is usually at the starting character
+for syntax errors. Since your hooks are called after whole element
+(i.e. markup or character data) is passed, position is at the end of
+the erroneous element for `IKS_HOOK' errors.
+
+ - Function: unsigned long iks_nr_bytes (iksparser* PRS);
+     Returns how many number of bytes parsed.
+
+ - Function: unsigned long iks_nr_lines (iksparser* PRS);
+     Returns how many number of lines parsed.
+
+   If you want to parse another document with your parser again, you
+should use the following function to reset your parser.
+
+ - Function: void iks_parser_reset (iksparser* PRS);
+     Resets the parser's internal state.
+
+
+File: iksemel,  Node: Working with XML Trees,  Next: XML Streams,  Prev: Parsing an XML Document,  Up: Tutorials
+
+Working with XML Trees
+======================
+
+SAX interface uses very little memory, but it forces you to access XML
+documents sequentally. In many cases you want to keep a tree like
+representation of XML document in memory and want to access and modify
+its content randomly.
+
+   iksemel provides functions for efficiently creating such trees either
+from documents or programmaticaly. You can access and modify this tree
+and can easily generate a new XML document from the tree.
+
+   This is called DOM (Document Object Model) interface.
+
+* Menu:
+
+* Memory Management::
+
+* Creating a Tree::
+
+* Accessing the Tree::
+
+* Converting a Tree into an XML Document::
+
+* Parsing an XML Document into a Tree::
+
+
+File: iksemel,  Node: Memory Management,  Next: Creating a Tree,  Up: Working with XML Trees
+
+Memory Management
+-----------------
+
+Since keeping whole document content uses a lot of memory and requires
+many calls to OS's memory allocation layer, iksemel uses a simple object
+stack system for minimizing calls to the `malloc' function and releasing
+all the memory associated with a tree in a single step.
+
+   A parsed XML tree contains following objects:
+`Nodes'
+     These are basic blocks of document. They can contain a tag,
+     attribute pair of a tag, or character data. Tag nodes can also
+     contain other nodes as children. Node structure has a small fixed
+     size depending on the node type.
+
+`Names'
+     Names of tags and attributes. They are utf-8 encoded small strings.
+
+`Character Data'
+     They are similar to names but usually much bigger.
+
+   iksemel's object stack has two separate areas for keeping these data
+objects.  Meta chunk contains all the structures and aligned data,
+while the data chunk contains strings. Each chunk starts with a choosen
+size memory block, then when necessary more blocks allocated for
+providing space. Unless there is a big request, each block is double
+the size of the previous block, thus real memory needs are quickly
+reached without allocating too many blocks, or wasting memory with too
+big blocks.
+
+ - Typedef: ikstack
+     This is a structure defining the object stack. Its fields are
+     private and subject to change with new iksemel releases.
+
+ - Function: ikstack * iks_stack_new (size_t META_CHUNK, size_t
+          DATA_CHUNK);
+     Creates an object stack. META_CHUNK is the initial size of the
+     data block used for structures and aligned data. DATA_CHUNK is the
+     initial size of the data block used for strings. They are both in
+     byte units.
+
+     These two initial chunks and a small object stack structure is
+     allocated in one `malloc' call for optimization purproses.
+
+ - Function: void * iks_stack_alloc (ikstack * STACK, size_t SÝZE);
+     Allocates SÝZE bytes of space from the object stack's meta chunk.
+     Allocated space is aligned on platform's default alignment
+     boundary and isn't initialized. Returns a pointer to the space, or
+     NULL if there isn't enough space available and allocating a new
+     block fails.
+
+ - Function: void * iks_stack_strdup (ikstack * STACK, const char *
+          SRC, size_t LEN);
+     Copies given string SRC into the object stack's data chunk.
+     Returns a pointer to the new string, or NULL if there isn't enough
+     space in the stack.  If LEN is zero string must be null terminated.
+
+ - Function: void iks_stack_delete (ikstack * STACK);
+     Gives all memory associated with object stack to the system.
+
+   Since character data sections are usually parsed in separate blocks,
+a growable string implementation is necessary for saving memory.
+
+ - Function: char * iks_stack_strcat (ikstack *STACK, char *OLD, size_t
+          OLD_LEN, const char *SRC, size_t SRC_LEN);
+     This function appends the string SRC to the string OLD in the
+     stack's data chunk. If  OLD is NULL it behaves like
+     `iks_stack_strdup'.  Otherwise OLD has to be a string created with
+     `iks_stack_strdup' or `iks_stack_strcat' functions.
+
+     If OLD_LEN or SRC_LEN is zero, corresponding string must be null
+     terminated.
+
+     Since string can be moved into another block of the data chunk,
+     you must use the returned value for new string, and must not
+     reference to OLD anymore.  Return value can be NULL if there isn't
+     enough space in stack, and allocating a new block fails.
+
+
+File: iksemel,  Node: Creating a Tree,  Next: Accessing the Tree,  Prev: Memory Management,  Up: Working with XML Trees
+
+Creating a Tree
+---------------
+
+ - Typedef: iks
+     This is a structure defining a XML node. Its fields are private
+     and only accessed by following functions.
+
+ - Function: iks* iks_new (const char *NAME);
+     Creates an object stack and creates a IKS_TAG type of node with
+     given tag name inside the stack. Tag name is also copied into the
+     stack.  Returns the node pointer, or NULL if there isn't enough
+     memory.
+
+ - Function: iks* iks_new_within (const char *NAME, ikstack* STACK);
+     Creates a IKS_TAG type of node with the given tag name. Node and
+     tag name is allocated inside the given object stack. Returns the
+     node pointer, or NULL if there isn't enough memory.
+
+ - Function: iks* iks_insert (iks *X, const char *NAME);
+     Creates a IKS_TAG type of node with the given tag name. Node and
+     tag name is allocated inside the X node's object stack and linked
+     to X as a child node. Returns the node pointer, or NULL if there
+     isn't enough memory.
+
+ - Function: iks* iks_insert_cdata (iks* X, const char* DATA, size_t
+          LEN);
+     Creates a IKS_CDATA type of node with given character data. Node is
+     allocated inside the X node's object stack and linked to X as a
+     child node. Data is copied as well. If LEN is zero data must be a
+     null terminated string. Returns the node pointer, or NULL if there
+     isn't enough memory.
+
+ - Function: iks* iks_insert_attrib (iks* X, const char* NAME, const
+          char* VALUE);
+     Creates a IKS_ATTRIBUTE type of node with given attribute name and
+     the value. Node is allocated inside the X node's object stack and
+     linked to X as an attribute node. Attribute name and value is
+     copied as well. Returns the node pointer, or NULL if there isn't
+     enough memory.
+
+     Reinserting another value with same attribute name changes an
+     attribute's value. If VALUE is NULL, attribute is removed from the
+     tag.
+
+ - Function: iks* iks_insert_node (iks* X, iks* Y);
+     Links node Y to node X as a child node. Nodes are not copied
+     between object stacks, be careful.
+
+ - Function: void iks_hide (iks *X);
+     Changes the links of the other nodes so that X becomes invisible.
+     It stays in the same object stack with neighbour nodes, be careful.
+
+ - Function: void iks_delete (iks *X);
+     Frees the object stack of the node X.
+
+   Now lets create a tree representation of following XML document:
+
+     <message type='chat' from='bob@bd.com'>
+     <subject>song lyric</subject><priority>high</priority>
+     <body>
+     <em style='underline'>here is the correct version:</em>
+     i just don't see why i should even care
+     it's not dark yet, but it's getting there
+     </body>
+     </message>
+
+   here is the code:
+
+     iks *x, *y, *z;
+     
+     x = iks_new ("message");
+     iks_insert_attrib (x, "type", "chat");
+     iks_insert_attrib (x, "from", "bob@bd.com");
+     iks_insert_cdata (x, "\n", 1);
+     iks_insert_cdata (iks_insert (x, "subject"), "song lyric", 10);
+     iks_insert_cdata (iks_insert (x, "priority"), "high", 4);
+     iks_insert_cdata (x, "\n", 1);
+     y = iks_insert (x, "body");
+     iks_insert_cdata (y, "\n", 1);
+     z = iks_insert (y, "em");
+     iks_insert_attrib (z, "style", "underline");
+     iks_insert_cdata (z, "here is the correct version", 0);
+     iks_insert_cdata (y, "\n", 1);
+     iks_insert_cdata (y, "i just don't see why", 0);
+     iks_insert_cdata (y, "i should even care\n", 0);
+     iks_insert_cdata (y, "it's not dark yet,", 0);
+     iks_insert_cdata (y, "but it's getting there\n", 0);
+     iks_insert_cdata (x, "\n", 1);
+
+   Notice how newlines are inserted for proper formatting of document.
+They aren't necessary for representing data, but they make it easier to
+read document for humans.
+
+   Also notice how `iks_insert' and `iks_insert_cdata' chained.
+
+   There are also functions for duplicating xml trees. They are:
+
+ - Function: iks * iks_copy (iks* X);
+     Creates a full copy of the tree in a newly created object stack.
+
+ - Function: iks * iks_copy_within (iks* X, ikstack *S);
+     Creates a full copy of the tree in given object stack.
+
+
+File: iksemel,  Node: Accessing the Tree,  Next: Converting a Tree into an XML Document,  Prev: Creating a Tree,  Up: Working with XML Trees
+
+Accessing a Tree
+----------------
+
+Basic access functions allow you to move on the tree:
+
+ - Function: iks* iks_next (iks* X);
+
+ - Function: iks* iks_prev (iks* X);
+
+ - Function: iks* iks_parent (iks* X);
+
+ - Function: iks* iks_child (iks* X);
+
+ - Function: iks* iks_attrib (iks* X);
+
+   These functions return a pointer to the next, previous, parent,
+first child, and first attribute node of the given node X. If that node
+doesn't exist or X is NULL, a NULL value is returned.
+
+ - Function: iks * iks_root (iks *X);
+     Returns the topmost parent node of the X.
+
+ - Function: iks* iks_next_tag (iks* X);
+
+ - Function: iks* iks_prev_tag (iks* X);
+
+ - Function: iks* iks_first_tag (iks* X);
+
+   These functions return a pointer to the next, previous, first child
+node of the given node X. Only tag nodes are considered, other type of
+the nodes are skipped. If such a node doesn't exist or X is NULL, a
+NULL value is returned.
+
+   Another group of functions allow you to access specific information
+and content of the nodes:
+
+ - Function: ikstack* iks_stack (iks* X);
+     Returns the object stack which node X stays.
+
+ - Function: enum ikstype iks_type (iks* X);
+     Returns the type of the node.
+
+    `IKS_TAG'
+          Node is a tag and can contain child nodes and attributes.
+
+    `IKS_CDATA'
+          Node contains character data.
+
+    `IKS_ATTRIBUTE'
+          Node contains an attribute and its value.
+
+ - Function: char* iks_name (iks* X);
+     Returns the name of the tag for nodes with the type IKS_TAG.
+
+ - Function: char* iks_cdata (iks* X);
+     Returns a pointer to node's character data if available, NULL
+     otherwise.
+
+ - Function: size_t iks_cdata_size (iks* X);
+     Returns the size of the node's character data in bytes.
+
+ - Function: int iks_has_children (iks* X);
+     Returns a non-zero value if node X has a child node.
+
+ - Function: int iks_has_attribs (iks* X);
+     Returns a non-zero value if node X has attributes.
+
+   Last group of the functions simplifies finding and accessing the
+content of a specific node:
+
+ - Function: iks* iks_find (iks* X, const char* NAME);
+     Searches a IKS_TAG type of node with NAME as tag name in child
+     nodes of X. Returns a pointer to the node if found, NULL otherwise.
+
+ - Function: char* iks_find_cdata (iks* X, const char* NAME);
+     Searches a IKS_TAG type of node with NAME as tag name in child
+     nodes of X. Returns a pointer to the character data of the node's
+     first child node if found, NULL otherwise.
+
+ - Function: char* iks_find_attrib (iks* X, const char* NAME);
+     Searches an attribute with given name in attributes of the X.
+     Returns a pointer to attribute value if found, NULL otherwise.
+
+ - Function: iks * iks_find_with_attrib (iks *X, const char *TAGNAME,
+          const char *ATTRNAME, const char *VALUE);
+     Searches for a child tag of X which has an attribute with name
+     ATTRNAME and value VALUE. If TAGNAME isn't NULL, name of the tag
+     must also match. Returns a pointer to the node if found, NULL
+     otherwise.
+
+   Here is an example which demonstrates accessing file names in a
+fictitious XML playlist file:
+
+     <playlist>
+         <item type='mpg'>
+             <name>/home/madcat/download/matrix_rev_trailer.mpg</name>
+             <duration>1:17</duration>
+         </item>
+         <item type='rm'>
+             <name>/home/madcat/anim/clementine_ep1.rm</name>
+             <duration>22:00</duration>
+         </item>
+         <item type='avi'>
+             <name>/home/madcat/anim/futurama/ep101.avi</name>
+             <subtitle>/home/madcat/subs/futurama/ep101.txt</subtitle>
+             <duration>30:00</duration>
+         </item>
+         <repeat/>
+         <fullscreen/>
+         <noui/>
+     </playlist>
+
+   and here is the code:
+
+     #include <stdio.h>
+     #include <iksemel.h>
+     
+     int main (int argc, char *argv[])
+     {
+         iks *x, *y;
+         int e;
+     
+         if (argc < 2) {
+             printf ("usage: %s <playlistfile>", argv[0]);
+             return 0;
+         }
+         e = iks_load (argv[1], &x);
+         if (e != IKS_OK) {
+         	printf ("parse error %d\n", e);
+             return 1;
+         }
+         if (iks_find (x, "repeat")) puts ("repeat mode enabled");
+         y = iks_child (x);
+         while (y) {
+             if (iks_type (y) == IKS_TAG
+                 && strcmp (iks_name (y), "item") == 0) {
+     	        printf ("Filename: [%s]\n", iks_find_cdata (y, "name"));
+             }
+             y = iks_next (y);
+          }
+         iks_delete (x);
+         return 0;
+     }
+
+
+File: iksemel,  Node: Converting a Tree into an XML Document,  Next: Parsing an XML Document into a Tree,  Prev: Accessing the Tree,  Up: Working with XML Trees
+
+Converting a Tree to an XML Document
+------------------------------------
+
+There is a function for converting given XML tree into a null
+terminated string.
+
+ - Function: char * iks_string (ikstack* STACK, iks* X);
+     Converts given tree into a string. String is created inside the
+     given object stack. Returns a pointer to the string, or NULL if
+     there isn't enough memory available.
+
+     If STACK is NULL, string is created inside an `iks_malloc'ed
+     buffer.  You can free it later with `iks_free' function.
+
+   Here is an example which builds a tree and print it.
+
+     iks *x;
+     char *t;
+     
+     x = iks_new ("test");
+     iks_insert_cdata (iks_insert (x, "a"), "1234", 4);
+     iks_insert (x, "br");
+     iks_insert_cdata (x, "1234", 4);
+     t = iks_string (iks_stack (x), x);
+     puts (t);
+     iks_delete (x);
+
+
+File: iksemel,  Node: Parsing an XML Document into a Tree,  Prev: Converting a Tree into an XML Document,  Up: Working with XML Trees
+
+Parsing a Document into a Tree
+------------------------------
+
+If you want to automatically convert an XML document into a tree, you
+can use iksemel's DOM parser. It is created with following function:
+
+ - Function: iksparser* iks_dom_new (iks **ÝKSPTR);
+     Creates a DOM parser. A pointer to the created XML tree is put
+     into the variable pointed by ÝKSPTR. Returns a pointer to the
+     parser, or NULL is there isn't enough memory.
+
+   Usage is same as SAX parser. You feed the data with `iks_parse', and
+if there isn't an error, you can access to your tree from variable
+`*iksptr'.
+
+   Here is a simple example:
+
+     iks *x;
+     iksparser *p;
+     
+     p = iks_dom_new (&x);
+     if (IKS_OK != iks_parse (p, "<a>bcd</a>", 9, 1)) {
+         puts ("parse error");
+     }
+     /* x is useable after that point */
+     
+     /* this will print 'bcd' */
+     printf ("%s\n", iks_cdata (iks_child (x)));
+
+   If you know the size of the file ahead, or you have an approximate
+idea, you can tell this to the dom parser for choosing a better memory
+allocation strategy. Here is the function for this.
+
+ - Function: void iks_set_size_hint (iksparser *PRS, size_t
+          APPROX_SÝZE);
+     Parser PRS must be a dom type parser. APPROX_SÝZE is the expected
+     size of the xml document. Parser chooses its chunk size based on
+     this information. Helps performance while processing big files.
+
+   If you already have your XML document in memory, you can simply parse
+it with:
+
+ - Function: iks * iks_tree (const char *XML_STR, size_t LEN, int *ERR);
+     This function parses the buffer pointed by XML_STR. If LEN is zero
+     buffer is considered as a null terminated utf8 string. Returns the
+     parsed tree, or NULL if there is an error. If ERR is not NULL,
+     actual error code (returned by iks_parse) is put there.
+
+   Most of the times you want to load your configuration (or similar)
+files directly into trees. iksemel provides two functions to greatly
+simplify this:
+
+ - Function: int iks_load (const char *FNAME, iks **XPTR);
+     Loads the XML file. Tree is placed into the variable pointed by
+     XPTR.
+
+ - Function: int iks_save (const char *FNAME, iks *X);
+     Converts tree X into a string and saves to the file.
+
+   Both functions return same error codes as `iks_parse'. Some
+additional error codes are defined for indicating file problems. They
+are:
+
+`IKS_FILE_NOFILE'
+     A file with the given name doesn't exist.
+
+`IKS_FILE_NOACCESS'
+     Cannot open file. Possibly a permission problem.
+
+`IKS_FILE_RWERR'
+     Read or write operation failed.
+
+   Here is a simple example which parses a file and saves it into
+another:
+
+     iks *x;
+     
+     if (IKS_OK != iks_load ("file1.xml", &x)) {
+         puts ("loading error");
+     }
+     if (IKS_OK != iks_save ("file2.xml", x)) {
+         puts ("saving error");
+     }
+
+
+File: iksemel,  Node: XML Streams,  Next: Writing a Jabber Client,  Prev: Working with XML Trees,  Up: Tutorials
+
+XML Streams
+===========
+
+XML streams function as containers for any XML chunks sent
+asynchronously between network endpoints. They are used for
+asyncronously exchanging relatively small payload of structured
+information between entities.
+
+   A stream is initiated by one of hosts connecting to the other, and
+sending a <stream:stream> tag. Receiving entity replies with a second
+XML stream back to the initiating entity within the same connection.
+Each unit of information is send as a direct child tag of the
+<stream:stream> tag.  Stream is closed with </stream:stream>.
+
+   XML streams use a subset of XML. Specifically they should not contain
+processing instructions, non-predefined entities, comments, or DTDs.
+
+   Jabber protocol uses XML streams for exchanging messages, presence
+information, and other information like authorization, search, time and
+version queries, protocol extensions.
+
+   iksemel provides you a stream parser, which automatically handles
+connection to the server, and calls your hook function with incoming
+information parsed and converted to an XML tree.
+
+   You can create such a parser with:
+
+ - Function: iksparser* iks_stream_new (char* NAME_SPACE, void*
+          USER_DATA, iksStreamHook* STREAMHOOK);
+     Allocates and initalizes a stream parser. NAME_SPACE indicates the
+     stream type, jabber clients use "jabber:client" namespace.
+     USER_DATA is passed directly to your hook function.
+
+ - Typedef: iksStreamHook
+     int iksStreamHook (void* USER_DATA, int TYPE, iks* NODE);
+
+     Depending on the value of the TYPE, NODE contains:
+    `IKS_NODE_START'
+          Got the <stream:stream> tag, namespace, stream id and other
+          information is contained in the NODE.
+
+    `IKS_NODE_NORMAL'
+          A first level child of the <stream:stream> tag is received.
+          NODE contains the parsed tag. If you are connected to a
+          jabber server, you can get <message>, <presence>, or <iq>
+          tags.
+
+    `IKS_NODE_ERROR'
+          Got a <stream:error> tag, details can be accessed from NODE.
+
+    `IKS_NODE_STOP'
+          </stream:stream> tag is received or connection is closed,
+          NODE is `NULL'.
+
+     Freeing the node with `iks_delete' is up to you.
+
+   You can manually feed this parser with `iks_parse' function, but
+using iksemel's connection facilities is easier for most of the cases.
+
+   This functions return `IKS_OK' for success. Error codes of
+`iks_parse' are used in same manner. Following additional codes are
+defined for network related problems:
+
+`IKS_NET_NODNS'
+     Hostname lookup failed. Possible reasons: hostname is incorrect,
+     you are not online, your dns server isn't accessible.
+
+`IKS_NET_NOSOCK'
+     Socket cannot created.
+
+`IKS_NET_NOCONN'
+     Connection attemp failed. Possible reasons: host is not an XML
+     stream server, port number is wrong, server is busy or closed for
+     the moment.
+
+`IKS_NET_RWERR'
+     `send' or `recv' call is failed when attempting to exchange the
+     data with the server. You should close the connection with
+     `iks_disconnect' after getting this error from data transfer
+     functions.
+
+ - Function: int iks_connect_tcp (iksparser *PRS, const char *SERVER,
+          int PORT);
+     This function connects the parser to a server and sends stream
+     header for you.  SERVER is the host name of the server and PORT is
+     the tcp port number which server is listening to. You can use
+     `IKS_JABBER_PORT' macro for the default jabber client port (5222).
+
+ - Function: int iks_connect_fd (iksparser *PRS, int FD);
+     Attaches parser to an already opened connection. FD is the socket
+     descriptor. Note that `iks_disconnect' doesn't close the socket
+     for this kind of connection, opening and closing of the socket is
+     up to your application. Stream header is not sent automatically.
+     You can use `iks_send_header' function for sending it.
+
+ - Function: void iks_disconnect (iksparser *PRS);
+     Closes connection to the server, and frees connection resources.
+
+   After successfully connecting to a server, you can use following
+functions for exchanging information with server.
+
+ - Function: int iks_recv (iksparser* PRS, int TÝMEOUT);
+     If TÝMEOUT is `-1', waits until some data arrives from server, and
+     process the data. Your stream hook can be called if a complete
+     chunk is arrived.
+
+     If TÝMEOUT is a positive integer, `iks_recv' returns if no data
+     arrives for TÝMEOUT seconds.
+
+     If TÝMEOUT is zero, `iks_recv' checks if there is any data waiting
+     at the network buffer, and returns without waiting for data.
+
+ - Function: int iks_fd (iksparser* PRS);
+     Returns the file descriptor of the connected socket. You can use
+     this in your `select' function or some other input loop to act
+     whenever some data from the server arrives. This value of only
+     valid between a successful `iks_connect_tcp' and `iks_disconnect'.
+
+ - Function: int iks_send (iksparser* PRS, iks* X);
+     Converts the tree given in X to a string, and sends to the server.
+     String is created inside the object stack of X.
+
+ - Function: int iks_send_raw (iksparser* PRS, char* XMLSTR);
+     Sends the string given in XMLSTR to the server.
+
+ - Function: int iks_send_header (iksparser *PRS, char *TO);
+     Sends the stream header. TO is the name of the server.  Normally
+     `iks_connect_tcp' function calls this for you. This is only useful
+     if you are using `iks_connect_fd'.
+
+   Sometimes it is useful to log incoming and outgoing data to your
+parser for debugging your applications. iksemel provides a logging
+facility for you.
+
+ - Function: void iks_set_log_hook (iksparser* PRS, iksLogHook*
+          LOGHOOK);
+     Sets the log function for your stream parser. You can't use this
+     function on any other type of parser.
+
+ - Typedef: iksLogHook
+     void iksLogHook (void* USER_DATA, const char* DATA, size_t SÝZE,
+     int ÝS_ÝNCOMÝNG);
+
+     USER_DATA is same value which you give with `iks_stream_new'.
+     DATA is SÝZE bytes of data. Be very careful that this data may be
+     coming from other side of the connection and can contain malicius
+     bytes. It isn't checked by iksemel yet, so you should check it
+     yourself before displaying or passing to other systems in your
+     application or computer. If ÝS_ÝNCOMÝNG is a non-zero value, data
+     is incoming from server, otherwise it is outgoing to the server.
+
+
+File: iksemel,  Node: Writing a Jabber Client,  Next: Utility Functions,  Prev: XML Streams,  Up: Tutorials
+
+Writing a Jabber Client
+=======================
+
+* Menu:
+
+* Security::
+
+* Packets::
+
+* Packet Filter::
+
+* Creating Common Packets::
+
+
+File: iksemel,  Node: Security,  Next: Packets,  Up: Writing a Jabber Client
+
+Security
+--------
+
+iksemel supports TLS protocol for encrypted communication and SASL
+protocol for authentication. TLS is handled by gnutls library.
+
+ - Function: int iks_has_tls (void);
+     If iksemel is compiled with gnutls library, this function returns
+     a non-zero value indicating you can try encrypted connection with
+     the server.
+
+ - Function: int iks_start_tls (iksparser* PRS);
+     Starts a TLS handshake over already connected parser. Returns
+     IKS_OK or one of the IKS_NET_ errors. If handshake succeeds you'll
+     get another stream header from server.
+
+ - Function: int iks_is_secure (iksparser* PRS);
+     Returns a non-zero value if a secure connection is fully
+     established between server.
+
+ - Function: int iks_start_sasl (iksparser* PRS, enum ikssasltype TYPE,
+          char* USERNAME, char* PASS);
+     Starts SASL operation.
+
+   See tools/iksroster.c for a good example.
+
+
+File: iksemel,  Node: Packets,  Next: Packet Filter,  Prev: Security,  Up: Writing a Jabber Client
+
+Packets
+-------
+
+iksemel can parse a jabber XML node and provide you a public packet
+structure which contains information like node type and subtype, id,
+namespace, sender's jabber id, etc.
+
+   This handles a lot of node parsing for you. Packets are also used in
+the packet filter subsystem.
+
+ - Function: ikspak * iks_packet (iks *X);
+     Takes a node from stream and extracts information from it to a
+     packet structure.  Structure is allocated inside the node's object
+     stack.
+
+   `ikspak' structure has following fields:
+
+`iks *x;'
+     This is a pointer to the node.
+
+`iksid *from;'
+     Sender's jabber id in parsed form. See below for `iksid' structure.
+
+`iks *query;'
+     A pointer to the <query> tag for IQ nodes.
+
+`char *ns;'
+     Namespace of the content for IQ nodes.
+
+`char *id;'
+     ID of the node.
+
+`enum ikspaktype type;'
+     Type of the node. Possible types are:
+
+    `IKS_PAK_NONE'
+          Unknown node.
+
+    `IKS_PAK_MESSAGE'
+          Message node.
+
+    `IKS_PAK_PRESENCE'
+          Presence node with presence publishing operation.
+
+    `IKS_PAK_S10N'
+          Presence node with subscription operation.
+
+    `IKS_PAK_IQ'
+          IQ node.
+
+`enum iksubtype subtype;'
+     Sub type of the node. Sub types for message nodes:
+
+    `IKS_TYPE_NONE'
+          A normal message.
+
+    `IKS_TYPE_CHAT'
+          Private chat message.
+
+    `IKS_TYPE_GROUPCHAT'
+          Multi user chat message.
+
+    `IKS_TYPE_HEADLINE'
+          Message from a news source.
+
+    `IKS_TYPE_ERROR'
+          Message error.
+
+     Sub types for IQ nodes:
+
+    `IKS_TYPE_GET'
+          Asks for some information.
+
+    `IKS_TYPE_SET'
+          Request for changing information.
+
+    `IKS_TYPE_RESULT'
+          Reply to get and set requests.
+
+    `IKS_TYPE_ERROR'
+          IQ error.
+
+     Sub types for subscription nodes:
+
+    `IKS_TYPE_SUBSCRIBE,'
+          Asks for subscribing to the presence.
+
+    `IKS_TYPE_SUBSCRIBED,'
+          Grants subscription.
+
+    `IKS_TYPE_UNSUBSCRIBE,'
+          Asks for unsubscribing to the presence.
+
+    `IKS_TYPE_UNSUBSCRIBED,'
+          Cancels subscription.
+
+    `IKS_TYPE_ERROR'
+          Presence error.
+
+     Sub types for presence nodes:
+
+    `IKS_TYPE_PROBE,'
+          Asks presence status.
+
+    `IKS_TYPE_AVAILABLE,'
+          Publishes entity as available. More information can be found
+          in `show' field.
+
+    `IKS_TYPE_UNAVAILABLE'
+          Publishes entity as unavailable. More information can be
+          found in `show' field.
+
+`enum ikshowtype show;'
+     Presence state for the presence nodes.
+
+    `IKS_SHOW_UNAVAILABLE'
+          Entity is unavailable.
+
+    `IKS_SHOW_AVAILABLE'
+          Entity is available.
+
+    `IKS_SHOW_CHAT'
+          Entity is free for chat.
+
+    `IKS_SHOW_AWAY'
+          Entity is away for a short time.
+
+    `IKS_SHOW_XA'
+          Entity is away for a long time.
+
+    `IKS_SHOW_DND'
+          Entity doesn't want to be disturbed.
+
+   iksemel has two functions to parse and compare jabber IDs.
+
+ - Function: iksid * iks_id_new (ikstack *S, const char *JÝD);
+     Parses a jabber id into its parts. `iksid' structure is created
+     inside the S object stack.
+
+   `iksid' structure has following fields:
+
+`char *user;'
+     User name.
+
+`char *server;'
+     Server name.
+
+`char *resource;'
+     Resource.
+
+`char *partial;'
+     User name and server name.
+
+`char *full;'
+     User name, server name and resource.
+
+   You can access this fields and read their values. Comparing two
+parsed jabber ids can be done with:
+
+ - Function: int iks_id_cmp (iksid *A, iksid *B, int PARTS);
+     Compares PARTS of A and B. Part values are:
+
+    `IKS_ID_USER'
+
+    `IKS_ID_SERVER'
+
+    `IKS_ID_RESOURCE'
+
+
+     You can combine this values with `or' operator. Some common
+     combinations are predefined for you:
+
+    `IKS_ID_PARTIAL'
+          `IKS_ID_USER | IKS_ID_SERVER'
+
+    `IKS_ID_FULL'
+          `IKS_ID_USER | IKS_ID_SERVER | IKS_ID_RESOURCE'
+
+     Return value is `0' for equality. If entities are not equal a
+     combination of part values showing different parts is returned.
+
+
+File: iksemel,  Node: Packet Filter,  Next: Creating Common Packets,  Prev: Packets,  Up: Writing a Jabber Client
+
+Packet Filter
+-------------
+
+Packet filter handles routing incoming packets to related functions.
+
+ - Function: iksfilter * iks_filter_new (void);
+     Creates a new packet filter.
+
+ - Function: void iks_filter_packet (iksfilter *F, ikspak *PAK);
+     Feeds the filter with given packet. Packet is compared to
+     registered rules and hook functions of the matching rules are
+     called in most matched to least matched order.
+
+ - Function: void iks_filter_delete (iksfilter *F);
+     Frees filter and rules.
+
+   Rules are created with following function:
+
+ - Function: iksrule * iks_filter_add_rule (iksfilter *F, iksFilterHook
+          *FÝLTERHOOK, void *USER_DATA, ...);
+     Adds a rule to the filter F. USER_DATA is passed directly to your
+     hook function FÝLTERHOOK.
+
+     A rule consist of one or more type and value pairs. Possible types:
+    `IKS_RULE_ID'
+          Compares `char *' value to packet ids.
+
+    `IKS_RULE_FROM'
+          Compares `char *' value to packet senders.
+
+    `IKS_RULE_FROM_PARTIAL'
+          Compares `char *' value to packet sender. Ignores resource
+          part of jabber id.
+
+    `IKS_RULE_NS'
+          Compares `char *' value to namespace of iq packets.
+
+    `IKS_RULE_TYPE'
+          Compares `int' value to packet types.
+
+    `IKS_RULE_SUBTYPE'
+          Compares `int' value to packet sub types.
+
+    `IKS_RULE_DONE'
+          Terminates the rule pairs.
+
+   Here is an example which creates a filter and adds three rules:
+     iksfilter *f;
+     
+     f = iks_filter_new ();
+     iks_filter_add_rule (f, on_msg, NULL,
+                          IKS_RULE_TYPE, IKS_PAK_MESSAGE,
+     		     IKS_RULE_DONE);
+     iks_filter_add_rule (f, on_auth_result, NULL,
+                          IKS_RULE_TYPE, IKS_PAK_IQ,
+     		     IKS_RULE_SUBTYPE, IKS_TYPE_RESULT,
+     		     IKS_RULE_ID, "auth",
+     		     IKS_RULE_DONE);
+     iks_filter_add_rule (f, on_roster_push, NULL,
+                          IKS_RULE_TYPE, IKS_PAK_IQ,
+     		     IKS_RULE_SUBTYPE, IKS_TYPE_SET,
+     		     IKS_RULE_NS, "jabber:iq:roster",
+     		     IKS_RULE_DONE);
+
+ - Typedef: iksFilterHook
+     int iksFilterHook (void *user_data, ikspak *pak);
+
+     Your hook is called with your USER_DATA and matching packet PAK.
+     You can return two different values from your hook:
+    `IKS_FILTER_PASS'
+          Packet is forwarded to least matching rules.
+
+    `IKS_FILTER_EAT'
+          Filtering process for the packet ends.
+
+   You can remove the rules with following functions:
+
+ - Function: void iks_filter_remove_rule (iksfilter *F, iksrule *RULE);
+     Removes the rule from filter.
+
+ - Function: void iks_filter_remove_hook (iksfilter *F, iksFilterHook
+          *FÝLTERHOOK);
+     Remove the rules using FÝLTERHOOK function from filter.
+
+
+File: iksemel,  Node: Creating Common Packets,  Prev: Packet Filter,  Up: Writing a Jabber Client
+
+Creating Common Packets
+-----------------------
+
+A usual jabber network traffic contains many similar XML constructs.
+iksemel provides several utility functions for creating them. They all
+generate an XML tree, so you can add or modify some parts of the tree,
+and send to server then.
+
+ - Function: iks * iks_make_auth (iksid *ÝD, const char *PASS, const
+          char *SÝD);
+     Creates an authorization packet. ÝD is your parsed jabber id, and
+     PASS is your password.
+
+     If stream id SÝD isn't NULL, SHA1 authentication is used,
+     otherwise password is attached in plain text. You can learn stream
+     id from `IKS_STREAM_START' packet in your stream hook like this:
+
+          char *sid;
+          
+          if (type == IKS_STREAM_START) {
+              sid = iks_find_attrib (node, "id");
+          }
+
+ - Function: iks * iks_make_msg (enum iksubtype TYPE, const char *TO,
+          const char *BODY);
+     Creates a message packet. TYPE is the message type, TO is jabber id
+     of the recipient, BODY is the message.
+
+ - Function: iks * iks_make_s10n (enum iksubtype TYPE, const char *TO,
+          const char *MSG);
+     Creates a presence packet for subscription operations. TYPE is
+     operation, TO is jabber id of the recipient, MSG is a small
+     message for introducing yourself, or explaning the reason of why
+     you are subscribing or unsubscribing.
+
+ - Function: iks * iks_make_pres (enum ikshowtype SHOW, const char
+          *STATUS);
+     Creates a presence packet for publishing your presence. SHOW is
+     your presence state and STATUS is a message explaining why you are
+     not available at the moment, or what you are doing now.
+
+ - Function: iks * iks_make_iq (enum iksubtype TYPE, const char *XMLNS);
+     Creates an IQ packet. TYPE is operation type and XMLNS is the
+     namespace of the content. You usually have to add real content to
+     the <query> tag before sending this packet.
+
+
+File: iksemel,  Node: Utility Functions,  Prev: Writing a Jabber Client,  Up: Tutorials
+
+Utility Functions
+=================
+
+Memory Utilities
+----------------
+
+ - Function: void * iks_malloc (size_t SÝZE);
+
+ - Function: void iks_free (void *PTR);
+
+   These are wrappers around ANSI malloc and free functions used by the
+iksemel library itself. You can free the output of iks_string (only if
+you passed it a NULL stack) with iks_free for example. That is important
+if you are using a malloc debugger in your application but not in
+iksemel or vice versa.
+
+String Utilities
+----------------
+
+ - Function: char * iks_strdup (const char *SRC);
+
+ - Function: int iks_strcmp (const char *A, const char *B);
+
+ - Function: int iks_strcasecmp (const char *A, const char *B);
+
+ - Function: int iks_strncmp (const char *A, const char *B, size_t N);
+
+ - Function: int iks_strncasecmp (const char *A, const char *B, size_t
+          N);
+
+ - Function: size_t iks_strlen (const char *SRC);
+
+   These functions work exactly like their ANSI equivalents except that
+they allow NULL values for string pointers. If SRC is NULL, iks_strdup
+and iks_strlen returns zero. If A or B is NULL in string comparisation
+functions they return -1.
+
+   Their usefulness comes from the fact that they can chained with DOM
+traversing functions like this:
+
+     if (iks_strcmp (iks_find_attrib (x, "id"), "x1") == 0) count++;
+
+   That example works even x doesn't have an 'id' attribute and
+iks_find_attrib returns NULL. So you don't need to use temporary
+variables in such situations.
+
+SHA1 Hash
+---------
+
+Secure Hash Algorithm (SHA1) is used in the Jabber authentication
+protocol for encoding your password when sending to the server.  This
+is normally handled by iks_make_auth() function, but if you want to
+handle it manually, or if you need a good hash function for other
+purproses you can use these functions.
+
+ - Function: iksha* iks_sha_new (void);
+     Allocates a structure for keeping calculation values and the state.
+
+ - Function: void iks_sha_reset (iksha *SHA);
+     Resets the state of the calculation.
+
+ - Function: void iks_sha_hash (iksha *SHA, const unsigned char *DATA,
+          int LEN, int FÝNÝSH);
+     Calculates the hash value of the given data. If FÝNÝSH is non
+     zero, applies the last step of the calculation.
+
+ - Function: void iks_sha_print (iksha *SHA, char *HASH);
+     Prints the result of a finished calculation into the buffer
+     pointed by HASH in hexadecimal string form. Buffer must be at
+     least 40 bytes long. String is not null terminated.
+
+ - Function: void iks_sha (const char *DATA, char *HASH);
+     Calculates the hash value of DATA and prints into HASH.  This is a
+     helper function for simple hash calculations. It calls other
+     functions for the actual work.
+
+
+File: iksemel,  Node: Development,  Next: Datatype Index,  Prev: Tutorials,  Up: Top
+
+Development
+***********
+
+This chapter contains information on plan, procedure and standarts of
+iksemel development.
+
+Roadmap
+=======
+
+There are three main functions iksemel tries to provide to applications:
+   * A generic XML parser with SAX and DOM interfaces.
+
+   * XML stream client and server functionality.
+
+   * Utilities for Jabber clients.
+
+   Goal of the iksemel is providing these functions while supporting
+embedded environments, keeping usage simple, and having a robust
+implementation.
+
+   Some decisions are made to reach this goal:
+
+   Code is written in ANSI C with a single dependency on C library.
+Instead of using expat or libxml, a simple built-in parser is used.
+Similarly glib and gnu only features of glibc (like object stacks) are
+avoided and built-in memory and string utilities are used. This may
+seem like code duplication but since they are optimized for iksemel and
+only a few kb in size, it isn't a big disadvantage.
+
+   Code is placed files in a modular fashion, and different modules
+don't depend on others' internal details. This allows taking unneeded
+functionality out when building for low resource situations.
+
+   It is tried to give functions names which are consistent, clear and
+short.
+
+   API is documented with texinfo for high quality printed output and
+info file output for fast and simple access during application
+development. Instead of using an autogenerated system or simply listing
+function descriptions, a task oriented tutorial approach is used.
+
+Coding Style
+============
+
+Here is a short list describing preferred coding style for iksemel.
+Please keep in mind when sending patches.
+
+   * Indentation is done with tabs. Aligning is done with spaces.
+
+   * Placement of braces is K&R style.
+
+   * Function names are put at the start of line.
+
+   * Function names are lowercase.
+
+   * Words of the function names are separated with underscore
+     character.
+
+   * Structure and variable names are lowercase.
+
+   * Macro and enumarations names are uppercase.
+
+   * Exported library API is contained in the single iksemel.h file.
+
+   * Exported function names start with iks_
+
+   * Exported structure and type names start with iks
+
+   * Exported macro and enumaration names start with IKS_
+
+   Here is an example:
+
+     int
+     iks_new_func (char *text)
+     {
+         int i;
+     
+         i = an_internal_func (text);
+         if (IKS_SOME_VALUE == i) {
+             iks_some_func (text);
+             i++;
+         }
+         return i;
+     }
+
+Resources
+=========
+
+   * RFC 2279, UTF-8 format <http://www.ietf.org/rfc/rfc2279.txt>
+
+   * W3C Recommendation, Extensible Markup Language 1.0
+     <http://www.w3.org/TR/REC-xml>
+
+   * Annotated XML Specification <http://www.xml.com/axml/testaxml.htm>
+
+   * Jabber Protocol Documents <http://www.jabber.org/protocol/>
+
+
+File: iksemel,  Node: Datatype Index,  Next: Function Index,  Prev: Development,  Up: Top
+
+Datatype Index
+**************
+
+* Menu:
+
+* iks:                                   Creating a Tree.
+* iksCDataHook:                          Parsing an XML Document.
+* iksfilter:                             Packet Filter.
+* iksFilterHook:                         Packet Filter.
+* iksid:                                 Packets.
+* iksLogHook:                            XML Streams.
+* ikspak:                                Packets.
+* iksparser:                             Parsing an XML Document.
+* iksrule:                               Packet Filter.
+* iksStreamHook:                         XML Streams.
+* ikstack:                               Memory Management.
+* iksTagHook:                            Parsing an XML Document.
+* ikstype:                               Accessing the Tree.
+
+
+File: iksemel,  Node: Function Index,  Prev: Datatype Index,  Up: Top
+
+Function Index
+**************
+
+* Menu:
+
+* iks_attrib:                            Accessing the Tree.
+* iks_cdata:                             Accessing the Tree.
+* iks_cdata_size:                        Accessing the Tree.
+* iks_child:                             Accessing the Tree.
+* iks_connect_fd:                        XML Streams.
+* iks_connect_tcp:                       XML Streams.
+* iks_copy:                              Creating a Tree.
+* iks_copy_within:                       Creating a Tree.
+* iks_delete:                            Creating a Tree.
+* iks_disconnect:                        XML Streams.
+* iks_dom_new:                           Parsing an XML Document into a Tree.
+* iks_fd:                                XML Streams.
+* iks_filter_add_rule:                   Packet Filter.
+* iks_filter_delete:                     Packet Filter.
+* iks_filter_new:                        Packet Filter.
+* iks_filter_packet:                     Packet Filter.
+* iks_filter_remove_hook:                Packet Filter.
+* iks_filter_remove_rule:                Packet Filter.
+* iks_find:                              Accessing the Tree.
+* iks_find_attrib:                       Accessing the Tree.
+* iks_find_cdata:                        Accessing the Tree.
+* iks_find_with_attrib:                  Accessing the Tree.
+* iks_first_tag:                         Accessing the Tree.
+* iks_free:                              Utility Functions.
+* iks_has_attribs:                       Accessing the Tree.
+* iks_has_children:                      Accessing the Tree.
+* iks_has_tls:                           Security.
+* iks_hide:                              Creating a Tree.
+* iks_id_cmp:                            Packets.
+* iks_id_new:                            Packets.
+* iks_insert:                            Creating a Tree.
+* iks_insert_attrib:                     Creating a Tree.
+* iks_insert_cdata:                      Creating a Tree.
+* iks_insert_node:                       Creating a Tree.
+* iks_is_secure:                         Security.
+* iks_load:                              Parsing an XML Document into a Tree.
+* iks_make_auth:                         Creating Common Packets.
+* iks_make_iq:                           Creating Common Packets.
+* iks_make_msg:                          Creating Common Packets.
+* iks_make_pres:                         Creating Common Packets.
+* iks_make_s10n:                         Creating Common Packets.
+* iks_malloc:                            Utility Functions.
+* iks_name:                              Accessing the Tree.
+* iks_new:                               Creating a Tree.
+* iks_new_within:                        Creating a Tree.
+* iks_next:                              Accessing the Tree.
+* iks_next_tag:                          Accessing the Tree.
+* iks_nr_bytes:                          Parsing an XML Document.
+* iks_nr_lines:                          Parsing an XML Document.
+* iks_packet:                            Packets.
+* iks_parent:                            Accessing the Tree.
+* iks_parse:                             Parsing an XML Document.
+* iks_parser_delete:                     Parsing an XML Document.
+* iks_parser_reset:                      Parsing an XML Document.
+* iks_prev:                              Accessing the Tree.
+* iks_prev_tag:                          Accessing the Tree.
+* iks_recv:                              XML Streams.
+* iks_root:                              Accessing the Tree.
+* iks_save:                              Parsing an XML Document into a Tree.
+* iks_sax_new:                           Parsing an XML Document.
+* iks_send:                              XML Streams.
+* iks_send_header:                       XML Streams.
+* iks_send_raw:                          XML Streams.
+* iks_set_log_hook:                      XML Streams.
+* iks_set_size_hint:                     Parsing an XML Document into a Tree.
+* iks_sha:                               Utility Functions.
+* iks_sha_hash:                          Utility Functions.
+* iks_sha_new:                           Utility Functions.
+* iks_sha_print:                         Utility Functions.
+* iks_sha_reset:                         Utility Functions.
+* iks_stack:                             Accessing the Tree.
+* iks_stack_alloc:                       Memory Management.
+* iks_stack_delete:                      Memory Management.
+* iks_stack_new:                         Memory Management.
+* iks_stack_strcat:                      Memory Management.
+* iks_stack_strdup:                      Memory Management.
+* iks_start_sasl:                        Security.
+* iks_start_tls:                         Security.
+* iks_strcasecmp:                        Utility Functions.
+* iks_strcmp:                            Utility Functions.
+* iks_strdup:                            Utility Functions.
+* iks_stream_new:                        XML Streams.
+* iks_string:                            Converting a Tree into an XML Document.
+* iks_strlen:                            Utility Functions.
+* iks_strncasecmp:                       Utility Functions.
+* iks_strncmp:                           Utility Functions.
+* iks_tree:                              Parsing an XML Document into a Tree.
+* iks_type:                              Accessing the Tree.
+
+
+
+Tag Table:
+Node: Top70
+Node: Introduction752
+Node: Tutorials2511
+Node: Parsing an XML Document2753
+Node: Working with XML Trees8583
+Node: Memory Management9400
+Node: Creating a Tree13024
+Node: Accessing the Tree17285
+Node: Converting a Tree into an XML Document22000
+Node: Parsing an XML Document into a Tree23003
+Node: XML Streams25987
+Node: Writing a Jabber Client32524
+Node: Security32768
+Node: Packets33759
+Node: Packet Filter37935
+Node: Creating Common Packets40818
+Node: Utility Functions42853
+Node: Development45645
+Node: Datatype Index48552
+Node: Function Index49439
+
+End Tag Table

@@ -1,0 +1,34 @@
+V1.2 (2004-08-06)
+* SASL authentication.
+* SSH connections via gnutls library.
+* Socket code abstracted, you can even provide your own transport functions.
+* Compiles on Windows with MinGW.
+* iks_sha_print() uses lowercase hex numbers to comply with latest jabber.
+* New stack implementation, much faster and uses less memory.
+  Unfortunately API has changed a bit:
+  iks_stack_strcat, strcatv, print functions removed.
+  iks_stack_stats modified.
+  iks_stack_strecat renamed to iks_stack_strcat.
+  iks_stack_new takes two chunk sizes, one for structures one for strings.
+  iks_stack_strdup returns (char *).
+
+V1.1 (2003-09-11)
+* Minor sax parser speed up.
+* iks_string() and dom parser performance is improved greatly.
+* iksperf: new tool for measuring iksemel performance.
+* ikslint: better error checking. supports stdin. can display tag usage histogram.
+* New dom functions: iks_copy(), iks_copy_within(), iks_root(), iks_tree().
+* License of the documentation changed to GPL from GNU FDL.
+
+V1.0 (2003-06-29)
+* API redesigned.
+* iconv interface removed.
+* ikslint and iksroster tools.
+* Jabber packet filter.
+* IPv6 support.
+* iks_find_with_attrib, iks_next_tag, iks_prev_tag, iks_first_tag functions.
+* Parser improvements (CDATA sections, comments, UTF8 validity checks)
+* Memory pools are replaced with object stacks.
+
+V0.1 (2002-10-30)
+* First release.
