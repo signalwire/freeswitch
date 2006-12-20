@@ -44,7 +44,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\..\speex-1.1.11.1\win32, ..\..\speex-1.1.11.1\include"
+				AdditionalIncludeDirectories="..\..\speex\win32, ..\..\speex\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;HAVE_CONFIG_H"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/libspeex.pch"
@@ -118,7 +118,7 @@
 				InlineFunctionExpansion="2"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="..\..\speex-1.1.11.1\win32, ..\..\speex-1.1.11.1\include"
+				AdditionalIncludeDirectories="..\..\speex\win32, ..\..\speex\include"
 				PreprocessorDefinitions="inline=__inline;WIN32;NDEBUG;_WINDOWS;HAVE_CONFIG_H"
 				RuntimeLibrary="0"
 				PrecompiledHeaderFile=".\Release/libspeex.pch"
@@ -171,131 +171,135 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\bits.c"
+				RelativePath="..\..\speex\libspeex\bits.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\cb_search.c"
+				RelativePath="..\..\speex\libspeex\cb_search.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\exc_10_16_table.c"
+				RelativePath="..\..\speex\libspeex\exc_10_16_table.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\exc_10_32_table.c"
+				RelativePath="..\..\speex\libspeex\exc_10_32_table.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\exc_20_32_table.c"
+				RelativePath="..\..\speex\libspeex\exc_20_32_table.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\exc_5_256_table.c"
+				RelativePath="..\..\speex\libspeex\exc_5_256_table.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\exc_5_64_table.c"
+				RelativePath="..\..\speex\libspeex\exc_5_64_table.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\exc_8_128_table.c"
+				RelativePath="..\..\speex\libspeex\exc_8_128_table.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\filters.c"
+				RelativePath="..\..\speex\libspeex\filters.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\gain_table.c"
+				RelativePath="..\..\speex\libspeex\gain_table.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\gain_table_lbr.c"
+				RelativePath="..\..\speex\libspeex\gain_table_lbr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\hexc_10_32_table.c"
+				RelativePath="..\..\speex\libspeex\hexc_10_32_table.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\hexc_table.c"
+				RelativePath="..\..\speex\libspeex\hexc_table.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\high_lsp_tables.c"
+				RelativePath="..\..\speex\libspeex\high_lsp_tables.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\lpc.c"
+				RelativePath="..\..\speex\libspeex\lpc.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\lsp.c"
+				RelativePath="..\..\speex\libspeex\lsp.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\lsp_tables_nb.c"
+				RelativePath="..\..\speex\libspeex\lsp_tables_nb.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\ltp.c"
+				RelativePath="..\..\speex\libspeex\ltp.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\math_approx.c"
+				RelativePath="..\..\speex\libspeex\math_approx.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\misc.c"
+				RelativePath="..\..\speex\libspeex\misc.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\modes.c"
+				RelativePath="..\..\speex\libspeex\modes.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\nb_celp.c"
+				RelativePath="..\..\speex\libspeex\nb_celp.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\preprocess.c"
+				RelativePath="..\..\speex\libspeex\preprocess.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\quant_lsp.c"
+				RelativePath="..\..\speex\libspeex\quant_lsp.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\sb_celp.c"
+				RelativePath="..\..\speex\libspeex\sb_celp.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\smallft.c"
+				RelativePath="..\..\speex\libspeex\smallft.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\speex.c"
+				RelativePath="..\..\speex\libspeex\speex.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\speex_callbacks.c"
+				RelativePath="..\..\speex\libspeex\speex_callbacks.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\speex_header.c"
+				RelativePath="..\..\speex\libspeex\speex_header.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\stereo.c"
+				RelativePath="..\..\speex\libspeex\stereo.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\vbr.c"
+				RelativePath="..\..\speex\libspeex\vbr.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\vq.c"
+				RelativePath="..\..\speex\libspeex\vq.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\speex\libspeex\window.c"
 				>
 			</File>
 		</Filter>
@@ -304,83 +308,83 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\cb_search.h"
+				RelativePath="..\..\speex\libspeex\cb_search.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\filters.h"
+				RelativePath="..\..\speex\libspeex\filters.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\lpc.h"
+				RelativePath="..\..\speex\libspeex\lpc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\lsp.h"
+				RelativePath="..\..\speex\libspeex\lsp.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\ltp.h"
+				RelativePath="..\..\speex\libspeex\ltp.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\misc.h"
+				RelativePath="..\..\speex\libspeex\misc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\modes.h"
+				RelativePath="..\..\speex\libspeex\modes.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\nb_celp.h"
+				RelativePath="..\..\speex\libspeex\nb_celp.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\quant_lsp.h"
+				RelativePath="..\..\speex\libspeex\quant_lsp.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\sb_celp.h"
+				RelativePath="..\..\speex\libspeex\sb_celp.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\smallft.h"
+				RelativePath="..\..\speex\libspeex\smallft.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\speex.h"
+				RelativePath="..\..\speex\libspeex\speex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\speex_bits.h"
+				RelativePath="..\..\speex\libspeex\speex_bits.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\speex_callbacks.h"
+				RelativePath="..\..\speex\libspeex\speex_callbacks.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\speex_denoise.h"
+				RelativePath="..\..\speex\libspeex\speex_denoise.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\speex_header.h"
+				RelativePath="..\..\speex\libspeex\speex_header.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\speex_stereo.h"
+				RelativePath="..\..\speex\libspeex\speex_stereo.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\stack_alloc.h"
+				RelativePath="..\..\speex\libspeex\stack_alloc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\vbr.h"
+				RelativePath="..\..\speex\libspeex\vbr.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\speex-1.1.11.1\libspeex\vq.h"
+				RelativePath="..\..\speex\libspeex\vq.h"
 				>
 			</File>
 		</Filter>
