@@ -1,0 +1,35 @@
+Better saturation handling in mdf?
+get rid of crap that shouldn't be exposed in speex.h
+
+Would be nice:
+
+Allocator override (speex_lib_ctl)
+Better error handling
+Fixed-point:
+  - Wideband
+  - Initialization
+  - Jitter buffer
+Denoiser:
+  - Smooth gain (remove musical noise)
+  - Better noise adaptation
+  - Do some tuning
+AGC:
+  - Use median filtering instead of "non-linear mean"
+
+
+
+Features
+-Add maximum/minimum bit-rate control for VBR
+-Improve error handling (with perror-like call?)
+
+Long-term quality improvements
+-Improve perceptual enhancement (including wideband)
+
+Standards
+-Complete Speex RTP profile
+-MIME type registration
+
+ideas:
+Peelable stream (double codebook, higher bands, stereo)
+LPC from spectral domain
+Better psycho-acoustic model. Masking curve from Vorbis?

@@ -1,0 +1,8 @@
+Installing Speex is as easy as:
+
+% ./configure [--prefix=<install-path>]
+% make
+% make install
+
+Note that if you are using the code from SVN, you will need to run "autogen.sh"
+instead of "configure".

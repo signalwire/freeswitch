@@ -1,0 +1,43 @@
+Using Speex on Symbian OS
+Conrad Parker and Colin Ward, CSIRO Australia, July 2004
+
+
+Introduction
+------------
+
+The symbian/ directory contains the following files for Symbian's abuild tool:
+
+  bld.inf    Component definition file
+  speex.mmp  Project specification file
+  config.h   Configuration options for both emulator and device builds
+
+
+Developing applications for libspeex for Symbian OS
+---------------------------------------------------
+
+     Any references to the statically defined SpeexMode structures must be
+     replaced by a call to a speex_lib_get_mode () for that mode.
+
+     * References to the statically defined array speex_mode_list[modeID]
+     must be replaced by a call to speex_lib_get_mode (modeID):
+
+-      mode = speex_mode_list[modeID];
++      mode = speex_lib_get_mode (modeID);
+
+     * References to the statically defined mode structures must be replaced:
+
+       SpeexMode * mode1, * mode2, * mode3;
+
+-      mode1 = &speex_nb_mode;
++      mode1 = speex_lib_get_mode (SPEEX_MODEID_NB);
+
+-      mode2 = &speex_wb_mode;
++      mode2 = speex_lib_get_mode (SPEEX_MODEID_WB);
+
+-      mode3 = &speex_uwb_mode;
++      mode3 = speex_lib_get_mode (SPEEX_MODEID_UWB);
+
+     Note that the constants SPEEX_MODEID_NB, SPEEX_MODEID_WB and
+     SPEEX_MODEID_UWB were introduced in libspeex 1.1.6, and are
+     defined in <speex/speex.h>. speex_lib_get_mode() was introduced
+     in libspeex 1.1.7 and is declared in <speex/speex.h>.

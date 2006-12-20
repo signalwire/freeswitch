@@ -1,0 +1,21 @@
+2005-09-07  Thomas Vander Stichele  <thomas at apestaart dot org>
+
+	* libspeex/cb_search.c: (split_cb_search_shape_sign_N1):
+	  add declaration for n, seems like an obvious build fix, slap
+	  me down if it's not
+
+2004-02-18 Jean-Marc Valin <jean-marc.valin@usherbrooke.ca>
+	Patch for compiling with mingw32 sent by j@thing.net 
+
+2004-02-18 Jean-Marc Valin <jean-marc.valin@usherbrooke.ca>
+	Integrated IRIX patch (getopt stuff) from Michael Pruett <michael@68k.org> 
+
+2004-02-18 Jean-Marc Valin <jean-marc.valin@usherbrooke.ca>
+	Changed the Makefile.am so that KDevelop can parse SUBDIRS correctly 
+
+2002/03/27 Jean-Marc Valin:
+Working encoder and decoder for both narrowband and wideband.
+
+2002/02/27 Jean-Marc Valin:
+Got the basic encoder working as a demo with quantization only on some 
+parameters.
