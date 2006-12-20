@@ -1,0 +1,46 @@
+<info>
+<keywords>
+FTP
+PASV
+RETR
+FAILURE
+</keywords>
+</info>
+# Server-side
+<reply>
+</reply>
+
+# Client-side
+<client>
+<server>
+ftp
+</server>
+ <name>
+FTP download, failed RETR
+ </name>
+ <command>
+ftp://%HOSTIP:%FTPPORT/118
+</command>
+<file name="log/ftpserver.cmd">
+REPLY RETR 314 bluah you f00l!
+REPLY EPSV 314 bluah you f00l!
+</file>
+</client>
+
+# Verify data after the test has been "shot"
+<verify>
+<errorcode>
+19
+</errorcode>
+<protocol>
+USER anonymous
+PASS curl_by_daniel@haxx.se
+PWD
+EPSV
+PASV
+TYPE I
+SIZE 118
+RETR 118
+QUIT
+</protocol>
+</verify>

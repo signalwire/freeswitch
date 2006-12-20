@@ -1,0 +1,136 @@
+These are problems known to exist at the time of this release. Feel free to
+join in and help us correct one or more of these! Also be sure to check the
+changelog of the current development status, as one or more of these problems
+may have been fixed since this was written!
+
+35. Both SOCKS5 and SOCKS4 proxy connections are done blocking, which is very
+  bad when used with the multi interface.
+
+34. The SOCKS4 connection codes don't properly acknowledge (connect) timeouts.
+  Also see #12. According to bug #1556528, even the SOCKS5 connect code does
+  not do it right: http://curl.haxx.se/bug/view.cgi?id=1556528,
+
+33. Doing multi-pass HTTP authentication on a non-default port does not work.
+  This happens because the multi-pass code abuses the redirect following code
+  for doing multiple requests, and when we following redirects to an absolute
+  URL we must use the newly specified port and not the one specified in the
+  original URL. A proper fix to this would need to separate the negotiation
+  "redirect" from an actual redirect.
+
+32. (At least on Windows) If libcurl is built with c-ares and there's no DNS
+  server configured in the system, the ares_init() call fails and thus
+  curl_easy_init() fails as well. This causes weird effects for people who use
+  numerical IP addresses only.
+
+31. "curl-config --libs" will include details set in LDFLAGS when configure is
+  run that might be needed only for building libcurl. Similarly, it might
+  include options that perhaps aren't suitable both for static and dynamic
+  linking. Further, curl-config --cflags suffers from the same effects with
+  CFLAGS/CPPFLAGS.
+
+30. You need to use -g to the command line tool in order to use RFC2732-style
+  IPv6 numerical addresses in URLs.
+
+29. IPv6 URLs with zone ID is not supported.
+  http://www.ietf.org/internet-drafts/draft-fenner-literal-zone-02.txt
+  specifies the use of a plus sign instead of a percent when specifying zone
+  IDs in URLs to get around the problem of percent signs being
+  special. According to the reporter, Firefox deals with the URL _with_ a
+  percent letter (which seems like a blatant URL spec violation).
+
+   See http://curl.haxx.se/bug/view.cgi?id=1371118
+
+26. NTLM authentication using SSPI (on Windows) when (lib)curl is running in
+  "system context" will make it use wrong(?) user name - at least when compared
+  to what winhttp does. See http://curl.haxx.se/bug/view.cgi?id=1281867
+
+25. When doing a CONNECT request with curl it doesn't properly handle if the
+  proxy closes the connection within the authentication "negotiation phase".
+  Like if you do HTTPS or similar over a proxy and you use perhaps
+  --proxy-anyauth.
+
+23. We don't support SOCKS for IPv6. We don't support FTPS over a SOCKS proxy.
+  We don't have any test cases for SOCKS proxy. We probably have even more
+  bugs and lack of features when a SOCKS proxy is used. And there seem to be a
+  problem with SOCKS when doing FTP: See
+  http://curl.haxx.se/bug/view.cgi?id=1371540
+
+22. Sending files to a FTP server using curl on VMS, might lead to curl
+  complaining on "unaligned file size" on completion. The problem is related
+  to VMS file structures and the perceived file sizes stat() returns. A
+  possible fix would involve sending a "STRU VMS" command.
+  http://curl.haxx.se/bug/view.cgi?id=1156287
+  
+21. FTP ASCII transfers do not follow RFC959. They don't convert the data
+   accordingly (not for sending nor for receiving). RFC 959 section 3.1.1.1
+   clearly describes how this should be done:
+
+     The sender converts the data from an internal character representation to
+     the standard 8-bit NVT-ASCII representation (see the Telnet
+     specification).  The receiver will convert the data from the standard
+     form to his own internal form.
+
+   Since 7.15.4 at least line endings are converted.
+
+16. FTP URLs passed to curl may contain NUL (0x00) in the RFC 1738 <user>,
+  <password>, and <fpath> components, encoded as "%00".  The problem is that
+  curl_unescape does not detect this, but instead returns a shortened C
+  string.  From a strict FTP protocol standpoint, NUL is a valid character
+  within RFC 959 <string>, so the way to handle this correctly in curl would
+  be to use a data structure other than a plain C string, one that can handle
+  embedded NUL characters.  From a practical standpoint, most FTP servers
+  would not meaningfully support NUL characters within RFC 959 <string>,
+  anyway (e.g., UNIX pathnames may not contain NUL).
+
+14. Test case 165 might fail on system which has libidn present, but with an
+  old iconv version (2.1.3 is a known bad version), since it doesn't recognize
+  the charset when named ISO8859-1. Changing the name to ISO-8859-1 makes the
+  test pass, but instead makes it fail on Solaris hosts that use its native
+  iconv.
+
+13. curl version 7.12.2 fails on AIX if compiled with --enable-ares.
+  The workaround is to combine --enable-ares with --disable-shared
+
+12. When connecting to a SOCKS proxy, the (connect) timeout is not properly
+  acknowledged after the actual TCP connect (during the SOCKS "negotiate"
+  phase).
+
+11. Using configure --disable-[protocol] may cause 'make test' to fail for
+  tests using the disabled protocol(s).
+
+10. To get HTTP Negotiate authentication to work fine, you need to provide a
+  (fake) user name (this concerns both curl and the lib) because the code
+  wrongly only considers authentication if there's a user name provided.
+  http://curl.haxx.se/bug/view.cgi?id=1004841. How?
+  http://curl.haxx.se/mail/lib-2004-08/0182.html
+
+8. Doing resumed upload over HTTP does not work with '-C -', because curl
+  doesn't do a HEAD first to get the initial size. This needs to be done
+  manually for HTTP PUT resume to work, and then '-C [index]'.
+
+7. CURLOPT_USERPWD and CURLOPT_PROXYUSERPWD have no way of providing user names
+  that contain a colon. This can't be fixed easily in a backwards compatible
+  way without adding new options (and then, they should most probably allow
+  setting user name and password separately).
+
+6. libcurl ignores empty path parts in FTP URLs, whereas RFC1738 states that
+  such parts should be sent to the server as 'CWD ' (without an argument).
+  The only exception to this rule, is that we knowingly break this if the
+  empty part is first in the path, as then we use the double slashes to
+  indicate that the user wants to reach the root dir (this exception SHALL
+  remain even when this bug is fixed).
+
+5. libcurl doesn't treat the content-length of compressed data properly, as
+  it seems HTTP servers send the *uncompressed* length in that header and
+  libcurl thinks of it as the *compressed* length. Some explanations are here:
+  http://curl.haxx.se/mail/lib-2003-06/0146.html
+
+2. If a HTTP server responds to a HEAD request and includes a body (thus
+  violating the RFC2616), curl won't wait to read the response but just stop
+  reading and return back. If a second request (let's assume a GET) is then
+  immediately made to the same server again, the connection will be re-used
+  fine of course, and the second request will be sent off but when the
+  response is to get read, the previous response-body is what curl will read
+  and havoc is what happens.
+  More details on this is found in this libcurl mailing list thread:
+  http://curl.haxx.se/mail/lib-2002-08/0000.html

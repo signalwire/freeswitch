@@ -1,0 +1,39 @@
+<info>
+<keywords>
+FTP
+FAILURE
+</keywords>
+</info>
+# Server-side
+<reply>
+</reply>
+
+# Client-side
+<client>
+<server>
+ftp
+</server>
+ <name>
+FTP download, failed CWD
+ </name>
+ <command>
+ftp://%HOSTIP:%FTPPORT/path/to/file/125
+</command>
+<file name="log/ftpserver.cmd">
+REPLY CWD 314 bluah you f00l!
+</file>
+</client>
+
+# Verify data after the test has been "shot"
+<verify>
+<errorcode>
+9
+</errorcode>
+<protocol>
+USER anonymous
+PASS curl_by_daniel@haxx.se
+PWD
+CWD path
+QUIT
+</protocol>
+</verify>

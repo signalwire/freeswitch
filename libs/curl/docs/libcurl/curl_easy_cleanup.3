@@ -1,0 +1,31 @@
+.\" You can view this file with:
+.\" nroff -man [file]
+.\" $Id: curl_easy_cleanup.3,v 1.6 2006-10-12 14:35:20 bagder Exp $
+.\"
+.TH curl_easy_cleanup 3 "12 Oct 2006" "libcurl 7.7" "libcurl Manual"
+.SH NAME
+curl_easy_cleanup - End a libcurl easy session
+.SH SYNOPSIS
+.B #include <curl/curl.h>
+
+.BI "void curl_easy_cleanup(CURL *" handle ");"
+
+.SH DESCRIPTION
+This function must be the last function to call for an easy session. It is the
+opposite of the \fIcurl_easy_init(3)\fP function and must be called with the
+same \fIhandle\fP as input that the curl_easy_init call returned.
+
+This will effectively close all connections this handle has used and possibly
+has kept open until now. Don't call this function if you intend to transfer
+more files.
+
+When you've called this, you can safely remove all the strings you've
+previously told libcurl to use, as it won't use them anymore now.
+
+Any uses of the \fBhandle\fP after this function has been called are
+illegal. This kills the handle and all memory associated with it!
+.SH RETURN VALUE
+None
+.SH "SEE ALSO"
+.BR curl_easy_init "(3), "
+

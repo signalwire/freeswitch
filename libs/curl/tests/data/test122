@@ -1,0 +1,43 @@
+<info>
+<keywords>
+FTP
+PASV
+Resume
+</keywords>
+</info>
+# Server-side
+<reply>
+<size>
+5
+</size>
+</reply>
+
+# Client-side
+<client>
+<server>
+ftp
+</server>
+ <name>
+FTP download resume with whole file already downloaded
+ </name>
+ <command>
+ftp://%HOSTIP:%FTPPORT/122 -C 5
+</command>
+<file name="log/ftpserver.cmd">
+REPLY EPSV 500 no such command
+</file>
+</client>
+
+# Verify data after the test has been "shot"
+<verify>
+<protocol>
+USER anonymous
+PASS curl_by_daniel@haxx.se
+PWD
+EPSV
+PASV
+TYPE I
+SIZE 122
+QUIT
+</protocol>
+</verify>

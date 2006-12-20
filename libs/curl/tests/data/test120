@@ -1,0 +1,51 @@
+<info>
+<keywords>
+FTP
+PASV
+RETR
+post-quote
+</keywords>
+</info>
+# Server-side
+<reply>
+<data>
+data
+    to
+      see
+that FTP
+works
+  so does it?
+</data>
+</reply>
+
+# Client-side
+<client>
+<server>
+ftp
+</server>
+ <name>
+ftp download with post-quote delete operation
+ </name>
+ <command>
+ftp://%HOSTIP:%FTPPORT/120 -Q "-DELE file"
+</command>
+<file name="log/ftpserver.cmd">
+REPLY EPSV 314 bluah you f00l!
+</file>
+</client>
+
+# Verify data after the test has been "shot"
+<verify>
+<protocol>
+USER anonymous
+PASS curl_by_daniel@haxx.se
+PWD
+EPSV
+PASV
+TYPE I
+SIZE 120
+RETR 120
+DELE file
+QUIT
+</protocol>
+</verify>

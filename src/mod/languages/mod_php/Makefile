@@ -15,7 +15,7 @@ all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(PHPMOD).$(DYNAMIC_LIB_EXTEN)
 
 depends:
 	MOD_CFLAGS="$(MOD_CFLAGS)" MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install zlib-1.2.3.tar.gz --prefix=$(PREFIX)
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install curl-7.15.2.tar.gz --prefix=$(PREFIX)
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install curl --prefix=$(PREFIX)
 	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install php-5.1.6.tar.gz --prefix=$(PREFIX) --enable-embed=shared --enable-shared --with-pic --with-zlib=$(PREFIX) --with-curl --enable-maintainer-zts --with-tsrm-pthreads --enable-debug
 %.o:  %.c
 	$(CC) $(LCFLAGS) $(CFLAGS) -c $< -o $@

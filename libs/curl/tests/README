@@ -1,0 +1,88 @@
+                                  _   _ ____  _     
+                              ___| | | |  _ \| |    
+                             / __| | | | |_) | |    
+                            | (__| |_| |  _ <| |___ 
+                             \___|\___/|_| \_\_____|
+
+The cURL Test Suite
+
+Requires:
+  perl (and a unix-style shell)
+  diff (when a test fail, a diff is shown)
+  stunnel (for HTTPS and FTPS tests)
+
+TCP ports used:
+
+  - 8999 on localhost for HTTP tests
+  - 8433 on localhost for HTTPS tests
+  - 8921 on localhost for FTP tests
+  - 8821 on localhost for FTPS tests (currently disabled)
+
+  The test suite runs simple FTP and HTTP servers on these ports to which
+  it makes requests.
+
+Run:
+  'make test'. This invokes the 'runtests.pl' perl script. Edit the top
+  variables of that script in case you have some specific needs.
+
+  The script breaks on the first test that doesn't do OK. Use -a to prevent
+  the script to abort on the first error. Run the script with -v for more
+  verbose output. Use -d to run the test servers with debug output enabled as
+  well.
+
+  Use -s for shorter output, or pass test numbers to run specific tests only
+  (like "./runtests.pl 3 4" to test 3 and 4 only). It also supports test case
+  ranges with 'to'. As in "./runtests 3 to 9" which runs the seven tests from
+  3 to 9.
+
+Memory:
+  The test script will check that all allocated memory is freed properly IF
+  curl has been built with the CURLDEBUG define set. The script will
+  automatically detect if that is the case, and it will use the ../memanalyze
+  script to analyze the memory debugging output.
+
+Debug:
+  If a test case fails, you can conveniently get the script to invoke the
+  debugger (gdb) for you with the server running and the exact same command
+  line parameters that failed. Just invoke 'runtests.pl <test number> -g' and
+  then just type 'run' in the debugger to perform the command through the
+  debugger.
+
+  If a test case causes a core dump, analyze it by running gdb like:
+
+          # gdb ../curl/src core
+
+  ... and get a stack trace with the gdb command:
+
+          (gdb) where
+
+Logs:
+  All logs are generated in the logs/ subdirctory (it is emptied first
+  in the runtests.pl script). Use runtests.pl -k to keep the temporary files
+  after the test run.
+
+Data:
+  All test cases are put in the data/ subdirctory. Each test is stored in the
+  file named according to the test number.
+
+  See FILEFORMAT for the description of the test case files.
+
+
+TEST CASE NUMBERS
+
+ So far, I've used this system:
+
+ 1   -  99   HTTP
+ 100 - 199   FTP
+ 200 - 299   FILE
+ 300 - 399   HTTPS
+ 400 - 499   FTPS
+ 500 - 599   libcurl source code tests, not using the curl command tool
+
+ Since 30-apr-2003, there's nothing in the system that requires us to keep
+ within these number series. Each test case now specifies its own server
+ requirements, independent of test number.
+
+TODO:
+
+  * Add tests for TELNET, LDAP, DICT...

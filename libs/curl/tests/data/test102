@@ -1,0 +1,50 @@
+<info>
+<keywords>
+FTP
+PASV
+RETR
+</keywords>
+</info>
+# Server-side
+<reply>
+<data>
+data
+    to
+      see
+that FTP
+works
+  so does it?
+</data>
+</reply>
+
+# Client-side
+<client>
+<server>
+ftp
+</server>
+ <name>
+FTP RETR PASV
+ </name>
+ <command>
+ftp://%HOSTIP:%FTPPORT/102
+</command>
+
+<file name="log/ftpserver.cmd">
+REPLY EPSV 500 no such command
+</file>
+</client>
+
+# Verify data after the test has been "shot"
+<verify>
+<protocol>
+USER anonymous
+PASS curl_by_daniel@haxx.se
+PWD
+EPSV
+PASV
+TYPE I
+SIZE 102
+RETR 102
+QUIT
+</protocol>
+</verify>

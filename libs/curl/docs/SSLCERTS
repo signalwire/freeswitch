@@ -1,0 +1,92 @@
+                      Peer SSL Certificate Verification
+                      =================================
+
+libcurl performs peer SSL certificate verification by default. This is done by
+installing a default CA cert bundle on 'make install' (or similar), that CA
+bundle package is used by default on operations against SSL servers.
+
+If you communicate with HTTPS or FTPS servers using certificates that are
+signed by CAs present in the bundle, you can be sure that the remote server
+really is the one it claims to be.
+
+If the remote server uses a self-signed certificate, if you don't install
+curl's CA cert bundle, if the server uses a certificate signed by a CA that
+isn't included in the bundle or if the remote host is an impostor
+impersonating your favorite site, and you want to transfer files from this
+server, do one of the following:
+
+ 1. Tell libcurl to *not* verify the peer. With libcurl you disable with with
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+
+    With the curl command line tool, you disable this with -k/--insecure.
+
+ 2. Get a CA certificate that can verify the remote server and use the proper
+    option to point out this CA cert for verification when connecting. For
+    libcurl hackers: curl_easy_setopt(curl, CURLOPT_CAPATH, capath);
+
+    With the curl command line tool: --cacert [file]
+
+ 3. Add the CA cert for your server to the existing default CA cert bundle.
+    The default path of the CA bundle installed with the curl package is:
+    /usr/local/share/curl/curl-ca-bundle.crt, which can be changed by running
+    configure with the --with-ca-bundle option pointing out the path of your
+    choice.
+
+    To do this, you need to get the CA cert for your server in PEM format and
+    then append that to your CA cert bundle.
+
+    If you use Internet Explorer, this is one way to get extract the CA cert
+    for a particular server:
+
+     o View the certificate by double-clicking the padlock
+     o Find out where the CA certificate is kept (Certificate>
+       Authority Information Access>URL)
+     o Get a copy of the crt file using curl
+     o Convert it from crt to PEM using the openssl tool:
+       openssl x509 -inform DES -in yourdownloaded.crt \
+       -out outcert.pem -text
+     o Append the 'outcert.pem' to the CA cert bundle or use it stand-alone
+       as described below.
+
+     (Thanks to Frankie V for this description)
+
+    If you use the 'openssl' tool, this is one way to get extract the CA cert
+    for a particular server:
+
+     o openssl s_client -connect xxxxx.com:443 |tee logfile
+     o type "QUIT", followed by the "ENTER" key
+     o The certificate will have "BEGIN CERTIFICATE" and "END CERTIFICATE"
+       markers.
+     o If you want to see the data in the certificate, you can do: "openssl
+       x509 -inform PEM -in certfile -text -out certdata" where certfile is
+       the cert you extracted from logfile. Look in certdata.
+     o If you want to trust the certificate, you can append it to your
+       cert_bundle or use it stand-alone as described. Just remember that the
+       security is no better than the way you obtained the certificate.
+
+     (Thanks to Doug Kaufman for this description)
+
+ 4. If you're using the curl command line tool, you can specify your own CA
+    cert path by setting the environment variable CURL_CA_BUNDLE to the path
+    of your choice.
+
+    If you're using the curl command line tool on Windows, curl will search
+    for a CA cert file named "curl-ca-bundle.crt" in these directories and in
+    this order:
+      1. application's directory
+      2. current working directory
+      3. Windows System directory (e.g. C:\windows\system32)
+      4. Windows Directory (e.g. C:\windows)
+      5. all directories along %PATH%
+
+ 5. Get a better/different/newer CA cert bundle! One option is to extract the
+    one a recent Mozilla browser uses, by following the instruction found
+    here:
+
+        http://curl.haxx.se/docs/caextract.html
+
+Neglecting to use one of the above methods when dealing with a server using a
+certificate that isn't signed by one of the certificates in the installed CA
+cert bundle, will cause SSL to report an error ("certificate verify failed")
+during the handshake and SSL will then refuse further communication with that
+server.

@@ -1,0 +1,45 @@
+<info>
+<keywords>
+FTP
+PASV
+RETR
+</keywords>
+</info>
+# Server-side
+<reply>
+<data>
+we can still send data even if pwd fails!
+</data>
+</reply>
+
+# Client-side
+<client>
+<server>
+ftp
+</server>
+ <name>
+FTP download, failed PWD
+ </name>
+ <command>
+ftp://%HOSTIP:%FTPPORT/124
+</command>
+<file name="log/ftpserver.cmd">
+REPLY PWD 314 bluah you f00l!
+REPLY EPSV 314 bluah you f00l!
+</file>
+</client>
+
+# Verify data after the test has been "shot"
+<verify>
+<protocol>
+USER anonymous
+PASS curl_by_daniel@haxx.se
+PWD
+EPSV
+PASV
+TYPE I
+SIZE 124
+RETR 124
+QUIT
+</protocol>
+</verify>

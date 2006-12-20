@@ -1,0 +1,52 @@
+<info>
+<keywords>
+FTP
+PASV
+RETR
+Resume
+</keywords>
+</info>
+# Server-side
+<reply>
+<data>
+expected to be a file without the first part
+but we emulate that
+</data>
+<size>
+85
+</size>
+</reply>
+
+# Client-side
+<client>
+<server>
+ftp
+</server>
+ <name>
+FTP download resume with set limit
+ </name>
+ <command>
+ftp://%HOSTIP:%FTPPORT/110 -C 20
+</command>
+<file name="log/ftpserver.cmd">
+REPLY EPSV 500 no such command
+</file>
+</client>
+
+# Verify data after the test has been "shot"
+<verify>
+<strip>
+</strip>
+<protocol>
+USER anonymous
+PASS curl_by_daniel@haxx.se
+PWD
+EPSV
+PASV
+TYPE I
+SIZE 110
+REST 20
+RETR 110
+QUIT
+</protocol>
+</verify>
