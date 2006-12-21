@@ -993,9 +993,9 @@ static void conference_loop(conference_member_t *member)
 					break;
 				case '9':
 					switch_mutex_lock(member->flag_mutex);
-					member->energy_level += 100;
-					if (member->energy_level > 1200) {
-						member->energy_level = 1200;
+					member->energy_level += 200;
+					if (member->energy_level > 3000) {
+						member->energy_level = 3000;
 					}
 					switch_mutex_unlock(member->flag_mutex);
 					snprintf(msg, sizeof(msg), "Energy level %d", member->energy_level);
