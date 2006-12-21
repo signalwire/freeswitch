@@ -2978,34 +2978,31 @@ static switch_status_t conf_api_sub_norecord(conference_obj_t *conference, switc
     return ret_status;
 }
 
-
-
 /* API Interface Function sub-commands */
 static api_command_t conf_api_sub_commands[] = {
-    {"list", 	&conf_api_sub_list, 		CONF_API_SUB_ARGS_SPLIT, 	"<confname> list [delim <string>]"}, 
-    {"energy", 	&conf_api_sub_energy, 		CONF_API_SUB_MEMBER_TARGET, 	"<confname> energy <member_id|all|last> [<newval>]"}, 
-    {"volume in", 	&conf_api_sub_volume_in, 	CONF_API_SUB_MEMBER_TARGET, 	"<confname> volume_in <member_id|all|last> [<newval>]"}, 
-    {"volume out", 	&conf_api_sub_volume_out, 	CONF_API_SUB_MEMBER_TARGET, 	"<confname> volume_out <member_id|all|last> [<newval>]"}, 
-    {"play", 	&conf_api_sub_play, 		CONF_API_SUB_ARGS_SPLIT, 	"<confname> play <file_path> [<member_id>]"}, 
-    {"say", 		&conf_api_sub_say, 		CONF_API_SUB_ARGS_AS_ONE, 	"<confname> say <text>"}, 
-    {"saymember", 	&conf_api_sub_saymember, 	CONF_API_SUB_ARGS_AS_ONE, 	"<confname> saymember <member_id> <text>"}, 
-    {"stop", 	&conf_api_sub_stop, 		CONF_API_SUB_MEMBER_TARGET, 	"<confname> stop <[current|all|last]> [<member_id>]"}, 
-    {"kick", 	&conf_api_sub_kick, 		CONF_API_SUB_MEMBER_TARGET, 	"<confname> kick <[member_id|all|last]>"}, 
-    {"mute", 	&conf_api_sub_mute, 		CONF_API_SUB_MEMBER_TARGET, 	"<confname> mute <[member_id|all]|last>"}, 
-    {"unmute", 	&conf_api_sub_unmute, 		CONF_API_SUB_MEMBER_TARGET, 	"<confname> unmute <[member_id|all]|last>"}, 
-    {"deaf", 	&conf_api_sub_deaf, 		CONF_API_SUB_MEMBER_TARGET, 	"<confname> deaf <[member_id|all]|last>"}, 
-    {"undeaf", 	&conf_api_sub_undeaf, 		CONF_API_SUB_MEMBER_TARGET, 	"<confname> undeaf <[member_id|all]|last>"}, 
-    {"relate", 	&conf_api_sub_relate, 		CONF_API_SUB_ARGS_SPLIT, 	"<confname> relate <member_id> <other_member_id> [nospeak|nohear|clear]"}, 
-    {"lock", 	&conf_api_sub_lock, 		CONF_API_SUB_ARGS_SPLIT, 	"<confname> lock"}, 
-    {"unlock", 	&conf_api_sub_unlock, 		CONF_API_SUB_ARGS_SPLIT, 	"<confname> unlock"}, 
-    {"dial", 	&conf_api_sub_dial, 		CONF_API_SUB_ARGS_SPLIT, 	"<confname> dial <endpoint_module_name>/<destination> <callerid number> <callerid name>"}, 
-    {"transfer", 	&conf_api_sub_transfer, 		CONF_API_SUB_ARGS_SPLIT, 	"<confname> transfer <conference_name> <member id> [...<member id>]"}, 
-    {"record", 	&conf_api_sub_record, 		CONF_API_SUB_ARGS_SPLIT, 	"<confname> record <filename>"}, 
-    {"norecord", 	&conf_api_sub_norecord, 		CONF_API_SUB_ARGS_SPLIT, 	"<confname> norecord <[filename|all]>"}, 
+	{"list", &conf_api_sub_list, CONF_API_SUB_ARGS_SPLIT, "<confname> list [delim <string>]"}, 
+	{"energy", &conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "<confname> energy <member_id|all|last> [<newval>]"}, 
+	{"volume in", &conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "<confname> volume_in <member_id|all|last> [<newval>]"}, 
+	{"volume out", &conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "<confname> volume_out <member_id|all|last> [<newval>]"}, 
+	{"play", &conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "<confname> play <file_path> [<member_id>]"}, 
+	{"say", &conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "<confname> say <text>"}, 
+	{"saymember", &conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "<confname> saymember <member_id> <text>"}, 
+	{"stop", &conf_api_sub_stop, CONF_API_SUB_MEMBER_TARGET, "<confname> stop <[current|all|last]> [<member_id>]"}, 
+	{"kick", &conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "<confname> kick <[member_id|all|last]>"}, 
+	{"mute", &conf_api_sub_mute, CONF_API_SUB_MEMBER_TARGET, "<confname> mute <[member_id|all]|last>"}, 
+	{"unmute", &conf_api_sub_unmute, CONF_API_SUB_MEMBER_TARGET, "<confname> unmute <[member_id|all]|last>"}, 
+	{"deaf", &conf_api_sub_deaf, CONF_API_SUB_MEMBER_TARGET, "<confname> deaf <[member_id|all]|last>"}, 
+	{"undeaf", &conf_api_sub_undeaf, CONF_API_SUB_MEMBER_TARGET, "<confname> undeaf <[member_id|all]|last>"}, 
+	{"relate", &conf_api_sub_relate, CONF_API_SUB_ARGS_SPLIT, "<confname> relate <member_id> <other_member_id> [nospeak|nohear|clear]"}, 
+	{"lock", &conf_api_sub_lock, CONF_API_SUB_ARGS_SPLIT, "<confname> lock"}, 
+	{"unlock", &conf_api_sub_unlock, CONF_API_SUB_ARGS_SPLIT, "<confname> unlock"}, 
+	{"dial", &conf_api_sub_dial, CONF_API_SUB_ARGS_SPLIT, "<confname> dial <endpoint_module_name>/<destination> <callerid number> <callerid name>"}, 
+	{"transfer", &conf_api_sub_transfer, CONF_API_SUB_ARGS_SPLIT, "<confname> transfer <conference_name> <member id> [...<member id>]"}, 
+	{"record", &conf_api_sub_record, CONF_API_SUB_ARGS_SPLIT, "<confname> record <filename>"}, 
+	{"norecord", &conf_api_sub_norecord, CONF_API_SUB_ARGS_SPLIT, "<confname> norecord <[filename|all]>"}, 
 };
 
 #define CONFFUNCAPISIZE (sizeof(conf_api_sub_commands)/sizeof(conf_api_sub_commands[0]))
-
 
 switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv, const char *cmdline, int argn)
 {	
@@ -3996,7 +3993,7 @@ static switch_status_t conference_caller_control_menu_build(caller_control_menu_
 }
 #endif
 
-static switch_status_t conference_new_install_caller_controls_default(conference_obj_t *conference)
+static switch_status_t conf_default_controls(conference_obj_t *conference)
 {
     switch_status_t status = SWITCH_STATUS_FALSE;
     uint32_t i;
@@ -4334,7 +4331,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 
         /* if no controls, or default controls specified, install default */
         if (caller_controls == NULL || *caller_controls == '\0' || strcasecmp(caller_controls, "default") == 0) {
-            status = conference_new_install_caller_controls_default(conference);
+            status = conf_default_controls(conference);
         } else if (strcasecmp(caller_controls, "none") != 0) {
             /* try to build caller control if the group has been specified and != "none" */
             switch_xml_t xml_controls = switch_xml_find_child(cfg.controls, "group", "name", caller_controls);
