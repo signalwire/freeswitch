@@ -578,6 +578,8 @@ su_duration_t su_timer_next_expires(su_timer_t const * t, su_time_t now)
 {
   su_duration_t tout;
 
+  t = timers_first(t);
+
   if (!t)
     return SU_DURATION_MAX;
 
