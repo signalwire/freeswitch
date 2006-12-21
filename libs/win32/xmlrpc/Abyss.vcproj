@@ -44,7 +44,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/include/&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/util/include/&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)../../xmlrpc-c/&quot;;&quot;$(ProjectDir)../../xmlrpc-c/include/&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/util/include/&quot;"
 				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;ABYSS_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				RuntimeLibrary="3"
@@ -119,7 +119,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/include/&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/util/include/&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)../../xmlrpc-c/&quot;;&quot;$(ProjectDir)../../xmlrpc-c/include/&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/util/include/&quot;"
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;ABYSS_WIN32;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -172,7 +172,7 @@
 			Filter="c"
 			>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\abyss\src\conf.c"
+				RelativePath="..\..\xmlrpc-c\lib\abyss\src\conf.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -194,7 +194,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\abyss\src\conn.c"
+				RelativePath="..\..\xmlrpc-c\lib\abyss\src\conn.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -216,7 +216,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\abyss\src\data.c"
+				RelativePath="..\..\xmlrpc-c\lib\abyss\src\data.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -238,7 +238,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\abyss\src\file.c"
+				RelativePath="..\..\xmlrpc-c\lib\abyss\src\file.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -260,7 +260,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\abyss\src\http.c"
+				RelativePath="..\..\xmlrpc-c\lib\abyss\src\http.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -282,7 +282,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\abyss\src\server.c"
+				RelativePath="..\..\xmlrpc-c\lib\abyss\src\server.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -304,7 +304,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\abyss\src\socket.c"
+				RelativePath="..\..\xmlrpc-c\lib\abyss\src\socket.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -326,7 +326,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\abyss\src\thread.c"
+				RelativePath="..\..\xmlrpc-c\lib\abyss\src\thread.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -348,11 +348,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\abyss\src\.\token.c"
+				RelativePath="..\..\xmlrpc-c\lib\abyss\src\.\token.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\abyss\src\trace.c"
+				RelativePath="..\..\xmlrpc-c\lib\abyss\src\trace.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -379,7 +379,7 @@
 			Filter="h"
 			>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\abyss\src\abyss.h"
+				RelativePath="..\..\xmlrpc-c\lib\abyss\src\abyss.h"
 				>
 			</File>
 		</Filter>

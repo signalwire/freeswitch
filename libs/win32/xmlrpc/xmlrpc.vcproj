@@ -26,7 +26,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist $(ProjectDir)..\..\xmlrpc-c-1.03.14\transport_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c-1.03.14\Windows\transport_config_win32.h&quot; $(ProjectDir)..\..\xmlrpc-c-1.03.14\transport_config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c-1.03.14\config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c-1.03.14\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c-1.03.14\config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c-1.03.14\xmlrpc_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c-1.03.14\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c-1.03.14\xmlrpc_config.h&#x0D;&#x0A;"
+				CommandLine="if not exist $(ProjectDir)..\..\xmlrpc-c\transport_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\transport_config_win32.h&quot; $(ProjectDir)..\..\xmlrpc-c\transport_config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c\config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c\config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -43,7 +43,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/curl_transport&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/util/include&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/include&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/expat/xmlparse&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/w3c-libwww-5.3.2/Library/src&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/abyss/src&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/wininet_transport&quot;;&quot;$(ProjectDir)../../include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)../../xmlrpc-c/lib/&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/curl_transport&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/util/include&quot;;&quot;$(ProjectDir)../../xmlrpc-c/include&quot;;&quot;$(ProjectDir)../../xmlrpc-c/&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/expat/xmlparse&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/w3c-libwww-5.3.2/Library/src&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/abyss/src&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/wininet_transport&quot;;&quot;$(ProjectDir)../../include&quot;"
 				PreprocessorDefinitions="_DEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -102,7 +102,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist $(ProjectDir)..\..\xmlrpc-c-1.03.14\transport_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c-1.03.14\Windows\transport_config_win32.h&quot; $(ProjectDir)..\..\xmlrpc-c-1.03.14\transport_config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c-1.03.14\config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c-1.03.14\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c-1.03.14\config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c-1.03.14\xmlrpc_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c-1.03.14\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c-1.03.14\xmlrpc_config.h&#x0D;&#x0A;"
+				CommandLine="if not exist $(ProjectDir)..\..\xmlrpc-c\transport_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\transport_config_win32.h&quot; $(ProjectDir)..\..\xmlrpc-c\transport_config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c\config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c\config.h&#x0D;&#x0A;if not exist $(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h copy &quot;$(ProjectDir)..\..\xmlrpc-c\Windows\xmlrpc_win32_config.h&quot; $(ProjectDir)..\..\xmlrpc-c\xmlrpc_config.h&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -120,7 +120,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/curl_transport&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/util/include&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/include&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/expat/xmlparse&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/w3c-libwww-5.3.2/Library/src&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/abyss/src&quot;;&quot;$(ProjectDir)../../xmlrpc-c-1.03.14/lib/wininet_transport&quot;;&quot;$(ProjectDir)../../include&quot;"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)../../xmlrpc-c/lib/&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/curl_transport&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/util/include&quot;;&quot;$(ProjectDir)../../xmlrpc-c/include&quot;;&quot;$(ProjectDir)../../xmlrpc-c/&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/expat/xmlparse&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/w3c-libwww-5.3.2/Library/src&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/abyss/src&quot;;&quot;$(ProjectDir)../../xmlrpc-c/lib/wininet_transport&quot;;&quot;$(ProjectDir)../../include&quot;"
 				PreprocessorDefinitions="NDEBUG;WIN32;_LIB;ABYSS_WIN32;CURL_STATICLIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -176,7 +176,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat;cc"
 			>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\util\casprintf.c"
+				RelativePath="..\..\xmlrpc-c\lib\util\casprintf.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -198,7 +198,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\util\pthreadx_win32.c"
+				RelativePath="..\..\xmlrpc-c\lib\util\pthreadx_win32.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -220,7 +220,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_array.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_array.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -242,7 +242,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_authcookie.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_authcookie.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -264,7 +264,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_base64.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_base64.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -286,7 +286,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_builddecomp.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_builddecomp.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -308,7 +308,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_client.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_client.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -330,97 +330,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\curl_transport\xmlrpc_curl_transport.c"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_data.c"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_datetime.c"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_expat.c"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_libxml2.c"
+				RelativePath="..\..\xmlrpc-c\lib\curl_transport\xmlrpc_curl_transport.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -444,7 +354,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_parse.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_data.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -466,7 +376,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_registry.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_datetime.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -488,7 +398,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_serialize.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_expat.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -510,29 +420,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_server_abyss.c"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_server_w32httpsys.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_libxml2.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -556,7 +444,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_struct.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_parse.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -578,7 +466,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_strutil.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_registry.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -600,7 +488,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_support.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_serialize.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -622,7 +510,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\src\xmlrpc_utf8.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_server_abyss.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -644,7 +532,119 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\wininet_transport\xmlrpc_wininet_transport.c"
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_server_w32httpsys.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_struct.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_strutil.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_support.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\xmlrpc-c\src\xmlrpc_utf8.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\xmlrpc-c\lib\wininet_transport\xmlrpc_wininet_transport.c"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -671,75 +671,75 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\include\xmlrpc-c\abyss.h"
+				RelativePath="..\..\xmlrpc-c\include\xmlrpc-c\abyss.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\include\xmlrpc-c\base.h"
+				RelativePath="..\..\xmlrpc-c\include\xmlrpc-c\base.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\util\include\bool.h"
+				RelativePath="..\..\xmlrpc-c\lib\util\include\bool.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\include\xmlrpc-c\client.h"
+				RelativePath="..\..\xmlrpc-c\include\xmlrpc-c\client.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\include\xmlrpc-c\client_int.h"
+				RelativePath="..\..\xmlrpc-c\include\xmlrpc-c\client_int.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\util\include\mallocvar.h"
+				RelativePath="..\..\xmlrpc-c\lib\util\include\mallocvar.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\util\include\pthreadx.h"
+				RelativePath="..\..\xmlrpc-c\lib\util\include\pthreadx.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\include\xmlrpc-c\server.h"
+				RelativePath="..\..\xmlrpc-c\include\xmlrpc-c\server.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\include\xmlrpc-c\server_abyss.h"
+				RelativePath="..\..\xmlrpc-c\include\xmlrpc-c\server_abyss.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\include\xmlrpc-c\server_cgi.h"
+				RelativePath="..\..\xmlrpc-c\include\xmlrpc-c\server_cgi.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\include\xmlrpc-c\server_w32httpsys.h"
+				RelativePath="..\..\xmlrpc-c\include\xmlrpc-c\server_w32httpsys.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\include\xmlrpc-c\transport.h"
+				RelativePath="..\..\xmlrpc-c\include\xmlrpc-c\transport.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\transport_config.h"
+				RelativePath="..\..\xmlrpc-c\transport_config.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\include\xmlrpc-c\transport_int.h"
+				RelativePath="..\..\xmlrpc-c\include\xmlrpc-c\transport_int.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\include\xmlrpc-c\xmlparser.h"
+				RelativePath="..\..\xmlrpc-c\include\xmlrpc-c\xmlparser.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\xmlrpc_config.h"
+				RelativePath="..\..\xmlrpc-c\xmlrpc_config.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\curl_transport\xmlrpc_curl_transport.h"
+				RelativePath="..\..\xmlrpc-c\lib\curl_transport\xmlrpc_curl_transport.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\xmlrpc-c-1.03.14\lib\wininet_transport\xmlrpc_wininet_transport.h"
+				RelativePath="..\..\xmlrpc-c\lib\wininet_transport\xmlrpc_wininet_transport.h"
 				>
 			</File>
 		</Filter>
