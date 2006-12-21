@@ -2510,7 +2510,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
             stream->write_function(stream, "Conference %s (%u member%s)\n", 
                                    conference->name, 
                                    conference->count, 
-                                   conference->count == 1 ? "" : "");
+                                   conference->count == 1 ? "" : "s");
             if (pretty) {
                 conference_list_pretty(conference, stream);
             } else {
