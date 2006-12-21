@@ -327,11 +327,19 @@ static switch_status_t woomerachan_kill_channel(switch_core_session_t *session, 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	udp_socket_close(tech_pvt);
-
-	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERACHAN KILL\n", switch_channel_get_name(channel));
-						  
+    switch(sig) {
+    case SWITCH_SIG_KILL:
+        udp_socket_close(tech_pvt);
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERACHAN KILL\n", switch_channel_get_name(channel));
+        break;
+    case SWITCH_SIG_BREAK:
+        {
+            int p = 0;
+            switch_size_t len = sizeof(p);
+            switch_socket_sendto(tech_pvt->udp_socket, tech_pvt->udpwrite, 0, &p, &len);
+        }
+        break;
+    }
 
 
 	return SWITCH_STATUS_SUCCESS;

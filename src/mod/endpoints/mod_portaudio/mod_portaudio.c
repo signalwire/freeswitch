@@ -273,10 +273,15 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-	deactivate_audio_device(tech_pvt);
-	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-
+    switch (sig) {
+    case SWITCH_SIG_KILL:
+        switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+        deactivate_audio_device(tech_pvt);
+        switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+        break;
+    default:
+        break;
+    }
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
 
 

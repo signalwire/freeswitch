@@ -1131,28 +1131,41 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	switch_channel_t *channel = NULL;
 	struct private_object *tech_pvt = NULL;
 
-	if ((channel = switch_core_session_get_channel(session))) {
-		if ((tech_pvt = switch_core_session_get_private(session))) {
-			switch_clear_flag_locked(tech_pvt, TFLAG_IO);
-			switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
-			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+    if (!(channel = switch_core_session_get_channel(session))) {
+        return SWITCH_STATUS_SUCCESS;
+    }
 
-			if (tech_pvt->dlsession) {
-				if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
-					ldl_session_terminate(tech_pvt->dlsession);
-					switch_set_flag_locked(tech_pvt, TFLAG_TERM);
-				}
-				ldl_session_destroy(&tech_pvt->dlsession);
+    if (!(tech_pvt = switch_core_session_get_private(session))) {
+        return SWITCH_STATUS_SUCCESS;
+    }
+    
 
-			}
+    switch (sig) {
+    case SWITCH_SIG_KILL:
+        switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+        switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
+        switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 
-			if (switch_rtp_ready(tech_pvt->rtp_session)) {
-				switch_rtp_kill_socket(tech_pvt->rtp_session);
-			}
+        if (tech_pvt->dlsession) {
+            if (!switch_test_flag(tech_pvt, TFLAG_TERM)) {
+                ldl_session_terminate(tech_pvt->dlsession);
+                switch_set_flag_locked(tech_pvt, TFLAG_TERM);
+            }
+            ldl_session_destroy(&tech_pvt->dlsession);
+            
+        }
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
-		}
-	}
+        if (switch_rtp_ready(tech_pvt->rtp_session)) {
+            switch_rtp_kill_socket(tech_pvt->rtp_session);
+        }
+        break;
+	case SWITCH_SIG_BREAK:
+		switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_BREAK);
+		break;
+    }
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL KILL\n", switch_channel_get_name(channel));
+
 
 	return SWITCH_STATUS_SUCCESS;
 }

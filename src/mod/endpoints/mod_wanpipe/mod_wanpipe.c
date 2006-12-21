@@ -755,11 +755,16 @@ static switch_status_t wanpipe_kill_channel(switch_core_session_t *session, int 
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_mutex_lock(tech_pvt->flag_mutex);
-	switch_set_flag(tech_pvt, TFLAG_BYE);
-	switch_clear_flag(tech_pvt, TFLAG_MEDIA);
-	switch_mutex_unlock(tech_pvt->flag_mutex);
-
+	switch(sig) {
+	case SWITCH_SIG_KILL:
+		switch_mutex_lock(tech_pvt->flag_mutex);
+		switch_set_flag(tech_pvt, TFLAG_BYE);
+		switch_clear_flag(tech_pvt, TFLAG_MEDIA);
+		switch_mutex_unlock(tech_pvt->flag_mutex);
+		break;
+	default:
+		break;
+	}
 	//sangoma_socket_close(&tech_pvt->wpsock->fd);
 	//wp_close(tech_pvt);
 
