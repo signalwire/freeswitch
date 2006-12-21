@@ -24,7 +24,7 @@
  * Contributor(s):
  * 
  * Brian Fertig <brian.fertig@convergencetek.com>
- * Johny Kadarisman <jkr888 at gmail.com>
+ * Johny Kadarisman <jkr888@gmail.com>
  *
  * mod_python.c -- Python Module
  *
@@ -43,6 +43,7 @@
 #include <switch.h>
 
 void init_freeswitch(void);
+static switch_api_interface_t python_run_interface;
 
 const char modname[] = "mod_python";
 
@@ -63,9 +64,37 @@ static void python_function(switch_core_session_t *session, char *data)
 
 }
 
+static switch_status_t launch_python(char *text, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+    FILE* pythonfile;
+
+    if (switch_strlen_zero(text)) {
+        stream->write_function(stream, "USAGE: %s\n", python_run_interface.syntax);
+        return SWITCH_STATUS_SUCCESS;
+    }
+
+    pythonfile = fopen(text, "r");
+
+    Py_Initialize();
+    init_freeswitch();
+    PyRun_SimpleFile(pythonfile, "");
+    Py_Finalize();
+
+    stream->write_function(stream, "OK\n");
+    return SWITCH_STATUS_SUCCESS;
+}
+
 static const switch_application_interface_t python_application_interface = {
 	/*.interface_name */ "python",
 	/*.application_function */ python_function
+};
+
+static switch_api_interface_t python_run_interface = {
+    /*.interface_name */ "python",
+    /*.desc */ "run a python script",
+    /*.function */ launch_python,
+    /*.syntax */ "python </path/to/script>",
+    /*.next */ NULL
 };
 
 static switch_loadable_module_interface_t python_module_interface = {
@@ -75,7 +104,7 @@ static switch_loadable_module_interface_t python_module_interface = {
 	/*.dialplan_interface */ NULL,
 	/*.codec_interface */ NULL,
 	/*.application_interface */ &python_application_interface,
-	/*.api_interface */ NULL,
+	/*.api_interface */ &python_run_interface,
 	/*.file_interface */ NULL,
 	/*.speech_interface */ NULL,
 	/*.directory_interface */ NULL
@@ -110,14 +139,3 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 
 /* Return the number of arguments of the application command line */
-
-/* For Emacs:
- * Local Variables:
- * mode:c
- * indent-tabs-mode:nil
- * tab-width:4
- * c-basic-offset:4
- * End:
- * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
- */
