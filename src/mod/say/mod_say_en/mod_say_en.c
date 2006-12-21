@@ -96,7 +96,7 @@ static switch_status_t en_say(switch_core_session_t *session,
 					switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
 				}
 
-				if (places[4] || places[3]) {
+				if (places[5] || places[4] || places[3]) {
 					switch_ivr_play_file(session, NULL, "digits/thousand.wav", NULL, input_callback, buf, buflen);
 				}
 
