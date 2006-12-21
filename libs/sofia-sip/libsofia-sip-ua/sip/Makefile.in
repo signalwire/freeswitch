@@ -25,8 +25,7 @@
 # ---------------------------------------------------
 
 
-
-SOURCES = $(libsip_la_SOURCES) date_test.c test_sip_msg.c torture_sip.c validator.c
+SOURCES = $(libsip_la_SOURCES) date_test.c sip_test_msg.c torture_sip.c validator.c
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -51,11 +50,10 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-check_PROGRAMS = torture_sip$(EXEEXT) test_sip_msg$(EXEEXT) \
+check_PROGRAMS = torture_sip$(EXEEXT) sip_test_msg$(EXEEXT) \
 	validator$(EXEEXT) date_test$(EXEEXT)
-DIST_COMMON = $(dist_noinst_SCRIPTS) $(nobase_include_sofia_HEADERS) \
-	$(srcdir)/../sofia.am $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in ChangeLog
+DIST_COMMON = $(nobase_include_sofia_HEADERS) $(srcdir)/../sofia.am \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in ChangeLog
 subdir = libsofia-sip-ua/sip
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/sac-general.m4 \
@@ -82,10 +80,10 @@ date_test_OBJECTS = date_test.$(OBJEXT)
 date_test_LDADD = $(LDADD)
 date_test_DEPENDENCIES = libsip.la ../msg/libmsg.la ../bnf/libbnf.la \
 	../url/liburl.la ../su/libsu.la
-test_sip_msg_SOURCES = test_sip_msg.c
-test_sip_msg_OBJECTS = test_sip_msg.$(OBJEXT)
-test_sip_msg_LDADD = $(LDADD)
-test_sip_msg_DEPENDENCIES = libsip.la ../msg/libmsg.la \
+sip_test_msg_SOURCES = sip_test_msg.c
+sip_test_msg_OBJECTS = sip_test_msg.$(OBJEXT)
+sip_test_msg_LDADD = $(LDADD)
+sip_test_msg_DEPENDENCIES = libsip.la ../msg/libmsg.la \
 	../bnf/libbnf.la ../url/liburl.la ../su/libsu.la
 torture_sip_SOURCES = torture_sip.c
 torture_sip_OBJECTS = torture_sip.$(OBJEXT)
@@ -97,7 +95,6 @@ validator_OBJECTS = validator.$(OBJEXT)
 validator_LDADD = $(LDADD)
 validator_DEPENDENCIES = libsip.la ../msg/libmsg.la ../bnf/libbnf.la \
 	../url/liburl.la ../su/libsu.la
-SCRIPTS = $(dist_noinst_SCRIPTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir) -I$(top_builddir)/libsofia-sip-ua/su/sofia-sip
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -109,9 +106,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libsip_la_SOURCES) date_test.c test_sip_msg.c \
+SOURCES = $(libsip_la_SOURCES) date_test.c sip_test_msg.c \
 	torture_sip.c validator.c
-DIST_SOURCES = $(libsip_la_SOURCES) date_test.c test_sip_msg.c \
+DIST_SOURCES = $(libsip_la_SOURCES) date_test.c sip_test_msg.c \
 	torture_sip.c validator.c
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -348,11 +345,6 @@ EXTRA_DIST = Doxyfile sip.docs sip_parser.docs sip.doxyaliases \
 	tests/test35.txt tests/test36.txt tests/test37.txt tests/test38.txt  \
 	tests/test39.txt tests/test40.txt tests/test41.txt tests/test42.txt
 
-
-# ----------------------------------------------------------------------
-# Tests
-TESTS = torture_sip run_sip_test_msg run_date_test
-dist_noinst_SCRIPTS = run_sip_test_msg run_date_test
 AM_CFLAGS = $(CWFLAG) $(SOFIA_CFLAGS) 
 DISTCLEANFILES = $(BUILT_SOURCES)
 
@@ -379,6 +371,13 @@ INTERNAL_INCLUDES = \
 	-I$(srcdir)/../url -I../url \
 	-I$(srcdir)/../su -I../su
 
+
+# ----------------------------------------------------------------------
+# Tests
+
+#TESTS = torture_sip run_sip_test_msg run_date_test
+
+#dist_noinst_SCRIPTS = 	run_sip_test_msg run_date_test
 
 # ----------------------------------------------------------------------
 # Sofia specific rules
@@ -440,9 +439,9 @@ clean-checkPROGRAMS:
 date_test$(EXEEXT): $(date_test_OBJECTS) $(date_test_DEPENDENCIES) 
 	@rm -f date_test$(EXEEXT)
 	$(LINK) $(date_test_LDFLAGS) $(date_test_OBJECTS) $(date_test_LDADD) $(LIBS)
-test_sip_msg$(EXEEXT): $(test_sip_msg_OBJECTS) $(test_sip_msg_DEPENDENCIES) 
-	@rm -f test_sip_msg$(EXEEXT)
-	$(LINK) $(test_sip_msg_LDFLAGS) $(test_sip_msg_OBJECTS) $(test_sip_msg_LDADD) $(LIBS)
+sip_test_msg$(EXEEXT): $(sip_test_msg_OBJECTS) $(sip_test_msg_DEPENDENCIES) 
+	@rm -f sip_test_msg$(EXEEXT)
+	$(LINK) $(sip_test_msg_LDFLAGS) $(sip_test_msg_OBJECTS) $(sip_test_msg_LDADD) $(LIBS)
 torture_sip$(EXEEXT): $(torture_sip_OBJECTS) $(torture_sip_DEPENDENCIES) 
 	@rm -f torture_sip$(EXEEXT)
 	$(LINK) $(torture_sip_LDFLAGS) $(torture_sip_OBJECTS) $(torture_sip_LDADD) $(LIBS)
@@ -476,9 +475,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_tag.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_tag_class.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_tag_ref.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_test_msg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_time.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sip_util.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_sip_msg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/torture_sip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/validator.Po@am__quote@
 
@@ -580,79 +579,6 @@ GTAGS:
 distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
-check-TESTS: $(TESTS)
-	@failed=0; all=0; xfail=0; xpass=0; skip=0; \
-	srcdir=$(srcdir); export srcdir; \
-	list='$(TESTS)'; \
-	if test -n "$$list"; then \
-	  for tst in $$list; do \
-	    if test -f ./$$tst; then dir=./; \
-	    elif test -f $$tst; then dir=; \
-	    else dir="$(srcdir)/"; fi; \
-	    if $(TESTS_ENVIRONMENT) $${dir}$$tst; then \
-	      all=`expr $$all + 1`; \
-	      case " $(XFAIL_TESTS) " in \
-	      *" $$tst "*) \
-		xpass=`expr $$xpass + 1`; \
-		failed=`expr $$failed + 1`; \
-		echo "XPASS: $$tst"; \
-	      ;; \
-	      *) \
-		echo "PASS: $$tst"; \
-	      ;; \
-	      esac; \
-	    elif test $$? -ne 77; then \
-	      all=`expr $$all + 1`; \
-	      case " $(XFAIL_TESTS) " in \
-	      *" $$tst "*) \
-		xfail=`expr $$xfail + 1`; \
-		echo "XFAIL: $$tst"; \
-	      ;; \
-	      *) \
-		failed=`expr $$failed + 1`; \
-		echo "FAIL: $$tst"; \
-	      ;; \
-	      esac; \
-	    else \
-	      skip=`expr $$skip + 1`; \
-	      echo "SKIP: $$tst"; \
-	    fi; \
-	  done; \
-	  if test "$$failed" -eq 0; then \
-	    if test "$$xfail" -eq 0; then \
-	      banner="All $$all tests passed"; \
-	    else \
-	      banner="All $$all tests behaved as expected ($$xfail expected failures)"; \
-	    fi; \
-	  else \
-	    if test "$$xpass" -eq 0; then \
-	      banner="$$failed of $$all tests failed"; \
-	    else \
-	      banner="$$failed of $$all tests did not behave as expected ($$xpass unexpected passes)"; \
-	    fi; \
-	  fi; \
-	  dashes="$$banner"; \
-	  skipped=""; \
-	  if test "$$skip" -ne 0; then \
-	    skipped="($$skip tests were not run)"; \
-	    test `echo "$$skipped" | wc -c` -le `echo "$$banner" | wc -c` || \
-	      dashes="$$skipped"; \
-	  fi; \
-	  report=""; \
-	  if test "$$failed" -ne 0 && test -n "$(PACKAGE_BUGREPORT)"; then \
-	    report="Please report to $(PACKAGE_BUGREPORT)"; \
-	    test `echo "$$report" | wc -c` -le `echo "$$banner" | wc -c` || \
-	      dashes="$$report"; \
-	  fi; \
-	  dashes=`echo "$$dashes" | sed s/./=/g`; \
-	  echo "$$dashes"; \
-	  echo "$$banner"; \
-	  test -z "$$skipped" || echo "$$skipped"; \
-	  test -z "$$report" || echo "$$report"; \
-	  echo "$$dashes"; \
-	  test "$$failed" -eq 0; \
-	else :; fi
-
 distdir: $(DISTFILES)
 	$(mkdir_p) $(distdir)/.. $(distdir)/images $(distdir)/sofia-sip $(distdir)/tests
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
@@ -683,10 +609,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
-	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) check-am
-all-am: Makefile $(LTLIBRARIES) $(SCRIPTS) $(HEADERS)
+all-am: Makefile $(LTLIBRARIES) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(include_sofiadir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
@@ -770,7 +695,7 @@ ps-am:
 
 uninstall-am: uninstall-info-am uninstall-nobase_include_sofiaHEADERS
 
-.PHONY: CTAGS GTAGS all all-am check check-TESTS check-am clean \
+.PHONY: CTAGS GTAGS all all-am check check-am clean \
 	clean-checkPROGRAMS clean-generic clean-libtool \
 	clean-noinstLTLIBRARIES ctags distclean distclean-compile \
 	distclean-generic distclean-libtool distclean-tags distdir dvi \

@@ -93,9 +93,9 @@ EXTRA_DIST =		Doxyfile sip.docs sip_parser.docs sip.doxyaliases \
 # ----------------------------------------------------------------------
 # Tests
 
-TESTS = torture_sip run_sip_test_msg run_date_test
+#TESTS = torture_sip run_sip_test_msg run_date_test
 
-dist_noinst_SCRIPTS = 	run_sip_test_msg run_date_test
+#dist_noinst_SCRIPTS = 	run_sip_test_msg run_date_test
 
 # ----------------------------------------------------------------------
 # Sofia specific rules
