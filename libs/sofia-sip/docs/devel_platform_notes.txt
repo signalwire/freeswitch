@@ -1,0 +1,42 @@
+======================================================
+Notes on compiling Sofia-SIP in different environments
+======================================================
+
+Using GNU Autotools
+-------------------
+
+If you modify autoconf or automake files (configure.ac or Makefile.am) or if
+you compile Sofia SIP that you pulled from darcs or CVS repo, you need
+up-to-date autotools. Autoconf should be at least 2.57 and automake should
+be at least 1.7. You can avoid running autoreconf explicitly if you use
+./configure option --enable-maintainer-mode.
+
+Generic POSIX (GNU/Linux, BSD, ...) 
+-----------------------------------
+
+Sofia-SIP should compile out-of-the-box on generic POSIX
+machines. Use the standard GNU autotool 'configure+make'
+procedure to build the software. See top-level INSTALL
+for more information.
+
+Mac OS X 
+--------
+
+TBD
+
+Win32 / Mingw 
+-------------
+
+TBD 
+
+Win32 / Cygwin 
+--------------
+
+TBD
+
+Visual-C on win32
+-----------------
+
+See sofia-sip/win32/README.txt
+
+ LocalWords:  automake

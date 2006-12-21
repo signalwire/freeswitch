@@ -1,0 +1,2 @@
+#!/bin/sh
+./date_test "Sun, 18 Mar 2001 23:01:00 GMT"

@@ -1,0 +1,1237 @@
+/*
+ * This file is part of the Sofia-SIP package
+ *
+ * Copyright (C) 2005 Nokia Corporation.
+ *
+ * Contact: Pekka Pessi <pekka.pessi@nokia.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * as published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
+/**@CFILE outbound.c
+ * @brief Implementation of SIP NAT traversal and outbound
+ *
+ * @author Pekka Pessi <Pekka.Pessi@nokia.com>
+ * @author Kai Vehmanen <Kai.Vehmanen@nokia.com>
+ * @author Martti Mela <Martti Mela@nokia.com>
+ *
+ * @date Created: Wed May 10 12:11:54 EEST 2006 ppessi
+ */
+
+#include "config.h"
+
+#define NTA_OUTGOING_MAGIC_T struct outbound
+
+#include <outbound.h>
+
+#include <sofia-sip/hostdomain.h>
+#include <sofia-sip/sip.h>
+#include <sofia-sip/sip_protos.h>
+#include <sofia-sip/sip_util.h>
+#include <sofia-sip/sip_status.h>
+#include <sofia-sip/su_tagarg.h>
+#include <sofia-sip/tport.h>
+#include <sofia-sip/nta_tport.h>
+
+#include <sofia-sip/su_md5.h>
+#include <sofia-sip/su_uniqueid.h>
+#include <sofia-sip/token64.h>
+
+#define SU_LOG (nua_log)
+#include <sofia-sip/su_debug.h>
+
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <assert.h>
+
+struct outbound {
+  su_home_t ob_home[1];
+  outbound_owner_vtable
+  const *ob_oo;			/**< Callbacks */
+  outbound_owner_t *ob_owner;	/**< Backpointer */
+
+  su_root_t *ob_root;		/**< Root for timers and stuff */
+  nta_agent_t *ob_nta;		/**< SIP transactions */
+
+  char ob_cookie[32];		/**< Our magic cookie */
+
+  struct outbound_prefs {
+    unsigned interval;	/**< Default keepalive interval for datagram */
+    unsigned stream_interval;	/**< Default keepalive interval for streams */
+    unsigned gruuize:1;		/**< Establish a GRUU */
+    unsigned outbound:1;	/**< Try to use outbound */
+    unsigned natify:1;		/**< Try to detect NAT */
+    unsigned okeepalive:1;	/**< Connection keepalive with OPTIONS */
+    unsigned validate:1;	/**< Validate registration with OPTIONS */
+    /* How to detect NAT binding or connect to outbound: */
+    unsigned use_connect:1;	/**< Use HTTP connect */
+    unsigned use_rport:1;	/**< Use received/rport */
+    unsigned use_socks:1;	/**< Detect and use SOCKS V5 */
+    unsigned use_upnp:1;	/**< Detect and use UPnP */
+    unsigned use_stun:1;	/**< Detect and try to use STUN */
+    unsigned :0;
+  } ob_prefs;
+
+  struct outbound_info {
+    /* See enum outbound_feature: */
+    /* 0 do not support, 1 - perhaps supports, 2 - supports, 3 - requires */
+    unsigned gruu:2, outbound:2, pref:2;
+  } ob_info;
+
+  /** Source of Contact header */
+  unsigned ob_by_stack:1;
+  /** Self-generated contacts */
+  unsigned ob_contacts:1, :0;
+
+  /* The registration state machine. */
+  /** Initial REGISTER containing ob_rcontact has been sent */
+  unsigned ob_registering:1;
+  /** 2XX response to REGISTER containg ob_rcontact has been received */
+  unsigned ob_registered:1;
+  /**The registration has been validated:
+   * We have successfully sent OPTIONS to ourselves.
+   */
+  unsigned ob_validated:1;
+  /** The registration has been validated once.
+   *   We have successfully sent OPTIONS to ourselves, so do not give
+   *   up if OPTIONS probe fails.
+   */
+  unsigned ob_once_validated:1;
+  unsigned :0;
+
+  char const *ob_instance;	/**< Our instance ID */
+  int32_t ob_reg_id;		/**< Flow-id */
+  char const *ob_features;	/**< Feature parameters for rcontact */
+  sip_contact_t *ob_rcontact;	/**< Our contact */
+  sip_contact_t *ob_dcontact;	/**< Contact for dialogs */
+  sip_contact_t *ob_previous;	/**< Stale contact */
+  sip_contact_t *ob_gruu;	/**< Contact added to requests */
+  sip_via_t *ob_via;		/**< Via header used to generate contacts */
+
+  sip_contact_t *ob_obp;	/**< Contacts from outbound proxy */
+
+  char *ob_nat_detected;	/**< Our public address */
+  char *ob_nat_port;		/**< Our public port number */
+
+  void *ob_stun;		/**< Stun context */
+  void *ob_upnp;		/**< UPnP context  */
+
+  struct {
+    char *sipstun;		/**< Stun server usable for keep-alives */
+    unsigned interval;		/**< Interval. */
+    su_timer_t *timer;		/**< Keep-alive timer */
+    msg_t *msg;			/**< Keep-alive OPTIONS message */
+    nta_outgoing_t *orq;	/**< Keep-alive OPTIONS transaction */
+    auth_client_t *auc[1];	/**< Authenticator for OPTIONS */
+    /** Progress of registration validation */
+    unsigned validating:1, validated:1,:0;
+  } ob_keepalive;		/**< Keepalive informatio */
+};
+
+static
+int outbound_nat_detect(outbound_t *ob,
+       			 sip_t const *request,
+       			 sip_t const *response);
+
+/** Return values for outbound_nat_detect(). */
+enum {
+  ob_nat_error = -1,		/* or anything below zero */
+  ob_no_nat = 0,
+  ob_nat_detected = 1,
+  ob_nat_changed = 2
+};
+
+/* ---------------------------------------------------------------------- */
+
+#define SIP_METHOD_UNKNOWN sip_method_unknown, NULL
+
+/** Content-Type sent in OPTIONS probing connectivity */
+char const * const outbound_content_type = "application/vnd.nokia-register-usage";
+
+static
+int outbound_check_for_nat(outbound_t *ob,
+			   sip_t const *request,
+			   sip_t const *response);
+
+enum outbound_feature {
+  outbound_feature_unsupported = 0,
+  outbound_feature_unsure = 1,
+  outbound_feature_supported = 2,
+  outbound_feature_required = 3
+};
+
+static enum outbound_feature feature_level(sip_t const *sip,
+					   char const *tag, int level);
+
+static int outbound_contacts_from_via(outbound_t *ob,
+				      sip_via_t const *via);
+
+/* ---------------------------------------------------------------------- */
+
+/** Create a new outbound object */
+outbound_t *
+outbound_new(outbound_owner_t *owner,
+	     outbound_owner_vtable const *owner_methods,
+	     su_root_t *root,
+	     nta_agent_t *agent,
+	     char const *instance)
+{
+  outbound_t *ob;
+
+  if (!owner || !owner_methods || !root || !agent)
+    return NULL;
+
+  ob = su_home_clone((su_home_t *)owner, sizeof *ob);
+  
+  if (ob) {
+    su_md5_t md5[1];
+    uint8_t digest[SU_MD5_DIGEST_SIZE];
+    su_guid_t guid[1];
+
+    ob->ob_owner = owner;
+    ob->ob_oo = owner_methods;
+    ob->ob_root = root;
+    ob->ob_nta = agent;
+
+    if (instance)
+      ob->ob_instance = su_strcat_all(ob->ob_home, "+sip.instance=\"<", instance, ">\"", NULL);
+    ob->ob_reg_id = 0;
+
+    /* Generate a cookie (used as Call-ID) for us */
+    su_md5_init(md5);
+    su_guid_generate(guid);
+    if (instance)
+      su_md5_update(md5, (void *)instance, strlen(instance));
+    su_md5_update(md5, (void *)guid, sizeof guid);
+    su_md5_digest(md5, digest);
+    token64_e(ob->ob_cookie, sizeof ob->ob_cookie, digest, sizeof digest);
+    
+    if (instance && !ob->ob_instance)
+      su_home_unref(ob->ob_home), ob = NULL;
+  }
+
+  return ob;
+}
+
+void outbound_unref(outbound_t *ob)
+{
+  if (ob->ob_keepalive.timer)
+    su_timer_destroy(ob->ob_keepalive.timer), ob->ob_keepalive.timer = NULL;
+
+  if (ob->ob_keepalive.orq)
+    nta_outgoing_destroy(ob->ob_keepalive.orq), ob->ob_keepalive.orq = NULL;
+
+  if (ob->ob_keepalive.msg)
+    msg_destroy(ob->ob_keepalive.msg), ob->ob_keepalive.msg = NULL;
+
+  su_home_unref(ob->ob_home);
+}
+
+#include <sofia-sip/bnf.h>
+
+/** Set various outbound and nat-traversal related options. */
+int outbound_set_options(outbound_t *ob,
+			 char const *options,
+			 unsigned interval,
+			 unsigned stream_interval)
+{
+  struct outbound_prefs prefs[1] = {{ 0 }};
+  char const *s;
+
+  prefs->interval = interval;
+  prefs->stream_interval = stream_interval;
+
+  prefs->gruuize = 1;
+  prefs->outbound = 0;
+  prefs->natify = 1;
+  prefs->okeepalive = 1;
+  prefs->validate = 1;
+  prefs->use_rport = 1;
+
+#define MATCH(v) (len == sizeof(#v) - 1 && strncasecmp(#v, s, len) == 0)
+
+  for (s = options; s && s[0]; ) {
+    size_t len = span_token(s);
+    int value = 1;
+
+    if (len > 3 && strncasecmp(s, "no-", 3) == 0)
+      value = 0, s += 3, len -= 3;
+    else if (len > 4 && strncasecmp(s, "not-", 4) == 0)
+      value = 0, s += 4, len -= 4;
+    else if (len > 3 && strncasecmp(s, "no_", 3) == 0)
+      value = 0, s += 3, len -= 3;
+    else if (len > 4 && strncasecmp(s, "not_", 4) == 0)
+      value = 0, s += 4, len -= 4;
+
+    if (len == 0)
+      break;
+    else if (MATCH(gruuize)) prefs->gruuize = value;
+    else if (MATCH(outbound)) prefs->outbound = value;
+    else if (MATCH(natify)) prefs->natify = value;
+    else if (MATCH(validate)) prefs->validate = value;
+    else if (MATCH(options-keepalive)) prefs->okeepalive = value;
+    else if (MATCH(options_keepalive)) prefs->okeepalive = value;
+    else if (MATCH(use-connect)) prefs->use_connect = value;
+    else if (MATCH(use_connect)) prefs->use_connect = value;
+    else if (MATCH(use-rport) || MATCH(use_rport)) prefs->use_rport = value;
+    else if (MATCH(use-socks) || MATCH(use_socks)) prefs->use_socks = value;
+    else if (MATCH(use-upnp) || MATCH(use_upnp)) prefs->use_upnp = value;
+    else if (MATCH(use-stun) || MATCH(use_stun)) prefs->use_stun = value;
+    else
+      SU_DEBUG_1(("outbound_t: unknown option \"%.*s\"\n", (int)len, s));
+
+    s += len;
+    len = strspn(s, " \t\n\r,;");
+    if (len == 0)
+      break;
+    s += len;
+  }
+
+  if (s && s[0]) {
+    SU_DEBUG_1(("outbound_t: invalid options \"%s\"\n", options));
+    return -1;
+  }
+
+  if (prefs->natify &&
+      !(prefs->outbound ||
+	prefs->use_connect ||
+	prefs->use_rport ||
+	prefs->use_socks ||
+	prefs->use_upnp ||
+	prefs->use_stun)) {
+    SU_DEBUG_1(("outbound(%p): no nat traversal method given\n", ob->ob_owner));
+  }
+
+  ob->ob_prefs = *prefs;
+  ob->ob_reg_id = prefs->outbound ? 1 : 0;
+
+  return 0;
+}
+
+/** Set the feature string (added to the Contact header when registering). */
+int outbound_set_features(outbound_t *ob, char *features)
+{
+  char *old_features = (char *)ob->ob_features;
+  char *new_features = su_strdup(ob->ob_home, features);
+
+  if (features && !new_features)
+    return -1;
+
+  ob->ob_features = new_features;
+  su_free(ob->ob_home, old_features);
+  return 0;
+}
+
+/* ---------------------------------------------------------------------- */
+
+/** Hook for sending register request with extra outbound-ish headers. */
+nta_outgoing_t *outbound_register_request(outbound_t *ob, int terminating, 
+					  sip_contact_t *stack_contact,
+					  nta_agent_t *nta,
+					  nta_response_f *callback,
+					  nta_outgoing_magic_t *magic,
+					  url_string_t *next_hop,
+					  msg_t *msg,
+					  tag_type_t tag, tag_value_t value,
+					  ...)
+{
+  sip_contact_t *previous_contact = NULL;
+  ta_list ta;
+  nta_outgoing_t *orq;
+
+  if (stack_contact) {
+    if (ob) {
+      if (ob->ob_contacts)
+	stack_contact = ob->ob_rcontact;
+      previous_contact = ob->ob_previous;
+    }
+  }
+
+  ta_start(ta, tag, value);
+
+  orq = nta_outgoing_mcreate(nta, callback, magic, next_hop, msg,
+			     TAG_IF(previous_contact,
+				    SIPTAG_CONTACT(previous_contact)),
+			     TAG_IF(stack_contact,
+				    SIPTAG_CONTACT(stack_contact)),
+			     ta_tags(ta));
+
+  ta_end(ta);
+
+  if (orq && ob)
+    ob->ob_registering = 1;
+
+  return orq;
+}
+
+/** Process response to REGISTER request */
+int outbound_register_response(outbound_t *ob,
+			       int terminating,
+			       sip_t const *request,
+			       sip_t const *response)
+{
+  int status, reregister;
+
+  if (!ob)
+    return 0;
+
+  assert(!request || request->sip_request);
+  assert(!response || response->sip_status);
+  
+  if (!response || !request)
+    return 0;
+
+  if (terminating) {
+    ob->ob_registered = ob->ob_registering = 0;
+    return 0;			/* Cleanup is done separately */
+  }  
+
+  reregister = outbound_check_for_nat(ob, request, response);
+  if (reregister)
+    return reregister;
+
+  status = response->sip_status->st_status;
+
+  if (status < 300) {
+    if (request->sip_contact && response->sip_contact)
+      ob->ob_registered = ob->ob_registering;
+    else
+      ob->ob_registered = 0;
+
+    if (ob->ob_previous)
+      msg_header_free(ob->ob_home, (void *)ob->ob_previous);
+    ob->ob_previous = NULL;
+  }
+
+  return 0;
+}
+
+
+/** @internal Check if there is a NAT between us and registrar */
+static
+int outbound_check_for_nat(outbound_t *ob,
+			   sip_t const *request,
+			   sip_t const *response)
+{
+  int binding_changed;
+  sip_contact_t *m = ob->ob_rcontact;
+
+  /* Update NAT information */
+  binding_changed = outbound_nat_detect(ob, request, response);
+
+  if (!ob->ob_nat_detected)
+    return ob_no_nat;
+
+  /* Contact was set by application, do not change it */
+  if (!ob->ob_by_stack)
+    return ob_no_nat;
+
+  /* Application does not want us to do any NAT traversal */ 
+  if (!ob->ob_prefs.natify)
+    return ob_no_nat;
+
+  /* We have detected NAT. Now, what to do?
+   * 1) do nothing - register as usual and let proxy take care of it?
+   * 2) try to detect our public nat binding and use it
+   * 2A) use public vias from nta generated by STUN or UPnP
+   * 2B) use SIP Via header
+   */
+
+  /* Do we have to ask for reregistration */
+  if (!m || binding_changed >= ob_nat_changed) {
+    if (ob->ob_stun) {
+      /* Use STUN? */
+      return 1;
+    }
+    else if (ob->ob_upnp) {
+      /* Use UPnP */
+      return 1;
+    }
+    else {
+      if (outbound_contacts_from_via(ob, response->sip_via) < 0)
+        return -1;
+    }
+
+    return 2;
+  }
+
+  return 0;
+}
+
+/**@internal
+ *
+ * Detect NAT.
+ *
+ * Based on "received" and possible "rport" parameters in the top-most Via,
+ * check and update our NAT status.
+ *
+ * @retval ob_nat_changed (2) change in public NAT binding detected
+ * @retval ob_nat_detected (1) NAT binding detected
+ * @retval ob_no_nat (0) no NAT binding detected
+ * @retval -1 an error occurred
+ */
+static
+int outbound_nat_detect(outbound_t *ob,
+			sip_t const *request,
+			sip_t const *response)
+{
+  sip_via_t const *v;
+  int one = 1;
+  char const *received, *rport;
+  char *nat_detected, *nat_port;
+  char *new_detected, *new_port;
+
+  assert(request && request->sip_request);
+  assert(response && response->sip_status);
+
+  if (!ob || !response || !response->sip_via || !request->sip_via)
+    return -1;
+
+  v = response->sip_via;
+
+  received = v->v_received;
+  if (!received || !strcmp(received, request->sip_via->v_host))
+    return 0;
+
+  if (!host_is_ip_address(received)) {
+    if (received[0])
+      SU_DEBUG_3(("outbound(%p): Via with invalid received=%s\n",
+		  ob->ob_owner, received));
+    return 0;
+  }
+
+  rport = sip_via_port(v, &one); assert(rport);
+
+  nat_detected = ob->ob_nat_detected;
+  nat_port = ob->ob_nat_port;
+
+  if (nat_detected && host_cmp(received, nat_detected) == 0) {
+    if (nat_port && strcasecmp(rport, nat_port) == 0)
+      return 1;
+    if (!v->v_rport || !v->v_rport[0])
+      return 1;
+  }
+
+  if (!nat_detected) {
+    SU_DEBUG_1(("outbound(%p): detected NAT: %s != %s\n",
+		ob->ob_owner, v->v_host, received));
+    if (ob->ob_oo && ob->ob_oo->oo_status)
+      ob->ob_oo->oo_status(ob->ob_owner, ob, 101, "NAT detected", TAG_END());
+  }
+  else {
+    SU_DEBUG_1(("outbound(%p): NAT binding changed: "
+		"[%s]:%s != [%s]:%s\n",
+		ob->ob_owner, nat_detected, nat_port, received, rport));
+    if (ob->ob_oo && ob->ob_oo->oo_status)
+      ob->ob_oo->oo_status(ob->ob_owner, ob, 102, "NAT binding changed", TAG_END());
+  }
+
+  /* Save our nat binding */
+  new_detected = su_strdup(ob->ob_home, received);
+  new_port = su_strdup(ob->ob_home, rport);
+
+  if (!new_detected || !new_port) {
+    su_free(ob->ob_home, new_detected);
+    su_free(ob->ob_home, new_port);
+    return -1;
+  }
+
+  ob->ob_nat_detected = new_detected;
+  ob->ob_nat_port = new_port;
+
+  su_free(ob->ob_home, nat_detected);
+  su_free(ob->ob_home, nat_port);
+
+  return 2;
+}
+
+/* ---------------------------------------------------------------------- */
+
+/** Convert "gruu" parameter returned by registrar to Contact header. */
+int outbound_gruuize(outbound_t *ob, sip_t const *sip)
+{
+  sip_contact_t *m = NULL;
+  char *gruu;
+
+  if (!ob)
+    return 0;
+
+  if (ob->ob_rcontact == NULL)
+    return -1;
+
+  if (!ob->ob_prefs.gruuize && ob->ob_instance) {
+    char const *my_instance, *my_reg_id = NULL;
+    char const *instance, *reg_id;
+
+    m = ob->ob_rcontact;
+    my_instance = msg_header_find_param(m->m_common, "+sip.instance=");
+    if (my_instance)
+      my_reg_id = msg_header_find_param(m->m_common, "reg-id=");
+
+    for (m = sip->sip_contact; m; m = m->m_next) {
+      if (my_instance) {
+	instance = msg_header_find_param(m->m_common, "+sip.instance=");
+	if (!instance || strcmp(instance, my_instance))
+	  continue;
+	if (my_reg_id) {
+	  reg_id = msg_header_find_param(m->m_common, "reg-id=");
+	  if (!reg_id || strcmp(reg_id, my_reg_id))
+	    continue;
+	}
+      }
+
+      if (url_cmp_all(ob->ob_rcontact->m_url, m->m_url) == 0)
+	break;
+    }
+  }
+
+  if (m == NULL) {
+    if (ob->ob_gruu)
+      msg_header_free(ob->ob_home, (void *)ob->ob_gruu), ob->ob_gruu = NULL;
+    return 0;
+  }
+
+  gruu = (char *)msg_header_find_param(m->m_common, "gruu=");
+
+  if (gruu == NULL || gruu[0] == '\0')
+    return 0;
+
+  gruu = msg_unquote_dup(NULL, gruu);
+  m = gruu ? sip_contact_format(ob->ob_home, "<%s>", gruu) : NULL;
+  su_free(NULL, gruu);
+
+  if (!m)
+    return -1;
+
+  if (ob->ob_gruu)
+    msg_header_free(ob->ob_home, (void *)ob->ob_gruu);
+  ob->ob_gruu = m;
+
+  return 0;
+}
+
+/* ---------------------------------------------------------------------- */
+
+static int create_keepalive_message(outbound_t *ob,
+				    sip_t const *register_request);
+
+static int keepalive_options(outbound_t *ob);
+static int keepalive_options_with_registration_probe(outbound_t *ob);
+
+static int response_to_keepalive_options(outbound_t *ob,
+					 nta_outgoing_t *orq,
+					 sip_t const *sip);
+
+static void keepalive_timer(su_root_magic_t *root_magic,
+			    su_timer_t *t,
+			    su_timer_arg_t *ob_as_timer_arg);
+
+/** Start OPTIONS keepalive or contact validation process */
+void outbound_start_keepalive(outbound_t *ob,
+			      nta_outgoing_t *register_transaction)
+{
+  unsigned interval = 0;
+  int need_to_validate;
+
+  if (!ob)
+    return;
+
+  if (ob->ob_prefs.natify && ob->ob_prefs.okeepalive)
+    interval = ob->ob_prefs.interval;
+  need_to_validate = ob->ob_prefs.validate && !ob->ob_validated;
+
+  if (!ob->ob_nat_detected || !register_transaction ||
+      !(need_to_validate || interval != 0)) {
+    outbound_stop_keepalive(ob);
+    return;
+  }
+
+  if (ob->ob_keepalive.timer)
+    su_timer_destroy(ob->ob_keepalive.timer), ob->ob_keepalive.timer = NULL;
+
+  if (interval)
+    ob->ob_keepalive.timer =
+      su_timer_create(su_root_task(ob->ob_root), interval);
+
+  ob->ob_keepalive.interval = interval;
+
+  if (!ob->ob_validated && ob->ob_keepalive.sipstun 
+      && 0 /* Stun is disabled for now */) {
+    nta_tport_keepalive(register_transaction);
+  }
+  else {
+    if (register_transaction) {
+      msg_t *msg = nta_outgoing_getrequest(register_transaction);
+      sip_t const *register_request = sip_object(msg);
+      create_keepalive_message(ob, register_request);
+      msg_destroy(msg);
+    }
+
+    keepalive_options(ob);
+  }
+}
+
+void outbound_stop_keepalive(outbound_t *ob)
+{
+  if (!ob)
+    return;
+
+  ob->ob_keepalive.interval = 0;
+
+  if (ob->ob_keepalive.timer)
+    su_timer_destroy(ob->ob_keepalive.timer), ob->ob_keepalive.timer = NULL;
+
+  if (ob->ob_keepalive.orq)
+    nta_outgoing_destroy(ob->ob_keepalive.orq), ob->ob_keepalive.orq = NULL;
+
+  if (ob->ob_keepalive.msg)
+    msg_destroy(ob->ob_keepalive.msg), ob->ob_keepalive.msg = NULL;
+}
+
+/** @internal Create a message template for keepalive. */
+static int create_keepalive_message(outbound_t *ob, sip_t const *regsip)
+{
+  msg_t *msg = nta_msg_create(ob->ob_nta, MSG_FLG_COMPACT), *previous;
+  sip_t *osip = sip_object(msg);
+  sip_accept_contact_t *ac;
+
+  char const *p1 = ob->ob_instance;
+  char const *p2 = ob->ob_features;
+
+  unsigned d = ob->ob_keepalive.interval;
+
+  assert(regsip); assert(regsip->sip_request);
+
+  if (p1 || p2) {
+    ac = sip_accept_contact_format(msg_home(msg), "*;require;explicit;%s%s%s",
+				   p1 ? p1 : "",
+				   p2 && p2 ? ";" : "",
+				   p2 ? p2 : "");
+    msg_header_insert(msg, NULL, (void *)ac);
+  }
+
+  if (0 >
+      /* Duplicate essential headers from REGISTER request: */
+      sip_add_tl(msg, osip,
+		 SIPTAG_TO(regsip->sip_to),
+		 SIPTAG_FROM(regsip->sip_from),
+		 /* XXX - we should only use loose routing here */
+		 /* XXX - if we used strict routing,
+		    the route header/request_uri must be restored
+		 */
+		 SIPTAG_ROUTE(regsip->sip_route),
+		 /* Add Max-Forwards 0 */
+		 TAG_IF(d, SIPTAG_MAX_FORWARDS_STR("0")),
+		 TAG_IF(d, SIPTAG_SUBJECT_STR("KEEPALIVE")),
+		 SIPTAG_CALL_ID_STR(ob->ob_cookie),
+		 SIPTAG_ACCEPT_STR(outbound_content_type),
+		 TAG_END()) ||
+      /* Create request-line, Call-ID, CSeq */
+      nta_msg_request_complete(msg,
+       			nta_default_leg(ob->ob_nta),
+       			SIP_METHOD_OPTIONS,
+       			(void *)regsip->sip_to->a_url) < 0 ||
+      msg_serialize(msg, (void *)osip) < 0 ||
+      msg_prepare(msg) < 0)
+    return msg_destroy(msg), -1;
+
+  previous = ob->ob_keepalive.msg;
+  ob->ob_keepalive.msg = msg;
+  msg_destroy(previous);
+
+  return 0;
+}
+
+static int keepalive_options(outbound_t *ob)
+{
+  msg_t *req;
+  sip_t *sip;
+
+  if (ob->ob_keepalive.orq)
+    return 0;
+
+  if (ob->ob_prefs.validate && ob->ob_registered && !ob->ob_validated)
+    return keepalive_options_with_registration_probe(ob);
+
+  req = msg_copy(ob->ob_keepalive.msg);
+  if (!req)
+    return -1;
+  sip = sip_object(req); assert(sip); assert(sip->sip_request);
+
+  if (nta_msg_request_complete(req, nta_default_leg(ob->ob_nta),
+			       SIP_METHOD_UNKNOWN, NULL) < 0)
+    return msg_destroy(req), -1;
+
+  if (ob->ob_keepalive.auc[0])
+    auc_authorization(ob->ob_keepalive.auc, req, (void *)sip,
+		      "OPTIONS", sip->sip_request->rq_url, sip->sip_payload);
+
+  ob->ob_keepalive.orq =
+    nta_outgoing_mcreate(ob->ob_nta,
+			 response_to_keepalive_options,
+			 ob,
+			 NULL,
+			 req,
+			 TAG_END());
+
+  if (!ob->ob_keepalive.orq)
+    return msg_destroy(req), -1;
+
+  return 0;
+}
+
+static int response_to_keepalive_options(outbound_t *ob,
+					 nta_outgoing_t *orq,
+					 sip_t const *sip)
+{
+  int status = 408;
+  char const *phrase = sip_408_Request_timeout;
+  int binding_check;
+  int challenged = 0, credentials = 0;
+  msg_t *_reqmsg = nta_outgoing_getrequest(orq);
+  sip_t *request = sip_object(_reqmsg); msg_destroy(_reqmsg);
+
+  if (sip && sip->sip_status) {
+    status = sip->sip_status->st_status;
+    phrase = sip->sip_status->st_phrase;
+  }
+
+  if (status == 100) {
+    /* This probably means that we are in trouble. whattodo, whattodo */
+  }
+
+  if (status < 200)
+    return 0;
+
+  if (status == 401 || status == 407) {
+    if (sip->sip_www_authenticate)
+      challenged += auc_challenge(ob->ob_keepalive.auc,
+				  ob->ob_home,
+				  sip->sip_www_authenticate,
+				  sip_authorization_class) > 0;
+    if (sip->sip_proxy_authenticate)
+      challenged += auc_challenge(ob->ob_keepalive.auc,
+				  ob->ob_home,
+				  sip->sip_proxy_authenticate,
+				  sip_proxy_authorization_class) > 0;
+    if (ob->ob_oo->oo_credentials)
+      credentials = ob->ob_oo->oo_credentials(ob->ob_owner,
+					      ob->ob_keepalive.auc);
+  }
+
+  binding_check = outbound_nat_detect(ob, request, sip);
+
+  if (orq == ob->ob_keepalive.orq)
+    ob->ob_keepalive.orq = NULL;
+  nta_outgoing_destroy(orq);
+
+  if (binding_check > 1) {
+    /* Bindings have changed */
+    if (outbound_contacts_from_via(ob, sip->sip_via) == 0) {
+      /* XXX - Destroy old keepalive template message */
+
+      /* re-REGISTER */
+      ob->ob_oo->oo_refresh(ob->ob_owner, ob);
+      return 0;
+    }
+  }
+
+  if (binding_check <= 1 && ob->ob_registered && ob->ob_keepalive.validating) {
+    int failed = 0;
+    unsigned loglevel = 3;
+
+    if (challenged > 0 && credentials > 0) {
+      keepalive_options_with_registration_probe(ob);
+      return 0;
+    }
+
+    if (status < 300 && ob->ob_keepalive.validated) {
+      loglevel = 5;
+      if (ob->ob_validated) 
+	loglevel = 99;		/* only once */
+      ob->ob_validated = ob->ob_once_validated = 1;
+    }
+    else if (status == 401 || status == 407 || status == 403) 
+      loglevel = 5, failed = 1;
+    else
+      loglevel = 3, failed = 1;
+      
+    loglevel = 1;		/* XXX ... for now */
+
+    if (loglevel >= SU_LOG->log_level) {
+      su_llog(SU_LOG, loglevel,       
+	      "outbound(%p): %s <" URL_PRINT_FORMAT ">\n",
+	      ob->ob_owner, failed ? "FAILED to validate" : "validated", 
+	      URL_PRINT_ARGS(ob->ob_rcontact->m_url));
+      if (failed)
+	su_llog(SU_LOG, loglevel, "outbound(%p): FAILED with %u %s\n", 
+		ob->ob_owner, status, phrase);
+    }
+
+    if (failed) 
+      ob->ob_oo->oo_probe_error(ob->ob_owner, ob, status, phrase, TAG_END());
+  }
+  else if (status == 408) {
+    SU_DEBUG_1(("outbound(%p): keepalive timeout\n", ob->ob_owner));
+    ob->ob_oo->oo_keepalive_error(ob->ob_owner, ob, status, phrase, TAG_END());
+    return 0;
+  }
+
+  ob->ob_keepalive.validating = 0;
+
+  if (ob->ob_keepalive.timer)
+    su_timer_set(ob->ob_keepalive.timer, keepalive_timer, ob);
+
+  return 0;
+}
+
+static void keepalive_timer(su_root_magic_t *root_magic,
+			    su_timer_t *t,
+			    su_timer_arg_t *ob_casted_as_timer_arg)
+{
+  outbound_t *ob = (outbound_t *)ob_casted_as_timer_arg;
+
+  (void)root_magic;
+
+  if (keepalive_options(ob) < 0)
+    su_timer_set(t, keepalive_timer, ob_casted_as_timer_arg);	/* XXX */
+}
+
+
+/** @internal Send a keepalive OPTIONS that probes the registration */
+static int keepalive_options_with_registration_probe(outbound_t *ob)
+{
+  msg_t *req;
+  sip_t *sip;
+  void *request_uri;
+
+  if (ob->ob_keepalive.orq)
+    return 0;
+
+  req = msg_copy(ob->ob_keepalive.msg);
+  if (!req)
+    return -1;
+
+  sip = sip_object(req); assert(sip);
+  request_uri = sip->sip_to->a_url;
+
+  if (nta_msg_request_complete(req, nta_default_leg(ob->ob_nta),
+       			SIP_METHOD_OPTIONS, request_uri) < 0)
+    return msg_destroy(req), -1;
+
+  if (ob->ob_keepalive.auc[0])
+    auc_authorization(ob->ob_keepalive.auc, req, (void *)sip,
+		      "OPTIONS", request_uri, sip->sip_payload);
+
+  ob->ob_keepalive.orq =
+    nta_outgoing_mcreate(ob->ob_nta,
+			 response_to_keepalive_options,
+			 ob,
+			 NULL,
+			 req,
+			 SIPTAG_SUBJECT_STR("REGISTRATION PROBE"),
+			 /* NONE is used to remove
+			    Max-Forwards: 0 found in ordinary keepalives */
+			 SIPTAG_MAX_FORWARDS(SIP_NONE),
+			 TAG_END());
+
+  if (!ob->ob_keepalive.orq)
+    return msg_destroy(req), -1;
+
+  ob->ob_keepalive.validating = 1;
+  ob->ob_keepalive.validated = 0;
+
+  return 0;
+}
+
+/** Check if request should be processed by outbound */
+int outbound_targeted_request(sip_t const *sip)
+{
+  return 
+    sip && sip->sip_request &&
+    sip->sip_request->rq_method == sip_method_options &&
+    sip->sip_accept &&
+    sip->sip_accept->ac_type &&
+    strcasecmp(sip->sip_accept->ac_type, outbound_content_type) == 0;
+}
+
+/** Answer to the connectivity probe OPTIONS */
+int outbound_process_request(outbound_t *ob, 
+			     nta_incoming_t *irq,
+			     sip_t const *sip)
+{
+  /* XXX - We assume that Call-ID is not modified. */
+  if (strcmp(sip->sip_call_id->i_id, ob->ob_cookie))
+    return 0;
+
+  if (ob->ob_keepalive.validating) {
+    SU_DEBUG_1(("outbound(%p): registration check OPTIONS received\n", 
+		ob->ob_owner));
+    ob->ob_keepalive.validated = 1;
+  }
+
+  nta_incoming_treply(irq, SIP_200_OK,
+		      SIPTAG_CONTENT_TYPE_STR(outbound_content_type),
+		      SIPTAG_PAYLOAD_STR(ob->ob_cookie),
+		      TAG_END());
+  return 200;
+}
+
+
+/* ---------------------------------------------------------------------- */
+
+/**@internal
+ * Create contacts for outbound.
+ *
+ * There are two contacts: 
+ * one suitable for registrations (ob_rcontact) and another that can be used
+ * in dialogs (ob_dcontact).
+ */
+int outbound_contacts_from_via(outbound_t *ob, sip_via_t const *via)
+{
+  su_home_t *home = ob->ob_home;
+  sip_contact_t *rcontact, *dcontact;
+  int reg_id = 0;
+  char reg_id_param[20] = "";
+  sip_contact_t *previous_previous, *previous_rcontact, *previous_dcontact;
+  sip_via_t *v, v0[1], *previous_via;
+  int contact_uri_changed;
+
+  if (!via)
+    return -1;
+
+  v = v0; *v0 = *via; v0->v_next = NULL;
+
+  dcontact = ob->ob_oo->oo_contact(ob->ob_owner, home,
+				   NULL, v, v->v_protocol, NULL);
+
+  if (ob->ob_instance && ob->ob_reg_id != 0)
+    snprintf(reg_id_param, sizeof reg_id_param, ";reg-id=%u", ob->ob_reg_id);
+
+  rcontact = ob->ob_oo->oo_contact(ob->ob_owner, home,
+				   NULL, v, v->v_protocol, 
+				   ob->ob_features ? ob->ob_features : "",
+				   ob->ob_instance, reg_id_param, NULL);
+    
+#if 0
+  char *uri;
+
+  /* uri contains < > */
+  uri = sip_contact_string_from_via(NULL, via, NULL, v->v_protocol);
+
+  dcontact = sip_contact_make(home, uri);
+
+
+
+  if (ob->ob_instance) {
+    char reg_id[20];
+
+    if (ob->ob_instance && ob->ob_reg_id)
+      snprintf(reg_id, sizeof reg_id, ";reg-id=%u", ob->ob_reg_id);
+    else
+      strcpy(reg_id, "");
+
+    rcontact = sip_contact_format(home, "%s;%s%s%s%s",
+				  uri, ob->ob_instance, reg_id,
+				  ob->ob_features ? ";" : "",
+				  ob->ob_features ? ob->ob_features : "");
+  }
+  else if (ob->ob_features)
+    rcontact = sip_contact_format(home, "%s;%s", uri, ob->ob_features);
+  else
+    rcontact = dcontact;
+
+  free(uri);
+#endif
+
+  v = sip_via_dup(home, v);
+
+  if (!rcontact || !dcontact || !v) {
+    msg_header_free(home, (void *)dcontact);
+    if (rcontact != dcontact)
+      msg_header_free(home, (void *)rcontact);
+    msg_header_free(home, (void *)v);
+    return -1;
+  }
+
+  contact_uri_changed = !ob->ob_rcontact ||
+    url_cmp_all(ob->ob_rcontact->m_url, rcontact->m_url);
+
+  if (contact_uri_changed) {
+    previous_previous = ob->ob_previous;
+    previous_dcontact = ob->ob_dcontact;
+    previous_via = ob->ob_via;
+
+    if (ob->ob_registering &&
+        (reg_id == 0 || ob->ob_info.outbound < outbound_feature_supported))
+      previous_rcontact = NULL, ob->ob_previous = ob->ob_rcontact;
+    else
+      previous_rcontact = ob->ob_rcontact, ob->ob_previous = NULL;
+
+    if (ob->ob_previous)
+      msg_header_replace_param(home, (void*)ob->ob_previous, "expires=0");
+  }
+  else {
+    previous_previous = ob->ob_rcontact;
+    previous_rcontact = NULL;
+    previous_dcontact = ob->ob_dcontact;
+    previous_via = ob->ob_via;
+  }
+
+  ob->ob_contacts = 1;
+
+  ob->ob_rcontact = rcontact;
+  ob->ob_dcontact = dcontact;
+  ob->ob_via = v;
+
+  if (contact_uri_changed) {
+    ob->ob_registering = 0;
+    ob->ob_registered = 0;
+    ob->ob_validated = 0;
+  }
+
+  msg_header_free(home, (void *)previous_rcontact);
+  msg_header_free(home, (void *)previous_previous);
+  if (previous_dcontact != ob->ob_previous &&
+      previous_dcontact != previous_rcontact &&
+      previous_dcontact != previous_previous)
+    msg_header_free(home, (void *)previous_dcontact);
+  msg_header_free(home, (void *)previous_via);
+
+  return 0;
+}
+
+/**Set new contact.
+ *
+ * @retval 0 when successful
+ * @retval -1 error setting contact
+ */
+int outbound_set_contact(outbound_t *ob,
+			 sip_contact_t const *application_contact,
+			 sip_via_t const *v,
+			 int terminating)
+{
+  su_home_t *home = ob->ob_home;
+  sip_contact_t *rcontact = NULL, *dcontact = NULL, *previous = NULL;
+  sip_contact_t *m1, *m2, *m3;
+  int contact_uri_changed = 0;
+
+  m1 = ob->ob_rcontact;
+  m2 = ob->ob_dcontact;
+  m3 = ob->ob_previous;
+
+  if (terminating) {
+    if (ob->ob_contacts)
+      previous = ob->ob_rcontact;
+  }
+  else if (application_contact) {
+    if (!ob->ob_rcontact || 
+	url_cmp_all(ob->ob_rcontact->m_url, application_contact->m_url)) {
+      contact_uri_changed = 1;
+      previous = ob->ob_contacts ? ob->ob_rcontact : NULL;
+    }
+  }
+  else if (v) {
+    char const *tport = !v->v_next ? v->v_protocol : NULL; 
+    char reg_id_param[20];
+
+    dcontact = ob->ob_oo->oo_contact(ob->ob_owner, home,
+				     NULL, v, tport, NULL);
+    if (!dcontact)
+      return -1;
+
+    if (ob->ob_instance && ob->ob_reg_id != 0)
+      snprintf(reg_id_param, sizeof reg_id_param, ";reg-id=%u", ob->ob_reg_id);
+
+    rcontact = ob->ob_oo->oo_contact(ob->ob_owner, home,
+				     NULL, v, v->v_protocol, 
+				     ob->ob_features ? ob->ob_features : "",
+				     ob->ob_instance, reg_id_param, NULL);
+    if (!rcontact)
+      return -1;
+
+    if (!ob->ob_rcontact || 
+	url_cmp_all(ob->ob_rcontact->m_url, rcontact->m_url)) {
+      contact_uri_changed = 1;
+      previous = ob->ob_contacts ? ob->ob_rcontact : NULL;
+    }
+  }
+
+  ob->ob_by_stack = application_contact == NULL;
+
+  ob->ob_rcontact = rcontact;
+  ob->ob_dcontact = dcontact;
+  ob->ob_previous = previous;
+
+  if (contact_uri_changed) {
+    ob->ob_registering = 0;
+    ob->ob_registered = 0;
+    ob->ob_validated = 0;
+    ob->ob_once_validated = 0;
+  }
+
+  if (m1 != previous)
+    msg_header_free(home, (void *)m1);
+  if (m2 != m1 && m2 != m3)
+    msg_header_free(home, (void *)m2);
+  msg_header_free(home, (void *)m3);
+
+  return 0;
+}
+
+sip_contact_t const *outbound_dialog_contact(outbound_t const *ob)
+{
+  if (ob == NULL)
+    return NULL;
+  else if (ob->ob_gruu)
+    return ob->ob_gruu;
+  else
+    return ob->ob_dcontact;
+}
+
+/* ---------------------------------------------------------------------- */
+
+
+static enum outbound_feature
+feature_level(sip_t const *sip, char const *tag, int level)
+{
+  if (sip_has_feature(sip->sip_require, tag))
+    return outbound_feature_required;
+  else if (sip_has_feature(sip->sip_supported, tag))
+    return outbound_feature_supported;
+  else if (sip_has_feature(sip->sip_unsupported, tag))
+    return outbound_feature_unsupported;
+  else
+    return level;
+}
+
+
+void outbound_peer_info(outbound_t *ob, sip_t const *sip)
+{
+  if (sip == NULL) {
+    ob->ob_info.outbound = outbound_feature_unsure;
+    ob->ob_info.gruu = outbound_feature_unsure;
+    ob->ob_info.pref = outbound_feature_unsure;
+    return;
+  }
+
+  ob->ob_info.outbound = feature_level(sip, "outbound", ob->ob_info.outbound);
+  ob->ob_info.gruu = feature_level(sip, "gruu", ob->ob_info.gruu);
+  ob->ob_info.pref = feature_level(sip, "pref", ob->ob_info.pref);
+}

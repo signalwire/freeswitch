@@ -1,0 +1,13 @@
+#
+# This file specifies extra SIP headers not included in sip_t structure
+#
+# The line format is: 
+# C-name @SINCE sip_t-like-comment
+#
+#### EXTRA HEADER LIST STARTS HERE ####
+
+refer_sub @VERSION_1_12_5 /**< Refer-Sub header */
+suppress_body_if_match @VERSION_1_12_5 /**< Suppress-Body-If-Match header */
+suppress_notify_if_match @VERSION_1_12_5 /**< Suppress-Notify-If-Match header*/
+
+#### EXTRA HEADER LIST ENDS HERE ####

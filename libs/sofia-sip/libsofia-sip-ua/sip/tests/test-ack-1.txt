@@ -1,0 +1,8 @@
+ACK sip:company.com SIP/2.0
+To: sip:j.user@company.com
+From: sip:j.user@company.com
+Call-ID: 0ha0isndaksdj@10.0.2.2
+Contact: sip:j.user@host.company.com
+CSeq: 8 NEWMETHOD
+Via: SIP/2.0/UDP 135.180.130.133
+Content-Length: 0

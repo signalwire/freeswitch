@@ -1,0 +1,10 @@
+2006-05-03  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* sres.c: Added win32 registry name server discovery. Based on a
+	patch from Dimitri E. Prado.
+
+	* sres.c: Decreased update interval to 180secs (SRES_UPDATE_INTERVAL_SECS).
+
+2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Initial import of the module to Sofia-SIP tree.

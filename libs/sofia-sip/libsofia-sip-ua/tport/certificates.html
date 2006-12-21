@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html>
+<head>
+<title>Generating SSL/TLS certificates for SIP agents and proxies</title>
+</head>
+<body>
+<h1>Generating SSL/TLS certificates for SIP agents and proxies</h1>
+<h2>Prerequisites</h2>
+The openssl v0.96 or higher must be installed to create the certificates.
+
+<h2>To generate the random seed file</h2>
+<strong><pre>$ tport_rand tls_seed.dat
+</pre>
+</strong>
+
+<h2>To generate the root authority certificate</h2>
+<strong><pre>
+$ make_root_cert.pl \
+     -cn &lt;root common name&gt;\
+     -dns &lt;comma separated list of root dns names&gt;\
+    [-prefix &lt;prefix for the generated files&gt; (default root)]\
+    [-rand &lt;random seed file&gt; (default tls_seed.dat)]</pre></strong>
+
+This command will generate files <strong>&lt;prefix&gt;key.pem</strong> (root private key), 
+<strong>&lt;prefix&gt;cert.pem</strong> (root certificate) and <strong>&lt;prefix&gt;.pem</strong> (combination
+of the key and the certificate). The latter file will be used to sign the node certificates.
+
+<h2>To generate a certificate for a single node (user agent or proxy)</h2>
+<strong><pre>
+$ make_node_cert.pl \
+     -cn &lt;node common name&gt;\
+     -dns &lt;comma separated list of node dns names&gt;\
+    [-ca &lt;cafile&gt; (default root.pem)]\
+    [-prefix &lt;prefix for the generated files&gt; (default agent)]\
+    [-rand &lt;random seed file&gt; (default tls_seed.dat)]
+</pre></strong>
+This command will generate files <strong>&lt;prefix&gt;key.pem </strong> (node private key), 
+<strong>&lt;prefix&gt;cert.pem</strong> (node certificate) and <strong>&lt;prefix&gt;.pem</strong> (combination
+of the key and the certificate). The certificate has been signed with ca certificate
+contained in <strong>&lt;cafile&gt;</strong>.
+
+<h2>Installing the certificates to the nodes</h2>
+
+<ol>
+
+<li>Copy the root certificate file (<strong>rootcert.pem</strong> by default - <strong>not root.pem or rootkey.pem!</strong>), 
+the combined node certificate+key file (<strong>agent.pem</strong>) and <strong>tls_seed.dat</strong> to the tls configuration
+directory (default <strong>$HOME/.sip/auth</strong>)</li>
+
+<li>Rename <strong>rootcert.pem</strong> as <strong>cafile.pem</strong></li>
+</ol>
+<p>
+<strong>Note that files agent.pem and tls_seed.dat must be kept secret to
+ensure secure connection</strong>  
+</p>
+
+</ol>
+</body>
+</html>
+

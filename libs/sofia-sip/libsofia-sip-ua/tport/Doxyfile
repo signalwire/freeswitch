@@ -1,0 +1,16 @@
+PROJECT_NAME         = "tport"
+OUTPUT_DIRECTORY     = ../docs/html/tport
+
+INPUT 		     = tport.docs sofia-sip .
+
+@INCLUDE = ../docs/Doxyfile.conf
+
+TAGFILES            += \
+	../docs/su.doxytags=../su \
+	../docs/msg.doxytags=../msg
+
+GENERATE_TAGFILE    = ../docs/tport.doxytags
+
+EXCLUDE_PATTERNS   += test_*.[hc] torture_*.[hc]
+
+ALIASES +=

@@ -1,0 +1,12 @@
+INVITE sip:user@comapny.com SIP/2.0
+To: sip:j.user@company.com
+From: sip:caller@university.edu
+Call-ID: 0ha0isndaksdj@10.0.0.1
+CSeq: 8 INVITE
+Via: SIP/2.0/UDP 135.180.130.133
+Content-Type: application/newformat
+Content-Length: 37
+
+<audio>
+ <pcmu port="443"/>
+</audio>

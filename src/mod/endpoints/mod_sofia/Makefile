@@ -1,6 +1,5 @@
 OS_ARCH         := $(subst /,_,$(shell uname -s | sed /\ /s//_/))
 VERSION = sofia-sip-1.12
-TARBALL = sofia-sip-1.12.4.tar.gz
 CFLAGS += -I. -I$(PREFIX)/include/$(VERSION)
 LDFLAGS += -lsofia-sip-ua
 LINKER=$(CC)
@@ -10,7 +9,7 @@ endif
 all:	depends $(MODNAME).$(DYNAMIC_LIB_EXTEN)
 
 depends:
-	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install $(TARBALL) --prefix=$(PREFIX) --with-pic --with-glib=no
+	MAKE=$(MAKE) $(BASE)/build/buildlib.sh $(BASE) install sofia-sip --prefix=$(PREFIX) --with-pic --with-glib=no
 
 %.o:  %.c
 	$(CC) -fPIC $(CFLAGS) -c -o $@ $<

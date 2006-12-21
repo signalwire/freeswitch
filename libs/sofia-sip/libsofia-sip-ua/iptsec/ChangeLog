@@ -1,0 +1,24 @@
+2005-11-08  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* Renamed auth_digest_test.c as test_auth_digest.c.
+
+2005-10-21  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+  * Generate opaque only if opaque parameter has value "*".
+
+    M ./libsofia-sip-ua/iptsec/auth_module.c -14 +20
+
+2005-09-06  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* auth_digest_test.c: Using opaque to match credentials (as per
+	auth_digest_credentials()).
+
+	* auth_plugin.h, auth_module.c: Added auth_digest_credentials.
+
+2005-08-10  Pekka Pessi  <Pekka.Pessi@nokia.com>
+
+	* auth_module.c: Using unsigned as type of hash!
+
+2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Initial import of the module to Sofia-SIP tree.

@@ -1,0 +1,20 @@
+PROJECT_NAME         = "iptsec"
+OUTPUT_DIRECTORY     = ../docs/html/iptsec
+
+INPUT 		     = iptsec.docs sofia-sip . 
+
+@INCLUDE = ../docs/Doxyfile.conf
+
+TAGFILES           += ../docs/su.doxytags=../su
+TAGFILES           += ../docs/ipt.doxytags=../ipt
+TAGFILES           += ../docs/bnf.doxytags=../bnf
+TAGFILES           += ../docs/url.doxytags=../url
+TAGFILES           += ../docs/msg.doxytags=../msg
+TAGFILES           += ../docs/sip.doxytags=../sip
+TAGFILES           += ../docs/sresolv.doxytags=../sresolv
+TAGFILES           += ../docs/tport.doxytags=../tport
+TAGFILES           += ../docs/nta.doxytags=../nta
+
+GENERATE_TAGFILE    = ../docs/iptsec.doxytags
+
+ALIASES 	   += 

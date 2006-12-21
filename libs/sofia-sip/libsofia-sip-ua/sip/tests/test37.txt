@@ -1,0 +1,9 @@
+REGISTER sip:bell-tel.com SIP/2.0
+Via: SIP/2.0/UDP saturn.bell-tel.com
+From: sip:watson@bell-tel.com
+To: sip:watson@bell-tel.com
+Call-ID: 70710@saturn.bell-tel.com
+CSeq: 2 REGISTER
+Contact: sip:+1-972-555-2222@gw1.wcom.com;user=phone
+
+

@@ -1,0 +1,25 @@
+2006-12-05  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua-glib interface v3 frozen, version to 3:0:0 (for 1.12.5 release).
+	* nua-glib submodule has been moved from libsofia-sip-ua-glib,
+	and sofia-sip, to a standalone sofia-nua-glib package.
+
+2006-11-22  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua-glib interface v2 frozen, version to 2:0:2 (for 1.12.4 release).
+
+2006-07-25  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua-glib interface v1 frozen, version to 1:0:1 (for 1.12.2 release).
+
+2006-06-16  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua-glib interface v0 frozen, version to 0:0:0.
+
+2006-04-12  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* Modified build system to require glib-2.4 or newer to compile libsofia-sip-ua-glib.
+
+2006-03-09  Kai Vehmanen  <kai.vehmanen@nokia.com>
+
+	* libsofia-sip-ua-glib created.

@@ -1,0 +1,19 @@
+#! /bin/bash
+
+rc=0
+
+if $VALGRIND ./test_su ; then
+    echo PASS: multithread test_su
+else
+    echo FAIL: multithread test_su failed
+    rc=1
+fi
+
+if $VALGRIND ./test_su -s ; then
+    echo PASS: singlethread test_su
+else
+    echo FAIL: singlethread test_su failed
+    rc=1
+fi
+
+exit $rc
