@@ -3818,12 +3818,17 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
             if (strcasecmp(argv[0], "list") == 0) {
                 conference_list_pretty(conference, &stream);
                 /* provide help */
-            } else if (strcasecmp(argv[0], "help") == 0 || strcasecmp(argv[0], "commands") == 0) {
-                stream.write_function(&stream, "%s\n", conf_api_interface.syntax);
-                /* find a normal command */
-            } else {
-                conf_api_dispatch(conference, &stream, argc, argv, (const char *)body, 0);
+            } 
+#if 0
+            else {
+                if (strcasecmp(argv[0], "help") == 0 || strcasecmp(argv[0], "commands") == 0) {
+                    stream.write_function(&stream, "%s\n", conf_api_interface.syntax);
+                    /* find a normal command */
+                } else {
+                    conf_api_dispatch(conference, &stream, argc, argv, (const char *)body, 0);
+                }
             }
+#endif
         } else {
             stream.write_function(&stream, "No parameters specified.\nTry 'help'\n");
         }
