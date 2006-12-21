@@ -4489,6 +4489,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
             int proceed = 0, ovector[30];
             char substituted[1024] = "";
             char *odata = NULL;
+            char *expanded = NULL;
 
             if ((proceed = switch_perform_regex(data, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
                 for (action = switch_xml_child(input, "action"); action; action = action->next) {
@@ -4501,7 +4502,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                     } else {
                         odata = adata;
                     }
+                    
+                    expanded = switch_channel_expand_variables(channel, odata);
 
+                    if (expanded == odata) {
+                        expanded = NULL;
+                    } else {
+                        odata = expanded;
+                    }
+                    
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle %s:[%s] (%s)\n", func, odata, lang);
 
                     if (!strcasecmp(func, "play-file")) {
@@ -4556,6 +4565,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
             }
 
             switch_clean_re(re);
+            switch_safe_free(expanded);
         }
 
         input = input->next;
