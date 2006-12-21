@@ -1,0 +1,64 @@
+Background:
+Let’s say you need to support a xmlrpc-c client running as a service.  In this
+situation you cannot use WinInet.  Details of the restriction can be found on
+the libcurl website or various Microsoft KB articles.  The alternative is to use
+libcurl.  This document describes the steps required to use libcurl as your
+transport mechanism as supported by the latest files and projects provided in
+the xmlrpc-c distribution.  The assumption is that you can successfully compile
+the distribution of xmlrpc-c.
+
+Overview:
+The default projects in xmlrpc-c create standalone executables that do not
+require other DLL’s (release mode).  While the case can be made for this
+behavior pro and con, it is beyond this document to justify it.  Therefore, we
+need to create static link libraries for libcurl that mimics this behavior. 
+Once the link libraries are created, we can then add them (plus the requisite
+curl headers) into the xmlrpc-c project.  Finally, we enable the compilation of
+the curl transport file and tell xmlrpc-c that we will be using curl.  Lastly,
+we build and test the project.
+
+Steps to use CURL with Win32 xmlrpc-c:
+1. Download the CURL source.  In the “include” folder of the CURL distribution,
+copy the curl directory to the “lib” directory of xmlbpc-c.  When you are done
+with this step, you should have a curl.h file located in the directory
+xmlrpc-c\lib\curl\.  The xmlrpc project looks in this relative path for the
+necessary headers.
+
+2. In the CURL distribution, lib directory, is a file called Makefile.vc6.  Edit
+this file.  The line starting with CCNODBG should be changed to:
+CCNODBG    = cl.exe /MT /O2 /DNDEBUG
+The /MT option links with the Multithreaded non-dll version of the c runtime. 
+If this change is not made, the project will not link, as this is the default
+setting for the xmlrpc-c projects.  In debug mode, we use the dll version of the
+c runtime as it makes memory leak checking tools work better.
+
+3. Open a command prompt window and run the vcvars32.bat file in your Visual C++
+distribution.  If you are using Studio 2002 or 2003, use the “Visual Studio
+Command Prompt” from the Start menu to open the console.
+
+4. Compile release and debug mode libraries.  For the purposes of this tutorial,
+we are going to build only the curl library without ssl or zlib support.  In the
+command prompt, navigate to the curl\lib directory and execute the following
+commands:
+nmake -f Makefile.vc6 CFG=debug
+nmake -f Makefile.vc6 CFG=release
+
+5. The above step should have generated two static link libraries in the
+curl\lib directory: libcurl.lib and libcurld.lib.  Copy these files into the
+root of the xmlrpc-c\lib\ directory.  This step ends our involvement with the
+actual CURL distribution.  The remainder of the steps are for XMLRPC-C.
+
+6. Open the xmlrpc-c Visual Studio workspace (Instructions for VC++ 6, other
+versions are slightly different).  In File View, expand the xmlrpc project. 
+Under “Source Files” there is an entry for xmlrpc_curl_transport.c  This is not
+included in any build paths by default.  To enable it for compilation, right
+click the file to change the settings.  In the dropdown, select “All
+Configurations.”  Pick the General tab and uncheck the “Exclude File From Build”
+setting.  Press OK to save your changes to the project.
+
+7.  In the “Header Files” section of the xmlrpc project is a file called
+“transport_config.h”.  Edit this file to set the MUST_BUILD_CURL_CLIENT to 1,
+and if you wish to change the default transport to curl, change the
+XMLRPC_DEFAULT_TRANSPORT to “curl”. 
+
+8. Compile and test one or more of the sample client projects.

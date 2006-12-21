@@ -1,0 +1,82 @@
+Here are some notes to help you develop code for Xmlrpc-c.  I include
+as "developing" debugging to figure out why Xmlrpc-c doesn't work for
+you.
+
+CODE LIBRARY
+------------
+
+The master Xmlrpc-c source code tree is the CVS repository on
+Sourceforge.  Anybody can read it; only the maintainer can commit to
+it.  If you're not the maintainer, simply use a 'cvs diff' command in
+your CVS working directory to create a patch file that embodies your
+changes and email that to the maintainer.  He can easily apply that
+patch to his own CVS working directory and then commit the changes.
+
+
+MAKE VARIABLES
+--------------
+
+You can pass make variable values to GNU Make to change the build.
+There are two common ways to do this:
+
+  1) Like this:
+
+     $ make MYVAR=myvalue
+
+  2) Via an environment variable, like this:
+
+     $ MYVAR=myvalue make
+
+     or
+ 
+     $ export MYVAR=myvalue
+     $ make
+
+See GNU Make and shell documentation for details.
+
+In Xmlrpc-c make files, there are two make variables that add
+arbitrary options to every compile command: CADD and CFLAGS_PERSONAL.
+
+They both do the same thing.  CADD is meant to be set on an individual
+make command, whereas CFLAGS_PERSONAL is meant to be a long-lived
+environment variable.  CFLAGS_PERSONAL is for flags you like on all
+your compiles, but maybe others don't.
+
+One of my favorite CADD settings is CADD=--save-temps.  To the GNU
+Compiler, --save-temps means to create, in addition to the object
+code, a file containing the intermediate preprocessed C code and a
+file containing the intermediate assembler source code.  I can use
+that to debug certain things.
+
+The Xmlrpc-c build uses -g by default with Gcc, so you don't need to
+use CADD to get debugging symbols in your object code.
+
+
+There's also LADD for linker options.
+
+
+CODE STYLE
+----------
+
+The maintainer is pretty particular about coding style, but doesn't
+require anyone to submit code in any particular style.  He changes
+what he thinks isn't maintainable enough as submitted.  You could do
+him a big favor, though, and reduce the chance of him introducing bugs
+into your code, but trying to copy the style you see in existing code.
+The major theme is high level programming -- closer to English prose
+and further from machine instructions.
+
+Probably the most important thing is not to use tabs.  Tabs are
+actually quite common in Unix C programming, but apart from tradition,
+they are a bad idea.  They don't look the same to everyone.  A person
+must suffer an additional configuration step -- setting up tab stops
+in order to see the code the right way.  Spaces, on the other hand,
+look the same to everyone.  Very old editors made it easier to compose
+with tabs than with spaces, but with modern ones, there is no
+difference.
+
+The maintainer tries to catch all tabs in code submitted to him and
+convert them to spaces, but this often leaves the code incorrectly
+indented.  Better to give him code that already has the right number
+of spaces explicitly.
+

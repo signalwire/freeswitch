@@ -1,0 +1,62 @@
+.\"                                      Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH XML-RPC-API2CPP 1 "June 27, 2001"
+.\" Please adjust this date whenever revising the manpage.
+.\"
+.\" Some roff macros, for reference:
+.\" .nh        disable hyphenation
+.\" .hy        enable hyphenation
+.\" .ad l      left justify
+.\" .ad b      justify to both left and right margins
+.\" .nf        disable filling
+.\" .fi        enable filling
+.\" .br        insert line break
+.\" .sp <n>    insert n+1 empty lines
+.\" for manpage-specific macros, see man(7)
+.SH NAME
+xml-rpc-api2cpp \- Make a C++ wrapper class for an XML-RPC API
+.SH SYNOPSIS
+.B xml-rpc-api2cpp
+\fIserver-url\fR \fIremote-method-prefix\fR \fIc++-class-name\fR
+.SH DESCRIPTION
+xml-rpc-api2cpp queries an XML-RPC server using the XML-RPC
+Instrospection API designed by Edd Dumbill.  It then prints a C++
+wrapper class to standard output.  This class can be used with
+xmlrpc-c's C++ API.
+.PP
+You can find a list of supported XML-RPC server libraries (and patches
+for many others) at \fBhttp://xmlrpc-c.sourceforge.net/hacks.php\fR.
+.SH OPTIONS
+.TP
+.I server-url
+The name of the server to query.  Try
+\fBhttp://xmlrpc-c.sourceforge.net/cgi-bin/interop.cgi\fR.
+.TP
+.I remote-method-prefix
+The prefix of the methods to wrap.  For example, to wrap all the
+system.* calls, you could specify "system".
+.TP
+.I c++-class-name
+The name of the C++ class to generate.  Try "SystemProxy".
+.SH BUGS
+xml-rpc-api2cpp can't talk to certain PHP servers based on Edd
+Dumbill's PHP library, because the trailing bytes of the XML-RPC
+message get truncated in HTTP pipelining mode.  It's not clear whether
+this is a PHP, Apache or w3c-libwww bug.
+.PP
+xml-rpc-api2cpp assumes that method descriptions are ASCII text, not
+HTML as specified in the standard.  (In practice, both conventions are
+often seen.)  It may also get unhappy if method descriptions contain
+"*/".
+.PP
+In general, error messages and diagnostics are still fairly poor.
+.SH SEE ALSO
+.BR xmlrpc-c (7),
+.BR xml-rpc-api2txt (1).
+.PP
+This program is part of xmlrpc-c.
+.SH AUTHOR
+This manual page was written by Eric Kidd <eric.kidd@pobox.com>.
+It may be distributed under the same terms as the rest of xmlrpc-c.

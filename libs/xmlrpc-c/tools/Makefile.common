@@ -1,0 +1,47 @@
+# -*-makefile-*-    <-- an Emacs control
+
+CLIENT_LDFLAGS =
+ifeq ($(MUST_BUILD_LIBWWW_CLIENT),yes)
+  CLIENT_LDFLAGS += $(shell libwww-config --libs)
+endif
+ifeq ($(MUST_BUILD_CURL_CLIENT),yes)
+  CLIENT_LDFLAGS += $(shell curl-config --libs) -lpthread
+endif
+ifeq ($(MUST_BUILD_WININET_CLIENT),yes)
+  CLIENT_LDFLAGS += $(shell wininet-config --libs)
+endif
+
+LIBEXPAT = $(BUILDDIR)/lib/expat/xmlparse/libxmlrpc_xmlparse.la \
+           $(BUILDDIR)/lib/expat/xmltok/libxmlrpc_xmltok.la
+
+ifeq ($(ENABLE_LIBXML2_BACKEND),yes)
+  LIBXML = $(LIBXML2_LIBS)
+else
+  LIBXML = $(LIBEXPAT)
+endif
+
+LIBXMLRPC = $(BUILDDIR)/src/libxmlrpc.la
+LIBXMLRPC_CPP = $(BUILDDIR)/src/cpp/libxmlrpc_cpp.a
+LIBXMLRPC_CLIENT = $(BUILDDIR)/src/libxmlrpc_client.la
+LIBXMLRPC_SERVER = $(BUILDDIR)/src/libxmlrpc_server.la
+
+XMLRPC_LIBS = $(LIBXMLRPC) $(LIBXMLRPC_CPP) $(LIBXMLRPC_CLIENT) \
+	$(LIBXMLRPC_SERVER) $(LIBXML)
+
+UTIL_DIR = $(BUILDDIR)/lib/util
+
+BUILDABLE_UTILS = casprintf.o cmdline_parser.o getoptx.o
+
+$(BUILDABLE_UTILS:%=$(UTIL_DIR)/%): FORCE
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
+include $(SRCDIR)/Makefile.common
+
+.PHONY: install
+install: install-common
+
+.PHONY: check
+check:
+
+.PHONY: FORCE
+FORCE:

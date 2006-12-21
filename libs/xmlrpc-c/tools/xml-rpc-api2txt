@@ -1,0 +1,147 @@
+#!/usr/bin/perl -w
+#
+# A handy little program to get the documentation of the available
+# methods from an XML-RPC service (via XML-RPC Introspection) and
+# print it out nicely formatted.
+#
+# (I wrote this in Perl because of all the spiffy report-generation
+# features.)
+#
+# You'll need to get Ken MacLeod's Frontier::RPC2 module from CPAN to use
+# this.
+#
+# Eric Kidd <eric.kidd@pobox.com>
+#
+# This script is part of xmlrpc-c, and may be used and distributed under
+# the same terms as the rest of the package.
+
+use strict;
+
+# One global variable for use with Perl's format routines, and one for
+# use inside an 'exec' block.
+use vars qw/$helptext $method_list/;
+
+# Try to load our Perl XML-RPC bindings, but fail gracefully.
+eval {
+    require Frontier::Client;
+};
+if ($@) {
+    print STDERR <<"EOD";
+This script requires Ken MacLeod\'s Frontier::RPC2 module. You can get this
+from CPAN or from his website at http://bitsko.slc.ut.us/~ken/xml-rpc/ .
+
+For installation instructions, see the XML-RPC HOWTO at:
+    http://www.linuxdoc.org/HOWTO/XML-RPC-HOWTO/index.html
+
+EOD
+    exit 1;
+}
+
+# Parse our command-line arguments.
+if (@ARGV != 1 || $ARGV[0] eq "--help") {
+    print STDERR "Usage: xml-rpc-api2txt serverURL\n";
+    exit 1;
+}
+
+my $server = Frontier::Client->new(url => $ARGV[0]);
+
+# Try (very carefully) to get our a list of methods from the server.
+local $method_list;
+eval {
+    $method_list = $server->call('system.listMethods');
+};
+if ($@) {
+    print STDERR <<"EOD";
+An error occurred while trying to talk to the XML-RPC server:
+
+  $@
+
+This may have been caused by several things--the server might not support
+introspection, it might not be an XML-RPC server, or your network might be
+down. Try the following:
+
+  xml-rpc-api2txt http://xmlrpc-c.sourceforge.net/api/sample.php
+
+EOD
+    exit 1;
+}
+
+# Enter the methods into a hashtable.
+my @methods = sort @$method_list;
+my %method_table;
+foreach my $method (@methods) {
+    $method_table{$method} = {};
+}
+
+# Get more information for the hash table. Since we need to make lots and
+# lots of very small XML-RPC calls, we'd like to use system.multicall to
+# reduce the latency.
+if (defined $method_table{'system.multicall'}) {
+
+    # This is messy but fast. Everybody hates HTTP round-trip lag, right?
+    my @call;
+    foreach my $method (@methods) {
+	push @call, {methodName => 'system.methodSignature',
+		     params => [$method]};
+	push @call, {methodName => 'system.methodHelp',
+		     params => [$method]};
+    }
+    my @result = @{$server->call('system.multicall', \@call)};
+    for (my $i = 0; $i < @methods; $i++) {
+	my $method = $methods[$i];
+	$method_table{$method}->{'signatures'} = $result[2*$i]->[0];
+	$method_table{$method}->{'help'} = $result[2*$i+1]->[0];
+    }
+} else {
+
+    # This is easy but slow (especially over backbone links).
+    foreach my $method (@methods) {
+	my $signature = $server->call('system.methodSignature', $method);
+	my $help = $server->call('system.methodHelp', $method);
+	$method_table{$method}->{'signatures'} = $signature;
+	$method_table{$method}->{'help'} = $help;
+    }
+}
+
+# Now, we need to dump the API.
+print <<"EOD";
+XML-RPC API for $ARGV[0]
+
+See http://www.linuxdoc.org/HOWTO/XML-RPC-HOWTO/index.html for instructions
+on using XML-RPC with Perl, Python, Java, C, C++, PHP, etc.
+EOD
+foreach my $method (@methods) {
+    print "\n";
+
+    # Print a synopsis of the function.
+    if ($method_table{$method}->{'signatures'} eq 'undef') {
+	# No documentation. Bad server. No biscuit.
+	print "unknown $method (...)\n";
+    } else {
+	for my $signature (@{$method_table{$method}->{'signatures'}}) {
+	    my $return_type = shift @$signature;
+	    my $arguments = join(", ", @$signature);
+	    print "$return_type $method ($arguments)\n";
+	}
+    }
+    print "\n";
+
+    my $help = $method_table{$method}->{'help'};
+    if ($help =~ /\n/) {
+	# Text has already been broken into lines by the server, so just
+	# indent it by two spaces and hope for the best.
+	my @lines = split(/\n/, $help);
+	my $help = "  " . join("\n  ", @lines);
+	print "$help\n";
+    } else {
+	# Print our help text in a nicely-wrapped fashion using Perl's
+	# formatting routines.
+	$helptext = $method_table{$method}->{'help'};
+	write;
+    }
+}
+
+format STDOUT =
+  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<~~
+  $helptext
+.

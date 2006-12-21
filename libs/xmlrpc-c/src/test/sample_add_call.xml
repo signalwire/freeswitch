@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<methodCall>
+<methodName>sample.add</methodName>
+<params>
+<param><value><i4>5</i4></value></param>
+<param><value><i4>7</i4></value></param>
+</params>
+</methodCall>

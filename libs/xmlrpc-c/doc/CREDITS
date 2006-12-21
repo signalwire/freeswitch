@@ -1,0 +1,19 @@
+Funding for the project that created the original Xmlrpc-c was
+provided in part by the good folks at First Peer, Inc., producers of
+P2P applications.
+
+Eric Kidd developed the original Xmlrpc-c in 2000 and maintained it up
+through June 2001.
+
+Bryan Henderson took over as maintainer in October 2004.
+
+Xmlrpc-c contains (and relies on for some server functions) a derivation
+of the Abyss web server by Moez Mahfoudh.
+
+Xmlrpc-c contains (and relies on) a derivation of the Expat XML
+parser, written by James Clark.
+
+The base64 code was derived from what Jack Jansen developed for Python.
+
+For more history, including credits for more minor contributions, see
+the HISTORY file.

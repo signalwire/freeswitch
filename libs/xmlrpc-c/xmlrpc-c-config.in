@@ -1,0 +1,180 @@
+#!/bin/sh
+# Stolen from rep-config and adapted for use with xmlrpc-c.
+# Other bits stolen from gnome-config & automake output.
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+bindir=@bindir@
+sbindir=@sbindir@
+libexecdir=@libexecdir@
+datadir=@datadir@
+sysconfdir=@sysconfdir@
+sharedstatedir=@sharedstatedir@
+localstatedir=@localstatedir@
+libdir=@libdir@
+infodir=@infodir@
+mandir=@mandir@
+includedir=@includedir@
+
+pkgdatadir=$datadir/@PACKAGE@
+pkglibdir=$libdir/@PACKAGE@
+pkgincludedir=$includedir/@PACKAGE@
+
+ENABLE_LIBXML2_BACKEND="@ENABLE_LIBXML2_BACKEND@"
+MUST_BUILD_CURL_CLIENT="@MUST_BUILD_CURL_CLIENT@"
+MUST_BUILD_WININET_CLIENT="@MUST_BUILD_WININET_CLIENT@"
+MUST_BUILD_LIBWWW_CLIENT="@MUST_BUILD_LIBWWW_CLIENT@"
+
+usage="Usage: xmlrpc-c-config <feature> ... <option> ...
+
+The features are:
+  c++            legacy C++ wrapper API
+  c++2           modern C++ API
+  client         client functions
+  cgi-server     CGI-based server functions
+  abyss-server   ABYSS-based server functions
+
+Options are:
+  --version      The version number of the package
+  --features     List all features (aka modules) currently installed
+  --cflags       C compiler flags to use when '#include'ing package headers
+  --libs         Libraries and flags to use when linking programs normally
+  --ldadd        Libraries to use with automake
+  --ldflags      Flags to use with automake & libtool
+  --prefix       The prefix under which the package was installed
+  --exec-prefix  The executable prefix under which the package was installed
+  --*dir         The various directories under which the package was installed"
+
+if test $# -eq 0; then
+      echo "${usage}" 1>&2
+      exit 1
+fi
+
+if test "${ENABLE_LIBXML2_BACKEND}" = "yes"; then
+  LIBXML="@LIBXML2_LIBS@"
+else
+  LIBXML="-lxmlrpc_xmlparse -lxmlrpc_xmltok"
+fi
+
+needCpp=no
+
+the_libdirs="-L@libdir@"
+the_libs="-lxmlrpc ${LIBXML}"
+the_rpath=
+the_wl_rpath=
+cpp_libs=
+
+while test $# -gt 0; do
+  case $1 in
+    c++)
+      the_libs="-lxmlrpc_cpp $the_libs"
+
+      # Unfortunately, there is just one legacy CPP library for
+      # everything, and it needs all the C libraries -- base, client,
+      # and server.  So all legacy C++ programs get linked with client
+      # and server libraries, whether they need them or not.
+
+      the_libs="-lxmlrpc_server_abyss $the_libs"
+      the_libs="-lxmlrpc_server $the_libs"
+      the_libs="-lxmlrpc_client $the_libs"
+      ;;
+    c++2)
+      needCpp=yes
+      the_libs="-lxmlrpc++ $the_libs"
+      ;;
+    cgi-server)
+      the_libs="-lxmlrpc_server $the_libs"
+      the_libs="-lxmlrpc_server_cgi $the_libs"
+      ;;
+    abyss-server)
+      the_libs="@LIBABYSS_LDADD@ $the_libs"
+      the_libs="-lxmlrpc_abyss $the_libs"
+      the_libs="-lxmlrpc_server $the_libs"
+      the_libs="-lxmlrpc_server_abyss $the_libs"
+      if test "${needCpp}" = "yes"; then
+        the_libs="-lxmlrpc_server++ $the_libs"
+        the_libs="-lxmlrpc_server_abyss++ $the_libs"
+        fi
+      ;;
+    client|libwww-client)
+      # libwww-client is for backward compatibility
+      the_libs="-lxmlrpc_client $the_libs"
+
+      if test "${MUST_BUILD_WININET_CLIENT}" = "yes"; then
+        the_libs="@WININET_LDADD@ $the_libs"
+        the_rpath="@WININET_RPATH@ $the_rpath"
+        the_wl_rpath="@WININET_WL_RPATH@ $the_wl_rpath"
+      fi
+      if test "${MUST_BUILD_CURL_CLIENT}" = "yes"; then
+        the_libs="@CURL_LDADD@ -lpthread $the_libs"
+        the_rpath="@CURL_RPATH@ $the_rpath"
+        the_wl_rpath="@CURL_WL_RPATH@ $the_wl_rpath"
+      fi
+      if test "${MUST_BUILD_LIBWWW_CLIENT}" = "yes"; then
+        the_libs="@LIBWWW_LDADD@ $the_libs"
+        the_rpath="@LIBWWW_RPATH@ $the_rpath"
+        the_wl_rpath="@LIBWWW_WL_RPATH@ $the_wl_rpath"
+      fi
+      if test "${needCpp}" = "yes"; then
+        the_libs="-lxmlrpc_client++ $the_libs"
+        fi
+      ;;
+    --version)
+      echo "@VERSION@"
+      exit 0
+      ;;
+    --modules)
+      echo "@FEATURE_LIST@"
+      exit 0
+      ;;
+    --features)
+      echo "@FEATURE_LIST@"
+      exit 0
+      ;;
+    --cflags)
+      echo "-I@includedir@"
+      exit 0
+      ;;
+    --libs)
+      echo "$the_libdirs $the_libs $the_wl_rpath"
+      exit 0
+      ;;
+    --ldadd)
+      echo "$the_libdirs $the_libs"
+      exit 0
+      ;;
+    --ldflags)
+      echo "$the_rpath"
+      exit 0
+      ;;
+    --prefix)
+      echo "@prefix@"
+      exit 0
+      ;;
+    --exec-prefix)
+      echo "@exec_prefix@"
+      exit 0
+      ;;
+    --*dir)
+      # Swiped from gnome-config.
+      dirname=\$`echo $1 | sed -e 's,^--,,'`
+      dirname=`eval echo $dirname`
+      test -z "$dirname" && exit 1
+      echo $dirname
+      exit 0
+      ;;
+    --help)
+      echo "${usage}" 1>&2
+      exit 0
+      ;;
+    *)
+      echo "${usage}" 1>&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+echo "${usage}" 1>&2
+exit 1

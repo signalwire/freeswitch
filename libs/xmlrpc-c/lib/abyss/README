@@ -1,0 +1,23 @@
+This directory contains the Abyss HTTP server component of XML-RPC For C/C++
+(Xmlrpc-c).
+
+This was derived from the independently developed and distributed
+Abyss web server package in 2001.  Since that time, work has stopped
+on package except for a non-free derivative of it that the original
+author has done.  He uses the Abyss name for that.
+
+So this is now strictly a piece of Xmlrpc-c.  Some day, we should change
+the name to avoid confusion with the old code on which it was based and
+the current non-free version.
+
+But for Xmlrpc-c, we don't want to enhance this much.  That would
+duplicate the vast amount of work that has gone into other HTTP (web)
+servers such as Apache.  If someone needs fancy HTTP service for
+XML-RPC, he should use Apache.  One can use Apache with Xmlrpc-c
+either by using an Apache request handler plugin or by using a CGI
+script.  Abyss is just for very simple servers, where the complexity
+of using (or even acquiring) Apache would not be warranted.
+
+
+Everything besides what's in the src/ directory is just historical --
+it comes from the original Abyss in 2001.

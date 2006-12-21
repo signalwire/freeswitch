@@ -1,0 +1,10 @@
+usr/bin/xmlrpc-c-config
+usr/bin/xml-rpc-api2txt
+usr/bin/xml-rpc-api2cpp
+usr/include/*
+usr/lib/lib*.a
+usr/lib/lib*.la
+usr/lib/lib*.so
+usr/share/man/man1/xmlrpc-c-config.1
+usr/share/man/man1/xml-rpc-api2txt.1
+usr/share/man/man1/xml-rpc-api2cpp.1

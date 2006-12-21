@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<methodResponse>
+  <fault>
+    <value>
+      <struct>
+        <member>
+          <name>faultString</name>
+          <value><string>An error occurred</string></value>
+        </member>
+        <member>
+          <name>faultCode</name>
+          <value><int>1</int></value>
+        </member>
+      </struct>
+    </value>
+  </fault>
+</methodResponse>

@@ -1,0 +1,89 @@
+This is the source code for XML-RPC for C/C++, called Xmlrpc-c for short.
+
+XML-RPC for C/C++ is programming libraries and related tools to help you
+write an XML-RPC server or client in C or C++.
+
+Documentation for the package is at
+
+  http://xmlrpc-c.sourceforge.net/doc
+
+See the Xmlrpc-c website at:
+
+  http://xmlrpc-c.sourceforge.net/
+
+
+PREREQUISITES
+-------------
+
+To build a useful Xmlrpc-c client library, you'll need to have at
+least one HTTP library.  Xmlrpc-c knows how to use W3C Libwww (Version
+5.3.2 or newer), Curl, and Wininet.  The configurator gives you the
+option of building libraries that use any or all of these, and
+defaults to every one you appear to have installed.  If you don't
+appear to have any installed, the configurator causes the build to
+omit client facilities altogether.
+
+Information about W3C Libwww, including how to get it are at
+<http://www.w3.org/Library>.
+
+For Curl, see <http://curl.haxx.se>.
+
+Wininet comes with Windows, and isn't available for any other platform.
+
+You also need an XML parser/builder library.  An old version of Expat
+is included in the package and used by default, so there's no actual
+prerequisite here.  But if you separately obtain Libxml2, you can
+configure the build to use that instead.  There's no really pressing
+reason to do that, though.
+
+Once you have the prerequisite libraries installed, you can issue
+these commands:
+
+  $ ./configure
+  $ make
+  $ make install
+
+(There's supposed to be a 'make check' step in there too, to validate
+that everything built OK, but it's broken right now - 2005.01.07).
+
+To see it work, run a simple server like this:
+
+  $ examples/xmlrpc_sample_add_server 8080
+
+Then run a client that does an RPC to this server:
+
+  $ examples/xmlrpc_sample_add_client
+
+(I don't mean to imply that the above are consecutive shell commands;
+They can't be, because the server program runs indefinitely).
+
+Also try other sample servers and clients, described in examples/README.
+
+
+You may want to pass a '--prefix' argument to 'configure'.  See
+'./configure --help' for details.
+
+You may also want to disable client XML transports that you won't be
+using.  In particular, the Libwww transport can be inconvenient, because
+it typically uses about 20 shared libraries.  Any XML-RPC client
+program that uses Xmlrpc-c, whether or not the program uses any of the
+libwww facilities, must attach all those libraries, and that can take
+a significant amount of time.
+
+See './configure --help' for the options that disable certain transports.
+
+
+
+WINDOWS
+-------
+
+All of the above is essentially for Unix-type operating systems.  To
+build and use Xmlrpc-c on Windows, see the file
+Windows/ReadMeWin32.txt.
+
+
+ADDITIONAL INFORMATION
+----------------------
+
+See the doc/ directory of the source tree for information about the
+source code.  User documentation is on the web, as described above.

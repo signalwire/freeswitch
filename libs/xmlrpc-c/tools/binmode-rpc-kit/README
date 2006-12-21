@@ -1,0 +1,31 @@
+Binmode RPC Implementor's Kit
+=============================
+
+Version: 0.1
+Author:  Eric Kidd <eric.kidd@pobox.com>
+Date:    31 January 2001
+
+The Binmode RPC Implementor's Kit was created as part the xmlrpc-c project.
+
+  http://xmlrpc-c.sourceforge.net/
+
+The following files are included:
+
+  README                This file
+  COPYING               A standard disclaimer, etc.
+  binmode-rpc-rfc.txt   The current draft of the standard
+  oct2bin               A Perl script for turning the notation used by
+                        the standard into actual binary data.
+  binmode-rpc2xml-rpc   A script which translates a Binmode RPC packet
+                        back into XML. You can use this for dumping wire
+                        messages. (It also catches the most obvious ways
+                        to misimplement the standard, so try it on your
+                        output data.)
+  examples/             Examples and counter-examples from the standard in
+                        machine-readable format.
+
+If you have any questions, please ask on the xmlrpc-c-devel mailing list:
+
+  http://xmlrpc-c.sourceforge.net/lists.php
+
+Thank you for investigating Binmode RPC. Share and enjoy!

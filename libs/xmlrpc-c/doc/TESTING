@@ -1,0 +1,96 @@
+In general, we want to run as many automated test tools on the
+Xmlrpc-c libraries as possible.  Before releasing a new release,
+please run as many of these tests as possible.
+
+
+Included Test Suites
+--------------------
+
+The 'test' program tests core functions.  These are functions that
+don't involve HTTP communications.  So obviously, it doesn't do any
+end-to-end client/server tests.
+
+The program is in src/test/test.  You have to build that explicitly (with
+src/test/ as your current directory, do a 'make'); a top level 'make all'
+doesn't build it.  (Reason: it's a tricky build, and we don't a user's
+build to fail just because of this program that a user doesn't need).
+
+src/cpp/cpptest is similar for the C++ libraries.
+
+Note: Before Release 1.03, 'test' was called 'rpctest' and both it
+and 'cpptest' were in the src/ directory and were built by 'make all'.
+
+
+Memory Leaks
+------------
+
+(Linux only?) Install Owen Taylor's 'memprof' utility. This program
+includes a malloc debugger and a conservative garbage collector. To run it,
+type:
+
+  memprof test
+
+This should report any memory leaks which occur while the test suites are
+running.
+
+
+Electric Fence
+--------------
+
+(Most Unix platforms.) Install Bruce Perens' Electric Fence library, and
+read the man pages carefully. Link 'test' against '-lefence', and run it
+with the following sets of environment variables:
+
+  1) (Default environment.)
+     Test for heap block overruns.
+
+  2) EF_PROTECT_BELOW=1
+     Test for heap block underruns.
+
+  3) EF_PROTECT_FREE=1
+     Test for doubly-freed memory and illegal accesses to freed memory.
+
+  4) EF_ALIGNMENT=0
+     Test for very small block overruns. This is an important test, but
+     it may not work on some platforms. Please see the efence manpage for
+     more information.
+
+(After each run, unset the environment variables from the previous run.)
+
+Using a Bourne shell (such as bash) you can run all these tests as follows:
+
+  test
+  EF_PROTECT_BELOW=1 test
+  EF_PROTECT_FREE=1 test
+  EF_ALIGNMENT=0 test
+
+Alternatively, if you have a copy of Purify installed, please run that.
+
+
+End-to-End Tests
+----------------
+
+To test Abyss and the client XML transports, use the example
+programs examples/sample_add_server and examples/sample_add_client:
+
+  $ export XMLRPC_TRACE_XML=1
+  $ examples/sample_add_server 8080&
+  $ examples/sample_add_client
+
+Note that we use XMLRPC_TRACE_XML so we can see the XML flying by on
+both sides of the connection.
+
+Note that the Port 8080 is hardcoded in sample_add_client.
+
+Note that sample_add_client uses only the default XML transport.
+
+
+You can do more extensive client testing with the 'xmlrpc' program
+(tools/xmlrpc/xmlrpc).
+
+
+Tips
+----
+
+To debug Abyss without threads, don't pass -D_UNIX or -D_WIN32. The server
+will run in a single-threaded mode.

@@ -1,0 +1,114 @@
+Notes about the Abyss Patch -- By: Rosimildo da Silva, Jan 31, 2001.
+-------------------------------------------------------------------
+
+This file contains some notes about the changes made to the
+Abyss source tree. The changes were required to fix a few 
+bugs, and port the base code to compile under CygWin,
+and Borland C++ free compiler. The free compiler for 
+Win32 from Borland can be downloaded from here:
+
+  http://www.borland.com/bcppbuilder/freecompiler/
+
+
+What is new:
+
+    + Package should compile out of the box under CygWin
+
+    + Added makefiles and changes to use Borland C++ compiler
+under WIN32 as well as VC++ 6.0
+
+    + Fix Abyss.dsp to use the proper thread safe libraries,
+and updated to VC++ 6.0
+
+    + Fixed thread leaks ( handles )
+
+
+
+Applying the patch to Abyss-0.3.tar.gz
+--------------------------------------
+
+   + get archive from here:
+	http://abyss.linuxave.net/abyss-0.3.tar.gz
+WARNING: this site seems to be dead for the last two months.
+
+   + cd /work	( any dir )
+     tar xzvf abyss-0.3.tar.gz
+	 cd abyss
+	 patch -p1 <abyss-0.3-20010131.patch
+
+
+What to do next:
+
+
+   a) Cygwin
+
+      cd abyss/src
+      make
+	 
+
+   b) Borland C++
+
+      cd abyss\src
+      set BCC_PATH=<location where your compiler is located>
+      ( BCC_PATH=d:\bcb5 )
+
+      make -f makefile.bcc32
+
+   c) VC++ 6.0	   		
+      cd abyss\src
+      msdev Abyss.dsp
+      ( Or just open the workspace with Visual Studio, and you know
+	the drill ).
+NOTE: Under Cygwin, after I apply the patch, Visual Studio was unable to
+recognize the workspace. ???
+
+
+List of changes done to the ABYSS http server: ( ChangesLog )
+----------------------------------------------
+
+ + changed _WIN32 to ABYSS_WIN32. THis solve the problem that the
+macro _WIN32 is defined under CygWin. CygWin has a unix like
+api ( _UNIX ), so the macro _UNIX should be defined then.
+Under CygWin we would have _UNIX and _WIN32 defined at the same
+time.
+
+
+ + Theead API -- Added two extra functions: ThreadExit() and
+ThreadClose(). These allows the resources of the threads to be
+released when the thread has complete its duty serving the
+request.
+
+ + Added extra flag to TConn structure to make possible the
+management of the worker threads by the server.
+
+
+ + Changed allocation of TConn array from stack to heap. This
+would cause problems on certain system ( specially embedded systems ),
+where the stack sizes arr not that large.
+
+ + Changed ServerRun to free thread resources when the connection
+for the thread is closed.
+
+ + Changed main.c to make the sginal registration conforming with
+the usage of the _FORK option.
+
+ + Change ThreadCreate to be able to specify the "stack size" of the
+worker's threads ( pthread ). Defined lable for it.
+
+
+ + Added flag _NO_USERS to disable check for users and groups.
+This is useful for embedded systems where no users are available.
+
+ + Updated VC++ workspace to version 6.0
+
+
+ + Changed the creation of the thread under WIN32 to use a RTL
+function ( _beginthreadex ), as recommend by MS, instead of using 
+the naked WIN32 API.
+
+-- 
+Rosimildo da Silva            rdasilva@connectel.com 
+ConnectTel, Inc.              Austin, TX -- USA      
+Phone : 512-338-1111          Fax : 512-918-0449     
+Company Page:  http://www.connecttel.com             
+Home Page:     http://members.nbci.com/rosimildo/

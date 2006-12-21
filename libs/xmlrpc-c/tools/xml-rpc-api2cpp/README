@@ -1,0 +1,6 @@
+This program generates C++ wrapper classes for XML-RPC servers.  It talks
+to xmlrpc-c and XML-RPC.NET servers without any problems, but tends to
+choke when talking to mod_php-based servers.  It looks like there is some
+kind of pipelining problem.
+
+This code is an ongoing project.  Please send feedback!

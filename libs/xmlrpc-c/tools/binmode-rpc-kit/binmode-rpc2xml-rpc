@@ -1,0 +1,552 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+# Some constants.
+my $crlf = "\015\012";
+
+# Try to load our external libraries, but fail gracefully.
+eval {
+    require Frontier::Client;
+    require MIME::Base64;
+};
+if ($@) {
+    print STDERR <<"EOD";
+This script requires Ken MacLeod\'s Frontier::RPC2 module. You can get this
+from CPAN or from his website at http://bitsko.slc.ut.us/~ken/xml-rpc/ .
+
+For installation instructions, see the XML-RPC HOWTO at:
+    http://www.linuxdoc.org/HOWTO/XML-RPC-HOWTO/index.html
+
+This script also requires MIME::Base64. You can get this from CPAN.
+EOD
+    exit 1;
+}
+
+# Parse our command-line arguments.
+if (@ARGV != 0) {
+    print STDERR "Usage: binmode-rpc2xml-rpc < data.binmode > data.xml\n";
+    exit 1;
+}
+
+# Perform our I/O in binary mode (hence the name of the protocol).
+binmode STDIN;  # Because we're reading raw binary data.
+binmode STDOUT; # Because we want our XML left unmolested.
+
+# Just suck all our input into one string and glom it together.
+my $binmode_data = join('', <STDIN>);
+
+# Check for the mandatory header.
+unless ($binmode_data =~ /^binmode-rpc:/) {
+    die "$0: No 'binmode-rpc:' header present, stopping";
+}
+
+# Set our decoding-position counter to point just past the header, and
+# our end pointer to just beyond the end of the entire message.
+my $position = length('binmode-rpc:');
+my $end = length($binmode_data);
+
+# Set our starting output indentation to zero (for the pretty-printer).
+my $indentation = 0;
+
+# Build an empty codebook of strings.
+my @codebook;
+
+# Begin the hard work.
+decode_call_or_response();
+
+# Print a warning if there's leftover data.
+if ($position != $end) {
+    printf STDERR "binmode-rpc2xml-rpc: warning: Trailing data ignored\n";
+}
+
+# We're done!
+exit (0);
+
+
+#--------------------------------------------------------------------------
+#  Pretty-printing
+#--------------------------------------------------------------------------
+
+sub escape_string ($) {
+    my ($string) = @_;
+    $string =~ s/&/&amp;/g;
+    $string =~ s/</&lt;/g;
+    $string =~ s/\"/&quot;/g;
+    return $string;
+}
+
+sub push_indentation_level () {
+    $indentation += 2;
+}
+
+sub pop_indentation_level () {
+    $indentation -= 2;
+}
+
+sub print_xml_line ($) {
+    my ($xml) = @_;
+    print STDOUT (' ' x $indentation) . $xml . $crlf;
+}
+
+
+#--------------------------------------------------------------------------
+#  Raw input routines
+#--------------------------------------------------------------------------
+#  These routines read raw input from our string, advance the current
+#  position, and return something in a Perl-friendly format.
+#
+#  This is all icky binary I/O using Perl's built-in unpack function.
+
+sub read_byte () {
+    die "Unexpected end of input" unless ($position + 1 <= $end);
+    my $byte = unpack('C', substr($binmode_data, $position, 1));
+    $position += 1;
+    die "Weird error decoding byte" unless (defined $byte);
+    return $byte;
+}
+
+sub peek_character () {
+    die "Unexpected end of input" unless ($position + 1 <= $end);
+    my $byte = chr(unpack('c', substr($binmode_data, $position, 1)));
+    die "Weird error decoding character" unless (defined $byte);
+    return $byte;
+}
+
+sub read_character () {
+    my $byte = peek_character();
+    $position += 1;
+    return $byte;
+}
+
+sub read_unsigned_lsb () {
+    die "Unexpected end of input" unless ($position + 4 <= $end);
+    my $integer = unpack('V', substr($binmode_data, $position, 4));
+    $position += 4;
+    die "Weird error decoding integer" unless (defined $integer);
+    unless ($integer >= 0) {
+	die "Perl can't handle 32-bit unsigned integers portably, stopping";
+    }
+    return $integer;
+}
+
+sub read_signed_lsb () {
+    die "Unexpected end of input" unless ($position + 4 <= $end);
+    my $integer = unpack('V', substr($binmode_data, $position, 4));
+    $position += 4;
+    die "Weird error decoding integer" unless (defined $integer);
+    return $integer;
+}
+
+sub read_data ($) {
+    my ($length) = @_;
+    die "Unexpected end of input" unless ($position + $length <= $end);
+    my $data = unpack("a$length", substr($binmode_data, $position, $length));
+    $position += $length;
+    die "Weird error decoding data" unless (defined $data);
+    die "Wrong data length" unless (length($data) == $length);
+    return $data;
+}
+
+sub read_data_w_byte_length () {
+    my $length = read_byte();
+    return read_data($length);
+}
+
+sub read_data_w_unsigned_lsb_length () {
+    my $length = read_unsigned_lsb();
+    return read_data($length)
+}
+
+sub read_string_data () {
+    my $string = read_data_w_unsigned_lsb_length();
+    validate_utf8($string);
+    return $string;
+}
+
+
+#--------------------------------------------------------------------------
+#  High-level input routines
+#--------------------------------------------------------------------------
+#  These use the low-level input routines to read data from the buffer,
+#  and then convert it into Frontier::RPC2 objects.
+
+sub read_value () {
+    my $type = read_character();
+    #print STDERR "DEBUG: Reading from '$type'\n";
+    if ($type eq 'I') {
+	return _read_int_value();
+    } elsif ($type eq 't') {
+	return Frontier::RPC2::Boolean->new(1);
+    } elsif ($type eq 'f') {
+	return Frontier::RPC2::Boolean->new(0);
+    } elsif ($type eq 'D') {
+	return _read_double_value();
+    } elsif ($type eq '8') {
+	return _read_dateTime_value();
+    } elsif ($type eq 'B') {
+	return _read_base64_value();
+    } elsif ($type eq 'A') {
+	return _read_array_value();
+    } elsif ($type eq 'S') {
+	return _read_struct_value();
+    } elsif ($type eq 'U') {
+	return _read_regular_string_value();
+    } elsif ($type eq '>') {
+	return _read_recorded_string_value();
+    } elsif ($type eq '<') {
+	return _read_recalled_string_value();
+    } elsif ($type eq 'O') {
+	die "Type 'O' Binmode RPC data not supported";
+    } else {
+	die "Type '$type' Binmode RPC data does not exist";
+    }
+}
+
+sub read_value_and_typecheck ($) {
+    my ($wanted_type) = @_;
+    my $value = read_value();
+    my $value_type = ref($value);
+    die "$0: Expected $wanted_type, got $value_type, stopping"
+	unless ($wanted_type eq $value_type);
+    return $value;
+}
+
+sub _read_int_value () {
+    return Frontier::RPC2::Integer->new(read_signed_lsb);
+}
+
+sub _read_double_value () {
+    return Frontier::RPC2::Double->new(read_data_w_byte_length);
+}
+
+sub _read_dateTime_value () {
+    return Frontier::RPC2::DateTime::ISO8601->new(read_data_w_byte_length);
+}
+
+sub _read_base64_value () {
+    my $binary = read_data_w_unsigned_lsb_length;
+    my $encoded = MIME::Base64::encode_base64($binary, $crlf);
+    return Frontier::RPC2::Base64->new($encoded);
+}
+
+sub _read_array_value () {
+    my $size = read_unsigned_lsb;
+    my @values;
+    for (my $i = 0; $i < $size; $i++) {
+	push @values, read_value;
+    }
+    return \@values;
+}
+
+sub _read_struct_value () {
+    my $size = read_unsigned_lsb;
+    my %struct;
+    for (my $i = 0; $i < $size; $i++) {
+	my $key = read_value_and_typecheck('Frontier::RPC2::String');
+	$struct{$key->value} = read_value;
+    }
+    return \%struct;
+}
+
+sub _read_regular_string_value () {
+    return Frontier::RPC2::String->new(read_string_data);
+}
+
+sub _read_recorded_string_value () {
+    my $codebook_entry = read_byte;
+    my $string = Frontier::RPC2::String->new(read_string_data);
+    $codebook[$codebook_entry] = $string;
+    return $string;
+}
+
+sub _read_recalled_string_value () {
+    my $codebook_entry = read_byte;
+    my $string = $codebook[$codebook_entry];
+    unless (defined $string) {
+	die "$0: Attempted to use undefined codebook position $codebook_entry";
+    }
+    return $string;
+}
+
+
+#--------------------------------------------------------------------------
+#  High-level output routines
+#--------------------------------------------------------------------------
+#  We don't use Frontier::RPC2's output routines, because we're looking
+#  for maximum readability. This is a debugging tool, after all.
+
+sub print_xml_header () {
+    print_xml_line '<?xml version="1.0" encoding="UTF-8"?>';
+}
+
+sub get_escaped_string ($) {
+    my ($value) = @_;
+    return escape_string($value->value);
+}
+
+sub print_simple_value ($$) {
+    my ($tag, $value) = @_;
+    my $string = get_escaped_string($value);
+    print_xml_line "<value><$tag>$string</$tag></value>";
+}
+
+sub print_value ($) {
+    my ($value) = @_;
+    my $type = ref($value);
+    if ($type eq 'Frontier::RPC2::Integer') {
+	print_simple_value("int", $value);
+    } elsif ($type eq 'Frontier::RPC2::Double') {
+	print_simple_value("double", $value);
+    } elsif ($type eq 'Frontier::RPC2::Boolean') {
+	print_simple_value("boolean", $value);
+    } elsif ($type eq 'Frontier::RPC2::String') {
+	print_simple_value("string", $value);
+    } elsif ($type eq 'Frontier::RPC2::DateTime::ISO8601') {
+	print_simple_value("dateTime.iso8601", $value);
+    } elsif ($type eq 'Frontier::RPC2::Base64') {
+	print_base64_data($value);
+    } elsif ($type eq 'ARRAY') {
+	print_array_value($value);
+    } elsif ($type eq 'HASH') {
+	print_struct_value($value);
+    } else {
+	die "Unxpected type '$type', stopping";
+    }
+}
+
+sub print_params ($) {
+    my ($params) = @_;
+
+    die "Wanted array" unless (ref($params) eq 'ARRAY');
+
+    print_xml_line '<params>';
+    push_indentation_level;
+
+    foreach my $item (@$params) {
+	print_xml_line '<param>';
+	push_indentation_level;
+	print_value($item);
+	pop_indentation_level;
+	print_xml_line '</param>';
+    }
+
+    pop_indentation_level;
+    print_xml_line '</params>';
+}
+
+sub print_base64_data ($) {
+    my ($value) = @_;
+    print_xml_line '<value>';
+    push_indentation_level;
+    print_xml_line '<base64>';
+    print $value->value;
+    print_xml_line '</base64>';
+    pop_indentation_level;
+    print_xml_line '</value>';    
+}
+
+sub print_array_value ($) {
+    my ($array) = @_;
+
+    print_xml_line '<value>';
+    push_indentation_level;
+    print_xml_line '<array>';
+    push_indentation_level;
+    print_xml_line '<data>';
+    push_indentation_level;
+
+    foreach my $item (@$array) {
+	print_value($item);
+    }
+
+    pop_indentation_level;
+    print_xml_line '</data>';
+    pop_indentation_level;
+    print_xml_line '</array>';
+    pop_indentation_level;
+    print_xml_line '</value>';
+}
+
+sub print_struct_value ($) {
+    my ($struct) = @_;
+
+    print_xml_line '<value>';
+    push_indentation_level;
+    print_xml_line '<struct>';
+    push_indentation_level;
+
+    for my $key (keys %$struct) {
+	print_xml_line '<member>';
+	push_indentation_level;
+	
+	my $name = escape_string($key);
+	print_xml_line "<name>$name</name>";
+	print_value($struct->{$key});
+
+	pop_indentation_level;
+	print_xml_line '</member>';
+    } 
+
+    pop_indentation_level;
+    print_xml_line '</struct>';
+    pop_indentation_level;
+    print_xml_line '</value>';
+}
+
+
+#--------------------------------------------------------------------------
+#  High-level decoder routines
+#--------------------------------------------------------------------------
+#  These routines convert Binmode RPC data into the corresponding XML-RPC
+#  documents.
+
+sub decode_call_or_response () {
+    my $type = read_character();
+    if ($type eq 'C') {
+	decode_call();
+    } elsif ($type eq 'R') {
+	decode_response();
+    } else {
+	die "$0: Unknown binmode-rpc request type '$type', stopping";
+    }
+}
+
+sub decode_call () {
+    my $namevalue = read_value_and_typecheck('Frontier::RPC2::String');
+    my $params = read_value_and_typecheck('ARRAY');
+    
+    print_xml_header;
+    print_xml_line '<methodCall>';
+    push_indentation_level;
+
+    my $name = get_escaped_string($namevalue);
+    print_xml_line "<methodName>$name</methodName>";
+
+    print_params($params);
+
+    pop_indentation_level;
+    print_xml_line '</methodCall>';
+}
+
+sub decode_response () {
+    my $maybe_fault = peek_character;
+    if ($maybe_fault eq 'F') {
+	read_character;
+	my $fault = read_value_and_typecheck('HASH');
+	print_xml_header;
+
+	print_xml_line '<methodResponse>';
+	push_indentation_level;
+	print_xml_line '<fault>';
+	push_indentation_level;
+
+	print_value $fault;
+
+	pop_indentation_level;
+	print_xml_line '</fault>';
+	pop_indentation_level;
+	print_xml_line '</methodResponse>';
+    } else {
+	my $value = read_value;
+	print_xml_header;
+	print_xml_line '<methodResponse>';
+	push_indentation_level;
+	print_params [$value];
+	pop_indentation_level;
+	print_xml_line '</methodResponse>';
+    }
+}
+
+
+#--------------------------------------------------------------------------
+#  UTF-8 Validation
+#--------------------------------------------------------------------------
+#  This is based on the UTF-8 section of the Secure Programs HOWTO.
+#    http://new.linuxnow.com/docs/content/HOWTO/Secure-Programs-HOWTO/
+#  This code *hasn't* been stress-tested for correctness yet; please see:
+#    http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
+#  This is not yet good enough to be used as part of a UTF-8 decoder or
+#  security validator, but it's OK to make sure nobody is sending Latin-1.
+
+BEGIN {
+
+    use vars qw{@illegal_initial_bytes @sequence_length_info};
+
+    # Bytes are represented as data/mask pairs.
+    @illegal_initial_bytes =
+	(# 10xxxxxx                 illegal as initial byte of char (80..BF)
+	 [0x80, 0xC0],   
+	 # 1100000x                 illegal, overlong (C0..C1 80..BF)
+	 [0xC0, 0xFE],   
+	 # 11100000 100xxxxx        illegal, overlong (E0 80..9F)
+	 [0xE0, 0xFF, 0x80, 0xE0],
+	 # 11110000 1000xxxx        illegal, overlong (F0 80..8F)
+	 [0xF0, 0xFF, 0x80, 0xF0],
+	 # 11111000 10000xxx        illegal, overlong (F8 80..87)
+	 [0xF8, 0xFF, 0x80, 0xF8],
+	 # 11111100 100000xx        illegal, overlong (FC 80..83)
+	 [0xFC, 0xFF, 0x80, 0xFC],
+	 # 1111111x                 illegal; prohibited by spec
+	 [0xFE, 0xFE]);
+    
+    # Items are byte, mask, sequence length.
+    @sequence_length_info =
+	(# 110xxxxx 10xxxxxx
+	 [0xC0, 0xE0, 2],
+	 # 1110xxxx 10xxxxxx 10xxxxxx
+	 [0xE0, 0xF0, 3],
+	 # 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+	 [0xF0, 0xF8, 4],
+	 # 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+	 [0xF8, 0xFC, 5],
+	 # 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
+	 [0xFC, 0xFE, 6]);
+}
+
+sub validate_utf8 ($) {
+    my ($string) = @_;
+    my $end = length($string);
+
+    my $i = 0;
+    while ($i < $end) {
+	my $byte = ord(substr($string, $i, 1));
+	#print STDERR "Checking byte $byte\n";
+
+	# Check for illegal bytes at the start of this sequence.
+      NEXT_CANDIDATE:
+	foreach my $illegal_byte_info (@illegal_initial_bytes) {
+	    my $offset = 0;
+	    for (my $j = 0; $j < @$illegal_byte_info; $j += 2) {
+		my $pattern = $illegal_byte_info->[$j];
+		my $mask = $illegal_byte_info->[$j+1];
+		my $data = ord(substr($string, $i+$offset, 1));
+		#print STDERR "  B: $byte P: $pattern M: $mask D: $data\n";
+		next NEXT_CANDIDATE unless ($data & $mask) == $pattern;
+		$offset++;
+	    }
+	    die "Illegal UTF-8 sequence (" . substr($string, $i, 2) . ")";
+	}
+
+	# Find the length of the sequence, and make sure we have enough data.
+	my $length = 1;
+	foreach my $length_info (@sequence_length_info) {
+	    my ($pattern, $mask, $length_candidate) = @$length_info;
+	    if (($byte & $mask) == $pattern) {
+		$length = $length_candidate;
+		last;
+	    }
+	}
+	die "$0: Unexpected end of UTF-8 sequence, stopping"
+	    unless $i + $length <= $end;
+	
+	# Verify the sequence is well-formed.
+	$i++, $length--;
+	while ($length > 0) {
+	    die "$0: Malformed UTF-8 sequence, stopping"
+		unless (ord(substr($string, $i, 1)) & 0xC0) == 0x80;
+	    $i++, $length--;
+	}
+    }
+    #printf STDERR "DEBUG: Verified $i bytes\n";
+}

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<methodResponse>
+  <params>
+    <param>
+      <value>
+        <array>
+          <data>
+            <value><int>6</int></value>
+            <value><boolean>1</boolean></value>
+            <value><boolean>0</boolean></value>
+            <value><double>2.75</double></value>
+            <value><dateTime.iso8601>19980717T14:08:55</dateTime.iso8601></value>
+            <value><string>foo</string></value>
+            <value>
+              <base64>
+YWJj
+              </base64>
+            </value>
+            <value>
+              <struct>
+                <member>
+                  <name>run</name>
+                  <value><boolean>1</boolean></value>
+                </member>
+              </struct>
+            </value>
+          </data>
+        </array>
+      </value>
+    </param>
+  </params>
+</methodResponse>

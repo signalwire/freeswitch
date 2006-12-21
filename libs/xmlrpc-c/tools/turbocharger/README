@@ -1,0 +1,37 @@
+XML-RPC Turbocharger (Experimental)
+===================================
+
+This a hacked copy of mod_gzip. In addition to the usual "gzip" encoding,
+it also handles "deflate" encoding.
+
+When used in conjuction with the xmlrpc-c client, this should reduce your
+outbound XML-RPC network traffic by an amazing amount--compression ratios
+of 10:1 and 30:1 are not unheard of. If you're clever, you should be able
+to use this with just about any Apache-based XML-RPC server.
+
+You can find the standard distribution of mod_gzip here:
+
+  http://www.remotecommunications.com/apache/mod_gzip/
+
+The hacked distribution is installed and used in exactly the same fashion
+as the regular distribution. There's one extra logging directive available:
+
+  %{mod_gzip_compression_format}n   Compression format chosen by client.
+
+Go read the mod_gzip documentation; it should all make sense.
+
+If you want to discuss the XML-RPC Turbocharger, please sign up for the
+xmlrpc-c-devel mailing list at:
+
+  http://xmlrpc-c.sourceforge.net/
+
+This code is highly experimental, and may do some strange things. You'll
+probably need to screw around with mod_gzip for a while until you get
+everything to work. Don't run this on your production web server, OK?
+
+Eric Kidd
+eric.kidd@pobox.com
+
+P.S. The Turbocharger appears to dump core in mod_gzip decides to serialize
+a large response to disk. Do you see what I mean by "experimental" and
+"don't run this on your production web server"? :-)

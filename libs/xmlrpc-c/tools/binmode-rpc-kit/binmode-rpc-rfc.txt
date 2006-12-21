@@ -1,0 +1,338 @@
+This is a draft, and subject to change. Please do not implement it
+yet. Thank you!
+
+Examples can be found at the bottom of the file.
+
+Thank you for your feedback!
+
+Eric Kidd
+eric.kidd@pobox.com
+30 January 2001
+
+
+The Binmode RPC Protocol
+========================
+
+Binmode RPC is an ultra-lightweight RPC protocol designed for 100%
+compatibility with XML-RPC <http://www.xmlrpc.com/>. It emphasizes
+simplicity, dynamically-typed data, and extreme ease of implementation.
+
+Two XML-RPC implementations that support 'binmode-rpc' may negotiate away
+the XML part of XML-RPC, and replace it with a simple binary protocol.
+
+Design goals:
+
+  * The complete specification should fit in a 350-line text file. :-)
+  * The protocol should be easy to implement.
+  * The protocol should provide a high degree of compression.
+  * The protocol should be very fast--faster than zlib compression.
+  * The protocol must be implementable in portable ANSI C, with no
+    './configure' checks.
+  * The protocol must not contain any options, variant encodings
+    or similar hair. If you want DCE/RPC, you know where to find it.
+  * All protocol operations must be performed at the byte level
+    (except for UTF-8 encoding and decoding).
+  * The protocol must be semi-readable in a hex dump or Emacs buffer.
+  * The protocol must efficiently encode boxcarred calls that are
+    implemented using 'system.multicall'.
+  * The protocol must support an efficient encoding for
+    frequently-repeated string values.
+
+  * The protocol must never be sent to clients or servers which
+    don't support it.
+  * There must be a way for clients and servers to active the protocol
+    if both ends of the connection support it.
+
+
+The X-XML-RPC-Extensions Header
+-------------------------------
+
+(First, we'll need a mechanism for unobtrusively announcing the presence of
+non-standard capabilities.)
+
+An XML-RPC implementation MAY advertise additional, non-standard
+capabilities using the 'X-XML-RPC-Extensions' header.
+
+Rationale: The 'X-XML-RPC-Extensions' header should be available to CGI
+scripts in the environment variable HTTP_X_XML_RPC_EXTENSIONS.
+
+If present, this header MUST contain a comma-separated list of
+keywords. Parameter information MAY be included, if desired, in the
+standard fashion used by HTTP 1.1 'Accept-Encoding' headers.
+
+  X-XML-RPC-Extensions: binmode-rpc
+  X-XML-RPC-Extensions: binmode-rpc, x-telepathic-transport
+  X-XML-RPC-Extensions: binmode-rpc,x-telepathic-transport
+  X-XML-RPC-Extensions: binmode-rpc, x-telepathic-transport;speed=low
+
+If a client sends the X-XML-RPC-Extensions header in a request, the server
+MAY use any of the specified extensions in its response.
+
+Rationale: No client may be sent non-standard data without first having
+advertised the ability to accept it.
+
+If the server includes the X-XML-RPC-Extensions header in a response, the
+client MAY use any of the specified extensions in further requests to that
+URL. The client MUST NOT assume that the same extensions are available for
+any other URL on the same server.
+
+Rationale: No server may be sent non-standard data without first having
+advertised the ability to accept it. Furthermore, this permission is
+URL-specific, since different XML-RPC implementations may be located at
+different URLs on a single server.
+
+The client SHOULD NOT cache extension information about a particular server
+for an excessive length of time (typically beyond a single program
+invocation). If the client does cache this information indefinitely, it
+SHOULD be able to cope if an extension is disabled.
+
+Rationale: The XML-RPC implementation used on the server may be changed by
+the administrator.
+
+
+The 'binmode-rpc' Extension
+-----------------------
+
+A client or server which sends the 'binmode-rpc' extension MUST accept
+message bodies of type 'application/x-binmode-rpc' in addition to the
+regular 'text/xml'.
+
+All servers which accept the binmode-rpc extension MUST also support
+standard XML-RPC, as described by <http://www.xmlrpc.org/spec>.
+
+
+The 'application/x-binmode-rpc' Format
+--------------------------------------
+
+All documents of the type 'application/x-binmode-rpc' MUST begin with the
+following byte sequence (represented here as a C string):
+
+  'binmode-rpc:'
+
+This MUST be followed by a Call or a Response, encoded as described below:
+
+  Call := 'C' String Array
+
+A Call consists of a single octet with the ASCII value 'C', followed by a
+String containing the method name and an Array containing the parameters.
+
+  Response := 'R' (Value|Fault)
+
+A Response MUST contain either a Value or a Fault.
+
+  Fault := 'F' Struct
+
+A Fault contains a regular Struct (with members as specified by the the
+XML-RPC specification).
+
+Trailing data at the end of an 'application/x-binmode-rpc' document MUST be
+ignored.
+
+
+Byte-Order of Integers
+----------------------
+
+(The following integer types don't correspond directly to XML-RPC
+integers--instead, they'll be used to *build* more complicated types.)
+
+  SignedLSB := a four-octet, signed, twos'-complement integer,
+               least-significant byte (LSB) first
+  UnsignedLSB := a four-octet, unsigned integer, LSB first
+
+Raw integer data is encoded in little-endian format.
+
+Rationale: A fixed, mandatory byte ordering is easier to implement than
+approaches which allow multiple byte orderings, and little-endian CPUs
+outnumber big-endian CPUs at the time of writing.
+
+
+Values
+------
+
+  Value := (Integer|Boolean|Double|DateTimeISO8601Binary|Array|Struct|
+            String|Other)
+
+  Integer := 'I' SignedLSB
+  Boolean := ('t'|'f')
+
+  Double := 'D' SizeOctet AsciiChar...
+  DateTimeISO8601 := '8' SizeOctet AsciiChar...
+
+These two types are encoded with an unsigned size octet followed by the
+specified number of ASCII characters. The values are encoded in the fashion
+described by the XML-RPC specification.
+
+Rationale: In both these cases, we're punting. Binary floating point
+formats are highly non-portable, and cannot be easily manipulated by most
+programming languages. XML-RPC <dateTime.iso8601> values lack timezone
+information, and are therefore difficult to convert to a binary format.
+
+  Binary := 'B' UnsignedLSB Octet...
+
+This corresponds to the XML-RPC <base64> type, but without any encoding.
+The UnsignedLSB specifies the number of octets of data.
+
+  Array := 'A' UnsignedLSB Value...
+
+The UnsignedLSB specifies the number of values in the array.
+
+  Struct := 'S' UnsignedLSB (String,Value)...
+
+The UnsignedLSB specifies the number of String,Value pairs in the struct.
+The strings are keys; the values may be of any type.
+
+  Other := 'O' String Binary
+
+Future XML-RPC types (if any) may be sent a String containing the type name
+and a Binary block (as above) containing type-specific data.
+Implementations MUST NOT encode any of the standard types using this
+construct. Implementations MAY signal an error if data of type Other is
+encountered.
+
+Rationale: This is allowed to cause an error because most applications
+won't understand the contents anyway. But if new types are added, dumb
+gateways will be able to manipulate them in encapsulated format (if they so
+desire).
+
+
+Strings
+-------
+
+  String := (RegularString|RecordedString|RecalledString)
+
+We have three types of strings.
+
+  RegularString := 'U' StringData
+  StringData := UnsignedLSB Utf8Octet...
+
+Strings are encoded in UTF-8 format. The UnsignedLSB specifies the number
+of UTF-8 octets. Implementations SHOULD raise an error if they encounter
+invalid UTF-8 data (e.g., ISO Latin 1 characters).
+
+Rationale: Technically speaking, XML-RPC is limited to plain ASCII
+characters, and may not contain 8-bit or 16-bit characters in any coding
+system. But since XML-RPC is based on XML, adding Unicode is a trivial
+enhancement to the basic protocol, and *somebody* will make it sooner or
+later. When that day arrives, we want to be able to encode Unicode
+characters.
+
+Implements MUST encode UTF-8 characters using the minimum number of octets.
+Implementations SHOULD raise an error if they encounter any UTF-8
+characters encoded using more than the minimum number of octets.
+
+Rationale: Overlong UTF-8 encodings are sometimes used to bypass string
+validation in security code. They serve no legitimate purpose, either. So
+to improve the overall security of the Universe, we work hard to discourage
+them.
+
+UTF-8 & Unicode FAQ: http://www.cl.cam.ac.uk/~mgk25/unicode.html
+
+  RecordedString := '>' CodebookPosition StringData
+  RecalledString := '<' CodebookPosition
+  CodebookPosition := UnsignedOctet
+
+The 'binmode' format supports a 256-entry "codebook" of strings. At the
+start of a data stream, the codebook is empty. When the decoder
+encounters a RecordedString, it MUST store it into the specified codebook
+position (and then proceed to decode it as a regular string).
+
+When the decoder encounters a RecalledString, it MUST look it up in the
+specified codebook position. If that codebook position has been set, the
+implementation MUST use the string value found in the codebook. If the
+position has not been set, the implementation MUST stop decoding and raise
+an error. It is legal to change a codebook position once it has been set;
+the most recent value applies.
+
+A RecordedString or a RecalledString may be used anywhere a RegularString
+may be used.
+
+Rationale: XML-RPC data tends to contain large numbers of identical
+strings. (These are typically the names of <struct> members or the names of
+methods in a multicall.) To get any kind of reasonable data compression,
+it's necessary to have some way of compressing these values. The codebook
+mechanism is relatively simple and uncomplicated.
+
+Implementations MAY choose not to use this feature when encoding data, but
+MUST understand it when decoding data.
+
+Rationale: On the decoding end of things, this feature is trivial to
+implement, and must be present for the sake of interoperability. On the
+encoding end of things, however, making effective use of this feature is
+slightly trickier, so implementations are allowed (but not encouraged) to
+omit it.
+
+
+Compliance
+----------
+
+Implementations MUST implement all features of this protocol correctly,
+particularly on the decoding end. In the case of this protocol, a 95% correct
+implementation is 100% broken. Yes, this statement is redundant. ;-)
+
+
+Examples
+--------
+
+Non-ASCII octets are specified as in C strings. Continued lines are
+indicated by a trailing '\'; these should be joined together as one
+sequence of bytes.
+
+binmode-rpc:CU\003\0\0\0addA\002\0\0\0I\002\0\0\0I\002\0\0\0
+
+binmode-rpc:RI\004\0\0\0
+
+binmode-rpc:RFS\002\0\0\0 \
+U\011\0\0\0faultCodeI\001\0\0\0 \
+U\013\0\0\0faultStringU\021\0\0\0An error occurred
+
+binmode-rpc:RA\006\0\0\0 \
+>\000\003\0\0\0foo \
+>\001\003\0\0\0bar \
+<\000 \
+>\000\003\0\0\0baz \
+<\000 \
+<\001
+
+(This deserializes to ['foo', 'bar', 'foo', 'baz', 'baz', 'bar'].)
+
+binmode-rpc:RU\042\0\0\0Copyright \302\251 1995 J. Random Hacker
+
+(This is based on an example in the Unicode/UTF-8 FAQ (see above).)
+
+binmode-rpc:RA\010\0\0\0 \
+I\006\0\0\0 \
+tf \
+D\0042.75 \
+8\02119980717T14:08:55 \
+U\003\0\0\0foo \
+B\003\0\0\0abc \
+S\002\0\0\0U\003\0\0\0runt
+
+Counter-Examples
+----------------
+
+The following specimens are illegal, and SHOULD be rejected by a compliant
+implementation. Please test your code.
+
+* A different format name:
+
+  binmode-rpc2:RI\004\0\0\0
+
+* A built-in type incorrectly encoded using 'O':
+
+  binmode-rpc:ROU\006\0\0\0stringB\003\0\0\0xyz
+
+* A recall of an unrecorded string:
+
+  binmode-rpc:R<\002
+
+* ISO Latin 1 data in a string. (UTF-8 required!)
+
+  binmode-rpc:RU\041\0\0\0Copyright \251 1995 J. Random Hacker
+  
+* UTF-8 character encoded with too many octets (based on an example in the
+  Unicode/UTF-8 FAQ):
+
+  binmode-rpc:RU\041\0\0\0Bad linefeed: \300\212 (too many bytes)
+
+A compliant implementation MUST NOT send any of these sequences.
