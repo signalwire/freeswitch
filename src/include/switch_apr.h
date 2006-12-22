@@ -262,6 +262,9 @@ typedef apr_os_thread_t switch_thread_id_t;
 #define switch_thread_data_set apr_thread_data_set
 #define switch_thread_data_get apr_thread_data_get
 #define switch_thread_self apr_os_thread_current
+#define switch_time_make(sec, usec) ((apr_time_t)(sec) * APR_USEC_PER_SEC \
+                                     + (apr_time_t)(usec))
+
 
 /**
  * Put the active calling thread to sleep until signaled to wake up. Each

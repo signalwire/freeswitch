@@ -4525,7 +4525,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                         odata = expanded;
                     }
                     
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle %s:[%s] (%s)\n", func, odata, lang);
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handle %s:[%s] (%s)\n", func, odata, lang);
 
                     if (!strcasecmp(func, "play-file")) {
                         switch_ivr_play_file(session, NULL, odata, NULL, input_callback, buf, buflen);
