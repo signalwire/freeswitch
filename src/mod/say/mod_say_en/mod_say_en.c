@@ -76,7 +76,7 @@ static char *strip_commas(char *in, char *out, switch_size_t len)
 {
 	char *p = in, *q = out;
 	char *ret = out;
-	int x = 0;
+	switch_size_t x = 0;
 	
 	for(;p && *p; p++) {
 		if ((*p > 47 && *p < 58)) {
@@ -150,7 +150,7 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,
 	default:
 		break;
 	}
-
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t en_say(switch_core_session_t *session,
