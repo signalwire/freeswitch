@@ -223,7 +223,7 @@ static JSFunctionSpec etpan_functions[] = {
 	{0}
 };
 
-switch_status_t spidermonkey_load(JSContext *cx, JSObject *obj)
+switch_status_t etpan_load(JSContext *cx, JSObject *obj)
 {
 	JS_DefineFunctions(cx, obj, etpan_functions);
 
@@ -244,7 +244,7 @@ switch_status_t spidermonkey_load(JSContext *cx, JSObject *obj)
 
 const sm_module_interface_t etpan_module_interface = {
 	/*.name = */ modname,
-	/*.spidermonkey_load*/ spidermonkey_load,
+	/*.spidermonkey_load*/ etpan_load,
 	/*.next*/ NULL
 };
 
