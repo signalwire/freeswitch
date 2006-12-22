@@ -1280,17 +1280,19 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		}
 
 		if (tech_pvt->read_frame.datalen > 0) {
-			if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
-				bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
-				frames = (tech_pvt->read_frame.datalen / bytes);
-			} else {
-				frames = 1;
-			}
-			samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
-			ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
-			tech_pvt->timestamp_recv += (int32_t) samples;
-			tech_pvt->read_frame.samples = (int) samples;
-			tech_pvt->last_read = tech_pvt->read_frame.datalen;
+            if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
+                if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame && bytes) {
+                    bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+                    frames = (tech_pvt->read_frame.datalen / bytes);
+                } else {
+                    frames = 1;
+                }
+                samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
+                ms = frames * tech_pvt->read_codec.implementation->microseconds_per_frame;
+                tech_pvt->timestamp_recv += (int32_t) samples;
+                tech_pvt->read_frame.samples = (int) samples;
+                tech_pvt->last_read = tech_pvt->read_frame.datalen;
+            }
 			break;
 		}
 

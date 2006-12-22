@@ -782,7 +782,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
             *flags |= SFF_CNG;
             /* Return a CNG frame */
             *payload_type = SWITCH_RTP_CNG_PAYLOAD;
-            return SWITCH_RTP_CNG_PAYLOAD;
+            return SWITCH_RTP_CNG_PAYLOAD + rtp_header_len;
 		}
 
 		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
@@ -857,7 +857,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				*flags |= SFF_CNG;
 				/* Return a CNG frame */
 				*payload_type = SWITCH_RTP_CNG_PAYLOAD;
-				return SWITCH_RTP_CNG_PAYLOAD;
+				return SWITCH_RTP_CNG_PAYLOAD + rtp_header_len;
 			}
 		}		
 		
