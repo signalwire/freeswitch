@@ -42,7 +42,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlcurl-c-1.03.14\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlcurl-c-1.03.14&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;ABYSS_WIN32;CURL_STATICLIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -125,7 +125,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlcurl-c-1.03.14\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlcurl-c-1.03.14&quot;;&quot;$(InputDir)..\..\..\..\libs\curl-7.15.2\include&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\include&quot;;&quot;$(InputDir)include&quot;;&quot;$(InputDir)..\..\..\..\libs\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c\include&quot;;&quot;$(InputDir)..\..\..\..\libs\xmlrpc-c&quot;;&quot;$(InputDir)..\..\..\..\libs\curl\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;ABYSS_WIN32;CURL_STATICLIB"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"

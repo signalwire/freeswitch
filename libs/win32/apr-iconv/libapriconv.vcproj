@@ -48,7 +48,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\apr-iconv-1.1.1\include,..\..\apr-1.2.7\include"
+				AdditionalIncludeDirectories="&quot;..\..\apr-iconv-1.1.1\include&quot;;..\..\apr\include"
 				PreprocessorDefinitions="_DEBUG;API_DECLARE_EXPORT;WIN32;_WINDOWS"
 				RuntimeLibrary="3"
 				PrecompiledHeaderFile=".\Debug/libapriconv.pch"
@@ -147,7 +147,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\apr-iconv-1.1.1\include,..\..\apr-1.2.7\include"
+				AdditionalIncludeDirectories="&quot;..\..\apr-iconv-1.1.1\include&quot;;..\..\apr\include"
 				PreprocessorDefinitions="NDEBUG;API_DECLARE_EXPORT;WIN32;_WINDOWS"
 				StringPooling="true"
 				RuntimeLibrary="2"
