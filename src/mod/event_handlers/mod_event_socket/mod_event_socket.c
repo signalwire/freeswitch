@@ -415,7 +415,9 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 
 	if (stream.data) {
 		if (switch_api_execute(acs->api_cmd, acs->arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-
+            if (!stream.data) {
+                stream.write_function(&stream, "Command returned no output!\n");
+            }
 			if (acs->bg) {
 				switch_event_t *event;
 

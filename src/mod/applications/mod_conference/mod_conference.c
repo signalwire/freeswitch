@@ -3153,7 +3153,7 @@ static switch_status_t conf_api_main(char *buf, switch_core_session_t *session, 
             }
 
             if (argc >= 2) {
-                status = conf_api_dispatch(conference, stream, argc, argv, (const char *)buf, 1);
+                conf_api_dispatch(conference, stream, argc, argv, (const char *)buf, 1);
             } else {
                 stream->write_function(stream, "Conference command, not specified.\nTry 'help'\n");
             }
