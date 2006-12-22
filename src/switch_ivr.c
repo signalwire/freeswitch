@@ -346,6 +346,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	char *p;
 	const char *vval;
     time_t start = 0;
+	int org_silence_hits = 0;
 
 	if (!fh) {
 		fh = &lfh;
@@ -432,10 +433,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
     }
 
     if (fh->thresh) {
-        if (!fh->silence_hits) {
-            fh->silence_hits = 20;
+        if (fh->silence_hits) {
+			fh->silence_hits = fh->samplerate * fh->silence_hits;
+		} else {
+            fh->silence_hits = fh->samplerate * 3;
         }
-    }
+		org_silence_hits = fh->silence_hits;
+	}
 
 	while(switch_channel_ready(channel)) {
 		switch_size_t len;
@@ -500,10 +504,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		
             score = (uint32_t)(energy / samples);
             if (score < fh->thresh) {
-                if (!--fh->silence_hits) {
+				fh->silence_hits -= fh->samplerate;
+                if (fh->silence_hits <= 0) {
                     break;
                 }
-            }
+			} else {
+				fh->silence_hits = org_silence_hits;
+			}
         }
 
 		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
