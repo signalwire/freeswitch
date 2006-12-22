@@ -891,7 +891,6 @@ typedef struct switch_speech_interface switch_speech_interface_t;
 typedef struct switch_asr_interface switch_asr_interface_t;
 typedef struct switch_directory_interface switch_directory_interface_t;
 typedef struct switch_chat_interface switch_chat_interface_t;
-typedef struct switch_say_interface switch_say_interface_t;
 typedef struct switch_core_port_allocator switch_core_port_allocator_t;
 typedef struct switch_media_bug switch_media_bug_t;
 typedef void (*switch_media_bug_callback_t)(switch_media_bug_t *, void *, switch_abc_type_t);
@@ -917,6 +916,14 @@ typedef switch_status_t (*switch_input_callback_function_t)(switch_core_session_
 															switch_input_type_t input_type,
 															void *buf,
 															unsigned int buflen);
+typedef struct switch_say_interface switch_say_interface_t;
+typedef switch_status_t (*switch_say_callback_t)(switch_core_session_t *session,
+                                                 char *tosay,
+                                                 switch_say_type_t type,
+                                                 switch_say_method_t method,
+                                                 switch_input_callback_function_t input_callback,
+                                                 void *buf,
+                                                 uint32_t buflen);
 typedef int (*switch_core_db_callback_func_t)(void *pArg, int argc, char **argv, char **columnNames);
 typedef switch_status_t (*switch_module_load_t) (switch_loadable_module_interface_t **, char *);
 typedef switch_status_t (*switch_module_reload_t) (void);

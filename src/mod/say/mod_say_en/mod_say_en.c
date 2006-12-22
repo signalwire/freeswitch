@@ -33,6 +33,126 @@
 
 static const char modname[] = "mod_say_en";
 
+typedef struct {
+	switch_core_session_t *session;
+	switch_input_callback_function_t input_callback;
+	void *buf;
+	uint32_t buflen;
+} common_args_t;
+
+static void play_group(int a, int b, int c, char *what, common_args_t *args)
+{
+	char tmp[80] = "";
+
+	if (a) {
+		snprintf(tmp, sizeof(tmp), "digits/%d.wav", a);
+		switch_ivr_play_file(args->session, NULL, tmp, NULL, args->input_callback, args->buf, args->buflen);
+		switch_ivr_play_file(args->session, NULL, "digits/hundred.wav", NULL, args->input_callback, args->buf, args->buflen);
+	}
+
+	if (b) {
+		if (b > 1) {
+			snprintf(tmp, sizeof(tmp), "digits/%d0.wav", b);
+			switch_ivr_play_file(args->session, NULL, tmp, NULL, args->input_callback, args->buf, args->buflen);
+		} else {
+			snprintf(tmp, sizeof(tmp), "digits/%d%d.wav", b, c);
+			switch_ivr_play_file(args->session, NULL, tmp, NULL, args->input_callback, args->buf, args->buflen);
+			c = 0;
+		}
+	}
+
+	if (c) {
+		snprintf(tmp, sizeof(tmp), "digits/%d.wav", c);
+		switch_ivr_play_file(args->session, NULL, tmp, NULL, args->input_callback, args->buf, args->buflen);
+	}
+
+	if (what && (a || b || c)) {
+		switch_ivr_play_file(args->session, NULL, what, NULL, args->input_callback, args->buf, args->buflen);
+	}
+
+}
+					   
+static char *strip_commas(char *in, char *out, switch_size_t len)
+{
+	char *p = in, *q = out;
+	char *ret = out;
+	int x = 0;
+	
+	for(;p && *p; p++) {
+		if ((*p > 47 && *p < 58)) {
+			*q++ = *p;
+		} else if (*p != ',') {
+			ret = NULL;
+			break;
+		}
+
+		if (++x > len) {
+			ret = NULL;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+static switch_status_t en_say_general_count(switch_core_session_t *session,
+											char *tosay,
+											switch_say_type_t type,
+											switch_say_method_t method,
+											switch_input_callback_function_t input_callback,
+											void *buf,
+											uint32_t buflen)
+{
+	switch_channel_t *channel;
+	int in;
+	int x = 0, places[9] = {0};
+	char tmp[80] = "";
+	char sbuf[13] = "";
+	common_args_t args = {0};
+
+	assert(session != NULL);
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+			
+	args.session = session;
+	args.input_callback = input_callback;
+	args.buf = buf;
+	args.buflen = buflen;
+	
+	if (!(tosay = strip_commas(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 9) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	in = atoi(tosay);
+	
+	for(x = 8; x >= 0; x--) {
+		int num = (int)pow(10, x);
+		if ((places[x] = in / num)) {
+			in -= places[x] * num;
+		}
+	}
+
+	switch (method) {
+	case SSM_PRONOUNCED:
+		play_group(places[8], places[7], places[6], "digits/million.wav", &args);
+		play_group(places[5], places[4], places[3], "digits/thousand.wav", &args);
+		play_group(places[2], places[1], places[0], NULL, &args);
+		break;
+	case SSM_ITERATED:
+		for(x = 8; x >= 0; x--) {
+			if (places[x]) {
+				snprintf(tmp, sizeof(tmp), "digits/%d.wav", places[x]);
+				switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+}
+
 static switch_status_t en_say(switch_core_session_t *session,
 							  char *tosay,
 							  switch_say_type_t type,
@@ -41,107 +161,24 @@ static switch_status_t en_say(switch_core_session_t *session,
 							  void *buf,
 							  uint32_t buflen)
 {
-	switch_channel_t *channel;
-
-	assert(session != NULL);
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
 	
+	switch_say_callback_t say_cb = NULL;
+
 	switch(type) {
 	case SST_NUMBER:
 	case SST_ITEMS:
 	case SST_PERSONS:
 	case SST_MESSAGES:
-		{
-			int in;
-			int x, places[7] = {0};
-			char tmp[25];
-
-			in = atoi(tosay);
-
-			for(x = 6; x >= 0; x--) {
-				int num = (int)pow(10, x);
-				if ((places[x] = in / num)) {
-					in -= places[x] * num;
-				}
-			}
-
-			switch (method) {
-			case SSM_PRONOUNCED:
-				if (places[6]) {
-					snprintf(tmp, sizeof(tmp), "digits/%d.wav", places[6]);
-					switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
-					switch_ivr_play_file(session, NULL, "digits/million.wav", NULL, input_callback, buf, buflen);
-				}
-
-				if (places[5]) {
-					snprintf(tmp, sizeof(tmp), "digits/%d.wav", places[5]);
-					switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
-					switch_ivr_play_file(session, NULL, "digits/hundred.wav", NULL, input_callback, buf, buflen);
-				}
-			
-				if (places[4]) {
-					if (places[4] > 1) {
-						snprintf(tmp, sizeof(tmp), "digits/%d0.wav", places[4]);
-						switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
-					} else {
-						snprintf(tmp, sizeof(tmp), "digits/%d%d.wav", places[4], places[3]);
-						switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
-						places[3] = 0;
-					}
-				}
-			
-				if (places[3]) {
-					snprintf(tmp, sizeof(tmp), "digits/%d.wav", places[3]);
-					switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
-				}
-
-				if (places[5] || places[4] || places[3]) {
-					switch_ivr_play_file(session, NULL, "digits/thousand.wav", NULL, input_callback, buf, buflen);
-				}
-
-				if (places[2]) {
-					snprintf(tmp, sizeof(tmp), "digits/%d.wav", places[2]);
-					switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
-					switch_ivr_play_file(session, NULL, "digits/hundred.wav", NULL, input_callback, buf, buflen);
-				}
-
-				if (places[1]) {
-					if (places[1] > 1) {
-						snprintf(tmp, sizeof(tmp), "digits/%d0.wav", places[1]);
-						switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
-					} else {
-						snprintf(tmp, sizeof(tmp), "digits/%d%d.wav", places[1], places[0]);
-						switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
-						places[0] = 0;
-					}
-				}
-
-				if (places[0]) {
-					snprintf(tmp, sizeof(tmp), "digits/%d.wav", places[0]);
-					switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
-				}
-
-				break;
-			case SSM_ITERATED:
-				for(x = 7; x >= 0; x--) {
-					if (places[x]) {
-						snprintf(tmp, sizeof(tmp), "digits/%d.wav", places[x]);
-						switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen);
-					}
-				}
-				break;
-			default:
-				break;
-			}
-		}
+		say_cb = en_say_general_count;
 		break;
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Finish ME!\n");
 		break;
 	}
-
-
+	
+	if (say_cb) {
+		say_cb(session, tosay, type, method, input_callback, buf, buflen);
+	} 
 
 	return SWITCH_STATUS_SUCCESS;
 }

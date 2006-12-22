@@ -417,13 +417,7 @@ struct switch_say_interface {
 	/*! the name of the interface */
 	const char *interface_name;
 	/*! function to pass down to the module */
-    switch_status_t (*say_function)(switch_core_session_t *session,
-                                    char *tosay,
-                                    switch_say_type_t type,
-                                    switch_say_method_t method,
-                                    switch_input_callback_function_t dtmf_callback,
-                                    void *buf,
-                                    uint32_t buflen);
+    switch_say_callback_t say_function;
 	const struct switch_say_interface *next;
 };
 
