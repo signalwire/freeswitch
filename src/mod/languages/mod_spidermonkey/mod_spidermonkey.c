@@ -1592,7 +1592,7 @@ static JSBool js_fetchurl_file(JSContext *cx, JSObject *obj, uintN argc, jsval *
 /*********************************************************************************/
 enum session_tinyid {
 	SESSION_NAME, SESSION_STATE,
-	PROFILE_DIALPLAN, PROFILE_CID_NAME, PROFILE_CID_NUM, PROFILE_IP, PROFILE_ANI, PROFILE_ANI_II, PROFILE_DEST
+	PROFILE_DIALPLAN, PROFILE_CID_NAME, PROFILE_CID_NUM, PROFILE_IP, PROFILE_ANI, PROFILE_ANI_II, PROFILE_DEST, SESSION_UUID
 };
 
 static JSFunctionSpec session_methods[] = {
@@ -1627,6 +1627,7 @@ static JSPropertySpec session_props[] = {
 	{"ani", PROFILE_ANI, JSPROP_READONLY|JSPROP_PERMANENT}, 
 	{"aniii", PROFILE_ANI_II, JSPROP_READONLY|JSPROP_PERMANENT}, 
 	{"destination", PROFILE_DEST, JSPROP_READONLY|JSPROP_PERMANENT}, 
+	{"uuid", SESSION_UUID, JSPROP_READONLY|JSPROP_PERMANENT}, 
 	{0}
 };
 
@@ -1659,6 +1660,9 @@ static JSBool session_getProperty(JSContext *cx, JSObject *obj, jsval id, jsval 
 	switch(param) {
 	case SESSION_NAME:
 		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, switch_channel_get_name(channel)));
+		break;
+	case SESSION_UUID:
+		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, switch_channel_get_uuid(channel)));
 		break;
 	case SESSION_STATE:
 		*vp = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, switch_channel_state_name(switch_channel_get_state(channel))));
