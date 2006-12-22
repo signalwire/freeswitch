@@ -434,9 +434,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
     if (fh->thresh) {
         if (fh->silence_hits) {
-			fh->silence_hits = fh->samplerate * fh->silence_hits;
+			fh->silence_hits = fh->samplerate * fh->silence_hits / read_codec->implementation->samples_per_frame;
 		} else {
-            fh->silence_hits = fh->samplerate * 3;
+            fh->silence_hits = fh->samplerate * 3 / read_codec->implementation->samples_per_frame;
         }
 		org_silence_hits = fh->silence_hits;
 	}
@@ -504,8 +504,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		
             score = (uint32_t)(energy / samples);
             if (score < fh->thresh) {
-				fh->silence_hits -= fh->samplerate;
-                if (fh->silence_hits <= 0) {
+                if (!--fh->silence_hits) {
                     break;
                 }
 			} else {
