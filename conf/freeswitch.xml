@@ -485,6 +485,19 @@
 
     <!-- *NOTE* The special context name 'any' will match any context -->
     <context name="default">
+      <extension name="556"> <!-- demo phrases -->
+        <condition field="destination_number" expression="^556$">
+          <action application="answer"/>
+          <action application="sleep" data="1000"/>
+          <action application="phrase" data="spell,${caller_id_name}"/>
+          <action application="phrase" data="spell-phonetic,${caller_id_name}"/>
+          <action application="phrase" data="timespec,12:45:15"/>
+          <action application="phrase" data="saydate,0"/>
+          <action application="phrase" data="msgcount,130"/>
+          <!--<action application="phrase" data="timeleft,3:30"/>-->
+	</condition>
+      </extension>
+
       <extension name="tollfree">
 	<condition field="destination_number" expression="^(18(0{2}|8{2}|7{2}|6{2})\d{7})$">
 	  <action application="enum" data="$1"/>
@@ -647,9 +660,29 @@
 	    <!--<action function="speak-text" data="you have $1 messages"/>-->
 	  </input>
 	</macro>
-	<macro name="timeleft">
+	<macro name="saydate">
+	  <input pattern="(.*)">
+	    <action function="say" data="$1" method="pronounced" type="current_date_time"/>
+	  </input>
+	</macro>
+	<macro name="timespec">
+	  <input pattern="(.*)">
+	    <action function="say" data="$1" method="pronounced" type="time_measurement"/>
+	  </input>
+	</macro>
+	<macro name="spell">
+	  <input pattern="(.*)">
+	    <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+	  </input>
+	</macro>
+	<macro name="spell-phonetic">
+	  <input pattern="(.*)">
+	    <action function="say" data="$1" method="pronounced" type="name_phonetic"/>
+	  </input>
+	</macro>
+	<macro name="tts-timeleft">
 	  <input pattern="(\d+):(\d+)">
-	    <action function="speak-text" data="You have $1 minutes, $2 seconds remaining"/>
+	    <action function="speak-text" data="You have $1 minutes, $2 seconds remaining $strftime(%Y-%m-%d)"/>
 	  </input>
 	</macro>
       </language>
