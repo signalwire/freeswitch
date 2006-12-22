@@ -338,7 +338,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 {
 	switch_channel_t *channel;
     char dtmf[128];
-	switch_file_handle_t lfh;
+	switch_file_handle_t lfh = {0};
 	switch_frame_t *read_frame;
 	switch_codec_t codec, *read_codec;
 	char *codec_name;
@@ -350,7 +350,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	if (!fh) {
 		fh = &lfh;
 	}
-	memset(fh, 0, sizeof(*fh));
 
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
