@@ -4487,17 +4487,26 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
         if (pattern) {
             pcre *re = NULL;
             int proceed = 0, ovector[30];
-            char substituted[1024] = "";
+            char *substituted = NULL;
+            switch_size_t len = 0;
             char *odata = NULL;
             char *expanded = NULL;
-
+            
             if ((proceed = switch_perform_regex(data, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
                 for (action = switch_xml_child(input, "action"); action; action = action->next) {
                     char *adata = (char *) switch_xml_attr_soft(action, "data");
                     char *func = (char *) switch_xml_attr_soft(action, "function");
 
                     if (strchr(pattern, '(') && strchr(adata, '$')) {
-                        switch_perform_substitution(re, proceed, adata, data, substituted, sizeof(substituted), ovector);
+                        len = strlen(data) + strlen(adata) + 10;
+                        if (!(substituted = malloc(len))) {
+                            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+                            switch_clean_re(re);
+                            switch_safe_free(expanded);
+                            goto done;
+                        }
+                        memset(substituted, 0, len);
+                        switch_perform_substitution(re, proceed, adata, data, substituted, len, ovector);
                         odata = substituted;
                     } else {
                         odata = adata;
@@ -4566,6 +4575,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
             switch_clean_re(re);
             switch_safe_free(expanded);
+            switch_safe_free(substituted);
         }
 
         input = input->next;

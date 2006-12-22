@@ -150,11 +150,19 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 		for (xaction = switch_xml_child(xcond, "action"); xaction; xaction = xaction->next) {
 			char *application = (char*) switch_xml_attr_soft(xaction, "application");
 			char *data = (char *) switch_xml_attr_soft(xaction, "data");
-			char substituted[1024] = "";
+			char *substituted = NULL;
+            switch_size_t len = 0;
 			char *app_data = NULL;
 
 			if (field && strchr(expression, '(')) {
-				switch_perform_substitution(re, proceed, data, field_data, substituted, sizeof(substituted), ovector);
+                len = strlen(data) + strlen(field_data) + 10;
+                if (!(substituted = malloc(len))) {
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
+                    proceed = 0;
+                    goto done;
+                }
+                memset(substituted, 0, len);
+				switch_perform_substitution(re, proceed, data, field_data, substituted, len, ovector);
 				app_data = substituted;
 			} else {
 				app_data = data;
@@ -170,6 +178,7 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 			}
 
 			switch_caller_extension_add_application(session, *extension, application, app_data);
+            switch_safe_free(substituted);
 		}
         
 		switch_clean_re(re);
