@@ -205,10 +205,10 @@ static switch_status_t en_say_time(switch_core_session_t *session,
 	uint8_t say_date = 0, say_time = 0;
 	
 	if (type == SST_TIME_MEASUREMENT) {
-		int32_t hours = 0;
-		int32_t minutes = 0;
-		int32_t seconds = 0;
-		int32_t r = 0;
+		int64_t hours = 0;
+		int64_t minutes = 0;
+		int64_t seconds = 0;
+		int64_t r = 0;
 
 		if (strchr(tosay, ':')) {
 			char *tme = switch_core_session_strdup(session, tosay);
@@ -227,7 +227,7 @@ static switch_status_t en_say_time(switch_core_session_t *session,
 			}
 		} else {
 			if ((seconds = atoi(tosay)) <= 0) {
-				seconds = (time_t) time(NULL);
+				seconds = (int64_t) time(NULL);
 			}
 
 			if (seconds >= 60) {
@@ -290,7 +290,7 @@ static switch_status_t en_say_time(switch_core_session_t *session,
 	}
 
 	if (say_time) {
-		uint8_t hour = tm.tm_hour, pm = 0;
+		int32_t hour = tm.tm_hour, pm = 0;
 		
 		if (hour > 12) {
 			hour -= 12;
