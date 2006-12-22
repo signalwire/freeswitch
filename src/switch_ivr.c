@@ -346,7 +346,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	char *p;
 	const char *vval;
     time_t start = 0;
-	int org_silence_hits = 0;
+	uint32_t org_silence_hits = 0;
 
 	if (!fh) {
 		fh = &lfh;
