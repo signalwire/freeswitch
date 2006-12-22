@@ -38,7 +38,7 @@ static const char modname[] = "mod_say_en";
 #define say_num(num) {\
 		char tmp[80];\
 		switch_status_t status;\
-		snprintf(tmp, sizeof(tmp), "%d", num);\
+		snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);				\
 	if ((status = en_say_general_count(session, tmp, SST_ITEMS, SSM_PRONOUNCED, input_callback, buf, buflen)) != SWITCH_STATUS_SUCCESS) {\
 		return status;\
 	}}\
