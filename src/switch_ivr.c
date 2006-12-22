@@ -4488,7 +4488,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
             pcre *re = NULL;
             int proceed = 0, ovector[30];
             char *substituted = NULL;
-            switch_size_t len = 0;
+            uint32_t len = 0;
             char *odata = NULL;
             char *expanded = NULL;
             
@@ -4498,7 +4498,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                     char *func = (char *) switch_xml_attr_soft(action, "function");
 
                     if (strchr(pattern, '(') && strchr(adata, '$')) {
-                        len = strlen(data) + strlen(adata) + 10;
+                        len = (uint32_t)(strlen(data) + strlen(adata) + 10);
                         if (!(substituted = malloc(len))) {
                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
                             switch_clean_re(re);

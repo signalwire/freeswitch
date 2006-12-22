@@ -151,11 +151,11 @@ static int parse_exten(switch_core_session_t *session, switch_xml_t xexten, swit
 			char *application = (char*) switch_xml_attr_soft(xaction, "application");
 			char *data = (char *) switch_xml_attr_soft(xaction, "data");
 			char *substituted = NULL;
-            switch_size_t len = 0;
+            uint32_t len = 0;
 			char *app_data = NULL;
 
 			if (field && strchr(expression, '(')) {
-                len = strlen(data) + strlen(field_data) + 10;
+                len = (uint32_t)(strlen(data) + strlen(field_data) + 10);
                 if (!(substituted = malloc(len))) {
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
                     proceed = 0;
