@@ -51,7 +51,6 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
-#pragma pack(4)
 #pragma warning(disable:4214)
 #endif
 
@@ -895,6 +894,10 @@ srtp_install_event_handler(srtp_event_handler_func_t func);
  * is not identical)
  */
  
+#ifdef _MSC_VER
+#pragma pack(push, r1, 1)
+#endif
+
 #ifndef WORDS_BIGENDIAN
 
 typedef struct {
@@ -904,9 +907,9 @@ typedef struct {
   unsigned version:2;	/* protocol version       */
   unsigned pt:7;	/* payload type           */
   unsigned m:1;		/* marker bit             */
-  uint16_t seq;		/* sequence number        */
-  uint32_t ts;		/* timestamp              */
-  uint32_t ssrc;	/* synchronization source */
+  unsigned seq:16;		/* sequence number        */
+  unsigned ts:32;		/* timestamp              */
+  unsigned ssrc:32;	/* synchronization source */
 } srtp_hdr_t;
 
 #else /*  BIG_ENDIAN */
@@ -918,9 +921,9 @@ typedef struct {
   unsigned cc:4;	/* CSRC count             */
   unsigned m:1;		/* marker bit             */
   unsigned pt:7;	/* payload type           */
-  uint16_t seq;		/* sequence number        */
-  uint32_t ts;		/* timestamp              */
-  uint32_t ssrc;	/* synchronization source */
+  unsigned seq:16;		/* sequence number        */
+  unsigned ts:32;		/* timestamp              */
+  unsigned ssrc:32;	/* synchronization source */
 } srtp_hdr_t;
 
 #endif
@@ -945,8 +948,8 @@ typedef struct {
   unsigned p:1;		/* padding flag           */
   unsigned version:2;	/* protocol version       */
   unsigned pt:8;		/* payload type           */
-  uint16_t len;			/* length                 */
-  uint32_t ssrc;	       	/* synchronization source */
+  unsigned len:16;			/* length                 */
+  unsigned ssrc:32;	       	/* synchronization source */
 } srtcp_hdr_t;
 
 typedef struct {
@@ -964,8 +967,8 @@ typedef struct {
   unsigned p:1;		/* padding flag           */
   unsigned rc:5;		/* reception report count */
   unsigned pt:8;		/* payload type           */
-  uint16_t len;			/* length                 */
-  uint32_t ssrc;	       	/* synchronization source */
+  unsigned len:16;			/* length                 */
+  unsigned ssrc:32;	       	/* synchronization source */
 } srtcp_hdr_t;
 
 typedef struct {
@@ -973,7 +976,7 @@ typedef struct {
   unsigned int p:1;        /* padding flag                         */
   unsigned int count:5;    /* varies by packet type                */
   unsigned int pt:8;       /* payload type                         */
-  uint16_t length;         /* len of uint32s of packet less header */
+  unsigned length:16;         /* len of uint32s of packet less header */
 } rtcp_common_t;
 
 typedef struct {
@@ -992,7 +995,7 @@ typedef struct {
 #define SRTCP_INDEX_MASK 0x7fffffff
 
 #ifdef _MSC_VER
-#pragma pack()
+#pragma pack(pop, r1)
 #endif
 
 #ifdef __cplusplus

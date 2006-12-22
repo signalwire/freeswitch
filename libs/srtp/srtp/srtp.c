@@ -684,7 +684,7 @@ srtp_stream_init(srtp_stream_ctx_t *srtp,
     * estimate the packet index using the start of the replay window   
     * and the sequence number from the header
     */
-   delta = rdbx_estimate_index(&stream->rtp_rdbx, &est, ntohs(hdr->seq));
+   delta = rdbx_estimate_index(&stream->rtp_rdbx, &est, ntohs((uint16_t)hdr->seq));
    status = rdbx_check(&stream->rtp_rdbx, delta);
    if (status)
      return status;  /* we've been asked to reuse an index */
@@ -842,7 +842,7 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
       est = (xtd_seq_num_t) make64(0,ntohs(hdr->seq));
       delta = low32(est);
 #else
-      est = (xtd_seq_num_t) ntohs(hdr->seq);
+      est = (xtd_seq_num_t) ntohs((uint16_t)hdr->seq);
       delta = (int)est;
 #endif
     } else {
@@ -856,7 +856,7 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
   } else {
   
     /* estimate packet index from seq. num. in header */
-    delta = rdbx_estimate_index(&stream->rtp_rdbx, &est, ntohs(hdr->seq));
+    delta = rdbx_estimate_index(&stream->rtp_rdbx, &est, ntohs((uint16_t)hdr->seq));
     
     /* check replay database */
     status = rdbx_check(&stream->rtp_rdbx, delta);

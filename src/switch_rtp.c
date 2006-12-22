@@ -467,7 +467,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 	rtp_session->recv_msg.header.x       = 0;
 	rtp_session->recv_msg.header.cc      = 0;
 
-	rtp_session->seq = rtp_session->send_msg.header.seq;
+	rtp_session->seq = (uint16_t)rtp_session->send_msg.header.seq;
 	rtp_session->payload = payload;
 	rtp_session->ms_per_packet = ms_per_packet;
 	rtp_session->packet_size = packet_size;
@@ -896,7 +896,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_GOOGLEHACK) && rtp_session->recv_msg.header.pt == 102) {
 				rtp_session->recv_msg.header.pt = 97;
 			}
-			rtp_session->rseq = ntohs(rtp_session->recv_msg.header.seq);
+			rtp_session->rseq = ntohs((uint16_t)rtp_session->recv_msg.header.seq);
 			rtp_session->rpayload = (switch_payload_t)rtp_session->recv_msg.header.pt;
 		} else {
 			if (rtp_session->recv_msg.header.version == 0 && rtp_session->ice_user) {
@@ -1296,7 +1296,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session, void *data, uint32_t data
 		if (!rtp_session->mini && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_MINI)) {
 			rtp_session->mini++;
 			rtp_session->rpayload = (switch_payload_t)send_msg->header.pt;
-			rtp_session->rseq = ntohs(send_msg->header.seq);
+			rtp_session->rseq = ntohs((uint16_t)send_msg->header.seq);
 		}
 
 	}
