@@ -2258,7 +2258,9 @@ static int env_init(JSContext *cx, JSObject *javascript_object)
 	JS_DefineFunctions(cx, javascript_object, fs_functions);
 
 	JS_InitStandardClasses(cx, javascript_object);
-				
+
+    /* this doesnt load in standard classes figure out wtf */
+    js_InitFileClass(cx, javascript_object);
 
 	JS_InitClass(cx,
 				 javascript_object,
