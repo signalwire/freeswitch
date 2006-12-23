@@ -576,7 +576,7 @@ extern void fs_channel_hangup(switch_core_session_t *,char *);
 extern void fs_channel_set_variable(switch_core_session_t *,char *,char *);
 extern void fs_channel_get_variable(switch_core_session_t *,char *);
 extern void fs_channel_set_state(switch_core_session_t *,char *);
-extern int fs_ivr_play_file(switch_core_session_t *,char *,char *,switch_input_callback_function_t,void *,unsigned int);
+extern int fs_ivr_play_file(switch_core_session_t *,char *);
 extern int fs_switch_ivr_record_file(switch_core_session_t *,switch_file_handle_t *,char *,switch_input_callback_function_t,void *,unsigned int,unsigned int);
 extern int fs_switch_ivr_sleep(switch_core_session_t *,uint32_t);
 extern int fs_ivr_play_file2(switch_core_session_t *,char *);
@@ -584,7 +584,7 @@ extern int fs_switch_ivr_collect_digits_callback(switch_core_session_t *,switch_
 extern int fs_switch_ivr_collect_digits_count(switch_core_session_t *,char *,unsigned int,unsigned int,char const *,char *,unsigned int);
 extern int fs_switch_ivr_originate(switch_core_session_t *,switch_core_session_t **,char *,uint32_t);
 extern int fs_switch_ivr_session_transfer(switch_core_session_t *,char *,char *,char *);
-extern int fs_switch_ivr_speak_text(switch_core_session_t *,char *,char *,char *,uint32_t,switch_input_callback_function_t,char *,void *,unsigned int);
+extern int fs_switch_ivr_speak_text(switch_core_session_t *,char *,char *,uint32_t,char *);
 extern char *fs_switch_channel_get_variable(switch_channel_t *,char *);
 extern int fs_switch_channel_set_variable(switch_channel_t *,char *,char *);
 
@@ -1081,19 +1081,15 @@ ZEND_NAMED_FUNCTION(_wrap_fs_channel_set_state) {
 ZEND_NAMED_FUNCTION(_wrap_fs_ivr_play_file) {
     switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
     char *arg2 ;
-    char *arg3 ;
-    switch_input_callback_function_t arg4 ;
-    void *arg5 = (void *) 0 ;
-    unsigned int arg6 ;
     int result;
-    zval **args[7];
+    zval **args[3];
     int argbase=0 ;
     
     if (this_ptr && this_ptr->type==IS_OBJECT) {
         /* fake this_ptr as first arg (till we can work out how to do it better */
         argbase++;
     }
-    if(((ZEND_NUM_ARGS() + argbase )!= 6) || (zend_get_parameters_array_ex(6-argbase, args)!= SUCCESS)) {
+    if(((ZEND_NUM_ARGS() + argbase )!= 2) || (zend_get_parameters_array_ex(2-argbase, args)!= SUCCESS)) {
         WRONG_PARAM_COUNT;
     }
     
@@ -1106,29 +1102,7 @@ ZEND_NAMED_FUNCTION(_wrap_fs_ivr_play_file) {
     convert_to_string_ex(args[1-argbase]);
     arg2 = (char *) Z_STRVAL_PP(args[1-argbase]);
     
-    
-    convert_to_string_ex(args[2-argbase]);
-    arg3 = (char *) Z_STRVAL_PP(args[2-argbase]);
-    
-    {
-        switch_input_callback_function_t * argp;
-        if(SWIG_ConvertPtr(*args[3-argbase], (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t) < 0) {
-            zend_error(E_ERROR, "Type error in argument %d of fs_ivr_play_file. Expected %s", 4-argbase, SWIGTYPE_p_switch_input_callback_function_t->name);
-        }
-        arg4 = *argp;
-    }
-    
-    if(SWIG_ConvertPtr(*args[4-argbase], (void **) &arg5, 0) < 0) {
-        /* Allow NULL from php for void* */
-        if ((*args[4-argbase])->type==IS_NULL) arg5=0;
-        else zend_error(E_ERROR, "Type error in argument %d of fs_ivr_play_file. Expected %s", 5-argbase, SWIGTYPE_p_void->name);
-    }
-    
-    
-    convert_to_long_ex(args[5-argbase]);
-    arg6 = (unsigned int) Z_LVAL_PP(args[5-argbase]);
-    
-    result = (int)fs_ivr_play_file(arg1,arg2,arg3,arg4,arg5,arg6);
+    result = (int)fs_ivr_play_file(arg1,arg2);
     
     
     ZVAL_LONG(return_value,result);
@@ -1469,21 +1443,17 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_speak_text) {
     switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
     char *arg2 ;
     char *arg3 ;
-    char *arg4 ;
-    uint32_t arg5 ;
-    switch_input_callback_function_t arg6 ;
-    char *arg7 ;
-    void *arg8 = (void *) 0 ;
-    unsigned int arg9 ;
+    uint32_t arg4 ;
+    char *arg5 ;
     int result;
-    zval **args[10];
+    zval **args[6];
     int argbase=0 ;
     
     if (this_ptr && this_ptr->type==IS_OBJECT) {
         /* fake this_ptr as first arg (till we can work out how to do it better */
         argbase++;
     }
-    if(((ZEND_NUM_ARGS() + argbase )!= 9) || (zend_get_parameters_array_ex(9-argbase, args)!= SUCCESS)) {
+    if(((ZEND_NUM_ARGS() + argbase )!= 5) || (zend_get_parameters_array_ex(5-argbase, args)!= SUCCESS)) {
         WRONG_PARAM_COUNT;
     }
     
@@ -1500,40 +1470,18 @@ ZEND_NAMED_FUNCTION(_wrap_fs_switch_ivr_speak_text) {
     convert_to_string_ex(args[2-argbase]);
     arg3 = (char *) Z_STRVAL_PP(args[2-argbase]);
     
-    
-    convert_to_string_ex(args[3-argbase]);
-    arg4 = (char *) Z_STRVAL_PP(args[3-argbase]);
-    
     {
         uint32_t * argp;
-        if(SWIG_ConvertPtr(*args[4-argbase], (void **) &argp, SWIGTYPE_p_uint32_t) < 0) {
-            zend_error(E_ERROR, "Type error in argument %d of fs_switch_ivr_speak_text. Expected %s", 5-argbase, SWIGTYPE_p_uint32_t->name);
+        if(SWIG_ConvertPtr(*args[3-argbase], (void **) &argp, SWIGTYPE_p_uint32_t) < 0) {
+            zend_error(E_ERROR, "Type error in argument %d of fs_switch_ivr_speak_text. Expected %s", 4-argbase, SWIGTYPE_p_uint32_t->name);
         }
-        arg5 = *argp;
-    }
-    {
-        switch_input_callback_function_t * argp;
-        if(SWIG_ConvertPtr(*args[5-argbase], (void **) &argp, SWIGTYPE_p_switch_input_callback_function_t) < 0) {
-            zend_error(E_ERROR, "Type error in argument %d of fs_switch_ivr_speak_text. Expected %s", 6-argbase, SWIGTYPE_p_switch_input_callback_function_t->name);
-        }
-        arg6 = *argp;
+        arg4 = *argp;
     }
     
-    convert_to_string_ex(args[6-argbase]);
-    arg7 = (char *) Z_STRVAL_PP(args[6-argbase]);
+    convert_to_string_ex(args[4-argbase]);
+    arg5 = (char *) Z_STRVAL_PP(args[4-argbase]);
     
-    
-    if(SWIG_ConvertPtr(*args[7-argbase], (void **) &arg8, 0) < 0) {
-        /* Allow NULL from php for void* */
-        if ((*args[7-argbase])->type==IS_NULL) arg8=0;
-        else zend_error(E_ERROR, "Type error in argument %d of fs_switch_ivr_speak_text. Expected %s", 8-argbase, SWIGTYPE_p_void->name);
-    }
-    
-    
-    convert_to_long_ex(args[8-argbase]);
-    arg9 = (unsigned int) Z_LVAL_PP(args[8-argbase]);
-    
-    result = (int)fs_switch_ivr_speak_text(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
+    result = (int)fs_switch_ivr_speak_text(arg1,arg2,arg3,arg4,arg5);
     
     
     ZVAL_LONG(return_value,result);

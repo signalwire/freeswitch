@@ -39,14 +39,14 @@ static const char modname[] = "mod_say_en";
 		char tmp[80];\
 		switch_status_t status;\
 		snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);				\
-	if ((status = en_say_general_count(session, tmp, SST_ITEMS, SSM_PRONOUNCED, input_callback, buf, buflen)) != SWITCH_STATUS_SUCCESS) {\
+	if ((status = en_say_general_count(session, tmp, SST_ITEMS, SSM_PRONOUNCED, args)) != SWITCH_STATUS_SUCCESS) {\
 		return status;\
 	}}\
 
 #define say_file(...) {\
 		char tmp[80];\
 		snprintf(tmp, sizeof(tmp), __VA_ARGS__);\
-		switch_ivr_play_file(session, NULL, tmp, NULL, input_callback, buf, buflen); \
+		switch_ivr_play_file(session, NULL, tmp, args); \
 		if (!switch_channel_ready(switch_core_session_get_channel(session))) {\
 			return SWITCH_STATUS_FALSE;\
 		}}\
@@ -54,12 +54,10 @@ static const char modname[] = "mod_say_en";
 
 
 static switch_status_t en_spell(switch_core_session_t *session,
-								   char *tosay,
-								   switch_say_type_t type,
-								   switch_say_method_t method,
-								   switch_input_callback_function_t input_callback,
-								   void *buf,
-								   uint32_t buflen)
+								char *tosay,
+								switch_say_type_t type,
+								switch_say_method_t method,
+								switch_input_args_t *args)
 {
 	char *p;
 
@@ -80,9 +78,7 @@ static switch_status_t play_group(int a,
 								  int c,
 								  char *what,
 								  switch_core_session_t *session,
-								  switch_input_callback_function_t input_callback,
-								  void *buf,
-								  uint32_t buflen)
+								  switch_input_args_t *args)
 {
 
 	if (a) {
@@ -137,9 +133,7 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,
 											char *tosay,
 											switch_say_type_t type,
 											switch_say_method_t method,
-											switch_input_callback_function_t input_callback,
-											void *buf,
-											uint32_t buflen)
+											switch_input_args_t *args)
 {
 	switch_channel_t *channel;
 	int in;
@@ -167,13 +161,13 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,
 
 	switch (method) {
 	case SSM_PRONOUNCED:
-		if ((status = play_group(places[8], places[7], places[6], "digits/million.wav", session, input_callback, buf, buflen)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = play_group(places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 			return status;
 		}
-		if ((status = play_group(places[5], places[4], places[3], "digits/thousand.wav", session, input_callback, buf, buflen)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = play_group(places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
 			return status;
 		}
-		if ((status = play_group(places[2], places[1], places[0], NULL, session, input_callback, buf, buflen)) != SWITCH_STATUS_SUCCESS) {
+		if ((status = play_group(places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
 			return status;
 		}
 		break;
@@ -195,9 +189,7 @@ static switch_status_t en_say_time(switch_core_session_t *session,
 								   char *tosay,
 								   switch_say_type_t type,
 								   switch_say_method_t method,
-								   switch_input_callback_function_t input_callback,
-								   void *buf,
-								   uint32_t buflen)
+								   switch_input_args_t *args)
 {
 	int32_t t;
 	switch_time_t target = 0;
@@ -326,9 +318,7 @@ static switch_status_t en_say(switch_core_session_t *session,
 							  char *tosay,
 							  switch_say_type_t type,
 							  switch_say_method_t method,
-							  switch_input_callback_function_t input_callback,
-							  void *buf,
-							  uint32_t buflen)
+							  switch_input_args_t *args)
 {
 	
 	switch_say_callback_t say_cb = NULL;
@@ -356,7 +346,7 @@ static switch_status_t en_say(switch_core_session_t *session,
 	}
 	
 	if (say_cb) {
-		say_cb(session, tosay, type, method, input_callback, buf, buflen);
+		say_cb(session, tosay, type, method, args);
 	} 
 
 	return SWITCH_STATUS_SUCCESS;

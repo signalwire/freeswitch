@@ -850,6 +850,7 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	switch_file_handle_t fh = {0};
 	JSFunction *function;
     int32 limit = 0;
+    switch_input_args_t args = {0};
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -904,7 +905,10 @@ static JSBool session_recordfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
     cb_state.saveDepth = JS_SuspendRequest(cx);
-	switch_ivr_record_file(jss->session, &fh, file_name, dtmf_func, bp, len, limit);
+    args.input_callback = dtmf_func;
+    args.buf = bp;
+    args.buflen = len;
+	switch_ivr_record_file(jss->session, &fh, file_name, &args, limit);
     JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 
@@ -922,6 +926,7 @@ static JSBool session_collect_input(JSContext *cx, JSObject *obj, uintN argc, js
 	switch_input_callback_function_t dtmf_func = NULL;
 	struct input_callback_state cb_state = {0};
 	JSFunction *function;
+    switch_input_args_t args = {0};
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -956,7 +961,10 @@ static JSBool session_collect_input(JSContext *cx, JSObject *obj, uintN argc, js
 	}
 
     cb_state.saveDepth = JS_SuspendRequest(cx);
-	switch_ivr_collect_digits_callback(jss->session, dtmf_func, bp, len, to);
+    args.input_callback = dtmf_func;
+    args.buf = bp;
+    args.buflen = len;
+	switch_ivr_collect_digits_callback(jss->session, &args, to);
     JS_ResumeRequest(cx, cb_state.saveDepth);
 
 	*rval = cb_state.ret;
@@ -969,7 +977,6 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_channel_t *channel;
 	char *file_name = NULL;
-	char *timer_name = NULL;
 	//char *input_callback = NULL;
 	void *bp = NULL;
 	int len = 0;
@@ -977,6 +984,7 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 	struct input_callback_state cb_state = {0};
 	switch_file_handle_t fh = {0};
 	JSFunction *function;
+    switch_input_args_t args = {0};
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -994,19 +1002,14 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 			return JS_FALSE;
 		}
 	}
+
 	if (argc > 1) {
-		timer_name = JS_GetStringBytes(JS_ValueToString(cx, argv[1]));
-		if (switch_strlen_zero(timer_name)) {
-			timer_name = NULL;
-		}
-	}
-	if (argc > 2) {
-		if ((function = JS_ValueToFunction(cx, argv[2]))) {
+		if ((function = JS_ValueToFunction(cx, argv[1]))) {
 			memset(&cb_state, 0, sizeof(cb_state));
 			cb_state.function = function;
 
-			if (argc > 3) {
-				cb_state.arg = argv[3];
+			if (argc > 2) {
+				cb_state.arg = argv[2];
 			}
 
 			cb_state.session_state = jss;
@@ -1018,16 +1021,19 @@ static JSBool session_streamfile(JSContext *cx, JSObject *obj, uintN argc, jsval
 		}
 	}
 
-    if (argc > 4) {
+    if (argc > 3) {
         int32 samps;
-        JS_ValueToInt32(cx, argv[4], &samps);
+        JS_ValueToInt32(cx, argv[3], &samps);
         fh.samples = samps;
     }
 
 	cb_state.extra = &fh;
 	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
     cb_state.saveDepth = JS_SuspendRequest(cx);
-	switch_ivr_play_file(jss->session, &fh, file_name, timer_name, dtmf_func, bp, len);
+    args.input_callback = dtmf_func;
+    args.buf = bp;
+    args.buflen = len;
+	switch_ivr_play_file(jss->session, &fh, file_name, &args);
     JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 	
@@ -1104,13 +1110,13 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	char *tts_name = NULL;
 	char *voice_name = NULL;
 	char *text = NULL;
-	char *timer_name = NULL;
 	switch_codec_t *codec;
 	void *bp = NULL;
 	int len = 0;
 	struct input_callback_state cb_state = {0};
 	switch_input_callback_function_t dtmf_func = NULL;
 	JSFunction *function;
+    switch_input_args_t args = {0};
 
 	channel = switch_core_session_get_channel(jss->session);
 	assert(channel != NULL);
@@ -1148,10 +1154,6 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 		}
 	}
 
-	if (argc > 5) {
-		timer_name = JS_GetStringBytes(JS_ValueToString(cx, argv[5]));
-	}
-
 	if (!tts_name && text) {
 		return JS_FALSE;
 	}
@@ -1159,15 +1161,15 @@ static JSBool session_speak(JSContext *cx, JSObject *obj, uintN argc, jsval *arg
 	codec = switch_core_session_get_read_codec(jss->session);
 	cb_state.ret = BOOLEAN_TO_JSVAL( JS_FALSE );
     cb_state.saveDepth = JS_SuspendRequest(cx);
+    args.input_callback = dtmf_func;
+    args.buf = bp;
+    args.buflen = len;
 	switch_ivr_speak_text(jss->session,
 						  tts_name,
 						  voice_name && strlen(voice_name) ? voice_name : NULL, 
-						  timer_name,
 						  codec->implementation->samples_per_second,
-						  dtmf_func,
 						  text,
-						  bp,
-						  len);
+                          &args);
     JS_ResumeRequest(cx, cb_state.saveDepth);
 	*rval = cb_state.ret;
 

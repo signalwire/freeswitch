@@ -72,6 +72,7 @@ static void speak_function(switch_core_session_t *session, char *data)
 	char *timer_name = NULL;
 	char *mydata = NULL;
 	switch_codec_t *codec;
+    switch_input_args_t args = {0};
 
 	codec = switch_core_session_get_read_codec(session);
 	assert(codec != NULL);
@@ -85,7 +86,6 @@ static void speak_function(switch_core_session_t *session, char *data)
 	engine = argv[0];
 	voice = argv[1];
 	text = argv[2];
-	timer_name = argv[3];
 	
 	if (!(engine && voice && text)) {
 		if (!engine) {
@@ -102,28 +102,29 @@ static void speak_function(switch_core_session_t *session, char *data)
 	}
 
 	switch_channel_pre_answer(channel);
-	switch_ivr_speak_text(session, engine, voice, timer_name, codec->implementation->samples_per_second, on_dtmf, text, buf, sizeof(buf));
+
+    args.input_callback = on_dtmf;
+    args.buf = buf;
+    args.buflen = sizeof(buf);
+	switch_ivr_speak_text(session, engine, voice, codec->implementation->samples_per_second, text, &args);
 	
 }
 
 static void playback_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
-	char *timer_name = NULL;
 	char *file_name = NULL;
+    switch_input_args_t args = {0};
 
 	file_name = switch_core_session_strdup(session, data);
-
-	if ((timer_name = strchr(file_name, ' ')) != 0) {
-		*timer_name++ = '\0';
-	}
 
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
 
 	switch_channel_pre_answer(channel);
 
-	switch_ivr_play_file(session, NULL, file_name, timer_name, on_dtmf, NULL, 0);
+    args.input_callback = on_dtmf;
+	switch_ivr_play_file(session, NULL, file_name, &args);
 
 }
 
@@ -135,6 +136,7 @@ static void record_function(switch_core_session_t *session, char *data)
     uint32_t limit = 0;
     char *path;
     char *p;
+    switch_input_args_t args = {0};
 
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -145,7 +147,8 @@ static void record_function(switch_core_session_t *session, char *data)
         limit = atoi(p);
     }
 
-	status = switch_ivr_record_file(session, NULL, path, on_dtmf, NULL, 0, limit);
+    args.input_callback = on_dtmf;
+	status = switch_ivr_record_file(session, NULL, path, &args, limit);
 
 	if (!switch_channel_ready(channel) || (status != SWITCH_STATUS_SUCCESS && !SWITCH_STATUS_IS_BREAK(status))) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);

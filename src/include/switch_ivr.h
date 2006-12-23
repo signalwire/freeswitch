@@ -43,8 +43,6 @@
 
 SWITCH_BEGIN_EXTERN_C
 
-
-
 /**
  * @defgroup switch_ivr IVR Library
  * @ingroup core1
@@ -74,9 +72,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session);
   \return SWITCH_STATUS_SUCCESS to keep the collection moving.
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session,
-																   switch_input_callback_function_t dtmf_callback,
-																   void *buf,
-																   uint32_t buflen,
+                                                                   switch_input_args_t *args,
 																   uint32_t timeout);
 
 /*!
@@ -175,7 +171,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_sessi
   \param session the session to play the file too
   \param fh file handle to use (NULL for builtin one)
   \param file the path to the file
-  \param timer_name the name of a timer to use input will be absorbed (NULL to time off the session input).
   \param dtmf_callback code to execute if any dtmf is dialed during the playback
   \param buf an object to maintain across calls
   \param buflen the size of buf
@@ -183,13 +178,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_sessi
   \note passing a NULL dtmf_callback nad a not NULL buf indicates to copy any dtmf to buf and stop playback.
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session,
-												   switch_file_handle_t *fh,
-												   char *file,
-												   char *timer_name,
-												   switch_input_callback_function_t dtmf_callback,
-												   void *buf,
-												   uint32_t buflen);
-
+                                                     switch_file_handle_t *fh,
+                                                     char *file,
+                                                     switch_input_args_t *args);
 
 
 /*!
@@ -207,9 +198,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *session,
                                                        switch_file_handle_t *fh,
                                                        char *file,
-                                                       switch_input_callback_function_t dtmf_callback,
-                                                       void *buf,
-                                                       uint32_t buflen,
+                                                       switch_input_args_t *args,
                                                        uint32_t limit);
 
 /*!
@@ -252,17 +241,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
                                                              switch_speech_handle_t *sh,
                                                              switch_codec_t *codec,
                                                              switch_timer_t *timer,
-                                                             switch_input_callback_function_t dtmf_callback,
                                                              char *text,
-                                                             void *buf,
-                                                             uint32_t buflen);
+                                                             switch_input_args_t *args);
 
 /*!
   \brief Speak given text with given tts engine
   \param session the session to speak on
   \param tts_name the desired tts module
   \param voice_name the desired voice
-  \param timer_name optional timer to use for async behaviour
   \param rate the sample rate
   \param dtmf_callback code to execute if any dtmf is dialed during the audio
   \param text the text to speak
@@ -273,12 +259,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session, 
 													  char *tts_name,
 													  char *voice_name,
-													  char *timer_name,
 													  uint32_t rate,
-													  switch_input_callback_function_t dtmf_callback,
 													  char *text,
-													  void *buf,
-													  uint32_t buflen);
+                                                      switch_input_args_t *args);
 
 /*!
   \brief Make an outgoing call
@@ -532,7 +515,6 @@ typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
  *\param tts_voice Text To Speech engine voice name
  *\param timeout A number of milliseconds to pause before looping.
  *\param max_failures Maximum number of failures to withstand before hangingup This resets everytime you enter the menu.
- *\param timer_name A pointer to a timer name
  *\param pool memory pool (NULL to create one)
  *\return SWITCH_STATUS_SUCCESS if the menu was created
  */
@@ -547,7 +529,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_men
 													 char *tts_voice,
 													 int timeout,
 													 int max_failures, 
-													 char *timer_name,
 													 switch_memory_pool_t *pool);
 
 /*!
@@ -600,14 +581,12 @@ typedef struct switch_ivr_menu_xml_ctx switch_ivr_menu_xml_ctx_t;
  *\param menu_stack The menu stack object that will be created for you
  *\param xml_menus The xml Menus source
  *\param xml_menu The xml Menu source of the menu to be created
- *\param timer_name The name of a timer that should be used - in almost all cases this should be NULL
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_xml_ctx_t *xml_menu_ctx,
-										switch_ivr_menu_t **menu_stack,
-										switch_xml_t xml_menus,
-										switch_xml_t xml_menu,
-										char *timer_name);
+                                                                switch_ivr_menu_t **menu_stack,
+                                                                switch_xml_t xml_menus,
+                                                                switch_xml_t xml_menu);
 
 /*!
  *\param xml_menu_ctx The XML menu parser context previously created by switch_ivr_menu_stack_xml_init
@@ -630,9 +609,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                                                         char *macro_name,
                                                         char *data,
                                                         char *lang,
-                                                        switch_input_callback_function_t input_callback,
-                                                        void *buf,
-                                                        uint32_t buflen);
+                                                        switch_input_args_t *args);
 /** @} */
 
 SWITCH_END_EXTERN_C

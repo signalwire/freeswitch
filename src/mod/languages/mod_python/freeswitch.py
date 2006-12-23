@@ -1,10 +1,10 @@
-# This file was created automatically by SWIG 1.3.27.
+# This file was created automatically by SWIG.
 # Don't modify this file, modify the SWIG interface instead.
+# This file is compatible with both classic and new-style classes.
 
 import _freeswitch
 
-# This file is compatible with both classic and new-style classes.
-def _swig_setattr_nondynamic(self,class_type,name,value,static=1):
+def _swig_setattr(self,class_type,name,value):
     if (name == "this"):
         if isinstance(value, class_type):
             self.__dict__[name] = value.this
@@ -13,13 +13,7 @@ def _swig_setattr_nondynamic(self,class_type,name,value,static=1):
             return
     method = class_type.__swig_setmethods__.get(name,None)
     if method: return method(self,value)
-    if (not static) or hasattr(self,name) or (name == "thisown"):
-        self.__dict__[name] = value
-    else:
-        raise AttributeError("You cannot add attributes to %s" % self)
-
-def _swig_setattr(self,class_type,name,value):
-    return _swig_setattr_nondynamic(self,class_type,name,value,0)
+    self.__dict__[name] = value
 
 def _swig_getattr(self,class_type,name):
     method = class_type.__swig_getmethods__.get(name,None)
@@ -44,7 +38,7 @@ class SessionContainer(_object):
     __swig_getmethods__ = {}
     __getattr__ = lambda self, name: _swig_getattr(self, SessionContainer, name)
     def __repr__(self):
-        return "<%s.%s; proxy of C++ SessionContainer instance at %s>" % (self.__class__.__module__, self.__class__.__name__, self.this,)
+        return "<C SessionContainer instance at %s>" % (self.this,)
     def __init__(self, *args):
         _swig_setattr(self, SessionContainer, 'this', _freeswitch.new_SessionContainer(*args))
         _swig_setattr(self, SessionContainer, 'thisown', 1)
@@ -52,7 +46,6 @@ class SessionContainer(_object):
         try:
             if self.thisown: destroy(self)
         except: pass
-
     def console_log(*args): return _freeswitch.SessionContainer_console_log(*args)
     def console_clean_log(*args): return _freeswitch.SessionContainer_console_clean_log(*args)
     def answer(*args): return _freeswitch.SessionContainer_answer(*args)
@@ -73,9 +66,8 @@ class SessionContainerPtr(SessionContainer):
     def __init__(self, this):
         _swig_setattr(self, SessionContainer, 'this', this)
         if not hasattr(self,"thisown"): _swig_setattr(self, SessionContainer, 'thisown', 0)
-        self.__class__ = SessionContainer
+        _swig_setattr(self, SessionContainer,self.__class__,SessionContainer)
 _freeswitch.SessionContainer_swigregister(SessionContainerPtr)
 cvar = _freeswitch.cvar
-
 
 

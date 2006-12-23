@@ -917,13 +917,16 @@ typedef switch_status_t (*switch_input_callback_function_t)(switch_core_session_
 															void *buf,
 															unsigned int buflen);
 typedef struct switch_say_interface switch_say_interface_t;
+typedef struct {
+    switch_input_callback_function_t input_callback;
+    void *buf;
+    uint32_t buflen;
+} switch_input_args_t;
 typedef switch_status_t (*switch_say_callback_t)(switch_core_session_t *session,
                                                  char *tosay,
                                                  switch_say_type_t type,
                                                  switch_say_method_t method,
-                                                 switch_input_callback_function_t input_callback,
-                                                 void *buf,
-                                                 uint32_t buflen);
+                                                 switch_input_args_t *args);
 typedef int (*switch_core_db_callback_func_t)(void *pArg, int argc, char **argv, char **columnNames);
 typedef switch_status_t (*switch_module_load_t) (switch_loadable_module_interface_t **, char *);
 typedef switch_status_t (*switch_module_reload_t) (void);
@@ -939,7 +942,6 @@ typedef switch_xml_t (*switch_xml_search_function_t)(char *section,
 													 char *key_name,
 													 char *key_value,
 													 char *params);
-
 
 /* things we don't deserve to know about */
 /*! \brief A channel */

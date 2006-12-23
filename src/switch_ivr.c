@@ -178,9 +178,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session)
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_session_t *session,
-																   switch_input_callback_function_t input_callback,
-																   void *buf,
-																   uint32_t buflen,
+                                                                   switch_input_args_t *args,
 																   uint32_t timeout)
 {
 	switch_channel_t *channel;
@@ -191,7 +189,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	if (!input_callback) {
+	if (!args->input_callback) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -218,11 +216,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 
 		if (switch_channel_has_dtmf(channel)) {
 			switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-			status = input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, buf, buflen);
+			status = args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 		}
 
 		if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-			status = input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, buf, buflen);			
+			status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);			
 			switch_event_destroy(&event);
 		}
 
@@ -331,9 +329,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *session, 
                                                        switch_file_handle_t *fh,
                                                        char *file,
-                                                       switch_input_callback_function_t input_callback,
-                                                       void *buf,
-                                                       uint32_t buflen,
+                                                       switch_input_args_t *args,
                                                        uint32_t limit)
 {
 	switch_channel_t *channel;
@@ -454,28 +450,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
             break;
         }
 
-		if (input_callback || buf || buflen) {
+		if (args->input_callback || args->buf || args->buflen) {
 			/*
 			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			*/
 			if (switch_channel_has_dtmf(channel)) {
-				if (!input_callback && !buf) {
+				if (!args->input_callback && !args->buf) {
 					status = SWITCH_STATUS_BREAK;
 					break;
 				}
 				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-				if (input_callback) {
-					status = input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, buf, buflen);
+				if (args->input_callback) {
+					status = args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
-					switch_copy_string((char *)buf, dtmf, buflen);
+					switch_copy_string((char *)args->buf, dtmf, args->buflen);
 					status = SWITCH_STATUS_BREAK;
 				}
 			}
 
-			if (input_callback) {
+			if (args->input_callback) {
 				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-					status = input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, buf, buflen);			
+					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);			
 					switch_event_destroy(&event);
 				}
 			}
@@ -955,12 +951,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_detect_speech(switch_core_session_t *
 #define FILE_BUFSIZE 1024 * 64
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *session, 
-												   switch_file_handle_t *fh,
-												   char *file,
-												   char *timer_name,
-												   switch_input_callback_function_t input_callback,
-												   void *buf,
-												   uint32_t buflen)
+                                                     switch_file_handle_t *fh,
+                                                     char *file,
+                                                     switch_input_args_t *args)
 {
 	switch_channel_t *channel;
 	int16_t abuf[FILE_STARTSAMPLES];
@@ -983,11 +976,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	uint8_t asis = 0;
 	char *ext;
     char *prefix;
+    char *timer_name;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
     prefix = switch_channel_get_variable(channel, "sound_prefix");
+    timer_name = switch_channel_get_variable(channel, "timer_name");
 	
 	if (file) {
         if (prefix && *file != '/' && *file != '\\' && *(file+1) != ':') {
@@ -1166,29 +1161,29 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_event_destroy(&event);
 		}
 
-		if (input_callback || buf || buflen) {
+		if (args->input_callback || args->buf || args->buflen) {
 			/*
 			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			*/
 			if (switch_channel_has_dtmf(channel)) {
-				if (!input_callback && !buf) {
+				if (!args->input_callback && !args->buf) {
 					status = SWITCH_STATUS_BREAK;
 					done = 1;
 					break;
 				}
 				switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-				if (input_callback) {
-					status = input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, buf, buflen);
+				if (args->input_callback) {
+					status = args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 				} else {
-					switch_copy_string((char *)buf, dtmf, buflen);
+					switch_copy_string((char *)args->buf, dtmf, args->buflen);
 					status = SWITCH_STATUS_BREAK;
 				}
 			}
 
-			if (input_callback) {
+			if (args->input_callback) {
 				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-					status = input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, buf, buflen);			
+					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);			
 					switch_event_destroy(&event);
 				}
 			}
@@ -1406,11 +1401,14 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 
 	//Start pestering the user for input
 	for(;(switch_channel_get_state(channel) == CS_EXECUTE) && max_tries > 0; max_tries--) {
+        switch_input_args_t args = {0};
 		//make the buffer so fresh and so clean clean
 		memset(digit_buffer, 0, digit_buffer_length);
-
+        
+        args.buf = digit_buffer;
+        args.buflen = digit_buffer_length;
 		//Play the file
-		status = switch_ivr_play_file(session, NULL, prompt_audio_file, NULL, NULL, digit_buffer, digit_buffer_length);
+		status = switch_ivr_play_file(session, NULL, prompt_audio_file, &args);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "play gave up %s", digit_buffer);
 
 		//Make sure we made it out alive
@@ -1433,7 +1431,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 				} else {
 					//See if a bad input prompt was specified, if so, play it
 					if (strlen(bad_input_audio_file) > 0) {
-						status = switch_ivr_play_file(session, NULL, bad_input_audio_file, NULL, NULL, NULL, 0);
+						status = switch_ivr_play_file(session, NULL, bad_input_audio_file, NULL);
 
 						//Make sure we made it out alive
 						if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
@@ -1473,7 +1471,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 				} else {
 					//See if a bad input prompt was specified, if so, play it
 					if (strlen(bad_input_audio_file) > 0) {
-						status = switch_ivr_play_file(session, NULL, bad_input_audio_file, NULL, NULL, NULL, 0);
+						status = switch_ivr_play_file(session, NULL, bad_input_audio_file, NULL);
 
 						//Make sure we made it out alive
 						if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
@@ -1499,10 +1497,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 															 switch_speech_handle_t *sh,
 															 switch_codec_t *codec,
 															 switch_timer_t *timer,
-															 switch_input_callback_function_t input_callback,
 															 char *text,
-															 void *buf,
-															 uint32_t buflen)
+                                                             switch_input_args_t *args)
 {
 	switch_channel_t *channel;
 	short abuf[960];
@@ -1562,33 +1558,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 			switch_event_destroy(&event);
 		}
 
-		if (input_callback || buf || buflen) {
+		if (args->input_callback || args->buf || args->buflen) {
 			/*
 			dtmf handler function you can hook up to be executed when a digit is dialed during playback 
 			if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
 			*/
 			if (switch_channel_has_dtmf(channel)) {
-				if (!input_callback && !buf) {
+				if (!args->input_callback && !args->buf) {
 					status = SWITCH_STATUS_BREAK;
 					done = 1;
 					break;
 				}
-				if (buf && !strcasecmp(buf, "_break_")) {
+				if (args->buf && !strcasecmp(args->buf, "_break_")) {
 					status = SWITCH_STATUS_BREAK;
 				} else {
 					switch_channel_dequeue_dtmf(channel, dtmf, sizeof(dtmf));
-					if (input_callback) {
-						status = input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, buf, buflen);
+					if (args->input_callback) {
+						status = args->input_callback(session, dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
 					} else {
-						switch_copy_string((char *)buf, dtmf, buflen);
+						switch_copy_string((char *)args->buf, dtmf, args->buflen);
 						status = SWITCH_STATUS_BREAK;
 					}
 				}
 			}
 
-			if (input_callback) {
+			if (args->input_callback) {
 				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
-					status = input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, buf, buflen);			
+					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);			
 					switch_event_destroy(&event);
 				}
 			}
@@ -1687,12 +1683,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *session, 
 													  char *tts_name,
 													  char *voice_name,
-													  char *timer_name,
 													  uint32_t rate,
-													  switch_input_callback_function_t input_callback,
 													  char *text,
-													  void *buf,
-													  uint32_t buflen)
+                                                      switch_input_args_t *args)
 {
 	switch_channel_t *channel;
 	int interval = 0;
@@ -1709,9 +1702,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	switch_speech_handle_t sh;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
 	switch_codec_t *read_codec;
+    char *timer_name;
 
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
+
+    timer_name = switch_channel_get_variable(channel, "timer_name");
 
 	if (rate == 0) {
 		read_codec = switch_core_session_get_read_codec(session);
@@ -1776,7 +1772,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 		}
 	}
 
-	switch_ivr_speak_text_handle(session, &sh, &codec, timer_name ? &timer : NULL, input_callback, text, buf, buflen);
+	switch_ivr_speak_text_handle(session, &sh, &codec, timer_name ? &timer : NULL, text, args);
 	flags = 0;	
 	switch_core_speech_close(&sh, &flags);
 	switch_core_codec_destroy(&codec);
@@ -2181,8 +2177,10 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		memset(buf, 0, sizeof(buf));
 
 		if (collect->file) {
-
-			switch_ivr_play_file(collect->session, NULL, collect->file, NULL, NULL, buf, sizeof(buf));
+            switch_input_args_t args = {0};
+            args.buf = buf;
+            args.buflen = sizeof(buf);
+			switch_ivr_play_file(collect->session, NULL, collect->file, &args);
 		} else {
 			switch_ivr_collect_digits_count(collect->session, buf, sizeof(buf), 1, "", &term, 0);
 		}
@@ -3753,7 +3751,6 @@ struct switch_ivr_menu {
 	char *tts_voice;
 	char *buf;
 	char *ptr;
-	char *timer_name;
 	int max_failures;
 	int timeout;
 	uint32_t inlen;
@@ -3805,7 +3802,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_men
 													 char *tts_voice,
 													 int timeout,
 													 int max_failures, 
-													 char *timer_name,
 													 switch_memory_pool_t *pool)
 {
 	switch_ivr_menu_t *menu;
@@ -3855,10 +3851,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_men
 
 	if (!switch_strlen_zero(tts_voice)) {
 		menu->tts_voice = switch_core_strdup(menu->pool, tts_voice);
-	}
-
-	if (!switch_strlen_zero(timer_name)) {
-		menu->timer_name = switch_core_strdup(menu->pool, timer_name);
 	}
 
 	menu->max_failures = max_failures;
@@ -3944,7 +3936,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t *st
 	return status;
 }
 
-static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_menu_t *menu, char *sound, uint32_t need, char *timer_name)
+static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_menu_t *menu, char *sound, uint32_t need)
 {
 	char terminator;
 	uint32_t len;
@@ -3964,10 +3956,16 @@ static switch_status_t play_or_say(switch_core_session_t *session, switch_ivr_me
 		}
 
 		if (*sound == '/' || *sound == '\\') {
-			status = switch_ivr_play_file(session, NULL, sound, timer_name, NULL, ptr, need ? 1 : 0);
+            switch_input_args_t args = {0};
+            args.buf = ptr;
+            args.buflen = need ? 1 : 0;
+			status = switch_ivr_play_file(session, NULL, sound, &args);
 		} else {
 			if (menu->tts_engine && menu->tts_voice) {
-				status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, NULL, 0, NULL, sound, ptr, len);
+                switch_input_args_t args = {0};
+                args.buf = ptr;
+                args.buflen = len;
+				status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, 0, sound, &args);
 			}
 		}
 
@@ -4032,13 +4030,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		memset(arg, 0, sizeof(arg));
 
 		memset(menu->buf, 0, menu->inlen);
-		status = play_or_say(session, menu, greeting_sound, menu->inlen, stack->timer_name);
+		status = play_or_say(session, menu, greeting_sound, menu->inlen);
 
 		if (!switch_strlen_zero(menu->buf)) {
 			for(ap = menu->actions; ap ; ap = ap->next) {
 				if (!strcmp(menu->buf, ap->bind)) {
 					char *membuf;
-
+                    
 					match++;
 					errs = 0;
 					if (ap->function) {
@@ -4051,15 +4049,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR action on menu '%s' matched '%s' param '%s'\n", menu->name, menu->buf,aptr);
 					}
 
+
 					switch(todo) {
 					case SWITCH_IVR_ACTION_DIE:
 						status = SWITCH_STATUS_FALSE;
 						break;
 					case SWITCH_IVR_ACTION_PLAYSOUND:
-						status = switch_ivr_play_file(session, NULL, aptr, stack->timer_name, NULL, NULL, 0);
+						status = switch_ivr_play_file(session, NULL, aptr, NULL);
 						break;
 					case SWITCH_IVR_ACTION_SAYTEXT:
-						status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, NULL, 0, NULL, aptr, NULL, 0);
+						status = switch_ivr_speak_text(session, menu->tts_engine, menu->tts_voice, 0, aptr, NULL);
 						break;
 					case SWITCH_IVR_ACTION_TRANSFER:
 						switch_ivr_session_transfer(session, aptr, NULL, NULL);
@@ -4123,7 +4122,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IVR menu '%s' caught invalid input '%s'\n", menu->name, menu->buf);
 
 			if (menu->invalid_sound) {
-				play_or_say(session, menu, menu->invalid_sound, 0, stack->timer_name);
+				play_or_say(session, menu, menu->invalid_sound, 0);
 			}
 			errs++;
 
@@ -4135,7 +4134,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "exit-sound '%s'\n",menu->exit_sound);
 	if (!switch_strlen_zero(menu->exit_sound)) {
-		status = switch_ivr_play_file(session, NULL, menu->exit_sound, stack->timer_name, NULL, NULL, 0);
+		status = switch_ivr_play_file(session, NULL, menu->exit_sound, NULL);
 	}
 
 	switch_safe_free(menu->buf);
@@ -4258,10 +4257,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_xml_ctx_t *xml_menu_ctx,
-										switch_ivr_menu_t **menu_stack,
-										switch_xml_t xml_menus,
-										switch_xml_t xml_menu,
-										char *timer_name)
+                                                                switch_ivr_menu_t **menu_stack,
+                                                                switch_xml_t xml_menus,
+                                                                switch_xml_t xml_menu)
+
 {
 	switch_status_t status	= SWITCH_STATUS_FALSE;
 
@@ -4278,7 +4277,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		switch_ivr_menu_t *menu	= NULL;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "building menu '%s'\n",menu_name);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "timer_name '%s'\n",timer_name);
 		status = switch_ivr_menu_init(&menu,
 									*menu_stack,
 									menu_name,
@@ -4290,7 +4288,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 									tts_voice,
 									atoi(timeout)*1000,
 									atoi(max_failures),
-									timer_name,
 									xml_menu_ctx->pool
 									);
 		// set the menu_stack for the caller
@@ -4322,7 +4319,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 						// do we need to build a new sub-menu ?
 						if (xml_map->action == SWITCH_IVR_ACTION_EXECMENU && switch_ivr_menu_find(*menu_stack, param) == NULL) {
 							if ((xml_menu = switch_xml_find_child(xml_menus, "menu", "name", param)) != NULL) {
-								status = switch_ivr_menu_stack_xml_build(xml_menu_ctx, menu_stack, xml_menus, xml_menu, timer_name);
+								status = switch_ivr_menu_stack_xml_build(xml_menu_ctx, menu_stack, xml_menus, xml_menu);
 							}
 						}
 
@@ -4412,9 +4409,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                                                         char *macro_name,
                                                         char *data,
                                                         char *lang,
-                                                        switch_input_callback_function_t input_callback,
-                                                        void *buf,
-                                                        uint32_t buflen)
+                                                        switch_input_args_t *args)
+
 {
 	switch_xml_t cfg, xml = NULL, language, macros, macro, input, action;
     char *lname = NULL, *mname = NULL, hint_data[1024] = "", enc_hint[1024] = "";
@@ -4528,7 +4524,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handle %s:[%s] (%s)\n", func, odata, lang);
 
                     if (!strcasecmp(func, "play-file")) {
-                        switch_ivr_play_file(session, NULL, odata, NULL, input_callback, buf, buflen);
+                        switch_ivr_play_file(session, NULL, odata, args);
                     } else if (!strcasecmp(func, "execute")) {
                         const switch_application_interface_t *application_interface;
                         char *app_name = NULL;
@@ -4557,22 +4553,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                             char *say_type = (char *) switch_xml_attr_soft(action, "type");
                             char *say_method = (char *) switch_xml_attr_soft(action, "method");
                             
-                            si->say_function(session, odata, get_say_type_by_name(say_type), get_say_method_by_name(say_method), input_callback, buf, buflen);
+                            si->say_function(session, odata, get_say_type_by_name(say_type), get_say_method_by_name(say_method), args);
                         } else {
                             switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invaid SAY Interface [%s]!\n", lang);
                         }
                     } else if (!strcasecmp(func, "speak-text")) {
                         switch_codec_t *read_codec;
                         if ((read_codec = switch_core_session_get_read_codec(session))) {
+                            
                             switch_ivr_speak_text(session,
                                                   tts_engine,
                                                   tts_voice,
-                                                  NULL,
                                                   read_codec->implementation->samples_per_second,
-                                                  input_callback,
                                                   odata,
-                                                  buf,
-                                                  buflen);
+                                                  args);
                         }
                     }
                 }

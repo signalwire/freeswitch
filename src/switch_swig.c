@@ -158,18 +158,14 @@ void fs_channel_set_state(switch_core_session_t *session, char *state)
 */
 
 int fs_ivr_play_file(switch_core_session_t *session,
-					 char *file,
-					 char *timer_name,
-					 switch_input_callback_function_t dtmf_callback,
-					 void *buf,
-					 unsigned int buflen)
+					 char *file)
 {
 	switch_status_t status;
 	if (switch_strlen_zero(timer_name)) {
 		timer_name = NULL;
 	}
 	
-	status = switch_ivr_play_file(session, NULL, file, timer_name, NULL, NULL, 0);
+	status = switch_ivr_play_file(session, NULL, file, NULL);
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
@@ -202,7 +198,7 @@ int fs_ivr_play_file2(switch_core_session_t *session,
 {
 	switch_status_t status;
 	
-	status = switch_ivr_play_file(session, NULL, file, NULL, NULL, NULL, 0);
+	status = switch_ivr_play_file(session, NULL, file, NULL, NULL);
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
@@ -294,16 +290,12 @@ int fs_switch_ivr_session_transfer(switch_core_session_t *session,
 int fs_switch_ivr_speak_text      (switch_core_session_t *session,
                                    char *tts_name,
                                    char *voice_name,
-                                   char *timer_name,
                                    uint32_t  	rate,
-                                   switch_input_callback_function_t dtmf_callback,
-                                   char *text,
-                                   void *buf,
-                                   unsigned int buflen)  
+                                   char *text)
 {
     switch_status_t status;
 
-    status = switch_ivr_speak_text(session,tts_name,voice_name,timer_name,rate,dtmf_callback,text,buf,buflen);
+    status = switch_ivr_speak_text(session,tts_name,voice_name,rate,text,NULL);
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 

@@ -138,7 +138,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 		}
 			
 
-		switch_ivr_play_file(session, NULL,"/ram/goodbye.wav",NULL,NULL,NULL,0);
+		switch_ivr_play_file(session, NULL,"/ram/goodbye.wav",NULL);
 	}
 }
 
@@ -201,6 +201,7 @@ static void tts_function(switch_core_session_t *session, char *data)
 	char buf[10] = "";
 	char *argv[3];
 	int argc;
+    switch_input_args_t args = {0};
 
 	if(!(mydata = switch_core_session_strdup(session, (char *) data))) {
 		return;
@@ -223,8 +224,10 @@ static void tts_function(switch_core_session_t *session, char *data)
     switch_channel_answer(channel);
 
 	codec = switch_core_session_get_read_codec(session);
-
-	switch_ivr_speak_text(session, tts_name, voice_name, NULL, codec->implementation->samples_per_second, show_dtmf, text, buf, sizeof(buf));
+    args.input_callback = show_dtmf;
+    args.buf = buf;
+    args.buflen = sizeof(buf);
+	switch_ivr_speak_text(session, tts_name, voice_name, codec->implementation->samples_per_second, text, &args);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Done\n");
 }
 
@@ -366,10 +369,14 @@ static void ivrtest_function(switch_core_session_t *session, char *data)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enter up to 10 digits, press # to terminate, * to hangup\n");
 
 		if (data) {
+            switch_input_args_t args = {0};
 			/* you could have passed NULL instead of on_dtmf to get this exact behaviour (copy the digits to buf and stop playing)
 			   but you may want to pass the function if you have something cooler to do...
 			*/
-			status = switch_ivr_play_file(session, NULL, data, NULL, on_dtmf, buf, sizeof(buf));
+            args.input_callback = on_dtmf;
+            args.buf = buf;
+            args.buflen = sizeof(buf);
+			status = switch_ivr_play_file(session, NULL, data, &args);
 			
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
@@ -387,7 +394,7 @@ static void ivrtest_function(switch_core_session_t *session, char *data)
 		}
 		snprintf(say, sizeof(say), "You Dialed [%s]\n", buf);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, say);
-		switch_ivr_speak_text(session, "cepstral", "david", NULL, codec->implementation->samples_per_second, NULL, say, NULL, 0);
+		switch_ivr_speak_text(session, "cepstral", "david", codec->implementation->samples_per_second, say, NULL);
 	}
 	
 }

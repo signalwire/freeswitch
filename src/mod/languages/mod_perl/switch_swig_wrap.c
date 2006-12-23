@@ -791,8 +791,6 @@ SWIGEXPORT(void) SWIG_init (pTHXo_ CV* cv);
 SWIGEXPORT(void) SWIG_init (CV *cv, CPerlObj *);
 #endif
 
-#include <switch.h>
-
 extern void fs_core_set_globals(void);
 extern int fs_core_init(char *);
 extern int fs_core_destroy(void);
@@ -808,7 +806,7 @@ extern void fs_channel_hangup(switch_core_session_t *,char *);
 extern void fs_channel_set_variable(switch_core_session_t *,char *,char *);
 extern void fs_channel_get_variable(switch_core_session_t *,char *);
 extern void fs_channel_set_state(switch_core_session_t *,char *);
-extern int fs_ivr_play_file(switch_core_session_t *,char *,char *,switch_input_callback_function_t,void *,unsigned int);
+extern int fs_ivr_play_file(switch_core_session_t *,char *);
 extern int fs_switch_ivr_record_file(switch_core_session_t *,switch_file_handle_t *,char *,switch_input_callback_function_t,void *,unsigned int,unsigned int);
 extern int fs_switch_ivr_sleep(switch_core_session_t *,uint32_t);
 extern int fs_ivr_play_file2(switch_core_session_t *,char *);
@@ -816,10 +814,11 @@ extern int fs_switch_ivr_collect_digits_callback(switch_core_session_t *,switch_
 extern int fs_switch_ivr_collect_digits_count(switch_core_session_t *,char *,unsigned int,unsigned int,char const *,char *,unsigned int);
 extern int fs_switch_ivr_originate(switch_core_session_t *,switch_core_session_t **,char *,uint32_t);
 extern int fs_switch_ivr_session_transfer(switch_core_session_t *,char *,char *,char *);
-extern int fs_switch_ivr_speak_text(switch_core_session_t *,char *,char *,char *,uint32_t,switch_input_callback_function_t,char *,void *,unsigned int);
+extern int fs_switch_ivr_speak_text(switch_core_session_t *,char *,char *,uint32_t,char *);
 extern char *fs_switch_channel_get_variable(switch_channel_t *,char *);
 extern int fs_switch_channel_set_variable(switch_channel_t *,char *,char *);
 
+#include "switch.h"
 
 #ifdef PERL_OBJECT
 #define MAGIC_CLASS _wrap_fs_perl_var::
@@ -1210,16 +1209,12 @@ XS(_wrap_fs_ivr_play_file) {
     {
         switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
         char *arg2 ;
-        char *arg3 ;
-        switch_input_callback_function_t arg4 ;
-        void *arg5 = (void *) 0 ;
-        unsigned int arg6 ;
         int result;
         int argvi = 0;
         dXSARGS;
         
-        if ((items < 6) || (items > 6)) {
-            SWIG_croak("Usage: fs_ivr_play_file(session,file,timer_name,dtmf_callback,buf,buflen);");
+        if ((items < 2) || (items > 2)) {
+            SWIG_croak("Usage: fs_ivr_play_file(session,file);");
         }
         {
             if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t,0) < 0) {
@@ -1228,22 +1223,7 @@ XS(_wrap_fs_ivr_play_file) {
         }
         if (!SvOK((SV*) ST(1))) arg2 = 0;
         else arg2 = (char *) SvPV(ST(1), PL_na);
-        if (!SvOK((SV*) ST(2))) arg3 = 0;
-        else arg3 = (char *) SvPV(ST(2), PL_na);
-        {
-            switch_input_callback_function_t * argp;
-            if (SWIG_ConvertPtr(ST(3),(void **) &argp, SWIGTYPE_p_switch_input_callback_function_t,0) < 0) {
-                SWIG_croak("Type error in argument 4 of fs_ivr_play_file. Expected _p_switch_input_callback_function_t");
-            }
-            arg4 = *argp;
-        }
-        {
-            if (SWIG_ConvertPtr(ST(4), (void **) &arg5, 0,0) < 0) {
-                SWIG_croak("Type error in argument 5 of fs_ivr_play_file. Expected _p_void");
-            }
-        }
-        arg6 = (unsigned int) SvUV(ST(5));
-        result = (int)fs_ivr_play_file(arg1,arg2,arg3,arg4,arg5,arg6);
+        result = (int)fs_ivr_play_file(arg1,arg2);
         
         ST(argvi) = sv_newmortal();
         sv_setiv(ST(argvi++), (IV) result);
@@ -1546,18 +1526,14 @@ XS(_wrap_fs_switch_ivr_speak_text) {
         switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
         char *arg2 ;
         char *arg3 ;
-        char *arg4 ;
-        uint32_t arg5 ;
-        switch_input_callback_function_t arg6 ;
-        char *arg7 ;
-        void *arg8 = (void *) 0 ;
-        unsigned int arg9 ;
+        uint32_t arg4 ;
+        char *arg5 ;
         int result;
         int argvi = 0;
         dXSARGS;
         
-        if ((items < 9) || (items > 9)) {
-            SWIG_croak("Usage: fs_switch_ivr_speak_text(session,tts_name,voice_name,timer_name,rate,dtmf_callback,text,buf,buflen);");
+        if ((items < 5) || (items > 5)) {
+            SWIG_croak("Usage: fs_switch_ivr_speak_text(session,tts_name,voice_name,rate,text);");
         }
         {
             if (SWIG_ConvertPtr(ST(0), (void **) &arg1, SWIGTYPE_p_switch_core_session_t,0) < 0) {
@@ -1568,31 +1544,16 @@ XS(_wrap_fs_switch_ivr_speak_text) {
         else arg2 = (char *) SvPV(ST(1), PL_na);
         if (!SvOK((SV*) ST(2))) arg3 = 0;
         else arg3 = (char *) SvPV(ST(2), PL_na);
-        if (!SvOK((SV*) ST(3))) arg4 = 0;
-        else arg4 = (char *) SvPV(ST(3), PL_na);
         {
             uint32_t * argp;
-            if (SWIG_ConvertPtr(ST(4),(void **) &argp, SWIGTYPE_p_uint32_t,0) < 0) {
-                SWIG_croak("Type error in argument 5 of fs_switch_ivr_speak_text. Expected _p_uint32_t");
+            if (SWIG_ConvertPtr(ST(3),(void **) &argp, SWIGTYPE_p_uint32_t,0) < 0) {
+                SWIG_croak("Type error in argument 4 of fs_switch_ivr_speak_text. Expected _p_uint32_t");
             }
-            arg5 = *argp;
+            arg4 = *argp;
         }
-        {
-            switch_input_callback_function_t * argp;
-            if (SWIG_ConvertPtr(ST(5),(void **) &argp, SWIGTYPE_p_switch_input_callback_function_t,0) < 0) {
-                SWIG_croak("Type error in argument 6 of fs_switch_ivr_speak_text. Expected _p_switch_input_callback_function_t");
-            }
-            arg6 = *argp;
-        }
-        if (!SvOK((SV*) ST(6))) arg7 = 0;
-        else arg7 = (char *) SvPV(ST(6), PL_na);
-        {
-            if (SWIG_ConvertPtr(ST(7), (void **) &arg8, 0,0) < 0) {
-                SWIG_croak("Type error in argument 8 of fs_switch_ivr_speak_text. Expected _p_void");
-            }
-        }
-        arg9 = (unsigned int) SvUV(ST(8));
-        result = (int)fs_switch_ivr_speak_text(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
+        if (!SvOK((SV*) ST(4))) arg5 = 0;
+        else arg5 = (char *) SvPV(ST(4), PL_na);
+        result = (int)fs_switch_ivr_speak_text(arg1,arg2,arg3,arg4,arg5);
         
         ST(argvi) = sv_newmortal();
         sv_setiv(ST(argvi++), (IV) result);

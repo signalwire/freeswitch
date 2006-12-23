@@ -3328,7 +3328,7 @@ static switch_status_t conference_local_play_file(switch_core_session_t *session
 
     /* if all is well, really play the file */
     if (status == SWITCH_STATUS_SUCCESS) {
-        status = switch_ivr_play_file(session, NULL, path, NULL, NULL, NULL, 0);
+        status = switch_ivr_play_file(session, NULL, path, NULL);
     }
 
     return status;
@@ -3702,7 +3702,7 @@ static void conference_function(switch_core_session_t *session, char *data)
     }
 
     if (switch_test_flag(&member, MFLAG_KICKED) && conference->kicked_sound) {
-        switch_ivr_play_file(session, NULL, conference->kicked_sound, NULL, NULL, NULL, 0);
+        switch_ivr_play_file(session, NULL, conference->kicked_sound, NULL);
     }
 
     switch_core_session_reset(session);

@@ -123,7 +123,7 @@ static void phrase_function(switch_core_session_t *session, char *data)
         }
         
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, mdata, lang);
-        switch_ivr_phrase_macro(session, macro, mdata, lang, NULL, NULL, 0);
+        switch_ivr_phrase_macro(session, macro, mdata, lang, NULL);
     }
 
 }
@@ -372,7 +372,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 #ifdef _TEST_CALLBACK_
 						&& switch_ivr_menu_stack_xml_add_custom(xml_ctx, "custom", &menu_handler) == SWITCH_STATUS_SUCCESS
 #endif
-						&& switch_ivr_menu_stack_xml_build(xml_ctx,&menu_stack,xml_menus,xml_menu,NULL) == SWITCH_STATUS_SUCCESS)
+						&& switch_ivr_menu_stack_xml_build(xml_ctx,&menu_stack,xml_menus,xml_menu) == SWITCH_STATUS_SUCCESS)
 					{
 						switch_channel_answer(channel);
 						switch_ivr_menu_execute(session,menu_stack,params,NULL);

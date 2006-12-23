@@ -627,7 +627,7 @@ extern void fs_channel_hangup(switch_core_session_t *,char *);
 extern void fs_channel_set_variable(switch_core_session_t *,char *,char *);
 extern void fs_channel_get_variable(switch_core_session_t *,char *);
 extern void fs_channel_set_state(switch_core_session_t *,char *);
-extern int fs_ivr_play_file(switch_core_session_t *,char *,char *,switch_input_callback_function_t,void *,unsigned int);
+extern int fs_ivr_play_file(switch_core_session_t *,char *);
 extern int fs_switch_ivr_record_file(switch_core_session_t *,switch_file_handle_t *,char *,switch_input_callback_function_t,void *,unsigned int,unsigned int);
 extern int fs_switch_ivr_sleep(switch_core_session_t *,uint32_t);
 extern int fs_ivr_play_file2(switch_core_session_t *,char *);
@@ -635,7 +635,7 @@ extern int fs_switch_ivr_collect_digits_callback(switch_core_session_t *,switch_
 extern int fs_switch_ivr_collect_digits_count(switch_core_session_t *,char *,unsigned int,unsigned int,char const *,char *,unsigned int);
 extern int fs_switch_ivr_originate(switch_core_session_t *,switch_core_session_t **,char *,uint32_t);
 extern int fs_switch_ivr_session_transfer(switch_core_session_t *,char *,char *,char *);
-extern int fs_switch_ivr_speak_text(switch_core_session_t *,char *,char *,char *,uint32_t,switch_input_callback_function_t,char *,void *,unsigned int);
+extern int fs_switch_ivr_speak_text(switch_core_session_t *,char *,char *,uint32_t,char *);
 extern char *fs_switch_channel_get_variable(switch_channel_t *,char *);
 extern int fs_switch_channel_set_variable(switch_channel_t *,char *,char *);
 
@@ -859,26 +859,14 @@ static VALUE
 _wrap_fs_ivr_play_file(int argc, VALUE *argv, VALUE self) {
     switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
     char *arg2 ;
-    char *arg3 ;
-    switch_input_callback_function_t arg4 ;
-    void *arg5 = (void *) 0 ;
-    unsigned int arg6 ;
     int result;
     VALUE vresult = Qnil;
     
-    if ((argc < 6) || (argc > 6))
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 6)",argc);
+    if ((argc < 2) || (argc > 2))
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc);
     SWIG_ConvertPtr(argv[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 1);
     arg2 = StringValuePtr(argv[1]);
-    arg3 = StringValuePtr(argv[2]);
-    {
-        switch_input_callback_function_t * ptr;
-        SWIG_ConvertPtr(argv[3], (void **) &ptr, SWIGTYPE_p_switch_input_callback_function_t, 1);
-        if (ptr) arg4 = *ptr;
-    }
-    SWIG_ConvertPtr(argv[4], (void **) &arg5, 0, 1);
-    arg6 = NUM2UINT(argv[5]);
-    result = (int)fs_ivr_play_file(arg1,arg2,arg3,arg4,arg5,arg6);
+    result = (int)fs_ivr_play_file(arg1,arg2);
     
     vresult = INT2NUM(result);
     return vresult;
@@ -1066,35 +1054,23 @@ _wrap_fs_switch_ivr_speak_text(int argc, VALUE *argv, VALUE self) {
     switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
     char *arg2 ;
     char *arg3 ;
-    char *arg4 ;
-    uint32_t arg5 ;
-    switch_input_callback_function_t arg6 ;
-    char *arg7 ;
-    void *arg8 = (void *) 0 ;
-    unsigned int arg9 ;
+    uint32_t arg4 ;
+    char *arg5 ;
     int result;
     VALUE vresult = Qnil;
     
-    if ((argc < 9) || (argc > 9))
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 9)",argc);
+    if ((argc < 5) || (argc > 5))
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 5)",argc);
     SWIG_ConvertPtr(argv[0], (void **) &arg1, SWIGTYPE_p_switch_core_session_t, 1);
     arg2 = StringValuePtr(argv[1]);
     arg3 = StringValuePtr(argv[2]);
-    arg4 = StringValuePtr(argv[3]);
     {
         uint32_t * ptr;
-        SWIG_ConvertPtr(argv[4], (void **) &ptr, SWIGTYPE_p_uint32_t, 1);
-        if (ptr) arg5 = *ptr;
+        SWIG_ConvertPtr(argv[3], (void **) &ptr, SWIGTYPE_p_uint32_t, 1);
+        if (ptr) arg4 = *ptr;
     }
-    {
-        switch_input_callback_function_t * ptr;
-        SWIG_ConvertPtr(argv[5], (void **) &ptr, SWIGTYPE_p_switch_input_callback_function_t, 1);
-        if (ptr) arg6 = *ptr;
-    }
-    arg7 = StringValuePtr(argv[6]);
-    SWIG_ConvertPtr(argv[7], (void **) &arg8, 0, 1);
-    arg9 = NUM2UINT(argv[8]);
-    result = (int)fs_switch_ivr_speak_text(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
+    arg5 = StringValuePtr(argv[4]);
+    result = (int)fs_switch_ivr_speak_text(arg1,arg2,arg3,arg4,arg5);
     
     vresult = INT2NUM(result);
     return vresult;
