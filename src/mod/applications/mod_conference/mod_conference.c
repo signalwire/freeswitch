@@ -1802,7 +1802,7 @@ static uint32_t conference_member_stop_file(conference_member_t *member, file_st
 /* Play a file in the conference room */
 static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel)
 {
-	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
     conference_file_node_t *fnode, *nptr;
     switch_memory_pool_t *pool;
     uint32_t count;
@@ -2982,8 +2982,8 @@ static switch_status_t conf_api_sub_norecord(conference_obj_t *conference, switc
 static api_command_t conf_api_sub_commands[] = {
 	{"list", &conf_api_sub_list, CONF_API_SUB_ARGS_SPLIT, "<confname> list [delim <string>]"}, 
 	{"energy", &conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET, "<confname> energy <member_id|all|last> [<newval>]"}, 
-	{"volume in", &conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "<confname> volume_in <member_id|all|last> [<newval>]"}, 
-	{"volume out", &conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "<confname> volume_out <member_id|all|last> [<newval>]"}, 
+	{"volume_in", &conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET, "<confname> volume_in <member_id|all|last> [<newval>]"}, 
+	{"volume_out", &conf_api_sub_volume_out, CONF_API_SUB_MEMBER_TARGET, "<confname> volume_out <member_id|all|last> [<newval>]"}, 
 	{"play", &conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "<confname> play <file_path> [<member_id>]"}, 
 	{"say", &conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "<confname> say <text>"}, 
 	{"saymember", &conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "<confname> saymember <member_id> <text>"}, 
