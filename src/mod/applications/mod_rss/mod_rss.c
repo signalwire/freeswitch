@@ -184,6 +184,7 @@ static void rss_function(switch_core_session_t *session, char *data)
 	char buf[1024];
 	int32_t jumpto = -1;
 	uint32_t matches = 0;
+	switch_input_args_t args = {0};
 
 	channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -324,14 +325,15 @@ static void rss_function(switch_core_session_t *session, char *data)
 			snprintf(buf + len, sizeof(buf) - len, "<break time=\"2000ms\"/>");
 			len = (int32_t)strlen(buf);
 
+			args.input_callback = NULL;
+			args.buf = cmd;
+			args.buflen = sizeof(cmd);
 			status = switch_ivr_speak_text_handle(session,
 												  &sh,
 												  &speech_codec,
 												  timerp,
-												  NULL,
 												  buf,
-												  cmd,
-												  sizeof(cmd));
+												  &args);
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				goto finished;
 			}
@@ -370,14 +372,15 @@ static void rss_function(switch_core_session_t *session, char *data)
 			} else if (matches > 1) {
 				
 			} else {
+				args.input_callback = NULL;
+				args.buf = NULL;
+				args.buflen = 0;
 				status = switch_ivr_speak_text_handle(session,
 													  &sh,
 													  &speech_codec,
 													  timerp,
-													  NULL,
 													  "I'm sorry. That is an Invalid Selection. ",
-													  NULL,
-													  0);
+													  &args);
 				if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 					goto finished;
 				}
@@ -492,14 +495,15 @@ static void rss_function(switch_core_session_t *session, char *data)
 
 			snprintf(buf, sizeof(buf), ",<break time=\"500ms\"/>%s. %s. %s. local time: %s, Press 0 for options, 5 to change voice, or pound to return to the main menu. ", 
 					 title_txt, description_txt, rights_txt, date);
+			args.input_callback = NULL;
+			args.buf = cmd;
+			args.buflen = sizeof(cmd);
 			status = switch_ivr_speak_text_handle(session,
 												  &sh,
 												  &speech_codec,
 												  timerp,
-												  NULL,
 												  buf,
-												  cmd,
-												  sizeof(cmd));
+												  &args);
 			if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
 				goto finished;
 			}
@@ -591,14 +595,15 @@ static void rss_function(switch_core_session_t *session, char *data)
 						}
 					}
 					switch_core_speech_flush_tts(&sh);
+					args.input_callback = on_dtmf;
+					args.buf = &dtb;
+					args.buflen = sizeof(dtb);
 					status = switch_ivr_speak_text_handle(session,
 														  &sh,
 														  &speech_codec,
 														  timerp,
-														  on_dtmf,
 														  buf,
-														  &dtb,
-														  sizeof(dtb));
+														  &args);
 					if (status == SWITCH_STATUS_BREAK) {
 						continue;
 					} else if (status != SWITCH_STATUS_SUCCESS) {
@@ -611,14 +616,15 @@ static void rss_function(switch_core_session_t *session, char *data)
 					}
 					
 					if (entries[dtb.index].description_txt) {
+						args.input_callback = on_dtmf;
+						args.buf = &dtb;
+						args.buflen = sizeof(dtb);
 						status = switch_ivr_speak_text_handle(session,
 															  &sh,
 															  &speech_codec,
 															  timerp,
-															  on_dtmf,
 															  entries[dtb.index].description_txt,
-															  &dtb,
-															  sizeof(dtb));
+															  &args);
 					}
 					if (status == SWITCH_STATUS_BREAK) {
 						continue;
