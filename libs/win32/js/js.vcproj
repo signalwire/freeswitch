@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\js\config.h&quot; type &quot;$(ProjectDir)..\..\js\config.hw&quot; &gt; &quot;$(ProjectDir)..\..\js\config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\js\src\jsautocfg.h&quot; type &quot;$(ProjectDir)..\..\js\src\jsautocfg.hw&quot; &gt; &quot;$(ProjectDir)..\..\js\src\jsautocfg.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h&quot; type &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\md\_winnt.cfg&quot; &gt; &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h&quot;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\js\config.h&quot; type &quot;$(ProjectDir)..\..\js\config.hw&quot; &gt; &quot;$(ProjectDir)..\..\js\config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\js\src\jsautocfg.h&quot; type &quot;$(ProjectDir)..\..\js\src\jsautocfg.hw&quot; &gt; &quot;$(ProjectDir)..\..\js\src\jsautocfg.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h&quot; type &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\md\_winnt.cfg&quot; &gt; &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -111,7 +111,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.release\nspr-4.6.1\lib\libnspr4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.release\nspr-4.6.1\lib\libplc4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.release\nspr-4.6.1\lib\libplds4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 		</Configuration>
 		<Configuration
@@ -125,7 +125,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)..\..\js\config.h&quot; type &quot;$(ProjectDir)..\..\js\config.hw&quot; &gt; &quot;$(ProjectDir)..\..\js\config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\js\src\jsautocfg.h&quot; type &quot;$(ProjectDir)..\..\js\src\jsautocfg.hw&quot; &gt; &quot;$(ProjectDir)..\..\js\src\jsautocfg.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h&quot; type &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\md\_winnt.cfg&quot; &gt; &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h&quot;"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\js\config.h&quot; type &quot;$(ProjectDir)..\..\js\config.hw&quot; &gt; &quot;$(ProjectDir)..\..\js\config.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\js\src\jsautocfg.h&quot; type &quot;$(ProjectDir)..\..\js\src\jsautocfg.hw&quot; &gt; &quot;$(ProjectDir)..\..\js\src\jsautocfg.h&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h&quot; type &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\md\_winnt.cfg&quot; &gt; &quot;$(ProjectDir)..\..\js\nsprpub\pr\include\prcpucfg.h&quot;&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -209,7 +209,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.debug\nspr-4.6.1\lib\libnspr4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.debug\nspr-4.6.1\lib\libplc4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;xcopy $(ProjectDir)..\..\nspr-4.6.1.winnt5.debug\nspr-4.6.1\lib\libplds4.dll $(OutDir)\ /C /Y /D&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 		</Configuration>
 	</Configurations>
