@@ -69,7 +69,6 @@ static void speak_function(switch_core_session_t *session, char *data)
 	char *engine = NULL;
 	char *voice = NULL;
 	char *text = NULL;
-	char *timer_name = NULL;
 	char *mydata = NULL;
 	switch_codec_t *codec;
     switch_input_args_t args = {0};
