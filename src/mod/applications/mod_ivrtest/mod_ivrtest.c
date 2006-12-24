@@ -102,7 +102,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 									  "I have no idea what that is",
 									  "cepstral",
 									  "david",
-									  15000, 10, NULL, NULL);
+									  15000, 10, NULL);
 
 
 		status = switch_ivr_menu_init(&sub_menu,
@@ -114,7 +114,7 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 									  "/ram/invalid.wav",
 									  NULL,
 									  NULL,
-									  15000, 10, NULL, NULL);
+									  15000, 10, NULL);
 
 		if (status == SWITCH_STATUS_SUCCESS) {
 			// build the menu
