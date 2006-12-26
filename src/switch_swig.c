@@ -158,29 +158,26 @@ void fs_channel_set_state(switch_core_session_t *session, char *state)
 */
 
 int fs_ivr_play_file(switch_core_session_t *session,
-					 char *file)
+                     switch_file_handle_t *fh,
+					 char *file,
+                     switch_input_args_t *args)
 {
 	switch_status_t status;
-	if (switch_strlen_zero(timer_name)) {
-		timer_name = NULL;
-	}
 	
-	status = switch_ivr_play_file(session, NULL, file, NULL);
+	status = switch_ivr_play_file(session, fh, file, args);
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
 int fs_switch_ivr_record_file(switch_core_session_t *session,
                               switch_file_handle_t *fh,
                               char *file,
-                              switch_input_callback_function_t dtmf_callback,
-                              void *buf,
-                              unsigned int buflen,
+                              switch_input_args_t *args,
                               unsigned int limit
                               )
 {  
 	switch_status_t status;
 	
-    status = switch_ivr_record_file(session, fh, file, dtmf_callback, buf, buflen, limit);
+    status = switch_ivr_record_file(session, fh, file, args, limit);
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
@@ -198,20 +195,18 @@ int fs_ivr_play_file2(switch_core_session_t *session,
 {
 	switch_status_t status;
 	
-	status = switch_ivr_play_file(session, NULL, file, NULL, NULL);
+	status = switch_ivr_play_file(session, NULL, file, NULL);
 	return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 
 
 int fs_switch_ivr_collect_digits_callback (switch_core_session_t *session,
-										   switch_input_callback_function_t dtmf_callback,
-										   void *buf,
-										   unsigned int buflen,
+                                           switch_input_args_t *args,
 										   unsigned int timeout)
 {
     switch_status_t status;
 
-    status = switch_ivr_collect_digits_callback(session, dtmf_callback, buf, buflen, timeout);
+    status = switch_ivr_collect_digits_callback(session, args, timeout);
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;
 }
 

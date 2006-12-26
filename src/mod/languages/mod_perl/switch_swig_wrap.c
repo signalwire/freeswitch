@@ -15,6 +15,7 @@
  * clashes if multiple interpreters are included
  *
  ************************************************************************/
+#include <switch.h>
 
 #define SWIG_TypeRegister    SWIG_Perl_TypeRegister
 #define SWIG_TypeCheck       SWIG_Perl_TypeCheck
