@@ -373,7 +373,8 @@
 	<room name="888@sub.mydomain.com" status="FreeSWITCH"/>
       </advertise>
 
-<!-- These are the default keys that map when you do not specify a caller control group-->	
+<!-- These are the default keys that map when you do not specify a caller control group -->	
+<!-- Note: none and default are reserved names for group names -->	
 	<caller-controls>
 	  <group name="default">
 	   <control action="mute" digits="0"/>
