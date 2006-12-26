@@ -373,6 +373,24 @@
 	<room name="888@sub.mydomain.com" status="FreeSWITCH"/>
       </advertise>
 
+<!-- These are the default keys that map when you do not specify a caller control group-->	
+	<caller-controls>
+	  <group name="default">
+	   <control action="mute" digits="0"/>
+	   <control action="deaf mute" digits="*"/>
+	   <control action="energy up" digits="9"/>
+	   <control action="energy equ" digits="8"/>
+	   <control action="energy dn" digits="7"/>
+	   <control action="vol talk up" digits="3"/>
+	   <control action="vol talk zero" digits="2"/>
+	   <control action="vol talk dn" digits="1"/>
+	   <control action="vol listen up" digits="6"/>
+	   <control action="vol listen zero" digits="5"/>
+	   <control action="vol listen dn" digits="4"/>
+	   <control action="hangup" digits="#"/>
+	  </group>
+	</caller-controls>
+
       <!-- Profiles are collections of settings you can reference by name. -->
       <profiles>
 	<profile name="default">
@@ -384,6 +402,8 @@
 	  <param name="interval" value="20"/>
 	  <!-- Energy level required for audio to be sent to the other users -->
 	  <param name="energy-level" value="300"/>
+		<!-- Name of the caller control group to use for this profile -->
+		<!-- <param name="caller-controls" value="some name"/> -->
 	  <!-- TTS Engine to use -->
 	  <!--<param name="tts-engine" value="cepstral"/>-->
 	  <!-- TTS Voice to use -->
