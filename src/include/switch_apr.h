@@ -193,6 +193,16 @@ DoxyDefine(apr_status_t switch_file_close(switch_file_t *file);)
 #define switch_file_close apr_file_close
 
 /**
+ * Delete the specified file.
+ * @param path The full path to the file (using / on all systems)
+ * @param pool The pool to use.
+ * @remark If the file is open, it won't be removed until all
+ * instances are closed.
+ */
+DoxyDefine(apr_status_t apr_file_remove(const char *path, apr_pool_t *pool);)
+#define switch_file_remove apr_file_remove
+
+/**
  * Read data from the specified file.
  * @param thefile The file descriptor to read from.
  * @param buf The buffer to store the data to.
