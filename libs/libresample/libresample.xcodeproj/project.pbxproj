@@ -18,8 +18,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		D3B2197D0B42590500C812C8 /* resample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = resample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		D3B2197F0B42590500C812C8 /* resample-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "resample-Info.plist"; sourceTree = "<group>"; };
+		D3B2197D0B42590500C812C8 /* libresample.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = libresample.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3B2197F0B42590500C812C8 /* libresample-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "libresample-Info.plist"; sourceTree = "<group>"; };
 		D3B219840B42594900C812C8 /* libresample.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = libresample.h; path = include/libresample.h; sourceTree = "<group>"; };
 		D3B219860B42595D00C812C8 /* configtemplate.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = configtemplate.h; path = src/configtemplate.h; sourceTree = "<group>"; };
 		D3B219870B42595D00C812C8 /* filterkit.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = filterkit.c; path = src/filterkit.c; sourceTree = "<group>"; };
@@ -43,14 +43,14 @@
 				D3B2198B0B42595D00C812C8 /* resamplesubs.c */,
 				D3B219840B42594900C812C8 /* libresample.h */,
 				D3B2197E0B42590500C812C8 /* Products */,
-				D3B2197F0B42590500C812C8 /* resample-Info.plist */,
+				D3B2197F0B42590500C812C8 /* libresample-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
 		D3B2197E0B42590500C812C8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D3B2197D0B42590500C812C8 /* resample.framework */,
+				D3B2197D0B42590500C812C8 /* libresample.framework */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -73,9 +73,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		D3B2197C0B42590500C812C8 /* resample */ = {
+		D3B2197C0B42590500C812C8 /* libresample */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D3B219800B42590500C812C8 /* Build configuration list for PBXNativeTarget "resample" */;
+			buildConfigurationList = D3B219800B42590500C812C8 /* Build configuration list for PBXNativeTarget "libresample" */;
 			buildPhases = (
 				D3B219950B4259A400C812C8 /* ShellScript */,
 				D3B219780B42590500C812C8 /* Headers */,
@@ -85,9 +85,9 @@
 			);
 			dependencies = (
 			);
-			name = resample;
+			name = libresample;
 			productName = resample;
-			productReference = D3B2197D0B42590500C812C8 /* resample.framework */;
+			productReference = D3B2197D0B42590500C812C8 /* libresample.framework */;
 			productType = "com.apple.product-type.framework";
 		};
 /* End PBXNativeTarget section */
@@ -101,7 +101,7 @@
 			productRefGroup = D3B2197E0B42590500C812C8 /* Products */;
 			projectDirPath = "";
 			targets = (
-				D3B2197C0B42590500C812C8 /* resample */,
+				D3B2197C0B42590500C812C8 /* libresample */,
 			);
 		};
 /* End PBXProject section */
@@ -173,10 +173,10 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				INFOPLIST_FILE = "resample-Info.plist";
+				INFOPLIST_FILE = "libresample-Info.plist";
 				INSTALL_PATH = "$(HOME)/Library/Frameworks";
 				PREBINDING = NO;
-				PRODUCT_NAME = resample;
+				PRODUCT_NAME = libresample;
 				ZERO_LINK = YES;
 			};
 			name = Debug;
@@ -192,10 +192,10 @@
 				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				INFOPLIST_FILE = "resample-Info.plist";
+				INFOPLIST_FILE = "libresample-Info.plist";
 				INSTALL_PATH = "$(HOME)/Library/Frameworks";
 				PREBINDING = NO;
-				PRODUCT_NAME = resample;
+				PRODUCT_NAME = libresample;
 				ZERO_LINK = NO;
 			};
 			name = Release;
@@ -212,7 +212,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D3B219800B42590500C812C8 /* Build configuration list for PBXNativeTarget "resample" */ = {
+		D3B219800B42590500C812C8 /* Build configuration list for PBXNativeTarget "libresample" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D3B219810B42590500C812C8 /* Debug */,
