@@ -391,7 +391,7 @@ static void pres_event_handler(switch_event_t *event)
 
 static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
 {
-	char *user, *host, *f_user = NULL, *ffrom = NULL, *f_host = NULL;
+	char *user, *host, *f_user = NULL, *ffrom = NULL, *f_host = NULL, *f_resource = NULL;
 	struct mdl_profile *profile = NULL;
 
 	assert(proto != NULL);
@@ -399,6 +399,9 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 	if (from && (f_user = strdup(from))) {
 		if ((f_host = strchr(f_user, '@'))) {
 			*f_host++ = '\0';
+            if ((f_resource = strchr(f_host, '/'))) {
+                *f_resource++ = '\0';
+            }
 		}
 	}
 
