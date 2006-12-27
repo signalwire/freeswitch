@@ -1612,13 +1612,13 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 			if (tech_pvt->read_frame.datalen > 0) {
                 size_t bytes = 0;
-                int frames = 0;
+                int frames = 1;
 				//tech_pvt->last_read = switch_time_now();
                 if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
                     if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame)) {
                         frames = (tech_pvt->read_frame.datalen / bytes);
-                        tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_frame);
                     }
+                    tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_frame);
                 }
 				break;
 			}
