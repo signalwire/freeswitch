@@ -2260,7 +2260,7 @@ static JSFunctionSpec fs_functions[] = {
 	{"bridge", js_bridge, 2},
 	{"apiExecute", js_api_execute, 2},
 	{"use", js_api_use, 1},
-	{"FileDelete", js_file_unlink, 1},
+	{"fileDelete", js_file_unlink, 1},
 #ifdef HAVE_CURL
 	{"fetchURLHash", js_fetchurl_hash, 1}, 
 	{"fetchURLFile", js_fetchurl_file, 1}, 
