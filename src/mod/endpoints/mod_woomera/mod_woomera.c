@@ -660,14 +660,21 @@ static int woomera_message_parse(switch_socket_t *fd, woomera_message * wmsg, in
 	bytes = 0;
 	while (!strstr(buf, WOOMERA_RECORD_SEPERATOR)) {
 		size_t len = 1;
+        switch_status_t status;
 
 		if (!profile->thread_running) {
 			return -1;
 		}
 
-		if (switch_socket_recv(fd, ptr, &len) != SWITCH_STATUS_SUCCESS) {
-			return -1;
-		}
+		status = switch_socket_recv(fd, ptr, &len);
+        if (SWITCH_STATUS_IS_BREAK(status)) {
+            continue;
+        }
+        
+        if (status != SWITCH_STATUS_SUCCESS) {
+            return -1;
+        }
+
 		ptr++;
 		bytes++;
 	}
