@@ -1939,6 +1939,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			switch_mutex_unlock(data->mutex);
 		}
 	}
+
+    switch_core_session_kill_channel(session_b, SWITCH_SIG_BREAK);
 	
 	msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
 	msg.from = __FILE__;
@@ -3304,19 +3306,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 				switch_event_fire(&event);
 			}
 
-
-			if (switch_channel_get_state(caller_channel) != CS_EXECUTE && !switch_channel_test_flag(caller_channel, CF_TRANSFER)) {
-				switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			}
-
             if (switch_channel_test_flag(caller_channel, CF_TRANSFER) && !switch_channel_test_flag(peer_channel, CF_TRANSFER)) {
-                switch_channel_hangup(peer_channel, SWITCH_CAUSE_NORMAL_CLEARING);
-            }
-            if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && switch_channel_test_flag(peer_channel, CF_TRANSFER)) {
-                switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_CLEARING);
+                //switch_channel_hangup(peer_channel, SWITCH_CAUSE_NORMAL_CLEARING);
+                switch_yield(2000000);
             }
 
-			this_audio_thread->objs[0] = NULL;
+            if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && switch_channel_test_flag(peer_channel, CF_TRANSFER)) {
+                //switch_channel_hangup(caller_channel, SWITCH_CAUSE_NORMAL_CLEARING);
+                switch_yield(2000000);
+            }
+
+
+            this_audio_thread->objs[0] = NULL;
 			this_audio_thread->objs[1] = NULL;
 			this_audio_thread->objs[2] = NULL;
 			this_audio_thread->input_callback = NULL;

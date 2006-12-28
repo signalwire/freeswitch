@@ -193,7 +193,7 @@ typedef enum {
 } reg_state_t;
 
 struct outbound_reg {
-	sofia_private_t sofia_private;
+	sofia_private_t *sofia_private;
 	nua_handle_t *nh;
 	sofia_profile_t *profile;
 	char *name;
@@ -255,7 +255,8 @@ struct sofia_profile {
 
 
 struct private_object {
-	sofia_private_t sofia_private;
+	sofia_private_t *sofia_private;
+	sofia_private_t *sofia_private2;
 	uint32_t flags;
 	switch_payload_t agreed_pt;
 	switch_core_session_t *session;
@@ -606,13 +607,12 @@ static int del_callback(void *pArg, int argc, char **argv, char **columnNames){
 	return 0;
 }
 
-static void check_expire(sofia_profile_t *profile, time_t now)
+static void check_expire(switch_core_db_t *db, sofia_profile_t *profile, time_t now)
 {
 	char sql[1024];
 	char *errmsg;
-	switch_core_db_t *db;
 
-	if (!(db = switch_core_db_open_file(profile->dbname))) {
+	if (!db) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening DB %s\n", profile->dbname);
 		return;
 	}
@@ -636,7 +636,6 @@ static void check_expire(sofia_profile_t *profile, time_t now)
 
 	switch_mutex_unlock(profile->ireg_mutex);
 
-	switch_core_db_close(db);
 }
 
 static char *find_reg_url(sofia_profile_t *profile, char *user, char *host, char *val, switch_size_t len)
@@ -670,7 +669,12 @@ static char *find_reg_url(sofia_profile_t *profile, char *user, char *host, char
 	switch_mutex_unlock(profile->ireg_mutex);
 
 	switch_core_db_close(db);
-	return cbt.matches ? val : NULL;
+    if (cbt.matches) {
+        return val;
+    } else {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate registered user %s@%s\n", user, host);
+        return NULL;
+    }
 }
 
 
@@ -975,8 +979,12 @@ static void do_invite(switch_core_session_t *session)
 									  SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 									  TAG_END());
 
-			tech_pvt->sofia_private.session = session;
-			nua_handle_bind(tech_pvt->nh, &tech_pvt->sofia_private);
+            if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
+                abort();
+            }
+            memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
+			tech_pvt->sofia_private->session = session;
+			nua_handle_bind(tech_pvt->nh, tech_pvt->sofia_private);
 
 		}
 
@@ -1048,8 +1056,13 @@ static void do_xfer_invite(switch_core_session_t *session)
 								  SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 								  TAG_END());
 			
-
-		nua_handle_bind(tech_pvt->nh2, &tech_pvt->sofia_private);
+        
+        if (!(tech_pvt->sofia_private2 = malloc(sizeof(*tech_pvt->sofia_private2)))) {
+            abort();
+        }
+        memset(tech_pvt->sofia_private2, 0, sizeof(*tech_pvt->sofia_private2));
+        tech_pvt->sofia_private2->session = tech_pvt->sofia_private->session;
+		nua_handle_bind(tech_pvt->nh2, tech_pvt->sofia_private2);
 
 
 
@@ -1257,14 +1270,14 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	if (tech_pvt->nh) {
 		if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
 			if (switch_test_flag(tech_pvt, TFLAG_ANS)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending BYE\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending BYE to %s\n", switch_channel_get_name(channel));
 				nua_bye(tech_pvt->nh, TAG_END());
 			} else {
 				if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding to INVITE with: %d\n", sip_cause);
 					nua_respond(tech_pvt->nh, sip_cause, NULL, TAG_END());
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
 					nua_cancel(tech_pvt->nh, TAG_END());
 				}
 			}
@@ -1282,6 +1295,10 @@ static switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		su_home_unref(tech_pvt->home);
 		tech_pvt->home = NULL;
 	}
+
+    if (tech_pvt->sofia_private) {
+        tech_pvt->sofia_private->session = NULL;
+    }
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1577,7 +1594,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 		tech_pvt->read_frame.datalen = 0;
 
 
-		while (!switch_test_flag(tech_pvt, TFLAG_BYE) && switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
+		while (switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 			tech_pvt->read_frame.flags = SFF_NONE;
 
 			status = switch_rtp_zerocopy_read_frame(tech_pvt->rtp_session, &tech_pvt->read_frame);
@@ -2779,7 +2796,7 @@ static void sip_i_state(int status,
 		if (session) {
 			if (switch_test_flag(tech_pvt, TFLAG_RWLOCK)) {
 				switch_core_session_rwunlock(session);
-				switch_clear_flag(tech_pvt, TFLAG_RWLOCK);
+				switch_clear_flag_locked(tech_pvt, TFLAG_RWLOCK);
 			}
 			if (!switch_test_flag(tech_pvt, TFLAG_BYE)) {
 
@@ -2792,6 +2809,12 @@ static void sip_i_state(int status,
 					terminate_session(&session, sip_cause_to_freeswitch(status), __LINE__);
 				}
 			}
+
+            if (tech_pvt->sofia_private) {
+                free(tech_pvt->sofia_private);
+                nua_handle_bind(tech_pvt->nh, NULL);
+                tech_pvt->sofia_private = NULL;
+            }
 			tech_pvt->nh = NULL;
 		}
 		if (nh) {
@@ -3069,12 +3092,12 @@ static uint8_t handle_register(nua_t *nua,
 								 from_host,
 								 contact_str,
 								 rpid,
-								 (long) time(NULL) + (long)exptime);
+								 (long) time(NULL) + (long)exptime * 2);
 
 		} else {
 			sql = switch_mprintf("update sip_registrations set contact='%q', expires=%ld, rpid='%q' where user='%q' and host='%q'",
 								 contact_str,
-								 (long) time(NULL) + (long)exptime,
+								 (long) time(NULL) + (long)exptime * 2,
 								 rpid,
 								 from_user,
 								 from_host);
@@ -3574,30 +3597,39 @@ static void sip_i_refer(nua_t *nua,
 						goto done;
 					}
 					if ((replaces = sip_replaces_make(tech_pvt->home, rep)) && (bnh = nua_handle_by_replaces(nua, replaces))) {
-						sofia_private_t *b_private;
-					
+						sofia_private_t *b_private = NULL;
+                        private_object_t *tech_pvt_b = NULL;
 						switch_channel_set_variable(channel_a, SOFIA_REPLACES_HEADER, rep);	
 						if ((b_private = nua_handle_magic(bnh))) {
-							channel_b = switch_core_session_get_channel(b_private->session);
+                            tech_pvt_b = (private_object_t *) switch_core_session_get_private(b_private->session);
+                            channel_b = switch_core_session_get_channel(b_private->session);
 				
 							br_a = switch_channel_get_variable(channel_a, SWITCH_BRIDGE_VARIABLE);
 							br_b = switch_channel_get_variable(channel_b, SWITCH_BRIDGE_VARIABLE);
 
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Attended Transfer [%s][%s]\n", br_a, br_b);
-
+                            
+                            if (switch_test_flag(tech_pvt, TFLAG_RWLOCK)) {
+                                switch_core_session_rwunlock(tech_pvt->session);
+                                switch_clear_flag_locked(tech_pvt, TFLAG_RWLOCK);
+                            }
+                            if (switch_test_flag(tech_pvt_b, TFLAG_RWLOCK)) {
+                                switch_core_session_rwunlock(tech_pvt_b->session);
+                                switch_clear_flag_locked(tech_pvt_b, TFLAG_RWLOCK);
+                            }
+    
+                            
 							if (br_a && br_b) {
 								switch_ivr_uuid_bridge(br_a, br_b);
 								switch_channel_set_variable(channel_b, "endpoint_disposition", "ATTENDED_TRANSFER");
-									
+                                switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 								nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 										   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"),
 										   SIPTAG_EVENT_STR(etmp),
 										   TAG_END());
-								
+                                
 							} else {
-								private_object_t *tech_pvt_b = (private_object_t *) switch_core_session_get_private(b_private->session);
-
-								if (!br_a && !br_b) {
+                                if (!br_a && !br_b) {
 									switch_set_flag_locked(tech_pvt, TFLAG_NOHUP);
 									switch_set_flag_locked(tech_pvt_b, TFLAG_XFER);
 									tech_pvt_b->xferto = switch_core_session_strdup(b_private->session, switch_core_session_get_uuid(session));
@@ -3632,7 +3664,7 @@ static void sip_i_refer(nua_t *nua,
 
 									switch_channel_hangup(channel_b, SWITCH_CAUSE_ATTENDED_TRANSFER);
 								}
-
+                                switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 								nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 										   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"),
 										   SIPTAG_EVENT_STR(etmp),
@@ -3684,6 +3716,11 @@ static void sip_i_refer(nua_t *nua,
 								tuuid_str = switch_core_session_get_uuid(tsession);
 								switch_ivr_uuid_bridge(br_a, tuuid_str);
 								switch_channel_set_variable(channel_a, "endpoint_disposition", "ATTENDED_TRANSFER");
+                                switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+                                if (switch_test_flag(tech_pvt, TFLAG_RWLOCK)) {
+                                    switch_core_session_rwunlock(tech_pvt->session);
+                                    switch_clear_flag_locked(tech_pvt, TFLAG_RWLOCK);
+                                }
 								nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 										   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"),
 										   SIPTAG_EVENT_STR(etmp),
@@ -3727,10 +3764,16 @@ static void sip_i_refer(nua_t *nua,
 
 				switch_channel_set_variable(channel, "endpoint_disposition", "BLIND_TRANSFER");
                 
+                /*
 				nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 						   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"),
 						   SIPTAG_EVENT_STR(etmp),
 						   TAG_END());
+                */
+                if (switch_test_flag(tech_pvt, TFLAG_RWLOCK)) {
+                    switch_core_session_rwunlock(tech_pvt->session);
+                    switch_clear_flag_locked(tech_pvt, TFLAG_RWLOCK);
+                }
 			} else {
 				exten = switch_mprintf("sip:%s@%s:%s", 
 											   (char *) refer_to->r_url->url_user,
@@ -3741,12 +3784,16 @@ static void sip_i_refer(nua_t *nua,
 				
 				switch_set_flag_locked(tech_pvt, TFLAG_NOHUP);
 
-
+                /*
 				nua_notify(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
 						   SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK"),
 						   SIPTAG_EVENT_STR(etmp),
 						   TAG_END());
-
+                */
+                if (switch_test_flag(tech_pvt, TFLAG_RWLOCK)) {
+                    switch_core_session_rwunlock(tech_pvt->session);
+                    switch_clear_flag_locked(tech_pvt, TFLAG_RWLOCK);
+                }
 				do_xfer_invite(session);
 
 			}
@@ -4022,8 +4069,8 @@ static void sip_i_invite(nua_t *nua,
 			}
 
 			attach_private(session, profile, tech_pvt, username);
-			//switch_core_session_read_lock(session);
-			//switch_set_flag(tech_pvt, TFLAG_RWLOCK);
+			switch_core_session_read_lock(session);
+			switch_set_flag(tech_pvt, TFLAG_RWLOCK);
 			channel = switch_core_session_get_channel(session);
 			switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
 			set_chat_hash(tech_pvt, sip);
@@ -4091,7 +4138,7 @@ static void sip_i_invite(nua_t *nua,
             
             snprintf(uri, sizeof(uri), "%s@%s:%s", req_user, req_host, req_port);
             switch_channel_set_variable(channel, "sip_req_uri", uri);
-            
+
 
 			if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																	  (char *) from->a_url->url_user,
@@ -4167,8 +4214,12 @@ static void sip_i_invite(nua_t *nua,
 				switch_safe_free(to_username);
 			}
 
-			tech_pvt->sofia_private.session = session;
-			nua_handle_bind(nh, &tech_pvt->sofia_private);
+            if (!(tech_pvt->sofia_private = malloc(sizeof(*tech_pvt->sofia_private)))) {
+                abort();
+            }
+            memset(tech_pvt->sofia_private, 0, sizeof(*tech_pvt->sofia_private));
+			tech_pvt->sofia_private->session = session;
+			nua_handle_bind(nh, tech_pvt->sofia_private);
 		}
 	}
 }
@@ -4483,9 +4534,6 @@ static void event_callback(nua_event_t event,
 		break;
 	case nua_r_message:
 	case nua_r_notify:
-		if (nh) {
-			nua_handle_destroy(nh);
-		}
 		break;
      
 	case nua_i_notify:
@@ -4529,6 +4577,11 @@ static void unreg(sofia_profile_t *profile)
 {
 	outbound_reg_t *oregp;
     for (oregp = profile->registrations; oregp; oregp = oregp->next) {
+        if (oregp->sofia_private) {
+            free(oregp->sofia_private);
+            nua_handle_bind(oregp->nh, NULL);
+            oregp->sofia_private = NULL;
+        }
 		nua_handle_destroy(oregp->nh);
 	}
 }
@@ -4553,8 +4606,14 @@ static void check_oreg(sofia_profile_t *profile, time_t now)
 										NUTAG_CALLSTATE_REF(ss_state),
 										SIPTAG_FROM_STR(oregp->register_from), TAG_END()))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,  "registering %s\n", oregp->name);	
-				oregp->sofia_private.oreg = oregp;
-				nua_handle_bind(oregp->nh, &oregp->sofia_private);
+                
+                if (!(oregp->sofia_private = malloc(sizeof(*oregp->sofia_private)))) {
+                    abort();
+                }
+                memset(oregp->sofia_private, 0, sizeof(*oregp->sofia_private));
+
+				oregp->sofia_private->oreg = oregp;
+				nua_handle_bind(oregp->nh, oregp->sofia_private);
 
 				nua_register(oregp->nh,
 							SIPTAG_FROM_STR(oregp->register_from),
@@ -4661,7 +4720,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 		return NULL;
 	}
-	switch_core_db_close(db);
+
 
 	switch_mutex_init(&profile->ireg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
 	switch_mutex_init(&profile->oreg_mutex, SWITCH_MUTEX_NESTED, profile->pool);
@@ -4696,9 +4755,12 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 		establish_presence(profile);
 	}
 
+
+
+
 	while(globals.running == 1) {
 		if (++ireg_loops >= IREG_SECONDS) {
-			check_expire(profile, time(NULL));
+			check_expire(db, profile, time(NULL));
 			ireg_loops = 0;
 		}
 
@@ -4710,6 +4772,7 @@ static void *SWITCH_THREAD_FUNC profile_thread_run(switch_thread_t *thread, void
 		su_root_step(profile->s_root, 1000);
 	}
 
+	switch_core_db_close(db);
 	unreg(profile);
 	su_home_unref(profile->home);
 	

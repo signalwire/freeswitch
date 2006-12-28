@@ -539,11 +539,12 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_session_t *session)
 {
-	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
+    if (session->rwlock) {
+        status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
+	}
 
-	status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
-	
 	return status;
 }
 
