@@ -599,7 +599,8 @@ static int nua_notify_usage_shutdown(nua_handle_t *nh,
 
   if (!cr->cr_usage) {
     /* Unnotify */
-    nua_stack_notify2(nh->nh_nua, nh, nua_r_destroy, du, NULL);
+	/* Commenting this line out to supress an attended transfer bug (awaiting fix from pessi) */
+    //nua_stack_notify2(nh->nh_nua, nh, nua_r_destroy, du, NULL);
     return cr->cr_usage != du;
   }
 

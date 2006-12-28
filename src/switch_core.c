@@ -67,10 +67,16 @@ struct switch_media_bug {
 	uint32_t flags;
 	struct switch_media_bug *next;
 };
-	
+
+typedef enum {
+    SSF_NONE = 0,
+    SSF_DESTROYED = (1 << 0)
+} switch_session_flag_t;
+
 struct switch_core_session {
 	uint32_t id;
 	char name[80];
+    switch_session_flag_t flags;
 	int thread_running;
 	switch_memory_pool_t *pool;
 	switch_channel_t *channel;
@@ -567,24 +573,22 @@ SWITCH_DECLARE(char *) switch_core_get_variable(char *varname)
 
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_str)
 {
-	switch_core_session_t *session;
+	switch_core_session_t *session = NULL;
 
 	if (uuid_str) {
 		switch_mutex_lock(runtime.session_table_mutex);
 		if ((session = switch_core_hash_find(runtime.session_table, uuid_str))) {
 			/* Acquire a read lock on the session */
-			if (switch_thread_rwlock_tryrdlock(session->rwlock) != SWITCH_STATUS_SUCCESS) {
+			if (switch_test_flag(session, SSF_DESTROYED) || switch_thread_rwlock_tryrdlock(session->rwlock) != SWITCH_STATUS_SUCCESS) {
 				/* not available, forget it */
 				session = NULL;
 			}
 		}
 		switch_mutex_unlock(runtime.session_table_mutex);
-
-		/* if its not NULL, now it's up to you to rwunlock this */
-		return session;
-	} else {
-		return NULL;
 	}
+
+    /* if its not NULL, now it's up to you to rwunlock this */
+    return session;
 }
 
 SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
@@ -3232,6 +3236,14 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Close Channel %s\n", switch_channel_get_name((*session)->channel));
 
+	switch_mutex_lock(runtime.session_table_mutex);
+	switch_core_hash_delete(runtime.session_table, (*session)->uuid_str);
+	if (runtime.session_count) {
+		runtime.session_count--;
+	}
+    switch_set_flag((*session), SSF_DESTROYED);
+	switch_mutex_unlock(runtime.session_table_mutex);
+
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DESTROY) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data((*session)->channel, event);
 		switch_event_fire(&event);
@@ -3247,11 +3259,6 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session
 	apr_pool_destroy(pool);
 	pool = NULL;
 
-	switch_mutex_lock(runtime.session_table_mutex);
-	if (runtime.session_count) {
-		runtime.session_count--;
-	}
-	switch_mutex_unlock(runtime.session_table_mutex);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t **hash, switch_memory_pool_t *pool)
@@ -3342,11 +3349,8 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 {
 	switch_core_session_t *session = obj;
 	session->thread = thread;
-	snprintf(session->name, sizeof(session->name), "%u", session->id);
-	switch_mutex_lock(runtime.session_table_mutex);
-	session->id = runtime.session_id++;
-	switch_core_hash_insert(runtime.session_table, session->uuid_str, session);
-	switch_mutex_unlock(runtime.session_table_mutex);
+
+
 
 	switch_core_session_run(session);
 	switch_core_media_bug_remove_all(session);
@@ -3354,9 +3358,6 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 	switch_core_session_write_lock(session);
 	switch_core_session_rwunlock(session);
 
-	switch_mutex_lock(runtime.session_table_mutex);
-	switch_core_hash_delete(runtime.session_table, session->uuid_str);
-	switch_mutex_unlock(runtime.session_table_mutex);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Session %u (%s) Ended\n", session->id, switch_channel_get_name(session->channel));
 	switch_core_session_destroy(&session);
 	return NULL;
@@ -3479,9 +3480,13 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	switch_thread_cond_create(&session->cond, session->pool);
 	switch_thread_rwlock_create(&session->rwlock, session->pool);
 
+	snprintf(session->name, sizeof(session->name), "%u", session->id);
 	switch_mutex_lock(runtime.session_table_mutex);
+	session->id = runtime.session_id++;
+	switch_core_hash_insert(runtime.session_table, session->uuid_str, session);
 	runtime.session_count++;
 	switch_mutex_unlock(runtime.session_table_mutex);
+
 	return session;
 }
 
