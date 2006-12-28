@@ -1016,11 +1016,15 @@ static void sha1_hash(char *out, char *in)
 
 static int on_stream_component(ldl_handle_t *handle, int type, iks *node)
 {
-	ikspak *pak = iks_packet(node);
+	ikspak *pak = NULL;
+
+    if (node) {
+        pak = iks_packet(node);
+    }
 
 	switch (type) {
 	case IKS_NODE_START:
-		if (handle->state == CS_NEW) {
+		if (pak && handle->state == CS_NEW) {
 			char secret[256] = "";
 			char hash[256] = "";
 			char handshake[512] = "";
@@ -1061,9 +1065,7 @@ static int on_stream_component(ldl_handle_t *handle, int type, iks *node)
 		return IKS_HOOK;
 	}
 	
-	
-	pak = iks_packet(node);
-	iks_filter_packet(handle->filter, pak);
+    iks_filter_packet(handle->filter, pak);
 
 	if (handle->job_done == 1) {
 		return IKS_HOOK;
@@ -1080,7 +1082,8 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 {
 	handle->counter = opt_timeout;
 
-	switch (type) {
+
+    switch (type) {
 	case IKS_NODE_START:
 		if (ldl_test_flag(handle, LDL_FLAG_TLS) && !iks_is_secure(handle->parser)) {
 			if (iks_has_tls()) {
@@ -1091,9 +1094,7 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 		}
 		break;
 	case IKS_NODE_NORMAL:
-		
-
-		if (strcmp("stream:features", iks_name(node)) == 0) {
+        if (node && strcmp("stream:features", iks_name(node)) == 0) {
 			handle->features = iks_stream_features(node);
 			if (ldl_test_flag(handle, LDL_FLAG_TLS) && !iks_is_secure(handle->parser))
 				break;
@@ -1137,12 +1138,12 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 					
 				}
 			}
-		} else if (strcmp("failure", iks_name(node)) == 0) {
+		} else if (node && strcmp("failure", iks_name(node)) == 0) {
 			globals.logger(DL_LOG_DEBUG, "sasl authentication failed\n");
 			if (handle->session_callback) {
 				handle->session_callback(handle, NULL, LDL_SIGNAL_LOGIN_FAILURE, "user", "core", "Login Failure", handle->login);
 			}
-		} else if (strcmp("success", iks_name(node)) == 0) {
+		} else if (node && strcmp("success", iks_name(node)) == 0) {
 			globals.logger(DL_LOG_DEBUG, "XMPP server connected\n");
 			iks_send_header(handle->parser, handle->acc->server);
 			ldl_set_flag_locked(handle, LDL_FLAG_CONNECTED);
@@ -1158,9 +1159,10 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 				globals.logger(DL_LOG_DEBUG, "XMPP authenticated\n");
 				ldl_set_flag_locked(handle, LDL_FLAG_AUTHORIZED);
 			}
-
-			pak = iks_packet(node);
-			iks_filter_packet(handle->filter, pak);
+            if (node) {
+                pak = iks_packet(node);
+                iks_filter_packet(handle->filter, pak);
+            }
 			if (handle->job_done == 1) {
 				return IKS_HOOK;
 			}
@@ -1178,8 +1180,9 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 
 	}
 
-	if (node)
+	if (node) {
 		iks_delete(node);
+    }
 	return IKS_OK;
 }
 
