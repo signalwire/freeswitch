@@ -158,6 +158,9 @@
 	    <param name="rtp-ip" value="192.168.1.20"/>
 	    <param name="sip-ip" value="mydomain1.com"/>
 
+	    <!--Uncomment to set all inbound calls to no media mode-->
+	    <!--<param name="inbound-no-media" value="true"/>-->
+
 	    <!-- this lets anything register -->
 	    <!--  comment the next line and uncomment one or both of the other 2 lines for call authentication -->
 	    <param name="accept-blind-reg" value="true"/>
