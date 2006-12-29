@@ -2239,6 +2239,22 @@ static JSBool js_bridge(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, j
 	return JS_TRUE;
 }
 
+/* Replace this with more robust version later */
+static JSBool js_system(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+{
+    char *cmd;
+    *rval = BOOLEAN_TO_JSVAL( JS_FALSE );
+
+    if (argc > 0 && (cmd = JS_GetStringBytes(JS_ValueToString(cx, argv[0])))) {
+        *rval = INT_TO_JSVAL( system(cmd) );
+        return JS_TRUE;
+    }
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Arguements\n");
+    return JS_FALSE;
+}
+
+
 static JSBool js_file_unlink(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
 	const char *path;
@@ -2261,6 +2277,7 @@ static JSFunctionSpec fs_functions[] = {
 	{"apiExecute", js_api_execute, 2},
 	{"use", js_api_use, 1},
 	{"fileDelete", js_file_unlink, 1},
+	{"system", js_system, 1},
 #ifdef HAVE_CURL
 	{"fetchURLHash", js_fetchurl_hash, 1}, 
 	{"fetchURLFile", js_fetchurl_file, 1}, 
