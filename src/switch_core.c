@@ -548,8 +548,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_sessio
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
     if (session->rwlock) {
-        status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
-	}
+        if (switch_test_flag(session, SSF_DESTROYED)) {
+            status = SWITCH_STATUS_FALSE;
+        } else {
+            status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
+        }	
+    }
 
 	return status;
 }
@@ -3241,7 +3245,6 @@ SWITCH_DECLARE(void) switch_core_session_destroy(switch_core_session_t **session
 	if (runtime.session_count) {
 		runtime.session_count--;
 	}
-    switch_set_flag((*session), SSF_DESTROYED);
 	switch_mutex_unlock(runtime.session_table_mutex);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DESTROY) == SWITCH_STATUS_SUCCESS) {
@@ -3356,6 +3359,7 @@ static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thre
 	switch_core_media_bug_remove_all(session);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session %u (%s) Locked, Waiting on external entities\n", session->id, switch_channel_get_name(session->channel));
 	switch_core_session_write_lock(session);
+    switch_set_flag(session, SSF_DESTROYED);
 	switch_core_session_rwunlock(session);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Session %u (%s) Ended\n", session->id, switch_channel_get_name(session->channel));
