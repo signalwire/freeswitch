@@ -230,24 +230,60 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(int vg);
 ///\defgroup rwl Read/Write Locking
 ///\ingroup core1
 ///\{
+
+#ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(switch_status_t) switch_core_session_perform_read_lock(switch_core_session_t *session,
+                                                                      const char *file,
+                                                                      const char *func,
+                                                                      int line);
+#endif
+
 /*! 
   \brief Acquire a read lock on the session
   \param session the session to acquire from
   \return success if it is safe to read from the session
 */
+#ifdef SWITCH_DEBUG_RWLOCKS
+#define switch_core_session_read_lock(session) switch_core_session_perform_read_lock(session, __FILE__, __SWITCH_FUNC__, __LINE__)
+#else
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_session_t *session);
+#endif
+
+
+#ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(void) switch_core_session_perform_write_lock(switch_core_session_t *session,
+                                                            const char *file,
+                                                            const char *func,
+                                                            int line);
+#endif
 
 /*! 
   \brief Acquire a write lock on the session
   \param session the session to acquire from
 */
+#ifdef SWITCH_DEBUG_RWLOCKS
+#define switch_core_session_write_lock(session) switch_core_session_perform_write_lock(session, __FILE__, __SWITCH_FUNC__, __LINE__)
+#else
 SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session_t *session);
+#endif
+
+#ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(void) switch_core_session_perform_rwunlock(switch_core_session_t *session,
+                                                          const char *file,
+                                                          const char *func,
+                                                          int line);
+#endif
 
 /*! 
   \brief Unlock a read or write lock on as given session
   \param session the session
 */
+#ifdef SWITCH_DEBUG_RWLOCKS
+#define switch_core_session_rwunlock(session) switch_core_session_perform_rwunlock(session, __FILE__, __SWITCH_FUNC__, __LINE__)
+#else
 SWITCH_DECLARE(void) switch_core_session_rwunlock(switch_core_session_t *session);
+#endif
+
 ///\}
 
 ///\defgroup sh State Handlers
@@ -410,13 +446,24 @@ SWITCH_DECLARE(void) switch_core_session_signal_state_change(switch_core_session
 */
 SWITCH_DECLARE(char *) switch_core_session_get_uuid(switch_core_session_t *session);
 
+#ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(char *uuid_str,
+                                                                           const char *file,
+                                                                           const char *func,
+                                                                           int line);
+#endif
+
 /*! 
   \brief Locate a session based on it's uuiid
   \param uuid_str the unique id of the session you want to find
   \return the session or NULL
   \note if the session was located it will have a read lock obtained which will need to be released with switch_core_session_rwunlock()
 */
+#ifdef SWITCH_DEBUG_RWLOCKS
+#define switch_core_session_locate(uuid_str) switch_core_session_perform_locate(uuid_str, __FILE__, __SWITCH_FUNC__, __LINE__)
+#else
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_str);
+#endif
 
 /*! 
   \brief Retrieve a global variable from the core

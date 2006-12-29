@@ -543,31 +543,66 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_core_get_state_handl
 	return runtime.state_handlers[index];
 }
 
+#ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(switch_status_t) switch_core_session_perform_read_lock(switch_core_session_t *session,
+                                                                      const char *file,
+                                                                      const char *func,
+                                                                      int line)
+#else
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_session_t *session)
+#endif
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
     if (session->rwlock) {
         if (switch_test_flag(session, SSF_DESTROYED)) {
             status = SWITCH_STATUS_FALSE;
+#ifdef SWITCH_DEBUG_RWLOCKS
+            switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_DEBUG, "%s Read lock FAIL\n", 
+                              switch_channel_get_name(session->channel));
+#endif
         } else {
             status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
+#ifdef SWITCH_DEBUG_RWLOCKS
+            switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_DEBUG, "%s Read lock AQUIRED\n", 
+                              switch_channel_get_name(session->channel));
+#endif
         }	
     }
 
 	return status;
 }
 
+#ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(void) switch_core_session_perform_write_lock(switch_core_session_t *session,
+                                                            const char *file,
+                                                            const char *func,
+                                                            int line)
+{
+
+    switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_DEBUG, "%s Write lock AQUIRED\n", 
+                      switch_channel_get_name(session->channel));
+#else
 SWITCH_DECLARE(void) switch_core_session_write_lock(switch_core_session_t *session)
 {
+#endif
 	switch_thread_rwlock_wrlock(session->rwlock);
 }
 
+#ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(void) switch_core_session_perform_rwunlock(switch_core_session_t *session,
+                                                  const char *file,
+                                                  const char *func,
+                                                  int line)
+{
+    switch_log_printf(SWITCH_CHANNEL_ID_LOG, (char *) file, func, line, SWITCH_LOG_DEBUG, "%s Read/Write lock CLEARED\n", 
+                      switch_channel_get_name(session->channel));
+#else
 SWITCH_DECLARE(void) switch_core_session_rwunlock(switch_core_session_t *session)
 {
-
+#endif
 	switch_thread_rwlock_unlock(session->rwlock);
-
+    
 }
 
 SWITCH_DECLARE(char *) switch_core_get_variable(char *varname)
@@ -575,7 +610,15 @@ SWITCH_DECLARE(char *) switch_core_get_variable(char *varname)
 	return (char *) switch_core_hash_find(runtime.global_vars, varname);
 }
 
+
+#ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(char *uuid_str,
+                                                                           const char *file,
+                                                                           const char *func,
+                                                                           int line)
+#else
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_str)
+#endif
 {
 	switch_core_session_t *session = NULL;
 
@@ -583,7 +626,11 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(char *uuid_st
 		switch_mutex_lock(runtime.session_table_mutex);
 		if ((session = switch_core_hash_find(runtime.session_table, uuid_str))) {
 			/* Acquire a read lock on the session */
-			if (switch_test_flag(session, SSF_DESTROYED) || switch_thread_rwlock_tryrdlock(session->rwlock) != SWITCH_STATUS_SUCCESS) {
+#ifdef SWITCH_DEBUG_RWLOCKS
+			if (switch_core_session_perform_read_lock(session, file, func, line) != SWITCH_STATUS_SUCCESS) {
+#else
+            if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+#endif
 				/* not available, forget it */
 				session = NULL;
 			}
@@ -601,6 +648,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 	void *val;
 	switch_core_session_t *session;
 	switch_channel_t *channel;
+    uint32_t loops = 0;
 
 	switch_mutex_lock(runtime.session_table_mutex);
 	for (hi = switch_hash_first(runtime.memory_pool, runtime.session_table); hi; hi = switch_hash_next(hi)) {
@@ -614,7 +662,12 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 	switch_mutex_unlock(runtime.session_table_mutex);
 
 	while(runtime.session_count > 0) {
-		switch_yield(10000);
+		switch_yield(100000);
+        if (++loops == 100) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Giving up with %d session%s remaining\n", 
+                              runtime.session_count, runtime.session_count == 1 ? "" : "s");
+            break;
+        }
 	}
 }
 
@@ -626,11 +679,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(char *uuid_str,
 	switch_mutex_lock(runtime.session_table_mutex);
 	if ((session = switch_core_hash_find(runtime.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
-		if (switch_thread_rwlock_tryrdlock(session->rwlock) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
 			if (switch_channel_get_state(session->channel) < CS_HANGUP) {
 				status = switch_core_session_receive_message(session, message);
 			}
-			switch_thread_rwlock_unlock(session->rwlock);
+            switch_core_session_rwunlock(session);
 		}
 	}
 	switch_mutex_unlock(runtime.session_table_mutex);
@@ -646,11 +699,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(char *uuid_str, s
 	switch_mutex_lock(runtime.session_table_mutex);
 	if ((session = switch_core_hash_find(runtime.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
-		if (switch_thread_rwlock_tryrdlock(session->rwlock) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
 			if (switch_channel_get_state(session->channel) < CS_HANGUP) {
 				status = switch_core_session_queue_event(session, event);
 			}
-			switch_thread_rwlock_unlock(session->rwlock);
+            switch_core_session_rwunlock(session);
 		}
 	}
 	switch_mutex_unlock(runtime.session_table_mutex);
@@ -1654,7 +1707,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_se
 	assert(session != NULL);
 
 	/* Acquire a read lock on the session or forget it the channel is dead */
-	if (switch_thread_rwlock_tryrdlock(session->rwlock) == SWITCH_STATUS_SUCCESS) {
+	if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
 		if (switch_channel_get_state(session->channel) < CS_HANGUP) {
 			if (session->endpoint_interface->io_routines->receive_event) {
 				status = session->endpoint_interface->io_routines->receive_event(session, *event);
@@ -1676,7 +1729,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_se
 				switch_event_destroy(event);
 			}
 		}
-		switch_thread_rwlock_unlock(session->rwlock);
+        switch_core_session_rwunlock(session);
 	}
 	
 	return status;
@@ -4181,6 +4234,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(int vg)
 		fclose(runtime.console);
 		runtime.console = NULL;
 	}
+
+    switch_yield(1000000);
 
 	if (runtime.memory_pool) {
 		apr_pool_destroy(runtime.memory_pool);

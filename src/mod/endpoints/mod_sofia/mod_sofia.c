@@ -2613,7 +2613,7 @@ static void sip_i_state(int status,
 						switch_channel_set_variable(channel, "endpoint_disposition", "EARLY MEDIA");
 						switch_set_flag_locked(tech_pvt, TFLAG_EARLY_MEDIA);
 						switch_channel_set_flag(channel, CF_EARLY_MEDIA);
-						return;
+                        goto done;
 					}
 					switch_channel_set_variable(channel, "endpoint_disposition", "NO CODECS");
 					nua_respond(nh, SIP_488_NOT_ACCEPTABLE, 
