@@ -167,7 +167,8 @@ typedef enum {
 	TFLAG_XFER = (1 << 19),
 	TFLAG_NOMEDIA = (1 << 20),
 	TFLAG_BUGGY_2833 = (1 << 21),
-	TFLAG_SIP_HOLD = (1 << 22)
+	TFLAG_SIP_HOLD = (1 << 22),
+	TFLAG_INB_NOMEDIA = (1 << 23)
 } TFLAGS;
 
 static struct {
@@ -817,15 +818,13 @@ static void attach_private(switch_core_session_t *session,
 	tech_pvt->profile = profile;
 	tech_pvt->te = profile->te;
 	tech_pvt->session = session;
-
 	tech_pvt->home = su_home_new(sizeof(*tech_pvt->home));
 
 	switch_core_session_set_private(session, tech_pvt);
 
 	tech_set_codecs(tech_pvt);
 	snprintf(name, sizeof(name), "sofia/%s/%s", profile->name, channame);
-
-	switch_channel_set_name(channel, name);
+    switch_channel_set_name(channel, name);
 }
 
 static void terminate_session(switch_core_session_t **session, switch_call_cause_t cause, int line)
@@ -2532,7 +2531,9 @@ static void sip_i_state(int status,
 		
 		tech_pvt->nh = nh;
 		
-		
+		if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
+            switch_set_flag(tech_pvt, TFLAG_NOMEDIA);
+        }
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s entering state [%s]\n", 
 						  switch_channel_get_name(channel),
@@ -2784,6 +2785,11 @@ static void sip_i_state(int status,
 				switch_set_flag_locked(tech_pvt, TFLAG_ANS);
 				switch_channel_set_variable(channel, "endpoint_disposition", "ANSWER");
                 switch_channel_mark_answered(channel);
+                if ((uuid = switch_channel_get_variable(channel, SWITCH_BRIDGE_VARIABLE)) && (other_session = switch_core_session_locate(uuid))) {
+                    other_channel = switch_core_session_get_channel(other_session);
+                    switch_channel_answer(other_channel);
+                    switch_core_session_rwunlock(other_session);
+                }
 				goto done;
 			} //else probably an ack
 		}
@@ -4053,9 +4059,17 @@ static void sip_i_invite(nua_t *nua,
     }
 
     attach_private(session, profile, tech_pvt, username);
+
+
     channel = switch_core_session_get_channel(session);
     switch_channel_set_variable(channel, "endpoint_disposition", "INBOUND CALL");
     set_chat_hash(tech_pvt, sip);
+
+    if (switch_test_flag(tech_pvt, TFLAG_INB_NOMEDIA)) {
+        switch_set_flag_locked(tech_pvt, TFLAG_NOMEDIA);
+        switch_channel_set_flag(channel, CF_NOMEDIA);
+    }
+
 			
     switch_channel_set_variable(channel, "sip_from_user", (char *) from->a_url->url_user);
     if (from->a_url->url_user && *from->a_url->url_user == '+') {
@@ -4367,12 +4381,18 @@ static void event_callback(nua_event_t event,
 	struct private_object *tech_pvt = NULL;
 	auth_res_t auth_res = AUTH_FORBIDDEN;
 	switch_core_session_t *session = NULL;
-	
+    switch_channel_t *channel = NULL;
+
     if (sofia_private) {
         if (!switch_strlen_zero(sofia_private->uuid)) {
 
             if ((session = switch_core_session_locate(sofia_private->uuid))) {
                 tech_pvt = switch_core_session_get_private(session);
+                channel = switch_core_session_get_channel(tech_pvt->session);
+                if (switch_channel_test_flag(channel, CF_NOMEDIA)) {
+                    switch_set_flag(tech_pvt, TFLAG_NOMEDIA);
+                }
+
             } else {
                 /* too late */
                 return;            
@@ -4380,20 +4400,18 @@ static void event_callback(nua_event_t event,
         }
     }
 
+
 	if (status != 100 && status != 200) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "event [%s] status [%d][%s] session: %s\n",
 						  nua_event_name (event), status, phrase,
-						  session ? switch_channel_get_name(switch_core_session_get_channel(session)) : "n/a"
+						  session ? switch_channel_get_name(channel) : "n/a"
 						  );
 	}
 
 	if ((profile->pflags & PFLAG_AUTH_ALL) && tech_pvt && tech_pvt->key && sip) {
 		sip_authorization_t const *authorization = NULL;
 
-		switch_channel_t *channel = switch_core_session_get_channel(tech_pvt->session);
-		assert(channel != NULL);
-
-		if (sip->sip_authorization) {
+        if (sip->sip_authorization) {
 			authorization = sip->sip_authorization;
 		} else if (sip->sip_proxy_authorization) {
 			authorization = sip->sip_proxy_authorization;
@@ -4409,7 +4427,7 @@ static void event_callback(nua_event_t event,
 			goto done;
 		}
 
-		if (session) {
+		if (channel) {
 			switch_channel_set_variable(channel, "sip_authorized", "true");
 		}
 	}
@@ -4812,6 +4830,8 @@ static switch_status_t config_sofia(int reload)
 						profile->debug = atoi(val);
 					} else if (!strcasecmp(var, "use-rtp-timer") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_TIMER);
+					} else if (!strcasecmp(var, "inbound-no-media") && switch_true(val)) {
+						switch_set_flag(profile, TFLAG_INB_NOMEDIA);
 					} else if (!strcasecmp(var, "rfc2833-pt")) {
 						profile->te = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "sip-port")) {
@@ -5079,7 +5099,12 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 		}
 		
 		if (!host || !(profile = (sofia_profile_t *) switch_core_hash_find(globals.profile_hash, host))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", host ? host : "NULL");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nInvalid Profile %s\n", 
+                              proto,
+                              from,
+                              to,
+                              body ? body : "[no body]",
+                              host ? host : "NULL");
 			return SWITCH_STATUS_FALSE;
 		}
 
