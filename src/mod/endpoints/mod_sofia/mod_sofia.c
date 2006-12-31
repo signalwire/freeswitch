@@ -4441,18 +4441,29 @@ static void event_callback(nua_event_t event,
 	case nua_r_shutdown:    
 	case nua_r_get_params:    
 	case nua_r_invite:
+    case nua_r_unregister:
+    case nua_r_options:
+	case nua_i_fork:
+	case nua_r_info:
+    case nua_r_bye:
+	case nua_i_bye:
+	case nua_r_unsubscribe:
+	case nua_r_publish:
+	case nua_r_message:
+	case nua_r_notify:
+    case nua_i_notify:
+	case nua_i_cancel:
+	case nua_i_error:
+	case nua_i_active:
+	case nua_i_ack:
+	case nua_i_terminated:
+	case nua_r_set_params:
         break;
 	case nua_r_register:
 		sip_r_register(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
-    case nua_r_unregister:
-		break;
-    case nua_r_options:
-		break;
 	case nua_i_options:
 		sip_i_options(status, phrase, nua, profile, nh, sofia_private, sip, tags);
-		break;
-	case nua_i_fork:
 		break;
     case nua_i_invite:
         if (!session) {
@@ -4470,12 +4481,8 @@ static void event_callback(nua_event_t event,
 	case nua_i_state:
 		sip_i_state(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
-    case nua_r_bye:
-	case nua_i_bye:
 	case nua_i_message:
 		sip_i_message(status, phrase, nua, profile, nh, sofia_private, sip, tags);
-		break;
-	case nua_r_info:
 		break;
 	case nua_i_info:
 		sip_i_info(nua, profile, nh, session, sip, tags);
@@ -4493,28 +4500,14 @@ static void event_callback(nua_event_t event,
 	case nua_i_subscribe:
 		sip_i_subscribe(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
-	case nua_r_unsubscribe:
-	case nua_r_publish:
-	case nua_r_message:
-	case nua_r_notify:
-    case nua_i_notify:
-	case nua_i_cancel:
-	case nua_i_error:
-	case nua_i_active:
-	case nua_i_ack:
-	case nua_i_terminated:
-	case nua_r_set_params:
-		break;
-
 	default:
-		if (status > 100)
+		if (status > 100) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: unknown event %d: %03d %s\n", 
 							  nua_event_name (event), event, status, phrase);
-		else
+        } else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s: unknown event %d\n", nua_event_name (event), event);
-	
+        }
 		break;
-
 	}
 
  done:
