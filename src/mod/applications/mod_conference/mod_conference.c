@@ -2680,6 +2680,8 @@ static switch_status_t conf_api_sub_stop(conference_obj_t *conference, switch_st
     if (argc > 2) {
         current = strcasecmp(argv[2], "current") ? 0 : 1;
         all = strcasecmp(argv[2], "all") ? 0 : 1;
+    } else {
+        all = 1;
     }
 
     if (current || all) {
@@ -2987,7 +2989,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"play", &conf_api_sub_play, CONF_API_SUB_ARGS_SPLIT, "<confname> play <file_path> [<member_id>]"}, 
 	{"say", &conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "<confname> say <text>"}, 
 	{"saymember", &conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "<confname> saymember <member_id> <text>"}, 
-	{"stop", &conf_api_sub_stop, CONF_API_SUB_MEMBER_TARGET, "<confname> stop <[current|all|last]> [<member_id>]"}, 
+	{"stop", &conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "<confname> stop <[current|all|last]> [<member_id>]"}, 
 	{"kick", &conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "<confname> kick <[member_id|all|last]>"}, 
 	{"mute", &conf_api_sub_mute, CONF_API_SUB_MEMBER_TARGET, "<confname> mute <[member_id|all]|last>"}, 
 	{"unmute", &conf_api_sub_unmute, CONF_API_SUB_MEMBER_TARGET, "<confname> unmute <[member_id|all]|last>"}, 
@@ -3031,9 +3033,17 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
                 /* member specific command that can be itteratted */
             case CONF_API_SUB_MEMBER_TARGET:
                 {
-                    uint32_t id = atoi(argv[argn+1]);
-                    int all = ( id == 0 && strcasecmp(argv[argn+1], "all") == 0 );
-                    int last = ( id == 0 && strcasecmp(argv[argn+1], "last") == 0 );
+                    uint32_t id = 0;
+                    int all;
+                    int last;
+
+                    if (argv[argn+1]) {
+                        if (!(id = atoi(argv[argn+1]))) {
+                            all = strcasecmp(argv[argn+1], "all") ? 0 : 1;
+                            last = strcasecmp(argv[argn+1], "last") ? 0 : 1;
+                        }                        
+                    }
+
 
                     if (all) {
                         conference_member_itterator(conference, stream, conf_api_sub_commands[i].pfnapicmd, argv[argn+2]);
