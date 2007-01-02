@@ -90,14 +90,24 @@ su_log_t tport_log[] = {
 /** Initialize logging. */
 void tport_open_log(tport_master_t *mr, tagi_t *tags)
 {
-  char const *log;
-  
-  mr->mr_log = 
-    getenv("MSG_STREAM_LOG") != NULL ||
-    getenv("TPORT_LOG") != NULL 
-    ? MSG_DO_EXTRACT_COPY : 0;
-    
-  if ((log = getenv("TPORT_DUMP")) || (log = getenv("MSG_DUMP"))) {
+  char const *log = NULL;
+  int log_msg = 0;
+
+  tl_gets(tags, TPTAG_LOG_REF(log_msg), TAG_END());
+
+  if (getenv("MSG_STREAM_LOG") != NULL || getenv("TPORT_LOG") != NULL)
+    log_msg = 1;
+
+  mr->mr_log = log_msg ? MSG_DO_EXTRACT_COPY : 0;
+
+  tl_gets(tags, TPTAG_DUMP_REF(log), TAG_END());
+
+  if (getenv("MSG_DUMP"))
+    log = getenv("MSG_DUMP");
+  if (getenv("TPORT_DUMP"))
+    log = getenv("TPORT_DUMP");
+
+  if (log) {
     time_t now;
 
     if (strcmp(log, "-")) 

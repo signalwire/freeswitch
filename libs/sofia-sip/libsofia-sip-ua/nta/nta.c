@@ -3074,13 +3074,6 @@ int nta_msg_request_complete(msg_t *msg,
   if (!sip->sip_max_forwards)
     sip_add_dup(msg, sip, (sip_header_t *)leg->leg_agent->sa_max_forwards);
 
-  if (!sip->sip_call_id) {
-    if (leg->leg_id)
-      sip->sip_call_id = sip_call_id_dup(home, leg->leg_id);
-    else
-      sip->sip_call_id = sip_call_id_create(home, NULL);
-  }
-
   if (!sip->sip_from)
     sip->sip_from = sip_from_dup(home, leg->leg_local);
   else if (leg->leg_local && leg->leg_local->a_tag &&
@@ -3113,7 +3106,10 @@ int nta_msg_request_complete(msg_t *msg,
   method = sip->sip_request->rq_method;
   method_name = sip->sip_request->rq_method_name;
 
-  if (method == sip_method_ack || method == sip_method_cancel)
+  if (!leg->leg_id && !sip->sip_call_id && sip->sip_cseq)
+    seq = sip->sip_cseq->cs_seq; 
+  else if (method == sip_method_ack || method == sip_method_cancel)
+    /* Dangerous - we may do PRACK/UPDATE meanwhile */
     seq = sip->sip_cseq ? sip->sip_cseq->cs_seq : leg->leg_seq; 
   else if (leg->leg_seq)
     seq = ++leg->leg_seq;
@@ -3121,6 +3117,13 @@ int nta_msg_request_complete(msg_t *msg,
     seq = leg->leg_seq = sip->sip_cseq->cs_seq;
   else
     seq = leg->leg_seq = (sip_now() >> 1) & 0x7ffffff;
+
+  if (!sip->sip_call_id) {
+    if (leg->leg_id)
+      sip->sip_call_id = sip_call_id_dup(home, leg->leg_id);
+    else
+      sip->sip_call_id = sip_call_id_create(home, NULL);
+  }
 
   if ((!sip->sip_cseq || 
        seq != sip->sip_cseq->cs_seq ||
@@ -9718,6 +9721,9 @@ int outgoing_recv_reliable(nta_outgoing_t *orq,
  * @param magic
  * @param to_tag
  * @param rseq
+ *
+ * @bug Fix the memory leak - either one of the requests is left unreleased
+ * for ever.
  */
 nta_outgoing_t *nta_outgoing_tagged(nta_outgoing_t *orq,
 				    nta_response_f *callback,
@@ -9757,8 +9763,8 @@ nta_outgoing_t *nta_outgoing_tagged(nta_outgoing_t *orq,
 
   tagged->orq_to 	   = to;
   tagged->orq_tport        = tport_ref(orq->orq_tport);
-  tagged->orq_request      = (msg_t *)msg_ref_create(orq->orq_request);
-  tagged->orq_response     = NULL;
+  tagged->orq_request      = msg_ref_create(orq->orq_request);
+  tagged->orq_response     = msg_ref_create(orq->orq_response);
   tagged->orq_cancel       = NULL;
 
   tagged->orq_pending = tport_pend(orq->orq_tport, 

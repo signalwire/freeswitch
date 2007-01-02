@@ -319,34 +319,28 @@ gboolean su_source_prepare(GSource *gs, gint *return_tout)
 
   enter;
   
-  if (self->sup_head)
+  if (self->sup_head) {
+    *return_tout = 0;
     return TRUE;
-
-  *return_tout = -1;
+  }
 
   if (self->sup_timers) {
     su_time_t now;
     GTimeVal  gtimeval;
     su_duration_t tout;
 
-    tout = SU_DURATION_MAX;
-
     g_source_get_current_time(gs, &gtimeval);
-
     now.tv_sec = gtimeval.tv_sec + 2208988800UL;
     now.tv_usec = gtimeval.tv_usec;
 
     tout = su_timer_next_expires(self->sup_timers, now);
 
-    if (tout == 0)
-      return TRUE;
+    *return_tout = (tout < 0 || tout > (su_duration_t)G_MAXINT)?
+	-1 : (gint)tout;
 
-    if ((gint)tout < 0 || tout > (su_duration_t)G_MAXINT)
-      tout = -1;
-
-    *return_tout = (gint)tout;
+    return (tout == 0);
   }
-  
+
   return FALSE;
 }
 
@@ -995,30 +989,30 @@ su_duration_t su_source_step(su_port_t *self, su_duration_t tout)
   gmc = g_source_get_context(self->sup_source);
 
   if (gmc && g_main_context_acquire(gmc)) {
+    GPollFD *fds = NULL;
+    gint fds_size = 0;
+    gint fds_wait;
     gint priority = G_MAXINT;
-    if (g_main_context_prepare(gmc, &priority)) {
-      g_main_context_dispatch(gmc);
-    } else {
-      gint timeout = tout > G_MAXINT ? G_MAXINT : tout;
-      gint i, n = 0;
-      GPollFD *fds = NULL;
+    gint src_tout = -1;
 
-      priority = G_MAXINT;
+    g_main_context_prepare(gmc, &priority);
 
-      n = g_main_context_query(gmc, priority, &timeout, fds, n);
-      if (n > 0) {
-	fds = g_alloca(n * (sizeof *fds));
-	n = g_main_context_query(gmc, priority, &timeout, fds, n);	
-      }
-
-      if (tout < timeout)
-	timeout = tout;
-
-      i = su_wait((su_wait_t *)fds, n, timeout);
-
-      if (g_main_context_check(gmc, priority, fds, n))
-	g_main_context_dispatch(gmc);
+    fds_wait = g_main_context_query(gmc, priority, &src_tout, NULL, 0);
+    while (fds_wait > fds_size) {
+      fds = g_alloca(fds_wait * sizeof(fds[0]));
+      fds_size = fds_wait;
+      fds_wait = g_main_context_query(gmc, priority, &src_tout, fds, fds_size);
     }
+
+    if (src_tout >= 0 && tout > (su_duration_t)src_tout)
+      tout = src_tout;
+
+    su_wait((su_wait_t *)fds, fds_wait, tout);
+
+    g_main_context_check(gmc, priority, fds, fds_wait);
+
+    g_main_context_dispatch(gmc);
+
     g_main_context_release(gmc);
   }
 

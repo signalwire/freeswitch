@@ -19,12 +19,12 @@ INCLUDES =		-I$(S_BASE)/su -I$(B_BASE)/su $(GLIB_CFLAGS)
 
 noinst_LTLIBRARIES = 	libsu-glib.la
 
-check_PROGRAMS = 	su_source_test
+check_PROGRAMS = 	su_source_test torture_su_glib_timer
 
 # ----------------------------------------------------------------------
 # Tests
 
-TESTS = 		su_source_test
+TESTS = 		su_source_test torture_su_glib_timer
 
 # ----------------------------------------------------------------------
 # Rules for building the targets

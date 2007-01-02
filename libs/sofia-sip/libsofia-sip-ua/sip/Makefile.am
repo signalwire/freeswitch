@@ -17,7 +17,7 @@ INCLUDES = 	-I$(srcdir)/../bnf -I../bnf \
 noinst_LTLIBRARIES = 	libsip.la
 
 check_PROGRAMS =       torture_sip \
-			test_sip_msg validator date_test
+			test_sip_msg validator test_date
 
 # ----------------------------------------------------------------------
 # Rules for building the targets
@@ -59,7 +59,7 @@ LDADD = 		libsip.la \
 
 torture_sip_LDFLAGS = 	-static
 test_sip_msg_LDFLAGS = 	-static
-date_test_LDFLAGS = 	-static
+test_date_LDFLAGS = 	-static
 
 # ----------------------------------------------------------------------
 # Install and distribution rules
@@ -93,9 +93,9 @@ EXTRA_DIST =		Doxyfile sip.docs sip_parser.docs sip.doxyaliases \
 # ----------------------------------------------------------------------
 # Tests
 
-#TESTS = torture_sip run_test_sip_msg run_date_test
+#TESTS = torture_sip run_test_sip_msg run_test_date
 
-#dist_noinst_SCRIPTS = 	run_test_sip_msg run_date_test
+#dist_noinst_SCRIPTS = 	run_test_sip_msg run_test_date
 
 # ----------------------------------------------------------------------
 # Sofia specific rules

@@ -133,7 +133,7 @@ AC_ARG_ENABLE(coverage,
 if test X$enable_coverage != Xno ; then
 case "${CC-cc}" in
   *gcc*) 
-	SOFIA_CFLAGS="$SOFIA_CFLAGS -fprofile-arcs -ftest-coverage" 
+	AC_SUBST([SOFIA_COVERAGE], ["-fprofile-arcs -ftest-coverage"])
 	;;
   *) AC_MSG_ERROR([--enable-coverage requires gcc])
 esac
@@ -344,7 +344,6 @@ AC_ARG_ENABLE(ndebug,
 [  --enable-ndebug             compile with NDEBUG (disabled)],
  , enable_ndebug=no)
 AM_CONDITIONAL(NDEBUG, test x$enable_ndebug = yes)
-SOFIA_CFLAGS="$SOFIA_CFLAGS -DNDEBUG"
 ])
 
 dnl ======================================================================

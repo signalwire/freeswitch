@@ -7,7 +7,10 @@ INPUT 		     = tport.docs sofia-sip .
 
 TAGFILES            += \
 	../docs/su.doxytags=../su \
-	../docs/msg.doxytags=../msg
+	../docs/msg.doxytags=../msg \
+	../docs/nth.doxytags=../nth \
+	../docs/nta.doxytags=../nta \
+	../docs/nua.doxytags=../nua \
 
 GENERATE_TAGFILE    = ../docs/tport.doxytags
 

@@ -58,6 +58,13 @@ int tport_udp_init_client(tport_primary_t *pri,
 			  tagi_t const *tags,
 			  char const **return_culprit);
 
+#if HAVE_FUNC
+#elif HAVE_FUNCTION
+#define __func__ __FUNCTION__
+#else
+static char const __func__[] = "tport_type_udp";
+#endif
+
 tport_vtable_t const tport_udp_client_vtable =
 {
   "udp", tport_type_client,
@@ -215,7 +222,7 @@ static void tport_check_trunc(tport_t *tp, su_addrinfo_t *ai)
 int tport_recv_dgram(tport_t *self)
 {
   msg_t *msg;
-  ssize_t n, veclen;
+  ssize_t n, veclen, N;
   su_addrinfo_t *ai;
   su_sockaddr_t *from;
   socklen_t fromlen;
@@ -232,8 +239,21 @@ int tport_recv_dgram(tport_t *self)
 
   assert(self->tp_msg == NULL);
 
-  veclen = tport_recv_iovec(self, &self->tp_msg, iovec, 65536, 1);
-  if (veclen < 0)
+#if nomore
+  /* We used to resize the buffer, but it fragments the memory */
+  N = 65535;
+#else
+  N = (ssize_t)su_getmsgsize(self->tp_socket);
+  if (N == -1) {
+    int err = su_errno();
+    SU_DEBUG_1(("%s(%p): su_getmsgsize(): %s (%d)\n", __func__, self,
+		su_strerror(err), err));
+    return -1;
+  }
+#endif
+
+  veclen = tport_recv_iovec(self, &self->tp_msg, iovec, N, 1);
+  if (veclen == -1)
     return -1;
 
   msg = self->tp_msg;

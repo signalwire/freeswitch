@@ -90,7 +90,7 @@ doxygen: built-sources
 	for d in $(DIST_SUBDIRS); do \
 	  test -r $$d/Doxyfile \
 	  && pushd $$d > /dev/null \
-	  && echo running ${DOXYGEN} in second time in $$d \
+	  && echo running ${DOXYGEN} second time in $$d \
           && ${DOXYGEN} 2>&1 \
 	   | egrep -v -i -e 'Warning: Unsupported (xml/)?html tag' \
           ; popd > /dev/null ; \

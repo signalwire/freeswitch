@@ -24,7 +24,7 @@
 
 /**@internal
  *
- * @CFILE date_test.c  
+ * @CFILE test_date.c  
  *
  * Tester for SIP date parser
  *
@@ -45,7 +45,7 @@
 void usage(void)
 {
   fprintf(stderr, 
-	  "usage: date_test [SIP-date] "
+	  "usage: test_date [SIP-date] "
 	  "[YYYYy][DDd][HHh][MMm][SS[s]]\n");
   exit(1);
 }
@@ -65,7 +65,7 @@ int main(int ac, char *av[])
 
   if ((s = av[1])) {
     if (msg_date_d(&s, &t) < 0) {
-      fprintf(stderr, "date_test: %s is not valid time\n", s);
+      fprintf(stderr, "test_date: %s is not valid time\n", s);
       exit(1);
     }
       
@@ -82,7 +82,7 @@ int main(int ac, char *av[])
 	case '\0': --s;		/* FALLTHROUGH */
 	case 's': delta += t2; break;
 	default:
-	  fprintf(stderr, "date_test: %s is not valid time offset\n" , av[2]);
+	  fprintf(stderr, "test_date: %s is not valid time offset\n" , av[2]);
 	  usage();
 	  break;
 	}
@@ -100,12 +100,12 @@ int main(int ac, char *av[])
 
     s = buf, t2 = 0;
     if (msg_date_d(&s, &t2) < 0) {
-      fprintf(stderr, "date_test: decoding %s failed\n", buf);
+      fprintf(stderr, "test_date: decoding %s failed\n", buf);
       retval = 1;
       break;
     }
     else if (t2 != t) {
-      fprintf(stderr, "date_test: %lu != %lu\n", t, t2);
+      fprintf(stderr, "test_date: %lu != %lu\n", t, t2);
       retval = 1;
       break;
     }

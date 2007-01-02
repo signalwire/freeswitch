@@ -138,7 +138,7 @@ void sl_from_log(su_log_t *log, int level,
   a->a_params = NULL;
   if (!a->a_display) a->a_display = "";
     
-  return sl_header_log(log, level, fmt, (sip_header_t *)a);
+  sl_header_log(log, level, fmt, (sip_header_t *)a);
 }
 
 /**Log a @To header.

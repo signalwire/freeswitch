@@ -165,17 +165,16 @@ int su_time_print(char *s, int n, su_time_t const *tv)
 
 /** Time difference in milliseconds.
  *
- *   Calculates the duration from t2 to t1 in milliseconds.  
+ * Calculates the duration from t2 to t1 in milliseconds.  
  *
  * @param t1   after time
  * @param t2   before time
  * 
- * @return
- *   The duration in milliseconds between the two times.  If the difference
- *   is bigger than @c SU_DURATION_MAX, the function su_duration() returns
- *   @c SU_DURATION_MAX instead.  If the difference is smaller than @c
- *   -SU_DURATION_MAX, the function su_duration() returns @c
- *   -SU_DURATION_MAX.
+ * @return The duration in milliseconds between the two times.
+ * If the difference is bigger than #SU_DURATION_MAX, return #SU_DURATION_MAX
+ * instead.
+ * If the difference is smaller than -#SU_DURATION_MAX, return
+ * -#SU_DURATION_MAX.
  */
 su_duration_t su_duration(su_time_t const t1, su_time_t const t2)
 {

@@ -58,6 +58,10 @@
 #include <sofia-sip/su_tag_inline.h>
 #include <sofia-sip/su_tagarg.h>
 
+#ifndef HAVE_STRTOULL
+unsigned longlong strtoull(const char *, char **, int);
+#endif
+
 /**@defgroup su_tag Tag Item Lists
  *
  * Object-oriented tag routines for Sofia utility library.

@@ -5,17 +5,30 @@ Pekka Pessi <pekka.pessi -at nokia -dot com>
 Martti Mela <martti.mela -at nokia -dot com>
 Kai Vehmanen <kai.vehmanen -at nokia -dot com>
 
-Contributors (in alphabetical order)
-------------------------------------
+Contributors (in alphabetical order, surname first)
+---------------------------------------------------
 
-Chan, Tat
-Haataja, Mikko
-Jacobs, Remeres
-Jalava, Teemu
+Chan, Tat <first.surname@nokia.com>
+Ciarkowski, Andrzej <wp-voigtkampff -at users -dot sourceforge -dot net>
+Haataja, Mikko <first.surname@nokia.com>
+Jacobs, Remeres <first.surname@nokia.com>
+Jalava, Teemu <first.surname@nokia.com>
 Jerris, Michael <mike -at jerris -dot com>
+Legostayev Denis <legostayev -at neic -dot nsk -dot su>
 Prado, Dimitri E. <dprado -at e3c -dot com -dot br>
-Puustinen, Ismo
-Rinne-Rahkola, Pasi
-Saari, Mika
-Selin, Jari
-Urpalainen, Jari
+Puolakka, Petteri <first.surname@nokia.com>
+Puustinen, Ismo <first.surname@nokia.com>
+Rinne-Rahkola, Pasi <first.surname@nokia.com>
+Saari, Mika <first.surname@nokia.com>
+Selin, Jari <first.surname@nokia.com>
+Underwood, Steve <steveu -at coppice -dot org>
+Urpalainen, Jari <first.surname@nokia.com>
+Whittaker, Colin <colinw -at occamnetworks -dot com>
+Zabaluev, Mikhail <first.surname@nokia.com>
+
+
+Note: for details on who did what, see the version control 
+      system change history, and release notes for past releases at
+      http://sofia-sip.sourceforge.net/relnotes/
+
+      

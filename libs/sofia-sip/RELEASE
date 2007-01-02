@@ -55,6 +55,7 @@ Contributors to this release
 
 - **template**: First Surname (patch to nua/soa/msg)
 - Petteri Puolakka (patch to stun)
+- Mikhail Zabluev (patch to su-glib mainloop integration)
 
 See the AUTHORS file in the distribution package.
 
@@ -94,3 +95,8 @@ Bugs fixed in this release
   Roman Filonenko.
 - Bug in zero-padding STUN messages with a message integrity 
   attribute. Patch by Petteri Puolakka.
+- Fixed a severe problem with timer accuracy, when sofia-sip timers 
+  where used under glib's mainloop.
+- Improved glib mainloop integration to avoid warnings about already
+  active mainloop context, and potentially other issue. Patch by 
+  Mikhail Zabaluev. Closes sf.net item #1606786.

@@ -78,3 +78,6 @@ tag_typedef_t tptag_thrprqsize = UINTTAG_TYPEDEF(thrprqsize);
 tag_typedef_t tptag_http_connect = STRTAG_TYPEDEF(http_connect);
 tag_typedef_t tptag_stun_server = BOOLTAG_TYPEDEF(stun_server);
 tag_typedef_t tptag_tos = INTTAG_TYPEDEF(tos);
+tag_typedef_t tptag_log = INTTAG_TYPEDEF(log);
+tag_typedef_t tptag_dump = STRTAG_TYPEDEF(dump);
+

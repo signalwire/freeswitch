@@ -286,7 +286,7 @@ static inline int tport_is_bound(tport_t const *self)
 }
 
 /** Test if transport connection has been established. @NEW_1_12_5 */
-inline int tport_is_connected(tport_t const *self)
+int tport_is_connected(tport_t const *self)
 {
   return self->tp_is_connected;
 }
@@ -308,7 +308,7 @@ void tport_set_tos(su_socket_t socket, su_addrinfo_t *ai, int tos)
 {
   if (tos >= 0 && 
       ai->ai_family == AF_INET && 
-      setsockopt(socket, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)) < 0) {
+      setsockopt(socket, IPPROTO_IP, IP_TOS, (const void*)&tos, sizeof(tos)) < 0) {
     SU_DEBUG_3(("tport: setsockopt(IP_TOS): %s\n",
 		su_strerror(su_errno())));
   }
@@ -427,7 +427,12 @@ msg_t *tport_destroy_alloc(tp_stack_t *stack, int flags,
 /** Name for "any" transport. @internal */
 static char const tpn_any[] = "*";
 
-/** Create the master transport. */
+/** Create the master transport. 
+ *
+ * @TAGS
+ * TPTAG_LOG(), TPTAG_DUMP(), tags used with tport_set_params(), especially
+ * TPTAG_QUEUESIZE().
+ */
 tport_t *tport_tcreate(tp_stack_t *stack,
 		       tp_stack_class_t const *tpac,
 		       su_root_t *root, 
@@ -1128,6 +1133,12 @@ int tport_get_params(tport_t const *self,
  *
  * @param self          pointer to a transport object
  * @param tag,value,... list of tags
+ *
+ * @TAGS
+ * TPTAG_MTU(), TPTAG_QUEUESIZE(), TPTAG_IDLE(), TPTAG_TIMEOUT(),
+ * TPTAG_DEBUG_DROP(), TPTAG_THRPSIZE(), TPTAG_THRPRQSIZE(),
+ * TPTAG_SIGCOMP_LIFETIME(), TPTAG_CONNECT(), TPTAG_SDWN_ERROR(),
+ * TPTAG_REUSE(), TPTAG_STUN_SERVER(), and TPTAG_TOS().
  */
 int tport_set_params(tport_t *self,
 		     tag_type_t tag, tag_value_t value, ...)
@@ -1137,8 +1148,6 @@ int tport_set_params(tport_t *self,
   tport_params_t tpp[1], *tpp0;
 
   int connect, sdwn_error, reusable, stun_server;
-
-  struct sigcomp_compartment *cc = NONE;
 
   if (self == NULL)
     return su_seterrno(EINVAL);
@@ -1164,7 +1173,6 @@ int tport_set_params(tport_t *self,
 	      TPTAG_CONNECT_REF(connect),
 	      TPTAG_SDWN_ERROR_REF(sdwn_error),
 	      TPTAG_REUSE_REF(reusable),
-	      TPTAG_COMPARTMENT_REF(cc),
 	      TPTAG_STUN_SERVER_REF(stun_server),
 	      TPTAG_TOS_REF(tpp->tpp_tos),
 	      TAG_END());
@@ -1324,6 +1332,11 @@ int tport_bind_set(tport_master_t *mr,
  * @param tpn         desired transport address
  * @param transports  list of protocol names supported by stack
  * @param tag,value,... tagged argument list
+ *
+ * @TAGS
+ * TPTAG_SERVER(), TPTAG_PUBLIC(), TPTAG_IDENT(), TPTAG_HTTP_CONNECT(),
+ * TPTAG_CERTIFICATE(), TPTAG_TLS_VERSION(), and tags used with
+ * tport_set_params(), especially TPTAG_QUEUESIZE().
  */
 int tport_tbind(tport_t *self,
 		tp_name_t const *tpn,
@@ -2940,6 +2953,7 @@ int tport_recv_error_report(tport_t *self)
  *
  * @TAGS
  * TPTAG_MTU(), TPTAG_REUSE(), TPTAG_CLOSE_AFTER(), TPTAG_SDWN_AFTER(), 
+ * TPTAG_FRESH(), TPTAG_COMPARTMENT().
  */
 tport_t *tport_tsend(tport_t *self, 
 		     msg_t *msg, 
@@ -4526,5 +4540,3 @@ char *tport_hostport(char buf[], isize_t bufsize,
 
   return buf;
 }
-
-/* ----------------------------------------------------------------------  */

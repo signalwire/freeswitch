@@ -54,7 +54,7 @@
 #elif HAVE_FUNCTION
 #define __func__ __FUNCTION__
 #else
-char const __func__[] = "tport_type_tcp";
+static char const __func__[] = "tport_type_tcp";
 #endif
 
 /* ---------------------------------------------------------------------- */
