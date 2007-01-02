@@ -1103,7 +1103,7 @@
 				>
 			</File>
 			<File
-				RelativePath="pcre.h"
+				RelativePath="..\..\pcre\pcre.h"
 				>
 			</File>
 			<File
