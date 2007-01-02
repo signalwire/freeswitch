@@ -48,6 +48,8 @@
 @set PR2=../libsofia-sip-ua/sip/sofia-sip/sip_hclasses.h
 @set PR3=../libsofia-sip-ua/sip/sofia-sip/sip_protos.h
 @set PR4=../libsofia-sip-ua/sip/sofia-sip/sip_tag.h
+@set PR5=../libsofia-sip-ua/sip/sofia-sip/sip_extra.h
+@set SIPEXTRA=../libsofia-sip-ua/sip/sip_extra_headers.txt
 @set PT=../libsofia-sip-ua/sip/sip_parser_table.c
 
 %MSG_AWK% module=sip PR=%PR% %IN%  < NUL
@@ -57,6 +59,8 @@
 %MSG_AWK% module=sip PR=%PR3% %IN% < NUL
 %CHECK%
 %MSG_AWK% module=sip PR=%PR4% %IN% < NUL
+%CHECK%
+%MSG_AWK% module=sip PR=%PR5% TEMPLATE1=%PR2%.in TEMPLATE2=%PR3%.in TEMPLATE=%PR5%.in NO_FIRST=1 NO_LAST=1 < NUL %SIPEXTRA%
 %CHECK%
 
 %MSG_AWK% module=sip MC_HASH_SIZE=127 MC_SHORT_SIZE=26 ^
