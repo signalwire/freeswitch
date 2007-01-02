@@ -652,7 +652,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
     
 	while (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		//switch_thread_cond_wait(tech_pvt->cond, tech_pvt->mutex);
-		if (switch_test_flag_locked(tech_pvt, TFLAG_BREAK)) {
+		if (switch_test_flag(tech_pvt, TFLAG_BREAK)) {
             switch_clear_flag(tech_pvt, TFLAG_BREAK);
             tech_pvt->read_frame.datalen = 13;
             memset(tech_pvt->read_frame.data, 0, 13);
