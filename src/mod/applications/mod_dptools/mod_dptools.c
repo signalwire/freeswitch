@@ -128,10 +128,27 @@ static void phrase_function(switch_core_session_t *session, char *data)
 
 }
 
+
+static void hangup_function(switch_core_session_t *session, char *data)
+{
+	switch_channel_t *channel;
+    switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
+
+	channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+
+    if (!switch_strlen_zero((char *) data)) {
+        cause = switch_channel_str2cause((char *) data);
+    }
+
+	switch_channel_hangup(channel, cause);
+}
+
 static void answer_function(switch_core_session_t *session, char *data)
 {
 	switch_channel_t *channel;
 	channel = switch_core_session_get_channel(session);
+
     assert(channel != NULL);
 	switch_channel_answer(channel);
 }
@@ -468,13 +485,24 @@ static const switch_application_interface_t log_application_interface = {
 	/*.next */ &info_application_interface
 };
 
+
+static const switch_application_interface_t hangup_application_interface = {
+	/*.interface_name */ "hangup",
+	/*.application_function */ hangup_function,
+	/* long_desc */ "Hangup the call for a channel.",
+	/* short_desc */ "Hangup the call",
+	/* syntax */ "[<cause>]",
+	/*.next */ &log_application_interface
+
+};
+
 static const switch_application_interface_t answer_application_interface = {
 	/*.interface_name */ "answer",
 	/*.application_function */ answer_function,
 	/* long_desc */ "Answer the call for a channel.",
 	/* short_desc */ "Answer the call",
 	/* syntax */ "",
-	/*.next */ &log_application_interface
+	/*.next */ &hangup_application_interface
 
 };
 
