@@ -960,7 +960,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	char dtmf[128];
 	uint32_t interval = 0, samples = 0, framelen, sample_start = 0;
 	uint32_t ilen = 0;
-	switch_size_t olen = 0;
+	switch_size_t olen = 0, llen = 0;
 	switch_frame_t write_frame = {0};
 	switch_timer_t timer;
 	switch_core_thread_session_t thread_session;
@@ -1264,11 +1264,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			last_speed = fh->speed;
 			continue;
 		}
-		
+		if (olen < llen) {
+            uint8_t *dp = (uint8_t *) write_frame.data;
+            memset(dp + (int)olen, 0, (int)(llen - olen));
+            olen = llen;
+        }
+
 		write_frame.datalen = (uint32_t)(olen * (asis ? 1 : 2));
 		write_frame.samples = (uint32_t)olen;
 
-		
+		llen = olen;
 
 
 #ifndef WIN32
@@ -4345,6 +4350,7 @@ static char *SAY_METHOD_NAMES[] = {
     "N/A",
     "PRONOUNCED",
     "ITERATED",
+    "COUNTED",
     NULL
 };
 
@@ -4361,6 +4367,7 @@ static char *SAY_TYPE_NAMES[] = {
 	"TELEPHONE_NUMBER",
 	"TELEPHONE_EXTENSION",
 	"URL",
+    "IP_ADDRESS",
 	"EMAIL_ADDRESS",
 	"POSTAL_ADDRESS",
 	"ACCOUNT_NUMBER",

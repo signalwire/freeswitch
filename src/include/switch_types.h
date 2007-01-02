@@ -96,7 +96,8 @@ typedef uint8_t switch_byte_t;
 typedef enum {
 	SSM_NA,
 	SSM_PRONOUNCED,
-	SSM_ITERATED
+	SSM_ITERATED,
+    SSM_COUNTED
 } switch_say_method_t;
 
 typedef enum {
@@ -112,6 +113,7 @@ typedef enum {
 	SST_TELEPHONE_NUMBER,
 	SST_TELEPHONE_EXTENSION,
 	SST_URL,
+	SST_IP_ADDRESS,
 	SST_EMAIL_ADDRESS,
 	SST_POSTAL_ADDRESS,
 	SST_ACCOUNT_NUMBER,
