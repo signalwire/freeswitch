@@ -518,6 +518,8 @@
           <action application="phrase" data="timespec,12:45:15"/>
           <action application="phrase" data="saydate,0"/>
           <action application="phrase" data="msgcount,130"/>
+          <action application="phrase" data="ip-addr,66.250.68.194"/>
+          <action application="phrase" data="saydate,$strepoch(2006-03-23 7:23)"/>
           <!--<action application="phrase" data="timeleft,3:30"/>-->
 	</condition>
       </extension>
@@ -692,6 +694,12 @@
 	<macro name="timespec">
 	  <input pattern="(.*)">
 	    <action function="say" data="$1" method="pronounced" type="time_measurement"/>
+	  </input>
+	</macro>
+	<macro name="ip-addr">
+	  <input pattern="(.*)">
+	    <action function="say" data="$1" method="iterated" type="ip_address"/>
+	    <action function="say" data="$1" method="pronounced" type="ip_address"/>
 	  </input>
 	</macro>
 	<macro name="spell">

@@ -131,37 +131,42 @@ SWITCH_DECLARE(switch_time_t) switch_str_time(char *in)
     switch_time_t ret = 0;
     char *pattern = "^(\\d+)-(\\d+)-(\\d+)\\s*(\\d*):{0,1}(\\d*):{0,1}(\\d*)";
 
+    switch_time_exp_lt(&tm, switch_time_now());
+    tm.tm_year = tm.tm_mon = tm.tm_mday = tm.tm_hour = tm.tm_min = tm.tm_sec = 0;
+
     if ((proceed = switch_perform_regex(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-        printf("ASS %d\n", proceed);
-        pcre_copy_substring(in, ovector, proceed, 0, replace, sizeof(replace));
-        tm.tm_year = atoi(replace) - 1900;
-        
+
         if (proceed > 1) {
             pcre_copy_substring(in, ovector, proceed, 1, replace, sizeof(replace));
-            tm.tm_mon = atoi(replace);
+            tm.tm_year = atoi(replace) - 1900;
         }
 
         if (proceed > 2) {
             pcre_copy_substring(in, ovector, proceed, 2, replace, sizeof(replace));
-            tm.tm_mday = atoi(replace);
-        }
-        
-        if (proceed > 3) {
-            pcre_copy_substring(in, ovector, proceed, 3, replace, sizeof(replace));
-            tm.tm_hour = atoi(replace);
+            tm.tm_mon = atoi(replace) - 1;
         }
 
+        if (proceed > 3) {
+            pcre_copy_substring(in, ovector, proceed, 3, replace, sizeof(replace));
+            tm.tm_mday = atoi(replace)-1;
+        }
+        
         if (proceed > 4) {
             pcre_copy_substring(in, ovector, proceed, 4, replace, sizeof(replace));
-            tm.tm_min = atoi(replace);
+            tm.tm_hour = atoi(replace);
         }
 
         if (proceed > 5) {
             pcre_copy_substring(in, ovector, proceed, 5, replace, sizeof(replace));
+            tm.tm_min = atoi(replace);
+        }
+
+        if (proceed > 6) {
+            pcre_copy_substring(in, ovector, proceed, 6, replace, sizeof(replace));
             tm.tm_sec = atoi(replace);
         }
 
-        apr_time_exp_get(&ret, &tm);
+        apr_time_exp_gmt_get(&ret, &tm);
         return ret;
     } /* possible else with more patterns later */
     
