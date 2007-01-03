@@ -678,57 +678,89 @@
       <language name="en" sound_path="/snds" tts_engine="cepstral" tts_voice="david">
 	<macro name="msgcount">
 	  <input pattern="(.*)">
-	    <action function="execute" data="sleep(1000)"/>
-	    <action function="play-file" data="vm-youhave.wav"/>
-	    <action function="say" data="$1" method="pronounced" type="items"/>
-	    <action function="play-file" data="vm-messages.wav"/>
-	    <!-- or -->
-	    <!--<action function="speak-text" data="you have $1 messages"/>-->
+	    <match>
+	      <action function="execute" data="sleep(1000)"/>
+	      <action function="play-file" data="vm-youhave.wav"/>
+	      <action function="say" data="$1" method="pronounced" type="items"/>
+	      <action function="play-file" data="vm-messages.wav"/>
+	      <!-- or -->
+	      <!--<action function="speak-text" data="you have $1 messages"/>-->
+	    </match>
 	  </input>
 	</macro>
 	<macro name="saydate">
 	  <input pattern="(.*)">
-	    <action function="say" data="$1" method="pronounced" type="current_date_time"/>
+	    <match>
+	      <action function="say" data="$1" method="pronounced" type="current_date_time"/>
+	    </match>
 	  </input>
 	</macro>
 	<macro name="timespec">
 	  <input pattern="(.*)">
-	    <action function="say" data="$1" method="pronounced" type="time_measurement"/>
+	    <match>
+	      <action function="say" data="$1" method="pronounced" type="time_measurement"/>
+	    </match>
 	  </input>
 	</macro>
 	<macro name="ip-addr">
 	  <input pattern="(.*)">
-	    <action function="say" data="$1" method="iterated" type="ip_address"/>
-	    <action function="say" data="$1" method="pronounced" type="ip_address"/>
+	    <match>
+	      <action function="say" data="$1" method="iterated" type="ip_address"/>
+	      <action function="say" data="$1" method="pronounced" type="ip_address"/>
+	    </match>
 	  </input>
 	</macro>
 	<macro name="spell">
 	  <input pattern="(.*)">
-	    <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+	    <match>
+	      <action function="say" data="$1" method="pronounced" type="name_spelled"/>
+	    </match>
 	  </input>
 	</macro>
 	<macro name="spell-phonetic">
 	  <input pattern="(.*)">
-	    <action function="say" data="$1" method="pronounced" type="name_phonetic"/>
+	    <match>
+	      <action function="say" data="$1" method="pronounced" type="name_phonetic"/>
+	    </match>
 	  </input>
 	</macro>
 	<macro name="tts-timeleft">
+	  <!-- The parser will visit each <input> tag and execute the actions in <match> or <nomatch> depending on the pattern param -->
+	  <!-- If the function "break" is encountered all parsing will cease -->
 	  <input pattern="(\d+):(\d+)">
-	    <action function="speak-text" data="You have $1 minutes, $2 seconds remaining $strftime(%Y-%m-%d)"/>
+	    <match>
+	      <action function="speak-text" data="You have $1 minutes, $2 seconds remaining $strftime(%Y-%m-%d)"/>
+	      <action function="break"/>
+	    </match>
+	    <nomatch>
+	      <action function="speak-text" data="That input was invalid."/>
+	    </nomatch>
+	  </input>
+	  <input pattern="(\d+) min (\d+) sec">
+	    <match>
+	      <action function="speak-text" data="You have $1 minutes, $2 seconds remaining $strftime(%Y-%m-%d)"/>
+	    </match>
+	    <nomatch>
+	      <action function="speak-text" data="That input was invalid."/>
+	    </nomatch>
 	  </input>
 	</macro>
       </language>
       <language name="fr" sound_path="/var/sounds/lang/fr/jean" tts_engine="cepstral" tts_voice="jean-pierre">
 	<macro name="msgcount">
 	  <input pattern="(.*)">
-	    <action function="play-file" data="tuas.wav"/>
-	    <action function="say" data="$1" method="pronounced" type="items"/>
-	    <action function="play-file" data="messages.wav"/>
+	    <match>
+	      <action function="play-file" data="tuas.wav"/>
+	      <action function="say" data="$1" method="pronounced" type="items"/>
+	      <action function="play-file" data="messages.wav"/>
+	    </match>
 	  </input>
 	</macro>
 	<macro name="timeleft">
 	  <input pattern="(\d+):(\d+)">
-	    <action function="speak-text" data="il y a $1 minutes et de $2 secondes de restant"/>
+	    <match>
+	      <action function="speak-text" data="il y a $1 minutes et de $2 secondes de restant"/>
+	    </match>
 	  </input>
 	</macro>
       </language>

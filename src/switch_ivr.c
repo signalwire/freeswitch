@@ -4414,6 +4414,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
     switch_status_t status = SWITCH_STATUS_GENERR;
     char *old_sound_prefix, *sound_path = NULL, *tts_engine = NULL, *tts_voice = NULL;
     switch_channel_t *channel;
+    uint8_t done = 0;
 
     channel = switch_core_session_get_channel(session);
     assert(channel != NULL);
@@ -4479,7 +4480,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
     switch_channel_pre_answer(channel);
 
-    while(input) {
+    while(input && !done) {
         char *pattern = (char *) switch_xml_attr(input, "pattern");
 
         if (pattern) {
@@ -4489,9 +4490,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
             uint32_t len = 0;
             char *odata = NULL;
             char *expanded = NULL;
+            switch_xml_t match = NULL;
             
             if ((proceed = switch_perform_regex(data, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
-                for (action = switch_xml_child(input, "action"); action; action = action->next) {
+                match = switch_xml_child(input, "match");
+            } else {
+                match = switch_xml_child(input, "nomatch");
+            }
+
+            if (match) {
+                for (action = switch_xml_child(match, "action"); action; action = action->next) {
                     char *adata = (char *) switch_xml_attr_soft(action, "data");
                     char *func = (char *) switch_xml_attr_soft(action, "function");
 
@@ -4522,6 +4530,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
                     if (!strcasecmp(func, "play-file")) {
                         switch_ivr_play_file(session, NULL, odata, args);
+                    } else if (!strcasecmp(func, "break")) {
+                        done = 1;
+                        break;
                     } else if (!strcasecmp(func, "execute")) {
                         const switch_application_interface_t *application_interface;
                         char *app_name = NULL;
@@ -4568,7 +4579,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
                     }
                 }
             }
-
+            
             switch_clean_re(re);
             switch_safe_free(expanded);
             switch_safe_free(substituted);
