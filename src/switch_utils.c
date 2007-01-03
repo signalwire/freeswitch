@@ -121,6 +121,54 @@ SWITCH_DECLARE(void) switch_perform_substitution(pcre *re, int match_count, char
 }
 
 
+
+SWITCH_DECLARE(switch_time_t) switch_str_time(char *in)
+{
+    switch_time_exp_t tm = {0};
+    int proceed = 0, ovector[30];
+    pcre *re = NULL;
+    char replace[1024] = "";
+    switch_time_t ret = 0;
+    char *pattern = "^(\\d+)-(\\d+)-(\\d+)\\s*(\\d*):{0,1}(\\d*):{0,1}(\\d*)";
+
+    if ((proceed = switch_perform_regex(in, pattern, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+        printf("ASS %d\n", proceed);
+        pcre_copy_substring(in, ovector, proceed, 0, replace, sizeof(replace));
+        tm.tm_year = atoi(replace) - 1900;
+        
+        if (proceed > 1) {
+            pcre_copy_substring(in, ovector, proceed, 1, replace, sizeof(replace));
+            tm.tm_mon = atoi(replace);
+        }
+
+        if (proceed > 2) {
+            pcre_copy_substring(in, ovector, proceed, 2, replace, sizeof(replace));
+            tm.tm_mday = atoi(replace);
+        }
+        
+        if (proceed > 3) {
+            pcre_copy_substring(in, ovector, proceed, 3, replace, sizeof(replace));
+            tm.tm_hour = atoi(replace);
+        }
+
+        if (proceed > 4) {
+            pcre_copy_substring(in, ovector, proceed, 4, replace, sizeof(replace));
+            tm.tm_min = atoi(replace);
+        }
+
+        if (proceed > 5) {
+            pcre_copy_substring(in, ovector, proceed, 5, replace, sizeof(replace));
+            tm.tm_sec = atoi(replace);
+        }
+
+        apr_time_exp_get(&ret, &tm);
+        return ret;
+    } /* possible else with more patterns later */
+    
+    return ret;
+
+}
+
 SWITCH_DECLARE(char *) switch_priority_name(switch_priority_t priority)
 {
 	switch(priority) { /*lol*/

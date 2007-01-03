@@ -181,6 +181,13 @@ switch_mutex_unlock(obj->flag_mutex);
 #endif
 
 /*!
+  \brief Converts a string representation of a date into a switch_time_t
+  \param in the string
+  \return the epoch time in usec
+*/
+SWITCH_DECLARE(switch_time_t) switch_str_time(char *in);
+
+/*!
   \brief Declares a function designed to set a dymaic global string
   \param fname the function name to declare
   \param vname the name of the global pointer to modify with the new function

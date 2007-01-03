@@ -279,6 +279,20 @@ static void strftime_function(switch_core_session_t *session, char *data)
 	}
 }
 
+
+static switch_status_t strepoch_api_function(char *data, switch_core_session_t *session, switch_stream_handle_t *stream)
+{
+    switch_time_t out;
+    
+    if (switch_strlen_zero(data)) {
+        out = switch_time_now();
+    } else {
+        out = switch_str_time(data);
+    }
+
+    stream->write_function(stream, "%d", (uint32_t)apr_time_sec(out));
+}
+
 static switch_status_t strftime_api_function(char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)
 {
 	
@@ -288,7 +302,7 @@ static switch_status_t strftime_api_function(char *fmt, switch_core_session_t *s
 	
 	switch_time_exp_lt(&tm, switch_time_now());
 	switch_strftime(date, &retsize, sizeof(date), fmt ? fmt : "%Y-%m-%d %T", &tm);
-	stream->write_function(stream, date);
+	stream->write_function(stream, "%s", date);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -407,12 +421,20 @@ static void ivr_application_function(switch_core_session_t *session, char *data)
 	}
 }
 
+static switch_api_interface_t strepoch_api_interface = {
+	/*.interface_name */ "strepoch",
+	/*.desc */ "Convert a date string into epoch time",
+	/*.function */ strepoch_api_function,
+	/*.syntax */ "<string>",
+	/*.next */ NULL
+};
+
 static switch_api_interface_t chat_api_interface = {
 	/*.interface_name */ "chat",
 	/*.desc */ "chat",
 	/*.function */ chat_api_function,
 	/*.syntax */ "<proto>|<from>|<to>|<message>",
-	/*.next */ NULL
+	/*.next */ &strepoch_api_interface
 };
 
 static switch_api_interface_t dptools_api_interface = {

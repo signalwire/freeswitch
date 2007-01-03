@@ -24,6 +24,7 @@
  * Contributor(s):
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
+ * Michael B. Murdock <mike@mmurdock.org>
  *
  * mod_say_en.c -- Say for English
  *
@@ -133,6 +134,26 @@ static char *strip_commas(char *in, char *out, switch_size_t len)
 	return ret;
 }
 
+static char *strip_nonnumerics(char *in, char *out, switch_size_t len)
+{
+	char *p = in, *q = out;
+	char *ret = out;
+	switch_size_t x = 0;
+	// valid are 0 - 9, period (.), minus (-), and plus (+) - remove all others
+	for(;p && *p; p++) {
+		if ((*p > 47 && *p < 58) || *p == '.' || *p == '-' || *p == '+') {
+			*q++ = *p;
+		} 
+
+		if (++x > len) {
+			ret = NULL;
+			break;
+		}
+	}
+
+	return ret;
+}
+
 static switch_status_t en_say_general_count(switch_core_session_t *session,
 											char *tosay,
 											switch_say_type_t type,
@@ -155,40 +176,46 @@ static switch_status_t en_say_general_count(switch_core_session_t *session,
 	}
 
 	in = atoi(tosay);
-	
-	for(x = 8; x >= 0; x--) {
-		int num = (int)pow(10, x);
-		if ((places[x] = in / num)) {
-			in -= places[x] * num;
-		}
-	}
 
-	switch (method) {
-	case SSM_COUNTED:
-	case SSM_PRONOUNCED:
-		if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
-			return status;
-		}
-		if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
-			return status;
-		}
-		if ((status = play_group(method, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
-			return status;
-		}
-		break;
-	case SSM_ITERATED:
-		{
-			char *p;
-			for (p = tosay; p && *p; p++) {
-				if (places[x] > -1) {
-					say_file("digits/%c.wav", *p);
-				}
+	if (in != 0) {
+		for(x = 8; x >= 0; x--) {
+			int num = (int)pow(10, x);
+			if ((places[x] = in / num)) {
+				in -= places[x] * num;
 			}
 		}
-		break;
-	default:
-		break;
+	
+		switch (method) {
+		case SSM_COUNTED:
+		case SSM_PRONOUNCED:
+			if ((status = play_group(SSM_PRONOUNCED, places[8], places[7], places[6], "digits/million.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+				return status;
+			}
+			if ((status = play_group(SSM_PRONOUNCED, places[5], places[4], places[3], "digits/thousand.wav", session, args)) != SWITCH_STATUS_SUCCESS) {
+				return status;
+			}
+			if ((status = play_group(method, places[2], places[1], places[0], NULL, session, args)) != SWITCH_STATUS_SUCCESS) {
+				return status;
+			}
+			break;
+		case SSM_ITERATED:
+			{
+				char *p;
+				for (p = tosay; p && *p; p++) {
+					if (places[x] > -1) {
+						say_file("digits/%c.wav", *p);
+					}
+				}
+			}
+			break;
+		default:
+			break;
+		}
 	}
+	else {
+		say_file("digits/0.wav");
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -367,6 +394,67 @@ static switch_status_t en_say_time(switch_core_session_t *session,
 }
 
 
+static switch_status_t en_say_money(switch_core_session_t *session,
+											char *tosay,
+											switch_say_type_t type,
+											switch_say_method_t method,
+											switch_input_args_t *args)
+{
+	switch_channel_t *channel;
+		
+	int x = 0;
+	char sbuf[16] = ""; // enuf for 999,999,999,999.99 (w/o the commas)
+	
+	double amt, dollars, cents;
+		
+	switch_status_t status;
+	
+	assert(session != NULL);
+	channel = switch_core_session_get_channel(session);
+	assert(channel != NULL);
+			
+	if (!(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 15) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	amt = atof(tosay);  //convert to double
+	dollars = trunc(amt); // get whole dollars
+	cents = trunc(fabs((amt - dollars))*100.0); // get cents as whole integer (dropping sign)
+	dollars = fabs(dollars); // lose the sign
+	
+	// If negative say "negative" (or "minus")
+	if (amt < 0.0) {
+		say_file("negative.wav");
+		// say_file("minus.wav");
+	}
+			
+	// Say dollar amount
+	snprintf(sbuf, sizeof(sbuf), "%.0f", dollars);
+	en_say_general_count(session, sbuf, type, method, args);
+	if (dollars == 1.0) {
+		say_file("dollar.wav");
+	}
+	else {
+		say_file("dollars.wav");
+	}
+		
+	// Say "and"
+	say_file("and.wav");
+	
+	// Say cents
+	snprintf(sbuf, sizeof(sbuf), "%.0f", cents);
+	en_say_general_count(session, sbuf, type, method, args);
+	if (cents == 1.0) {
+		say_file("cent.wav");
+	}
+	else {
+		say_file("cents.wav");
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 
 static switch_status_t en_say(switch_core_session_t *session,
@@ -398,8 +486,11 @@ static switch_status_t en_say(switch_core_session_t *session,
 	case SST_NAME_PHONETIC:
 		say_cb = en_spell;
 		break;
+	case SST_CURRENCY:
+		say_cb = en_say_money;
+		break;
 	default:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Finish ME!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown Say type=[%d]\n", type);
 		break;
 	}
 	
@@ -439,4 +530,3 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
-
