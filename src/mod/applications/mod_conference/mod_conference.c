@@ -2338,8 +2338,8 @@ static switch_status_t conf_api_sub_kick(conference_member_t *member, switch_str
         switch_mutex_lock(member->flag_mutex);
         switch_clear_flag(member, MFLAG_RUNNING);
         switch_set_flag(member, MFLAG_KICKED);
-        switch_mutex_unlock(member->flag_mutex);
         switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
+        switch_mutex_unlock(member->flag_mutex);
 
         if (stream != NULL) {
             stream->write_function(stream, "OK kicked %u\n", member->id);
@@ -2359,6 +2359,47 @@ static switch_status_t conf_api_sub_kick(conference_member_t *member, switch_str
     }
 
     return ret_status;
+}
+
+
+static switch_status_t conf_api_sub_dtmf(conference_member_t *member, switch_stream_handle_t *stream, void *data)
+{
+    switch_event_t *event;
+    char *dtmf = (char *) data;
+
+    if (member == NULL) {
+        stream->write_function(stream, "Invalid member!\n");
+        return SWITCH_STATUS_GENERR;
+    }
+
+    if (switch_strlen_zero(dtmf)) {
+        stream->write_function(stream, "Invalid input!\n");
+        return SWITCH_STATUS_GENERR;
+    }
+
+    
+    switch_mutex_lock(member->flag_mutex);
+    switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
+    switch_core_session_send_dtmf(member->session, dtmf);
+    switch_mutex_unlock(member->flag_mutex);
+
+
+    if (stream != NULL) {
+        stream->write_function(stream, "OK sent %s to %u\n", (char *) data, member->id);
+    }
+
+    if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+        switch_channel_t *channel = switch_core_session_get_channel(member->session);
+        switch_channel_event_set_data(channel, event);
+
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Conference-Name", member->conference->name);
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Action", "dtmf-member");
+        switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Digits", dtmf);
+        switch_event_fire(&event);
+    }
+
+    return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t conf_api_sub_energy(conference_member_t *member, switch_stream_handle_t *stream, void *data)
@@ -2990,6 +3031,7 @@ static api_command_t conf_api_sub_commands[] = {
 	{"say", &conf_api_sub_say, CONF_API_SUB_ARGS_AS_ONE, "<confname> say <text>"}, 
 	{"saymember", &conf_api_sub_saymember, CONF_API_SUB_ARGS_AS_ONE, "<confname> saymember <member_id> <text>"}, 
 	{"stop", &conf_api_sub_stop, CONF_API_SUB_ARGS_SPLIT, "<confname> stop <[current|all|last]> [<member_id>]"}, 
+	{"dtmf", &conf_api_sub_dtmf, CONF_API_SUB_MEMBER_TARGET, "<confname> dtmf <[member_id|all|last]> <digits>"}, 
 	{"kick", &conf_api_sub_kick, CONF_API_SUB_MEMBER_TARGET, "<confname> kick <[member_id|all|last]>"}, 
 	{"mute", &conf_api_sub_mute, CONF_API_SUB_MEMBER_TARGET, "<confname> mute <[member_id|all]|last>"}, 
 	{"unmute", &conf_api_sub_unmute, CONF_API_SUB_MEMBER_TARGET, "<confname> unmute <[member_id|all]|last>"}, 
