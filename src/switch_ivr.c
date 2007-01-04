@@ -2221,7 +2221,7 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 									int32_t *idx,
 									char *file,
 									char *key,
-									char *ringback_data)
+									uint8_t early_ok)
 {
 
 	uint32_t i;
@@ -2235,7 +2235,7 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 		if (switch_channel_get_state(peer_channels[i]) >= CS_HANGUP) {
 			hups++;
 		} else if ((switch_channel_test_flag(peer_channels[i], CF_ANSWERED) || 
-					(!ringback_data && len == 1 && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA))) && 
+                    (early_ok && len == 1 && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA))) && 
 				   !switch_channel_test_flag(peer_channels[i], CF_TAGGED)) {
 
 			if (key) {
@@ -2325,14 +2325,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	int32_t idx = IDX_NADA;
 	switch_codec_t write_codec = {0};
 	switch_frame_t write_frame = {0};
-	uint8_t err = 0, fdata[1024], pass = 0;
+	uint8_t fdata[1024], pass = 0;
 	char *file = NULL, *key = NULL, *odata, *var;
 	switch_call_cause_t reason = SWITCH_CAUSE_UNALLOCATED;
 	uint8_t to = 0;
-	char *ringback_data = NULL;
+	char *var_val, *vars = NULL, *ringback_data = NULL;
 	switch_codec_t *read_codec = NULL;
-	uint8_t sent_ring = 0;
+	uint8_t sent_ring = 0, early_ok = 1;
 	switch_core_session_message_t *message = NULL;
+    switch_event_t *var_event = NULL;
 
 	write_frame.data = fdata;
 	
@@ -2340,46 +2341,85 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	odata = strdup(bridgeto);
 	data = odata;
 
-	if (!strncasecmp(data, "confirm=", 8)) {
-		data += 8;
-		file = data;
-		if ((data = strchr(file, ';'))) {
-			*data++ = '\0';
-			if ((key = strchr(file, ':'))) {
-				*key++ = '\0';
-			} else {
-				err++;
-			}
-		} else {
-			err++;
-		}
-	}
+    if (*data == '{') {
+        vars = data + 1;
+        if (!(data = strchr(data, '}'))) {
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+            status = SWITCH_STATUS_GENERR;
+            goto done;
+        }
+        *data++ = '\0';
+    }
 
-	if (err) {
-		status = SWITCH_STATUS_GENERR;
-		goto done;
-	}
 
+    /* Some channel are created from an originating channel and some aren't so not all outgoing calls have a way to get params
+       so we will normalize dialstring params and channel variables (when there is an originator) into an event that we 
+       will use as a pseudo hash to consult for params as needed.
+     */
+    if (switch_event_create(&var_event, SWITCH_EVENT_MESSAGE) != SWITCH_STATUS_SUCCESS) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+        status = SWITCH_STATUS_MEMERR;
+        goto done;
+    }
+    
 	if (session) {
-		caller_channel = switch_core_session_get_channel(session);
+        switch_hash_index_t *hi;
+        void *vval;
+        const void *vvar;
+        
+        caller_channel = switch_core_session_get_channel(session);
 		assert(caller_channel != NULL);
 
+        /* Copy all the channel variables into the event */
+        for (hi = switch_channel_variable_first(caller_channel, switch_core_session_get_pool(session)); hi; hi = switch_hash_next(hi)) {
+            switch_hash_this(hi, &vvar, NULL, &vval);
+            if (vvar && vval) {
+                switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, vvar, vval);
+            }
+        }
+
+    }
+
+    if (vars) { /* Parse parameters specified from the dialstring */
+        char *var_array[1024] = {0};
+        int var_count = 0;
+        if ((var_count = switch_separate_string(vars, ',', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
+            int x = 0;
+            for (x = 0; x < var_count; x++) {
+                char *inner_var_array[2];
+                int inner_var_count;
+                if ((inner_var_count = 
+                     switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+                    
+                    switch_event_add_header(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
+                    if (caller_channel) {
+                        switch_channel_set_variable(caller_channel, inner_var_array[0], inner_var_array[1]);
+                    }
+                }
+            }
+        }
+    }
+
+
+    if (caller_channel) { /* ringback is only useful when there is an originator */
 		ringback_data = switch_channel_get_variable(caller_channel, "ringback");
 		switch_channel_set_variable(caller_channel, "originate_disposition", "failure");
-
-		if ((var = switch_channel_get_variable(caller_channel, "group_confirm_key"))) {
-			key = switch_core_session_strdup(session, var);
-			if ((var = switch_channel_get_variable(caller_channel, "group_confirm_file"))) {
-				file = switch_core_session_strdup(session, var);
-			}
-		}
 	}
 	
-
+    if ((var = switch_event_get_header(var_event, "group_confirm_key"))) {
+        key = switch_core_session_strdup(session, var);
+        if ((var = switch_event_get_header(var_event, "group_confirm_file"))) {
+            file = switch_core_session_strdup(session, var);
+        }
+    }
 
 	if (file && !strcmp(file, "undef")) {
 		file = NULL;
 	}
+
+    if ((var_val = switch_event_get_header(var_event, "noanswer_early_media")) && switch_true(var_val)) {
+        early_ok = 0;
+    }
 
 	or_argc = switch_separate_string(data, '|', pipe_names, (sizeof(pipe_names) / sizeof(pipe_names[0])));
 
@@ -2652,9 +2692,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 		}
+        
+        if (ringback_data) {
+            early_ok = 0;
+        }
 
-		while ((!caller_channel || switch_channel_ready(caller_channel)) && 
-			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key, ringback_data)) {
+        while ((!caller_channel || switch_channel_ready(caller_channel)) && 
+			   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, file, key, early_ok)) {
 
 			if ((to = (uint8_t)((time(NULL) - start) >= (time_t)timelimit_sec))) {
 				idx = IDX_CANCEL;
@@ -2803,6 +2847,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	done:
 		*cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+
+        if (var_event) {
+            switch_event_destroy(&var_event);
+        }
 
 		if (status == SWITCH_STATUS_SUCCESS) {
 			if (caller_channel) {
