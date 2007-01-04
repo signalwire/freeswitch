@@ -667,12 +667,16 @@ static int woomera_message_parse(switch_socket_t *fd, woomera_message * wmsg, in
 		}
 
 		status = switch_socket_recv(fd, ptr, &len);
-        if (SWITCH_STATUS_IS_BREAK(status)) {
+
+        if (status == 70007) {
+            char bbuf = '\n';
+            switch_size_t blen = sizeof(bbuf);
+            switch_socket_send(fd, &bbuf, &blen);
             continue;
         }
         
         if (status != SWITCH_STATUS_SUCCESS) {
-            return -1;
+                return -1;
         }
 
 		ptr++;
@@ -804,6 +808,7 @@ static int connect_woomera(switch_socket_t **new_sock, woomera_profile * profile
 	if (switch_socket_create(new_sock, AF_INET, SOCK_STREAM, 0, module_pool) != SWITCH_STATUS_SUCCESS) {
 		return -1;
 	}
+
 	/*
 	   status = switch_socket_bind((*new_sock), sa);
 	   if (0 && status != SWITCH_STATUS_SUCCESS) {
@@ -814,6 +819,9 @@ static int connect_woomera(switch_socket_t **new_sock, woomera_profile * profile
 	if (switch_socket_connect((*new_sock), sa) != SWITCH_STATUS_SUCCESS) {
 		return -1;
 	}
+
+    switch_socket_timeout_set((*new_sock), 10000000);
+    switch_socket_opt_set((*new_sock), SWITCH_SO_KEEPALIVE, 1);
 
 	return 1;
 }
