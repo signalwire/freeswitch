@@ -2341,6 +2341,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	odata = strdup(bridgeto);
 	data = odata;
 
+    /* strip leading spaces */
+    while (data && *data && *data == ' ') {
+        data++;
+    }
+
     if (*data == '{') {
         vars = data + 1;
         if (!(data = strchr(data, '}'))) {
@@ -2351,7 +2356,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
         *data++ = '\0';
     }
 
-
+    /* strip leading spaces (again)*/
+    while (data && *data && *data == ' ') {
+        data++;
+    }
+    
+    if (switch_strlen_zero(data)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+        status = SWITCH_STATUS_GENERR;
+        goto done;
+    }
+    
     /* Some channel are created from an originating channel and some aren't so not all outgoing calls have a way to get params
        so we will normalize dialstring params and channel variables (when there is an originator) into an event that we 
        will use as a pseudo hash to consult for params as needed.
