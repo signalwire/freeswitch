@@ -3034,8 +3034,8 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
             case CONF_API_SUB_MEMBER_TARGET:
                 {
                     uint32_t id = 0;
-                    int all;
-                    int last;
+                    uint8_t all = 0;
+                    uint8_t last = 0;
 
                     if (argv[argn+1]) {
                         if (!(id = atoi(argv[argn+1]))) {
@@ -3160,6 +3160,7 @@ static switch_status_t conf_api_main(char *buf, switch_core_session_t *session, 
         if ((conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, argv[0]))) {
             if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
+                goto done;
             }
 
             if (argc >= 2) {
@@ -3185,7 +3186,8 @@ static switch_status_t conf_api_main(char *buf, switch_core_session_t *session, 
     } else {
         stream->write_function(stream, "No parameters specified.\nTry 'help conference'\n");
     }
-    
+
+ done:
     switch_safe_free(lbuf);
 
     return status;
