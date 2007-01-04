@@ -1876,6 +1876,11 @@ static switch_status_t dl_login(char *arg, switch_core_session_t *session, switc
 		return SWITCH_STATUS_FALSE;
 	}
 
+    if (switch_strlen_zero(arg)) {
+        stream->write_function(stream, "USAGE: %s\n", login_api_interface.syntax);
+        return SWITCH_STATUS_SUCCESS;
+    }
+
 	myarg = strdup(arg);
 
 	argc = switch_separate_string(myarg, ';', argv, (sizeof(argv) / sizeof(argv[0])));
