@@ -809,6 +809,9 @@ static int connect_woomera(switch_socket_t **new_sock, woomera_profile * profile
 		return -1;
 	}
 
+    switch_socket_timeout_set((*new_sock), 10000000);
+    switch_socket_opt_set((*new_sock), SWITCH_SO_KEEPALIVE, 1);
+
 	/*
 	   status = switch_socket_bind((*new_sock), sa);
 	   if (0 && status != SWITCH_STATUS_SUCCESS) {
@@ -820,8 +823,6 @@ static int connect_woomera(switch_socket_t **new_sock, woomera_profile * profile
 		return -1;
 	}
 
-    switch_socket_timeout_set((*new_sock), 10000000);
-    switch_socket_opt_set((*new_sock), SWITCH_SO_KEEPALIVE, 1);
 
 	return 1;
 }
