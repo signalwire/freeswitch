@@ -402,45 +402,46 @@ static switch_status_t en_say_money(switch_core_session_t *session,
 {
 	switch_channel_t *channel;
 		
-	char sbuf[16] = ""; // enuf for 999,999,999,999.99 (w/o the commas)
-	
-	double amt, dollars, cents;
+	char sbuf[16] = ""; /* enuough for 999,999,999,999.99 (w/o the commas or leading $) */
+	char *dollars = NULL;
+	char *cents = NULL;
 		
 	assert(session != NULL);
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 			
-	if (!(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf))) || strlen(tosay) > 15) {
+	if (strlen(tosay) > 15 || !(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
 		return SWITCH_STATUS_GENERR;
 	}
 
-	amt = atof(tosay);  //convert to double
-	cents = modf(fabs(amt), &dollars); // split dollars and cents
+	dollars = sbuf;
+
+	if ((cents = strchr(sbuf, '.'))) {
+		*cents++ = '\0';
+	}
 	
-	// If negative say "negative" (or "minus")
-	if (amt < 0.0) {
+	/* If negative say "negative" */
+	if (sbuf[0] == '-') {
 		say_file("negative.wav");
-		// say_file("minus.wav");
+		dollars++;
 	}
 			
-	// Say dollar amount
-	snprintf(sbuf, sizeof(sbuf), "%.0f", dollars);
-	en_say_general_count(session, sbuf, type, method, args);
-	if (dollars == 1.0) {
+	/* Say dollar amount */
+	en_say_general_count(session, dollars, type, method, args);
+	if (atoi(dollars) == 1) {
 		say_file("dollar.wav");
 	}
 	else {
 		say_file("dollars.wav");
 	}
 		
-	// Say "and"
+	/* Say "and" */
 	say_file("and.wav");
 	
-	// Say cents
-	snprintf(sbuf, sizeof(sbuf), "%.0f", cents);
-	en_say_general_count(session, sbuf, type, method, args);
-	if (cents == 1.0) {
+	/* Say cents */
+	en_say_general_count(session, cents, type, method, args);
+	if (atoi(cents) == 1) {
 		say_file("cent.wav");
 	}
 	else {
