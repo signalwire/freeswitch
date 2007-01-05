@@ -26,7 +26,7 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  *
  *
- * mod_woomerachan.c -- Woomera Endpoint Module
+ * mod_woomera.c -- Woomera Endpoint Module
  *
  */
 #include <switch.h>
@@ -164,18 +164,18 @@ typedef struct woomera_event_queue woomera_event_queue;
 
 static woomera_profile default_profile;
 
-static switch_status_t woomerachan_on_init(switch_core_session_t *session);
-static switch_status_t woomerachan_on_hangup(switch_core_session_t *session);
-static switch_status_t woomerachan_on_ring(switch_core_session_t *session);
-static switch_status_t woomerachan_on_loopback(switch_core_session_t *session);
-static switch_status_t woomerachan_on_transmit(switch_core_session_t *session);
-static switch_status_t woomerachan_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+static switch_status_t woomera_on_init(switch_core_session_t *session);
+static switch_status_t woomera_on_hangup(switch_core_session_t *session);
+static switch_status_t woomera_on_ring(switch_core_session_t *session);
+static switch_status_t woomera_on_loopback(switch_core_session_t *session);
+static switch_status_t woomera_on_transmit(switch_core_session_t *session);
+static switch_status_t woomera_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
 												  switch_core_session_t **new_session, switch_memory_pool_t *pool);
-static switch_status_t woomerachan_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
+static switch_status_t woomera_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
 											switch_io_flag_t flags, int stream_id);
-static switch_status_t woomerachan_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
+static switch_status_t woomera_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
 											 switch_io_flag_t flags, int stream_id);
-static switch_status_t woomerachan_kill_channel(switch_core_session_t *session, int sig);
+static switch_status_t woomera_kill_channel(switch_core_session_t *session, int sig);
 static void tech_destroy(private_object * tech_pvt);
 static void woomera_printf(woomera_profile * profile, switch_socket_t *socket, char *fmt, ...);
 static char *woomera_message_header(woomera_message * wmsg, char *key);
@@ -196,7 +196,7 @@ static int tech_activate(private_object * tech_pvt);
    returning SWITCH_STATUS_SUCCESS tells the core to execute the standard state method next
    so if you fully implement the state you can return SWITCH_STATUS_FALSE to skip it.
 */
-static switch_status_t woomerachan_on_init(switch_core_session_t *session)
+static switch_status_t woomera_on_init(switch_core_session_t *session)
 {
 	switch_channel_t *channel;
 	struct private_object *tech_pvt = NULL;
@@ -235,12 +235,12 @@ static switch_status_t woomerachan_on_init(switch_core_session_t *session)
 
 	switch_core_session_launch_thread(session, woomera_channel_thread_run, session);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERACHAN INIT\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA INIT\n", switch_channel_get_name(channel));
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t woomerachan_on_ring(switch_core_session_t *session)
+static switch_status_t woomera_on_ring(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	struct private_object *tech_pvt = NULL;
@@ -251,12 +251,12 @@ static switch_status_t woomerachan_on_ring(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERACHAN RING\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA RING\n", switch_channel_get_name(channel));
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t woomerachan_on_execute(switch_core_session_t *session)
+static switch_status_t woomera_on_execute(switch_core_session_t *session)
 {
 
 	switch_channel_t *channel = NULL;
@@ -268,13 +268,13 @@ static switch_status_t woomerachan_on_execute(switch_core_session_t *session)
 	tech_pvt = switch_core_session_get_private(session);
 	assert(tech_pvt != NULL);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERACHAN EXECUTE\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA EXECUTE\n", switch_channel_get_name(channel));
 
 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t woomerachan_on_hangup(switch_core_session_t *session)
+static switch_status_t woomera_on_hangup(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	struct private_object *tech_pvt = NULL;
@@ -288,7 +288,7 @@ static switch_status_t woomerachan_on_hangup(switch_core_session_t *session)
 	switch_core_codec_destroy(&tech_pvt->read_codec);
 	switch_core_codec_destroy(&tech_pvt->write_codec);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERACHAN HANGUP\n", switch_channel_get_name(channel));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA HANGUP\n", switch_channel_get_name(channel));
 	tech_destroy(tech_pvt);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -312,7 +312,7 @@ static void udp_socket_close(struct private_object *tech_pvt)
 }
 
 
-static switch_status_t woomerachan_kill_channel(switch_core_session_t *session, int sig)
+static switch_status_t woomera_kill_channel(switch_core_session_t *session, int sig)
 {
 	switch_channel_t *channel = NULL;
 	struct private_object *tech_pvt = NULL;
@@ -330,7 +330,7 @@ static switch_status_t woomerachan_kill_channel(switch_core_session_t *session, 
     switch(sig) {
     case SWITCH_SIG_KILL:
         udp_socket_close(tech_pvt);
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERACHAN KILL\n", switch_channel_get_name(channel));
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s WOOMERA KILL\n", switch_channel_get_name(channel));
         break;
     case SWITCH_SIG_BREAK:
         {
@@ -345,19 +345,19 @@ static switch_status_t woomerachan_kill_channel(switch_core_session_t *session, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t woomerachan_on_loopback(switch_core_session_t *session)
+static switch_status_t woomera_on_loopback(switch_core_session_t *session)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WOOMERACHAN LOOPBACK\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WOOMERA LOOPBACK\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t woomerachan_on_transmit(switch_core_session_t *session)
+static switch_status_t woomera_on_transmit(switch_core_session_t *session)
 {
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WOOMERACHAN TRANSMIT\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WOOMERA TRANSMIT\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t woomerachan_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
+static switch_status_t woomera_waitfor_read(switch_core_session_t *session, int ms, int stream_id)
 {
 	struct private_object *tech_pvt = NULL;
 
@@ -367,7 +367,7 @@ static switch_status_t woomerachan_waitfor_read(switch_core_session_t *session, 
 	return switch_socket_waitfor(&tech_pvt->read_poll, ms) ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
-static switch_status_t woomerachan_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
+static switch_status_t woomera_waitfor_write(switch_core_session_t *session, int ms, int stream_id)
 {
 	struct private_object *tech_pvt = NULL;
 
@@ -378,7 +378,7 @@ static switch_status_t woomerachan_waitfor_write(switch_core_session_t *session,
 //	return switch_socket_waitfor(&tech_pvt->write_poll, ms);
 }
 
-static switch_status_t woomerachan_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
+static switch_status_t woomera_read_frame(switch_core_session_t *session, switch_frame_t **frame, int timeout,
 											switch_io_flag_t flags, int stream_id)
 {
 	switch_channel_t *channel = NULL;
@@ -396,7 +396,7 @@ static switch_status_t woomerachan_read_frame(switch_core_session_t *session, sw
 		return SWITCH_STATUS_GENERR;
 	}
 	/*
-	   if ((status = woomerachan_waitfor_read(session, -1)) != SWITCH_STATUS_SUCCESS) {
+	   if ((status = woomera_waitfor_read(session, -1)) != SWITCH_STATUS_SUCCESS) {
 	   return status;
 	   }1<
 	 */
@@ -413,7 +413,7 @@ static switch_status_t woomerachan_read_frame(switch_core_session_t *session, sw
 	return SWITCH_STATUS_FALSE;
 }
 
-static switch_status_t woomerachan_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
+static switch_status_t woomera_write_frame(switch_core_session_t *session, switch_frame_t *frame, int timeout,
 											 switch_io_flag_t flags, int stream_id)
 {
 	switch_channel_t *channel = NULL;
@@ -441,36 +441,36 @@ static switch_status_t woomerachan_write_frame(switch_core_session_t *session, s
 	return SWITCH_STATUS_GENERR;
 }
 
-static const switch_state_handler_table_t woomerachan_event_handlers = {
-	/*.on_init */ woomerachan_on_init,
-	/*.on_ring */ woomerachan_on_ring,
-	/*.on_execute */ woomerachan_on_execute,
-	/*.on_hangup */ woomerachan_on_hangup,
-	/*.on_loopback */ woomerachan_on_loopback,
-	/*.on_transmit */ woomerachan_on_transmit
+static const switch_state_handler_table_t woomera_event_handlers = {
+	/*.on_init */ woomera_on_init,
+	/*.on_ring */ woomera_on_ring,
+	/*.on_execute */ woomera_on_execute,
+	/*.on_hangup */ woomera_on_hangup,
+	/*.on_loopback */ woomera_on_loopback,
+	/*.on_transmit */ woomera_on_transmit
 };
 
-static const switch_io_routines_t woomerachan_io_routines = {
-	/*.outgoing_channel */ woomerachan_outgoing_channel,
+static const switch_io_routines_t woomera_io_routines = {
+	/*.outgoing_channel */ woomera_outgoing_channel,
 	/*.answer_channel */ NULL,
-	/*.read_frame */ woomerachan_read_frame,
-	/*.write_frame */ woomerachan_write_frame,
-	/*.kill_channel */ woomerachan_kill_channel,
-	/*.waitfor_read */ woomerachan_waitfor_read,
-	/*.waitfor_write */ woomerachan_waitfor_write
+	/*.read_frame */ woomera_read_frame,
+	/*.write_frame */ woomera_write_frame,
+	/*.kill_channel */ woomera_kill_channel,
+	/*.waitfor_read */ woomera_waitfor_read,
+	/*.waitfor_write */ woomera_waitfor_write
 };
 
-static const switch_endpoint_interface_t woomerachan_endpoint_interface = {
+static const switch_endpoint_interface_t woomera_endpoint_interface = {
 	/*.interface_name */ "woomera",
-	/*.io_routines */ &woomerachan_io_routines,
-	/*.event_handlers */ &woomerachan_event_handlers,
+	/*.io_routines */ &woomera_io_routines,
+	/*.event_handlers */ &woomera_event_handlers,
 	/*.private */ NULL,
 	/*.next */ NULL
 };
 
-static const switch_loadable_module_interface_t woomerachan_module_interface = {
+static const switch_loadable_module_interface_t woomera_module_interface = {
 	/*.module_name */ modname,
-	/*.endpoint_interface */ &woomerachan_endpoint_interface,
+	/*.endpoint_interface */ &woomera_endpoint_interface,
 	/*.timer_interface */ NULL,
 	/*.dialplan_interface */ NULL,
 	/*.codec_interface */ NULL,
@@ -481,10 +481,10 @@ static const switch_loadable_module_interface_t woomerachan_module_interface = {
 /* Make sure when you have 2 sessions in the same scope that you pass the appropriate one to the routines
    that allocate memory or you will have 1 channel with memory allocated from another channel's pool!
 */
-static switch_status_t woomerachan_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
+static switch_status_t woomera_outgoing_channel(switch_core_session_t *session, switch_caller_profile_t *outbound_profile,
 												  switch_core_session_t **new_session, switch_memory_pool_t *pool)
 {
-	if ((*new_session = switch_core_session_request(&woomerachan_endpoint_interface, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(&woomera_endpoint_interface, pool)) != 0) {
 		struct private_object *tech_pvt;
 		switch_channel_t *channel;
 
@@ -1258,7 +1258,7 @@ static void *woomera_thread_run(void *obj)
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Inbound Channel %s!\n", name);
-				if ((session = switch_core_session_request(&woomerachan_endpoint_interface, NULL)) != 0) {
+				if ((session = switch_core_session_request(&woomera_endpoint_interface, NULL)) != 0) {
 					struct private_object *tech_pvt;
 					switch_channel_t *channel;
 
@@ -1409,7 +1409,7 @@ SWITCH_MOD_DECLARE(switch_status_t) switch_module_load(const switch_loadable_mod
 
 
 	/* connect my internal structure to the blank pointer passed to me */
-	*module_interface = &woomerachan_module_interface;
+	*module_interface = &woomera_module_interface;
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
