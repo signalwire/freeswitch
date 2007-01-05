@@ -291,6 +291,8 @@ static switch_status_t strepoch_api_function(char *data, switch_core_session_t *
     }
 
     stream->write_function(stream, "%d", (uint32_t)apr_time_sec(out));
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t strftime_api_function(char *fmt, switch_core_session_t *session, switch_stream_handle_t *stream)

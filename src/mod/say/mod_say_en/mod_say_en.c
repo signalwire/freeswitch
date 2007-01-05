@@ -402,13 +402,10 @@ static switch_status_t en_say_money(switch_core_session_t *session,
 {
 	switch_channel_t *channel;
 		
-	int x = 0;
 	char sbuf[16] = ""; // enuf for 999,999,999,999.99 (w/o the commas)
 	
 	double amt, dollars, cents;
 		
-	switch_status_t status;
-	
 	assert(session != NULL);
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
@@ -419,9 +416,7 @@ static switch_status_t en_say_money(switch_core_session_t *session,
 	}
 
 	amt = atof(tosay);  //convert to double
-	dollars = trunc(amt); // get whole dollars
-	cents = trunc(fabs((amt - dollars))*100.0); // get cents as whole integer (dropping sign)
-	dollars = fabs(dollars); // lose the sign
+	cents = modf(fabs(amt), &dollars); // split dollars and cents
 	
 	// If negative say "negative" (or "minus")
 	if (amt < 0.0) {
