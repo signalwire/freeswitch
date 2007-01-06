@@ -323,43 +323,43 @@ static switch_status_t en_say_time(switch_core_session_t *session,
 		if (hours) {
 			say_num(hours, SSM_PRONOUNCED);
             if (hours == 1) {
-                say_file("digits/hour.wav");  //TODO -- NEED TO GET "hour.wav" recorded
+                say_file("time/hour.wav");  //TODO -- NEED TO GET "hour.wav" recorded
             }
             else {
-                say_file("digits/hours.wav");
+                say_file("time/hours.wav");
             }
 		}
         else {
             say_file("digits/0.wav");
-            say_file("digits/hours.wav");
+            say_file("time/hours.wav");
         }
 
 		if (minutes) {
 			say_num(minutes, SSM_PRONOUNCED);
             if (minutes == 1) {
-                say_file("digits/minute.wav");
+                say_file("time/minute.wav");
             }
             else {
-                say_file("digits/minutes.wav");
+                say_file("time/minutes.wav");
             }
 		}
         else {
             say_file("digits/0.wav");
-            say_file("digits/minutes.wav");
+            say_file("time/minutes.wav");
         }
 
 		if (seconds) {
 			say_num(seconds, SSM_PRONOUNCED);
             if (seconds == 1) {
-                say_file("digits/second.wav");
+                say_file("time/second.wav");
             }
             else {
-                say_file("digits/seconds.wav");
+                say_file("time/seconds.wav");
             }
 		}
         else {
             say_file("digits/0.wav");
-            say_file("digits/seconds.wav");
+            say_file("time/seconds.wav");
         }
 
 		return SWITCH_STATUS_SUCCESS;
@@ -387,8 +387,8 @@ static switch_status_t en_say_time(switch_core_session_t *session,
 	}
 
 	if (say_date) {
-		say_file("digits/day-%d.wav", tm.tm_wday);
-		say_file("digits/mon-%d.wav", tm.tm_mon);
+		say_file("time/day-%d.wav", tm.tm_wday);
+		say_file("time/mon-%d.wav", tm.tm_mon);
 		say_num(tm.tm_mday, SSM_COUNTED);
 		say_num(tm.tm_year + 1900, SSM_PRONOUNCED);
 	}
@@ -411,13 +411,13 @@ static switch_status_t en_say_time(switch_core_session_t *session,
 		if (tm.tm_min > 9) {
 			say_num(tm.tm_min, SSM_PRONOUNCED);
 		} else if (tm.tm_min) {
-			say_file("digits/oh.wav");
+			say_file("time/oh.wav");
 			say_num(tm.tm_min, SSM_PRONOUNCED);
 		} else {
-			say_file("digits/oclock.wav");
+			say_file("time/oclock.wav");
 		}
 
-		say_file("digits/%s.wav", pm ? "p-m" : "a-m");
+		say_file("time/%s.wav", pm ? "p-m" : "a-m");
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -461,35 +461,35 @@ static switch_status_t en_say_money(switch_core_session_t *session,
 
 	/* If negative say "negative" */
 	if (sbuf[0] == '-') {
-		say_file("negative.wav");
+		say_file("currency/negative.wav");
 		dollars++;
 	}
 			
 	/* Say dollar amount */
 	en_say_general_count(session, dollars, type, method, args);
 	if (atoi(dollars) == 1) {
-		say_file("dollar.wav");
+		say_file("currency/dollar.wav");
 	}
 	else {
-		say_file("dollars.wav");
+		say_file("currency/dollars.wav");
 	}
 		
 	/* Say "and" */
-	say_file("and.wav");
+	say_file("currency/and.wav");
 	
     /* Say cents */
     if (cents) {
         en_say_general_count(session, cents, type, method, args);
         if (atoi(cents) == 1) {
-            say_file("cent.wav");
+            say_file("currency/cent.wav");
         }
         else {
-            say_file("cents.wav");
+            say_file("currency/cents.wav");
         }
     }
     else {
         say_file("digits/0.wav");
-        say_file("cents.wav");
+        say_file("currency/cents.wav");
     }
 	
 	return SWITCH_STATUS_SUCCESS;
