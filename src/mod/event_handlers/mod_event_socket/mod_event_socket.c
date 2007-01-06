@@ -162,7 +162,7 @@ static void socket_function(switch_core_session_t *session, char *data)
     char *host, *port_name;
     switch_socket_t *new_sock;
     switch_sockaddr_t *sa;
-    int port = 8084;
+    switch_port_t port = 8084;
     listener_t *listener;
 	int argc = 0, x = 0;
 	char *argv[80] = {0};
@@ -186,7 +186,7 @@ static void socket_function(switch_core_session_t *session, char *data)
 
     if ((port_name = strchr(host, ':'))) {
         *port_name++ = '\0';
-        port = atoi(port_name);
+        port = (switch_port_t)atoi(port_name);
     }
 
 	if (switch_sockaddr_info_get(&sa, host, AF_INET, port, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
