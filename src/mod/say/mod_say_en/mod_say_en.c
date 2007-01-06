@@ -420,7 +420,12 @@ static switch_status_t en_say_money(switch_core_session_t *session,
 	if ((cents = strchr(sbuf, '.'))) {
 		*cents++ = '\0';
 	}
-	
+
+    /* If positive sign - skip over" */
+    if (sbuf[0] == '+') {
+        dollars++;
+    }
+
 	/* If negative say "negative" */
 	if (sbuf[0] == '-') {
 		say_file("negative.wav");
@@ -439,14 +444,20 @@ static switch_status_t en_say_money(switch_core_session_t *session,
 	/* Say "and" */
 	say_file("and.wav");
 	
-	/* Say cents */
-	en_say_general_count(session, cents, type, method, args);
-	if (atoi(cents) == 1) {
-		say_file("cent.wav");
-	}
-	else {
-		say_file("cents.wav");
-	}
+    /* Say cents */
+    if (cents) {
+        en_say_general_count(session, cents, type, method, args);
+        if (atoi(cents) == 1) {
+            say_file("cent.wav");
+        }
+        else {
+            say_file("cents.wav");
+        }
+    }
+    else {
+        say_file("digits/0.wav");
+        say_file("cents.wav");
+    }
 	
 	return SWITCH_STATUS_SUCCESS;
 }
