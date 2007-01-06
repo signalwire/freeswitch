@@ -1085,6 +1085,15 @@ DoxyDefine(switch_time_t switch_time_now(void);)
 #define switch_time_now apr_time_now
 
 /**
+ * Convert time value from human readable format to a numeric apr_time_t that
+ * always represents GMT
+ * @param result the resulting imploded time
+ * @param input the input exploded time
+ */
+DoxyDefine(switch_status_t switch_time_exp_gmt_get(switch_time_t *result, switch_time_exp_t *input);)
+#define switch_time_exp_gmt_get apr_time_exp_gmt_get
+
+/**
  * formats the exploded time according to the format specified
  * @param s string to write to
  * @param retsize The length of the returned string
