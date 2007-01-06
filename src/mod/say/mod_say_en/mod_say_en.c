@@ -63,11 +63,16 @@ static switch_status_t en_spell(switch_core_session_t *session,
 
 	for(p = tosay; p && *p; p++) {
 		int a = tolower((int) *p);
-		if (type == SST_NAME_SPELLED) {
-			say_file("ascii/%d.wav", a);
-		} else if (type == SST_NAME_PHONETIC) {
-			say_file("phonetic-ascii/%d.wav", a);
-		}
+        if (a >= 48 && a <= 57) {
+            say_file("digits/%d.wav", a-48);
+        }
+        else {
+    		if (type == SST_NAME_SPELLED) {
+    			say_file("ascii/%d.wav", a);
+    		} else if (type == SST_NAME_PHONETIC) {
+    			say_file("phonetic-ascii/%d.wav", a);
+    		}
+        }
 	}
 
 	return SWITCH_STATUS_SUCCESS;
